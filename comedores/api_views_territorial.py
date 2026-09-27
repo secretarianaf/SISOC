@@ -73,6 +73,8 @@ class TerritorialComedorSerializer(NoSaveSerializer):
     programa = serializers.SerializerMethodField()
     organizacion = serializers.SerializerMethodField()
     comienzo = serializers.IntegerField(allow_null=True)
+    # Solo lectura: filtro "Mes de ejecucion" del listado de la app (issue #2472).
+    mes_ejecucion = serializers.IntegerField(allow_null=True, read_only=True)
     provincia = serializers.SerializerMethodField()
     municipio = serializers.SerializerMethodField()
     localidad = serializers.SerializerMethodField()

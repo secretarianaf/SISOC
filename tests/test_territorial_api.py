@@ -698,3 +698,28 @@ def test_territorial_endpoint_requires_authentication():
     response = client.get("/api/territorial/comedores/")
 
     assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_territorial_comedores_expone_mes_ejecucion():
+    # La app filtra el listado por "Mes de ejecucion" (issue #2472).
+    prov = Provincia.objects.create(nombre="Prov Mes")
+    con_mes = Comedor.objects.create(nombre="Con mes", provincia=prov, mes_ejecucion=3)
+    sin_mes = Comedor.objects.create(nombre="Sin mes", provincia=prov)
+    user = _make_territorial("terr_mes", [prov])
+    for comedor in (con_mes, sin_mes):
+        Relevamiento.objects.create(
+            comedor=comedor, estado="Visita pendiente", territorial_user=user
+        )
+    client = _auth_client(user)
+
+    response = client.get("/api/territorial/comedores/")
+
+    assert response.status_code == 200
+    por_id = {row["id"]: row for row in response.data["results"]}
+    assert por_id[con_mes.id]["mes_ejecucion"] == 3
+    assert por_id[sin_mes.id]["mes_ejecucion"] is None
+
+    detalle = client.get(f"/api/territorial/comedores/{con_mes.id}/")
+    assert detalle.status_code == 200
+    assert detalle.data["mes_ejecucion"] == 3

@@ -30,7 +30,11 @@
 
 - Empezar por `docs/registro/prs/PR-2581.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
 - `comedores/api_views_territorial.py`
+- `docs/contexto/features/pr-2581-fix-seguimiento-dni-de-referente-duplicado-mes-ejecucion-en-api-territorial.md`
+- `docs/registro/prs/PR-2581.md`
+- `docs/registro/releases/pending/2026-09-30-pr-2581.md`
 - `relevamientos/serializer.py`
 - `tests/test_primer_seguimiento_relevamientos.py`
 - `tests/test_territorial_api.py`

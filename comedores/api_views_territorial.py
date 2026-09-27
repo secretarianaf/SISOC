@@ -26,6 +26,12 @@ from comedores.api_serializers import (
     NoSaveSerializer,
     TerritorialComedorWriteSerializer,
 )
+from comedores.api_views_territorial_pnud import (
+    SeguimientosPnudTerritorialMixin,
+    TerritorialComedorPnudFieldsMixin,
+    prestaciones_aprobadas_por_dia,
+    seguimientos_pnud_payload,
+)
 from comedores.models import (
     Comedor,
     ComedorPwaCreateOperation,
@@ -66,7 +72,7 @@ class TerritorialUltimoRelevamientoSerializer(NoSaveSerializer):
     asignado_desde_sisoc = serializers.BooleanField()
 
 
-class TerritorialComedorSerializer(NoSaveSerializer):
+class TerritorialComedorSerializer(TerritorialComedorPnudFieldsMixin, NoSaveSerializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField()
     tipo = serializers.SerializerMethodField()
@@ -167,6 +173,7 @@ class TerritorialComedorSerializer(NoSaveSerializer):
 
 @extend_schema(tags=["Territorial"])
 class TerritorialComedorViewSet(
+    SeguimientosPnudTerritorialMixin,
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -331,7 +338,8 @@ class TerritorialComedorViewSet(
                     "relevamiento_set",
                     queryset=relevamientos_asignados,
                     to_attr="relevamientos_territorial",
-                )
+                ),
+                "seguimientos_pnud__tecnico",
             )
             .order_by("nombre", "id")
         )
@@ -369,6 +377,9 @@ class TerritorialComedorViewSet(
             "total": len(actas),
             "items": [self._serialize_acta(acta) for acta in actas],
         }
+        # Seguimientos PNUD (N22) con respuestas y aprobados para precargarlos.
+        data["seguimientos_pnud"] = seguimientos_pnud_payload(comedor, request.user)
+        data["prestaciones_aprobadas"] = prestaciones_aprobadas_por_dia(comedor)
         return Response(data)
 
     def _seguimiento_anterior(self, comedor):
@@ -437,7 +448,8 @@ class TerritorialComedorViewSet(
 
     @staticmethod
     def _leer_client_uuid(request):
-        return (request.data.get("client_uuid") or "").strip() or None
+        valor = request.data.get("client_uuid")
+        return valor.strip() or None if isinstance(valor, str) else None
 
     @staticmethod
     def _falta_client_uuid():
@@ -885,7 +897,13 @@ class TerritorialComedorViewSet(
         # Sube la firma como imagen y devuelve la URL, para guardarla como string
         # en excepcion.firma (relevamiento) o cierre.firma_* (seguimiento) vía el
         # PATCH. No se mezcla con las fotos del comedor (ImagenComedor).
-        comedor = self.get_object()
+        # Asignado a mí (como antes) o de mi zona (altas N15/N18/N22: actas y
+        # seguimientos PNUD se firman sobre comedores sin asignacion previa).
+        comedor = (
+            self._comedor_de_mi_zona() or self.get_queryset().filter(pk=pk).first()
+        )
+        if comedor is None:
+            return self._fuera_de_zona()
         archivo = request.FILES.get("firma")
         if not archivo:
             return Response(

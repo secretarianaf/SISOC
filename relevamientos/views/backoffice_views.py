@@ -7,6 +7,7 @@ consume la app no cambia.
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic import DetailView
@@ -17,7 +18,8 @@ from relevamientos.forms_backoffice import (
     ActaComplementariaEditor,
     SeguimientoEditor,
 )
-from relevamientos.models import ActaComplementaria
+from relevamientos.models import ActaComplementaria, SeguimientoPnud
+from relevamientos.pnud_formularios import respuestas_por_seccion, titulos
 from relevamientos.views.seguimiento_helpers import (
     aplicar_revision_coordinador,
     resolver_seguimiento,
@@ -84,6 +86,65 @@ class SeguimientoRevisionCoordinadorView(LoginRequiredMixin, View):
                 request, "Seguimiento devuelto al territorial para subsanar."
             )
         return redirect(_url_detalle_seguimiento(seguimiento))
+
+
+def _url_detalle_seguimiento_pnud(seguimiento):
+    return reverse(
+        "seguimiento_pnud_detalle",
+        kwargs={"comedor_pk": seguimiento.comedor_id, "pk": seguimiento.pk},
+    )
+
+
+class SeguimientoPnudDetailView(LoginRequiredMixin, DetailView):
+    """Seguimiento PNUD (N22) cargado por el territorial desde la app."""
+
+    model = SeguimientoPnud
+    template_name = "seguimiento_pnud_detail.html"
+    context_object_name = "seguimiento"
+
+    def get_queryset(self):
+        return SeguimientoPnud.objects.filter(
+            comedor_id=self.kwargs["comedor_pk"]
+        ).select_related("comedor", "tecnico", "coordinador")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comedor"] = self.object.comedor
+        context["secciones"] = respuestas_por_seccion(
+            self.object.formulario, self.object.datos
+        )
+        context["encabezado_formulario"] = titulos(self.object.formulario)
+        return context
+
+
+class SeguimientoPnudRevisionCoordinadorView(LoginRequiredMixin, View):
+    """Revisión del coordinador (N16) sobre un seguimiento PNUD (N22)."""
+
+    http_method_names = ["post"]
+
+    def post(self, request, **kwargs):
+        with transaction.atomic():
+            # Bloqueo de fila: no se cruza con una corrección del territorial.
+            seguimiento = get_object_or_404(
+                SeguimientoPnud.objects.select_for_update(),
+                pk=kwargs["pk"],
+                comedor_id=kwargs["comedor_pk"],
+            )
+            if seguimiento.esta_validado:
+                error = "El seguimiento PNUD ya está validado: no admite otra revisión."
+            else:
+                error = aplicar_revision_coordinador(
+                    request, seguimiento, "el seguimiento PNUD"
+                )
+        if error:
+            messages.error(request, error)
+        elif seguimiento.esta_validado:
+            messages.success(request, "Seguimiento PNUD validado correctamente.")
+        else:
+            messages.success(
+                request, "Seguimiento PNUD devuelto al territorial para subsanar."
+            )
+        return redirect(_url_detalle_seguimiento_pnud(seguimiento))
 
 
 class ActaComplementariaDetailView(LoginRequiredMixin, DetailView):

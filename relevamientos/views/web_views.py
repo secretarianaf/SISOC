@@ -23,6 +23,7 @@ from relevamientos.models import (
     ActaComplementaria,
     PrimerSeguimiento,
     Relevamiento,
+    SeguimientoPnud,
 )
 from relevamientos.service import RelevamientoService
 from relevamientos.views.seguimiento_helpers import (
@@ -157,6 +158,11 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
             ActaComplementaria.objects.filter(comedor_id=self.kwargs["comedor_pk"])
             .select_related("tecnico")
             .prefetch_related("prestaciones")
+        )
+        context["seguimientos_pnud"] = list(
+            SeguimientoPnud.objects.filter(
+                comedor_id=self.kwargs["comedor_pk"]
+            ).select_related("tecnico")
         )
         return context
 

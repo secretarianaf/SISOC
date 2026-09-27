@@ -12,7 +12,7 @@
             <a href="{% url 'comedor_detalle' relevamiento.comedor.id %}">{{ relevamiento.comedor.nombre }}</a>
         </div>
         <div class="breadcrumb-item active">
-            <a href="{% url 'relevamiento_detalle' relevamiento.comedor.id relevamiento.id %}">Relevamiento {{ relevamiento.fecha_visita | default_if_none:"Sin información" }}</a>
+            <a href="{% url 'relevamiento_detalle' relevamiento.comedor.id relevamiento.id %}">Acompañamiento Territorial {{ relevamiento.fecha_visita | default_if_none:"Sin información" }}</a>
         </div>
         <div class="breadcrumb-item">Eliminar</div>
     </ol>

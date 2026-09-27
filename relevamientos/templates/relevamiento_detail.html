@@ -1,7 +1,7 @@
 {% extends "includes/main.html" %};
 {% load static custom_filters image_tags %}
 ;
-{% block title %}Relevamiento - Comedor: {{ comedor.nombre }}{% endblock %}
+{% block title %}Acompañamiento Territorial - Comedor: {{ comedor.nombre }}{% endblock %}
 ;
 {% block titulo-pagina %}
     <div class="mb-4">
@@ -10,7 +10,7 @@
     </div>
 
     {{ relevamiento.comedor.nombre }}
-    <span class="ml-2 h5">| Relevamiento</span>
+    <span class="ml-2 h5">| Acompañamiento Territorial</span>
     <span class="ml-2 h5">| {{ relevamiento.fecha_visita | default_if_none:"Sin información" }} |</span>
     <span class="ml-2 h5"
           {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
@@ -47,7 +47,7 @@
             <a href="{% url 'comedor_detalle' relevamiento.comedor.id %}">{{ relevamiento.comedor.nombre }}</a>
         </div>
         <div class="breadcrumb-item active">
-            Relevamiento {{ relevamiento.fecha_visita | default_if_none:"Sin información" }}
+            Acompañamiento Territorial {{ relevamiento.fecha_visita | default_if_none:"Sin información" }}
         </div>
     </ol>
 {% endblock %}
@@ -238,7 +238,7 @@
         <div class="col-3">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title font-weight-bold mr-3">Relevamiento</h3>
+                    <h3 class="card-title font-weight-bold mr-3">Acompañamiento Territorial</h3>
                     <div class="card-tools">
                         <button type="button" class="btn btn-tool" data-card-widget="collapse">
                             <i class="fas fa-minus"></i>

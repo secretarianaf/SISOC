@@ -1099,10 +1099,14 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
 
         defaults = {k: v for k, v in referente_data.items() if v is not None}
         if documento:
-            referente, created = Referente.objects.get_or_create(
-                documento=documento, defaults=defaults
-            )
-            if not created and defaults:
+            # `documento` no es unico en la base (hay DNIs repetidos entre
+            # referentes): get_or_create fallaba con MultipleObjectsReturned y el
+            # PATCH respondia 400. Mismo criterio que el relevamiento
+            # (_upsert_referente_por_documento_data): se reutiliza el ultimo.
+            referente = Referente.objects.filter(documento=documento).last()
+            if referente is None:
+                referente = Referente.objects.create(documento=documento, **defaults)
+            elif defaults:
                 for field_name, value in defaults.items():
                     setattr(referente, field_name, value)
                 referente.save()

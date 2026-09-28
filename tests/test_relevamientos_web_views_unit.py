@@ -142,8 +142,9 @@ def test_list_view_get_queryset_filtra_y_ordena(mocker):
 def test_list_view_get_context_data_agrega_comedor(mocker):
     view = RelevamientoListView()
     view.kwargs = {"comedor_pk": 5}
-    # El listado tambien carga las actas complementarias del comedor (sin DB aca).
+    # El listado tambien carga actas y seguimientos PNUD (sin DB aca).
     mocker.patch("relevamientos.views.web_views.ActaComplementaria.objects")
+    mocker.patch("relevamientos.views.web_views.SeguimientoPnud.objects")
     mocker.patch(
         "django.views.generic.list.MultipleObjectMixin.get_context_data",
         return_value={"relevamientos": []},
@@ -211,6 +212,7 @@ def test_list_view_construye_items_solo_padre_sin_seguimiento(mocker):
     view.kwargs = {"comedor_pk": 5}
     # El listado tambien carga las actas complementarias del comedor (sin DB aca).
     mocker.patch("relevamientos.views.web_views.ActaComplementaria.objects")
+    mocker.patch("relevamientos.views.web_views.SeguimientoPnud.objects")
     rel = _make_relevamiento_stub(11, numero_if="IF-11")
     mocker.patch(
         "django.views.generic.list.MultipleObjectMixin.get_context_data",
@@ -244,6 +246,7 @@ def test_list_view_construye_items_padre_seguido_de_hijo(mocker):
     view.kwargs = {"comedor_pk": 5}
     # El listado tambien carga las actas complementarias del comedor (sin DB aca).
     mocker.patch("relevamientos.views.web_views.ActaComplementaria.objects")
+    mocker.patch("relevamientos.views.web_views.SeguimientoPnud.objects")
     seguimiento = _make_seguimiento_stub(900)
     rel = _make_relevamiento_stub(42, numero_if="IF-42", seguimientos=[seguimiento])
     mocker.patch(

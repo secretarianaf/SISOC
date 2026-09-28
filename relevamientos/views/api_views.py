@@ -1,7 +1,7 @@
 import logging
 
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -67,6 +67,30 @@ def _validado_bloquea_edicion(request, instance):
     )
 
 
+def _cuerpo_no_es_objeto(request):
+    """400 si el body no es un objeto JSON (una lista rompía ``.get`` con 500).
+
+    Estas vistas legacy responden un string suelto; se mantiene ese formato.
+    """
+    if isinstance(request.data, dict):
+        return None
+    return Response(
+        "El cuerpo de la solicitud debe ser un objeto JSON.",
+        status=status.HTTP_400_BAD_REQUEST,
+    )
+
+
+def _conflicto_de_unicidad(mensaje):
+    """409 cuando dos escrituras concurrentes chocan en un UNIQUE de la base.
+
+    La validación del serializer ya rechaza los duplicados con 400; el
+    IntegrityError solo queda para la carrera entre dos PATCH simultáneos, que
+    antes terminaba en 500.
+    """
+    logger.warning(mensaje)
+    return Response(mensaje, status=status.HTTP_409_CONFLICT)
+
+
 def _reenviar_a_validacion(model, pk, estado_validacion_actual):
     """Un envío del territorial vuelve a pedir validación del coordinador.
 
@@ -84,7 +108,10 @@ class RelevamientoApiView(APIView):
     serializer_class = RelevamientoSerializer
     permission_classes = [HasAPIKeyOrToken]
 
-    def patch(self, request):
+    def patch(self, request):  # pylint: disable=too-many-return-statements
+        cuerpo_invalido = _cuerpo_no_es_objeto(request)
+        if cuerpo_invalido is not None:
+            return cuerpo_invalido
         sisoc_id = request.data.get("sisoc_id")
         if sisoc_id in (None, ""):
             return Response(
@@ -144,6 +171,12 @@ class RelevamientoApiView(APIView):
             return Response(
                 f"Relevamiento {sisoc_id} no encontrado",
                 status=status.HTTP_404_NOT_FOUND,
+            )
+        except IntegrityError:
+            return _conflicto_de_unicidad(
+                f"Conflicto al guardar el relevamiento {sisoc_id}: otra escritura "
+                "simultánea chocó con una restricción de unicidad (por ejemplo, "
+                "comedor y fecha de visita)."
             )
         except Exception:
             logger.exception(
@@ -243,7 +276,10 @@ class PrimerSeguimientoApiView(APIView):
             )
         return seguimiento, None
 
-    def patch(self, request):
+    def patch(self, request):  # pylint: disable=too-many-return-statements
+        cuerpo_invalido = _cuerpo_no_es_objeto(request)
+        if cuerpo_invalido is not None:
+            return cuerpo_invalido
         seguimiento_queryset = _scope_relevamientos_for_authenticated_user(
             request,
             PrimerSeguimiento.objects.select_related("id_relevamiento__comedor"),
@@ -309,6 +345,11 @@ class PrimerSeguimientoApiView(APIView):
             return Response(
                 PrimerSeguimientoSerializer(seguimiento_serializer.instance).data,
                 status=status.HTTP_200_OK,
+            )
+        except IntegrityError:
+            return _conflicto_de_unicidad(
+                f"Conflicto al guardar el seguimiento {seguimiento.pk}: otra "
+                "escritura simultánea chocó con una restricción de unicidad."
             )
         except Exception:
             logger.exception(

@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Seguimiento PNUD: de dónde sale cada dato",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      520
+    ]
+  },
+  "stages": [
+    {
+      "label": "Origen"
+    },
+    {
+      "label": "Formulario"
+    },
+    {
+      "label": "Envío"
+    },
+    {
+      "label": "SISOC"
+    },
+    {
+      "label": "Consumo"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "listado",
+      "type": "external",
+      "label": "GET N22",
+      "sublabel": "aprobados y códigos",
+      "stage": 0,
+      "row": 0,
+      "tag": "precargado"
+    },
+    {
+      "id": "ficha",
+      "type": "frontend",
+      "label": "Ficha del espacio",
+      "sublabel": "domicilio",
+      "stage": 0,
+      "row": 1,
+      "tag": "editable"
+    },
+    {
+      "id": "tecnico",
+      "type": "frontend",
+      "label": "Técnico",
+      "sublabel": "respuestas y firma",
+      "stage": 0,
+      "row": 2,
+      "tag": "cargado"
+    },
+    {
+      "id": "form",
+      "type": "frontend",
+      "label": "Formulario PNUD",
+      "sublabel": "seguir-pnud",
+      "stage": 1,
+      "row": 1
+    },
+    {
+      "id": "datos",
+      "type": "messagebus",
+      "label": "datos",
+      "sublabel": "FormValues tal cual",
+      "stage": 2,
+      "row": 1,
+      "tag": "outbox"
+    },
+    {
+      "id": "defs",
+      "type": "database",
+      "label": "Definiciones",
+      "sublabel": "pnud_formularios.json",
+      "stage": 3,
+      "row": 0
+    },
+    {
+      "id": "sisoc",
+      "type": "database",
+      "label": "Seguimiento PNUD",
+      "sublabel": "datos como JSON",
+      "stage": 3,
+      "row": 1
+    },
+    {
+      "id": "backoffice",
+      "type": "backend",
+      "label": "Backoffice SISOC",
+      "sublabel": "respuestas por sección",
+      "stage": 4,
+      "row": 1
+    },
+    {
+      "id": "pdf",
+      "type": "backend",
+      "label": "PDF en la app",
+      "sublabel": "solo si Validado",
+      "stage": 4,
+      "row": 2
+    }
+  ],
+  "flows": [
+    {
+      "id": "f-precarga",
+      "from": "listado",
+      "to": "form",
+      "label": "precarga",
+      "classification": "solo lectura",
+      "fromSide": "right",
+      "toSide": "top",
+      "via": [
+        [
+          315,
+          157
+        ]
+      ]
+    },
+    {
+      "id": "f-domicilio",
+      "from": "ficha",
+      "to": "form",
+      "label": "domicilio",
+      "route": "straight"
+    },
+    {
+      "id": "f-carga",
+      "from": "tecnico",
+      "to": "form",
+      "label": "respuestas",
+      "fromSide": "right",
+      "toSide": "bottom",
+      "via": [
+        [
+          315,
+          385
+        ]
+      ]
+    },
+    {
+      "id": "f-guardar",
+      "from": "form",
+      "to": "datos",
+      "label": "guardar",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "id": "f-envio",
+      "from": "datos",
+      "to": "sisoc",
+      "label": "POST / PATCH",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "id": "f-definiciones",
+      "from": "defs",
+      "to": "backoffice",
+      "label": "etiquetas",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "top",
+      "via": [
+        [
+          960,
+          157
+        ]
+      ]
+    },
+    {
+      "id": "f-muestra",
+      "from": "sisoc",
+      "to": "backoffice",
+      "label": "respuestas",
+      "route": "straight"
+    },
+    {
+      "id": "f-pdf",
+      "from": "datos",
+      "to": "pdf",
+      "label": "respuestas locales",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "left",
+      "via": [
+        [
+          530,
+          385
+        ]
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Precargado de SISOC",
+      "items": [
+        "Vianda: AP por día y comida, en la grilla fija de 35 filas",
+        "Módulo: destinatarios aprobados por comida",
+        "Código de proyecto e ID externo; linea_pnud decide el formulario",
+        "Técnico: el usuario que ingresó; SISOC devuelve tecnico_nombre"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Cargado por el técnico",
+      "items": [
+        "El resto de las respuestas y la firma del entrevistado",
+        "El domicilio llega de la ficha y se puede corregir"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Cómo se muestra",
+      "items": [
+        "SISOC guarda datos sin tocar el legajo",
+        "El backoffice usa las etiquetas de pnudForm.ts, copiadas a pnud_formularios.json"
+      ]
+    }
+  ]
+}

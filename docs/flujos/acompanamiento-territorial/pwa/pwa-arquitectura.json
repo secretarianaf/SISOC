@@ -1,0 +1,288 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "PWA: módulos del Acompañamiento Territorial PNUD",
+    "quality_profile": "showcase"
+  },
+  "layout": {
+    "mode": "grid",
+    "origin": [
+      60,
+      80
+    ],
+    "cols": 5,
+    "cellW": 150,
+    "cellH": 60,
+    "gapX": 60,
+    "gapY": 100
+  },
+  "components": [
+    {
+      "id": "ficha",
+      "type": "frontend",
+      "label": "comedor/[id]",
+      "sublabel": "ficha del espacio",
+      "row": 0,
+      "col": 0,
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "seguir",
+      "type": "frontend",
+      "label": "seguir-pnud",
+      "sublabel": "carga y corrección",
+      "row": 0,
+      "col": 1,
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "detalle",
+      "type": "frontend",
+      "label": "seguimiento-pnud/[id]",
+      "sublabel": "estado y PDF",
+      "row": 0,
+      "col": 2,
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "perfil",
+      "type": "frontend",
+      "label": "Perfil",
+      "sublabel": "reintentar o descartar",
+      "row": 0,
+      "col": 4,
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "form",
+      "type": "backend",
+      "label": "pnudForm",
+      "sublabel": "5 formularios + catalogos",
+      "row": 1,
+      "col": 0,
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "motor",
+      "type": "backend",
+      "label": "Motor de formularios",
+      "sublabel": "visibilidad y controles",
+      "row": 1,
+      "col": 1,
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "usepnud",
+      "type": "backend",
+      "label": "usePnud",
+      "sublabel": "handler + pnudMerge",
+      "row": 1,
+      "col": 2,
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "sync",
+      "type": "messagebus",
+      "label": "Sync engine",
+      "sublabel": "reintentos con backoff",
+      "row": 1,
+      "col": 4,
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "pdf",
+      "type": "backend",
+      "label": "Generador de PDF",
+      "sublabel": "respuestas locales",
+      "row": 0,
+      "col": 3,
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "storage",
+      "type": "database",
+      "label": "Caché + outbox",
+      "sublabel": "withLock",
+      "row": 1,
+      "col": 3,
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "pnudApi",
+      "sublabel": "cliente N22",
+      "row": 2,
+      "col": 4,
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "sisoc",
+      "type": "external",
+      "label": "SISOC N22",
+      "sublabel": "seguimientos-pnud",
+      "row": 3,
+      "col": 4,
+      "size": [
+        150,
+        60
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "PWA en el dispositivo del técnico",
+      "wraps": [
+        "ficha",
+        "seguir",
+        "detalle",
+        "perfil",
+        "form",
+        "motor",
+        "usepnud",
+        "sync",
+        "pdf",
+        "storage",
+        "api"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "c-ficha-seguir",
+      "from": "ficha",
+      "to": "seguir",
+      "label": "abre"
+    },
+    {
+      "id": "c-seguir-motor",
+      "from": "seguir",
+      "to": "motor",
+      "label": "renderiza",
+      "labelDy": 24
+    },
+    {
+      "id": "c-form-motor",
+      "from": "form",
+      "to": "motor",
+      "label": "define"
+    },
+    {
+      "id": "c-seguir-use",
+      "from": "seguir",
+      "to": "usepnud",
+      "label": "guarda",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c-detalle-use",
+      "from": "detalle",
+      "to": "usepnud",
+      "label": "lee",
+      "labelDy": 24
+    },
+    {
+      "id": "c-detalle-pdf",
+      "from": "detalle",
+      "to": "pdf",
+      "label": "si Validado"
+    },
+    {
+      "id": "c-perfil-sync",
+      "from": "perfil",
+      "to": "sync",
+      "label": "reintenta",
+      "labelDy": 24
+    },
+    {
+      "id": "c-use-storage",
+      "from": "usepnud",
+      "to": "storage",
+      "label": "encola",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c-sync-storage",
+      "from": "sync",
+      "to": "storage",
+      "label": "drena"
+    },
+    {
+      "id": "c-sync-api",
+      "from": "sync",
+      "to": "api",
+      "label": "POST / PATCH",
+      "labelDy": 24
+    },
+    {
+      "id": "c-api-sisoc",
+      "from": "api",
+      "to": "sisoc",
+      "label": "HTTPS",
+      "variant": "emphasis",
+      "labelDy": 24
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Pantallas",
+      "items": [
+        "La ficha del espacio elige el formulario según el programa en SISOC",
+        "El detalle muestra el estado y habilita el PDF solo si está Validado"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Offline primero",
+      "items": [
+        "Guardar escribe caché y outbox en un solo paso con withLock",
+        "El sync engine ejecuta el handler de usePnud: prepare sube la firma y save hace POST o PATCH con pnudApi"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Contrato N22",
+      "items": [
+        "Alta idempotente por client_uuid",
+        "Corrección por PATCH mientras no esté Validado",
+        "GET del listado para estado, observaciones y aprobados"
+      ]
+    }
+  ]
+}

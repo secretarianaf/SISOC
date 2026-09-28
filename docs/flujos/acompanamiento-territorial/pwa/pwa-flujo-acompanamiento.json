@@ -1,0 +1,40 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Acompañamiento Territorial: entrada y elección del formulario",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "app", "label": "App del técnico" },
+    { "id": "decision", "label": "Decisiones" },
+    { "id": "forms", "label": "Formularios" }
+  ],
+  "mainPath": ["ingreso", "ficha", "tipo", "programa", "modalidad", "prestacion", "tradicional"],
+  "nodes": [
+    { "id": "ingreso", "lane": "app", "col": 0, "type": "frontend", "label": "Ingreso", "sublabel": "login del técnico", "width": 132 },
+    { "id": "ficha", "lane": "app", "col": 1, "type": "frontend", "label": "Ficha del Espacio", "sublabel": "Espacio Comunitario", "width": 132 },
+    { "id": "tipo", "lane": "app", "col": 2, "type": "frontend", "label": "Tipo", "sublabel": "¿Inicial o Seguimiento?", "width": 132 },
+    { "id": "programa", "lane": "decision", "col": 3, "type": "backend", "label": "Programa en SISOC", "sublabel": "no lo elige el técnico", "width": 132 },
+    { "id": "modalidad", "lane": "decision", "col": 4, "type": "frontend", "label": "Modalidad", "sublabel": "la elige el técnico", "width": 132 },
+    { "id": "prestacion", "lane": "decision", "col": 5, "type": "frontend", "label": "Prestación", "sublabel": "la elige el técnico", "width": 132 },
+    { "id": "inicial", "lane": "forms", "col": 2, "type": "database", "label": "FORM-PNUD-INICIAL", "sublabel": "actualiza el legajo", "width": 132 },
+    { "id": "secos", "lane": "forms", "col": 4, "type": "database", "label": "FORM-PNUD-SECOS", "sublabel": "Puntos de Entrega", "width": 132 },
+    { "id": "tradicional", "lane": "forms", "col": 5, "type": "database", "label": "Línea Tradicional", "sublabel": "IIA1 · IIB1 · IIA · IIB", "width": 132 }
+  ],
+  "edges": [
+    { "id": "e-ingreso-ficha", "from": "ingreso", "to": "ficha" },
+    { "id": "e-ficha-tipo", "from": "ficha", "to": "tipo" },
+    { "id": "e-tipo-inicial", "from": "tipo", "to": "inicial", "label": "Inicial", "role": "branch" },
+    { "id": "e-tipo-programa", "from": "tipo", "to": "programa", "label": "Seguimiento", "variant": "emphasis" },
+    { "id": "e-programa-secos", "from": "programa", "to": "secos", "label": "Línea Secos", "role": "branch" },
+    { "id": "e-programa-modalidad", "from": "programa", "to": "modalidad", "label": "Línea Tradicional", "variant": "emphasis" },
+    { "id": "e-modalidad-prestacion", "from": "modalidad", "to": "prestacion", "label": "Virtual / Presencial" },
+    { "id": "e-prestacion-tradicional", "from": "prestacion", "to": "tradicional", "label": "Vianda / Módulo" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Lo decide SISOC", "items": ["La línea sale de linea_pnud del programa del espacio", "Si no se puede confirmar el programa, la app no abre el formulario"] },
+    { "dot": "amber", "title": "Lo elige el técnico", "items": ["Virtual → IIA1 (Vianda) o IIB1 (Módulo)", "Presencial → IIA (Vianda) o IIB (Módulo)"] },
+    { "dot": "slate", "title": "Otros programas", "items": ["Espacios fuera de Abordaje Comunitario siguen con los seguimientos actuales, sin cambios"] }
+  ]
+}

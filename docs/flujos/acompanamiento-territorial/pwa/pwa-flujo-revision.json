@@ -1,0 +1,189 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Seguimiento PNUD: envío, revisión y PDF",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "app",
+      "label": "App del técnico"
+    },
+    {
+      "id": "sisoc",
+      "label": "Envío y revisión en SISOC"
+    },
+    {
+      "id": "correccion",
+      "label": "Correcciones",
+      "variant": "exception"
+    }
+  ],
+  "mainPath": [
+    "formulario",
+    "guardar",
+    "envio",
+    "revision",
+    "decision",
+    "validado",
+    "pdf"
+  ],
+  "nodes": [
+    {
+      "id": "formulario",
+      "lane": "app",
+      "col": 0,
+      "type": "frontend",
+      "label": "Formulario PNUD",
+      "sublabel": "SECOS o Tradicional",
+      "width": 132
+    },
+    {
+      "id": "guardar",
+      "lane": "app",
+      "col": 1,
+      "type": "database",
+      "label": "Guardar",
+      "sublabel": "en el dispositivo",
+      "width": 132
+    },
+    {
+      "id": "pdf",
+      "lane": "app",
+      "col": 5,
+      "type": "frontend",
+      "label": "Descargar PDF",
+      "sublabel": "solo si Validado",
+      "width": 132
+    },
+    {
+      "id": "envio",
+      "lane": "sisoc",
+      "col": 2,
+      "type": "backend",
+      "label": "Se envía",
+      "sublabel": "al haber conexión",
+      "width": 132
+    },
+    {
+      "id": "revision",
+      "lane": "sisoc",
+      "col": 3,
+      "type": "backend",
+      "label": "En revisión",
+      "sublabel": "espera al coordinador",
+      "width": 132
+    },
+    {
+      "id": "decision",
+      "lane": "sisoc",
+      "col": 4,
+      "type": "security",
+      "label": "¿Correcciones?",
+      "sublabel": "decide el coordinador",
+      "width": 132
+    },
+    {
+      "id": "validado",
+      "lane": "sisoc",
+      "col": 5,
+      "type": "backend",
+      "label": "Validado",
+      "sublabel": "no actualiza el legajo",
+      "width": 132
+    },
+    {
+      "id": "subsanar",
+      "lane": "correccion",
+      "col": 4,
+      "type": "security",
+      "label": "A subsanar",
+      "sublabel": "con observaciones",
+      "width": 132
+    },
+    {
+      "id": "corregir",
+      "lane": "correccion",
+      "col": 3,
+      "type": "frontend",
+      "label": "Corregir y reenviar",
+      "sublabel": "en la app",
+      "width": 132
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-form-guardar",
+      "from": "formulario",
+      "to": "guardar"
+    },
+    {
+      "id": "e-guardar-envio",
+      "from": "guardar",
+      "to": "envio",
+      "label": "outbox"
+    },
+    {
+      "id": "e-envio-revision",
+      "from": "envio",
+      "to": "revision"
+    },
+    {
+      "id": "e-revision-decision",
+      "from": "revision",
+      "to": "decision"
+    },
+    {
+      "id": "e-decision-validado",
+      "from": "decision",
+      "to": "validado",
+      "label": "No",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-validado-pdf",
+      "from": "validado",
+      "to": "pdf",
+      "label": "habilita"
+    },
+    {
+      "id": "e-decision-subsanar",
+      "from": "decision",
+      "to": "subsanar",
+      "label": "Sí",
+      "role": "error"
+    },
+    {
+      "id": "e-subsanar-corregir",
+      "from": "subsanar",
+      "to": "corregir",
+      "role": "branch"
+    },
+    {
+      "id": "e-corregir-revision",
+      "from": "corregir",
+      "to": "revision",
+      "label": "vuelve",
+      "role": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Al validarse",
+      "items": [
+        "El PDF se genera en la app con las respuestas locales",
+        "Estos seguimientos no actualizan el legajo del espacio"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Mientras no esté Validado",
+      "items": [
+        "El técnico puede corregir y reenviar",
+        "Un envío sobre un Validado se rechaza y queda como Error de envío"
+      ]
+    }
+  ]
+}

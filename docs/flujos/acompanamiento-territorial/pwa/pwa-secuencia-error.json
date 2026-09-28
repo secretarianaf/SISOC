@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Seguimiento PNUD: refresco del detalle y error de envío",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1000,
+      580
+    ],
+    "legend": {
+      "mode": "hidden"
+    }
+  },
+  "participants": [
+    {
+      "id": "pantalla",
+      "type": "frontend",
+      "label": "Pantallas",
+      "sublabel": "seguir-pnud · detalle"
+    },
+    {
+      "id": "store",
+      "type": "database",
+      "label": "Caché + outbox",
+      "sublabel": "withLock"
+    },
+    {
+      "id": "sync",
+      "type": "messagebus",
+      "label": "Sync engine",
+      "sublabel": "al haber conexión"
+    },
+    {
+      "id": "handler",
+      "type": "backend",
+      "label": "usePnud",
+      "sublabel": "handler + merge"
+    },
+    {
+      "id": "sisoc",
+      "type": "external",
+      "label": "SISOC N22",
+      "sublabel": "seguimientos-pnud"
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 326,
+      "label": "Refresco del detalle"
+    },
+    {
+      "from": 348,
+      "to": 530,
+      "label": "Error de envío"
+    }
+  ],
+  "messages": [
+    {
+      "from": "pantalla",
+      "to": "handler",
+      "y": 180,
+      "label": "detalle desde la caché (SWR)"
+    },
+    {
+      "from": "handler",
+      "to": "sisoc",
+      "y": 222,
+      "label": "GET seguimientos-pnud"
+    },
+    {
+      "from": "sisoc",
+      "to": "handler",
+      "y": 264,
+      "label": "instancias + veredicto",
+      "variant": "return"
+    },
+    {
+      "from": "handler",
+      "to": "store",
+      "y": 306,
+      "label": "cacheUpdateOneConCola",
+      "variant": "emphasis",
+      "note": "respuestaVieja descarta una GET anterior al envío"
+    },
+    {
+      "from": "handler",
+      "to": "sisoc",
+      "y": 368,
+      "label": "PATCH sobre un Validado",
+      "variant": "dashed"
+    },
+    {
+      "from": "sisoc",
+      "to": "handler",
+      "y": 410,
+      "label": "409 {detail}",
+      "variant": "return"
+    },
+    {
+      "from": "sync",
+      "to": "store",
+      "y": 452,
+      "label": "ítem en error",
+      "variant": "security"
+    },
+    {
+      "from": "store",
+      "to": "pantalla",
+      "y": 494,
+      "label": "Error de envío → Perfil",
+      "variant": "return",
+      "note": "reintentar o descartar"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Sin pisar correcciones",
+      "items": [
+        "La cola se lee dentro del mismo lock que la caché",
+        "Una GET lanzada antes de confirmar el envío no revierte el estado"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Errores",
+      "items": [
+        "Un rechazo 4xx (salvo 401, 408 y 429) queda en error hasta que el técnico decide en Perfil",
+        "Los errores transitorios se reintentan con backoff"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "N22 · Contrato API de seguimientos PNUD",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1080,
+      680
+    ]
+  },
+  "participants": [
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "App territorial",
+      "sublabel": "Gestionar PWA · Token"
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "API territorial",
+      "sublabel": "SISOC"
+    },
+    {
+      "id": "valid",
+      "type": "security",
+      "label": "Validaciones",
+      "sublabel": "programa · datos · firma"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "SeguimientoPnud",
+      "sublabel": "DB"
+    },
+    {
+      "id": "storage",
+      "type": "cloud",
+      "label": "Storage de firmas",
+      "sublabel": "firmas/<comedor_id>/"
+    }
+  ],
+  "segments": [
+    {
+      "from": 158,
+      "to": 242,
+      "label": "Firma"
+    },
+    {
+      "from": 252,
+      "to": 392,
+      "label": "Alta (POST)"
+    },
+    {
+      "from": 402,
+      "to": 458,
+      "label": "Consulta (GET)"
+    },
+    {
+      "from": 468,
+      "to": 608,
+      "label": "Corrección"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m-firma",
+      "from": "app",
+      "to": "api",
+      "y": 172,
+      "label": "POST …/{id}/firma/ (≤ 3 MB)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-guarda-firma",
+      "from": "api",
+      "to": "storage",
+      "y": 200,
+      "label": "guarda la imagen en firmas/<comedor_id>/",
+      "variant": "default"
+    },
+    {
+      "id": "m-url",
+      "from": "api",
+      "to": "app",
+      "y": 228,
+      "label": "201 {url}",
+      "variant": "return"
+    },
+    {
+      "id": "m-alta",
+      "from": "app",
+      "to": "api",
+      "y": 266,
+      "label": "POST …/seguimientos-pnud/",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-uuid",
+      "from": "api",
+      "to": "db",
+      "y": 294,
+      "label": "client_uuid ya usado: mismo técnico y comedor → 200 · otro → 409",
+      "variant": "default"
+    },
+    {
+      "id": "m-valida",
+      "from": "api",
+      "to": "valid",
+      "y": 322,
+      "label": "client_uuid, programa/formulario, tablas, firma → 400",
+      "variant": "security"
+    },
+    {
+      "id": "m-guarda",
+      "from": "api",
+      "to": "db",
+      "y": 350,
+      "label": "alta atómica · Pendiente validación coordinador",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-201",
+      "from": "api",
+      "to": "app",
+      "y": 378,
+      "label": "201 (carrera: 200 o 409)",
+      "variant": "return"
+    },
+    {
+      "id": "m-get",
+      "from": "app",
+      "to": "api",
+      "y": 416,
+      "label": "GET …/seguimientos-pnud/",
+      "variant": "default"
+    },
+    {
+      "id": "m-items",
+      "from": "api",
+      "to": "app",
+      "y": 444,
+      "label": "200 · datos solo en los propios",
+      "variant": "return"
+    },
+    {
+      "id": "m-patch",
+      "from": "app",
+      "to": "api",
+      "y": 482,
+      "label": "PATCH …/seguimientos-pnud/{pnud_id}/",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-lock",
+      "from": "api",
+      "to": "db",
+      "y": 510,
+      "label": "select_for_update · Validado → 409",
+      "variant": "default"
+    },
+    {
+      "id": "m-revalida",
+      "from": "api",
+      "to": "valid",
+      "y": 538,
+      "label": "revalida programa y datos → 400",
+      "variant": "security"
+    },
+    {
+      "id": "m-reemplaza",
+      "from": "api",
+      "to": "db",
+      "y": 566,
+      "label": "reemplaza datos · Pendiente validación coordinador",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-200",
+      "from": "api",
+      "to": "app",
+      "y": 594,
+      "label": "200",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "api",
+      "from": 166,
+      "to": 234,
+      "type": "backend"
+    },
+    {
+      "participant": "api",
+      "from": 260,
+      "to": 384,
+      "type": "backend"
+    },
+    {
+      "participant": "api",
+      "from": 410,
+      "to": 450,
+      "type": "backend"
+    },
+    {
+      "participant": "api",
+      "from": 476,
+      "to": 600,
+      "type": "backend"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Idempotencia por client_uuid",
+      "items": [
+        "Mismo técnico y comedor → 200; otro seguimiento → 409",
+        "Fuera de zona → 404"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Validado es terminal",
+      "items": [
+        "Alta y corrección → Pendiente validación coordinador",
+        "Se corrige desde Pendiente o A subsanar; Validado → 409"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Sin escritura en el legajo",
+      "items": [
+        "La clave comedor dentro de datos se descarta",
+        "Firmas: solo URLs de /firma/ del mismo comedor"
+      ]
+    }
+  ]
+}

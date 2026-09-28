@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Seguimiento PNUD: estados que ve el técnico",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    },
+    "viewBox": [
+      1080,
+      640
+    ]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Camino principal"
+    },
+    {
+      "id": "eventos",
+      "label": "Correcciones"
+    },
+    {
+      "id": "terminal",
+      "label": "Error y ajeno"
+    }
+  ],
+  "states": [
+    {
+      "id": "borrador",
+      "type": "start",
+      "label": "Borrador",
+      "sublabel": "formulario sin guardar",
+      "lane": "main",
+      "col": 0,
+      "step": "01"
+    },
+    {
+      "id": "pendiente",
+      "type": "waiting",
+      "label": "Pendiente de envío",
+      "sublabel": "en cola o enviándose",
+      "lane": "main",
+      "col": 1,
+      "step": "02",
+      "width": 126
+    },
+    {
+      "id": "revision",
+      "type": "active",
+      "label": "En revisión",
+      "sublabel": "espera al coordinador",
+      "lane": "main",
+      "col": 2,
+      "step": "03"
+    },
+    {
+      "id": "validado",
+      "type": "success",
+      "label": "Validado",
+      "sublabel": "PDF habilitado",
+      "lane": "main",
+      "col": 3,
+      "step": "04"
+    },
+    {
+      "id": "subsanar",
+      "type": "decision",
+      "label": "A subsanar",
+      "sublabel": "con observaciones",
+      "lane": "eventos",
+      "col": 0
+    },
+    {
+      "id": "correccion",
+      "type": "waiting",
+      "label": "Corrección pendiente",
+      "sublabel": "de envío",
+      "lane": "eventos",
+      "col": 2,
+      "width": 150
+    },
+    {
+      "id": "error",
+      "type": "failure",
+      "label": "Error de envío",
+      "sublabel": "reintentar o descartar",
+      "lane": "terminal",
+      "col": 1
+    },
+    {
+      "id": "ajeno",
+      "type": "neutral",
+      "label": "Ajeno",
+      "sublabel": "no se corrige ni imprime",
+      "lane": "terminal",
+      "col": 2
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t-guardar",
+      "from": "borrador",
+      "to": "pendiente",
+      "label": "Guardar",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "straight",
+      "labelDy": -25
+    },
+    {
+      "id": "t-aceptado",
+      "from": "pendiente",
+      "to": "revision",
+      "label": "SISOC acepta",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "straight",
+      "labelAt": [
+        325,
+        110
+      ]
+    },
+    {
+      "id": "t-valida",
+      "from": "revision",
+      "to": "validado",
+      "label": "coordinador valida",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "straight",
+      "labelAt": [
+        479,
+        202
+      ]
+    },
+    {
+      "id": "t-pide",
+      "from": "revision",
+      "to": "subsanar",
+      "label": "pide correcciones",
+      "labelAt": [
+        345,
+        233
+      ]
+    },
+    {
+      "id": "t-corrige",
+      "from": "subsanar",
+      "to": "correccion",
+      "label": "Corregir y reenviar",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "straight"
+    },
+    {
+      "id": "t-reenvio",
+      "from": "correccion",
+      "to": "revision",
+      "label": "SISOC acepta",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [
+          710,
+          100
+        ],
+        [
+          402,
+          100
+        ]
+      ]
+    },
+    {
+      "id": "t-rechazo",
+      "from": "pendiente",
+      "to": "error",
+      "label": "rechazo",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          248,
+          420
+        ],
+        [
+          556,
+          420
+        ]
+      ]
+    },
+    {
+      "id": "t-reintento",
+      "from": "error",
+      "to": "pendiente",
+      "label": "reintentar (alta)",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "top",
+      "via": [
+        [
+          20,
+          479
+        ],
+        [
+          20,
+          72
+        ],
+        [
+          248,
+          72
+        ]
+      ],
+      "labelAt": [
+        70,
+        330
+      ]
+    },
+    {
+      "id": "t-rechazo-correccion",
+      "from": "correccion",
+      "to": "error",
+      "label": "rechazo (409)",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "bottom",
+      "via": [
+        [
+          810,
+          307
+        ],
+        [
+          810,
+          560
+        ],
+        [
+          556,
+          560
+        ]
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Camino principal",
+      "items": [
+        "El PDF solo se habilita en Validado; un Validado ya no se corrige",
+        "Ajeno: de otro técnico, SISOC no comparte sus respuestas"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Error de envío (Perfil)",
+      "items": [
+        "Reintentar reenvía lo mismo: el alta vuelve a Pendiente de envío, la corrección a Corrección pendiente",
+        "Descartar borra el envío local: el alta se pierde; la corrección vuelve a los datos de SISOC (así sale de un 409)"
+      ]
+    }
+  ]
+}

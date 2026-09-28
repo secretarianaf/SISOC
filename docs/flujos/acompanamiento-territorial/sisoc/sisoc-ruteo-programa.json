@@ -1,0 +1,243 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "N22 · Ruteo por programa (linea_pnud)",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "secos",
+      "label": "Línea Secos"
+    },
+    {
+      "id": "ruteo",
+      "label": "Ruteo linea_pnud"
+    },
+    {
+      "id": "tradicional",
+      "label": "Línea Tradicional"
+    }
+  ],
+  "mainPath": [
+    "programa",
+    "tiene_nombre",
+    "coincide",
+    "linea_trad",
+    "forms_trad"
+  ],
+  "nodes": [
+    {
+      "id": "programa",
+      "lane": "ruteo",
+      "col": 0,
+      "type": "frontend",
+      "label": "Programa",
+      "sublabel": "del comedor"
+    },
+    {
+      "id": "tiene_nombre",
+      "lane": "ruteo",
+      "col": 1,
+      "type": "security",
+      "label": "¿Tiene nombre?",
+      "sublabel": "no vacío"
+    },
+    {
+      "id": "coincide",
+      "lane": "ruteo",
+      "col": 2,
+      "type": "security",
+      "label": "¿Qué contiene?",
+      "sublabel": "nombre normalizado",
+      "width": 128
+    },
+    {
+      "id": "sin_linea",
+      "lane": "ruteo",
+      "col": 3,
+      "type": "security",
+      "label": "None → 400",
+      "sublabel": "comedor no PNUD"
+    },
+    {
+      "id": "respaldo_id",
+      "lane": "ruteo",
+      "col": 4,
+      "type": "backend",
+      "label": "programa_id",
+      "sublabel": "respaldo"
+    },
+    {
+      "id": "linea_secos",
+      "lane": "secos",
+      "col": 3,
+      "type": "backend",
+      "label": "secos",
+      "sublabel": "linea_pnud"
+    },
+    {
+      "id": "form_secos",
+      "lane": "secos",
+      "col": 4,
+      "type": "database",
+      "label": "Formulario",
+      "sublabel": "secos"
+    },
+    {
+      "id": "linea_trad",
+      "lane": "tradicional",
+      "col": 3,
+      "type": "backend",
+      "label": "tradicional",
+      "sublabel": "linea_pnud"
+    },
+    {
+      "id": "forms_trad",
+      "lane": "tradicional",
+      "col": 4,
+      "type": "database",
+      "label": "Formularios",
+      "sublabel": "iia · iia1 · iib · iib1",
+      "width": 132
+    },
+    {
+      "id": "form_ajeno",
+      "lane": "tradicional",
+      "col": 5,
+      "type": "security",
+      "label": "400 formulario",
+      "sublabel": "no corresponde"
+    }
+  ],
+  "edges": [
+    {
+      "from": "programa",
+      "to": "tiene_nombre"
+    },
+    {
+      "from": "tiene_nombre",
+      "to": "coincide",
+      "label": "sí",
+      "variant": "emphasis"
+    },
+    {
+      "from": "tiene_nombre",
+      "to": "respaldo_id",
+      "label": "no / sin programa",
+      "role": "branch",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "right",
+      "via": [
+        [
+          214,
+          44
+        ],
+        [
+          790,
+          44
+        ],
+        [
+          790,
+          243
+        ]
+      ]
+    },
+    {
+      "from": "coincide",
+      "to": "linea_secos",
+      "label": "linea secos",
+      "role": "branch",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "from": "coincide",
+      "to": "linea_trad",
+      "label": "linea tradicional",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "from": "coincide",
+      "to": "sin_linea",
+      "label": "otro nombre",
+      "role": "error",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "from": "respaldo_id",
+      "to": "linea_secos",
+      "label": "id 3",
+      "role": "branch",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "from": "respaldo_id",
+      "to": "linea_trad",
+      "label": "id 4",
+      "role": "branch",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "respaldo_id",
+      "to": "sin_linea",
+      "label": "otro id",
+      "role": "error",
+      "variant": "security",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "from": "linea_secos",
+      "to": "form_secos"
+    },
+    {
+      "from": "linea_trad",
+      "to": "forms_trad",
+      "variant": "emphasis"
+    },
+    {
+      "from": "forms_trad",
+      "to": "form_ajeno",
+      "label": "otro formulario",
+      "role": "error",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Nombre primero, id de respaldo",
+      "items": [
+        "Normaliza: minúsculas, sin tildes, espacios colapsados",
+        "\"abordaje comunitario\" + \"linea secos\" / \"linea tradicional\"",
+        "Solo sin nombre: id 3 = secos, id 4 = tradicional"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Tradicional: 4 formularios",
+      "items": [
+        "El técnico elige presencial/virtual y vianda/módulo en la app",
+        "iia pres.·vianda, iia1 virt.·vianda, iib pres.·módulo, iib1 virt.·módulo"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Rechazos 400",
+      "items": [
+        "None (p. ej. Alimentar Comunidad): comedor no PNUD",
+        "'formulario' no corresponde al programa del comedor. (ambas líneas)"
+      ]
+    }
+  ]
+}

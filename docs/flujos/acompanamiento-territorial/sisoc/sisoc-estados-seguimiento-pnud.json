@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "N22 · Estados de SeguimientoPnud",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      680
+    ]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Flujo · inicio y decisión no son valores de estado_validacion"
+    },
+    {
+      "id": "devolucion",
+      "label": "Devolución al técnico"
+    },
+    {
+      "id": "terminal",
+      "label": "Resultado terminal"
+    }
+  ],
+  "states": [
+    {
+      "id": "alta",
+      "type": "start",
+      "label": "Alta del técnico",
+      "sublabel": "POST seguimientos-pnud",
+      "lane": "main",
+      "col": 0,
+      "step": "01",
+      "tag": "app"
+    },
+    {
+      "id": "pendiente",
+      "type": "waiting",
+      "label": "Pendiente validación coordinador",
+      "sublabel": "esperando revisión",
+      "lane": "main",
+      "col": 2,
+      "step": "02",
+      "tag": "espera",
+      "width": 210
+    },
+    {
+      "id": "revision",
+      "type": "decision",
+      "label": "Revisión",
+      "sublabel": "coordinador en backoffice",
+      "lane": "main",
+      "col": 4,
+      "step": "03",
+      "tag": "backoffice"
+    },
+    {
+      "id": "validado",
+      "type": "success",
+      "label": "Validado",
+      "sublabel": "terminal · PATCH → 409",
+      "lane": "terminal",
+      "col": 2,
+      "step": "04",
+      "tag": "terminal"
+    },
+    {
+      "id": "subsanar",
+      "type": "failure",
+      "label": "A subsanar",
+      "sublabel": "observaciones obligatorias",
+      "lane": "devolucion",
+      "col": 1,
+      "tag": "recuperable"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t-alta",
+      "from": "alta",
+      "to": "pendiente",
+      "label": "técnico vía app · POST"
+    },
+    {
+      "id": "t-revisar",
+      "from": "pendiente",
+      "to": "revision",
+      "label": "coordinador · POST revisión",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "straight"
+    },
+    {
+      "id": "t-validar",
+      "from": "revision",
+      "to": "validado",
+      "variant": "emphasis",
+      "label": "Validado",
+      "labelAt": [
+        710,
+        202
+      ]
+    },
+    {
+      "id": "t-devolver",
+      "from": "revision",
+      "to": "subsanar",
+      "variant": "security",
+      "label": "A subsanar + observaciones"
+    },
+    {
+      "id": "t-corregir",
+      "from": "subsanar",
+      "to": "pendiente",
+      "variant": "emphasis",
+      "label": "técnico vía app · PATCH",
+      "fromSide": "left",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "Correcciones del técnico",
+      "items": [
+        "estado_validacion toma 3 valores: Pendiente validación coordinador, A subsanar y Validado; Alta del técnico (inicio) y Revisión (decisión) no son estados",
+        "PATCH desde Pendiente o A subsanar deja Pendiente validación coordinador; sin observaciones, A subsanar no cambia nada"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Validado es terminal",
+      "items": [
+        "PATCH responde 409 y una nueva revisión se rechaza",
+        "La PWA habilita el PDF solo con Validado; lo genera en el navegador"
+      ]
+    }
+  ]
+}

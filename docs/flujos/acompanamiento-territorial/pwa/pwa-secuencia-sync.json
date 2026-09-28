@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Seguimiento PNUD: guardado offline y envío",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1080,
+      540
+    ],
+    "legend": {
+      "mode": "hidden"
+    }
+  },
+  "participants": [
+    {
+      "id": "pantalla",
+      "type": "frontend",
+      "label": "Pantallas",
+      "sublabel": "seguir-pnud · detalle"
+    },
+    {
+      "id": "store",
+      "type": "database",
+      "label": "Caché + outbox",
+      "sublabel": "withLock"
+    },
+    {
+      "id": "sync",
+      "type": "messagebus",
+      "label": "Sync engine",
+      "sublabel": "al haber conexión"
+    },
+    {
+      "id": "handler",
+      "type": "backend",
+      "label": "usePnud",
+      "sublabel": "handler + merge"
+    },
+    {
+      "id": "sisoc",
+      "type": "external",
+      "label": "SISOC N22",
+      "sublabel": "seguimientos-pnud"
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 220,
+      "label": "Guardar offline"
+    },
+    {
+      "from": 232,
+      "to": 470,
+      "label": "Envío al volver la conexión"
+    }
+  ],
+  "messages": [
+    {
+      "from": "pantalla",
+      "to": "store",
+      "y": 176,
+      "label": "saveQueuedRecord",
+      "variant": "emphasis",
+      "note": "caché + outbox en un paso"
+    },
+    {
+      "from": "store",
+      "to": "pantalla",
+      "y": 206,
+      "label": "Pendiente de envío",
+      "variant": "return"
+    },
+    {
+      "from": "sync",
+      "to": "store",
+      "y": 246,
+      "label": "toma el ítem (syncing)"
+    },
+    {
+      "from": "sync",
+      "to": "handler",
+      "y": 276,
+      "label": "prepare"
+    },
+    {
+      "from": "handler",
+      "to": "sisoc",
+      "y": 306,
+      "label": "firma data: → /firma/",
+      "note": "solo si falta subirla"
+    },
+    {
+      "from": "sisoc",
+      "to": "handler",
+      "y": 336,
+      "label": "URL de la firma",
+      "variant": "return"
+    },
+    {
+      "from": "handler",
+      "to": "sisoc",
+      "y": 366,
+      "label": "POST client_uuid · PATCH remoteId",
+      "variant": "emphasis"
+    },
+    {
+      "from": "sisoc",
+      "to": "handler",
+      "y": 396,
+      "label": "id + estado_validacion",
+      "variant": "return"
+    },
+    {
+      "from": "handler",
+      "to": "sync",
+      "y": 426,
+      "label": "registro con syncedAt",
+      "variant": "return"
+    },
+    {
+      "from": "sync",
+      "to": "store",
+      "y": 456,
+      "label": "completeSyncItem",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Idempotencia",
+      "items": [
+        "El alta lleva client_uuid: un reintento no duplica",
+        "La firma subida queda en el payload y no se vuelve a subir"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Cierre atómico",
+      "items": [
+        "completeSyncItem saca el ítem de la cola y actualiza la caché bajo el mismo lock",
+        "Si el técnico volvió a guardar mientras tanto, su corrección se conserva"
+      ]
+    }
+  ]
+}

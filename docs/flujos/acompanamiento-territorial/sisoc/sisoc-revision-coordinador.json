@@ -1,0 +1,212 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "N22 · Revisión del coordinador en el backoffice",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "coord",
+      "label": "Coordinador · backoffice"
+    },
+    {
+      "id": "sisoc",
+      "label": "SISOC · guardado"
+    },
+    {
+      "id": "subsanar",
+      "label": "Correcciones · técnico",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "consulta",
+      "label": "Consultar",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "revision",
+      "label": "Revisar",
+      "fromCol": 2,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "resultado",
+      "label": "Resultado",
+      "fromCol": 4,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "mainPath": [
+    "listado",
+    "detalle",
+    "revisar",
+    "decision",
+    "validado",
+    "guardado"
+  ],
+  "nodes": [
+    {
+      "id": "listado",
+      "lane": "coord",
+      "col": 0,
+      "type": "frontend",
+      "label": "Listado del comedor",
+      "sublabel": "Seguimientos PNUD",
+      "tag": "view_relevamiento",
+      "width": 140
+    },
+    {
+      "id": "detalle",
+      "lane": "coord",
+      "col": 1,
+      "type": "frontend",
+      "label": "Detalle",
+      "sublabel": "secciones y etiquetas",
+      "tag": "pnud_formularios.json",
+      "width": 140
+    },
+    {
+      "id": "revisar",
+      "lane": "coord",
+      "col": 2,
+      "type": "security",
+      "label": "Botón Revisar",
+      "sublabel": "oculto si Validado",
+      "tag": "review_relevamiento",
+      "width": 140
+    },
+    {
+      "id": "decision",
+      "lane": "coord",
+      "col": 3,
+      "type": "backend",
+      "label": "¿Correcciones?",
+      "sublabel": "POST estado_validacion",
+      "width": 140
+    },
+    {
+      "id": "validado",
+      "lane": "sisoc",
+      "col": 4,
+      "type": "backend",
+      "label": "Validado",
+      "sublabel": "la PWA habilita el PDF",
+      "width": 140
+    },
+    {
+      "id": "guardado",
+      "lane": "sisoc",
+      "col": 5,
+      "type": "database",
+      "label": "Registro de revisión",
+      "sublabel": "coordinador + fechas",
+      "tag": "select_for_update",
+      "width": 140
+    },
+    {
+      "id": "observaciones",
+      "lane": "subsanar",
+      "col": 3,
+      "type": "security",
+      "label": "Observaciones",
+      "sublabel": "obligatorias",
+      "width": 140
+    },
+    {
+      "id": "asubsanar",
+      "lane": "subsanar",
+      "col": 4,
+      "type": "messagebus",
+      "label": "A subsanar",
+      "sublabel": "vuelve al técnico",
+      "width": 140
+    },
+    {
+      "id": "corrige",
+      "lane": "subsanar",
+      "col": 5,
+      "type": "external",
+      "label": "Técnico corrige",
+      "sublabel": "PATCH desde la PWA",
+      "width": 140
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-listado-detalle",
+      "from": "listado",
+      "to": "detalle",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-detalle-revisar",
+      "from": "detalle",
+      "to": "revisar",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-revisar-decision",
+      "from": "revisar",
+      "to": "decision",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-decision-validado",
+      "from": "decision",
+      "to": "validado",
+      "label": "no",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-validado-guardado",
+      "from": "validado",
+      "to": "guardado",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-decision-obs",
+      "from": "decision",
+      "to": "observaciones",
+      "label": "sí",
+      "variant": "security",
+      "role": "branch"
+    },
+    {
+      "id": "e-obs-subsanar",
+      "from": "observaciones",
+      "to": "asubsanar",
+      "variant": "security",
+      "role": "branch"
+    },
+    {
+      "id": "e-subsanar-corrige",
+      "from": "asubsanar",
+      "to": "corrige",
+      "variant": "dashed",
+      "role": "branch"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Qué se guarda",
+      "items": [
+        "Bloqueo select_for_update; se registran estado, observaciones, coordinador y fecha_revision_coordinador; luego fecha_actualizacion"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Límites",
+      "items": [
+        "No se actualiza el legajo del comedor",
+        "Validado no admite otra revisión"
+      ]
+    }
+  ]
+}

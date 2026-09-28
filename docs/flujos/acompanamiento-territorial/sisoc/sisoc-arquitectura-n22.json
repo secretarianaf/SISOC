@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "N22 · Seguimientos PNUD en SISOC — componentes",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "app",
+      "type": "external",
+      "label": "Gestionar",
+      "sublabel": "app territorial (PWA)",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "API territorial",
+      "sublabel": "TerritorialComedorViewSet",
+      "pos": [
+        370,
+        300
+      ],
+      "size": [
+        200,
+        64
+      ],
+      "tag": "IsTerritorialComedorUser"
+    },
+    {
+      "id": "val",
+      "type": "backend",
+      "label": "api_views_territorial_pnud",
+      "sublabel": "validaciones alta / PATCH",
+      "pos": [
+        740,
+        300
+      ],
+      "size": [
+        220,
+        64
+      ],
+      "tag": "client_uuid · ≤ 512 KB"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "SeguimientoPnud",
+      "sublabel": "relevamientos · DB",
+      "pos": [
+        1130,
+        300
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "firmas",
+      "type": "cloud",
+      "label": "Storage de firmas",
+      "sublabel": "firmas/<comedor_id>/",
+      "pos": [
+        370,
+        500
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "comedor",
+      "type": "database",
+      "label": "Legajo Comedor",
+      "sublabel": "no se modifica",
+      "pos": [
+        740,
+        500
+      ],
+      "size": [
+        220,
+        64
+      ]
+    },
+    {
+      "id": "json",
+      "type": "backend",
+      "label": "pnud_formularios.json",
+      "sublabel": "5 formularios vendorizados",
+      "pos": [
+        740,
+        100
+      ],
+      "size": [
+        220,
+        64
+      ]
+    },
+    {
+      "id": "bo",
+      "type": "frontend",
+      "label": "Backoffice coordinador",
+      "sublabel": "listado · detalle · revisión",
+      "pos": [
+        1130,
+        100
+      ],
+      "size": [
+        180,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "SISOC (Django)",
+      "wraps": [
+        "api",
+        "val",
+        "db",
+        "firmas",
+        "comedor",
+        "json",
+        "bo"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "Token DRF + alcance por zona (404)",
+      "wraps": [
+        "api",
+        "val"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "app-api",
+      "from": "app",
+      "to": "api",
+      "label": "Token DRF",
+      "variant": "emphasis"
+    },
+    {
+      "id": "api-val",
+      "from": "api",
+      "to": "val",
+      "label": "seguimientos-pnud/",
+      "variant": "emphasis"
+    },
+    {
+      "id": "val-db",
+      "from": "val",
+      "to": "db",
+      "label": "guardado atómico",
+      "variant": "emphasis"
+    },
+    {
+      "id": "api-firmas",
+      "from": "api",
+      "to": "firmas",
+      "label": "POST /firma/ → 201",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 58
+    },
+    {
+      "id": "val-comedor",
+      "from": "val",
+      "to": "comedor",
+      "label": "sin escritura",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 58
+    },
+    {
+      "id": "json-bo",
+      "from": "json",
+      "to": "bo",
+      "label": "secciones y etiquetas"
+    },
+    {
+      "id": "bo-db",
+      "from": "bo",
+      "to": "db",
+      "label": "lee y revisa",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 58
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Endpoints territoriales",
+      "items": [
+        "GET / POST /api/territorial/comedores/{id}/seguimientos-pnud/",
+        "PATCH /api/territorial/comedores/{id}/seguimientos-pnud/{pnud_id}/",
+        "POST /api/territorial/comedores/{id}/firma/ (image/*, ≤ 3 MB)"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Validaciones del alta",
+      "items": [
+        "formulario según el programa (linea_pnud)",
+        "tablas como lista de objetos; firma solo de firmas/<comedor_id>/",
+        "client_uuid idempotente: 200 o 409; alta 201",
+        "la clave comedor de datos se descarta"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Backoffice",
+      "items": [
+        "listado y detalle con view_relevamiento",
+        "revisión con review_relevamiento: Validado o A subsanar",
+        "detalle con secciones de pnud_formularios.json"
+      ]
+    }
+  ]
+}

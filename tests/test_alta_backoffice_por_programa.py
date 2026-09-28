@@ -361,3 +361,32 @@ def test_comedores_zona_no_hace_una_consulta_por_programa():
         _zona(api)
 
     assert len(cuatro) == len(uno)
+
+
+def test_el_pnud_asignado_sin_cargar_no_se_puede_revisar(client):
+    """Nace vacío y sin enviar: validarlo antes de que el territorial lo
+    complete lo bloquearía para siempre (Validado es definitivo)."""
+    comedor = _comedor(SECOS)
+    territorial = _territorial("terr_rev_h1", comedor.provincia)
+    user = _login(client)
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="relevamientos", codename="review_relevamiento"
+        )
+    )
+    _post(client, comedor, "pnud_secos", territorial)
+    seguimiento = SeguimientoPnud.objects.get()
+    kwargs = {"comedor_pk": comedor.pk, "pk": seguimiento.pk}
+
+    detalle = client.get(reverse("seguimiento_pnud_detalle", kwargs=kwargs))
+    client.post(
+        reverse("seguimiento_pnud_revision_coordinador", kwargs=kwargs),
+        {"estado_validacion": SeguimientoPnud.ESTADO_VALIDACION_VALIDADO},
+    )
+
+    assert detalle.status_code == 200
+    html = detalle.content.decode()
+    assert 'data-bs-target="#modalRevisionSeguimientoPnud"' not in html
+    seguimiento.refresh_from_db()
+    assert seguimiento.estado_validacion is None
+    assert seguimiento.coordinador_id is None

@@ -46,7 +46,7 @@
                 <a href="{% url 'acta_complementaria_editar' comedor.id acta.id %}"
                    class="btn btn-primary mr-1">Editar</a>
             {% endif %}
-            {% if perms.relevamientos.review_relevamiento and not acta.esta_validado %}
+            {% if perms.relevamientos.review_relevamiento and not acta.esta_validado and not acta.sin_cargar %}
                 <button type="button"
                         class="btn btn-warning mr-1"
                         data-bs-toggle="modal"
@@ -71,7 +71,7 @@
             <div class="mt-1">{{ acta.observaciones_coordinador|linebreaksbr }}</div>
         </div>
     {% endif %}
-    {% if perms.relevamientos.review_relevamiento and not acta.esta_validado %}
+    {% if perms.relevamientos.review_relevamiento and not acta.esta_validado and not acta.sin_cargar %}
         <div class="modal fade"
              id="modalRevisionActa"
              tabindex="-1"

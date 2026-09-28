@@ -339,3 +339,41 @@ def test_detalle_muestra_revisar_y_estado(client, zona, estado, visible):
     assert estado in html
     assert "Nota del coordinador" in html
     assert estado in listado
+
+
+def test_acta_asignada_sin_cargar_no_se_revisa_hasta_que_la_completen(client, zona):
+    """Un acta asignada desde SISOC nace vacía y sin enviar: validarla antes de
+    que el territorial la cargue la bloquearía para siempre (Validado es
+    definitivo). Una vez completada desde la app, se revisa normalmente."""
+    comedor, tecnico = zona
+    acta = ActaComplementaria.objects.create(
+        comedor=comedor,
+        tecnico=tecnico,
+        origen=ActaComplementaria.ORIGEN_SISOC,
+        asignado_desde_sisoc=True,
+    )
+    _coordinador(client)
+    url_detalle = reverse(
+        "acta_complementaria_detalle",
+        kwargs={"comedor_pk": comedor.id, "pk": acta.id},
+    )
+
+    detalle = client.get(url_detalle).content.decode()
+    rechazada = _revisar(client, acta, estado_validacion=VALIDADO)
+
+    acta.refresh_from_db()
+    assert acta.estado_validacion is None
+    assert 'data-bs-target="#modalRevisionActa"' not in detalle
+    assert "Todavía no hay nada que revisar" in " ".join(
+        str(m) for m in get_messages(rechazada.wsgi_request)
+    )
+
+    completada = _api(tecnico).patch(
+        _url(comedor, acta.id), {"observaciones": "Cambio de menú"}, format="json"
+    )
+    assert completada.status_code == 200, completada.content
+    detalle = client.get(url_detalle).content.decode()
+    assert 'data-bs-target="#modalRevisionActa"' in detalle
+    _revisar(client, acta, estado_validacion=VALIDADO)
+    acta.refresh_from_db()
+    assert acta.estado_validacion == VALIDADO

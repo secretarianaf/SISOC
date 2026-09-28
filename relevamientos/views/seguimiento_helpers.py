@@ -76,6 +76,14 @@ def aplicar_revision_coordinador(request, registro, etiqueta, mensaje_validado=N
             return mensaje_validado
         sujeto = etiqueta[:1].upper() + etiqueta[1:]
         return f"{sujeto} ya está validado: no admite otra revisión."
+    # Un PNUD o un acta asignados desde SISOC nacen vacíos y sin enviar:
+    # validarlos antes de que el territorial los cargue los bloquearía para
+    # siempre (un Validado es definitivo).
+    if getattr(registro, "sin_cargar", False):
+        return (
+            f"Todavía no hay nada que revisar en {etiqueta}: falta la carga del "
+            "territorial desde la app."
+        )
 
     estado = (request.POST.get("estado_validacion") or "").strip()
     observaciones = (request.POST.get("observaciones_coordinador") or "").strip()

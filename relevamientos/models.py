@@ -2046,6 +2046,17 @@ class ActaComplementaria(ValidacionCoordinadorMixin, OrigenRegistroMixin, models
         comedor = self.comedor.nombre if self.comedor_id else "Sin comedor"
         return f"Acta complementaria ({comedor})"
 
+    @property
+    def sin_cargar(self):
+        """Sin enviar y sin contenido (p. ej. recién asignada desde SISOC): el
+        coordinador no tiene nada que revisar, y un ``Validado`` es definitivo."""
+        tiene_contenido = self.observaciones or self.firma or self.fecha_hora
+        return (
+            self.estado_validacion is None
+            and not tiene_contenido
+            and not self.prestaciones.all()
+        )
+
 
 class PrestacionActaComplementaria(models.Model):
     """Fila de la tabla día x tipo del acta: cantidades actuales y en espera."""
@@ -2129,3 +2140,10 @@ class SeguimientoPnud(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Mo
     def __str__(self):
         comedor = self.comedor.nombre if self.comedor_id else "Sin comedor"
         return f"{self.get_formulario_display()} ({comedor})"
+
+    @property
+    def sin_cargar(self):
+        """Sin enviar y sin respuestas (asignado desde SISOC y todavía no
+        completado en la app): el coordinador no tiene nada que revisar, y un
+        ``Validado`` es definitivo."""
+        return self.estado_validacion is None and not self.datos

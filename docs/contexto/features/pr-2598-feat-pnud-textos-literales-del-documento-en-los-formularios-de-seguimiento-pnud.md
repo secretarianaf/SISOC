@@ -30,6 +30,10 @@
 
 - Empezar por `docs/registro/prs/PR-2598.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
+- `docs/contexto/features/pr-2598-feat-pnud-textos-literales-del-documento-en-los-formularios-de-seguimiento-pnud.md`
+- `docs/registro/prs/PR-2598.md`
+- `docs/registro/releases/pending/2026-09-30-pr-2598.md`
 - `relevamientos/data/pnud_formularios.json`
 - `relevamientos/pnud_formularios.py`
 - `tests/test_seguimientos_pnud_n22.py`

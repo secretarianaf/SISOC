@@ -34,6 +34,7 @@ from relevamientos.models import (
     RegistroAsistenciaSeguimiento,
     RendicionCuentasSeguimiento,
     RecursosSeguimiento,
+    SeguimientoPnud,
     ServiciosBasicosSeguimiento,
     TareasComedorSeguimiento,
     TarjetaSeguimiento,
@@ -74,3 +75,21 @@ admin.site.register(CierreSeguimiento)
 admin.site.register(PrimerSeguimiento)
 admin.site.register(PrestacionSeguimiento)
 admin.site.register(ItemRecetaSeguimiento)
+
+
+@admin.register(SeguimientoPnud)
+class SeguimientoPnudAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "comedor",
+        "formulario",
+        "fecha_hora",
+        "tecnico",
+        "estado_validacion",
+        "origen",
+    )
+    list_filter = ("formulario", "estado_validacion", "origen")
+    list_select_related = ("comedor", "tecnico")
+    search_fields = ("comedor__nombre", "client_uuid")
+    raw_id_fields = ("comedor", "tecnico", "coordinador")
+    readonly_fields = ("client_uuid", "fecha_creacion", "fecha_actualizacion")

@@ -1,4 +1,6 @@
 from django import forms
+from django.contrib.auth import get_user_model
+from django.db.models import Q
 from django.forms import inlineformset_factory
 from organizaciones.models import (
     Organizacion,
@@ -8,6 +10,15 @@ from organizaciones.models import (
     SubtipoEntidad,
 )
 from core.models import Municipio, Provincia, Localidad
+from users.services_territoriales import (
+    etiqueta_territorial,
+    usuarios_territoriales_pnud,
+)
+
+
+class TerritorialesMultipleChoiceField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, obj):
+        return etiqueta_territorial(obj)
 
 
 class OrganizacionForm(forms.ModelForm):
@@ -31,6 +42,12 @@ class OrganizacionForm(forms.ModelForm):
                 "title": "Ingresá 11 dígitos, solo con números y sin espacios.",
             }
         ),
+    )
+    territoriales_abordaje_comunitario = TerritorialesMultipleChoiceField(
+        queryset=usuarios_territoriales_pnud(),
+        required=False,
+        label="Territorial Asignado Abordaje Comunitario",
+        widget=forms.SelectMultiple(attrs={"class": "form-control"}),
     )
     cuil_duplicado_confirmado = forms.BooleanField(
         required=False,
@@ -61,12 +78,26 @@ class OrganizacionForm(forms.ModelForm):
         if subtipo_actual_id:
             subtipos = subtipos | SubtipoEntidad.objects.filter(pk=subtipo_actual_id)
         self.fields["subtipo_entidad"].queryset = subtipos.order_by("nombre")
+        self._configurar_territoriales()
         if not self.is_bound and self.instance.pk:
             self.initial["codigos_proyecto"] = ", ".join(
                 self.instance.proyectos.filter(activo=True).values_list(
                     "codigo", flat=True
                 )
             )
+
+    def _configurar_territoriales(self):
+        # Los ya asignados siguen siendo opciones aunque hayan perdido el rol:
+        # si no, guardar el legajo los quitaría sin que nadie lo haya pedido.
+        queryset = usuarios_territoriales_pnud()
+        if self.instance.pk:
+            asignados = self.instance.territoriales_abordaje_comunitario.values("pk")
+            queryset = (
+                get_user_model()
+                .objects.filter(Q(pk__in=queryset.values("pk")) | Q(pk__in=asignados))
+                .order_by("last_name", "first_name", "username")
+            )
+        self.fields["territoriales_abordaje_comunitario"].queryset = queryset
 
     def popular_campos_ubicacion(self):
 

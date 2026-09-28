@@ -335,9 +335,13 @@ class TerritorialComedorViewSet(
             .prefetch_related("seguimientos")
             .order_by("-fecha_visita", "-id")
         )
-        # Un seguimiento PNUD asignado desde SISOC (H1) también es "trabajo
-        # asignado a mí": el comedor aparece aunque no tenga relevamiento.
+        # Un seguimiento PNUD (H1) o un acta complementaria (H5) asignados desde
+        # SISOC también son "trabajo asignado a mí": el comedor aparece aunque
+        # no tenga relevamiento.
         asignados_pnud = SeguimientoPnud.objects.filter(
+            tecnico=user, asignado_desde_sisoc=True
+        ).values("comedor_id")
+        actas_asignadas = ActaComplementaria.objects.filter(
             tecnico=user, asignado_desde_sisoc=True
         ).values("comedor_id")
         return (
@@ -347,6 +351,7 @@ class TerritorialComedorViewSet(
                     relevamiento__deleted_at__isnull=True,
                 )
                 | Q(id__in=asignados_pnud)
+                | Q(id__in=actas_asignadas)
             )
             .distinct()
             .select_related("provincia", "municipio", "localidad")

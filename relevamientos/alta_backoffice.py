@@ -5,7 +5,8 @@ con el mismo criterio que usa la API territorial (``linea_pnud``: nombre
 normalizado y, solo si el programa no tiene nombre, el id 3/4):
 
 - Alimentar Comunidad y cualquier otro programa (PAC): inicial, primer
-  seguimiento, seguimiento posterior, seguimiento virtual y acta de excepción.
+  seguimiento, seguimiento posterior, seguimiento virtual y acta
+  complementaria extraordinaria.
 - Abordaje Comunitario - Línea Secos: inicial y FORM-PNUD-SECOS.
 - Abordaje Comunitario - Línea Tradicional: inicial y FORM II A / II A.1 /
   II B / II B.1.
@@ -21,7 +22,7 @@ from comedores.api_views_territorial_pnud import (
     formulario_permitido,
     linea_pnud,
 )
-from relevamientos.models import SeguimientoPnud
+from relevamientos.models import ActaComplementaria, SeguimientoPnud
 from relevamientos.service import (
     TERRITORIAL_INVALIDO_ERROR,
     _parse_territorial_payload,
@@ -37,7 +38,14 @@ OPCIONES_SEGUIMIENTO_PAC = (
     ("primer_seguimiento", "Primer seguimiento"),
     ("seguimiento_posterior", "Seguimiento posterior"),
     ("seguimiento_virtual", "Seguimiento virtual"),
-    ("acta_excepcion", "Acta de excepción (visita no realizada)"),
+)
+TIPO_ACTA_COMPLEMENTARIA = "acta_complementaria"
+# El acta de excepción ya no se ofrece en el popup (H5): la visita no realizada
+# se registra dentro de cada formulario de la app. En su lugar va el acta
+# complementaria extraordinaria (§12), que es de Alimentar Comunidad.
+OPCION_ACTA_COMPLEMENTARIA = (
+    TIPO_ACTA_COMPLEMENTARIA,
+    "Acta complementaria extraordinaria",
 )
 _ETIQUETAS_PNUD = {
     SeguimientoPnud.FORMULARIO_SECOS: "Seguimiento Puntos de Entrega (SECOS)",
@@ -70,7 +78,7 @@ def opciones_alta(comedor):
     """Opciones ``(valor, etiqueta)`` del popup según el programa del comedor."""
     linea = linea_pnud(comedor)
     if linea is None:
-        return [OPCION_INICIAL, *OPCIONES_SEGUIMIENTO_PAC]
+        return [OPCION_INICIAL, *OPCIONES_SEGUIMIENTO_PAC, OPCION_ACTA_COMPLEMENTARIA]
     return [OPCION_INICIAL] + [
         (valor_pnud(formulario), _ETIQUETAS_PNUD[formulario])
         for formulario in FORMULARIOS_POR_LINEA[linea]
@@ -119,4 +127,17 @@ def crear_seguimiento_pnud_asignado(comedor, raw_territorial_data, formulario):
         origen=SeguimientoPnud.ORIGEN_SISOC,
         asignado_desde_sisoc=True,
         estado_validacion=None,
+    )
+
+
+def crear_acta_complementaria_asignada(comedor, raw_territorial_data):
+    """Acta complementaria extraordinaria creada desde SISOC y asignada a un
+    territorial (H5). Nace sin prestaciones ni envío: el territorial la
+    completa desde la app."""
+    tecnico = territorial_asignable(comedor, raw_territorial_data)
+    return ActaComplementaria.objects.create(
+        comedor=comedor,
+        tecnico=tecnico,
+        origen=ActaComplementaria.ORIGEN_SISOC,
+        asignado_desde_sisoc=True,
     )

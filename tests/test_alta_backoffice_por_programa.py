@@ -94,7 +94,7 @@ def test_alimentar_comunidad_ofrece_el_ciclo_pac():
         "primer_seguimiento",
         "seguimiento_posterior",
         "seguimiento_virtual",
-        "acta_excepcion",
+        "acta_complementaria",
     ]
     assert opciones_seguimiento_pac(comedor)
 

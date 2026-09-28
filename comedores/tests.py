@@ -1044,14 +1044,14 @@ def test_relevamiento_create_edit_ajax_primer_seguimiento_reenvia_relevamiento_i
         ("segundo_seguimiento", "posterior"),  # alias historico
         ("seguimiento_posterior", "posterior"),
         ("seguimiento_virtual", "virtual"),
-        ("acta_excepcion", "acta_excepcion"),
     ],
 )
 def test_relevamiento_create_edit_ajax_crea_otras_instancias_del_ciclo(
     client_logged_fixture, comedor_fixture, monkeypatch, valor_select, tipo_esperado
 ):
     """El popup ya no rechaza el 'segundo seguimiento': crea la instancia del
-    ciclo que corresponda (posterior / virtual / acta de excepcion)."""
+    ciclo que corresponda (posterior / virtual). El acta de excepcion ya no se
+    ofrece en el popup (H5)."""
     relevamiento_mock = mock.Mock()
     relevamiento_mock.pk = 1003
     relevamiento_mock.comedor = mock.Mock()

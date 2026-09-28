@@ -60,7 +60,7 @@ def resolver_seguimiento(kwargs, queryset=None):
     return seguimiento
 
 
-def aplicar_revision_coordinador(request, registro, etiqueta):
+def aplicar_revision_coordinador(request, registro, etiqueta, mensaje_validado=None):
     """Guarda el resultado de la revisión del coordinador (N16) sobre un
     relevamiento o una instancia de seguimiento.
 
@@ -72,6 +72,8 @@ def aplicar_revision_coordinador(request, registro, etiqueta):
     Devuelve el mensaje de error a mostrar, o ``None`` si se guardó.
     """
     if registro.esta_validado:
+        if mensaje_validado:
+            return mensaje_validado
         sujeto = etiqueta[:1].upper() + etiqueta[1:]
         return f"{sujeto} ya está validado: no admite otra revisión."
 

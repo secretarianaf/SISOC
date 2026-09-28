@@ -2009,12 +2009,13 @@ class ClasificacionComedor(models.Model):
         verbose_name_plural = "Clasificaciones de Comedor"
 
 
-class ActaComplementaria(OrigenRegistroMixin, models.Model):
+class ActaComplementaria(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Model):
     """Acta complementaria extraordinaria (§12 / §18.5).
 
     Registra, **fuera del ciclo de visitas**, un cambio en la prestación del
-    comedor. Es espontánea: no hay asignación previa desde SISOC, la crea el
-    territorial desde la app sobre un comedor de su zona.
+    comedor. La crea el territorial desde la app sobre un comedor de su zona o
+    se la asigna SISOC desde el popup del backoffice. Pasa por el mismo ciclo
+    de validación del coordinador (N16) que relevamientos y seguimientos.
     """
 
     comedor = models.ForeignKey(

@@ -165,7 +165,7 @@ class ActaComplementariaDetailView(LoginRequiredMixin, DetailView):
     def get_queryset(self):
         return (
             ActaComplementaria.objects.filter(comedor_id=self.kwargs["comedor_pk"])
-            .select_related("comedor", "tecnico")
+            .select_related("comedor", "tecnico", "coordinador")
             .prefetch_related("prestaciones")
         )
 
@@ -174,6 +174,44 @@ class ActaComplementariaDetailView(LoginRequiredMixin, DetailView):
         context["comedor"] = self.object.comedor
         context["prestaciones"] = list(self.object.prestaciones.all())
         return context
+
+
+class ActaComplementariaRevisionCoordinadorView(LoginRequiredMixin, View):
+    """Revisión del coordinador (N16) sobre un acta complementaria (H16)."""
+
+    http_method_names = ["post"]
+
+    def post(self, request, comedor_pk, pk):
+        with transaction.atomic():
+            # Bloqueo de fila: no se cruza con una corrección del territorial.
+            acta = get_object_or_404(
+                ActaComplementaria.objects.select_for_update(),
+                pk=pk,
+                comedor_id=comedor_pk,
+            )
+            error = aplicar_revision_coordinador(
+                request,
+                acta,
+                "el acta complementaria",
+                mensaje_validado=(
+                    "El acta complementaria ya está validada: no admite otra "
+                    "revisión."
+                ),
+            )
+        if error:
+            messages.error(request, error)
+        elif acta.esta_validado:
+            messages.success(request, "Acta complementaria validada correctamente.")
+        else:
+            messages.success(
+                request, "Acta complementaria devuelta al territorial para subsanar."
+            )
+        return redirect(
+            reverse(
+                "acta_complementaria_detalle",
+                kwargs={"comedor_pk": comedor_pk, "pk": pk},
+            )
+        )
 
 
 class ActaComplementariaFormView(LoginRequiredMixin, View):

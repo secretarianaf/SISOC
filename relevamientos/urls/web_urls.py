@@ -6,6 +6,7 @@ from relevamientos.views.backoffice_views import (
     SeguimientoPnudRevisionCoordinadorView,
     ActaComplementariaEliminarView,
     ActaComplementariaFormView,
+    ActaComplementariaRevisionCoordinadorView,
     SeguimientoRevisionCoordinadorView,
     SeguimientoUpdateView,
 )
@@ -142,6 +143,13 @@ urlpatterns = [
             ActaComplementariaFormView.as_view()
         ),
         name="acta_complementaria_editar",
+    ),
+    path(
+        "comedores/<int:comedor_pk>/acta-complementaria/<int:pk>/revision",
+        permissions_any_required(["relevamientos.review_relevamiento"])(
+            ActaComplementariaRevisionCoordinadorView.as_view()
+        ),
+        name="acta_complementaria_revision_coordinador",
     ),
     path(
         "comedores/<int:comedor_pk>/acta-complementaria/<int:pk>/eliminar",

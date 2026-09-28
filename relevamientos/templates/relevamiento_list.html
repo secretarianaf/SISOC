@@ -184,6 +184,9 @@
                                                     <span class="badge bg-light text-dark" title="Cargada desde SISOC">SISOC</span>
                                                 {% endif %}
                                                 <span class="badge bg-info">{{ acta.prestaciones.all|length }} prestación{{ acta.prestaciones.all|length|pluralize:"es" }}</span>
+                                                {% if acta.estado_validacion %}
+                                                    <span class="badge {% if acta.estado_validacion == 'Validado' %}bg-success{% elif acta.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ acta.estado_validacion }}</span>
+                                                {% endif %}
                                             </div>
                                             <div class="col-2 d-flex justify-content-end">
                                                 {% if perms.relevamientos.change_actacomplementaria %}

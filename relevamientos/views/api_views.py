@@ -174,8 +174,9 @@ class RelevamientoApiView(APIView):
             )
         except IntegrityError:
             return _conflicto_de_unicidad(
-                f"Conflicto al guardar el relevamiento {sisoc_id}: ya existe otro "
-                "del mismo comedor con esa fecha de visita. Reintente."
+                f"Conflicto al guardar el relevamiento {sisoc_id}: otra escritura "
+                "simultánea chocó con una restricción de unicidad (por ejemplo, "
+                "comedor y fecha de visita)."
             )
         except Exception:
             logger.exception(
@@ -348,7 +349,7 @@ class PrimerSeguimientoApiView(APIView):
         except IntegrityError:
             return _conflicto_de_unicidad(
                 f"Conflicto al guardar el seguimiento {seguimiento.pk}: otra "
-                "escritura simultánea ocupó la misma posición del ciclo. Reintente."
+                "escritura simultánea chocó con una restricción de unicidad."
             )
         except Exception:
             logger.exception(

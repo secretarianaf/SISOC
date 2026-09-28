@@ -178,6 +178,29 @@ def test_s3_asignado_fuera_de_la_zona_expone_solo_mis_relevamientos():
     assert [r["id"] for r in response.json()["relevamientos"]["items"]] == [mio.id]
 
 
+def test_s3_asignado_y_en_zona_expone_solo_mis_relevamientos():
+    """El caso típico: comedor asignado a mí Y de mi zona. El detalle no cambia
+    respecto de antes (solo mis relevamientos y sus seguimientos), igual que el
+    listado; la zona solo entra cuando no hay asignación."""
+    tecnico, comedor, ajeno = _zona_con_ancla_ajena("s3_ambos")
+    mio = Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=tecnico
+    )
+    PrimerSeguimiento.objects.create(
+        id_relevamiento=ajeno, tipo=PrimerSeguimiento.TIPO_POSTERIOR, numero_orden=1
+    )
+    client = _client(tecnico)
+
+    detalle = client.get(f"/api/territorial/comedores/{comedor.id}/")
+    listado = client.get("/api/territorial/comedores/")
+
+    assert detalle.status_code == 200
+    assert [r["id"] for r in detalle.json()["relevamientos"]["items"]] == [mio.id]
+    assert detalle.json()["seguimientos"]["items"] == []
+    fila = next(row for row in listado.json()["results"] if row["id"] == comedor.id)
+    assert [r["id"] for r in fila["relevamientos"]["items"]] == [mio.id]
+
+
 def test_s3_detalle_por_zona_no_expone_datos_pnud_de_otro_tecnico():
     """Regla D8 de N22: el detalle ampliado a la zona sigue sin mostrar
     ``datos`` ni ``observaciones_coordinador`` de los PNUD ajenos."""
@@ -416,6 +439,29 @@ def test_s2_solo_el_tecnico_que_subio_la_foto_puede_borrarla():
     assert set(ImagenComedor.objects.values_list("pk", flat=True)) == {legado_ajeno.pk}
 
 
+def test_s2_foto_legada_del_espacio_solo_con_el_relevamiento_vigente_asignado():
+    """Foto anterior al campo `subido_por`, sin relevamiento ni seguimiento: la
+    puede borrar solo el técnico con el relevamiento vigente (el más reciente)
+    del comedor."""
+    tecnico, comedor, _ = _zona_con_ancla_ajena("s2_espacio")
+    client = _client(tecnico)
+    foto = ImagenComedor.objects.create(
+        comedor=comedor, imagen=_png("esp.png"), origen="mobile"
+    )
+
+    # El relevamiento vigente es del otro técnico: no es mía.
+    r_ajeno = client.delete(f"{_url_imagenes(comedor)}{foto.id}/")
+    # Ahora el más reciente es mío.
+    Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=tecnico
+    )
+    r_mio = client.delete(f"{_url_imagenes(comedor)}{foto.id}/")
+
+    assert r_ajeno.status_code == 403
+    assert r_mio.status_code == 200
+    assert not ImagenComedor.objects.filter(pk=foto.id).exists()
+
+
 # ------------------------------------------------------------------- S9b
 
 
@@ -461,7 +507,9 @@ def test_s6_carrera_de_numero_orden_devuelve_409_json():
         )
 
     assert response.status_code == 409, response.content
-    assert "Reintente" in response.json()["detail"]
+    assert "al mismo tiempo" in response.json()["detail"]
+    # La app agrega "(no se reintenta)" a todo 409: el detalle no lo contradice.
+    assert "Reintente" not in response.json()["detail"]
 
 
 # -------------------------------------------------------------------- S7
@@ -598,4 +646,5 @@ def test_s9_carrera_de_fecha_visita_en_patch_devuelve_409_string():
 
     assert response.status_code == 409, response.content
     assert isinstance(response.data, str)
-    assert "fecha de visita" in response.data
+    assert "Conflicto al guardar el relevamiento" in response.data
+    assert "Reintente" not in response.data

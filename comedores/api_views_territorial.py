@@ -363,11 +363,11 @@ class TerritorialComedorViewSet(
     def retrieve(self, request, *args, **kwargs):
         # Asignado a mí o de mi zona (S3), el mismo criterio que las altas: el
         # técnico crea un seguimiento sobre un comedor de su zona y después tiene
-        # que poder verlo y precargarlo. En un comedor de la zona se exponen
-        # todos sus relevamientos y seguimientos (como el listado de SISOC web,
-        # y como ya hacían `relevamiento_actual_mobile` y
-        # `seguimiento_anterior_mobile`); en uno asignado fuera de la zona, solo
-        # los asignados a mí. El listado sigue siendo "asignados a mí".
+        # que poder verlo y precargarlo. Un comedor asignado a mí responde como
+        # siempre (solo mis relevamientos y sus seguimientos); uno de la zona sin
+        # asignación expone todos sus relevamientos y seguimientos (como el
+        # listado de SISOC web, y como ya hacían `relevamiento_actual_mobile` y
+        # `seguimiento_anterior_mobile`). El listado sigue siendo "asignados a mí".
         comedor = self._comedor_accesible()
         if comedor is None:
             return self._fuera_de_zona()
@@ -456,26 +456,27 @@ class TerritorialComedorViewSet(
         )
 
     def _comedor_accesible(self):
-        """Comedor de mi zona o, si no, con un relevamiento asignado a mí.
+        """Comedor con un relevamiento asignado a mí o, si no, de mi zona.
 
         Es el criterio de `firma`, extendido al detalle y a las fotos: lo que el
-        técnico puede activar en su zona también lo puede ver y adjuntar. El
-        comedor que llega por asignación trae el prefetch de "mis" relevamientos
-        (`relevamientos_territorial`); el de zona no, y el serializer cae a
-        todos los del comedor.
+        técnico puede activar en su zona también lo puede ver y adjuntar. Primero
+        la asignación, porque ese comedor trae el prefetch de "mis" relevamientos
+        (`relevamientos_territorial`) y el detalle no cambia respecto de antes;
+        el de zona no lo trae y el serializer cae a todos los del comedor.
         """
-        comedor = self._comedor_de_mi_zona()
-        if comedor is not None:
-            return comedor
         pk = self._pk_numerico()
         if pk is None:
             return None
-        return self.get_queryset().filter(pk=pk).first()
+        comedor = self.get_queryset().filter(pk=pk).first()
+        if comedor is not None:
+            return comedor
+        return self._comedor_de_mi_zona()
 
     @staticmethod
     def _conflicto_concurrente(detalle):
         """409 cuando dos altas simultáneas chocan en un UNIQUE que no es el
-        ``client_uuid`` (p. ej. ``numero_orden`` del ciclo). La app reintenta."""
+        ``client_uuid`` (p. ej. ``numero_orden`` del ciclo). La app lo muestra
+        como error definitivo con su motivo; el técnico vuelve a enviar."""
         return Response({"detail": detalle}, status=status.HTTP_409_CONFLICT)
 
     def partial_update(self, request, *args, **kwargs):
@@ -682,8 +683,8 @@ class TerritorialComedorViewSet(
                 # `numero_orden` (unique_together con el relevamiento): la app
                 # reintenta y toma el siguiente.
                 return self._conflicto_concurrente(
-                    "Otra activación de seguimiento se registró al mismo tiempo. "
-                    "Reintente."
+                    "Otra activación de seguimiento se registró al mismo tiempo "
+                    "sobre este comedor."
                 )
             return Response(
                 self._serialize_seguimiento_creado(existente),
@@ -763,7 +764,7 @@ class TerritorialComedorViewSet(
             ).first()
             if existente is None:
                 return self._conflicto_concurrente(
-                    "Otra acta se registró al mismo tiempo. Reintente."
+                    "Otra acta se registró al mismo tiempo sobre este comedor."
                 )
             return Response(self._serialize_acta(existente), status=status.HTTP_200_OK)
 

@@ -279,9 +279,13 @@ class AdjuntosTerritorialMixin:
         """Propia si ``subido_por`` es este usuario.
 
         Las fotos anteriores al campo no lo tienen: en ese caso vale que el
-        relevamiento de la foto (o el ancla de su seguimiento, o alguno del
-        comedor si es una foto del espacio) esté asignado al técnico, que es la
-        condición con la que se podían subir antes de este cambio.
+        relevamiento de la foto (o el ancla de su seguimiento) esté asignado al
+        técnico, que es la condición con la que se podían subir antes de este
+        cambio. Una foto legada "del espacio" (sin relevamiento ni seguimiento)
+        no tiene a quién atribuirse: se acepta solo si el relevamiento vigente
+        del comedor (el más reciente, el ancla del ciclo) está asignado al
+        técnico. Riesgo acotado a datos legados: ese técnico podría borrar una
+        foto del espacio que subió otro.
         """
         if imagen.subido_por_id is not None:
             return imagen.subido_por_id == usuario.id
@@ -289,7 +293,12 @@ class AdjuntosTerritorialMixin:
             return imagen.relevamiento.territorial_user_id == usuario.id
         if imagen.seguimiento_id is not None:
             return imagen.seguimiento.id_relevamiento.territorial_user_id == usuario.id
-        return imagen.comedor.relevamiento_set.filter(territorial_user=usuario).exists()
+        vigente = (
+            imagen.comedor.relevamiento_set.order_by("-fecha_visita", "-id")
+            .values_list("territorial_user_id", flat=True)
+            .first()
+        )
+        return vigente is not None and vigente == usuario.id
 
     @staticmethod
     def _nombre_firma_idempotente(comedor, client_uuid, extension):

@@ -1063,17 +1063,7 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
 
         sisoc_id = data.get("sisoc_id") or data.get("Id_SISOC")
         if sisoc_id:
-            try:
-                referente = Referente.objects.get(pk=int(sisoc_id))
-            except (TypeError, ValueError) as exc:
-                raise DjangoValidationError(
-                    {"referente": [f"sisoc_id invalido: {sisoc_id}"]}
-                ) from exc
-            except Referente.DoesNotExist as exc:
-                raise DjangoValidationError(
-                    {"referente": [f"Referente con sisoc_id={sisoc_id} no existe"]}
-                ) from exc
-            self.initial_data["referente"] = referente.id
+            self.initial_data["referente"] = self._referente_por_sisoc_id(sisoc_id).id
             return
 
         documento = self._to_int_or_none(data.get("documento") or data.get("dni"))
@@ -1097,6 +1087,24 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
             self.initial_data.pop("referente", None)
             return
 
+        referente = self._upsert_referente(documento, referente_data)
+        self.initial_data["referente"] = referente.id
+
+    @staticmethod
+    def _referente_por_sisoc_id(sisoc_id):
+        try:
+            return Referente.objects.get(pk=int(sisoc_id))
+        except (TypeError, ValueError) as exc:
+            raise DjangoValidationError(
+                {"referente": [f"sisoc_id invalido: {sisoc_id}"]}
+            ) from exc
+        except Referente.DoesNotExist as exc:
+            raise DjangoValidationError(
+                {"referente": [f"Referente con sisoc_id={sisoc_id} no existe"]}
+            ) from exc
+
+    @staticmethod
+    def _upsert_referente(documento, referente_data):
         defaults = {k: v for k, v in referente_data.items() if v is not None}
         if documento:
             # `documento` no es unico en la base (hay DNIs repetidos entre
@@ -1105,28 +1113,27 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
             # (_upsert_referente_por_documento_data): se reutiliza el ultimo.
             referente = Referente.objects.filter(documento=documento).last()
             if referente is None:
-                referente = Referente.objects.create(documento=documento, **defaults)
-            elif defaults:
+                return Referente.objects.create(documento=documento, **defaults)
+            if defaults:
                 for field_name, value in defaults.items():
                     setattr(referente, field_name, value)
                 referente.save()
+            return referente
+        # Sin documento, fallback al patron previo: buscar por nombre sin
+        # documento, o crear uno nuevo. Mantiene compatibilidad con datos
+        # antiguos que vienen sin DNI.
+        referente = (
+            Referente.objects.filter(documento__isnull=True)
+            .filter(nombre=referente_data["nombre"])
+            .last()
+        )
+        if referente is None:
+            referente = Referente(**defaults)
         else:
-            # Sin documento, fallback al patron previo: buscar por nombre sin
-            # documento, o crear uno nuevo. Mantiene compatibilidad con datos
-            # antiguos que vienen sin DNI.
-            referente = (
-                Referente.objects.filter(documento__isnull=True)
-                .filter(nombre=referente_data["nombre"])
-                .last()
-            )
-            if referente is None:
-                referente = Referente(**defaults)
-            else:
-                for field_name, value in defaults.items():
-                    setattr(referente, field_name, value)
-            referente.save()
-
-        self.initial_data["referente"] = referente.id
+            for field_name, value in defaults.items():
+                setattr(referente, field_name, value)
+        referente.save()
+        return referente
 
     def _normalize_string(self, value):
         if value is None:

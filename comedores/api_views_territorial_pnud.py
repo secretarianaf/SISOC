@@ -12,6 +12,7 @@ import json
 import posixpath
 from urllib.parse import unquote, urlparse
 
+from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
 from django.utils import timezone
@@ -207,24 +208,43 @@ def _leer_texto(request, campo):
 def es_url_de_firma(valor, comedor, hosts):
     """¿``valor`` es una URL que devolvio ``/firma/`` para este comedor?
 
-    Ruta relativa, o http(s) de un host propio (el de la API o el del
-    storage); sin ``..``; y dentro de ``firmas/<comedor>/`` del storage.
+    Ruta relativa, o http(s) sin credenciales cuyo hostname sea propio (ver
+    ``_hosts_propios``); sin ``..`` ni barra invertida (los navegadores la
+    convierten en ``/``); y dentro de ``firmas/<comedor>/`` del storage.
     """
-    if not isinstance(valor, str):
+    if not isinstance(valor, str) or "\\" in valor:
         return False
     url = urlparse(valor)
     if url.scheme or url.netloc:
-        if url.scheme not in ("http", "https") or url.netloc not in hosts:
+        if (
+            url.scheme not in ("http", "https")
+            or url.username
+            or url.password
+            or (url.hostname or "") not in hosts
+        ):
             return False
     ruta = unquote(url.path)
-    if ".." in ruta.split("/"):
+    if "\\" in ruta or ".." in ruta.split("/"):
         return False
     prefijo = urlparse(default_storage.url(f"firmas/{comedor.id}/")).path
     return posixpath.normpath(ruta).startswith(prefijo.rstrip("/") + "/")
 
 
 def _hosts_propios(request):
-    hosts = {request.get_host(), urlparse(default_storage.url("firmas/")).netloc}
+    """Hostnames propios para las URLs de firma.
+
+    El del request, el del storage y los de ``ALLOWED_HOSTS`` explicitos: una
+    firma ya subida (p.ej. en la cola offline) sigue valiendo si cambia el
+    alias con que se entra a la API (www, puerto, proxy sin X-Forwarded-Host).
+    Si ``ALLOWED_HOSTS`` tiene ``*`` no se amplia, y los comodines ``.dominio``
+    nunca cuentan: solo hosts concretos.
+    """
+    candidatos = [request.get_host(), urlparse(default_storage.url("firmas/")).netloc]
+    if "*" not in settings.ALLOWED_HOSTS:
+        candidatos += [
+            host for host in settings.ALLOWED_HOSTS if host and not host.startswith(".")
+        ]
+    hosts = {urlparse(f"//{host}").hostname for host in candidatos if host}
     return {host for host in hosts if host}
 
 

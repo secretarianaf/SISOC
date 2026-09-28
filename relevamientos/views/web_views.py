@@ -423,7 +423,7 @@ class RelevamientoDeleteView(
     model = Relevamiento
     template_name = "relevamiento_confirm_delete.html"
     context_object_name = "relevamiento"
-    success_message = "Relevamiento dado de baja correctamente."
+    success_message = "Acompañamiento Territorial dado de baja correctamente."
 
     def get_success_url(self):
         comedor = self.object.comedor
@@ -526,15 +526,19 @@ class RelevamientoRevisionCoordinadorView(LoginRequiredMixin, View):
 
     def post(self, request, comedor_pk, pk):
         relevamiento = get_object_or_404(Relevamiento, pk=pk, comedor_id=comedor_pk)
-        error = aplicar_revision_coordinador(request, relevamiento, "el relevamiento")
+        error = aplicar_revision_coordinador(
+            request, relevamiento, "el acompañamiento territorial"
+        )
         if error:
             messages.error(request, error)
         elif relevamiento.estado_validacion == Relevamiento.ESTADO_VALIDACION_VALIDADO:
-            messages.success(request, "Relevamiento validado correctamente.")
+            messages.success(
+                request, "Acompañamiento Territorial validado correctamente."
+            )
         else:
             messages.success(
                 request,
-                "Relevamiento devuelto al territorial para subsanar.",
+                "Acompañamiento Territorial devuelto al territorial para subsanar.",
             )
         return redirect(
             reverse(

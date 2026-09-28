@@ -776,3 +776,92 @@ def test_observaciones_ajenas_no_se_exponen(zona):
     assert get_pnud["estado_validacion"] == A_SUBSANAR
     item = listado["seguimientos_pnud"]["items"][0]
     assert item["observaciones_coordinador"] is None
+
+
+# ------------------------------------------------------------ ronda 3
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        r"/media/firmas/{id}/..\..\x.png",
+        "/media/firmas/{id}/%5C..%5Cx.png",
+        "http://user@testserver/media/firmas/{id}/f.png",
+    ],
+)
+def test_firma_rechaza_barra_invertida_y_credenciales(zona, url):
+    _, comedor, tecnico = zona
+
+    response = _client(tecnico).post(
+        _url(comedor),
+        _payload(datos={"firma_entrevistado": url.format(id=comedor.id)}),
+        format="json",
+    )
+
+    assert response.status_code == 400, response.content
+
+
+def test_firma_de_otro_alias_de_allowed_hosts_se_acepta(zona, settings):
+    _, comedor, tecnico = zona
+    settings.ALLOWED_HOSTS = ["testserver", "sisoc.example.gob.ar"]
+    client = _client(tecnico)
+
+    alias = client.post(
+        _url(comedor),
+        _payload(
+            datos={
+                "firma_entrevistado": f"https://sisoc.example.gob.ar/media/firmas/{comedor.id}/f.png"
+            }
+        ),
+        format="json",
+    )
+    puerto = client.post(
+        _url(comedor),
+        _payload(
+            client_uuid="uuid-puerto",
+            datos={
+                "firma_entrevistado": f"https://testserver:443/media/firmas/{comedor.id}/f.png"
+            },
+        ),
+        format="json",
+    )
+
+    assert alias.status_code == 201, alias.content
+    assert puerto.status_code == 201, puerto.content
+
+
+def test_allowed_hosts_con_comodin_no_amplia_los_hosts(zona, settings):
+    _, comedor, tecnico = zona
+    settings.ALLOWED_HOSTS = ["*", ".example.gob.ar"]
+
+    response = _client(tecnico).post(
+        _url(comedor),
+        _payload(
+            datos={
+                "firma_entrevistado": f"https://otro.example.gob.ar/media/firmas/{comedor.id}/f.png"
+            }
+        ),
+        format="json",
+    )
+
+    assert response.status_code == 400
+
+
+def test_mensajes_de_revision_dicen_acompanamiento_territorial(client, zona):
+    _, comedor, tecnico = zona
+    relevamiento = Relevamiento.objects.create(
+        comedor=comedor, estado="Finalizado", territorial_user=tecnico
+    )
+    _coordinador(client)
+
+    response = client.post(
+        reverse(
+            "relevamiento_revision_coordinador",
+            kwargs={"comedor_pk": comedor.id, "pk": relevamiento.id},
+        ),
+        {"estado_validacion": VALIDADO},
+        follow=True,
+    )
+
+    mensajes = [str(m) for m in response.context["messages"]]
+    assert "Acompañamiento Territorial validado correctamente." in mensajes

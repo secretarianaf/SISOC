@@ -648,3 +648,81 @@ def test_s9_carrera_de_fecha_visita_en_patch_devuelve_409_string():
     assert isinstance(response.data, str)
     assert "Conflicto al guardar el relevamiento" in response.data
     assert "Reintente" not in response.data
+
+
+# ------------------------------------------------------------------- S9c
+
+
+def _seguimiento_en_zona(provincia, nombre):
+    """Comedor de la zona del técnico con un relevamiento y su primer
+    seguimiento (nº 1), para el PATCH /api/relevamiento/primer-seguimiento."""
+    comedor = Comedor.objects.create(nombre=f"Comedor {nombre}", provincia=provincia)
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento, estado=PrimerSeguimiento.ESTADO_ASIGNADO
+    )
+    return relevamiento, seguimiento
+
+
+def _patch_referente(client, relevamiento, seguimiento, referente):
+    return client.patch(
+        "/api/relevamiento/primer-seguimiento",
+        {
+            "sisoc_id": seguimiento.id,
+            "id_relevamiento": relevamiento.id,
+            "referente": referente,
+        },
+        format="json",
+    )
+
+
+def test_s9c_seguimiento_sin_documento_no_reusa_un_referente_homonimo():
+    """PATCH del seguimiento sin DNI: dos personas con el mismo nombre en
+    relevamientos distintos son dos Referentes, y el primero no se pisa."""
+    tecnico, comedor, _ = _zona_con_ancla_ajena("s9c")
+    client = _client(tecnico)
+    rel_a, seg_a = _seguimiento_en_zona(comedor.provincia, "s9c A")
+    rel_b, seg_b = _seguimiento_en_zona(comedor.provincia, "s9c B")
+
+    r_a = _patch_referente(
+        client, rel_a, seg_a, {"nombre_apellido": "Juan Perez", "funcion": "Cocinero"}
+    )
+    r_b = _patch_referente(
+        client, rel_b, seg_b, {"nombre_apellido": "Juan Perez", "funcion": "Presidente"}
+    )
+
+    assert r_a.status_code == 200, r_a.content
+    assert r_b.status_code == 200, r_b.content
+    seg_a.refresh_from_db()
+    seg_b.refresh_from_db()
+    assert seg_a.referente_id != seg_b.referente_id
+    assert Referente.objects.filter(nombre="Juan Perez").count() == 2
+    assert seg_a.referente.funcion == "Cocinero"
+    assert seg_b.referente.funcion == "Presidente"
+
+
+def test_s9c_seguimiento_sin_documento_ni_datos_no_crea_referente_vacio():
+    tecnico, comedor, _ = _zona_con_ancla_ajena("s9c_vacio")
+    rel, seg = _seguimiento_en_zona(comedor.provincia, "s9c vacio")
+
+    response = _patch_referente(_client(tecnico), rel, seg, {"nombre": "  "})
+
+    assert response.status_code == 200, response.content
+    seg.refresh_from_db()
+    assert seg.referente_id is None
+    assert not Referente.objects.exists()
+
+
+def test_s9c_seguimiento_con_documento_sigue_reusando_el_ultimo():
+    tecnico, comedor, _ = _zona_con_ancla_ajena("s9c_doc")
+    rel, seg = _seguimiento_en_zona(comedor.provincia, "s9c doc")
+    existente = Referente.objects.create(nombre="Ana", documento=30111222)
+
+    response = _patch_referente(
+        _client(tecnico), rel, seg, {"documento": "30111222", "funcion": "Directora"}
+    )
+
+    assert response.status_code == 200, response.content
+    seg.refresh_from_db()
+    assert seg.referente_id == existente.id
+    assert Referente.objects.count() == 1

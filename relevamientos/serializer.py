@@ -1119,21 +1119,11 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
                     setattr(referente, field_name, value)
                 referente.save()
             return referente
-        # Sin documento, fallback al patron previo: buscar por nombre sin
-        # documento, o crear uno nuevo. Mantiene compatibilidad con datos
-        # antiguos que vienen sin DNI.
-        referente = (
-            Referente.objects.filter(documento__isnull=True)
-            .filter(nombre=referente_data["nombre"])
-            .last()
-        )
-        if referente is None:
-            referente = Referente(**defaults)
-        else:
-            for field_name, value in defaults.items():
-                setattr(referente, field_name, value)
-        referente.save()
-        return referente
+        # Sin documento no hay clave para reusar (S9c): buscar "por nombre" entre
+        # los referentes sin DNI pisaba a otra persona homonima. Se crea uno
+        # nuevo, el mismo criterio que _upsert_referente_por_documento_data en
+        # service.py; el caso sin datos ya lo descarto _process_referente.
+        return Referente.objects.create(**defaults)
 
     def _normalize_string(self, value):
         if value is None:

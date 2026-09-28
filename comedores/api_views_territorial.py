@@ -327,11 +327,10 @@ class TerritorialComedorViewSet(
         # aunque el comedor sea de otra provincia; la asignación se hace desde el
         # backoffice).
         user = self.request.user
-        # ``Relevamiento.objects`` (manager soft-delete) ya excluye borrados en el
-        # prefetch. Pero el JOIN ``relevamiento__...`` del filtro de comedores NO
-        # aplica el manager, así que hay que excluir los borrados explícitamente;
-        # de lo contrario un comedor cuyo único relevamiento asignado esté borrado
-        # aparecería con ``items: []``.
+        # ``Relevamiento.objects`` (manager soft-delete) excluye borrados, tanto
+        # en el prefetch como en la subconsulta del filtro de comedores: un
+        # comedor cuyo único relevamiento asignado esté borrado no aparece con
+        # ``items: []``.
         relevamientos_asignados = (
             Relevamiento.objects.filter(territorial_user=user)
             .prefetch_related("seguimientos")
@@ -346,16 +345,16 @@ class TerritorialComedorViewSet(
         actas_asignadas = ActaComplementaria.objects.filter(
             tecnico=user, asignado_desde_sisoc=True
         ).values("comedor_id")
+        # Las tres fuentes van como subconsultas: un OR sobre el JOIN
+        # ``relevamiento__...`` obliga a un LEFT JOIN + DISTINCT sobre toda la
+        # tabla de comedores en el listado principal de la app.
+        mis_relevamientos = Relevamiento.objects.filter(territorial_user=user)
         return (
             Comedor.objects.filter(
-                Q(
-                    relevamiento__territorial_user=user,
-                    relevamiento__deleted_at__isnull=True,
-                )
+                Q(id__in=mis_relevamientos.values("comedor_id"))
                 | Q(id__in=asignados_pnud)
                 | Q(id__in=actas_asignadas)
             )
-            .distinct()
             .select_related("provincia", "municipio", "localidad")
             .prefetch_related(
                 Prefetch(

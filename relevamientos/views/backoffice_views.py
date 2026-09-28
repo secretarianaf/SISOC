@@ -136,6 +136,10 @@ class SeguimientoPnudRevisionCoordinadorView(LoginRequiredMixin, View):
                 error = aplicar_revision_coordinador(
                     request, seguimiento, "el seguimiento PNUD"
                 )
+                if not error:
+                    # El helper compartido guarda con update_fields sin
+                    # fecha_actualizacion (auto_now): se registra la revisión acá.
+                    seguimiento.save(update_fields=["fecha_actualizacion"])
         if error:
             messages.error(request, error)
         elif seguimiento.esta_validado:

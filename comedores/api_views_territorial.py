@@ -15,7 +15,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import filters, generics, mixins, serializers, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import ParseError, PermissionDenied
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -448,8 +448,10 @@ class TerritorialComedorViewSet(
 
     @staticmethod
     def _leer_client_uuid(request):
-        valor = request.data.get("client_uuid")
-        return valor.strip() or None if isinstance(valor, str) else None
+        valor = request.data.get("client_uuid") or ""
+        if not isinstance(valor, str) or len(valor.strip()) > 64:
+            raise ParseError("'client_uuid' debe ser texto de hasta 64 caracteres.")
+        return valor.strip() or None
 
     @staticmethod
     def _falta_client_uuid():

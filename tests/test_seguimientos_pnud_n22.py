@@ -201,7 +201,7 @@ def _crear(comedor, tecnico, **kwargs):
     return SeguimientoPnud.objects.create(
         comedor=comedor,
         tecnico=tecnico,
-        formulario="secos",
+        formulario="iia",
         datos={"funcionamiento": "Cerrado"},
         origen=SeguimientoPnud.ORIGEN_APP,
         asignado_desde_sisoc=False,
@@ -310,7 +310,7 @@ def test_listado_y_detalle_territorial_exponen_seguimientos_pnud(zona):
     detalle = client.get(f"/api/territorial/comedores/{comedor.id}/")
 
     item = listado.json()["results"][0]["seguimientos_pnud"]["items"][0]
-    assert item["formulario"] == "secos"
+    assert item["formulario"] == "iia"
     assert item["estado_validacion"] == A_SUBSANAR
     assert item["observaciones_coordinador"] == "Corregir"
     assert "datos" not in item
@@ -589,3 +589,190 @@ def test_validado_no_admite_otra_revision(client, zona):
 
     seguimiento.refresh_from_db()
     assert seguimiento.estado_validacion == VALIDADO
+
+
+# ------------------------------------------------------------ ronda 2
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://evil.example/media/firmas/{id}/x.png",
+        "javascript:/media/firmas/{id}/x",
+        "/media/firmas/{id}/../../otro/x.png",
+        "//evil.example/media/firmas/{id}/x.png",
+    ],
+)
+def test_firma_rechaza_esquema_host_y_path_ajenos(zona, url):
+    _, comedor, tecnico = zona
+
+    response = _client(tecnico).post(
+        _url(comedor),
+        _payload(datos={"firma_entrevistado": url.format(id=comedor.id)}),
+        format="json",
+    )
+
+    assert response.status_code == 400, response.content
+
+
+def test_firma_relativa_del_storage_propio_se_acepta(zona):
+    _, comedor, tecnico = zona
+
+    response = _client(tecnico).post(
+        _url(comedor),
+        _payload(datos={"firma_entrevistado": f"/media/firmas/{comedor.id}/f.png"}),
+        format="json",
+    )
+
+    assert response.status_code == 201, response.content
+
+
+def test_tabla_malformada_da_400(zona):
+    _, comedor, tecnico = zona
+
+    response = _client(tecnico).post(
+        _url(comedor), _payload(datos={"prestaciones": 5}), format="json"
+    )
+
+    assert response.status_code == 400
+    assert "prestaciones" in response.json()["detail"]
+
+
+def test_detalle_no_se_rompe_con_datos_malformados(client, zona):
+    _, comedor, tecnico = zona
+    seguimiento = _crear(comedor, tecnico, estado_validacion=PENDIENTE)
+    seguimiento.formulario = "iia"
+    seguimiento.datos = {
+        "prestaciones": 5,
+        "firma_entrevistado": "javascript:alert(1)",
+        "extra": {"a": 1, "b": [{"c": 2}]},
+    }
+    seguimiento.save()
+    _coordinador(client)
+
+    response = client.get(
+        reverse(
+            "seguimiento_pnud_detalle",
+            kwargs={"comedor_pk": comedor.id, "pk": seguimiento.id},
+        )
+    )
+
+    html = response.content.decode()
+    assert response.status_code == 200
+    assert 'src="javascript' not in html
+    assert "{&#x27;" not in html and "{'" not in html
+    assert "A: 1" in html
+
+
+def test_patch_rechaza_si_el_comedor_dejo_de_ser_pnud(zona):
+    _, comedor, tecnico = zona
+    seguimiento = _crear(comedor, tecnico, estado_validacion=A_SUBSANAR)
+    seguimiento.formulario = "iia"
+    seguimiento.save()
+    comedor.programa = _programa("Alimentar comunidad")
+    comedor.save(update_fields=["programa"])
+
+    response = _client(tecnico).patch(
+        _url(comedor, seguimiento.id), {"datos": {"x": 1}}, format="json"
+    )
+
+    assert response.status_code == 400
+    seguimiento.refresh_from_db()
+    assert seguimiento.estado_validacion == A_SUBSANAR
+
+
+def test_programa_con_nombre_no_usa_el_id_de_respaldo(zona):
+    _, comedor, tecnico = zona
+    programa, _ = Programas.objects.get_or_create(id=3)
+    programa.nombre = "Alimentar comunidad"
+    programa.save()
+    comedor.programa = programa
+    comedor.save(update_fields=["programa"])
+
+    response = _client(tecnico).post(
+        _url(comedor), _payload(formulario="secos"), format="json"
+    )
+
+    assert response.status_code == 400
+
+
+def test_alta_concurrente_de_otro_tecnico_da_409(zona, mocker):
+    provincia, comedor, tecnico = zona
+    otro = _make_territorial("terr_pnud_carrera", [provincia])
+    _crear(comedor, otro, client_uuid="pnud-uuid-1")
+    filtro_real = SeguimientoPnud.objects.filter
+    llamadas = []
+
+    def filtro(*args, **kwargs):
+        # La primera búsqueda por uuid no lo ve (carrera): el INSERT choca.
+        llamadas.append(kwargs)
+        if len(llamadas) == 1:
+            return SeguimientoPnud.objects.none()
+        return filtro_real(*args, **kwargs)
+
+    mocker.patch.object(SeguimientoPnud.objects, "filter", side_effect=filtro)
+
+    response = _client(tecnico).post(_url(comedor), _payload(), format="json")
+
+    assert response.status_code == 409
+    assert "datos" not in response.json()
+
+
+def test_client_uuid_demasiado_largo_da_400(zona):
+    _, comedor, tecnico = zona
+    client = _client(tecnico)
+
+    pnud = client.post(_url(comedor), _payload(client_uuid="x" * 65), format="json")
+    acta = client.post(
+        f"/api/territorial/comedores/{comedor.id}/actas-complementarias/",
+        {"client_uuid": "x" * 65},
+        format="json",
+    )
+
+    assert pnud.status_code == 400
+    assert "detail" in pnud.json()
+    assert acta.status_code == 400
+
+
+def test_revision_actualiza_fecha_actualizacion(client, zona):
+    _, comedor, tecnico = zona
+    seguimiento = _crear(comedor, tecnico, estado_validacion=PENDIENTE)
+    SeguimientoPnud.objects.filter(pk=seguimiento.pk).update(
+        fecha_actualizacion="2020-01-01T00:00:00Z"
+    )
+    _coordinador(client)
+
+    client.post(
+        reverse(
+            "seguimiento_pnud_revision_coordinador",
+            kwargs={"comedor_pk": comedor.id, "pk": seguimiento.id},
+        ),
+        {"estado_validacion": VALIDADO},
+    )
+
+    seguimiento.refresh_from_db()
+    assert seguimiento.fecha_actualizacion.year > 2020
+
+
+def test_observaciones_ajenas_no_se_exponen(zona):
+    provincia, comedor, tecnico = zona
+    otro = _make_territorial("terr_pnud_obs", [provincia])
+    _crear(
+        comedor,
+        otro,
+        client_uuid="uuid-obs-ajena",
+        estado_validacion=A_SUBSANAR,
+        observaciones_coordinador="El DNI 30111222 no coincide",
+    )
+    Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=tecnico
+    )
+    client = _client(tecnico)
+
+    get_pnud = client.get(_url(comedor)).json()["items"][0]
+    listado = client.get("/api/territorial/comedores/").json()["results"][0]
+
+    assert get_pnud["observaciones_coordinador"] is None
+    assert get_pnud["estado_validacion"] == A_SUBSANAR
+    item = listado["seguimientos_pnud"]["items"][0]
+    assert item["observaciones_coordinador"] is None

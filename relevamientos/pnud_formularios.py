@@ -47,6 +47,17 @@ def _opcion(campo, valor):
     return str(valor)
 
 
+def campos_tabla(formulario):
+    """Nombres de los campos tabla (filas hijas) del formulario."""
+    definicion = definiciones().get(formulario) or {"sections": []}
+    return [
+        campo["name"]
+        for seccion in definicion["sections"]
+        for campo in seccion["fields"]
+        if campo.get("type") == "child"
+    ]
+
+
 def formatear_valor(campo, valor):  # pylint: disable=too-many-return-statements
     """Valor de una respuesta como texto legible según el tipo del campo."""
     if _vacio(valor):
@@ -55,24 +66,45 @@ def formatear_valor(campo, valor):  # pylint: disable=too-many-return-statements
         return "Sí"
     if valor is False:
         return "No"
+    if isinstance(valor, dict):
+        partes = [
+            f"{_humanizar(str(clave))}: {formatear_valor({}, item)}"
+            for clave, item in valor.items()
+            if not _vacio(item)
+        ]
+        return ", ".join(partes) or "—"
     tipo = campo.get("type")
     if tipo == "enumlist" or isinstance(valor, list):
         items = valor if isinstance(valor, list) else [valor]
-        return ", ".join(_opcion(campo, item) for item in items)
+        separador = " · " if any(isinstance(i, (dict, list)) for i in items) else ", "
+        return separador.join(
+            (
+                formatear_valor({}, item)
+                if isinstance(item, (dict, list))
+                else _opcion(campo, item)
+            )
+            for item in items
+        )
     if tipo in ("enum", "ref"):
         return _opcion(campo, valor)
     if tipo == "date":
         return _fecha(valor, con_hora=False)
     if tipo == "datetime":
         return _fecha(valor, con_hora=True)
-    if isinstance(valor, dict):
-        return ", ".join(f"{_humanizar(k)}: {v}" for k, v in valor.items())
     return str(valor)
+
+
+def _es_url_mostrable(valor):
+    """Solo http(s) o rutas relativas del sitio se renderizan como <img>."""
+    return isinstance(valor, str) and (
+        valor.startswith(("https://", "http://"))
+        or (valor.startswith("/") and not valor.startswith("//"))
+    )
 
 
 def _fila(campo, valor):
     etiqueta = campo["label"]
-    if campo.get("type") == "child":
+    if campo.get("type") == "child" and isinstance(valor, list):
         columnas = campo.get("itemFields") or []
         filas = [
             [
@@ -88,7 +120,7 @@ def _fila(campo, valor):
             "columnas": [columna["label"] for columna in columnas],
             "filas": filas,
         }
-    if campo.get("type") == "signature":
+    if campo.get("type") == "signature" and _es_url_mostrable(valor):
         return {"etiqueta": etiqueta, "tipo": "imagen", "valor": valor}
     return {
         "etiqueta": etiqueta,

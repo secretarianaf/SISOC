@@ -9,7 +9,8 @@ modulo acotado; se mezcla como mixin.
 """
 
 import json
-from urllib.parse import urlparse
+import posixpath
+from urllib.parse import unquote, urlparse
 
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
@@ -18,6 +19,7 @@ from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from comedores.api_serializers import NoSaveSerializer
 from comedores.models import ComedorDatosConvenioPnud
 from comedores.services.comedor_service import ComedorService
 from comedores.utils import (
@@ -27,6 +29,7 @@ from comedores.utils import (
 )
 from core.utils import format_fecha_django
 from relevamientos.models import SeguimientoPnud
+from relevamientos.pnud_formularios import campos_tabla
 
 # Tope de las respuestas de un seguimiento PNUD (N22): los cinco formularios en
 # papel caben holgados; evita que un cliente guarde blobs (p.ej. firmas base64).
@@ -64,7 +67,17 @@ def linea_pnud(comedor):
         return LINEA_SECOS
     if is_abordaje_comunitario_linea_tradicional_program(comedor):
         return LINEA_TRADICIONAL
+    # El id de fixture es solo respaldo para un programa SIN nombre: un
+    # "Alimentar comunidad" que en otra base tenga id 3 no debe pasar por Secos.
+    programa = getattr(comedor, "programa", None)
+    if programa is not None and (getattr(programa, "nombre", "") or "").strip():
+        return None
     return _PROGRAMA_ID_POR_LINEA.get(getattr(comedor, "programa_id", None))
+
+
+def formulario_permitido(comedor, formulario):
+    linea = linea_pnud(comedor)
+    return linea is not None and formulario in FORMULARIOS_POR_LINEA[linea]
 
 
 def datos_comedor_pnud(comedor):
@@ -88,8 +101,12 @@ def _nombre_usuario(usuario):
     return usuario.get_full_name() or usuario.get_username()
 
 
-def serialize_seguimiento_pnud(seguimiento, con_datos=False):
-    """Instancia PNUD (N22) con los metadatos del ciclo del coordinador (N16)."""
+def serialize_seguimiento_pnud(seguimiento, propio=False):
+    """Instancia PNUD (N22) con los metadatos del ciclo del coordinador (N16).
+
+    Las respuestas y las observaciones del coordinador (pueden citar datos
+    personales del entrevistado) solo van al tecnico que la cargo.
+    """
     data = {
         "id": seguimiento.id,
         "comedor": seguimiento.comedor_id,
@@ -98,14 +115,16 @@ def serialize_seguimiento_pnud(seguimiento, con_datos=False):
         "tecnico": seguimiento.tecnico_id,
         "tecnico_nombre": _nombre_usuario(seguimiento.tecnico),
         "estado_validacion": seguimiento.estado_validacion,
-        "observaciones_coordinador": seguimiento.observaciones_coordinador,
+        "observaciones_coordinador": (
+            seguimiento.observaciones_coordinador if propio else None
+        ),
         "fecha_revision_coordinador": _fecha_iso(
             seguimiento.fecha_revision_coordinador
         ),
         "origen": seguimiento.origen,
         "client_uuid": seguimiento.client_uuid,
     }
-    if con_datos:
+    if propio:
         data["datos"] = seguimiento.datos or {}
     return data
 
@@ -114,7 +133,7 @@ def seguimientos_pnud_payload(comedor, usuario):
     """Instancias del comedor; las respuestas (con datos personales del
     entrevistado) solo en las del propio tecnico, para "Corregir y reenviar"."""
     items = [
-        serialize_seguimiento_pnud(s, con_datos=s.tecnico_id == usuario.id)
+        serialize_seguimiento_pnud(s, propio=s.tecnico_id == usuario.id)
         for s in comedor.seguimientos_pnud.select_related("tecnico")
     ]
     return {"total": len(items), "items": items}
@@ -185,16 +204,53 @@ def _leer_texto(request, campo):
     return valor.strip() or None, None
 
 
-def _firmas_invalidas(datos, comedor):
-    """Claves de firma cuyo valor no es una URL de ``/firma/`` de este comedor."""
+def es_url_de_firma(valor, comedor, hosts):
+    """¿``valor`` es una URL que devolvio ``/firma/`` para este comedor?
+
+    Ruta relativa, o http(s) de un host propio (el de la API o el del
+    storage); sin ``..``; y dentro de ``firmas/<comedor>/`` del storage.
+    """
+    if not isinstance(valor, str):
+        return False
+    url = urlparse(valor)
+    if url.scheme or url.netloc:
+        if url.scheme not in ("http", "https") or url.netloc not in hosts:
+            return False
+    ruta = unquote(url.path)
+    if ".." in ruta.split("/"):
+        return False
     prefijo = urlparse(default_storage.url(f"firmas/{comedor.id}/")).path
-    invalidas = []
-    for clave, valor in datos.items():
-        if "firma" not in clave or valor in (None, ""):
-            continue
-        if not isinstance(valor, str) or not urlparse(valor).path.startswith(prefijo):
-            invalidas.append(clave)
-    return invalidas
+    return posixpath.normpath(ruta).startswith(prefijo.rstrip("/") + "/")
+
+
+def _hosts_propios(request):
+    hosts = {request.get_host(), urlparse(default_storage.url("firmas/")).netloc}
+    return {host for host in hosts if host}
+
+
+def _firmas_invalidas(datos, comedor, request):
+    """Claves de firma cuyo valor no es una URL de ``/firma/`` de este comedor."""
+    hosts = _hosts_propios(request)
+    return [
+        clave
+        for clave, valor in datos.items()
+        if "firma" in clave
+        and valor not in (None, "")
+        and not es_url_de_firma(valor, comedor, hosts)
+    ]
+
+
+def _tablas_invalidas(datos, formulario):
+    """Campos tabla (hijos) que no llegan como lista de objetos."""
+    return [
+        nombre
+        for nombre in campos_tabla(formulario)
+        if datos.get(nombre) not in (None, "")
+        and not (
+            isinstance(datos[nombre], list)
+            and all(isinstance(fila, dict) for fila in datos[nombre])
+        )
+    ]
 
 
 class SeguimientosPnudTerritorialMixin:
@@ -205,7 +261,7 @@ class SeguimientosPnudTerritorialMixin:
     """
 
     @staticmethod
-    def _leer_datos_pnud(request, comedor):
+    def _leer_datos_pnud(request, comedor, formulario):
         """``datos`` validado (objeto JSON, tope de tamaño) o una Response 400."""
         datos = request.data.get("datos")
         if not isinstance(datos, dict):
@@ -216,7 +272,12 @@ class SeguimientosPnudTerritorialMixin:
         tamanio = len(json.dumps(datos, ensure_ascii=False).encode("utf-8"))
         if tamanio > MAX_DATOS_PNUD_BYTES:
             return None, _error("Las respuestas exceden el tamaño máximo (512 KB).")
-        invalidas = _firmas_invalidas(datos, comedor)
+        tablas = _tablas_invalidas(datos, formulario)
+        if tablas:
+            return None, _error(
+                "Estos campos deben ser listas de filas: " + ", ".join(tablas) + "."
+            )
+        invalidas = _firmas_invalidas(datos, comedor, request)
         if invalidas:
             return None, _error(
                 "Las firmas deben subirse con /firma/ de este comedor: "
@@ -262,15 +323,7 @@ class SeguimientosPnudTerritorialMixin:
 
         existente = SeguimientoPnud.objects.filter(client_uuid=client_uuid).first()
         if existente is not None:
-            if (
-                existente.comedor_id != comedor.id
-                or existente.tecnico_id != request.user.id
-            ):
-                return _error(
-                    "El 'client_uuid' ya se usó en otro seguimiento.",
-                    status.HTTP_409_CONFLICT,
-                )
-            return Response(serialize_seguimiento_pnud(existente, con_datos=True))
+            return self._respuesta_existente(existente, comedor, request)
 
         linea = linea_pnud(comedor)
         if linea is None:
@@ -282,12 +335,12 @@ class SeguimientosPnudTerritorialMixin:
         if error is not None:
             return error
         validos = FORMULARIOS_POR_LINEA[linea]
-        if formulario not in validos:
+        if not formulario_permitido(comedor, formulario):
             return _error(
                 f"'formulario' no corresponde al programa del comedor. "
                 f"Válidos: {', '.join(validos)}."
             )
-        datos, error = self._leer_datos_pnud(request, comedor)
+        datos, error = self._leer_datos_pnud(request, comedor, formulario)
         if error is not None:
             return error
 
@@ -309,14 +362,28 @@ class SeguimientosPnudTerritorialMixin:
             with transaction.atomic():
                 seguimiento.save()
         except IntegrityError:
+            # Alta concurrente con el mismo uuid: mismas reglas que el reintento.
             existente = SeguimientoPnud.objects.filter(client_uuid=client_uuid).first()
-            if existente is None or existente.tecnico_id != request.user.id:
+            if existente is None:
                 raise
-            return Response(serialize_seguimiento_pnud(existente, con_datos=True))
+            return self._respuesta_existente(existente, comedor, request)
         return Response(
-            serialize_seguimiento_pnud(seguimiento, con_datos=True),
+            serialize_seguimiento_pnud(seguimiento, propio=True),
             status=status.HTTP_201_CREATED,
         )
+
+    @staticmethod
+    def _respuesta_existente(existente, comedor, request):
+        """Reintento con un ``client_uuid`` ya usado: 200 si es el mismo alta."""
+        if (
+            existente.comedor_id != comedor.id
+            or existente.tecnico_id != request.user.id
+        ):
+            return _error(
+                "El 'client_uuid' ya se usó en otro seguimiento.",
+                status.HTTP_409_CONFLICT,
+            )
+        return Response(serialize_seguimiento_pnud(existente, propio=True))
 
     @action(
         detail=True,
@@ -334,9 +401,6 @@ class SeguimientosPnudTerritorialMixin:
         comedor = self._comedor_de_mi_zona()
         if comedor is None:
             return self._fuera_de_zona()
-        datos, error = self._leer_datos_pnud(request, comedor)
-        if error is not None:
-            return error
         with transaction.atomic():
             # Bloqueo de fila: una revisión del coordinador en paralelo no puede
             # quedar pisada (un Validado nunca vuelve a Pendiente).
@@ -360,17 +424,27 @@ class SeguimientosPnudTerritorialMixin:
                     status.HTTP_409_CONFLICT,
                     estado_validacion=seguimiento.estado_validacion,
                 )
-            error = self._leer_fecha_hora(request, seguimiento)
+            # El programa del comedor pudo cambiar desde el alta.
+            if not formulario_permitido(comedor, seguimiento.formulario):
+                return _error(
+                    "El comedor ya no pertenece a un programa PNUD compatible con "
+                    "este formulario."
+                )
+            datos, error = self._leer_datos_pnud(
+                request, comedor, seguimiento.formulario
+            )
+            if error is None:
+                error = self._leer_fecha_hora(request, seguimiento)
             if error is not None:
                 return error
             seguimiento.datos = datos
             # "A subsanar" (o sin enviar) vuelve a la bandeja del coordinador.
             seguimiento.estado_validacion = SeguimientoPnud.ESTADO_VALIDACION_PENDIENTE
             seguimiento.save()
-        return Response(serialize_seguimiento_pnud(seguimiento, con_datos=True))
+        return Response(serialize_seguimiento_pnud(seguimiento, propio=True))
 
 
-class TerritorialComedorPnudFieldsMixin(serializers.Serializer):
+class TerritorialComedorPnudFieldsMixin(NoSaveSerializer):
     """Campos PNUD (N22) del comedor en el listado/detalle territorial."""
 
     programa_id = serializers.IntegerField(allow_null=True, read_only=True)
@@ -386,5 +460,14 @@ class TerritorialComedorPnudFieldsMixin(serializers.Serializer):
 
     def get_seguimientos_pnud(self, obj):
         # Sin respuestas: el detalle y GET .../seguimientos-pnud/ las incluyen.
-        items = [serialize_seguimiento_pnud(s) for s in obj.seguimientos_pnud.all()]
+        # Las observaciones del coordinador, solo en las del propio tecnico.
+        request = self.context.get("request")
+        usuario_id = getattr(getattr(request, "user", None), "id", None)
+        items = []
+        for seguimiento in obj.seguimientos_pnud.all():
+            item = serialize_seguimiento_pnud(
+                seguimiento, propio=seguimiento.tecnico_id == usuario_id
+            )
+            item.pop("datos", None)
+            items.append(item)
         return {"total": len(items), "items": items}

@@ -10,6 +10,11 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from comedores.services.comedor_service import ComedorService
+from relevamientos.alta_backoffice import (
+    crear_seguimiento_pnud_asignado,
+    formulario_de_valor,
+    valores_permitidos,
+)
 from relevamientos.models import PrimerSeguimiento, Relevamiento
 from relevamientos.primer_seguimiento_service import PrimerSeguimientoService
 from relevamientos.service import RelevamientoService
@@ -102,23 +107,82 @@ def _handle_create_seguimiento(request, comedor, is_ajax, tipo):
     )
 
 
+def _redirect_to(request, is_ajax, message, url):
+    if is_ajax:
+        return JsonResponse({"url": url}, status=200)
+    messages.success(request, message)
+    return redirect(url)
+
+
+def _handle_create_seguimiento_pnud(request, comedor, is_ajax, formulario):
+    if not request.user.has_perm("relevamientos.add_relevamiento"):
+        return _error_response(
+            request,
+            is_ajax,
+            "No tiene permisos para crear acompañamientos territoriales.",
+            403,
+            "relevamientos",
+            comedor_pk=comedor.pk,
+        )
+    seguimiento = crear_seguimiento_pnud_asignado(
+        comedor, request.POST.get("territorial"), formulario
+    )
+    return _redirect_to(
+        request,
+        is_ajax,
+        "Seguimiento PNUD creado y asignado al territorial.",
+        reverse(
+            "seguimiento_pnud_detalle",
+            kwargs={"comedor_pk": comedor.pk, "pk": seguimiento.pk},
+        ),
+    )
+
+
+def _tipo_permitido(comedor, tipo_relevamiento):
+    """El tipo tiene que corresponder al programa del comedor (H1): el popup
+    solo ofrece esas opciones, pero el ``<select>`` no es una garantía."""
+    if tipo_relevamiento == TIPO_SEGUNDO_SEGUIMIENTO:
+        tipo_relevamiento = "seguimiento_posterior"
+    return tipo_relevamiento in valores_permitidos(comedor)
+
+
 def _handle_create_with_tipo(request, comedor, is_ajax):
     tipo_relevamiento = request.POST.get(
         "tipo_relevamiento",
         TIPO_RELEVAMIENTO_INICIAL,
     )
+    reconocido = tipo_relevamiento == TIPO_RELEVAMIENTO_INICIAL or (
+        tipo_relevamiento in TIPOS_SEGUIMIENTO_POPUP
+        or formulario_de_valor(tipo_relevamiento) is not None
+    )
+    if not reconocido:
+        return _error_response(
+            request,
+            is_ajax,
+            "Tipo de relevamiento no reconocido.",
+            400,
+            "relevamientos",
+            comedor_pk=comedor.pk,
+        )
+    if not _tipo_permitido(comedor, tipo_relevamiento):
+        return _error_response(
+            request,
+            is_ajax,
+            "El tipo de acompañamiento territorial no corresponde al programa "
+            "del comedor.",
+            400,
+            "relevamientos",
+            comedor_pk=comedor.pk,
+        )
     if tipo_relevamiento == TIPO_RELEVAMIENTO_INICIAL:
         return _handle_create_pendiente(request, comedor, is_ajax)
-    tipo_seguimiento = TIPOS_SEGUIMIENTO_POPUP.get(tipo_relevamiento)
-    if tipo_seguimiento is not None:
-        return _handle_create_seguimiento(request, comedor, is_ajax, tipo_seguimiento)
-    return _error_response(
-        request,
-        is_ajax,
-        "Tipo de relevamiento no reconocido.",
-        400,
-        "relevamientos",
-        comedor_pk=comedor.pk,
+    formulario_pnud = formulario_de_valor(tipo_relevamiento)
+    if formulario_pnud is not None:
+        return _handle_create_seguimiento_pnud(
+            request, comedor, is_ajax, formulario_pnud
+        )
+    return _handle_create_seguimiento(
+        request, comedor, is_ajax, TIPOS_SEGUIMIENTO_POPUP[tipo_relevamiento]
     )
 
 

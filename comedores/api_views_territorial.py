@@ -9,7 +9,7 @@ import hashlib
 import json
 
 from django.db import IntegrityError, transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import filters, generics, mixins, serializers, status, viewsets
 from rest_framework.authentication import TokenAuthentication
@@ -48,6 +48,7 @@ from relevamientos.models import (
     PrestacionActaComplementaria,
     PrimerSeguimiento,
     Relevamiento,
+    SeguimientoPnud,
 )
 from users.api_permissions import IsTerritorialComedorUser
 from users.services_pwa import (
@@ -334,10 +335,18 @@ class TerritorialComedorViewSet(
             .prefetch_related("seguimientos")
             .order_by("-fecha_visita", "-id")
         )
+        # Un seguimiento PNUD asignado desde SISOC (H1) también es "trabajo
+        # asignado a mí": el comedor aparece aunque no tenga relevamiento.
+        asignados_pnud = SeguimientoPnud.objects.filter(
+            tecnico=user, asignado_desde_sisoc=True
+        ).values("comedor_id")
         return (
             Comedor.objects.filter(
-                relevamiento__territorial_user=user,
-                relevamiento__deleted_at__isnull=True,
+                Q(
+                    relevamiento__territorial_user=user,
+                    relevamiento__deleted_at__isnull=True,
+                )
+                | Q(id__in=asignados_pnud)
             )
             .distinct()
             .select_related("provincia", "municipio", "localidad")

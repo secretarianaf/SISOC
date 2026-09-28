@@ -17,6 +17,7 @@ from django.views.generic.base import View
 
 from comedores.models import Comedor
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from relevamientos.alta_backoffice import opciones_alta, opciones_seguimiento_pac
 from relevamientos.form import RelevamientoForm
 from relevamientos.helpers import RelevamientoFormManager
 from relevamientos.models import (
@@ -118,6 +119,12 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
             "localidad__nombre",
             "municipio__nombre",
         ).get(pk=self.kwargs["comedor_pk"])
+        # Opciones del popup según el programa del comedor (H1): PAC o PNUD.
+        comedor_programa = Comedor.objects.select_related("programa").get(
+            pk=self.kwargs["comedor_pk"]
+        )
+        context["opciones_alta"] = opciones_alta(comedor_programa)
+        context["opciones_seguimiento"] = opciones_seguimiento_pac(comedor_programa)
 
         items = []
         for rel in context["relevamientos"]:

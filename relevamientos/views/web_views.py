@@ -3,6 +3,7 @@ from typing import Any
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models as dj_models
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
@@ -16,6 +17,7 @@ from django.views.generic.base import View
 
 from comedores.models import Comedor
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from relevamientos.alta_backoffice import opciones_alta, opciones_seguimiento_pac
 from relevamientos.form import RelevamientoForm
 from relevamientos.helpers import RelevamientoFormManager
 from relevamientos.models import (
@@ -81,6 +83,12 @@ class RelevamientoCreateView(LoginRequiredMixin, CreateView):
                 )
 
 
+def _opciones_del_popup(comedor_pk):
+    """Opciones del popup de alta y de "Agregar seguimiento" del comedor."""
+    comedor = Comedor.objects.select_related("programa").get(pk=comedor_pk)
+    return opciones_alta(comedor), opciones_seguimiento_pac(comedor)
+
+
 class RelevamientoListView(LoginRequiredMixin, ListView):
     model = Relevamiento
     template_name = "relevamiento_list.html"
@@ -117,6 +125,10 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
             "localidad__nombre",
             "municipio__nombre",
         ).get(pk=self.kwargs["comedor_pk"])
+        # Opciones del popup según el programa del comedor (H1): PAC o PNUD.
+        context["opciones_alta"], context["opciones_seguimiento"] = _opciones_del_popup(
+            self.kwargs["comedor_pk"]
+        )
 
         items = []
         for rel in context["relevamientos"]:
@@ -525,10 +537,14 @@ class RelevamientoRevisionCoordinadorView(LoginRequiredMixin, View):
     http_method_names = ["post"]
 
     def post(self, request, comedor_pk, pk):
-        relevamiento = get_object_or_404(Relevamiento, pk=pk, comedor_id=comedor_pk)
-        error = aplicar_revision_coordinador(
-            request, relevamiento, "el acompañamiento territorial"
-        )
+        with transaction.atomic():
+            # Bloqueo de fila: no se cruza con una corrección del territorial.
+            relevamiento = get_object_or_404(
+                Relevamiento.objects.select_for_update(), pk=pk, comedor_id=comedor_pk
+            )
+            error = aplicar_revision_coordinador(
+                request, relevamiento, "el acompañamiento territorial"
+            )
         if error:
             messages.error(request, error)
         elif relevamiento.estado_validacion == Relevamiento.ESTADO_VALIDACION_VALIDADO:

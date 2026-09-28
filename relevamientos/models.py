@@ -2009,12 +2009,13 @@ class ClasificacionComedor(models.Model):
         verbose_name_plural = "Clasificaciones de Comedor"
 
 
-class ActaComplementaria(OrigenRegistroMixin, models.Model):
+class ActaComplementaria(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Model):
     """Acta complementaria extraordinaria (§12 / §18.5).
 
     Registra, **fuera del ciclo de visitas**, un cambio en la prestación del
-    comedor. Es espontánea: no hay asignación previa desde SISOC, la crea el
-    territorial desde la app sobre un comedor de su zona.
+    comedor. La crea el territorial desde la app sobre un comedor de su zona o
+    se la asigna SISOC desde el popup del backoffice. Pasa por el mismo ciclo
+    de validación del coordinador (N16) que relevamientos y seguimientos.
     """
 
     comedor = models.ForeignKey(
@@ -2044,6 +2045,17 @@ class ActaComplementaria(OrigenRegistroMixin, models.Model):
     def __str__(self):
         comedor = self.comedor.nombre if self.comedor_id else "Sin comedor"
         return f"Acta complementaria ({comedor})"
+
+    @property
+    def sin_cargar(self):
+        """Sin enviar y sin contenido (p. ej. recién asignada desde SISOC): el
+        coordinador no tiene nada que revisar, y un ``Validado`` es definitivo."""
+        tiene_contenido = self.observaciones or self.firma or self.fecha_hora
+        return (
+            self.estado_validacion is None
+            and not tiene_contenido
+            and not self.prestaciones.all()
+        )
 
 
 class PrestacionActaComplementaria(models.Model):
@@ -2128,3 +2140,10 @@ class SeguimientoPnud(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Mo
     def __str__(self):
         comedor = self.comedor.nombre if self.comedor_id else "Sin comedor"
         return f"{self.get_formulario_display()} ({comedor})"
+
+    @property
+    def sin_cargar(self):
+        """Sin enviar y sin respuestas (asignado desde SISOC y todavía no
+        completado en la app): el coordinador no tiene nada que revisar, y un
+        ``Validado`` es definitivo."""
+        return self.estado_validacion is None and not self.datos

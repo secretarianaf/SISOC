@@ -3,6 +3,7 @@ from typing import Any
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models as dj_models
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
@@ -525,10 +526,14 @@ class RelevamientoRevisionCoordinadorView(LoginRequiredMixin, View):
     http_method_names = ["post"]
 
     def post(self, request, comedor_pk, pk):
-        relevamiento = get_object_or_404(Relevamiento, pk=pk, comedor_id=comedor_pk)
-        error = aplicar_revision_coordinador(
-            request, relevamiento, "el acompañamiento territorial"
-        )
+        with transaction.atomic():
+            # Bloqueo de fila: no se cruza con una corrección del territorial.
+            relevamiento = get_object_or_404(
+                Relevamiento.objects.select_for_update(), pk=pk, comedor_id=comedor_pk
+            )
+            error = aplicar_revision_coordinador(
+                request, relevamiento, "el acompañamiento territorial"
+            )
         if error:
             messages.error(request, error)
         elif relevamiento.estado_validacion == Relevamiento.ESTADO_VALIDACION_VALIDADO:

@@ -18,7 +18,11 @@ from relevamientos.forms_backoffice import (
     ActaComplementariaEditor,
     SeguimientoEditor,
 )
-from relevamientos.models import ActaComplementaria, SeguimientoPnud
+from relevamientos.models import (
+    ActaComplementaria,
+    PrimerSeguimiento,
+    SeguimientoPnud,
+)
 from relevamientos.pnud_formularios import respuestas_por_seccion, titulos
 from relevamientos.views.seguimiento_helpers import (
     aplicar_revision_coordinador,
@@ -75,8 +79,12 @@ class SeguimientoRevisionCoordinadorView(LoginRequiredMixin, View):
     http_method_names = ["post"]
 
     def post(self, request, **kwargs):
-        seguimiento = resolver_seguimiento(self.kwargs)
-        error = aplicar_revision_coordinador(request, seguimiento, "el seguimiento")
+        with transaction.atomic():
+            # Bloqueo de fila: no se cruza con una corrección del territorial.
+            seguimiento = resolver_seguimiento(
+                self.kwargs, PrimerSeguimiento.objects.select_for_update()
+            )
+            error = aplicar_revision_coordinador(request, seguimiento, "el seguimiento")
         if error:
             messages.error(request, error)
         elif seguimiento.estado_validacion == seguimiento.ESTADO_VALIDACION_VALIDADO:
@@ -130,16 +138,14 @@ class SeguimientoPnudRevisionCoordinadorView(LoginRequiredMixin, View):
                 pk=kwargs["pk"],
                 comedor_id=kwargs["comedor_pk"],
             )
-            if seguimiento.esta_validado:
-                error = "El seguimiento PNUD ya está validado: no admite otra revisión."
-            else:
-                error = aplicar_revision_coordinador(
-                    request, seguimiento, "el seguimiento PNUD"
-                )
-                if not error:
-                    # El helper compartido guarda con update_fields sin
-                    # fecha_actualizacion (auto_now): se registra la revisión acá.
-                    seguimiento.save(update_fields=["fecha_actualizacion"])
+            # Un Validado no admite otra revisión (lo resuelve el helper).
+            error = aplicar_revision_coordinador(
+                request, seguimiento, "el seguimiento PNUD"
+            )
+            if not error:
+                # El helper compartido guarda con update_fields sin
+                # fecha_actualizacion (auto_now): se registra la revisión acá.
+                seguimiento.save(update_fields=["fecha_actualizacion"])
         if error:
             messages.error(request, error)
         elif seguimiento.esta_validado:

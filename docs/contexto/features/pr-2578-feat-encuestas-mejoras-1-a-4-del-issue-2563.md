@@ -52,8 +52,8 @@
 - `encuestas/templates/encuestas/partials/responder_modal.html`
 - `encuestas/tests/test_encuestas_opcionales.py`
 - `encuestas/tests/test_encuestas_portabilidad.py`
-- `encuestas/urls.py`
-- ... y 4 archivo(s) adicional(es) relacionados.
+- `encuestas/tests/test_encuestas_responder.py`
+- ... y 5 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

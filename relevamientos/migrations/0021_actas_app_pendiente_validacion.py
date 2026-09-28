@@ -6,9 +6,12 @@ lee vacío como "todavía no enviada". Las actas que la app ya envió (``origen`
 app y con contenido) entran a la bandeja del coordinador; el resto (cargadas o
 asignadas desde SISOC, o vacías) queda vacío.
 
-Reversible: la vuelta deja vacías las actas de la app en "Pendiente" que el
-coordinador todavía no revisó (sin coordinador ni fecha de revisión), que son
-exactamente las que movió la ida.
+Reversible, pero la vuelta NO es exacta: deja vacías todas las actas de la
+app en "Pendiente" que el coordinador todavía no revisó (sin coordinador ni
+fecha de revisión). Eso incluye las que movió la ida y también las que la app
+envió (POST o PATCH) después de la 0020 y siguen sin revisar: no hay columna
+que distinga unas de otras. Solo tiene sentido volver atrás junto con la 0020,
+que borra el campo de todos modos.
 """
 
 from django.db import migrations

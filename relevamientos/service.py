@@ -587,9 +587,16 @@ def _territorial_user_id_from_uid(territorial_uid):
 
 
 def _upsert_referente_por_documento_data(referente_data):
-    referente = Referente.objects.filter(
-        documento=referente_data.get("documento")
-    ).last()
+    documento = referente_data.get("documento")
+    if documento == "":
+        # "" no pasa la validación del modelo (7 u 8 dígitos); vale como "sin DNI".
+        documento = None
+        referente_data = {**referente_data, "documento": None}
+    # Sin documento no hay clave para reusar: ``filter(documento=None)`` es
+    # ``IS NULL`` y pisaba un Referente cualquiera de los que no tienen DNI.
+    referente = None
+    if documento is not None:
+        referente = Referente.objects.filter(documento=documento).last()
 
     if referente:
         for key, value in referente_data.items():
@@ -602,7 +609,7 @@ def _upsert_referente_por_documento_data(referente_data):
         apellido=referente_data.get("apellido", None),
         mail=referente_data.get("mail", None),
         celular=referente_data.get("celular", None),
-        documento=referente_data.get("documento", None),
+        documento=documento,
         funcion=referente_data.get("funcion", None),
     )
 
@@ -1295,6 +1302,12 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 excepcion_data["adjuntos"] = [
                     url.strip() for url in excepcion_data["adjuntos"].split(",")
                 ]
+            # La app manda "" cuando no hay georreferencia; FloatField no lo
+            # acepta ("expected a number but got ''") y el PATCH daba 400.
+            for campo in ("latitud", "longitud"):
+                valor = excepcion_data.get(campo)
+                if isinstance(valor, str) and not valor.strip():
+                    excepcion_data[campo] = None
 
             return excepcion_data
         except Exception as e:

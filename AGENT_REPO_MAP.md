@@ -9,24 +9,17 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
   users/0051 une las hojas de configuracion mobile y DataCalle sin operaciones.
   Evidencia/conflictos: docs/registro/cambios/2026-09-08-sincronizacion-datacalle-main.md.
 
-- Workflow HML de esta revisión: `.github/workflows/deploy.yml` extrae el helper
-  de backend del SHA aprobado y usa `--without-mobile`; no prepara ni activa
-  satélites. Cada PWA despliega y promueve desde su propio repositorio. El
-  coordinador descrito debajo queda como referencia histórica de esta rama.
-- PWA privadas: `scripts/operacion/pwas.json` declara Espacios Comunitarios,
-  DataCalle y Gestionar. `deploy_pwas.py` prepara snapshots/imagenes antes del
-  downtime y activa despues del health del backend. Las apps nuevas estan
-  habilitadas en el registro: requieren Compose en main, .env privado en la raiz
-  y la API de HML disponible antes de promover. `PWA_API_BASE_URL` fija la URL
-  HTTPS del entorno para Expo; Espacios conserva /api y /mobile/ y agrega
-  /pwa/espacioscomunitarios/ con un segundo build en la misma imagen. Instalar
-  primero esa imagen y luego el include; no redirigir /mobile/. Contrato y orden:
-  `docs/operacion/deploy_pwas.md`. `render_pwa_nginx.py` genera un include de servidor
-  y una vista previa que no debe instalarse. No mover `/sisoc/SISOC-Mobile` ni
-  asumir acceso publico de Git. Estado privado de releases: `SISOC/.deploy/pwa/`.
-  El helper de backend corre con umask 022 en un subshell; el estado PWA conserva
-  077. Verificar tambien estabilidad de workers tras desplegar: el healthcheck
-  HTTP no detecta errores de lectura de codigo en otros UID de contenedores.
+- PWA privadas: Espacios Comunitarios, DataCalle y Gestionar despliegan desde sus
+  propios repositorios y ramas `main`, `homologacion` y `development`. SISOC ya
+  no las activa como parte de su deploy. `scripts/operacion/pwas.json` y
+  `deploy_pwas.py` quedan como herramientas operativas compatibles, no como el
+  disparador automatico. `render_pwa_nginx.py` genera el include compartido;
+  `scripts/infra/install_qa_pwa_nginx.sh` lo instala transaccionalmente en el
+  vhost HTTP de QA con backup y rollback. Contrato, aliases y riesgos:
+  `docs/operacion/deploy_pwas.md`. No mover `/sisoc/SISOC-Mobile` ni asumir
+  acceso publico de Git. Verificar tambien estabilidad de workers tras desplegar:
+  el healthcheck HTTP no detecta errores de lectura de codigo en otros UID de
+  contenedores.
 
 - `Hecho observado`: confirmado leyendo codigo, config, workflows o docs del repo.
 - `Inferencia`: deduccion razonable por nombres, estructura o convenciones, pero no validada en profundidad.
@@ -85,7 +78,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Docker Compose para local | Hecho observado | `docker-compose.yml` |
 | Compose separado para deploy | Hecho observado | `docker-compose.deploy.yml`, `docker-compose.produccion.yml` |
 | GitHub Actions para lint/tests/arquitectura/release sanity | Hecho observado | `.github/workflows/` |
-| Promoción event-driven y sincronización descendente con gates | Hecho observado | `.github/workflows/release-orchestrator.yml`, `.github/workflows/sync-main-downstream.yml`, `docs/operacion/deploy_automatizado.md` |
+| Promoción event-driven y sincronización descendente con gates | Hecho observado | `.github/workflows/release-orchestrator.yml`, `.github/workflows/deploy.yml`, `docs/operacion/deploy_automatizado.md` |
 | Helpers de Codex/worktrees | Hecho observado | `scripts/ai/`, `.codex/environments/environment.toml` |
 
 ## Que tipo de proyecto es
@@ -125,6 +118,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - `scripts/ai/codex_run.ps1 up`: bootstrap + levantar entorno.
 - `scripts/ai/codex_run.ps1 validate`: corre `black`, `djlint`, smoke tests y `makemigrations --check`.
 - `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado, hace fast-forward antes de validar los Compose y bloquea una revisión obsoleta antes del downtime. Así un checkout anterior puede incorporar un Compose nuevo de forma segura.
+- `scripts/operacion/deploy_verified.sh`: wrapper de CI para QA/HML/PRD; valida migraciones y healthcheck y restaura automáticamente el checkout/stack anterior ante un fallo.
 
 ## Estructura general del proyecto
 
@@ -207,7 +201,6 @@ SISOC/
 - `user_import_worker`
 - `ocr_worker`
 - `encuestas_worker`: abre/cierra rondas de encuestas por fecha (ver `encuestas/services.py:run_encuestas_scheduler`, sin Celery).
-- Los loops persistentes llaman `close_old_connections()` por ciclo. Ciudadanos y usuarios reclaman lotes con `lease_token`; los lotes inactivos vuelven a pendiente y un worker anterior no debe confirmar filas. Con otros pendientes, ambos importadores ceden el worker por tramos configurables de treinta minutos y el reclamo prioriza al lote que lleva más tiempo esperando.
 
 ## Configuracion y variables de entorno relevantes
 
@@ -231,7 +224,7 @@ SISOC/
 | Testing | `USE_SQLITE_FOR_TESTS`, `PYTEST_RUNNING` |
 | Integracion GESTIONAR | `GESTIONAR_INTEGRATION_ENABLED` (corte total de envíos, pulls y comandos), `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
 | Ticketera | `TICKETERA_ENABLED` |
-| RENAPER/importaciones | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, `RENAPER_MAX_CONSULTAS_POR_SEGUNDO` (30 por defecto, global mediante `core/integrations/renaper_rate_limit.py` y `core.0009`); ciudadanos usa `CIUDADANOS_IMPORT_RENAPER_PARALLELISM` (2 hilos por réplica por defecto) y reutiliza token por hilo/lote; los tramos de cola usan `CIUDADANOS_IMPORT_JOB_SLICE_SECONDS` y `USER_IMPORT_JOB_SLICE_SECONDS` |
+| RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, reintentos/espera incremental; el cliente permite reutilización en memoria por worker, sin cache compartida ni TTL |
 | Google Maps | `GOOGLE_MAPS_API_KEY` |
 | Sentry | `SENTRY_ENABLED`, `SENTRY_DSN`, `SENTRY_RELEASE` |
 | Email/password reset | `EMAIL_*`, `DEFAULT_FROM_EMAIL`, `PASSWORD_RESET_TIMEOUT`, `INITIAL_PASSWORD_MAX_AGE_HOURS` |
@@ -410,7 +403,6 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `/usuarios/crear/`; admite uno o más scopes provinciales completos. La URL
   histórica `/simepi/egp/generar-usuario/` sólo redirige por compatibilidad.
 - `users/services_user_import_jobs.py`: procesamiento y reanudacion del lote.
-- Los checkpoints de usuario y progreso se confirman en una transacción por fila. `users.0053` agrega el identificador de propiedad del lote.
 - `users/views_user_import.py`, `users/urls.py` y
   `users/templates/user/user_import_job_detail.html`: detalle y descargas.
 - Las credenciales se agrupan al finalizar el lote; los lotes PWA deben usar
@@ -658,7 +650,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   management commands relacionados, `.env.example`. El flag
   `GESTIONAR_INTEGRATION_ENABLED` corta todo el tráfico AppSheet/GESTIONAR; no
   usarlo como interruptor parcial.
-- RENAPER: `core/integrations/renaper.py`, `core/integrations/renaper_rate_limit.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`. La migración `core.0009` debe existir antes de consultas.
+- RENAPER: `core/integrations/renaper.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`
 - Validación RENAPER de nómina CDI (#2508, Fase 1): payload en
   `ciudadanos/services_renaper_validacion.py`, indicador compartido del PDF en
   `centrodeinfancia/services_renaper_estado.py` y comando
@@ -715,19 +707,21 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `.github/workflows/architecture.yml`
 - `.github/workflows/release-sanity.yml`
 - `.github/workflows/release-orchestrator.yml`
-- `.github/workflows/sync-main-downstream.yml`
 - `.github/scripts/sync_main_downstream.js`: crea y actualiza ramas técnicas
-  `automation/sync-main-to-<destino>` para que los PRs descendentes cumplan
-  checks estrictos sin mezclar QA/HML en `main`.
-- El workflow descendente debe checkoutear `development`, donde vive el helper
-  versionado; un checkout de `main` falla durante el bootstrap si todavía no
-  contiene ese archivo. La regresión se cubre en
-  `.github/scripts/sync_main_downstream.test.js` y `deploy_guard` ejecuta las
-  pruebas Node de ambos orquestadores.
+  `automation/promote-<origen>-to-<destino>` después de un deploy verificado.
+  Rechaza una rama origen que ya no coincida con el SHA desplegado y habilita
+  auto-merge para respetar los checks del destino.
+- `.github/scripts/sync_main_downstream.test.js` cubre la promoción exacta y
+  el rechazo de runs obsoletos; `deploy_guard` ejecuta las pruebas Node de
+  ambos orquestadores.
 - `.github/workflows/deploy.yml`
-- Producción sondea hasta 30 veces `migrate --check` y su healthcheck luego
-  de `deploy_refresh.sh`; si no convergen, publica `docker compose ps` y los
-  últimos logs de Django. La regresión vive en `tests/test_deploy_workflow.py`.
+- QA, HML y producción ejecutan `deploy_verified.sh`, que sondea
+  `migrate --check` y el healthcheck específico. Si no convergen, publica
+  diagnóstico y reconstruye/verifica la revisión anterior; las migraciones de
+  base no se revierten automáticamente.
+- Después de producción verificada se promueve `main -> homologacion`; después
+  de HML verificada, `homologacion -> development`. Cada tramo verifica el SHA
+  desplegado y usa la GitHub App para respetar rulesets y auto-merge.
 - Ante el bloqueo histórico de `centrodeinfancia.0042`, `deploy.yml` sólo
   permite inspeccionar sin PII las categorías de los ids legacy 7, 237 y 242.
   No expone una acción que nulifique filas; antes archiva el SHA aprobado en un
@@ -972,7 +966,8 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `.github/workflows/architecture.yml`
 - `.github/workflows/release-sanity.yml`
 - `.github/workflows/release-orchestrator.yml`
-- `.github/workflows/sync-main-downstream.yml`
+- `.github/workflows/deploy.yml`: deploy por ambiente y promoción secuencial
+  posterior a producción/HML verificadas.
 - `.github/workflows/pr-docs.yml`: genera los artefactos spec-as-source; usa
   `git status --porcelain --untracked-files=all` para incluir archivos nuevos.
   Solo pushea en ramas internas no protegidas; `sync_pr_artifacts` verifica

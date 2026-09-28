@@ -26,19 +26,21 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: organizaciones/templates/organizacion_list.html, static/custom/css/comunicadoForm.css, static/custom/js/comunicadosDestinatarios.js, static/custom/js/comunicadosForm.js, templates/comunicados/comunicado_form.html, templates/comunicados/partials/destinatarios_panel.html
+- Archivos visuales relevantes: static/custom/css/comunicadoForm.css, static/custom/js/comunicadosDestinatarios.js, static/custom/js/comunicadosForm.js, templates/comunicados/comunicado_form.html, templates/comunicados/partials/destinatarios_panel.html
 
 ## Memoria operativa para agentes
 
 - Empezar por `docs/registro/prs/PR-2557.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `comunicados/forms.py`
+- `comunicados/permissions.py`
 - `comunicados/services_destinatarios.py`
 - `comunicados/urls.py`
 - `comunicados/views.py`
+- `docs/contexto/features/pr-2557-cambios.md`
 - `docs/registro/cambios/2026-09-22-comunicados-seleccion-personalizada-destinatarios.md`
+- `docs/registro/prs/PR-2557.md`
 - `organizaciones/filter_config.py`
-- `organizaciones/templates/organizacion_list.html`
 - `organizaciones/views.py`
 - `organizaciones/views_export.py`
 - `static/custom/css/comunicadoForm.css`

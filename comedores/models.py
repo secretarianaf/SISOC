@@ -1394,6 +1394,18 @@ class ImagenComedor(models.Model):
             "reintentos offline de subida."
         ),
     )
+    subido_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=(
+            "Usuario que subió la foto desde la app. Solo él puede borrarla por la "
+            "API territorial. Null en las fotos de SISOC web y en las anteriores a "
+            "este campo."
+        ),
+    )
 
     class Meta:
         # Unique plano (sin condición) para que MySQL lo cree de verdad: los NULL

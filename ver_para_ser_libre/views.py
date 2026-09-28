@@ -696,7 +696,7 @@ class ItinerarioDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         jornadas = (
-            self.object.jornadas.select_related("localidad", "municipio")
+            self.object.jornadas.select_related("localidad", "municipio", "sede_vpsl")
             .prefetch_related("vehiculos")
             .annotate(registros_total=Count("registros", distinct=True))
         )
@@ -765,6 +765,8 @@ class ItinerarioExportView(LoginRequiredMixin, CSVExportMixin, View):
         return get_object_or_404(
             _filtrar_itinerarios_por_usuario(
                 ItinerarioVPSL.objects.select_related("provincia").prefetch_related(
+                    "jornadas__localidad",
+                    "jornadas__sede_vpsl",
                     "jornadas__vehiculos",
                     "jornadas__registros",
                     "jornadas__registros__caso_laboratorio",
@@ -795,7 +797,7 @@ class ItinerarioExportView(LoginRequiredMixin, CSVExportMixin, View):
                     "referente_email": itinerario.referente_email,
                     "jornada_fecha": jornada.fecha if jornada else "",
                     "jornada_sede": jornada.sede if jornada else "",
-                    "jornada_localidad": jornada.localidad if jornada else "",
+                    "jornada_localidad": jornada.localidad_display if jornada else "",
                     "jornada_direccion": jornada.direccion if jornada else "",
                     "ubicacion_sede": (
                         jornada.ubicacion_coordenadas if jornada else ""
@@ -1308,7 +1310,7 @@ class JornadaDetailView(LoginRequiredMixin, DetailView):
         context["sede_resumen"] = {
             "escuela": self.object.sede,
             "provincia": self.object.itinerario.provincia,
-            "localidad": self.object.localidad or "",
+            "localidad": self.object.localidad_display,
             "calle_altura": self.object.direccion,
         }
         context["puede_exportar"] = _puede_exportar(self.request.user)
@@ -1364,6 +1366,7 @@ class JornadaExportView(LoginRequiredMixin, CSVExportMixin, View):
                 JornadaVPSL.objects.select_related(
                     "itinerario",
                     "itinerario__provincia",
+                    "localidad",
                     "sede_vpsl",
                 ).prefetch_related(
                     "vehiculos", "registros", "registros__caso_laboratorio"
@@ -1386,7 +1389,7 @@ class JornadaExportView(LoginRequiredMixin, CSVExportMixin, View):
                     "fecha": jornada.fecha,
                     "estado": jornada.get_estado_display(),
                     "sede": jornada.sede,
-                    "localidad": jornada.localidad or "",
+                    "localidad": jornada.localidad_display,
                     "direccion": jornada.direccion,
                     "ubicacion_sede": jornada.ubicacion_coordenadas,
                     "vehiculo": jornada.get_vehiculo_display(),

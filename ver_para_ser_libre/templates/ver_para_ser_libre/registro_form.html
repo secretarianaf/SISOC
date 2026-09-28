@@ -231,7 +231,7 @@
           }
           [graduacionIzquierda, graduacionDerecha].forEach((field) => {
             if (!field) return;
-            field.required = requiereGraduacion;
+            field.required = requiereGraduacion && !field.dataset.graduacionOpcional;
             if (noRequiere) field.value = "";
           });
         }

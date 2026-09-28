@@ -56,6 +56,15 @@ class ResultadoAtencion(models.TextChoices):
     DERIVADO = "derivado", "Derivado"
 
 
+RESULTADOS_CON_GRADUACION = frozenset(
+    {
+        ResultadoAtencion.ENTREGADO_DIA,
+        ResultadoAtencion.DERIVADO,
+        ResultadoAtencion.ENVIADO_LABORATORIO,
+    }
+)
+
+
 class EstadoRegistroNominal(models.TextChoices):
     CARGADO = "cargado", "Cargado"
     VALIDADO = "validado", "Validado"
@@ -391,6 +400,16 @@ class JornadaVPSL(SoftDeleteModelMixin, models.Model):
         return ", ".join(vehiculo.nombre for vehiculo in self.vehiculos.all())
 
     @property
+    def localidad_display(self):
+        # Las jornadas previas a la carga de localidad por jornada solo la
+        # tienen como texto en la sede del catalogo.
+        if self.localidad_id:
+            return str(self.localidad)
+        if self.sede_vpsl_id:
+            return self.sede_vpsl.localidad
+        return ""
+
+    @property
     def ubicacion_coordenadas(self):
         if self.latitud is None or self.longitud is None:
             return ""
@@ -585,6 +604,18 @@ class RegistroNominalVPSL(SoftDeleteModelMixin, models.Model):
     def __str__(self):
         return f"{self.apellido}, {self.nombre} - acta {self.numero_acta}"
 
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        instance = super().from_db(db, field_names, values)
+        # Registros cargados antes de exigir graduacion: se pueden editar sin
+        # inventar un dato que no se relevo en su momento.
+        instance.previo_a_graduacion = (
+            instance.__dict__.get("resultado") in RESULTADOS_CON_GRADUACION
+            and instance.__dict__.get("graduacion_izquierda") is None
+            and instance.__dict__.get("graduacion_derecha") is None
+        )
+        return instance
+
     def clean(self):
         super().clean()
         if not self.dni and not self.identificador_alternativo:
@@ -602,15 +633,13 @@ class RegistroNominalVPSL(SoftDeleteModelMixin, models.Model):
             raise ValidationError(
                 {"cantidad_lentes": "La cantidad maxima de lentes es 2."}
             )
-        resultados_con_graduacion = {
-            ResultadoAtencion.ENTREGADO_DIA,
-            ResultadoAtencion.DERIVADO,
-            ResultadoAtencion.ENVIADO_LABORATORIO,
-        }
+        exige_graduacion = self.resultado in RESULTADOS_CON_GRADUACION and not getattr(
+            self, "previo_a_graduacion", False
+        )
         errores_graduacion = {}
         for field_name in ("graduacion_izquierda", "graduacion_derecha"):
             value = getattr(self, field_name)
-            if self.resultado in resultados_con_graduacion and value is None:
+            if exige_graduacion and value is None:
                 errores_graduacion[field_name] = (
                     "Debe informar la graduacion para este resultado."
                 )

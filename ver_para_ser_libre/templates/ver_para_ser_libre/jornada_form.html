@@ -312,7 +312,8 @@
               if (!response.ok || !data.success) {
                 throw new Error(data.message || "No se pudo interpretar el enlace.");
               }
-              if (!direccion.value.trim() && data.direccion) {
+              const direccionSinEditar = direccion.value.trim() === direccion.defaultValue.trim();
+              if (data.direccion && (!direccion.value.trim() || direccionSinEditar)) {
                 direccion.value = data.direccion;
               }
               ubicacionUrl.value = data.ubicacion_url;

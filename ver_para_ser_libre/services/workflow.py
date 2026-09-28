@@ -351,8 +351,7 @@ def actualizar_consistencia_cierre(jornada: JornadaVPSL, *, usuario=None):
 
 
 @transaction.atomic
-# pylint: disable=too-many-arguments
-def generar_cierre_diario(
+def generar_cierre_diario(  # pylint: disable=too-many-arguments
     jornada: JornadaVPSL,
     *,
     responsable,

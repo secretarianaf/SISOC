@@ -148,7 +148,7 @@
                                         <tr data-jornada-row>
                                             <td>{{ jornada.fecha|date:"d/m/Y" }}</td>
                                             <td>{{ jornada.sede }}</td>
-                                            <td>{{ jornada.localidad|default:"-" }}</td>
+                                            <td>{{ jornada.localidad_display|default:"-" }}</td>
                                             <td>{{ jornada.direccion|default:"-" }}</td>
                                             <td>{{ jornada.get_vehiculo_display|default:"-" }}</td>
                                             <td class="text-nowrap">

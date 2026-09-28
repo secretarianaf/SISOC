@@ -1,5 +1,6 @@
 """Resolucion segura de enlaces de ubicacion para jornadas VPSL."""
 
+import logging
 import re
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
@@ -9,6 +10,7 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from django.core.exceptions import ValidationError
 
+logger = logging.getLogger("django")
 
 SHORT_MAP_HOST = "maps.app.goo.gl"
 CANONICAL_MAP_HOST = "www.google.com"
@@ -25,6 +27,10 @@ COORDINATES_PATTERN = re.compile(
     r"(?<!\d)(-?\d{1,2}(?:\.\d+)?)[,+%20 ]+(-?\d{1,3}(?:\.\d+)?)(?!\d)"
 )
 AT_COORDINATES_PATTERN = re.compile(r"@(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)")
+# En enlaces de lugar, "@lat,lng" es el centro del mapa; "!3d<lat>!4d<lng>" es el pin.
+PIN_COORDINATES_PATTERN = re.compile(
+    r"!3d(-?\d{1,2}(?:\.\d+)?)!4d(-?\d{1,3}(?:\.\d+)?)"
+)
 
 
 @dataclass(frozen=True)
@@ -169,6 +175,7 @@ def _resolve_short_url(url, timeout=5):
         ) as response:
             return _validate_resolved_google_maps_url(response.geturl())
     except (HTTPError, URLError, TimeoutError, OSError) as exc:
+        logger.warning("VPSL: no se pudo resolver enlace corto de Google Maps: %r", exc)
         raise ValidationError(
             "No se pudo resolver el enlace corto de Google Maps. Intente nuevamente."
         ) from exc
@@ -189,7 +196,11 @@ def _valid_coordinates(latitude, longitude):
 
 def _extract_coordinates(url):
     decoded = unquote_plus(url)
-    for pattern in (AT_COORDINATES_PATTERN, COORDINATES_PATTERN):
+    for pattern in (
+        PIN_COORDINATES_PATTERN,
+        AT_COORDINATES_PATTERN,
+        COORDINATES_PATTERN,
+    ):
         match = pattern.search(decoded)
         if match:
             latitude, longitude = _valid_coordinates(*match.groups())

@@ -244,8 +244,11 @@ class JornadaVPSLForm(BootstrapModelForm):
         self.fields["sede"].label = "Nombre de la sede"
         self.fields["sede"].required = True
         self.fields["sede"].widget.attrs["placeholder"] = "Ej.: Escuela N.° 123"
+        # Las jornadas previas a este flujo no tienen localidad ni ubicacion;
+        # se exigen al crear y no se pueden quitar una vez informadas.
+        es_alta = not self.instance.pk
         self.fields["localidad"].label = "Localidad"
-        self.fields["localidad"].required = True
+        self.fields["localidad"].required = es_alta or bool(self.instance.localidad_id)
         self.fields["localidad"].empty_label = "Seleccione una localidad"
         self.fields["localidad"].widget.attrs.update(
             {
@@ -254,7 +257,9 @@ class JornadaVPSLForm(BootstrapModelForm):
             }
         )
         self.fields["ubicacion_url"].label = "Enlace de Google Maps o coordenadas"
-        self.fields["ubicacion_url"].required = True
+        self.fields["ubicacion_url"].required = es_alta or bool(
+            self.instance.ubicacion_url
+        )
         self.fields["ubicacion_url"].widget.attrs[
             "placeholder"
         ] = "https://maps.app.goo.gl/..."
@@ -302,7 +307,14 @@ class JornadaVPSLForm(BootstrapModelForm):
         cleaned_data["ubicacion_url"] = location.original_url
         self.instance.latitud = location.latitude
         self.instance.longitud = location.longitude
-        if not cleaned_data.get("direccion") and location.address:
+        # Si el usuario no edito la direccion, se toma la del nuevo enlace para
+        # no exportar coordenadas nuevas con la direccion anterior.
+        direccion_sin_editar = cleaned_data.get("direccion") in (
+            "",
+            None,
+            self.initial.get("direccion"),
+        )
+        if location.address and direccion_sin_editar:
             cleaned_data["direccion"] = location.address
         return cleaned_data
 
@@ -444,6 +456,12 @@ class RegistroNominalVPSLForm(BootstrapModelForm):
         self.fields["primera_vez_anteojos"].label = "Primera vez que utiliza anteojos"
         self.fields["graduacion_izquierda"].label = "Izquierda"
         self.fields["graduacion_derecha"].label = "Derecha"
+        if getattr(self.instance, "previo_a_graduacion", False):
+            for field_name in ("graduacion_izquierda", "graduacion_derecha"):
+                self.fields[field_name].widget.attrs["data-graduacion-opcional"] = "1"
+                self.fields[field_name].help_text = (
+                    "Registro previo a la carga de graduacion: es opcional."
+                )
         self.fields["cantidad_lentes"].widget.attrs.update({"min": "0", "max": "2"})
         for field_name in ("nombre", "apellido", "edad", "genero"):
             attrs = self.fields[field_name].widget.attrs

@@ -13,6 +13,8 @@ import json
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -290,3 +292,72 @@ def test_la_app_ve_y_completa_el_pnud_asignado(client):
     seguimiento.refresh_from_db()
     assert seguimiento.estado_validacion == SeguimientoPnud.ESTADO_VALIDACION_PENDIENTE
     assert seguimiento.datos["funcionamiento"].startswith("Abierto")
+
+
+# ------------------------------------------------ comedores de mi zona
+
+
+def _zona(api):
+    response = api.get("/api/territorial/comedores-zona/")
+    assert response.status_code == 200, response.content
+    data = response.json()
+    return data["results"] if isinstance(data, dict) else data
+
+
+def test_comedores_zona_expone_programa_y_linea_pnud():
+    secos = _comedor(SECOS)
+    provincia = secos.provincia
+    tradicional = Comedor.objects.create(
+        nombre="Trad",
+        provincia=provincia,
+        programa=Programas.objects.create(nombre=TRADICIONAL),
+    )
+    pac = Comedor.objects.create(
+        nombre="PAC",
+        provincia=provincia,
+        programa=Programas.objects.create(nombre="Alimentar comunidad", id=3),
+    )
+    sin_nombre = Comedor.objects.create(
+        nombre="Sin nombre",
+        provincia=provincia,
+        programa=Programas.objects.create(nombre="", id=4),
+    )
+    sin_programa = Comedor.objects.create(nombre="Sin programa", provincia=provincia)
+    territorial = _territorial("terr_zona", provincia)
+    token, _ = Token.objects.get_or_create(user=territorial)
+    api = APIClient()
+    api.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    por_id = {item["id"]: item for item in _zona(api)}
+
+    assert por_id[secos.id]["linea_pnud"] == "secos"
+    assert por_id[secos.id]["programa"] == SECOS
+    assert por_id[secos.id]["programa_id"] == secos.programa_id
+    assert por_id[tradicional.id]["linea_pnud"] == "tradicional"
+    # Mismo criterio que el detalle: el nombre manda sobre el id 3/4.
+    assert por_id[pac.id]["linea_pnud"] is None
+    assert por_id[sin_nombre.id]["linea_pnud"] == "tradicional"
+    assert por_id[sin_programa.id]["programa"] is None
+    assert por_id[sin_programa.id]["programa_id"] is None
+    assert por_id[sin_programa.id]["linea_pnud"] is None
+
+
+def test_comedores_zona_no_hace_una_consulta_por_programa():
+    comedor = _comedor(SECOS)
+    territorial = _territorial("terr_zona_nq", comedor.provincia)
+    token, _ = Token.objects.get_or_create(user=territorial)
+    api = APIClient()
+    api.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    with CaptureQueriesContext(connection) as uno:
+        _zona(api)
+    for indice in range(3):
+        Comedor.objects.create(
+            nombre=f"Otro {indice}",
+            provincia=comedor.provincia,
+            programa=Programas.objects.create(nombre=f"{TRADICIONAL} {indice}"),
+        )
+    with CaptureQueriesContext(connection) as cuatro:
+        _zona(api)
+
+    assert len(cuatro) == len(uno)

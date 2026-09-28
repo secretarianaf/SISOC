@@ -83,6 +83,12 @@ class RelevamientoCreateView(LoginRequiredMixin, CreateView):
                 )
 
 
+def _opciones_del_popup(comedor_pk):
+    """Opciones del popup de alta y de "Agregar seguimiento" del comedor."""
+    comedor = Comedor.objects.select_related("programa").get(pk=comedor_pk)
+    return opciones_alta(comedor), opciones_seguimiento_pac(comedor)
+
+
 class RelevamientoListView(LoginRequiredMixin, ListView):
     model = Relevamiento
     template_name = "relevamiento_list.html"
@@ -120,11 +126,9 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
             "municipio__nombre",
         ).get(pk=self.kwargs["comedor_pk"])
         # Opciones del popup según el programa del comedor (H1): PAC o PNUD.
-        comedor_programa = Comedor.objects.select_related("programa").get(
-            pk=self.kwargs["comedor_pk"]
+        context["opciones_alta"], context["opciones_seguimiento"] = _opciones_del_popup(
+            self.kwargs["comedor_pk"]
         )
-        context["opciones_alta"] = opciones_alta(comedor_programa)
-        context["opciones_seguimiento"] = opciones_seguimiento_pac(comedor_programa)
 
         items = []
         for rel in context["relevamientos"]:

@@ -32,6 +32,7 @@ from comedores.api_views_territorial_adjuntos import AdjuntosTerritorialMixin
 from comedores.api_views_territorial_pnud import (
     SeguimientosPnudTerritorialMixin,
     TerritorialComedorPnudFieldsMixin,
+    linea_pnud,
     prestaciones_aprobadas_por_dia,
     seguimientos_pnud_payload,
 )
@@ -752,6 +753,11 @@ class TerritorialComedorZonaSerializer(NoSaveSerializer):
     latitud = serializers.FloatField(allow_null=True)
     longitud = serializers.FloatField(allow_null=True)
     estado = serializers.CharField(allow_null=True)
+    # Programa y línea PNUD (N22), mismos valores que el listado asignado: la
+    # app elige el flujo (PAC / PNUD) de un comedor de su zona sin asignación.
+    programa = serializers.SerializerMethodField()
+    programa_id = serializers.IntegerField(allow_null=True, read_only=True)
+    linea_pnud = serializers.SerializerMethodField()
 
     def get_provincia(self, obj):
         return obj.provincia.nombre if obj.provincia_id else None
@@ -761,6 +767,12 @@ class TerritorialComedorZonaSerializer(NoSaveSerializer):
 
     def get_localidad(self, obj):
         return obj.localidad.nombre if obj.localidad_id else None
+
+    def get_programa(self, obj):
+        return obj.programa.nombre if obj.programa_id else None
+
+    def get_linea_pnud(self, obj):
+        return linea_pnud(obj)
 
 
 @extend_schema(tags=["Territorial"])
@@ -788,6 +800,6 @@ class TerritorialComedorZonaListView(generics.ListAPIView):
             return Comedor.objects.none()
         return (
             Comedor.objects.filter(provincia_id__in=provincia_ids)
-            .select_related("provincia", "municipio", "localidad")
+            .select_related("provincia", "municipio", "localidad", "programa")
             .order_by("nombre", "id")
         )

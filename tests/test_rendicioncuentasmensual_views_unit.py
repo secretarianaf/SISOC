@@ -129,6 +129,7 @@ def test_global_list_excluye_estado_compuesto_con_operador_ne():
     assert excluida not in view.get_queryset()
 
 
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("field_name", "model_choices"),
     [
@@ -151,6 +152,7 @@ def test_global_list_filtros_choice_exponen_todos_los_valores_del_modelo(
     ]
 
 
+@pytest.mark.django_db
 def test_global_list_filtros_preseleccionan_proyecto_como_campo_por_defecto():
     """El listado abre con Proyecto elegido, sin depender del HTML renderizado."""
     cache.delete(module_filtros.FILTERS_UI_CONFIG_CACHE_KEY)
@@ -162,6 +164,7 @@ def test_global_list_filtros_preseleccionan_proyecto_como_campo_por_defecto():
     assert config["fields"][0]["label"] == "Proyecto"
 
 
+@pytest.mark.django_db
 def test_global_list_conserva_todos_los_filtros_disponibles():
     """El default no puede achicar el set de filtros ni sus operadores."""
     cache.delete(module_filtros.FILTERS_UI_CONFIG_CACHE_KEY)
@@ -180,6 +183,7 @@ def test_global_list_conserva_todos_los_filtros_disponibles():
     }
 
 
+@pytest.mark.django_db
 def test_global_list_view_contexto_expone_campo_por_defecto(mocker):
     view = module.RendicionCuentaMensualGlobalListView()
     view.request = _Req(user=_user(), GET={})
@@ -202,6 +206,7 @@ def test_global_list_view_contexto_expone_campo_por_defecto(mocker):
     assert contexto["filters_config"]["defaultField"] == "codigo_proyecto"
 
 
+@pytest.mark.django_db
 def test_global_list_view_contexto_expone_titulo(mocker):
     view = module.RendicionCuentaMensualGlobalListView()
     view.request = _Req(user=_user(), GET={})

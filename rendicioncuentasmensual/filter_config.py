@@ -6,6 +6,10 @@ from typing import Any, Dict
 from django.core.cache import cache
 
 from rendicioncuentasmensual.models import RendicionCuentaMensual
+from users.services_territoriales import (
+    etiqueta_territorial,
+    usuarios_territoriales_pnud,
+)
 
 FIELD_MAP: Dict[str, str] = {
     "codigo_proyecto": "comedor__codigo_de_proyecto",
@@ -42,6 +46,11 @@ FIELD_TYPES: Dict[str, str] = {
     "fecha_creacion": "date",
     "ultima_modificacion": "date",
 }
+
+# Campos con lógica propia en la vista (no pasan por AdvancedFilterEngine) que
+# igual deben poder guardarse como filtros favoritos.
+TERRITORIAL_ASIGNADO_FIELD = "territorial_asignado"
+CUSTOM_FIELD_TYPES: Dict[str, str] = {TERRITORIAL_ASIGNADO_FIELD: "choice"}
 
 TEXT_OPS = ["contains", "ncontains", "eq", "ne", "empty"]
 NUM_OPS = ["eq", "ne", "gt", "lt", "empty"]
@@ -87,6 +96,13 @@ FILTER_FIELDS = [
     {"name": "codigo_proyecto", "label": "Proyecto", "type": "text"},
     {"name": "comedor", "label": "Espacio", "type": "text"},
     {"name": "organizacion", "label": "Organizacion", "type": "text"},
+    {
+        "name": TERRITORIAL_ASIGNADO_FIELD,
+        "label": "Territorial asignado",
+        "type": "choice",
+        # Se completa en cada request: no debe quedar congelado en la caché.
+        "choices": [],
+    },
     {"name": "convenio", "label": "Convenio", "type": "text"},
     {"name": "numero_rendicion", "label": "Numero de rendicion", "type": "number"},
     {
@@ -135,14 +151,28 @@ FILTER_FIELDS = [
 ]
 
 DEFAULT_FIELD = "codigo_proyecto"
-FILTERS_UI_CONFIG_CACHE_KEY = "rendiciones:filters_ui_config:v4"
+FILTERS_UI_CONFIG_CACHE_KEY = "rendiciones:filters_ui_config:v5"
 FILTERS_UI_CONFIG_CACHE_TTL = 60 * 15
+
+
+def _territoriales_choices():
+    return [
+        {"value": str(user.pk), "label": etiqueta_territorial(user)}
+        for user in usuarios_territoriales_pnud()
+    ]
+
+
+def _con_territoriales(config: Dict[str, Any]) -> Dict[str, Any]:
+    for field in config["fields"]:
+        if field["name"] == TERRITORIAL_ASIGNADO_FIELD:
+            field["choices"] = _territoriales_choices()
+    return config
 
 
 def get_filters_ui_config() -> Dict[str, Any]:
     cached_config = cache.get(FILTERS_UI_CONFIG_CACHE_KEY)
     if cached_config is not None:
-        return deepcopy(cached_config)
+        return _con_territoriales(deepcopy(cached_config))
 
     config = {
         # El listado abre con Proyecto ya elegido en el selector de campo. Antes
@@ -159,12 +189,14 @@ def get_filters_ui_config() -> Dict[str, Any]:
         },
     }
     cache.set(FILTERS_UI_CONFIG_CACHE_KEY, config, FILTERS_UI_CONFIG_CACHE_TTL)
-    return deepcopy(config)
+    return _con_territoriales(deepcopy(config))
 
 
 __all__ = [
     "FIELD_MAP",
     "FIELD_TYPES",
+    "CUSTOM_FIELD_TYPES",
+    "TERRITORIAL_ASIGNADO_FIELD",
     "TEXT_OPS",
     "NUM_OPS",
     "DATE_OPS",

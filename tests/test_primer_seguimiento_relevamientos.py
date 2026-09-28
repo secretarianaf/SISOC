@@ -475,6 +475,40 @@ def test_api_primer_seguimiento_referente_get_or_create_por_documento(
     assert referente.nombre == "Maria"  # no se pisa con None
 
 
+def test_api_primer_seguimiento_referente_documento_duplicado_no_da_400(
+    api_client, comedor
+):
+    # `documento` no es unico en la base: antes get_or_create explotaba con
+    # "get() returned more than one Referente" y el PATCH respondia 400.
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+    duplicados = [
+        Referente.objects.create(nombre=f"Dup {i}", documento=30999888)
+        for i in range(3)
+    ]
+
+    response = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {
+            "sisoc_id": seguimiento.id,
+            "id_relevamiento": relevamiento.id,
+            "referente": {"documento": "30999888", "nombre_apellido": "Rosa Diaz"},
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200, response.content
+    assert Referente.objects.filter(documento=30999888).count() == 3
+    seguimiento.refresh_from_db()
+    # Mismo criterio que el relevamiento: se reutiliza (y actualiza) el ultimo.
+    assert seguimiento.referente_id == duplicados[-1].id
+    duplicados[-1].refresh_from_db()
+    assert duplicados[-1].nombre == "Rosa Diaz"
+
+
 def test_api_primer_seguimiento_referente_sisoc_id_inexistente(api_client, comedor):
     relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
     seguimiento = PrimerSeguimiento.objects.create(

@@ -18,6 +18,35 @@ class MultipleFileInput(forms.ClearableFileInput):
     allow_multiple_selected = True
 
 
+class CommaSeparatedIdsInput(forms.HiddenInput):
+    """Un solo input oculto con los ids separados por coma.
+
+    Un input por id hace que selecciones grandes superen
+    ``DATA_UPLOAD_MAX_NUMBER_FIELDS`` y Django responda 400. Se sigue aceptando
+    el formato de valores repetidos (``getlist``) por compatibilidad.
+    """
+
+    def format_value(self, value):
+        if not value:
+            return ""
+        if isinstance(value, (list, tuple)):
+            return ",".join(str(item) for item in value)
+        return str(value)
+
+    def value_from_datadict(self, data, files, name):
+        raw_values = data.getlist(name) if hasattr(data, "getlist") else data.get(name)
+        if raw_values is None:
+            return []
+        if not isinstance(raw_values, (list, tuple)):
+            raw_values = [raw_values]
+        return [
+            item.strip()
+            for raw in raw_values
+            for item in str(raw).split(",")
+            if item.strip()
+        ]
+
+
 class MultipleFileField(forms.FileField):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("widget", MultipleFileInput())
@@ -75,8 +104,8 @@ class ComunicadoForm(forms.ModelForm):
             # El selector de destinatarios (issue #2505) es un panel propio con
             # filtros combinables: el front administra inputs ocultos con los ids
             # elegidos en lugar de renderizar el universo completo en un <select>.
-            "comedores": forms.MultipleHiddenInput(),
-            "organizaciones": forms.MultipleHiddenInput(),
+            "comedores": CommaSeparatedIdsInput(),
+            "organizaciones": CommaSeparatedIdsInput(),
         }
 
     def __init__(self, *args, user=None, **kwargs):

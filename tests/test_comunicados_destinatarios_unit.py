@@ -144,6 +144,9 @@ def test_buscar_respeta_el_alcance_del_usuario(client, admin, monkeypatch):
     visible = Comedor.objects.create(nombre="Comedor visible")
     Comedor.objects.create(nombre="Comedor ajeno")
     monkeypatch.setattr(
+        services_destinatarios, "tiene_alcance_total_destinatarios", lambda user: False
+    )
+    monkeypatch.setattr(
         services_destinatarios,
         "get_ids_comedores_del_usuario",
         lambda user: (visible.pk,),
@@ -239,3 +242,76 @@ def test_las_secciones_se_muestran_en_el_orden_pedido(client, admin):
     ]
 
     assert orden == sorted(orden)
+
+
+def test_alcance_total_no_materializa_los_ids(client, admin, monkeypatch):
+    Comedor.objects.create(nombre="Comedor cualquiera")
+
+    def _no_deberia_llamarse(user):
+        raise AssertionError("con alcance total no se arma el IN de ids")
+
+    monkeypatch.setattr(
+        services_destinatarios, "get_ids_comedores_del_usuario", _no_deberia_llamarse
+    )
+
+    payload = client.get(
+        reverse("comunicados_destinatarios_buscar", args=["comedores"]),
+        {"filters": _filtros([])},
+    ).json()
+
+    assert payload["total"] == 1
+
+
+def test_formulario_guarda_seleccion_masiva_en_un_solo_campo(client, admin):
+    # Mas ids que DATA_UPLOAD_MAX_NUMBER_FIELDS (1000): con un input por id el
+    # POST respondia 400.
+    Comedor.objects.bulk_create(
+        [Comedor(nombre=f"Comedor masivo {indice}") for indice in range(1100)]
+    )
+    ids = list(Comedor.objects.values_list("pk", flat=True))
+
+    response = client.post(
+        reverse("comunicados_crear"),
+        _form_data(comedores=",".join(str(pk) for pk in ids)),
+    )
+
+    assert response.status_code == 302
+    comunicado = Comunicado.objects.get(titulo="Comunicado con destinatarios")
+    assert comunicado.comedores.count() == 1100
+
+
+def test_edicion_renderiza_la_seleccion_en_un_solo_input(client, admin):
+    uno = Comedor.objects.create(nombre="Comedor uno")
+    dos = Comedor.objects.create(nombre="Comedor dos")
+    comunicado = Comunicado.objects.create(
+        titulo="Editable",
+        cuerpo="Contenido",
+        tipo=TipoComunicado.EXTERNO,
+        subtipo=SubtipoComunicado.COMEDORES,
+        usuario_creador=admin,
+    )
+    comunicado.comedores.add(uno, dos)
+
+    response = client.get(reverse("comunicados_editar", kwargs={"pk": comunicado.pk}))
+    contenido = response.content.decode()
+
+    assert contenido.count('name="comedores"') == 1
+    assert (
+        f'value="{uno.pk},{dos.pk}"' in contenido
+        or f'value="{dos.pk},{uno.pk}"' in contenido
+    )
+
+
+def test_post_con_ids_invalidos_no_rompe_el_render(client, admin):
+    comedor = Comedor.objects.create(nombre="Comedor valido")
+
+    response = client.post(
+        reverse("comunicados_crear"),
+        _form_data(comedores=f"{comedor.pk},abc"),
+    )
+
+    assert response.status_code == 200
+    assert "comedores" in response.context["form"].errors
+    assert response.context["destinatarios_seleccionados"]["comedores"] == [
+        {"id": comedor.pk, "nombre": "Comedor valido"}
+    ]

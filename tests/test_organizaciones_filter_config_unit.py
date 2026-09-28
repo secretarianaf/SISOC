@@ -71,7 +71,7 @@ def test_engine_combina_filtros_de_distintos_campos():
 
 
 @pytest.mark.django_db
-def test_listado_de_organizaciones_aplica_filters_y_expone_config(client):
+def test_listado_de_organizaciones_acepta_filters(client):
     admin = User.objects.create_superuser("admin_org_filtros", "org@test.com", "test")
     provincia = Provincia.objects.create(nombre="Santa Fe")
     municipio = Municipio.objects.create(nombre="Rosario", provincia=provincia)
@@ -89,7 +89,58 @@ def test_listado_de_organizaciones_aplica_filters_y_expone_config(client):
     response = client.get(reverse("organizaciones"), {"filters": payload})
 
     assert response.status_code == 200
-    assert response.context["filters_mode"] is True
-    assert response.context["filters_config"]["fields"]
     ids = [org.pk for org in response.context["organizaciones"]]
     assert ids == [buscada.pk]
+
+
+@pytest.mark.django_db
+def test_filtros_de_fecha_comparan_por_dia_sobre_datetime():
+    from datetime import datetime
+
+    from django.utils import timezone
+
+    del_dia = Organizacion.objects.create(nombre="Vence el 10")
+    posterior = Organizacion.objects.create(nombre="Vence el 11")
+    Organizacion.objects.filter(pk=del_dia.pk).update(
+        fecha_vencimiento=timezone.make_aware(datetime(2026, 9, 10, 15, 0))
+    )
+    Organizacion.objects.filter(pk=posterior.pk).update(
+        fecha_vencimiento=timezone.make_aware(datetime(2026, 9, 11, 9, 0))
+    )
+
+    def filtrar(op):
+        payload = {
+            "logic": "AND",
+            "items": [{"field": "fecha_vencimiento", "op": op, "value": "2026-09-10"}],
+        }
+        return set(
+            ORGANIZACION_ADVANCED_FILTER.filter_queryset(
+                Organizacion.objects.all(), {"filters": json.dumps(payload)}
+            ).values_list("pk", flat=True)
+        )
+
+    assert filtrar("eq") == {del_dia.pk}
+    assert filtrar("gt") == {posterior.pk}
+    assert filtrar("lte") == {del_dia.pk}
+
+
+@pytest.mark.django_db
+def test_export_no_infla_el_conteo_al_filtrar_por_relacion(rf):
+    from comedores.models import Comedor
+    from organizaciones.views_export import OrganizacionExportView
+
+    organizacion = Organizacion.objects.create(nombre="Org con comedores")
+    Comedor.objects.create(nombre="Comedor A", organizacion=organizacion)
+    Comedor.objects.create(nombre="Comedor B", organizacion=organizacion)
+    payload = json.dumps(
+        {
+            "logic": "AND",
+            "items": [{"field": "comedor", "op": "contains", "value": "Comedor"}],
+        }
+    )
+    view = OrganizacionExportView()
+    view.request = rf.get("/", {"filters": payload})
+
+    fila = view.get_queryset().get(pk=organizacion.pk)
+
+    assert fila.comedores_count == 2

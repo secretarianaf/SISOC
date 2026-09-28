@@ -22,6 +22,7 @@ from organizaciones.models import Organizacion
 from .permissions import (
     get_ids_comedores_del_usuario,
     get_ids_organizaciones_del_usuario,
+    tiene_alcance_total_destinatarios,
 )
 
 # Tope de resultados que se listan por pagina en el panel de destinatarios.
@@ -43,21 +44,34 @@ def _paginar(queryset, page: int) -> Tuple[List[Any], int, bool]:
 
 
 def _comedores_scoped(user):
-    ids = get_ids_comedores_del_usuario(user)
-    return (
-        Comedor.objects.filter(pk__in=ids)
-        .select_related("provincia", "municipio", "localidad", "programa")
-        .order_by("nombre", "id")
-    )
+    queryset = Comedor.objects.all()
+    # Con alcance total no se materializan todos los ids para un ``IN`` gigante.
+    if not tiene_alcance_total_destinatarios(user):
+        queryset = queryset.filter(pk__in=get_ids_comedores_del_usuario(user))
+    return queryset.select_related(
+        "provincia", "municipio", "localidad", "programa"
+    ).order_by("nombre", "id")
 
 
 def _organizaciones_scoped(user):
-    ids = get_ids_organizaciones_del_usuario(user)
-    return (
-        Organizacion.objects.filter(pk__in=ids)
-        .select_related("tipo_entidad", "provincia", "municipio", "localidad")
-        .order_by("nombre", "id")
-    )
+    queryset = Organizacion.objects.all()
+    if not tiene_alcance_total_destinatarios(user):
+        queryset = queryset.filter(pk__in=get_ids_organizaciones_del_usuario(user))
+    return queryset.select_related(
+        "tipo_entidad", "provincia", "municipio", "localidad"
+    ).order_by("nombre", "id")
+
+
+def _ids_validos(ids) -> List[int]:
+    """Descarta valores no numericos (p. ej. un POST manipulado)."""
+
+    validos = []
+    for pk in ids or []:
+        try:
+            validos.append(int(pk))
+        except (TypeError, ValueError):
+            continue
+    return validos
 
 
 def _detalle_comedor(comedor: Comedor) -> str:
@@ -167,8 +181,8 @@ def seleccionar_todas_organizaciones(request, user) -> Dict[str, Any]:
 def etiquetas_de_seleccion(user, comedor_ids: Iterable[int], organizacion_ids) -> Dict:
     """Nombres de los destinatarios ya seleccionados, para pintar los badges."""
 
-    comedor_ids = [int(pk) for pk in comedor_ids or []]
-    organizacion_ids = [int(pk) for pk in organizacion_ids or []]
+    comedor_ids = _ids_validos(comedor_ids)
+    organizacion_ids = _ids_validos(organizacion_ids)
     comedores = (
         _comedores_scoped(user).filter(pk__in=comedor_ids).values_list("pk", "nombre")
         if comedor_ids

@@ -214,19 +214,16 @@ class ComunicadoDestinatariosContextMixin:
     """Contexto que necesita el panel de destinatarios con filtros (issue #2505)."""
 
     def _destinatarios_seleccionados(self, form):
-        """Ids ya elegidos: los del POST si hubo error de validacion, si no los guardados."""
+        """Ids ya elegidos: los del POST si hubo error de validacion, si no los guardados.
 
-        if self.request.method == "POST":
-            return (
-                self.request.POST.getlist("comedores"),
-                self.request.POST.getlist("organizaciones"),
-            )
-        instancia = getattr(form, "instance", None)
-        if not instancia or not instancia.pk:
+        ``BoundField.value()`` resuelve ambos casos con el mismo parseo del widget.
+        """
+
+        if form is None:
             return [], []
         return (
-            list(instancia.comedores.values_list("pk", flat=True)),
-            list(instancia.organizaciones.values_list("pk", flat=True)),
+            form["comedores"].value() or [],
+            form["organizaciones"].value() or [],
         )
 
     def add_destinatarios_context(self, ctx):

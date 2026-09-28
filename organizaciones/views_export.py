@@ -28,7 +28,11 @@ class OrganizacionExportView(LoginRequiredMixin, CSVExportMixin, View):
 
         organizaciones = Organizacion.objects.select_related(
             "tipo_entidad", "subtipo_entidad"
-        ).annotate(comedores_count=Count("comedor"))
+        ).annotate(
+            # distinct: los filtros sobre relaciones multivaluadas (comedor,
+            # proyectos) agregan joins que inflarian el conteo.
+            comedores_count=Count("comedor", distinct=True)
+        )
 
         if busqueda:
             organizaciones = _apply_organizacion_search(organizaciones, busqueda)

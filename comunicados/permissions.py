@@ -165,10 +165,16 @@ def get_ids_comedores_del_tecnico(user) -> tuple[int, ...]:
     return obtener_ids_comedores_del_tecnico(user)
 
 
+def tiene_alcance_total_destinatarios(user) -> bool:
+    """Indica si el usuario puede enviar a todos los comedores/organizaciones."""
+
+    return is_admin(user) or _has_permission(user, COMUNICADO_CREATE_CODE)
+
+
 def get_ids_comedores_del_usuario(user) -> tuple[int, ...]:
     """Retorna los identificadores de comedores que puede ver/enviar el usuario."""
 
-    if is_admin(user) or _has_permission(user, COMUNICADO_CREATE_CODE):
+    if tiene_alcance_total_destinatarios(user):
         return obtener_ids_comedores()
     if es_tecnico(user):
         return get_ids_comedores_del_tecnico(user)
@@ -178,7 +184,7 @@ def get_ids_comedores_del_usuario(user) -> tuple[int, ...]:
 def get_ids_organizaciones_del_usuario(user) -> tuple[int, ...]:
     """Retorna los identificadores de organizaciones que puede ver/enviar el usuario."""
 
-    if is_admin(user) or _has_permission(user, COMUNICADO_CREATE_CODE):
+    if tiene_alcance_total_destinatarios(user):
         return obtener_ids_organizaciones()
     if es_tecnico(user):
         return obtener_ids_organizaciones_de_comedores(

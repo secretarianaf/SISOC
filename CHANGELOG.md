@@ -4,6 +4,7 @@
 ## Actualizaciones
 
 - [sin-area] feat(pnud): seguimientos PNUD desde la app territorial (N22). (PR #2582)
+- [sin-area] fix(territorial): errores HTTP de la API territorial detectados por la auditoría de la app. (PR #2584)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-30 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-09-23 -->

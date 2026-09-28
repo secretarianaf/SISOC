@@ -2065,3 +2065,66 @@ class PrestacionActaComplementaria(models.Model):
 
     def __str__(self):
         return f"{self.dias_prestacion or '-'} / {self.tipo_prestacion or '-'}"
+
+
+class SeguimientoPnud(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Model):
+    """Seguimiento de prestaciones alimentarias del programa PNUD (N22).
+
+    Abordaje Comunitario tiene formularios propios según la línea del espacio
+    ("FLUJO APP PNUD" §4.2 / §7.2): Línea Secos → FORM-PNUD-SECOS; Línea
+    Tradicional → FORM II A / II B (presencial, vianda / módulo) o II A.1 /
+    II B.1 (virtual). Los carga el territorial desde la app **sin asignación
+    previa** sobre un comedor de su zona.
+
+    Las respuestas se guardan tal cual las envía la app en ``datos`` (JSON con
+    los nombres de campo estables de la app): son cinco formularios en papel
+    con decenas de campos cada uno, sin columnas equivalentes en los modelos
+    PAC. **No actualizan el legajo del comedor.** Pasan por el mismo ciclo de
+    validación del coordinador (N16) que relevamientos y seguimientos.
+    """
+
+    FORMULARIO_SECOS = "secos"
+    FORMULARIO_II_A1 = "iia1"
+    FORMULARIO_II_B1 = "iib1"
+    FORMULARIO_II_A = "iia"
+    FORMULARIO_II_B = "iib"
+    FORMULARIO_CHOICES = [
+        (
+            FORMULARIO_SECOS,
+            "FORM-PNUD-SECOS — Seguimiento Puntos de Entrega (Línea Secos)",
+        ),
+        (
+            FORMULARIO_II_A1,
+            "FORM II A.1 — Virtual · Presencial y Vianda (Línea Tradicional)",
+        ),
+        (FORMULARIO_II_B1, "FORM II B.1 — Virtual · Módulo (Línea Tradicional)"),
+        (FORMULARIO_II_A, "FORM II A — Presencial · Vianda (Línea Tradicional)"),
+        (FORMULARIO_II_B, "FORM II B — Presencial · Módulo (Línea Tradicional)"),
+    ]
+
+    comedor = models.ForeignKey(
+        to=Comedor,
+        on_delete=models.CASCADE,
+        related_name="seguimientos_pnud",
+    )
+    tecnico = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="seguimientos_pnud",
+    )
+    formulario = models.CharField(max_length=8, choices=FORMULARIO_CHOICES)
+    fecha_hora = models.DateTimeField(blank=True, null=True)
+    datos = models.JSONField(default=dict, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Seguimiento PNUD"
+        verbose_name_plural = "Seguimientos PNUD"
+        ordering = ["-fecha_hora", "-id"]
+
+    def __str__(self):
+        comedor = self.comedor.nombre if self.comedor_id else "Sin comedor"
+        return f"{self.get_formulario_display()} ({comedor})"

@@ -677,7 +677,7 @@
           },
           {
             "name": "capacitacion_temas_otro",
-            "label": "Otra temática recibida (especificar)",
+            "label": "Otro (especificar)",
             "type": "text"
           },
           {
@@ -725,7 +725,7 @@
           },
           {
             "name": "temas_interes_otro",
-            "label": "Otro tema de interés (especificar)",
+            "label": "Otro (especificar)",
             "type": "text"
           }
         ]
@@ -1121,7 +1121,7 @@
           },
           {
             "name": "menu_cantidad_vianda",
-            "label": "Modalidad de prestación: Vianda (cantidad)",
+            "label": "Vianda (cantidad)",
             "type": "number"
           },
           {
@@ -1644,7 +1644,7 @@
           },
           {
             "name": "frecuencia_entrega_modulo_otra",
-            "label": "Otra frecuencia (especifique)",
+            "label": "Otra",
             "type": "text"
           },
           {
@@ -1701,27 +1701,27 @@
           },
           {
             "name": "cantidad_modulos_a",
-            "label": "Tipo de módulo A: Cantidad total de módulos alimentarios (mensuales)",
+            "label": "A: Cantidad total de módulos alimentarios (mensuales)",
             "type": "number"
           },
           {
             "name": "cantidad_modulos_b",
-            "label": "Tipo de módulo B: Cantidad total de módulos alimentarios (mensuales)",
+            "label": "B: Cantidad total de módulos alimentarios (mensuales)",
             "type": "number"
           },
           {
             "name": "cantidad_modulos_c",
-            "label": "Tipo de módulo C: Cantidad total de módulos alimentarios (mensuales)",
+            "label": "C: Cantidad total de módulos alimentarios (mensuales)",
             "type": "number"
           },
           {
             "name": "cantidad_modulos_d",
-            "label": "Tipo de módulo D: Cantidad total de módulos alimentarios (mensuales)",
+            "label": "D: Cantidad total de módulos alimentarios (mensuales)",
             "type": "number"
           },
           {
             "name": "cantidad_modulos_e",
-            "label": "Tipo de módulo E: Cantidad total de módulos alimentarios (mensuales)",
+            "label": "E: Cantidad total de módulos alimentarios (mensuales)",
             "type": "number"
           },
           {
@@ -2447,7 +2447,7 @@
           },
           {
             "name": "motivo_diferencia",
-            "label": "5.3 En caso de que lo aprobado no coincida con lo declarado, indicar el motivo",
+            "label": "5.3 Motivo si lo aprobado no coincide con lo declarado",
             "type": "longtext"
           },
           {
@@ -2484,7 +2484,7 @@
           },
           {
             "name": "menu_cantidad_vianda",
-            "label": "Modalidad de prestación: Vianda (cantidad)",
+            "label": "Vianda (cantidad)",
             "type": "number"
           },
           {
@@ -2649,7 +2649,7 @@
           },
           {
             "name": "condiciones_detalle",
-            "label": "Si no son adecuadas, describir",
+            "label": "Descripción libre si no adecuada",
             "type": "longtext"
           },
           {
@@ -2694,7 +2694,7 @@
           },
           {
             "name": "combustible_otros_cual",
-            "label": "¿Qué otro combustible?",
+            "label": "Otros",
             "type": "text"
           },
           {
@@ -2796,7 +2796,7 @@
           },
           {
             "name": "capacitacion_temas_otro",
-            "label": "Otra temática recibida (especificar)",
+            "label": "Otro (especificar)",
             "type": "text"
           },
           {
@@ -2848,7 +2848,7 @@
           },
           {
             "name": "temas_interes_otro",
-            "label": "Otro tema de interés (especificar)",
+            "label": "Otro (especificar)",
             "type": "text"
           }
         ]
@@ -3625,7 +3625,7 @@
           },
           {
             "name": "frecuencia_entrega_modulo_otra",
-            "label": "Otra frecuencia (especifique)",
+            "label": "Otra",
             "type": "text"
           },
           {
@@ -3682,27 +3682,27 @@
           },
           {
             "name": "cantidad_modulos_a",
-            "label": "Tipo de módulo A: Cantidad total de módulos alimentarios (mensuales)",
+            "label": "A: Cantidad total de módulos alimentarios (mensuales)",
             "type": "number"
           },
           {
             "name": "cantidad_modulos_b",
-            "label": "Tipo de módulo B: Cantidad total de módulos alimentarios (mensuales)",
+            "label": "B: Cantidad total de módulos alimentarios (mensuales)",
             "type": "number"
           },
           {
             "name": "cantidad_modulos_c",
-            "label": "Tipo de módulo C: Cantidad total de módulos alimentarios (mensuales)",
+            "label": "C: Cantidad total de módulos alimentarios (mensuales)",
             "type": "number"
           },
           {
             "name": "cantidad_modulos_d",
-            "label": "Tipo de módulo D: Cantidad total de módulos alimentarios (mensuales)",
+            "label": "D: Cantidad total de módulos alimentarios (mensuales)",
             "type": "number"
           },
           {
             "name": "cantidad_modulos_e",
-            "label": "Tipo de módulo E: Cantidad total de módulos alimentarios (mensuales)",
+            "label": "E: Cantidad total de módulos alimentarios (mensuales)",
             "type": "number"
           },
           {
@@ -3801,7 +3801,7 @@
           },
           {
             "name": "condiciones_detalle",
-            "label": "Si no son adecuadas, describir",
+            "label": "Descripción libre si no adecuada",
             "type": "longtext"
           },
           {
@@ -3918,7 +3918,7 @@
           },
           {
             "name": "capacitacion_temas_otro",
-            "label": "Otra temática recibida (especificar)",
+            "label": "Otro (especificar)",
             "type": "text"
           },
           {
@@ -3970,7 +3970,7 @@
           },
           {
             "name": "temas_interes_otro",
-            "label": "Otro tema de interés (especificar)",
+            "label": "Otro (especificar)",
             "type": "text"
           }
         ]

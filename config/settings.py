@@ -432,6 +432,9 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    # Bajo /api/ el 404 genérico de Django ("No Comedor matches the given
+    # query.") se responde como {"detail": "No encontrado."}.
+    "EXCEPTION_HANDLER": "config.api_errors.api_exception_handler",
 }
 
 # Swagger/OpenAPI

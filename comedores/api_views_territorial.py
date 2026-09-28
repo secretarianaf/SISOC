@@ -79,6 +79,7 @@ class TerritorialComedorSerializer(TerritorialComedorPnudFieldsMixin, NoSaveSeri
     programa = serializers.SerializerMethodField()
     organizacion = serializers.SerializerMethodField()
     comienzo = serializers.IntegerField(allow_null=True)
+    mes_ejecucion = serializers.IntegerField(allow_null=True, read_only=True)  # #2472
     provincia = serializers.SerializerMethodField()
     municipio = serializers.SerializerMethodField()
     localidad = serializers.SerializerMethodField()

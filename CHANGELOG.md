@@ -3,6 +3,7 @@
 
 ## Actualizaciones
 
+- [sin-area] fix(seguimiento): DNI de referente duplicado + mes_ejecucion en API territorial. (PR #2581)
 - [sin-area] feat(pnud): seguimientos PNUD desde la app territorial (N22). (PR #2582)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-30 -->
 

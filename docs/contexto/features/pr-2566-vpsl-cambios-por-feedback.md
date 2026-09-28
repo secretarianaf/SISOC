@@ -35,13 +35,17 @@
 - Empezar por `docs/registro/prs/PR-2566.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
+- `docs/contexto/features/pr-2566-vpsl-cambios-por-feedback.md`
 - `docs/registro/cambios/2026-09-21-vpsl-ubicacion-jornadas.md`
 - `docs/registro/cambios/2026-09-23-vpsl-catalogo-vehiculos.md`
 - `docs/registro/cambios/2026-09-23-vpsl-graduacion-registros.md`
+- `docs/registro/cambios/2026-09-28-vpsl-compatibilidad-datos-previos.md`
+- `docs/registro/prs/PR-2566.md`
 - `static/custom/css/ver_para_ser_libre.css`
 - `ver_para_ser_libre/admin.py`
 - `ver_para_ser_libre/forms.py`
 - `ver_para_ser_libre/migrations/0015_vpsl_ubicacion_vehiculos_graduaciones.py`
+- `ver_para_ser_libre/migrations/0016_copiar_checklist_sede_a_jornadas.py`
 - `ver_para_ser_libre/models.py`
 - `ver_para_ser_libre/services/map_location.py`
 - `ver_para_ser_libre/services/workflow.py`
@@ -50,11 +54,7 @@
 - `ver_para_ser_libre/templates/ver_para_ser_libre/itinerario_form.html`
 - `ver_para_ser_libre/templates/ver_para_ser_libre/jornada_detail.html`
 - `ver_para_ser_libre/templates/ver_para_ser_libre/jornada_form.html`
-- `ver_para_ser_libre/templates/ver_para_ser_libre/registro_form.html`
-- `ver_para_ser_libre/tests/test_jornada_location.py`
-- `ver_para_ser_libre/tests/test_workflow.py`
-- `ver_para_ser_libre/urls.py`
-- ... y 1 archivo(s) adicional(es) relacionados.
+- ... y 6 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

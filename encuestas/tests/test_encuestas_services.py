@@ -6,6 +6,8 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
+from encuestas.tests.helpers import publicar_para_test as publicar
+
 from encuestas.models import (
     Encuesta,
     EstadoEncuesta,
@@ -24,7 +26,6 @@ from encuestas.services import (
     cerrar_ronda,
     crear_encuesta,
     nueva_version,
-    publicar,
     reemplazar_preguntas,
     serializar_preguntas,
 )

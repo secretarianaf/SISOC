@@ -4,6 +4,8 @@ import pytest
 from django.contrib.auth.models import Permission
 from django.urls import reverse
 
+from encuestas.tests.helpers import publicar_para_test as publicar
+
 from encuestas.models import (
     Encuesta,
     EstadoEncuesta,
@@ -12,7 +14,84 @@ from encuestas.models import (
     TipoPregunta,
     TipoSegmentacion,
 )
-from encuestas.services import actualizar_segmentacion, publicar
+from encuestas.services import actualizar_segmentacion
+
+
+@pytest.mark.django_db
+def test_filtros_combinados_y_compatibilidad(client, user_gestor, encuesta_lista):
+    client.force_login(user_gestor)
+    for estado in EstadoEncuesta.values:
+        Encuesta.objects.create(
+            titulo="Otra",
+            estado=estado,
+            es_opcional=True,
+            duracion_ronda_dias=7,
+            usuario_creador=user_gestor,
+        )
+    payload = {
+        "logic": "AND",
+        "items": [
+            {"field": "titulo", "op": "contains", "value": encuesta_lista.titulo},
+            {"field": "estado", "op": "eq", "value": "borrador"},
+            {"field": "es_anonima", "op": "eq", "value": "false"},
+            {"field": "es_recurrente", "op": "eq", "value": "false"},
+        ],
+    }
+    response = client.get(reverse("encuestas_listar"), {"filters": json.dumps(payload)})
+    assert list(response.context["encuestas"]) == [encuesta_lista]
+    response = client.get(
+        reverse("encuestas_listar"),
+        {"busqueda": encuesta_lista.titulo, "estado": "borrador"},
+        follow=True,
+    )
+    assert list(response.context["encuestas"]) == [encuesta_lista]
+    assert "filters=" in response.redirect_chain[0][0]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("estado", EstadoEncuesta.values)
+def test_filtro_por_cada_estado(client, user_gestor, estado):
+    client.force_login(user_gestor)
+    for valor in EstadoEncuesta.values:
+        Encuesta.objects.create(
+            titulo=valor,
+            estado=valor,
+            es_opcional=True,
+            duracion_ronda_dias=7,
+            usuario_creador=user_gestor,
+        )
+    payload = {"items": [{"field": "estado", "op": "eq", "value": estado}]}
+    response = client.get(reverse("encuestas_listar"), {"filters": json.dumps(payload)})
+    assert [e.estado for e in response.context["encuestas"]] == [estado]
+
+
+@pytest.mark.django_db
+def test_paginacion_conserva_filtros_y_rechaza_campos_arbitrarios(client, user_gestor):
+    client.force_login(user_gestor)
+    Encuesta.objects.bulk_create(
+        [
+            Encuesta(
+                titulo=f"Borrador {i}",
+                duracion_ronda_dias=7,
+                usuario_creador=user_gestor,
+            )
+            for i in range(21)
+        ]
+    )
+    payload = {"items": [{"field": "estado", "op": "eq", "value": "borrador"}]}
+    response = client.get(
+        reverse("encuestas_listar"), {"filters": json.dumps(payload), "page": 2}
+    )
+    assert response.context["page_obj"].paginator.count == 21
+    assert len(response.context["encuestas"]) == 1
+    assert b"filters=" in response.content
+    payload = {
+        "items": [
+            {"field": "usuario_creador__password", "op": "contains", "value": "no"}
+        ]
+    }
+    response = client.get(reverse("encuestas_listar"), {"filters": json.dumps(payload)})
+    assert response.context["page_obj"].paginator.count == 21
 
 
 def _permisos(codenames):
@@ -189,13 +268,13 @@ def test_crear_encuesta_con_preguntas_json_invalido_no_guarda(client, user_gesto
 
 
 @pytest.mark.django_db
-def test_gestor_puede_publicar_encuesta_lista(client, user_gestor, encuesta_lista):
+def test_gestor_puede_solicitar_publicacion(client, user_gestor, encuesta_lista):
     client.force_login(user_gestor)
     response = client.post(reverse("encuestas_publicar", args=[encuesta_lista.pk]))
     assert response.status_code == 302
     encuesta_lista.refresh_from_db()
-    assert encuesta_lista.estado == EstadoEncuesta.PUBLICADA
-    assert encuesta_lista.rondas.filter(estado=EstadoRonda.ABIERTA).count() == 1
+    assert encuesta_lista.estado == EstadoEncuesta.PENDIENTE_APROBACION
+    assert not encuesta_lista.rondas.exists()
 
 
 @pytest.mark.django_db

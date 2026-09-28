@@ -32,6 +32,7 @@
 
 - Empezar por `docs/registro/prs/PR-2584.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
 - `comedores/api_views_territorial.py`
 - `comedores/api_views_territorial_adjuntos.py`
 - `comedores/api_views_territorial_validaciones.py`
@@ -41,6 +42,9 @@
 - `config/settings.py`
 - `config/urls.py`
 - `config/views.py`
+- `docs/contexto/features/pr-2584-fix-territorial-errores-http-de-la-api-territorial-detectados-por-la-auditoria-de-la-app.md`
+- `docs/registro/prs/PR-2584.md`
+- `docs/registro/releases/pending/2026-09-30-pr-2584.md`
 - `relevamientos/service.py`
 - `relevamientos/views/api_views.py`
 - `tests/test_territorial_api.py`

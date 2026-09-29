@@ -449,6 +449,13 @@ LISTADO_DEFINED_GROUPS = (
         ),
     ),
     BootstrapGroupSeed(
+        "Administrador de Encuestas",
+        (
+            "encuestas.view_encuesta",
+            "encuestas.aprobar_encuesta",
+        ),
+    ),
+    BootstrapGroupSeed(
         "Encuestas Resultados",
         (
             "encuestas.view_encuesta",
@@ -1137,6 +1144,27 @@ LISTADO_DEFINED_GROUPS = (
             # Da de alta y de baja a sus entrevistadores. El alcance sale de la
             # delegación del perfil (grupos_asignables / roles_asignables), que
             # configura un administrador al crear al coordinador.
+            "auth.view_user",
+            "auth.add_user",
+            "auth.change_user",
+        ),
+    ),
+    BootstrapGroupSeed(
+        "Administrador DataCalle",
+        (
+            # Administrador Nacional: lo mismo que el coordinador provincial,
+            # pero sin restriccion territorial. El alcance nacional no sale de
+            # los permisos sino de no tener `territorial_scopes` (ver
+            # docs/registro/decisiones/2026-09-18-datacalle-roles-y-permisos.md).
+            "datacalle.view_relevamiento",
+            "datacalle.add_relevamiento",
+            "datacalle.change_relevamiento",
+            "datacalle.delete_relevamiento",
+            "datacalle.view_encuesta",
+            "datacalle.add_encuesta",
+            "datacalle.change_encuesta",
+            "datacalle.delete_encuesta",
+            # Da de alta coordinadores y relevadores de cualquier provincia.
             "auth.view_user",
             "auth.add_user",
             "auth.change_user",

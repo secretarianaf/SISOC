@@ -5,6 +5,8 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils.datastructures import MultiValueDict
 
+from encuestas.tests.helpers import publicar_para_test as publicar
+
 from encuestas.models import (
     OpcionPregunta,
     OperadorCondicion,
@@ -18,7 +20,6 @@ from encuestas.services import (
     actualizar_segmentacion,
     cerrar_ronda,
     crear_encuesta,
-    publicar,
     registrar_respuesta,
     reemplazar_preguntas,
     serializar_preguntas,

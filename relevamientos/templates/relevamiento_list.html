@@ -1,7 +1,7 @@
 {% extends "includes/main.html" %};
 {% load static %}
 ;
-{% block title %}Relevamiento - Comedor: {{ comedor.nombre }}{% endblock %}
+{% block title %}Acompañamiento Territorial - Comedor: {{ comedor.nombre }}{% endblock %}
 ;
 {% block titulo-pagina %}
     {{ relevamiento.comedor__nombre }}
@@ -25,7 +25,7 @@
                 <div class="col-12">
                     <div class="card card-informacion">
                         <div class="card-header d-flex align-items-center">
-                            <h3 class="card-title font-weight-bold mr-3 pt-1 mb-0">Relevamientos</h3>
+                            <h3 class="card-title font-weight-bold mr-3 pt-1 mb-0">Acompañamiento Territorial</h3>
                             {% if perms.relevamientos.add_relevamiento %}
                                 <button type="button"
                                         class="btn btn-primary btn-sm"
@@ -204,6 +204,52 @@
         </div>
     </div>
 
+    <div class="row relevamiento-container mt-3">
+        <div class="col-12">
+            <div class="card card-informacion">
+                <div class="card-header d-flex align-items-center">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1 mb-0">Seguimientos PNUD</h3>
+                    <div class="card-tools ml-auto">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body card-comments p-0 pb-1">
+                    <div class="nav nav-pills row my-3">
+                        <div class="col-12">
+                            <div class="nav-item d-flex">
+                                <div class="comment-text w-100">
+                                    {% for seguimiento in seguimientos_pnud %}
+                                        <div class="row align-items-center w-100 mx-0 mb-2">
+                                            <div class="col-5 d-flex">
+                                                <a href="{% url 'seguimiento_pnud_detalle' comedor.id seguimiento.id %}">{{ seguimiento.id }} - {{ seguimiento.get_formulario_display }}</a>
+                                            </div>
+                                            <div class="col-2 d-flex">
+                                                <p class="mb-0">{{ seguimiento.fecha_hora|default_if_none:"Sin fecha" }}</p>
+                                            </div>
+                                            <div class="col-2 d-flex">
+                                                <p class="mb-0">{{ seguimiento.tecnico|default:"Sin técnico" }}</p>
+                                            </div>
+                                            <div class="col-3 d-flex flex-wrap gap-1">
+                                                {% if seguimiento.estado_validacion %}
+                                                    <span class="badge {% if seguimiento.estado_validacion == 'Validado' %}bg-success{% elif seguimiento.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ seguimiento.estado_validacion }}</span>
+                                                {% endif %}
+                                                {% if seguimiento.origen == "app" %}<span class="badge bg-primary" title="Cargado desde la app">App</span>{% endif %}
+                                            </div>
+                                        </div>
+                                    {% empty %}
+                                        <p class="text-muted mb-0 px-2">No hay seguimientos PNUD cargados para este comedor.</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% if perms.relevamientos.add_relevamiento %}
         <div class="modal fade"
              id="modalRelevamientoNuevo"
@@ -216,7 +262,7 @@
                           action="{% url 'relevamiento_create_edit_ajax' comedor.id %}">
                         {% csrf_token %}
                         <div class="modal-header">
-                            <h5 class="modal-title" id="modalRelevamientoNuevoLabel">Nuevo relevamiento</h5>
+                            <h5 class="modal-title" id="modalRelevamientoNuevoLabel">Nuevo acompañamiento territorial</h5>
                             <button type="button"
                                     class="btn-close"
                                     data-bs-dismiss="modal"
@@ -229,7 +275,7 @@
                                         name="tipo_relevamiento"
                                         class="form-select"
                                         required>
-                                    <option value="relevamiento_inicial" selected>Relevamiento inicial</option>
+                                    <option value="relevamiento_inicial" selected>Acompañamiento territorial inicial</option>
                                     <option value="primer_seguimiento">Primer seguimiento</option>
                                     <option value="seguimiento_posterior">Seguimiento posterior</option>
                                     <option value="seguimiento_virtual">Seguimiento virtual</option>
@@ -253,11 +299,11 @@
                                      role="listbox"
                                      aria-label="Sugerencias de territoriales"></div>
                             </div>
-                            <small class="text-muted">El relevamiento se crea asignado al territorial seleccionado.</small>
+                            <small class="text-muted">El acompañamiento territorial se crea asignado al territorial seleccionado.</small>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Crear relevamiento</button>
+                            <button type="submit" class="btn btn-primary">Crear acompañamiento territorial</button>
                         </div>
                     </form>
                 </div>
@@ -297,7 +343,7 @@
                                     <option value="acta_excepcion">Acta de excepción (visita no realizada)</option>
                                 </select>
                             </div>
-                            <small class="text-muted">El seguimiento se agrega a este relevamiento y hereda su territorial asignado.</small>
+                            <small class="text-muted">El seguimiento se agrega a este acompañamiento territorial y hereda su territorial asignado.</small>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>

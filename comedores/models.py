@@ -432,6 +432,13 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         blank=True,
         related_name="comedores_responsable_tarjeta",
     )
+    responsable_tarjeta_municipio = models.ForeignKey(
+        to=Municipio,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="comedores_responsable_tarjeta",
+    )
     responsable_tarjeta_provincia = models.ForeignKey(
         to=Provincia,
         on_delete=models.PROTECT,
@@ -1385,6 +1392,18 @@ class ImagenComedor(models.Model):
         help_text=(
             "Identificador estable generado por el cliente (PWA) para deduplicar "
             "reintentos offline de subida."
+        ),
+    )
+    subido_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=(
+            "Usuario que subió la foto desde la app. Solo él puede borrarla por la "
+            "API territorial. Null en las fotos de SISOC web y en las anteriores a "
+            "este campo."
         ),
     )
 

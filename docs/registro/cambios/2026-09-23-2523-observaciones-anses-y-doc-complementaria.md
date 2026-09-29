@@ -131,6 +131,26 @@ lugar de confiar en el default.
   expediente prefetchea `subsanaciones__archivos`; un `.filter()` rompería ese
   caché y agregaría una consulta por subsanación y por bloque del template.
 
+### Correcciones del review
+
+- **`tests/test_celiaquia_expediente_view_helpers_unit.py` rompía.** Ese test vive
+  en `tests/` y no en `celiaquia/tests/`, así que no aparecía al correr sólo la
+  suite de la app. Arma el request de SUBSANAR con un `SimpleNamespace`, y al
+  empezar `_subsanar` a leer `request.FILES` el stub quedó corto
+  (`AttributeError`). Se le agregó `FILES=MultiValueDict()` en vez de hacer que
+  la vista tolere requests sin `FILES`: el stub es el que está incompleto, no la
+  vista. De paso se fijó el motivo del 400 que ya esperaba el test
+  (`"estado APROBADO"`), para dejar asentado que sale del guard de estado y no de
+  la validación nueva.
+- **Test de la visibilidad para Provincia**, que es criterio de aceptación del
+  issue y no estaba cubierto: los tests existentes llegaban hasta el servicio y
+  hasta el modal de Nación, pero ninguno renderizaba el componente. El riesgo
+  concreto es que arma dos listas desde la misma relación, así que volver a
+  `archivos.all` en el bloque de evidencia mostraría los archivos de Nación como
+  respuesta de la Provincia. Se agregaron dos casos que renderizan
+  `expediente_detail` como usuario provincial con alcance territorial, y se
+  verificó que el primero falla si se reintroduce esa regresión.
+
 ### Fuera de alcance (deuda registrada)
 
 - La carga de subsanación de la **Provincia** sigue sin validar tipo ni tamaño
@@ -141,11 +161,17 @@ lugar de confiar en el default.
   para toda la subsanación; el ticket pide que la documentación sea visible para
   la Provincia "cuando corresponda", y eso se cumple a nivel UI pero no a nivel
   URL. Cambiarlo implica servir los adjuntos por vista protegida, que es un
-  evolutivo aparte.
+  evolutivo aparte. **El review hizo notar que este PR le sube el peso**: el
+  `upload_to` es fijo (`legajos/subsanaciones/`) y conserva el nombre original,
+  así que las URLs son adivinables. Amerita issue propio.
+- **Límite de body del proxy.** El endpoint pasa a aceptar hasta ~50 MB por
+  request (5 archivos × 10 MB). Hay que confirmar que el proxy de homologación y
+  producción lo soporte; si no, el usuario ve un 413 genérico en el modal en
+  lugar del mensaje de validación.
 
 ### Tests
 
-`celiaquia/tests/test_subsanacion_documentacion_complementaria.py` (12 casos).
+`celiaquia/tests/test_subsanacion_documentacion_complementaria.py` (14 casos).
 El central es `test_la_documentacion_de_nacion_no_cuenta_como_respuesta`, que fija
 la regresión descrita arriba. Los demás cubren el alta con origen y usuario, que
 la ausencia de archivos no bloquee, que la respuesta de la Provincia sí cuente

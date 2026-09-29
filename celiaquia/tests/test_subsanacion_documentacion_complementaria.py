@@ -17,6 +17,7 @@ from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
 from core.models import Provincia
+from users.models import Profile, ProfileTerritorialScope
 from celiaquia.models import (
     EstadoExpediente,
     EstadoLegajo,
@@ -87,6 +88,29 @@ def fixture_legajo(coordinador):
         usuario=coordinador,
     )
     return legajo
+
+
+@pytest.fixture(name="provincial")
+def fixture_provincial(legajo):
+    """Usuario de Provincia con alcance territorial sobre el expediente.
+
+    Tiene que ser territorial: el detalle filtra por
+    `ciudadano__provincia`, y sin scope el expediente no se lista.
+    """
+    user = User.objects.create_user(username="prov-dc", password="pass")
+    _grant(user, "view_expediente", model=Expediente)
+    _grant(user, "role_provinciaceliaquia", name="Provincia Celiaquia")
+    profile, _ = Profile.objects.get_or_create(user=user)
+    profile.es_usuario_provincial = True
+    profile.save()
+    ProfileTerritorialScope.objects.create(
+        profile=profile, provincia=legajo.ciudadano.provincia
+    )
+    return user
+
+
+def _url_detalle(legajo):
+    return reverse("expediente_detail", args=[legajo.expediente_id])
 
 
 def _url_revisar(legajo):
@@ -203,6 +227,61 @@ def test_nombre_archivo_no_expone_la_carpeta_de_upload(client, coordinador, lega
     assert "/" not in archivo.nombre_archivo
     assert archivo.nombre_archivo.endswith(".pdf")
     assert archivo.nombre_archivo.startswith("constancia-codem")
+
+
+def test_la_provincia_ve_la_documentacion_y_no_como_respuesta_suya(
+    client, coordinador, provincial, legajo
+):
+    """Visibilidad para Provincia: criterio de aceptación del issue #2523.
+
+    El componente arma dos listas desde la misma relación
+    (`Subsanacion.archivos`), así que una regresión —volver a `archivos.all` en
+    el bloque de evidencia— mostraría los archivos de Nación como si fueran la
+    respuesta de la Provincia. Este test renderiza el detalle y separa los dos
+    bloques.
+    """
+    client.force_login(coordinador)
+    _subsanar(client, legajo, archivos=[_pdf("codem-vencido.pdf")])
+
+    client.force_login(provincial)
+    response = client.get(_url_detalle(legajo))
+    html = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Documentación complementaria" in html
+
+    archivo = SubsanacionArchivo.objects.get()
+    # El texto del link es el nombre suelto, no la ruta de `upload_to`. Se mira
+    # el texto y no el HTML entero porque la ruta completa aparece igual dentro
+    # del href, que es legítimo.
+    assert f"</i> {archivo.nombre_archivo}" in html
+    assert f"</i> {archivo.archivo.name}" not in html
+
+    # Y el bloque de evidencia sigue vacío: lo de Nación no es una respuesta.
+    assert "Sin archivos de respuesta todavía." in html
+
+
+def test_la_provincia_ve_su_respuesta_separada_de_la_de_nacion(
+    client, coordinador, provincial, legajo
+):
+    """Una vez que la Provincia responde, cada archivo queda en su bloque."""
+    client.force_login(coordinador)
+    _subsanar(client, legajo, archivos=[_pdf("codem-vencido.pdf")])
+    legajo.refresh_from_db()
+    SubsanacionService.responder(
+        legajo=legajo, archivos=[_pdf("corregido.pdf")], usuario=provincial
+    )
+
+    client.force_login(provincial)
+    html = client.get(_url_detalle(legajo)).content.decode()
+
+    assert "Sin archivos de respuesta todavía." not in html
+    nacion = SubsanacionArchivo.objects.get(origen=OrigenArchivoSubsanacion.NACION)
+    provincia = SubsanacionArchivo.objects.get(
+        origen=OrigenArchivoSubsanacion.PROVINCIA
+    )
+    assert nacion.nombre_archivo in html
+    assert provincia.nombre_archivo in html
 
 
 def test_el_modal_recibe_los_limites_del_backend(client, coordinador, legajo):

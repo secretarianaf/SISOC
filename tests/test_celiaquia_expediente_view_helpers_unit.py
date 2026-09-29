@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from django.http import JsonResponse, QueryDict
+from django.utils.datastructures import MultiValueDict
 
 from celiaquia.views import expediente as module
 
@@ -535,12 +536,19 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
     subs_post["accion"] = "SUBSANAR"
     subs_post["motivo"] = "faltan docs"
     subs_post["tipo_subsanacion"] = "DOCUMENTACION"
+    # `_subsanar` lee la documentación complementaria de `request.FILES`
+    # (issue #2523); el stub necesita el atributo aunque no adjunte nada.
     req_subs = SimpleNamespace(
         user=_user_stub(user_id=1, tec=True),
         POST=subs_post,
+        FILES=MultiValueDict(),
     )
     resp_sub = revisar.post(req_subs, pk=1, legajo_id=3)
     assert resp_sub.status_code == 400
+    # El 400 tiene que seguir siendo el del guard de estado, no el de la
+    # validación de documentación complementaria: con el legajo en APROBADO la
+    # acción se corta antes de llegar a `_subsanar`.
+    assert "estado APROBADO" in json.loads(resp_sub.content)["error"]
 
     leg.revision_tecnico = "APROBADO"
     resp_ap_bloqueado = revisar.post(req_aprobar, pk=1, legajo_id=3)

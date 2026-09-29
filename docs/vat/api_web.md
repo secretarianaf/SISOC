@@ -108,6 +108,24 @@ Ejemplo:
 }
 ```
 
+### `GET /pav/`
+
+Consulta los registros de PAV de un ciudadano en el data warehouse
+(`DW_sisoc.FCT_PAV`), con la descripción del curso de `DW_sisoc.DIM_PAV_Cursos`.
+
+Query:
+
+- `documento`: DNI numerico del ciudadano. Obligatorio; si falta o no es numerico
+  responde 400.
+
+Respuesta: paginada (`count`, `next`, `previous`, `results`), ordenada por
+`fecha_inscripcion` del más reciente al más viejo. Cada registro trae
+`pav_cursada_key`, `ciudadano_key`, `pav_curso_key`, `fecha_inscripcion`,
+`fecha_finalizacion`, `estado`, `fecha_carga` y `pav_curso_desc`; este último
+queda en `null` si el curso no está en `DIM_PAV_Cursos`. Si el DNI no tiene
+registros devuelve `results` vacío; si el data warehouse falla o tarda más de
+5 segundos responde 500.
+
 ### `POST /inscripciones/`
 
 Crea una inscripción VAT y, si la oferta usa voucher, descuenta el costo configurado.

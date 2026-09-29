@@ -291,9 +291,13 @@
         return url.toString();
     };
 
-    PanelDestinatarios.prototype.buscar = function (pagina) {
+    // ``reusarFiltros``: la paginacion recorre la ultima busqueda ejecutada, no
+    // lo que haya quedado editado en los filtros sin presionar Buscar.
+    PanelDestinatarios.prototype.buscar = function (pagina, reusarFiltros) {
         if (this.cargando || !this.urls.buscar) return;
-        this.ultimaBusqueda = this.recolectarFiltros();
+        if (!reusarFiltros || !this.ultimaBusqueda) {
+            this.ultimaBusqueda = this.recolectarFiltros();
+        }
         this.paginaActual = pagina || 1;
         this.cargando = true;
         this.refs.resumen.textContent = "Buscando...";
@@ -456,7 +460,7 @@
             boton.addEventListener(
                 "click",
                 function () {
-                    this.buscar(destino);
+                    this.buscar(destino, true);
                 }.bind(this)
             );
             return boton;
@@ -509,17 +513,14 @@
             );
         }
 
-        // Inputs ocultos: lo que realmente viaja en el POST.
+        // Un solo input oculto con los ids separados por coma: un input por id
+        // supera DATA_UPLOAD_MAX_NUMBER_FIELDS con selecciones grandes (400).
         this.refs.inputs.innerHTML = "";
-        this.seleccion.forEach(
-            function (_nombre, id) {
-                var input = document.createElement("input");
-                input.type = "hidden";
-                input.name = this.universo;
-                input.value = id;
-                this.refs.inputs.appendChild(input);
-            }.bind(this)
-        );
+        var input = document.createElement("input");
+        input.type = "hidden";
+        input.name = this.universo;
+        input.value = Array.from(this.seleccion.keys()).join(",");
+        this.refs.inputs.appendChild(input);
     };
 
     document.addEventListener("DOMContentLoaded", function () {

@@ -13,7 +13,7 @@
 
 ## Cambios aplicados
 
-### Organizaciones: filtros combinables en el listado
+### Organizaciones: motor de filtros combinables
 - `organizaciones/filter_config.py` (nuevo): `FIELD_MAP` / `FIELD_TYPES` /
   `FILTER_FIELDS` / operadores + `ORGANIZACION_ADVANCED_FILTER` (instancia de
   `AdvancedFilterEngine`) + `get_filters_ui_config()` con cache, espejando
@@ -22,11 +22,9 @@
   provincia, municipio, localidad, espacio comunitario, codigo de proyecto,
   sin vencimiento, fecha de vencimiento, fecha de creacion e ID.
 - `organizaciones/views.py`: `_build_organizacion_list_queryset` acepta
-  `request_or_get` y aplica el engine; el listado pasa a `filters_mode` y expone
-  `filters_config`; la vista AJAX honra `filters`.
+  `request_or_get` y aplica el engine; el listado y la vista AJAX honran
+  `filters` (sin UI que lo envie, ver "Ajustes de review").
 - `organizaciones/views_export.py`: el CSV usa los mismos filtros que el listado.
-- `organizaciones/templates/organizacion_list.html`: el buscador pasa de
-  `ajax_search_mode` a `filters_mode` (mismo componente que comedores).
 
 ### Comunicados: panel de destinatarios con filtros
 - `comunicados/services_destinatarios.py` (nuevo): busca comedores y
@@ -40,7 +38,8 @@
   config de filtros, URLs y seleccion previa en Create/Update.
 - `comunicados/forms.py`: los campos `comedores` y `organizaciones` pasan de
   `SelectMultiple` a `MultipleHiddenInput`. El universo ya no se serializa en el
-  HTML; el queryset por permisos sigue validando lo que llega por POST.
+  HTML; el queryset por permisos sigue validando lo que llega por POST. (Luego
+  reemplazado por un input unico, ver "Ajustes de review".)
 - `templates/comunicados/partials/destinatarios_panel.html` (nuevo) y
   `static/custom/js/comunicadosDestinatarios.js` (nuevo): filas de filtro
   (campo + operador + valor, segun el tipo), busqueda paginada, agregar/quitar
@@ -60,8 +59,8 @@
 - El formulario deja de renderizar miles de `<option>`: el universo se consulta
   por AJAX. Los comunicados ya guardados se siguen editando igual (la seleccion
   previa se precarga como badges).
-- El listado de organizaciones cambia de buscador: en lugar de la busqueda AJAX
-  por texto libre ahora usa el mismo panel de filtros que comedores.
+- El listado de organizaciones no cambia para el usuario: conserva la busqueda
+  AJAX por texto libre.
 
 ## Validación
 - `pytest tests/ comunicados/ organizaciones/ comedores/ -n auto`:
@@ -73,11 +72,32 @@
   `cp1252` de `xlwt`); se verifico con `git stash`.
 - `black`, `djlint --reformat` y `pylint -E` sobre los archivos tocados.
 
+## Ajustes de review
+- **Seleccion en un solo campo**: `comedores` y `organizaciones` viajan como un
+  unico input oculto con ids separados por coma (`CommaSeparatedIdsInput` en
+  `comunicados/forms.py`). Con un input por id, seleccionar ~1000 o mas
+  destinatarios superaba `DATA_UPLOAD_MAX_NUMBER_FIELDS` (1000 por defecto) y el
+  POST respondia 400. El widget sigue aceptando valores repetidos (`getlist`)
+  por compatibilidad. Se descarto subir el setting global porque afloja una
+  proteccion anti-DoS en todo el sitio.
+- **Fechas de Organizaciones por dia**: `fecha_vencimiento` y `fecha_creacion`
+  son `DateTimeField`; se mapean a `__date` (mismo patron que celiaquia, CDF y
+  rendicion de cuentas). Antes `eq` comparaba contra medianoche y `gt`/`lt`
+  quedaban corridos un dia.
+- **Alcance sin `IN` gigante**: con alcance total
+  (`permissions.tiene_alcance_total_destinatarios`) la busqueda usa el queryset
+  completo en vez de materializar todos los ids.
+- **Robustez**: ids no numericos en el POST se descartan al pintar la seleccion
+  (antes 500); la paginacion del panel reutiliza la ultima busqueda ejecutada;
+  el CSV de organizaciones cuenta comedores con `distinct=True` para no inflar
+  el conteo al filtrar por relaciones.
+- **Listado de Organizaciones sin cambio de UX**: se revirtio el paso a
+  `filters_mode` en `organizacion_list.html` porque no estaba pedido en el issue.
+  Los filtros combinables de organizaciones quedan para Comunicados; el backend
+  del listado sigue aceptando `filters` y puede habilitarse en la UI con una
+  decision de producto explicita.
+
 ## Riesgos y rollback
-- Riesgo principal: el cambio de buscador del listado de organizaciones es
-  visible para todos sus usuarios. Si hace falta conservar la busqueda AJAX por
-  texto, alcanza con volver `filters_mode` a `ajax_search_mode` en
-  `organizacion_list.html` (el backend soporta ambos: `busqueda` y `filters`).
 - El tope de seleccion masiva (2000) es conservador; si molesta, subirlo en
   `comunicados/services_destinatarios.MAX_SELECCION_MASIVA`.
 - Rollback: revertir el commit. No hay migraciones.

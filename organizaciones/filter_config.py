@@ -34,9 +34,10 @@ FIELD_MAP: Dict[str, str] = {
     "telefono": "telefono",
     # Booleanos
     "sin_vencimiento": "sin_vencimiento",
-    # Fechas
-    "fecha_vencimiento": "fecha_vencimiento",
-    "fecha_creacion": "fecha_creacion",
+    # Fechas: ambos son DateTimeField; ``__date`` compara por dia y no contra
+    # la medianoche del valor recibido.
+    "fecha_vencimiento": "fecha_vencimiento__date",
+    "fecha_creacion": "fecha_creacion__date",
 }
 
 FIELD_TYPES: Dict[str, str] = {

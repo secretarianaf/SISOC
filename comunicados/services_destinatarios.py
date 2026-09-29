@@ -2,22 +2,24 @@
 
 Reutiliza los motores de filtros combinables de los listados de comedores y
 organizaciones, acotando siempre el universo al alcance del usuario.
+
+La busqueda en si vive en `comedores/api.py`, la fachada publica de Comedores
+Core: el contrato `comedores-core-public-boundary` le prohibe a `comunicados`
+importar `comedores.models`, `comedores.services` y `organizaciones.models`. De
+este lado del limite solo circulan DTOs, nunca objetos del ORM.
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List
 
-from comedores.models import Comedor
-from comedores.services.comedor_service.impl import COMEDOR_ADVANCED_FILTER
-from comedores.services.filter_config import (
-    get_filters_ui_config as get_comedores_filters_ui_config,
+from comedores.api import (
+    buscar_comedores_para_destinatarios,
+    buscar_organizaciones_para_destinatarios,
+    get_filtros_destinatarios_config as _config_de_filtros_de_la_fachada,
+    nombres_de_comedores,
+    nombres_de_organizaciones,
 )
-from organizaciones.filter_config import (
-    ORGANIZACION_ADVANCED_FILTER,
-    get_filters_ui_config as get_organizaciones_filters_ui_config,
-)
-from organizaciones.models import Organizacion
 
 from .permissions import (
     get_ids_comedores_del_usuario,
@@ -33,33 +35,22 @@ PAGE_SIZE = 25
 MAX_SELECCION_MASIVA = 2000
 
 
-def _paginar(queryset, page: int) -> Tuple[List[Any], int, bool]:
-    """Devuelve (items, total, hay_mas) para la pagina pedida."""
+def _ids_scope_comedores(user):
+    """Ids a los que se acota la busqueda, o ``None`` si el alcance es total.
 
-    page = max(1, page)
-    total = queryset.count()
-    inicio = (page - 1) * PAGE_SIZE
-    fin = inicio + PAGE_SIZE
-    return list(queryset[inicio:fin]), total, fin < total
+    ``None`` no es "sin alcance": es alcance total, y le evita a la fachada
+    armar un ``IN`` con todos los comedores del sistema.
+    """
 
-
-def _comedores_scoped(user):
-    queryset = Comedor.objects.all()
-    # Con alcance total no se materializan todos los ids para un ``IN`` gigante.
-    if not tiene_alcance_total_destinatarios(user):
-        queryset = queryset.filter(pk__in=get_ids_comedores_del_usuario(user))
-    return queryset.select_related(
-        "provincia", "municipio", "localidad", "programa"
-    ).order_by("nombre", "id")
+    if tiene_alcance_total_destinatarios(user):
+        return None
+    return get_ids_comedores_del_usuario(user)
 
 
-def _organizaciones_scoped(user):
-    queryset = Organizacion.objects.all()
-    if not tiene_alcance_total_destinatarios(user):
-        queryset = queryset.filter(pk__in=get_ids_organizaciones_del_usuario(user))
-    return queryset.select_related(
-        "tipo_entidad", "provincia", "municipio", "localidad"
-    ).order_by("nombre", "id")
+def _ids_scope_organizaciones(user):
+    if tiene_alcance_total_destinatarios(user):
+        return None
+    return get_ids_organizaciones_del_usuario(user)
 
 
 def _ids_validos(ids) -> List[int]:
@@ -74,85 +65,60 @@ def _ids_validos(ids) -> List[int]:
     return validos
 
 
-def _detalle_comedor(comedor: Comedor) -> str:
-    partes = [
-        getattr(comedor.provincia, "nombre", None),
-        getattr(comedor.municipio, "nombre", None),
-        getattr(comedor.localidad, "nombre", None),
-    ]
-    return " · ".join(parte for parte in partes if parte)
-
-
-def _detalle_organizacion(organizacion: Organizacion) -> str:
-    partes = [
-        getattr(organizacion.tipo_entidad, "nombre", None),
-        getattr(organizacion.provincia, "nombre", None),
-        getattr(organizacion.municipio, "nombre", None),
-    ]
-    return " · ".join(parte for parte in partes if parte)
+def _respuesta_pagina(pagina, page: int) -> Dict[str, Any]:
+    return {
+        "results": [
+            {"id": item.id, "nombre": item.nombre, "detalle": item.detalle}
+            for item in pagina.items
+        ],
+        "total": pagina.total,
+        "has_more": pagina.hay_mas,
+        "page": max(1, page),
+        "max_seleccion_masiva": MAX_SELECCION_MASIVA,
+    }
 
 
 def buscar_comedores(request, user, page: int = 1) -> Dict[str, Any]:
     """Comedores del usuario que matchean los filtros recibidos."""
 
-    queryset = COMEDOR_ADVANCED_FILTER.filter_queryset(
-        _comedores_scoped(user), request
-    ).distinct()
-    items, total, hay_mas = _paginar(queryset, page)
-    return {
-        "results": [
-            {
-                "id": comedor.pk,
-                "nombre": comedor.nombre or f"Comedor {comedor.pk}",
-                "detalle": _detalle_comedor(comedor),
-            }
-            for comedor in items
-        ],
-        "total": total,
-        "has_more": hay_mas,
-        "page": max(1, page),
-        "max_seleccion_masiva": MAX_SELECCION_MASIVA,
-    }
+    pagina = buscar_comedores_para_destinatarios(
+        request,
+        ids_scope=_ids_scope_comedores(user),
+        page=page,
+        page_size=PAGE_SIZE,
+    )
+    return _respuesta_pagina(pagina, page)
 
 
 def buscar_organizaciones(request, user, page: int = 1) -> Dict[str, Any]:
     """Organizaciones del usuario que matchean los filtros recibidos."""
 
-    queryset = ORGANIZACION_ADVANCED_FILTER.filter_queryset(
-        _organizaciones_scoped(user), request
-    ).distinct()
-    items, total, hay_mas = _paginar(queryset, page)
-    return {
-        "results": [
-            {
-                "id": organizacion.pk,
-                "nombre": organizacion.nombre or f"Organizacion {organizacion.pk}",
-                "detalle": _detalle_organizacion(organizacion),
-            }
-            for organizacion in items
-        ],
-        "total": total,
-        "has_more": hay_mas,
-        "page": max(1, page),
-        "max_seleccion_masiva": MAX_SELECCION_MASIVA,
-    }
+    pagina = buscar_organizaciones_para_destinatarios(
+        request,
+        ids_scope=_ids_scope_organizaciones(user),
+        page=page,
+        page_size=PAGE_SIZE,
+    )
+    return _respuesta_pagina(pagina, page)
 
 
-def _seleccionar_todos(queryset) -> Dict[str, Any]:
-    total = queryset.count()
-    if total > MAX_SELECCION_MASIVA:
+def _respuesta_seleccion_masiva(pagina) -> Dict[str, Any]:
+    """Convierte una pagina del tope en la respuesta de 'agregar todos'.
+
+    Se pide una sola pagina de ``MAX_SELECCION_MASIVA`` elementos: si el total
+    la supera, se corta sin haber traido las filas.
+    """
+
+    if pagina.total > MAX_SELECCION_MASIVA:
         return {
             "results": [],
-            "total": total,
+            "total": pagina.total,
             "truncado": True,
             "max_seleccion_masiva": MAX_SELECCION_MASIVA,
         }
     return {
-        "results": [
-            {"id": pk, "nombre": nombre or f"#{pk}"}
-            for pk, nombre in queryset.values_list("pk", "nombre")
-        ],
-        "total": total,
+        "results": [{"id": item.id, "nombre": item.nombre} for item in pagina.items],
+        "total": pagina.total,
         "truncado": False,
         "max_seleccion_masiva": MAX_SELECCION_MASIVA,
     }
@@ -161,46 +127,42 @@ def _seleccionar_todos(queryset) -> Dict[str, Any]:
 def seleccionar_todos_comedores(request, user) -> Dict[str, Any]:
     """Todos los comedores que matchean, para el boton 'agregar todos'."""
 
-    return _seleccionar_todos(
-        COMEDOR_ADVANCED_FILTER.filter_queryset(
-            _comedores_scoped(user), request
-        ).distinct()
+    return _respuesta_seleccion_masiva(
+        buscar_comedores_para_destinatarios(
+            request,
+            ids_scope=_ids_scope_comedores(user),
+            page=1,
+            page_size=MAX_SELECCION_MASIVA,
+        )
     )
 
 
 def seleccionar_todas_organizaciones(request, user) -> Dict[str, Any]:
     """Todas las organizaciones que matchean, para el boton 'agregar todos'."""
 
-    return _seleccionar_todos(
-        ORGANIZACION_ADVANCED_FILTER.filter_queryset(
-            _organizaciones_scoped(user), request
-        ).distinct()
+    return _respuesta_seleccion_masiva(
+        buscar_organizaciones_para_destinatarios(
+            request,
+            ids_scope=_ids_scope_organizaciones(user),
+            page=1,
+            page_size=MAX_SELECCION_MASIVA,
+        )
     )
 
 
 def etiquetas_de_seleccion(user, comedor_ids: Iterable[int], organizacion_ids) -> Dict:
     """Nombres de los destinatarios ya seleccionados, para pintar los badges."""
 
-    comedor_ids = _ids_validos(comedor_ids)
-    organizacion_ids = _ids_validos(organizacion_ids)
-    comedores = (
-        _comedores_scoped(user).filter(pk__in=comedor_ids).values_list("pk", "nombre")
-        if comedor_ids
-        else []
+    comedores = nombres_de_comedores(
+        _ids_validos(comedor_ids), ids_scope=_ids_scope_comedores(user)
     )
-    organizaciones = (
-        _organizaciones_scoped(user)
-        .filter(pk__in=organizacion_ids)
-        .values_list("pk", "nombre")
-        if organizacion_ids
-        else []
+    organizaciones = nombres_de_organizaciones(
+        _ids_validos(organizacion_ids), ids_scope=_ids_scope_organizaciones(user)
     )
     return {
-        "comedores": [
-            {"id": pk, "nombre": nombre or f"#{pk}"} for pk, nombre in comedores
-        ],
+        "comedores": [{"id": item.id, "nombre": item.nombre} for item in comedores],
         "organizaciones": [
-            {"id": pk, "nombre": nombre or f"#{pk}"} for pk, nombre in organizaciones
+            {"id": item.id, "nombre": item.nombre} for item in organizaciones
         ],
     }
 
@@ -208,10 +170,7 @@ def etiquetas_de_seleccion(user, comedor_ids: Iterable[int], organizacion_ids) -
 def get_filtros_destinatarios_config() -> Dict[str, Any]:
     """Config de filtros de ambos universos, para el panel de destinatarios."""
 
-    return {
-        "comedores": get_comedores_filters_ui_config(),
-        "organizaciones": get_organizaciones_filters_ui_config(),
-    }
+    return _config_de_filtros_de_la_fachada()
 
 
 __all__ = [

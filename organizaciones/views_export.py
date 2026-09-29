@@ -3,8 +3,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from core.mixins import CSVExportMixin
 from organizaciones.models import Organizacion
+from organizaciones.filter_config import ORGANIZACION_ADVANCED_FILTER
 from organizaciones.views import (
-    ORGANIZACION_ADVANCED_FILTER,
     _apply_organizacion_search,
 )
 

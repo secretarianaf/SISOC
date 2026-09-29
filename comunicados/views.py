@@ -55,6 +55,7 @@ from .permissions import (
     can_toggle_destacado,
     require_create_permission,
     require_edit_permission,
+    require_seleccionar_destinatarios_permission,
     require_publish_permission,
     require_archive_permission,
     require_toggle_destacado_permission,
@@ -603,7 +604,7 @@ class DestinatariosBuscarView(LoginRequiredMixin, View):
     }
 
     def get(self, request, universo, *args, **kwargs):
-        require_create_permission(request.user)
+        require_seleccionar_destinatarios_permission(request.user)
         buscador = self.buscadores.get(universo)
         if buscador is None:
             return JsonResponse({"error": "Universo desconocido."}, status=404)
@@ -623,7 +624,7 @@ class DestinatariosSeleccionarTodosView(LoginRequiredMixin, View):
     }
 
     def get(self, request, universo, *args, **kwargs):
-        require_create_permission(request.user)
+        require_seleccionar_destinatarios_permission(request.user)
         selector = self.selectores.get(universo)
         if selector is None:
             return JsonResponse({"error": "Universo desconocido."}, status=404)

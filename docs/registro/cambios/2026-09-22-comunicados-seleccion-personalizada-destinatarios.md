@@ -97,6 +97,51 @@
   del listado sigue aceptando `filters` y puede habilitarse en la UI con una
   decision de producto explicita.
 
+## Segunda ronda de review (PR #2557)
+
+- **La busqueda se movio a `comedores/api.py`.** `comunicados.services_destinatarios`
+  importaba `comedores.models`, `comedores.services` y `organizaciones.models`, y
+  eso rompe el contrato `comedores-core-public-boundary` de `.importlinter`
+  (`architecture_imports` en rojo). Ademas `comedores.services.filter_config` es
+  un alias por `sys.modules`, asi que pylint tiraba `E0611` sobre ese import.
+
+  La fachada publica de Comedores Core ahora expone
+  `buscar_comedores_para_destinatarios`, `buscar_organizaciones_para_destinatarios`,
+  `nombres_de_comedores`, `nombres_de_organizaciones` y
+  `get_filtros_destinatarios_config`. Devuelven **DTOs** (`DestinatarioDisponible`,
+  `PaginaDestinatarios`): del lado de comunicados no circula ningun objeto del
+  ORM. Se descarto agregar la excepcion en `ignore_imports`, porque seria aflojar
+  el contrato para un caso que la fachada resuelve bien.
+
+- **El panel dejo de exigir permiso de creacion.** Se renderiza tanto en el alta
+  como en la edicion, y cada vista pide un permiso distinto: un usuario del grupo
+  "Comunicado Editar" abria un borrador, tocaba Buscar y recibia 403. Ahora los
+  dos endpoints usan `require_seleccionar_destinatarios_permission`
+  (`can_create_comunicado or can_edit_comunicado`). El alcance lo sigue aplicando
+  el servicio.
+
+  Efecto lateral que importa: como `can_create_comunicado` era **exactamente**
+  `tiene_alcance_total_destinatarios`, la rama de alcance acotado del servicio no
+  se alcanzaba nunca desde estos endpoints. Ahora si, con un tecnico que entra
+  por el permiso de edicion.
+
+- **Tests con usuarios reales.** `test_buscar_respeta_el_alcance_del_usuario`
+  forzaba `tiene_alcance_total_destinatarios=False` sobre un admin, un estado que
+  no puede darse con permisos reales, y por eso no detectaba el 403. Se reemplazo
+  por usuarios construidos con permisos de verdad: un editor sin alcance, un
+  tecnico con dupla activa, y la vista de edicion junto a los dos endpoints.
+
+- **`organizaciones/views.py`**: el `.distinct()` se aplicaba siempre que llegara
+  `request_or_get`, aunque no hubiera `filters`. Como la UI del listado se
+  revirtio y no manda `filters`, cada carga pagaba un `SELECT DISTINCT` de mas.
+  Ahora se usa `build_q()` y solo se filtra y aplica `distinct()` si devuelve un
+  `Q`. Tambien se movio el import de `filter_config` junto a los de
+  `organizaciones` (`C0412 ungrouped-imports`).
+
+- **`organizaciones/views_export.py`** importa `ORGANIZACION_ADVANCED_FILTER`
+  directo de `organizaciones.filter_config`, para no acoplar el export a las
+  views.
+
 ## Riesgos y rollback
 - El tope de seleccion masiva (2000) es conservador; si molesta, subirlo en
   `comunicados/services_destinatarios.MAX_SELECCION_MASIVA`.

@@ -3,16 +3,66 @@
 import json
 
 import pytest
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, User
+from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 
 from comedores.models import Comedor
 from comunicados import services_destinatarios
 from comunicados.models import Comunicado, SubtipoComunicado, TipoComunicado
 from core.models import Provincia
+from duplas.models import Dupla
 from organizaciones.models import Organizacion, TipoEntidad
 
 pytestmark = pytest.mark.django_db
+
+
+def _dar_permiso(usuario, codename, modelo=User, nombre=None):
+    content_type = ContentType.objects.get_for_model(modelo)
+    permiso, _ = Permission.objects.get_or_create(
+        codename=codename,
+        content_type=content_type,
+        defaults={"name": nombre or codename},
+    )
+    usuario.user_permissions.add(permiso)
+    return usuario
+
+
+def _usuario_editor(username="editor_dest"):
+    """Usuario del grupo "Comunicado Editar": edita, pero no crea.
+
+    Es el caso que regresionaba: abria un borrador y el panel le devolvia 403.
+    """
+
+    usuario = User.objects.create_user(username, password="test")
+    return _dar_permiso(usuario, "change_comunicado", Comunicado)
+
+
+def _usuario_tecnico_editor(username="tecnico_editor_dest"):
+    """Tecnico con permiso de edicion: alcance acotado a su dupla."""
+
+    usuario = _usuario_editor(username)
+    return _dar_permiso(usuario, "role_tecnico_comedor", User, nombre="Tecnico Comedor")
+
+
+def _comedor_de_la_dupla(tecnico, comedor, nombre="Dupla destinatarios"):
+    abogado = User.objects.create_user(f"abogado_{tecnico.username}", password="test")
+    dupla = Dupla.objects.create(nombre=nombre, estado="Activo", abogado=abogado)
+    dupla.tecnico.add(tecnico)
+    comedor.dupla = dupla
+    comedor.save(update_fields=["dupla"])
+    return dupla
+
+
+def _borrador(usuario, titulo="Borrador editable"):
+    return Comunicado.objects.create(
+        titulo=titulo,
+        cuerpo="Contenido",
+        tipo=TipoComunicado.EXTERNO,
+        subtipo=SubtipoComunicado.COMEDORES,
+        estado="borrador",
+        usuario_creador=usuario,
+    )
 
 
 def _filtros(items):
@@ -140,17 +190,19 @@ def test_seleccionar_todos_corta_cuando_supera_el_tope(client, admin, monkeypatc
     assert payload["total"] == 2
 
 
-def test_buscar_respeta_el_alcance_del_usuario(client, admin, monkeypatch):
+def test_buscar_respeta_el_alcance_del_usuario(client):
+    """Un tecnico solo ve los comedores de su dupla.
+
+    Con usuarios reales, y no forzando el alcance: tener permiso de crear ya
+    implica alcance total, asi que la rama acotada solo se alcanza con alguien
+    que entra por el permiso de edicion.
+    """
+
     visible = Comedor.objects.create(nombre="Comedor visible")
     Comedor.objects.create(nombre="Comedor ajeno")
-    monkeypatch.setattr(
-        services_destinatarios, "tiene_alcance_total_destinatarios", lambda user: False
-    )
-    monkeypatch.setattr(
-        services_destinatarios,
-        "get_ids_comedores_del_usuario",
-        lambda user: (visible.pk,),
-    )
+    tecnico = _usuario_tecnico_editor()
+    _comedor_de_la_dupla(tecnico, visible)
+    client.force_login(tecnico)
 
     payload = client.get(
         reverse("comunicados_destinatarios_buscar", args=["comedores"]),
@@ -158,6 +210,60 @@ def test_buscar_respeta_el_alcance_del_usuario(client, admin, monkeypatch):
     ).json()
 
     assert [item["id"] for item in payload["results"]] == [visible.pk]
+
+
+def test_el_editor_puede_abrir_el_borrador_y_usar_el_panel(client):
+    """La regresion del PR: editar exigia un permiso y el panel, otro."""
+
+    Comedor.objects.create(nombre="Comedor cualquiera")
+    editor = _usuario_editor()
+    comunicado = _borrador(editor)
+    client.force_login(editor)
+
+    edicion = client.get(reverse("comunicados_editar", kwargs={"pk": comunicado.pk}))
+    buscar = client.get(
+        reverse("comunicados_destinatarios_buscar", args=["comedores"]),
+        {"filters": _filtros([])},
+    )
+    todos = client.get(
+        reverse("comunicados_destinatarios_todos", args=["comedores"]),
+        {"filters": _filtros([])},
+    )
+
+    assert edicion.status_code == 200
+    assert buscar.status_code == 200
+    assert todos.status_code == 200
+
+
+def test_el_editor_sin_alcance_no_recibe_destinatarios(client):
+    """Puede abrir el panel, pero sin alcance no ve a nadie."""
+
+    Comedor.objects.create(nombre="Comedor fuera de alcance")
+    client.force_login(_usuario_editor("editor_sin_alcance"))
+
+    payload = client.get(
+        reverse("comunicados_destinatarios_buscar", args=["comedores"]),
+        {"filters": _filtros([])},
+    ).json()
+
+    assert payload["results"] == []
+    assert payload["total"] == 0
+
+
+def test_seleccionar_todos_respeta_el_alcance_del_tecnico(client):
+    suyo = Comedor.objects.create(nombre="Comedor propio")
+    Comedor.objects.create(nombre="Comedor de otro")
+    tecnico = _usuario_tecnico_editor("tecnico_todos_dest")
+    _comedor_de_la_dupla(tecnico, suyo, nombre="Dupla seleccion masiva")
+    client.force_login(tecnico)
+
+    payload = client.get(
+        reverse("comunicados_destinatarios_todos", args=["comedores"]),
+        {"filters": _filtros([])},
+    ).json()
+
+    assert [item["id"] for item in payload["results"]] == [suyo.pk]
+    assert payload["total"] == 1
 
 
 def test_universo_desconocido_devuelve_404(client, admin):
@@ -168,7 +274,9 @@ def test_universo_desconocido_devuelve_404(client, admin):
     assert response.status_code == 404
 
 
-def test_buscar_exige_permiso_de_creacion(client):
+def test_buscar_exige_permiso_sobre_comunicados(client):
+    """Sin permiso de crear ni de editar, el panel sigue cerrado."""
+
     sin_permisos = User.objects.create_user("sin_permisos_dest", password="test")
     client.force_login(sin_permisos)
 

@@ -1,4 +1,4 @@
-# Contexto de feature PR #2557 - Cambios
+# Contexto de feature PR #2557 - selección personalizada de destinatarios con filtros combinables
 
 ## Resumen
 

@@ -33,7 +33,7 @@
 
 - Empezar por `docs/registro/prs/PR-2590.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
-- `docs/contexto/features/pr-2590-r-cuentas-tk-2445.md`
+- `docs/contexto/features/pr-2590-feat-organizaciones-territorial-asignado-y-filtro-en-rendiciones-2445.md`
 - `docs/registro/cambios/2026-09-28-issue-2445-territorial-asignado-abordaje.md`
 - `docs/registro/prs/PR-2590.md`
 - `organizaciones/forms.py`

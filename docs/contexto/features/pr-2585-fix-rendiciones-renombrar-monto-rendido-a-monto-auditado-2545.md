@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- No informado explícitamente; inferir desde el título del PR y el diff.
+- Rendición de cuentas mensual. Nombre del monto que se registra al cerrar la etapa Auditoría.
 
 ## Arquitectura tocada
 
@@ -17,10 +17,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: No informado
-- Área principal declarada: No informada
-- Impacto usuario declarado: No informado
-- Riesgos / rollback: No informado
+- Tipo de cambio declarado: Cambio de texto (UI)
+- Área principal declarada: Rendición de cuentas mensual / Organizaciones
+- Impacto usuario declarado: Cambia el nombre visible del campo. No cambian datos, validaciones ni la PWA.
+- Riesgos / rollback: Riesgo mínimo, solo cambian textos. El rollback es revertir la PR, sin migraciones.
 
 ## Design system y UI
 
@@ -31,7 +31,9 @@
 
 - Empezar por `docs/registro/prs/PR-2585.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `docs/contexto/features/pr-2585-fix-rendiciones-renombrar-monto-rendido-a-monto-auditado-2545.md`
 - `docs/registro/cambios/2026-09-28-issue-2545-monto-auditado.md`
+- `docs/registro/prs/PR-2585.md`
 - `organizaciones/templates/organizacion_detail.html`
 - `organizaciones/templates/organizacion_rendicion_detail.html`
 - `organizaciones/tests.py`

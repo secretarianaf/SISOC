@@ -9,7 +9,7 @@ import hashlib
 import json
 
 from django.db import IntegrityError, transaction
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch
 from drf_spectacular.utils import extend_schema
 from rest_framework import filters, generics, mixins, serializers, status, viewsets
 from rest_framework.authentication import TokenAuthentication
@@ -336,25 +336,8 @@ class TerritorialComedorViewSet(
             .prefetch_related("seguimientos")
             .order_by("-fecha_visita", "-id")
         )
-        # Un seguimiento PNUD (H1) o un acta complementaria (H5) asignados desde
-        # SISOC también son "trabajo asignado a mí": el comedor aparece aunque
-        # no tenga relevamiento.
-        asignados_pnud = SeguimientoPnud.objects.filter(
-            tecnico=user, asignado_desde_sisoc=True
-        ).values("comedor_id")
-        actas_asignadas = ActaComplementaria.objects.filter(
-            tecnico=user, asignado_desde_sisoc=True
-        ).values("comedor_id")
-        # Las tres fuentes van como subconsultas: un OR sobre el JOIN
-        # ``relevamiento__...`` obliga a un LEFT JOIN + DISTINCT sobre toda la
-        # tabla de comedores en el listado principal de la app.
-        mis_relevamientos = Relevamiento.objects.filter(territorial_user=user)
         return (
-            Comedor.objects.filter(
-                Q(id__in=mis_relevamientos.values("comedor_id"))
-                | Q(id__in=asignados_pnud)
-                | Q(id__in=actas_asignadas)
-            )
+            Comedor.objects.filter(id__in=self._comedor_ids_asignados(user))
             .select_related("provincia", "municipio", "localidad")
             .prefetch_related(
                 Prefetch(
@@ -366,6 +349,29 @@ class TerritorialComedorViewSet(
             )
             .order_by("nombre", "id")
         )
+
+    @staticmethod
+    def _comedor_ids_asignados(user):
+        """Ids de los comedores con trabajo asignado a ``user``.
+
+        Relevamientos asignados (el manager soft-delete excluye los borrados) y,
+        desde H1/H5, seguimientos PNUD y actas complementarias asignados desde
+        SISOC. Se juntan primero en tres consultas por índice y el listado filtra
+        ``Comedor`` por PK: un OR de subconsultas sobre ``Comedor`` recorría toda
+        la tabla con tres DEPENDENT SUBQUERY por fila (EXPLAIN en MySQL).
+        """
+        ids = set(
+            Relevamiento.objects.filter(territorial_user=user).values_list(
+                "comedor_id", flat=True
+            )
+        )
+        for modelo in (SeguimientoPnud, ActaComplementaria):
+            ids.update(
+                modelo.objects.filter(
+                    tecnico=user, asignado_desde_sisoc=True
+                ).values_list("comedor_id", flat=True)
+            )
+        return sorted(ids)
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)

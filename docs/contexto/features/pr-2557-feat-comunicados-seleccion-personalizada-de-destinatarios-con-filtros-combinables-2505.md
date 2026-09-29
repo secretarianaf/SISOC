@@ -1,4 +1,4 @@
-# Contexto de feature PR #2557 - selección personalizada de destinatarios con filtros combinables
+# Contexto de feature PR #2557 - feat(comunicados): selección personalizada de destinatarios con filtros combinables (#2505)
 
 ## Resumen
 
@@ -38,7 +38,7 @@
 - `comunicados/services_destinatarios.py`
 - `comunicados/urls.py`
 - `comunicados/views.py`
-- `docs/contexto/features/pr-2557-cambios.md`
+- `docs/contexto/features/pr-2557-seleccion-personalizada-de-destinatarios-con-filtros-combinables.md`
 - `docs/registro/cambios/2026-09-22-comunicados-seleccion-personalizada-destinatarios.md`
 - `docs/registro/prs/PR-2557.md`
 - `organizaciones/filter_config.py`

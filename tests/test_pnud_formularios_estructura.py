@@ -84,8 +84,10 @@ def test_ranking_y_casillas_se_muestran_en_su_seccion_con_su_etiqueta():
     filas = {f["etiqueta"]: f["valor"] for f in espacio["filas"]}
     assert filas["Heladeras"] == "Sí"
     assert filas["Freezer"] == "No"
-    assert filas["Gas envasado en garrafa o tubo"] == "1"
-    assert filas["Gas de red"] == "2"
+    # Los ítems del ranking llevan la pregunta (se ven sueltos en el detalle).
+    pregunta = "7.2.1 Tipo de combustible que utilizan para cocinar"
+    assert filas[f"{pregunta} — Gas envasado en garrafa o tubo (n° de orden)"] == "1"
+    assert filas[f"{pregunta} — Gas de red (n° de orden)"] == "2"
     assert filas["7.2.2 ¿Cuentan con agua potable dentro del espacio?"] == "SI"
 
 
@@ -127,3 +129,33 @@ def test_tabla_prestaciones_conserva_sus_columnas():
         "DE — V (Vianda)",
     ]
     assert tabla["filas"] == [["Lunes", "ALM (Almuerzo)", "40", "35", "5"]]
+
+
+def test_bloques_finales_numerados_en_su_propia_seccion():
+    datos = {
+        "relevo_servicio": "Completa",
+        "comentarios_finales": "Sin novedades",
+        "firma_entrevistado": "https://sisoc.example/media/f.png",
+    }
+    titulos = [s["titulo"] for s in respuestas_por_seccion("iia", datos)]
+    assert titulos == [
+        "10. LA ENTREVISTA RELEVÓ EL SERVICIO ALIMENTARIO DE MANERA:",
+        "11. COMENTARIOS FINALES",
+        "Cierre",
+    ]
+
+
+def test_tablas_del_papel_no_agregan_campos():
+    # Las grillas de la app (cuadro de recursos, tablas de módulos) solo dibujan campos
+    # que ya existen: no figuran como campos propios.
+    for formulario in ("secos", "iia1", "iib1", "iia", "iib"):
+        nombres = {c["name"] for c in _campos(formulario)}
+        assert not nombres & {
+            "cuadro_recursos",
+            "tabla_tipo_prestacion",
+            "tabla_modulos",
+            "tabla_cantidad_modulos",
+        }
+    nombres = {c["name"] for c in _campos("iib")}
+    assert {"recibe_donaciones", "aprobados_cena", "destinatarios_modulo_a"} <= nombres
+    assert {"cantidad_modulos_total", "modulo_alimentos"} <= nombres

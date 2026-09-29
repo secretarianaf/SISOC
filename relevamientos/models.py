@@ -6,6 +6,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.forms import ValidationError
 from django.utils import timezone
+from django.utils.functional import cached_property
 
 from comedores.models import CategoriaComedor, Comedor, Referente, TipoDeComedor
 from core.soft_delete import SoftDeleteModelMixin
@@ -2046,16 +2047,23 @@ class ActaComplementaria(ValidacionCoordinadorMixin, OrigenRegistroMixin, models
         comedor = self.comedor.nombre if self.comedor_id else "Sin comedor"
         return f"Acta complementaria ({comedor})"
 
-    @property
+    @cached_property
     def sin_cargar(self):
         """Sin enviar y sin contenido (p. ej. recién asignada desde SISOC): el
-        coordinador no tiene nada que revisar, y un ``Validado`` es definitivo."""
-        tiene_contenido = self.observaciones or self.firma or self.fecha_hora
-        return (
-            self.estado_validacion is None
-            and not tiene_contenido
-            and not self.prestaciones.all()
-        )
+        coordinador no tiene nada que revisar, y un ``Validado`` es definitivo.
+
+        Se calcula una vez por instancia (el detalle lo consulta varias veces):
+        usa el ``prefetch_related("prestaciones")`` si está y, si no, un solo
+        ``exists()``.
+        """
+        if self.estado_validacion is not None:
+            return False
+        if self.observaciones or self.firma or self.fecha_hora:
+            return False
+        cache = getattr(self, "_prefetched_objects_cache", None) or {}
+        if "prestaciones" in cache:
+            return not cache["prestaciones"]
+        return not self.prestaciones.exists()
 
 
 class PrestacionActaComplementaria(models.Model):

@@ -8,10 +8,16 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CSV_POLICY_PATH = Path("core/services/csv_export.py")
 CSV_INPUT_VALIDATOR_PATH = Path("insumos/validators.py")
 LOCALIDADES_JS_EXPORT_PATH = Path("static/custom/js/localidades_modal.js")
+VPSL_OPENAPI_PATH = Path("ver_para_ser_libre/api_views.py")
+GENERATED_API_TYPES_PATH = Path("frontends/packages/api/src/generated.ts")
 ALLOWED_CSV_MIME_PATHS = {
     CSV_POLICY_PATH,
     CSV_INPUT_VALIDATOR_PATH,
     LOCALIDADES_JS_EXPORT_PATH,
+    # Solo declaran el MIME en el contrato OpenAPI; el endpoint VPSL delega
+    # la exportacion a CSVExportMixin, que aplica la politica central.
+    VPSL_OPENAPI_PATH,
+    GENERATED_API_TYPES_PATH,
 }
 CSV_MIME_LITERAL = re.compile(r"text/csv", flags=re.IGNORECASE)
 SOURCE_SUFFIXES = {".py", ".js", ".ts", ".tsx"}

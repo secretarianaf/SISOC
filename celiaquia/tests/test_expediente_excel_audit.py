@@ -146,7 +146,7 @@ def test_provincia_no_ve_auditoria_excel_y_no_descarga(client, settings, tmp_pat
 
 
 @pytest.mark.django_db
-def test_tecnico_asignado_ve_auditoria_y_descarga_excel(client, settings, tmp_path):
+def test_tecnico_asignado_descarga_excel_sin_ver_auditoria(client, settings, tmp_path):
     provincia = _user("provincia-tec", provincial=True)
     tecnico = _user("tecnico", tecnico=True)
     expediente = _expediente_con_excel(settings, tmp_path, provincia)
@@ -159,10 +159,14 @@ def test_tecnico_asignado_ve_auditoria_y_descarga_excel(client, settings, tmp_pa
     assert "Descargar Excel Provincia" in content
     assert "Excel original" in content
     assert "carga_original.xlsx" in content
+    assert "Cargado por" not in content
+    assert "Procesado por" not in content
 
     listing = client.get(reverse("expediente_list"))
     assert listing.status_code == 200
     assert "Excel original" in listing.content.decode()
+    assert "Cargado por" not in listing.content.decode()
+    assert "Procesado por" not in listing.content.decode()
 
     download = client.get(
         reverse("expediente_excel_masivo_descargar", args=[expediente.pk])
@@ -182,6 +186,11 @@ def test_tecnico_no_asignado_no_descarga_excel_masivo(client, settings, tmp_path
     expediente = _expediente_con_excel(settings, tmp_path, provincia)
 
     client.force_login(tecnico)
+    detail = client.get(reverse("expediente_detail", args=[expediente.pk]))
+    assert detail.status_code in (403, 404)
+    assert "Cargado por" not in detail.content.decode()
+    assert "Procesado por" not in detail.content.decode()
+
     download = client.get(
         reverse("expediente_excel_masivo_descargar", args=[expediente.pk])
     )

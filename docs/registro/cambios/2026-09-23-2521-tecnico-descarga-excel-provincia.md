@@ -5,11 +5,10 @@ visible para administradores y coordinadores. El técnico, que es quien revisa
 legajo por legajo, no tenía forma de contrastar lo cargado contra el archivo
 de origen y dependía de que un coordinador se lo enviara por fuera del sistema.
 
-El rol Técnico pasa a ver lo mismo que el Coordinador: el botón "Descargar
-Excel Provincia" en el detalle del expediente, el bloque "Excel original" con
-la auditoría de carga y procesamiento, y la columna homónima del listado. Todo
-está gobernado por un único flag, `can_manage_excel_masivo_audit`, que ahora
-incluye al técnico.
+El rol Técnico puede descargar el Excel desde el detalle y la columna del
+listado. La metadata "Cargado por / Procesado por" sigue reservada al
+Coordinador y al Administrador. La descarga usa `can_download_excel_masivo`;
+la metadata usa `can_manage_excel_masivo_audit`.
 
 ## Alcance por rol
 

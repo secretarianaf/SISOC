@@ -25,7 +25,18 @@ Qué señales hay en SISOC (ver el PR para el detalle):
 
 Por eso este módulo trabaja con *evidencias* (id + hora + fuente) que salen de
 los logs, de auditlog o de ids informados a mano, y nunca repara lo que no puede
-probar: el caso 2 de seguimientos se reporta, no se restaura.
+probar:
+
+* caso 1: solo se invierten los ids que el usuario confirma en
+  ``--invertir-ids`` (el resto queda ``a_revisar``): el valor pudo venir
+  precargado o corregirse por web, y eso no deja línea en el log;
+* caso 2 de seguimientos: se reporta, no se restaura (no hay historial);
+* caso 2 de relevamientos: se restaura desde auditlog solo si el vaciado lo hizo
+  la app (línea del log de la API a ±2 min o actor territorial) y nadie volvió a
+  tocar el campo después.
+
+La repetición se controla con las ``LogEntry`` que deja cada cambio: si
+``purge_auditlog`` las borra, una segunda corrida volvería a proponerlos.
 """
 
 from __future__ import annotations
@@ -36,12 +47,16 @@ import json
 import logging
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timezone as dt_timezone
+from datetime import datetime, timedelta, timezone as dt_timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from auditlog.models import LogEntry
-from django.core.exceptions import FieldDoesNotExist, ValidationError
+from django.core.exceptions import (
+    FieldDoesNotExist,
+    ObjectDoesNotExist,
+    ValidationError,
+)
 from django.db import models, transaction
 from django.utils import timezone
 
@@ -67,7 +82,13 @@ ACCION_RESTAURAR = "restaurar"
 ACCION_YA_REPARADO = "ya_reparado"
 ACCION_CONFLICTO = "conflicto"
 ACCION_SOLO_REPORTE = "solo_reporte"
+ACCION_A_REVISAR = "a_revisar"
 ACCIONES_APLICABLES = (ACCION_INVERTIR, ACCION_RESTAURAR)
+
+AVISO_CASO1 = "si el valor venía precargado o se corrigió por web, invertirlo lo rompe"
+# Distancia máxima entre la línea del log de la API y la LogEntry del mismo PATCH
+# (la línea se escribe al final del request, segundos después del save()).
+TOLERANCIA_LOG = timedelta(seconds=120)
 
 COLUMNAS = (
     "caso",
@@ -85,6 +106,8 @@ COLUMNAS = (
     "valor_propuesto",
     "accion",
     "detalle",
+    "actor",
+    "entrada_auditlog",
 )
 
 # Línea de ``logger.info`` de relevamientos/views/api_views.py con el formatter
@@ -156,6 +179,8 @@ class Fila:
     valor_propuesto: object = ""
     accion: str = ACCION_SOLO_REPORTE
     detalle: str = ""
+    actor: str = ""
+    entrada_auditlog: str = ""
     objetivo: Objetivo | None = None
 
     def como_dict(self):
@@ -169,6 +194,8 @@ class Parametros:
     hasta: datetime = HASTA_DEFAULT
     casos: tuple = (1, 2)
     evidencias: list = field(default_factory=list)
+    # Seguimientos que el usuario confirmó, uno por uno, para invertir la 2.1.6.
+    invertir_ids: frozenset = frozenset()
 
 
 @dataclass
@@ -223,12 +250,13 @@ def _abrir_log(path):
     return path.open(encoding="utf-8", errors="replace")
 
 
-def leer_logs(rutas, tz_nombre):
+def leer_logs(rutas, tz_nombre, advertencias=None):
     """Evidencias desde ``info.log`` (archivos o carpetas; acepta ``.gz``).
 
     ``asctime`` está en la hora local del proceso: Django fija ``TZ`` con
     ``settings.TIME_ZONE``, así que por defecto se interpreta en esa zona y se
-    pasa a UTC.
+    pasa a UTC. Una línea con fecha inválida se ignora con un aviso (se agrega a
+    ``advertencias`` si se pasa la lista).
     """
     zona = ZoneInfo(tz_nombre)
     evidencias = []
@@ -238,7 +266,17 @@ def leer_logs(rutas, tz_nombre):
                 match = _LOG_RE.search(linea)
                 if not match:
                     continue
-                local = datetime.strptime(match["ts"], "%Y-%m-%d %H:%M:%S")
+                try:
+                    local = datetime.strptime(match["ts"], "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    aviso = (
+                        f"{path.name}:{numero}: fecha inválida {match['ts']!r}; "
+                        "se ignora la línea."
+                    )
+                    logger.warning(aviso)
+                    if advertencias is not None:
+                        advertencias.append(aviso)
+                    continue
                 modelo = (
                     SEGUIMIENTO
                     if match["tipo"] == "Primer seguimiento"
@@ -283,20 +321,31 @@ def _clave_orden(evidencia):
 
 
 def _entradas_auditlog_relevamientos(desde, hasta):
-    """Historial de django-auditlog de Relevamiento dentro de la ventana.
+    """Historial de django-auditlog de Relevamiento.
 
+    Devuelve ``(en_ventana, desde_la_ventana)``: las entradas de ``[desde,
+    hasta)`` y, para esos mismos relevamientos, todas las entradas desde
+    ``desde`` sin tope de fin (para detectar cambios posteriores al vaciado).
     Se descartan las entradas que dejó esta misma reparación.
     """
-    entradas = LogEntry.objects.get_for_model(Relevamiento).filter(
-        action=LogEntry.Action.UPDATE,
-        timestamp__gte=desde,
-        timestamp__lt=hasta,
+    base = (
+        LogEntry.objects.get_for_model(Relevamiento)
+        .filter(action=LogEntry.Action.UPDATE)
+        .select_related("actor")
+        .order_by("timestamp", "pk")
     )
-    return [
-        entrada
-        for entrada in entradas.order_by("timestamp", "pk")
-        if _dict(entrada.additional_data).get("reparacion") != MARCA
-    ]
+
+    def _ajenas(queryset):
+        return [
+            entrada
+            for entrada in queryset
+            if _dict(entrada.additional_data).get("reparacion") != MARCA
+        ]
+
+    en_ventana = _ajenas(base.filter(timestamp__gte=desde, timestamp__lt=hasta))
+    pks = {entrada.object_pk for entrada in en_ventana}
+    desde_la_ventana = _ajenas(base.filter(object_pk__in=pks, timestamp__gte=desde))
+    return en_ventana, desde_la_ventana
 
 
 def _marcas_aplicadas():
@@ -417,7 +466,7 @@ def _envios_posteriores(evidencias, corte):
     return posteriores
 
 
-def _filas_caso1(evidencias, seguimientos, marcas, posteriores):
+def _filas_caso1(evidencias, seguimientos, marcas, posteriores, invertir_ids):
     filas = []
     for evidencia in evidencias:
         seguimiento = seguimientos[evidencia.pk]
@@ -444,9 +493,10 @@ def _filas_caso1(evidencias, seguimientos, marcas, posteriores):
                 f"reenviado después ({_texto(posterior.momento)}, {posterior.fuente}): "
                 "el valor puede haberse corregido; revisar a mano"
             )
-        else:
+        elif seguimiento.pk in invertir_ids:
             fila.accion = ACCION_INVERTIR
             fila.valor_propuesto = not actual
+            fila.detalle = f"confirmado en --invertir-ids; {AVISO_CASO1}"
             fila.objetivo = Objetivo(
                 ServiciosBasicosSeguimiento,
                 bloque.pk,
@@ -454,6 +504,16 @@ def _filas_caso1(evidencias, seguimientos, marcas, posteriores):
                 actual,
                 not actual,
                 marca,
+            )
+        else:
+            # Ni el backoffice ni la precarga dejan línea en el log: sin la
+            # confirmación del usuario por id, el valor actual puede ser correcto.
+            fila.accion = ACCION_A_REVISAR
+            fila.valor_propuesto = not actual
+            origen = "id sin hora (manual); " if evidencia.momento is None else ""
+            fila.detalle = (
+                f"{origen}{AVISO_CASO1}; para invertirlo, revisarlo contra el "
+                "papel y pasarlo en --invertir-ids"
             )
         filas.append(fila)
     return filas
@@ -517,45 +577,129 @@ def _filas_caso2_seguimientos(evidencias, seguimientos):
     return filas
 
 
-def _fila_relevamiento_desde_cambio(relevamiento, entrada, campo, par, marcas):
+@dataclass
+class _ContextoRelevamientos:
+    marcas: set
+    # Todas las entradas de auditlog de esos relevamientos desde la ventana.
+    historial: list
+    # Evidencias de log (con hora) por id de relevamiento, de cualquier momento.
+    evidencias_log: dict
+
+
+def _actor(entrada):
+    actor = entrada.actor
+    return actor.get_username() if actor is not None else ""
+
+
+def _es_territorial(usuario, relevamiento):
+    if usuario.pk == relevamiento.territorial_user_id:
+        return True
+    try:
+        return bool(usuario.profile.es_territorial_comedor)
+    except ObjectDoesNotExist:
+        return False
+
+
+def _respaldo_app(entrada, relevamiento, contexto):
+    """Por qué se cree que el vaciado lo hizo la app, o ``None``.
+
+    Con token DRF el middleware de auditlog no ve al usuario (autentica la
+    vista), así que las LogEntry de la app suelen quedar sin actor: la prueba es
+    la línea del log de la API para el mismo relevamiento, a pocos segundos. Si
+    la LogEntry tiene actor, tiene que ser el territorial.
+    """
+    if entrada.actor is not None:
+        if _es_territorial(entrada.actor, relevamiento):
+            return f"actor territorial {_actor(entrada)}"
+        return None
+    for evidencia in contexto.evidencias_log.get(relevamiento.pk, ()):
+        if abs(evidencia.momento - entrada.timestamp) <= TOLERANCIA_LOG:
+            return evidencia.fuente
+    return None
+
+
+def _cambio_posterior(entrada, campo, contexto):
+    """La primera LogEntry posterior al vaciado que vuelve a tocar ``campo``."""
+    for otra in contexto.historial:
+        if otra.object_pk != entrada.object_pk:
+            continue
+        if (otra.timestamp, otra.pk) <= (entrada.timestamp, entrada.pk):
+            continue
+        if campo in (_dict(otra.changes) or _dict(otra.changes_text)):
+            return otra
+    return None
+
+
+def _marca_relevamiento(relevamiento, campo):
+    return f"{MARCA}:caso2:{Relevamiento._meta.label_lower}:{relevamiento.pk}:{campo}"
+
+
+def _bloqueo_previo(fila, relevamiento, entrada, contexto):
+    """``(accion, motivo)`` si el registro no admite restauración, o ``None``."""
+    if _marca_relevamiento(relevamiento, fila.campo) in contexto.marcas:
+        return ACCION_YA_REPARADO, "ya restaurado por esta reparación"
+    if relevamiento.deleted_at is not None:
+        return ACCION_SOLO_REPORTE, "relevamiento borrado lógicamente: no se restaura"
+    posterior = _cambio_posterior(entrada, fila.campo, contexto)
+    if posterior is not None:
+        return ACCION_CONFLICTO, (
+            f"auditlog #{posterior.pk} ({_texto(posterior.timestamp)}) lo cambió "
+            "después del vaciado; no se toca"
+        )
+    return None
+
+
+def _decidir_restauracion(fila, relevamiento, entrada, contexto):
+    """Devuelve ``(accion, motivo)``; si se restaura, completa el objetivo."""
+    bloqueo = _bloqueo_previo(fila, relevamiento, entrada, contexto)
+    if bloqueo is not None:
+        return bloqueo
+    model_field = Relevamiento._meta.get_field(fila.campo)
+    try:
+        anterior = _desde_auditlog(model_field, fila.valor_anterior)
+    except (ValidationError, ValueError, TypeError):
+        return ACCION_CONFLICTO, "el valor anterior no se pudo interpretar"
+    if not _vacio(fila.valor_actual):
+        if fila.valor_actual == anterior:
+            return ACCION_YA_REPARADO, "ya tiene el valor anterior"
+        return ACCION_CONFLICTO, "cambió después del vaciado, no se toca"
+    respaldo = _respaldo_app(entrada, relevamiento, contexto)
+    if respaldo is None:
+        return ACCION_A_REVISAR, (
+            "sin evidencia de que lo haya vaciado la app (ni línea del log de la "
+            "API a ±2 min ni actor territorial); revisar a mano"
+        )
+    fila.valor_propuesto = anterior
+    fila.objetivo = Objetivo(
+        Relevamiento,
+        relevamiento.pk,
+        model_field.attname,
+        fila.valor_actual,
+        anterior,
+        _marca_relevamiento(relevamiento, fila.campo),
+    )
+    return ACCION_RESTAURAR, f"evidencia de la app: {respaldo}"
+
+
+def _fila_relevamiento_desde_cambio(relevamiento, entrada, campo, par, contexto):
     """Una fila por campo que auditlog vio pasar de un valor a vacío."""
     anterior_crudo, nuevo_crudo = par
-    model_field = Relevamiento._meta.get_field(campo)
     evidencia = Evidencia(
         RELEVAMIENTO, relevamiento.pk, entrada.timestamp, f"auditlog:{entrada.pk}"
     )
-    base = _base_fila(2, RELEVAMIENTO, relevamiento, evidencia)
-    actual = model_field.value_from_object(relevamiento)
     fila = Fila(
-        **base,
+        **_base_fila(2, RELEVAMIENTO, relevamiento, evidencia),
         tecnico=_tecnico(relevamiento),
         campo=campo,
-        valor_actual=actual,
+        valor_actual=Relevamiento._meta.get_field(campo).value_from_object(
+            relevamiento
+        ),
         valor_anterior=anterior_crudo,
-        detalle=f"auditlog: {anterior_crudo!r} -> {nuevo_crudo!r}",
+        actor=_actor(entrada) or "(sin actor)",
+        entrada_auditlog=str(entrada.pk),
     )
-    try:
-        anterior = _desde_auditlog(model_field, anterior_crudo)
-    except (ValidationError, ValueError, TypeError):
-        fila.accion = ACCION_CONFLICTO
-        fila.detalle += "; el valor anterior no se pudo interpretar"
-        return fila
-    marca = f"{MARCA}:caso2:{Relevamiento._meta.label_lower}:{relevamiento.pk}:{campo}"
-    if marca in marcas:
-        fila.accion = ACCION_YA_REPARADO
-        fila.detalle += "; ya restaurado por esta reparación"
-    elif _vacio(actual):
-        fila.accion = ACCION_RESTAURAR
-        fila.valor_propuesto = anterior
-        fila.objetivo = Objetivo(
-            Relevamiento, relevamiento.pk, model_field.attname, actual, anterior, marca
-        )
-    elif actual == anterior:
-        fila.accion = ACCION_YA_REPARADO
-        fila.detalle += "; ya tiene el valor anterior"
-    else:
-        fila.accion = ACCION_CONFLICTO
-        fila.detalle += "; cambió después del vaciado, no se toca"
+    fila.accion, motivo = _decidir_restauracion(fila, relevamiento, entrada, contexto)
+    fila.detalle = f"auditlog: {anterior_crudo!r} -> {nuevo_crudo!r}; {motivo}"
     return fila
 
 
@@ -569,33 +713,42 @@ def _campo_restaurable(campo):
     return model_field.concrete and not model_field.many_to_many
 
 
-def _filas_caso2_relevamientos(entradas, evidencias, relevamientos, marcas):
+def _vaciados(entrada):
+    """Pares ``(campo, [anterior, nuevo])`` que pasaron de un valor a vacío."""
+    cambios = _dict(entrada.changes) or _dict(entrada.changes_text)
+    for campo, par in cambios.items():
+        if not isinstance(par, (list, tuple)) or len(par) != 2:
+            continue
+        if not _campo_restaurable(campo):
+            continue
+        if _vacio_en_log(par[1]) and not _vacio_en_log(par[0]):
+            yield campo, par
+
+
+def _filas_caso2_relevamientos(entradas, evidencias, relevamientos, contexto):
     filas = []
     vistos = set()
-    con_historial = set()
     for entrada in entradas:
         relevamiento = relevamientos.get(int(entrada.object_pk))
         if relevamiento is None:
             continue
-        cambios = _dict(entrada.changes) or _dict(entrada.changes_text)
-        for campo, par in cambios.items():
-            if not isinstance(par, (list, tuple)) or len(par) != 2:
-                continue
-            if not _campo_restaurable(campo) or (relevamiento.pk, campo) in vistos:
-                continue
-            if not _vacio_en_log(par[1]) or _vacio_en_log(par[0]):
+        for campo, par in _vaciados(entrada):
+            if (relevamiento.pk, campo) in vistos:
                 continue
             vistos.add((relevamiento.pk, campo))
-            con_historial.add(relevamiento.pk)
             filas.append(
                 _fila_relevamiento_desde_cambio(
-                    relevamiento, entrada, campo, par, marcas
+                    relevamiento, entrada, campo, par, contexto
                 )
             )
+    con_historial = {pk for pk, _ in vistos}
     for evidencia in evidencias:
         relevamiento = relevamientos.get(evidencia.pk)
         if relevamiento is None or relevamiento.pk in con_historial:
             continue
+        borrado = (
+            "; relevamiento borrado lógicamente" if relevamiento.deleted_at else ""
+        )
         filas.append(
             Fila(
                 **_base_fila(2, RELEVAMIENTO, relevamiento, evidencia),
@@ -604,8 +757,8 @@ def _filas_caso2_relevamientos(entradas, evidencias, relevamientos, marcas):
                 valor_actual="-",
                 valor_anterior="(sin historial)",
                 detalle=(
-                    "hubo envío en la ventana; auditlog no registró campos "
-                    "propios vaciados y los bloques anidados no tienen historial"
+                    "hubo envío en la ventana; auditlog no registró campos propios "
+                    f"vaciados y los bloques anidados no tienen historial{borrado}"
                 ),
             )
         )
@@ -619,6 +772,24 @@ def _faltantes(evidencias, encontrados, modelo, diagnostico):
                 f"{modelo} {evidencia.pk} ({evidencia.fuente}) no existe en la base."
             )
     return [evidencia for evidencia in evidencias if evidencia.pk in encontrados]
+
+
+def _evidencias_log_por_id(evidencias, modelo):
+    por_id = {}
+    for evidencia in evidencias:
+        if evidencia.modelo == modelo and evidencia.momento is not None:
+            por_id.setdefault(evidencia.pk, []).append(evidencia)
+    return por_id
+
+
+def _avisar_invertir_ids(invertir_ids, filas, diagnostico):
+    invertibles = {f.registro_id for f in filas if f.accion == ACCION_INVERTIR}
+    for pk in sorted(set(invertir_ids) - invertibles):
+        fila = next((f for f in filas if f.registro_id == pk), None)
+        motivo = fila.accion if fila else "no es candidato del caso 1"
+        diagnostico.advertencias.append(
+            f"--invertir-ids {pk}: no se invierte ({motivo})."
+        )
 
 
 def diagnosticar(parametros):
@@ -640,10 +811,16 @@ def diagnosticar(parametros):
 
     if 1 in parametros.casos:
         posteriores = _envios_posteriores(parametros.evidencias, parametros.corte)
-        diagnostico.filas += _filas_caso1(seg_1, seguimientos, marcas, posteriores)
+        filas_1 = _filas_caso1(
+            seg_1, seguimientos, marcas, posteriores, parametros.invertir_ids
+        )
+        _avisar_invertir_ids(parametros.invertir_ids, filas_1, diagnostico)
+        diagnostico.filas += filas_1
         diagnostico.revisados["caso 1 · seguimientos"] = len(seg_1)
     if 2 in parametros.casos:
-        entradas = _entradas_auditlog_relevamientos(parametros.corte, parametros.hasta)
+        entradas, historial = _entradas_auditlog_relevamientos(
+            parametros.corte, parametros.hasta
+        )
         ids = {int(e.object_pk) for e in entradas} | {e.pk for e in rel_2}
         relevamientos = {
             relevamiento.pk: relevamiento
@@ -653,8 +830,13 @@ def diagnosticar(parametros):
         }
         rel_2 = _faltantes(rel_2, relevamientos, "Relevamiento", diagnostico)
         diagnostico.filas += _filas_caso2_seguimientos(seg_2, seguimientos)
+        contexto = _ContextoRelevamientos(
+            marcas=marcas,
+            historial=historial,
+            evidencias_log=_evidencias_log_por_id(parametros.evidencias, RELEVAMIENTO),
+        )
         diagnostico.filas += _filas_caso2_relevamientos(
-            entradas, rel_2, relevamientos, marcas
+            entradas, rel_2, relevamientos, contexto
         )
         diagnostico.revisados["caso 2 · seguimientos"] = len(seg_2)
         diagnostico.revisados["caso 2 · relevamientos"] = len(relevamientos)
@@ -714,7 +896,8 @@ def _aplicar_fila(fila):
         f"{objetivo.modelo._meta.label}#{objetivo.pk}.{objetivo.attname}: "
         f"{_texto(objetivo.valor_actual)} -> {_texto(objetivo.valor_nuevo)}"
     )
-    logger.info(mensaje)
+    # El log se escribe solo si la transacción confirma.
+    transaction.on_commit(lambda: logger.info(mensaje))
     return mensaje
 
 

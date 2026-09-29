@@ -4,16 +4,26 @@ Por defecto es SOLO LECTURA. Ver ``relevamientos/reparacion_app_2809.py``.
 
 Ejemplos::
 
-    # 1) diagnóstico con los logs de la API (recomendado)
+    # 1) diagnóstico con el LOG_DIR COMPLETO de todas las réplicas
     python manage.py diagnosticar_datos_app_2809 --log /sisoc/logs --formato csv \
         --salida /tmp/diagnostico_2809.csv
 
-    # 2) aplicar exactamente lo listado (el token lo imprime el paso 1)
+    # 2) repetir el diagnóstico con los seguimientos del caso 1 revisados contra
+    #    el papel, para obtener el token de ese conjunto
     python manage.py diagnosticar_datos_app_2809 --log /sisoc/logs \
-        --aplicar --confirmar 1a2b3c4d5e6f
+        --invertir-ids 12,34
+
+    # 3) aplicar exactamente lo listado en el paso 2
+    python manage.py diagnosticar_datos_app_2809 --log /sisoc/logs \
+        --invertir-ids 12,34 --aplicar --confirmar 1a2b3c4d5e6f
+
+La repetición se controla con las LogEntry de auditlog que deja cada cambio:
+``purge_auditlog --days=N`` las borra, y después de eso una corrida nueva
+volvería a proponer los mismos cambios.
 """
 
 import csv
+import os
 from collections import Counter
 from datetime import timezone as dt_timezone
 
@@ -68,7 +78,11 @@ class Command(BaseCommand):
     help = (
         "Diagnostica (solo lectura) los datos que dañaron las versiones 1.1.44 "
         "(2.1.6 invertida) y 1.1.45 (campos vaciados) de la app el 28/9/2026. "
-        "Con --aplicar --confirmar <token> repara lo que se puede probar."
+        "Con --aplicar --confirmar <token> repara lo que se puede probar. "
+        "Pasar el LOG_DIR completo de todas las réplicas y fechas: "
+        "DailyFileHandler nombra la carpeta con la fecha en que arrancó cada "
+        "proceso. La repetición se controla con las LogEntry de auditlog "
+        "(purge_auditlog las borra)."
     )
 
     def add_arguments(self, parser):
@@ -96,7 +110,9 @@ class Command(BaseCommand):
             default=[],
             help=(
                 "Archivo o carpeta de logs de la API (info.log, .gz). Repetible. "
-                "Es la única señal con hora para los seguimientos."
+                "Es la única señal con hora para los seguimientos. Pasar el "
+                "LOG_DIR COMPLETO de todas las réplicas (las carpetas llevan la "
+                "fecha de arranque del proceso, no la del log) y hasta hoy."
             ),
         )
         parser.add_argument(
@@ -114,8 +130,21 @@ class Command(BaseCommand):
             default="",
             help="Ids de relevamiento a revisar sin evidencia de log (1,2,3).",
         )
+        parser.add_argument(
+            "--invertir-ids",
+            default="",
+            help=(
+                "Caso 1: ids de seguimiento revisados contra el papel que sí se "
+                "invierten (1,2,3). Sin esto, el caso 1 queda en a_revisar."
+            ),
+        )
         parser.add_argument("--formato", choices=("tabla", "csv"), default="tabla")
         parser.add_argument("--salida", help="Escribe el listado en este archivo.")
+        parser.add_argument(
+            "--forzar",
+            action="store_true",
+            help="Permite que --salida pise un archivo existente.",
+        )
         parser.add_argument(
             "--aplicar",
             action="store_true",
@@ -161,10 +190,23 @@ class Command(BaseCommand):
         )
         if not desde <= corte <= hasta:
             raise CommandError("Se espera --desde <= --corte <= --hasta.")
+        if (
+            options["salida"]
+            and os.path.exists(options["salida"])
+            and not options["forzar"]
+        ):
+            raise CommandError(
+                f"{options['salida']} ya existe; usar otro nombre o --forzar."
+            )
+        avisos = []
         try:
-            evidencias = reparacion.leer_logs(options["log"], options["log_tz"])
+            evidencias = reparacion.leer_logs(
+                options["log"], options["log_tz"], advertencias=avisos
+            )
         except (FileNotFoundError, OSError) as exc:
             raise CommandError(str(exc)) from exc
+        for aviso in avisos:
+            self.stdout.write(self.style.WARNING(aviso))
         evidencias += reparacion.evidencias_manuales(
             reparacion.SEGUIMIENTO, _ids(options["seguimientos"])
         )
@@ -189,7 +231,12 @@ class Command(BaseCommand):
                 )
             )
         return reparacion.Parametros(
-            desde=desde, corte=corte, hasta=hasta, casos=casos, evidencias=evidencias
+            desde=desde,
+            corte=corte,
+            hasta=hasta,
+            casos=casos,
+            evidencias=evidencias,
+            invertir_ids=frozenset(_ids(options["invertir_ids"])),
         )
 
     def _reportar(self, diagnostico, options, aplicado):

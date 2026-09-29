@@ -8,6 +8,7 @@
 - [sin-area] fix(territorial): errores HTTP de la API territorial detectados por la auditoría de la app. (PR #2584)
 - [sin-area] fix(acompañamiento): QA 28/9 — popup por programa, acta complementaria, bloqueo de re-revisión y validación del acta (H1, H5, H12, H16). (PR #2596)
 - [sin-area] feat(pnud): textos literales del documento en los formularios de seguimiento PNUD. (PR #2598)
+- [sin-area] PNUD: estructura literal del documento en el detalle del backoffice (SI/NO, ranking y casillas aplanados; sin migración). (PR #2600)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-30 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-09-23 -->

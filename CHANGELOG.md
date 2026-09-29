@@ -9,6 +9,7 @@
 - [sin-area] fix(acompañamiento): QA 28/9 — popup por programa, acta complementaria, bloqueo de re-revisión y validación del acta (H1, H5, H12, H16). (PR #2596)
 - [sin-area] feat(pnud): textos literales del documento en los formularios de seguimiento PNUD. (PR #2598)
 - [sin-area] fix(qa-28/9): ajustes de la revisión de #2596 (performance del listado, duplicados, backfill de actas). (PR #2599)
+- [sin-area] PNUD: estructura literal del documento en el detalle del backoffice (SI/NO, ranking y casillas aplanados; sin migración). (PR #2600)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-30 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-09-23 -->

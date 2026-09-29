@@ -31,6 +31,7 @@ from VAT.api_web_views import (
     VatWebCiudadanoViewSet,
     VatWebCursoViewSet,
     VatWebInscripcionViewSet,
+    VatWebPavViewSet,
     VatWebTituloViewSet,
 )
 
@@ -148,6 +149,7 @@ router.register(
     VatWebInscripcionViewSet,
     basename="vat-web-inscripcion",
 )
+router.register(r"web/pav", VatWebPavViewSet, basename="vat-web-pav")
 
 urlpatterns = [
     path("", include(router.urls)),

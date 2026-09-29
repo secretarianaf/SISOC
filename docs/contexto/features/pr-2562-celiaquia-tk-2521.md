@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- Celiaquía — revisión técnica de expedientes. El Técnico necesita acceder al Excel original de la Provincia para contrastarlo contra los legajos que revisa; hasta ahora dependía de que un Coordinador se lo enviara por fuera del sistema.
+- No informado explícitamente; inferir desde el título del PR y el diff.
 
 ## Arquitectura tocada
 
@@ -17,10 +17,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: Feature — ampliación de permisos por rol, con endurecimiento del control de acceso asociado en la vista de descarga.
-- Área principal declarada: celiaquia (views/expediente.py y tests).
-- Impacto usuario declarado: Los Técnicos dejan de depender de un Coordinador para acceder al archivo de origen del expediente, acortando el circuito de revisión de legajos.
-- Riesgos / rollback: Riesgo bajo. No hay migraciones, cambios de modelo ni modificaciones de templates. El cambio consiste en una condición de permiso y una validación de alcance.
+- Tipo de cambio declarado: No informado
+- Área principal declarada: No informada
+- Impacto usuario declarado: No informado
+- Riesgos / rollback: No informado
 
 ## Design system y UI
 

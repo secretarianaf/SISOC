@@ -22,6 +22,7 @@ class Element extends EventTarget {
     this.dataset = {};
   }
   querySelectorAll() { return []; }
+  querySelector() { return null; }
 }
 
 function loadForm(initial = {}) {

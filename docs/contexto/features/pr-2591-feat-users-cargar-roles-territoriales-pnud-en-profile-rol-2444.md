@@ -30,7 +30,9 @@
 
 - Empezar por `docs/registro/prs/PR-2591.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `docs/contexto/features/pr-2591-feat-users-cargar-roles-territoriales-pnud-en-profile-rol-2444.md`
 - `docs/registro/cambios/2026-09-28-issue-2444-roles-territoriales-pnud.md`
+- `docs/registro/prs/PR-2591.md`
 - `tests/test_issue_2444_roles_territoriales_migration.py`
 - `users/migrations/0056_issue_2444_roles_territoriales_pnud.py`
 - Documentación sugerida para ampliar contexto:

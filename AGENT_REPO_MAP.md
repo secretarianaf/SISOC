@@ -9,20 +9,17 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
   users/0051 une las hojas de configuracion mobile y DataCalle sin operaciones.
   Evidencia/conflictos: docs/registro/cambios/2026-09-08-sincronizacion-datacalle-main.md.
 
-- PWA privadas: `scripts/operacion/pwas.json` declara Espacios Comunitarios,
-  DataCalle y Gestionar. `deploy_pwas.py` prepara snapshots/imagenes antes del
-  downtime y activa despues del health del backend. Las apps nuevas estan
-  habilitadas en el registro: requieren Compose en main, .env privado en la raiz
-  y la API de HML disponible antes de promover. `PWA_API_BASE_URL` fija la URL
-  HTTPS del entorno para Expo; Espacios conserva /api y /mobile/ y agrega
-  /pwa/espacioscomunitarios/ con un segundo build en la misma imagen. Instalar
-  primero esa imagen y luego el include; no redirigir /mobile/. Contrato y orden:
-  `docs/operacion/deploy_pwas.md`. `render_pwa_nginx.py` genera un include de servidor
-  y una vista previa que no debe instalarse. No mover `/sisoc/SISOC-Mobile` ni
-  asumir acceso publico de Git. Estado privado de releases: `SISOC/.deploy/pwa/`.
-  El helper de backend corre con umask 022 en un subshell; el estado PWA conserva
-  077. Verificar tambien estabilidad de workers tras desplegar: el healthcheck
-  HTTP no detecta errores de lectura de codigo en otros UID de contenedores.
+- PWA privadas: Espacios Comunitarios, DataCalle y Gestionar despliegan desde sus
+  propios repositorios y ramas `main`, `homologacion` y `development`. SISOC ya
+  no las activa como parte de su deploy. `scripts/operacion/pwas.json` y
+  `deploy_pwas.py` quedan como herramientas operativas compatibles, no como el
+  disparador automatico. `render_pwa_nginx.py` genera el include compartido;
+  `scripts/infra/install_qa_pwa_nginx.sh` lo instala transaccionalmente en el
+  vhost HTTP de QA con backup y rollback. Contrato, aliases y riesgos:
+  `docs/operacion/deploy_pwas.md`. No mover `/sisoc/SISOC-Mobile` ni asumir
+  acceso publico de Git. Verificar tambien estabilidad de workers tras desplegar:
+  el healthcheck HTTP no detecta errores de lectura de codigo en otros UID de
+  contenedores.
 
 - `Hecho observado`: confirmado leyendo codigo, config, workflows o docs del repo.
 - `Inferencia`: deduccion razonable por nombres, estructura o convenciones, pero no validada en profundidad.
@@ -82,7 +79,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Docker Compose para local | Hecho observado | `docker-compose.yml` |
 | Compose separado para deploy | Hecho observado | `docker-compose.deploy.yml`, `docker-compose.produccion.yml` |
 | GitHub Actions para lint/tests/arquitectura/release sanity | Hecho observado | `.github/workflows/` |
-| Promoción event-driven y sincronización descendente con gates | Hecho observado | `.github/workflows/release-orchestrator.yml`, `.github/workflows/sync-main-downstream.yml`, `docs/operacion/deploy_automatizado.md` |
+| Promoción event-driven y sincronización descendente con gates | Hecho observado | `.github/workflows/release-orchestrator.yml`, `.github/workflows/deploy.yml`, `docs/operacion/deploy_automatizado.md` |
 | Helpers de Codex/worktrees | Hecho observado | `scripts/ai/`, `.codex/environments/environment.toml` |
 
 ## Que tipo de proyecto es
@@ -122,6 +119,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - `scripts/ai/codex_run.ps1 up`: bootstrap + levantar entorno.
 - `scripts/ai/codex_run.ps1 validate`: corre `black`, `djlint`, smoke tests y `makemigrations --check`.
 - `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado, hace fast-forward antes de validar los Compose y bloquea una revisión obsoleta antes del downtime. Así un checkout anterior puede incorporar un Compose nuevo de forma segura.
+- `scripts/operacion/deploy_verified.sh`: wrapper de CI para QA/HML/PRD; valida migraciones y healthcheck y restaura automáticamente el checkout/stack anterior ante un fallo.
 
 ## Estructura general del proyecto
 
@@ -316,7 +314,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
-| `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito; el alta de itinerarios permite elegir cualquier provincia con `create_itinerarios_any_province_vpsl` si el perfil tiene una provincia asignada, y el permiso permite ver solo los itinerarios propios fuera de ella; `services/sedes.py` equipara ambos nombres de CABA al filtrar sedes; alta y edicion de sedes comparten formulario con cinco obligatorios, localidad select2 por provincia y checklist pendiente; `SedeVPSL.mapa_query` alimenta la jornada desde direccion guardada o coordenadas historicas y el iframe no comunica cambios de pin | `models.py`, `forms.py`, `views.py`, `urls.py`, `migrations/0014_sedevpsl_optional_school_data.py`, `templates/ver_para_ser_libre/itinerario_form.html`, `templates/ver_para_ser_libre/sede_form.html`, `tests/test_workflow.py`, `services/workflow.py`, `services/sedes.py` | Medio |
+| `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito; el alta de itinerarios permite elegir cualquier provincia con `create_itinerarios_any_province_vpsl` si el perfil tiene una provincia asignada, y el permiso permite ver solo los itinerarios propios fuera de ella; los itinerarios ya no seleccionan ni aprueban sedes tentativas; cada jornada guarda nombre, localidad, enlace Google Maps, direccion, coordenadas y una relacion Many-to-Many con el catalogo `VehiculoVPSL`, con preview seguro mediante `services/map_location.py`; el checklist operativo pertenece a la jornada y la habilita automaticamente al completarse; los registros nominales guardan graduacion izquierda/derecha en pasos de 0.25; las relaciones historicas con `SedeVPSL`, matricula estimada y prescripcion se conservan solo por compatibilidad | `models.py`, `forms.py`, `views.py`, `urls.py`, `migrations/0015_vpsl_ubicacion_vehiculos_graduaciones.py`, `templates/ver_para_ser_libre/itinerario_form.html`, `templates/ver_para_ser_libre/jornada_form.html`, `templates/ver_para_ser_libre/jornada_detail.html`, `templates/ver_para_ser_libre/registro_form.html`, `tests/test_jornada_location.py`, `services/workflow.py`, `services/map_location.py` | Medio |
 | `pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV—, Informes PAS versionados, circuito mensual de cruces SINTyS/RENAPER, Panel de Control y Formación pendiente; el padrón lateral de Formación pagina por scroll mediante `/pas/formacion/personas` | `models.py`, `api.py`, `views.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `services/cruces_service.py`, `services/supervivencia_service.py`, `services/persona_service.py`, `services/formacion_service.py`, `templates/pas/`, `static/custom/js/pas_formacion.js`, `management/commands/`, `urls.py`, `migrations/` | Alto |
 | `audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
 | `historial/` | historial de dominio | `models.py`, `services/` | Bajo |
@@ -611,14 +609,22 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 - `encuestas/models.py`: `Encuesta` (versionado por edicion, ver `version`/`version_de`), `Pregunta` (condicion de visibilidad via `pregunta_condicion`/`operador_condicion`/`valor_condicion`), `OpcionPregunta`, `SegmentacionEncuesta`/`SegmentacionDestinatario`, `RondaEncuesta`, `RespuestaRonda`/`RespuestaPregunta`, `RecordatorioUsuario`.
 - `encuestas/services.py`: ciclo de vida (crear/editar-nueva version/publicar/abrir-cerrar ronda), respuestas (`registrar_respuesta`, respeta anonimato), segmentacion (`actualizar_segmentacion`, `agregar_destinatario`/`quitar_destinatario`, aplican en caliente con ronda abierta), cola de pendientes (`get_rondas_pendientes_para_request`, cacheada por request) y el scheduler (`procesar_rondas_pendientes`, `run_encuestas_scheduler`).
+- Segmentación por grupos: `SegmentacionEncuesta.grupos` (migración `0007`), `actualizar_segmentacion(..., grupos_ids=...)`; unión de pertenencias actuales a grupos de auth, precargada en pendientes. Selector con búsqueda y selección múltiple en segmentación; nombres visibles en revisión. Exportación JSON v5 por nombre, sin crear grupos al importar. Pruebas: `test_encuestas_segmentacion_grupos.py`.
+- Apariencia de segmentación: `static/custom/css/encuestaSegmentacion.css` restaura la paleta oscura/dorada previa a `efd1abcc7`, cargada después del layout compartido `encuestaForm.css` únicamente en `encuesta_segmentacion.html`. Conserva selección visible de grupos y cargas por documentos/IDs.
 - `encuestas/services_resultados.py`: agregacion de resultados por pregunta y export CSV/Excel (nunca vincula contenido a identidad si la encuesta es anonima).
-- `encuestas/validators.py`: parseo del listado de segmentacion (Excel/CSV) y del payload JSON del editor de preguntas (no usa formsets de Django a proposito).
+- `encuestas/validators.py`: parseo del listado de segmentacion (Excel/CSV por documentos o `usuario_id`) y del payload JSON del editor de preguntas (no usa formsets de Django a proposito). Segmentación por IDs: relación `SegmentacionEncuesta.usuarios`, migración `0006`, plantilla `?tipo=listado_usuarios`, validación de existencia y reemplazo atómico; tests en `test_encuestas_segmentacion_usuarios.py`. Exportar con estos destinatarios usa JSON v4; los IDs son locales al ambiente.
 - `encuestas/middleware.py` (`EncuestaObligatoriaMiddleware`): bloquea la navegacion de cualquier usuario con una encuesta obligatoria pendiente; registrado en `config/settings.py` despues de `ProfileConfirmationMiddleware`. Mismo patron que `users/middleware.py`.
 - `encuestas/context_processors.py`: expone la ronda pendiente al modal global (`templates/includes/base.html` + `encuestas/templates/encuestas/partials/responder_modal.html`); comparte cache de request con el middleware para no duplicar la consulta.
 - `encuestas/management/commands/process_encuestas_rondas.py` + servicio `encuestas_worker` en `docker-compose.yml`: abre/cierra rondas por fecha, sin Celery.
-- `users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas` y `Encuestas Resultados`.
+- `users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas`, `Administrador de Encuestas` (permiso `aprobar_encuesta`) y `Encuestas Resultados`.
 - Guía funcional canónica: `docs/implementaciones/encuestas.md`. El análisis histórico y sus decisiones de diseño quedan en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
-- Limite conocido: la segmentacion por CUIT nunca matchea a un usuario individual (`users.Profile` no tiene CUIT propio, solo DNI/CUIL).
+- Aprobación: `solicitar_publicacion` / `publicar` / `rechazar_publicacion` en `services.py`; borrador → pendiente → publicada o borrador. La ruta histórica `publicar/` ahora solicita, `aprobar/` y `rechazar/` requieren `aprobar_encuesta`. Revisión de solo lectura en `revision/`; pendientes bloquean edición y segmentación. Migración `0004` + `create_groups`. Tests en `test_encuestas_aprobacion.py`; `tests/helpers.py` prepara rondas recorriendo el circuito.
+- Portabilidad JSON: `exportar_encuesta` / `importar_encuesta` en `services.py`, endpoints `/encuestas/<pk>/exportar/` y `/encuestas/importar/`. Formato v3, admite v1/v2; importar crea borrador nuevo y vuelve al listado. Segmentacion optativa, contiene documentos personales si se incluye.
+- Modalidades: obligatoria, postergable y opcional (`Encuesta.es_opcional`). `descartar_ronda` registra descarte por usuario/ronda en `RecordatorioUsuario`, sin computar respuesta. Migracion `0003_encuesta_opcional` necesaria antes de servir el cambio y reiniciar workers.
+- UI: `encuestaForm.css` y `encuestaResponder.css` comparten tokens Poncho. Regresiones en `test_encuestas_portabilidad.py` y `test_encuestas_opcionales.py`.
+- Listado/revisión: `encuestas/filters.py` configura `AdvancedFilterEngine` y el buscador compartido de Usuarios; título, estado, anónima y recurrente. `encuestaGestion.css` complementa los estilos de listado y las tarjetas de `user_form.css`; filtros/paginación en `test_encuestas_views.py`.
+- Rechazo: modal en `encuesta_revision.html` + `RechazoEncuestaForm`, motivo obligatorio (2000 caracteres) validado también por `rechazar_publicacion`. Migración `0005_motivo_rechazo`; guarda último motivo, revisor y fecha, visibles al gestor en edición (`partials/motivo_rechazo.html`) y al revisor después del reenvío. No se exportan ni se copian a nuevas versiones.
+- Segmentacion por CUIT: `_documentos_de_usuario` compara CUIT y CUIL contra el CUIL del perfil, ademas de DNI.
 ### Si necesitas auditar o reparar mojibake en datos
 
 - Reparación conservadora compartida: `core/services/text_encoding.py`.
@@ -712,19 +718,21 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `.github/workflows/architecture.yml`
 - `.github/workflows/release-sanity.yml`
 - `.github/workflows/release-orchestrator.yml`
-- `.github/workflows/sync-main-downstream.yml`
 - `.github/scripts/sync_main_downstream.js`: crea y actualiza ramas técnicas
-  `automation/sync-main-to-<destino>` para que los PRs descendentes cumplan
-  checks estrictos sin mezclar QA/HML en `main`.
-- El workflow descendente debe checkoutear `development`, donde vive el helper
-  versionado; un checkout de `main` falla durante el bootstrap si todavía no
-  contiene ese archivo. La regresión se cubre en
-  `.github/scripts/sync_main_downstream.test.js` y `deploy_guard` ejecuta las
-  pruebas Node de ambos orquestadores.
+  `automation/promote-<origen>-to-<destino>` después de un deploy verificado.
+  Rechaza una rama origen que ya no coincida con el SHA desplegado y habilita
+  auto-merge para respetar los checks del destino.
+- `.github/scripts/sync_main_downstream.test.js` cubre la promoción exacta y
+  el rechazo de runs obsoletos; `deploy_guard` ejecuta las pruebas Node de
+  ambos orquestadores.
 - `.github/workflows/deploy.yml`
-- Producción sondea hasta 30 veces `migrate --check` y su healthcheck luego
-  de `deploy_refresh.sh`; si no convergen, publica `docker compose ps` y los
-  últimos logs de Django. La regresión vive en `tests/test_deploy_workflow.py`.
+- QA, HML y producción ejecutan `deploy_verified.sh`, que sondea
+  `migrate --check` y el healthcheck específico. Si no convergen, publica
+  diagnóstico y reconstruye/verifica la revisión anterior; las migraciones de
+  base no se revierten automáticamente.
+- Después de producción verificada se promueve `main -> homologacion`; después
+  de HML verificada, `homologacion -> development`. Cada tramo verifica el SHA
+  desplegado y usa la GitHub App para respetar rulesets y auto-merge.
 - Ante el bloqueo histórico de `centrodeinfancia.0042`, `deploy.yml` sólo
   permite inspeccionar sin PII las categorías de los ids legacy 7, 237 y 242.
   No expone una acción que nulifique filas; antes archiva el SHA aprobado en un
@@ -969,7 +977,8 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `.github/workflows/architecture.yml`
 - `.github/workflows/release-sanity.yml`
 - `.github/workflows/release-orchestrator.yml`
-- `.github/workflows/sync-main-downstream.yml`
+- `.github/workflows/deploy.yml`: deploy por ambiente y promoción secuencial
+  posterior a producción/HML verificadas.
 - `.github/workflows/pr-docs.yml`: genera los artefactos spec-as-source; usa
   `git status --porcelain --untracked-files=all` para incluir archivos nuevos.
   Solo pushea en ramas internas no protegidas; `sync_pr_artifacts` verifica

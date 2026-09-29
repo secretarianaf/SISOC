@@ -1,0 +1,179 @@
+/* Apariencia de segmentación anterior al cambio Poncho (efd1abcc7).
+   Se limita a esta pantalla; encuestaForm.css conserva el layout compartido. */
+.encuesta-editor.encuesta-segmentacion {
+  font-family: inherit;
+  color: inherit;
+}
+
+.encuesta-segmentacion .editor-panel {
+  background: #2c3e50;
+  border-color: #374151;
+  border-radius: 10px;
+}
+
+.encuesta-segmentacion .panel-label {
+  background: transparent;
+  border-bottom-color: #374151;
+  color: #9ca3af;
+}
+
+.encuesta-segmentacion .panel-label i,
+.encuesta-segmentacion .radio-card-title i {
+  color: #f39c12;
+}
+
+.encuesta-segmentacion .form-control,
+.encuesta-segmentacion .form-select {
+  background-color: #1a2332;
+  color: #e5e7eb;
+  border-color: #3d4f63;
+  border-radius: 6px;
+  padding: .375rem .75rem;
+}
+
+.encuesta-segmentacion .form-control:focus,
+.encuesta-segmentacion .form-select:focus {
+  background-color: #1e2a3a;
+  border-color: #f39c12;
+  box-shadow: 0 0 0 .2rem rgba(243, 156, 18, .15);
+  color: #e5e7eb;
+}
+
+.encuesta-segmentacion .form-control::placeholder,
+.encuesta-segmentacion .form-text,
+.encuesta-segmentacion .help-text,
+.encuesta-segmentacion .switch-help,
+.encuesta-segmentacion .radio-card-help {
+  color: #6b7280;
+}
+
+.encuesta-segmentacion label,
+.encuesta-segmentacion .form-check-label {
+  color: #d1d5db;
+}
+
+.encuesta-segmentacion .form-check-input {
+  background-color: #3d4f63;
+  border-color: #4b5563;
+}
+
+.encuesta-segmentacion .form-check-input:checked {
+  background-color: #f39c12;
+  border-color: #f39c12;
+}
+
+.encuesta-segmentacion .form-check-input:focus {
+  box-shadow: 0 0 0 .2rem rgba(243, 156, 18, .15);
+}
+
+.encuesta-segmentacion .subfields {
+  border-top-color: #374151;
+}
+
+.encuesta-segmentacion .btn-save {
+  background: #e7ba61;
+  color: #1a2332;
+  border-radius: 6px;
+}
+
+.encuesta-segmentacion .btn-save:hover {
+  background: #e7ba61;
+  color: #1a2332;
+  box-shadow: 0 4px 12px rgba(243, 156, 18, .3);
+}
+
+.encuesta-segmentacion .btn-cancel {
+  border-color: #4b5563;
+  color: #9ca3af;
+  border-radius: 6px;
+}
+
+.encuesta-segmentacion .btn-cancel:hover {
+  background: #374151;
+  color: #e5e7eb;
+}
+
+.encuesta-segmentacion .plantilla-descarga {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.encuesta-segmentacion .btn-dashed {
+  background: rgba(243, 156, 18, .08);
+  border-color: rgba(243, 156, 18, .4);
+  color: #f39c12;
+  border-radius: 8px;
+}
+
+.encuesta-segmentacion .btn-dashed:hover {
+  background: rgba(243, 156, 18, .15);
+  border-color: #f39c12;
+  color: #f39c12;
+}
+
+.encuesta-segmentacion .btn-quitar-pregunta:not(.poncho-btn) {
+  border-color: #4b5563;
+  color: #6b7280;
+}
+
+.encuesta-segmentacion .btn-quitar-pregunta:not(.poncho-btn):hover {
+  border-color: #e05656;
+  color: #e05656;
+}
+
+.encuesta-segmentacion .count-badge {
+  color: #9ca3af;
+}
+
+.encuesta-segmentacion .radio-card {
+  background: #1a2332;
+  border-color: #3d4f63;
+  border-radius: 8px;
+}
+
+.encuesta-segmentacion .radio-card:hover {
+  border-color: #4b5563;
+}
+
+.encuesta-segmentacion .radio-card:has(input:checked) {
+  border-color: #f39c12;
+  background: rgba(243, 156, 18, .08);
+}
+
+.encuesta-segmentacion .radio-card-title,
+.encuesta-segmentacion .destinatario-numero {
+  color: #e5e7eb;
+}
+
+.encuesta-segmentacion .destinatarios-list {
+  border-color: #374151;
+  border-radius: 8px;
+}
+
+.encuesta-segmentacion .destinatario-row {
+  background: #1a2332;
+  border-bottom-color: rgba(55, 65, 81, .6);
+}
+
+.encuesta-segmentacion .destinatario-row:hover {
+  background: #1e2a3a;
+}
+
+.encuesta-segmentacion .destinatario-tipo {
+  background: rgba(96, 165, 250, .12);
+  color: #60a5fa;
+  border-color: rgba(96, 165, 250, .25);
+}
+
+.encuesta-segmentacion .grupos-seleccionados {
+  background: #1a2332;
+  border-color: #3d4f63;
+  border-radius: 8px;
+}
+
+.encuesta-segmentacion .grupo-seleccionado {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+}

@@ -2,13 +2,15 @@
 
 El monto que se carga al finalizar la etapa `Auditoría` se muestra ahora como
 `Monto auditado` en lugar de `Monto rendido`. El cambio es solo de etiqueta y
-alcanza a todas las pantallas que exponen ese valor:
+alcanza a las pantallas indicadas en el issue:
 
 - formulario de cierre de Auditoría del detalle de la rendición (Línea
   Tradicional y Línea Secos), incluido el mensaje de validación cuando falta
   el monto;
-- detalle de la rendición desde el legajo de la organización;
-- columna del listado `Rendiciones Presentadas` del legajo de la organización.
+- detalle de la rendición desde el legajo de la organización.
+
+La columna del listado `Rendiciones Presentadas` conserva su texto anterior,
+porque ese cambio no está pedido en #2545.
 
 No cambian el campo persistido (`monto_rendido`), el nombre del input del
 formulario, los servicios ni ningún contrato de API/PWA. El `verbose_name` del

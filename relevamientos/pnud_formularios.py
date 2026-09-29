@@ -3,10 +3,14 @@
 ``data/pnud_formularios.json`` se genera desde la app territorial, que es la
 fuente de los formularios (``pwa/src/features/pnud/pnudForm.ts`` del repo
 Gestionar): secciones y campos en el orden del formulario en papel, con su
-etiqueta, tipo, opciones y columnas de las tablas. Si la app cambia un
-formulario, se regenera ejecutando ``buildPnudForm(id)`` para los cinco ids
-(``secos``, ``iia1``, ``iib1``, ``iia``, ``iib``) y volcando el resultado a
-JSON (ver el PR de N22).
+etiqueta, tipo, opciones, columnas de las tablas y, en los Sí/No que el papel
+escribe distinto, ``etiquetasSiNo``. Las preguntas que se ordenan (ranking) o
+se marcan con cruz (casillas) llegan aplanadas: un campo por cada clave que
+guardan en ``datos``. Las etiquetas son las
+literales del documento "FLUJO APP PNUD" §7.2; los ``name`` y los ``value``
+de las opciones son las claves guardadas en ``datos`` y no cambian. Si la app
+cambia un formulario, se regenera desde ``pwa/`` del repo Gestionar con
+``node scripts/pnud/formularios-json.mjs <ruta a este JSON>``.
 """
 
 import json
@@ -62,10 +66,11 @@ def formatear_valor(campo, valor):  # pylint: disable=too-many-return-statements
     """Valor de una respuesta como texto legible según el tipo del campo."""
     if _vacio(valor):
         return "—"
-    if valor is True:
-        return "Sí"
-    if valor is False:
-        return "No"
+    if isinstance(valor, bool):
+        # El papel escribe algunas respuestas "SI/NO" (sin tilde): el JSON lo trae
+        # en ``etiquetasSiNo``; si no, Sí/No.
+        si, no = campo.get("etiquetasSiNo") or ("Sí", "No")
+        return si if valor else no
     if isinstance(valor, dict):
         partes = [
             f"{_humanizar(str(clave))}: {formatear_valor({}, item)}"

@@ -17,6 +17,10 @@
     {% else %}
         <span class="badge bg-light text-dark ml-2" title="Cargada desde SISOC">SISOC</span>
     {% endif %}
+    {% if acta.estado_validacion %}
+        <span class="badge ml-2 {% if acta.estado_validacion == 'Validado' %}bg-success{% elif acta.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}"
+              title="Estado de validación del coordinador">{{ acta.estado_validacion }}</span>
+    {% endif %}
 {% endblock titulo-pagina %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
@@ -42,6 +46,12 @@
                 <a href="{% url 'acta_complementaria_editar' comedor.id acta.id %}"
                    class="btn btn-primary mr-1">Editar</a>
             {% endif %}
+            {% if perms.relevamientos.review_relevamiento and not acta.esta_validado and not acta.sin_cargar %}
+                <button type="button"
+                        class="btn btn-warning mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalRevisionActa">Revisar</button>
+            {% endif %}
             {% if perms.relevamientos.delete_actacomplementaria %}
                 <button type="button"
                         class="btn btn-danger"
@@ -50,6 +60,64 @@
             {% endif %}
         </div>
     </div>
+    {% if acta.observaciones_coordinador %}
+        <div class="alert {% if acta.estado_validacion == 'A subsanar' %}alert-danger{% else %}alert-info{% endif %} mx-1 d-print-none">
+            <strong>Observaciones del coordinador</strong>
+            {% if acta.coordinador %}
+                <span class="ml-1">({{ acta.coordinador.username }}
+                    {% if acta.fecha_revision_coordinador %}· {{ acta.fecha_revision_coordinador }}{% endif %}
+                )</span>
+            {% endif %}
+            <div class="mt-1">{{ acta.observaciones_coordinador|linebreaksbr }}</div>
+        </div>
+    {% endif %}
+    {% if perms.relevamientos.review_relevamiento and not acta.esta_validado and not acta.sin_cargar %}
+        <div class="modal fade"
+             id="modalRevisionActa"
+             tabindex="-1"
+             aria-labelledby="modalRevisionActaLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="post"
+                          action="{% url 'acta_complementaria_revision_coordinador' comedor.id acta.id %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalRevisionActaLabel">Revisión del coordinador</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="revision_acta_estado" class="form-label">Resultado</label>
+                                <select id="revision_acta_estado"
+                                        name="estado_validacion"
+                                        class="form-select"
+                                        required>
+                                    <option value="Validado">Validado</option>
+                                    <option value="A subsanar">A subsanar (devolver al territorial)</option>
+                                </select>
+                            </div>
+                            <div class="mb-0">
+                                <label for="revision_acta_observaciones" class="form-label">Observaciones</label>
+                                <textarea id="revision_acta_observaciones"
+                                          name="observaciones_coordinador"
+                                          class="form-control"
+                                          rows="4"
+                                          placeholder="Qué debe corregir el territorial (obligatorio si devuelve el acta)">{{ acta.observaciones_coordinador|default_if_none:"" }}</textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-warning">Guardar revisión</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <div class="card mb-4">
         <div class="card-header">
             <h3 class="card-title font-weight-bold mr-3 pt-1">Resumen</h3>

@@ -390,6 +390,13 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   La migración es `users.0050` y la visibilidad vive en
   `static/custom/js/user_mobile_access.js`. Validar con
   `tests/test_users_pwa_forms.py` y `node tests/js/user_mobile_access.test.js`.
+- Las secciones del ABM de usuarios que no son generales (Mobile Comedores,
+  Territorial comedor, Equipos técnicos, DataCalle, Administración de accesos)
+  se habilitan por permiso `auth.role_usuarios_seccion_*`: catálogo en
+  `users/secciones_usuario.py`, campos en `CAMPOS_POR_SECCION` de
+  `users/forms.py`. Una sección nueva de un programa se agrega ahí, con su
+  permiso en el seed. Decisión:
+  `docs/registro/decisiones/2026-09-29-usuarios-secciones-por-permiso.md`.
 - La autogestión vive en `MiCuentaForm`, `MiCuentaView` y la ruta `/mi-cuenta/`.
   La confirmación inicial usa `/mi-cuenta/confirmar/` y
   `ProfileConfirmationMiddleware`, registrado después del cambio de contraseña.

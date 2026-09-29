@@ -24,18 +24,20 @@ from comedores.api_serializers import (
     NoSaveSerializer,
     TerritorialComedorWriteSerializer,
 )
+from comedores.api_views_territorial_actas import (
+    ActasComplementariasTerritorialMixin,
+    actas_payload,
+)
 from comedores.api_views_territorial_adjuntos import AdjuntosTerritorialMixin
 from comedores.api_views_territorial_pnud import (
     SeguimientosPnudTerritorialMixin,
     TerritorialComedorPnudFieldsMixin,
+    linea_pnud,
     prestaciones_aprobadas_por_dia,
     seguimientos_pnud_payload,
 )
 from comedores.api_views_territorial_validaciones import (
-    MAX_LARGO_FIRMA,
-    MAX_LARGO_OBSERVACIONES,
     leer_texto,
-    validar_prestaciones_acta,
 )
 from comedores.models import (
     Comedor,
@@ -45,9 +47,9 @@ from core.utils import format_fecha_django
 from relevamientos.models import (
     ActaComplementaria,
     MotivoExcepcionSeguimiento,
-    PrestacionActaComplementaria,
     PrimerSeguimiento,
     Relevamiento,
+    SeguimientoPnud,
 )
 from users.api_permissions import IsTerritorialComedorUser
 from users.services_pwa import (
@@ -175,6 +177,7 @@ class TerritorialComedorSerializer(TerritorialComedorPnudFieldsMixin, NoSaveSeri
 
 @extend_schema(tags=["Territorial"])
 class TerritorialComedorViewSet(
+    ActasComplementariasTerritorialMixin,
     SeguimientosPnudTerritorialMixin,
     AdjuntosTerritorialMixin,
     mixins.CreateModelMixin,
@@ -324,22 +327,17 @@ class TerritorialComedorViewSet(
         # aunque el comedor sea de otra provincia; la asignación se hace desde el
         # backoffice).
         user = self.request.user
-        # ``Relevamiento.objects`` (manager soft-delete) ya excluye borrados en el
-        # prefetch. Pero el JOIN ``relevamiento__...`` del filtro de comedores NO
-        # aplica el manager, así que hay que excluir los borrados explícitamente;
-        # de lo contrario un comedor cuyo único relevamiento asignado esté borrado
-        # aparecería con ``items: []``.
+        # ``Relevamiento.objects`` (manager soft-delete) excluye borrados, tanto
+        # en el prefetch como en la subconsulta del filtro de comedores: un
+        # comedor cuyo único relevamiento asignado esté borrado no aparece con
+        # ``items: []``.
         relevamientos_asignados = (
             Relevamiento.objects.filter(territorial_user=user)
             .prefetch_related("seguimientos")
             .order_by("-fecha_visita", "-id")
         )
         return (
-            Comedor.objects.filter(
-                relevamiento__territorial_user=user,
-                relevamiento__deleted_at__isnull=True,
-            )
-            .distinct()
+            Comedor.objects.filter(id__in=self._comedor_ids_asignados(user))
             .select_related("provincia", "municipio", "localidad")
             .prefetch_related(
                 Prefetch(
@@ -351,6 +349,29 @@ class TerritorialComedorViewSet(
             )
             .order_by("nombre", "id")
         )
+
+    @staticmethod
+    def _comedor_ids_asignados(user):
+        """Ids de los comedores con trabajo asignado a ``user``.
+
+        Relevamientos asignados (el manager soft-delete excluye los borrados) y,
+        desde H1/H5, seguimientos PNUD y actas complementarias asignados desde
+        SISOC. Se juntan primero en tres consultas por índice y el listado filtra
+        ``Comedor`` por PK: un OR de subconsultas sobre ``Comedor`` recorría toda
+        la tabla con tres DEPENDENT SUBQUERY por fila (EXPLAIN en MySQL).
+        """
+        ids = set(
+            Relevamiento.objects.filter(territorial_user=user).values_list(
+                "comedor_id", flat=True
+            )
+        )
+        for modelo in (SeguimientoPnud, ActaComplementaria):
+            ids.update(
+                modelo.objects.filter(
+                    tecnico=user, asignado_desde_sisoc=True
+                ).values_list("comedor_id", flat=True)
+            )
+        return sorted(ids)
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
@@ -388,12 +409,9 @@ class TerritorialComedorViewSet(
                 self._seguimiento_anterior(comedor)
             )
         )
-        # Actas complementarias extraordinarias del comedor (N15).
-        actas = list(comedor.actas_complementarias.prefetch_related("prestaciones"))
-        data["actas_complementarias"] = {
-            "total": len(actas),
-            "items": [self._serialize_acta(acta) for acta in actas],
-        }
+        # Actas complementarias extraordinarias del comedor (N15), con su
+        # estado de validación del coordinador (N16).
+        data["actas_complementarias"] = actas_payload(comedor, request.user)
         # Seguimientos PNUD (N22) con respuestas y aprobados para precargarlos.
         data["seguimientos_pnud"] = seguimientos_pnud_payload(comedor, request.user)
         data["prestaciones_aprobadas"] = prestaciones_aprobadas_por_dia(comedor)
@@ -709,90 +727,6 @@ class TerritorialComedorViewSet(
             "client_uuid": seguimiento.client_uuid,
         }
 
-    @action(detail=True, methods=["post"], url_path="actas-complementarias")
-    def crear_acta_complementaria(  # pylint: disable=too-many-return-statements
-        self, request, pk=None
-    ):
-        """Acta complementaria extraordinaria (N15): cambio de prestacion."""
-        comedor = self._comedor_de_mi_zona()
-        if comedor is None:
-            return self._fuera_de_zona()
-
-        client_uuid = self._leer_client_uuid(request)
-        if not client_uuid:
-            return self._falta_client_uuid()
-
-        existente = ActaComplementaria.objects.filter(client_uuid=client_uuid).first()
-        if existente is not None:
-            return Response(self._serialize_acta(existente), status=status.HTTP_200_OK)
-
-        # Tipos y largos se validan antes de tocar la base (S5): una cantidad
-        # negativa, un texto donde va un número o un largo excedido terminaban
-        # en 500 (en MySQL estricto también por columna). Todo es 400 {detail}.
-        prestaciones = validar_prestaciones_acta(request.data.get("prestaciones") or [])
-
-        acta = ActaComplementaria(
-            comedor=comedor,
-            tecnico=request.user,
-            observaciones=leer_texto(
-                request.data, "observaciones", MAX_LARGO_OBSERVACIONES
-            ),
-            firma=leer_texto(request.data, "firma", MAX_LARGO_FIRMA),
-            origen=ActaComplementaria.ORIGEN_APP,
-            asignado_desde_sisoc=False,
-            client_uuid=client_uuid,
-        )
-        fecha_hora = leer_texto(request.data, "fecha_hora")
-        if fecha_hora:
-            try:
-                acta.fecha_hora = format_fecha_django(fecha_hora)
-            except (ValueError, TypeError):
-                return self._fecha_invalida("fecha_hora")
-
-        try:
-            with transaction.atomic():
-                acta.save()
-                PrestacionActaComplementaria.objects.bulk_create(
-                    [
-                        PrestacionActaComplementaria(acta=acta, **fila)
-                        for fila in prestaciones
-                    ]
-                )
-        except IntegrityError:
-            existente = ActaComplementaria.objects.filter(
-                client_uuid=client_uuid
-            ).first()
-            if existente is None:
-                return self._conflicto_concurrente(
-                    "Otra acta se registró al mismo tiempo sobre este comedor."
-                )
-            return Response(self._serialize_acta(existente), status=status.HTTP_200_OK)
-
-        return Response(self._serialize_acta(acta), status=status.HTTP_201_CREATED)
-
-    @staticmethod
-    def _serialize_acta(acta):
-        return {
-            "id": acta.id,
-            "comedor": acta.comedor_id,
-            "tecnico": acta.tecnico_id,
-            "fecha_hora": acta.fecha_hora,
-            "observaciones": acta.observaciones,
-            "firma": acta.firma,
-            "origen": acta.origen,
-            "client_uuid": acta.client_uuid,
-            "prestaciones": [
-                {
-                    "id": fila.id,
-                    "dias_prestacion": fila.dias_prestacion,
-                    "tipo_prestacion": fila.tipo_prestacion,
-                    "cantidad_actual": fila.cantidad_actual,
-                    "cantidad_espera": fila.cantidad_espera,
-                }
-                for fila in acta.prestaciones.all()
-            ],
-        }
-
 
 @extend_schema(tags=["Territorial"])
 class MotivosExcepcionSeguimientoView(APIView):
@@ -824,6 +758,11 @@ class TerritorialComedorZonaSerializer(NoSaveSerializer):
     latitud = serializers.FloatField(allow_null=True)
     longitud = serializers.FloatField(allow_null=True)
     estado = serializers.CharField(allow_null=True)
+    # Programa y línea PNUD (N22), mismos valores que el listado asignado: la
+    # app elige el flujo (PAC / PNUD) de un comedor de su zona sin asignación.
+    programa = serializers.SerializerMethodField()
+    programa_id = serializers.IntegerField(allow_null=True, read_only=True)
+    linea_pnud = serializers.SerializerMethodField()
 
     def get_provincia(self, obj):
         return obj.provincia.nombre if obj.provincia_id else None
@@ -833,6 +772,12 @@ class TerritorialComedorZonaSerializer(NoSaveSerializer):
 
     def get_localidad(self, obj):
         return obj.localidad.nombre if obj.localidad_id else None
+
+    def get_programa(self, obj):
+        return obj.programa.nombre if obj.programa_id else None
+
+    def get_linea_pnud(self, obj):
+        return linea_pnud(obj)
 
 
 @extend_schema(tags=["Territorial"])
@@ -860,6 +805,6 @@ class TerritorialComedorZonaListView(generics.ListAPIView):
             return Comedor.objects.none()
         return (
             Comedor.objects.filter(provincia_id__in=provincia_ids)
-            .select_related("provincia", "municipio", "localidad")
+            .select_related("provincia", "municipio", "localidad", "programa")
             .order_by("nombre", "id")
         )

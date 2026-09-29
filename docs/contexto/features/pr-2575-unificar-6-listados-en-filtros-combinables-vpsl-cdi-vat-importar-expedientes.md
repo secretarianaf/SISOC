@@ -46,13 +46,12 @@
 - `importarexpediente/filter_config.py`
 - `importarexpediente/templates/importarexpediente_list.html`
 - `importarexpediente/tests/test_ajax_endpoints.py`
-- `importarexpediente/urls.py`
 - `importarexpediente/views.py`
 - `tests/test_buscadores_homogeneos.py`
 - `ver_para_ser_libre/filter_config.py`
 - `ver_para_ser_libre/templates/ver_para_ser_libre/itinerario_list.html`
 - `ver_para_ser_libre/templates/ver_para_ser_libre/sede_list.html`
-- ... y 1 archivo(s) adicional(es) relacionados.
+- `ver_para_ser_libre/views.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

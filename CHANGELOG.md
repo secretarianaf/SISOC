@@ -11,6 +11,7 @@
 - [sin-area] fix(qa-28/9): ajustes de la revisión de #2596 (performance del listado, duplicados, backfill de actas). (PR #2599)
 - [sin-area] PNUD: estructura literal del documento en el detalle del backoffice (SI/NO, ranking y casillas aplanados; sin migración). (PR #2600)
 - [sin-area] fix(pnud): JSON de etiquetas PNUD de la ronda 2 de la estructura literal (complemento de #2600). (PR #2602)
+- [sin-area] fix(territorial): el listado trae las actas complementarias asignadas desde SISOC. (PR #2606)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-30 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-09-29 -->

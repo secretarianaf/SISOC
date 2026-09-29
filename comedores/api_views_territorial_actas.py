@@ -11,10 +11,11 @@ territorial para mantener ese módulo acotado; se mezcla como mixin.
 
 from django.db import IntegrityError, transaction
 from django.utils import timezone
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from comedores.api_serializers import NoSaveSerializer
 from comedores.api_views_territorial_validaciones import (
     MAX_LARGO_FIRMA,
     MAX_LARGO_OBSERVACIONES,
@@ -29,13 +30,14 @@ def _fecha_iso(valor):
     return timezone.localtime(valor).isoformat() if valor else None
 
 
-def serialize_acta(acta, usuario_id=None):
+def serialize_acta(acta, usuario_id=None, con_prestaciones=True):
     """Acta con sus prestaciones y los metadatos del coordinador (N16).
 
     Las observaciones del coordinador solo van al técnico del acta (pueden
-    citar datos personales), como en los seguimientos PNUD.
+    citar datos personales), como en los seguimientos PNUD. El listado no
+    lleva las prestaciones (``con_prestaciones=False``): el detalle sí.
     """
-    return {
+    data = {
         "id": acta.id,
         "comedor": acta.comedor_id,
         "tecnico": acta.tecnico_id,
@@ -52,7 +54,9 @@ def serialize_acta(acta, usuario_id=None):
             else None
         ),
         "fecha_revision_coordinador": _fecha_iso(acta.fecha_revision_coordinador),
-        "prestaciones": [
+    }
+    if con_prestaciones:
+        data["prestaciones"] = [
             {
                 "id": fila.id,
                 "dias_prestacion": fila.dias_prestacion,
@@ -61,8 +65,8 @@ def serialize_acta(acta, usuario_id=None):
                 "cantidad_espera": fila.cantidad_espera,
             }
             for fila in acta.prestaciones.all()
-        ],
-    }
+        ]
+    return data
 
 
 def actas_payload(comedor, usuario):
@@ -71,6 +75,26 @@ def actas_payload(comedor, usuario):
         "total": len(actas),
         "items": [serialize_acta(acta, usuario.id) for acta in actas],
     }
+
+
+class TerritorialComedorActasFieldsMixin(NoSaveSerializer):
+    """Actas del comedor en el listado territorial (sin prestaciones).
+
+    Sin esto la app no se enteraba de un acta asignada desde el popup de SISOC:
+    el comedor llegaba al listado (``_comedor_ids_asignados``) pero sin nada
+    que la app pudiera reconocer como trabajo asignado.
+    """
+
+    actas_complementarias = serializers.SerializerMethodField()
+
+    def get_actas_complementarias(self, obj):
+        request = self.context.get("request")
+        usuario_id = getattr(getattr(request, "user", None), "id", None)
+        items = [
+            serialize_acta(acta, usuario_id, con_prestaciones=False)
+            for acta in obj.actas_complementarias.all()
+        ]
+        return {"total": len(items), "items": items}
 
 
 def _error(mensaje, codigo, **extra):

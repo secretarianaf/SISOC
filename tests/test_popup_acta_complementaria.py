@@ -190,3 +190,57 @@ def test_el_territorial_ve_el_comedor_del_acta_asignada(client, comedor, territo
     actas = detalle.json()["actas_complementarias"]
     assert actas["total"] == 1
     assert actas["items"][0]["origen"] == "sisoc"
+
+
+def test_el_listado_trae_el_acta_asignada_para_que_la_app_la_reconozca(
+    client, comedor, territorial
+):
+    """Sin el acta en el listado, la app descartaba el comedor: solo lo muestra
+    si reconoce trabajo asignado al territorial (relevamiento, PNUD o acta)."""
+    _login(client, "add_relevamiento", "add_actacomplementaria")
+    _post(client, comedor, "acta_complementaria", territorial)
+    acta = ActaComplementaria.objects.get()
+    acta.observaciones_coordinador = "Nota solo para el técnico"
+    acta.save(update_fields=["observaciones_coordinador"])
+    token, _ = Token.objects.get_or_create(user=territorial)
+    api = APIClient()
+    api.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    listado = api.get("/api/territorial/comedores/")
+
+    item = next(i for i in listado.json()["results"] if i["id"] == comedor.id)
+    actas = item["actas_complementarias"]
+    assert actas["total"] == 1
+    fila = actas["items"][0]
+    assert fila["id"] == acta.id
+    assert fila["tecnico"] == territorial.id
+    assert fila["asignado_desde_sisoc"] is True
+    assert fila["origen"] == "sisoc"
+    assert fila["estado_validacion"] is None
+    assert fila["observaciones_coordinador"] == "Nota solo para el técnico"
+    # El listado no lleva la tabla de prestaciones: la trae el detalle.
+    assert "prestaciones" not in fila
+    detalle = api.get(f"/api/territorial/comedores/{comedor.id}/").json()
+    assert detalle["actas_complementarias"]["items"][0]["prestaciones"] == []
+
+
+def test_el_listado_oculta_las_observaciones_del_coordinador_de_actas_ajenas(
+    comedor, territorial
+):
+    otro = get_user_model().objects.create_user(username="otro_h5", password="x")
+    Relevamiento.objects.create(comedor=comedor, territorial_user=territorial)
+    ActaComplementaria.objects.create(
+        comedor=comedor,
+        tecnico=otro,
+        observaciones_coordinador="Nota de otro técnico",
+    )
+    token, _ = Token.objects.get_or_create(user=territorial)
+    api = APIClient()
+    api.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    listado = api.get("/api/territorial/comedores/")
+
+    item = next(i for i in listado.json()["results"] if i["id"] == comedor.id)
+    fila = item["actas_complementarias"]["items"][0]
+    assert fila["tecnico"] == otro.id
+    assert fila["observaciones_coordinador"] is None

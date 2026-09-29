@@ -26,6 +26,7 @@ from comedores.api_serializers import (
 )
 from comedores.api_views_territorial_actas import (
     ActasComplementariasTerritorialMixin,
+    TerritorialComedorActasFieldsMixin,
     actas_payload,
 )
 from comedores.api_views_territorial_adjuntos import AdjuntosTerritorialMixin
@@ -75,7 +76,11 @@ class TerritorialUltimoRelevamientoSerializer(NoSaveSerializer):
     asignado_desde_sisoc = serializers.BooleanField()
 
 
-class TerritorialComedorSerializer(TerritorialComedorPnudFieldsMixin, NoSaveSerializer):
+class TerritorialComedorSerializer(
+    TerritorialComedorActasFieldsMixin,
+    TerritorialComedorPnudFieldsMixin,
+    NoSaveSerializer,
+):
     id = serializers.IntegerField()
     nombre = serializers.CharField()
     tipo = serializers.SerializerMethodField()
@@ -346,6 +351,8 @@ class TerritorialComedorViewSet(
                     to_attr="relevamientos_territorial",
                 ),
                 "seguimientos_pnud__tecnico",
+                # Actas del listado (sin prestaciones): una consulta por página.
+                "actas_complementarias",
             )
             .order_by("nombre", "id")
         )

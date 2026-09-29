@@ -16,12 +16,15 @@ El servidor vuelve a validar el tipo contra el programa: nunca se confía en el
 """
 
 from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.models import Q
 
 from comedores.api_views_territorial_pnud import (
     FORMULARIOS_POR_LINEA,
     formulario_permitido,
     linea_pnud,
 )
+from comedores.models import Comedor
 from relevamientos.models import ActaComplementaria, SeguimientoPnud
 from relevamientos.service import (
     TERRITORIAL_INVALIDO_ERROR,
@@ -106,6 +109,18 @@ def territorial_asignable(comedor, raw_territorial_data):
     return usuario
 
 
+# Un registro "sin terminar" (sin cargar o enviado y todavía sin revisar)
+# bloquea una segunda asignación igual: "A subsanar" y "Validado" no.
+_SIN_TERMINAR = Q(estado_validacion__isnull=True) | Q(
+    estado_validacion=SeguimientoPnud.ESTADO_VALIDACION_PENDIENTE
+)
+
+
+def _bloquear_comedor(comedor):
+    """Serializa las asignaciones concurrentes sobre el mismo comedor."""
+    list(Comedor.objects.select_for_update().filter(pk=comedor.pk).values("pk"))
+
+
 def crear_seguimiento_pnud_asignado(comedor, raw_territorial_data, formulario):
     """Seguimiento PNUD (N22) creado desde SISOC y asignado a un territorial.
 
@@ -119,6 +134,23 @@ def crear_seguimiento_pnud_asignado(comedor, raw_territorial_data, formulario):
             "El formulario elegido no corresponde al programa del comedor."
         )
     tecnico = territorial_asignable(comedor, raw_territorial_data)
+    with transaction.atomic():
+        _bloquear_comedor(comedor)
+        if (
+            SeguimientoPnud.objects.filter(
+                comedor=comedor, tecnico=tecnico, formulario=formulario
+            )
+            .filter(_SIN_TERMINAR)
+            .exists()
+        ):
+            raise ValidationError(
+                "El territorial ya tiene este formulario asignado en este comedor "
+                "sin terminar (sin cargar o pendiente de validación)."
+            )
+        return _crear_pnud(comedor, tecnico, formulario)
+
+
+def _crear_pnud(comedor, tecnico, formulario):
     return SeguimientoPnud.objects.create(
         comedor=comedor,
         tecnico=tecnico,
@@ -135,9 +167,20 @@ def crear_acta_complementaria_asignada(comedor, raw_territorial_data):
     territorial (H5). Nace sin prestaciones ni envío: el territorial la
     completa desde la app."""
     tecnico = territorial_asignable(comedor, raw_territorial_data)
-    return ActaComplementaria.objects.create(
-        comedor=comedor,
-        tecnico=tecnico,
-        origen=ActaComplementaria.ORIGEN_SISOC,
-        asignado_desde_sisoc=True,
-    )
+    with transaction.atomic():
+        _bloquear_comedor(comedor)
+        if (
+            ActaComplementaria.objects.filter(comedor=comedor, tecnico=tecnico)
+            .filter(_SIN_TERMINAR)
+            .exists()
+        ):
+            raise ValidationError(
+                "El territorial ya tiene un acta complementaria de este comedor "
+                "sin terminar (sin cargar o pendiente de validación)."
+            )
+        return ActaComplementaria.objects.create(
+            comedor=comedor,
+            tecnico=tecnico,
+            origen=ActaComplementaria.ORIGEN_SISOC,
+            asignado_desde_sisoc=True,
+        )

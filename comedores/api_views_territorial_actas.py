@@ -54,6 +54,9 @@ def serialize_acta(acta, usuario_id=None, con_prestaciones=True):
             else None
         ),
         "fecha_revision_coordinador": _fecha_iso(acta.fecha_revision_coordinador),
+        # Asignada desde SISOC y aun sin contenido: la app ofrece "Completar"
+        # solo si es True (ver ``ActaComplementaria.sin_cargar``).
+        "sin_cargar": acta.sin_cargar,
     }
     if con_prestaciones:
         data["prestaciones"] = [

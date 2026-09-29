@@ -351,8 +351,10 @@ class TerritorialComedorViewSet(
                     to_attr="relevamientos_territorial",
                 ),
                 "seguimientos_pnud__tecnico",
-                # Actas del listado (sin prestaciones): una consulta por página.
-                "actas_complementarias",
+                # Actas del listado (sin prestaciones en la respuesta): una
+                # consulta por página; las prestaciones se precargan solo para
+                # calcular ``sin_cargar`` sin N+1 (+1 consulta por página).
+                "actas_complementarias__prestaciones",
             )
             .order_by("nombre", "id")
         )

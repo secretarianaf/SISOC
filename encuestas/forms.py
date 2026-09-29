@@ -3,6 +3,23 @@ from django import forms
 from .models import Encuesta
 
 
+class RechazoEncuestaForm(forms.Form):
+    motivo = forms.CharField(
+        label="Motivo del rechazo",
+        max_length=2000,
+        strip=True,
+        error_messages={"required": "Indicá qué debe corregir el gestor."},
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "rows": 5,
+                "placeholder": "Explicá qué debe corregirse antes de volver a solicitar la publicación.",
+                "aria-describedby": "motivo-rechazo-ayuda motivo-rechazo-error",
+            }
+        ),
+    )
+
+
 class EncuestaForm(forms.ModelForm):
     modalidad = forms.ChoiceField(
         choices=[

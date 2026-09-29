@@ -6,6 +6,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from encuestas.forms import EncuestaForm
+from encuestas.tests.helpers import publicar_para_test as publicar
+
 from encuestas.models import (
     CumplimientoRonda,
     Pregunta,
@@ -20,7 +22,6 @@ from encuestas.services import (
     nueva_version,
     posponer_ronda,
     procesar_rondas_pendientes,
-    publicar,
 )
 
 pytestmark = pytest.mark.django_db

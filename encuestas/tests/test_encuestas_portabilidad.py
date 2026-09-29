@@ -144,7 +144,11 @@ def test_importacion_admite_versiones_anteriores(gestor, payload, version):
         ("encuesta.json", b"\xff"),
         ("encuesta.json", b"[]"),
         ("encuesta.json", b'{"formato":"otro"}'),
-        ("encuesta.json", b"x" * (ENCUESTA_JSON_MAX_BYTES + 1)),
+        pytest.param(
+            "encuesta.json",
+            b"x" * (ENCUESTA_JSON_MAX_BYTES + 1),
+            id="archivo-supera-5mb",
+        ),
     ],
 )
 def test_archivo_invalido_no_crea_encuesta(gestor, nombre, contenido):

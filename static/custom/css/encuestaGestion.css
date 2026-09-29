@@ -1,0 +1,55 @@
+/* Listado y revisión de encuestas: componentes y tokens compartidos de SISOC. */
+.encuesta-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .35rem .65rem;
+  border: 1px solid currentColor;
+  border-radius: var(--poncho-radio-base);
+  font-size: .8rem;
+  white-space: nowrap;
+  color: var(--poncho-texto-placeholder);
+}
+.encuesta-estado--pendiente_aprobacion { color: #f2d18c; }
+.encuesta-estado--publicada { color: #8ee0bb; }
+.encuestas-gestion .encuesta-meta,
+.encuesta-revision .encuesta-meta { color: var(--poncho-texto-placeholder); font-size: .875rem; }
+.encuestas-gestion .encuesta-titulo { font-weight: 600; overflow-wrap: anywhere; }
+.encuestas-gestion .encuesta-acciones { display: flex; flex-wrap: wrap; gap: .5rem; min-width: 160px; }
+.encuestas-gestion .encuesta-bandeja {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: var(--poncho-radio-base);
+  background: var(--poncho-azul-secundario);
+}
+.encuesta-revision { max-width: 1200px; }
+.encuesta-revision h1 { font-size: clamp(1.5rem, 3vw, 2rem); overflow-wrap: anywhere; }
+.encuesta-revision h2 { font-size: 1rem; margin: 0; }
+.encuesta-revision h3 { font-size: 1.125rem; line-height: 1.5; }
+.encuesta-revision__cabecera { margin: 1.5rem 0; }
+.encuesta-revision__layout { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 1.5rem; align-items: start; }
+.encuesta-revision__datos { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1.25rem; margin: 0; }
+.encuesta-revision__datos dt { color: var(--poncho-texto-placeholder); font-size: .8rem; font-weight: 400; margin-bottom: .35rem; }
+.encuesta-revision__datos dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; }
+.encuesta-revision__decision { position: sticky; top: 1rem; }
+.encuesta-revision__decision form + form { margin-top: .75rem; }
+.encuesta-revision__nota { padding: .75rem 1rem; border-left: 3px solid var(--poncho-verde-azulado); background: var(--poncho-azul-secundario); font-size: .875rem; }
+.encuesta-revision__pregunta + .encuesta-revision__pregunta { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,.2); }
+.encuesta-revision__opciones { list-style: none; padding: 0; margin: .75rem 0 0; display: grid; gap: .5rem; }
+.encuesta-revision__opciones li { padding: .6rem .8rem; border: 1px solid rgba(255,255,255,.25); border-radius: var(--poncho-radio-base); }
+.encuesta-revision__destinatarios { max-height: 250px; overflow: auto; padding: .75rem 0; }
+.encuesta-revision details summary { cursor: pointer; }
+@media (max-width: 991.98px) {
+  .encuesta-revision__layout { grid-template-columns: 1fr; }
+  .encuesta-revision__decision { position: static; }
+}
+@media (max-width: 575.98px) {
+  .encuesta-revision__datos { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .encuesta-bandeja .poncho-btn { width: 100%; }
+}

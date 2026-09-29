@@ -6,6 +6,8 @@ import pytest
 from django.contrib.auth.models import Permission
 from django.urls import reverse
 
+from encuestas.tests.helpers import publicar_para_test as publicar
+
 from encuestas.models import (
     OpcionPregunta,
     Pregunta,
@@ -16,7 +18,6 @@ from encuestas.models import (
 from encuestas.services import (
     actualizar_segmentacion,
     crear_encuesta,
-    publicar,
     registrar_respuesta,
 )
 from encuestas.services_resultados import (

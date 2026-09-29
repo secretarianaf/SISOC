@@ -338,6 +338,11 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
         queryset = CENTRODEINFANCIA_ADVANCED_FILTER.filter_queryset(
             queryset, self.request
         )
+        query = self.request.GET.get("busqueda", "").strip()
+        if query:
+            queryset = queryset.filter(
+                Q(nombre__icontains=query) | Q(organizacion__icontains=query)
+            )
         return queryset.order_by("nombre")
 
     def get_context_data(self, **kwargs):

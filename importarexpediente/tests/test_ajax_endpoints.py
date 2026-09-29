@@ -97,6 +97,20 @@ def test_list_requiere_permiso_de_lectura(client, user):
     assert list_response.status_code == 403
 
 
+def test_ajax_anterior_conserva_respuesta_y_permiso(
+    client_logged, seed_imports, client, user
+):
+    response = client_logged.get(
+        reverse("importarexpedientes_ajax"), {"busqueda": "expedientes_1.csv"}
+    )
+    assert response.status_code == 200
+    assert response.json()["count"] == 1
+    assert "expedientes_1.csv" in response.json()["html"]
+
+    client.force_login(user)
+    assert client.get(reverse("importarexpedientes_ajax")).status_code == 403
+
+
 def test_list_view_backfills_periodo_from_stored_file(client_logged, tmp_media):
     content = (
         "ID;COMEDOR;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;A\u00f1o de pago\n"

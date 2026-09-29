@@ -144,6 +144,17 @@ def test_sede_vpsl_busca_por_domicilio_con_el_filtro_combinable(client, admin):
     assert [s.pk for s in response.context["sedes"]] == [objetivo.pk]
 
 
+def test_sede_vpsl_conserva_busqueda_enlace_anterior(client, admin):
+    from ver_para_ser_libre.models import SedeVPSL
+
+    objetivo = SedeVPSL.objects.create(nombre="Escuela Norte", domicilio="Calle Falsa")
+    SedeVPSL.objects.create(nombre="Escuela Sur", domicilio="Otra")
+
+    response = client.get(reverse("vpsl_sede_list"), {"busqueda": "Falsa"})
+
+    assert [s.pk for s in response.context["sedes"]] == [objetivo.pk]
+
+
 def test_centro_de_infancia_filtra_por_organizacion(client, admin):
     from centrodeinfancia.models import CentroDeInfancia
 
@@ -164,6 +175,17 @@ def test_centro_de_infancia_filtra_por_organizacion(client, admin):
     assert [c.pk for c in response.context["centros"]] == [objetivo.pk]
 
 
+def test_centro_de_infancia_conserva_busqueda_enlace_anterior(client, admin):
+    from centrodeinfancia.models import CentroDeInfancia
+
+    objetivo = CentroDeInfancia.objects.create(nombre="CDI Uno", organizacion="Alfa")
+    CentroDeInfancia.objects.create(nombre="CDI Dos", organizacion="Beta")
+
+    response = client.get(reverse("centrodeinfancia"), {"busqueda": "Alfa"})
+
+    assert [c.pk for c in response.context["centros"]] == [objetivo.pk]
+
+
 def test_importar_expedientes_filtra_por_usuario(client, admin):
     from importarexpediente.models import ArchivosImportados
 
@@ -179,6 +201,17 @@ def test_importar_expedientes_filtra_por_usuario(client, admin):
             )
         },
     )
+
+    assert [a.pk for a in response.context["archivos_importados"]] == [objetivo.pk]
+
+
+def test_importar_expedientes_conserva_busqueda_enlace_anterior(client, admin):
+    from importarexpediente.models import ArchivosImportados
+
+    objetivo = ArchivosImportados.objects.create(archivo="uno.csv", usuario=admin)
+    ArchivosImportados.objects.create(archivo="dos.csv", usuario=admin)
+
+    response = client.get(reverse("importarexpedientes_list"), {"busqueda": "uno"})
 
     assert [a.pk for a in response.context["archivos_importados"]] == [objetivo.pk]
 

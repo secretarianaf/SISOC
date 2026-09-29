@@ -1,5 +1,18 @@
 # 2026-09-24 - Homogeneizar los buscadores: filtros combinables en todos los listados
 
+## Compatibilidad de enlaces existentes
+
+Se conserva `?busqueda=` en los listados que ya lo aplicaban: importar
+expedientes, CDI y sedes VPSL; en CDI tambien se respeta en el CSV. El listado
+de itinerarios VPSL ya lo conservaba. El endpoint
+`importarexpedientes/ajax/` mantiene su respuesta JSON y permisos para los
+consumidores existentes. Los filtros combinables siguen siendo la interfaz
+principal y se pueden combinar con el parametro anterior. En modalidades VAT
+el parametro antiguo nunca filtraba resultados y conserva ese comportamiento.
+
+Las notas posteriores que describen la eliminacion de estas URLs corresponden
+al estado anterior a esta correccion de compatibilidad.
+
 ## Contexto
 - Los 18 listados principales tenian buscadores con modos distintos. Auditados
   renderizando cada pantalla:

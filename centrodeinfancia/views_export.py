@@ -2,6 +2,7 @@ import logging
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 from django.http import HttpResponse
 from django.utils.text import slugify
 from django.views.generic import View
@@ -94,6 +95,11 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
         queryset = CENTRODEINFANCIA_ADVANCED_FILTER.filter_queryset(
             queryset, self.request
         )
+        query = self.request.GET.get("busqueda", "").strip()
+        if query:
+            queryset = queryset.filter(
+                Q(nombre__icontains=query) | Q(organizacion__icontains=query)
+            )
         return queryset.order_by("nombre")
 
     def get(self, request, *args, **kwargs):

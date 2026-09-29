@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-09-29 -->
+# Versión SISOC 29.09.2026
+
+## Actualizaciones
+
+- [users.] El alta y edición de usuarios muestra solo las secciones del programa de quien las gestiona (Comedores, DataCalle, administración), según permisos agrupados en roles. (PR #2601)
+<!-- AUTO-GENERATED RELEASE END: 2026-09-29 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-09-30 -->
 # Versión SISOC 30.09.2026
 

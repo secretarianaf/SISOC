@@ -1,4 +1,4 @@
-# Contexto de feature PR #2575 - Fixes en buscadores
+# Contexto de feature PR #2575 - Unificar 6 listados en filtros combinables (VPSL, CDI, VAT, importar expedientes)
 
 ## Resumen
 

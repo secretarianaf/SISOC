@@ -43,9 +43,12 @@
 - `celiaquia/validators.py`
 - `celiaquia/views/expediente.py`
 - `celiaquia/views/subsanacion.py`
+- `docs/contexto/features/pr-2569-celiaquia-tk-2523.md`
 - `docs/registro/cambios/2026-09-23-2523-observaciones-anses-y-doc-complementaria.md`
+- `docs/registro/prs/PR-2569.md`
 - `static/custom/js/expediente_detail.js`
 - `templates/components/legajo_archivos_requeridos.html`
+- `tests/test_celiaquia_expediente_view_helpers_unit.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

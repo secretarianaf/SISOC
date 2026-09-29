@@ -39,7 +39,8 @@
 - `centrodeinfancia/filter_config.py`
 - `centrodeinfancia/templates/centrodeinfancia/centrodeinfancia_list.html`
 - `centrodeinfancia/views.py`
-- `docs/contexto/features/pr-2575-fixes-en-buscadores.md`
+- `centrodeinfancia/views_export.py`
+- `docs/contexto/features/pr-2575-unificar-6-listados-en-filtros-combinables-vpsl-cdi-vat-importar-expedientes.md`
 - `docs/registro/cambios/2026-09-24-buscadores-homogeneos-filtros-combinables.md`
 - `docs/registro/prs/PR-2575.md`
 - `importarexpediente/filter_config.py`
@@ -51,7 +52,7 @@
 - `ver_para_ser_libre/filter_config.py`
 - `ver_para_ser_libre/templates/ver_para_ser_libre/itinerario_list.html`
 - `ver_para_ser_libre/templates/ver_para_ser_libre/sede_list.html`
-- `ver_para_ser_libre/views.py`
+- ... y 1 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

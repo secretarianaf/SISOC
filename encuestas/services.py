@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+# Se conserva el servicio de dominio existente; separar su API excede este cambio.
+# pylint: disable=too-many-lines
+
+import json
 import logging
 import os
 import time
 from decimal import Decimal, InvalidOperation
 from typing import Iterable
 
-from django.core.exceptions import ValidationError
-from django.db import IntegrityError, transaction
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import IntegrityError, close_old_connections, transaction
 from django.db.models import Prefetch, Q
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -30,9 +36,189 @@ from .models import (
     TipoPregunta,
     TipoSegmentacion,
 )
-from .validators import parse_listado_destinatarios, parse_preguntas_payload
+from .validators import (
+    parse_listado_destinatarios,
+    parse_listado_usuarios,
+    parse_preguntas_payload,
+    validar_usuario_id,
+)
 
 logger = logging.getLogger("django")
+
+ENCUESTA_JSON_MAX_BYTES = 5 * 1024 * 1024
+ENCUESTA_JSON_CAMPOS = {
+    "titulo": (str,),
+    "descripcion": (str,),
+    "es_anonima": (bool,),
+    "es_obligatoria": (bool,),
+    "es_opcional": (bool,),
+    "intervalo_recordatorio_dias": (int, type(None)),
+    "es_recurrente": (bool,),
+    "intervalo_recurrencia_dias": (int, type(None)),
+    "duracion_ronda_dias": (int,),
+}
+
+
+def exportar_encuesta(encuesta: Encuesta, *, incluir_segmentacion=False) -> dict:
+    datos = {
+        "formato": "sisoc.encuesta",
+        "version_formato": 3,
+        "encuesta": {campo: getattr(encuesta, campo) for campo in ENCUESTA_JSON_CAMPOS},
+        "preguntas": serializar_preguntas(encuesta),
+    }
+    segmentacion = getattr(encuesta, "segmentacion", None)
+    if incluir_segmentacion and segmentacion is not None:
+        datos["segmentacion"] = {
+            "tipo": segmentacion.tipo,
+            "destinatarios": (
+                list(
+                    segmentacion.destinatarios.order_by("pk").values(
+                        "tipo_documento", "numero_documento"
+                    )
+                )
+                if segmentacion.tipo == TipoSegmentacion.LISTADO_DOCUMENTOS
+                else []
+            ),
+        }
+        if segmentacion.tipo == TipoSegmentacion.LISTADO_USUARIOS:
+            datos["version_formato"] = 4
+            datos["segmentacion"]["destinatarios"] = [
+                {"usuario_id": pk}
+                for pk in segmentacion.usuarios.order_by("pk").values_list(
+                    "pk", flat=True
+                )
+            ]
+        if segmentacion.tipo == TipoSegmentacion.GRUPOS:
+            datos["version_formato"] = 5
+            datos["segmentacion"]["destinatarios"] = [
+                {"grupo": nombre}
+                for nombre in segmentacion.grupos.order_by("name").values_list(
+                    "name", flat=True
+                )
+            ]
+    return datos
+
+
+def _importar_segmentacion(encuesta: Encuesta, datos: dict) -> None:
+    if not isinstance(datos, dict) or datos.get("tipo") not in TipoSegmentacion.values:
+        raise ValidationError("El tipo de segmentación del archivo es inválido.")
+    destinatarios = datos.get("destinatarios")
+    if not isinstance(destinatarios, list):
+        raise ValidationError("Los destinatarios deben ser una lista.")
+    if datos["tipo"] == TipoSegmentacion.TODOS_LOS_USUARIOS and destinatarios:
+        raise ValidationError("La segmentación para todos no admite un listado.")
+    if datos["tipo"] == TipoSegmentacion.GRUPOS:
+        if any(
+            not isinstance(d, dict) or not isinstance(d.get("grupo"), str)
+            for d in destinatarios
+        ):
+            raise ValidationError("Cada destinatario debe incluir el nombre del grupo.")
+        nombres = {d["grupo"] for d in destinatarios}
+        grupos = list(Group.objects.filter(name__in=nombres))
+        if {g.name for g in grupos} != nombres:
+            raise ValidationError(
+                "Hay grupos de la encuesta que no existen en este ambiente."
+            )
+        actualizar_segmentacion(
+            encuesta, tipo=datos["tipo"], grupos_ids=[g.pk for g in grupos]
+        )
+        return
+    if datos["tipo"] == TipoSegmentacion.LISTADO_USUARIOS:
+        if any(not isinstance(d, dict) or "usuario_id" not in d for d in destinatarios):
+            raise ValidationError("Cada destinatario debe incluir 'usuario_id'.")
+        actualizar_segmentacion(
+            encuesta,
+            tipo=datos["tipo"],
+            usuarios_ids=[d["usuario_id"] for d in destinatarios],
+        )
+        return
+    for destinatario in destinatarios:
+        if not isinstance(destinatario, dict):
+            raise ValidationError("El formato de un destinatario es inválido.")
+        numero = destinatario.get("numero_documento")
+        if (
+            destinatario.get("tipo_documento") not in TipoDocumento.values
+            or not isinstance(numero, str)
+            or not numero.isascii()
+            or not numero.isdigit()
+            or len(numero) > 20
+        ):
+            raise ValidationError("Un destinatario contiene un documento inválido.")
+    actualizar_segmentacion(encuesta, tipo=datos["tipo"], destinatarios=destinatarios)
+
+
+def _leer_archivo_encuesta(archivo) -> dict:
+    if archivo is None:
+        raise ValidationError("Seleccioná un archivo JSON de encuesta.")
+    if not archivo.name.lower().endswith(".json"):
+        raise ValidationError("Solo se permiten archivos JSON (.json).")
+    contenido = archivo.read(ENCUESTA_JSON_MAX_BYTES + 1)
+    if len(contenido) > ENCUESTA_JSON_MAX_BYTES:
+        raise ValidationError("El archivo supera el tamaño máximo de 5 MB.")
+    try:
+        datos = json.loads(contenido.decode("utf-8-sig"))
+    except (UnicodeDecodeError, ValueError, RecursionError) as exc:
+        raise ValidationError("El archivo no contiene un JSON válido.") from exc
+    if not isinstance(datos, dict) or datos.get("formato") != "sisoc.encuesta":
+        raise ValidationError("El archivo no es una exportación de encuesta SISOC.")
+    version = datos.get("version_formato")
+    if (
+        not isinstance(version, int)
+        or isinstance(version, bool)
+        or version not in (1, 2, 3, 4, 5)
+    ):
+        raise ValidationError("La versión del archivo de encuesta no es compatible.")
+    return datos
+
+
+def _validar_preguntas_importadas(preguntas) -> str:
+    if not isinstance(preguntas, list):
+        raise ValidationError("El archivo debe incluir una lista de preguntas.")
+    for pregunta in preguntas:
+        if not isinstance(pregunta, dict):
+            raise ValidationError("El formato de una pregunta es inválido.")
+        if not isinstance(pregunta.get("opciones", []), list):
+            raise ValidationError("Las opciones de una pregunta deben ser una lista.")
+        for campo in ("obligatoria", "pondera"):
+            if campo in pregunta and not isinstance(pregunta[campo], bool):
+                raise ValidationError(f"El campo '{campo}' de la pregunta es inválido.")
+    try:
+        preguntas_json = json.dumps(preguntas, allow_nan=False)
+        for pregunta in parse_preguntas_payload(preguntas_json):
+            for orden, opcion in enumerate(pregunta.opciones, start=1):
+                OpcionPregunta(
+                    texto=opcion.texto,
+                    valor=opcion.texto,
+                    orden=orden,
+                    puntaje=opcion.puntaje,
+                ).full_clean(exclude=["pregunta"])
+    except (TypeError, ValueError, OverflowError, RecursionError) as exc:
+        raise ValidationError(
+            "El archivo contiene datos de preguntas inválidos."
+        ) from exc
+    return preguntas_json
+
+
+@transaction.atomic
+def importar_encuesta(archivo, *, usuario) -> Encuesta:
+    datos = _leer_archivo_encuesta(archivo)
+    campos = datos.get("encuesta")
+    if not isinstance(campos, dict):
+        raise ValidationError("Falta la configuración de la encuesta.")
+    if datos["version_formato"] < 3:
+        campos.setdefault("es_opcional", False)
+    for campo, tipos in ENCUESTA_JSON_CAMPOS.items():
+        if campo not in campos or type(campos[campo]) not in tipos:
+            raise ValidationError(f"El campo '{campo}' falta o tiene un tipo inválido.")
+    preguntas_json = _validar_preguntas_importadas(datos.get("preguntas"))
+    encuesta = crear_encuesta(
+        usuario=usuario,
+        **{campo: campos[campo] for campo in ENCUESTA_JSON_CAMPOS},
+    )
+    reemplazar_preguntas(encuesta, preguntas_json)
+    if "segmentacion" in datos:
+        _importar_segmentacion(encuesta, datos["segmentacion"])
+    return encuesta
 
 
 class RondaAbiertaError(ValidationError):
@@ -106,6 +292,8 @@ def _clonar_segmentacion(encuesta_origen: Encuesta, encuesta_destino: Encuesta) 
     nueva_segmentacion = SegmentacionEncuesta.objects.create(
         encuesta=encuesta_destino, tipo=segmentacion_actual.tipo
     )
+    nueva_segmentacion.usuarios.set(segmentacion_actual.usuarios.all())
+    nueva_segmentacion.grupos.set(segmentacion_actual.grupos.all())
     SegmentacionDestinatario.objects.bulk_create(
         SegmentacionDestinatario(
             segmentacion=nueva_segmentacion,
@@ -116,7 +304,21 @@ def _clonar_segmentacion(encuesta_origen: Encuesta, encuesta_destino: Encuesta) 
     )
 
 
+def _validar_edicion(encuesta):
+    estado = (
+        Encuesta.objects.select_for_update()
+        .values_list("estado", flat=True)
+        .get(pk=encuesta.pk)
+    )
+    if estado == EstadoEncuesta.PENDIENTE_APROBACION:
+        raise ValidationError(
+            "La encuesta está pendiente de aprobación y no se puede modificar."
+        )
+
+
+@transaction.atomic
 def nueva_version(encuesta: Encuesta, *, usuario, **campos) -> Encuesta:
+    _validar_edicion(encuesta)
     if tiene_ronda_abierta(encuesta):
         raise RondaAbiertaError(
             "No se puede editar una encuesta mientras tenga una ronda abierta."
@@ -127,6 +329,7 @@ def nueva_version(encuesta: Encuesta, *, usuario, **campos) -> Encuesta:
         "descripcion": encuesta.descripcion,
         "es_anonima": encuesta.es_anonima,
         "es_obligatoria": encuesta.es_obligatoria,
+        "es_opcional": encuesta.es_opcional,
         "intervalo_recordatorio_dias": encuesta.intervalo_recordatorio_dias,
         "es_recurrente": encuesta.es_recurrente,
         "intervalo_recurrencia_dias": encuesta.intervalo_recurrencia_dias,
@@ -150,7 +353,9 @@ def nueva_version(encuesta: Encuesta, *, usuario, **campos) -> Encuesta:
     return nueva
 
 
+@transaction.atomic
 def actualizar_encuesta(encuesta: Encuesta, *, usuario, **campos) -> Encuesta:
+    _validar_edicion(encuesta)
     if tiene_ronda_abierta(encuesta):
         raise RondaAbiertaError(
             "No se puede editar una encuesta mientras tenga una ronda abierta."
@@ -167,9 +372,7 @@ def actualizar_encuesta(encuesta: Encuesta, *, usuario, **campos) -> Encuesta:
     return encuesta
 
 
-def publicar(encuesta: Encuesta, *, usuario) -> RondaEncuesta:
-    if encuesta.estado != EstadoEncuesta.BORRADOR:
-        raise ValidationError("Solo se puede publicar una encuesta en borrador.")
+def _validar_publicacion(encuesta):
     if not encuesta.preguntas.exists():
         raise ValidationError(
             "La encuesta debe tener al menos una pregunta para publicarse."
@@ -179,7 +382,9 @@ def publicar(encuesta: Encuesta, *, usuario) -> RondaEncuesta:
             "La encuesta debe tener una segmentación configurada para publicarse."
         )
 
-    encuesta.estado = EstadoEncuesta.PUBLICADA
+
+def _guardar_estado(encuesta, estado, usuario):
+    encuesta.estado = estado
     encuesta.usuario_ultima_modificacion = usuario
     encuesta.save(
         update_fields=[
@@ -188,7 +393,54 @@ def publicar(encuesta: Encuesta, *, usuario) -> RondaEncuesta:
             "fecha_ultima_modificacion",
         ]
     )
+
+
+@transaction.atomic
+def solicitar_publicacion(encuesta: Encuesta, *, usuario) -> None:
+    if not usuario.has_perm("encuestas.change_encuesta"):
+        raise PermissionDenied
+    encuesta.estado = Encuesta.objects.select_for_update().get(pk=encuesta.pk).estado
+    if encuesta.estado != EstadoEncuesta.BORRADOR:
+        raise ValidationError(
+            "Solo se puede solicitar la publicación de una encuesta en borrador."
+        )
+    _validar_publicacion(encuesta)
+    _guardar_estado(encuesta, EstadoEncuesta.PENDIENTE_APROBACION, usuario)
+
+
+@transaction.atomic
+def publicar(encuesta: Encuesta, *, usuario) -> RondaEncuesta:
+    if not usuario.has_perm("encuestas.aprobar_encuesta"):
+        raise PermissionDenied
+    encuesta.estado = Encuesta.objects.select_for_update().get(pk=encuesta.pk).estado
+    if encuesta.estado != EstadoEncuesta.PENDIENTE_APROBACION:
+        raise ValidationError(
+            "Solo se puede aprobar una encuesta pendiente de aprobación."
+        )
+    _validar_publicacion(encuesta)
+    _guardar_estado(encuesta, EstadoEncuesta.PUBLICADA, usuario)
     return abrir_ronda(encuesta)
+
+
+@transaction.atomic
+def rechazar_publicacion(encuesta: Encuesta, *, usuario, motivo="") -> None:
+    if not usuario.has_perm("encuestas.aprobar_encuesta"):
+        raise PermissionDenied
+    encuesta.estado = Encuesta.objects.select_for_update().get(pk=encuesta.pk).estado
+    if encuesta.estado != EstadoEncuesta.PENDIENTE_APROBACION:
+        raise ValidationError(
+            "Solo se puede rechazar una encuesta pendiente de aprobación."
+        )
+    motivo = motivo.strip() if isinstance(motivo, str) else ""
+    if not motivo:
+        raise ValidationError("Indicá qué debe corregir el gestor.")
+    if len(motivo) > 2000:
+        raise ValidationError("El motivo no puede superar los 2000 caracteres.")
+    encuesta.motivo_rechazo = motivo
+    encuesta.usuario_rechazo = usuario
+    encuesta.fecha_rechazo = timezone.now()
+    encuesta.save(update_fields=["motivo_rechazo", "usuario_rechazo", "fecha_rechazo"])
+    _guardar_estado(encuesta, EstadoEncuesta.BORRADOR, usuario)
 
 
 def abrir_ronda(encuesta: Encuesta, *, fecha_apertura=None) -> RondaEncuesta:
@@ -219,9 +471,11 @@ def cerrar_ronda(ronda: RondaEncuesta, *, manual: bool = True) -> RondaEncuesta:
     return ronda
 
 
+@transaction.atomic
 def reemplazar_preguntas(encuesta: Encuesta, preguntas_raw_json: str) -> None:
     """Reemplaza todas las preguntas de la encuesta a partir del JSON armado por
     el editor dinámico (ver validators.parse_preguntas_payload)."""
+    _validar_edicion(encuesta)
     if tiene_ronda_abierta(encuesta):
         raise RondaAbiertaError(
             "No se pueden modificar las preguntas mientras la encuesta tenga una "
@@ -309,13 +563,17 @@ def serializar_preguntas(encuesta: Encuesta) -> list[dict]:
     return resultado
 
 
-def actualizar_segmentacion(
+@transaction.atomic
+def actualizar_segmentacion(  # pylint: disable=too-many-arguments
     encuesta: Encuesta,
     *,
     tipo: str,
     archivo=None,
     destinatarios: Iterable[dict] | None = None,
+    usuarios_ids=None,
+    grupos_ids=None,
 ) -> SegmentacionEncuesta:
+    _validar_edicion(encuesta)
     segmentacion, _ = SegmentacionEncuesta.objects.get_or_create(
         encuesta=encuesta, defaults={"tipo": tipo}
     )
@@ -323,7 +581,24 @@ def actualizar_segmentacion(
     if archivo is not None:
         segmentacion.archivo_listado = archivo
     segmentacion.full_clean()
+    if tipo == TipoSegmentacion.GRUPOS:
+        ids = _validar_grupos(grupos_ids)
+        segmentacion.save()
+        segmentacion.grupos.set(ids)
+        segmentacion.usuarios.clear()
+        segmentacion.destinatarios.all().delete()
+        return segmentacion
+    segmentacion.grupos.clear()
+    if tipo == TipoSegmentacion.LISTADO_USUARIOS:
+        ids = parse_listado_usuarios(archivo) if archivo is not None else usuarios_ids
+        usuarios = _validar_usuarios_existentes(ids) if ids is not None else None
+        segmentacion.save()
+        segmentacion.destinatarios.all().delete()
+        if usuarios is not None:
+            segmentacion.usuarios.set(usuarios)
+        return segmentacion
     segmentacion.save()
+    segmentacion.usuarios.clear()
 
     if tipo != TipoSegmentacion.LISTADO_DOCUMENTOS:
         segmentacion.destinatarios.all().delete()
@@ -357,18 +632,53 @@ def actualizar_segmentacion(
     return segmentacion
 
 
+def _validar_grupos(ids):
+    try:
+        ids = {validar_usuario_id(value) for value in (ids or [])}
+    except ValidationError as exc:
+        raise ValidationError("La selección de grupos es inválida.") from exc
+    if not ids:
+        raise ValidationError("Seleccioná al menos un grupo.")
+    existentes = set(Group.objects.filter(pk__in=ids).values_list("pk", flat=True))
+    if ids != existentes:
+        raise ValidationError("Alguno de los grupos seleccionados ya no existe.")
+    return existentes
+
+
+def _validar_usuarios_existentes(ids):
+    ids = {validar_usuario_id(value) for value in ids}
+    existentes = set(
+        get_user_model().objects.filter(pk__in=ids).values_list("pk", flat=True)
+    )
+    faltantes = ids - existentes
+    if faltantes:
+        muestra = ", ".join(str(pk) for pk in sorted(faltantes)[:20])
+        raise ValidationError(f"No existen usuarios con estos IDs: {muestra}.")
+    return existentes
+
+
+@transaction.atomic
 def agregar_destinatario(
-    encuesta: Encuesta, *, tipo_documento: str, numero_documento: str
-) -> SegmentacionDestinatario:
+    encuesta: Encuesta,
+    *,
+    tipo_documento: str = "",
+    numero_documento: str = "",
+    usuario_id=None,
+):
     """Alta individual de un destinatario, sin reemplazar todo el listado.
 
     A diferencia de actualizar_encuesta/reemplazar_preguntas, esto no
     verifica tiene_ronda_abierta a propósito: la segmentación se puede
     modificar "en caliente" con la ronda ya abierta (regla de negocio 12).
     """
+    _validar_edicion(encuesta)
     segmentacion, _ = SegmentacionEncuesta.objects.get_or_create(
         encuesta=encuesta, defaults={"tipo": TipoSegmentacion.LISTADO_DOCUMENTOS}
     )
+    if segmentacion.tipo == TipoSegmentacion.LISTADO_USUARIOS:
+        ids = _validar_usuarios_existentes([usuario_id])
+        segmentacion.usuarios.add(*ids)
+        return get_user_model().objects.get(pk=next(iter(ids)))
     if segmentacion.tipo != TipoSegmentacion.LISTADO_DOCUMENTOS:
         raise ValidationError(
             "Solo se pueden agregar destinatarios individuales cuando el tipo "
@@ -390,13 +700,20 @@ def agregar_destinatario(
     return destinatario
 
 
+@transaction.atomic
 def quitar_destinatario(encuesta: Encuesta, destinatario_pk: int) -> None:
     """Baja individual de un destinatario (ver nota de agregar_destinatario
     sobre aplicar cambios en caliente con la ronda abierta)."""
+    _validar_edicion(encuesta)
     segmentacion = getattr(encuesta, "segmentacion", None)
     if segmentacion is None:
         raise ValidationError("La encuesta no tiene segmentación configurada.")
 
+    if segmentacion.tipo == TipoSegmentacion.LISTADO_USUARIOS:
+        if not segmentacion.usuarios.filter(pk=destinatario_pk).exists():
+            raise ValidationError("El usuario no existe en esta segmentación.")
+        segmentacion.usuarios.remove(destinatario_pk)
+        return
     borrados, _ = segmentacion.destinatarios.filter(pk=destinatario_pk).delete()
     if not borrados:
         raise ValidationError("El destinatario no existe en esta segmentación.")
@@ -435,6 +752,20 @@ def usuario_esta_segmentado(encuesta: Encuesta, usuario) -> bool:
         return False
     if segmentacion.tipo == TipoSegmentacion.TODOS_LOS_USUARIOS:
         return True
+    if segmentacion.tipo in (
+        TipoSegmentacion.LISTADO_USUARIOS,
+        TipoSegmentacion.GRUPOS,
+    ):
+        por_grupos = segmentacion.tipo == TipoSegmentacion.GRUPOS
+        relacion = segmentacion.grupos if por_grupos else segmentacion.usuarios
+        atributo = "grupos_coincidentes" if por_grupos else "usuarios_coincidentes"
+        filtro = {"user": usuario} if por_grupos else {"pk": usuario.pk}
+        usuarios = getattr(segmentacion, atributo, None)
+        return (
+            bool(usuarios)
+            if usuarios is not None
+            else relacion.filter(**filtro).exists()
+        )
 
     documentos = _documentos_de_usuario(usuario)
     if not documentos:
@@ -466,6 +797,16 @@ def get_rondas_pendientes(usuario) -> list[RondaEncuesta]:
         .select_related("encuesta", "encuesta__segmentacion")
         .prefetch_related(
             Prefetch(
+                "encuesta__segmentacion__grupos",
+                queryset=Group.objects.filter(user=usuario),
+                to_attr="grupos_coincidentes",
+            ),
+            Prefetch(
+                "encuesta__segmentacion__usuarios",
+                queryset=get_user_model().objects.filter(pk=usuario.pk),
+                to_attr="usuarios_coincidentes",
+            ),
+            Prefetch(
                 "encuesta__segmentacion__destinatarios",
                 queryset=destinatarios_queryset,
                 to_attr="destinatarios_usuario",
@@ -484,7 +825,9 @@ def get_rondas_pendientes(usuario) -> list[RondaEncuesta]:
         if not usuario_esta_segmentado(ronda.encuesta, usuario):
             continue
         recordatorio = next(iter(ronda.recordatorios_usuario), None)
-        if recordatorio and recordatorio.fecha_proximo_aviso > ahora:
+        if recordatorio and (
+            recordatorio.descartada or recordatorio.fecha_proximo_aviso > ahora
+        ):
             continue
         pendientes.append(ronda)
     return pendientes
@@ -513,13 +856,38 @@ def get_rondas_pendientes_para_request(request) -> list[RondaEncuesta]:
 
 
 def posponer_ronda(ronda: RondaEncuesta, usuario) -> RecordatorioUsuario:
-    if ronda.encuesta.es_obligatoria:
-        raise ValidationError("Esta encuesta es obligatoria y no se puede posponer.")
+    _validar_accion_ronda(ronda, usuario)
+    if ronda.encuesta.es_obligatoria or ronda.encuesta.es_opcional:
+        raise ValidationError("Solo se pueden posponer encuestas postergables.")
 
     intervalo_dias = ronda.encuesta.intervalo_recordatorio_dias or 1
     proximo_aviso = timezone.now() + timezone.timedelta(days=intervalo_dias)
     recordatorio, _ = RecordatorioUsuario.objects.update_or_create(
         ronda=ronda, usuario=usuario, defaults={"fecha_proximo_aviso": proximo_aviso}
+    )
+    return recordatorio
+
+
+def _validar_accion_ronda(ronda: RondaEncuesta, usuario) -> None:
+    if (
+        ronda.estado != EstadoRonda.ABIERTA
+        or ronda.fecha_cierre_programada <= timezone.now()
+    ):
+        raise ValidationError("La ronda ya no está disponible.")
+    if not usuario_esta_segmentado(ronda.encuesta, usuario):
+        raise ValidationError("No sos destinatario de esta encuesta.")
+    if CumplimientoRonda.objects.filter(ronda=ronda, usuario=usuario).exists():
+        raise ValidationError("Ya respondiste esta ronda.")
+
+
+def descartar_ronda(ronda: RondaEncuesta, usuario) -> RecordatorioUsuario:
+    _validar_accion_ronda(ronda, usuario)
+    if not ronda.encuesta.es_opcional or ronda.encuesta.es_obligatoria:
+        raise ValidationError("Solo se pueden descartar encuestas opcionales.")
+    recordatorio, _ = RecordatorioUsuario.objects.update_or_create(
+        ronda=ronda,
+        usuario=usuario,
+        defaults={"descartada": True, "fecha_proximo_aviso": timezone.now()},
     )
     return recordatorio
 
@@ -740,6 +1108,7 @@ def run_encuestas_scheduler(*, once: bool = False) -> None:
 
     while True:
         try:
+            close_old_connections()
             resultado = procesar_rondas_pendientes()
             if resultado["rondas_cerradas"] or resultado["rondas_abiertas"]:
                 logger.info(
@@ -750,6 +1119,8 @@ def run_encuestas_scheduler(*, once: bool = False) -> None:
                 )
         except Exception:  # noqa: BLE001 - el worker no debe morir por un ciclo fallido
             logger.exception("[encuestas] Error inesperado en el scheduler de rondas.")
+        finally:
+            close_old_connections()
 
         if once:
             break

@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
+from encuestas.tests.helpers import publicar_para_test as publicar
+
 from encuestas.models import (
     Pregunta,
     SegmentacionDestinatario,
@@ -15,7 +17,6 @@ from encuestas.services import (
     actualizar_segmentacion,
     agregar_destinatario,
     crear_encuesta,
-    publicar,
     quitar_destinatario,
 )
 

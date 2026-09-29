@@ -4,6 +4,8 @@ import pytest
 from django.core.management import call_command
 from django.utils import timezone
 
+from encuestas.tests.helpers import publicar_para_test as publicar
+
 from encuestas.models import EstadoRonda, Pregunta, TipoPregunta, TipoSegmentacion
 from encuestas.services import (
     DEFAULT_ENCUESTAS_SCHEDULER_POLL_SECONDS,
@@ -11,7 +13,6 @@ from encuestas.services import (
     crear_encuesta,
     get_encuestas_scheduler_poll_seconds,
     procesar_rondas_pendientes,
-    publicar,
 )
 
 

@@ -33,8 +33,12 @@
 - Empezar por `docs/registro/prs/PR-2601.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
+- `CHANGELOG.md`
 - `core/constants.py`
+- `docs/contexto/features/pr-2601-feat-usuarios-secciones-del-abm-habilitadas-por-permiso.md`
 - `docs/registro/decisiones/2026-09-29-usuarios-secciones-por-permiso.md`
+- `docs/registro/prs/PR-2601.md`
+- `docs/registro/releases/pending/2026-09-29-pr-2601.md`
 - `static/custom/js/user_mobile_access.js`
 - `tests/js/user_mobile_access.test.js`
 - `tests/test_users_regressions.py`

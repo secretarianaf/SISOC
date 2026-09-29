@@ -48,13 +48,13 @@
 - `docker-compose.deploy.yml`
 - `docker-compose.frontends.dev.yml`
 - `docker-compose.yml`
-- `docs/contexto/features/pr-2605-feat-vpsl-migrate-module-to-react-on-front-v2.md`
+- `docs/contexto/features/pr-2605-feat-vpsl-migrar-modulo-a-front-react.md`
 - `docs/indice.md`
 - `docs/operacion/ver_para_ser_libre_react.md`
 - `docs/registro/cambios/2026-09-29-vpsl-react-cierre-revision.md`
 - `docs/registro/cambios/2026-09-29-vpsl-react-dependencias-seguras.md`
 - `docs/registro/prs/PR-2605.md`
-- ... y 51 archivo(s) adicional(es) relacionados.
+- ... y 52 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`

@@ -48,7 +48,14 @@ El bloqueo aplica a los usuarios que pertenezcan a estos grupos:
 > y falla en silencio**, porque no coincide con ningún grupo existente.
 
 Los demás grupos con permiso de edición de centro (`CFPINET`, `Provincia VAT`,
-`VAT SSE`) **conservan** la edición. Conviene confirmar que sea lo esperado.
+`VAT SSE`) **conservan** la edición.
+
+> **Decisión (2026-09-29, review PR #2568):** si un usuario pertenece a la vez
+> a un grupo bloqueado (p. ej. `CFP`) y a uno de administración (`CFPINET`,
+> `Provincia VAT`, `VAT SSE`), **el administrador tiene prioridad**: puede
+> editar nombre y CUE. Implementado en
+> `IDENTIFICACION_CENTRO_ADMIN_GROUP_NAMES` (`VAT/forms.py`), evaluado antes
+> que el bloqueo en `_debe_bloquear_identificacion_centro()`.
 
 ## Cómo extender el bloqueo a otros roles
 

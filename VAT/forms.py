@@ -326,6 +326,16 @@ IDENTIFICACION_CENTRO_BLOQUEADA_GROUP_NAMES = (
     "CFPRevisor",
 )
 
+# Grupos de administración con permiso de edición de centro
+# (core/permissions/registry.py) que tienen prioridad sobre el bloqueo de
+# arriba: un usuario que pertenezca a la vez a un grupo bloqueado (p. ej.
+# "CFP") y a uno de estos puede editar nombre y código.
+IDENTIFICACION_CENTRO_ADMIN_GROUP_NAMES = (
+    "CFPINET",
+    "Provincia VAT",
+    "VAT SSE",
+)
+
 
 def _is_inet_provincia_actor(actor) -> bool:
     if not actor or not getattr(actor, "is_authenticated", False):
@@ -339,9 +349,10 @@ def _is_inet_provincia_actor(actor) -> bool:
 def _debe_bloquear_identificacion_centro(actor) -> bool:
     if not actor or not getattr(actor, "is_authenticated", False):
         return False
-    return actor.groups.filter(
-        name__in=IDENTIFICACION_CENTRO_BLOQUEADA_GROUP_NAMES
-    ).exists()
+    grupos_del_actor = set(actor.groups.values_list("name", flat=True))
+    if grupos_del_actor & set(IDENTIFICACION_CENTRO_ADMIN_GROUP_NAMES):
+        return False
+    return bool(grupos_del_actor & set(IDENTIFICACION_CENTRO_BLOQUEADA_GROUP_NAMES))
 
 
 def _lock_fields_readonly(form, field_names):
@@ -1877,7 +1888,9 @@ class InstitucionUbicacionForm(forms.ModelForm):
         if not centro_val:
             return None
         try:
-            return Centro.objects.only("id", "provincia_id").filter(pk=centro_val).first()
+            return (
+                Centro.objects.only("id", "provincia_id").filter(pk=centro_val).first()
+            )
         except (TypeError, ValueError):
             return None
 

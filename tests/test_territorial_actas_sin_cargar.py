@@ -128,3 +128,54 @@ def test_el_listado_no_hace_una_consulta_por_acta(api, comedor, territorial):
     assert len(filas) == 5
     assert all(fila["sin_cargar"] is True for fila in filas)
     assert len(cinco) == len(una)
+
+
+def _patch(api, comedor, acta, **datos):
+    return api.patch(
+        f"/api/territorial/comedores/{comedor.id}/actas-complementarias/{acta.id}/",
+        datos,
+        format="json",
+    )
+
+
+def test_patch_sobre_acta_cargada_sin_estado_es_409_y_no_pisa(
+    api, comedor, territorial
+):
+    acta = _acta_cargada(comedor, territorial)
+    respuesta = _patch(
+        api,
+        comedor,
+        acta,
+        observaciones="Pisado por la app",
+        prestaciones=[],
+    )
+    assert respuesta.status_code == 409
+    assert "ya fue cargada en SISOC" in respuesta.json()["detail"]
+    acta.refresh_from_db()
+    assert acta.estado_validacion is None
+    assert acta.observaciones == "Cambio de prestacion"
+    assert acta.prestaciones.count() == 1
+
+
+def test_patch_sobre_acta_vacia_asignada_pasa_a_pendiente_y_es_idempotente(
+    api, comedor, territorial
+):
+    acta = _acta_vacia(comedor, territorial)
+    assert acta.sin_cargar
+    for _ in range(2):
+        respuesta = _patch(api, comedor, acta, observaciones="Cargada desde la app")
+        assert respuesta.status_code == 200
+    acta.refresh_from_db()
+    assert acta.estado_validacion == ActaComplementaria.ESTADO_VALIDACION_PENDIENTE
+    assert acta.observaciones == "Cargada desde la app"
+
+
+def test_patch_sobre_acta_a_subsanar_sigue_permitido(api, comedor, territorial):
+    acta = _acta_cargada(comedor, territorial)
+    acta.estado_validacion = ActaComplementaria.ESTADO_VALIDACION_A_SUBSANAR
+    acta.save()
+    respuesta = _patch(api, comedor, acta, observaciones="Subsanada")
+    assert respuesta.status_code == 200
+    acta.refresh_from_db()
+    assert acta.estado_validacion == ActaComplementaria.ESTADO_VALIDACION_PENDIENTE
+    assert acta.observaciones == "Subsanada"

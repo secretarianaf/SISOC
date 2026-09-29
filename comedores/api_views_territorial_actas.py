@@ -277,4 +277,7 @@ class ActasComplementariasTerritorialMixin:
                         for fila in prestaciones
                     ]
                 )
+        # ``sin_cargar`` es cached_property y se leyó antes de guardar: se
+        # descarta para que la respuesta refleje el acta ya cargada (False).
+        acta.__dict__.pop("sin_cargar", None)
         return Response(serialize_acta(acta, request.user.id))

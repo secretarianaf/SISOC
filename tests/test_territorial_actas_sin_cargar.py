@@ -165,6 +165,7 @@ def test_patch_sobre_acta_vacia_asignada_pasa_a_pendiente_y_es_idempotente(
     for _ in range(2):
         respuesta = _patch(api, comedor, acta, observaciones="Cargada desde la app")
         assert respuesta.status_code == 200
+        assert respuesta.json()["sin_cargar"] is False
     acta.refresh_from_db()
     assert acta.estado_validacion == ActaComplementaria.ESTADO_VALIDACION_PENDIENTE
     assert acta.observaciones == "Cargada desde la app"
@@ -179,3 +180,46 @@ def test_patch_sobre_acta_a_subsanar_sigue_permitido(api, comedor, territorial):
     acta.refresh_from_db()
     assert acta.estado_validacion == ActaComplementaria.ESTADO_VALIDACION_PENDIENTE
     assert acta.observaciones == "Subsanada"
+
+
+def test_patch_sobre_acta_vacia_reemplaza_prestaciones(api, comedor, territorial):
+    acta = _acta_vacia(comedor, territorial)
+    respuesta = _patch(
+        api,
+        comedor,
+        acta,
+        prestaciones=[
+            {
+                "dias_prestacion": "Martes",
+                "tipo_prestacion": "Cena",
+                "cantidad_actual": 30,
+                "cantidad_espera": 5,
+            }
+        ],
+    )
+    assert respuesta.status_code == 200
+    acta.refresh_from_db()
+    assert acta.estado_validacion == ActaComplementaria.ESTADO_VALIDACION_PENDIENTE
+    filas = list(acta.prestaciones.values_list("dias_prestacion", "cantidad_actual"))
+    assert filas == [("Martes", 30)]
+
+
+@pytest.mark.parametrize("validado", [False, True])
+def test_otro_tecnico_recibe_403_antes_que_el_409(comedor, territorial, validado):
+    acta = _acta_cargada(comedor, territorial)
+    if validado:
+        acta.estado_validacion = ActaComplementaria.ESTADO_VALIDACION_VALIDADO
+        acta.save()
+    otro = get_user_model().objects.create_user(username="terr_otro", password="x")
+    otro.profile.es_territorial_comedor = True
+    otro.profile.save(update_fields=["es_territorial_comedor"])
+    TerritorialComedorProvincia.objects.create(
+        profile=otro.profile, provincia=comedor.provincia
+    )
+    token, _ = Token.objects.get_or_create(user=otro)
+    cliente = APIClient()
+    cliente.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+    respuesta = _patch(cliente, comedor, acta, observaciones="Ajeno")
+    assert respuesta.status_code == 403
+    acta.refresh_from_db()
+    assert acta.observaciones == "Cambio de prestacion"

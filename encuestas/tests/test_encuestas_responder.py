@@ -487,3 +487,37 @@ def test_posponer_ronda_obligatoria_falla(usuario_creador, respondiente):
 
     with pytest.raises(ValidationError):
         posponer_ronda(ronda, respondiente)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("caso", ["no_segmentado", "respondida", "cerrada"])
+def test_posponer_ronda_rechaza_acciones_no_permitidas(
+    usuario_creador, respondiente, caso
+):
+    """posponer_ronda no debe crear recordatorios para rondas ajenas, ya
+    respondidas o cerradas (el endpoint recibe el pk de la ronda por URL)."""
+    segmentacion = {}
+    if caso == "no_segmentado":
+        segmentacion = {
+            "tipo_segmentacion": TipoSegmentacion.LISTADO_DOCUMENTOS,
+            "destinatarios": [
+                {
+                    "tipo_documento": TipoDocumento.DNI,
+                    "numero_documento": "99999999",
+                }
+            ],
+        }
+    _, ronda = _publicar_con_pregunta_si_no(
+        usuario_creador, obligatoria=False, **segmentacion
+    )
+    if caso == "respondida":
+        CumplimientoRonda.objects.create(ronda=ronda, usuario=respondiente)
+    elif caso == "cerrada":
+        ronda.estado = EstadoRonda.CERRADA
+        ronda.save(update_fields=["estado"])
+
+    with pytest.raises(ValidationError):
+        posponer_ronda(ronda, respondiente)
+    assert not RecordatorioUsuario.objects.filter(
+        ronda=ronda, usuario=respondiente
+    ).exists()

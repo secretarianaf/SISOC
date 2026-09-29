@@ -433,6 +433,9 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    # Bajo /api/ el 404 genérico de Django ("No Comedor matches the given
+    # query.") se responde como {"detail": "No encontrado."}.
+    "EXCEPTION_HANDLER": "config.api_errors.api_exception_handler",
 }
 
 # Swagger/OpenAPI
@@ -504,6 +507,13 @@ RENAPER_API_URL = "https://wsv2.secretarianaf.gob.ar/api"
 RENAPER_REQUEST_TIMEOUT_SECONDS = _safe_positive_float_env(
     "RENAPER_REQUEST_TIMEOUT_SECONDS",
     10.0,
+)
+# El proveedor limita las consultas de toda la organización, no los logins.
+# Tests unitarios de transporte usan dobles HTTP sin base de datos.
+RENAPER_MAX_CONSULTAS_POR_SEGUNDO = (
+    0
+    if RUNNING_TESTS
+    else max(1, _safe_int_env("RENAPER_MAX_CONSULTAS_POR_SEGUNDO", 30))
 )
 RENAPER_VALIDACION_MAX_RETRIES = _safe_int_env(
     "RENAPER_VALIDACION_MAX_RETRIES",

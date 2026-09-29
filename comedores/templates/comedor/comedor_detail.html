@@ -27,7 +27,7 @@
             {% endif %}
             {% if mostrar_relevamientos_header %}
                 <a href="{% url 'relevamientos' comedor.id %}"
-                   class="btn btn-md btn-outline-light"><i class="bi bi-clipboard-check me-1"></i>Relevamientos</a>
+                   class="btn btn-md btn-outline-light"><i class="bi bi-clipboard-check me-1"></i>Acompañamiento Territorial</a>
             {% endif %}
             {% if perms.auditlog.view_logentry %}
                 <a href="{% url 'audittrail:log_instance' 'comedores' 'comedor' comedor.pk %}"
@@ -759,7 +759,7 @@
                     {% if es_programa_pnud %}
                         Actividades
                     {% else %}
-                        Relevamientos
+                        Acompañamiento Territorial
                     {% endif %}
                 </div>
                 <div class="accordion-content">
@@ -1119,7 +1119,7 @@
                                 <p class="fw-bold fs-7">Actividades</p>
                             {% else %}
                                 <h4 class="fw-bold my-1">{{ count_relevamientos|default_if_none:"0" }}</h4>
-                                <p class="fw-bold fs-7">Relevamientos</p>
+                                <p class="fw-bold fs-7">Acompañamiento Territorial</p>
                             {% endif %}
                         </div>
                     </div>

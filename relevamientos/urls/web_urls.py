@@ -2,6 +2,8 @@ from django.urls import path
 from core.decorators import permissions_any_required
 from relevamientos.views.backoffice_views import (
     ActaComplementariaDetailView,
+    SeguimientoPnudDetailView,
+    SeguimientoPnudRevisionCoordinadorView,
     ActaComplementariaEliminarView,
     ActaComplementariaFormView,
     SeguimientoRevisionCoordinadorView,
@@ -103,6 +105,21 @@ urlpatterns = [
             SeguimientoRevisionCoordinadorView.as_view()
         ),
         name="seguimiento_revision_coordinador",
+    ),
+    # --- Seguimientos PNUD (N22) ---
+    path(
+        "comedores/<int:comedor_pk>/seguimiento-pnud/<int:pk>",
+        permissions_any_required(["relevamientos.view_relevamiento"])(
+            SeguimientoPnudDetailView.as_view()
+        ),
+        name="seguimiento_pnud_detalle",
+    ),
+    path(
+        "comedores/<int:comedor_pk>/seguimiento-pnud/<int:pk>/revision",
+        permissions_any_required(["relevamientos.review_relevamiento"])(
+            SeguimientoPnudRevisionCoordinadorView.as_view()
+        ),
+        name="seguimiento_pnud_revision_coordinador",
     ),
     # --- Actas complementarias extraordinarias ---
     path(

@@ -480,10 +480,12 @@ def test_territorial_comedores_expone_seguimientos_items():
 
 
 @pytest.mark.django_db
-def test_territorial_detail_scoped_by_asignacion():
+def test_territorial_detail_scoped_by_asignacion_o_zona():
     prov_a = Provincia.objects.create(nombre="Prov Det A")
+    prov_b = Provincia.objects.create(nombre="Prov Det B")
     comedor_a = Comedor.objects.create(nombre="Comedor Det A", provincia=prov_a)
-    comedor_sin = Comedor.objects.create(nombre="Comedor Det SA", provincia=prov_a)
+    comedor_zona = Comedor.objects.create(nombre="Comedor Det SA", provincia=prov_a)
+    comedor_fuera = Comedor.objects.create(nombre="Comedor Det B", provincia=prov_b)
 
     user = _make_territorial("terr_det", [prov_a])
     Relevamiento.objects.create(
@@ -495,9 +497,16 @@ def test_territorial_detail_scoped_by_asignacion():
     assert ok.status_code == 200
     assert ok.data["id"] == comedor_a.id
 
-    # Comedor de mi provincia pero sin relevamiento asignado a mí: fuera de scope.
-    fuera = client.get(f"/api/territorial/comedores/{comedor_sin.id}/")
+    # Comedor de mi provincia sin relevamiento asignado a mí: es de mi zona, el
+    # mismo criterio con el que puedo activar trabajo sobre él (N18).
+    zona = client.get(f"/api/territorial/comedores/{comedor_zona.id}/")
+    assert zona.status_code == 200
+    assert zona.data["relevamientos"]["items"] == []
+
+    # Ni asignado ni de mi zona: fuera de scope.
+    fuera = client.get(f"/api/territorial/comedores/{comedor_fuera.id}/")
     assert fuera.status_code == 404
+    assert fuera.data == {"detail": "El comedor no pertenece a su zona."}
 
 
 @pytest.mark.django_db
@@ -698,3 +707,28 @@ def test_territorial_endpoint_requires_authentication():
     response = client.get("/api/territorial/comedores/")
 
     assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_territorial_comedores_expone_mes_ejecucion():
+    # La app filtra el listado por "Mes de ejecucion" (issue #2472).
+    prov = Provincia.objects.create(nombre="Prov Mes")
+    con_mes = Comedor.objects.create(nombre="Con mes", provincia=prov, mes_ejecucion=3)
+    sin_mes = Comedor.objects.create(nombre="Sin mes", provincia=prov)
+    user = _make_territorial("terr_mes", [prov])
+    for comedor in (con_mes, sin_mes):
+        Relevamiento.objects.create(
+            comedor=comedor, estado="Visita pendiente", territorial_user=user
+        )
+    client = _auth_client(user)
+
+    response = client.get("/api/territorial/comedores/")
+
+    assert response.status_code == 200
+    por_id = {row["id"]: row for row in response.data["results"]}
+    assert por_id[con_mes.id]["mes_ejecucion"] == 3
+    assert por_id[sin_mes.id]["mes_ejecucion"] is None
+
+    detalle = client.get(f"/api/territorial/comedores/{con_mes.id}/")
+    assert detalle.status_code == 200
+    assert detalle.data["mes_ejecucion"] == 3

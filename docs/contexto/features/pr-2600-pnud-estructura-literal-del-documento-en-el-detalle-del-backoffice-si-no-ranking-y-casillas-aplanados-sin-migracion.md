@@ -30,6 +30,10 @@
 
 - Empezar por `docs/registro/prs/PR-2600.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
+- `docs/contexto/features/pr-2600-pnud-estructura-literal-del-documento-en-el-detalle-del-backoffice-si-no-ranking-y-casillas-aplanados-sin-migracion.md`
+- `docs/registro/prs/PR-2600.md`
+- `docs/registro/releases/pending/2026-09-30-pr-2600.md`
 - `relevamientos/data/pnud_formularios.json`
 - `relevamientos/pnud_formularios.py`
 - `tests/test_pnud_formularios_estructura.py`

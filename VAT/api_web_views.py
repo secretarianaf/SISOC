@@ -5,6 +5,7 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 
 from core.api_auth import HasAPIKeyOrToken
 from VAT.models import (
@@ -30,6 +31,7 @@ from VAT.services.inscripcion_service import (
     ESTADOS_INSCRIPCION_OCUPAN_CUPO,
     InscripcionService,
 )
+from VAT.services.pav_service import PavService
 
 
 @extend_schema(
@@ -622,3 +624,40 @@ class VatWebInscripcionViewSet(
             programa=serializer.validated_data.get("programa"),
         )
         return Response(resultado, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["VAT Web - PAV"])
+class VatWebPavViewSet(viewsets.ViewSet):
+    # ViewSet y no GenericViewSet: no hay queryset (las tablas son del DW) y la
+    # vista navegable de DRF llama a get_queryset() si existe.
+    permission_classes = [HasAPIKeyOrToken]
+    pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
+
+    @extend_schema(
+        summary="Listar registros PAV por DNI",
+        description=(
+            "Devuelve los registros de DW_sisoc.FCT_PAV del documento, con la "
+            "descripción del curso de DW_sisoc.DIM_PAV_Cursos."
+        ),
+        parameters=[
+            OpenApiParameter(
+                "documento",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                required=True,
+                description="DNI numerico del ciudadano.",
+            ),
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    def list(self, request, *args, **kwargs):
+        documento = str(request.query_params.get("documento") or "").strip()
+        if not documento:
+            raise ValidationError({"documento": ["Este parametro es requerido."]})
+        if not documento.isdigit():
+            raise ValidationError({"documento": ["El documento debe ser numerico."]})
+
+        registros = PavService.listar_por_documento(documento)
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(registros, request, view=self)
+        return paginator.get_paginated_response(page)

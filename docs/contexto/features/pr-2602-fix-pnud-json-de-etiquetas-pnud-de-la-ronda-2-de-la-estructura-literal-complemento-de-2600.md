@@ -30,6 +30,10 @@
 
 - Empezar por `docs/registro/prs/PR-2602.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
+- `docs/contexto/features/pr-2602-fix-pnud-json-de-etiquetas-pnud-de-la-ronda-2-de-la-estructura-literal-complemento-de-2600.md`
+- `docs/registro/prs/PR-2602.md`
+- `docs/registro/releases/pending/2026-09-30-pr-2602.md`
 - `relevamientos/data/pnud_formularios.json`
 - `tests/test_pnud_formularios_estructura.py`
 - Documentación sugerida para ampliar contexto:

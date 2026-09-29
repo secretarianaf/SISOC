@@ -1,11 +1,3 @@
-<!-- AUTO-GENERATED RELEASE START: 2026-09-29 -->
-# Versión SISOC 29.09.2026
-
-## Actualizaciones
-
-- [users.] El alta y edición de usuarios muestra solo las secciones del programa de quien las gestiona (Comedores, DataCalle, administración), según permisos agrupados en roles. (PR #2601)
-<!-- AUTO-GENERATED RELEASE END: 2026-09-29 -->
-
 <!-- AUTO-GENERATED RELEASE START: 2026-09-30 -->
 # Versión SISOC 30.09.2026
 
@@ -20,6 +12,15 @@
 - [sin-area] PNUD: estructura literal del documento en el detalle del backoffice (SI/NO, ranking y casillas aplanados; sin migración). (PR #2600)
 - [sin-area] fix(pnud): JSON de etiquetas PNUD de la ronda 2 de la estructura literal (complemento de #2600). (PR #2602)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-30 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-09-29 -->
+# Versión SISOC 29.09.2026
+
+## Actualizaciones
+
+- [users.] El alta y edición de usuarios muestra solo las secciones del programa de quien las gestiona (Comedores, DataCalle, administración), según permisos agrupados en roles. (PR #2601)
+<!-- AUTO-GENERATED RELEASE END: 2026-09-29 -->
+
 
 <!-- AUTO-GENERATED RELEASE START: 2026-09-23 -->
 # Versión SISOC 23.09.2026

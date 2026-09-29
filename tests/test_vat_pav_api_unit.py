@@ -32,6 +32,8 @@ def _listar(query, mocker, permitir=True):
         ({"documento": "  "}, "Este parametro es requerido."),
         ({"documento": "30.111.222"}, "El documento debe ser numerico."),
         ({"documento": "abc"}, "El documento debe ser numerico."),
+        ({"documento": "١٢٣٤٥٦٧٨"}, "El documento debe ser numerico."),
+        ({"documento": "99999999999999999999"}, "El documento es demasiado largo."),
     ],
 )
 def test_pav_documento_invalido_devuelve_400_sin_consultar_dw(query, mensaje, mocker):

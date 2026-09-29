@@ -654,8 +654,11 @@ class VatWebPavViewSet(viewsets.ViewSet):
         documento = str(request.query_params.get("documento") or "").strip()
         if not documento:
             raise ValidationError({"documento": ["Este parametro es requerido."]})
-        if not documento.isdigit():
+        if not documento.isascii() or not documento.isdecimal():
             raise ValidationError({"documento": ["El documento debe ser numerico."]})
+
+        if len(documento) > 20 or int(documento) > 18_446_744_073_709_551_615:
+            raise ValidationError({"documento": ["El documento es demasiado largo."]})
 
         registros = PavService.listar_por_documento(documento)
         paginator = self.pagination_class()

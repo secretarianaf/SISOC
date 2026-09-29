@@ -3,8 +3,11 @@
 from copy import deepcopy
 from typing import Any, Dict
 
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.db.models import Q
 
+from organizaciones.models import Organizacion
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from users.services_territoriales import (
     etiqueta_territorial,
@@ -156,9 +159,26 @@ FILTERS_UI_CONFIG_CACHE_TTL = 60 * 15
 
 
 def _territoriales_choices():
+    # Además de los elegibles hoy, los que siguen asignados a una organización
+    # activa aunque hayan perdido el rol o estén inactivos: la columna los
+    # muestra, así que el filtro tiene que poder encontrar sus rendiciones.
+    usuarios = (
+        get_user_model()
+        .objects.filter(
+            Q(pk__in=usuarios_territoriales_pnud().values("pk"))
+            | Q(
+                pk__in=Organizacion.territoriales_abordaje_comunitario.through.objects.filter(
+                    organizacion__deleted_at__isnull=True
+                ).values(
+                    "user_id"
+                )
+            )
+        )
+        .order_by("last_name", "first_name", "username")
+    )
     return [
         {"value": str(user.pk), "label": etiqueta_territorial(user)}
-        for user in usuarios_territoriales_pnud()
+        for user in usuarios
     ]
 
 

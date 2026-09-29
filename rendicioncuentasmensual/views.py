@@ -131,6 +131,13 @@ class RendicionCuentaMensualGlobalListView(
             self.COLUMN_LIST_KEY,
             [{"title": title} for _key, title, _field in self.COLUMN_DEFINITIONS],
             [{"name": key} for key, _title, _field in self.COLUMN_DEFINITIONS],
+            # Territorial asignado queda disponible en la configuración, pero no
+            # cambia la grilla por defecto de quienes no la activen.
+            default_keys=[
+                key
+                for key, _title, _field in self.COLUMN_DEFINITIONS
+                if key != TERRITORIAL_ASIGNADO_FIELD
+            ],
             required_keys=["proyecto"],
         )
 

@@ -23,7 +23,7 @@ from comunicados.models import (
 )
 from comedores.models import Comedor
 from iam.services import user_has_permission_code
-from organizaciones.models import ProyectoOrganizacion
+from organizaciones.models import Organizacion, ProyectoOrganizacion
 from pwa.services.mensajes_service import MOBILE_RENDICION_PERMISSION_CODE
 from pwa.services.push_service import notify_rendicion_revision_push
 from users.services_territoriales import etiqueta_territorial
@@ -1398,17 +1398,18 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         """Rendiciones cuya organización tiene asignado al territorial.
 
         La organización es la del proyecto; sin proyecto, la del comedor
-        (rendiciones históricas). Se resuelve por subconsulta para que el M2M no
-        duplique filas ni altere la negación del operador ``ne``.
+        (rendiciones históricas). Se resuelve por ids de organización, con una
+        subconsulta sobre la tabla M2M: usa los índices de las FK, no duplica
+        filas y la negación del operador ``ne`` sigue siendo correcta.
         """
-        rendiciones = RendicionCuentaMensual.objects.filter(
-            Q(proyecto__organizacion__territoriales_abordaje_comunitario=user_id)
-            | Q(
-                proyecto__isnull=True,
-                comedor__organizacion__territoriales_abordaje_comunitario=user_id,
-            )
+        organizacion_ids = (
+            Organizacion.territoriales_abordaje_comunitario.through.objects.filter(
+                user_id=user_id
+            ).values("organizacion_id")
         )
-        return Q(pk__in=rendiciones.values("pk"))
+        return Q(proyecto__organizacion_id__in=organizacion_ids) | Q(
+            proyecto__isnull=True, comedor__organizacion_id__in=organizacion_ids
+        )
 
     @staticmethod
     def territoriales_asignados_display(rendicion):

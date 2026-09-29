@@ -5,10 +5,14 @@ import json
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.db import connection
 from django.test import RequestFactory
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
+from django.utils import timezone
 
 from comedores.models import Comedor
+from core.models import PreferenciaColumnas
 from core.services.favorite_filters import (
     SeccionesFiltrosFavoritos,
     obtener_configuracion_seccion,
@@ -105,12 +109,17 @@ def test_con_proyecto_manda_la_organizacion_del_proyecto():
 def test_operador_ne_excluye_las_del_territorial():
     territorial = _territorial("t1", "Uno")
     excluida = _rendicion_por_comedor(_organizacion("Org A", territorial), mes=1)
+    excluida_por_proyecto = _rendicion_por_proyecto(
+        _organizacion("Org C", territorial), mes=3
+    )
     incluida = _rendicion_por_comedor(_organizacion("Org B"), mes=2)
+    sin_organizacion = RendicionCuentaMensual.objects.create(mes=4, anio=2026)
 
     resultado = _filtrar(_item(territorial, op="ne"))
 
-    assert incluida in resultado
+    assert set(resultado) == {incluida, sin_organizacion}
     assert excluida not in resultado
+    assert excluida_por_proyecto not in resultado
 
 
 def test_valor_invalido_se_ignora():
@@ -149,6 +158,42 @@ def test_configuracion_expone_territoriales_elegibles_aunque_haya_cache():
     ]
 
 
+def test_opciones_incluyen_asignados_que_perdieron_el_rol_o_estan_inactivos():
+    vigente = _territorial("vigente", "Aaa")
+    sin_rol = _territorial("sin_rol", "Bbb", rol="OTRO")
+    inactivo = _territorial("inactivo", "Ccc")
+    inactivo.is_active = False
+    inactivo.save(update_fields=["is_active"])
+    _organizacion("Org", sin_rol, inactivo)
+    solo_en_baja = _territorial("en_baja", "Ddd", rol="OTRO")
+    org_baja = _organizacion("Org dada de baja", solo_en_baja)
+    Organizacion.objects.filter(pk=org_baja.pk).update(deleted_at=timezone.now())
+    _territorial("no_elegible", "Eee", rol="TECNICO")
+    # Cumple las dos condiciones (rol vigente y asignado): no debe duplicarse.
+    _organizacion("Org vigente", vigente)
+
+    campo = next(
+        field
+        for field in filter_config.get_filters_ui_config()["fields"]
+        if field["name"] == CAMPO
+    )
+
+    assert [choice["value"] for choice in campo["choices"]] == [
+        str(vigente.pk),
+        str(sin_rol.pk),
+        str(inactivo.pk),
+    ]
+
+
+def test_filtro_encuentra_rendiciones_de_un_asignado_que_perdio_el_rol():
+    territorial = _territorial("t1", "Uno")
+    rendicion = _rendicion_por_comedor(_organizacion("Org", territorial), mes=1)
+    territorial.profile.rol = "OTRO"
+    territorial.profile.save(update_fields=["rol"])
+
+    assert _filtrar(_item(territorial)) == [rendicion]
+
+
 def test_filtro_favorito_con_territorial_no_queda_obsoleto():
     configuracion = obtener_configuracion_seccion(SeccionesFiltrosFavoritos.RENDICIONES)
 
@@ -173,14 +218,81 @@ def test_columna_territorial_disponible_y_exportable():
     assert view.resolve_field(rendicion, campo) == "Uno, Nom (t1)"
 
 
-def test_listado_muestra_territorial_en_la_grilla(client, admin_user):
+def _activar_columnas(user, *columnas):
+    PreferenciaColumnas.objects.create(
+        usuario=user,
+        listado=module.RendicionCuentaMensualGlobalListView.COLUMN_LIST_KEY,
+        columnas=list(columnas),
+    )
+
+
+def test_listado_muestra_territorial_en_la_celda_de_la_grilla(client, admin_user):
     territorial = _territorial("t1", "Uno")
     _rendicion_por_proyecto(_organizacion("Org", territorial), mes=1)
+    _activar_columnas(admin_user, "proyecto", CAMPO)
     client.force_login(admin_user)
 
     response = client.get(reverse("rendicioncuentasmensual_global_list"))
 
     assert response.status_code == 200
     html = response.content.decode()
-    assert "Territorial asignado" in html
-    assert "Uno, Nom (t1)" in html
+    # El nombre también está en el JSON de filters_config: se valida la celda.
+    assert "<th>Territorial asignado</th>" in html
+    assert "<td>Uno, Nom (t1)</td>" in html
+
+
+def test_columna_territorial_disponible_pero_no_activa_por_defecto(client, admin_user):
+    territorial = _territorial("t1", "Uno")
+    _rendicion_por_proyecto(_organizacion("Org", territorial), mes=1)
+    client.force_login(admin_user)
+
+    response = client.get(reverse("rendicioncuentasmensual_global_list"))
+
+    assert CAMPO not in response.context["column_active_keys"]
+    assert CAMPO in [
+        columna["key"] for columna in response.context["column_config"]["available"]
+    ]
+    assert "<td>Uno, Nom (t1)</td>" not in response.content.decode()
+
+
+def _crear_rendiciones_en_organizaciones_distintas(cantidad, desde):
+    for indice in range(desde, desde + cantidad):
+        territorial = _territorial(f"t{indice}", f"Apellido{indice}")
+        organizacion = _organizacion(f"Org {indice}", territorial)
+        if indice % 2:
+            _rendicion_por_proyecto(organizacion, mes=indice)
+        else:
+            _rendicion_por_comedor(organizacion, mes=indice)
+
+
+def _get_completo(client, url, params):
+    """GET que consume la respuesta: el CSV es streaming y consulta al leerse."""
+    response = client.get(url, params)
+    if response.streaming:
+        response.content_leido = b"".join(response.streaming_content)
+    else:
+        response.content_leido = response.content
+    return response
+
+
+@pytest.mark.parametrize("params", [{}, {"export": "csv"}], ids=["grilla", "csv"])
+def test_listado_no_hace_una_consulta_por_fila(
+    client, admin_user, django_assert_num_queries, params
+):
+    _activar_columnas(admin_user, "proyecto", "organizacion", CAMPO)
+    client.force_login(admin_user)
+    url = reverse("rendicioncuentasmensual_global_list")
+    _crear_rendiciones_en_organizaciones_distintas(2, desde=1)
+    _get_completo(client, url, params)  # calienta cachés de sesión y configuración
+
+    with CaptureQueriesContext(connection) as con_pocas:
+        _get_completo(client, url, params)
+    # Los usuarios nuevos agregan opciones al filtro, no consultas.
+    _crear_rendiciones_en_organizaciones_distintas(6, desde=3)
+
+    with django_assert_num_queries(len(con_pocas)):
+        response = _get_completo(client, url, params)
+
+    assert response.status_code == 200
+    # Las filas nuevas están en la respuesta: el conteo no se hizo sobre vacío.
+    assert "Apellido8, Nom (t8)" in response.content_leido.decode()

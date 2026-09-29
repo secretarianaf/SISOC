@@ -11,6 +11,7 @@ anterior de cada usuario actualizado.
 """
 
 from django.db import migrations
+from django.db.models.functions import Lower
 
 ROLES_POR_USERNAME = (
     ("rodalaya", "TERRITORIAL PNUD"),
@@ -123,13 +124,15 @@ def cargar_roles_territoriales(apps, schema_editor):
 
     roles = dict(ROLES_POR_USERNAME)
     usuarios = {
-        user.username: user
-        for user in user_model.objects.using(database).filter(username__in=list(roles))
+        user.username.lower(): user
+        for user in user_model.objects.using(database)
+        .annotate(username_normalizado=Lower("username"))
+        .filter(username_normalizado__in=list(roles))
     }
 
     actualizados, sin_cambios = [], 0
     for username, rol in ROLES_POR_USERNAME:
-        user = usuarios.get(username)
+        user = usuarios.get(username.lower())
         if user is None:
             continue
         profile, _ = profile_model.objects.using(database).get_or_create(user=user)
@@ -140,7 +143,7 @@ def cargar_roles_territoriales(apps, schema_editor):
         profile.rol = rol
         profile.save(update_fields=["rol"])
 
-    no_encontrados = [u for u, _rol in ROLES_POR_USERNAME if u not in usuarios]
+    no_encontrados = [u for u, _rol in ROLES_POR_USERNAME if u.lower() not in usuarios]
     print(f"\n[#2444] Actualizados: {len(actualizados)}")
     for linea in actualizados:
         print(f"[#2444]   {linea}")

@@ -90,6 +90,18 @@ def test_usuarios_inexistentes_se_informan_y_no_se_crean(monkeypatch, capsys):
     assert "Actualizados: 1" in salida
 
 
+def test_username_con_otra_capitalizacion_se_actualiza(monkeypatch, capsys):
+    monkeypatch.setattr(
+        _migration, "ROLES_POR_USERNAME", _roles(rodalaya="TERRITORIAL PNUD")
+    )
+    user = User.objects.create_user(username="RodAlaya")
+
+    _ejecutar()
+
+    assert Profile.objects.get(user=user).rol == "TERRITORIAL PNUD"
+    assert "No encontrados (0):" in capsys.readouterr().out
+
+
 def test_crea_el_perfil_si_el_usuario_no_lo_tiene(monkeypatch):
     monkeypatch.setattr(
         _migration, "ROLES_POR_USERNAME", _roles(sinperfil="TERRITORIAL PNUD")

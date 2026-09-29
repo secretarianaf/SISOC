@@ -1,0 +1,10 @@
+<span class="encuesta-estado encuesta-estado--{{ encuesta.estado }}">
+    {% if encuesta.estado == 'pendiente_aprobacion' %}
+        <i class="fas fa-clock" aria-hidden="true"></i>
+    {% elif encuesta.estado == 'publicada' %}
+        <i class="fas fa-check-circle" aria-hidden="true"></i>
+    {% else %}
+        <i class="fas fa-file-alt" aria-hidden="true"></i>
+    {% endif %}
+    {{ encuesta.get_estado_display }}
+</span>

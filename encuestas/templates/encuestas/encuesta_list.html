@@ -1,6 +1,9 @@
 {% extends "includes/main.html" %}
+{% load static %}
 {% block title %}Encuestas{% endblock %}
+{% block titulo-pagina %}Encuestas{% endblock %}
 {% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     <style nonce="{{ request.csp_nonce }}">
         #toast-container > .toast-error {
             background-color: #bd362f;
@@ -8,8 +11,9 @@
             opacity: 1;
         }
     </style>
-    <div class="list-container">
-        {% include 'components/search_bar.html' with titulo='Buscar encuestas' placeholder='Buscar por título' help_text='Buscar por título.' reset_url='encuestas_listar' query=busqueda show_add_button=puede_gestionar add_url='encuestas_crear' add_text='Crear' leading_buttons=leading_buttons request=request only %}
+    <link rel="stylesheet" href="{% static 'custom/css/encuestaGestion.css' %}" />
+    <div class="list-container encuestas-gestion">
+        {% include 'components/search_bar.html' with titulo='Buscar encuestas' filters_mode=True filters_config=filters_config reset_url='encuestas_listar' show_add_button=puede_gestionar add_url='encuestas_crear' add_text='Crear encuesta' leading_buttons=leading_buttons request=request only %}
         {% if puede_gestionar %}
             <form method="post"
                   id="importar-encuesta-form"
@@ -24,17 +28,28 @@
                        hidden />
             </form>
         {% endif %}
+        {% if puede_aprobar %}
+            <div class="encuesta-bandeja">
+                <div>
+                    <strong><i class="fas fa-clipboard-check me-2" aria-hidden="true"></i>Solicitudes de publicación</strong>
+                    <p class="encuesta-meta mb-0">
+                        {{ pendientes_aprobacion }} pendiente{{ pendientes_aprobacion|pluralize:"s" }} de aprobación. Revisá el contenido antes de publicar.
+                    </p>
+                </div>
+                <a href="{{ pendientes_url }}" class="poncho-btn poncho-btn--neutro">
+                    <i class="fas fa-clock" aria-hidden="true"></i>Ver pendientes
+                </a>
+            </div>
+        {% endif %}
         <div class="card mt-3">
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>Título</th>
-                                <th>Versión</th>
+                                <th>Encuesta</th>
                                 <th>Estado</th>
                                 <th>Modalidad</th>
-                                <th>Anónima</th>
                                 <th>Creada por</th>
                                 <th>Acciones</th>
                             </tr>
@@ -42,15 +57,31 @@
                         <tbody>
                             {% for encuesta in encuestas %}
                                 <tr>
-                                    <td>{{ encuesta.titulo }}</td>
-                                    <td>v{{ encuesta.version }}</td>
-                                    <td>{{ encuesta.get_estado_display }}</td>
-                                    <td>{{ encuesta.modalidad|capfirst }}</td>
-                                    <td>{{ encuesta.es_anonima|yesno:"Sí,No" }}</td>
+                                    <td>
+                                        <div class="encuesta-titulo">{{ encuesta.titulo }}</div>
+                                        <div class="encuesta-meta">Versión {{ encuesta.version }} · {{ encuesta.fecha_creacion|date:"d/m/Y" }}</div>
+                                    </td>
+                                    <td>
+                                        {% include 'encuestas/partials/estado.html' %}
+                                        {% if encuesta.estado == 'borrador' and encuesta.motivo_rechazo and puede_editar %}
+                                            <a href="{% url 'encuestas_editar' encuesta.pk %}"
+                                               class="d-block mt-2 small"><i class="fas fa-comment-alt me-1" aria-hidden="true"></i>Ver motivo del rechazo</a>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ encuesta.modalidad|capfirst }}
+                                        <div class="encuesta-meta">
+                                            {% if encuesta.es_anonima %}
+                                                Anónima
+                                            {% else %}
+                                                Identificada
+                                            {% endif %}
+                                        </div>
+                                    </td>
                                     <td>{{ encuesta.usuario_creador }}</td>
                                     <td>
-                                        <div class="d-flex flex-wrap align-items-center gap-2">
-                                            {% if puede_gestionar %}
+                                        <div class="encuesta-acciones">
+                                            {% if puede_editar and encuesta.estado != 'pendiente_aprobacion' %}
                                                 <a href="{% url 'encuestas_editar' encuesta.pk %}"
                                                    class="btn btn-sm btn-secondary px-2 py-1 text-nowrap">
                                                     <i class="fas fa-edit" aria-hidden="true"></i> Editar
@@ -64,10 +95,16 @@
                                                           action="{% url 'encuestas_publicar' encuesta.pk %}"
                                                           class="m-0">
                                                         {% csrf_token %}
-                                                        <button type="submit" class="btn btn-sm btn-primary px-2 py-1 text-nowrap">
-                                                            <i class="fas fa-paper-plane" aria-hidden="true"></i> Publicar
+                                                        <button type="submit" class="btn btn-sm btn-success">
+                                                            <i class="fas fa-paper-plane" aria-hidden="true"></i> Solicitar publicación
                                                         </button>
                                                     </form>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if encuesta.estado == 'pendiente_aprobacion' %}
+                                                {% if puede_editar or puede_aprobar %}
+                                                    <a href="{% url 'encuestas_revision' encuesta.pk %}"
+                                                       class="btn btn-sm btn-success"><i class="fas fa-clipboard-check" aria-hidden="true"></i>Revisar solicitud</a>
                                                 {% endif %}
                                             {% endif %}
                                             {% if puede_ver_resultados %}
@@ -81,7 +118,7 @@
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="7">
+                                    <td colspan="5">
                                         <div class="no-data-message">
                                             <h3>No se encontraron encuestas</h3>
                                             <p>No hay encuestas que coincidan con los criterios de búsqueda.</p>

@@ -9,6 +9,9 @@ from .views import (
     EncuestaImportarView,
     EncuestaListView,
     EncuestaPublicarView,
+    EncuestaAprobarView,
+    EncuestaRechazarView,
+    EncuestaRevisionView,
     EncuestaResultadosExportarView,
     EncuestaResultadosView,
     EncuestaSegmentacionView,
@@ -23,6 +26,27 @@ from .views import (
 )
 
 urlpatterns = [
+    path(
+        "encuestas/<int:pk>/revision/",
+        permissions_any_required(
+            ["encuestas.aprobar_encuesta", "encuestas.change_encuesta"]
+        )(EncuestaRevisionView.as_view()),
+        name="encuestas_revision",
+    ),
+    path(
+        "encuestas/<int:pk>/aprobar/",
+        permissions_any_required(["encuestas.aprobar_encuesta"])(
+            EncuestaAprobarView.as_view()
+        ),
+        name="encuestas_aprobar",
+    ),
+    path(
+        "encuestas/<int:pk>/rechazar/",
+        permissions_any_required(["encuestas.aprobar_encuesta"])(
+            EncuestaRechazarView.as_view()
+        ),
+        name="encuestas_rechazar",
+    ),
     path(
         "encuestas/responder/<int:pk>/descartar/",
         DescartarRondaView.as_view(),

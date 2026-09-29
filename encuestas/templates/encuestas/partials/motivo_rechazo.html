@@ -1,0 +1,19 @@
+{% if encuesta.motivo_rechazo %}
+    <div class="alert alert-warning mb-3" role="note">
+        <h2 class="h6 mb-2">
+            <i class="fas fa-comment-alt me-1" aria-hidden="true"></i>
+            {% if encuesta.estado == 'borrador' %}
+                Cambios solicitados
+            {% else %}
+                Motivo del último rechazo
+            {% endif %}
+        </h2>
+        <p class="mb-2 text-break">{{ encuesta.motivo_rechazo|linebreaksbr }}</p>
+        <p class="small mb-0">{{ encuesta.usuario_rechazo }} · {{ encuesta.fecha_rechazo|date:"d/m/Y H:i" }}</p>
+        {% if encuesta.estado == 'borrador' %}
+            <p class="small mt-2 mb-0">
+                Corregí la encuesta, guardá los cambios y volvé a solicitar la publicación desde el listado.
+            </p>
+        {% endif %}
+    </div>
+{% endif %}

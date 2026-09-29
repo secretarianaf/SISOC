@@ -1,4 +1,4 @@
-# Contexto de feature PR #2590 - R cuentas tk 2445
+# Contexto de feature PR #2590 - feat(organizaciones): territorial asignado y filtro en rendiciones (#2445)
 
 ## Resumen
 

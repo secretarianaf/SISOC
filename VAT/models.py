@@ -304,13 +304,25 @@ class PlanVersionCurricular(SoftDeleteModelMixin, models.Model):
             raise ValidationError(errors)
 
     def __str__(self):
+        # REQ 2026-09-23: la etiqueta identifica el plan por su normativa, no
+        # por Modalidad/Sector (quedaron obsoletos para el usuario, ver
+        # docs/registro/analisis/2026-09-23-inet-modalidad-sector-en-selector-de-plan.md).
+        # Sin normativa, dos planes homónimos (mismo nombre o mismo título de
+        # referencia) quedarían con la misma etiqueta: se desambigua con el id,
+        # nunca con el Sector.
         nombre = (self.nombre or "").strip()
         if nombre:
-            return f"{nombre} - {self.modalidad_cursada.nombre}"
-        titulo_referencia = self.titulo_referencia
-        if titulo_referencia:
-            return f"{titulo_referencia.nombre} - {self.modalidad_cursada.nombre}"
-        return f"{self.sector.nombre} - {self.modalidad_cursada.nombre}"
+            label = nombre
+        else:
+            titulo_referencia = self.titulo_referencia
+            label = titulo_referencia.nombre if titulo_referencia else None
+
+        normativa = (self.normativa or "").strip()
+        if normativa:
+            return f"{label or f'Plan #{self.pk}'} - {normativa}"
+        if label:
+            return f"{label} - Plan #{self.pk}"
+        return f"Plan #{self.pk}"
 
     class Meta:
         verbose_name = "Plan de Estudio"

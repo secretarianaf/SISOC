@@ -116,4 +116,5 @@ if getattr(settings, "ENABLE_API_DOCS", False):
         ),
     ]
 
+handler404 = "config.views.page_not_found"
 handler500 = "config.views.server_error"

@@ -30,8 +30,13 @@
 
 - Empezar por `docs/registro/prs/PR-2607.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
 - `comedores/api_views_territorial.py`
 - `comedores/api_views_territorial_actas.py`
+- `docs/contexto/features/pr-2607-fix-territorial-exponer-sin-cargar-en-las-actas-complementarias-para-app-1-1-54.md`
+- `docs/registro/prs/PR-2607.md`
+- `docs/registro/releases/pending/2026-09-30-pr-2607.md`
+- `tests/test_acta_complementaria_validacion.py`
 - `tests/test_territorial_actas_sin_cargar.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`

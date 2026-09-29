@@ -24,6 +24,7 @@ from VAT.forms import (
     InstitucionIdentificadorHistForm,
     InstitucionUbicacionForm,
     build_localidad_queryset_for_centro,
+    build_municipio_queryset_for_centro,
 )
 
 logger = logging.getLogger("django")
@@ -384,3 +385,24 @@ def localidades_por_centro(request):
 
     data = [{"id": loc.id, "nombre": loc.nombre} for loc in qs]
     return JsonResponse({"localidades": data})
+
+
+def municipios_por_centro(request):
+    """Devuelve los departamentos de la provincia del centro seleccionado.
+
+    Alimenta la cascada departamento -> localidad de ubicacion_form.html
+    cuando el usuario cambia de centro (el campo "centro" no está bloqueado
+    en la edición standalone). Reemplaza el fetch province-wide que antes
+    hacía ese formulario contra `localidades_por_centro`.
+    """
+    centro_id = request.GET.get("centro_id")
+    if not centro_id:
+        return JsonResponse({"municipios": []})
+    try:
+        centro = Centro.objects.only("id", "provincia_id").get(pk=centro_id)
+    except Centro.DoesNotExist:
+        return JsonResponse({"municipios": []})
+
+    qs = build_municipio_queryset_for_centro(centro)
+    data = [{"id": municipio.id, "nombre": municipio.nombre} for municipio in qs]
+    return JsonResponse({"municipios": data})

@@ -156,6 +156,12 @@ class Organizacion(SoftDeleteModelMixin, models.Model):
     )
     sin_vencimiento = models.BooleanField(default=False)
     fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    territoriales_abordaje_comunitario = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name="organizaciones_territorial_abordaje",
+        verbose_name="Territorial Asignado Abordaje Comunitario",
+    )
 
     def __str__(self):
         return str(self.nombre)

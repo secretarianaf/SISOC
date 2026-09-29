@@ -38,6 +38,7 @@ from organizaciones.models import (
 )
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from rendicioncuentasmensual.services import RendicionesOrganizacionService
+from users.services_territoriales import etiqueta_territorial
 
 MAX_DOCUMENTO_ORGANIZACION_FILE_SIZE = 20 * 1024 * 1024
 DOCUMENTO_ORGANIZACION_FORMATOS_VALIDOS = "PDF, JPG, PNG, Excel o Word"
@@ -918,6 +919,12 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
             .order_by("codigo")
             .values_list("codigo", flat=True)
         )
+        context["territoriales_organizacion"] = [
+            etiqueta_territorial(user)
+            for user in self.object.territoriales_abordaje_comunitario.order_by(
+                "last_name", "first_name", "username"
+            )
+        ]
         proyecto_solicitado = (self.request.GET.get("proyecto") or "").strip()
         proyecto_seleccionado = (
             proyecto_solicitado if proyecto_solicitado in proyectos else ""

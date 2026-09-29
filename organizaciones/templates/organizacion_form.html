@@ -250,6 +250,9 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="form-group row">
+                            <div class="col-12">{{ form.territoriales_abordaje_comunitario|as_crispy_field }}</div>
+                        </div>
                     </div>
                 </div>
 
@@ -367,6 +370,14 @@
     <!-- Scripts externos -->
     <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
     <script src="{% static 'custom/js/organizacionesform.js' %}"></script>
+    <script nonce="{{ request.csp_nonce }}">
+        $(function () {
+            $("#id_territoriales_abordaje_comunitario").select2({
+                width: "100%",
+                placeholder: "Buscar por apellido, nombre o usuario",
+            });
+        });
+    </script>
 
     <script nonce="{{ request.csp_nonce }}">
     (function () {

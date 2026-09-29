@@ -8,6 +8,7 @@ from core.services.favorite_filters import (
 from rendicioncuentasmensual.filter_config import (
     BOOL_OPS,
     CHOICE_OPS,
+    CUSTOM_FIELD_TYPES,
     DATE_OPS,
     FIELD_TYPES,
     NUM_OPS,
@@ -19,7 +20,7 @@ def registrar_filtros_favoritos() -> None:
     registrar_configuracion_seccion(
         SeccionesFiltrosFavoritos.RENDICIONES,
         ConfiguracionFiltrosSeccion(
-            tipos_campos=FIELD_TYPES,
+            tipos_campos={**FIELD_TYPES, **CUSTOM_FIELD_TYPES},
             operadores_permitidos={
                 "text": TEXT_OPS,
                 "number": NUM_OPS,

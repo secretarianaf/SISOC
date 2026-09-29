@@ -195,10 +195,36 @@ def _can_manage_registros_erroneos(user) -> bool:
 
 
 def _can_manage_excel_masivo_audit(user) -> bool:
+    """Roles que ven la metadata de carga y procesamiento del Excel."""
     return bool(
         _is_admin(user)
         or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
     )
+
+
+def _can_download_excel_masivo(user) -> bool:
+    """Roles que pueden descargar el Excel; el técnico requiere asignación."""
+    return bool(
+        _can_manage_excel_masivo_audit(user)
+        or _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+    )
+
+
+def _puede_descargar_excel_masivo(user, expediente) -> bool:
+    """Acota la descarga del Excel original al alcance de cada rol.
+
+    La vista de descarga no pasa por el queryset del detalle, asi que el filtro
+    por asignacion del tecnico hay que aplicarlo aca de forma explicita.
+    """
+    if not _can_download_excel_masivo(user):
+        return False
+
+    if _is_admin(user) or _user_has_permission(
+        user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
+    ):
+        return True
+
+    return expediente.asignaciones_tecnicos.filter(tecnico=user).exists()
 
 
 def _get_nacionalidad_argentina():
@@ -874,7 +900,8 @@ class ExpedienteListView(ListView):
         ctx["is_tecnico_celiaquia"] = is_tecnico
         ctx["is_provincial_celiaquia"] = _is_provincial(user)
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
-        ctx["can_manage_excel_masivo_audit"] = is_admin or is_coord
+        ctx["can_manage_excel_masivo_audit"] = _can_manage_excel_masivo_audit(user)
+        ctx["can_download_excel_masivo"] = _can_download_excel_masivo(user)
         ctx["show_tecnico_column_celiaquia"] = _can_view_tecnico_column(user)
 
         # El titulo depende del rol y lo consume el componente de busqueda, que
@@ -1044,10 +1071,12 @@ class ExpedienteExcelMasivoDownloadView(View):
     """Descarga la copia del Excel masivo vigente del expediente."""
 
     def get(self, request, pk):
-        if not _can_manage_excel_masivo_audit(request.user):
+        if not _can_download_excel_masivo(request.user):
             raise PermissionDenied("No tiene permisos para descargar el Excel masivo.")
 
         expediente = get_object_or_404(Expediente, pk=pk)
+        if not _puede_descargar_excel_masivo(request.user, expediente):
+            raise PermissionDenied("No sos el tecnico asignado a este expediente.")
         if not expediente.excel_masivo:
             messages.error(request, "El expediente no tiene Excel masivo cargado.")
             return redirect("expediente_detail", pk=expediente.pk)
@@ -1157,7 +1186,8 @@ class ExpedienteDetailView(DetailView):
         ctx["is_provincial_celiaquia"] = _is_provincial(user)
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
         ctx["can_manage_registros_erroneos"] = can_manage_registros_erroneos
-        ctx["can_manage_excel_masivo_audit"] = is_admin or is_coord
+        ctx["can_manage_excel_masivo_audit"] = _can_manage_excel_masivo_audit(user)
+        ctx["can_download_excel_masivo"] = _can_download_excel_masivo(user)
         ctx["can_download_nomina_aprobados"] = bool(
             (is_admin or is_coord or is_tecnico)
             and expediente.estado.nombre == "CRUCE_FINALIZADO"

@@ -32,6 +32,7 @@
 
 - Empezar por `docs/registro/prs/PR-2557.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `comedores/api.py`
 - `comunicados/forms.py`
 - `comunicados/permissions.py`
 - `comunicados/services_destinatarios.py`

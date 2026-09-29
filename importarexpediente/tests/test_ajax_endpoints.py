@@ -98,7 +98,7 @@ def test_list_requiere_permiso_de_lectura(client, user):
 
 
 def test_ajax_anterior_conserva_respuesta_y_permiso(
-    client_logged, seed_imports, client, user
+    client_logged, seed_imports, client
 ):
     response = client_logged.get(
         reverse("importarexpedientes_ajax"), {"busqueda": "expedientes_1.csv"}
@@ -107,7 +107,7 @@ def test_ajax_anterior_conserva_respuesta_y_permiso(
     assert response.json()["count"] == 1
     assert "expedientes_1.csv" in response.json()["html"]
 
-    client.force_login(user)
+    client.force_login(User.objects.create_user(username="sin_permiso_ajax"))
     assert client.get(reverse("importarexpedientes_ajax")).status_code == 403
 
 

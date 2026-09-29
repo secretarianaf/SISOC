@@ -6,7 +6,7 @@
     "sections": [
       {
         "id": "encabezado",
-        "title": "Datos de la visita",
+        "title": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
         "fields": [
           {
             "name": "codigo_proyecto",
@@ -503,7 +503,13 @@
             "name": "modalidad_recepcion_otros",
             "label": "Otros",
             "type": "text"
-          },
+          }
+        ]
+      },
+      {
+        "id": "frecuencia_recepcion",
+        "title": "5. FRECUENCIA DE RECEPCIÓN DE MERCADERÍA",
+        "fields": [
           {
             "name": "recepcion_semanal",
             "label": "Semanal",
@@ -770,7 +776,7 @@
     "sections": [
       {
         "id": "encabezado",
-        "title": "Datos de la visita",
+        "title": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
         "fields": [
           {
             "name": "codigo_proyecto",
@@ -1273,7 +1279,7 @@
     "sections": [
       {
         "id": "encabezado",
-        "title": "Datos de la visita",
+        "title": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
         "fields": [
           {
             "name": "codigo_proyecto",
@@ -1807,7 +1813,7 @@
     "sections": [
       {
         "id": "encabezado",
-        "title": "Datos de la visita",
+        "title": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
         "fields": [
           {
             "name": "codigo_proyecto",
@@ -2592,7 +2598,11 @@
           {
             "name": "almacenamiento_alimentos_adecuado",
             "label": "¿Es adecuado el almacenamiento de alimentos?",
-            "type": "bool"
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
           },
           {
             "name": "tiene_heladera",
@@ -2607,7 +2617,11 @@
           {
             "name": "almacenamiento_limpieza_adecuado",
             "label": "¿Es adecuado el almacenamiento de los productos de limpieza?",
-            "type": "bool"
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
           },
           {
             "name": "condicion_limpieza",
@@ -2655,7 +2669,11 @@
           {
             "name": "presencia_plagas",
             "label": "Presencia de animales/plagas donde se preparan, sirven y/o entregan los alimentos",
-            "type": "bool"
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
           },
           {
             "name": "basura_con_tapa",
@@ -2700,7 +2718,11 @@
           {
             "name": "agua_potable",
             "label": "7.2.2 ¿Cuentan con agua potable dentro del espacio?",
-            "type": "bool"
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
           },
           {
             "name": "fecha_analisis_bacteriologico",
@@ -2928,7 +2950,7 @@
     "sections": [
       {
         "id": "encabezado",
-        "title": "Datos de la visita",
+        "title": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
         "fields": [
           {
             "name": "codigo_proyecto",
@@ -3744,7 +3766,11 @@
           {
             "name": "almacenamiento_alimentos_adecuado",
             "label": "¿Es adecuado el almacenamiento de alimentos?",
-            "type": "bool"
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
           },
           {
             "name": "tiene_heladera",
@@ -3759,7 +3785,11 @@
           {
             "name": "almacenamiento_limpieza_adecuado",
             "label": "¿Es adecuado el almacenamiento de los productos de limpieza?",
-            "type": "bool"
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
           },
           {
             "name": "condicion_limpieza",
@@ -3807,7 +3837,11 @@
           {
             "name": "presencia_plagas",
             "label": "Presencia de animales/plagas donde se entregan los alimentos",
-            "type": "bool"
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
           },
           {
             "name": "basura_con_tapa",
@@ -3822,7 +3856,11 @@
           {
             "name": "agua_potable",
             "label": "7.2.2 ¿Cuentan con agua potable dentro del espacio?",
-            "type": "bool"
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
           },
           {
             "name": "fecha_analisis_bacteriologico",

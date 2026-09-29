@@ -25,7 +25,7 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: organizaciones/templates/organizacion_detail.html, organizaciones/templates/organizacion_rendicion_detail.html
+- Archivos visuales relevantes: organizaciones/templates/organizacion_rendicion_detail.html
 
 ## Memoria operativa para agentes
 
@@ -34,7 +34,6 @@
 - `docs/contexto/features/pr-2585-fix-rendiciones-renombrar-monto-rendido-a-monto-auditado-2545.md`
 - `docs/registro/cambios/2026-09-28-issue-2545-monto-auditado.md`
 - `docs/registro/prs/PR-2585.md`
-- `organizaciones/templates/organizacion_detail.html`
 - `organizaciones/templates/organizacion_rendicion_detail.html`
 - `organizaciones/tests.py`
 - `rendicioncuentasmensual/forms.py`

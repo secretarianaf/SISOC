@@ -54,6 +54,13 @@ from ver_para_ser_libre.models import (
     RegistroNominalVPSL,
     SedeVPSL,
 )
+from ver_para_ser_libre.services.access import (
+    provincia_usuario_provincial as _provincia_usuario_provincial,
+    puede_ver_todos_los_itinerarios as _puede_ver_todos_los_itinerarios,
+    filtrar_itinerarios_por_usuario as _filtrar_itinerarios_por_usuario,
+    filtrar_jornadas_por_usuario as _filtrar_jornadas_por_usuario,
+    filtrar_casos_laboratorio_por_usuario as _filtrar_casos_laboratorio_por_usuario,
+)
 from ver_para_ser_libre.services import workflow
 from ver_para_ser_libre.services.map_location import resolve_google_maps_location
 from ver_para_ser_libre.services.sedes import filtrar_sedes_por_provincia
@@ -120,51 +127,6 @@ def _display_sexo_renaper(raw_value, normalized_value):
         "X": "X",
     }.get(normalized_value)
     return display or str(raw_value or "")
-
-
-def _provincia_usuario_provincial(user):
-    profile = getattr(user, "profile", None)
-    if profile and profile.es_usuario_provincial and profile.provincia_id:
-        return profile.provincia
-    return None
-
-
-def _puede_ver_todos_los_itinerarios(user):
-    return bool(
-        getattr(user, "is_superuser", False)
-        or user_has_permission_code(user, VIEW_ALL_ITINERARIOS_PERMISSION)
-    )
-
-
-def _filtrar_itinerarios_por_usuario(queryset, user):
-    if _puede_ver_todos_los_itinerarios(user):
-        return queryset
-    provincia = _provincia_usuario_provincial(user)
-    if user_has_permission_code(user, CREATE_ANY_PROVINCE_PERMISSION):
-        if provincia:
-            return queryset.filter(Q(provincia=provincia) | Q(creado_por=user))
-        return queryset.filter(creado_por=user)
-    if provincia:
-        return queryset.filter(provincia=provincia)
-    return queryset.none()
-
-
-def _filtrar_jornadas_por_usuario(queryset, user):
-    if _puede_ver_todos_los_itinerarios(user):
-        return queryset
-    provincia = _provincia_usuario_provincial(user)
-    if provincia:
-        return queryset.filter(itinerario__provincia=provincia)
-    return queryset.none()
-
-
-def _filtrar_casos_laboratorio_por_usuario(queryset, user):
-    if _puede_ver_todos_los_itinerarios(user):
-        return queryset
-    provincia = _provincia_usuario_provincial(user)
-    if provincia:
-        return queryset.filter(registro__jornada__itinerario__provincia=provincia)
-    return queryset.none()
 
 
 def _filtro_estado_itinerario_por_texto(query):

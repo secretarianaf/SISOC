@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- No informado explícitamente; inferir desde el título del PR y el diff.
+- Legajo de Centro (CFP) del programa VAT/INET — identificación, plan curricular, alta de curso y sedes adicionales.
 
 ## Arquitectura tocada
 
@@ -18,10 +18,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: No informado
-- Área principal declarada: No informada
-- Impacto usuario declarado: No informado
-- Riesgos / rollback: No informado
+- Tipo de cambio declarado: Corrección funcional / control de acceso.
+- Área principal declarada: VAT
+- Impacto usuario declarado: Los perfiles CFP ya no pueden editar denominación/CUE de su centro (salvo que también tengan un rol de administración); ya no se ofrece "Usa voucher" al cargar cursos; se puede cargar una sede en cualquier departamento de la provincia.
+- Riesgos / rollback: Revertir el PR restaura el comportamiento anterior. Sin riesgos abiertos adicionales a los ya documentados en los REQ de docs/registro/analisis/.
 
 ## Design system y UI
 

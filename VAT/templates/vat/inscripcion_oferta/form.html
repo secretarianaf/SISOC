@@ -46,9 +46,7 @@
                             </label>
                             {{ form.oferta }}
                             {% if form.oferta.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.oferta.errors %}{{ error }}{% endfor %}
-                                </div>
+                                <div class="text-danger small mt-1">{% for error in form.oferta.errors %}{{ error }}{% endfor %}</div>
                             {% endif %}
                         </div>
 
@@ -59,9 +57,7 @@
                             </label>
                             {{ form.ciudadano }}
                             {% if form.ciudadano.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.ciudadano.errors %}{{ error }}{% endfor %}
-                                </div>
+                                <div class="text-danger small mt-1">{% for error in form.ciudadano.errors %}{{ error }}{% endfor %}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -74,9 +70,7 @@
                             </label>
                             {{ form.estado }}
                             {% if form.estado.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.estado.errors %}{{ error }}{% endfor %}
-                                </div>
+                                <div class="text-danger small mt-1">{% for error in form.estado.errors %}{{ error }}{% endfor %}</div>
                             {% endif %}
                         </div>
                     </div>

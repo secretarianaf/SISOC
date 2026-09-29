@@ -5,7 +5,7 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
@@ -25,6 +25,14 @@ from .models import (
     EstadoComunicado,
     TipoComunicado,
     SubtipoComunicado,
+)
+from .services_destinatarios import (
+    buscar_comedores,
+    etiquetas_de_seleccion,
+    get_filtros_destinatarios_config,
+    buscar_organizaciones,
+    seleccionar_todas_organizaciones,
+    seleccionar_todos_comedores,
 )
 from .services_mailing import (
     generate_mailing_template,
@@ -47,6 +55,7 @@ from .permissions import (
     can_toggle_destacado,
     require_create_permission,
     require_edit_permission,
+    require_seleccionar_destinatarios_permission,
     require_publish_permission,
     require_archive_permission,
     require_toggle_destacado_permission,
@@ -202,6 +211,48 @@ class ComunicadoDetailView(LoginRequiredMixin, DetailView):
         return ctx
 
 
+class ComunicadoDestinatariosContextMixin:
+    """Contexto que necesita el panel de destinatarios con filtros (issue #2505)."""
+
+    def _destinatarios_seleccionados(self, form):
+        """Ids ya elegidos: los del POST si hubo error de validacion, si no los guardados.
+
+        ``BoundField.value()`` resuelve ambos casos con el mismo parseo del widget.
+        """
+
+        if form is None:
+            return [], []
+        return (
+            form["comedores"].value() or [],
+            form["organizaciones"].value() or [],
+        )
+
+    def add_destinatarios_context(self, ctx):
+        form = ctx.get("form")
+        comedor_ids, organizacion_ids = self._destinatarios_seleccionados(form)
+        ctx["destinatarios_filters_config"] = get_filtros_destinatarios_config()
+        ctx["destinatarios_seleccionados"] = etiquetas_de_seleccion(
+            self.request.user, comedor_ids, organizacion_ids
+        )
+        ctx["destinatarios_urls"] = {
+            "comedores": {
+                "buscar": reverse(
+                    "comunicados_destinatarios_buscar", args=["comedores"]
+                ),
+                "todos": reverse("comunicados_destinatarios_todos", args=["comedores"]),
+            },
+            "organizaciones": {
+                "buscar": reverse(
+                    "comunicados_destinatarios_buscar", args=["organizaciones"]
+                ),
+                "todos": reverse(
+                    "comunicados_destinatarios_todos", args=["organizaciones"]
+                ),
+            },
+        }
+        return ctx
+
+
 class ComunicadoPersistMixin:
     """Comportamiento compartido para guardar comunicados y sus relaciones."""
 
@@ -254,7 +305,12 @@ class ComunicadoPersistMixin:
             self._save_uploaded_files()
 
 
-class ComunicadoCreateView(ComunicadoPersistMixin, LoginRequiredMixin, CreateView):
+class ComunicadoCreateView(
+    ComunicadoDestinatariosContextMixin,
+    ComunicadoPersistMixin,
+    LoginRequiredMixin,
+    CreateView,
+):
     """Vista para crear un comunicado."""
 
     model = Comunicado
@@ -284,7 +340,7 @@ class ComunicadoCreateView(ComunicadoPersistMixin, LoginRequiredMixin, CreateVie
         ctx["es_tecnico"] = es_tecnico(self.request.user) and not is_admin(
             self.request.user
         )
-        return ctx
+        return self.add_destinatarios_context(ctx)
 
     def form_valid(self, form):
         ctx = self.get_context_data()
@@ -300,7 +356,12 @@ class ComunicadoCreateView(ComunicadoPersistMixin, LoginRequiredMixin, CreateVie
         return redirect(self.success_url)
 
 
-class ComunicadoUpdateView(ComunicadoPersistMixin, LoginRequiredMixin, UpdateView):
+class ComunicadoUpdateView(
+    ComunicadoDestinatariosContextMixin,
+    ComunicadoPersistMixin,
+    LoginRequiredMixin,
+    UpdateView,
+):
     """Vista para editar un comunicado."""
 
     model = Comunicado
@@ -331,7 +392,7 @@ class ComunicadoUpdateView(ComunicadoPersistMixin, LoginRequiredMixin, UpdateVie
         ctx["es_tecnico"] = es_tecnico(self.request.user) and not is_admin(
             self.request.user
         )
-        return ctx
+        return self.add_destinatarios_context(ctx)
 
     def form_valid(self, form):
         ctx = self.get_context_data()
@@ -528,3 +589,43 @@ class MailingJobResumeView(LoginRequiredMixin, View):
         return HttpResponseRedirect(
             reverse("comunicados_mailing_detalle", kwargs={"pk": job.pk})
         )
+
+
+class DestinatariosBuscarView(LoginRequiredMixin, View):
+    """Busca destinatarios que matchean los filtros combinables (issue #2505).
+
+    ``universo`` llega por URL y decide si se buscan comedores u organizaciones.
+    El alcance del usuario lo aplica siempre el servicio, nunca el front.
+    """
+
+    buscadores = {
+        "comedores": buscar_comedores,
+        "organizaciones": buscar_organizaciones,
+    }
+
+    def get(self, request, universo, *args, **kwargs):
+        require_seleccionar_destinatarios_permission(request.user)
+        buscador = self.buscadores.get(universo)
+        if buscador is None:
+            return JsonResponse({"error": "Universo desconocido."}, status=404)
+        try:
+            page = int(request.GET.get("page", 1))
+        except (TypeError, ValueError):
+            page = 1
+        return JsonResponse(buscador(request, request.user, page=page))
+
+
+class DestinatariosSeleccionarTodosView(LoginRequiredMixin, View):
+    """Devuelve todos los destinatarios que matchean, para 'agregar todos'."""
+
+    selectores = {
+        "comedores": seleccionar_todos_comedores,
+        "organizaciones": seleccionar_todas_organizaciones,
+    }
+
+    def get(self, request, universo, *args, **kwargs):
+        require_seleccionar_destinatarios_permission(request.user)
+        selector = self.selectores.get(universo)
+        if selector is None:
+            return JsonResponse({"error": "Universo desconocido."}, status=404)
+        return JsonResponse(selector(request, request.user))

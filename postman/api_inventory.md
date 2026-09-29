@@ -1,7 +1,7 @@
 # API Inventory — SISOC
 
 Todas las APIs (internas y externas) están documentadas en la colección única:
-**`SISOC APIs.postman_collection.json`** · 244 requests · 11 carpetas · entorno: `Local.postman_environment.json`
+**`SISOC APIs.postman_collection.json`** · 245 requests · 11 carpetas · entorno: `Local.postman_environment.json`
 
 ---
 
@@ -17,13 +17,13 @@ Todas las APIs (internas y externas) están documentadas en la colección única
 | Relevamientos | 2 | PATCH relevamiento + primer seguimiento (`/api/relevamiento`) |
 | PWA | 33 | Health, push, colaboradores, actividades, formación, mensajes, nómina (`/api/espacios/`) |
 | Ticketera | 3 | Alta usuario, verificar auth, cambiar password (`/api/ticketera/`) |
-| VAT | 148 | Cobertura completa del router público VAT; ver detalle abajo |
+| VAT | 149 | Cobertura completa del router público VAT; ver detalle abajo |
 | Integraciones Externas | 12 | GESTIONAR (AppSheet) + RENAPER API externa |
 | Docs | 2 | OpenAPI schema SISOC + VAT (`/api/schema/`) |
 
 ---
 
-## VAT (148 requests)
+## VAT (149 requests)
 
 | Subcarpeta | Requests | Endpoints principales |
 |-----------|----------|----------------------|
@@ -35,7 +35,7 @@ Todas las APIs (internas y externas) están documentadas en la colección única
 | 5 - API operativa - Oferta institucional | 18 | ofertas institucionales, comisiones legacy y horarios; CRUD completo |
 | 6 - API operativa - Inscripciones y vouchers | 26 | inscripciones de oferta, vouchers, acciones `disponible`/`por_ciudadano`, inscripciones generales y de curso; CRUD completo |
 | 7 - API operativa - Evaluaciones | 12 | evaluaciones y resultados; CRUD completo |
-| 8 - API web | 10 | centros, títulos y cursos (list/retrieve), `voucher-estado`, listado/alta/prevalidación de inscripciones |
+| 8 - API web | 11 | centros, títulos y cursos (list/retrieve), `voucher-estado`, listado/alta/prevalidación de inscripciones y registros PAV por DNI |
 
 La cobertura corresponde a los métodos de negocio registrados en
 `VAT/api_urls.py`: GET, POST, PUT, PATCH y DELETE según cada ViewSet, más sus

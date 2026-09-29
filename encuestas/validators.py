@@ -64,14 +64,15 @@ class ParsedDestinatarioRow:
     numero_documento: str
 
 
-def generar_plantilla_listado() -> bytes:
+def generar_plantilla_listado(*, por_usuario=False) -> bytes:
     """Genera el Excel de plantilla para cargar destinatarios por listado,
     con las mismas columnas que espera ``_parse_rows`` de este módulo."""
     workbook = Workbook()
     worksheet = workbook.active
     worksheet.title = LISTADO_TEMPLATE_SHEET_NAME
-    worksheet.append(list(LISTADO_TEMPLATE_HEADERS))
-    worksheet.append(list(LISTADO_TEMPLATE_EJEMPLO))
+    worksheet.append(["usuario_id"] if por_usuario else list(LISTADO_TEMPLATE_HEADERS))
+    if not por_usuario:
+        worksheet.append(list(LISTADO_TEMPLATE_EJEMPLO))
 
     output = io.BytesIO()
     workbook.save(output)
@@ -142,7 +143,7 @@ def _parse_rows(headers: list[str], data_rows) -> list[ParsedDestinatarioRow]:
     return parsed
 
 
-def _rows_from_xlsx(uploaded_file) -> list[ParsedDestinatarioRow]:
+def _rows_from_xlsx(uploaded_file, parser=_parse_rows):
     try:
         uploaded_file.seek(0)
         workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
@@ -154,21 +155,63 @@ def _rows_from_xlsx(uploaded_file) -> list[ParsedDestinatarioRow]:
         if not rows:
             raise ValidationError("El archivo está vacío.")
         headers = [_clean_cell(value) for value in rows[0]]
-        return _parse_rows(headers, rows[1:])
+        return parser(headers, rows[1:])
     finally:
         workbook.close()
 
 
-def _rows_from_csv(uploaded_file) -> list[ParsedDestinatarioRow]:
+def _rows_from_csv(uploaded_file, parser=_parse_rows):
     uploaded_file.seek(0)
     content = uploaded_file.read()
     if isinstance(content, bytes):
-        content = content.decode("utf-8-sig")
+        try:
+            content = content.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise ValidationError("El CSV debe estar codificado en UTF-8.") from exc
     rows = list(csv.reader(io.StringIO(content)))
     if not rows:
         raise ValidationError("El archivo está vacío.")
     headers = [_clean_cell(value) for value in rows[0]]
-    return _parse_rows(headers, rows[1:])
+    return parser(headers, rows[1:])
+
+
+def validar_usuario_id(value):
+    numero = _clean_cell(value)
+    if (
+        not numero.isascii()
+        or not numero.isdigit()
+        or len(numero) > 19
+        or not 0 < int(numero) <= 9223372036854775807
+    ):
+        raise ValidationError(
+            "El ID de usuario debe ser un número entero positivo válido."
+        )
+    return int(numero)
+
+
+def _parse_usuarios(headers, data_rows):
+    index = _find_column(headers, "usuario_id")
+    if index == -1:
+        raise ValidationError("El archivo debe incluir la columna 'usuario_id'.")
+    usuarios = []
+    for fila, row in enumerate(data_rows, start=2):
+        if not any(_clean_cell(cell) for cell in row):
+            continue
+        try:
+            usuarios.append(validar_usuario_id(row[index] if index < len(row) else ""))
+        except ValidationError as exc:
+            raise ValidationError(f"Fila {fila}: {exc.messages[0]}") from exc
+    if not usuarios:
+        raise ValidationError("El archivo no contiene filas con datos para procesar.")
+    return usuarios
+
+
+def parse_listado_usuarios(uploaded_file):
+    for validator in LISTADO_FILE_VALIDATORS:
+        validator(uploaded_file)
+    if uploaded_file.name.lower().endswith(".csv"):
+        return _rows_from_csv(uploaded_file, _parse_usuarios)
+    return _rows_from_xlsx(uploaded_file, _parse_usuarios)
 
 
 def parse_listado_destinatarios(uploaded_file) -> list[ParsedDestinatarioRow]:

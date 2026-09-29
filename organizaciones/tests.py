@@ -205,7 +205,8 @@ class OrganizacionRendicionesPresentadasTests(TestCase):
         self.assertContains(response, "CONV-01")
         self.assertContains(response, "CONV-02")
         self.assertEqual(response.context["proyectos_rendiciones"], ["P01", "P02"])
-        self.assertContains(response, "<th>Monto rendido</th>", html=True)
+        self.assertContains(response, "<th>Monto auditado</th>", html=True)
+        self.assertNotContains(response, "Monto rendido")
 
     def test_filtro_por_proyecto_limita_resultados_y_activa_tab(self):
         response = self.client.get(

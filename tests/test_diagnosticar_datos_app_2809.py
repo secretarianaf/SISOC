@@ -264,17 +264,44 @@ def test_dry_run_caso_2(escenario, tmp_path):
 
 
 @pytest.mark.django_db
-def test_actor_territorial_alcanza_sin_linea_de_log(escenario, tmp_path):
+def test_actor_territorial_es_web_y_queda_a_revisar(escenario, tmp_path):
+    """Una LogEntry con actor viene de la web, aunque haya línea de la API cerca."""
     territorial = escenario["relevamiento"].territorial_user
     territorial.profile.es_territorial_comedor = True
     territorial.profile.save(update_fields=["es_territorial_comedor"])
+    LogEntry.objects.get_for_object(escenario["relevamiento"]).update(actor=territorial)
     LogEntry.objects.get_for_object(escenario["rel_coordinador"]).update(
         actor=territorial
     )
     filas = _correr(tmp_path, "--log", escenario["log"])
-    fila = _fila_relevamiento(filas, escenario["rel_coordinador"])
+    for clave in ("relevamiento", "rel_coordinador"):
+        fila = _fila_relevamiento(filas, escenario[clave])
+        assert fila["accion"] == reparacion.ACCION_A_REVISAR
+        assert fila["actor"] == "tec_2809"
+
+
+@pytest.mark.django_db
+def test_la_linea_de_log_tiene_que_ser_del_mismo_id(tmp_path):
+    """Un envío de la app sobre B a los 10 s no respalda el vaciado de A."""
+    rel_a = Relevamiento.objects.create(
+        comedor=Comedor.objects.create(nombre="Comedor A"), observacion="de A"
+    )
+    rel_b = Relevamiento.objects.create(
+        comedor=Comedor.objects.create(nombre="Comedor B"), observacion="de B"
+    )
+    _vaciar_observacion(rel_a, datetime(2026, 9, 28, 21, 50, 0, tzinfo=UTC))
+    log = tmp_path / "info.log"
+    log.write_text(_linea("18:50:10", "Relevamiento", rel_b.pk), encoding="utf-8")
+
+    filas = _correr(tmp_path, "--log", str(log))
+    fila = _fila_relevamiento(filas, rel_a)
+    assert fila["accion"] == reparacion.ACCION_A_REVISAR
+    assert fila["actor"] == "(sin actor)"
+
+    # Control: con la línea del propio A, sí se restaura.
+    log.write_text(_linea("18:50:10", "Relevamiento", rel_a.pk), encoding="utf-8")
+    fila = _fila_relevamiento(_correr(tmp_path, "--log", str(log)), rel_a)
     assert fila["accion"] == reparacion.ACCION_RESTAURAR
-    assert "actor territorial" in fila["detalle"]
 
 
 @pytest.mark.django_db
@@ -492,7 +519,10 @@ def test_leer_logs_convierte_zona_y_acepta_gz(tmp_path):
     ]
 
 
-def test_linea_con_fecha_invalida_se_ignora_con_aviso(tmp_path):
+def test_linea_con_fecha_invalida_se_ignora_con_aviso(tmp_path, monkeypatch):
+    # El aviso va solo a stdout: nada a warning.log ni a Sentry en un dry-run.
+    registrados = []
+    monkeypatch.setattr(reparacion.logger, "warning", registrados.append)
     log = tmp_path / "info.log"
     log.write_text(
         "[2026-13-45 18:20:01,123] api_views INFO django: "
@@ -503,6 +533,7 @@ def test_linea_con_fecha_invalida_se_ignora_con_aviso(tmp_path):
     avisos = []
     evidencias = reparacion.leer_logs([log], TZ_LOG, advertencias=avisos)
     assert [e.pk for e in evidencias] == [6]
+    assert registrados == []
     assert len(avisos) == 1 and "fecha inválida" in avisos[0]
 
 

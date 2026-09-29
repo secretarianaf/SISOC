@@ -32,8 +32,10 @@ probar:
   precargado o corregirse por web, y eso no deja línea en el log;
 * caso 2 de seguimientos: se reporta, no se restaura (no hay historial);
 * caso 2 de relevamientos: se restaura desde auditlog solo si el vaciado lo hizo
-  la app (línea del log de la API a ±2 min o actor territorial) y nadie volvió a
-  tocar el campo después.
+  la app (LogEntry sin actor y línea del log de la API del MISMO id a ±2 min)
+  y nadie volvió a tocar el campo después. Una LogEntry con actor viene de
+  la web (la app autentica con token DRF, que el middleware de auditlog no
+  ve), así que queda siempre ``a_revisar``.
 
 La repetición se controla con las ``LogEntry`` que deja cada cambio: si
 ``purge_auditlog`` las borra, una segunda corrida volvería a proponerlos.
@@ -52,11 +54,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from auditlog.models import LogEntry
-from django.core.exceptions import (
-    FieldDoesNotExist,
-    ObjectDoesNotExist,
-    ValidationError,
-)
+from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 
@@ -273,7 +271,8 @@ def leer_logs(rutas, tz_nombre, advertencias=None):
                         f"{path.name}:{numero}: fecha inválida {match['ts']!r}; "
                         "se ignora la línea."
                     )
-                    logger.warning(aviso)
+                    # Solo stdout: en un dry-run no se escribe en
+                    # warning.log ni se manda a Sentry.
                     if advertencias is not None:
                         advertencias.append(aviso)
                     continue
@@ -591,26 +590,16 @@ def _actor(entrada):
     return actor.get_username() if actor is not None else ""
 
 
-def _es_territorial(usuario, relevamiento):
-    if usuario.pk == relevamiento.territorial_user_id:
-        return True
-    try:
-        return bool(usuario.profile.es_territorial_comedor)
-    except ObjectDoesNotExist:
-        return False
-
-
 def _respaldo_app(entrada, relevamiento, contexto):
     """Por qué se cree que el vaciado lo hizo la app, o ``None``.
 
-    Con token DRF el middleware de auditlog no ve al usuario (autentica la
-    vista), así que las LogEntry de la app suelen quedar sin actor: la prueba es
-    la línea del log de la API para el mismo relevamiento, a pocos segundos. Si
-    la LogEntry tiene actor, tiene que ser el territorial.
+    La app autentica con token DRF y ``AuditlogMiddleware`` toma el actor antes
+    de que la vista autentique: sus LogEntry quedan con ``actor=None``. Una
+    LogEntry con actor (aunque sea un territorial) viene de la web y nunca se
+    atribuye a la app. La única prueba es la línea del log de la API del MISMO
+    relevamiento a ±2 min.
     """
-    if entrada.actor is not None:
-        if _es_territorial(entrada.actor, relevamiento):
-            return f"actor territorial {_actor(entrada)}"
+    if entrada.actor_id is not None:
         return None
     for evidencia in contexto.evidencias_log.get(relevamiento.pk, ()):
         if abs(evidencia.momento - entrada.timestamp) <= TOLERANCIA_LOG:
@@ -666,8 +655,9 @@ def _decidir_restauracion(fila, relevamiento, entrada, contexto):
     respaldo = _respaldo_app(entrada, relevamiento, contexto)
     if respaldo is None:
         return ACCION_A_REVISAR, (
-            "sin evidencia de que lo haya vaciado la app (ni línea del log de la "
-            "API a ±2 min ni actor territorial); revisar a mano"
+            "sin evidencia de que lo haya vaciado la app (hace falta LogEntry "
+            "sin actor y línea del log de la API del mismo id a ±2 min); revisar "
+            "a mano"
         )
     fila.valor_propuesto = anterior
     fila.objetivo = Objetivo(

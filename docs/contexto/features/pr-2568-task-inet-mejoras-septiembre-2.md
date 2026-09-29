@@ -26,7 +26,7 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: VAT/templates/vat/centros/centro_detail.html, VAT/templates/vat/centros/partials/centro_cursos_panel.html
+- Archivos visuales relevantes: VAT/templates/vat/centros/centro_detail.html, VAT/templates/vat/centros/partials/centro_cursos_panel.html, VAT/templates/vat/curso/curso_form.html, VAT/templates/vat/institucion/ubicacion_form.html
 
 ## Memoria operativa para agentes
 
@@ -36,12 +36,18 @@
 - `VAT/models.py`
 - `VAT/templates/vat/centros/centro_detail.html`
 - `VAT/templates/vat/centros/partials/centro_cursos_panel.html`
+- `VAT/templates/vat/curso/curso_form.html`
+- `VAT/templates/vat/institucion/ubicacion_form.html`
 - `VAT/tests.py`
+- `VAT/urls.py`
 - `VAT/views/centro.py`
+- `VAT/views/institucion.py`
+- `docs/contexto/features/pr-2568-task-inet-mejoras-septiembre-2.md`
 - `docs/registro/analisis/2026-09-23-inet-bloquear-cue-y-denominacion.md`
 - `docs/registro/analisis/2026-09-23-inet-modalidad-sector-en-selector-de-plan.md`
 - `docs/registro/analisis/2026-09-23-inet-quitar-usa-voucher-alta-curso.md`
 - `docs/registro/analisis/2026-09-23-inet-sedes-fuera-del-departamento.md`
+- `docs/registro/prs/PR-2568.md`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

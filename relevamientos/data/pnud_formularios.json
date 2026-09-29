@@ -737,14 +737,20 @@
         ]
       },
       {
-        "id": "cierre",
-        "title": "Cierre",
+        "id": "comentarios",
+        "title": "8. COMENTARIOS FINALES",
         "fields": [
           {
             "name": "comentarios_finales",
             "label": "8. COMENTARIOS FINALES",
             "type": "longtext"
-          },
+          }
+        ]
+      },
+      {
+        "id": "modalidad_entrevista",
+        "title": "9. LA ENTREVISTA SE REALIZÓ DE FORMA:",
+        "fields": [
           {
             "name": "modalidad_entrevista",
             "label": "9. LA ENTREVISTA SE REALIZÓ DE FORMA:",
@@ -759,7 +765,13 @@
                 "label": "Virtual"
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "id": "cierre",
+        "title": "Cierre",
+        "fields": [
           {
             "name": "firma_entrevistado",
             "label": "Firma del entrevistado",
@@ -1260,8 +1272,8 @@
         ]
       },
       {
-        "id": "cierre",
-        "title": "Cierre",
+        "id": "comentarios",
+        "title": "6. COMENTARIOS FINALES",
         "fields": [
           {
             "name": "comentarios_finales",
@@ -1269,6 +1281,11 @@
             "type": "longtext"
           }
         ]
+      },
+      {
+        "id": "cierre",
+        "title": "Cierre",
+        "fields": []
       }
     ]
   },
@@ -1794,8 +1811,8 @@
         ]
       },
       {
-        "id": "cierre",
-        "title": "Cierre",
+        "id": "comentarios",
+        "title": "6. COMENTARIOS FINALES",
         "fields": [
           {
             "name": "comentarios_finales",
@@ -1803,6 +1820,11 @@
             "type": "longtext"
           }
         ]
+      },
+      {
+        "id": "cierre",
+        "title": "Cierre",
+        "fields": []
       }
     ]
   },
@@ -2687,27 +2709,27 @@
           },
           {
             "name": "combustible_gas_red",
-            "label": "Gas de red",
+            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Gas de red (n° de orden)",
             "type": "number"
           },
           {
             "name": "combustible_electricidad",
-            "label": "Electricidad",
+            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Electricidad (n° de orden)",
             "type": "number"
           },
           {
             "name": "combustible_garrafa",
-            "label": "Gas envasado en garrafa o tubo",
+            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Gas envasado en garrafa o tubo (n° de orden)",
             "type": "number"
           },
           {
             "name": "combustible_lena_carbon",
-            "label": "Leña o carbón",
+            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Leña o carbón (n° de orden)",
             "type": "number"
           },
           {
             "name": "combustible_otros",
-            "label": "Otros",
+            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Otros (n° de orden)",
             "type": "number"
           },
           {
@@ -2907,8 +2929,8 @@
         ]
       },
       {
-        "id": "cierre",
-        "title": "Cierre",
+        "id": "relevo_servicio",
+        "title": "10. LA ENTREVISTA RELEVÓ EL SERVICIO ALIMENTARIO DE MANERA:",
         "fields": [
           {
             "name": "relevo_servicio",
@@ -2928,12 +2950,24 @@
                 "label": "No corresponde"
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "id": "comentarios",
+        "title": "11. COMENTARIOS FINALES",
+        "fields": [
           {
             "name": "comentarios_finales",
             "label": "11. COMENTARIOS FINALES",
             "type": "longtext"
-          },
+          }
+        ]
+      },
+      {
+        "id": "cierre",
+        "title": "Cierre",
+        "fields": [
           {
             "name": "firma_entrevistado",
             "label": "Firma del entrevistado",
@@ -4045,8 +4079,8 @@
         ]
       },
       {
-        "id": "cierre",
-        "title": "Cierre",
+        "id": "relevo_servicio",
+        "title": "10. LA ENTREVISTA RELEVÓ EL SERVICIO ALIMENTARIO DE MANERA:",
         "fields": [
           {
             "name": "relevo_servicio",
@@ -4066,12 +4100,24 @@
                 "label": "No corresponde"
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "id": "comentarios",
+        "title": "11. COMENTARIOS FINALES",
+        "fields": [
           {
             "name": "comentarios_finales",
             "label": "11. COMENTARIOS FINALES",
             "type": "longtext"
-          },
+          }
+        ]
+      },
+      {
+        "id": "cierre",
+        "title": "Cierre",
+        "fields": [
           {
             "name": "firma_entrevistado",
             "label": "Firma del entrevistado",

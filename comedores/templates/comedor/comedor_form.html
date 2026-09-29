@@ -14,11 +14,6 @@
           href="{% static 'custom/css/comedorFormModerno.css' %}" />
     <div class="d-flex justify-content-between mb-3">
         <div>
-            {% if comedor.id %}
-            {% else %}
-            {% endif %}
-        </div>
-        <div>
             <a class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
             <a href="#" data-history-back="true" class="btn btn-secondary">Cancelar</a>
         </div>
@@ -441,14 +436,6 @@
 
                 <!-- Botones sticky -->
                 <div class="sticky-actions">
-                    <div>
-                        {% if comedor.id %}
-                        {% else %}
-                            <a href="{% url 'comedores' %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left mr-1"></i> Volver
-                            </a>
-                        {% endif %}
-                    </div>
                     <div>
                         <button type="button" data-history-back="true" class="btn btn-secondary mr-2">
                             <i class="fas fa-times mr-1"></i> Cancelar

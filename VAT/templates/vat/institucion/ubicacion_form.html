@@ -13,8 +13,6 @@
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/vat_design.css' %}" />
     <div class="vat-ui container-fluid py-4">
-        <a href="{% if return_url %}{{ return_url }}{% else %}{% url 'vat_institucion_ubicacion_list' %}{% endif %}"
-           class="vat-back"><i class="bi bi-arrow-left"></i> Volver</a>
         <div class="vp-hero">
             <h1>
                 {% if form.instance.id %}

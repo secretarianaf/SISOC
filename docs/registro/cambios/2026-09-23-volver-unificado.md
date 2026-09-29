@@ -75,3 +75,98 @@
 - Si una pantalla necesita un destino fijo, la vista pasa `volver_url`; si no
   debe mostrarlo, `ocultar_volver=True`.
 - Rollback: revertir el commit. No hay migraciones.
+
+## Segunda ronda de review (PR #2567)
+
+### 1. El destino ya no sale solo del orden de navegacion (bloqueante)
+
+La pila guardaba el orden en que se visitaron las pantallas, no la jerarquia.
+Despues de un POST-redirect-GET a una URL nueva, el formulario quedaba como
+"pantalla anterior" y el boton apuntaba ahi. Tres flujos rotos:
+
+- **Alta**: listado -> crear -> POST -> detalle nuevo. "Volver" iba al alta vacia.
+- **Borrado desde el detalle**: "Volver" iba al `confirm_delete` de un objeto que
+  ya no existe, o sea un 404.
+- **Edicion con `success_url` al listado**: "Volver" iba al formulario de edicion.
+
+Se corrigio por partida doble:
+
+- **Las pantallas transitorias no se apilan.** Quien lo decide es el servidor:
+  `core.context_processors._es_pantalla_transitoria` mira la clase de la vista
+  (`FormMixin` o `DeletionMixin`) y emite `data-volver-transitoria` en el
+  `<script>`. Se dedujo de la clase en vez de pedirle a cada template que se
+  marcara porque son ~200 formularios y uno sin marcar es un bug silencioso.
+- **El destino jerarquico gana sobre la pila.** Si la vista declara
+  `volver_url`, se usa ese; la pila solo aporta la querystring cuando alguna
+  visita apunta al mismo path. Asi el destino es el correcto *y* se conservan
+  los filtros, que era el requisito original del issue.
+
+### 2. Destino jerarquico en la entrada directa (importante)
+
+Con la pila y el referrer vacios (pestaña nueva, link de mail), el boton caia a
+`history.back()`, que podia sacar al usuario de SISOC. Ahora:
+
+- `history.back()` se elimino: el ultimo recurso es `/`.
+- Se declaro `volver_url` en las vistas donde se habia sacado un boton
+  contextual, con el mismo destino que tenia: VAT (curso, centro, comision,
+  asistencia, wizard de comision e institucion), centro de familia, importar
+  expedientes, ciudadanos y los tres `*_job_detail`.
+- En `centrodeinfancia/views.py` el `back_url` que habia quedado muerto se
+  renombro a `volver_url`: esa pantalla recupera el detalle del CDI como destino.
+
+### 3. Se sacaron los "Volver" duplicados que quedaban (importante)
+
+17 botones de navegacion en 16 templates, entre ellos
+`ciudadanos/importacion_masiva_form.html`, que es uno de los ejemplos que cita
+el issue y mostraba dos "Volver".
+
+`VAT/.../nomina_form_edit.html` resulto ser un template muerto: ninguna vista lo
+referencia.
+
+### 4. El test de arquitectura ahora los detecta (importante)
+
+Antes exigia la clase `btn`, asi que no veia `vat-back`, `sisoc-back-link` ni
+`sisoc-wizard-back`; tampoco miraba `<button>`; y con una ventana de 400
+caracteres cualquier `type="submit"` cercano eximia al boton, aunque estuviera
+en otro form.
+
+Ahora mira `<a>` y `<button>` con cualquier clase, y en vez de la heuristica por
+distancia usa una **allowlist explicita** (`CANCELAR_DE_FORMULARIO`) de las 22
+pantallas donde el "Volver" es el cancelar de un formulario. Un segundo test
+falla si una entrada de la allowlist se queda sin su boton, para que no acumule
+entradas muertas: de hecho encontro tres mientras se hacia este cambio.
+
+### 5. Criterio unificado en los formularios (importante)
+
+En `comedor_form.html` y `organizacion_form.html` el "Volver" de la barra sticky
+se habia sacado en edicion y dejado en alta. Se saco en los dos: esa barra ya
+tiene un "Cancelar" explicito al lado, asi que el "Volver" era navegacion
+duplicada, no la salida del formulario. Se eliminaron los `{% if %}{% else %}
+{% endif %}` vacios que quedaron ahi y en `centrodeinfancia_form.html`,
+`destinatario_form`, `trabajador_form`, `nomina_form` y el `<div>` vacio de
+`rendicion_cuentas_final_detail.html`.
+
+### 6. Cobertura del JavaScript (importante)
+
+`tests/js/volver.test.js`: 12 casos con `node:test` y `node:vm`, sin dependencias
+nuevas, siguiendo el estilo de los tests JS que ya habia. Cubren los tres flujos
+rotos, la pila, el zigzag, la recarga, el destino jerarquico con y sin
+querystring, la entrada directa y el referrer externo.
+
+El paso "Ejecutar pruebas de JavaScript" se sumo a `deploy_guard`. Se listan los
+archivos en vez de la carpeta porque `tests/js/user_mobile_access.test.js` ya
+venia fallando de antes (su stub de DOM no implementa `querySelector`) y sumarlo
+pondria el CI en rojo por algo ajeno a este PR.
+
+### 7. Formato mezclado con el cambio funcional (menor)
+
+`includes/base.html`, `includes/sidebar/new_opciones.html` y
+`components/data_table.html` no tenian ningun cambio funcional: se revirtieron
+del todo y salen del diff.
+
+Los reflows de `centrodeinfancia_detail`, `ciudadano_detail`,
+`relevamientos/relevamiento_detail` y `datacalle/relevamiento_detail` **no se
+pueden sacar**: los genera el paso "Run DJLint autofix" de `.github/workflows/lint.yml`,
+que corre `djlint --reformat` sobre todo template modificado y commitea el
+resultado. Mientras esos archivos formen parte del PR, el CI los va a reformatear.
+Se verifico revirtiendolos y volviendo a correr djlint: los reintroduce.

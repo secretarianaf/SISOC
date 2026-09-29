@@ -3,14 +3,26 @@
  *
  * El requisito no es solo estetico: al volver tienen que seguir aplicados los
  * filtros de la pantalla anterior. Por eso no alcanza con un href fijo al
- * listado (perderia la querystring) ni con history.back() a secas (se rompe
- * despues de un POST-redirect-GET, que deja una entrada intermedia).
+ * listado (perderia la querystring) ni con history.back() a secas.
  *
- * Solucion: se mantiene una pila de URLs visitadas en sessionStorage, con
- * path + querystring. "Volver" navega a la anterior distinta de la actual, asi
- * que vuelve al listado tal como estaba filtrado. Si no hay historial (entrada
- * directa, pestaña nueva) cae al fallback que declara la pantalla y, si tampoco
- * hay, al referrer o a history.back().
+ * El destino se resuelve combinando dos fuentes, y el orden importa:
+ *
+ * 1. `volver_url`, el destino **jerarquico** que declara la vista (el detalle
+ *    de una nomina vuelve al CDI, no a la pantalla anterior). Si en la pila hay
+ *    una visita a ese mismo path, se usa la de la pila, que trae la
+ *    querystring: asi el destino es el correcto y ademas conserva los filtros.
+ * 2. La pila de navegacion, cuando la vista no declara destino.
+ * 3. El referrer, si es del mismo origen.
+ * 4. La raiz.
+ *
+ * Nunca se llama a `history.back()`: con un referrer externo o vacio (link de
+ * mail, pestaña nueva) sacaba al usuario de SISOC.
+ *
+ * Las pantallas **transitorias** (altas, ediciones, confirmaciones de borrado)
+ * no se apilan. Si se apilaran, un POST-redirect-GET dejaria el formulario como
+ * "pantalla anterior" y "Volver" llevaria al alta vacia o al confirm_delete de
+ * un objeto ya borrado. Quien marca la pantalla es el servidor, via
+ * `data-volver-transitoria` en el <script> (ver core.context_processors).
  */
 (function (window, document) {
     "use strict";
@@ -18,8 +30,19 @@
     var CLAVE_PILA = "sisocNavStack";
     var MAX_ENTRADAS = 25;
 
+    // Se lee en tiempo de parseo, antes de que corra registrarVisita().
+    var script = document.currentScript;
+    var ES_TRANSITORIA = !!(
+        script && script.getAttribute("data-volver-transitoria") === "1"
+    );
+
     function urlActual() {
         return window.location.pathname + window.location.search;
+    }
+
+    function soloPath(url) {
+        var corte = url.indexOf("?");
+        return corte === -1 ? url : url.slice(0, corte);
     }
 
     function leerPila() {
@@ -43,15 +66,19 @@
     /**
      * Registra la pantalla actual.
      *
+     * - Las transitorias no se apilan: son un paso del flujo, no un destino.
      * - Si repite la ultima entrada (F5, o POST que re-renderiza la misma URL)
      *   no se apila de nuevo.
      * - Si coincide con la anteultima, se interpreta como "el usuario volvio" y
      *   se desapila, para que la pila no crezca en zigzag.
      */
     function registrarVisita() {
-        var actual = urlActual();
         var pila = leerPila();
+        if (ES_TRANSITORIA) {
+            return pila;
+        }
 
+        var actual = urlActual();
         if (pila.length && pila[pila.length - 1] === actual) {
             return pila;
         }
@@ -81,6 +108,23 @@
         return null;
     }
 
+    /**
+     * El destino jerarquico que declaro la vista, enriquecido con la
+     * querystring si esa misma pantalla esta en la pila (se la visito filtrada).
+     */
+    function destinoDeclarado(fallback) {
+        if (!fallback) return null;
+
+        var pila = leerPila();
+        var path = soloPath(fallback);
+        for (var i = pila.length - 1; i >= 0; i--) {
+            if (soloPath(pila[i]) === path) {
+                return pila[i];
+            }
+        }
+        return fallback;
+    }
+
     /** El referrer solo sirve si es del mismo origen. */
     function referrerInterno() {
         if (!document.referrer) return null;
@@ -96,29 +140,15 @@
 
     function resolverDestino(boton) {
         return (
+            destinoDeclarado(boton.dataset.volverFallback) ||
             destinoPrevio() ||
             referrerInterno() ||
-            boton.dataset.volverFallback ||
-            null
+            "/"
         );
     }
 
     function conectar(boton) {
-        var destino = resolverDestino(boton);
-        if (destino) {
-            boton.setAttribute("href", destino);
-            return;
-        }
-        // Sin destino conocido: ultimo recurso, el historial del navegador.
-        boton.setAttribute("href", "#");
-        boton.addEventListener("click", function (evento) {
-            evento.preventDefault();
-            if (window.history.length > 1) {
-                window.history.back();
-            } else {
-                window.location.href = "/";
-            }
-        });
+        boton.setAttribute("href", resolverDestino(boton));
     }
 
     registrarVisita();
@@ -127,10 +157,13 @@
         document.querySelectorAll("[data-sisoc-volver]").forEach(conectar);
     });
 
-    // Expuesto para tests manuales y para pantallas que reconstruyen el boton.
+    // Expuesto para los tests y para pantallas que reconstruyen el boton.
     window.SisocVolver = {
         registrarVisita: registrarVisita,
         destinoPrevio: destinoPrevio,
+        destinoDeclarado: destinoDeclarado,
+        resolverDestino: resolverDestino,
         conectar: conectar,
+        esTransitoria: ES_TRANSITORIA,
     };
 })(window, document);

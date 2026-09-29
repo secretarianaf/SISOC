@@ -725,6 +725,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
                 ),
                 "show_provincia_field": not self._should_hide_provincia_field(),
                 "cancel_url": reverse("vat_centro_list"),
+                "volver_url": reverse("vat_centro_list"),
                 "submit_text": "Guardar",
                 "submit_continue_text": "Guardar y continuar",
                 "show_save_continue": True,
@@ -843,6 +844,9 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
                     "contactos institucionales del centro VAT."
                 ),
                 "cancel_url": reverse(
+                    "vat_centro_detail", kwargs={"pk": self.object.pk}
+                ),
+                "volver_url": reverse(
                     "vat_centro_detail", kwargs={"pk": self.object.pk}
                 ),
                 "submit_text": "Guardar",

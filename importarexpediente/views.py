@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.http import FileResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import FormView, ListView
 
 from expedientespagos.models import ExpedientePago
@@ -421,6 +421,7 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["volver_url"] = reverse("importarexpedientes_list")
         errores = ErroresImportacion.objects.filter(
             archivo_importado=self.batch
         ).order_by("fila")

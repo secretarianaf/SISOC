@@ -97,6 +97,7 @@ class InstitucionContactoCreateView(LoginRequiredMixin, CreateView):
     form_class = InstitucionContactoForm
     template_name = "vat/institucion/contacto_form.html"
     success_url = reverse_lazy("vat_institucion_contacto_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_contacto_list")}
 
     def get_initial(self):
         initial = super().get_initial()
@@ -140,6 +141,7 @@ class InstitucionContactoUpdateView(LoginRequiredMixin, UpdateView):
     form_class = InstitucionContactoForm
     template_name = "vat/institucion/contacto_form.html"
     success_url = reverse_lazy("vat_institucion_contacto_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_contacto_list")}
 
     def get_template_names(self):
         if _is_ajax_request(self.request):
@@ -209,6 +211,7 @@ class InstitucionIdentificadorHistCreateView(LoginRequiredMixin, CreateView):
     form_class = InstitucionIdentificadorHistForm
     template_name = "vat/institucion/identificador_form.html"
     success_url = reverse_lazy("vat_institucion_identificador_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_identificador_list")}
 
     def get_initial(self):
         initial = super().get_initial()
@@ -233,6 +236,7 @@ class InstitucionIdentificadorHistUpdateView(LoginRequiredMixin, UpdateView):
     form_class = InstitucionIdentificadorHistForm
     template_name = "vat/institucion/identificador_form.html"
     success_url = reverse_lazy("vat_institucion_identificador_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_identificador_list")}
 
     def form_valid(self, form):
         messages.success(self.request, "Identificador actualizado exitosamente.")
@@ -284,6 +288,7 @@ class InstitucionUbicacionCreateView(LoginRequiredMixin, CreateView):
     form_class = InstitucionUbicacionForm
     template_name = "vat/institucion/ubicacion_form.html"
     success_url = reverse_lazy("vat_institucion_ubicacion_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_ubicacion_list")}
 
     def get_initial(self):
         initial = super().get_initial()
@@ -338,6 +343,7 @@ class InstitucionUbicacionUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["return_url"] = self.get_success_url()
+        context["volver_url"] = context["return_url"]
         return context
 
     def form_valid(self, form):

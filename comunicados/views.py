@@ -509,6 +509,7 @@ class MailingJobDetailView(LoginRequiredMixin, View):
                 "page_obj": page_obj,
                 "is_resume_available": can_resume_mailing_job(job),
                 "upload_url": reverse("comunicados_mailing"),
+                "volver_url": reverse("comunicados_mailing"),
             },
         )
 

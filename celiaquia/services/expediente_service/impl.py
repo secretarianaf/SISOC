@@ -273,6 +273,65 @@ class ExpedienteService:
 
     @staticmethod
     @transaction.atomic
+    def crear_legajos_desde_filas(expediente: Expediente, filas, usuario) -> dict:
+        """Alta manual de legajos a partir de filas ya previsualizadas.
+
+        Vivia en `CrearLegajosView`. Se trae aca porque la API necesita el mismo
+        alta y porque el `get_or_create` por ciudadano es la regla que evita
+        duplicar una persona dentro del mismo expediente.
+        """
+
+        from celiaquia.models import (  # pylint: disable=import-outside-toplevel
+            EstadoLegajo,
+            ExpedienteCiudadano,
+        )
+        from celiaquia.services.ciudadano_service import (  # pylint: disable=import-outside-toplevel
+            CiudadanoService,
+        )
+
+        estado_inicial, _ = EstadoLegajo.objects.get_or_create(
+            nombre="DOCUMENTO_PENDIENTE"
+        )
+        creados = existentes = 0
+        for datos in filas:
+            ciudadano = CiudadanoService.get_or_create_ciudadano(datos, usuario)
+            _, was_created = ExpedienteCiudadano.objects.get_or_create(
+                expediente=expediente,
+                ciudadano=ciudadano,
+                defaults={"estado": estado_inicial},
+            )
+            if was_created:
+                creados += 1
+            else:
+                existentes += 1
+
+        logger.info(
+            "Expediente %s: %s legajos creados, %s ya existian.",
+            expediente.pk,
+            creados,
+            existentes,
+        )
+        return {"creados": creados, "existentes": existentes}
+
+    @staticmethod
+    @transaction.atomic
+    def recepcionar(expediente: Expediente, usuario):
+        """Nacion toma el expediente que la provincia confirmo.
+
+        La regla vivia suelta en `RecepcionarExpedienteView`. Se trae aca para
+        que la API y la pantalla compartan la misma guarda de estado: solo se
+        recepciona lo que esta en CONFIRMACION_DE_ENVIO.
+        """
+
+        if expediente.estado.nombre != "CONFIRMACION_DE_ENVIO":
+            raise ValidationError("El expediente no está pendiente de recepción.")
+
+        _set_estado(expediente, "RECEPCIONADO", usuario)
+        logger.info("Expediente %s recepcionado por %s", expediente.pk, usuario)
+        return expediente
+
+    @staticmethod
+    @transaction.atomic
     def asignar_tecnico(expediente: Expediente, tecnico, usuario):
         if isinstance(tecnico, int):
             tecnico = User.objects.get(pk=tecnico)

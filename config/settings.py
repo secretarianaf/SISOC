@@ -154,6 +154,25 @@ def _safe_bool_env(var_name: str, default: bool) -> bool:
 
 CSRF_TRUSTED_ORIGINS = _build_csrf_trusted_origins()
 
+
+# --- Front v2 (React) -------------------------------------------------------
+# Allowlist de los servicios de front que Django reenvia bajo /v2/<modulo>/.
+# Los destinos salen de aca y nunca del request: si el modulo saliera de la URL,
+# cualquiera podria hacer que Django consulte una URL arbitraria.
+FRONTEND_V2_SERVICIOS = {
+    modulo.strip(): destino.strip()
+    for modulo, _, destino in (
+        entrada.partition("=")
+        for entrada in os.getenv("FRONTEND_V2_SERVICIOS", "").split(",")
+        if entrada.strip()
+    )
+    if modulo.strip() and destino.strip()
+}
+
+# Si el servicio de front no responde en este tiempo, /v2/ devuelve 503 y el
+# resto del sitio sigue andando.
+FRONTEND_V2_TIMEOUT = int(os.getenv("FRONTEND_V2_TIMEOUT", "3"))
+
 # CDI: funcionalidades suspendidas temporalmente por el issue #2182.
 # Se reactivan de forma independiente mediante las variables de entorno homónimas.
 CDI_ASISTENCIA_NOMINA_VISIBLE = _safe_bool_env("CDI_ASISTENCIA_NOMINA_VISIBLE", False)

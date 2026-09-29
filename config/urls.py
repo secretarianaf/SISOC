@@ -2,6 +2,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+
+from core.frontend_v2 import FrontendV2ProxyView
 from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -18,6 +20,17 @@ from users.views import (
 )
 
 urlpatterns = [
+    # Front v2: Django recibe /v2/<modulo>/ y lo reenvia al servicio del modulo.
+    path(
+        "v2/<slug:modulo>/",
+        FrontendV2ProxyView.as_view(),
+        name="frontend_v2_index",
+    ),
+    path(
+        "v2/<slug:modulo>/<path:ruta>",
+        FrontendV2ProxyView.as_view(),
+        name="frontend_v2",
+    ),
     path("login/", UsuariosLoginView.as_view(), name="login"),
     path("password_reset/", SisocPasswordResetView.as_view(), name="password_reset"),
     path(

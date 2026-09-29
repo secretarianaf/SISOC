@@ -23,6 +23,7 @@ from celiaquia.models import (
     PagoExpediente,
     PagoNomina,
     ProvinciaCupo,
+    RegistroErroneo,
     Subsanacion,
     TipoCruce,
     TipoDocumento,
@@ -340,3 +341,126 @@ class AccionResultadoSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         raise serializers.ValidationError("Serializer de solo lectura.")
+
+
+class _EntradaSerializer(serializers.Serializer):
+    """Base de los serializers de solo entrada: no persisten nada.
+
+    Las escrituras de este modulo pasan siempre por `celiaquia/services/`, asi
+    que `create`/`update` no deben existir. Se centraliza el rechazo para no
+    repetirlo en cada serializer.
+    """
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo entrada.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo entrada.")
+
+
+class ExpedienteCreateSerializer(_EntradaSerializer):
+    """Alta del expediente con su Excel masivo."""
+
+    numero_expediente = serializers.CharField(
+        max_length=100, required=False, allow_blank=True
+    )
+    observaciones = serializers.CharField(required=False, allow_blank=True)
+    excel_masivo = serializers.FileField(required=False)
+
+
+class ExpedienteUpdateSerializer(_EntradaSerializer):
+    """Metadatos editables mientras el expediente esta en CREADO."""
+
+    numero_expediente = serializers.CharField(
+        max_length=100, required=False, allow_blank=True
+    )
+    observaciones = serializers.CharField(required=False, allow_blank=True)
+
+
+class PreviewExcelSerializer(_EntradaSerializer):
+    """Previsualizacion del Excel antes de crear el expediente."""
+
+    excel_masivo = serializers.FileField()
+    limit = serializers.IntegerField(required=False, min_value=1, max_value=5000)
+
+
+class ArchivoSerializer(_EntradaSerializer):
+    """Subida generica de un archivo (cruce, respuesta de Sintys)."""
+
+    archivo = serializers.FileField()
+
+
+class ObservacionSubsanacionSerializer(_EntradaSerializer):
+    tipo = serializers.CharField(max_length=50)
+    detalle = serializers.CharField(max_length=500, allow_blank=True)
+
+
+class RevisarLegajoSerializer(_EntradaSerializer):
+    """Entrada de la revision tecnica de un legajo.
+
+    `texto_libre` es solo el complemento: el motivo final lo compone el service
+    concatenando las observaciones tecnicas del legajo. Lo que mande el cliente
+    no es la fuente de verdad.
+    """
+
+    accion = serializers.ChoiceField(
+        choices=["APROBAR", "RECHAZAR", "SUBSANAR", "ELIMINAR"]
+    )
+    texto_libre = serializers.CharField(
+        required=False, allow_blank=True, max_length=2000
+    )
+    tipo_subsanacion = serializers.CharField(
+        required=False, allow_blank=True, max_length=50
+    )
+    observaciones = ObservacionSubsanacionSerializer(many=True, required=False)
+
+
+class SubirArchivoLegajoSerializer(_EntradaSerializer):
+    """Documentacion de un legajo. El slot es el campo archivo1/2/3."""
+
+    archivo = serializers.FileField()
+    slot = serializers.IntegerField(required=False, min_value=1, max_value=3)
+
+
+class ConfigurarCupoSerializer(_EntradaSerializer):
+    total_asignado = serializers.IntegerField(min_value=0)
+
+
+class MotivoSerializer(_EntradaSerializer):
+    """Motivo de una baja, suspension o reactivacion de cupo."""
+
+    motivo = serializers.CharField(
+        max_length=2000, required=False, allow_blank=True, default=""
+    )
+
+
+class CrearPagoSerializer(_EntradaSerializer):
+    provincia_id = serializers.IntegerField()
+    periodo = serializers.CharField(max_length=7, required=False, allow_blank=True)
+
+
+class CrearLegajosSerializer(_EntradaSerializer):
+    """Alta manual de legajos desde las filas previsualizadas."""
+
+    rows = serializers.ListField(child=serializers.DictField(), allow_empty=False)
+
+
+class RegistroErroneoSerializer(serializers.ModelSerializer):
+    """Fila del Excel que no pudo importarse.
+
+    `datos_raw` sale tal cual entro: es lo que el usuario tiene que corregir.
+    """
+
+    class Meta:
+        model = RegistroErroneo
+        fields = [
+            "id",
+            "expediente",
+            "fila_excel",
+            "datos_raw",
+            "campo_error",
+            "mensaje_error",
+            "procesado",
+            "creado_en",
+            "procesado_en",
+        ]

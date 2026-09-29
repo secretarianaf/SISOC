@@ -25,6 +25,9 @@ services:
       dockerfile: ./docker/django/Dockerfile
     environment:
       TZ: America/Argentina/Buenos_Aires
+      # Allowlist del router /v2/: que modulos puede reenviar Django y adonde.
+      # Va aca y no en .env para que /v2/ funcione sin configuracion previa.
+      FRONTEND_V2_SERVICIOS: ${FRONTEND_V2_SERVICIOS:-celiaquia=http://front_celiaquia:8080/}
     env_file:
       - .env
     ports:
@@ -34,6 +37,20 @@ services:
       - .:/sisoc/
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
     restart: "no"
+
+  # Front v2 del modulo. Puerto interno: no se expone al host, solo lo alcanza
+  # Django por la red de compose (FRONTEND_V2_SERVICIOS).
+  front_celiaquia:
+    build:
+      context: ./frontends
+      dockerfile: Dockerfile
+      target: ${FRONT_TARGET:-prod}
+      args:
+        APP: celiaquia
+    image: sisoc-front-celiaquia
+    expose:
+      - "8080"
+    restart: unless-stopped
 
   ocr_worker:
     build:

@@ -78,6 +78,10 @@ from celiaquia.services.expediente_filter_config import (  # pylint: disable=no-
 from celiaquia.services.padron_final_service import (  # pylint: disable=no-name-in-module
     PadronFinalService,
 )
+from celiaquia.services.revision_service import (  # pylint: disable=no-name-in-module
+    MAPA_TIPO_DOCUMENTO_A_SUBSANACION,
+    RevisionService,
+)
 from celiaquia.services.validacion_edad_service import ValidacionEdadService
 from django.utils import timezone
 from django.db import transaction
@@ -976,22 +980,9 @@ class CrearLegajosView(View):
         except json.JSONDecodeError:
             return HttpResponseBadRequest("JSON inválido.")
 
-        estado_inicial, _ = EstadoLegajo.objects.get_or_create(
-            nombre="DOCUMENTO_PENDIENTE"
+        return JsonResponse(
+            ExpedienteService.crear_legajos_desde_filas(expediente, rows, user)
         )
-        creados = existentes = 0
-        for datos in rows:
-            ciudadano = CiudadanoService.get_or_create_ciudadano(datos, user)
-            _, was_created = ExpedienteCiudadano.objects.get_or_create(
-                expediente=expediente,
-                ciudadano=ciudadano,
-                defaults={"estado": estado_inicial},
-            )
-            if was_created:
-                creados += 1
-            else:
-                existentes += 1
-        return JsonResponse({"creados": creados, "existentes": existentes})
 
 
 class ExpedientePlantillaExcelView(View):
@@ -1760,14 +1751,14 @@ class RecepcionarExpedienteView(View):
             )
 
         expediente = get_object_or_404(Expediente, pk=pk)
-        if expediente.estado.nombre != "CONFIRMACION_DE_ENVIO":
-            msg = "El expediente no está pendiente de recepción."
+        try:
+            ExpedienteService.recepcionar(expediente, user)
+        except ValidationError as exc:
+            msg = "; ".join(exc.messages)
             if _is_ajax(request):
                 return JsonResponse({"success": False, "error": msg}, status=400)
             messages.warning(request, msg)
             return redirect("expediente_detail", pk=pk)
-
-        _set_estado(expediente, "RECEPCIONADO", user)
 
         if _is_ajax(request):
             return JsonResponse(
@@ -1973,31 +1964,13 @@ ESTADOS_CON_COMENTARIOS_PUBLICADOS = {
     RevisionTecnico.APROBADO,
 }
 
-#: Los comentarios técnicos se registran por tipo de documento; las
-#: observaciones de la Fase 2 usan las categorías previas. ANSES y condición
-#: diagnóstica son ambas cuestiones de documentación respaldatoria.
-MAPA_TIPO_DOCUMENTO_A_SUBSANACION = {
-    TipoDocumentoComentario.RENAPER.value: TipoSubsanacion.RENAPER,
-    TipoDocumentoComentario.ANSES.value: TipoSubsanacion.DOCUMENTACION,
-    TipoDocumentoComentario.CONDICION_DIAGNOSTICA.value: TipoSubsanacion.DOCUMENTACION,
-}
-
 
 def _observaciones_desde_comentarios_tecnicos(legajo):
     """Observaciones (tipo, detalle) derivadas de los comentarios técnicos.
 
-    Traduce las observaciones publicables del legajo al formato que consumen
-    `Subsanacion`/`SubsanacionObservacion`. Lista vacía si el legajo todavía no
-    tiene comentarios técnicos con observaciones."""
-    return [
-        (
-            MAPA_TIPO_DOCUMENTO_A_SUBSANACION.get(
-                comentario.tipo_documento, TipoSubsanacion.OTROS
-            ),
-            comentario.comentario,
-        )
-        for comentario in ComentariosTecnicosService.observaciones_publicables(legajo)
-    ]
+    Alias del service, que es donde vive la traducción. Se conserva el nombre
+    porque lo usan los tests y el resto del módulo."""
+    return RevisionService.observaciones_desde_comentarios_tecnicos(legajo)
 
 
 def _parse_observaciones_subsanacion(request, motivo_general):
@@ -2062,191 +2035,50 @@ class RevisarLegajoView(View):
             )
 
     def _rechazar(self, user, leg, motivo):
-        """Rechaza el legajo, registra la auditoría y publica las observaciones."""
-        estado_anterior = leg.revision_tecnico
-        leg.revision_tecnico = "RECHAZADO"
-        # Marcar RENAPER como rechazado también
-        if getattr(leg, "estado_validacion_renaper", 0) == 0:
-            leg.estado_validacion_renaper = 2
-
-        with transaction.atomic():
-            leg.save(
-                update_fields=[
-                    "revision_tecnico",
-                    "estado_validacion_renaper",
-                    "modificado_en",
-                    "estado_cupo",
-                    "es_titular_activo",
-                ]
-            )
-
-            HistorialValidacionTecnica.objects.create(
-                legajo=leg,
-                estado_anterior=estado_anterior,
-                estado_nuevo="RECHAZADO",
-                usuario=user,
-                motivo=motivo,
-            )
-
-            publicados = ComentariosTecnicosService.publicar(leg, usuario=user)
-
-        return JsonResponse(
-            {
-                "success": True,
-                "estado": leg.revision_tecnico,
-                "cupo_liberado": True,
-                "comentarios_publicados": publicados,
-            }
-        )
+        """Rechaza el legajo. La regla vive en `RevisionService.rechazar`."""
+        return JsonResponse(RevisionService.rechazar(leg, user, motivo))
 
     def _subsanar(self, request, user, leg, motivo):
-        """Solicita la subsanación: estado, observaciones y publicación."""
+        """Solicita la subsanación. La vista solo parsea el POST.
+
+        El fallback por request cubre los legajos previos al issue #2318, que
+        todavía no tienen comentarios técnicos: el service lo usa solo si no
+        encuentra observaciones publicables."""
         tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
-
-        # Las observaciones salen de los comentarios técnicos del legajo. Si
-        # todavía no tiene ninguno (legajos previos al issue #2318), se cae al
-        # parseo del POST para no romper el flujo anterior.
-        observaciones = _observaciones_desde_comentarios_tecnicos(
-            leg
-        ) or _parse_observaciones_subsanacion(request, motivo)
-
-        estado_anterior = leg.revision_tecnico
-        leg.revision_tecnico = RevisionTecnico.SUBSANAR
-        # Campos legacy: se preserva el primer tipo y el motivo general para
-        # compatibilidad con la UI y los datos previos a la Fase 1.
-        leg.subsanacion_tipo = (
-            observaciones[0][0] if observaciones else (tipo_subsanacion or None)
-        )
-        leg.subsanacion_motivo = motivo
-        leg.subsanacion_solicitada_en = timezone.now()
-        leg.subsanacion_usuario = user
-        # Nota: la subsanación técnica ya no marca estado_validacion_renaper=3.
-        # Ese estado queda reservado para la validación RENAPER real
-        # (ValidacionRenaperView). Así la respuesta se gestiona por el flujo
-        # unificado de subsanación (multi-archivo) en lugar del modal RENAPER.
-
-        with transaction.atomic():
-            leg.save(
-                update_fields=[
-                    "revision_tecnico",
-                    "subsanacion_tipo",
-                    "subsanacion_motivo",
-                    "subsanacion_solicitada_en",
-                    "subsanacion_usuario",
-                    "modificado_en",
-                    "estado_cupo",
-                    "es_titular_activo",
-                ]
-            )
-
-            HistorialValidacionTecnica.objects.create(
-                legajo=leg,
-                estado_anterior=estado_anterior,
-                estado_nuevo=RevisionTecnico.SUBSANAR,
-                usuario=user,
-                motivo=motivo,
-            )
-
-            subsanacion = Subsanacion.objects.create(
-                legajo=leg,
-                estado=SubsanacionEstado.PENDIENTE,
-                motivo_general=motivo,
-                solicitada_por=user,
-            )
-            SubsanacionObservacion.objects.bulk_create(
-                [
-                    SubsanacionObservacion(
-                        subsanacion=subsanacion, tipo=tipo, detalle=detalle
-                    )
-                    for tipo, detalle in observaciones
-                ]
-            )
-
-            publicados = ComentariosTecnicosService.publicar(leg, usuario=user)
-
         return JsonResponse(
-            {
-                "success": True,
-                "estado": str(RevisionTecnico.SUBSANAR),
-                "cupo_liberado": True,
-                "subsanacion_id": subsanacion.pk,
-                "observaciones": len(observaciones),
-                "comentarios_publicados": publicados,
-            }
+            RevisionService.subsanar(
+                leg,
+                user,
+                motivo,
+                tipo_subsanacion=tipo_subsanacion,
+                observaciones_fallback=_parse_observaciones_subsanacion(
+                    request, motivo
+                ),
+            )
         )
 
     def _eliminar_legajo(self, request, user, leg, *, revalidar_baja_provincial=False):
-        """Elimina un legajo (baja lógica en cascada) liberando el cupo si estaba
-        ocupado. Soporta el modo `preview` para confirmar antes de eliminar y
-        registra la acción. Devuelve siempre una JsonResponse."""
+        """Elimina un legajo delegando en `RevisionService.eliminar`.
+
+        La vista conserva el modo `preview` (que es de la UI) y la traducción de
+        los errores a JsonResponse. Devuelve siempre una JsonResponse."""
         try:
             get_data = getattr(request, "GET", {})
             post_data = getattr(request, "POST", {})
             preview_enabled = str(
                 post_data.get("preview") or get_data.get("preview") or ""
             )
-            if preview_enabled in {
-                "1",
-                "true",
-                "True",
-            } and is_soft_deletable_instance(leg):
-                payload = {
-                    "success": True,
-                    "preview": build_delete_preview(leg),
-                }
-                advertencia = ValidacionEdadService.advertencia_por_eliminacion(leg)
-                if advertencia:
-                    payload["menores_sin_responsable"] = advertencia
-                return JsonResponse(payload)
+            if preview_enabled in {"1", "true", "True"}:
+                payload = RevisionService.preview_eliminacion(leg)
+                if payload is not None:
+                    return JsonResponse(payload)
 
-            with transaction.atomic():
-                if revalidar_baja_provincial:
-                    expediente_bloqueado = (
-                        Expediente.objects.select_for_update()
-                        .select_related("estado")
-                        .get(pk=leg.expediente_id)
-                    )
-                    leg = (
-                        ExpedienteCiudadano.objects.select_for_update()
-                        .select_related("ciudadano")
-                        .get(pk=leg.pk, expediente=expediente_bloqueado)
-                    )
-                    can_delete_legajo(user, expediente_bloqueado, leg)
-
-                estado_expediente = getattr(
-                    getattr(leg.expediente, "estado", None), "nombre", ""
-                )
-
-                # Liberar cupo si estaba ocupado
-                if leg.estado_cupo == "DENTRO":
-                    try:
-                        CupoService.liberar_slot(
-                            legajo=leg,
-                            usuario=user,
-                            motivo="Eliminación de legajo del expediente",
-                        )
-                    except Exception as e:
-                        logger.error(
-                            "Error al liberar cupo para legajo %s: %s",
-                            leg.pk,
-                            e,
-                            exc_info=True,
-                        )
-
-                if is_soft_deletable_instance(leg):
-                    leg.delete(user=user, cascade=True)
-                else:
-                    leg.delete()
-
-            logger.info(
-                "Legajo %s eliminado por user=%s (expediente=%s, estado=%s).",
-                leg.pk,
-                getattr(user, "id", None),
-                leg.expediente_id,
-                estado_expediente,
-            )
             return JsonResponse(
-                {"success": True, "message": "Legajo eliminado correctamente."}
+                RevisionService.eliminar(
+                    leg,
+                    user,
+                    revalidar_baja_provincial=revalidar_baja_provincial,
+                )
             )
         except PermissionDenied as exc:
             return JsonResponse({"success": False, "error": str(exc)}, status=403)
@@ -2261,28 +2093,30 @@ class RevisarLegajoView(View):
             )
 
     def post(self, request, pk, legajo_id):
+        """Punto de entrada de la pantalla. Las reglas viven en RevisionService."""
         user = request.user
         expediente = get_object_or_404(Expediente, pk=pk)
+
+        accion = (request.POST.get("accion") or "").upper()
 
         es_admin = _is_admin(user)
         es_tecnico = _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
         es_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
         es_prov = _is_provincial(user)
+        solo_provincia = es_prov and not (es_admin or es_tecnico or es_coord)
 
-        accion = (request.POST.get("accion") or "").upper()
+        try:
+            RevisionService.verificar_permiso(user, expediente, accion)
+        except PermissionDenied as exc:
+            return JsonResponse({"success": False, "error": str(exc)}, status=403)
 
-        # Provincia (sin rol técnico/coordinador/admin): únicamente puede
-        # ELIMINAR legajos y solo antes del envío del expediente. Las acciones de
-        # revisión (APROBAR/RECHAZAR/SUBSANAR) quedan reservadas a técnicos y
-        # coordinadores.
-        if es_prov and not (es_admin or es_tecnico or es_coord):
-            if accion != "ELIMINAR":
-                return JsonResponse(
-                    {"success": False, "error": "Permiso denegado."}, status=403
-                )
-            leg = get_object_or_404(
-                ExpedienteCiudadano, pk=legajo_id, expediente=expediente
-            )
+        leg = get_object_or_404(
+            ExpedienteCiudadano, pk=legajo_id, expediente=expediente
+        )
+
+        # La provincia solo elimina, y con la validación extra de `can_delete_legajo`
+        # tanto acá como al confirmar, con el expediente bloqueado.
+        if solo_provincia:
             try:
                 can_delete_legajo(user, expediente, leg)
             except PermissionDenied as exc:
@@ -2291,63 +2125,13 @@ class RevisarLegajoView(View):
                 request, user, leg, revalidar_baja_provincial=True
             )
 
-        # Permisos: admin, técnico o coordinador
-        if not (es_admin or es_tecnico or es_coord):
+        try:
+            accion = RevisionService.validar_accion(accion)
+            RevisionService.validar_transicion(leg, accion)
+        except ValidationError as exc:
             return JsonResponse(
-                {"success": False, "error": "Permiso denegado."}, status=403
+                {"success": False, "error": "; ".join(exc.messages)}, status=400
             )
-
-        # Técnicos deben estar asignados; coordinadores quedan exceptuados
-        if not (es_admin or es_coord):
-            # Usar prefetch para evitar query adicional
-            tecnicos_ids = [
-                t.tecnico_id for t in expediente.asignaciones_tecnicos.all()
-            ]
-            if user.id not in tecnicos_ids:
-                return JsonResponse(
-                    {"success": False, "error": "No sos un técnico asignado."},
-                    status=403,
-                )
-
-        leg = get_object_or_404(
-            ExpedienteCiudadano, pk=legajo_id, expediente=expediente
-        )
-
-        if accion not in ("APROBAR", "RECHAZAR", "SUBSANAR", "ELIMINAR"):
-            return JsonResponse(
-                {"success": False, "error": "Acción inválida."}, status=400
-            )
-
-        estado_actual = leg.revision_tecnico
-        if accion in ("APROBAR", "RECHAZAR", "SUBSANAR"):
-            if estado_actual in (
-                RevisionTecnico.APROBADO,
-                RevisionTecnico.RECHAZADO,
-            ):
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": f"No se puede modificar un legajo en estado {estado_actual}.",
-                    },
-                    status=400,
-                )
-
-            transiciones_permitidas = {
-                RevisionTecnico.PENDIENTE: {"APROBAR", "RECHAZAR", "SUBSANAR"},
-                RevisionTecnico.SUBSANADO: {"APROBAR", "RECHAZAR", "SUBSANAR"},
-            }
-            acciones_permitidas = transiciones_permitidas.get(estado_actual, set())
-            if accion not in acciones_permitidas:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": (
-                            "La acción solicitada no es válida para el estado actual "
-                            f"del legajo ({estado_actual})."
-                        ),
-                    },
-                    status=400,
-                )
 
         # El motivo se compone antes de tocar el cupo y el estado: si no hay
         # nada que comunicar, el legajo tiene que quedar intacto.
@@ -2357,72 +2141,17 @@ class RevisarLegajoView(View):
             if error:
                 return error
 
-        # Si RECHAZAR / SUBSANAR y estaba dentro de cupo -> liberar
-        if accion in ("RECHAZAR", "SUBSANAR") and leg.estado_cupo == "DENTRO":
-            try:
-                CupoService.liberar_slot(
-                    legajo=leg,
-                    usuario=user,
-                    motivo=f"Salida del cupo por {accion.lower()} técnico en expediente",
-                )
-                leg.estado_cupo = "NO_EVAL"
-                leg.es_titular_activo = False
-            except Exception as e:
-                logger.error(
-                    "Error al liberar cupo para legajo %s: %s", leg.pk, e, exc_info=True
-                )
+        RevisionService.liberar_cupo_si_corresponde(leg, user, accion)
 
         if accion == "APROBAR":
-            estado_anterior = leg.revision_tecnico
-            leg.revision_tecnico = "APROBADO"
-            # Asegurar que RENAPER esté validado
-            if getattr(leg, "estado_validacion_renaper", 0) == 0:
-                leg.estado_validacion_renaper = 1
-            leg.save(
-                update_fields=[
-                    "revision_tecnico",
-                    "estado_validacion_renaper",
-                    "modificado_en",
-                    "estado_cupo",
-                    "es_titular_activo",
-                ]
-            )
-
-            HistorialValidacionTecnica.objects.create(
-                legajo=leg,
-                estado_anterior=estado_anterior,
-                estado_nuevo="APROBADO",
-                usuario=user,
-                motivo=None,
-            )
-
-            return JsonResponse(
-                {
-                    "success": True,
-                    "estado": leg.revision_tecnico,
-                    "cupo_liberado": False,
-                }
-            )
+            return JsonResponse(RevisionService.aprobar(leg, user))
 
         if accion == "RECHAZAR":
             return self._rechazar(user, leg, motivo)
 
-        # ELIMINAR - Solo coordinadores y admin (técnicos no eliminan)
         if accion == "ELIMINAR":
-            if not (
-                _is_admin(user)
-                or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
-            ):
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": "Solo coordinadores pueden eliminar legajos.",
-                    },
-                    status=403,
-                )
             return self._eliminar_legajo(request, user, leg)
 
-        # SUBSANAR
         return self._subsanar(request, user, leg, motivo)
 
 

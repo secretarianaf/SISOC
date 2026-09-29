@@ -5,6 +5,8 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.datastructures import MultiValueDict
 
+from encuestas.tests.helpers import publicar_para_test as publicar
+
 from encuestas.models import (
     CumplimientoRonda,
     Encuesta,
@@ -25,7 +27,6 @@ from encuestas.services import (
     crear_encuesta,
     get_rondas_pendientes,
     posponer_ronda,
-    publicar,
     registrar_respuesta,
     usuario_esta_segmentado,
 )

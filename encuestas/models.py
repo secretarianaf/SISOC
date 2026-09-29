@@ -7,6 +7,7 @@ from .validators import LISTADO_FILE_VALIDATORS, TIPOS_PREGUNTA_PONDERABLES
 
 class EstadoEncuesta(models.TextChoices):
     BORRADOR = "borrador", "Borrador"
+    PENDIENTE_APROBACION = "pendiente_aprobacion", "Pendiente aprobación"
     PUBLICADA = "publicada", "Publicada"
     CERRADA = "cerrada", "Cerrada"
     ARCHIVADA = "archivada", "Archivada"
@@ -31,6 +32,8 @@ class OperadorCondicion(models.TextChoices):
 class TipoSegmentacion(models.TextChoices):
     TODOS_LOS_USUARIOS = "todos_los_usuarios", "Todos los usuarios"
     LISTADO_DOCUMENTOS = "listado_documentos", "Listado de documentos"
+    LISTADO_USUARIOS = "listado_usuarios", "Listado de IDs de usuarios"
+    GRUPOS = "grupos", "Grupos de usuarios"
 
 
 class TipoDocumento(models.TextChoices):
@@ -59,6 +62,23 @@ class Encuesta(models.Model):
         verbose_name="Estado",
     )
     es_anonima = models.BooleanField(default=False, verbose_name="¿Es anónima?")
+    motivo_rechazo = models.TextField(
+        blank=True,
+        default="",
+        max_length=2000,
+        verbose_name="Motivo del último rechazo",
+    )
+    fecha_rechazo = models.DateTimeField(
+        null=True, blank=True, verbose_name="Fecha del último rechazo"
+    )
+    usuario_rechazo = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="encuestas_rechazadas",
+        verbose_name="Último rechazo por",
+    )
     es_obligatoria = models.BooleanField(default=False, verbose_name="¿Es obligatoria?")
     es_opcional = models.BooleanField(
         default=False, verbose_name="¿Se puede descartar?"
@@ -118,6 +138,10 @@ class Encuesta(models.Model):
         ]
         permissions = [
             ("ver_resultados", "Puede ver los resultados de las encuestas"),
+            (
+                "aprobar_encuesta",
+                "Puede aprobar o rechazar la publicación de encuestas",
+            ),
         ]
 
     def __str__(self):
@@ -278,6 +302,18 @@ class OpcionPregunta(models.Model):
 
 
 class SegmentacionEncuesta(models.Model):
+    grupos = models.ManyToManyField(
+        "auth.Group",
+        blank=True,
+        related_name="segmentaciones_encuestas",
+        verbose_name="Grupos destinatarios",
+    )
+    usuarios = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name="segmentaciones_encuestas",
+        verbose_name="Usuarios destinatarios",
+    )
     encuesta = models.OneToOneField(
         Encuesta,
         on_delete=models.CASCADE,

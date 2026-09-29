@@ -14,6 +14,7 @@
     <div class="encuesta-editor"
          data-tipos-con-opciones="{{ tipos_pregunta_con_opciones }}"
          data-tipos-ponderables="{{ tipos_pregunta_ponderables }}">
+        {% include 'encuestas/partials/motivo_rechazo.html' with encuesta=form.instance %}
         <div class="d-flex justify-content-between align-items-start mb-3">
             <h2 class="mb-0">
                 {% if form.instance.pk %}

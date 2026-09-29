@@ -1,11 +1,12 @@
 import csv
 import json
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Q
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -15,8 +16,16 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from core.services.csv_export import build_csv_response
 
-from .forms import EncuestaForm
-from .models import Encuesta, OperadorCondicion, RondaEncuesta, TipoPregunta
+from .forms import EncuestaForm, RechazoEncuestaForm
+from .filters import FILTER_ENGINE, get_filters_config
+from .models import (
+    Encuesta,
+    EstadoEncuesta,
+    OperadorCondicion,
+    RondaEncuesta,
+    TipoPregunta,
+    TipoSegmentacion,
+)
 from .services import (
     actualizar_encuesta,
     actualizar_segmentacion,
@@ -29,6 +38,8 @@ from .services import (
     importar_encuesta,
     posponer_ronda,
     publicar,
+    solicitar_publicacion,
+    rechazar_publicacion,
     quitar_destinatario,
     registrar_respuesta,
     reemplazar_preguntas,
@@ -96,12 +107,35 @@ class EncuestaListView(LoginRequiredMixin, ListView):
     context_object_name = "encuestas"
     paginate_by = 20
 
+    def get(self, request, *args, **kwargs):
+        # Conserva los enlaces anteriores y muestra sus filtros en el buscador.
+        if "filters" not in request.GET:
+            items = []
+            if request.GET.get("busqueda", "").strip():
+                items.append(
+                    {
+                        "field": "titulo",
+                        "op": "contains",
+                        "value": request.GET["busqueda"].strip(),
+                    }
+                )
+            if request.GET.get("estado") in EstadoEncuesta.values:
+                items.append(
+                    {"field": "estado", "op": "eq", "value": request.GET["estado"]}
+                )
+            if items:
+                params = request.GET.copy()
+                params.pop("busqueda", None)
+                params.pop("estado", None)
+                params["filters"] = json.dumps({"logic": "AND", "items": items})
+                return HttpResponseRedirect(
+                    f"{reverse('encuestas_listar')}?{params.urlencode()}"
+                )
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
         queryset = get_encuestas_queryset()
-        busqueda = (self.request.GET.get("busqueda") or "").strip()
-        if busqueda:
-            queryset = queryset.filter(Q(titulo__icontains=busqueda))
-        return queryset
+        return FILTER_ENGINE.filter_queryset(queryset, self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -122,6 +156,36 @@ class EncuestaListView(LoginRequiredMixin, ListView):
             "encuestas.ver_resultados"
         )
         context["busqueda"] = (self.request.GET.get("busqueda") or "").strip()
+        context["puede_aprobar"] = self.request.user.has_perm(
+            "encuestas.aprobar_encuesta"
+        )
+        context["puede_editar"] = self.request.user.has_perm(
+            "encuestas.change_encuesta"
+        )
+        context["pendientes_aprobacion"] = Encuesta.objects.filter(
+            estado=EstadoEncuesta.PENDIENTE_APROBACION
+        ).count()
+        context["filters_config"] = get_filters_config()
+        context["pendientes_url"] = (
+            reverse("encuestas_listar")
+            + "?"
+            + urlencode(
+                {
+                    "filters": json.dumps(
+                        {
+                            "logic": "AND",
+                            "items": [
+                                {
+                                    "field": "estado",
+                                    "op": "eq",
+                                    "value": EstadoEncuesta.PENDIENTE_APROBACION,
+                                }
+                            ],
+                        }
+                    )
+                }
+            )
+        )
         return context
 
 
@@ -185,6 +249,14 @@ class EncuestaCreateView(LoginRequiredMixin, EncuestaFormMixin, CreateView):
 
 
 class EncuestaUpdateView(LoginRequiredMixin, EncuestaFormMixin, UpdateView):
+    def get(self, request, *args, **kwargs):
+        encuesta = self.get_object()
+        if encuesta.estado == EstadoEncuesta.PENDIENTE_APROBACION:
+            return HttpResponseRedirect(
+                reverse("encuestas_revision", args=[encuesta.pk])
+            )
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
         return get_encuestas_queryset()
 
@@ -243,14 +315,66 @@ class EncuestaImportarView(LoginRequiredMixin, View):
 
 
 class EncuestaPublicarView(LoginRequiredMixin, View):
+    accion = staticmethod(solicitar_publicacion)
+    mensaje = "Publicación solicitada. La encuesta está pendiente de aprobación."
+
     def post(self, request, pk):
         encuesta = get_object_or_404(get_encuestas_queryset(), pk=pk)
         try:
-            publicar(encuesta, usuario=request.user)
+            self.accion(encuesta, usuario=request.user)
         except ValidationError as exc:
             messages.error(request, _mensaje_error(exc))
         else:
-            messages.success(request, "Encuesta publicada correctamente.")
+            messages.success(request, self.mensaje)
+        return HttpResponseRedirect(reverse("encuestas_listar"))
+
+
+class EncuestaAprobarView(EncuestaPublicarView):
+    accion = staticmethod(publicar)
+    mensaje = "Encuesta aprobada y publicada correctamente."
+
+
+class EncuestaRevisionView(LoginRequiredMixin, DetailView):
+    model = Encuesta
+    template_name = "encuestas/encuesta_revision.html"
+    context_object_name = "encuesta"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["preguntas"] = (
+            self.object.preguntas.select_related("pregunta_condicion")
+            .prefetch_related("opciones")
+            .order_by("orden")
+        )
+        context["segmentacion"] = getattr(self.object, "segmentacion", None)
+        context.setdefault("rechazo_form", RechazoEncuestaForm())
+        return context
+
+
+class EncuestaRechazarView(EncuestaRevisionView):
+    http_method_names = ["post"]
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = RechazoEncuestaForm(request.POST)
+        if not form.is_valid():
+            return self.render_to_response(
+                self.get_context_data(rechazo_form=form, abrir_modal_rechazo=True),
+                status=400,
+            )
+        try:
+            rechazar_publicacion(
+                self.object, usuario=request.user, motivo=form.cleaned_data["motivo"]
+            )
+        except ValidationError as exc:
+            messages.error(request, _mensaje_error(exc))
+            return HttpResponseRedirect(
+                reverse("encuestas_revision", args=[self.object.pk])
+            )
+        messages.success(
+            request,
+            "Solicitud rechazada. El gestor podrá ver el motivo y corregir la encuesta.",
+        )
         return HttpResponseRedirect(reverse("encuestas_listar"))
 
 
@@ -367,10 +491,15 @@ class EncuestaResultadosExportarView(LoginRequiredMixin, View):
 
 
 class EncuestaSegmentacionView(LoginRequiredMixin, DetailView):
-    """Gestión de destinatarios, separada del formulario de edición general
-    a propósito: a diferencia de preguntas/config, la segmentación se puede
-    modificar en caliente con una ronda ya abierta (regla de negocio 12), y
-    EncuestaUpdateView bloquea justamente eso."""
+    """Gestión de destinatarios; los pendientes solo permiten revisión."""
+
+    def get(self, request, *args, **kwargs):
+        encuesta = self.get_object()
+        if encuesta.estado == EstadoEncuesta.PENDIENTE_APROBACION:
+            return HttpResponseRedirect(
+                reverse("encuestas_revision", args=[encuesta.pk])
+            )
+        return super().get(request, *args, **kwargs)
 
     model = Encuesta
     template_name = "encuestas/encuesta_segmentacion.html"
@@ -388,21 +517,40 @@ class EncuestaSegmentacionView(LoginRequiredMixin, DetailView):
             if segmentacion
             else []
         )
+        context["usuarios_destinatarios"] = (
+            segmentacion.usuarios.order_by("pk") if segmentacion else []
+        )
+        context["grupos_disponibles"] = Group.objects.order_by("name")
+        context["grupos_seleccionados"] = (
+            set(segmentacion.grupos.values_list("pk", flat=True))
+            if segmentacion
+            else set()
+        )
         return context
 
 
 class SegmentacionPlantillaDownloadView(LoginRequiredMixin, View):
-    """Descarga el Excel de plantilla para cargar el listado de destinatarios
-    (columnas tipo_documento/numero_documento, ver encuestas/validators.py)."""
+    """Descarga la plantilla Excel de documentos o IDs de usuarios."""
 
     def get(self, request, pk):
         get_object_or_404(get_encuestas_queryset(), pk=pk)
+        tipo = request.GET.get("tipo", TipoSegmentacion.LISTADO_DOCUMENTOS)
+        if tipo not in (
+            TipoSegmentacion.LISTADO_DOCUMENTOS,
+            TipoSegmentacion.LISTADO_USUARIOS,
+        ):
+            raise Http404
+        por_usuario = tipo == TipoSegmentacion.LISTADO_USUARIOS
         response = HttpResponse(
-            generar_plantilla_listado(), content_type=EXCEL_CONTENT_TYPE
+            generar_plantilla_listado(por_usuario=por_usuario),
+            content_type=EXCEL_CONTENT_TYPE,
         )
-        response["Content-Disposition"] = (
-            f'attachment; filename="{LISTADO_TEMPLATE_FILENAME}"'
+        filename = (
+            "plantilla_encuestas_usuarios.xlsx"
+            if por_usuario
+            else LISTADO_TEMPLATE_FILENAME
         )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
 
 
@@ -414,6 +562,7 @@ class SegmentacionTipoUpdateView(LoginRequiredMixin, View):
                 encuesta,
                 tipo=request.POST.get("tipo", ""),
                 archivo=request.FILES.get("archivo_listado"),
+                grupos_ids=request.POST.getlist("grupos"),
             )
         except ValidationError as exc:
             messages.error(request, _mensaje_error(exc))
@@ -430,6 +579,7 @@ class SegmentacionAgregarDestinatarioView(LoginRequiredMixin, View):
                 encuesta,
                 tipo_documento=request.POST.get("tipo_documento", ""),
                 numero_documento=request.POST.get("numero_documento", ""),
+                usuario_id=request.POST.get("usuario_id"),
             )
         except ValidationError as exc:
             messages.error(request, _mensaje_error(exc))

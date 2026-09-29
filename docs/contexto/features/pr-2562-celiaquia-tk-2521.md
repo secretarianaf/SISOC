@@ -13,7 +13,7 @@
 
 ## Arquitectura tocada
 
-- No se detectó un patrón arquitectónico dominante más allá del diff observado.
+- Se modifican templates, con posible impacto visual o de composición UI.
 
 ## Decisiones y supuestos detectados
 
@@ -24,15 +24,20 @@
 
 ## Design system y UI
 
-- Sin cambios visibles de UI o design system detectados en el diff.
+- El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
+- Archivos visuales relevantes: celiaquia/templates/celiaquia/expediente_detail.html, celiaquia/templates/celiaquia/expediente_list.html
 
 ## Memoria operativa para agentes
 
 - Empezar por `docs/registro/prs/PR-2562.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `celiaquia/templates/celiaquia/expediente_detail.html`
+- `celiaquia/templates/celiaquia/expediente_list.html`
 - `celiaquia/tests/test_expediente_excel_audit.py`
 - `celiaquia/views/expediente.py`
+- `docs/contexto/features/pr-2562-celiaquia-tk-2521.md`
 - `docs/registro/cambios/2026-09-23-2521-tecnico-descarga-excel-provincia.md`
+- `docs/registro/prs/PR-2562.md`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

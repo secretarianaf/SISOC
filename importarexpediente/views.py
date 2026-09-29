@@ -323,10 +323,10 @@ class ImportarExpedienteListView(LoginRequiredMixin, ListView):
         queryset = ArchivosImportados.objects.select_related("usuario").order_by(
             "-fecha_subida"
         )
-        queryset = IMPORTAREXPEDIENTE_ADVANCED_FILTER.filter_queryset(
+        # Sin `distinct()`: el mapeo no cruza relaciones multivaluadas.
+        return IMPORTAREXPEDIENTE_ADVANCED_FILTER.filter_queryset(
             queryset, self.request
         )
-        return queryset.distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

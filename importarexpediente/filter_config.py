@@ -18,7 +18,10 @@ FIELD_MAP: Dict[str, str] = {
     "count_errores": "count_errores",
     "count_exitos": "count_exitos",
     "importacion_completada": "importacion_completada",
-    "fecha_subida": "fecha_subida",
+    # `fecha_subida` es DateTimeField y el filtro es de tipo `date`: sin
+    # `__date` el engine compararia contra la medianoche y con USE_TZ=True no
+    # matchearia nunca. Mismo patron que celiaquia, rendicion y CDF.
+    "fecha_subida": "fecha_subida__date",
 }
 
 FIELD_TYPES: Dict[str, str] = {

@@ -849,8 +849,8 @@ class SedeListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = SedeVPSL.objects.order_by("jurisdiccion", "localidad", "nombre")
-        queryset = SEDE_ADVANCED_FILTER.filter_queryset(queryset, self.request)
-        return queryset.distinct()
+        # Sin `distinct()`: el mapeo de sedes solo toca campos locales.
+        return SEDE_ADVANCED_FILTER.filter_queryset(queryset, self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -8,8 +8,10 @@ la busqueda que cada listado ya tenia sigue funcionando.
 import json
 
 import pytest
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, Permission, User
+from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
+from django.utils import timezone
 
 pytestmark = pytest.mark.django_db
 
@@ -240,3 +242,149 @@ def test_itinerarios_conserva_su_busqueda_libre_y_su_panel(client, admin):
     assert 'name="busqueda"' in contenido
     assert 'form="filters-form"' in contenido
     assert "poncho-filter-row-template" in contenido
+
+
+# --- Caminos criticos ------------------------------------------------------
+# Los casos de arriba corren con superusuario, que no tiene scope. Estos cubren
+# lo que el superusuario no puede mostrar: que filtrar no amplie el alcance, que
+# el export respete los filtros y que las fechas funcionen sobre un DateTimeField.
+
+
+def _dar_rol(usuario, codename, nombre):
+    """`auth.role_*` son permisos de rol colgados del ContentType de Group."""
+
+    permiso, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename=codename,
+        defaults={"name": nombre},
+    )
+    usuario.user_permissions.add(permiso)
+
+
+def _usuario_provincial(client, username, provincia):
+    from users.models import Profile, ProfileTerritorialScope
+
+    usuario = User.objects.create_user(username=username, password="test1234")
+    perfil, _ = Profile.objects.get_or_create(user=usuario)
+    perfil.provincia = provincia
+    perfil.es_usuario_provincial = True
+    perfil.save()
+    ProfileTerritorialScope.objects.create(profile=perfil, provincia=provincia)
+    usuario.user_permissions.add(
+        Permission.objects.get(
+            codename="view_centrodeinfancia",
+            content_type__app_label="centrodeinfancia",
+        )
+    )
+    _dar_rol(usuario, "role_exportar_a_csv", "Exportar a csv")
+    client.force_login(User.objects.get(pk=usuario.pk))
+    return usuario
+
+
+def test_centro_de_infancia_el_filtro_no_amplia_el_alcance_provincial(client):
+    """Filtrar acota dentro del scope; nunca lo abre.
+
+    El engine corre despues de `_aplicar_scope_centros_cdi`, asi que un centro de
+    otra provincia no puede aparecer aunque matchee el filtro.
+    """
+
+    from centrodeinfancia.models import CentroDeInfancia
+    from core.models import Provincia
+
+    propia = Provincia.objects.create(nombre="Chaco")
+    ajena = Provincia.objects.create(nombre="Salta")
+    _usuario_provincial(client, "cdi_provincial", propia)
+
+    dentro = CentroDeInfancia.objects.create(
+        nombre="CDI Propio", organizacion="Fundación Alfa", provincia=propia
+    )
+    CentroDeInfancia.objects.create(
+        nombre="CDI Ajeno", organizacion="Fundación Alfa", provincia=ajena
+    )
+
+    response = client.get(
+        reverse("centrodeinfancia"),
+        {
+            "filters": _filtros(
+                [{"field": "organizacion", "op": "contains", "value": "Alfa"}]
+            )
+        },
+    )
+
+    assert [c.pk for c in response.context["centros"]] == [dentro.pk]
+
+
+def test_el_export_de_cdi_aplica_los_filtros_combinables(client, admin):
+    """`export_helper.js` reenvia `?filters=`: el CSV tiene que respetarlos.
+
+    Antes de migrar, el export leia `busqueda`. Al quedar ese parametro fuera de
+    la UI, exportaba el universo completo del scope aunque el usuario filtrara.
+    """
+
+    from centrodeinfancia.models import CentroDeInfancia
+
+    CentroDeInfancia.objects.create(nombre="CDI Alfa", organizacion="Fundación Alfa")
+    CentroDeInfancia.objects.create(nombre="CDI Beta", organizacion="Fundación Beta")
+
+    response = client.get(
+        reverse("centrodeinfancia_exportar"),
+        {
+            "filters": _filtros(
+                [{"field": "organizacion", "op": "contains", "value": "Alfa"}]
+            )
+        },
+    )
+    contenido = b"".join(response.streaming_content).decode("utf-8-sig")
+
+    assert response.status_code == 200
+    assert "CDI Alfa" in contenido
+    assert "CDI Beta" not in contenido
+
+
+def test_el_export_de_cdi_no_escapa_del_alcance_del_usuario(client):
+    from centrodeinfancia.models import CentroDeInfancia
+    from core.models import Provincia
+
+    propia = Provincia.objects.create(nombre="Chaco")
+    ajena = Provincia.objects.create(nombre="Salta")
+    _usuario_provincial(client, "cdi_export_provincial", propia)
+
+    CentroDeInfancia.objects.create(
+        nombre="CDI Propio", organizacion="Fundación Alfa", provincia=propia
+    )
+    CentroDeInfancia.objects.create(
+        nombre="CDI Ajeno", organizacion="Fundación Alfa", provincia=ajena
+    )
+
+    response = client.get(
+        reverse("centrodeinfancia_exportar"),
+        {
+            "filters": _filtros(
+                [{"field": "organizacion", "op": "contains", "value": "Alfa"}]
+            )
+        },
+    )
+    contenido = b"".join(response.streaming_content).decode("utf-8-sig")
+
+    assert "CDI Propio" in contenido
+    assert "CDI Ajeno" not in contenido
+
+
+def test_importar_expedientes_filtra_por_fecha_de_subida(client, admin):
+    """`fecha_subida` es DateTimeField y el filtro es de tipo `date`.
+
+    Sin el mapeo a `__date`, el engine comparaba contra la medianoche y con
+    `USE_TZ=True` el registro de hoy no aparecia nunca.
+    """
+
+    from importarexpediente.models import ArchivosImportados
+
+    archivo = ArchivosImportados.objects.create(archivo="hoy.csv", usuario=admin)
+    hoy = timezone.localtime(archivo.fecha_subida).date().isoformat()
+
+    response = client.get(
+        reverse("importarexpedientes_list"),
+        {"filters": _filtros([{"field": "fecha_subida", "op": "eq", "value": hoy}])},
+    )
+
+    assert [a.pk for a in response.context["archivos_importados"]] == [archivo.pk]

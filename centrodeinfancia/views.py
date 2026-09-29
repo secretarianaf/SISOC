@@ -332,10 +332,13 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
             "localidad",
         ).annotate(tiene_nomina=Exists(nomina_subquery))
         queryset = _aplicar_scope_centros_cdi(queryset, self.request.user)
+        # Sin `distinct()`: todos los campos de `filter_config` son locales o FK
+        # hacia adelante, asi que ninguna fila se duplica. En MySQL forzaria un
+        # SELECT DISTINCT sobre todas las columnas y un COUNT por subconsulta.
         queryset = CENTRODEINFANCIA_ADVANCED_FILTER.filter_queryset(
             queryset, self.request
         )
-        return queryset.distinct().order_by("nombre")
+        return queryset.order_by("nombre")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

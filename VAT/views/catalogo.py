@@ -35,13 +35,13 @@ from VAT.services.access_scope import (
     is_vat_provincial,
     is_vat_sse,
 )
-from users.territorial_scope import apply_full_province_scope
 from VAT.catalogo_filter_config import (
     MODALIDAD_ADVANCED_FILTER,
     PLAN_ADVANCED_FILTER,
     get_modalidad_filters_ui_config,
     get_plan_filters_ui_config,
 )
+from users.territorial_scope import apply_full_province_scope
 
 # ============ MODALIDAD CURSADA ============
 
@@ -53,10 +53,11 @@ class ModalidadCursadaListView(LoginRequiredMixin, ListView):
     paginate_by = 50
 
     def get_queryset(self):
+        # Sin `distinct()`: el mapeo solo toca campos locales.
         queryset = MODALIDAD_ADVANCED_FILTER.filter_queryset(
             super().get_queryset(), self.request
         )
-        return queryset.distinct().order_by("nombre")
+        return queryset.order_by("nombre")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -468,6 +469,8 @@ class PlanVersionCurricularListView(
             queryset = queryset.filter(activo=True)
         elif activo == "false":
             queryset = queryset.filter(activo=False)
+        # `distinct()` si hace falta: el mapeo filtra por `titulos__nombre`, que
+        # es M2M y duplica el plan una vez por titulo que matchea.
         return queryset.distinct()
 
     def get_context_data(self, **kwargs):

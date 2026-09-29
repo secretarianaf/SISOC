@@ -1,12 +1,29 @@
 from django.http import HttpResponseServerError
 from django.template import loader
+from django.views import defaults
 from drf_spectacular.views import SpectacularAPIView
 
+from config.api_errors import es_ruta_api, respuesta_json_404, respuesta_json_500
 
-def server_error(_request, template_name="500.html"):
-    """Return a static 500 error response without invoking context processors."""
+
+def server_error(request, template_name="500.html"):
+    """Return a static 500 error response without invoking context processors.
+
+    Bajo ``/api/`` responde ``{"detail": ...}`` en JSON: la app y GESTIONAR no
+    pueden leer la página HTML.
+    """
+    if es_ruta_api(request):
+        return respuesta_json_500()
     template = loader.get_template(template_name)
     return HttpResponseServerError(template.render())
+
+
+def page_not_found(request, exception, template_name="404.html"):
+    """404 de ruteo: JSON bajo ``/api/`` (p. ej. un pk no numérico), la página
+    de siempre en el resto del sitio."""
+    if es_ruta_api(request):
+        return respuesta_json_404()
+    return defaults.page_not_found(request, exception, template_name=template_name)
 
 
 class VatSpectacularAPIView(SpectacularAPIView):

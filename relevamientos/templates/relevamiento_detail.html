@@ -1,7 +1,7 @@
 {% extends "includes/main.html" %};
 {% load static custom_filters image_tags %}
 ;
-{% block title %}Relevamiento - Comedor: {{ comedor.nombre }}{% endblock %}
+{% block title %}Acompañamiento Territorial - Comedor: {{ comedor.nombre }}{% endblock %}
 ;
 {% block titulo-pagina %}
     <div class="mb-4">
@@ -10,7 +10,7 @@
     </div>
 
     {{ relevamiento.comedor.nombre }}
-    <span class="ml-2 h5">| Relevamiento</span>
+    <span class="ml-2 h5">| Acompañamiento Territorial</span>
     <span class="ml-2 h5">| {{ relevamiento.fecha_visita | default_if_none:"Sin información" }} |</span>
     <span class="ml-2 h5"
           {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
@@ -18,7 +18,7 @@
     </span>
     {% if relevamiento.sincronizado_gestionar %}
         <span class="badge bg-success ml-2"
-              title="El relevamiento se sincronizó con GESTIONAR">Sincronizado con GESTIONAR</span>
+              title="El acompañamiento territorial se sincronizó con GESTIONAR">Sincronizado con GESTIONAR</span>
     {% endif %}
     {% if relevamiento.estado_validacion %}
         <span class="badge ml-2 {% if relevamiento.estado_validacion == 'Validado' %}bg-success{% elif relevamiento.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}"
@@ -47,7 +47,7 @@
             <a href="{% url 'comedor_detalle' relevamiento.comedor.id %}">{{ relevamiento.comedor.nombre }}</a>
         </div>
         <div class="breadcrumb-item active">
-            Relevamiento {{ relevamiento.fecha_visita | default_if_none:"Sin información" }}
+            Acompañamiento Territorial {{ relevamiento.fecha_visita | default_if_none:"Sin información" }}
         </div>
     </ol>
 {% endblock %}
@@ -135,9 +135,9 @@
                                           name="observaciones_coordinador"
                                           class="form-control"
                                           rows="4"
-                                          placeholder="Qué debe corregir el territorial (obligatorio si devuelve el relevamiento)">{{ relevamiento.observaciones_coordinador|default_if_none:"" }}</textarea>
+                                          placeholder="Qué debe corregir el territorial (obligatorio si devuelve el acompañamiento territorial)">{{ relevamiento.observaciones_coordinador|default_if_none:"" }}</textarea>
                             </div>
-                            <small class="text-muted">Si valida, el territorial ya no podrá modificar el relevamiento desde la app.</small>
+                            <small class="text-muted">Si valida, el territorial ya no podrá modificar el acompañamiento territorial desde la app.</small>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -177,7 +177,7 @@
                                     <option value="" selected disabled>Seleccionar territorial</option>
                                 </select>
                             </div>
-                            <small class="text-muted">Al confirmar, el relevamiento pasará a estado Visita pendiente.</small>
+                            <small class="text-muted">Al confirmar, el acompañamiento territorial pasará a estado Visita pendiente.</small>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -238,7 +238,7 @@
         <div class="col-3">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title font-weight-bold mr-3">Relevamiento</h3>
+                    <h3 class="card-title font-weight-bold mr-3">Acompañamiento Territorial</h3>
                     <div class="card-tools">
                         <button type="button" class="btn btn-tool" data-card-widget="collapse">
                             <i class="fas fa-minus"></i>
@@ -441,7 +441,7 @@
         </div>
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title font-weight-bold mr-3 pt-1">Datos del responsable del relevamiento</h3>
+                <h3 class="card-title font-weight-bold mr-3 pt-1">Datos del responsable del acompañamiento territorial</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse">
                         <i class="fas fa-minus"></i>

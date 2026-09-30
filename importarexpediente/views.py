@@ -422,6 +422,7 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["volver_url"] = reverse("importarexpedientes_list")
         errores = ErroresImportacion.objects.filter(
             archivo_importado=self.batch
         ).order_by("fila")

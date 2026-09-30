@@ -14,6 +14,10 @@ Primer paso del ADR `docs/registro/decisiones/2026-09-30-monorepo-kernel-backend
 - El tooling estático declara la misma raíz: `.pylintrc` (`init-hook`),
   `pytest.ini` (`pythonpath`) y `.github/workflows/architecture.yml`
   (`PYTHONPATH` para import-linter).
+- Pylint: se desactiva `C0411` (wrong-import-order), porque el isort interno
+  de pylint no lee la configuración del proyecto y clasifica los paquetes de
+  `kernel/` como third party. El job de CI agrega `kernel/*/*.py`: sin
+  globstar, `**/*.py` solo cubre un nivel de carpetas.
 - Se ajustaron las rutas que dependían de la ubicación física: el fixture
   territorial, el comando `export_relaciones_territoriales_fixture`,
   `debug_queries`, el generador del mapa de arquitectura y los tests que leen

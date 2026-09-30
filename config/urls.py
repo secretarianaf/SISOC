@@ -2,13 +2,14 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from django.urls import include, path
+from django.urls import include, path, re_path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
     SpectacularRedocView,
 )
 from config.views import VatSpectacularAPIView
+from core.v2_frontend import frontend_v2
 from users.views import (
     PasswordResetConfirmCustomView,
     SisocPasswordResetCompleteView,
@@ -18,6 +19,11 @@ from users.views import (
 )
 
 urlpatterns = [
+    re_path(
+        r"^v2/(?P<module>[a-z0-9_-]+)(?:/(?P<asset_path>.*))?$",
+        frontend_v2,
+        name="frontend_v2",
+    ),
     path("login/", UsuariosLoginView.as_view(), name="login"),
     path("password_reset/", SisocPasswordResetView.as_view(), name="password_reset"),
     path(
@@ -65,6 +71,7 @@ urlpatterns = [
     path("celiaquia/", include("celiaquia.urls")),
     # API URLs
     path("api/users/", include("users.api_urls")),
+    path("api/vpsl/", include("ver_para_ser_libre.api_urls")),
     path("api/comedores/", include("comedores.api_urls")),
     path("api/territorial/", include("comedores.api_urls_territorial")),
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),

@@ -36,6 +36,9 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - La logica de negocio suele vivir en `services/` cuando la app la tiene, pero coexisten apps mas legacy con mas logica en `views.py`, `models.py` o `tasks.py`.
 - Hay un esfuerzo explicito de control arquitectonico incremental con `import-linter` (`.importlinter`) para evitar que el monolito siga acoplandose.
 - Los modulos nuevos deben nacer como verticales extraibles dentro del monolito; la regla aplicable y sus limites actuales viven en `docs/ia/MODULAR_BOUNDARIES.md`.
+- VPSL convive con sus pantallas Django existentes y el nuevo React en `/v2/vpsl/`. La app está en `frontends/apps/vpsl/`, usa `@sisoc/ui` y `@sisoc/api`, y se sirve desde `front_vpsl` por el router autenticado `core/v2_frontend.py`. La API `/api/vpsl/` corre en el Django principal y reutiliza la lógica del dominio, con adaptadores de ModelForms/vistas existentes y alcance compartido en `services/access.py`. Ver `docs/implementaciones/frontend_v2.md` y `docs/operacion/ver_para_ser_libre_react.md`.
+- Registro nominal React: `frontends/apps/vpsl/src/Workflow.tsx` replica las secciones y reglas condicionales de `registro_form.html`; el schema de `api_workflow.py` incluye `renaper_estado` oculto y `graduacion_opcional` desde el ModelForm oficial para registros históricos. Crear usa Guardar y continuar y recarga el schema para el siguiente número de acta. La compatibilidad con PR #2566 se verifica en `ver_para_ser_libre/tests/test_api_compatibilidad.py` y `frontends/apps/vpsl/src/Workflow.test.tsx`; los límites de promoción están en `docs/operacion/ver_para_ser_libre_react.md`.
+- El tema visual de Front v2 usa `getTheme(mode)` de `frontends/packages/ui/src/theme.ts`, con correcciones de contraste AA; las reglas de componentes y UX vigentes están en `docs/implementaciones/frontend_v2.md`.
 
 ### Inferencias utiles
 
@@ -70,7 +73,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Bootstrap/AdminLTE/Select2 | Hecho observado | `static/dist/`, `requirements`, templates |
 | PWA backend + endpoints | Hecho observado | `pwa/`, `config/urls.py`, docs PWA |
 | Toolchain Node formal en raiz | No confirmado como toolchain real; mas bien ausente | hay `package-lock.json` en raiz, pero no `package.json` |
-| Front v2 React (`/v2/<modulo>/`, `frontends/`) | Regla vigente, implementacion pendiente | `docs/implementaciones/frontend_v2.md`, `docs/registro/decisiones/2026-09-24-frontend-v2-react.md` |
+| Front v2 React 19 + Vite + MUI | Hecho observado | `frontends/apps/vpsl/`, `frontends/packages/ui/`, `frontends/packages/api/` |
 
 ### Operacion y CI
 
@@ -109,7 +112,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ### Hechos observados
 
-- `docker-compose.yml` levanta `mysql`, `django`, `ocr_worker` y `encuestas_worker`.
+- `docker-compose.yml` levanta `mysql`, `django`, `ocr_worker`, `encuestas_worker` y `front_vpsl`. Este último solo expone su puerto dentro de la red de Compose; Django entrega `/v2/vpsl/` al navegador.
 - El contenedor `django` monta el repo completo en `/sisoc/`.
 - `docker/django/entrypoint.py` espera MySQL, puede correr `makemigrations`, siempre corre `migrate`, `load_fixtures`, `create_test_users`, `create_groups`, y luego levanta `runserver` o `gunicorn` segun `ENVIRONMENT`.
 
@@ -314,7 +317,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
-| `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito; el alta de itinerarios permite elegir cualquier provincia con `create_itinerarios_any_province_vpsl` si el perfil tiene una provincia asignada, y el permiso permite ver solo los itinerarios propios fuera de ella; los itinerarios ya no seleccionan ni aprueban sedes tentativas; cada jornada guarda nombre, localidad, enlace Google Maps, direccion, coordenadas y una relacion Many-to-Many con el catalogo `VehiculoVPSL`, con preview seguro mediante `services/map_location.py`; el checklist operativo pertenece a la jornada y la habilita automaticamente al completarse; los registros nominales guardan graduacion izquierda/derecha en pasos de 0.25; las relaciones historicas con `SedeVPSL`, matricula estimada y prescripcion se conservan solo por compatibilidad | `models.py`, `forms.py`, `views.py`, `urls.py`, `migrations/0015_vpsl_ubicacion_vehiculos_graduaciones.py`, `templates/ver_para_ser_libre/itinerario_form.html`, `templates/ver_para_ser_libre/jornada_form.html`, `templates/ver_para_ser_libre/jornada_detail.html`, `templates/ver_para_ser_libre/registro_form.html`, `tests/test_jornada_location.py`, `services/workflow.py`, `services/map_location.py` | Medio |
+| `ver_para_ser_libre/` | dominio VPSL compartido por SISOC y el servicio HTTP React; desde PR #2566 el itinerario evalua cartas sin sedes tentativas, cada jornada posee sede/localidad/ubicacion/vehiculos y checklist con habilitacion automatica, y el registro nominal guarda graduaciones; las sedes previas permanecen para historial; la compatibilidad del PR #2566 conserva localidad historica, copia checklists y permite editar registros previos sin inventar graduacion; `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py` y `services/access.py` exponen el flujo React con permisos, contrato JSON/multipart y alcance provincial | `models.py`, `forms.py`, `views.py`, `api_urls.py`, `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py`, `services/access.py`, `services/workflow.py`, `services/map_location.py`, `migrations/0015_vpsl_ubicacion_vehiculos_graduaciones.py`, `migrations/0016_copiar_checklist_sede_a_jornadas.py`, `tests/test_api.py`, `tests/test_api_contract.py`, `tests/test_jornada_location.py` | Alto |
 | `pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV—, Informes PAS versionados, circuito mensual de cruces SINTyS/RENAPER, Panel de Control y Formación pendiente; el padrón lateral de Formación pagina por scroll mediante `/pas/formacion/personas` | `models.py`, `api.py`, `views.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `services/cruces_service.py`, `services/supervivencia_service.py`, `services/persona_service.py`, `services/formacion_service.py`, `templates/pas/`, `static/custom/js/pas_formacion.js`, `management/commands/`, `urls.py`, `migrations/` | Alto |
 | `audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
 | `historial/` | historial de dominio | `models.py`, `services/` | Bajo |
@@ -782,6 +785,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Build/deploy
 
 - Local: `docker compose up`
+- Front v2 local: `docker compose up --build front_vpsl`; hot reload con `docker-compose.frontends.dev.yml` como segundo archivo. Desde `frontends/`: `npm ci`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm run test:e2e` y `npm audit --audit-level=low`.
+- Contrato VPSL: `FRONTEND_V2_SCHEMA_ONLY=1 python manage.py spectacular --file frontends/packages/api/openapi.yaml --format openapi`; luego `npm run types:generate` en `frontends/`.
 - Deploy versionado: `docker compose -f docker-compose.deploy.yml ...`
 - Produccion: override `docker-compose.produccion.yml`
 - Sanity de release a `main` valida `check --deploy`, OpenAPI y `collectstatic`
@@ -831,7 +836,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Legacy / deuda tecnica visible
 
-- JS y templates dispersos por pantalla, sin pipeline frontend moderno.
+- El front legacy conserva JS y templates dispersos; la nueva base `frontends/` usa pipeline propio de npm, Vite y CI.
 - coexistencia de apps muy refactorizadas y apps con archivos monoliticos.
 - `package-lock.json` en raiz sin `package.json`: parece drift/artefacto sobrante, no contrato operativo confirmado.
 - `tmp/ci-pr-*`: artefactos temporales; no usarlos como fuente de verdad.

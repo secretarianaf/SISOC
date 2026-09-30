@@ -350,7 +350,15 @@ main() {
   # Validarlos despues del fast-forward evita bloquear un checkout anterior.
   configure_compose_command
 
+  deployed_revision="$(git -C "$ROOT_DIR" rev-parse HEAD)" \
+    || fail "No pude resolver la revision a desplegar."
+  export VPSL_IMAGE_TAG="sisoc/front-vpsl:$deployed_revision"
+  export VITE_RELEASE_SHA="$deployed_revision"
+
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" config -q
+
+  # Construir el front antes de detener los servicios anteriores.
+  run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" build front_vpsl
 
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" "${DOWN_ARGS[@]}"
 

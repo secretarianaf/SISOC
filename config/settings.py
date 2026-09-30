@@ -274,6 +274,18 @@ MEDIA_ROOT = BASE_DIR / "media"
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "inicio"
 LOGOUT_REDIRECT_URL = "login"
+FRONTEND_V2_UPSTREAMS = {
+    "vpsl": os.getenv("FRONT_VPSL_ORIGIN", "http://front_vpsl:8080"),
+}
+FRONTEND_V2_HMR_ORIGINS = (
+    [
+        origin.strip()
+        for origin in os.getenv("FRONTEND_V2_HMR_ORIGINS", "").split(",")
+        if origin.strip()
+    ]
+    if DEBUG
+    else []
+)
 ACCOUNT_FORMS = {"login": "users.forms.UserLoginForm"}
 INITIAL_PASSWORD_MAX_AGE_HOURS = _safe_int_env("INITIAL_PASSWORD_MAX_AGE_HOURS", 336)
 PASSWORD_RESET_TIMEOUT = _safe_int_env("PASSWORD_RESET_TIMEOUT", 3600)
@@ -467,6 +479,8 @@ SPECTACULAR_SETTINGS = {
         ],
     },
 }
+if os.getenv("FRONTEND_V2_SCHEMA_ONLY") == "1":
+    SPECTACULAR_SETTINGS["PREPROCESSING_HOOKS"] = ["core.v2_frontend.schema_endpoints"]
 
 # Dominios / Integraciones
 DOMINIO = os.environ.get("DOMINIO", "localhost:8001")

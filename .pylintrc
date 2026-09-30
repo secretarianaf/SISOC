@@ -68,7 +68,9 @@ ignored-modules=django.*,rest_framework.*,auditlog.*,drf_spectacular.*,markdown
 
 # Python code to execute, usually for sys.path manipulation such as
 # pygtk.require().
-#init-hook=
+# El kernel vive en kernel/ pero se importa como `core`, `users`, etc.
+# (ver config/__init__.py).
+init-hook="import sys; sys.path.insert(0, 'kernel')"
 
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use, and will cap the count on Windows to
@@ -442,6 +444,7 @@ disable=raw-checker-failed,
         C0114, # Missing module docstring
         C0115, # Missing class docstring
         C0116, # Missing function or method docstring
+        C0411, # wrong-import-order: el isort interno de pylint toma kernel/ (core, users...) como third party
         W0511, # TODO comments
         R0903, # Too few public methods (useful for Django models/forms)
         E1131, # Emitted when a binary arithmetic operation between two operands is not supported

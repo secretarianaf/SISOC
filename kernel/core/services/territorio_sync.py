@@ -11,7 +11,11 @@ from core.models import Localidad, Municipio, Provincia
 
 
 logger = logging.getLogger(__name__)
-FIXTURE_TERRITORIO_PATH = Path("core/fixtures/localidad_municipio_provincia.json")
+FIXTURE_TERRITORIO_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "fixtures"
+    / "localidad_municipio_provincia.json"
+)
 
 
 def normalizar_nombre(valor):

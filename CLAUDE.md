@@ -44,9 +44,11 @@ djlint templates/ --check
 
 Django 4.2 + MySQL 8.4, desplegado con Docker Compose. Python 3.11+.
 
-**Organización de apps:** cada dominio de negocio es una Django app propia (`comedores/`, `admisiones/`, `users/`, etc.). La lógica de negocio vive en `<app>/services/`, nunca en views ni modelos. Las views son CBVs sin lógica. DRF coexiste con las views tradicionales; los serializers van en `api_serializers.py` y las API views en `api_views.py`.
+**Organización de apps:** cada dominio de negocio es una Django app propia (`comedores/`, `admisiones/`, `kernel/users/`, etc.). La lógica de negocio vive en `<app>/services/`, nunca en views ni modelos. Las views son CBVs sin lógica. DRF coexiste con las views tradicionales; los serializers van en `api_serializers.py` y las API views en `api_views.py`.
 
-**Core compartido:** `core/` expone utilidades reutilizables (soft delete, permisos, cache, auth de API, validadores). No duplicar lo que ya existe ahí.
+**Core compartido:** `kernel/core/` expone utilidades reutilizables (soft delete, permisos, cache, auth de API, validadores). No duplicar lo que ya existe ahí.
+
+**Estructura en migración (#1931/#2251):** `kernel/` contiene el código común (`core`, `users`, `iam`, `ciudadanos`, `audittrail`); cada vertical va a `backends/<vertical>/` y cada front a `frontends/apps/<modulo>/`. Los imports no cambian (`import core`, `import users`): `config/__init__.py` agrega `kernel/` al `sys.path`. Ver `docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md`.
 
 **Configuración central:** `config/settings.py` centraliza DB, cache, middleware, apps instaladas, logging custom e integraciones externas (GESTIONAR, RENAPER, Sentry, PWA). El stack de middleware define contexto de seguridad, sesión, auditoría y thread-locals en ese orden — el orden importa.
 

@@ -6,7 +6,12 @@ from pathlib import Path
 def test_ciudadano_detail_template_incluye_accion_eliminar():
     repo_root = Path(__file__).resolve().parents[1]
     template_path = (
-        repo_root / "ciudadanos" / "templates" / "ciudadanos" / "ciudadano_detail.html"
+        repo_root
+        / "kernel"
+        / "ciudadanos"
+        / "templates"
+        / "ciudadanos"
+        / "ciudadano_detail.html"
     )
 
     content = template_path.read_text(encoding="utf-8")
@@ -17,7 +22,12 @@ def test_ciudadano_detail_template_incluye_accion_eliminar():
 def test_ciudadano_detail_template_usa_admision_comedor_con_guardas():
     repo_root = Path(__file__).resolve().parents[1]
     template_path = (
-        repo_root / "ciudadanos" / "templates" / "ciudadanos" / "ciudadano_detail.html"
+        repo_root
+        / "kernel"
+        / "ciudadanos"
+        / "templates"
+        / "ciudadanos"
+        / "ciudadano_detail.html"
     )
 
     content = template_path.read_text(encoding="utf-8")
@@ -31,7 +41,12 @@ def test_ciudadano_detail_template_usa_admision_comedor_con_guardas():
 def test_ciudadano_detail_template_incluye_pestana_vat():
     repo_root = Path(__file__).resolve().parents[1]
     template_path = (
-        repo_root / "ciudadanos" / "templates" / "ciudadanos" / "ciudadano_detail.html"
+        repo_root
+        / "kernel"
+        / "ciudadanos"
+        / "templates"
+        / "ciudadanos"
+        / "ciudadano_detail.html"
     )
 
     content = template_path.read_text(encoding="utf-8")
@@ -45,7 +60,12 @@ def test_ciudadano_detail_template_incluye_pestana_vat():
 def test_ciudadano_detail_template_usa_el_resumen_publico_de_celiaquia():
     repo_root = Path(__file__).resolve().parents[1]
     template_path = (
-        repo_root / "ciudadanos" / "templates" / "ciudadanos" / "ciudadano_detail.html"
+        repo_root
+        / "kernel"
+        / "ciudadanos"
+        / "templates"
+        / "ciudadanos"
+        / "ciudadano_detail.html"
     )
 
     content = template_path.read_text(encoding="utf-8")
@@ -59,7 +79,12 @@ def test_ciudadano_detail_template_usa_el_resumen_publico_de_celiaquia():
 def test_ciudadano_list_template_incluye_filtro_estado_revision_dinamico():
     repo_root = Path(__file__).resolve().parents[1]
     template_path = (
-        repo_root / "ciudadanos" / "templates" / "ciudadanos" / "ciudadano_list.html"
+        repo_root
+        / "kernel"
+        / "ciudadanos"
+        / "templates"
+        / "ciudadanos"
+        / "ciudadano_list.html"
     )
 
     content = template_path.read_text(encoding="utf-8")

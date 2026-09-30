@@ -34,7 +34,7 @@ Usar `docs/ia/CONTEXT_HYGIENE.md` para decidir si hace falta ampliar. Abrir mas 
 - Mantener compatibilidad hacia atras salvo pedido explicito.
 - La logica de negocio vive preferentemente en `services/`.
 - Coexisten Django views y DRF.
-- Hay logging custom en `config/settings.py` y `core/utils.py`.
+- Hay logging custom en `config/settings.py` y `kernel/core/utils.py`.
 
 ## Documentacion
 

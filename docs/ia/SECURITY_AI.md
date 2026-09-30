@@ -57,7 +57,7 @@ Reglas:
 - Agregar tests de permisos (sin permiso / con permiso).
 
 Nota del repo:
-- existen helpers/permisos API key en `core/api_auth.py` (`HasAPIKey`, `HasAPIKeyOrToken`).
+- existen helpers/permisos API key en `kernel/core/api_auth.py` (`HasAPIKey`, `HasAPIKeyOrToken`).
 
 ## Validación y sanitización de entrada
 
@@ -69,7 +69,7 @@ Nota del repo:
 ## Redirects seguros
 
 Si el redirect depende de input del usuario (`next`, referer, etc.):
-- usar helper seguro (`core/security.py` -> `safe_redirect`) o patrón equivalente.
+- usar helper seguro (`kernel/core/security.py` -> `safe_redirect`) o patrón equivalente.
 - no redirigir directamente a URLs provistas por el usuario sin validar host.
 
 Ejemplo (correcto):

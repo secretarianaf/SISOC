@@ -405,7 +405,11 @@ def municipios_por_centro(request):
     if not centro_id:
         return JsonResponse({"municipios": []})
     try:
-        centro = Centro.objects.only("id", "provincia_id").get(pk=centro_id)
+        centro = (
+            Centro.objects.select_related("localidad__municipio")
+            .only("id", "provincia_id", "localidad__municipio__provincia_id")
+            .get(pk=centro_id)
+        )
     except Centro.DoesNotExist:
         return JsonResponse({"municipios": []})
 

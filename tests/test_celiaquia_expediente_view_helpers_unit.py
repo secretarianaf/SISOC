@@ -35,6 +35,14 @@ class _EmptyRelatedManager:
         return iter(())
 
 
+def _post(datos):
+    """POST como QueryDict: `RevisarLegajoView` lee la selección de motivos
+    con `getlist` (issue #2592)."""
+    post = QueryDict(mutable=True)
+    post.update(datos)
+    return post
+
+
 def _user_stub(*, user_id=1, is_admin=False, tec=False, coord=False):
     perms = set()
     if tec:
@@ -556,7 +564,7 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
 
     req_rechazar = SimpleNamespace(
         user=_user_stub(user_id=1, tec=True),
-        POST={"accion": "RECHAZAR", "motivo": "dato invalido"},
+        POST=_post({"accion": "RECHAZAR", "motivo": "dato invalido"}),
     )
     leg.revision_tecnico = "PENDIENTE"
     leg.estado_validacion_renaper = 0
@@ -767,13 +775,15 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
     assert invalid.status_code == 400
 
     no_motivo_req = SimpleNamespace(
-        user=_user_stub(user_id=1, tec=True), POST={"accion": "SUBSANAR", "motivo": ""}
+        user=_user_stub(user_id=1, tec=True),
+        POST=_post({"accion": "SUBSANAR", "motivo": ""}),
     )
     no_motivo = view.post(no_motivo_req, pk=1, legajo_id=3)
     assert no_motivo.status_code == 400
 
     no_motivo_rechazo_req = SimpleNamespace(
-        user=_user_stub(user_id=1, tec=True), POST={"accion": "RECHAZAR", "motivo": ""}
+        user=_user_stub(user_id=1, tec=True),
+        POST=_post({"accion": "RECHAZAR", "motivo": ""}),
     )
     no_motivo_rechazo = view.post(no_motivo_rechazo_req, pk=1, legajo_id=3)
     assert no_motivo_rechazo.status_code == 400
@@ -784,7 +794,7 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
     )
     rechazar_req = SimpleNamespace(
         user=_user_stub(user_id=1, tec=True),
-        POST={"accion": "RECHAZAR", "motivo": "Documento ilegible"},
+        POST=_post({"accion": "RECHAZAR", "motivo": "Documento ilegible"}),
     )
     rechazar = view.post(rechazar_req, pk=1, legajo_id=3)
     assert rechazar.status_code == 200

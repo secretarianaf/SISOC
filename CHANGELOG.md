@@ -14,6 +14,7 @@
 - [sin-area] fix(territorial): el listado trae las actas complementarias asignadas desde SISOC. (PR #2606)
 - [sin-area] fix(territorial): exponer sin_cargar en las actas complementarias (para app 1.1.54). (PR #2607)
 - [sin-area] chore(datos): diagnóstico (y reparación opcional) de datos de la app del 28/9. (PR #2608)
+- [CI/CD, migraciones de usuarios y despliegue HML.] Corrige el grafo de migraciones de usuarios y amplía el margen de healthcheck para que CI y HML completen la inicialización. (PR #2614)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-30 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-09-29 -->

@@ -37,26 +37,26 @@
 - Empezar por `docs/registro/prs/PR-2610.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `.github/workflows/architecture.yml`
+- `.github/workflows/lint.yml`
 - `.importlinter`
 - `.pylintrc`
 - `AGENTS.md`
 - `AGENT_REPO_MAP.md`
 - `CLAUDE.md`
 - `config/__init__.py`
+- `docs/contexto/features/pr-2610-refactor-kernel-mover-core-users-iam-ciudadanos-y-audittrail-a-kernel-ola-0-1931-2251.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/ERRORS_LOGGING.md`
 - `docs/ia/SECURITY_AI.md`
 - `docs/registro/cambios/2026-09-30-kernel-estructura.md`
 - `docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md`
+- `docs/registro/prs/PR-2610.md`
 - `kernel/audittrail/__init__.py`
 - `kernel/audittrail/api.py`
 - `kernel/audittrail/apps.py`
 - `kernel/audittrail/constants.py`
 - `kernel/audittrail/context.py`
-- `kernel/audittrail/forms.py`
-- `kernel/audittrail/management/__init__.py`
-- `kernel/audittrail/management/commands/__init__.py`
-- ... y 281 archivo(s) adicional(es) relacionados.
+- ... y 284 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

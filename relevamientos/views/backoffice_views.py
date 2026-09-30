@@ -18,7 +18,11 @@ from relevamientos.forms_backoffice import (
     ActaComplementariaEditor,
     SeguimientoEditor,
 )
-from relevamientos.models import ActaComplementaria, SeguimientoPnud
+from relevamientos.models import (
+    ActaComplementaria,
+    PrimerSeguimiento,
+    SeguimientoPnud,
+)
 from relevamientos.pnud_formularios import respuestas_por_seccion, titulos
 from relevamientos.views.seguimiento_helpers import (
     aplicar_revision_coordinador,
@@ -75,8 +79,12 @@ class SeguimientoRevisionCoordinadorView(LoginRequiredMixin, View):
     http_method_names = ["post"]
 
     def post(self, request, **kwargs):
-        seguimiento = resolver_seguimiento(self.kwargs)
-        error = aplicar_revision_coordinador(request, seguimiento, "el seguimiento")
+        with transaction.atomic():
+            # Bloqueo de fila: no se cruza con una corrección del territorial.
+            seguimiento = resolver_seguimiento(
+                self.kwargs, PrimerSeguimiento.objects.select_for_update()
+            )
+            error = aplicar_revision_coordinador(request, seguimiento, "el seguimiento")
         if error:
             messages.error(request, error)
         elif seguimiento.estado_validacion == seguimiento.ESTADO_VALIDACION_VALIDADO:
@@ -130,16 +138,14 @@ class SeguimientoPnudRevisionCoordinadorView(LoginRequiredMixin, View):
                 pk=kwargs["pk"],
                 comedor_id=kwargs["comedor_pk"],
             )
-            if seguimiento.esta_validado:
-                error = "El seguimiento PNUD ya está validado: no admite otra revisión."
-            else:
-                error = aplicar_revision_coordinador(
-                    request, seguimiento, "el seguimiento PNUD"
-                )
-                if not error:
-                    # El helper compartido guarda con update_fields sin
-                    # fecha_actualizacion (auto_now): se registra la revisión acá.
-                    seguimiento.save(update_fields=["fecha_actualizacion"])
+            # Un Validado no admite otra revisión (lo resuelve el helper).
+            error = aplicar_revision_coordinador(
+                request, seguimiento, "el seguimiento PNUD"
+            )
+            if not error:
+                # El helper compartido guarda con update_fields sin
+                # fecha_actualizacion (auto_now): se registra la revisión acá.
+                seguimiento.save(update_fields=["fecha_actualizacion"])
         if error:
             messages.error(request, error)
         elif seguimiento.esta_validado:
@@ -159,7 +165,7 @@ class ActaComplementariaDetailView(LoginRequiredMixin, DetailView):
     def get_queryset(self):
         return (
             ActaComplementaria.objects.filter(comedor_id=self.kwargs["comedor_pk"])
-            .select_related("comedor", "tecnico")
+            .select_related("comedor", "tecnico", "coordinador")
             .prefetch_related("prestaciones")
         )
 
@@ -168,6 +174,44 @@ class ActaComplementariaDetailView(LoginRequiredMixin, DetailView):
         context["comedor"] = self.object.comedor
         context["prestaciones"] = list(self.object.prestaciones.all())
         return context
+
+
+class ActaComplementariaRevisionCoordinadorView(LoginRequiredMixin, View):
+    """Revisión del coordinador (N16) sobre un acta complementaria (H16)."""
+
+    http_method_names = ["post"]
+
+    def post(self, request, comedor_pk, pk):
+        with transaction.atomic():
+            # Bloqueo de fila: no se cruza con una corrección del territorial.
+            acta = get_object_or_404(
+                ActaComplementaria.objects.select_for_update(),
+                pk=pk,
+                comedor_id=comedor_pk,
+            )
+            error = aplicar_revision_coordinador(
+                request,
+                acta,
+                "el acta complementaria",
+                mensaje_validado=(
+                    "El acta complementaria ya está validada: no admite otra "
+                    "revisión."
+                ),
+            )
+        if error:
+            messages.error(request, error)
+        elif acta.esta_validado:
+            messages.success(request, "Acta complementaria validada correctamente.")
+        else:
+            messages.success(
+                request, "Acta complementaria devuelta al territorial para subsanar."
+            )
+        return redirect(
+            reverse(
+                "acta_complementaria_detalle",
+                kwargs={"comedor_pk": comedor_pk, "pk": pk},
+            )
+        )
 
 
 class ActaComplementariaFormView(LoginRequiredMixin, View):

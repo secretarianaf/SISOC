@@ -970,6 +970,11 @@ LISTADO_DEFINED_GROUPS = (
         UserGroups.ADMIN,
         (
             "auth.role_reportes_cdi",
+            "auth.role_usuarios_seccion_mobile_comedores",
+            "auth.role_usuarios_seccion_territorial_comedor",
+            "auth.role_usuarios_seccion_equipos_tecnicos",
+            "auth.role_usuarios_seccion_datacalle",
+            "auth.role_usuarios_seccion_administracion",
             "acompanamientos.view_informacionrelevante",
             "admisiones.view_admision",
             "auth.add_group",
@@ -1147,6 +1152,8 @@ LISTADO_DEFINED_GROUPS = (
             "auth.view_user",
             "auth.add_user",
             "auth.change_user",
+            # Sólo ve la sección DataCalle del ABM de usuarios.
+            "auth.role_usuarios_seccion_datacalle",
         ),
     ),
     BootstrapGroupSeed(
@@ -1168,6 +1175,22 @@ LISTADO_DEFINED_GROUPS = (
             "auth.view_user",
             "auth.add_user",
             "auth.change_user",
+            # Sólo ve la sección DataCalle del ABM de usuarios.
+            "auth.role_usuarios_seccion_datacalle",
+        ),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.USUARIOS_GESTOR_COMEDORES,
+        (
+            # Da de alta y edita usuarios de Comedores: ve las secciones del
+            # ABM propias del programa y no las de otros (DataCalle) ni la de
+            # administración de accesos.
+            "auth.view_user",
+            "auth.add_user",
+            "auth.change_user",
+            "auth.role_usuarios_seccion_mobile_comedores",
+            "auth.role_usuarios_seccion_territorial_comedor",
+            "auth.role_usuarios_seccion_equipos_tecnicos",
         ),
     ),
 )

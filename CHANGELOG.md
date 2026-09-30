@@ -6,7 +6,24 @@
 - [sin-area] fix(seguimiento): DNI de referente duplicado + mes_ejecucion en API territorial. (PR #2581)
 - [sin-area] feat(pnud): seguimientos PNUD desde la app territorial (N22). (PR #2582)
 - [sin-area] fix(territorial): errores HTTP de la API territorial detectados por la auditoría de la app. (PR #2584)
+- [sin-area] fix(acompañamiento): QA 28/9 — popup por programa, acta complementaria, bloqueo de re-revisión y validación del acta (H1, H5, H12, H16). (PR #2596)
+- [sin-area] feat(pnud): textos literales del documento en los formularios de seguimiento PNUD. (PR #2598)
+- [sin-area] fix(qa-28/9): ajustes de la revisión de #2596 (performance del listado, duplicados, backfill de actas). (PR #2599)
+- [sin-area] PNUD: estructura literal del documento en el detalle del backoffice (SI/NO, ranking y casillas aplanados; sin migración). (PR #2600)
+- [sin-area] fix(pnud): JSON de etiquetas PNUD de la ronda 2 de la estructura literal (complemento de #2600). (PR #2602)
+- [sin-area] fix(territorial): el listado trae las actas complementarias asignadas desde SISOC. (PR #2606)
+- [sin-area] fix(territorial): exponer sin_cargar en las actas complementarias (para app 1.1.54). (PR #2607)
+- [sin-area] chore(datos): diagnóstico (y reparación opcional) de datos de la app del 28/9. (PR #2608)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-30 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-09-29 -->
+# Versión SISOC 29.09.2026
+
+## Actualizaciones
+
+- [users.] El alta y edición de usuarios muestra solo las secciones del programa de quien las gestiona (Comedores, DataCalle, administración), según permisos agrupados en roles. (PR #2601)
+<!-- AUTO-GENERATED RELEASE END: 2026-09-29 -->
+
 
 <!-- AUTO-GENERATED RELEASE START: 2026-09-23 -->
 # Versión SISOC 23.09.2026

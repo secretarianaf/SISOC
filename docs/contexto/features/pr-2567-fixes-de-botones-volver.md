@@ -53,7 +53,7 @@
 - `VAT/templates/vat/inscripcion_oferta/form.html`
 - `VAT/templates/vat/institucion/contacto_confirm_delete.html`
 - `VAT/templates/vat/institucion/contacto_form.html`
-- ... y 143 archivo(s) adicional(es) relacionados.
+- ... y 144 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

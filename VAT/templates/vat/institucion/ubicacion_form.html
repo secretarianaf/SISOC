@@ -166,9 +166,13 @@
     function cargarLocalidades(municipioId, seleccionarId) {
         if (!municipioId) {
             localidadSelect.innerHTML = '<option value=""></option>';
+            localidadSelect.disabled = true;
             refreshSelect2(localidadSelect);
             return;
         }
+        localidadSelect.disabled = true;
+        localidadSelect.innerHTML = '<option value="">Cargando...</option>';
+        refreshSelect2(localidadSelect);
         fetch(localidadesUrl + '?municipio_id=' + encodeURIComponent(municipioId), {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
@@ -182,6 +186,12 @@
                     if (String(loc.id) === String(seleccionarId)) opt.selected = true;
                     localidadSelect.appendChild(opt);
                 });
+                localidadSelect.disabled = false;
+                refreshSelect2(localidadSelect);
+            })
+            .catch(function () {
+                localidadSelect.innerHTML = '<option value=""></option>';
+                localidadSelect.disabled = true;
                 refreshSelect2(localidadSelect);
             });
     }
@@ -206,6 +216,10 @@
                     if (String(municipio.id) === String(seleccionarId)) opt.selected = true;
                     departamentoSelect.appendChild(opt);
                 });
+                if (!seleccionarId && data.municipios.length === 1) {
+                    seleccionarId = data.municipios[0].id;
+                    departamentoSelect.value = seleccionarId;
+                }
                 refreshSelect2(departamentoSelect);
                 cargarLocalidades(seleccionarId || null, seleccionarLocalidadId);
             });
@@ -215,15 +229,34 @@
         cargarDepartamentos(this.value, null, null);
     });
 
-    departamentoSelect.addEventListener('change', function () {
-        cargarLocalidades(this.value, null);
-    });
+    if (window.jQuery) {
+        window.jQuery(departamentoSelect).on('change select2:select select2:clear', function () {
+            cargarLocalidades(this.value, null);
+        });
+    } else {
+        departamentoSelect.addEventListener('change', function () {
+            cargarLocalidades(this.value, null);
+        });
+    }
 
     // Al cargar la página, si ya hay un centro seleccionado (alta con centro
     // preseleccionado o edición) los departamentos ya vienen server-side; solo
     // falta la localidad, que carga por AJAX según el departamento inicial.
     if (centroSelect.value) {
-        cargarLocalidades(departamentoActual, localidadActual);
+        let departamentoInicial = departamentoActual;
+        if (!departamentoInicial) {
+            const opcionesDepartamento = Array.from(departamentoSelect.options).filter(function (option) {
+                return option.value;
+            });
+            if (opcionesDepartamento.length === 1) {
+                departamentoInicial = opcionesDepartamento[0].value;
+                departamentoSelect.value = departamentoInicial;
+                if (window.jQuery) {
+                    window.jQuery(departamentoSelect).trigger('change.select2');
+                }
+            }
+        }
+        cargarLocalidades(departamentoInicial, localidadActual);
     }
 })();
     </script>

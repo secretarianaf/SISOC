@@ -233,25 +233,46 @@ def build_ubicacion_queryset_for_centros(centro_ids, include_ubicacion_ids=None)
     )
 
 
+def _get_provincia_id_para_sedes(centro):
+    if not centro:
+        return None
+    if getattr(centro, "pk", None):
+        ubicacion_principal = (
+            centro.ubicaciones.select_related("localidad__municipio")
+            .filter(Q(es_principal=True) | Q(rol_ubicacion="sede_principal"))
+            .order_by("-es_principal", "id")
+            .first()
+        )
+        if (
+            ubicacion_principal
+            and ubicacion_principal.localidad_id
+            and ubicacion_principal.localidad.municipio_id
+        ):
+            return ubicacion_principal.localidad.municipio.provincia_id
+    if getattr(centro, "localidad_id", None) and centro.localidad.municipio_id:
+        return centro.localidad.municipio.provincia_id
+    return getattr(centro, "provincia_id", None)
+
+
 def build_localidad_queryset_for_centro(centro):
     # REQ 2026-09-23 (docs/registro/analisis/2026-09-23-inet-sedes-fuera-del-departamento.md):
     # antes se cortaba en el municipio del centro y por eso un CFP con sede en
     # otro municipio de la misma provincia no podía cargarla. El alcance queda
-    # provincial: se listan todas las localidades de la provincia del centro,
-    # sin importar el municipio.
+    # provincial: se listan todas las localidades de la provincia de la
+    # ubicación principal del centro, sin importar el municipio.
     queryset = Localidad.objects.order_by("nombre")
-    if centro and centro.provincia_id:
-        return queryset.filter(municipio__provincia_id=centro.provincia_id)
+    provincia_id = _get_provincia_id_para_sedes(centro)
+    if provincia_id:
+        return queryset.filter(municipio__provincia_id=provincia_id)
     return queryset
 
 
 def build_municipio_queryset_for_centro(centro):
     """Departamentos para el selector de filtrado del modal de sedes: todos
-    los de la provincia del centro (ver build_localidad_queryset_for_centro)."""
-    if centro and centro.provincia_id:
-        return Municipio.objects.filter(provincia_id=centro.provincia_id).order_by(
-            "nombre"
-        )
+    los de la provincia de la ubicación principal del centro."""
+    provincia_id = _get_provincia_id_para_sedes(centro)
+    if provincia_id:
+        return Municipio.objects.filter(provincia_id=provincia_id).order_by("nombre")
     return Municipio.objects.none()
 
 

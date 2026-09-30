@@ -5,9 +5,11 @@ from django.core.management.base import BaseCommand, CommandError
 from core.services.territorial_export import export_fixture_relations_workbook
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_FIXTURE_PATH = (
-    PROJECT_ROOT / "core" / "fixtures" / "localidad_municipio_provincia.json"
+    Path(__file__).resolve().parents[2]
+    / "fixtures"
+    / "localidad_municipio_provincia.json"
 )
 DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "out" / "relaciones_territoriales_fixture.xlsx"
 

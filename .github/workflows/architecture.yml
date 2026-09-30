@@ -39,6 +39,9 @@ jobs:
                   pip install -r requirements/arch.txt
 
             - name: Run import-linter
+              # El kernel vive en kernel/ pero se importa como `core`, `users`, etc.
+              env:
+                  PYTHONPATH: kernel
               run: |
                   lint-imports
                   lint-imports --config .importlinter_celiaquia_config

@@ -4,6 +4,13 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ## Como leer este documento
 
+- Estructura del monorepo (#1931/#2251): el codigo comun vive en `kernel/`
+  (`core`, `users`, `iam`, `ciudadanos`, `audittrail`), cada vertical migra a
+  `backends/<vertical>/` y cada front a `frontends/apps/<modulo>/`. Los imports
+  no cambian: `config/__init__.py` agrega `kernel/` al `sys.path` (tooling:
+  `.pylintrc`, `pytest.ini`, `architecture.yml`). Decision y plan:
+  `docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md`.
+
 - Sincronizacion DataCalle: los cambios de main de #2452/#2453 se incorporan a
   development conservando coordinadores PWA y su checkbox maestro. La migracion
   users/0051 une las hojas de configuracion mobile y DataCalle sin operaciones.
@@ -36,7 +43,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - La logica de negocio suele vivir en `services/` cuando la app la tiene, pero coexisten apps mas legacy con mas logica en `views.py`, `models.py` o `tasks.py`.
 - Hay un esfuerzo explicito de control arquitectonico incremental con `import-linter` (`.importlinter`) para evitar que el monolito siga acoplandose.
 - Los modulos nuevos deben nacer como verticales extraibles dentro del monolito; la regla aplicable y sus limites actuales viven en `docs/ia/MODULAR_BOUNDARIES.md`.
-- VPSL convive con sus pantallas Django existentes y el nuevo React en `/v2/vpsl/`. La app está en `frontends/apps/vpsl/`, usa `@sisoc/ui` y `@sisoc/api`, y se sirve desde `front_vpsl` por el router autenticado `core/v2_frontend.py`. La API `/api/vpsl/` corre en el Django principal y reutiliza la lógica del dominio, con adaptadores de ModelForms/vistas existentes y alcance compartido en `services/access.py`. Ver `docs/implementaciones/frontend_v2.md` y `docs/operacion/ver_para_ser_libre_react.md`.
+- VPSL convive con sus pantallas Django existentes y el nuevo React en `/v2/vpsl/`. La app está en `frontends/apps/vpsl/`, usa `@sisoc/ui` y `@sisoc/api`, y se sirve desde `front_vpsl` por el router autenticado `kernel/core/v2_frontend.py`. La API `/api/vpsl/` corre en el Django principal y reutiliza la lógica del dominio, con adaptadores de ModelForms/vistas existentes y alcance compartido en `services/access.py`. Ver `docs/implementaciones/frontend_v2.md` y `docs/operacion/ver_para_ser_libre_react.md`.
 - Registro nominal React: `frontends/apps/vpsl/src/Workflow.tsx` replica las secciones y reglas condicionales de `registro_form.html`; el schema de `api_workflow.py` incluye `renaper_estado` oculto y `graduacion_opcional` desde el ModelForm oficial para registros históricos. Crear usa Guardar y continuar y recarga el schema para el siguiente número de acta. La compatibilidad con PR #2566 se verifica en `ver_para_ser_libre/tests/test_api_compatibilidad.py` y `frontends/apps/vpsl/src/Workflow.test.tsx`; los límites de promoción están en `docs/operacion/ver_para_ser_libre_react.md`.
 - El tema visual de Front v2 usa `getTheme(mode)` de `frontends/packages/ui/src/theme.ts`, con correcciones de contraste AA; las reglas de componentes y UX vigentes están en `docs/implementaciones/frontend_v2.md`.
 
@@ -229,7 +236,7 @@ SISOC/
 | Testing | `USE_SQLITE_FOR_TESTS`, `PYTEST_RUNNING` |
 | Integracion GESTIONAR | `GESTIONAR_INTEGRATION_ENABLED` (corte total de envíos, pulls y comandos), `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
 | Ticketera | `TICKETERA_ENABLED` |
-| RENAPER/importaciones | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, `RENAPER_MAX_CONSULTAS_POR_SEGUNDO` (30 por defecto, global mediante `core/integrations/renaper_rate_limit.py` y `core.0009`); ciudadanos usa `CIUDADANOS_IMPORT_RENAPER_PARALLELISM` (2 hilos por réplica por defecto) y reutiliza token por hilo/lote; los tramos de cola usan `CIUDADANOS_IMPORT_JOB_SLICE_SECONDS` y `USER_IMPORT_JOB_SLICE_SECONDS` |
+| RENAPER/importaciones | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, `RENAPER_MAX_CONSULTAS_POR_SEGUNDO` (30 por defecto, global mediante `kernel/core/integrations/renaper_rate_limit.py` y `core.0009`); ciudadanos usa `CIUDADANOS_IMPORT_RENAPER_PARALLELISM` (2 hilos por réplica por defecto) y reutiliza token por hilo/lote; los tramos de cola usan `CIUDADANOS_IMPORT_JOB_SLICE_SECONDS` y `USER_IMPORT_JOB_SLICE_SECONDS` |
 | Google Maps | `GOOGLE_MAPS_API_KEY` |
 | Sentry | `SENTRY_ENABLED`, `SENTRY_DSN`, `SENTRY_RELEASE` |
 | Email/password reset | `EMAIL_*`, `DEFAULT_FROM_EMAIL`, `PASSWORD_RESET_TIMEOUT`, `INITIAL_PASSWORD_MAX_AGE_HOURS` |
@@ -256,9 +263,9 @@ SISOC/
 
 | Ruta | Responsabilidad |
 | --- | --- |
-| `core/` | utilidades transversales, fixtures, soft delete, API auxiliar, paginacion, benchmark/debug tooling |
-| `users/` | auth, login/reset, perfiles, grupos, import masivo de usuarios, permisos PWA |
-| `audittrail/` | auditoria propia del sistema |
+| `kernel/core/` | utilidades transversales, fixtures, soft delete, API auxiliar, paginacion, benchmark/debug tooling |
+| `kernel/users/` | auth, login/reset, perfiles, grupos, import masivo de usuarios, permisos PWA |
+| `kernel/audittrail/` | auditoria propia del sistema |
 | `healthcheck/` | endpoint de salud |
 
 ### Presentacion/UI compartida
@@ -294,12 +301,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 | App | Rol practico | Piezas a mirar primero | Estado de confirmacion |
 | --- | --- | --- | --- |
-| `users/` | autenticacion, perfiles, grupos, login/reset, import y credenciales masivas | `models.py`, `views.py`, `api_views.py`, `management/commands/`, `services_*` | Alto |
-| `core/` | utilidades transversales, helpers, soft delete, filtros/paginacion, comandos compartidos | `views.py`, `services/`, `management/commands/`, `utils.py` | Alto |
+| `kernel/users/` | autenticacion, perfiles, grupos, login/reset, import y credenciales masivas | `models.py`, `views.py`, `api_views.py`, `management/commands/`, `services_*` | Alto |
+| `kernel/core/` | utilidades transversales, helpers, soft delete, filtros/paginacion, comandos compartidos | `views.py`, `services/`, `management/commands/`, `utils.py` | Alto |
 | `dashboard/` | tableros internos | `urls.py`, `views.py`, templates | Medio |
 | `comedores/` | dominio fuerte: comedores, nomina, estados, sync GESTIONAR y API territorial PWA | `models.py`, `api_views.py`, `api_views_territorial.py`, `tasks.py`, `signals.py`, `services/`, `urls.py` | Alto |
 | `relevamientos/` | relevamientos y sync externo asociado | `models.py`, `tasks.py`, `views.py`, commands | Alto |
-| `ciudadanos/` | gestion de ciudadanos/beneficiarios | `models.py`, `views.py`, `api_views.py`, forms | Medio |
+| `kernel/ciudadanos/` | gestion de ciudadanos/beneficiarios | `models.py`, `views.py`, `api_views.py`, forms | Medio |
 | `centrodefamilia/` | beneficiarios/centros/familia + API | `models.py`, `views.py`, `api_views.py`, `services/` | Alto |
 | `celiaquia/` | modulo especializado con bastante logica en services y vistas; expone un contrato Python acotado | `api.py`, `models.py`, `views/`, `services/`, `permissions.py`, tests | Alto |
 | `admisiones/` | flujo de admision, legales/tecnicos, generacion DOCX/PDF y correcciones operativas auditadas | `views/web_views.py`, `services/`, `forms/`, `management/commands/`, templates `docx/` y `pdf/` | Alto |
@@ -319,7 +326,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `ver_para_ser_libre/` | dominio VPSL compartido por SISOC y el servicio HTTP React; desde PR #2566 el itinerario evalua cartas sin sedes tentativas, cada jornada posee sede/localidad/ubicacion/vehiculos y checklist con habilitacion automatica, y el registro nominal guarda graduaciones; las sedes previas permanecen para historial; la compatibilidad del PR #2566 conserva localidad historica, copia checklists y permite editar registros previos sin inventar graduacion; `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py` y `services/access.py` exponen el flujo React con permisos, contrato JSON/multipart y alcance provincial | `models.py`, `forms.py`, `views.py`, `api_urls.py`, `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py`, `services/access.py`, `services/workflow.py`, `services/map_location.py`, `migrations/0015_vpsl_ubicacion_vehiculos_graduaciones.py`, `migrations/0016_copiar_checklist_sede_a_jornadas.py`, `tests/test_api.py`, `tests/test_api_contract.py`, `tests/test_jornada_location.py` | Alto |
 | `pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV—, Informes PAS versionados, circuito mensual de cruces SINTyS/RENAPER, Panel de Control y Formación pendiente; el padrón lateral de Formación pagina por scroll mediante `/pas/formacion/personas` | `models.py`, `api.py`, `views.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `services/cruces_service.py`, `services/supervivencia_service.py`, `services/persona_service.py`, `services/formacion_service.py`, `templates/pas/`, `static/custom/js/pas_formacion.js`, `management/commands/`, `urls.py`, `migrations/` | Alto |
-| `audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
+| `kernel/audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
 | `historial/` | historial de dominio | `models.py`, `services/` | Bajo |
 | `intervenciones/` | intervenciones sobre casos | tests + archivos del modulo | Bajo; exploracion parcial |
 | `sentry/` | soporte/integracion local de sentry | codigo del modulo si toca observabilidad | Bajo |
@@ -356,7 +363,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - La auditoria de autenticacion se solicita desde `users.auth_audit`; PWA registra el persistidor de `AuditoriaSesionPWA` durante su arranque.
 - La sincronizacion entre `Profile.duplas_asignadas` y `Dupla.coordinador` se suscribe desde `duplas.signals`; `users` no debe conocer el modelo Dupla.
 - Las restricciones PWA por programa de Comedores se consultan mediante `users.pwa_comedores`; Comedores registra la capacidad concreta durante su arranque.
-- Las pruebas de alcance territorial que ejercitan `Ciudadano` viven en `ciudadanos/test_territorial_scope.py`; el módulo heredado de regresiones de Users vive en `tests/test_users_regressions.py` para no abrir imports de dominio dentro de la app.
+- Las pruebas de alcance territorial que ejercitan `Ciudadano` viven en `kernel/ciudadanos/test_territorial_scope.py`; el módulo heredado de regresiones de Users vive en `tests/test_users_regressions.py` para no abrir imports de dominio dentro de la app.
 - Los querysets de dominio requeridos por formularios administrativos de Users se registran en `users.form_catalogs`; `users.forms` no debe importar modelos de Comedores, Duplas ni Organizaciones.
 - La expansión de organizaciones y comedores del importador PWA se resuelve mediante `users.pwa_import_access`; Comedores registra el proveedor y `users.services_user_import` sólo consume IDs y especificaciones de acceso.
 - `users.api` es la fachada pública de la proyección PWA por organización. `comedores.signals` y `sincronizar_accesos_pwa_organizaciones` sólo le pasan IDs; `AccesoOrganizacionPWA` es la fuente de verdad y `AccesoComedorPWA` la proyección. El save/soft-delete/restore de `Comedor` es transaccional para estos side effects y los envíos a GESTIONAR quedan en `on_commit`.
@@ -373,20 +380,20 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Implicancia practica
 
 - Antes de meter logica en una view, revisar si esa app ya tiene `services/`.
-- Antes de crear otro helper global, revisar `core/`.
+- Antes de crear otro helper global, revisar `kernel/core/`.
 - Antes de agregar un import cross-app, revisar `.importlinter`: quizas estas rompiendo un boundary aunque el codigo "funcione".
 
 ## Donde buscar segun el tipo de cambio
 
 ### Si necesitas cambiar autenticacion / login / reset / grupos
 
-- `users/views.py`
-- `users/forms.py`
-- `users/models.py`
-- `users/api_views.py`
-- `users/bootstrap/groups_seed.py`
-- `users/management/commands/create_groups.py`
-- templates en `users/templates/`
+- `kernel/users/views.py`
+- `kernel/users/forms.py`
+- `kernel/users/models.py`
+- `kernel/users/api_views.py`
+- `kernel/users/bootstrap/groups_seed.py`
+- `kernel/users/management/commands/create_groups.py`
+- templates en `kernel/users/templates/`
 - En el ABM de usuarios, `es_representante_pwa` es el interruptor general de
   acceso mobile, incluido el coordinador PWA. `Profile.configuracion_mobile`
   conserva las selecciones al suspender el acceso; no otorga permisos.
@@ -397,27 +404,27 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   La confirmación inicial usa `/mi-cuenta/confirmar/` y
   `ProfileConfirmationMiddleware`, registrado después del cambio de contraseña.
   El middleware solo bloquea web: `/api/` está exento; al tocar ese flujo, revisar
-  `users/profile_utils.py`, las migraciones `0044`/`0045` y
+  `kernel/users/profile_utils.py`, las migraciones `0044`/`0045` y
   `tests/test_users_mi_cuenta.py`.
 
 ### Si necesitas cambiar la importacion masiva de usuarios
 
-- `users/services_user_import.py`: parsing, alta/actualizacion, mail de
+- `kernel/users/services_user_import.py`: parsing, alta/actualizacion, mail de
   credenciales y exportacion CSV.
 - El alta canónica de `SIMEPI - EGP` es `users.UserCreationForm` en
   `/usuarios/crear/`; admite uno o más scopes provinciales completos. La URL
   histórica `/simepi/egp/generar-usuario/` sólo redirige por compatibilidad.
-- `users/services_user_import_jobs.py`: procesamiento y reanudacion del lote.
+- `kernel/users/services_user_import_jobs.py`: procesamiento y reanudacion del lote.
 - Los checkpoints de usuario y progreso se confirman en una transacción por fila. `users.0053` agrega el identificador de propiedad del lote.
-- `users/views_user_import.py`, `users/urls.py` y
-  `users/templates/user/user_import_job_detail.html`: detalle y descargas.
+- `kernel/users/views_user_import.py`, `kernel/users/urls.py` y
+  `kernel/users/templates/user/user_import_job_detail.html`: detalle y descargas.
 - Las credenciales se agrupan al finalizar el lote; los lotes PWA deben usar
   `/mobile/login` y las descargas sensibles se limitan al solicitante o a un
   superusuario.
 
 ### Si necesitas cambiar el import/export Excel-CSV del Django admin
 
-- `core/admin_import_export.py`: bases `BaseImportExportAdmin` (import +
+- `kernel/core/admin_import_export.py`: bases `BaseImportExportAdmin` (import +
   export) y `BaseExportAdmin` (solo export), con formatos limitados a XLSX/CSV.
 - `<app>/resources.py`: resources explicitos cuando hay que acotar campos o
   resolver relaciones por nombre (`core`, `intervenciones`).
@@ -429,9 +436,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar permisos o IAM
 
-- `users/bootstrap/groups_seed.py`
-- `users/services_group_permissions.py`
-- `users/api_permissions.py`
+- `kernel/users/bootstrap/groups_seed.py`
+- `kernel/users/services_group_permissions.py`
+- `kernel/users/api_permissions.py`
 - permisos especificos por app, por ejemplo `celiaquia/permissions.py`
 - docs: `docs/implementaciones/usuarios_perfil_iam.md`
 
@@ -545,8 +552,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `pwa/models.py`
 - `pwa/api_urls.py`
 - `pwa/api_views.py`
-- `users/services_pwa.py`: alcance PWA, accesos y coordinador de equipo técnico PWA.
-- `users/api_permissions.py`: permisos de lectura y veto transversal de escritura
+- `kernel/users/services_pwa.py`: alcance PWA, accesos y coordinador de equipo técnico PWA.
+- `kernel/users/api_permissions.py`: permisos de lectura y veto transversal de escritura
   para roles PWA de solo lectura.
 - Toda mutación PWA debe incluir `IsPWAWriteAllowed`, excepto las acciones
   personales expresamente permitidas (contraseña y suscripciones push).
@@ -601,9 +608,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar exportaciones CSV
 
-- Política UTF-8/BOM y helpers HTTP: `core/services/csv_export.py`.
-- Streaming reutilizable: `core/mixins.py:CSVExportMixin`.
-- Admin import/export: `core/admin_import_export.py`.
+- Política UTF-8/BOM y helpers HTTP: `kernel/core/services/csv_export.py`.
+- Streaming reutilizable: `kernel/core/mixins.py:CSVExportMixin`.
+- Admin import/export: `kernel/core/admin_import_export.py`.
 - Guía y contrato: `docs/implementaciones/exportar_listados.md`.
 - Los productores CSV nuevos deben reutilizar la política central; el guard
   vive en `tests/test_csv_export_architecture.py`.
@@ -616,10 +623,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Apariencia de segmentación: `static/custom/css/encuestaSegmentacion.css` restaura la paleta oscura/dorada previa a `efd1abcc7`, cargada después del layout compartido `encuestaForm.css` únicamente en `encuesta_segmentacion.html`. Conserva selección visible de grupos y cargas por documentos/IDs.
 - `encuestas/services_resultados.py`: agregacion de resultados por pregunta y export CSV/Excel (nunca vincula contenido a identidad si la encuesta es anonima).
 - `encuestas/validators.py`: parseo del listado de segmentacion (Excel/CSV por documentos o `usuario_id`) y del payload JSON del editor de preguntas (no usa formsets de Django a proposito). Segmentación por IDs: relación `SegmentacionEncuesta.usuarios`, migración `0006`, plantilla `?tipo=listado_usuarios`, validación de existencia y reemplazo atómico; tests en `test_encuestas_segmentacion_usuarios.py`. Exportar con estos destinatarios usa JSON v4; los IDs son locales al ambiente.
-- `encuestas/middleware.py` (`EncuestaObligatoriaMiddleware`): bloquea la navegacion de cualquier usuario con una encuesta obligatoria pendiente; registrado en `config/settings.py` despues de `ProfileConfirmationMiddleware`. Mismo patron que `users/middleware.py`.
+- `encuestas/middleware.py` (`EncuestaObligatoriaMiddleware`): bloquea la navegacion de cualquier usuario con una encuesta obligatoria pendiente; registrado en `config/settings.py` despues de `ProfileConfirmationMiddleware`. Mismo patron que `kernel/users/middleware.py`.
 - `encuestas/context_processors.py`: expone la ronda pendiente al modal global (`templates/includes/base.html` + `encuestas/templates/encuestas/partials/responder_modal.html`); comparte cache de request con el middleware para no duplicar la consulta.
 - `encuestas/management/commands/process_encuestas_rondas.py` + servicio `encuestas_worker` en `docker-compose.yml`: abre/cierra rondas por fecha, sin Celery.
-- `users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas`, `Administrador de Encuestas` (permiso `aprobar_encuesta`) y `Encuestas Resultados`.
+- `kernel/users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas`, `Administrador de Encuestas` (permiso `aprobar_encuesta`) y `Encuestas Resultados`.
 - Guía funcional canónica: `docs/implementaciones/encuestas.md`. El análisis histórico y sus decisiones de diseño quedan en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
 - Aprobación: `solicitar_publicacion` / `publicar` / `rechazar_publicacion` en `services.py`; borrador → pendiente → publicada o borrador. La ruta histórica `publicar/` ahora solicita, `aprobar/` y `rechazar/` requieren `aprobar_encuesta`. Revisión de solo lectura en `revision/`; pendientes bloquean edición y segmentación. Migración `0004` + `create_groups`. Tests en `test_encuestas_aprobacion.py`; `tests/helpers.py` prepara rondas recorriendo el circuito.
 - Portabilidad JSON: `exportar_encuesta` / `importar_encuesta` en `services.py`, endpoints `/encuestas/<pk>/exportar/` y `/encuestas/importar/`. Formato v3, admite v1/v2; importar crea borrador nuevo y vuelve al listado. Segmentacion optativa, contiene documentos personales si se incluye.
@@ -630,8 +637,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Segmentacion por CUIT: `_documentos_de_usuario` compara CUIT y CUIL contra el CUIL del perfil, ademas de DNI.
 ### Si necesitas auditar o reparar mojibake en datos
 
-- Reparación conservadora compartida: `core/services/text_encoding.py`.
-- Prevención en RENAPER: `core/integrations/renaper.py`; el JSON se decodifica
+- Reparación conservadora compartida: `kernel/core/services/text_encoding.py`.
+- Prevención en RENAPER: `kernel/core/integrations/renaper.py`; el JSON se decodifica
   desde bytes UTF-8 y el payload se normaliza antes de persistirse.
 - Auditoría read-only de campos explícitos: `python manage.py
   audit_utf8_mojibake --field app.Model.campo`.
@@ -664,9 +671,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   management commands relacionados, `.env.example`. El flag
   `GESTIONAR_INTEGRATION_ENABLED` corta todo el tráfico AppSheet/GESTIONAR; no
   usarlo como interruptor parcial.
-- RENAPER: `core/integrations/renaper.py`, `core/integrations/renaper_rate_limit.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`. La migración `core.0009` debe existir antes de consultas.
+- RENAPER: `kernel/core/integrations/renaper.py`, `kernel/core/integrations/renaper_rate_limit.py`, `kernel/core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`. La migración `core.0009` debe existir antes de consultas.
 - Validación RENAPER de nómina CDI (#2508, Fase 1): payload en
-  `ciudadanos/services_renaper_validacion.py`, indicador compartido del PDF en
+  `kernel/ciudadanos/services_renaper_validacion.py`, indicador compartido del PDF en
   `centrodeinfancia/services_renaper_estado.py` y comando
   `validar_renaper_nominas_cdi --dry-run --batch-size 500 --limit 100`.
   Incluso dry-run consulta RENAPER real: requiere ventana autorizada. El comando
@@ -825,7 +832,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `config/settings.py`: cambia todo el runtime, seguridad, cache, auth, logging, docs API.
 - `config/urls.py`: cualquier ajuste impacta routing global.
 - `docker/django/entrypoint.py`: side effects de arranque, migraciones, workers.
-- `users/bootstrap/groups_seed.py` y comandos de grupos: permisos globales.
+- `kernel/users/bootstrap/groups_seed.py` y comandos de grupos: permisos globales.
 - `encuestas/middleware.py`: middleware global nuevo (registrado en `config/settings.py`), puede bloquear la navegacion de cualquier usuario autenticado en cualquier vista del sistema si tiene una encuesta obligatoria pendiente.
 - `comedores/tasks.py` y `relevamientos/tasks.py`: syncs externos, threads y side effects.
 - `signals.py` de varias apps: pueden disparar efectos colaterales no obvios.
@@ -876,7 +883,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | --- | --- |
 | bugfix view/template | `docs/ia/TESTING.md`, template, view, JS asociado |
 | API/serializer | `docs/ia/TESTING.md`, `api_views.py`, serializer, tests API |
-| permisos/auth | `docs/ia/SECURITY_AI.md`, `users/`, docs IAM |
+| permisos/auth | `docs/ia/SECURITY_AI.md`, `kernel/users/`, docs IAM |
 | nuevo modulo o preparacion de extraccion | `docs/ia/MODULAR_BOUNDARIES.md`, `.importlinter`, `config/settings.py`, `config/urls.py` |
 | boundaries/refactor existente | `docs/ia/ARCHITECTURE.md`, `.importlinter` |
 | logging/errores/fallbacks | `docs/ia/ERRORS_LOGGING.md` |
@@ -915,19 +922,19 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 | Necesidad | Mirar primero |
 | --- | --- |
-| login / reset / perfil | `users/views.py`, `users/forms.py`, templates `users/templates/` |
-| grupos / permisos | `users/bootstrap/groups_seed.py`, `users/api_permissions.py`, docs IAM |
+| login / reset / perfil | `kernel/users/views.py`, `kernel/users/forms.py`, templates `kernel/users/templates/` |
+| grupos / permisos | `kernel/users/bootstrap/groups_seed.py`, `kernel/users/api_permissions.py`, docs IAM |
 | navbar / sidebar / layout | `templates/includes/`, `templates/includes/sidebar/`, `static/custom/js/sidebar.js` |
-| filtro/listado generico | `core/`, `templates/components/data_table.html`, JS de la pantalla |
+| filtro/listado generico | `kernel/core/`, `templates/components/data_table.html`, JS de la pantalla |
 | comedores | `comedores/models.py`, `tasks.py`, `signals.py`, tests `test_comedor*` |
 | relevamientos | `relevamientos/models.py`, `tasks.py`, `views.py` |
-| RENAPER | `core/integrations/renaper.py`, `core/services/renaper.py` |
+| RENAPER | `kernel/core/integrations/renaper.py`, `kernel/core/services/renaper.py` |
 | GESTIONAR | `comedores/tasks.py`, `relevamientos/tasks.py`, commands relacionados |
 | docx/pdf | `admisiones/services/`, `comedores/services/certificacion_prestaciones_service.py`, `pwa/services/nomina_destinatarios_pdf_service.py`, `pwa/files/varios/` |
 | PWA | `pwa/api_views.py`, `pwa/services/`, tests `test_pwa_*` |
 | OCR | `ocr/`, `docker/django/entrypoint.py` |
 | encuestas | `encuestas/services.py`, `encuestas/middleware.py`, `docs/registro/analisis/2026-08-28-modulo-encuestas.md` |
-| auditoria | `audittrail/`, docs `audittrail_*` |
+| auditoria | `kernel/audittrail/`, docs `audittrail_*` |
 | release/deploy | `docs/operacion/*.md`, workflows, compose deploy |
 | CI rota por estilo | `.github/workflows/lint.yml`, `scripts/ci/pr_lint_tools.py` |
 | CI rota por imports | `.importlinter`, `requirements/arch.txt` |

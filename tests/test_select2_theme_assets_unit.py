@@ -26,8 +26,8 @@ def test_select2_theme_cubre_variantes_bootstrap():
 
 def test_templates_migrados_no_cargan_override_legacy_de_select2():
     templates = (
-        "users/templates/group/group_form.html",
-        "users/templates/user/user_form.html",
+        "kernel/users/templates/group/group_form.html",
+        "kernel/users/templates/user/user_form.html",
         "relevamientos/templates/relevamiento_form.html",
     )
 

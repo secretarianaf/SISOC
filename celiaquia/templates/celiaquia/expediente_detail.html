@@ -28,8 +28,6 @@
         </style>
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
-                <a href="{% url 'expediente_list' %}"
-                   class="btn btn-outline-secondary btn-sm">Volver</a>
                 {% if expediente.estado.nombre == 'CREADO' %}
                     <a href="{% url 'expediente_update' expediente.pk %}"
                        class="btn btn-outline-primary btn-sm ms-2">Editar Metadatos</a>
@@ -372,7 +370,7 @@
                         <tbody>
                             {% for leg in legajos_enriquecidos %}
                                 <tr class="legajo-row"
-                                    {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107;"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8;"{% elif leg.revision_tecnico == 'RECHAZADO' or leg.estado_validacion_renaper == 2 %}style="border-left: 4px solid #dc3545;"{% elif leg.revision_tecnico == 'APROBADO' %}style="border-left: 4px solid #28a745;"{% endif %}
+                                    {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107;"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8;"{% elif leg.revision_tecnico == 'APROBADO' %}style="border-left: 4px solid #28a745;"{% elif leg.revision_tecnico == 'RECHAZADO' or leg.estado_validacion_renaper == 2 %}style="border-left: 4px solid #dc3545;"{% endif %}
                                     data-estado="{{ leg.revision_tecnico|default:'PENDIENTE' }}"
                                     data-search="{{ leg.pk }} {{ leg.ciudadano.nombre|lower }} {{ leg.ciudadano.apellido|lower }} {{ leg.ciudadano.documento|default:'' }}">
                                     <td>
@@ -743,7 +741,7 @@
                                                     {% if leg.revision_tecnico == 'APROBADO' or leg.revision_tecnico == 'RECHAZADO' or leg.revision_tecnico == 'SUBSANADO' %}
                                                         <div class="d-flex justify-content-end mt-2">
                                                             <button type="button"
-                                                                    class="btn btn-sm btn-outline-dark btn-corregir-evaluacion"
+                                                                    class="btn btn-sm btn-success btn-corregir-evaluacion"
                                                                     data-legajo-id="{{ leg.pk }}"
                                                                     data-estado-actual="{{ leg.revision_tecnico }}"
                                                                     data-bs-toggle="modal"
@@ -962,7 +960,7 @@
                                     {% if leg.revision_tecnico == 'APROBADO' or leg.revision_tecnico == 'RECHAZADO' or leg.revision_tecnico == 'SUBSANADO' %}
                                         <div class="d-flex justify-content-end mt-2">
                                             <button type="button"
-                                                    class="btn btn-sm btn-outline-dark btn-corregir-evaluacion"
+                                                    class="btn btn-sm btn-success btn-corregir-evaluacion"
                                                     data-legajo-id="{{ leg.pk }}"
                                                     data-estado-actual="{{ leg.revision_tecnico }}"
                                                     data-bs-toggle="modal"
@@ -1020,13 +1018,16 @@
                         <input type="hidden" name="accion" value="RECHAZAR" />
                         <input type="hidden" id="rechazar-legajo-id" name="legajo_id" value="" />
                         <div class="mb-3">
-                            <span class="form-label d-block">Observaciones técnicas registradas</span>
-                            <div id="rechazar-preview" class="motivo-preview p-2 rounded">
+                            <span class="form-label d-block">Motivos del rechazo</span>
+                            <div id="rechazar-preview"
+                                 class="motivo-preview p-2 rounded"
+                                 role="group"
+                                 aria-label="Motivos del rechazo">
                                 <span class="text-muted small">Cargando…</span>
                             </div>
                             <small class="text-muted d-block mt-1">
-                                Son las observaciones cargadas en Comentarios Técnicos. El texto
-                                definitivo lo arma el sistema al confirmar.
+                                Elegí las observaciones de Comentarios Técnicos que corresponden a esta instancia.
+                                Las que no elijas quedan en el historial y no se le vuelven a pedir a la provincia.
                             </small>
                         </div>
                         <div class="mb-2">
@@ -1038,8 +1039,12 @@
                                       placeholder="Agregá algo puntual que no esté en las observaciones…"></textarea>
                         </div>
                         <small class="text-muted d-block">
-                            El legajo quedará en estado <strong>RECHAZADO</strong> y la provincia verá estas observaciones.
+                            El legajo quedará en estado <strong>RECHAZADO</strong> y la provincia verá los motivos elegidos.
                         </small>
+                        <div id="rechazar-error"
+                             class="alert alert-danger mt-3 mb-0 py-2 small"
+                             role="alert"
+                             hidden></div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -1469,13 +1474,16 @@
                         <input type="hidden" name="accion" value="SUBSANAR" />
                         <input type="hidden" id="subsanar-legajo-id" name="legajo_id" value="" />
                         <div class="mb-3">
-                            <span class="form-label d-block">Observaciones técnicas registradas</span>
-                            <div id="subsanar-preview" class="motivo-preview p-2 rounded">
+                            <span class="form-label d-block">Motivos a subsanar</span>
+                            <div id="subsanar-preview"
+                                 class="motivo-preview p-2 rounded"
+                                 role="group"
+                                 aria-label="Motivos a subsanar">
                                 <span class="text-muted small">Cargando…</span>
                             </div>
                             <small class="text-muted d-block mt-1">
-                                Son las observaciones cargadas en Comentarios Técnicos. El texto
-                                definitivo lo arma el sistema al confirmar.
+                                Elegí las observaciones de Comentarios Técnicos que corresponden a esta instancia.
+                                Las que no elijas quedan en el historial y no se le vuelven a pedir a la provincia.
                             </small>
                         </div>
                         <div class="mb-3">
@@ -2281,7 +2289,7 @@
     <script src="{% static 'custom/js/expediente_detail_config.js' %}?v=20260902-comentarios-tecnicos"></script>
     <script src="{% static 'custom/js/registros_erroneos.js' %}?v=20260326-guardado-parcial-siempre"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
-    <script src="{% static 'custom/js/expediente_detail.js' %}?v=20260902-comentarios-tecnicos"></script>
+    <script src="{% static 'custom/js/expediente_detail.js' %}?v=20260930-aprobar-recarga"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
     <script src="{% static 'custom/js/legajo_comentarios.js' %}?v=20260902-comentarios-tecnicos"></script>

@@ -55,6 +55,7 @@ class CiudadanosImportUploadView(CiudadanosImportPermissionMixin, FormView):
         context["template_download_url"] = reverse(
             "ciudadanos_importacion_masiva_plantilla"
         )
+        context["volver_url"] = reverse("ciudadanos")
         return context
 
     def form_valid(self, form):
@@ -84,6 +85,7 @@ class CiudadanosImportJobDetailView(CiudadanosImportPermissionMixin, TemplateVie
                 "job": job,
                 "rows_page": rows_page,
                 "can_resume": can_resume_ciudadanos_import_job(job),
+                "volver_url": reverse("ciudadanos_importacion_masiva"),
             }
         )
         return context

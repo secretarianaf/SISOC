@@ -485,9 +485,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ===== PREVISUALIZACIÓN DEL MOTIVO (subsanar / rechazar) =====
-     El motivo definitivo lo arma el backend a partir de los comentarios
-     técnicos del legajo; esto es sólo lo que se muestra en pantalla. */
+  /* ===== MOTIVOS DE SUBSANAR / RECHAZAR (issue #2592) =====
+     Multiselect con las observaciones técnicas del legajo. Vienen tildadas
+     las que todavía no se comunicaron a la Provincia; las de instancias
+     anteriores se ofrecen sin tildar. Sólo viajan los ids elegidos: el motivo
+     definitivo lo arma el backend. */
   async function cargarPreviewMotivo(legajoId, contenedor) {
     if (!contenedor) return;
     contenedor.innerHTML = '<span class="text-muted small">Cargando…</span>';
@@ -515,15 +517,33 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      contenedor.innerHTML =
-        '<ul class="mb-0 ps-3 small">' +
-        data.lineas.map((linea) => `<li>${escapeHtmlPreview(linea)}</li>`).join('') +
-        '</ul>';
+      contenedor.innerHTML = data.opciones.map((opcion) => {
+        const inputId = `${contenedor.id}-${opcion.id}`;
+        const nota = opcion.pendiente
+          ? ''
+          : ' <span class="text-muted">(ya comunicada en una instancia anterior)</span>';
+        return (
+          '<div class="form-check small mb-1">' +
+          `<input class="form-check-input" type="checkbox" name="observaciones_ids" ` +
+          `id="${inputId}" value="${escapeHtmlPreview(opcion.id)}"${opcion.pendiente ? ' checked' : ''}>` +
+          `<label class="form-check-label" for="${inputId}">${escapeHtmlPreview(opcion.etiqueta)}${nota}</label>` +
+          '</div>'
+        );
+      }).join('');
     } catch (err) {
       console.error('Previsualización del motivo:', err);
       contenedor.innerHTML = '<span class="text-danger small">No se pudo cargar la previsualización.</span>';
     }
   }
+
+  function motivosSeleccionados(contenedor) {
+    return Array.from(
+      contenedor?.querySelectorAll('input[name="observaciones_ids"]:checked') || []
+    ).map((input) => input.value);
+  }
+
+  const MENSAJE_SIN_MOTIVO =
+    'Seleccioná al menos un motivo o completá la información complementaria.';
 
   function escapeHtmlPreview(value) {
     return String(value ?? '')
@@ -585,11 +605,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* El modal tapa la zona de alertas de la página, así que los errores del
      submit se muestran también adentro. */
-  function mostrarErrorSubsanar(mensaje) {
-    const cont = document.getElementById('subsanar-error');
+  function mostrarErrorEnModal(contenedorId, mensaje) {
+    const cont = document.getElementById(contenedorId);
     if (!cont) return;
     cont.textContent = mensaje || '';
     cont.hidden = !mensaje;
+  }
+
+  function mostrarErrorSubsanar(mensaje) {
+    mostrarErrorEnModal('subsanar-error', mensaje);
+  }
+
+  function mostrarErrorRechazar(mensaje) {
+    mostrarErrorEnModal('rechazar-error', mensaje);
   }
 
   /* ===== MODAL SUBSANAR (técnico) ===== */
@@ -638,6 +666,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       mostrarErrorSubsanar('');
 
+      const motivos = motivosSeleccionados(previewSubsanar);
+      if (!motivos.length && !textoLibre) {
+        mostrarErrorSubsanar(MENSAJE_SIN_MOTIVO);
+        return;
+      }
+
       const inputDocs = modalSubsanar.querySelector('#subsanar-documentacion');
       if (!validarDocumentacionComplementaria(inputDocs)) {
         mostrarErrorSubsanar('Revisá la documentación complementaria antes de continuar.');
@@ -650,11 +684,12 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando…';
 
       try {
-        // El motivo lo arma el backend con los comentarios técnicos del
-        // legajo; desde acá sólo viaja el texto libre complementario.
+        // El motivo lo arma el backend con los comentarios técnicos
+        // elegidos; desde acá viajan sus ids y el texto libre complementario.
         const fd = new FormData();
         fd.append('accion', 'SUBSANAR');
         fd.append('texto_libre', textoLibre);
+        motivos.forEach((id) => fd.append('observaciones_ids', id));
 
         // Documentación complementaria (opcional): acompaña a la solicitud
         // entera, no a una observación puntual. El backend valida formato,
@@ -914,6 +949,7 @@ document.addEventListener('DOMContentLoaded', () => {
       modalRechazar.querySelector('#rechazar-legajo-id').value = legajoId;
       const ta = modalRechazar.querySelector('#rechazar-motivo');
       if (ta) ta.value = '';
+      mostrarErrorRechazar('');
       cargarPreviewMotivo(legajoId, previewRechazar);
     });
 
@@ -935,17 +971,26 @@ document.addEventListener('DOMContentLoaded', () => {
         showAlert('danger', 'No se configuró la URL de revisión de legajos.');
         return;
       }
+
+      mostrarErrorRechazar('');
+      const motivos = motivosSeleccionados(previewRechazar);
+      if (!motivos.length && !textoLibre) {
+        mostrarErrorRechazar(MENSAJE_SIN_MOTIVO);
+        return;
+      }
+
       const url = window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId);
 
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando…';
 
       try {
-        // El motivo lo arma el backend con los comentarios técnicos del
-        // legajo; desde acá sólo viaja el texto libre complementario.
+        // El motivo lo arma el backend con los comentarios técnicos
+        // elegidos; desde acá viajan sus ids y el texto libre complementario.
         const fd = new FormData();
         fd.append('accion', 'RECHAZAR');
         fd.append('texto_libre', textoLibre);
+        motivos.forEach((id) => fd.append('observaciones_ids', id));
 
         const resp = await fetch(url, {
           method: 'POST',
@@ -982,6 +1027,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       } catch (err) {
         console.error('Rechazar legajo:', err);
+        mostrarErrorRechazar(`No se pudo registrar el rechazo. ${err.message}`);
         showAlert('danger', 'No se pudo registrar el rechazo. ', err.message);
       } finally {
         btn.disabled = false;
@@ -1222,6 +1268,9 @@ document.addEventListener('DOMContentLoaded', () => {
             data.estado || (accion === 'APROBAR' ? 'APROBADO' : 'RECHAZADO'),
           );
           showAlert('success', 'Legajo ', legajoId, ': estado actualizado a ', data.estado, '.');
+          // Recargar como Subsanar/Rechazar/Corregir: la fila (borde, badge,
+          // observación y botones) se arma en el template según el estado.
+          setTimeout(() => window.location.reload(), 800);
 
         } catch (err) {
           console.error('Revisión de legajo:', err);

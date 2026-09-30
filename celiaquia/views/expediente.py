@@ -2049,12 +2049,12 @@ MAPA_TIPO_DOCUMENTO_A_SUBSANACION = {
 }
 
 
-def _observaciones_desde_comentarios_tecnicos(legajo):
+def _observaciones_desde_comentarios_tecnicos(comentarios):
     """Observaciones (tipo, detalle) derivadas de los comentarios técnicos.
 
-    Traduce las observaciones publicables del legajo al formato que consumen
-    `Subsanacion`/`SubsanacionObservacion`. Lista vacía si el legajo todavía no
-    tiene comentarios técnicos con observaciones."""
+    Traduce los comentarios elegidos para la subsanación al formato que
+    consumen `Subsanacion`/`SubsanacionObservacion`. Lista vacía si no se
+    eligió ninguno."""
     return [
         (
             MAPA_TIPO_DOCUMENTO_A_SUBSANACION.get(
@@ -2062,7 +2062,7 @@ def _observaciones_desde_comentarios_tecnicos(legajo):
             ),
             comentario.comentario,
         )
-        for comentario in ComentariosTecnicosService.observaciones_publicables(legajo)
+        for comentario in comentarios
     ]
 
 
@@ -2110,25 +2110,38 @@ class RevisarLegajoView(View):
     def _componer_motivo(self, request, leg):
         """Motivo de Subsanar/Rechazar armado en backend.
 
-        Concatena las observaciones técnicas del legajo (las que tienen
-        observaciones = Sí) y le suma el texto libre complementario. Lo que
-        llega del cliente es solo ese texto libre: la previsualización que
-        muestra el modal no es la fuente de verdad. Devuelve
-        ``(motivo, None)`` o ``("", JsonResponse)`` cuando no hay nada que
-        comunicar."""
+        Del cliente llegan solo los ids de los comentarios técnicos elegidos
+        para esta instancia (`observaciones_ids`) y el texto libre
+        complementario; el texto de las observaciones se toma de la base. Sin
+        ids no se usa ninguna observación: cada instancia lleva únicamente lo
+        que Nación eligió (issue #2592).
+
+        Devuelve ``(motivo, comentarios, None)`` o ``("", [], JsonResponse)``
+        cuando la selección es inválida o no hay nada que comunicar."""
         texto_libre = request.POST.get("texto_libre")
         if texto_libre is None:
             # La UI previa al issue #2318 manda el motivo en `motivo`.
             texto_libre = request.POST.get("motivo") or ""
         try:
-            return ComentariosTecnicosService.componer_motivo(leg, texto_libre), None
-        except ValidationError as exc:
-            return "", JsonResponse(
-                {"success": False, "error": "; ".join(exc.messages)}, status=400
+            comentarios = ComentariosTecnicosService.resolver_seleccion(
+                leg, request.POST.getlist("observaciones_ids")
             )
+            motivo = ComentariosTecnicosService.componer_motivo(
+                comentarios, texto_libre
+            )
+        except ValidationError as exc:
+            return (
+                "",
+                [],
+                JsonResponse(
+                    {"success": False, "error": "; ".join(exc.messages)}, status=400
+                ),
+            )
+        return motivo, comentarios, None
 
-    def _rechazar(self, user, leg, motivo):
-        """Rechaza el legajo, registra la auditoría y publica las observaciones."""
+    def _rechazar(self, user, leg, motivo, comentarios):
+        """Rechaza el legajo, registra la auditoría y publica las observaciones
+        elegidas como motivo del rechazo."""
         estado_anterior = leg.revision_tecnico
         leg.revision_tecnico = "RECHAZADO"
         # Marcar RENAPER como rechazado también
@@ -2154,7 +2167,9 @@ class RevisarLegajoView(View):
                 motivo=motivo,
             )
 
-            publicados = ComentariosTecnicosService.publicar(leg, usuario=user)
+            publicados = ComentariosTecnicosService.publicar(
+                leg, comentarios=comentarios, usuario=user
+            )
 
         return JsonResponse(
             {
@@ -2165,9 +2180,12 @@ class RevisarLegajoView(View):
             }
         )
 
-    def _subsanar(self, request, user, leg, motivo):
+    def _subsanar(  # pylint: disable=too-many-arguments
+        self, request, user, leg, motivo, comentarios
+    ):
         """Solicita la subsanación: estado, observaciones, documentación y
-        publicación."""
+        publicación. `comentarios` son los comentarios técnicos elegidos para
+        esta instancia."""
         tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
 
         # Documentación complementaria de Nación (issue #2523): opcional, y se
@@ -2182,11 +2200,11 @@ class RevisarLegajoView(View):
                 {"success": False, "error": "; ".join(exc.messages)}, status=400
             )
 
-        # Las observaciones salen de los comentarios técnicos del legajo. Si
-        # todavía no tiene ninguno (legajos previos al issue #2318), se cae al
-        # parseo del POST para no romper el flujo anterior.
+        # Las observaciones salen de los comentarios técnicos elegidos. Si no se
+        # eligió ninguno (solo texto libre, o legajos previos al issue #2318),
+        # se cae al parseo del POST para no romper el flujo anterior.
         observaciones = _observaciones_desde_comentarios_tecnicos(
-            leg
+            comentarios
         ) or _parse_observaciones_subsanacion(request, motivo)
 
         estado_anterior = leg.revision_tecnico
@@ -2245,7 +2263,9 @@ class RevisarLegajoView(View):
                 subsanacion, complementaria, usuario=user
             )
 
-            publicados = ComentariosTecnicosService.publicar(leg, usuario=user)
+            publicados = ComentariosTecnicosService.publicar(
+                leg, comentarios=comentarios, usuario=user
+            )
 
         return JsonResponse(
             {
@@ -2436,8 +2456,9 @@ class RevisarLegajoView(View):
         # El motivo se compone antes de tocar el cupo y el estado: si no hay
         # nada que comunicar, el legajo tiene que quedar intacto.
         motivo = ""
+        comentarios = []
         if accion in ("RECHAZAR", "SUBSANAR"):
-            motivo, error = self._componer_motivo(request, leg)
+            motivo, comentarios, error = self._componer_motivo(request, leg)
             if error:
                 return error
 
@@ -2489,7 +2510,7 @@ class RevisarLegajoView(View):
             )
 
         if accion == "RECHAZAR":
-            return self._rechazar(user, leg, motivo)
+            return self._rechazar(user, leg, motivo, comentarios)
 
         # ELIMINAR - Solo coordinadores y admin (técnicos no eliminan)
         if accion == "ELIMINAR":
@@ -2507,7 +2528,7 @@ class RevisarLegajoView(View):
             return self._eliminar_legajo(request, user, leg)
 
         # SUBSANAR
-        return self._subsanar(request, user, leg, motivo)
+        return self._subsanar(request, user, leg, motivo, comentarios)
 
 
 ESTADOS_EVALUACION_FINAL = {"APROBADO", "RECHAZADO", "SUBSANADO"}

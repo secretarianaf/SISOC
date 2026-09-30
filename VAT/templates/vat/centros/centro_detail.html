@@ -2560,9 +2560,14 @@
 
                 if (!municipioId) {
                     localidadSelect.innerHTML = vacia;
+                    localidadSelect.disabled = true;
                     refreshSelect2(localidadSelect);
                     return;
                 }
+
+                localidadSelect.disabled = true;
+                localidadSelect.innerHTML = '<option value="">Cargando...</option>';
+                refreshSelect2(localidadSelect);
 
                 // Descarta respuestas viejas si se cambia de departamento rápido.
                 var esteRequest = ++requestId;
@@ -2583,23 +2588,55 @@
                         if (String(loc.id) === String(valorPrevio)) opt.selected = true;
                         localidadSelect.appendChild(opt);
                     });
+                    localidadSelect.disabled = false;
                     refreshSelect2(localidadSelect);
                 })
                 .catch(function(err) {
                     console.error('No se pudieron cargar las localidades:', err);
+                    localidadSelect.innerHTML = vacia;
+                    localidadSelect.disabled = true;
+                    refreshSelect2(localidadSelect);
                 });
             }
 
-            form.addEventListener('change', function(event) {
-                if (event.target && event.target.id === 'id_departamento_ubicacion') {
-                    cargarLocalidades(false);
+            function seleccionarUnicoDepartamentoSiAplica() {
+                var departamentoSelect = form.querySelector('#id_departamento_ubicacion');
+                if (!departamentoSelect || departamentoSelect.value) return;
+
+                var opciones = Array.from(departamentoSelect.options).filter(function(option) {
+                    return option.value;
+                });
+                if (opciones.length !== 1) return;
+
+                departamentoSelect.value = opciones[0].value;
+                if (window.jQuery) {
+                    window.jQuery(departamentoSelect).trigger('change.select2');
                 }
-            });
+            }
+
+            function onDepartamentoChange() {
+                cargarLocalidades(false);
+            }
+
+            if (window.jQuery) {
+                window.jQuery(form).on(
+                    'change select2:select select2:clear',
+                    '#id_departamento_ubicacion',
+                    onDepartamentoChange
+                );
+            } else {
+                form.addEventListener('change', function(event) {
+                    if (event.target && event.target.id === 'id_departamento_ubicacion') {
+                        onDepartamentoChange();
+                    }
+                });
+            }
 
             // En edición el departamento ya viene elegido: al abrir el modal se
             // traen sus localidades conservando la guardada.
             if (modal) {
                 modal.addEventListener('shown.bs.modal', function() {
+                    seleccionarUnicoDepartamentoSiAplica();
                     cargarLocalidades(true);
                 });
             }

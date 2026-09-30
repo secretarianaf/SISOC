@@ -302,6 +302,7 @@ class ComisionDetailView(LoginRequiredMixin, DetailView):
         context["comision_back_url"] = reverse(
             "vat_centro_detail", kwargs={"pk": comision.oferta.centro_id}
         )
+        context["volver_url"] = context["comision_back_url"]
         context["comision_edit_url"] = reverse(
             "vat_comision_update", kwargs={"pk": comision.pk}
         )
@@ -488,6 +489,7 @@ class AsistenciaSesionView(LoginRequiredMixin, TemplateView):
         context["comision_detail_url"] = reverse(
             "vat_comision_detail", kwargs={"pk": sesion.comision_id}
         )
+        context["volver_url"] = context["comision_detail_url"]
         context["comision_label"] = str(sesion.comision)
         return context
 

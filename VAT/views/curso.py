@@ -306,6 +306,7 @@ class CursoDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         curso = self.object
         context["cancel_url"] = _centro_cursos_tab_url(curso.centro_id)
+        context["volver_url"] = context["cancel_url"]
         context["puede_editar_curso"] = can_user_edit_centro(
             self.request.user, curso.centro
         ) and self.request.user.has_perm("VAT.change_curso")
@@ -1028,6 +1029,7 @@ class AsistenciaSesionCursoView(LoginRequiredMixin, TemplateView):
         context["comision_detail_url"] = reverse(
             "vat_comision_curso_detail", kwargs={"pk": sesion.comision_curso_id}
         )
+        context["volver_url"] = context["comision_detail_url"]
         context["comision_label"] = str(sesion.entidad_comision)
         return context
 

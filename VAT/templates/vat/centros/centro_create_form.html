@@ -554,11 +554,6 @@
     {% include 'components/alert_message.html' with show_django_messages=True %}
 
     <div class="vp-shell">
-        <div class="vp-topbar">
-            <a href="{{ cancel_url }}" class="vp-back">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
-        </div>
         <div class="vp-hero">
             <h1>{{ page_title|default:"Alta Centro de Formación Profesional" }}</h1>
         </div>
@@ -766,10 +761,10 @@
             <div class="vp-contact-item mb-3 contacto-form-item"
                  data-form-index="__prefix__">__FORM_FIELDS__</div>
         </template>
-    {% endblock %}
+{% endblock %}
 
-    {% block customJS %}
-        <script nonce="{{ request.csp_nonce }}">
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
         var referenteSearchOptions = [
@@ -807,6 +802,6 @@
                 </div>
             {% endwith %}
         {% endfilter %}`;
-        </script>
-        <script src="{% static 'custom/js/centro_create_form.js' %}"></script>
-    {% endblock %}
+</script>
+<script src="{% static 'custom/js/centro_create_form.js' %}"></script>
+{% endblock %}

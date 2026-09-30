@@ -94,6 +94,7 @@ class UserImportJobDetailView(AdminRequiredMixin, View):
                 "page_obj": page_obj,
                 "is_resume_available": can_resume_user_import_job(job),
                 "upload_url": reverse("usuarios_importar"),
+                "volver_url": reverse("usuarios_importar"),
                 "status_filter": status_filter,
                 "has_csv_download": job.rows.filter(
                     status=UserImportJobRow.Status.CREATED,

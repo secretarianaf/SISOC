@@ -2257,7 +2257,7 @@ class AsistenciaNominaCentroView(LoginRequiredMixin, TemplateView):
                 "total_presentes": presentes,
                 "total_ausentes": ausentes,
                 "total_sin_marcar": sin_marcar,
-                "back_url": reverse(
+                "volver_url": reverse(
                     "centrodeinfancia_detalle",
                     kwargs={"pk": centro.pk},
                 ),

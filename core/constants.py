@@ -29,6 +29,7 @@ class UserGroups:
     SIMEPI_EQUIPO_NACIONAL = "SIMEPI - Equipo Nacional"
     SIMEPI_AUDITORIA = "SIMEPI - Auditoría"
     SIMEPI_EGP = "SIMEPI - EGP"
+    USUARIOS_GESTOR_COMEDORES = "Usuarios - Gestor Comedores"
 
     # =========================================================================
     # Grupos de permisos específicos

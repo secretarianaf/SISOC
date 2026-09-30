@@ -16,7 +16,7 @@ services:
       test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health/', timeout=2).close()"]
       interval: 10s
       timeout: 3s
-      start_period: 5m
+      start_period: 10m
       retries: 12
 
   front_vpsl:

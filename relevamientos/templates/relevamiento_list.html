@@ -121,7 +121,7 @@
                                                         {% endif %}
                                                     </div>
                                                     <div class="col-2 d-flex justify-content-end">
-                                                        {% if not item.is_child and perms.relevamientos.add_relevamiento %}
+                                                        {% if not item.is_child and perms.relevamientos.add_relevamiento and opciones_seguimiento %}
                                                             <button type="button"
                                                                     class="btn btn-sm btn-primary mb-0 py-1 px-2"
                                                                     data-bs-toggle="modal"
@@ -179,6 +179,9 @@
                                                     <span class="badge bg-light text-dark" title="Cargada desde SISOC">SISOC</span>
                                                 {% endif %}
                                                 <span class="badge bg-info">{{ acta.prestaciones.all|length }} prestación{{ acta.prestaciones.all|length|pluralize:"es" }}</span>
+                                                {% if acta.estado_validacion %}
+                                                    <span class="badge {% if acta.estado_validacion == 'Validado' %}bg-success{% elif acta.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ acta.estado_validacion }}</span>
+                                                {% endif %}
                                             </div>
                                             <div class="col-2 d-flex justify-content-end">
                                                 {% if perms.relevamientos.change_actacomplementaria %}
@@ -229,6 +232,9 @@
                                             <div class="col-3 d-flex flex-wrap gap-1">
                                                 {% if seguimiento.estado_validacion %}
                                                     <span class="badge {% if seguimiento.estado_validacion == 'Validado' %}bg-success{% elif seguimiento.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ seguimiento.estado_validacion }}</span>
+                                                {% elif seguimiento.asignado_desde_sisoc %}
+                                                    <span class="badge bg-secondary"
+                                                          title="Asignado desde SISOC, el territorial todavía no lo envió">Asignado</span>
                                                 {% endif %}
                                                 {% if seguimiento.origen == "app" %}<span class="badge bg-primary" title="Cargado desde la app">App</span>{% endif %}
                                             </div>
@@ -270,11 +276,9 @@
                                         name="tipo_relevamiento"
                                         class="form-select"
                                         required>
-                                    <option value="relevamiento_inicial" selected>Acompañamiento territorial inicial</option>
-                                    <option value="primer_seguimiento">Primer seguimiento</option>
-                                    <option value="seguimiento_posterior">Seguimiento posterior</option>
-                                    <option value="seguimiento_virtual">Seguimiento virtual</option>
-                                    <option value="acta_excepcion">Acta de excepción (visita no realizada)</option>
+                                    {% for valor, etiqueta in opciones_alta %}
+                                        <option value="{{ valor }}" {% if forloop.first %}selected{% endif %}>{{ etiqueta }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             <div id="new_territorial_container"
@@ -294,7 +298,7 @@
                                      role="listbox"
                                      aria-label="Sugerencias de territoriales"></div>
                             </div>
-                            <small class="text-muted">El acompañamiento territorial se crea asignado al territorial seleccionado.</small>
+                            <small class="text-muted">El acompañamiento territorial se crea asignado al territorial seleccionado. Las opciones dependen del programa del comedor.</small>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -332,10 +336,9 @@
                                         name="tipo_relevamiento"
                                         class="form-select"
                                         required>
-                                    <option value="primer_seguimiento" selected>Primer seguimiento</option>
-                                    <option value="seguimiento_posterior">Seguimiento posterior</option>
-                                    <option value="seguimiento_virtual">Seguimiento virtual</option>
-                                    <option value="acta_excepcion">Acta de excepción (visita no realizada)</option>
+                                    {% for valor, etiqueta in opciones_seguimiento %}
+                                        <option value="{{ valor }}" {% if forloop.first %}selected{% endif %}>{{ etiqueta }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             <small class="text-muted">El seguimiento se agrega a este acompañamiento territorial y hereda su territorial asignado.</small>

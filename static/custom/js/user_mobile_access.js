@@ -22,6 +22,8 @@
     show('mobile-pwa-permissions-wrapper', enabled && !readOnly);
     show('backoffice-permisos-card', !enabled);
     show('backoffice-config-card', !enabled);
+    show('backoffice-equipos-card', !enabled);
+    show('backoffice-admin-card', !enabled);
     show('password-field-wrapper', !enabled);
     show('mobile-password-help', enabled);
   };

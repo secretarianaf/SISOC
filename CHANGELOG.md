@@ -12,6 +12,7 @@
 - [sin-area] PNUD: estructura literal del documento en el detalle del backoffice (SI/NO, ranking y casillas aplanados; sin migración). (PR #2600)
 - [sin-area] fix(pnud): JSON de etiquetas PNUD de la ronda 2 de la estructura literal (complemento de #2600). (PR #2602)
 - [sin-area] fix(territorial): el listado trae las actas complementarias asignadas desde SISOC. (PR #2606)
+- [sin-area] fix(territorial): exponer sin_cargar en las actas complementarias (para app 1.1.54). (PR #2607)
 - [sin-area] chore(datos): diagnóstico (y reparación opcional) de datos de la app del 28/9. (PR #2608)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-30 -->
 

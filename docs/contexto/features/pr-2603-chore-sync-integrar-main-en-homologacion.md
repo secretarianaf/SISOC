@@ -49,12 +49,12 @@
 - `docs/contexto/features/pr-2602-fix-pnud-json-de-etiquetas-pnud-de-la-ronda-2-de-la-estructura-literal-complemento-de-2600.md`
 - `docs/contexto/features/pr-2603-chore-sync-integrar-main-en-homologacion.md`
 - `docs/contexto/features/pr-2606-fix-territorial-el-listado-trae-las-actas-complementarias-asignadas-desde-sisoc.md`
+- `docs/contexto/features/pr-2607-fix-territorial-exponer-sin-cargar-en-las-actas-complementarias-para-app-1-1-54.md`
+- `docs/contexto/features/pr-2608-chore-datos-diagnostico-y-reparacion-opcional-de-datos-de-la-app-del-28-9.md`
 - `docs/registro/decisiones/2026-09-29-usuarios-secciones-por-permiso.md`
 - `docs/registro/prs/PR-2596.md`
 - `docs/registro/prs/PR-2598.md`
-- `docs/registro/prs/PR-2599.md`
-- `docs/registro/prs/PR-2600.md`
-- ... y 43 archivo(s) adicional(es) relacionados.
+- ... y 53 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

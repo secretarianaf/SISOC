@@ -56,7 +56,7 @@
 - `kernel/audittrail/apps.py`
 - `kernel/audittrail/constants.py`
 - `kernel/audittrail/context.py`
-- ... y 284 archivo(s) adicional(es) relacionados.
+- ... y 285 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

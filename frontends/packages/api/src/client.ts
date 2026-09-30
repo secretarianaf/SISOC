@@ -56,6 +56,19 @@ export const mensajeDeError = (error: unknown): string => {
   return partes.join(" · ") || "No se pudo completar la operación.";
 };
 
+/**
+ * Campos que el back marco como invalidos en un 400.
+ *
+ * `registros_erroneos_service` los deriva del mensaje de error y los devuelve en
+ * `invalid_fields`, que es lo que la pantalla usa para resaltar los inputs.
+ * Devuelve lista vacia si la respuesta no los trae.
+ */
+export const camposInvalidosDeError = (error: unknown): string[] => {
+  const data = (error as AxiosError<Record<string, unknown>>)?.response?.data;
+  const campos = data?.invalid_fields;
+  return Array.isArray(campos) ? campos.map(String) : [];
+};
+
 export const crearCliente = (baseURL: string): AxiosInstance => {
   const cliente = axios.create({ baseURL, withCredentials: true });
 

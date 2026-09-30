@@ -79,6 +79,28 @@ regeneraron y `npm run api:check` queda en verde.
   services del repo puntúa más bajo por el mismo artefacto de resolución de
   imports).
 
+## Front v2 conectado
+
+`frontends/packages/api/src/celiaquia.ts` suma las tres requests, y
+`RegistrosErroneos.tsx` dejo de ser solo lectura: ahora corrige una fila en un
+modal, reprocesa todas y descarta.
+
+Detalles que importan:
+
+- **El formulario edita las claves que trae `datos_raw`**, no una lista fija de
+  campos. Las columnas dependen del Excel que se subio; mantener la lista del
+  lado del front la habria dejado desincronizada del back.
+- **Los campos invalidos se resaltan** con `camposInvalidosDeError`, que lee el
+  `invalid_fields` del 400. Es el mismo dato que usa la pantalla Django.
+- Reprocesar invalida tambien la query de legajos, porque crea legajos nuevos.
+- La tarjeta se oculta sola cuando no quedan filas, pero se queda visible
+  mientras haya un mensaje: si no, el resumen del reproceso desaparecia justo
+  cuando se arreglaban todas las filas.
+
+Tests: 5 casos nuevos en `apps/celiaquia/src/test/cliente.test.ts` sobre el
+helper de campos invalidos y sobre la URL y el cuerpo de cada request (11 en
+total). `lint`, `typecheck`, `test`, `build` y `api:check` en verde.
+
 ## Pendiente
 
 La API todavía no cubre estas operaciones del front Django:

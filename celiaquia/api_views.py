@@ -14,14 +14,13 @@ Dos reglas que ordenan todo este modulo:
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Count
-from django.http import HttpResponse
+from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 
 from celiaquia.api_serializers import (
@@ -46,6 +45,12 @@ from celiaquia.api_serializers import (
     PagoExpedienteSerializer,
     PagoNominaSerializer,
     ActualizarRegistroErroneoSerializer,
+    ImportacionResultadoSerializer,
+    LocalidadLookupSerializer,
+    ComentarioLegajoSerializer,
+    CrearComentarioTecnicoSerializer,
+    MotivoPreviewSerializer,
+    ResponderSubsanacionSerializer,
     PreviewExcelResultadoSerializer,
     ReprocesoResultadoSerializer,
     PreviewExcelSerializer,
@@ -84,7 +89,15 @@ from celiaquia.services.asignacion_service import AsignacionService
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService
 from celiaquia.services.documentos_service import DocumentosService
+from core.models import Localidad
+from users.territorial_scope import apply_territorial_scope
+from celiaquia.permissions import (
+    can_edit_legajo_files,
+    exigir_acceso_nacion_a_comentarios,
+)
 from celiaquia.services import registros_erroneos_service
+from celiaquia.services.comentarios_tecnicos_service import ComentariosTecnicosService
+from celiaquia.services.subsanacion_service import SubsanacionService
 from celiaquia.services.expediente_service import ExpedienteService
 from celiaquia.services.familia_service import FamiliaService
 from celiaquia.services.importacion_service import ImportacionService
@@ -251,6 +264,26 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
         if not (is_admin(user) or is_provincial(user) or is_coordinador(user)):
             raise PermissionDenied("No tiene permisos para operar el expediente.")
 
+    @extend_schema(request=None, responses=ImportacionResultadoSerializer)
+    @action(detail=True, methods=["post"])
+    def importar(self, request, pk=None):
+        """Importa los legajos del Excel masivo ya cargado en el expediente.
+
+        La pantalla Django devuelve los totales por `messages`; aca se devuelven
+        como JSON para que el front pueda mostrar validos, errores y
+        advertencias sin parsear texto.
+        """
+
+        self._exigir_gestion()
+        expediente = self.get_object()
+        try:
+            resultado = ImportacionService.importar_legajos_desde_excel(
+                expediente, expediente.excel_masivo, request.user
+            )
+        except DjangoValidationError as exc:
+            raise _traducir_error(exc) from exc
+        return Response(ImportacionResultadoSerializer(resultado).data)
+
     @extend_schema(request=None, responses=AccionResultadoSerializer)
     @action(detail=True, methods=["post"])
     def procesar(self, request, pk=None):
@@ -369,6 +402,88 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
         expediente = self.get_object()
         expediente.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(
+        responses={
+            (
+                200,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ): bytes
+        }
+    )
+    @action(detail=False, methods=["get"], url_path="plantilla-excel")
+    def plantilla_excel(self, request):
+        """Excel vacio con las columnas que espera la importacion masiva."""
+
+        contenido = ImportacionService.generar_plantilla_excel()
+        respuesta = HttpResponse(
+            contenido,
+            content_type=(
+                "application/vnd.openxmlformats-officedocument" ".spreadsheetml.sheet"
+            ),
+        )
+        respuesta["Content-Disposition"] = (
+            'attachment; filename="plantilla_expediente.xlsx"'
+        )
+        return respuesta
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("provincia", int),
+            OpenApiParameter("municipio", int),
+        ],
+        responses=LocalidadLookupSerializer(many=True),
+    )
+    @action(detail=False, methods=["get"], url_path="localidades")
+    def localidades(self, request):
+        """Localidades para los selectores del alta, acotadas al alcance.
+
+        El filtro territorial es el mismo que aplica la pantalla: un usuario
+        provincial no ve localidades de otra provincia.
+        """
+
+        queryset = Localidad.objects.select_related("municipio__provincia")
+        if (
+            is_provincial(request.user)
+            and not is_coordinador(request.user)
+            and not is_admin(request.user)
+        ):
+            queryset = apply_territorial_scope(
+                queryset,
+                request.user,
+                provincia_lookup="municipio__provincia_id",
+                municipio_lookup="municipio_id",
+                localidad_lookup="id",
+            )
+
+        provincia_id = (request.query_params.get("provincia") or "").strip()
+        if provincia_id.isdigit():
+            queryset = queryset.filter(municipio__provincia_id=int(provincia_id))
+        municipio_id = (request.query_params.get("municipio") or "").strip()
+        if municipio_id.isdigit():
+            queryset = queryset.filter(municipio_id=int(municipio_id))
+
+        queryset = queryset.order_by(
+            "municipio__provincia__nombre", "municipio__nombre", "nombre"
+        )
+        return Response(LocalidadLookupSerializer(queryset, many=True).data)
+
+    @extend_schema(responses={(200, "application/octet-stream"): bytes})
+    @action(detail=True, methods=["get"], url_path="excel-masivo")
+    def excel_masivo(self, request, pk=None):
+        """Descarga la copia del Excel masivo vigente del expediente."""
+
+        if not (is_admin(request.user) or is_coordinador(request.user)):
+            raise PermissionDenied("No tiene permisos para descargar el Excel masivo.")
+        expediente = self.get_object()
+        if not expediente.excel_masivo:
+            raise ValidationError(
+                {"detail": "El expediente no tiene Excel masivo cargado."}
+            )
+        nombre = expediente.excel_masivo.name.rsplit("/", 1)[-1]
+        return FileResponse(
+            expediente.excel_masivo.open("rb"), as_attachment=True, filename=nombre
+        )
 
     @extend_schema(
         request=PreviewExcelSerializer, responses=PreviewExcelResultadoSerializer
@@ -514,7 +629,7 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
             )
         except DjangoValidationError as exc:
             # Se devuelven los campos invalidos como los espera un formulario.
-            raise DRFValidationError(
+            raise ValidationError(
                 {
                     "detail": str(exc),
                     "invalid_fields": registros_erroneos_service.campos_invalidos(exc),
@@ -637,6 +752,98 @@ class LegajoViewSet(viewsets.ReadOnlyModelViewSet):
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+
+    @extend_schema(responses=ComentarioLegajoSerializer(many=True))
+    @action(detail=True, methods=["get"])
+    def comentarios(self, request, pk=None):
+        """Historial de comentarios del legajo, deduplicado como la pantalla."""
+
+        legajo = self.get_object()
+        exigir_acceso_nacion_a_comentarios(request.user, legajo)
+        historial = ComentariosTecnicosService.historial(legajo)
+        return Response(
+            ComentarioLegajoSerializer(
+                historial, many=True, context=self.get_serializer_context()
+            ).data
+        )
+
+    @extend_schema(
+        request=CrearComentarioTecnicoSerializer,
+        responses=ComentarioLegajoSerializer,
+    )
+    @action(detail=True, methods=["post"], url_path="comentarios/tecnico")
+    def crear_comentario_tecnico(self, request, pk=None):
+        """Alta de un comentario tecnico interno sobre el legajo.
+
+        Solo el tecnico asignado, el coordinador o un admin: la provincia ve el
+        panel pero no escribe, igual que en la pantalla.
+        """
+
+        legajo = self.get_object()
+        exigir_acceso_nacion_a_comentarios(request.user, legajo)
+        entrada = CrearComentarioTecnicoSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        try:
+            comentario = ComentariosTecnicosService.registrar(
+                legajo, usuario=request.user, **entrada.validated_data
+            )
+        except DjangoValidationError as exc:
+            raise _traducir_error(exc) from exc
+        return Response(
+            ComentarioLegajoSerializer(
+                comentario, context=self.get_serializer_context()
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @extend_schema(responses=MotivoPreviewSerializer)
+    @action(detail=True, methods=["get"], url_path="motivo-preview")
+    def motivo_preview(self, request, pk=None):
+        """Motivo que se propondria al subsanar o rechazar, ya concatenado."""
+
+        legajo = self.get_object()
+        exigir_acceso_nacion_a_comentarios(request.user, legajo)
+        return Response(
+            MotivoPreviewSerializer(
+                {
+                    "lineas": ComentariosTecnicosService.lineas_concatenadas(legajo),
+                    "motivo": ComentariosTecnicosService.texto_concatenado(legajo),
+                }
+            ).data
+        )
+
+    @extend_schema(
+        request=ResponderSubsanacionSerializer, responses=AccionResultadoSerializer
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="responder-subsanacion",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def responder_subsanacion(self, request, pk=None):
+        """La provincia adjunta evidencia nueva para la subsanacion activa."""
+
+        legajo = self.get_object()
+        try:
+            can_edit_legajo_files(request.user, legajo.expediente, legajo)
+        except PermissionDenied as exc:
+            raise PermissionDenied(str(exc) or "Permiso denegado.") from exc
+
+        entrada = ResponderSubsanacionSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        try:
+            SubsanacionService.exigir_puede_responder(legajo)
+            SubsanacionService.responder(
+                legajo=legajo,
+                archivos=entrada.validated_data["archivos"],
+                usuario=request.user,
+                descripcion=entrada.validated_data.get("descripcion", ""),
+                observacion_id=entrada.validated_data.get("observacion_id"),
+            )
+        except DjangoValidationError as exc:
+            raise _traducir_error(exc) from exc
+        return Response({"detalle": "Archivos de subsanación cargados correctamente."})
 
     @extend_schema(responses=DocumentoLegajoSerializer(many=True))
     @action(detail=True, methods=["get"])

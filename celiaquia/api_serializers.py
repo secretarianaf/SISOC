@@ -12,6 +12,7 @@ from rest_framework import serializers
 
 from celiaquia.models import (
     AsignacionTecnico,
+    HistorialComentarios,
     CupoMovimiento,
     DocumentoLegajo,
     EstadoExpediente,
@@ -416,6 +417,118 @@ class PreviewExcelResultadoSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         raise serializers.ValidationError("Serializer de solo lectura.")
+
+
+class ImportacionResultadoSerializer(serializers.Serializer):
+    """Resultado de importar los legajos del Excel masivo ya cargado."""
+
+    validos = serializers.IntegerField()
+    errores = serializers.IntegerField()
+    detalles_errores = serializers.ListField(
+        child=serializers.DictField(), default=list
+    )
+    warnings = serializers.ListField(child=serializers.DictField(), default=list)
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+
+class LocalidadLookupSerializer(serializers.Serializer):
+    """Localidad con su municipio y provincia, para los selectores del alta."""
+
+    localidad_id = serializers.IntegerField(source="id", read_only=True)
+    localidad_nombre = serializers.CharField(source="nombre", read_only=True)
+    municipio_id = serializers.IntegerField(read_only=True)
+    municipio_nombre = serializers.CharField(
+        source="municipio.nombre", read_only=True, default=""
+    )
+    provincia_id = serializers.IntegerField(
+        source="municipio.provincia_id", read_only=True, default=None
+    )
+    provincia_nombre = serializers.CharField(
+        source="municipio.provincia.nombre", read_only=True, default=""
+    )
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+
+class ComentarioLegajoSerializer(serializers.ModelSerializer):
+    """Comentario del panel de un legajo.
+
+    Los comentarios tecnicos estructurados (issue #2318) traen ademas tipo de
+    documento y observacion; en el resto esos campos vienen vacios.
+    """
+
+    usuario = UsuarioResumenSerializer(read_only=True)
+    tipo_documento_display = serializers.CharField(
+        source="get_tipo_documento_display", read_only=True
+    )
+    archivo_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = HistorialComentarios
+        fields = [
+            "id",
+            "comentario",
+            "usuario",
+            "fecha_creacion",
+            "es_interno",
+            "es_comentario_tecnico",
+            "tipo_comentario",
+            "tipo_documento",
+            "tipo_documento_display",
+            "archivo_url",
+        ]
+
+    def get_archivo_url(self, obj) -> str:
+        archivo = getattr(obj, "archivo_adjunto", None)
+        if not archivo:
+            return ""
+        request = self.context.get("request")
+        return request.build_absolute_uri(archivo.url) if request else archivo.url
+
+
+class CrearComentarioTecnicoSerializer(_EntradaSerializer):
+    """Alta estructurada: tipo de documento + Si/No + observacion.
+
+    La combinacion valida la decide `ComentariosTecnicosService.registrar`, que
+    es el mismo camino que usa la pantalla.
+    """
+
+    tipo_documento = serializers.CharField()
+    tiene_observaciones = serializers.CharField()
+    observacion_codigo = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True
+    )
+    observacion_libre = serializers.CharField(required=False, allow_blank=True)
+
+
+class MotivoPreviewSerializer(serializers.Serializer):
+    """Motivo que se propondria al subsanar o rechazar, ya concatenado."""
+
+    lineas = serializers.ListField(child=serializers.CharField())
+    motivo = serializers.CharField(allow_blank=True)
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+
+class ResponderSubsanacionSerializer(_EntradaSerializer):
+    """Respuesta de la provincia: uno o varios archivos como evidencia nueva."""
+
+    archivos = serializers.ListField(child=serializers.FileField(), allow_empty=False)
+    descripcion = serializers.CharField(required=False, allow_blank=True)
+    observacion_id = serializers.IntegerField(required=False, allow_null=True)
 
 
 class ActualizarRegistroErroneoSerializer(_EntradaSerializer):

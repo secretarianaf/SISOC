@@ -238,8 +238,11 @@ export function ExpedienteDetailPage() {
           revisando={revisar.isPending}
         />
 
-        {registros.data && registros.data.length > 0 ? (
-          <RegistrosErroneos registros={registros.data} />
+        {registros.data ? (
+          <RegistrosErroneos
+            registros={registros.data}
+            expedienteId={expedienteId}
+          />
         ) : null}
       </Stack>
 

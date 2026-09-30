@@ -752,6 +752,31 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/celiaquia/expedientes/{id}/excel-masivo/:
+    get:
+      operationId: expedientes_excel_masivo_retrieve
+      description: Descarga la copia del Excel masivo vigente del expediente.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          description: ''
   /api/celiaquia/expedientes/{id}/fuera-de-cupo/:
     get:
       operationId: expedientes_fuera_de_cupo_list
@@ -811,6 +836,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedExpedienteEstadoHistorialList'
+          description: ''
+  /api/celiaquia/expedientes/{id}/importar/:
+    post:
+      operationId: expedientes_importar_create
+      description: |-
+        Importa los legajos del Excel masivo ya cargado en el expediente.
+
+        La pantalla Django devuelve los totales por `messages`; aca se devuelven
+        como JSON para que el front pueda mostrar validos, errores y
+        advertencias sin parsear texto.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportacionResultado'
           description: ''
   /api/celiaquia/expedientes/{id}/legajos/:
     get:
@@ -1062,6 +1116,60 @@ paths:
               schema:
                 $ref: '#/components/schemas/ReprocesoResultado'
           description: ''
+  /api/celiaquia/expedientes/localidades/:
+    get:
+      operationId: expedientes_localidades_list
+      description: |-
+        Localidades para los selectores del alta, acotadas al alcance.
+
+        El filtro territorial es el mismo que aplica la pantalla: un usuario
+        provincial no ve localidades de otra provincia.
+      parameters:
+      - in: query
+        name: municipio
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - in: query
+        name: provincia
+        schema:
+          type: integer
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLocalidadLookupList'
+          description: ''
+  /api/celiaquia/expedientes/plantilla-excel/:
+    get:
+      operationId: expedientes_plantilla_excel_retrieve
+      description: Excel vacio con las columnas que espera la importacion masiva.
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+          description: ''
   /api/celiaquia/expedientes/preview-excel/:
     post:
       operationId: expedientes_preview_excel_create
@@ -1181,6 +1289,76 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/celiaquia/legajos/{id}/comentarios/:
+    get:
+      operationId: legajos_comentarios_list
+      description: Historial de comentarios del legajo, deduplicado como la pantalla.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente Ciudadano.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - legajos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedComentarioLegajoList'
+          description: ''
+  /api/celiaquia/legajos/{id}/comentarios/tecnico/:
+    post:
+      operationId: legajos_comentarios_tecnico_create
+      description: |-
+        Alta de un comentario tecnico interno sobre el legajo.
+
+        Solo el tecnico asignado, el coordinador o un admin: la provincia ve el
+        panel pero no escribe, igual que en la pantalla.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente Ciudadano.
+        required: true
+      tags:
+      - legajos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearComentarioTecnico'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CrearComentarioTecnico'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CrearComentarioTecnico'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComentarioLegajo'
+          description: ''
   /api/celiaquia/legajos/{id}/documentos/:
     get:
       operationId: legajos_documentos_list
@@ -1210,6 +1388,63 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedDocumentoLegajoList'
+          description: ''
+  /api/celiaquia/legajos/{id}/motivo-preview/:
+    get:
+      operationId: legajos_motivo_preview_retrieve
+      description: Motivo que se propondria al subsanar o rechazar, ya concatenado.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente Ciudadano.
+        required: true
+      tags:
+      - legajos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MotivoPreview'
+          description: ''
+  /api/celiaquia/legajos/{id}/responder-subsanacion/:
+    post:
+      operationId: legajos_responder_subsanacion_create
+      description: La provincia adjunta evidencia nueva para la subsanacion activa.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente Ciudadano.
+        required: true
+      tags:
+      - legajos
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ResponderSubsanacion'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ResponderSubsanacion'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccionResultado'
           description: ''
   /api/celiaquia/legajos/{id}/revisar/:
     post:
@@ -1679,6 +1914,65 @@ components:
           type: integer
       required:
       - tecnico_id
+    BlankEnum:
+      enum:
+      - ''
+    ComentarioLegajo:
+      type: object
+      description: |-
+        Comentario del panel de un legajo.
+
+        Los comentarios tecnicos estructurados (issue #2318) traen ademas tipo de
+        documento y observacion; en el resto esos campos vienen vacios.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        comentario:
+          type: string
+        usuario:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioResumen'
+          readOnly: true
+        fecha_creacion:
+          type: string
+          format: date-time
+          readOnly: true
+        es_interno:
+          type: boolean
+          description: 'Comentario interno: visible solo para usuarios de Nación'
+        es_comentario_tecnico:
+          type: boolean
+          readOnly: true
+        tipo_comentario:
+          $ref: '#/components/schemas/TipoComentarioEnum'
+        tipo_documento:
+          nullable: true
+          description: |-
+            Tipo de documento revisado (solo en comentarios técnicos)
+
+            * `RENAPER` - RENAPER
+            * `ANSES` - ANSES
+            * `CONDICION_DIAGNOSTICA` - Condición diagnóstica
+          oneOf:
+          - $ref: '#/components/schemas/TipoDocumentoEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        tipo_documento_display:
+          type: string
+          readOnly: true
+        archivo_url:
+          type: string
+          readOnly: true
+      required:
+      - archivo_url
+      - comentario
+      - es_comentario_tecnico
+      - fecha_creacion
+      - id
+      - tipo_comentario
+      - tipo_documento_display
+      - usuario
     ConfigurarCupo:
       type: object
       description: |-
@@ -1693,6 +1987,26 @@ components:
           minimum: 0
       required:
       - total_asignado
+    CrearComentarioTecnico:
+      type: object
+      description: |-
+        Alta estructurada: tipo de documento + Si/No + observacion.
+
+        La combinacion valida la decide `ComentariosTecnicosService.registrar`, que
+        es el mismo camino que usa la pantalla.
+      properties:
+        tipo_documento:
+          type: string
+        tiene_observaciones:
+          type: string
+        observacion_codigo:
+          type: string
+          nullable: true
+        observacion_libre:
+          type: string
+      required:
+      - tiene_observaciones
+      - tipo_documento
     CrearLegajos:
       type: object
       description: Alta manual de legajos desde las filas previsualizadas.
@@ -1915,6 +2229,27 @@ components:
       - fecha
       - id
       - usuario
+    ImportacionResultado:
+      type: object
+      description: Resultado de importar los legajos del Excel masivo ya cargado.
+      properties:
+        validos:
+          type: integer
+        errores:
+          type: integer
+        detalles_errores:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        warnings:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - errores
+      - validos
     Legajo:
       type: object
       description: '`ExpedienteCiudadano` es el legajo de una persona dentro del expediente.'
@@ -1993,6 +2328,38 @@ components:
       - expediente_id
       - id
       - modificado_en
+    LocalidadLookup:
+      type: object
+      description: Localidad con su municipio y provincia, para los selectores del
+        alta.
+      properties:
+        localidad_id:
+          type: integer
+          readOnly: true
+        localidad_nombre:
+          type: string
+          readOnly: true
+        municipio_id:
+          type: integer
+          readOnly: true
+        municipio_nombre:
+          type: string
+          readOnly: true
+          default: ''
+        provincia_id:
+          type: integer
+          readOnly: true
+        provincia_nombre:
+          type: string
+          readOnly: true
+          default: ''
+      required:
+      - localidad_id
+      - localidad_nombre
+      - municipio_id
+      - municipio_nombre
+      - provincia_id
+      - provincia_nombre
     Motivo:
       type: object
       description: Motivo de una baja, suspension o reactivacion de cupo.
@@ -2001,6 +2368,22 @@ components:
           type: string
           default: ''
           maxLength: 2000
+    MotivoPreview:
+      type: object
+      description: Motivo que se propondria al subsanar o rechazar, ya concatenado.
+      properties:
+        lineas:
+          type: array
+          items:
+            type: string
+        motivo:
+          type: string
+      required:
+      - lineas
+      - motivo
+    NullEnum:
+      enum:
+      - null
     ObservacionSubsanacion:
       type: object
       description: |-
@@ -2054,6 +2437,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AsignacionTecnico'
+    PaginatedComentarioLegajoList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComentarioLegajo'
     PaginatedCupoMovimientoList:
       type: object
       required:
@@ -2169,6 +2575,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Legajo'
+    PaginatedLocalidadLookupList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalidadLookup'
     PaginatedPagoExpedienteList:
       type: object
       required:
@@ -2537,6 +2966,23 @@ components:
       - excluidos
       - excluidos_detalle
       - registros_restantes
+    ResponderSubsanacion:
+      type: object
+      description: 'Respuesta de la provincia: uno o varios archivos como evidencia
+        nueva.'
+      properties:
+        archivos:
+          type: array
+          items:
+            type: string
+            format: uri
+        descripcion:
+          type: string
+        observacion_id:
+          type: integer
+          nullable: true
+      required:
+      - archivos
     ResultadoSintysEnum:
       enum:
       - SIN_CRUCE
@@ -2660,6 +3106,26 @@ components:
       description: |-
         * `PENDIENTE` - Pendiente de respuesta
         * `RESPONDIDA` - Respondida por la provincia
+    TipoComentarioEnum:
+      enum:
+      - VALIDACION_TECNICA
+      - SUBSANACION_MOTIVO
+      - SUBSANACION_RESPUESTA
+      - RENAPER_VALIDACION
+      - OBSERVACION_GENERAL
+      - CRUCE_SINTYS
+      - PAGO_OBSERVACION
+      - COMENTARIO_TECNICO
+      type: string
+      description: |-
+        * `VALIDACION_TECNICA` - Validación Técnica
+        * `SUBSANACION_MOTIVO` - Motivo de Subsanación
+        * `SUBSANACION_RESPUESTA` - Respuesta de Subsanación
+        * `RENAPER_VALIDACION` - Validación RENAPER
+        * `OBSERVACION_GENERAL` - Observación General
+        * `CRUCE_SINTYS` - Cruce SINTYS
+        * `PAGO_OBSERVACION` - Observación de Pago
+        * `COMENTARIO_TECNICO` - Comentario Técnico
     TipoCruce:
       type: object
       properties:
@@ -2696,6 +3162,16 @@ components:
       required:
       - id
       - nombre
+    TipoDocumentoEnum:
+      enum:
+      - RENAPER
+      - ANSES
+      - CONDICION_DIAGNOSTICA
+      type: string
+      description: |-
+        * `RENAPER` - RENAPER
+        * `ANSES` - ANSES
+        * `CONDICION_DIAGNOSTICA` - Condición diagnóstica
     TipoEnum:
       enum:
       - ALTA

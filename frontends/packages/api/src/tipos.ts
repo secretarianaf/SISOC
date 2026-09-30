@@ -53,6 +53,11 @@ export type UsuarioResumen = Schemas["UsuarioResumen"];
 /** Lo que devuelve `preview-excel/`. `PreviewExcel` a secas es el request. */
 export type PreviewExcel = Schemas["PreviewExcelResultado"];
 export type AccionResultado = Schemas["AccionResultado"];
+export type ReprocesoResultado = Schemas["ReprocesoResultado"];
+export type ImportacionResultado = Schemas["ImportacionResultado"];
+export type ComentarioLegajo = Schemas["ComentarioLegajo"];
+export type MotivoPreview = Schemas["MotivoPreview"];
+export type LocalidadLookup = Schemas["LocalidadLookup"];
 
 /* Enums: el back los publica como componentes propios. */
 export type RevisionTecnico = Schemas["RevisionTecnicoEnum"];

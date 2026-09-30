@@ -1,18 +1,24 @@
 import type { AxiosInstance } from "axios";
 import type {
+  AccionResultado,
   AccionRevision,
+  ComentarioLegajo,
   CupoMovimiento,
   DocumentoLegajo,
   Expediente,
   HistorialEstado,
+  ImportacionResultado,
+  LocalidadLookup,
   Legajo,
   MetricasCupo,
+  MotivoPreview,
   Paginado,
   PagoExpediente,
   PagoNomina,
   PreviewExcel,
   ProvinciaCupo,
   RegistroErroneo,
+  ReprocesoResultado,
 } from "./tipos";
 
 /**
@@ -82,6 +88,75 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
         .get<RegistroErroneo[]>(`expedientes/${id}/registros-erroneos/`)
         .then((r) => r.data),
 
+    /**
+     * Corrige una fila que no se pudo importar.
+     *
+     * Las claves de `datos` son las columnas del Excel, asi que el back recibe
+     * el diccionario entero y valida con el mismo service que la pantalla
+     * Django. Si la fila sigue invalida responde 400 con `invalid_fields`.
+     */
+    actualizarRegistroErroneo: (
+      id: number,
+      registroId: number,
+      datos: Record<string, string>,
+    ) =>
+      http
+        .post<AccionResultado>(
+          `expedientes/${id}/registros-erroneos/${registroId}/actualizar/`,
+          { datos },
+        )
+        .then((r) => r.data),
+
+    /** Reintenta crear los legajos de todas las filas con error. */
+    reprocesarRegistrosErroneos: (id: number) =>
+      http
+        .post<ReprocesoResultado>(
+          `expedientes/${id}/registros-erroneos/reprocesar/`,
+        )
+        .then((r) => r.data),
+
+    /**
+     * Importa los legajos del Excel masivo ya cargado en el expediente.
+     *
+     * Devuelve los totales como JSON; la pantalla Django los manda por
+     * `messages`, que no se pueden leer desde React.
+     */
+    importar: (id: number) =>
+      http
+        .post<ImportacionResultado>(`expedientes/${id}/importar/`)
+        .then((r) => r.data),
+
+    /** Excel vacio con las columnas que espera la importacion. */
+    plantillaExcel: () =>
+      http
+        .get("expedientes/plantilla-excel/", { responseType: "blob" })
+        .then((r) => r.data as Blob),
+
+    /** Copia del Excel masivo vigente. Solo coordinacion y admin. */
+    descargarExcelMasivo: (id: number) =>
+      http
+        .get(`expedientes/${id}/excel-masivo/`, { responseType: "blob" })
+        .then((r) => r.data as Blob),
+
+    /**
+     * Localidades para los selectores del alta.
+     *
+     * El back las acota al alcance territorial del usuario, asi que no hace
+     * falta filtrar de este lado.
+     */
+    localidades: (params?: { provincia?: number; municipio?: number }) =>
+      http
+        .get<LocalidadLookup[]>("expedientes/localidades/", { params })
+        .then((r) => r.data),
+
+    /** Descarta una fila sin importarla. */
+    eliminarRegistroErroneo: (id: number, registroId: number) =>
+      http
+        .delete<AccionResultado>(
+          `expedientes/${id}/registros-erroneos/${registroId}/`,
+        )
+        .then((r) => r.data),
+
     estructuraFamiliar: (id: number) =>
       http
         .get<Record<string, unknown>>(`expedientes/${id}/estructura-familiar/`)
@@ -132,6 +207,54 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
 
     documentos: (id: number) =>
       http.get<DocumentoLegajo[]>(`legajos/${id}/documentos/`).then((r) => r.data),
+
+    /**
+     * Historial de comentarios internos del legajo.
+     *
+     * Es del panel de Nacion: la provincia recibe 403 hasta que el comentario
+     * se publica al subsanar o rechazar.
+     */
+    comentarios: (id: number) =>
+      http
+        .get<ComentarioLegajo[]>(`legajos/${id}/comentarios/`)
+        .then((r) => r.data),
+
+    /** Alta de un comentario tecnico estructurado (tipo + Si/No + observacion). */
+    crearComentarioTecnico: (
+      id: number,
+      datos: {
+        tipo_documento: string;
+        tiene_observaciones: string;
+        observacion_codigo?: string | null;
+        observacion_libre?: string;
+      },
+    ) =>
+      http
+        .post<ComentarioLegajo>(`legajos/${id}/comentarios/tecnico/`, datos)
+        .then((r) => r.data),
+
+    /** Motivo que se propondria al subsanar o rechazar, ya concatenado. */
+    motivoPreview: (id: number) =>
+      http
+        .get<MotivoPreview>(`legajos/${id}/motivo-preview/`)
+        .then((r) => r.data),
+
+    /** La provincia adjunta evidencia nueva para la subsanacion activa. */
+    responderSubsanacion: (
+      id: number,
+      archivos: File[],
+      datos?: { descripcion?: string; observacion_id?: number },
+    ) => {
+      const form = new FormData();
+      archivos.forEach((archivo) => form.append("archivos", archivo));
+      if (datos?.descripcion) form.append("descripcion", datos.descripcion);
+      if (datos?.observacion_id != null) {
+        form.append("observacion_id", String(datos.observacion_id));
+      }
+      return http
+        .post<AccionResultado>(`legajos/${id}/responder-subsanacion/`, form)
+        .then((r) => r.data);
+    },
 
     revisar: (
       id: number,

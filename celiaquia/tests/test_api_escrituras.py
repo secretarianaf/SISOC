@@ -592,3 +592,131 @@ def test_el_tecnico_no_gestiona_registros_erroneos(client, territorio):
     # 404 y no 403: el alcance se aplica en el queryset, asi que la API no
     # confirma que el expediente exista.
     assert response.status_code in (403, 404)
+
+
+# --- Comentarios tecnicos, subsanacion y lookups ---------------------------
+# Todo delega en el service que ya usaban las pantallas. Lo que se verifica aca
+# es el permiso, que es donde una API nueva puede abrir datos sin querer.
+
+
+def test_los_comentarios_internos_no_se_exponen_a_la_provincia(client, territorio):
+    """Un usuario territorial no ve el panel interno, aunque acumule permisos.
+
+    Es la regla de `exigir_acceso_nacion_a_comentarios`: los comentarios se
+    publican recien al subsanar o rechazar.
+    """
+
+    owner = _provincial("prov_coment", territorio[0])
+    _, legajo = _expediente_con_legajo(owner, territorio, "40000010", "COM1")
+    client.force_login(owner)
+
+    response = client.get(
+        reverse("celiaquia-legajo-comentarios", kwargs={"pk": legajo.pk})
+    )
+
+    assert response.status_code == 403
+
+
+def test_el_coordinador_lee_el_historial_de_comentarios(client, territorio):
+    owner = _provincial("prov_coment_2", territorio[0])
+    _, legajo = _expediente_con_legajo(owner, territorio, "40000011", "COM2")
+    client.force_login(_coordinador("coord_coment"))
+
+    response = client.get(
+        reverse("celiaquia-legajo-comentarios", kwargs={"pk": legajo.pk})
+    )
+
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+def test_crear_comentario_tecnico_delega_en_el_service(client, territorio):
+    owner = _provincial("prov_coment_3", territorio[0])
+    _, legajo = _expediente_con_legajo(owner, territorio, "40000012", "COM3")
+    client.force_login(_coordinador("coord_coment_3"))
+
+    with patch(
+        "celiaquia.services.comentarios_tecnicos_service.ComentariosTecnicosService.registrar"
+    ) as registrar:
+        registrar.return_value = None
+        client.post(
+            reverse(
+                "celiaquia-legajo-crear-comentario-tecnico", kwargs={"pk": legajo.pk}
+            ),
+            {
+                "tipo_documento": "DNI",
+                "tiene_observaciones": "SI",
+                "observacion_libre": "falta el dorso",
+            },
+        )
+
+    assert registrar.called
+    assert registrar.call_args.kwargs["tipo_documento"] == "DNI"
+
+
+def test_motivo_preview_devuelve_lineas_y_texto(client, territorio):
+    owner = _provincial("prov_motivo", territorio[0])
+    _, legajo = _expediente_con_legajo(owner, territorio, "40000013", "MOT1")
+    client.force_login(_coordinador("coord_motivo"))
+
+    response = client.get(
+        reverse("celiaquia-legajo-motivo-preview", kwargs={"pk": legajo.pk})
+    )
+
+    assert response.status_code == 200
+    assert set(response.json()) == {"lineas", "motivo"}
+
+
+def test_responder_subsanacion_exige_subsanacion_activa(client, territorio):
+    """Mismo guard que la pantalla: sin subsanación activa, 400 y no 500."""
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    owner = _provincial("prov_subs", territorio[0])
+    _, legajo = _expediente_con_legajo(owner, territorio, "40000014", "SUB1")
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("celiaquia-legajo-responder-subsanacion", kwargs={"pk": legajo.pk}),
+        {"archivos": SimpleUploadedFile("evidencia.pdf", b"contenido")},
+    )
+
+    assert response.status_code in (400, 403)
+
+
+def test_las_localidades_se_acotan_al_alcance_del_usuario(client, territorio):
+    """El lookup del alta no puede devolver localidades de otra provincia."""
+
+    provincia, municipio, localidad = territorio
+    otra = Provincia.objects.create(nombre="Salta")
+    otro_municipio = Municipio.objects.create(nombre="Cafayate", provincia=otra)
+    Localidad.objects.create(nombre="Animaná", municipio=otro_municipio)
+
+    client.force_login(_provincial("prov_loc", provincia))
+    response = client.get(reverse("celiaquia-expediente-localidades"))
+
+    assert response.status_code == 200
+    nombres = {fila["localidad_nombre"] for fila in response.json()}
+    assert localidad.nombre in nombres
+    assert "Animaná" not in nombres
+
+
+def test_la_plantilla_de_excel_se_descarga(client, territorio):
+    client.force_login(_coordinador("coord_plantilla"))
+
+    response = client.get(reverse("celiaquia-expediente-plantilla-excel"))
+
+    assert response.status_code == 200
+    assert "spreadsheetml" in response["Content-Type"]
+
+
+def test_el_excel_masivo_solo_lo_descarga_coordinacion(client, territorio):
+    owner = _provincial("prov_excel", territorio[0])
+    expediente, _ = _expediente_con_legajo(owner, territorio, "40000015", "XLS1")
+    client.force_login(owner)
+
+    response = client.get(
+        reverse("celiaquia-expediente-excel-masivo", kwargs={"pk": expediente.pk})
+    )
+
+    assert response.status_code == 403

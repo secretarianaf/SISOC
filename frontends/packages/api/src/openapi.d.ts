@@ -425,6 +425,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/celiaquia/expedientes/{id}/excel-masivo/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Descarga la copia del Excel masivo vigente del expediente. */
+        get: operations["expedientes_excel_masivo_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/celiaquia/expedientes/{id}/fuera-de-cupo/": {
         parameters: {
             query?: never;
@@ -453,6 +470,29 @@ export interface paths {
         get: operations["expedientes_historial_estados_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/celiaquia/expedientes/{id}/importar/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Importa los legajos del Excel masivo ya cargado en el expediente.
+         *
+         *     La pantalla Django devuelve los totales por `messages`; aca se devuelven
+         *     como JSON para que el front pueda mostrar validos, errores y
+         *     advertencias sin parsear texto.
+         */
+        post: operations["expedientes_importar_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -612,6 +652,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/celiaquia/expedientes/localidades/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Localidades para los selectores del alta, acotadas al alcance.
+         *
+         *     El filtro territorial es el mismo que aplica la pantalla: un usuario
+         *     provincial no ve localidades de otra provincia.
+         */
+        get: operations["expedientes_localidades_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/celiaquia/expedientes/plantilla-excel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Excel vacio con las columnas que espera la importacion masiva. */
+        get: operations["expedientes_plantilla_excel_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/celiaquia/expedientes/preview-excel/": {
         parameters: {
             query?: never;
@@ -685,6 +764,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/celiaquia/legajos/{id}/comentarios/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Historial de comentarios del legajo, deduplicado como la pantalla. */
+        get: operations["legajos_comentarios_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/celiaquia/legajos/{id}/comentarios/tecnico/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Alta de un comentario tecnico interno sobre el legajo.
+         *
+         *     Solo el tecnico asignado, el coordinador o un admin: la provincia ve el
+         *     panel pero no escribe, igual que en la pantalla.
+         */
+        post: operations["legajos_comentarios_tecnico_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/celiaquia/legajos/{id}/documentos/": {
         parameters: {
             query?: never;
@@ -696,6 +814,40 @@ export interface paths {
         get: operations["legajos_documentos_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/celiaquia/legajos/{id}/motivo-preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Motivo que se propondria al subsanar o rechazar, ya concatenado. */
+        get: operations["legajos_motivo_preview_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/celiaquia/legajos/{id}/responder-subsanacion/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description La provincia adjunta evidencia nueva para la subsanacion activa. */
+        post: operations["legajos_responder_subsanacion_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -992,6 +1144,35 @@ export interface components {
         AsignarTecnico: {
             tecnico_id: number;
         };
+        /** @enum {unknown} */
+        BlankEnum: "";
+        /**
+         * @description Comentario del panel de un legajo.
+         *
+         *     Los comentarios tecnicos estructurados (issue #2318) traen ademas tipo de
+         *     documento y observacion; en el resto esos campos vienen vacios.
+         */
+        ComentarioLegajo: {
+            readonly id: number;
+            comentario: string;
+            readonly usuario: components["schemas"]["UsuarioResumen"];
+            /** Format: date-time */
+            readonly fecha_creacion: string;
+            /** @description Comentario interno: visible solo para usuarios de Nación */
+            es_interno?: boolean;
+            readonly es_comentario_tecnico: boolean;
+            tipo_comentario: components["schemas"]["TipoComentarioEnum"];
+            /**
+             * @description Tipo de documento revisado (solo en comentarios técnicos)
+             *
+             *     * `RENAPER` - RENAPER
+             *     * `ANSES` - ANSES
+             *     * `CONDICION_DIAGNOSTICA` - Condición diagnóstica
+             */
+            tipo_documento?: (components["schemas"]["TipoDocumentoEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
+            readonly tipo_documento_display: string;
+            readonly archivo_url: string;
+        };
         /**
          * @description Base de los serializers de solo entrada: no persisten nada.
          *
@@ -1001,6 +1182,18 @@ export interface components {
          */
         ConfigurarCupo: {
             total_asignado: number;
+        };
+        /**
+         * @description Alta estructurada: tipo de documento + Si/No + observacion.
+         *
+         *     La combinacion valida la decide `ComentariosTecnicosService.registrar`, que
+         *     es el mismo camino que usa la pantalla.
+         */
+        CrearComentarioTecnico: {
+            tipo_documento: string;
+            tiene_observaciones: string;
+            observacion_codigo?: string | null;
+            observacion_libre?: string;
         };
         /** @description Alta manual de legajos desde las filas previsualizadas. */
         CrearLegajos: {
@@ -1092,6 +1285,17 @@ export interface components {
             /** Format: date-time */
             readonly fecha: string;
         };
+        /** @description Resultado de importar los legajos del Excel masivo ya cargado. */
+        ImportacionResultado: {
+            validos: number;
+            errores: number;
+            detalles_errores?: {
+                [key: string]: unknown;
+            }[];
+            warnings?: {
+                [key: string]: unknown;
+            }[];
+        };
         /** @description `ExpedienteCiudadano` es el legajo de una persona dentro del expediente. */
         Legajo: {
             readonly id: number;
@@ -1121,11 +1325,29 @@ export interface components {
             /** Format: date-time */
             readonly modificado_en: string;
         };
+        /** @description Localidad con su municipio y provincia, para los selectores del alta. */
+        LocalidadLookup: {
+            readonly localidad_id: number;
+            readonly localidad_nombre: string;
+            readonly municipio_id: number;
+            /** @default  */
+            readonly municipio_nombre: string;
+            readonly provincia_id: number;
+            /** @default  */
+            readonly provincia_nombre: string;
+        };
         /** @description Motivo de una baja, suspension o reactivacion de cupo. */
         Motivo: {
             /** @default  */
             motivo: string;
         };
+        /** @description Motivo que se propondria al subsanar o rechazar, ya concatenado. */
+        MotivoPreview: {
+            lineas: string[];
+            motivo: string;
+        };
+        /** @enum {unknown} */
+        NullEnum: null;
         /**
          * @description Base de los serializers de solo entrada: no persisten nada.
          *
@@ -1155,6 +1377,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["AsignacionTecnico"][];
+        };
+        PaginatedComentarioLegajoList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["ComentarioLegajo"][];
         };
         PaginatedCupoMovimientoList: {
             /** @example 123 */
@@ -1230,6 +1467,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Legajo"][];
+        };
+        PaginatedLocalidadLookupList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["LocalidadLookup"][];
         };
         PaginatedPagoExpedienteList: {
             /** @example 123 */
@@ -1419,6 +1671,12 @@ export interface components {
             registros_restantes: number;
             alerta_resumen: string;
         };
+        /** @description Respuesta de la provincia: uno o varios archivos como evidencia nueva. */
+        ResponderSubsanacion: {
+            archivos: string[];
+            descripcion?: string;
+            observacion_id?: number | null;
+        };
         /**
          * @description * `SIN_CRUCE` - Sin cruce
          *     * `MATCH` - Matcheado
@@ -1483,6 +1741,18 @@ export interface components {
          * @enum {string}
          */
         SubsanacionEstadoEnum: "PENDIENTE" | "RESPONDIDA";
+        /**
+         * @description * `VALIDACION_TECNICA` - Validación Técnica
+         *     * `SUBSANACION_MOTIVO` - Motivo de Subsanación
+         *     * `SUBSANACION_RESPUESTA` - Respuesta de Subsanación
+         *     * `RENAPER_VALIDACION` - Validación RENAPER
+         *     * `OBSERVACION_GENERAL` - Observación General
+         *     * `CRUCE_SINTYS` - Cruce SINTYS
+         *     * `PAGO_OBSERVACION` - Observación de Pago
+         *     * `COMENTARIO_TECNICO` - Comentario Técnico
+         * @enum {string}
+         */
+        TipoComentarioEnum: "VALIDACION_TECNICA" | "SUBSANACION_MOTIVO" | "SUBSANACION_RESPUESTA" | "RENAPER_VALIDACION" | "OBSERVACION_GENERAL" | "CRUCE_SINTYS" | "PAGO_OBSERVACION" | "COMENTARIO_TECNICO";
         TipoCruce: {
             readonly id: number;
             nombre: string;
@@ -1499,6 +1769,13 @@ export interface components {
             orden?: number;
             activo?: boolean;
         };
+        /**
+         * @description * `RENAPER` - RENAPER
+         *     * `ANSES` - ANSES
+         *     * `CONDICION_DIAGNOSTICA` - Condición diagnóstica
+         * @enum {string}
+         */
+        TipoDocumentoEnum: "RENAPER" | "ANSES" | "CONDICION_DIAGNOSTICA";
         /**
          * @description * `ALTA` - Alta
          *     * `REACTIVACION` - Reactivacion
@@ -2165,6 +2442,28 @@ export interface operations {
             };
         };
     };
+    expedientes_excel_masivo_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Un valor de entero único que identifique este Expediente. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+        };
+    };
     expedientes_fuera_de_cupo_list: {
         parameters: {
             query?: {
@@ -2211,6 +2510,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedExpedienteEstadoHistorialList"];
+                };
+            };
+        };
+    };
+    expedientes_importar_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Un valor de entero único que identifique este Expediente. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportacionResultado"];
                 };
             };
         };
@@ -2426,6 +2747,49 @@ export interface operations {
             };
         };
     };
+    expedientes_localidades_list: {
+        parameters: {
+            query?: {
+                municipio?: number;
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
+                page?: number;
+                provincia?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedLocalidadLookupList"];
+                };
+            };
+        };
+    };
+    expedientes_plantilla_excel_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+        };
+    };
     expedientes_preview_excel_create: {
         parameters: {
             query?: never;
@@ -2523,6 +2887,59 @@ export interface operations {
             };
         };
     };
+    legajos_comentarios_list: {
+        parameters: {
+            query?: {
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
+                page?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Un valor de entero único que identifique este Expediente Ciudadano. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedComentarioLegajoList"];
+                };
+            };
+        };
+    };
+    legajos_comentarios_tecnico_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Un valor de entero único que identifique este Expediente Ciudadano. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrearComentarioTecnico"];
+                "application/x-www-form-urlencoded": components["schemas"]["CrearComentarioTecnico"];
+                "multipart/form-data": components["schemas"]["CrearComentarioTecnico"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComentarioLegajo"];
+                };
+            };
+        };
+    };
     legajos_documentos_list: {
         parameters: {
             query?: {
@@ -2544,6 +2961,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedDocumentoLegajoList"];
+                };
+            };
+        };
+    };
+    legajos_motivo_preview_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Un valor de entero único que identifique este Expediente Ciudadano. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MotivoPreview"];
+                };
+            };
+        };
+    };
+    legajos_responder_subsanacion_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Un valor de entero único que identifique este Expediente Ciudadano. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["ResponderSubsanacion"];
+                "application/x-www-form-urlencoded": components["schemas"]["ResponderSubsanacion"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccionResultado"];
                 };
             };
         };

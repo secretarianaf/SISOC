@@ -1,4 +1,5 @@
 export {
+  camposInvalidosDeError,
   crearCliente,
   leerCookie,
   mensajeDeError,

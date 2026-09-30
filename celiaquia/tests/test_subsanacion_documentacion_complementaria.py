@@ -122,7 +122,10 @@ def _pdf(nombre="constancia.pdf", contenido=b"%PDF-1.4 fake"):
 
 
 def _subsanar(client, legajo, archivos=None, **extra):
-    data = {"accion": "SUBSANAR"}
+    # Elige todos los motivos del legajo, como el multiselect tildado entero
+    # (issue #2592): sin selección ni texto libre el backend responde 400.
+    opciones = ComentariosTecnicosService.opciones_seleccionables(legajo)
+    data = {"accion": "SUBSANAR", "observaciones_ids": [o["id"] for o in opciones]}
     data.update(extra)
     if archivos is not None:
         data["documentacion_complementaria"] = archivos

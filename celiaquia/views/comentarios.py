@@ -358,12 +358,12 @@ class LegajoComentarioListView(View):
 
 
 class LegajoMotivoPreviewView(View):
-    """Previsualización del motivo de Subsanar/Rechazar.
+    """Motivos elegibles para Subsanar/Rechazar.
 
-    Devuelve la concatenación de las observaciones técnicas del legajo para que
-    los modales la muestren. Es solo una vista previa: al confirmar, el motivo
-    se vuelve a calcular en el backend (`RevisarLegajoView`), que es la fuente
-    de verdad.
+    Devuelve las observaciones técnicas del legajo para que los modales las
+    ofrezcan en un multiselect (issue #2592); `pendiente` marca las que todavía
+    no se comunicaron a la Provincia, que la UI tilda de entrada. Al confirmar,
+    `RevisarLegajoView` valida la selección y arma el motivo en backend.
     """
 
     def get(self, request, expediente_id, legajo_id):
@@ -371,12 +371,11 @@ class LegajoMotivoPreviewView(View):
         if error:
             return error
 
-        lineas = ComentariosTecnicosService.lineas_concatenadas(legajo)
+        opciones = ComentariosTecnicosService.opciones_seleccionables(legajo)
         return JsonResponse(
             {
                 "success": True,
-                "lineas": lineas,
-                "motivo": ComentariosTecnicosService.texto_concatenado(legajo),
-                "tiene_observaciones": bool(lineas),
+                "opciones": opciones,
+                "tiene_observaciones": bool(opciones),
             }
         )

@@ -1,8 +1,9 @@
 """Comentarios técnicos estructurados y su publicación a Provincia (issue #2318).
 
 Cubre las reglas de `ComentariosTecnicosService`: validación de la combinación
-de opciones, multi-alta sin sobrescritura, concatenación cronológica sin
-duplicados y publicación selectiva (sólo las observaciones con ``Sí``).
+de opciones, multi-alta sin sobrescritura, opciones del multiselect sin
+duplicados, y motivo y publicación restringidos a lo elegido en cada instancia
+(issue #2592).
 """
 
 from datetime import date
@@ -214,37 +215,42 @@ def test_altas_sucesivas_no_se_sobrescriben(legajo, tecnico):
     assert ComentariosTecnicosService.historial(legajo).count() == 3
 
 
-# --- Concatenación --------------------------------------------------------
+# --- Opciones del multiselect (issue #2592) --------------------------------
 
 
-def test_concatenado_es_cronologico_e_ignora_los_no(legajo, tecnico):
-    _registrar(legajo, tecnico)
-    _registrar(legajo, tecnico, tiene_observaciones=False)
-    _registrar(
+def _anses(legajo, tecnico, **kwargs):
+    return _registrar(
         legajo,
         tecnico,
         tipo_documento=TipoDocumentoComentario.ANSES,
         observacion_codigo=CODIGO_ANSES,
-    )
-
-    lineas = ComentariosTecnicosService.lineas_concatenadas(legajo)
-
-    assert len(lineas) == 2
-    assert lineas[0].startswith("RENAPER: ")
-    assert lineas[1].startswith("ANSES: ")
-    assert "Sin observaciones." not in ComentariosTecnicosService.texto_concatenado(
-        legajo
+        **kwargs,
     )
 
 
-def test_concatenado_deduplica_el_mismo_codigo(legajo, tecnico):
+def test_opciones_son_cronologicas_e_ignoran_los_no(legajo, tecnico):
     _registrar(legajo, tecnico)
+    _registrar(legajo, tecnico, tiene_observaciones=False)
+    _anses(legajo, tecnico)
+
+    opciones = ComentariosTecnicosService.opciones_seleccionables(legajo)
+
+    assert [o["etiqueta"].split(":")[0] for o in opciones] == ["RENAPER", "ANSES"]
+    assert all(o["pendiente"] for o in opciones)
+    assert not any("Sin observaciones." in o["etiqueta"] for o in opciones)
+
+
+def test_opciones_deduplican_el_mismo_codigo(legajo, tecnico):
     _registrar(legajo, tecnico)
+    segundo = _registrar(legajo, tecnico)
 
-    assert len(ComentariosTecnicosService.lineas_concatenadas(legajo)) == 1
+    opciones = ComentariosTecnicosService.opciones_seleccionables(legajo)
+
+    # Una sola opción, que apunta al registro más reciente.
+    assert [o["id"] for o in opciones] == [segundo.pk]
 
 
-def test_concatenado_deduplica_otros_con_el_mismo_texto(legajo, tecnico):
+def test_opciones_deduplican_otros_con_el_mismo_texto(legajo, tecnico):
     _registrar(
         legajo, tecnico, observacion_codigo=CODIGO_OTROS, observacion_libre="Falta DNI"
     )
@@ -261,66 +267,176 @@ def test_concatenado_deduplica_otros_con_el_mismo_texto(legajo, tecnico):
         observacion_libre="Falta la partida",
     )
 
-    lineas = ComentariosTecnicosService.lineas_concatenadas(legajo)
-    assert len(lineas) == 2
+    assert len(ComentariosTecnicosService.opciones_seleccionables(legajo)) == 2
+
+
+def test_opciones_ya_publicadas_no_vienen_pendientes(legajo, tecnico):
+    renaper = _registrar(legajo, tecnico)
+    ComentariosTecnicosService.publicar(legajo, comentarios=[renaper])
+    _anses(legajo, tecnico)
+
+    pendientes = {
+        o["etiqueta"].split(":")[0]: o["pendiente"]
+        for o in ComentariosTecnicosService.opciones_seleccionables(legajo)
+    }
+
+    assert pendientes == {"RENAPER": False, "ANSES": True}
+
+
+def test_opcion_publicada_vuelve_a_pendiente_si_se_registra_de_nuevo(legajo, tecnico):
+    """El caso del tk: ANSES se pidió en la 1° instancia y Nación lo vuelve a
+    registrar para la 2°. Tiene que ofrecerse tildado otra vez."""
+    primero = _anses(legajo, tecnico)
+    ComentariosTecnicosService.publicar(legajo, comentarios=[primero])
+    segundo = _anses(legajo, tecnico)
+
+    (opcion,) = ComentariosTecnicosService.opciones_seleccionables(legajo)
+
+    assert opcion["id"] == segundo.pk
+    assert opcion["pendiente"] is True
+
+
+# --- Selección -------------------------------------------------------------
+
+
+def test_resolver_seleccion_devuelve_solo_lo_elegido_en_orden(legajo, tecnico):
+    renaper = _registrar(legajo, tecnico)
+    anses = _anses(legajo, tecnico)
+    _registrar(
+        legajo,
+        tecnico,
+        tipo_documento=TipoDocumentoComentario.CONDICION_DIAGNOSTICA,
+        observacion_codigo="DIAG_DOC_ILEGIBLE",
+    )
+
+    elegidos = ComentariosTecnicosService.resolver_seleccion(
+        legajo, [str(anses.pk), str(renaper.pk)]
+    )
+
+    assert elegidos == [renaper, anses]
+
+
+def test_resolver_seleccion_vacia(legajo, tecnico):
+    _registrar(legajo, tecnico)
+
+    assert ComentariosTecnicosService.resolver_seleccion(legajo, []) == []
+    assert ComentariosTecnicosService.resolver_seleccion(legajo, ["", " "]) == []
+
+
+@pytest.mark.parametrize("caso", ["no", "otro_legajo", "inexistente", "basura"])
+def test_resolver_seleccion_rechaza_ids_invalidos(legajo, tecnico, caso):
+    if caso == "no":
+        ids = [_registrar(legajo, tecnico, tiene_observaciones=False).pk]
+    elif caso == "otro_legajo":
+        otro = ExpedienteCiudadano.objects.create(
+            expediente=legajo.expediente,
+            ciudadano=Ciudadano.objects.create(
+                apellido="Otro",
+                nombre="Legajo",
+                documento="40100201",
+                fecha_nacimiento=date(1990, 1, 1),
+            ),
+            estado=legajo.estado,
+        )
+        ids = [_registrar(otro, tecnico).pk]
+    elif caso == "inexistente":
+        ids = [999999]
+    else:
+        ids = ["abc"]
+
+    with pytest.raises(ValidationError):
+        ComentariosTecnicosService.resolver_seleccion(legajo, ids)
+
+
+# --- Motivo ----------------------------------------------------------------
+
+
+def test_componer_motivo_usa_solo_lo_elegido(legajo, tecnico):
+    renaper = _registrar(legajo, tecnico)
+    _anses(legajo, tecnico)
+
+    motivo = ComentariosTecnicosService.componer_motivo([renaper])
+
+    assert motivo.startswith("RENAPER: ")
+    assert "ANSES" not in motivo
 
 
 def test_componer_motivo_agrega_el_texto_libre(legajo, tecnico):
-    _registrar(legajo, tecnico)
+    renaper = _registrar(legajo, tecnico)
 
-    motivo = ComentariosTecnicosService.componer_motivo(legajo, "  Urgente.  ")
+    motivo = ComentariosTecnicosService.componer_motivo([renaper], "  Urgente.  ")
 
     assert motivo.startswith("RENAPER: ")
     assert motivo.endswith("Urgente.")
 
 
-def test_componer_motivo_sin_observaciones_acepta_solo_texto_libre(legajo, tecnico):
-    _registrar(legajo, tecnico, tiene_observaciones=False)
-
-    assert ComentariosTecnicosService.componer_motivo(legajo, "Motivo puntual.") == (
+def test_componer_motivo_acepta_solo_texto_libre():
+    assert ComentariosTecnicosService.componer_motivo([], "Motivo puntual.") == (
         "Motivo puntual."
     )
 
 
-def test_componer_motivo_sin_observaciones_ni_texto_libre_falla(legajo, tecnico):
-    _registrar(legajo, tecnico, tiene_observaciones=False)
-
+def test_componer_motivo_sin_seleccion_ni_texto_libre_falla():
     with pytest.raises(ValidationError):
-        ComentariosTecnicosService.componer_motivo(legajo, "   ")
+        ComentariosTecnicosService.componer_motivo([], "   ")
 
 
 # --- Publicación ----------------------------------------------------------
 
 
-def test_publicar_solo_alcanza_a_las_observaciones_con_si(legajo, tecnico):
-    con_obs = _registrar(legajo, tecnico)
+def test_publicar_solo_alcanza_a_lo_elegido(legajo, tecnico):
+    elegido = _registrar(legajo, tecnico)
+    no_elegido = _anses(legajo, tecnico)
     sin_obs = _registrar(legajo, tecnico, tiene_observaciones=False)
 
-    assert ComentariosTecnicosService.publicar(legajo, usuario=tecnico) == 1
+    assert (
+        ComentariosTecnicosService.publicar(
+            legajo, comentarios=[elegido], usuario=tecnico
+        )
+        == 1
+    )
 
-    con_obs.refresh_from_db()
-    sin_obs.refresh_from_db()
-    assert con_obs.es_interno is False
-    assert con_obs.publicado_en is not None
-    assert con_obs.publicado_por == tecnico
+    for comentario in (elegido, no_elegido, sin_obs):
+        comentario.refresh_from_db()
+    assert elegido.es_interno is False
+    assert elegido.publicado_en is not None
+    assert elegido.publicado_por == tecnico
+    assert no_elegido.es_interno is True
+    assert no_elegido.publicado_en is None
     assert sin_obs.es_interno is True
-    assert sin_obs.publicado_en is None
+
+
+def test_publicar_alcanza_a_los_registros_repetidos_de_lo_elegido(legajo, tecnico):
+    primero = _registrar(legajo, tecnico)
+    segundo = _registrar(legajo, tecnico)
+
+    assert ComentariosTecnicosService.publicar(legajo, comentarios=[segundo]) == 2
+
+    primero.refresh_from_db()
+    assert primero.es_interno is False
+
+
+def test_publicar_sin_seleccion_no_publica_nada(legajo, tecnico):
+    _registrar(legajo, tecnico)
+
+    assert ComentariosTecnicosService.publicar(legajo, comentarios=[]) == 0
+    assert ComentariosTecnicosService.historial(legajo).get().es_interno is True
 
 
 def test_publicar_no_repisa_la_auditoria_de_los_ya_publicados(legajo, tecnico):
     primero = _registrar(legajo, tecnico)
-    ComentariosTecnicosService.publicar(legajo, usuario=tecnico)
+    ComentariosTecnicosService.publicar(legajo, comentarios=[primero], usuario=tecnico)
     primero.refresh_from_db()
     publicado_en_original = primero.publicado_en
 
     otro_tecnico = User.objects.create_user(username="tec_2", password="pass")
-    _registrar(
-        legajo,
-        tecnico,
-        tipo_documento=TipoDocumentoComentario.ANSES,
-        observacion_codigo=CODIGO_ANSES,
+    anses = _anses(legajo, tecnico)
+    assert (
+        ComentariosTecnicosService.publicar(
+            legajo, comentarios=[primero, anses], usuario=otro_tecnico
+        )
+        == 1
     )
-    assert ComentariosTecnicosService.publicar(legajo, usuario=otro_tecnico) == 1
 
     primero.refresh_from_db()
     assert primero.publicado_en == publicado_en_original

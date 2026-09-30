@@ -107,7 +107,9 @@ def test_get_expone_estado_y_observaciones_solo_al_tecnico(zona):
     assert item["observaciones_coordinador"] == "Falta la firma"
 
 
-@pytest.mark.parametrize("estado_previo", [None, A_SUBSANAR, PENDIENTE])
+# El caso sin estado (acta cargada desde el backoffice) ahora es 409: ver
+# tests/test_territorial_actas_sin_cargar.py.
+@pytest.mark.parametrize("estado_previo", [A_SUBSANAR, PENDIENTE])
 def test_correccion_reemplaza_y_vuelve_a_pendiente(zona, estado_previo):
     comedor, tecnico = zona
     acta = _acta(comedor, tecnico, estado_validacion=estado_previo)

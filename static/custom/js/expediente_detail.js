@@ -1268,6 +1268,9 @@ document.addEventListener('DOMContentLoaded', () => {
             data.estado || (accion === 'APROBAR' ? 'APROBADO' : 'RECHAZADO'),
           );
           showAlert('success', 'Legajo ', legajoId, ': estado actualizado a ', data.estado, '.');
+          // Recargar como Subsanar/Rechazar/Corregir: la fila (borde, badge,
+          // observación y botones) se arma en el template según el estado.
+          setTimeout(() => window.location.reload(), 800);
 
         } catch (err) {
           console.error('Revisión de legajo:', err);

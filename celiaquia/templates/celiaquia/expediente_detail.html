@@ -372,7 +372,7 @@
                         <tbody>
                             {% for leg in legajos_enriquecidos %}
                                 <tr class="legajo-row"
-                                    {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107;"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8;"{% elif leg.revision_tecnico == 'RECHAZADO' or leg.estado_validacion_renaper == 2 %}style="border-left: 4px solid #dc3545;"{% elif leg.revision_tecnico == 'APROBADO' %}style="border-left: 4px solid #28a745;"{% endif %}
+                                    {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107;"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8;"{% elif leg.revision_tecnico == 'APROBADO' %}style="border-left: 4px solid #28a745;"{% elif leg.revision_tecnico == 'RECHAZADO' or leg.estado_validacion_renaper == 2 %}style="border-left: 4px solid #dc3545;"{% endif %}
                                     data-estado="{{ leg.revision_tecnico|default:'PENDIENTE' }}"
                                     data-search="{{ leg.pk }} {{ leg.ciudadano.nombre|lower }} {{ leg.ciudadano.apellido|lower }} {{ leg.ciudadano.documento|default:'' }}">
                                     <td>
@@ -743,7 +743,7 @@
                                                     {% if leg.revision_tecnico == 'APROBADO' or leg.revision_tecnico == 'RECHAZADO' or leg.revision_tecnico == 'SUBSANADO' %}
                                                         <div class="d-flex justify-content-end mt-2">
                                                             <button type="button"
-                                                                    class="btn btn-sm btn-outline-dark btn-corregir-evaluacion"
+                                                                    class="btn btn-sm btn-success btn-corregir-evaluacion"
                                                                     data-legajo-id="{{ leg.pk }}"
                                                                     data-estado-actual="{{ leg.revision_tecnico }}"
                                                                     data-bs-toggle="modal"
@@ -962,7 +962,7 @@
                                     {% if leg.revision_tecnico == 'APROBADO' or leg.revision_tecnico == 'RECHAZADO' or leg.revision_tecnico == 'SUBSANADO' %}
                                         <div class="d-flex justify-content-end mt-2">
                                             <button type="button"
-                                                    class="btn btn-sm btn-outline-dark btn-corregir-evaluacion"
+                                                    class="btn btn-sm btn-success btn-corregir-evaluacion"
                                                     data-legajo-id="{{ leg.pk }}"
                                                     data-estado-actual="{{ leg.revision_tecnico }}"
                                                     data-bs-toggle="modal"
@@ -2291,7 +2291,7 @@
     <script src="{% static 'custom/js/expediente_detail_config.js' %}?v=20260902-comentarios-tecnicos"></script>
     <script src="{% static 'custom/js/registros_erroneos.js' %}?v=20260326-guardado-parcial-siempre"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
-    <script src="{% static 'custom/js/expediente_detail.js' %}?v=20260930-motivos-por-instancia"></script>
+    <script src="{% static 'custom/js/expediente_detail.js' %}?v=20260930-aprobar-recarga"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
     <script src="{% static 'custom/js/legajo_comentarios.js' %}?v=20260902-comentarios-tecnicos"></script>

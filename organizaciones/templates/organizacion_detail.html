@@ -413,6 +413,16 @@
                                             {% endfor %}
                                         </div>
                                     </div>
+                                    <div class="info-row">
+                                        <strong>Territorial Asignado Abordaje Comunitario:</strong>
+                                        <div class="value d-flex flex-wrap justify-content-end gap-1">
+                                            {% for territorial in territoriales_organizacion %}
+                                                <span class="badge rounded-pill bg-primary px-3 py-2">{{ territorial }}</span>
+                                            {% empty %}
+                                                <span>-</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="info-column">
@@ -987,7 +997,7 @@
                                                 <th>Conv.</th>
                                                 <th>N° de Rend.</th>
                                                 <th>Período</th>
-                                                <th>Monto rendido</th>
+                                                <th>Monto auditado</th>
                                                 <th>Validación Territorial</th>
                                                 <th>Revisión para Carga</th>
                                                 <th>Cargada para Auditoría</th>

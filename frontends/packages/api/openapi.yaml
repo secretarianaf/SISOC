@@ -1,0 +1,1669 @@
+openapi: 3.0.3
+info:
+  title: SISOC API
+  version: 1.0.0
+  description: API de gestión de comedores, centros de familia y más
+paths:
+  /api/vpsl/actions/{kind}/{id}/:
+    get:
+      operationId: actions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: kind
+        schema:
+          type: string
+        required: true
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeletePreview'
+          description: ''
+    post:
+      operationId: actions_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: kind
+        schema:
+          type: string
+        required: true
+      tags:
+      - vpsl
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ActionInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ActionInput'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResult'
+          description: ''
+  /api/vpsl/exports/{kind}/{id}/:
+    get:
+      operationId: exports_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: kind
+        schema:
+          type: string
+        required: true
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/vpsl/forms/{kind}/{id}/:
+    get:
+      operationId: forms_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: kind
+        schema:
+          type: string
+        required: true
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormSchema'
+          description: ''
+    post:
+      operationId: forms_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: kind
+        schema:
+          type: string
+        required: true
+      tags:
+      - vpsl
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VpslFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VpslFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VpslFormInput'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResult'
+          description: ''
+  /api/vpsl/itinerarios/:
+    get:
+      operationId: vpsl_itinerarios_list
+      parameters:
+      - in: query
+        name: estado
+        schema:
+          type: string
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItinerarioPage'
+          description: ''
+    post:
+      operationId: vpsl_itinerarios_create
+      parameters:
+      - in: query
+        name: estado
+        schema:
+          type: string
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - vpsl
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItinerarioInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ItinerarioInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ItinerarioInput'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Itinerario'
+          description: ''
+  /api/vpsl/itinerarios/{id}/:
+    get:
+      operationId: vpsl_itinerario_detail
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Itinerario'
+          description: ''
+  /api/vpsl/jornadas/{id}/:
+    get:
+      operationId: jornadas_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Jornada'
+          description: ''
+  /api/vpsl/jornadas/{id}/laboratorio/:
+    get:
+      operationId: jornadas_laboratorio_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LaboratorioPage'
+          description: ''
+  /api/vpsl/jornadas/{id}/registros/:
+    get:
+      operationId: jornadas_registros_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistroPage'
+          description: ''
+  /api/vpsl/options/:
+    get:
+      operationId: options_retrieve
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Options'
+          description: ''
+  /api/vpsl/renaper/:
+    get:
+      operationId: renaper_retrieve
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Renaper'
+          description: ''
+  /api/vpsl/sedes/:
+    get:
+      operationId: vpsl_sedes
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SedePage'
+          description: ''
+  /api/vpsl/sedes/{id}/:
+    get:
+      operationId: vpsl_sede_detail
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sede'
+          description: ''
+  /api/vpsl/session/:
+    get:
+      operationId: session_retrieve
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+          description: ''
+  /api/vpsl/ubicacion/:
+    post:
+      operationId: ubicacion_create
+      tags:
+      - vpsl
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LocationInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LocationInput'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationPreview'
+          description: ''
+components:
+  schemas:
+    AccionEvaluacionEnum:
+      enum:
+      - aprobar
+      - subsanar
+      - rechazar
+      type: string
+      description: |-
+        * `aprobar` - aprobar
+        * `subsanar` - subsanar
+        * `rechazar` - rechazar
+    ActionInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        accion_evaluacion:
+          $ref: '#/components/schemas/AccionEvaluacionEnum'
+        carta_archivo_estado:
+          type: string
+        carta_referencia_estado:
+          type: string
+        subsanacion_observaciones:
+          type: string
+        casos:
+          type: array
+          items:
+            type: integer
+        fecha:
+          type: string
+          format: date
+        responsable:
+          type: string
+    ActionResult:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        ok:
+          type: boolean
+        message:
+          type: string
+        redirect:
+          type: string
+      required:
+      - ok
+    Checklist:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        item:
+          type: string
+        descripcion:
+          type: string
+        cumple:
+          type: boolean
+          nullable: true
+        observacion:
+          type: string
+        evidencia_url:
+          type: string
+        historial:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChecklistHistory'
+      required:
+      - cumple
+      - descripcion
+      - evidencia_url
+      - historial
+      - item
+      - observacion
+    ChecklistHistory:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        fecha:
+          type: string
+          format: date-time
+        antes:
+          type: boolean
+          nullable: true
+        despues:
+          type: boolean
+          nullable: true
+        observacion:
+          type: string
+        responsable:
+          type: string
+      required:
+      - antes
+      - despues
+      - fecha
+      - observacion
+      - responsable
+    ChecklistInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        electricidad_cumple:
+          type: string
+        electricidad_observacion:
+          type: string
+        electricidad_evidencia:
+          type: string
+          format: uri
+        viandas_cumple:
+          type: string
+        viandas_observacion:
+          type: string
+        viandas_evidencia:
+          type: string
+          format: uri
+        seguridad_cumple:
+          type: string
+        seguridad_observacion:
+          type: string
+        seguridad_evidencia:
+          type: string
+          format: uri
+      required:
+      - electricidad_cumple
+      - seguridad_cumple
+      - viandas_cumple
+    Choice:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+      required:
+      - label
+      - value
+    Cierre:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        id:
+          type: integer
+        consistente:
+          type: boolean
+        responsable:
+          type: string
+        atenciones:
+          type: integer
+        lentes:
+          type: integer
+        casos:
+          type: integer
+        observaciones:
+          type: string
+        acta_adjunta_url:
+          type: string
+        historial:
+          type: array
+          items:
+            $ref: '#/components/schemas/CierreHistory'
+      required:
+      - acta_adjunta_url
+      - atenciones
+      - casos
+      - consistente
+      - historial
+      - id
+      - lentes
+      - observaciones
+      - responsable
+    CierreHistory:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        fecha:
+          type: string
+          format: date-time
+        responsable:
+          type: string
+        atenciones:
+          type: integer
+        lentes:
+          type: integer
+        casos:
+          type: integer
+        acta_adjunta_url:
+          type: string
+      required:
+      - acta_adjunta_url
+      - atenciones
+      - casos
+      - fecha
+      - lentes
+      - responsable
+    CierreInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        cantidad_atenciones_registradas:
+          type: integer
+        cantidad_lentes_entregados_dia:
+          type: integer
+        cantidad_casos_laboratorio_reportados:
+          type: integer
+        responsable_cierre:
+          type: string
+        acta_adjunta:
+          type: string
+          format: uri
+        observaciones:
+          type: string
+      required:
+      - cantidad_atenciones_registradas
+      - cantidad_casos_laboratorio_reportados
+      - cantidad_lentes_entregados_dia
+      - responsable_cierre
+    DeleteBreakdown:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        modelo_key:
+          type: string
+        modelo:
+          type: string
+        cantidad:
+          type: integer
+        modo:
+          $ref: '#/components/schemas/ModoEnum'
+        ejemplos:
+          type: array
+          items:
+            type: string
+      required:
+      - cantidad
+      - ejemplos
+      - modelo
+      - modelo_key
+      - modo
+    DeletePreview:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        preview:
+          $ref: '#/components/schemas/DeleteSummary'
+      required:
+      - preview
+    DeleteSummary:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        operacion:
+          $ref: '#/components/schemas/OperacionEnum'
+        total_afectados:
+          type: integer
+        total_baja_logica:
+          type: integer
+        total_borrado_fisico:
+          type: integer
+        desglose_por_modelo:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeleteBreakdown'
+        ejemplos_por_modelo:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+      - desglose_por_modelo
+      - ejemplos_por_modelo
+      - operacion
+      - total_afectados
+      - total_baja_logica
+      - total_borrado_fisico
+    FormField:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        name:
+          type: string
+        label:
+          type: string
+        type:
+          type: string
+        required:
+          type: boolean
+        disabled:
+          type: boolean
+        help:
+          type: string
+        value: {}
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Choice'
+        min:
+          type: string
+        max:
+          type: string
+        step:
+          type: string
+        graduacion_opcional:
+          type: boolean
+        file_url:
+          type: string
+      required:
+      - choices
+      - disabled
+      - file_url
+      - graduacion_opcional
+      - help
+      - label
+      - max
+      - min
+      - name
+      - required
+      - step
+      - type
+      - value
+    FormSchema:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        kind:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/FormField'
+        back:
+          type: string
+        instrucciones:
+          type: string
+      required:
+      - back
+      - fields
+      - instrucciones
+      - kind
+    Itinerario:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        id:
+          type: integer
+        codigo:
+          type: string
+        provincia:
+          type: string
+        estado:
+          type: string
+        estado_label:
+          type: string
+        fecha_inicio:
+          type: string
+          format: date
+        fecha_fin:
+          type: string
+          format: date
+        referente:
+          type: string
+        localidades:
+          type: string
+        observaciones:
+          type: string
+        referente_telefono:
+          type: string
+        referente_email:
+          type: string
+        jornadas_total:
+          type: integer
+          nullable: true
+        jornadas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Jornada'
+        carta_archivo_estado:
+          type: string
+        carta_referencia_estado:
+          type: string
+        carta_archivo_url:
+          type: string
+        carta_referencia:
+          type: string
+        subsanacion_observaciones:
+          type: string
+        estados_evaluacion:
+          type: array
+          items:
+            $ref: '#/components/schemas/Choice'
+      required:
+      - codigo
+      - estado
+      - estado_label
+      - fecha_fin
+      - fecha_inicio
+      - id
+      - jornadas_total
+      - localidades
+      - observaciones
+      - provincia
+      - referente
+      - referente_email
+      - referente_telefono
+    ItinerarioEditInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        provincia:
+          type: integer
+        fecha_inicio:
+          type: string
+          format: date
+        fecha_fin:
+          type: string
+          format: date
+        referente_nombre:
+          type: string
+        referente_apellido:
+          type: string
+        referente_telefono:
+          type: string
+        referente_email:
+          type: string
+        carta_archivo:
+          type: string
+          format: uri
+        observaciones:
+          type: string
+      required:
+      - fecha_fin
+      - fecha_inicio
+      - provincia
+      - referente_nombre
+    ItinerarioInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        provincia:
+          type: integer
+        fecha_inicio:
+          type: string
+          format: date
+        fecha_fin:
+          type: string
+          format: date
+        referente_nombre:
+          type: string
+        referente_apellido:
+          type: string
+        referente_telefono:
+          type: string
+        referente_email:
+          type: string
+        carta_archivo:
+          type: string
+          format: uri
+        observaciones:
+          type: string
+      required:
+      - fecha_fin
+      - fecha_inicio
+      - provincia
+      - referente_nombre
+    ItinerarioPage:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Itinerario'
+        estados:
+          type: array
+          items:
+            $ref: '#/components/schemas/Choice'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    Jornada:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        id:
+          type: integer
+        itinerario_id:
+          type: integer
+        fecha:
+          type: string
+          format: date
+        sede:
+          type: string
+        localidad:
+          type: string
+        ubicacion_url:
+          type: string
+        latitud:
+          type: string
+        longitud:
+          type: string
+        vehiculos:
+          type: array
+          items:
+            type: string
+        direccion:
+          type: string
+        estado:
+          type: string
+        estado_label:
+          type: string
+        referente:
+          type: string
+        referente_telefono:
+          type: string
+        equipo_asignado:
+          type: string
+        observaciones:
+          type: string
+        registros_total:
+          type: integer
+          nullable: true
+        mapa_query:
+          type: string
+        checklist:
+          type: array
+          items:
+            $ref: '#/components/schemas/Checklist'
+        registros:
+          type: array
+          items:
+            $ref: '#/components/schemas/Registro'
+        laboratorio:
+          type: array
+          items:
+            $ref: '#/components/schemas/Laboratorio'
+        cierre:
+          allOf:
+          - $ref: '#/components/schemas/Cierre'
+          nullable: true
+      required:
+      - direccion
+      - equipo_asignado
+      - estado
+      - estado_label
+      - fecha
+      - id
+      - itinerario_id
+      - latitud
+      - localidad
+      - longitud
+      - observaciones
+      - referente
+      - referente_telefono
+      - registros_total
+      - sede
+      - ubicacion_url
+      - vehiculos
+    JornadaHistoricalInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        fecha:
+          type: string
+          format: date
+        sede:
+          type: string
+        localidad:
+          type: integer
+          nullable: true
+        ubicacion_url:
+          type: string
+        direccion:
+          type: string
+        vehiculos:
+          type: array
+          items:
+            type: integer
+        horario_inicio:
+          type: string
+          format: time
+          nullable: true
+        horario_fin:
+          type: string
+          format: time
+          nullable: true
+        referente_dni:
+          type: string
+        referente_sexo:
+          type: string
+        referente_telefono:
+          type: string
+        observaciones:
+          type: string
+      required:
+      - fecha
+      - sede
+      - ubicacion_url
+    JornadaInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        renaper_estado:
+          type: string
+        referente_nombre_renaper:
+          type: string
+        referente_apellido_renaper:
+          type: string
+        fecha:
+          type: string
+          format: date
+        sede:
+          type: string
+        localidad:
+          type: integer
+          nullable: true
+        ubicacion_url:
+          type: string
+        direccion:
+          type: string
+        vehiculos:
+          type: array
+          items:
+            type: integer
+        horario_inicio:
+          type: string
+          format: time
+          nullable: true
+        horario_fin:
+          type: string
+          format: time
+          nullable: true
+        referente_dni:
+          type: string
+        referente_sexo:
+          type: string
+        referente_telefono:
+          type: string
+        observaciones:
+          type: string
+      required:
+      - fecha
+      - sede
+      - ubicacion_url
+    Laboratorio:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        id:
+          type: integer
+        registro_id:
+          type: integer
+        persona:
+          type: string
+        estado:
+          type: string
+        siguiente:
+          type: string
+          nullable: true
+        historial:
+          type: array
+          items:
+            $ref: '#/components/schemas/LaboratorioHistory'
+      required:
+      - estado
+      - historial
+      - id
+      - persona
+      - registro_id
+      - siguiente
+    LaboratorioHistory:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        fecha:
+          type: string
+          format: date-time
+        antes:
+          type: string
+        despues:
+          type: string
+        responsable:
+          type: string
+      required:
+      - antes
+      - despues
+      - fecha
+      - responsable
+    LaboratorioInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        estado:
+          type: string
+        fecha:
+          type: string
+          format: date
+        responsable:
+          type: string
+      required:
+      - estado
+      - fecha
+      - responsable
+    LaboratorioPage:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Laboratorio'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    LocationInput:
+      type: object
+      properties:
+        ubicacion_url:
+          type: string
+      required:
+      - ubicacion_url
+    LocationPreview:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        success:
+          type: boolean
+        ubicacion_url:
+          type: string
+        query:
+          type: string
+        direccion:
+          type: string
+        latitud:
+          type: string
+        longitud:
+          type: string
+      required:
+      - direccion
+      - latitud
+      - longitud
+      - query
+      - success
+      - ubicacion_url
+    ModoEnum:
+      enum:
+      - baja_logica
+      - borrado_fisico
+      type: string
+      description: |-
+        * `baja_logica` - baja_logica
+        * `borrado_fisico` - borrado_fisico
+    OperacionEnum:
+      enum:
+      - delete
+      type: string
+      description: '* `delete` - delete'
+    Options:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        provincias:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProvinceOption'
+      required:
+      - provincias
+    ProvinceOption:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+      required:
+      - id
+      - nombre
+    Registro:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        id:
+          type: integer
+        dni:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+        numero_acta:
+          type: string
+        resultado:
+          type: string
+        cantidad_lentes:
+          type: integer
+        graduacion_izquierda:
+          type: string
+        graduacion_derecha:
+          type: string
+      required:
+      - apellido
+      - cantidad_lentes
+      - dni
+      - graduacion_derecha
+      - graduacion_izquierda
+      - id
+      - nombre
+      - numero_acta
+      - resultado
+    RegistroHistoricalInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        dni:
+          type: string
+        sexo:
+          type: string
+        identificador_alternativo:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+        edad:
+          type: integer
+          nullable: true
+        genero:
+          type: string
+        telefono:
+          type: string
+        escuela_sede:
+          type: string
+        numero_acta:
+          type: string
+        numero_sobre:
+          type: string
+        fecha_atencion:
+          type: string
+          format: date
+        graduacion_izquierda:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          nullable: true
+        graduacion_derecha:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          nullable: true
+        resultado:
+          type: string
+        cantidad_lentes:
+          type: integer
+        adjunto:
+          type: string
+          format: uri
+        primera_vez_anteojos:
+          type: boolean
+        observaciones:
+          type: string
+      required:
+      - apellido
+      - cantidad_lentes
+      - fecha_atencion
+      - nombre
+      - numero_acta
+      - resultado
+    RegistroInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        renaper_estado:
+          type: string
+        guardar_continuar:
+          type: string
+        dni:
+          type: string
+        sexo:
+          type: string
+        identificador_alternativo:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+        edad:
+          type: integer
+          nullable: true
+        genero:
+          type: string
+        telefono:
+          type: string
+        escuela_sede:
+          type: string
+        numero_acta:
+          type: string
+        numero_sobre:
+          type: string
+        fecha_atencion:
+          type: string
+          format: date
+        graduacion_izquierda:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          nullable: true
+        graduacion_derecha:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          nullable: true
+        resultado:
+          type: string
+        cantidad_lentes:
+          type: integer
+        adjunto:
+          type: string
+          format: uri
+        primera_vez_anteojos:
+          type: boolean
+        observaciones:
+          type: string
+      required:
+      - apellido
+      - cantidad_lentes
+      - fecha_atencion
+      - nombre
+      - numero_acta
+      - resultado
+    RegistroPage:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Registro'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    Renaper:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          additionalProperties: {}
+        datos_api:
+          nullable: true
+        ciudadano_created:
+          type: boolean
+        ciudadano_pendiente_creacion:
+          type: boolean
+      required:
+      - message
+      - success
+    Sede:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        cueanexo:
+          type: string
+          nullable: true
+        jurisdiccion:
+          type: string
+        localidad:
+          type: string
+        domicilio:
+          type: string
+        telefono:
+          type: string
+        mail:
+          type: string
+        checklist_aprobado:
+          type: boolean
+        mapa_query:
+          type: string
+      required:
+      - checklist_aprobado
+      - cueanexo
+      - domicilio
+      - id
+      - jurisdiccion
+      - localidad
+      - mail
+      - mapa_query
+      - nombre
+      - telefono
+    SedeInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        sector:
+          type: string
+        ambito:
+          type: string
+        departamento:
+          type: string
+        codigo_departamento:
+          type: string
+        localidad:
+          type: string
+        codigo_localidad:
+          type: string
+        cueanexo:
+          type: string
+        nombre:
+          type: string
+        domicilio:
+          type: string
+        codigo_postal:
+          type: string
+        telefono:
+          type: string
+        mail:
+          type: string
+        provincia:
+          type: integer
+        electricidad_cumple:
+          type: string
+        electricidad_observacion:
+          type: string
+        electricidad_evidencia:
+          type: string
+          format: uri
+        viandas_cumple:
+          type: string
+        viandas_observacion:
+          type: string
+        viandas_evidencia:
+          type: string
+          format: uri
+        seguridad_cumple:
+          type: string
+        seguridad_observacion:
+          type: string
+        seguridad_evidencia:
+          type: string
+          format: uri
+      required:
+      - domicilio
+      - localidad
+      - nombre
+      - provincia
+    SedePage:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sede'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    SedeUpdateInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        sector:
+          type: string
+        ambito:
+          type: string
+        departamento:
+          type: string
+        codigo_departamento:
+          type: string
+        localidad:
+          type: string
+        codigo_localidad:
+          type: string
+        cueanexo:
+          type: string
+        nombre:
+          type: string
+        domicilio:
+          type: string
+        codigo_postal:
+          type: string
+        telefono:
+          type: string
+        mail:
+          type: string
+        provincia:
+          type: integer
+      required:
+      - domicilio
+      - localidad
+      - nombre
+      - provincia
+    Session:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        username:
+          type: string
+        can_view_itinerarios:
+          type: boolean
+        can_add_itinerarios:
+          type: boolean
+        can_view_sedes:
+          type: boolean
+        can_export:
+          type: boolean
+        permissions:
+          type: object
+          additionalProperties:
+            type: boolean
+      required:
+      - can_add_itinerarios
+      - can_export
+      - can_view_itinerarios
+      - can_view_sedes
+      - permissions
+      - username
+    SubsanacionInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        carta_archivo:
+          type: string
+          format: uri
+      required:
+      - carta_archivo
+    VpslFormInput:
+      oneOf:
+      - $ref: '#/components/schemas/ItinerarioInput'
+      - $ref: '#/components/schemas/SedeInput'
+      - $ref: '#/components/schemas/JornadaInput'
+      - $ref: '#/components/schemas/RegistroInput'
+      - $ref: '#/components/schemas/ChecklistInput'
+      - $ref: '#/components/schemas/LaboratorioInput'
+      - $ref: '#/components/schemas/CierreInput'
+      - $ref: '#/components/schemas/SubsanacionInput'
+      - $ref: '#/components/schemas/ItinerarioEditInput'
+      - $ref: '#/components/schemas/SedeUpdateInput'
+      - $ref: '#/components/schemas/RegistroHistoricalInput'
+      - $ref: '#/components/schemas/JornadaHistoricalInput'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: 'Usar formato: Api-Key TU_API_KEY'
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token-based authentication with required prefix "Token"

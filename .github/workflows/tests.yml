@@ -302,6 +302,7 @@ jobs:
                         "migrations_check",
                         "mysql_compat",
                         "release_quality",
+                        "frontend",
                       ];
                       if (baseRef === "main") {
                         required.push("release_sanity");
@@ -368,7 +369,7 @@ jobs:
                           failed.push(`${name} (missing)`);
                           continue;
                         }
-                        if (!passConclusions.has(run.conclusion)) {
+                        if (name === "frontend" ? run.conclusion !== "success" : !passConclusions.has(run.conclusion)) {
                           failed.push(`${name} (${run.conclusion})`);
                         }
                       }

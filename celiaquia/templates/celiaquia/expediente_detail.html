@@ -34,7 +34,7 @@
                 {% endif %}
             </div>
             <div class="d-flex gap-2">
-                {% if can_manage_excel_masivo_audit and expediente.excel_masivo %}
+                {% if can_download_excel_masivo and expediente.excel_masivo %}
                     <a href="{% url 'expediente_excel_masivo_descargar' expediente.pk %}"
                        class="btn btn-outline-success btn-sm me-2">
                         <i class="fas fa-file-excel"></i> Descargar Excel Provincia
@@ -141,7 +141,7 @@
                     <p>
                         <strong>Fecha de creacion:</strong> {{ expediente.fecha_creacion|date:"d/m/Y" }}
                     </p>
-                    {% if can_manage_excel_masivo_audit and expediente.excel_masivo %}
+                    {% if can_download_excel_masivo and expediente.excel_masivo %}
                         <div class="mt-3 small">
                             <div class="fw-semibold">Excel original</div>
                             <div>
@@ -149,28 +149,30 @@
                                    class="text-decoration-underline"
                                    target="_blank">{{ expediente.excel_masivo.name }}</a>
                             </div>
-                            <div class="text-muted">
-                                Cargado por
-                                {% if expediente.excel_masivo_cargado_por %}
-                                    {% with usuario_carga=expediente.excel_masivo_cargado_por %}
-                                        {{ usuario_carga.get_full_name|default:usuario_carga.username }}
-                                    {% endwith %}
-                                {% else %}
-                                    -
-                                {% endif %}
-                                {% if expediente.excel_masivo_cargado_en %}el {{ expediente.excel_masivo_cargado_en|date:"d/m/Y H:i" }}{% endif %}
-                            </div>
-                            <div class="text-muted">
-                                Procesado por
-                                {% if expediente.excel_masivo_procesado_por %}
-                                    {% with usuario_proceso=expediente.excel_masivo_procesado_por %}
-                                        {{ usuario_proceso.get_full_name|default:usuario_proceso.username }}
-                                    {% endwith %}
-                                {% else %}
-                                    -
-                                {% endif %}
-                                {% if expediente.excel_masivo_procesado_en %}el {{ expediente.excel_masivo_procesado_en|date:"d/m/Y H:i" }}{% endif %}
-                            </div>
+                            {% if can_manage_excel_masivo_audit %}
+                                <div class="text-muted">
+                                    Cargado por
+                                    {% if expediente.excel_masivo_cargado_por %}
+                                        {% with usuario_carga=expediente.excel_masivo_cargado_por %}
+                                            {{ usuario_carga.get_full_name|default:usuario_carga.username }}
+                                        {% endwith %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                    {% if expediente.excel_masivo_cargado_en %}el {{ expediente.excel_masivo_cargado_en|date:"d/m/Y H:i" }}{% endif %}
+                                </div>
+                                <div class="text-muted">
+                                    Procesado por
+                                    {% if expediente.excel_masivo_procesado_por %}
+                                        {% with usuario_proceso=expediente.excel_masivo_procesado_por %}
+                                            {{ usuario_proceso.get_full_name|default:usuario_proceso.username }}
+                                        {% endwith %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                    {% if expediente.excel_masivo_procesado_en %}el {{ expediente.excel_masivo_procesado_en|date:"d/m/Y H:i" }}{% endif %}
+                                </div>
+                            {% endif %}
                         </div>
                     {% endif %}
                     {% if expediente.documento %}
@@ -1482,9 +1484,33 @@
                                       rows="3"
                                       placeholder="Agregá algo puntual que no esté en las observaciones…"></textarea>
                         </div>
+                        <div class="mb-3">
+                            <label for="subsanar-documentacion" class="form-label">Documentación complementaria (opcional)</label>
+                            <input type="file"
+                                   id="subsanar-documentacion"
+                                   name="documentacion_complementaria"
+                                   class="form-control"
+                                   accept="{{ complementaria_accept }}"
+                                   data-max-archivos="{{ complementaria_max_archivos }}"
+                                   data-max-mb="{{ complementaria_max_mb }}"
+                                   data-extensiones="{{ complementaria_accept }}"
+                                   multiple />
+                            <div id="subsanar-documentacion-error" class="invalid-feedback d-block"></div>
+                            <small class="text-muted d-block mt-1">
+                                Hasta {{ complementaria_max_archivos }} archivos PDF, JPG o PNG de {{ complementaria_max_mb }} MB cada uno.
+                                Se adjunta a la solicitud completa, no a una observación en particular,
+                                y la provincia va a poder consultarla.
+                            </small>
+                        </div>
                         <small class="text-muted d-block">
                             El legajo quedará en estado <strong>SUBSANAR</strong> y la provincia podrá actualizar los archivos.
                         </small>
+                        <!-- Los errores del submit se muestran acá y no sólo en la zona
+                             de alertas de la página, que el backdrop del modal tapa. -->
+                        <div id="subsanar-error"
+                             class="alert alert-danger mt-3 mb-0 py-2 small"
+                             role="alert"
+                             hidden></div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>

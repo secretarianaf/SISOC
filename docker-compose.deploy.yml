@@ -12,6 +12,28 @@ services:
     restart: unless-stopped
     ports:
       - "8001:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health/', timeout=2).close()"]
+      interval: 10s
+      timeout: 3s
+      start_period: 5m
+      retries: 12
+
+  front_vpsl:
+    image: ${VPSL_IMAGE_TAG:-sisoc/front-vpsl:local}
+    build:
+      context: ./frontends
+      dockerfile: Dockerfile
+      target: prod
+      args:
+        APP: vpsl
+        VITE_SENTRY_DSN: ${SENTRY_DSN:-}
+        VITE_SENTRY_ENVIRONMENT: ${ENVIRONMENT:-production}
+        VITE_RELEASE_SHA: ${VITE_RELEASE_SHA:-local}
+    depends_on:
+      django:
+        condition: service_healthy
+    restart: unless-stopped
 
   ocr_worker:
     build:

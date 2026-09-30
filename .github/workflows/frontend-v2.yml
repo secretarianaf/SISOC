@@ -1,0 +1,61 @@
+name: Front v2
+
+on:
+  pull_request:
+    branches: [development, homologacion, main]
+  push:
+    branches: [development, homologacion, main]
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: frontends/.nvmrc
+          cache: npm
+          cache-dependency-path: frontends/package-lock.json
+      - name: Instalar dependencias
+        working-directory: frontends
+        run: npm ci
+      - name: Verificar front y tipos OpenAPI
+        working-directory: frontends
+        run: |
+          npm audit --audit-level=low
+          npm run lint
+          npm run typecheck
+          npm run test
+          npm run build
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+          npm run types:generate
+          git diff --exit-code -- packages/api/src/generated.ts
+      - name: Preparar Django para generar el contrato
+        run: |
+          cat > .env <<'EOF'
+          DJANGO_DEBUG=False
+          DJANGO_SECRET_KEY=ci-secret-key
+          DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,testserver
+          DATABASE_HOST=mysql
+          DATABASE_PORT=3306
+          DATABASE_USER=root
+          DATABASE_PASSWORD=root1-password2
+          DATABASE_NAME=sisoc-local
+          DOCKER_MYSQL_PORT_FORWARD=3307
+          DOCKER_MYSQL_PORT=3306
+          DOCKER_DJANGO_PORT_FORWARD=8000
+          DOCKER_DJANGO_PORT=8000
+          DOCKER_DEBUGGER_PORT_FORWARD=5678
+          DOCKER_DEBUGGER_PORT=5678
+          USE_SQLITE_FOR_TESTS=1
+          EOF
+      - name: Verificar contrato Django
+        run: |
+          docker compose run --build --no-deps --rm -T \
+            -e FRONTEND_V2_SCHEMA_ONLY=1 -e USE_SQLITE_FOR_TESTS=1 django \
+            python manage.py spectacular --file frontends/packages/api/openapi.yaml --format openapi --validate --fail-on-warn
+          git diff --exit-code -- frontends/packages/api/openapi.yaml

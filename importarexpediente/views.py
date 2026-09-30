@@ -21,6 +21,10 @@ from importarexpediente.models import (
     ExitoImportacion,
     RegistroImportado,
 )
+from importarexpediente.filter_config import (
+    IMPORTAREXPEDIENTE_ADVANCED_FILTER,
+    get_filters_ui_config,
+)
 from importarexpediente.services import (
     EmptyImportFileError,
     HeaderlessImportFileError,
@@ -320,6 +324,10 @@ class ImportarExpedienteListView(LoginRequiredMixin, ListView):
         queryset = ArchivosImportados.objects.select_related("usuario").order_by(
             "-fecha_subida"
         )
+        # Sin `distinct()`: el mapeo no cruza relaciones multivaluadas.
+        queryset = IMPORTAREXPEDIENTE_ADVANCED_FILTER.filter_queryset(
+            queryset, self.request
+        )
         query = self.request.GET.get("busqueda", "").strip()
         if query:
             queryset = queryset.filter(
@@ -330,15 +338,16 @@ class ImportarExpedienteListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         _completar_periodos_faltantes(context["archivos_importados"])
-        context["query"] = self.request.GET.get("busqueda", "")
+        context["filters_mode"] = True
+        context["filters_config"] = get_filters_ui_config()
+        context["filters_action"] = reverse("importarexpedientes_list")
         return context
 
 
 @login_required
 def importarexpedientes_ajax(request):
+    """Keep the former list endpoint available for existing consumers."""
     query = request.GET.get("busqueda", "").strip()
-    page = request.GET.get("page", 1)
-
     queryset = ArchivosImportados.objects.select_related("usuario").order_by(
         "-fecha_subida"
     )
@@ -346,21 +355,14 @@ def importarexpedientes_ajax(request):
         queryset = queryset.filter(
             Q(archivo__icontains=query) | Q(usuario__username__icontains=query)
         )
-
     paginator = Paginator(queryset, 10)
-    try:
-        page_obj = paginator.get_page(page)
-    except (ValueError, TypeError):
-        page_obj = paginator.get_page(1)
-
+    page_obj = paginator.get_page(request.GET.get("page", 1))
     _completar_periodos_faltantes(page_obj.object_list)
-
     table_html = render_to_string(
         "partials/importarexpediente_list_rows.html",
         {"importarexpedientes": page_obj.object_list},
         request=request,
     )
-
     pagination_html = render_to_string(
         "components/pagination.html",
         {
@@ -372,7 +374,6 @@ def importarexpedientes_ajax(request):
         },
         request=request,
     )
-
     return JsonResponse(
         {
             "html": table_html,

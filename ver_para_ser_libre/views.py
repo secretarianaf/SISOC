@@ -41,6 +41,12 @@ from ver_para_ser_libre.forms import (
     SedeCreateVPSLForm,
     SedeUpdateVPSLForm,
 )
+from ver_para_ser_libre.filter_config import (
+    ITINERARIO_ADVANCED_FILTER,
+    SEDE_ADVANCED_FILTER,
+    get_itinerario_filters_ui_config,
+    get_sede_filters_ui_config,
+)
 from ver_para_ser_libre.models import (
     CasoLaboratorioVPSL,
     CierreDiarioVPSL,
@@ -53,6 +59,13 @@ from ver_para_ser_libre.models import (
     JornadaVPSL,
     RegistroNominalVPSL,
     SedeVPSL,
+)
+from ver_para_ser_libre.services.access import (
+    provincia_usuario_provincial as _provincia_usuario_provincial,
+    puede_ver_todos_los_itinerarios as _puede_ver_todos_los_itinerarios,
+    filtrar_itinerarios_por_usuario as _filtrar_itinerarios_por_usuario,
+    filtrar_jornadas_por_usuario as _filtrar_jornadas_por_usuario,
+    filtrar_casos_laboratorio_por_usuario as _filtrar_casos_laboratorio_por_usuario,
 )
 from ver_para_ser_libre.services import workflow
 from ver_para_ser_libre.services.map_location import resolve_google_maps_location
@@ -120,51 +133,6 @@ def _display_sexo_renaper(raw_value, normalized_value):
         "X": "X",
     }.get(normalized_value)
     return display or str(raw_value or "")
-
-
-def _provincia_usuario_provincial(user):
-    profile = getattr(user, "profile", None)
-    if profile and profile.es_usuario_provincial and profile.provincia_id:
-        return profile.provincia
-    return None
-
-
-def _puede_ver_todos_los_itinerarios(user):
-    return bool(
-        getattr(user, "is_superuser", False)
-        or user_has_permission_code(user, VIEW_ALL_ITINERARIOS_PERMISSION)
-    )
-
-
-def _filtrar_itinerarios_por_usuario(queryset, user):
-    if _puede_ver_todos_los_itinerarios(user):
-        return queryset
-    provincia = _provincia_usuario_provincial(user)
-    if user_has_permission_code(user, CREATE_ANY_PROVINCE_PERMISSION):
-        if provincia:
-            return queryset.filter(Q(provincia=provincia) | Q(creado_por=user))
-        return queryset.filter(creado_por=user)
-    if provincia:
-        return queryset.filter(provincia=provincia)
-    return queryset.none()
-
-
-def _filtrar_jornadas_por_usuario(queryset, user):
-    if _puede_ver_todos_los_itinerarios(user):
-        return queryset
-    provincia = _provincia_usuario_provincial(user)
-    if provincia:
-        return queryset.filter(itinerario__provincia=provincia)
-    return queryset.none()
-
-
-def _filtrar_casos_laboratorio_por_usuario(queryset, user):
-    if _puede_ver_todos_los_itinerarios(user):
-        return queryset
-    provincia = _provincia_usuario_provincial(user)
-    if provincia:
-        return queryset.filter(registro__jornada__itinerario__provincia=provincia)
-    return queryset.none()
 
 
 def _filtro_estado_itinerario_por_texto(query):
@@ -413,6 +381,7 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
             .order_by("-fecha_inicio", "provincia__nombre")
         )
         queryset = _filtrar_itinerarios_por_usuario(queryset, self.request.user)
+        queryset = ITINERARIO_ADVANCED_FILTER.filter_queryset(queryset, self.request)
         if query:
             filtro_estado = _filtro_estado_itinerario_por_texto(query)
             filtros_busqueda = {
@@ -466,6 +435,9 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
             else _provincia_usuario_provincial(self.request.user)
         )
         context["query"] = self.request.GET.get("busqueda", "")
+        context["filters_mode"] = True
+        context["filters_config"] = get_itinerario_filters_ui_config()
+        context["filters_action"] = reverse("vpsl_itinerario_list")
         context["filtros"] = {
             "busqueda": context["query"],
             "buscar_por": self.request.GET.get("buscar_por", "todos"),
@@ -838,8 +810,10 @@ class SedeListView(LoginRequiredMixin, ListView):
     paginate_by = 15
 
     def get_queryset(self):
-        query = (self.request.GET.get("busqueda") or "").strip()
         queryset = SedeVPSL.objects.order_by("jurisdiccion", "localidad", "nombre")
+        # Sin `distinct()`: el mapeo de sedes solo toca campos locales.
+        queryset = SEDE_ADVANCED_FILTER.filter_queryset(queryset, self.request)
+        query = (self.request.GET.get("busqueda") or "").strip()
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query)
@@ -852,7 +826,9 @@ class SedeListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["query"] = self.request.GET.get("busqueda", "")
+        context["filters_mode"] = True
+        context["filters_config"] = get_sede_filters_ui_config()
+        context["filters_action"] = reverse("vpsl_sede_list")
         context["breadcrumb_items"] = _breadcrumb({"text": "Sedes", "active": True})
         return context
 

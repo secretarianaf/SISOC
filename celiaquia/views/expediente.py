@@ -78,7 +78,14 @@ from celiaquia.services.expediente_filter_config import (  # pylint: disable=no-
 from celiaquia.services.padron_final_service import (  # pylint: disable=no-name-in-module
     PadronFinalService,
 )
+from celiaquia.services.subsanacion_service import SubsanacionService
 from celiaquia.services.validacion_edad_service import ValidacionEdadService
+from celiaquia.validators import (
+    COMPLEMENTARIA_ACCEPT_ATTR,
+    COMPLEMENTARIA_MAX_ARCHIVOS,
+    COMPLEMENTARIA_MAX_SIZE_MB,
+    validar_archivos_complementarios,
+)
 from django.utils import timezone
 from django.db import transaction
 from core.models import Nacionalidad, Provincia, Localidad
@@ -188,10 +195,36 @@ def _can_manage_registros_erroneos(user) -> bool:
 
 
 def _can_manage_excel_masivo_audit(user) -> bool:
+    """Roles que ven la metadata de carga y procesamiento del Excel."""
     return bool(
         _is_admin(user)
         or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
     )
+
+
+def _can_download_excel_masivo(user) -> bool:
+    """Roles que pueden descargar el Excel; el técnico requiere asignación."""
+    return bool(
+        _can_manage_excel_masivo_audit(user)
+        or _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+    )
+
+
+def _puede_descargar_excel_masivo(user, expediente) -> bool:
+    """Acota la descarga del Excel original al alcance de cada rol.
+
+    La vista de descarga no pasa por el queryset del detalle, asi que el filtro
+    por asignacion del tecnico hay que aplicarlo aca de forma explicita.
+    """
+    if not _can_download_excel_masivo(user):
+        return False
+
+    if _is_admin(user) or _user_has_permission(
+        user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
+    ):
+        return True
+
+    return expediente.asignaciones_tecnicos.filter(tecnico=user).exists()
 
 
 def _get_nacionalidad_argentina():
@@ -867,7 +900,8 @@ class ExpedienteListView(ListView):
         ctx["is_tecnico_celiaquia"] = is_tecnico
         ctx["is_provincial_celiaquia"] = _is_provincial(user)
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
-        ctx["can_manage_excel_masivo_audit"] = is_admin or is_coord
+        ctx["can_manage_excel_masivo_audit"] = _can_manage_excel_masivo_audit(user)
+        ctx["can_download_excel_masivo"] = _can_download_excel_masivo(user)
         ctx["show_tecnico_column_celiaquia"] = _can_view_tecnico_column(user)
 
         # El titulo depende del rol y lo consume el componente de busqueda, que
@@ -1037,10 +1071,12 @@ class ExpedienteExcelMasivoDownloadView(View):
     """Descarga la copia del Excel masivo vigente del expediente."""
 
     def get(self, request, pk):
-        if not _can_manage_excel_masivo_audit(request.user):
+        if not _can_download_excel_masivo(request.user):
             raise PermissionDenied("No tiene permisos para descargar el Excel masivo.")
 
         expediente = get_object_or_404(Expediente, pk=pk)
+        if not _puede_descargar_excel_masivo(request.user, expediente):
+            raise PermissionDenied("No sos el tecnico asignado a este expediente.")
         if not expediente.excel_masivo:
             messages.error(request, "El expediente no tiene Excel masivo cargado.")
             return redirect("expediente_detail", pk=expediente.pk)
@@ -1150,7 +1186,8 @@ class ExpedienteDetailView(DetailView):
         ctx["is_provincial_celiaquia"] = _is_provincial(user)
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
         ctx["can_manage_registros_erroneos"] = can_manage_registros_erroneos
-        ctx["can_manage_excel_masivo_audit"] = is_admin or is_coord
+        ctx["can_manage_excel_masivo_audit"] = _can_manage_excel_masivo_audit(user)
+        ctx["can_download_excel_masivo"] = _can_download_excel_masivo(user)
         ctx["can_download_nomina_aprobados"] = bool(
             (is_admin or is_coord or is_tecnico)
             and expediente.estado.nombre == "CRUCE_FINALIZADO"
@@ -1190,7 +1227,6 @@ class ExpedienteDetailView(DetailView):
         # Enriquecer legajos con informacion de tipo (hijo/responsable)
         from celiaquia.services.legajo_service import LegajoService
         from celiaquia.services.familia_service import FamiliaService
-        from celiaquia.services.subsanacion_service import SubsanacionService
 
         legajos_enriquecidos = []
         # Prefetch de subsanaciones solo para la lista que se enriquece y muestra
@@ -1636,6 +1672,12 @@ class ExpedienteDetailView(DetailView):
                 # el cliente, sin ida y vuelta al servidor.
                 "catalogo_comentarios_tecnicos": catalogo_comentarios_tecnicos(),
                 "tipos_documento_comentario": TipoDocumentoComentario.choices,
+                # Límites de la documentación complementaria del modal de
+                # subsanar: se declaran en un solo lugar y el template los usa
+                # para el `accept` y para el texto de ayuda.
+                "complementaria_accept": COMPLEMENTARIA_ACCEPT_ATTR,
+                "complementaria_max_archivos": COMPLEMENTARIA_MAX_ARCHIVOS,
+                "complementaria_max_mb": COMPLEMENTARIA_MAX_SIZE_MB,
             }
         )
         return ctx
@@ -2124,8 +2166,21 @@ class RevisarLegajoView(View):
         )
 
     def _subsanar(self, request, user, leg, motivo):
-        """Solicita la subsanación: estado, observaciones y publicación."""
+        """Solicita la subsanación: estado, observaciones, documentación y
+        publicación."""
         tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
+
+        # Documentación complementaria de Nación (issue #2523): opcional, y se
+        # valida antes de tocar el estado del legajo para no dejar la
+        # subsanación hecha a medias por un archivo inválido.
+        try:
+            complementaria = validar_archivos_complementarios(
+                request.FILES.getlist("documentacion_complementaria")
+            )
+        except ValidationError as exc:
+            return JsonResponse(
+                {"success": False, "error": "; ".join(exc.messages)}, status=400
+            )
 
         # Las observaciones salen de los comentarios técnicos del legajo. Si
         # todavía no tiene ninguno (legajos previos al issue #2318), se cae al
@@ -2186,6 +2241,10 @@ class RevisarLegajoView(View):
                 ]
             )
 
+            adjuntos = SubsanacionService.adjuntar_documentacion_complementaria(
+                subsanacion, complementaria, usuario=user
+            )
+
             publicados = ComentariosTecnicosService.publicar(leg, usuario=user)
 
         return JsonResponse(
@@ -2195,6 +2254,7 @@ class RevisarLegajoView(View):
                 "cupo_liberado": True,
                 "subsanacion_id": subsanacion.pk,
                 "observaciones": len(observaciones),
+                "documentacion_complementaria": len(adjuntos),
                 "comentarios_publicados": publicados,
             }
         )

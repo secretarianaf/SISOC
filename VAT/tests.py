@@ -25,13 +25,17 @@ from VAT import serializers as vat_serializers
 from VAT.api_views import CursoViewSet
 from VAT.forms import (
     CUE_PREFIJOS_POR_PROVINCIA,
+    IDENTIFICACION_CENTRO_ADMIN_GROUP_NAMES,
+    IDENTIFICACION_CENTRO_BLOQUEADA_GROUP_NAMES,
     ComisionCursoForm,
     CentroAltaForm,
     CursoForm,
     InstitucionContactoAltaForm,
     InstitucionContactoForm,
+    InstitucionUbicacionForm,
     PlanVersionCurricularForm,
 )
+from core.permissions.registry import LEGACY_ALIAS_TO_PERMISSION_CODES
 from VAT.views import centro as centro_views
 from VAT.models import (
     Centro,
@@ -3591,14 +3595,16 @@ def test_centro_detail_modal_ubicacion_expone_localidades_habilitadas(
     soup = BeautifulSoup(response.content, "html.parser")
     modal_form = soup.find("form", {"id": "formUbicacion"})
     centro_select = modal_form.find("select", {"name": "centro"})
+    departamento_select = modal_form.find("select", {"name": "departamento"})
     localidad_select = modal_form.find("select", {"name": "localidad"})
 
     assert response.status_code == 200
     assert centro_select["id"] == "id_centro_ubicacion"
+    assert departamento_select["id"] == "id_departamento_ubicacion"
     assert localidad_select["id"] == "id_localidad_ubicacion"
     assert "disabled" not in localidad_select.attrs
     assert localidad_select["data-dropdown-parent"] == "#modalUbicacion .modal-body"
-    assert localidad_select.find("option", value=str(localidad.pk)) is not None
+    assert localidad_select["data-placeholder"] == "Elegí primero un departamento..."
 
 
 @pytest.mark.django_db
@@ -3652,13 +3658,80 @@ def test_centro_detail_modal_ubicacion_fallback_a_provincia_sin_localidades_muni
 
     soup = BeautifulSoup(response.content, "html.parser")
     modal_form = soup.find("form", {"id": "formUbicacion"})
+    departamento_select = modal_form.find("select", {"name": "departamento"})
     localidad_select = modal_form.find("select", {"name": "localidad"})
 
     assert response.status_code == 200
-    assert localidad_select.find("option", value=str(localidad_provincial.pk))
+    assert departamento_select is not None
+    assert localidad_select is not None
+    assert "data-placeholder" in localidad_select.attrs
+    assert localidad_select["data-placeholder"] == "Elegí primero un departamento..."
     assert ajax_response.json()["localidades"] == [
         {"id": localidad_provincial.pk, "nombre": localidad_provincial.nombre}
     ]
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_ajax_municipios_por_centro_devuelve_departamentos_de_la_provincia(client):
+    """VAT/views/institucion.py:municipios_por_centro alimenta la cascada
+    departamento -> localidad de ubicacion_form.html (docs/registro/analisis/
+    2026-09-23-inet-sedes-fuera-del-departamento.md) sin traer las localidades
+    de toda la provincia en cada cambio de centro."""
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    municipio_del_centro = Municipio.objects.create(
+        nombre="Municipio del centro", provincia=provincia
+    )
+    otro_municipio_provincia = Municipio.objects.create(
+        nombre="Otro municipio de la misma provincia", provincia=provincia
+    )
+    Municipio.objects.create(
+        nombre="Municipio de otra provincia",
+        provincia=Provincia.objects.create(nombre="Mendoza"),
+    )
+    localidad = Localidad.objects.create(
+        nombre="Localidad del centro", municipio=municipio_del_centro
+    )
+    user = User.objects.create_superuser(
+        username="admin-municipios-por-centro",
+        email="admin-municipios-por-centro@vat.test",
+        password="test1234",
+    )
+    centro = Centro.objects.create(
+        nombre="Centro Municipios",
+        codigo="CFP-MUNI-CENTRO",
+        provincia=provincia,
+        municipio=municipio_del_centro,
+        localidad=localidad,
+        calle="9",
+        numero=789,
+        domicilio_actividad="Calle 9 N° 789",
+        telefono="221-7100000",
+        celular="221-8100000",
+        correo="centro-municipios@vat.test",
+        nombre_referente="Carla",
+        apellido_referente="Diaz",
+        telefono_referente="221-9100000",
+        correo_referente="carla-municipios@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    client.force_login(user)
+    response = client.get(
+        reverse("vat_ajax_municipios_por_centro"), {"centro_id": str(centro.pk)}
+    )
+    response_sin_centro = client.get(reverse("vat_ajax_municipios_por_centro"))
+
+    assert response.status_code == 200
+    assert response.json()["municipios"] == [
+        {"id": municipio_del_centro.pk, "nombre": municipio_del_centro.nombre},
+        {"id": otro_municipio_provincia.pk, "nombre": otro_municipio_provincia.nombre},
+    ]
+    assert response_sin_centro.json() == {"municipios": []}
 
 
 @pytest.mark.django_db
@@ -7483,11 +7556,14 @@ def test_comision_curso_no_permite_ubicacion_de_otro_centro(vat_geo_data):
 
 
 @pytest.mark.django_db
-def test_curso_form_rechaza_vouchers_fuera_del_programa(vat_curso_base):
+def test_curso_form_ignora_campos_de_voucher_ocultos_al_crear(vat_curso_base):
+    """REQ 2026-09-23: "Usa voucher" y sus campos dependientes quedan ocultos y
+    disabled en el alta -ver docs/registro/analisis/2026-09-23-inet-quitar-usa-voucher-alta-curso.md-,
+    así que lo que se postee ahí se ignora: el curso nuevo siempre queda con
+    usa_voucher=False, costo_creditos=0 y sin vouchers, sin importar el POST."""
     centro, ubicacion, modalidad = vat_curso_base
     usuario = User.objects.create_user(username="voucher-curso", password="test1234")
-    programa_otro = Programa.objects.create(nombre="Programa Otro")
-    programa_extra = Programa.objects.create(nombre="Programa Extra")
+    programa = Programa.objects.create(nombre="Programa Oculto")
     sector = Sector.objects.create(nombre="Servicios")
     plan_estudio = PlanVersionCurricular.objects.create(
         provincia=centro.provincia,
@@ -7495,17 +7571,9 @@ def test_curso_form_rechaza_vouchers_fuera_del_programa(vat_curso_base):
         modalidad_cursada=modalidad,
         activo=True,
     )
-    voucher_otro_programa = VoucherParametria.objects.create(
-        nombre="Voucher Programa Otro",
-        programa=programa_otro,
-        cantidad_inicial=3,
-        fecha_vencimiento=date(2026, 12, 31),
-        creado_por=usuario,
-        activa=True,
-    )
-    voucher_programa_extra = VoucherParametria.objects.create(
-        nombre="Voucher Programa Extra",
-        programa=programa_extra,
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher Oculto",
+        programa=programa,
         cantidad_inicial=3,
         fecha_vencimiento=date(2026, 12, 31),
         creado_por=usuario,
@@ -7518,19 +7586,90 @@ def test_curso_form_rechaza_vouchers_fuera_del_programa(vat_curso_base):
             "nombre": "Curso Test Voucher",
             "estado": "planificado",
             "usa_voucher": "on",
-            "voucher_parametrias": [
-                str(voucher_otro_programa.id),
-                str(voucher_programa_extra.id),
-            ],
-            "costo_creditos": 1,
+            "voucher_parametrias": [str(voucher.id)],
+            "costo_creditos": 5,
             "observaciones": "",
         },
         initial={"centro": centro},
     )
 
-    assert not form.is_valid()
-    assert "voucher_parametrias" in form.errors
-    assert "programa" not in form.fields
+    assert form.is_valid(), form.errors
+    form.instance.centro = centro  # lo asigna la vista antes de guardar
+    curso = form.save()
+    assert curso.usa_voucher is False
+    assert curso.costo_creditos == 0
+    assert list(curso.voucher_parametrias.all()) == []
+
+
+@pytest.mark.django_db
+def test_curso_form_conserva_voucher_al_editar_curso_existente(vat_curso_base):
+    """REQ 2026-09-23: un curso que ya usaba voucher conserva usa_voucher,
+    costo_creditos y sus vouchers al editarse, aunque esos campos estén ocultos
+    y disabled en el form -docs/registro/analisis/2026-09-23-inet-quitar-usa-voucher-alta-curso.md-.
+    Un campo disabled toma su valor inicial (el guardado en el modelo), nunca
+    el que venga en el POST."""
+    centro, ubicacion, modalidad = vat_curso_base
+    usuario = User.objects.create_user(
+        username="voucher-curso-edicion", password="test1234"
+    )
+    programa = Programa.objects.create(nombre="Programa Existente")
+    sector = Sector.objects.create(nombre="Servicios")
+    plan_estudio = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    voucher_activo = VoucherParametria.objects.create(
+        nombre="Voucher Activo",
+        programa=programa,
+        cantidad_inicial=3,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    voucher_inactivo = VoucherParametria.objects.create(
+        nombre="Voucher Inactivo",
+        programa=programa,
+        cantidad_inicial=2,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=False,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        plan_estudio=plan_estudio,
+        nombre="Curso con voucher existente",
+        modalidad=modalidad,
+        estado="planificado",
+        usa_voucher=True,
+        costo_creditos=5,
+    )
+    curso.voucher_parametrias.set([voucher_activo, voucher_inactivo])
+
+    form = CursoForm(
+        data={
+            "plan_estudio": str(plan_estudio.id),
+            "nombre": "Curso con voucher existente (editado)",
+            "estado": "planificado",
+            # Un POST manipulado que intente apagar el voucher y limpiar sus
+            # campos dependientes: como están disabled, se ignora.
+            "costo_creditos": 0,
+            "observaciones": "",
+        },
+        instance=curso,
+    )
+
+    assert form.is_valid(), form.errors
+    curso_editado = form.save()
+
+    assert curso_editado.nombre == "Curso con voucher existente (editado)"
+    assert curso_editado.usa_voucher is True
+    assert curso_editado.costo_creditos == 5
+    assert set(curso_editado.voucher_parametrias.all()) == {
+        voucher_activo,
+        voucher_inactivo,
+    }
 
 
 @pytest.mark.django_db
@@ -7576,41 +7715,24 @@ def test_curso_form_tipo_choices_incluye_valores_legacy_de_cursos(vat_curso_base
 
 
 @pytest.mark.django_db
-def test_curso_form_requiere_costo_creditos_si_usa_voucher(vat_curso_base):
+def test_curso_model_requiere_costo_creditos_si_usa_voucher(vat_curso_base):
+    """La validación sigue vigente a nivel de modelo (Curso.clean()), aunque
+    ya no sea alcanzable desde CursoForm: REQ 2026-09-23,
+    docs/registro/analisis/2026-09-23-inet-quitar-usa-voucher-alta-curso.md."""
     centro, ubicacion, modalidad = vat_curso_base
-    programa = Programa.objects.create(nombre="Programa Test Costo")
-    usuario = User.objects.create_user(username="voucher-costo-1", password="test1234")
-    sector = Sector.objects.create(nombre="Administración")
-    plan_estudio = PlanVersionCurricular.objects.create(
-        provincia=centro.provincia,
-        sector=sector,
-        modalidad_cursada=modalidad,
-        activo=True,
-    )
-    voucher = VoucherParametria.objects.create(
-        nombre="Voucher Costo",
-        programa=programa,
-        cantidad_inicial=5,
-        fecha_vencimiento=date(2026, 12, 31),
-        creado_por=usuario,
-        activa=True,
+
+    curso = Curso(
+        centro=centro,
+        nombre="Curso sin costo",
+        modalidad=modalidad,
+        estado="planificado",
+        usa_voucher=True,
+        costo_creditos=0,
     )
 
-    form = CursoForm(
-        data={
-            "plan_estudio": str(plan_estudio.id),
-            "nombre": "Curso sin costo",
-            "estado": "planificado",
-            "usa_voucher": "on",
-            "voucher_parametrias": [str(voucher.id)],
-            "costo_creditos": "",
-            "observaciones": "",
-        },
-        initial={"centro": centro},
-    )
-
-    assert not form.is_valid()
-    assert "costo_creditos" in form.errors
+    with pytest.raises(ValidationError) as excinfo:
+        curso.full_clean()
+    assert "costo_creditos" in excinfo.value.message_dict
 
 
 @pytest.mark.django_db
@@ -7640,47 +7762,27 @@ def test_curso_form_default_costo_creditos_si_no_usa_voucher(vat_curso_base):
 
 
 @pytest.mark.django_db
-def test_curso_form_no_permite_voucher_e_inscripcion_libre_al_mismo_tiempo(
+def test_curso_model_no_permite_voucher_e_inscripcion_libre_al_mismo_tiempo(
     vat_curso_base,
 ):
+    """La exclusión mutua sigue vigente a nivel de modelo (Curso.clean()),
+    aunque ya no sea alcanzable desde CursoForm: REQ 2026-09-23,
+    docs/registro/analisis/2026-09-23-inet-quitar-usa-voucher-alta-curso.md."""
     centro, ubicacion, modalidad = vat_curso_base
-    programa = Programa.objects.create(nombre="Programa Exclusión Curso")
-    usuario = User.objects.create_user(
-        username="curso-mixto-invalido",
-        password="test1234",
-    )
-    sector = Sector.objects.create(nombre="Servicios")
-    plan_estudio = PlanVersionCurricular.objects.create(
-        provincia=centro.provincia,
-        sector=sector,
-        modalidad_cursada=modalidad,
-        activo=True,
-    )
-    voucher = VoucherParametria.objects.create(
-        nombre="Voucher Exclusión Curso",
-        programa=programa,
-        cantidad_inicial=5,
-        fecha_vencimiento=date(2026, 12, 31),
-        creado_por=usuario,
-        activa=True,
+
+    curso = Curso(
+        centro=centro,
+        nombre="Curso mixto inválido",
+        modalidad=modalidad,
+        estado="planificado",
+        usa_voucher=True,
+        inscripcion_libre=True,
+        costo_creditos=1,
     )
 
-    form = CursoForm(
-        data={
-            "plan_estudio": str(plan_estudio.id),
-            "nombre": "Curso mixto inválido",
-            "estado": "planificado",
-            "usa_voucher": "on",
-            "inscripcion_libre": "on",
-            "voucher_parametrias": [str(voucher.id)],
-            "costo_creditos": 1,
-            "observaciones": "",
-        },
-        initial={"centro": centro},
-    )
-
-    assert not form.is_valid()
-    assert "inscripcion_libre" in form.errors
+    with pytest.raises(ValidationError) as excinfo:
+        curso.full_clean()
+    assert "inscripcion_libre" in excinfo.value.message_dict
 
 
 @pytest.mark.django_db
@@ -12127,8 +12229,15 @@ def test_cue_valida_prefijo_en_edicion_con_provincia_oculta(
     En edicion `provincia` va oculta y `required=False` (hide_provincia). Si no
     llega en el POST, el prefijo debe validarse igual contra la provincia de la
     instancia, no saltearse en silencio.
+
+    El actor no puede ser un referente CFP: desde REQ 2026-09-23
+    (docs/registro/analisis/2026-09-23-inet-bloquear-cue-y-denominacion.md) ese
+    perfil tiene "codigo" bloqueado en edicion, y un campo disabled ignora el
+    valor del POST -el test dejaria de probar la validacion de prefijo, porque
+    el "codigo" invalido nunca llegaria a validarse.
     """
     provincia, municipio, localidad = vat_geo_data
+    editor = User.objects.create_user(username="editor-cue", password="test1234")
     propio = _centro_existente_para_cue(
         vat_cue_referente, provincia, municipio, localidad, "060166500"
     )
@@ -12145,7 +12254,7 @@ def test_cue_valida_prefijo_en_edicion_con_provincia_oculta(
     form = CentroAltaForm(
         data=data,
         instance=propio,
-        actor=vat_cue_referente,
+        actor=editor,
         hide_provincia=True,
         provincia_inicial=propio.provincia,
     )
@@ -12154,3 +12263,325 @@ def test_cue_valida_prefijo_en_edicion_con_provincia_oculta(
     assert form.errors["codigo"] == [
         "Los primeros 2 dígitos del CUE no corresponden a la provincia seleccionada."
     ]
+
+
+@pytest.mark.parametrize("group_name", IDENTIFICACION_CENTRO_BLOQUEADA_GROUP_NAMES)
+@pytest.mark.django_db
+def test_cfp_referente_no_puede_modificar_codigo_ni_nombre_en_edicion(
+    vat_geo_data, vat_cue_referente, group_name
+):
+    """REQ 2026-09-23: CFP/CFPJuridicccion/CFPRevisor no pueden editar la
+    identificación del centro (docs/registro/analisis/2026-09-23-inet-bloquear-cue-y-denominacion.md).
+
+    Parametrizado por los tres grupos de IDENTIFICACION_CENTRO_BLOQUEADA_GROUP_NAMES:
+    el propio comentario en VAT/forms.py advierte que un error de tipeo en
+    "CFPJuridicccion" desactiva el bloqueo sin ningún error visible, así que
+    un rename ahí tiene que romper este test en vez de abrir el bloqueo en
+    silencio.
+    """
+    # vat_cue_referente sigue siendo el referente asignado al centro (tiene que
+    # estar en "CFP" para pasar la validación de "rol válido de referente");
+    # el actor que edita -y a quien se le aplica el bloqueo bajo prueba- es un
+    # usuario aparte con el grupo parametrizado.
+    provincia, municipio, localidad = vat_geo_data
+    grupo, _ = Group.objects.get_or_create(name=group_name)
+    actor = User.objects.create_user(
+        username=f"actor-{group_name}", password="test1234"
+    )
+    actor.groups.add(grupo)
+    propio = _centro_existente_para_cue(
+        vat_cue_referente, provincia, municipio, localidad, "060166500"
+    )
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo="500144900",
+        nombre="Nombre Manipulado",
+        referentes=[str(vat_cue_referente.pk)],
+    )
+
+    form = CentroAltaForm(
+        data=data,
+        instance=propio,
+        actor=actor,
+        hide_provincia=True,
+        provincia_inicial=propio.provincia,
+    )
+
+    assert form.is_valid(), form.errors
+    centro = form.save()
+    assert centro.codigo == "060166500"
+    assert centro.nombre == "Centro CUE Existente"
+
+
+@pytest.mark.django_db
+def test_cfpinet_si_puede_modificar_codigo_y_nombre_en_edicion(
+    vat_geo_data, vat_cue_referente
+):
+    """Caso negativo del bloqueo: un grupo de administración como CFPINET no
+    está en IDENTIFICACION_CENTRO_BLOQUEADA_GROUP_NAMES y sí puede editar."""
+    provincia, municipio, localidad = vat_geo_data
+    assert "CFPINET" not in IDENTIFICACION_CENTRO_BLOQUEADA_GROUP_NAMES
+    grupo_inet, _ = Group.objects.get_or_create(name="CFPINET")
+    actor = User.objects.create_user(username="actor-CFPINET", password="test1234")
+    actor.groups.add(grupo_inet)
+    propio = _centro_existente_para_cue(
+        vat_cue_referente, provincia, municipio, localidad, "060166500"
+    )
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo="060199900",  # sigue el prefijo de Buenos Aires, pero distinto del original
+        nombre="Nombre Manipulado",
+        referentes=[str(vat_cue_referente.pk)],
+    )
+
+    form = CentroAltaForm(
+        data=data,
+        instance=propio,
+        actor=actor,
+        hide_provincia=True,
+        provincia_inicial=propio.provincia,
+    )
+
+    assert form.is_valid(), form.errors
+    centro = form.save()
+    assert centro.codigo == "060199900"
+    assert centro.nombre == "Nombre Manipulado"
+
+
+@pytest.mark.django_db
+def test_admin_tiene_prioridad_sobre_bloqueo_si_pertenece_a_ambos_grupos(
+    vat_geo_data, vat_cue_referente
+):
+    """Decisión de producto (2026-09-29): si un usuario pertenece a la vez a un
+    grupo bloqueado (CFP) y a uno de administración (CFPINET), el
+    administrador tiene prioridad y puede editar."""
+    provincia, municipio, localidad = vat_geo_data
+    grupo_cfp, _ = Group.objects.get_or_create(name="CFP")
+    grupo_inet, _ = Group.objects.get_or_create(name="CFPINET")
+    actor = User.objects.create_user(
+        username="actor-CFP-y-CFPINET", password="test1234"
+    )
+    actor.groups.set([grupo_cfp, grupo_inet])
+    propio = _centro_existente_para_cue(
+        vat_cue_referente, provincia, municipio, localidad, "060166500"
+    )
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo="060199900",
+        nombre="Nombre Manipulado",
+        referentes=[str(vat_cue_referente.pk)],
+    )
+
+    form = CentroAltaForm(
+        data=data,
+        instance=propio,
+        actor=actor,
+        hide_provincia=True,
+        provincia_inicial=propio.provincia,
+    )
+
+    assert form.is_valid(), form.errors
+    centro = form.save()
+    assert centro.codigo == "060199900"
+    assert centro.nombre == "Nombre Manipulado"
+
+
+def test_identificacion_centro_bloqueada_group_names_existen_en_registry():
+    """Cada nombre de IDENTIFICACION_CENTRO_BLOQUEADA_GROUP_NAMES y de
+    IDENTIFICACION_CENTRO_ADMIN_GROUP_NAMES tiene que existir en el registry
+    de permisos: si alguien corrige la ortografía de "CFPJuridicccion" en un
+    solo lugar, este test lo detecta."""
+    for group_name in IDENTIFICACION_CENTRO_BLOQUEADA_GROUP_NAMES:
+        assert group_name in LEGACY_ALIAS_TO_PERMISSION_CODES
+    for group_name in IDENTIFICACION_CENTRO_ADMIN_GROUP_NAMES:
+        assert group_name in LEGACY_ALIAS_TO_PERMISSION_CODES
+
+
+# ---------------------------------------------------------------------------
+# REQ 2026-09-23 - Mejoras INET septiembre 2
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_str_usa_normativa_y_no_modalidad(vat_curso_base):
+    """docs/registro/analisis/2026-09-23-inet-modalidad-sector-en-selector-de-plan.md"""
+    centro, _, modalidad = vat_curso_base
+    sector = Sector.objects.create(nombre="Artes")
+    plan = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        nombre="Artesanías y Manualidades",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Res. 1932/2002",
+        activo=True,
+    )
+
+    assert str(plan) == "Artesanías y Manualidades - Res. 1932/2002"
+    assert modalidad.nombre not in str(plan)
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_str_sin_nombre_ni_normativa_no_muestra_sector(
+    vat_curso_base,
+):
+    """El respaldo desambigua por id, nunca por Sector (ver comentario inline
+    en PlanVersionCurricular.__str__ y el REQ de modalidad/sector)."""
+    centro, _, modalidad = vat_curso_base
+    sector = Sector.objects.create(nombre="Artes")
+    plan = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+
+    assert str(plan) == f"Plan #{plan.pk}"
+    assert sector.nombre not in str(plan)
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_str_desambigua_homonimos_sin_normativa(
+    vat_curso_base,
+):
+    """docs/registro/analisis/2026-09-23-inet-modalidad-sector-en-selector-de-plan.md:
+    dos planes con el mismo nombre y sin normativa no pueden quedar con la
+    misma etiqueta en el selector."""
+    centro, _, modalidad = vat_curso_base
+    sector = Sector.objects.create(nombre="Artes")
+    plan_1 = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        nombre="Artesanías y Manualidades",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    plan_2 = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        nombre="Artesanías y Manualidades",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+
+    assert str(plan_1) != str(plan_2)
+    assert str(plan_1) == f"Artesanías y Manualidades - Plan #{plan_1.pk}"
+    assert str(plan_2) == f"Artesanías y Manualidades - Plan #{plan_2.pk}"
+
+
+def _crear_localidad_en(provincia, municipio_nombre, localidad_nombre):
+    municipio = Municipio.objects.create(nombre=municipio_nombre, provincia=provincia)
+    localidad = Localidad.objects.create(nombre=localidad_nombre, municipio=municipio)
+    return municipio, localidad
+
+
+@pytest.mark.django_db
+def test_sede_admite_localidades_de_toda_la_provincia_del_centro(vat_curso_base):
+    """docs/registro/analisis/2026-09-23-inet-sedes-fuera-del-departamento.md"""
+    centro, _, _ = vat_curso_base
+    otro_municipio, localidad_otro_municipio = _crear_localidad_en(
+        centro.provincia, "Berisso", "Villa Argüello"
+    )
+    _, localidad_otra_provincia = _crear_localidad_en(
+        Provincia.objects.create(nombre="Mendoza"), "Godoy Cruz", "Godoy Cruz"
+    )
+
+    form = InstitucionUbicacionForm(initial={"centro": centro})
+
+    localidades = set(form.fields["localidad"].queryset)
+    assert centro.localidad in localidades
+    assert localidad_otro_municipio in localidades
+    assert localidad_otra_provincia not in localidades
+    assert set(form.fields["departamento"].queryset) == {
+        centro.municipio,
+        otro_municipio,
+    }
+    # Validar abarca la provincia, pero renderizar no: las localidades se traen
+    # por AJAX al elegir departamento.
+    html_localidad = str(form["localidad"])
+    assert localidad_otro_municipio.nombre not in html_localidad
+    assert centro.localidad.nombre not in html_localidad
+
+
+@pytest.mark.django_db
+def test_sede_en_edicion_preselecciona_departamento_y_muestra_su_localidad(
+    vat_curso_base,
+):
+    centro, ubicacion, _ = vat_curso_base
+
+    form = InstitucionUbicacionForm(instance=ubicacion)
+
+    assert form["departamento"].value() == ubicacion.localidad.municipio_id
+    html_localidad = str(form["localidad"])
+    assert f'value="{ubicacion.localidad_id}" selected' in html_localidad
+    assert ubicacion.localidad.nombre in html_localidad
+
+
+@pytest.mark.django_db
+def test_sede_valida_localidad_contra_el_centro_enviado_y_no_el_guardado(
+    vat_curso_base,
+):
+    """En la edición standalone el centro es editable: si se cambia a uno de
+    otra provincia, la localidad nueva tiene que validar contra ese centro."""
+    centro, ubicacion, _ = vat_curso_base
+    otra_provincia = Provincia.objects.create(nombre="Mendoza")
+    otro_municipio, otra_localidad = _crear_localidad_en(
+        otra_provincia, "Godoy Cruz", "Godoy Cruz"
+    )
+    otro_centro = Centro.objects.create(
+        nombre="CFP 502",
+        codigo="CFP-502",
+        provincia=otra_provincia,
+        municipio=otro_municipio,
+        localidad=otra_localidad,
+        calle="9",
+        numero=222,
+        domicilio_actividad="Calle 9 N° 222",
+        telefono="261-1111111",
+        celular="261-1111112",
+        correo="cfp502@vat.test",
+        nombre_referente="Juan",
+        apellido_referente="Perez",
+        telefono_referente="261-1111113",
+        correo_referente="juan@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    form = InstitucionUbicacionForm(
+        data={
+            "centro": str(otro_centro.pk),
+            "localidad": str(otra_localidad.pk),
+            "rol_ubicacion": ubicacion.rol_ubicacion,
+            "domicilio": "Calle 9 N° 222",
+        },
+        instance=ubicacion,
+    )
+
+    assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+def test_sede_con_centro_invalido_en_el_post_no_rompe(vat_curso_base):
+    centro, ubicacion, _ = vat_curso_base
+
+    form = InstitucionUbicacionForm(
+        data={
+            "centro": "abc",
+            "localidad": str(centro.localidad_id),
+            "rol_ubicacion": ubicacion.rol_ubicacion,
+        }
+    )
+
+    assert not form.is_valid()
+    assert "centro" in form.errors

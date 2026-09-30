@@ -48,6 +48,7 @@ from rendicioncuentasmensual.filter_config import (
     FIELD_MAP,
     FIELD_TYPES,
     NUM_OPS,
+    TERRITORIAL_ASIGNADO_FIELD,
     TEXT_OPS,
     get_filters_ui_config,
 )
@@ -111,6 +112,11 @@ class RendicionCuentaMensualGlobalListView(
     COLUMN_DEFINITIONS = (
         ("proyecto", "Proyecto", "comedor.codigo_de_proyecto"),
         ("organizacion", "Organización", "comedor.organizacion.nombre"),
+        (
+            TERRITORIAL_ASIGNADO_FIELD,
+            "Territorial asignado",
+            "territoriales_asignados_display",
+        ),
         ("convenio", "Convenio", "convenio"),
         ("numero_rendicion", "Rendición", "numero_rendicion"),
         ("periodo", "Período", "periodo_exportacion"),
@@ -125,6 +131,13 @@ class RendicionCuentaMensualGlobalListView(
             self.COLUMN_LIST_KEY,
             [{"title": title} for _key, title, _field in self.COLUMN_DEFINITIONS],
             [{"name": key} for key, _title, _field in self.COLUMN_DEFINITIONS],
+            # Territorial asignado queda disponible en la configuración, pero no
+            # cambia la grilla por defecto de quienes no la activen.
+            default_keys=[
+                key
+                for key, _title, _field in self.COLUMN_DEFINITIONS
+                if key != TERRITORIAL_ASIGNADO_FIELD
+            ],
             required_keys=["proyecto"],
         )
 
@@ -140,6 +153,8 @@ class RendicionCuentaMensualGlobalListView(
             if obj.periodo_inicio and obj.periodo_fin:
                 return f"{obj.periodo_inicio:%d/%m/%Y} - {obj.periodo_fin:%d/%m/%Y}"
             return f"{obj.mes}/{obj.anio}"
+        if field_path == "territoriales_asignados_display":
+            return RendicionCuentaMensualService.territoriales_asignados_display(obj)
         return super().resolve_field(obj, field_path)
 
     def get(self, request, *args, **kwargs):
@@ -164,7 +179,34 @@ class RendicionCuentaMensualGlobalListView(
             },
         )
         queryset = engine.filter_queryset(queryset, self.request.GET)
+        queryset = self._filter_territorial_asignado(queryset)
         return self._filter_estado_proceso(queryset)
+
+    def _filter_territorial_asignado(self, queryset):
+        """Filtra por territorial de la organización; varios se combinan con OR."""
+        try:
+            payload = json.loads(self.request.GET.get("filters") or "{}")
+        except (TypeError, json.JSONDecodeError):
+            return queryset
+
+        territorial_q = Q()
+        tiene_territorial_valido = False
+        for item in payload.get("items", []):
+            if (
+                not isinstance(item, dict)
+                or item.get("field") != TERRITORIAL_ASIGNADO_FIELD
+                or item.get("op") not in {"eq", "ne"}
+            ):
+                continue
+            try:
+                user_id = int(item.get("value"))
+            except (TypeError, ValueError):
+                continue
+            item_q = RendicionCuentaMensualService.q_territorial_asignado(user_id)
+            territorial_q |= ~item_q if item["op"] == "ne" else item_q
+            tiene_territorial_valido = True
+
+        return queryset.filter(territorial_q) if tiene_territorial_valido else queryset
 
     def _filter_estado_proceso(self, queryset):
         """Filtra por el valor compuesto que se muestra en la columna Estado."""
@@ -215,6 +257,10 @@ class RendicionCuentaMensualGlobalListView(
         context["seccion_filtros_favoritos"] = SeccionesFiltrosFavoritos.RENDICIONES
         context.update(self._get_columns_context())
         context["active_columns"] = context["column_active_keys"]
+        for rendicion in context["rendiciones_cuentas_mensuales"]:
+            rendicion.territoriales_asignados_display = (
+                RendicionCuentaMensualService.territoriales_asignados_display(rendicion)
+            )
         context["breadcrumb_items"] = [
             {"text": "Organizaciones", "url": reverse_lazy("organizaciones")},
             {"text": "Rendiciones", "active": True},

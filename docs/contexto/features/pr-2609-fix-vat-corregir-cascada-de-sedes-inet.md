@@ -37,7 +37,9 @@
 - `VAT/templates/vat/institucion/ubicacion_form.html`
 - `VAT/tests.py`
 - `VAT/views/institucion.py`
+- `docs/contexto/features/pr-2609-fix-vat-corregir-cascada-de-sedes-inet.md`
 - `docs/registro/cambios/2026-09-30-inet-sedes-cascada-localidades.md`
+- `docs/registro/prs/PR-2609.md`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

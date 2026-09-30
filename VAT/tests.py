@@ -12512,6 +12512,63 @@ def test_sede_admite_localidades_de_toda_la_provincia_del_centro(vat_curso_base)
 
 
 @pytest.mark.django_db
+def test_sede_toma_departamentos_de_la_provincia_de_ubicacion_principal():
+    provincia_legajo = Provincia.objects.create(nombre="San Juan Test")
+    municipio_legajo, localidad_legajo = _crear_localidad_en(
+        provincia_legajo, "Capital San Juan Test", "Centro San Juan Test"
+    )
+    provincia_principal = Provincia.objects.create(nombre="Buenos Aires Test")
+    municipio_principal, localidad_principal = _crear_localidad_en(
+        provincia_principal, "La Matanza Test", "San Justo Test"
+    )
+    municipio_misma_provincia, localidad_misma_provincia = _crear_localidad_en(
+        provincia_principal, "Lanus Test", "Lanus Este Test"
+    )
+    _, localidad_otra_provincia = _crear_localidad_en(
+        Provincia.objects.create(nombre="Mendoza Test"), "Godoy Cruz Test", "Centro"
+    )
+    centro = Centro.objects.create(
+        nombre="CFP provincia principal",
+        codigo="CFP-PROV-PRINC",
+        provincia=provincia_legajo,
+        municipio=municipio_legajo,
+        localidad=localidad_legajo,
+        calle="9",
+        numero=222,
+        domicilio_actividad="Calle 9 N 222",
+        telefono="261-1111111",
+        celular="261-1111112",
+        correo="cfp-principal@vat.test",
+        nombre_referente="Juan",
+        apellido_referente="Perez",
+        telefono_referente="261-1111113",
+        correo_referente="juan@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad_principal,
+        rol_ubicacion="sede_principal",
+        es_principal=True,
+    )
+
+    form = InstitucionUbicacionForm(initial={"centro": centro})
+
+    assert set(form.fields["departamento"].queryset) == {
+        municipio_principal,
+        municipio_misma_provincia,
+    }
+    localidades = set(form.fields["localidad"].queryset)
+    assert localidad_principal in localidades
+    assert localidad_misma_provincia in localidades
+    assert localidad_legajo not in localidades
+    assert localidad_otra_provincia not in localidades
+
+
+@pytest.mark.django_db
 def test_sede_en_edicion_preselecciona_departamento_y_muestra_su_localidad(
     vat_curso_base,
 ):

@@ -185,7 +185,7 @@ class RendicionProcesoForm(forms.Form):
         max_digits=15,
         decimal_places=2,
         min_value=0,
-        label="Monto rendido",
+        label="Monto auditado",
     )
     monto_observado = forms.DecimalField(
         required=False,
@@ -240,7 +240,7 @@ class RendicionProcesoForm(forms.Form):
         accion = cleaned.get("accion_proceso")
         if accion in {"finalizar_sin_observaciones", "finalizar_con_observaciones"}:
             if cleaned.get("monto_rendido") is None:
-                self.add_error("monto_rendido", "Ingresá el monto rendido.")
+                self.add_error("monto_rendido", "Ingresá el monto auditado.")
             genera_acta = cleaned.get("genera_acta_auditoria")
             rendiciones_incluidas = cleaned.get("rendiciones_incluidas")
             if self.es_linea_tradicional and genera_acta is None:

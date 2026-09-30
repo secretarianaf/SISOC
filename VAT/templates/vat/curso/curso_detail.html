@@ -238,12 +238,6 @@
     </style>
 
     <div class="sisoc-curso-page">
-        <div class="sisoc-page-top">
-            <a href="{{ cancel_url }}" class="sisoc-back-link">
-                <i class="fas fa-arrow-left"></i> Volver al centro
-            </a>
-        </div>
-
         <div class="sisoc-title-row">
             <div class="sisoc-title-block">
                 <p class="sisoc-title-kicker">Curso</p>
@@ -271,10 +265,6 @@
                             <div class="sisoc-data-item">
                                 <p class="sisoc-data-label">Plan de estudio</p>
                                 <p class="sisoc-data-value">{{ curso.plan_estudio|default:"-" }}</p>
-                            </div>
-                            <div class="sisoc-data-item">
-                                <p class="sisoc-data-label">Modalidad</p>
-                                <p class="sisoc-data-value">{{ curso.modalidad.nombre|default:"-" }}</p>
                             </div>
                             <div class="sisoc-data-item">
                                 <p class="sisoc-data-label">Estado</p>

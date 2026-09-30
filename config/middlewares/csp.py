@@ -52,6 +52,9 @@ class ContentSecurityPolicyMiddleware:
 
         # CSP policy que permite recursos del mismo origen, Google Maps API, y Bootstrap CDN
         # `unsafe-inline` en script-src se controla por flag para compatibilidad temporal.
+        hmr_origins = ""
+        if settings.DEBUG and request.path.startswith("/v2/"):
+            hmr_origins = " ".join(getattr(settings, "FRONTEND_V2_HMR_ORIGINS", []))
         csp_policy = (
             "default-src 'self'; "
             f"script-src {' '.join(script_src_tokens)} "
@@ -60,7 +63,7 @@ class ContentSecurityPolicyMiddleware:
             "https://cdn.jsdelivr.net https://cdn.datatables.net https://fonts.googleapis.com https://code.ionicframework.com https://cdnjs.cloudflare.com; "
             "img-src 'self' data: https: blob:; "
             "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-            "connect-src 'self' https://maps.googleapis.com https://app.powerbi.com https://*.ingest.sentry.io; "
+            f"connect-src 'self' https://maps.googleapis.com https://app.powerbi.com https://*.ingest.sentry.io {hmr_origins}; "
             "frame-src 'self' https://maps.google.com https://www.google.com "
             "https://app.powerbi.com https://lookerstudio.google.com "
             "https://datastudio.google.com; "

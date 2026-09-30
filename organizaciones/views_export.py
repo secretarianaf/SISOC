@@ -3,7 +3,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from core.mixins import CSVExportMixin
 from organizaciones.models import Organizacion
-from organizaciones.views import _apply_organizacion_search
+from organizaciones.filter_config import ORGANIZACION_ADVANCED_FILTER
+from organizaciones.views import (
+    _apply_organizacion_search,
+)
 
 
 class OrganizacionExportView(LoginRequiredMixin, CSVExportMixin, View):
@@ -25,10 +28,19 @@ class OrganizacionExportView(LoginRequiredMixin, CSVExportMixin, View):
 
         organizaciones = Organizacion.objects.select_related(
             "tipo_entidad", "subtipo_entidad"
-        ).annotate(comedores_count=Count("comedor"))
+        ).annotate(
+            # distinct: los filtros sobre relaciones multivaluadas (comedor,
+            # proyectos) agregan joins que inflarian el conteo.
+            comedores_count=Count("comedor", distinct=True)
+        )
 
         if busqueda:
             organizaciones = _apply_organizacion_search(organizaciones, busqueda)
+
+        # Mismos filtros combinables que el listado (issue #2505).
+        organizaciones = ORGANIZACION_ADVANCED_FILTER.filter_queryset(
+            organizaciones, self.request
+        ).distinct()
 
         # Sorting from request
         sort_col = self.request.GET.get("sort")

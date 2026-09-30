@@ -449,6 +449,13 @@ LISTADO_DEFINED_GROUPS = (
         ),
     ),
     BootstrapGroupSeed(
+        "Administrador de Encuestas",
+        (
+            "encuestas.view_encuesta",
+            "encuestas.aprobar_encuesta",
+        ),
+    ),
+    BootstrapGroupSeed(
         "Encuestas Resultados",
         (
             "encuestas.view_encuesta",

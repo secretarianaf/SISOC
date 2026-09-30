@@ -133,6 +133,17 @@ def _sembrar(legajo, usuario, con_si=True, con_no=True):
         )
 
 
+def _ids_opciones(legajo):
+    """Ids de todas las opciones del multiselect: equivale a tildar todo."""
+    return [o["id"] for o in ComentariosTecnicosService.opciones_seleccionables(legajo)]
+
+
+def _con_observaciones(legajo):
+    return list(
+        ComentariosTecnicosService.historial(legajo).filter(tiene_observaciones=True)
+    )
+
+
 # --- Fase 3: endpoints ----------------------------------------------------
 
 
@@ -303,7 +314,9 @@ def test_listado_provincia_deduplica_las_observaciones_publicadas(
         observacion_codigo=CODIGO_RENAPER,
         usuario=coordinador,
     )
-    ComentariosTecnicosService.publicar(legajo, usuario=coordinador)
+    ComentariosTecnicosService.publicar(
+        legajo, comentarios=_con_observaciones(legajo), usuario=coordinador
+    )
 
     client.force_login(coordinador)
     assert len(client.get(_url_listar(legajo)).json()["comentarios"]) == 3
@@ -312,16 +325,17 @@ def test_listado_provincia_deduplica_las_observaciones_publicadas(
     assert len(client.get(_url_listar(legajo)).json()["comentarios"]) == 2
 
 
-def test_preview_devuelve_las_lineas_concatenadas(client, coordinador, legajo):
+def test_preview_devuelve_las_opciones_del_multiselect(client, coordinador, legajo):
     _sembrar(legajo, coordinador)
     client.force_login(coordinador)
 
     payload = client.get(_url_preview(legajo)).json()
 
     assert payload["tiene_observaciones"] is True
-    assert len(payload["lineas"]) == 2
-    assert payload["lineas"][0].startswith("RENAPER: ")
-    assert "Sin observaciones." not in payload["motivo"]
+    assert len(payload["opciones"]) == 2
+    assert payload["opciones"][0]["etiqueta"].startswith("RENAPER: ")
+    assert all(o["pendiente"] for o in payload["opciones"])
+    assert not any("Sin observaciones." in o["etiqueta"] for o in payload["opciones"])
 
 
 def test_preview_sin_observaciones(client, coordinador, legajo):
@@ -331,7 +345,7 @@ def test_preview_sin_observaciones(client, coordinador, legajo):
     payload = client.get(_url_preview(legajo)).json()
 
     assert payload["tiene_observaciones"] is False
-    assert payload["motivo"] == ""
+    assert payload["opciones"] == []
 
 
 def test_preview_denegado_para_provincia(client, provincial, legajo):
@@ -369,7 +383,11 @@ def test_subsanar_arma_el_motivo_y_publica(client, coordinador, legajo):
 
     response = client.post(
         _url_revisar(legajo),
-        data={"accion": "SUBSANAR", "texto_libre": "Se adjunta nota."},
+        data={
+            "accion": "SUBSANAR",
+            "texto_libre": "Se adjunta nota.",
+            "observaciones_ids": _ids_opciones(legajo),
+        },
     )
 
     assert response.status_code == 200
@@ -393,7 +411,10 @@ def test_subsanar_deriva_las_observaciones_del_legajo(client, coordinador, legaj
     _sembrar(legajo, coordinador)
     client.force_login(coordinador)
 
-    client.post(_url_revisar(legajo), data={"accion": "SUBSANAR"})
+    client.post(
+        _url_revisar(legajo),
+        data={"accion": "SUBSANAR", "observaciones_ids": _ids_opciones(legajo)},
+    )
 
     subsanacion = Subsanacion.objects.get(legajo=legajo)
     tipos = sorted(o.tipo for o in subsanacion.observaciones.all())
@@ -470,7 +491,10 @@ def test_motivo_largo_no_se_trunca(client, coordinador, legajo):
         )
     client.force_login(coordinador)
 
-    client.post(_url_revisar(legajo), data={"accion": "SUBSANAR"})
+    client.post(
+        _url_revisar(legajo),
+        data={"accion": "SUBSANAR", "observaciones_ids": _ids_opciones(legajo)},
+    )
 
     legajo.refresh_from_db()
     assert len(legajo.subsanacion_motivo) > 500
@@ -484,7 +508,11 @@ def test_rechazar_arma_el_motivo_y_publica(client, coordinador, legajo):
 
     response = client.post(
         _url_revisar(legajo),
-        data={"accion": "RECHAZAR", "texto_libre": "No cumple requisitos."},
+        data={
+            "accion": "RECHAZAR",
+            "texto_libre": "No cumple requisitos.",
+            "observaciones_ids": _ids_opciones(legajo),
+        },
     )
 
     assert response.status_code == 200
@@ -522,3 +550,149 @@ def test_aprobar_no_publica_comentarios(client, coordinador, legajo):
         ComentariosTecnicosService.historial(legajo).filter(es_interno=False).count()
         == 0
     )
+
+
+# --- Issue #2592: motivos por instancia ------------------------------------
+
+
+def _registrar_obs(legajo, usuario, tipo, codigo):
+    return ComentariosTecnicosService.registrar(
+        legajo,
+        tipo_documento=tipo,
+        tiene_observaciones=True,
+        observacion_codigo=codigo,
+        usuario=usuario,
+    )
+
+
+def _subsanar(client, legajo, comentarios):
+    return client.post(
+        _url_revisar(legajo),
+        data={
+            "accion": "SUBSANAR",
+            "observaciones_ids": [c.pk for c in comentarios],
+        },
+    )
+
+
+def test_subsanar_con_texto_libre_y_sin_seleccion_no_arrastra_observaciones(
+    client, coordinador, legajo
+):
+    """Sin ids elegidos no entra ninguna observación, aunque el legajo tenga."""
+    _sembrar(legajo, coordinador)
+    client.force_login(coordinador)
+
+    response = client.post(
+        _url_revisar(legajo),
+        data={"accion": "SUBSANAR", "texto_libre": "Solo esto."},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["comentarios_publicados"] == 0
+    legajo.refresh_from_db()
+    assert legajo.subsanacion_motivo == "Solo esto."
+
+
+def test_subsanar_con_observaciones_sin_seleccion_ni_texto_libre_falla(
+    client, coordinador, legajo
+):
+    _sembrar(legajo, coordinador)
+    client.force_login(coordinador)
+
+    response = client.post(_url_revisar(legajo), data={"accion": "SUBSANAR"})
+
+    assert response.status_code == 400
+    legajo.refresh_from_db()
+    assert legajo.revision_tecnico == RevisionTecnico.PENDIENTE
+    assert not legajo.subsanaciones.exists()
+
+
+def test_subsanar_con_comentario_sin_observaciones_falla(client, coordinador, legajo):
+    """Un comentario con No no es un motivo elegible aunque sea del legajo."""
+    sin_obs = ComentariosTecnicosService.registrar(
+        legajo, tipo_documento="ANSES", tiene_observaciones=False, usuario=coordinador
+    )
+    client.force_login(coordinador)
+
+    response = client.post(
+        _url_revisar(legajo),
+        data={"accion": "SUBSANAR", "observaciones_ids": [sin_obs.pk]},
+    )
+
+    assert response.status_code == 400
+    legajo.refresh_from_db()
+    assert legajo.revision_tecnico == RevisionTecnico.PENDIENTE
+
+
+def test_subsanar_publica_solo_lo_elegido(client, coordinador, legajo):
+    renaper = _registrar_obs(legajo, coordinador, "RENAPER", CODIGO_RENAPER)
+    diag = _registrar_obs(legajo, coordinador, "CONDICION_DIAGNOSTICA", CODIGO_DIAG)
+    client.force_login(coordinador)
+
+    response = _subsanar(client, legajo, [renaper])
+
+    assert response.status_code == 200
+    assert response.json()["comentarios_publicados"] == 1
+    renaper.refresh_from_db()
+    diag.refresh_from_db()
+    assert renaper.es_interno is False
+    # Lo no elegido no se le comunica a la Provincia.
+    assert diag.es_interno is True
+    legajo.refresh_from_db()
+    assert "Condición diagnóstica" not in legajo.subsanacion_motivo
+
+
+def test_segunda_subsanacion_no_arrastra_la_primera(client, coordinador, legajo):
+    """Caso del tk: 1° instancia RENAPER + ANSES + diagnóstico; la Provincia
+    subsana; en la 2° solo persiste ANSES, con una observación nueva."""
+    renaper = _registrar_obs(legajo, coordinador, "RENAPER", CODIGO_RENAPER)
+    anses = _registrar_obs(legajo, coordinador, "ANSES", "ANSES_REGISTRA_OBRA_SOCIAL")
+    diag = _registrar_obs(legajo, coordinador, "CONDICION_DIAGNOSTICA", CODIGO_DIAG)
+    client.force_login(coordinador)
+
+    assert _subsanar(client, legajo, [renaper, anses, diag]).status_code == 200
+    primera = legajo.subsanaciones.get()
+    # La Provincia responde y el legajo vuelve a revisión.
+    ExpedienteCiudadano.objects.filter(pk=legajo.pk).update(
+        revision_tecnico=RevisionTecnico.SUBSANADO
+    )
+
+    anses_nueva = _registrar_obs(legajo, coordinador, "ANSES", "ANSES_CODEM_VENCIDO")
+    opciones = client.get(_url_preview(legajo)).json()["opciones"]
+    pendientes = [o["id"] for o in opciones if o["pendiente"]]
+    # Solo la observación nueva viene tildada; las anteriores se ofrecen igual.
+    assert pendientes == [anses_nueva.pk]
+    assert len(opciones) == 4
+
+    assert _subsanar(client, legajo, [anses_nueva]).status_code == 200
+
+    legajo.refresh_from_db()
+    segunda = legajo.subsanaciones.exclude(pk=primera.pk).get()
+    assert [o.detalle for o in segunda.observaciones.all()] == [anses_nueva.comentario]
+    assert legajo.subsanacion_motivo == f"ANSES: {anses_nueva.comentario}"
+    # El historial conserva la primera instancia intacta.
+    assert primera.observaciones.count() == 3
+    historial = HistorialValidacionTecnica.objects.filter(legajo=legajo).order_by("pk")
+    assert historial.last().motivo == legajo.subsanacion_motivo
+    assert "RENAPER" in historial.first().motivo
+
+
+def test_rechazar_registra_solo_el_motivo_elegido(client, coordinador, legajo):
+    renaper = _registrar_obs(legajo, coordinador, "RENAPER", CODIGO_RENAPER)
+    anses = _registrar_obs(legajo, coordinador, "ANSES", "ANSES_REGISTRA_OBRA_SOCIAL")
+    client.force_login(coordinador)
+    assert _subsanar(client, legajo, [renaper, anses]).status_code == 200
+    ExpedienteCiudadano.objects.filter(pk=legajo.pk).update(
+        revision_tecnico=RevisionTecnico.SUBSANADO
+    )
+
+    response = client.post(
+        _url_revisar(legajo),
+        data={"accion": "RECHAZAR", "observaciones_ids": [renaper.pk]},
+    )
+
+    assert response.status_code == 200
+    rechazo = HistorialValidacionTecnica.objects.get(
+        legajo=legajo, estado_nuevo="RECHAZADO"
+    )
+    assert rechazo.motivo == f"RENAPER: {renaper.comentario}"

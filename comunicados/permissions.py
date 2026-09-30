@@ -165,10 +165,39 @@ def get_ids_comedores_del_tecnico(user) -> tuple[int, ...]:
     return obtener_ids_comedores_del_tecnico(user)
 
 
+def tiene_alcance_total_destinatarios(user) -> bool:
+    """Indica si el usuario puede enviar a todos los comedores/organizaciones."""
+
+    return is_admin(user) or _has_permission(user, COMUNICADO_CREATE_CODE)
+
+
+def can_seleccionar_destinatarios(user) -> bool:
+    """Indica si el usuario puede usar el panel de seleccion de destinatarios.
+
+    El panel se renderiza tanto en el alta como en la edicion de un comunicado,
+    y cada vista pide un permiso distinto. Gatear los endpoints solo por el de
+    crear dejaba al grupo "Comunicado Editar" abriendo un borrador y recibiendo
+    403 al buscar. El alcance no se decide aca: lo aplica el servicio.
+    """
+
+    if not user.is_authenticated:
+        return False
+    return can_create_comunicado(user) or can_edit_comunicado(user)
+
+
+def require_seleccionar_destinatarios_permission(user):
+    """Decorator helper: lanza PermissionDenied si no puede elegir destinatarios."""
+
+    if not can_seleccionar_destinatarios(user):
+        raise PermissionDenied(
+            "No tiene permisos para seleccionar destinatarios de comunicados."
+        )
+
+
 def get_ids_comedores_del_usuario(user) -> tuple[int, ...]:
     """Retorna los identificadores de comedores que puede ver/enviar el usuario."""
 
-    if is_admin(user) or _has_permission(user, COMUNICADO_CREATE_CODE):
+    if tiene_alcance_total_destinatarios(user):
         return obtener_ids_comedores()
     if es_tecnico(user):
         return get_ids_comedores_del_tecnico(user)
@@ -178,7 +207,7 @@ def get_ids_comedores_del_usuario(user) -> tuple[int, ...]:
 def get_ids_organizaciones_del_usuario(user) -> tuple[int, ...]:
     """Retorna los identificadores de organizaciones que puede ver/enviar el usuario."""
 
-    if is_admin(user) or _has_permission(user, COMUNICADO_CREATE_CODE):
+    if tiene_alcance_total_destinatarios(user):
         return obtener_ids_organizaciones()
     if es_tecnico(user):
         return obtener_ids_organizaciones_de_comedores(

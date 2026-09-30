@@ -260,7 +260,7 @@ def test_tradicional_requiere_monto_rendido_y_respuesta_si_no():
     )
 
     assert not form.is_valid()
-    assert form.errors["monto_rendido"] == ["Ingresá el monto rendido."]
+    assert form.errors["monto_rendido"] == ["Ingresá el monto auditado."]
     assert form.errors["genera_acta_auditoria"] == [
         "Indicá si se genera acta de auditoría."
     ]
@@ -481,6 +481,8 @@ def test_detalle_tradicional_muestra_campos_en_el_orden_requerido(
     ]
     assert posiciones == sorted(posiciones)
     assert 'id="rendiciones-incluidas-container"' in html
+    assert "Monto auditado" in html
+    assert "Monto rendido" not in html
 
 
 @pytest.mark.django_db
@@ -498,6 +500,8 @@ def test_detalle_secos_mantiene_flujo_sin_campos_exclusivos_de_tradicional(
 
     assert response.status_code == 200
     assert 'name="monto_rendido"' in html
+    assert "Monto auditado" in html
+    assert "Monto rendido" not in html
     assert 'name="acta_auditoria"' in html
     assert 'id="id_genera_acta_auditoria_' not in html
     assert 'id="id_rendiciones_incluidas"' not in html

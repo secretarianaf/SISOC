@@ -22,12 +22,6 @@
                     {% endif %}
                 </h1>
             </div>
-            <div class="col-md-4 text-end">
-                <a href="{% url 'vat_inscripcion_oferta_list' %}"
-                   class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver
-                </a>
-            </div>
         </div>
 
         <div class="card">
@@ -52,9 +46,7 @@
                             </label>
                             {{ form.oferta }}
                             {% if form.oferta.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.oferta.errors %}{{ error }}{% endfor %}
-                                </div>
+                                <div class="text-danger small mt-1">{% for error in form.oferta.errors %}{{ error }}{% endfor %}</div>
                             {% endif %}
                         </div>
 
@@ -65,9 +57,7 @@
                             </label>
                             {{ form.ciudadano }}
                             {% if form.ciudadano.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.ciudadano.errors %}{{ error }}{% endfor %}
-                                </div>
+                                <div class="text-danger small mt-1">{% for error in form.ciudadano.errors %}{{ error }}{% endfor %}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -80,9 +70,7 @@
                             </label>
                             {{ form.estado }}
                             {% if form.estado.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.estado.errors %}{{ error }}{% endfor %}
-                                </div>
+                                <div class="text-danger small mt-1">{% for error in form.estado.errors %}{{ error }}{% endfor %}</div>
                             {% endif %}
                         </div>
                     </div>

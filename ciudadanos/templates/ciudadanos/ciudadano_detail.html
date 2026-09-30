@@ -411,7 +411,8 @@
                         {% endif %}
                     </h1>
                     <p class="subtitle mb-0">
-                        {{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento|default:"Sin documento" }}
+                        {{ ciudadano.get_tipo_documento_display }} {{ ciudadano.numero_documento|default:"Sin documento" }}
+                        {% if ciudadano.pais_emisor %}<span class="ms-1">({{ ciudadano.pais_emisor }})</span>{% endif %}
                     </p>
                     {% if ciudadano.identificador_interno %}
                         <p class="mb-0"
@@ -423,7 +424,6 @@
                     {% endif %}
                 </div>
                 <div class="btn-group">
-                    <a href="{% url 'ciudadanos' %}" class="btn btn-outline-light">Volver</a>
                     {% if perms.auditlog.view_logentry %}
                         <a href="{% url 'audittrail:log_instance' 'ciudadanos' 'ciudadano' ciudadano.pk %}"
                            class="btn btn-outline-light">Historial</a>
@@ -558,8 +558,14 @@
                                     </div>
                                     <div class="info-row">
                                         <strong>Número de Documento:</strong>
-                                        <span class="value">{{ ciudadano.documento|default:'-' }}</span>
+                                        <span class="value">{{ ciudadano.numero_documento|default:'-' }}</span>
                                     </div>
+                                    {% if ciudadano.pais_emisor %}
+                                        <div class="info-row">
+                                            <strong>País Emisor:</strong>
+                                            <span class="value">{{ ciudadano.pais_emisor }}</span>
+                                        </div>
+                                    {% endif %}
                                     <div class="info-row">
                                         <strong>Provincia:</strong>
                                         <span class="value">{{ ciudadano.provincia|default:'-' }}</span>
@@ -1590,7 +1596,9 @@
                                         <small style="color: rgba(255,255,255,0.7);">Estado Legajo</small>
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">{{ celiaquia_resumen.legajo_actual.estado_legajo }}</div>
+                                                    margin-top: 0.25rem">
+                                            {{ celiaquia_resumen.legajo_actual.estado_legajo }}
+                                        </div>
                                     </div>
                                     <div>
                                         <small style="color: rgba(255,255,255,0.7);">Resultado Cruce</small>

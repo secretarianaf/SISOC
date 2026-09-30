@@ -70,7 +70,7 @@ export function CupoDashboardPage() {
                       );
                   return (
                     <TableRow key={r.id} hover>
-                      <TableCell>{r.provincia_nombre ?? r.provincia}</TableCell>
+                      <TableCell>{r.provincia}</TableCell>
                       <TableCell align="right">
                         {sinConfigurar ? (
                           <StateChip label="Sin configurar" tone="neutral" />

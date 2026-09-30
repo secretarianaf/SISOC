@@ -155,7 +155,7 @@ export function ExpedienteListPage() {
               </TableHead>
               <TableBody>
                 {filas.map((e) => {
-                  const nombreEstado = e.estado?.nombre ?? "";
+                  const nombreEstado = e.estado;
                   return (
                     <TableRow key={e.id} hover>
                       <TableCell>{e.id}</TableCell>
@@ -166,7 +166,7 @@ export function ExpedienteListPage() {
                       <TableCell>{e.provincia ?? "—"}</TableCell>
                       <TableCell>
                         <StateChip
-                          label={e.estado?.display_name ?? nombreEstado ?? "—"}
+                          label={nombreEstado}
                           tone={toneExpediente(nombreEstado)}
                         />
                       </TableCell>

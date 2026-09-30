@@ -49,8 +49,10 @@ export function PagoListPage() {
   });
 
   // El listado del back no filtra por provincia: se acota en la pantalla.
+  // `provincia` viene como nombre en el contrato, no como id.
+  const filtroProvincia = (provincia ?? "").toString().trim().toLowerCase();
   const filas = (consulta.data?.results ?? []).filter(
-    (p) => !Number.isFinite(provincia) || p.provincia === provincia,
+    (p) => !filtroProvincia || p.provincia.toLowerCase() === filtroProvincia,
   );
 
   return (
@@ -121,8 +123,8 @@ export function PagoListPage() {
                     <TableCell>{p.periodo}</TableCell>
                     <TableCell>
                       <StateChip
-                        label={p.estado}
-                        tone={tonePago[p.estado] ?? "neutral"}
+                        label={p.estado ?? "—"}
+                        tone={(p.estado && tonePago[p.estado]) ?? "neutral"}
                       />
                     </TableCell>
                     <TableCell align="right">{p.total_candidatos}</TableCell>
@@ -132,7 +134,9 @@ export function PagoListPage() {
                         variant="body2"
                         sx={{
                           color:
-                            p.total_excluidos > 0 ? "error.text" : "inherit",
+                            (p.total_excluidos ?? 0) > 0
+                              ? "error.text"
+                              : "inherit",
                         }}
                       >
                         {p.total_excluidos}

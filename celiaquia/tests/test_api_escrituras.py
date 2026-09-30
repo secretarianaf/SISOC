@@ -441,3 +441,154 @@ def test_la_provincia_no_genera_expedientes_de_pago(client, territorio):
     )
 
     assert response.status_code == 403
+
+
+# --- Registros erroneos ----------------------------------------------------
+# La logica vive en `registros_erroneos_service`, el mismo que usan las
+# pantallas. Estos tests verifican que la API entre por ahi y con los mismos
+# permisos: si alguien reimplementara la validacion del lado de la API, la
+# pantalla y el endpoint podrian aceptar cosas distintas.
+
+
+def _registro_erroneo(expediente, fila=3, datos=None):
+    from celiaquia.models import RegistroErroneo
+
+    return RegistroErroneo.objects.create(
+        expediente=expediente,
+        fila_excel=fila,
+        datos_raw=datos or {"documento": "123", "nombre": "Ana"},
+        campo_error="documento",
+        mensaje_error="Documento invalido",
+    )
+
+
+def test_actualizar_registro_erroneo_delega_en_el_service(client, territorio):
+    owner = _provincial("prov_reg_upd", territorio[0])
+    expediente, _ = _expediente_con_legajo(owner, territorio, "40000001", "REG1")
+    registro = _registro_erroneo(expediente)
+    client.force_login(owner)
+
+    with patch(
+        "celiaquia.services.registros_erroneos_service.actualizar"
+    ) as actualizar:
+        response = client.post(
+            reverse(
+                "celiaquia-expediente-actualizar-registro-erroneo",
+                kwargs={"pk": expediente.pk, "registro_id": registro.pk},
+            ),
+            {"datos": {"documento": "40000002"}},
+            content_type="application/json",
+        )
+
+    assert response.status_code == 200
+    assert actualizar.called
+    assert actualizar.call_args.args[1].pk == registro.pk
+
+
+def test_actualizar_registro_erroneo_devuelve_los_campos_invalidos(client, territorio):
+    """Un 400 de DRF con el detalle y los campos que la pantalla resalta."""
+
+    owner = _provincial("prov_reg_inv", territorio[0])
+    expediente, _ = _expediente_con_legajo(owner, territorio, "40000003", "REG2")
+    registro = _registro_erroneo(expediente)
+    client.force_login(owner)
+
+    with patch(
+        "celiaquia.services.registros_erroneos_service.actualizar",
+        side_effect=DjangoValidationError("Fila 3: documento invalido"),
+    ):
+        response = client.post(
+            reverse(
+                "celiaquia-expediente-actualizar-registro-erroneo",
+                kwargs={"pk": expediente.pk, "registro_id": registro.pk},
+            ),
+            {"datos": {"documento": "x"}},
+            content_type="application/json",
+        )
+
+    assert response.status_code == 400
+    assert "invalid_fields" in response.json()
+
+
+def test_reprocesar_registros_erroneos_devuelve_el_resumen(client, territorio):
+    owner = _provincial("prov_reg_rep", territorio[0])
+    expediente, _ = _expediente_con_legajo(owner, territorio, "40000004", "REG3")
+    _registro_erroneo(expediente)
+    client.force_login(owner)
+
+    resumen = {
+        "creados": 2,
+        "errores": 1,
+        "errores_detalle": ["Fila 5: documento invalido"],
+        "excluidos": 0,
+        "excluidos_detalle": [],
+        "registros_restantes": 1,
+        "alerta_resumen": "Importacion procesada.",
+    }
+    with patch(
+        "celiaquia.services.registros_erroneos_service.reprocesar", return_value=resumen
+    ) as reprocesar:
+        response = client.post(
+            reverse(
+                "celiaquia-expediente-reprocesar-registros-erroneos",
+                kwargs={"pk": expediente.pk},
+            )
+        )
+
+    assert response.status_code == 200
+    assert reprocesar.called
+    assert response.json()["creados"] == 2
+    assert response.json()["registros_restantes"] == 1
+
+
+def test_reprocesar_sin_registros_da_400(client, territorio):
+    owner = _provincial("prov_reg_vacio", territorio[0])
+    expediente, _ = _expediente_con_legajo(owner, territorio, "40000005", "REG4")
+    client.force_login(owner)
+
+    response = client.post(
+        reverse(
+            "celiaquia-expediente-reprocesar-registros-erroneos",
+            kwargs={"pk": expediente.pk},
+        )
+    )
+
+    assert response.status_code == 400
+
+
+def test_eliminar_registro_erroneo(client, territorio):
+    owner = _provincial("prov_reg_del", territorio[0])
+    expediente, _ = _expediente_con_legajo(owner, territorio, "40000006", "REG5")
+    registro = _registro_erroneo(expediente)
+    client.force_login(owner)
+
+    response = client.delete(
+        reverse(
+            "celiaquia-expediente-eliminar-registro-erroneo",
+            kwargs={"pk": expediente.pk, "registro_id": registro.pk},
+        )
+    )
+
+    assert response.status_code == 200
+
+
+def test_el_tecnico_no_gestiona_registros_erroneos(client, territorio):
+    """Mismo permiso que la pantalla: el tecnico revisa legajos, no importa."""
+
+    owner = _provincial("prov_reg_dueno", territorio[0])
+    expediente, _ = _expediente_con_legajo(owner, territorio, "40000007", "REG6")
+    registro = _registro_erroneo(expediente)
+    client.force_login(_tecnico("tecnico_reg"))
+
+    response = client.post(
+        reverse(
+            "celiaquia-expediente-actualizar-registro-erroneo",
+            kwargs={"pk": expediente.pk, "registro_id": registro.pk},
+        ),
+        {"datos": {"documento": "1"}},
+        content_type="application/json",
+    )
+
+    # 404 y no 403: el alcance se aplica en el queryset, asi que la API no
+    # confirma que el expediente exista.
+    assert response.status_code in (403, 404)

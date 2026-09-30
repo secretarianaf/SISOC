@@ -6,6 +6,7 @@ export {
   SinPermiso,
 } from "./client";
 export { celiaquiaApi } from "./celiaquia";
+export { iniciarObservabilidad } from "./observabilidad";
 export type { CeliaquiaApi } from "./celiaquia";
 export * from "./tipos";
 

@@ -41,17 +41,19 @@ export function RegistrosErroneos({
             </TableRow>
           </TableHead>
           <TableBody>
-            {registros.map((r) => (
+            {registros.map((r) => {
+              const fila = (r.datos_raw ?? {}) as Record<string, string>;
+              return (
               <TableRow key={r.id} hover>
                 <TableCell>
                   <StateChip label={`${r.fila_excel}`} tone="neutral" />
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2">
-                    {r.datos_raw?.apellido || "—"}, {r.datos_raw?.nombre || "—"}
+                    {fila.apellido || "—"}, {fila.nombre || "—"}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {r.datos_raw?.documento || "sin documento"}
+                    {fila.documento || "sin documento"}
                   </Typography>
                 </TableCell>
                 <TableCell>
@@ -65,7 +67,8 @@ export function RegistrosErroneos({
                   ) : null}
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>

@@ -9,6 +9,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "axios": "1.13.5"
+    "@sentry/react": "10.75.3",
+    "axios": "1.13.5",
+    "react": "19.2.4"
   }
 }

@@ -166,7 +166,7 @@ export function ExpedienteFormPage() {
                     {preview.rows.map((row, i) => (
                       <TableRow key={i} hover>
                         {preview.headers.map((h) => (
-                          <TableCell key={h}>{row[h] ?? ""}</TableCell>
+                          <TableCell key={h}>{String(row[h] ?? "")}</TableCell>
                         ))}
                       </TableRow>
                     ))}

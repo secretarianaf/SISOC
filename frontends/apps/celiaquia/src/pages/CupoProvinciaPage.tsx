@@ -63,8 +63,7 @@ function TablaTitulares({
             <TableHead>
               <TableRow>
                 <TableCell>CUIL</TableCell>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Apellido</TableCell>
+                <TableCell>Ciudadano</TableCell>
                 <TableCell>Revisión</TableCell>
                 <TableCell>Resultado</TableCell>
                 <TableCell>Estado cupo</TableCell>
@@ -77,13 +76,12 @@ function TablaTitulares({
             <TableBody>
               {legajos.map((l) => (
                 <TableRow key={l.id} hover>
-                  <TableCell>{l.documento ?? "—"}</TableCell>
-                  <TableCell>{l.nombre ?? "—"}</TableCell>
-                  <TableCell>{l.apellido ?? "—"}</TableCell>
+                  <TableCell>{l.documento}</TableCell>
+                  <TableCell>{l.ciudadano}</TableCell>
                   <TableCell>
                     <StateChip
-                      label={l.revision_tecnico}
-                      tone={toneRevision(l.revision_tecnico)}
+                      label={l.revision_tecnico ?? "PENDIENTE"}
+                      tone={toneRevision(l.revision_tecnico ?? "PENDIENTE")}
                     />
                   </TableCell>
                   <TableCell>
@@ -94,8 +92,8 @@ function TablaTitulares({
                   </TableCell>
                   <TableCell>
                     <StateChip
-                      label={l.estado_cupo}
-                      tone={toneCupo(l.estado_cupo)}
+                      label={l.estado_cupo ?? "SIN_ASIGNAR"}
+                      tone={toneCupo(l.estado_cupo ?? "SIN_ASIGNAR")}
                     />
                   </TableCell>
                   <TableCell>
@@ -203,7 +201,7 @@ export function CupoProvinciaPage() {
 
   const configurar = useMutation({
     mutationFn: () =>
-      api.cupos.configurar(cupo.data!.provincia, Number(total)),
+      api.cupos.configurar(cupo.data!.provincia_id, Number(total)),
     onSuccess: () => {
       setAviso("Cupo configurado.");
       setModalConfig(false);
@@ -238,8 +236,9 @@ export function CupoProvinciaPage() {
   if (cupo.isError) return <ErrorPanel error={cupo.error} />;
   if (!cupo.data) return <ErrorPanel error={new Error("Cupo inexistente.")} />;
 
-  const nombre = cupo.data.provincia_nombre ?? `Provincia ${cupo.data.provincia}`;
-  const sinConfigurar = cupo.data.total_asignado === null;
+  const nombre = cupo.data.provincia;
+  // El schema lo declara opcional: el serializer lo omite si nunca se configuro.
+  const sinConfigurar = cupo.data.total_asignado == null;
 
   return (
     <>
@@ -383,7 +382,7 @@ export function CupoProvinciaPage() {
           <Stack spacing={2}>
             <Typography variant="body2" color="text.secondary">
               {pendiente
-                ? `${pendiente.legajo.nombre} ${pendiente.legajo.apellido} · ${pendiente.legajo.documento}`
+                ? `${pendiente.legajo.ciudadano} · ${pendiente.legajo.documento}`
                 : ""}
             </Typography>
             <TextField

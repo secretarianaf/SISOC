@@ -130,7 +130,7 @@ export function ExpedienteDetailPage() {
   if (expediente.isError) return <ErrorPanel error={expediente.error} />;
 
   const exp = expediente.data;
-  const nombreEstado = exp.estado?.nombre ?? "";
+  const nombreEstado = exp.estado;
 
   return (
     <>
@@ -139,7 +139,7 @@ export function ExpedienteDetailPage() {
           <Stack direction="row" spacing={1.5} alignItems="center">
             <span>Expediente #{exp.id}</span>
             <StateChip
-              label={exp.estado?.display_name ?? nombreEstado}
+              label={nombreEstado}
               tone={toneExpediente(nombreEstado)}
             />
           </Stack>
@@ -218,9 +218,7 @@ export function ExpedienteDetailPage() {
               <Dato label="Número de expediente">
                 {exp.numero_expediente ?? "—"}
               </Dato>
-              <Dato label="Estado">
-                {exp.estado?.display_name ?? nombreEstado}
-              </Dato>
+              <Dato label="Estado">{nombreEstado}</Dato>
               <Dato label="Fecha de creación">
                 {new Date(exp.fecha_creacion).toLocaleDateString("es-AR")}
               </Dato>
@@ -260,9 +258,8 @@ export function ExpedienteDetailPage() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Fecha</TableCell>
-                    <TableCell>Cambio</TableCell>
+                    <TableCell>Estado</TableCell>
                     <TableCell>Usuario</TableCell>
-                    <TableCell>Observaciones</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -271,11 +268,8 @@ export function ExpedienteDetailPage() {
                       <TableCell>
                         {new Date(h.fecha).toLocaleString("es-AR")}
                       </TableCell>
-                      <TableCell>
-                        {h.estado_anterior ?? "—"} → {h.estado_nuevo ?? "—"}
-                      </TableCell>
-                      <TableCell>{h.usuario ?? "—"}</TableCell>
-                      <TableCell>{h.observaciones ?? "—"}</TableCell>
+                      <TableCell>{h.estado}</TableCell>
+                      <TableCell>{h.usuario?.nombre ?? "—"}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

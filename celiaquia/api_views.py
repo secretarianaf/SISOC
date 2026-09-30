@@ -21,6 +21,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 
 from celiaquia.api_serializers import (
@@ -44,6 +45,9 @@ from celiaquia.api_serializers import (
     OrganismoSerializer,
     PagoExpedienteSerializer,
     PagoNominaSerializer,
+    ActualizarRegistroErroneoSerializer,
+    PreviewExcelResultadoSerializer,
+    ReprocesoResultadoSerializer,
     PreviewExcelSerializer,
     ProvinciaCupoSerializer,
     RegistroErroneoSerializer,
@@ -80,6 +84,7 @@ from celiaquia.services.asignacion_service import AsignacionService
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService
 from celiaquia.services.documentos_service import DocumentosService
+from celiaquia.services import registros_erroneos_service
 from celiaquia.services.expediente_service import ExpedienteService
 from celiaquia.services.familia_service import FamiliaService
 from celiaquia.services.importacion_service import ImportacionService
@@ -365,7 +370,9 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
         expediente.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @extend_schema(request=PreviewExcelSerializer, responses=None)
+    @extend_schema(
+        request=PreviewExcelSerializer, responses=PreviewExcelResultadoSerializer
+    )
     @action(
         detail=False,
         methods=["post"],
@@ -389,7 +396,8 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
             )
         except DjangoValidationError as exc:
             raise _traducir_error(exc) from exc
-        return Response(preview)
+        # `all_rows` queda afuera: lo usa la vista web para su cache de sesion.
+        return Response(PreviewExcelResultadoSerializer(preview).data)
 
     @extend_schema(request=None, responses=AccionResultadoSerializer)
     @action(detail=True, methods=["post"])
@@ -472,6 +480,77 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
                 queryset, many=True, context=self.get_serializer_context()
             ).data
         )
+
+    def _exigir_gestion_registros_erroneos(self):
+        """Mismo permiso que la pantalla: lo decide el service, no la API."""
+
+        if not registros_erroneos_service.puede_gestionar(self.request.user):
+            raise PermissionDenied(
+                "No tiene permisos para gestionar los registros erróneos."
+            )
+
+    @extend_schema(
+        request=ActualizarRegistroErroneoSerializer,
+        responses=AccionResultadoSerializer,
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path=r"registros-erroneos/(?P<registro_id>[0-9]+)/actualizar",
+    )
+    def actualizar_registro_erroneo(self, request, pk=None, registro_id=None):
+        """Corrige una fila erronea, con la misma validacion que la pantalla."""
+
+        self._exigir_gestion_registros_erroneos()
+        expediente = self.get_object()
+        entrada = ActualizarRegistroErroneoSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        registro = get_object_or_404(
+            RegistroErroneo, pk=registro_id, expediente=expediente
+        )
+        try:
+            registros_erroneos_service.actualizar(
+                expediente, registro, entrada.validated_data["datos"], request.user
+            )
+        except DjangoValidationError as exc:
+            # Se devuelven los campos invalidos como los espera un formulario.
+            raise DRFValidationError(
+                {
+                    "detail": str(exc),
+                    "invalid_fields": registros_erroneos_service.campos_invalidos(exc),
+                }
+            ) from exc
+        return Response({"detalle": "Registro actualizado correctamente."})
+
+    @extend_schema(request=None, responses=ReprocesoResultadoSerializer)
+    @action(detail=True, methods=["post"], url_path="registros-erroneos/reprocesar")
+    def reprocesar_registros_erroneos(self, request, pk=None):
+        """Reintenta crear los legajos de las filas que quedaron con error."""
+
+        self._exigir_gestion_registros_erroneos()
+        expediente = self.get_object()
+        try:
+            resumen = registros_erroneos_service.reprocesar(expediente, request.user)
+        except DjangoValidationError as exc:
+            raise _traducir_error(exc) from exc
+        return Response(ReprocesoResultadoSerializer(resumen).data)
+
+    @extend_schema(request=None, responses=AccionResultadoSerializer)
+    @action(
+        detail=True,
+        methods=["delete"],
+        url_path=r"registros-erroneos/(?P<registro_id>[0-9]+)",
+    )
+    def eliminar_registro_erroneo(self, request, pk=None, registro_id=None):
+        """Descarta una fila erronea sin importarla."""
+
+        self._exigir_gestion_registros_erroneos()
+        expediente = self.get_object()
+        registro = get_object_or_404(
+            RegistroErroneo, pk=registro_id, expediente=expediente
+        )
+        registros_erroneos_service.eliminar(registro, request.user)
+        return Response({"detalle": "Registro eliminado correctamente."})
 
     @extend_schema(responses=None)
     @action(detail=True, methods=["get"], url_path="estructura-familiar")

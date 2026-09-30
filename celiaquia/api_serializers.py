@@ -241,11 +241,22 @@ class SubsanacionSerializer(serializers.ModelSerializer):
 
 class ProvinciaCupoSerializer(serializers.ModelSerializer):
     provincia = serializers.CharField(source="provincia.nombre", read_only=True)
+    # `provincia` es el nombre, para mostrar. El id va aparte porque el front
+    # lo necesita para `cupos/provincia/<id>/configurar`: sin esto no hay forma
+    # de configurar un cupo desde el listado.
+    provincia_id = serializers.IntegerField(read_only=True)
     disponibles = serializers.SerializerMethodField()
 
     class Meta:
         model = ProvinciaCupo
-        fields = ["id", "provincia", "total_asignado", "usados", "disponibles"]
+        fields = [
+            "id",
+            "provincia",
+            "provincia_id",
+            "total_asignado",
+            "usados",
+            "disponibles",
+        ]
 
     def get_disponibles(self, obj) -> int:
         return max((obj.total_asignado or 0) - (obj.usados or 0), 0)
@@ -382,6 +393,58 @@ class PreviewExcelSerializer(_EntradaSerializer):
 
     excel_masivo = serializers.FileField()
     limit = serializers.IntegerField(required=False, min_value=1, max_value=5000)
+
+
+class PreviewExcelResultadoSerializer(serializers.Serializer):
+    """Respuesta de `preview-excel/`.
+
+    Sin esto, drf-spectacular documentaba el serializer de **entrada** como si
+    fuera la respuesta, y los tipos generados para el front quedaban al reves.
+
+    No se expone `all_rows`, que el servicio devuelve para que la vista web lo
+    guarde en sesion: son hasta 5000 filas duplicadas que ningun cliente de la
+    API consume.
+    """
+
+    headers = serializers.ListField(child=serializers.CharField())
+    rows = serializers.ListField(child=serializers.DictField())
+    total_rows = serializers.IntegerField()
+    shown_rows = serializers.IntegerField()
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+
+class ActualizarRegistroErroneoSerializer(_EntradaSerializer):
+    """Correccion de una fila que quedo con error en la importacion.
+
+    Las claves dependen del Excel, asi que se acepta el diccionario entero y la
+    validacion real la hace `registros_erroneos_service`, que es el mismo camino
+    que usa la pantalla.
+    """
+
+    datos = serializers.DictField(child=serializers.CharField(allow_blank=True))
+
+
+class ReprocesoResultadoSerializer(serializers.Serializer):
+    """Resumen de `registros-erroneos/reprocesar`."""
+
+    creados = serializers.IntegerField()
+    errores = serializers.IntegerField()
+    errores_detalle = serializers.ListField(child=serializers.CharField())
+    excluidos = serializers.IntegerField()
+    excluidos_detalle = serializers.ListField(child=serializers.DictField())
+    registros_restantes = serializers.IntegerField()
+    alerta_resumen = serializers.CharField(allow_blank=True)
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
 
 
 class ArchivoSerializer(_EntradaSerializer):

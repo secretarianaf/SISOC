@@ -65,8 +65,12 @@ function FilaLegajo({
   const [abierto, setAbierto] = useState(false);
   const [motivoDe, setMotivoDe] = useState<AccionRevision | null>(null);
   const [textoLibre, setTextoLibre] = useState("");
-  const tone = toneRevision(leg.revision_tecnico);
-  const bloqueado = deshabilitado || esFinal(leg.revision_tecnico);
+  // El schema declara estos campos opcionales: el serializer los omite
+  // cuando el legajo todavia no fue evaluado.
+  const revision = leg.revision_tecnico ?? "PENDIENTE";
+  const estadoCupo = leg.estado_cupo ?? "SIN_ASIGNAR";
+  const tone = toneRevision(revision);
+  const bloqueado = deshabilitado || esFinal(revision);
 
   const confirmarConMotivo = () => {
     if (!motivoDe) return;
@@ -99,7 +103,7 @@ function FilaLegajo({
 
         <TableCell>
           <Typography variant="subtitle1Medium" component="div">
-            {leg.nombre} {leg.apellido}
+            {leg.ciudadano}
           </Typography>
           <Typography variant="caption" color="text.secondary">
             CUIL: {leg.documento ?? "—"}
@@ -108,7 +112,7 @@ function FilaLegajo({
 
         <TableCell>
           <StateChip
-            label={etiquetaRevision[leg.revision_tecnico] ?? leg.revision_tecnico}
+            label={etiquetaRevision[revision] ?? revision}
             tone={tone}
           />
         </TableCell>
@@ -120,8 +124,8 @@ function FilaLegajo({
               tone={toneSintys(leg.resultado_sintys ?? "")}
             />
             <StateChip
-              label={`Cupo: ${leg.estado_cupo}`}
-              tone={toneCupo(leg.estado_cupo)}
+              label={`Cupo: ${estadoCupo}`}
+              tone={toneCupo(estadoCupo)}
             />
           </Stack>
         </TableCell>
@@ -177,7 +181,7 @@ function FilaLegajo({
                     </Typography>
                     <Stack spacing={0.5} sx={{ mt: 1 }}>
                       <Typography variant="body2">
-                        {leg.nombre} {leg.apellido}
+                        {leg.ciudadano}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         CUIL {leg.documento ?? "—"}
@@ -204,10 +208,10 @@ function FilaLegajo({
                       Revisión técnica
                     </Typography>
                     <Stack spacing={1.5} sx={{ mt: 1 }}>
-                      {esFinal(leg.revision_tecnico) ? (
+                      {esFinal(revision) ? (
                         <Typography variant="body2" color="text.secondary">
                           El legajo ya tiene evaluación final
-                          {` (${etiquetaRevision[leg.revision_tecnico]})`}. Se
+                          {` (${etiquetaRevision[revision]})`}. Se
                           corrige desde la pantalla de corrección.
                         </Typography>
                       ) : (
@@ -303,7 +307,7 @@ export function LegajosTable({
     const texto = q.trim().toLowerCase();
     if (!texto) return legajos;
     return legajos.filter((l) =>
-      `${l.id} ${l.nombre ?? ""} ${l.apellido ?? ""} ${l.documento ?? ""}`
+      `${l.id} ${l.ciudadano} ${l.documento}`
         .toLowerCase()
         .includes(texto),
     );

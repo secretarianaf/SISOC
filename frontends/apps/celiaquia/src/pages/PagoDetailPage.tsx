@@ -83,7 +83,10 @@ export function PagoDetailPage() {
             <span>
               Pago #{p.id} — {p.periodo}
             </span>
-            <StateChip label={p.estado} tone={tonePago[p.estado] ?? "neutral"} />
+            <StateChip
+              label={p.estado ?? "—"}
+              tone={(p.estado && tonePago[p.estado]) ?? "neutral"}
+            />
           </Stack>
         }
         crumbs={[
@@ -196,7 +199,7 @@ export function PagoDetailPage() {
                       <TableCell>{r.apellido}</TableCell>
                       <TableCell>
                         <StateChip
-                          label={r.estado}
+                          label={r.estado ?? "—"}
                           tone={r.estado === "VALIDADO" ? "success" : "error"}
                         />
                       </TableCell>

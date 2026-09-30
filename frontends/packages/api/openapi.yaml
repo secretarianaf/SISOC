@@ -1,0 +1,2740 @@
+openapi: 3.0.3
+info:
+  title: SISOC API
+  version: 1.0.0
+  description: API de gestión de comedores, centros de familia y más
+paths:
+  /api/celiaquia/cupos/:
+    get:
+      operationId: cupos_list
+      description: 'Cupos por provincia. Solo lectura: el alta la hace `CupoService`.'
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - cupos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProvinciaCupoList'
+          description: ''
+  /api/celiaquia/cupos-movimientos/:
+    get:
+      operationId: cupos_movimientos_list
+      description: Auditoria de movimientos de cupo.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - cupos-movimientos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCupoMovimientoList'
+          description: ''
+  /api/celiaquia/cupos-movimientos/{id}/:
+    get:
+      operationId: cupos_movimientos_retrieve
+      description: Auditoria de movimientos de cupo.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Movimiento de Cupo.
+        required: true
+      tags:
+      - cupos-movimientos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CupoMovimiento'
+          description: ''
+  /api/celiaquia/cupos/{id}/:
+    get:
+      operationId: cupos_retrieve
+      description: 'Cupos por provincia. Solo lectura: el alta la hace `CupoService`.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Cupo por Provincia.
+        required: true
+      tags:
+      - cupos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvinciaCupo'
+          description: ''
+  /api/celiaquia/cupos/{id}/metricas/:
+    get:
+      operationId: cupos_metricas_retrieve
+      description: Metricas calculadas por `CupoService`, no el contador crudo.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Cupo por Provincia.
+        required: true
+      tags:
+      - cupos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvinciaCupo'
+          description: ''
+  /api/celiaquia/cupos/{id}/ocupados/:
+    get:
+      operationId: cupos_ocupados_list
+      description: 'Cupos por provincia. Solo lectura: el alta la hace `CupoService`.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Cupo por Provincia.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - cupos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLegajoList'
+          description: ''
+  /api/celiaquia/cupos/{id}/suspendidos/:
+    get:
+      operationId: cupos_suspendidos_list
+      description: 'Cupos por provincia. Solo lectura: el alta la hace `CupoService`.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Cupo por Provincia.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - cupos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLegajoList'
+          description: ''
+  /api/celiaquia/cupos/legajos/{legajo_id}/baja/:
+    post:
+      operationId: cupos_legajos_baja_create
+      description: Libera definitivamente el cupo del titular.
+      parameters:
+      - in: path
+        name: legajo_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - cupos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Motivo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Motivo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Motivo'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccionResultado'
+          description: ''
+  /api/celiaquia/cupos/legajos/{legajo_id}/reactivar/:
+    post:
+      operationId: cupos_legajos_reactivar_create
+      description: Reactiva un titular suspendido.
+      parameters:
+      - in: path
+        name: legajo_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - cupos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Motivo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Motivo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Motivo'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccionResultado'
+          description: ''
+  /api/celiaquia/cupos/legajos/{legajo_id}/suspender/:
+    post:
+      operationId: cupos_legajos_suspender_create
+      description: Suspende al titular sin liberar el cupo.
+      parameters:
+      - in: path
+        name: legajo_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - cupos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Motivo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Motivo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Motivo'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccionResultado'
+          description: ''
+  /api/celiaquia/cupos/provincia/{provincia_id}/:
+    post:
+      operationId: cupos_provincia_create
+      description: |-
+        Fija el total asignado de una provincia. Crea el cupo si no existia.
+
+        Va por provincia y no por pk del cupo porque la provincia puede todavia
+        no tener `ProvinciaCupo`: es justamente el caso de "sin configurar".
+      parameters:
+      - in: path
+        name: provincia_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - cupos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigurarCupo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConfigurarCupo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConfigurarCupo'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvinciaCupo'
+          description: ''
+  /api/celiaquia/estados-expediente/:
+    get:
+      operationId: estados_expediente_list
+      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
+      tags:
+      - estados-expediente
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EstadoExpediente'
+          description: ''
+  /api/celiaquia/estados-expediente/{id}/:
+    get:
+      operationId: estados_expediente_retrieve
+      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Estado del Expediente.
+        required: true
+      tags:
+      - estados-expediente
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadoExpediente'
+          description: ''
+  /api/celiaquia/estados-legajo/:
+    get:
+      operationId: estados_legajo_list
+      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
+      tags:
+      - estados-legajo
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EstadoLegajo'
+          description: ''
+  /api/celiaquia/estados-legajo/{id}/:
+    get:
+      operationId: estados_legajo_retrieve
+      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Estado del Legajo.
+        required: true
+      tags:
+      - estados-legajo
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadoLegajo'
+          description: ''
+  /api/celiaquia/expedientes/:
+    get:
+      operationId: expedientes_list
+      description: Expedientes visibles para el usuario, con sus transiciones de estado.
+      parameters:
+      - in: query
+        name: estado
+        schema:
+          type: string
+        description: Nombre exacto del estado.
+      - in: query
+        name: numero_expediente
+        schema:
+          type: string
+        description: Coincidencia parcial.
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedExpedienteList'
+          description: ''
+    post:
+      operationId: expedientes_create
+      description: |-
+        Alta del expediente, opcionalmente con su Excel masivo.
+
+        El alta la hace la provincia: el expediente queda a nombre del usuario
+        que lo crea y es lo que despues determina su alcance.
+      tags:
+      - expedientes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpedienteCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExpedienteCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExpedienteCreate'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expediente'
+          description: ''
+  /api/celiaquia/expedientes/{id}/:
+    get:
+      operationId: expedientes_retrieve
+      description: Expedientes visibles para el usuario, con sus transiciones de estado.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expediente'
+          description: ''
+    patch:
+      operationId: expedientes_partial_update
+      description: Edicion de metadatos. Solo mientras el expediente esta en CREADO.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedExpedienteUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedExpedienteUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedExpedienteUpdate'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expediente'
+          description: ''
+    delete:
+      operationId: expedientes_destroy
+      description: Baja del expediente. Reservada a coordinacion y admin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/celiaquia/expedientes/{id}/asignaciones/:
+    get:
+      operationId: expedientes_asignaciones_list
+      description: Expedientes visibles para el usuario, con sus transiciones de estado.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAsignacionTecnicoList'
+          description: ''
+  /api/celiaquia/expedientes/{id}/asignar-tecnico/:
+    post:
+      operationId: expedientes_asignar_tecnico_create
+      description: Expedientes visibles para el usuario, con sus transiciones de estado.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AsignarTecnico'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AsignarTecnico'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AsignarTecnico'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccionResultado'
+          description: ''
+  /api/celiaquia/expedientes/{id}/confirmar-envio/:
+    post:
+      operationId: expedientes_confirmar_envio_create
+      description: Cierra la carga provincial y envia el expediente a revision.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccionResultado'
+          description: ''
+  /api/celiaquia/expedientes/{id}/crear-legajos/:
+    post:
+      operationId: expedientes_crear_legajos_create
+      description: Alta manual de legajos a partir de filas ya previsualizadas.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearLegajos'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CrearLegajos'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CrearLegajos'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/celiaquia/expedientes/{id}/cruce/:
+    post:
+      operationId: expedientes_cruce_create
+      description: Sube el Excel de respuesta de Sintys y ejecuta el cruce por CUIT.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Archivo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Archivo'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/celiaquia/expedientes/{id}/desasignar-tecnico/:
+    post:
+      operationId: expedientes_desasignar_tecnico_create
+      description: Expedientes visibles para el usuario, con sus transiciones de estado.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccionResultado'
+          description: ''
+  /api/celiaquia/expedientes/{id}/estructura-familiar/:
+    get:
+      operationId: expedientes_estructura_familiar_retrieve
+      description: Responsables e hijos a cargo del expediente.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/celiaquia/expedientes/{id}/fuera-de-cupo/:
+    get:
+      operationId: expedientes_fuera_de_cupo_list
+      description: Expedientes visibles para el usuario, con sus transiciones de estado.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLegajoList'
+          description: ''
+  /api/celiaquia/expedientes/{id}/historial-estados/:
+    get:
+      operationId: expedientes_historial_estados_list
+      description: Expedientes visibles para el usuario, con sus transiciones de estado.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedExpedienteEstadoHistorialList'
+          description: ''
+  /api/celiaquia/expedientes/{id}/legajos/:
+    get:
+      operationId: expedientes_legajos_list
+      description: Legajos del expediente (`ExpedienteCiudadano`).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLegajoList'
+          description: ''
+  /api/celiaquia/expedientes/{id}/nomina-sintys/:
+    get:
+      operationId: expedientes_nomina_sintys_retrieve
+      description: Excel con la nomina a enviar a Sintys.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/celiaquia/expedientes/{id}/padron-final/:
+    get:
+      operationId: expedientes_padron_final_retrieve
+      description: Excel con los legajos aprobados del expediente.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/celiaquia/expedientes/{id}/procesar/:
+    post:
+      operationId: expedientes_procesar_create
+      description: Procesa el Excel masivo y crea los legajos.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccionResultado'
+          description: ''
+  /api/celiaquia/expedientes/{id}/recepcionar/:
+    post:
+      operationId: expedientes_recepcionar_create
+      description: Nacion toma el expediente que la provincia confirmo.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccionResultado'
+          description: ''
+  /api/celiaquia/expedientes/{id}/registros-erroneos/:
+    get:
+      operationId: expedientes_registros_erroneos_list
+      description: Filas del Excel que no pudieron importarse.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRegistroErroneoList'
+          description: ''
+  /api/celiaquia/expedientes/{id}/registros-erroneos/{registro_id}/:
+    delete:
+      operationId: expedientes_registros_erroneos_destroy
+      description: Descarta una fila erronea sin importarla.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      - in: path
+        name: registro_id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/celiaquia/expedientes/{id}/registros-erroneos/{registro_id}/actualizar/:
+    post:
+      operationId: expedientes_registros_erroneos_actualizar_create
+      description: Corrige una fila erronea, con la misma validacion que la pantalla.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      - in: path
+        name: registro_id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - expedientes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarRegistroErroneo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ActualizarRegistroErroneo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ActualizarRegistroErroneo'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccionResultado'
+          description: ''
+  /api/celiaquia/expedientes/{id}/registros-erroneos/reprocesar/:
+    post:
+      operationId: expedientes_registros_erroneos_reprocesar_create
+      description: Reintenta crear los legajos de las filas que quedaron con error.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReprocesoResultado'
+          description: ''
+  /api/celiaquia/expedientes/preview-excel/:
+    post:
+      operationId: expedientes_preview_excel_create
+      description: |-
+        Lee el Excel y devuelve las filas, sin crear nada.
+
+        Es la previsualizacion del alta: permite corregir el archivo antes de
+        que exista un expediente.
+      tags:
+      - expedientes
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PreviewExcel'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PreviewExcel'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreviewExcelResultado'
+          description: ''
+  /api/celiaquia/legajos/:
+    get:
+      operationId: legajos_list
+      description: Legajos, acotados a los expedientes que el usuario puede ver.
+      parameters:
+      - in: query
+        name: estado_cupo
+        schema:
+          type: string
+      - in: query
+        name: expediente
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - in: query
+        name: revision_tecnico
+        schema:
+          type: string
+      tags:
+      - legajos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLegajoList'
+          description: ''
+  /api/celiaquia/legajos/{id}/:
+    get:
+      operationId: legajos_retrieve
+      description: Legajos, acotados a los expedientes que el usuario puede ver.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente Ciudadano.
+        required: true
+      tags:
+      - legajos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Legajo'
+          description: ''
+  /api/celiaquia/legajos/{id}/archivos/:
+    post:
+      operationId: legajos_archivos_create
+      description: Sube un archivo al legajo, en el slot indicado (1, 2 o 3).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente Ciudadano.
+        required: true
+      tags:
+      - legajos
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubirArchivoLegajo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubirArchivoLegajo'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/celiaquia/legajos/{id}/documentos/:
+    get:
+      operationId: legajos_documentos_list
+      description: Legajos, acotados a los expedientes que el usuario puede ver.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente Ciudadano.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - legajos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDocumentoLegajoList'
+          description: ''
+  /api/celiaquia/legajos/{id}/revisar/:
+    post:
+      operationId: legajos_revisar_create
+      description: |-
+        Revision tecnica: aprobar, rechazar, subsanar o eliminar.
+
+        Todo el flujo (permisos, transiciones, liberacion de cupo, historial y
+        publicacion de observaciones) vive en `RevisionService`, el mismo que
+        usa la pantalla.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente Ciudadano.
+        required: true
+      tags:
+      - legajos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevisarLegajo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RevisarLegajo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RevisarLegajo'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/celiaquia/legajos/{id}/solicitar-subsanacion/:
+    post:
+      operationId: legajos_solicitar_subsanacion_create
+      description: Marca el legajo para subsanar. Es una accion del tecnico revisor.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente Ciudadano.
+        required: true
+      tags:
+      - legajos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitarSubsanacion'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SolicitarSubsanacion'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SolicitarSubsanacion'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccionResultado'
+          description: ''
+  /api/celiaquia/legajos/{id}/subsanaciones/:
+    get:
+      operationId: legajos_subsanaciones_list
+      description: Legajos, acotados a los expedientes que el usuario puede ver.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente Ciudadano.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - legajos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSubsanacionList'
+          description: ''
+  /api/celiaquia/organismos/:
+    get:
+      operationId: organismos_list
+      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
+      tags:
+      - organismos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organismo'
+          description: ''
+  /api/celiaquia/organismos/{id}/:
+    get:
+      operationId: organismos_retrieve
+      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Organismo de Cruce.
+        required: true
+      tags:
+      - organismos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organismo'
+          description: ''
+  /api/celiaquia/pagos/:
+    get:
+      operationId: pagos_list
+      description: Lotes de pago y su nomina.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - pagos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPagoExpedienteList'
+          description: ''
+    post:
+      operationId: pagos_create
+      description: Arma el lote de pago de una provincia con su nomina activa.
+      tags:
+      - pagos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearPago'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CrearPago'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CrearPago'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagoExpediente'
+          description: ''
+  /api/celiaquia/pagos/{id}/:
+    get:
+      operationId: pagos_retrieve
+      description: Lotes de pago y su nomina.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente de Pago.
+        required: true
+      tags:
+      - pagos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagoExpediente'
+          description: ''
+  /api/celiaquia/pagos/{id}/exportar-nomina/:
+    get:
+      operationId: pagos_exportar_nomina_retrieve
+      description: Excel con la nomina activa de la provincia del lote.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente de Pago.
+        required: true
+      tags:
+      - pagos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/celiaquia/pagos/{id}/nomina/:
+    get:
+      operationId: pagos_nomina_list
+      description: Lotes de pago y su nomina.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente de Pago.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - pagos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPagoNominaList'
+          description: ''
+  /api/celiaquia/pagos/{id}/procesar-respuesta/:
+    post:
+      operationId: pagos_procesar_respuesta_create
+      description: Cruza la respuesta de Sintys contra la nomina del lote.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente de Pago.
+        required: true
+      tags:
+      - pagos
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Archivo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Archivo'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/celiaquia/tipos-cruce/:
+    get:
+      operationId: tipos_cruce_list
+      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
+      tags:
+      - tipos-cruce
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TipoCruce'
+          description: ''
+  /api/celiaquia/tipos-cruce/{id}/:
+    get:
+      operationId: tipos_cruce_retrieve
+      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Tipo de Cruce.
+        required: true
+      tags:
+      - tipos-cruce
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoCruce'
+          description: ''
+  /api/celiaquia/tipos-documento/:
+    get:
+      operationId: tipos_documento_list
+      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
+      tags:
+      - tipos-documento
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TipoDocumento'
+          description: ''
+  /api/celiaquia/tipos-documento/{id}/:
+    get:
+      operationId: tipos_documento_retrieve
+      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Tipo de Documento.
+        required: true
+      tags:
+      - tipos-documento
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoDocumento'
+          description: ''
+components:
+  schemas:
+    AccionEnum:
+      enum:
+      - APROBAR
+      - RECHAZAR
+      - SUBSANAR
+      - ELIMINAR
+      type: string
+      description: |-
+        * `APROBAR` - APROBAR
+        * `RECHAZAR` - RECHAZAR
+        * `SUBSANAR` - SUBSANAR
+        * `ELIMINAR` - ELIMINAR
+    AccionResultado:
+      type: object
+      description: Respuesta uniforme de las acciones que delegan en un service.
+      properties:
+        detail:
+          type: string
+        expediente:
+          $ref: '#/components/schemas/Expediente'
+      required:
+      - detail
+    ActualizarRegistroErroneo:
+      type: object
+      description: |-
+        Correccion de una fila que quedo con error en la importacion.
+
+        Las claves dependen del Excel, asi que se acepta el diccionario entero y la
+        validacion real la hace `registros_erroneos_service`, que es el mismo camino
+        que usa la pantalla.
+      properties:
+        datos:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - datos
+    Archivo:
+      type: object
+      description: Subida generica de un archivo (cruce, respuesta de Sintys).
+      properties:
+        archivo:
+          type: string
+          format: uri
+      required:
+      - archivo
+    AsignacionTecnico:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        tecnico:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioResumen'
+          readOnly: true
+        fecha_asignacion:
+          type: string
+          format: date-time
+          readOnly: true
+        activa:
+          type: boolean
+          description: Indica si la asignación está activa
+      required:
+      - fecha_asignacion
+      - id
+      - tecnico
+    AsignarTecnico:
+      type: object
+      properties:
+        tecnico_id:
+          type: integer
+      required:
+      - tecnico_id
+    ConfigurarCupo:
+      type: object
+      description: |-
+        Base de los serializers de solo entrada: no persisten nada.
+
+        Las escrituras de este modulo pasan siempre por `celiaquia/services/`, asi
+        que `create`/`update` no deben existir. Se centraliza el rechazo para no
+        repetirlo en cada serializer.
+      properties:
+        total_asignado:
+          type: integer
+          minimum: 0
+      required:
+      - total_asignado
+    CrearLegajos:
+      type: object
+      description: Alta manual de legajos desde las filas previsualizadas.
+      properties:
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - rows
+    CrearPago:
+      type: object
+      description: |-
+        Base de los serializers de solo entrada: no persisten nada.
+
+        Las escrituras de este modulo pasan siempre por `celiaquia/services/`, asi
+        que `create`/`update` no deben existir. Se centraliza el rechazo para no
+        repetirlo en cada serializer.
+      properties:
+        provincia_id:
+          type: integer
+        periodo:
+          type: string
+          maxLength: 7
+      required:
+      - provincia_id
+    CupoMovimiento:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        provincia:
+          type: string
+          readOnly: true
+        expediente_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        legajo_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        tipo:
+          $ref: '#/components/schemas/TipoEnum'
+        delta:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        motivo:
+          type: string
+          maxLength: 255
+        usuario:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioResumen'
+          readOnly: true
+        creado_en:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - creado_en
+      - delta
+      - expediente_id
+      - id
+      - legajo_id
+      - provincia
+      - tipo
+      - usuario
+    DocumentoLegajo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        legajo_id:
+          type: integer
+          readOnly: true
+        tipo_documento:
+          type: string
+          readOnly: true
+        archivo_url:
+          type: string
+          description: URL absoluta del archivo; nunca la ruta de almacenamiento.
+          readOnly: true
+        observaciones:
+          type: string
+        usuario_carga:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioResumen'
+          readOnly: true
+        fecha_carga:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - archivo_url
+      - fecha_carga
+      - id
+      - legajo_id
+      - tipo_documento
+      - usuario_carga
+    EstadoCupoEnum:
+      enum:
+      - NO_EVAL
+      - DENTRO
+      - FUERA
+      type: string
+      description: |-
+        * `NO_EVAL` - No evaluado
+        * `DENTRO` - Dentro de cupo
+        * `FUERA` - Fuera de cupo
+    EstadoExpediente:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nombre:
+          type: string
+          maxLength: 50
+      required:
+      - id
+      - nombre
+    EstadoLegajo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nombre:
+          type: string
+          maxLength: 50
+      required:
+      - id
+      - nombre
+    Expediente:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        numero_expediente:
+          type: string
+          nullable: true
+          maxLength: 100
+        estado:
+          type: string
+          readOnly: true
+        provincia:
+          type: string
+          description: |-
+            Provincia derivada del perfil de quien creo el expediente.
+
+            El listado web la deriva de los ciudadanos con un Subquery; aca se usa
+            el valor anotado cuando el ViewSet lo provee y se cae al perfil.
+          readOnly: true
+        usuario_provincia:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioResumen'
+          readOnly: true
+        observaciones:
+          type: string
+          nullable: true
+        legajos_total:
+          type: integer
+          readOnly: true
+        fecha_creacion:
+          type: string
+          format: date-time
+          readOnly: true
+        fecha_modificacion:
+          type: string
+          format: date-time
+          readOnly: true
+        fecha_cierre:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - estado
+      - fecha_creacion
+      - fecha_modificacion
+      - id
+      - legajos_total
+      - provincia
+      - usuario_provincia
+    ExpedienteCreate:
+      type: object
+      description: Alta del expediente con su Excel masivo.
+      properties:
+        numero_expediente:
+          type: string
+          maxLength: 100
+        observaciones:
+          type: string
+        excel_masivo:
+          type: string
+          format: uri
+    ExpedienteEstadoHistorial:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        estado:
+          type: string
+          readOnly: true
+        usuario:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioResumen'
+          readOnly: true
+        fecha:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - estado
+      - fecha
+      - id
+      - usuario
+    Legajo:
+      type: object
+      description: '`ExpedienteCiudadano` es el legajo de una persona dentro del expediente.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        expediente_id:
+          type: integer
+          readOnly: true
+        ciudadano_id:
+          type: integer
+          readOnly: true
+        ciudadano:
+          type: string
+          readOnly: true
+        documento:
+          type: string
+          readOnly: true
+        estado:
+          type: string
+          readOnly: true
+        rol:
+          $ref: '#/components/schemas/RolEnum'
+        archivos_ok:
+          type: boolean
+        cruce_ok:
+          type: boolean
+          nullable: true
+        observacion_cruce:
+          type: string
+          nullable: true
+          maxLength: 255
+        revision_tecnico:
+          $ref: '#/components/schemas/RevisionTecnicoEnum'
+        resultado_sintys:
+          $ref: '#/components/schemas/ResultadoSintysEnum'
+        estado_cupo:
+          $ref: '#/components/schemas/EstadoCupoEnum'
+        es_titular_activo:
+          type: boolean
+        estado_validacion_renaper:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: 0=no validado, 1=aceptado, 2=rechazado, 3=subsanar
+        subsanacion_tipo:
+          type: string
+          nullable: true
+          maxLength: 50
+        subsanacion_motivo:
+          type: string
+          nullable: true
+        subsanacion_solicitada_en:
+          type: string
+          format: date-time
+          nullable: true
+        subsanacion_enviada_en:
+          type: string
+          format: date-time
+          nullable: true
+        creado_en:
+          type: string
+          format: date-time
+          readOnly: true
+        modificado_en:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - ciudadano
+      - ciudadano_id
+      - creado_en
+      - documento
+      - estado
+      - expediente_id
+      - id
+      - modificado_en
+    Motivo:
+      type: object
+      description: Motivo de una baja, suspension o reactivacion de cupo.
+      properties:
+        motivo:
+          type: string
+          default: ''
+          maxLength: 2000
+    ObservacionSubsanacion:
+      type: object
+      description: |-
+        Base de los serializers de solo entrada: no persisten nada.
+
+        Las escrituras de este modulo pasan siempre por `celiaquia/services/`, asi
+        que `create`/`update` no deben existir. Se centraliza el rechazo para no
+        repetirlo en cada serializer.
+      properties:
+        tipo:
+          type: string
+          maxLength: 50
+        detalle:
+          type: string
+          maxLength: 500
+      required:
+      - detalle
+      - tipo
+    Organismo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nombre:
+          type: string
+          maxLength: 100
+      required:
+      - id
+      - nombre
+    PaginatedAsignacionTecnicoList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AsignacionTecnico'
+    PaginatedCupoMovimientoList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CupoMovimiento'
+    PaginatedDocumentoLegajoList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentoLegajo'
+    PaginatedExpedienteEstadoHistorialList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExpedienteEstadoHistorial'
+    PaginatedExpedienteList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Expediente'
+    PaginatedLegajoList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Legajo'
+    PaginatedPagoExpedienteList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PagoExpediente'
+    PaginatedPagoNominaList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PagoNomina'
+    PaginatedProvinciaCupoList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProvinciaCupo'
+    PaginatedRegistroErroneoList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistroErroneo'
+    PaginatedSubsanacionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subsanacion'
+    PagoExpediente:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        provincia:
+          type: string
+          readOnly: true
+        periodo:
+          type: string
+          description: YYYY-MM
+          maxLength: 7
+        estado:
+          $ref: '#/components/schemas/PagoExpedienteEstadoEnum'
+        total_candidatos:
+          type: integer
+          maximum: 4294967295
+          minimum: 0
+          format: int64
+        total_validados:
+          type: integer
+          maximum: 4294967295
+          minimum: 0
+          format: int64
+        total_excluidos:
+          type: integer
+          maximum: 4294967295
+          minimum: 0
+          format: int64
+        creado_en:
+          type: string
+          format: date-time
+          readOnly: true
+        modificado_en:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - creado_en
+      - id
+      - modificado_en
+      - periodo
+      - provincia
+    PagoExpedienteEstadoEnum:
+      enum:
+      - BORRADOR
+      - ENVIADO
+      - PROCESADO
+      - CERRADO
+      type: string
+      description: |-
+        * `BORRADOR` - Borrador
+        * `ENVIADO` - Enviado a Sintys
+        * `PROCESADO` - Cruce procesado
+        * `CERRADO` - Cerrado
+    PagoNomina:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        pago_id:
+          type: integer
+          readOnly: true
+        legajo_id:
+          type: integer
+          readOnly: true
+        documento:
+          type: string
+          maxLength: 16
+        nombre:
+          type: string
+          maxLength: 80
+        apellido:
+          type: string
+          maxLength: 80
+        estado:
+          $ref: '#/components/schemas/PagoNominaEstadoEnum'
+        observacion:
+          type: string
+          maxLength: 255
+        creado_en:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - creado_en
+      - documento
+      - id
+      - legajo_id
+      - pago_id
+    PagoNominaEstadoEnum:
+      enum:
+      - VALIDADO
+      - EXCLUIDO
+      type: string
+      description: |-
+        * `VALIDADO` - Validado para pago
+        * `EXCLUIDO` - Excluido por cruce
+    PatchedExpedienteUpdate:
+      type: object
+      description: Metadatos editables mientras el expediente esta en CREADO.
+      properties:
+        numero_expediente:
+          type: string
+          maxLength: 100
+        observaciones:
+          type: string
+    PreviewExcel:
+      type: object
+      description: Previsualizacion del Excel antes de crear el expediente.
+      properties:
+        excel_masivo:
+          type: string
+          format: uri
+        limit:
+          type: integer
+          maximum: 5000
+          minimum: 1
+      required:
+      - excel_masivo
+    PreviewExcelResultado:
+      type: object
+      description: |-
+        Respuesta de `preview-excel/`.
+
+        Sin esto, drf-spectacular documentaba el serializer de **entrada** como si
+        fuera la respuesta, y los tipos generados para el front quedaban al reves.
+
+        No se expone `all_rows`, que el servicio devuelve para que la vista web lo
+        guarde en sesion: son hasta 5000 filas duplicadas que ningun cliente de la
+        API consume.
+      properties:
+        headers:
+          type: array
+          items:
+            type: string
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        total_rows:
+          type: integer
+        shown_rows:
+          type: integer
+      required:
+      - headers
+      - rows
+      - shown_rows
+      - total_rows
+    ProvinciaCupo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        provincia:
+          type: string
+          readOnly: true
+        provincia_id:
+          type: integer
+          readOnly: true
+        total_asignado:
+          type: integer
+          maximum: 4294967295
+          minimum: 0
+          format: int64
+        usados:
+          type: integer
+          maximum: 4294967295
+          minimum: 0
+          format: int64
+        disponibles:
+          type: integer
+          readOnly: true
+      required:
+      - disponibles
+      - id
+      - provincia
+      - provincia_id
+    RegistroErroneo:
+      type: object
+      description: |-
+        Fila del Excel que no pudo importarse.
+
+        `datos_raw` sale tal cual entro: es lo que el usuario tiene que corregir.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        expediente:
+          type: integer
+        fila_excel:
+          type: integer
+          maximum: 4294967295
+          minimum: 0
+          format: int64
+        datos_raw: {}
+        campo_error:
+          type: string
+          maxLength: 100
+        mensaje_error:
+          type: string
+        procesado:
+          type: boolean
+        creado_en:
+          type: string
+          format: date-time
+          readOnly: true
+        procesado_en:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - creado_en
+      - datos_raw
+      - expediente
+      - fila_excel
+      - id
+      - mensaje_error
+    ReprocesoResultado:
+      type: object
+      description: Resumen de `registros-erroneos/reprocesar`.
+      properties:
+        creados:
+          type: integer
+        errores:
+          type: integer
+        errores_detalle:
+          type: array
+          items:
+            type: string
+        excluidos:
+          type: integer
+        excluidos_detalle:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        registros_restantes:
+          type: integer
+        alerta_resumen:
+          type: string
+      required:
+      - alerta_resumen
+      - creados
+      - errores
+      - errores_detalle
+      - excluidos
+      - excluidos_detalle
+      - registros_restantes
+    ResultadoSintysEnum:
+      enum:
+      - SIN_CRUCE
+      - MATCH
+      - NO_MATCH
+      type: string
+      description: |-
+        * `SIN_CRUCE` - Sin cruce
+        * `MATCH` - Matcheado
+        * `NO_MATCH` - No matcheado
+    RevisarLegajo:
+      type: object
+      description: |-
+        Entrada de la revision tecnica de un legajo.
+
+        `texto_libre` es solo el complemento: el motivo final lo compone el service
+        concatenando las observaciones tecnicas del legajo. Lo que mande el cliente
+        no es la fuente de verdad.
+      properties:
+        accion:
+          $ref: '#/components/schemas/AccionEnum'
+        texto_libre:
+          type: string
+          maxLength: 2000
+        tipo_subsanacion:
+          type: string
+          maxLength: 50
+        observaciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObservacionSubsanacion'
+      required:
+      - accion
+    RevisionTecnicoEnum:
+      enum:
+      - PENDIENTE
+      - APROBADO
+      - RECHAZADO
+      - SUBSANAR
+      - SUBSANADO
+      type: string
+      description: |-
+        * `PENDIENTE` - Pendiente
+        * `APROBADO` - Aprobado por el tecnico
+        * `RECHAZADO` - Rechazado por el tecnico
+        * `SUBSANAR` - Subsanar
+        * `SUBSANADO` - Subsanado
+    RolEnum:
+      enum:
+      - beneficiario
+      - responsable
+      - beneficiario_y_responsable
+      type: string
+      description: |-
+        * `beneficiario` - Solo Beneficiario
+        * `responsable` - Solo Responsable
+        * `beneficiario_y_responsable` - Beneficiario y Responsable
+    SolicitarSubsanacion:
+      type: object
+      properties:
+        motivo:
+          type: string
+          maxLength: 2000
+      required:
+      - motivo
+    SubirArchivoLegajo:
+      type: object
+      description: Documentacion de un legajo. El slot es el campo archivo1/2/3.
+      properties:
+        archivo:
+          type: string
+          format: uri
+        slot:
+          type: integer
+          maximum: 3
+          minimum: 1
+      required:
+      - archivo
+    Subsanacion:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        legajo_id:
+          type: integer
+          readOnly: true
+        estado:
+          $ref: '#/components/schemas/SubsanacionEstadoEnum'
+        motivo_general:
+          type: string
+          nullable: true
+          description: Motivo general/observación libre
+        solicitada_por:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioResumen'
+          readOnly: true
+        solicitada_en:
+          type: string
+          format: date-time
+          readOnly: true
+        respondida_por:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioResumen'
+          readOnly: true
+        respondida_en:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - id
+      - legajo_id
+      - respondida_por
+      - solicitada_en
+      - solicitada_por
+    SubsanacionEstadoEnum:
+      enum:
+      - PENDIENTE
+      - RESPONDIDA
+      type: string
+      description: |-
+        * `PENDIENTE` - Pendiente de respuesta
+        * `RESPONDIDA` - Respondida por la provincia
+    TipoCruce:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nombre:
+          type: string
+          maxLength: 50
+      required:
+      - id
+      - nombre
+    TipoDocumento:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nombre:
+          type: string
+          maxLength: 100
+        descripcion:
+          type: string
+        requerido:
+          type: boolean
+        orden:
+          type: integer
+          maximum: 4294967295
+          minimum: 0
+          format: int64
+          description: Orden de presentación
+        activo:
+          type: boolean
+      required:
+      - id
+      - nombre
+    TipoEnum:
+      enum:
+      - ALTA
+      - REACTIVACION
+      - BAJA
+      - AJUSTE
+      - SUSPENDIDO
+      type: string
+      description: |-
+        * `ALTA` - Alta
+        * `REACTIVACION` - Reactivacion
+        * `BAJA` - Baja
+        * `AJUSTE` - Ajuste
+        * `SUSPENDIDO` - Suspendido
+    UsuarioResumen:
+      type: object
+      description: 'Identidad minima de un usuario: nunca mail, permisos ni credenciales.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nombre:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - nombre
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: 'Usar formato: Api-Key TU_API_KEY'
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token-based authentication with required prefix "Token"

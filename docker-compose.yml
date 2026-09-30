@@ -36,6 +36,19 @@ services:
     volumes:
       - .:/sisoc/
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
+    # El front v2 espera a que Django este sano antes de levantar.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          python -c "import urllib.request,sys;
+          sys.exit(0 if urllib.request.urlopen(
+          'http://localhost:${DOCKER_DJANGO_PORT}/health/', timeout=5
+          ).status == 200 else 1)"
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
     restart: "no"
 
   # Front v2 del modulo. Puerto interno: no se expone al host, solo lo alcanza
@@ -50,6 +63,10 @@ services:
     image: sisoc-front-celiaquia
     expose:
       - "8080"
+    # Reiniciar el front no reinicia django, y viceversa (frontend_v2.md, 9).
+    depends_on:
+      django:
+        condition: service_healthy
     restart: unless-stopped
 
   ocr_worker:

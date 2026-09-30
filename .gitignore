@@ -435,3 +435,7 @@ tmp_ocr_eval/
 
 # Templates de providencias locales (insumo para lectura, no versionar)
 /_templates_providencias/
+
+# Front v2 browser test artifacts
+frontends/test-results/
+frontends/playwright-report/

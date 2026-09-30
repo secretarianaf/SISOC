@@ -36,6 +36,9 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - La logica de negocio suele vivir en `services/` cuando la app la tiene, pero coexisten apps mas legacy con mas logica en `views.py`, `models.py` o `tasks.py`.
 - Hay un esfuerzo explicito de control arquitectonico incremental con `import-linter` (`.importlinter`) para evitar que el monolito siga acoplandose.
 - Los modulos nuevos deben nacer como verticales extraibles dentro del monolito; la regla aplicable y sus limites actuales viven en `docs/ia/MODULAR_BOUNDARIES.md`.
+- VPSL convive con sus pantallas Django existentes y el nuevo React en `/v2/vpsl/`. La app está en `frontends/apps/vpsl/`, usa `@sisoc/ui` y `@sisoc/api`, y se sirve desde `front_vpsl` por el router autenticado `core/v2_frontend.py`. La API `/api/vpsl/` corre en el Django principal y reutiliza la lógica del dominio, con adaptadores de ModelForms/vistas existentes y alcance compartido en `services/access.py`. Ver `docs/implementaciones/frontend_v2.md` y `docs/operacion/ver_para_ser_libre_react.md`.
+- Registro nominal React: `frontends/apps/vpsl/src/Workflow.tsx` replica las secciones y reglas condicionales de `registro_form.html`; el schema de `api_workflow.py` incluye `renaper_estado` oculto y `graduacion_opcional` desde el ModelForm oficial para registros históricos. Crear usa Guardar y continuar y recarga el schema para el siguiente número de acta. La compatibilidad con PR #2566 se verifica en `ver_para_ser_libre/tests/test_api_compatibilidad.py` y `frontends/apps/vpsl/src/Workflow.test.tsx`; los límites de promoción están en `docs/operacion/ver_para_ser_libre_react.md`.
+- El tema visual de Front v2 usa `getTheme(mode)` de `frontends/packages/ui/src/theme.ts`, con correcciones de contraste AA; las reglas de componentes y UX vigentes están en `docs/implementaciones/frontend_v2.md`.
 
 ### Inferencias utiles
 
@@ -70,7 +73,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Bootstrap/AdminLTE/Select2 | Hecho observado | `static/dist/`, `requirements`, templates |
 | PWA backend + endpoints | Hecho observado | `pwa/`, `config/urls.py`, docs PWA |
 | Toolchain Node formal en raiz | No confirmado como toolchain real; mas bien ausente | hay `package-lock.json` en raiz, pero no `package.json` |
-| Front v2 React (`/v2/<modulo>/`, `frontends/`) | Regla vigente, implementacion pendiente | `docs/implementaciones/frontend_v2.md`, `docs/registro/decisiones/2026-09-24-frontend-v2-react.md` |
+| Front v2 React 19 + Vite + MUI | Hecho observado | `frontends/apps/vpsl/`, `frontends/packages/ui/`, `frontends/packages/api/` |
 
 ### Operacion y CI
 
@@ -109,7 +112,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ### Hechos observados
 
-- `docker-compose.yml` levanta `mysql`, `django`, `ocr_worker` y `encuestas_worker`.
+- `docker-compose.yml` levanta `mysql`, `django`, `ocr_worker`, `encuestas_worker` y `front_vpsl`. Este último solo expone su puerto dentro de la red de Compose; Django entrega `/v2/vpsl/` al navegador.
 - El contenedor `django` monta el repo completo en `/sisoc/`.
 - `docker/django/entrypoint.py` espera MySQL, puede correr `makemigrations`, siempre corre `migrate`, `load_fixtures`, `create_test_users`, `create_groups`, y luego levanta `runserver` o `gunicorn` segun `ENVIRONMENT`.
 
@@ -314,7 +317,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
-| `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito; el alta de itinerarios permite elegir cualquier provincia con `create_itinerarios_any_province_vpsl` si el perfil tiene una provincia asignada, y el permiso permite ver solo los itinerarios propios fuera de ella; los itinerarios ya no seleccionan ni aprueban sedes tentativas; cada jornada guarda nombre, localidad, enlace Google Maps, direccion, coordenadas y una relacion Many-to-Many con el catalogo `VehiculoVPSL`, con preview seguro mediante `services/map_location.py`; el checklist operativo pertenece a la jornada y la habilita automaticamente al completarse; los registros nominales guardan graduacion izquierda/derecha en pasos de 0.25; las relaciones historicas con `SedeVPSL`, matricula estimada y prescripcion se conservan solo por compatibilidad | `models.py`, `forms.py`, `views.py`, `urls.py`, `migrations/0015_vpsl_ubicacion_vehiculos_graduaciones.py`, `templates/ver_para_ser_libre/itinerario_form.html`, `templates/ver_para_ser_libre/jornada_form.html`, `templates/ver_para_ser_libre/jornada_detail.html`, `templates/ver_para_ser_libre/registro_form.html`, `tests/test_jornada_location.py`, `services/workflow.py`, `services/map_location.py` | Medio |
+| `ver_para_ser_libre/` | dominio VPSL compartido por SISOC y el servicio HTTP React; desde PR #2566 el itinerario evalua cartas sin sedes tentativas, cada jornada posee sede/localidad/ubicacion/vehiculos y checklist con habilitacion automatica, y el registro nominal guarda graduaciones; las sedes previas permanecen para historial; la compatibilidad del PR #2566 conserva localidad historica, copia checklists y permite editar registros previos sin inventar graduacion; `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py` y `services/access.py` exponen el flujo React con permisos, contrato JSON/multipart y alcance provincial | `models.py`, `forms.py`, `views.py`, `api_urls.py`, `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py`, `services/access.py`, `services/workflow.py`, `services/map_location.py`, `migrations/0015_vpsl_ubicacion_vehiculos_graduaciones.py`, `migrations/0016_copiar_checklist_sede_a_jornadas.py`, `tests/test_api.py`, `tests/test_api_contract.py`, `tests/test_jornada_location.py` | Alto |
 | `pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV—, Informes PAS versionados, circuito mensual de cruces SINTyS/RENAPER, Panel de Control y Formación pendiente; el padrón lateral de Formación pagina por scroll mediante `/pas/formacion/personas` | `models.py`, `api.py`, `views.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `services/cruces_service.py`, `services/supervivencia_service.py`, `services/persona_service.py`, `services/formacion_service.py`, `templates/pas/`, `static/custom/js/pas_formacion.js`, `management/commands/`, `urls.py`, `migrations/` | Alto |
 | `audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
 | `historial/` | historial de dominio | `models.py`, `services/` | Bajo |
@@ -609,14 +612,22 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 - `encuestas/models.py`: `Encuesta` (versionado por edicion, ver `version`/`version_de`), `Pregunta` (condicion de visibilidad via `pregunta_condicion`/`operador_condicion`/`valor_condicion`), `OpcionPregunta`, `SegmentacionEncuesta`/`SegmentacionDestinatario`, `RondaEncuesta`, `RespuestaRonda`/`RespuestaPregunta`, `RecordatorioUsuario`.
 - `encuestas/services.py`: ciclo de vida (crear/editar-nueva version/publicar/abrir-cerrar ronda), respuestas (`registrar_respuesta`, respeta anonimato), segmentacion (`actualizar_segmentacion`, `agregar_destinatario`/`quitar_destinatario`, aplican en caliente con ronda abierta), cola de pendientes (`get_rondas_pendientes_para_request`, cacheada por request) y el scheduler (`procesar_rondas_pendientes`, `run_encuestas_scheduler`).
+- Segmentación por grupos: `SegmentacionEncuesta.grupos` (migración `0007`), `actualizar_segmentacion(..., grupos_ids=...)`; unión de pertenencias actuales a grupos de auth, precargada en pendientes. Selector con búsqueda y selección múltiple en segmentación; nombres visibles en revisión. Exportación JSON v5 por nombre, sin crear grupos al importar. Pruebas: `test_encuestas_segmentacion_grupos.py`.
+- Apariencia de segmentación: `static/custom/css/encuestaSegmentacion.css` restaura la paleta oscura/dorada previa a `efd1abcc7`, cargada después del layout compartido `encuestaForm.css` únicamente en `encuesta_segmentacion.html`. Conserva selección visible de grupos y cargas por documentos/IDs.
 - `encuestas/services_resultados.py`: agregacion de resultados por pregunta y export CSV/Excel (nunca vincula contenido a identidad si la encuesta es anonima).
-- `encuestas/validators.py`: parseo del listado de segmentacion (Excel/CSV) y del payload JSON del editor de preguntas (no usa formsets de Django a proposito).
+- `encuestas/validators.py`: parseo del listado de segmentacion (Excel/CSV por documentos o `usuario_id`) y del payload JSON del editor de preguntas (no usa formsets de Django a proposito). Segmentación por IDs: relación `SegmentacionEncuesta.usuarios`, migración `0006`, plantilla `?tipo=listado_usuarios`, validación de existencia y reemplazo atómico; tests en `test_encuestas_segmentacion_usuarios.py`. Exportar con estos destinatarios usa JSON v4; los IDs son locales al ambiente.
 - `encuestas/middleware.py` (`EncuestaObligatoriaMiddleware`): bloquea la navegacion de cualquier usuario con una encuesta obligatoria pendiente; registrado en `config/settings.py` despues de `ProfileConfirmationMiddleware`. Mismo patron que `users/middleware.py`.
 - `encuestas/context_processors.py`: expone la ronda pendiente al modal global (`templates/includes/base.html` + `encuestas/templates/encuestas/partials/responder_modal.html`); comparte cache de request con el middleware para no duplicar la consulta.
 - `encuestas/management/commands/process_encuestas_rondas.py` + servicio `encuestas_worker` en `docker-compose.yml`: abre/cierra rondas por fecha, sin Celery.
-- `users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas` y `Encuestas Resultados`.
+- `users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas`, `Administrador de Encuestas` (permiso `aprobar_encuesta`) y `Encuestas Resultados`.
 - Guía funcional canónica: `docs/implementaciones/encuestas.md`. El análisis histórico y sus decisiones de diseño quedan en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
-- Limite conocido: la segmentacion por CUIT nunca matchea a un usuario individual (`users.Profile` no tiene CUIT propio, solo DNI/CUIL).
+- Aprobación: `solicitar_publicacion` / `publicar` / `rechazar_publicacion` en `services.py`; borrador → pendiente → publicada o borrador. La ruta histórica `publicar/` ahora solicita, `aprobar/` y `rechazar/` requieren `aprobar_encuesta`. Revisión de solo lectura en `revision/`; pendientes bloquean edición y segmentación. Migración `0004` + `create_groups`. Tests en `test_encuestas_aprobacion.py`; `tests/helpers.py` prepara rondas recorriendo el circuito.
+- Portabilidad JSON: `exportar_encuesta` / `importar_encuesta` en `services.py`, endpoints `/encuestas/<pk>/exportar/` y `/encuestas/importar/`. Formato v3, admite v1/v2; importar crea borrador nuevo y vuelve al listado. Segmentacion optativa, contiene documentos personales si se incluye.
+- Modalidades: obligatoria, postergable y opcional (`Encuesta.es_opcional`). `descartar_ronda` registra descarte por usuario/ronda en `RecordatorioUsuario`, sin computar respuesta. Migracion `0003_encuesta_opcional` necesaria antes de servir el cambio y reiniciar workers.
+- UI: `encuestaForm.css` y `encuestaResponder.css` comparten tokens Poncho. Regresiones en `test_encuestas_portabilidad.py` y `test_encuestas_opcionales.py`.
+- Listado/revisión: `encuestas/filters.py` configura `AdvancedFilterEngine` y el buscador compartido de Usuarios; título, estado, anónima y recurrente. `encuestaGestion.css` complementa los estilos de listado y las tarjetas de `user_form.css`; filtros/paginación en `test_encuestas_views.py`.
+- Rechazo: modal en `encuesta_revision.html` + `RechazoEncuestaForm`, motivo obligatorio (2000 caracteres) validado también por `rechazar_publicacion`. Migración `0005_motivo_rechazo`; guarda último motivo, revisor y fecha, visibles al gestor en edición (`partials/motivo_rechazo.html`) y al revisor después del reenvío. No se exportan ni se copian a nuevas versiones.
+- Segmentacion por CUIT: `_documentos_de_usuario` compara CUIT y CUIL contra el CUIL del perfil, ademas de DNI.
 ### Si necesitas auditar o reparar mojibake en datos
 
 - Reparación conservadora compartida: `core/services/text_encoding.py`.
@@ -774,6 +785,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Build/deploy
 
 - Local: `docker compose up`
+- Front v2 local: `docker compose up --build front_vpsl`; hot reload con `docker-compose.frontends.dev.yml` como segundo archivo. Desde `frontends/`: `npm ci`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm run test:e2e` y `npm audit --audit-level=low`.
+- Contrato VPSL: `FRONTEND_V2_SCHEMA_ONLY=1 python manage.py spectacular --file frontends/packages/api/openapi.yaml --format openapi`; luego `npm run types:generate` en `frontends/`.
 - Deploy versionado: `docker compose -f docker-compose.deploy.yml ...`
 - Produccion: override `docker-compose.produccion.yml`
 - Sanity de release a `main` valida `check --deploy`, OpenAPI y `collectstatic`
@@ -823,7 +836,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Legacy / deuda tecnica visible
 
-- JS y templates dispersos por pantalla, sin pipeline frontend moderno.
+- El front legacy conserva JS y templates dispersos; la nueva base `frontends/` usa pipeline propio de npm, Vite y CI.
 - coexistencia de apps muy refactorizadas y apps con archivos monoliticos.
 - `package-lock.json` en raiz sin `package.json`: parece drift/artefacto sobrante, no contrato operativo confirmado.
 - `tmp/ci-pr-*`: artefactos temporales; no usarlos como fuente de verdad.

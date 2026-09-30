@@ -369,6 +369,7 @@ class BulkCredentialsJobDetailView(AdminRequiredMixin, View):
                 "page_obj": page_obj,
                 "is_resume_available": can_resume_bulk_credentials_job(job),
                 "upload_url": reverse("usuarios_credenciales_masivas"),
+                "volver_url": reverse("usuarios_credenciales_masivas"),
             }
         )
 

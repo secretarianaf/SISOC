@@ -75,6 +75,7 @@ from VAT.views.institucion import (
     InstitucionUbicacionUpdateView,
     InstitucionUbicacionDeleteView,
     localidades_por_centro,
+    municipios_por_centro,
 )
 
 from VAT.views.oferta_institucional import (
@@ -754,6 +755,13 @@ urlpatterns = [
             localidades_por_centro
         ),
         name="vat_ajax_localidades_por_centro",
+    ),
+    path(
+        "vat/ajax/municipios-por-centro/",
+        permissions_any_required(["VAT.view_institucionubicacion"])(
+            municipios_por_centro
+        ),
+        name="vat_ajax_municipios_por_centro",
     ),
     # Oferta Institucional
     path(

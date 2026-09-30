@@ -78,6 +78,13 @@
 <!-- Custom-->
 <script src="{% static 'custom/js/custom.js' %}"></script>
 <script src="{% static 'custom/js/navigator.js' %}"></script>
+{% comment %}
+data-volver-transitoria: las altas, ediciones y confirmaciones de borrado no se
+apilan en el historial del boton "Volver". Lo decide core.context_processors a
+partir de la clase de la vista. Ver static/custom/js/volver.js (issue #2460).
+{% endcomment %}
+<script src="{% static 'custom/js/volver.js' %}"
+        data-volver-transitoria="{% if volver_transitoria %}1{% else %}0{% endif %}"></script>
 <script src="{% static 'custom/js/base.js' %}"></script>
 <script src="{% static 'custom/js/sidebar.js' %}"></script>
 <script nonce="{{ request.csp_nonce }}">

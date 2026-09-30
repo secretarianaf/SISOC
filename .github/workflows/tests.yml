@@ -280,6 +280,12 @@ jobs:
             - name: Ejecutar pruebas de automatizacion de release
               run: node --test .github/scripts/release_orchestrator.test.js .github/scripts/sync_main_downstream.test.js
 
+            # Se listan los archivos en vez de la carpeta: tests/js/user_mobile_access.test.js
+            # ya venia fallando antes de este PR (su stub de DOM no implementa
+            # querySelector) y sumarlo aca pondria el CI en rojo por algo ajeno.
+            - name: Ejecutar pruebas de JavaScript
+              run: node --test tests/js/volver.test.js tests/js/showAlert.test.js tests/js/informeTecnicoCambiosSinGuardar.test.js
+
             - name: Validate required CI checks
               uses: actions/github-script@v8
               with:
@@ -296,6 +302,7 @@ jobs:
                         "migrations_check",
                         "mysql_compat",
                         "release_quality",
+                        "frontend",
                       ];
                       if (baseRef === "main") {
                         required.push("release_sanity");
@@ -362,7 +369,7 @@ jobs:
                           failed.push(`${name} (missing)`);
                           continue;
                         }
-                        if (!passConclusions.has(run.conclusion)) {
+                        if (name === "frontend" ? run.conclusion !== "success" : !passConclusions.has(run.conclusion)) {
                           failed.push(`${name} (${run.conclusion})`);
                         }
                       }

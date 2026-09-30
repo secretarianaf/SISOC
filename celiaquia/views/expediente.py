@@ -78,7 +78,14 @@ from celiaquia.services.expediente_filter_config import (  # pylint: disable=no-
 from celiaquia.services.padron_final_service import (  # pylint: disable=no-name-in-module
     PadronFinalService,
 )
+from celiaquia.services.subsanacion_service import SubsanacionService
 from celiaquia.services.validacion_edad_service import ValidacionEdadService
+from celiaquia.validators import (
+    COMPLEMENTARIA_ACCEPT_ATTR,
+    COMPLEMENTARIA_MAX_ARCHIVOS,
+    COMPLEMENTARIA_MAX_SIZE_MB,
+    validar_archivos_complementarios,
+)
 from django.utils import timezone
 from django.db import transaction
 from core.models import Nacionalidad, Provincia, Localidad
@@ -188,10 +195,36 @@ def _can_manage_registros_erroneos(user) -> bool:
 
 
 def _can_manage_excel_masivo_audit(user) -> bool:
+    """Roles que ven la metadata de carga y procesamiento del Excel."""
     return bool(
         _is_admin(user)
         or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
     )
+
+
+def _can_download_excel_masivo(user) -> bool:
+    """Roles que pueden descargar el Excel; el técnico requiere asignación."""
+    return bool(
+        _can_manage_excel_masivo_audit(user)
+        or _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+    )
+
+
+def _puede_descargar_excel_masivo(user, expediente) -> bool:
+    """Acota la descarga del Excel original al alcance de cada rol.
+
+    La vista de descarga no pasa por el queryset del detalle, asi que el filtro
+    por asignacion del tecnico hay que aplicarlo aca de forma explicita.
+    """
+    if not _can_download_excel_masivo(user):
+        return False
+
+    if _is_admin(user) or _user_has_permission(
+        user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
+    ):
+        return True
+
+    return expediente.asignaciones_tecnicos.filter(tecnico=user).exists()
 
 
 def _get_nacionalidad_argentina():
@@ -867,7 +900,8 @@ class ExpedienteListView(ListView):
         ctx["is_tecnico_celiaquia"] = is_tecnico
         ctx["is_provincial_celiaquia"] = _is_provincial(user)
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
-        ctx["can_manage_excel_masivo_audit"] = is_admin or is_coord
+        ctx["can_manage_excel_masivo_audit"] = _can_manage_excel_masivo_audit(user)
+        ctx["can_download_excel_masivo"] = _can_download_excel_masivo(user)
         ctx["show_tecnico_column_celiaquia"] = _can_view_tecnico_column(user)
 
         # El titulo depende del rol y lo consume el componente de busqueda, que
@@ -1037,10 +1071,12 @@ class ExpedienteExcelMasivoDownloadView(View):
     """Descarga la copia del Excel masivo vigente del expediente."""
 
     def get(self, request, pk):
-        if not _can_manage_excel_masivo_audit(request.user):
+        if not _can_download_excel_masivo(request.user):
             raise PermissionDenied("No tiene permisos para descargar el Excel masivo.")
 
         expediente = get_object_or_404(Expediente, pk=pk)
+        if not _puede_descargar_excel_masivo(request.user, expediente):
+            raise PermissionDenied("No sos el tecnico asignado a este expediente.")
         if not expediente.excel_masivo:
             messages.error(request, "El expediente no tiene Excel masivo cargado.")
             return redirect("expediente_detail", pk=expediente.pk)
@@ -1150,7 +1186,8 @@ class ExpedienteDetailView(DetailView):
         ctx["is_provincial_celiaquia"] = _is_provincial(user)
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
         ctx["can_manage_registros_erroneos"] = can_manage_registros_erroneos
-        ctx["can_manage_excel_masivo_audit"] = is_admin or is_coord
+        ctx["can_manage_excel_masivo_audit"] = _can_manage_excel_masivo_audit(user)
+        ctx["can_download_excel_masivo"] = _can_download_excel_masivo(user)
         ctx["can_download_nomina_aprobados"] = bool(
             (is_admin or is_coord or is_tecnico)
             and expediente.estado.nombre == "CRUCE_FINALIZADO"
@@ -1190,7 +1227,6 @@ class ExpedienteDetailView(DetailView):
         # Enriquecer legajos con informacion de tipo (hijo/responsable)
         from celiaquia.services.legajo_service import LegajoService
         from celiaquia.services.familia_service import FamiliaService
-        from celiaquia.services.subsanacion_service import SubsanacionService
 
         legajos_enriquecidos = []
         # Prefetch de subsanaciones solo para la lista que se enriquece y muestra
@@ -1636,6 +1672,12 @@ class ExpedienteDetailView(DetailView):
                 # el cliente, sin ida y vuelta al servidor.
                 "catalogo_comentarios_tecnicos": catalogo_comentarios_tecnicos(),
                 "tipos_documento_comentario": TipoDocumentoComentario.choices,
+                # Límites de la documentación complementaria del modal de
+                # subsanar: se declaran en un solo lugar y el template los usa
+                # para el `accept` y para el texto de ayuda.
+                "complementaria_accept": COMPLEMENTARIA_ACCEPT_ATTR,
+                "complementaria_max_archivos": COMPLEMENTARIA_MAX_ARCHIVOS,
+                "complementaria_max_mb": COMPLEMENTARIA_MAX_SIZE_MB,
             }
         )
         return ctx
@@ -2007,12 +2049,12 @@ MAPA_TIPO_DOCUMENTO_A_SUBSANACION = {
 }
 
 
-def _observaciones_desde_comentarios_tecnicos(legajo):
+def _observaciones_desde_comentarios_tecnicos(comentarios):
     """Observaciones (tipo, detalle) derivadas de los comentarios técnicos.
 
-    Traduce las observaciones publicables del legajo al formato que consumen
-    `Subsanacion`/`SubsanacionObservacion`. Lista vacía si el legajo todavía no
-    tiene comentarios técnicos con observaciones."""
+    Traduce los comentarios elegidos para la subsanación al formato que
+    consumen `Subsanacion`/`SubsanacionObservacion`. Lista vacía si no se
+    eligió ninguno."""
     return [
         (
             MAPA_TIPO_DOCUMENTO_A_SUBSANACION.get(
@@ -2020,7 +2062,7 @@ def _observaciones_desde_comentarios_tecnicos(legajo):
             ),
             comentario.comentario,
         )
-        for comentario in ComentariosTecnicosService.observaciones_publicables(legajo)
+        for comentario in comentarios
     ]
 
 
@@ -2068,25 +2110,38 @@ class RevisarLegajoView(View):
     def _componer_motivo(self, request, leg):
         """Motivo de Subsanar/Rechazar armado en backend.
 
-        Concatena las observaciones técnicas del legajo (las que tienen
-        observaciones = Sí) y le suma el texto libre complementario. Lo que
-        llega del cliente es solo ese texto libre: la previsualización que
-        muestra el modal no es la fuente de verdad. Devuelve
-        ``(motivo, None)`` o ``("", JsonResponse)`` cuando no hay nada que
-        comunicar."""
+        Del cliente llegan solo los ids de los comentarios técnicos elegidos
+        para esta instancia (`observaciones_ids`) y el texto libre
+        complementario; el texto de las observaciones se toma de la base. Sin
+        ids no se usa ninguna observación: cada instancia lleva únicamente lo
+        que Nación eligió (issue #2592).
+
+        Devuelve ``(motivo, comentarios, None)`` o ``("", [], JsonResponse)``
+        cuando la selección es inválida o no hay nada que comunicar."""
         texto_libre = request.POST.get("texto_libre")
         if texto_libre is None:
             # La UI previa al issue #2318 manda el motivo en `motivo`.
             texto_libre = request.POST.get("motivo") or ""
         try:
-            return ComentariosTecnicosService.componer_motivo(leg, texto_libre), None
-        except ValidationError as exc:
-            return "", JsonResponse(
-                {"success": False, "error": "; ".join(exc.messages)}, status=400
+            comentarios = ComentariosTecnicosService.resolver_seleccion(
+                leg, request.POST.getlist("observaciones_ids")
             )
+            motivo = ComentariosTecnicosService.componer_motivo(
+                comentarios, texto_libre
+            )
+        except ValidationError as exc:
+            return (
+                "",
+                [],
+                JsonResponse(
+                    {"success": False, "error": "; ".join(exc.messages)}, status=400
+                ),
+            )
+        return motivo, comentarios, None
 
-    def _rechazar(self, user, leg, motivo):
-        """Rechaza el legajo, registra la auditoría y publica las observaciones."""
+    def _rechazar(self, user, leg, motivo, comentarios):
+        """Rechaza el legajo, registra la auditoría y publica las observaciones
+        elegidas como motivo del rechazo."""
         estado_anterior = leg.revision_tecnico
         leg.revision_tecnico = "RECHAZADO"
         # Marcar RENAPER como rechazado también
@@ -2112,7 +2167,9 @@ class RevisarLegajoView(View):
                 motivo=motivo,
             )
 
-            publicados = ComentariosTecnicosService.publicar(leg, usuario=user)
+            publicados = ComentariosTecnicosService.publicar(
+                leg, comentarios=comentarios, usuario=user
+            )
 
         return JsonResponse(
             {
@@ -2123,15 +2180,31 @@ class RevisarLegajoView(View):
             }
         )
 
-    def _subsanar(self, request, user, leg, motivo):
-        """Solicita la subsanación: estado, observaciones y publicación."""
+    def _subsanar(  # pylint: disable=too-many-arguments
+        self, request, user, leg, motivo, comentarios
+    ):
+        """Solicita la subsanación: estado, observaciones, documentación y
+        publicación. `comentarios` son los comentarios técnicos elegidos para
+        esta instancia."""
         tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
 
-        # Las observaciones salen de los comentarios técnicos del legajo. Si
-        # todavía no tiene ninguno (legajos previos al issue #2318), se cae al
-        # parseo del POST para no romper el flujo anterior.
+        # Documentación complementaria de Nación (issue #2523): opcional, y se
+        # valida antes de tocar el estado del legajo para no dejar la
+        # subsanación hecha a medias por un archivo inválido.
+        try:
+            complementaria = validar_archivos_complementarios(
+                request.FILES.getlist("documentacion_complementaria")
+            )
+        except ValidationError as exc:
+            return JsonResponse(
+                {"success": False, "error": "; ".join(exc.messages)}, status=400
+            )
+
+        # Las observaciones salen de los comentarios técnicos elegidos. Si no se
+        # eligió ninguno (solo texto libre, o legajos previos al issue #2318),
+        # se cae al parseo del POST para no romper el flujo anterior.
         observaciones = _observaciones_desde_comentarios_tecnicos(
-            leg
+            comentarios
         ) or _parse_observaciones_subsanacion(request, motivo)
 
         estado_anterior = leg.revision_tecnico
@@ -2186,7 +2259,13 @@ class RevisarLegajoView(View):
                 ]
             )
 
-            publicados = ComentariosTecnicosService.publicar(leg, usuario=user)
+            adjuntos = SubsanacionService.adjuntar_documentacion_complementaria(
+                subsanacion, complementaria, usuario=user
+            )
+
+            publicados = ComentariosTecnicosService.publicar(
+                leg, comentarios=comentarios, usuario=user
+            )
 
         return JsonResponse(
             {
@@ -2195,6 +2274,7 @@ class RevisarLegajoView(View):
                 "cupo_liberado": True,
                 "subsanacion_id": subsanacion.pk,
                 "observaciones": len(observaciones),
+                "documentacion_complementaria": len(adjuntos),
                 "comentarios_publicados": publicados,
             }
         )
@@ -2376,8 +2456,9 @@ class RevisarLegajoView(View):
         # El motivo se compone antes de tocar el cupo y el estado: si no hay
         # nada que comunicar, el legajo tiene que quedar intacto.
         motivo = ""
+        comentarios = []
         if accion in ("RECHAZAR", "SUBSANAR"):
-            motivo, error = self._componer_motivo(request, leg)
+            motivo, comentarios, error = self._componer_motivo(request, leg)
             if error:
                 return error
 
@@ -2429,7 +2510,7 @@ class RevisarLegajoView(View):
             )
 
         if accion == "RECHAZAR":
-            return self._rechazar(user, leg, motivo)
+            return self._rechazar(user, leg, motivo, comentarios)
 
         # ELIMINAR - Solo coordinadores y admin (técnicos no eliminan)
         if accion == "ELIMINAR":
@@ -2447,7 +2528,7 @@ class RevisarLegajoView(View):
             return self._eliminar_legajo(request, user, leg)
 
         # SUBSANAR
-        return self._subsanar(request, user, leg, motivo)
+        return self._subsanar(request, user, leg, motivo, comentarios)
 
 
 ESTADOS_EVALUACION_FINAL = {"APROBADO", "RECHAZADO", "SUBSANADO"}

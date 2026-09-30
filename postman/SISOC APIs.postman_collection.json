@@ -13040,6 +13040,64 @@
               ]
             },
             {
+              "name": "PAV web",
+              "description": "Registros PAV del data warehouse (`DW_sisoc.FCT_PAV` con la descripción del curso de `DIM_PAV_Cursos`), consultados por DNI. Solo lectura.",
+              "item": [
+                {
+                  "name": "Listar registros PAV por documento",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Api-Key {{apiKey}}",
+                        "type": "text",
+                        "description": "API key VAT. En los endpoints web también puede reemplazarse por Token <token>."
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}{{apiPrefix}}/vat/web/pav/?documento={{documento}}",
+                      "host": [
+                        "{{baseUrl}}{{apiPrefix}}"
+                      ],
+                      "path": [
+                        "vat",
+                        "web",
+                        "pav",
+                        ""
+                      ],
+                      "query": [
+                        {
+                          "key": "documento",
+                          "value": "{{documento}}",
+                          "description": "DNI numérico obligatorio."
+                        },
+                        {
+                          "key": "page",
+                          "value": "1",
+                          "description": "Página de resultados (10 por página).",
+                          "disabled": true
+                        }
+                      ]
+                    },
+                    "description": "Devuelve paginados (`count`, `next`, `previous`, `results`) los registros de FCT_PAV del DNI, ordenados por `fecha_inscripcion` descendente, con `pav_curso_desc`. Documento faltante o no numérico: 400. Falla o demora de más de 5 s del data warehouse: 500."
+                  },
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "pm.test('Status code 200', function () { pm.response.to.have.status(200); });"
+                        ]
+                      }
+                    }
+                  ],
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "Inscripciones web",
               "description": "Consulta, prevalidación y alta pública de inscripciones. Acepta Api-Key o token; la colección usa Api-Key por defecto.",
               "item": [

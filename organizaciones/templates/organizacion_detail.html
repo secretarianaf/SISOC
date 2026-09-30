@@ -323,7 +323,6 @@
                     </p>
                 </div>
                 <div class="btn-group">
-                    <a href="{% url 'organizaciones' %}" class="btn btn-outline-light">Volver</a>
                     {% if perms.auditlog.view_logentry %}
                         <a href="{% url 'audittrail:log_instance' 'organizaciones' 'organizacion' organizacion.pk %}"
                            class="btn btn-outline-light">Historial</a>
@@ -409,6 +408,16 @@
                                         <div class="value d-flex flex-wrap justify-content-end gap-1">
                                             {% for proyecto in proyectos_organizacion %}
                                                 <span class="badge rounded-pill bg-primary px-3 py-2">{{ proyecto }}</span>
+                                            {% empty %}
+                                                <span>-</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Territorial Asignado Abordaje Comunitario:</strong>
+                                        <div class="value d-flex flex-wrap justify-content-end gap-1">
+                                            {% for territorial in territoriales_organizacion %}
+                                                <span class="badge rounded-pill bg-primary px-3 py-2">{{ territorial }}</span>
                                             {% empty %}
                                                 <span>-</span>
                                             {% endfor %}
@@ -988,7 +997,7 @@
                                                 <th>Conv.</th>
                                                 <th>N° de Rend.</th>
                                                 <th>Período</th>
-                                                <th>Monto rendido</th>
+                                                <th>Monto auditado</th>
                                                 <th>Validación Territorial</th>
                                                 <th>Revisión para Carga</th>
                                                 <th>Cargada para Auditoría</th>

@@ -98,6 +98,7 @@ jobs:
                       exit 1
                   fi
                   wait_for "healthcheck de QA" 30 bash "$APP_ROOT/scripts/infra/healthcheck_qa.sh"
+                  wait_for "Front v2 VPSL de QA" 30 docker compose -f "$APP_ROOT/docker-compose.deploy.yml" --project-directory "$APP_ROOT" exec -T front_vpsl wget -q -O /dev/null http://127.0.0.1:8080/v2/vpsl/
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
                   {
@@ -189,6 +190,7 @@ jobs:
                       exit 1
                   fi
                   wait_for "healthcheck de HML" 30 bash "$APP_ROOT/scripts/infra/healthcheck_hml.sh"
+                  wait_for "Front v2 VPSL de HML" 30 docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" exec -T front_vpsl wget -q -O /dev/null http://127.0.0.1:8080/v2/vpsl/
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
                   {
@@ -279,6 +281,10 @@ jobs:
                       exit 1
                   fi
                   if ! wait_for "healthcheck de produccion" 30 bash "$APP_ROOT/scripts/infra/healthcheck_prod.sh"; then
+                      show_django_diagnostics
+                      exit 1
+                  fi
+                  if ! wait_for "Front v2 VPSL de produccion" 30 docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" exec -T front_vpsl wget -q -O /dev/null http://127.0.0.1:8080/v2/vpsl/; then
                       show_django_diagnostics
                       exit 1
                   fi

@@ -56,7 +56,7 @@
 - `backends/celiaquia/celiaquia/management/commands/test_celiacos_real.py`
 - `backends/celiaquia/celiaquia/migrations/0001_squashed_0012.py`
 - `backends/celiaquia/celiaquia/migrations/0002_subsanacion_models.py`
-- ... y 492 archivo(s) adicional(es) relacionados.
+- ... y 494 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 
 from core.models import Localidad, Municipio, Provincia
-from organizaciones.filter_config import (
+from gestion_organizaciones.filter_config import (
     FIELD_MAP,
     FIELD_TYPES,
     ORGANIZACION_ADVANCED_FILTER,
@@ -127,7 +127,7 @@ def test_filtros_de_fecha_comparan_por_dia_sobre_datetime():
 @pytest.mark.django_db
 def test_export_no_infla_el_conteo_al_filtrar_por_relacion(rf):
     from comedores.models import Comedor
-    from organizaciones.views_export import OrganizacionExportView
+    from gestion_organizaciones.views_export import OrganizacionExportView
 
     organizacion = Organizacion.objects.create(nombre="Org con comedores")
     Comedor.objects.create(nombre="Comedor A", organizacion=organizacion)

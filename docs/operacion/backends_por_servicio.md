@@ -9,9 +9,20 @@ Guía operativa del ADR `docs/registro/decisiones/2026-09-30-monorepo-kernel-bac
 | `pas` | pas (más Celery: `celery_pas_worker`, `celery_beat`) | `/pas/`, `/media/pas/` |
 | `vat` | VAT | `/vat/`, `/api/vat/`, `/api/schema/VAT/`, `/api/docs/VAT/`, `/api/redoc/VAT/` |
 | `celiaquia` | celiaquia | `/celiaquia/`, `/reporter-provincias/` |
+| `cdi` | centrodeinfancia, ticketera | `/centrodeinfancia/`, `/simepi/`, `/api/ticketera/` |
+| `cdf` | centrodefamilia | `/centrodefamilia/`, `/api/centrodefamilia/` |
 
-Siguen en el core, pendientes de una ola próxima: CDI y CDF, que necesitan
-antes que `organizaciones` e `intervenciones` pasen al kernel.
+**Datos maestros en el kernel.** `organizaciones` (Organizacion, roles,
+avales) y `catalogo_intervenciones` (tipos, subtipos, destinatarios y
+contactos) viven en `kernel/`, porque los usan CDI, CDF y el core. Las
+pantallas de organizaciones y el modelo `Firmante`, que se relaciona con
+comedores, quedan en el core (`gestion_organizaciones`). Las tablas no
+cambiaron de nombre.
+
+**URLs viejas de CDF.** `/centros/`, `/actividades/`, `/ajax/actividades/`,
+`/informecabal/` y `/beneficiarios/` redirigen a `/centrodefamilia/...`
+(`core.legacy_redirects`). Esas redirecciones existen solo por compatibilidad
+con enlaces guardados: no hay que usarlas en código nuevo.
 
 ## Topología
 
@@ -58,12 +69,15 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
   kernel (`iam.roles_vat`), así que se aplica en todos lados.
 - **Filtros favoritos.** El endpoint lo sirve el core. Si la sección pertenece
   a un backend (`favorite_sections`), el core reenvía el pedido a ese backend.
-- **Ciudadano 360.** Las secciones de VAT y Celiaquía son contribuciones
+- **Ciudadano 360.** Las secciones de VAT, Celiaquía y CDF (sección y monto) son contribuciones
   renderizadas (`ciudadanos.detail_contributions`): el template de la sección
   vive en el vertical. Si el vertical corre en otro backend
   (`ciudadano_contributions`), el core pide el fragmento ya renderizado con la
   sesión del usuario. Si no responde, la sección queda vacía y el resto del
   detalle se muestra igual.
+- **Métricas del dashboard de CDF.** Si `centrodefamilia` no está instalada en
+  el core, el dashboard las pide a `/centrodefamilia/metricas-dashboard/`. Si
+  el backend no responde, muestra las métricas en cero.
 - **Celery** solo lo usa PAS: el worker y el beat corren con la imagen y el
   settings del backend de PAS. El deploy selectivo de PAS los recrea
   (`extra_services`).

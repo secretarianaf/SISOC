@@ -9,6 +9,7 @@ from admisiones import audit_signals as admisiones_signals
 from audittrail import api as audittrail_api
 from audittrail import signals as audittrail_signals
 from comedores import audit_signals as comedores_signals
+from gestion_organizaciones import audit_signals as firmante_signals
 from intervenciones import audit_signals as intervenciones_signals
 from organizaciones import audit_signals as organizaciones_signals
 from relevamientos import audit_signals as relevamientos_signals
@@ -145,6 +146,7 @@ def test_cache_and_log_imagen_comedor_change_and_delete(mocker):
 
 def test_firmante_and_aval_changes(mocker):
     log_org = mocker.patch("organizaciones.audit_signals.registrar_evento")
+    mocker.patch("gestion_organizaciones.audit_signals.registrar_evento", log_org)
 
     # Firmante created
     firmante = SimpleNamespace(
@@ -155,7 +157,7 @@ def test_firmante_and_aval_changes(mocker):
         rol_id=1,
         rol="R",
     )
-    organizaciones_signals.registrar_cambios_firmante(None, firmante, created=True)
+    firmante_signals.registrar_cambios_firmante(None, firmante, created=True)
     assert log_org.called
 
     # Firmante updated
@@ -169,7 +171,7 @@ def test_firmante_and_aval_changes(mocker):
         rol_id=2,
         rol="R2",
     )
-    organizaciones_signals.registrar_cambios_firmante(
+    firmante_signals.registrar_cambios_firmante(
         None,
         firmante2,
         created=False,
@@ -202,7 +204,7 @@ def test_cache_firmante_and_aval_state_does_not_exist_paths():
         DoesNotExist=Exception,
     )
     inst_f = SimpleNamespace(pk=1)
-    organizaciones_signals.cache_firmante_state(sender_f, inst_f)
+    firmante_signals.cache_firmante_state(sender_f, inst_f)
     assert getattr(inst_f, organizaciones_signals.PREVIOUS_STATE_ATTR, None) is None
 
     sender_a = SimpleNamespace(
@@ -220,10 +222,11 @@ def test_cache_firmante_and_aval_state_does_not_exist_paths():
 
 def test_firmante_and_aval_delete_signals_without_duplicates(mocker):
     log_org = mocker.patch("organizaciones.audit_signals.registrar_evento")
+    mocker.patch("gestion_organizaciones.audit_signals.registrar_evento", log_org)
 
     firmante = SimpleNamespace(organizacion="org-f", __str__=lambda self: "Firmante X")
-    organizaciones_signals.registrar_baja_firmante(None, firmante)
-    organizaciones_signals.registrar_baja_firmante(None, firmante)
+    firmante_signals.registrar_baja_firmante(None, firmante)
+    firmante_signals.registrar_baja_firmante(None, firmante)
     assert log_org.call_count == 1
     assert log_org.call_args.args[1] == {"Firmante": [str(firmante), "Eliminado"]}
     assert log_org.call_args.args[2] == organizaciones_signals.ACTION_DELETE

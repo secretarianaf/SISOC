@@ -210,7 +210,12 @@ class CiudadanosDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
     context_object_name = "ciudadano"
     permission_required = "ciudadanos.view_ciudadano"
     raise_exception = True
-    CONTRIBUCIONES_RENDERIZADAS = ("celiaquia", "vat")
+    CONTRIBUCIONES_RENDERIZADAS = (
+        "celiaquia",
+        "vat",
+        "centrodefamilia",
+        "centrodefamilia_monto",
+    )
     MESES_NOMBRES = [
         "",
         "Ene",
@@ -238,7 +243,6 @@ class CiudadanosDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
         )
         ctx.update(self.get_programas_context(ciudadano))
         ctx.update(self.get_historial_context(ciudadano))
-        ctx.update(self.get_cdf_context(ciudadano))
         ctx.update(self.get_comedor_context(ciudadano))
         ctx.update(self.get_flags_sociales_context(ciudadano))
         # Secciones de verticales que pueden correr en otro backend: llegan
@@ -296,14 +300,6 @@ class CiudadanosDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
             ],
             "historial_comedor": [float(h.monto_comedor) for h in historial],
         }
-
-    def get_cdf_context(self, ciudadano):
-        return obtener_contexto_contribucion(
-            "centrodefamilia",
-            ciudadano,
-            logger,
-            lambda: {"participaciones_cdf": [], "costo_total_cdf": 0},
-        )
 
     def get_comedor_context(self, ciudadano):
         return obtener_contexto_contribucion(

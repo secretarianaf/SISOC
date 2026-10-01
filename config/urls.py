@@ -8,6 +8,7 @@ from drf_spectacular.views import (
 )
 from config.urls_dev import dev_urlpatterns
 from core.backend_proxy import backend_proxy_urlpatterns
+from core.legacy_redirects import redirecciones_legacy
 from core.url_registry import stub_urlpatterns
 from core.v2_frontend import frontend_v2
 from usuarios.views import (
@@ -21,6 +22,18 @@ from usuarios.views import (
 urlpatterns = [
     # Verticales que corren en su propio backend (config/backends.json).
     *backend_proxy_urlpatterns(),
+    # SOLO compatibilidad: URLs de Centro de Familia anteriores a su prefijo
+    # propio. El código nuevo usa {% url %}/reverse() (ver core.legacy_redirects).
+    *redirecciones_legacy(
+        "centrodefamilia/",
+        [
+            "centros/",
+            "actividades/",
+            "ajax/actividades/",
+            "informecabal/",
+            "beneficiarios/",
+        ],
+    ),
     re_path(
         r"^v2/(?P<module>[a-z0-9_-]+)(?:/(?P<asset_path>.*))?$",
         frontend_v2,
@@ -50,14 +63,12 @@ urlpatterns = [
     path("", include("core.urls")),
     path("", include("dashboard.urls")),
     path("", include("comedores.urls")),
-    path("", include("organizaciones.urls")),
+    path("", include("gestion_organizaciones.urls")),
     path("", include("duplas.urls")),
     path("", include("audittrail.urls")),
     path("", include("ciudadanos.urls")),
     path("", include("admisiones.urls")),
-    path("", include("centrodefamilia.urls")),
     path("", include("healthcheck.urls")),
-    path("", include("centrodeinfancia.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
     path("expedientespagos/", include("expedientespagos.urls")),
     path("", include("rendicioncuentasfinal.urls")),
@@ -68,11 +79,9 @@ urlpatterns = [
     path("api/users/", include("usuarios.api_urls")),
     path("api/comedores/", include("comedores.api_urls")),
     path("api/territorial/", include("comedores.api_urls_territorial")),
-    path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
     path("api/comunicados/", include("comunicados.api_urls")),
     path("api/renaper/", include("core.api_urls")),
     path("api/pwa/", include("pwa.api_urls")),
-    path("api/ticketera/", include("ticketera.api_urls")),
     path("", include("importarexpediente.urls")),
     path("", include("comunicados.urls")),
     path("ocr/", include("ocr.urls")),

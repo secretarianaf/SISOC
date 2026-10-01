@@ -89,5 +89,44 @@
     "ciudadano_contributions": [
       "celiaquia"
     ]
+  },
+  "cdi": {
+    "apps": [
+      "centrodeinfancia",
+      "ticketera"
+    ],
+    "url_prefixes": [
+      "centrodeinfancia/",
+      "simepi/",
+      "api/ticketera/"
+    ],
+    "urlconf": "cdi_runtime.urls",
+    "origin_env": "BACKEND_CDI_ORIGIN",
+    "default_origin": "http://backend_cdi:8000",
+    "service": "backend_cdi",
+    "migrate_service": "migrator"
+  },
+  "cdf": {
+    "apps": [
+      "centrodefamilia"
+    ],
+    "url_prefixes": [
+      "centrodefamilia/",
+      "api/centrodefamilia/"
+    ],
+    "urlconf": "cdf_runtime.urls",
+    "origin_env": "BACKEND_CDF_ORIGIN",
+    "default_origin": "http://backend_cdf:8000",
+    "service": "backend_cdf",
+    "migrate_service": "migrator",
+    "favorite_sections": [
+      "centrodefamilia_centros",
+      "centrodefamilia_beneficiarios",
+      "centrodefamilia_responsables"
+    ],
+    "ciudadano_contributions": [
+      "centrodefamilia",
+      "centrodefamilia_monto"
+    ]
   }
 }

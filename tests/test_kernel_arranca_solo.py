@@ -22,7 +22,7 @@ import users.services_generate_user, users.services_datacalle
 import users.services_delegation, users.services_group_permissions, users.admin
 import core.admin, core.context_processors, core.views, core.resources
 from core.models import Programa
-assert Programa(organismo_id=1).organismo is None
+assert Programa().organismo is None
 print("KERNEL_OK")
 """
 

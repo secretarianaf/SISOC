@@ -75,6 +75,8 @@ ZONAS = [
             "historial",
             "healthcheck",
             "sentry",
+            "organizaciones",
+            "catalogo_intervenciones",
         ],
     },
     {
@@ -91,7 +93,7 @@ ZONAS = [
             "comedores",
             "admisiones",
             "relevamientos",
-            "organizaciones",
+            "gestion_organizaciones",
             "duplas",
             "intervenciones",
             "acompanamientos",

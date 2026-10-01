@@ -737,19 +737,18 @@ def test_grupofamiliar_delete_get_success_url_uses_safe_redirect(mocker):
 def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
     ciudadano = SimpleNamespace(pk=9)
 
-    # CDF import error
-    orig_import = __import__
+    # CDF es una contribución renderizada del vertical (centrodefamilia.ciudadano_detail).
+    from centrodefamilia import (  # pylint: disable=import-outside-toplevel
+        ciudadano_detail as cdf_detail,
+    )
 
-    def fake_import(name, *args, **kwargs):
-        if name == "centrodefamilia.models":
-            raise ImportError("no cdf")
-        return orig_import(name, *args, **kwargs)
-
-    mocker.patch("builtins.__import__", side_effect=fake_import)
-    cdf_ctx = module.CiudadanosDetailView().get_cdf_context(ciudadano)
+    mocker.patch(
+        "centrodefamilia.models.ParticipanteActividad.objects.filter",
+        side_effect=Exception("boom"),
+    )
+    cdf_ctx = cdf_detail.obtener_contexto(ciudadano, Mock())
     assert cdf_ctx == {"participaciones_cdf": [], "costo_total_cdf": 0}
 
-    mocker.patch("builtins.__import__", side_effect=orig_import)
     part_qs = _ExpedientesList([SimpleNamespace(id=1)])
     mocker.patch(
         "centrodefamilia.models.ParticipanteActividad.objects.filter",
@@ -762,8 +761,10 @@ def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
             SimpleNamespace(aggregate=lambda **_k: {"total": 1200}),
         ],
     )
-    cdf_ok = module.CiudadanosDetailView().get_cdf_context(ciudadano)
+    cdf_ok = cdf_detail.obtener_contexto(ciudadano, Mock())
     assert cdf_ok["costo_total_cdf"] == 1200
+
+    orig_import = __import__
 
     # Comedor import error
     def fake_import2(name, *args, **kwargs):

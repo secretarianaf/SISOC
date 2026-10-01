@@ -61,7 +61,8 @@ from admisiones.models.admisiones import (
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
 from duplas.models import Dupla
-from organizaciones.models import Aval, Firmante
+from organizaciones.models import Aval
+from gestion_organizaciones.models import Firmante
 
 logger = logging.getLogger("django")
 

@@ -22,7 +22,8 @@ from acompanamientos.models.acompanamiento import (
     Prestacion,
 )
 from duplas.models import Dupla
-from intervenciones.models.intervenciones import Intervencion, SubIntervencion
+from intervenciones.models.intervenciones import Intervencion
+from catalogo_intervenciones.models import SubIntervencion
 from comedores.models import Comedor
 from iam.services import user_has_any_permission_codes
 from users.services import UserPermissionService

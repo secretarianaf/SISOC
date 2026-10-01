@@ -29,7 +29,12 @@ from comedores.services.comedor_service import ComedorService
 from comedores.services.validacion_service import ValidacionService
 from comedores.views import ComedorDetailView, NominaImportarView
 from core.models import Sexo
-from organizaciones.models import Aval, Firmante, Organizacion, RolFirmante
+from organizaciones.models import (
+    Aval,
+    Organizacion,
+    RolFirmante,
+)
+from gestion_organizaciones.models import Firmante
 from relevamientos.models import Relevamiento
 
 

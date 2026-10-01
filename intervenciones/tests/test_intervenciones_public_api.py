@@ -1,7 +1,10 @@
 import pytest
 
-from intervenciones.api import obtener_configuracion_formulario_cdi
-from intervenciones.models.intervenciones import SubIntervencion, TipoIntervencion
+from catalogo_intervenciones.api import obtener_configuracion_formulario_cdi
+from catalogo_intervenciones.models import (
+    SubIntervencion,
+    TipoIntervencion,
+)
 
 
 @pytest.mark.django_db

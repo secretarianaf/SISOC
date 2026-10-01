@@ -16,7 +16,7 @@ eso ningún backend podía arrancar sin el cluster de Comedores.
   - Mantienen las tablas `users_*` (`Meta.db_table`) y los nombres de
     índices, constraints y tablas M2M.
   - Migraciones solo de estado: `pwa.0025_accesos_pwa_desde_users` y
-    `users.0057_accesos_pwa_a_pwa`. No hay DDL ni copia de datos.
+    `users.0058_accesos_pwa_a_pwa`. No hay DDL ni copia de datos.
   - Los content types `users.*` de esos modelos pasan a `pwa`, así que los
     permisos de grupos y el historial de auditoría apuntan al mismo
     registro. Si ya existieran en ambas apps, la migración falla a propósito,

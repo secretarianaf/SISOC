@@ -35,7 +35,7 @@ services:
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
     restart: "no"
     healthcheck:
-      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health/', timeout=2).close()"]
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen, Request; r = urlopen(Request('http://127.0.0.1:8000/health/', headers={'X-Forwarded-Proto': 'https'}), timeout=2); exit(0 if r.status == 200 else 1)"]
       interval: 10s
       timeout: 3s
       # En CI el primer arranque (migrate + load_fixtures sobre MySQL vacio)

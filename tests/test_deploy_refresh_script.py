@@ -63,7 +63,13 @@ case "$1 ${2:-} ${3:-}" in
   "branch --show-current ") cat "$repo/.branch" ;;
   "remote get-url origin") cat "$repo/.origin" ;;
   "remote set-url origin") printf '%s\\n' "$4" > "$repo/.origin" ;;
-  "fetch origin --prune") exit 0 ;;
+  "fetch origin --prune")
+    if [[ "${FAKE_ROOT_FETCH_FAIL_ONCE:-0}" == "1" && ! -f "$repo/.fetch-failed-once" ]]; then
+      touch "$repo/.fetch-failed-once"
+      exit 128
+    fi
+    exit 0
+    ;;
   "fetch origin --no-tags") exit "${FAKE_FETCH_ERROR:-0}" ;;
   "rev-parse FETCH_HEAD^{commit} ") printf '%s\\n' aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ;;
   "merge-base --is-ancestor HEAD") exit 0 ;;
@@ -175,6 +181,25 @@ def test_mobile_fetch_fallido_bloquea_backend(tmp_path, monkeypatch):
     result = _run_deploy(tmp_path, checkout, dry_run=False)
     assert result.returncode != 0
     assert "docker compose" not in result.stdout
+
+
+def test_fetch_backend_reintenta_un_corte_transitorio_antes_de_desplegar(
+    tmp_path, monkeypatch
+):
+    checkout = _mobile_checkout(tmp_path, HTTPS_MOBILE_REMOTE)
+    monkeypatch.setenv("FAKE_ROOT_FETCH_FAIL_ONCE", "1")
+
+    result = _run_deploy(
+        tmp_path,
+        checkout,
+        dry_run=False,
+        expected_revision=EXPECTED_REVISION,
+        backend_only=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "git fetch fallo (1/3); reintentando" in result.stdout
+    assert result.stdout.count("fetch origin --prune") == 2
 
 
 def test_backend_only_no_inspecciona_mobile(tmp_path):

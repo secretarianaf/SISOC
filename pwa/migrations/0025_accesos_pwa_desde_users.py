@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("contenttypes", "0002_remove_content_type_name"),
-        ("users", "0056_issue_2444_roles_territoriales_pnud"),
+        ("users", "0057_merge_usuarios_secciones_y_roles_territoriales"),
         ("comedores", "0063_merge_subido_por_responsable_tarjeta"),
         ("duplas", "0001_squashed_0003"),
         ("organizaciones", "0022_issue_2445_territoriales_abordaje_comunitario"),

@@ -28,6 +28,14 @@ from users.services_datacalle import (
     es_solo_app,
     validar_alcance_coordinador,
 )
+from users.secciones_usuario import (
+    SECCION_ADMINISTRACION,
+    SECCION_DATACALLE,
+    SECCION_EQUIPOS_TECNICOS,
+    SECCION_MOBILE_COMEDORES,
+    SECCION_TERRITORIAL_COMEDOR,
+    secciones_habilitadas,
+)
 from users.services_delegation import effective_delegatable_groups_qs
 from users.services_bulk_credentials import get_bulk_credentials_send_type_choices
 from users.territorial_scope import (
@@ -113,22 +121,21 @@ PWA_SELECTION_FIELDS = (
 )
 
 
-CDI_ABM_RESTRICTED_GROUPS = (
-    UserGroups.SIMEPI_ADMINISTRADOR,
-    UserGroups.SIMEPI_EQUIPO_NACIONAL,
-    UserGroups.SIMEPI_EGP,
-    UserGroups.CDI_REFERENTE_CENTRO,
-)
-
-CDI_ABM_RESTRICTED_FIELDS = (
-    "es_representante_pwa",
-    *PWA_SELECTION_FIELDS,
-    "user_permissions",
-    "es_coordinador",
-    "duplas_asignadas",
-    "grupos_asignables",
-    "roles_asignables",
-)
+# Campos de cada sección del ABM habilitada por permiso (ver
+# ``users.secciones_usuario``). Sin el permiso de la sección, sus campos quedan
+# deshabilitados además de ocultos en el template: un POST construido a mano no
+# puede modificarlos y en edición Django conserva los valores actuales.
+CAMPOS_POR_SECCION = {
+    SECCION_MOBILE_COMEDORES: ("es_representante_pwa", *PWA_SELECTION_FIELDS),
+    SECCION_TERRITORIAL_COMEDOR: ("es_territorial_comedor", "provincias_territorial"),
+    SECCION_EQUIPOS_TECNICOS: ("es_coordinador", "duplas_asignadas"),
+    SECCION_DATACALLE: ("es_relevador_calle", "datacalle_rol", "provincias_datacalle"),
+    SECCION_ADMINISTRACION: (
+        "user_permissions",
+        "grupos_asignables",
+        "roles_asignables",
+    ),
+}
 
 
 def _validation_error_messages(error):
@@ -730,33 +737,22 @@ class DelegationScopeMixin:
             help_text="Permisos auth.role_* delegables a terceros.",
         )
 
-    def _apply_cdi_abm_restrictions(self):
-        """Restringe capacidades administrativas para los gestores CDI.
+    def _apply_section_restrictions(self):
+        """Habilita cada sección del ABM según los permisos del actor."""
+        self.secciones_habilitadas = secciones_habilitadas(self.actor)
+        habilitadas = self.secciones_habilitadas
+        self.can_manage_mobile_access = SECCION_MOBILE_COMEDORES in habilitadas
+        self.can_manage_territorial_comedor = SECCION_TERRITORIAL_COMEDOR in habilitadas
+        self.can_manage_technical_teams = SECCION_EQUIPOS_TECNICOS in habilitadas
+        self.can_manage_datacalle = SECCION_DATACALLE in habilitadas
+        self.can_manage_direct_permissions = SECCION_ADMINISTRACION in habilitadas
+        self.can_manage_delegation = SECCION_ADMINISTRACION in habilitadas
 
-        Los campos quedan deshabilitados, además de ocultos en el template, para
-        que un POST construido manualmente no pueda modificar configuraciones
-        ajenas al circuito CDI. En edición Django conserva sus valores iniciales.
-        """
-        actor_groups = (
-            set(
-                self.actor.groups.filter(
-                    name__in=CDI_ABM_RESTRICTED_GROUPS
-                ).values_list("name", flat=True)
-            )
-            if self.actor and not self.actor.is_superuser
-            else set()
-        )
-        self.is_cdi_abm_restricted = bool(actor_groups)
-        self.can_manage_mobile_access = not self.is_cdi_abm_restricted
-        self.can_manage_direct_permissions = not self.is_cdi_abm_restricted
-        self.can_manage_technical_teams = not self.is_cdi_abm_restricted
-        self.can_manage_delegation = not self.is_cdi_abm_restricted
-
-        if not self.is_cdi_abm_restricted:
-            return
-
-        for field_name in CDI_ABM_RESTRICTED_FIELDS:
-            self.fields[field_name].disabled = True
+        for clave, campos in CAMPOS_POR_SECCION.items():
+            if clave in habilitadas:
+                continue
+            for field_name in campos:
+                self.fields[field_name].disabled = True
 
     def _is_unrestricted_actor(self):
         return not self.actor or self.actor.is_superuser
@@ -1092,6 +1088,10 @@ class RelevadorCalleFormMixin:
         """
         actor = getattr(self, "actor", None)
         if actor is None or getattr(actor, "is_superuser", False):
+            return
+        if SECCION_DATACALLE not in secciones_habilitadas(actor):
+            # Sin la sección el campo queda deshabilitado con la provincia que
+            # el perfil ya tiene; fijarla al alcance del actor la pisaría.
             return
         provincia_ids = get_full_province_scope_ids(actor)
         if not provincia_ids:
@@ -1570,7 +1570,7 @@ class UserCreationForm(
         self.generated_password = None
         self.password_was_auto_generated = False
         self._setup_territorial_scope_fields()
-        self._apply_cdi_abm_restrictions()
+        self._apply_section_restrictions()
 
     def clean(self):
         cleaned = super().clean()
@@ -1837,7 +1837,7 @@ class CustomUserChangeForm(
             self.fields["duplas_asignadas"].initial = prof.duplas_asignadas.all()
             self.fields["rol"].initial = prof.rol
             self._init_delegation_fields(prof)
-        self._apply_cdi_abm_restrictions()
+        self._apply_section_restrictions()
 
     def clean(self):
         cleaned = super().clean()

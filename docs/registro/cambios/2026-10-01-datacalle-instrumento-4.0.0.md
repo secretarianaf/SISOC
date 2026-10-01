@@ -93,6 +93,20 @@ del cuestionario local, igual se resuelve su etiqueta, su catálogo y su marca
   único que ve distinto es la versión del endpoint de catálogos, y la app usa su
   copia embebida como respaldo.
 
+## Cómo se verificó
+
+Los tests nuevos están en `tests/test_datacalle_instrumento_4_0_0.py` (lectura del instrumento,
+sin base) y en `tests/test_datacalle_api.py` (conteo con casos de las dos versiones conviviendo).
+
+Las etiquetas que asertan esos tests **no son supuestas**: están tomadas de lo que devuelven los
+catálogos reales del contrato. `datacalle/services/instrumento.py` no importa Django a propósito, así
+que se puede ejercitar de punta a punta contra los JSON sin levantar el proyecto — que es como se
+corrigieron cuatro etiquetas que estaban mal adivinadas en el primer borrador de los tests.
+
+El pin de versión en `test_catalogos_sirven_el_instrumento_vigente` sube a `4.0.0`. Es el único
+mecanismo que hace fallar a CI cuando la copia local queda vieja; ya se omitió dos veces y por eso el
+endpoint llegó a servir una versión de hace un mes.
+
 ## Pendientes de decisión del área
 
 - **Permanencia en calle y motivo principal**: las series se cortan. Hoy no hay

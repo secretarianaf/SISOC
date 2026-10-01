@@ -290,7 +290,8 @@ jobs:
             - name: Verificar aislamiento y arranque
               run: |
                   set -euo pipefail
-                  docker run --rm $CHECK_ENV sisoc-ci/core sh -c 'test ! -e /sisoc/backends'
+                  # El core trae solo su cluster (backends/sisoc_core), ningún vertical.
+                  docker run --rm $CHECK_ENV sisoc-ci/core sh -c 'test "$(ls /sisoc/backends)" = sisoc_core'
                   docker run --rm $CHECK_ENV sisoc-ci/core python manage.py check
                   python3 - <<'PY'
                   import json, subprocess

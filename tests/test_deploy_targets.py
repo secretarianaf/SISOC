@@ -40,7 +40,7 @@ _spec.loader.exec_module(deploy_targets)
         (["requirements/base.txt"], ("completo", [], True)),
         (["docker-compose.deploy.yml"], ("completo", [], True)),
         (["CHANGELOG.md"], ("completo", [], True)),
-        (["comedores/views.py"], ("completo", [], True)),
+        (["backends/sisoc_core/comedores/views.py"], ("completo", [], True)),
         # Documentación, tests y CI no reinician nada.
         (["docs/registro/prs/PR-1.md", "README.md"], ("ninguno", [], False)),
         (

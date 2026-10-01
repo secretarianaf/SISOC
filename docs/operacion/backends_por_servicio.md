@@ -12,6 +12,13 @@ Guía operativa del ADR `docs/registro/decisiones/2026-09-30-monorepo-kernel-bac
 | `cdi` | centrodeinfancia, ticketera | `/centrodeinfancia/`, `/simepi/`, `/api/ticketera/` |
 | `cdf` | centrodefamilia | `/centrodefamilia/`, `/api/centrodefamilia/` |
 
+**El core** corre las apps de `backends/sisoc_core/`: el cluster de Comedores
+(comedores, admisiones, relevamientos, intervenciones, rendiciones, etc.) y
+los servicios propios del core (dashboard, comunicados, encuestas, OCR, PWA,
+usuarios). No es un backend detrás del proxy: es el proceso que recibe el
+tráfico. Por eso no figura en `config/backends.json`, y un cambio en
+`backends/sisoc_core/**` hace un deploy completo.
+
 **Datos maestros en el kernel.** `organizaciones` (Organizacion, roles,
 avales) y `catalogo_intervenciones` (tipos, subtipos, destinatarios y
 contactos) viven en `kernel/`, porque los usan CDI, CDF y el core. Las

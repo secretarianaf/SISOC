@@ -20,7 +20,7 @@ from rendicioncuentasmensual.models import RendicionCuentaMensual
 class CuilDuplicadoTemplateTests(TestCase):
     def test_verificacion_inicial_usa_secuencia_para_evitar_respuestas_viejas(self):
         template = Path(
-            "gestion_organizaciones/templates/organizacion_form.html"
+            "backends/sisoc_core/gestion_organizaciones/templates/organizacion_form.html"
         ).read_text(encoding="utf-8")
 
         self.assertIn("var initialSeq = requestSeq;", template)
@@ -29,9 +29,9 @@ class CuilDuplicadoTemplateTests(TestCase):
 
 class ProyectosOrganizacionAjaxTests(TestCase):
     def test_formulario_escucha_cambios_de_select2_con_jquery(self):
-        template = Path("comedores/templates/comedor/comedor_form.html").read_text(
-            encoding="utf-8"
-        )
+        template = Path(
+            "backends/sisoc_core/comedores/templates/comedor/comedor_form.html"
+        ).read_text(encoding="utf-8")
 
         self.assertIn(
             '$(organizacionInput).on("change", actualizarProyectos);', template

@@ -313,35 +313,35 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | --- | --- | --- | --- |
 | `kernel/users/` | autenticacion, perfiles, grupos, login/reset, import y credenciales masivas | `models.py`, `views.py`, `api_views.py`, `management/commands/`, `services_*` | Alto |
 | `kernel/core/` | utilidades transversales, helpers, soft delete, filtros/paginacion, comandos compartidos | `views.py`, `services/`, `management/commands/`, `utils.py` | Alto |
-| `dashboard/` | tableros internos | `urls.py`, `views.py`, templates | Medio |
-| `comedores/` | dominio fuerte: comedores, nomina, estados, sync GESTIONAR y API territorial PWA | `models.py`, `api_views.py`, `api_views_territorial.py`, `tasks.py`, `signals.py`, `services/`, `urls.py` | Alto |
-| `relevamientos/` | relevamientos y sync externo asociado | `models.py`, `tasks.py`, `views.py`, commands | Alto |
+| `backends/sisoc_core/dashboard/` | tableros internos | `urls.py`, `views.py`, templates | Medio |
+| `backends/sisoc_core/comedores/` | dominio fuerte: comedores, nomina, estados, sync GESTIONAR y API territorial PWA | `models.py`, `api_views.py`, `api_views_territorial.py`, `tasks.py`, `signals.py`, `services/`, `urls.py` | Alto |
+| `backends/sisoc_core/relevamientos/` | relevamientos y sync externo asociado | `models.py`, `tasks.py`, `views.py`, commands | Alto |
 | `kernel/ciudadanos/` | gestion de ciudadanos/beneficiarios | `models.py`, `views.py`, `api_views.py`, forms | Medio |
 | `backends/cdf/centrodefamilia/` | backend propio (`/centrodefamilia/`); beneficiarios/centros/familia + API | `models.py`, `views.py`, `api_views.py`, `services/` | Alto |
 | `celiaquia/` | modulo especializado con bastante logica en services y vistas; expone un contrato Python acotado | `api.py`, `models.py`, `views/`, `services/`, `permissions.py`, tests | Alto |
-| `admisiones/` | flujo de admision, legales/tecnicos, generacion DOCX/PDF y correcciones operativas auditadas | `views/web_views.py`, `services/`, `forms/`, `management/commands/`, templates `docx/` y `pdf/` | Alto |
+| `backends/sisoc_core/admisiones/` | flujo de admision, legales/tecnicos, generacion DOCX/PDF y correcciones operativas auditadas | `views/web_views.py`, `services/`, `forms/`, `management/commands/`, templates `docx/` y `pdf/` | Alto |
 | `VAT/` | modulo amplio propio con views, API, services y reportes | `models.py`, `views/`, `api_views.py`, `services/`, `serializers.py`; docs `docs/vat/` | Alto |
-| `pwa/` | endpoints backend para experiencia PWA | `api_urls.py`, `api_views.py`, `services/`, `models.py` | Medio |
+| `backends/sisoc_core/pwa/` | endpoints backend para experiencia PWA | `api_urls.py`, `api_views.py`, `services/`, `models.py` | Medio |
 | `backends/cdi/ticketera/` | corre en el backend de CDI; API server-to-server con kill-switch | `api_urls.py`, `api_views.py`, `api_serializers.py` | Medio |
-| `comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
-| `kernel/organizaciones/` + `gestion_organizaciones/` | datos maestros en el kernel; pantallas, forms y `Firmante` en el core (`gestion_organizaciones`). Entidades/organizaciones vinculadas; edición modal de proyectos y detalle con rendiciones por relación directa o legado | `models.py`, `forms.py`, `views.py`, templates de organización | Alto |
+| `backends/sisoc_core/comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
+| `kernel/organizaciones/` + `backends/sisoc_core/gestion_organizaciones/` | datos maestros en el kernel; pantallas, forms y `Firmante` en el core (`gestion_organizaciones`). Entidades/organizaciones vinculadas; edición modal de proyectos y detalle con rendiciones por relación directa o legado | `models.py`, `forms.py`, `views.py`, templates de organización | Alto |
 | `backends/cdi/centrodeinfancia/` | backend propio (`/centrodeinfancia/`, `/simepi/`); dominio de centros de infancia, personal, asistencia y descargables provinciales | `models.py`, `services.py`, `services_nomina_ninos_pdf.py`, `views.py`, `tests/`, urls | Alto |
-| `acompanamientos/` | seguimiento/acompanamientos | `views.py`, `acompanamiento_service.py`, `services/filter_config.py`, templates | Medio |
-| `expedientespagos/` | expedientes de pagos | `models.py`, `views.py`, urls | Bajo |
-| `rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
-| `rendicioncuentasmensual/` | rendición mensual, revisión Territorial/Auditoría, subsanaciones y datos expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, templates, urls | Alto |
-| `duplas/` | equipos tecnicos/duplas | `models.py`, `views.py` | Bajo-Medio |
+| `backends/sisoc_core/acompanamientos/` | seguimiento/acompanamientos | `views.py`, `acompanamiento_service.py`, `services/filter_config.py`, templates | Medio |
+| `backends/sisoc_core/expedientespagos/` | expedientes de pagos | `models.py`, `views.py`, urls | Bajo |
+| `backends/sisoc_core/rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
+| `backends/sisoc_core/rendicioncuentasmensual/` | rendición mensual, revisión Territorial/Auditoría, subsanaciones y datos expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, templates, urls | Alto |
+| `backends/sisoc_core/duplas/` | equipos tecnicos/duplas | `models.py`, `views.py` | Bajo-Medio |
 | `dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
-| `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
-| `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
+| `backends/sisoc_core/importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
+| `backends/sisoc_core/ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `ver_para_ser_libre/` | dominio VPSL compartido por SISOC y el servicio HTTP React; desde PR #2566 el itinerario evalua cartas sin sedes tentativas, cada jornada posee sede/localidad/ubicacion/vehiculos y checklist con habilitacion automatica, y el registro nominal guarda graduaciones; las sedes previas permanecen para historial; la compatibilidad del PR #2566 conserva localidad historica, copia checklists y permite editar registros previos sin inventar graduacion; `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py` y `services/access.py` exponen el flujo React con permisos, contrato JSON/multipart y alcance provincial | `models.py`, `forms.py`, `views.py`, `api_urls.py`, `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py`, `services/access.py`, `services/workflow.py`, `services/map_location.py`, `migrations/0015_vpsl_ubicacion_vehiculos_graduaciones.py`, `migrations/0016_copiar_checklist_sede_a_jornadas.py`, `tests/test_api.py`, `tests/test_api_contract.py`, `tests/test_jornada_location.py` | Alto |
 | `pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV—, Informes PAS versionados, circuito mensual de cruces SINTyS/RENAPER, Panel de Control y Formación pendiente; el padrón lateral de Formación pagina por scroll mediante `/pas/formacion/personas` | `models.py`, `api.py`, `views.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `services/cruces_service.py`, `services/supervivencia_service.py`, `services/persona_service.py`, `services/formacion_service.py`, `templates/pas/`, `static/custom/js/pas_formacion.js`, `management/commands/`, `urls.py`, `migrations/` | Alto |
 | `kernel/audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
-| `historial/` | historial de dominio | `models.py`, `services/` | Bajo |
-| `intervenciones/` | intervenciones sobre casos | tests + archivos del modulo | Bajo; exploracion parcial |
+| `backends/sisoc_core/historial/` | historial de dominio | `models.py`, `services/` | Bajo |
+| `backends/sisoc_core/intervenciones/` | intervenciones sobre casos | tests + archivos del modulo | Bajo; exploracion parcial |
 | `kernel/catalogo_intervenciones/` | catálogos de intervención compartidos por Comedores y CDI (tablas `intervenciones_*`) | `models.py`, `api.py`, `services_catalogo.py`, `fixtures/` | Medio |
 | `sentry/` | soporte/integracion local de sentry | codigo del modulo si toca observabilidad | Bajo |
-| `encuestas/` | encuestas periodicas a usuarios logueados: preguntas con logica condicional, segmentacion, rondas recurrentes, bloqueo global si son obligatorias, resultados y export | `models.py`, `services.py`, `services_resultados.py`, `middleware.py`, `context_processors.py`, `management/commands/process_encuestas_rondas.py`, `tests/` | Alto (modulo propio, doc completa en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`) |
+| `backends/sisoc_core/encuestas/` | encuestas periodicas a usuarios logueados: preguntas con logica condicional, segmentacion, rondas recurrentes, bloqueo global si son obligatorias, resultados y export | `models.py`, `services.py`, `services_resultados.py`, `middleware.py`, `context_processors.py`, `management/commands/process_encuestas_rondas.py`, `tests/` | Alto (modulo propio, doc completa en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`) |
 
 ## Patrones arquitectonicos y de codigo
 

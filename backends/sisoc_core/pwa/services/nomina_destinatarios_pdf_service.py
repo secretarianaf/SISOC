@@ -5,7 +5,6 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db.models import Q
@@ -307,8 +306,7 @@ def _render_nomina_docx(
 
 def _build_pdf_from_template(*, comedor, periodo_referencia, nominas, actor):
     template_path = (
-        Path(settings.BASE_DIR)
-        / "pwa"
+        Path(__file__).resolve().parent.parent
         / "files"
         / "varios"
         / "NOMINA.DE.DESTINATARIOS.docx"

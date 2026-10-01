@@ -14,7 +14,7 @@ export function App() {
   return (
     <AppShell modulo="Celiaquía" secciones={secciones}>
       <Routes>
-        <Route path="/" element={<Navigate to="expedientes" replace />} />
+        <Route path="/" element={<Navigate to="/expedientes" replace />} />
         <Route path="expedientes" element={<ExpedienteListPage />} />
         <Route path="expedientes/nuevo" element={<ExpedienteFormPage />} />
         <Route path="expedientes/:id" element={<ExpedienteDetailPage />} />
@@ -23,7 +23,7 @@ export function App() {
         <Route path="pagos/:provinciaId" element={<PagoListPage />} />
         <Route path="pagos/expediente/:id" element={<PagoDetailPage />} />
         <Route path="sin-permiso" element={<SinPermisoPage />} />
-        <Route path="*" element={<Navigate to="expedientes" replace />} />
+        <Route path="*" element={<Navigate to="/expedientes" replace />} />
       </Routes>
     </AppShell>
   );

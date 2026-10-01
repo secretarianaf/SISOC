@@ -7,10 +7,10 @@ from core.services.column_preferences import (
     build_export_sort_map,
     resolve_column_state,
 )
-from users.grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
+from usuarios.grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
+from usuarios.views import AdminRequiredMixin
 from users.services import UsuariosService
 from users.usuarios_column_config import USUARIOS_COLUMNS, USUARIOS_LIST_KEY
-from users.views import AdminRequiredMixin
 
 
 class UserExportView(AdminRequiredMixin, CSVExportMixin, View):

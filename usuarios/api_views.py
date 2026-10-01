@@ -11,13 +11,13 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from users.api_serializers import (
+from usuarios.api_serializers import (
     PasswordChangeRequiredSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     UserContextSerializer,
 )
-from users.auth_audit import (
+from usuarios.auth_audit import (
     EVENTO_LOGIN_ERROR,
     EVENTO_LOGIN_OK,
     EVENTO_LOGOUT,
@@ -26,15 +26,15 @@ from users.auth_audit import (
     RESULTADO_OK,
     registrar_evento_auth,
 )
+from usuarios.services_password_reset_pwa import request_password_reset_for_identity
 from users.rate_limits import hit_rate_limit
 from users.profile_utils import get_profile_or_none
 from users.services_auth import (
     change_password_for_authenticated_user,
     confirm_password_reset,
-    request_password_reset_for_identity,
 )
 from users.services_datacalle import tiene_acceso_datacalle
-from users.services_pwa import (
+from pwa.services.accesos import (
     get_pwa_context,
     is_pwa_user,
     is_territorial_comedor_user,

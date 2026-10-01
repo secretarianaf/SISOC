@@ -10,7 +10,7 @@ from organizaciones.models import (
     SubtipoEntidad,
 )
 from core.models import Municipio, Provincia, Localidad
-from users.services_territoriales import (
+from usuarios.services_territoriales import (
     etiqueta_territorial,
     usuarios_territoriales_pnud,
 )

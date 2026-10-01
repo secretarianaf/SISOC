@@ -9,7 +9,7 @@ from django.test import override_settings
 from django.urls import reverse
 
 from users.models import UserImportJob, UserImportJobRow
-from users.services_user_import import send_user_import_job_credentials
+from usuarios.services_user_import import send_user_import_job_credentials
 
 User = get_user_model()
 

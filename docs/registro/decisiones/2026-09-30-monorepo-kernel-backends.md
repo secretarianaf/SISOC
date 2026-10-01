@@ -72,10 +72,13 @@ aceptadas.
      requirements, se despliega todo.
 
    El rollback de un vertical es volver a desplegar su imagen del SHA anterior.
-9. **Migraciones.** Cada backend migra solo su app; el core migra el kernel y
-   su cluster. Las data migrations de `users` que dependen de verticales
-   (grupos de CDI, CDF y VAT) se pasan a migraciones idempotentes dentro de
-   cada vertical.
+9. **Migraciones: un único job de migración** (revisado el 2026-10-01). Las
+   migraciones del kernel dependen de migraciones de dominio (por ejemplo,
+   `users.0031` depende de `centrodefamilia.0014`), así que un backend no
+   puede cargar el grafo sin el cluster. Con la DB compartida, el grafo real
+   es uno solo: un job *migrador*, con todo el repo y `config.settings_all`,
+   corre antes de actualizar cualquier servicio. Los servicios web nunca
+   migran. Reemplaza "cada backend migra solo su app".
 10. **Datacalle entra en el backend de Dispositivos**, por velocidad. Comparten
     deploy.
 11. **Media por vertical.** Los archivos nuevos se suben a
@@ -84,6 +87,15 @@ aceptadas.
     ejecuta con autorización explícita, fuera de horario.
 12. **Producción.** Ningún cambio, deploy ni migración se aplica en PRD sin
     autorización explícita de juanikitro y fuera del horario de uso.
+
+13. **`kernel/users` es identidad y permisos** (2026-10-01). La gestión de
+    usuarios (pantallas, formularios, importación masiva y API de login de
+    las PWAs) es del core y vive en la app `usuarios`. Los accesos PWA
+    (`AccesoComedorPWA`, `AccesoOrganizacionPWA`, `AuditAccesoComedorPWA`,
+    `CoordinadorEquipoTecnicoPWA`) y su lógica pasan a `pwa`. Conservan sus
+    tablas `users_*` y la migración es solo de estado. Sin esto, cualquier
+    backend que instale `users` necesitaba `comedores`, `organizaciones` y
+    `duplas`.
 
 ## Deuda aceptada (revisar en el futuro)
 

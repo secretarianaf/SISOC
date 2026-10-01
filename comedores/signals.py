@@ -29,7 +29,7 @@ from rendicioncuentasfinal.models import (
     RendicionCuentasFinal,
     TipoDocumentoRendicionFinal,
 )
-from users.api import aplicar_cambio_organizacion_comedor
+from usuarios.api import aplicar_cambio_organizacion_comedor
 
 
 def _current_user_id():

@@ -7,7 +7,7 @@ from comedores.services.capacitaciones_certificados_service import (
     is_alimentar_comunidad_program,
 )
 from organizaciones.models import Organizacion
-from users.pwa_import_access import (
+from usuarios.pwa_import_access import (
     ComedorOrganizacionPWA,
     SeleccionAccesosPWAImportacion,
     registrar_resolvedor_accesos_pwa_importacion,

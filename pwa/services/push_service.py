@@ -11,8 +11,8 @@ from pwa.models import (
     build_push_endpoint_hash,
     normalize_push_endpoint,
 )
-from users.services_pwa import get_accessible_comedor_ids
-from users.models import AccesoComedorPWA
+from pwa.services.accesos import get_accessible_comedor_ids
+from pwa.models import AccesoComedorPWA
 
 try:
     from pywebpush import WebPushException, webpush

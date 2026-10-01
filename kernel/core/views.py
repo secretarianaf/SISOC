@@ -47,10 +47,23 @@ from core.services.favorite_filters import (
     obtener_configuracion_seccion,
     obtener_items_obsoletos,
 )
-from historial.services.historial_service import HistorialService
 from users.territorial_scope import get_geography_scope_map
 
 logger = logging.getLogger(__name__)
+
+
+def _registrar_historial(**kwargs):
+    """Registra en ``historial``, que vive en el core y no en el kernel.
+
+    Import diferido: este módulo lo carga ``core.context_processors`` en todos
+    los servicios, incluidos los backends, que no instalan ``historial``.
+    """
+    from historial.services.historial_service import (  # pylint: disable=import-outside-toplevel
+        HistorialService,
+    )
+
+    return HistorialService.registrar_historial(**kwargs)
+
 
 CHANGELOG_HEADER_PATTERN = re.compile(
     (
@@ -573,7 +586,7 @@ class MontoPrestacionProgramaCreateView(
                 obj.usuario_creador = self.request.user
             obj.save()
             self.object = obj
-            HistorialService.registrar_historial(
+            _registrar_historial(
                 accion="Creación de Monto de Prestación",
                 instancia=obj,
                 diferencias=form.cleaned_data,
@@ -599,7 +612,7 @@ class MontoPrestacionProgramaUpdateView(
         with transaction.atomic():
             obj = form.save()
             self.object = obj
-            HistorialService.registrar_historial(
+            _registrar_historial(
                 accion="Edición de Monto de Prestación",
                 instancia=obj,
                 diferencias=form.cleaned_data,
@@ -638,7 +651,7 @@ class MontoPrestacionProgramaDeleteView(
         obj = getattr(self, "object", None) or self.get_object()
         self.object = obj
         with transaction.atomic():
-            HistorialService.registrar_historial(
+            _registrar_historial(
                 accion="Eliminación de Prestación",
                 instancia=obj,
                 diferencias={"programa": getattr(obj, "programa", None)},

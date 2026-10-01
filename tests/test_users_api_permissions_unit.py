@@ -12,7 +12,7 @@ from pwa.api_views import (
     NominaEspacioPWAViewSet,
 )
 
-from users.api_permissions import (
+from usuarios.api_permissions import (
     CanViewPwaUsuariosPermission,
     IsPWAAuthenticatedToken,
     IsPWARepresentativeForComedor,
@@ -51,7 +51,7 @@ def test_is_pwa_authenticated_token_delegates_to_service(mocker):
     permission = IsPWAAuthenticatedToken()
     user = _user()
     mock_is_pwa_user = mocker.patch(
-        "users.api_permissions.is_pwa_user", return_value=True
+        "usuarios.api_permissions.is_pwa_user", return_value=True
     )
 
     assert permission.has_permission(_request(user), _view()) is True
@@ -91,7 +91,7 @@ def test_is_pwa_representative_uses_pk_and_service(mocker):
     permission = IsPWARepresentativeForComedor()
     user = _user()
     mock_is_representante = mocker.patch(
-        "users.api_permissions.is_representante", return_value=True
+        "usuarios.api_permissions.is_representante", return_value=True
     )
 
     assert permission.has_permission(_request(user), _view({"pk": "10"})) is True
@@ -102,7 +102,7 @@ def test_is_pwa_representative_uses_comedor_id_fallback(mocker):
     permission = IsPWARepresentativeForComedor()
     user = _user()
     mock_is_representante = mocker.patch(
-        "users.api_permissions.is_representante", return_value=False
+        "usuarios.api_permissions.is_representante", return_value=False
     )
 
     assert (
@@ -115,7 +115,7 @@ def test_is_pwa_representative_prioritizes_comedor_id_over_pk(mocker):
     permission = IsPWARepresentativeForComedor()
     user = _user()
     mock_is_representante = mocker.patch(
-        "users.api_permissions.is_representante", return_value=True
+        "usuarios.api_permissions.is_representante", return_value=True
     )
 
     assert (
@@ -131,7 +131,7 @@ def test_pwa_write_permission_rejects_read_only_coordinator(mocker):
     permission = IsPWAWriteAllowed()
     user = _user()
     mock_is_coordinador = mocker.patch(
-        "users.api_permissions.is_coordinador_equipo_tecnico_pwa",
+        "usuarios.api_permissions.is_coordinador_equipo_tecnico_pwa",
         return_value=True,
     )
 
@@ -143,7 +143,7 @@ def test_pwa_write_permission_allows_non_coordinator(mocker):
     permission = IsPWAWriteAllowed()
     user = _user()
     mocker.patch(
-        "users.api_permissions.is_coordinador_equipo_tecnico_pwa",
+        "usuarios.api_permissions.is_coordinador_equipo_tecnico_pwa",
         return_value=False,
     )
 
@@ -154,11 +154,11 @@ def test_pwa_user_list_requires_representante_for_non_coordinator(mocker):
     permission = CanViewPwaUsuariosPermission()
     user = _user()
     mocker.patch(
-        "users.api_permissions.is_coordinador_equipo_tecnico_pwa",
+        "usuarios.api_permissions.is_coordinador_equipo_tecnico_pwa",
         return_value=False,
     )
-    mocker.patch("users.api_permissions.is_representante", return_value=False)
-    mocker.patch("users.api_permissions.user_has_permission_code", return_value=True)
+    mocker.patch("usuarios.api_permissions.is_representante", return_value=False)
+    mocker.patch("usuarios.api_permissions.user_has_permission_code", return_value=True)
 
     assert permission.has_permission(_request(user), _view({"pk": 15})) is False
 
@@ -167,7 +167,7 @@ def test_pwa_user_list_allows_coordinator_without_representante(mocker):
     permission = CanViewPwaUsuariosPermission()
     user = _user()
     mocker.patch(
-        "users.api_permissions.is_coordinador_equipo_tecnico_pwa",
+        "usuarios.api_permissions.is_coordinador_equipo_tecnico_pwa",
         return_value=True,
     )
 

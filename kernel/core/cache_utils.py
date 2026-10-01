@@ -138,14 +138,10 @@ def invalidate_centrodefamilia_cache(user_id=None):
         invalidate_cache_keys(*keys_to_invalidate)
 
 
-# Signals para invalidación automática
-@receiver([post_save, post_delete], sender="comedores.Comedor")
-def invalidate_comedor_cache_on_change(sender, instance, **kwargs):
-    """Invalida cache cuando se modifica un comedor."""
-    invalidate_comedor_cache(instance.id)
-    invalidate_dashboard_cache()
-
-
+# Signals para invalidación automática.
+# Solo los modelos del kernel: cada dominio conecta los suyos
+# (comedores/cache_signals.py, intervenciones/cache_signals.py) para que el
+# kernel no dependa de apps que los backends por vertical no instalan.
 @receiver([post_save, post_delete], sender="ciudadanos.Ciudadano")
 def invalidate_ciudadano_cache_on_change(sender, instance, **kwargs):
     """Invalida cache cuando se modifica un ciudadano."""
@@ -156,46 +152,9 @@ def invalidate_ciudadano_cache_on_change(sender, instance, **kwargs):
 @receiver([post_soft_delete, post_restore])
 def invalidate_cache_on_soft_delete_events(sender, instance, **kwargs):
     """Invalida cache relevante cuando hay baja lógica o restauración."""
-    label = instance._meta.label_lower
-    if label == "comedores.comedor":
-        invalidate_comedor_cache(instance.id)
-        invalidate_dashboard_cache()
-    elif label == "ciudadanos.ciudadano":
+    if instance._meta.label_lower == "ciudadanos.ciudadano":
         invalidate_ciudadano_cache(instance.id)
         invalidate_dashboard_cache()
-
-
-@receiver([post_save, post_delete], sender="intervenciones.TipoIntervencion")
-def invalidate_tipo_intervencion_cache_on_change(sender, instance, **kwargs):
-    """Invalida cache cuando se modifica un tipo de intervención."""
-    invalidate_intervenciones_cache()
-
-
-@receiver([post_save, post_delete], sender="intervenciones.TipoDestinatario")
-def invalidate_destinatario_cache_on_change(sender, instance, **kwargs):
-    """Invalida cache cuando se modifica un tipo de destinatario."""
-    invalidate_intervenciones_cache()
-
-
-# Señales específicas para invalidación de cache
-@receiver([post_save, post_delete], sender="comedores.ValorComida")
-def invalidate_valor_comida_cache_on_change(sender, **kwargs):
-    """Invalida cache cuando cambian valores de comida."""
-    invalidate_cache_keys("valores_comida_map")
-
-
-@receiver([post_save, post_delete], sender="comedores.TerritorialCache")
-def invalidate_territorial_cache_on_change(sender, instance, **kwargs):
-    """Invalida cache cuando cambian datos de territoriales por provincia."""
-    # Invalidar cache legacy
-    invalidate_territoriales_cache()
-
-    # Invalidar cache específico por provincia si existe
-    if hasattr(instance, "provincia_id") and instance.provincia_id:
-        invalidate_territoriales_cache_provincia(instance.provincia_id)
-    else:
-        # Fallback: invalidar todas las provincias
-        invalidate_territoriales_cache_provincia()
 
 
 # Funciones helper para uso en vistas

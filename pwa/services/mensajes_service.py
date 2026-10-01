@@ -16,8 +16,8 @@ from comedores.models import Comedor
 from pwa.models import LecturaMensajePWA
 from pwa.services.auditoria_operacion_service import registrar_evento_operacion
 from rendicioncuentasmensual.models import RendicionCuentaMensual
-from users.models import AccesoComedorPWA
-from users.services_pwa import (
+from pwa.models import AccesoComedorPWA
+from pwa.services.accesos import (
     get_access_rows,
     get_accessible_comedor_ids,
     is_coordinador_equipo_tecnico_pwa,

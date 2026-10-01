@@ -88,9 +88,9 @@ def test_compose_deploy_deja_tiempo_para_el_arranque_de_hml():
 def test_grafo_de_migraciones_users_tiene_una_sola_hoja():
     loader = MigrationLoader(None, ignore_no_migrations=True)
 
-    assert loader.graph.leaf_nodes("users") == [
-        ("users", "0057_merge_usuarios_secciones_y_roles_territoriales")
-    ]
+    # Una sola hoja: dos ramas de migraciones de users sin merge rompen el
+    # deploy. No se fija el nombre para no tocar este test en cada migración.
+    assert len(loader.graph.leaf_nodes("users")) == 1, loader.graph.leaf_nodes("users")
 
 
 def test_promociones_usan_github_app_y_sha_desplegado():

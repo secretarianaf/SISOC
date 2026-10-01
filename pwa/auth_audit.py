@@ -1,7 +1,7 @@
 """Registro del persistidor PWA para la auditoría de autenticación."""
 
 from pwa.services.auditoria_service import registrar_evento_auth
-from users.auth_audit import registrar_auditoria_auth
+from usuarios.auth_audit import registrar_auditoria_auth
 
 
 def registrar_auditoria_auth_pwa() -> None:

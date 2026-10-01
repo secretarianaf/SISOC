@@ -2,7 +2,7 @@ import logging
 import uuid
 
 from pwa.models import AuditoriaSesionPWA
-from users.services_pwa import get_pwa_context
+from pwa.services.accesos import get_pwa_context
 
 LOGGER = logging.getLogger(__name__)
 

@@ -22,7 +22,7 @@ from pwa.models import (
     NominaEspacioPWA,
     RegistroAsistenciaNominaPWA,
 )
-from users.models import AccesoComedorPWA
+from pwa.models import AccesoComedorPWA
 
 
 def _grant_pwa_permission(user, codename):

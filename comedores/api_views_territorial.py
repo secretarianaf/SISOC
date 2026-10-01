@@ -52,8 +52,8 @@ from relevamientos.models import (
     Relevamiento,
     SeguimientoPnud,
 )
-from users.api_permissions import IsTerritorialComedorUser
-from users.services_pwa import (
+from usuarios.api_permissions import IsTerritorialComedorUser
+from pwa.services.accesos import (
     get_territorial_comedor_provincia_ids,
     get_territorial_comedor_provincias,
 )

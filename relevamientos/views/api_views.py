@@ -12,7 +12,7 @@ from core.api_auth import HasAPIKeyOrToken
 from core.utils import format_error_detail
 from relevamientos.models import PrimerSeguimiento, Relevamiento
 from relevamientos.serializer import PrimerSeguimientoSerializer, RelevamientoSerializer
-from users.services_pwa import get_territorial_comedor_provincia_ids
+from pwa.services.accesos import get_territorial_comedor_provincia_ids
 
 logger = logging.getLogger("django")
 

@@ -3,14 +3,14 @@ from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError as DjangoValidationError
 
 from iam.services import get_effective_permission_codes, get_effective_role_names
-from users.models import AccesoComedorPWA
+from pwa.models import AccesoComedorPWA
+from pwa.services.accesos import get_pwa_context, get_territorial_comedor_provincias
 from users.profile_utils import get_profile_or_none
 from users.services import UserPermissionService
 from users.services_datacalle import (
     get_datacalle_rol,
     get_relevador_calle_provincias,
 )
-from users.services_pwa import get_pwa_context, get_territorial_comedor_provincias
 from users.services_auth import get_user_by_uid
 from users.territorial_scope import serialize_profile_scopes
 

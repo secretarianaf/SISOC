@@ -19,7 +19,7 @@ from django.http import Http404
 from django.utils import timezone
 
 from users.models import UserImportJob, UserImportJobRow
-from users.services_user_import import (
+from usuarios.services_user_import import (
     build_user_import_error_message,
     load_user_import_rows,
     process_single_user_import_row,

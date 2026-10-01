@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from users.services_bulk_credentials_jobs import run_bulk_credentials_jobs_worker
+from usuarios.services_bulk_credentials_jobs import run_bulk_credentials_jobs_worker
 
 
 class Command(BaseCommand):

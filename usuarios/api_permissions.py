@@ -1,7 +1,7 @@
 from rest_framework.permissions import BasePermission
 
 from iam.services import user_has_permission_code
-from users.services_pwa import (
+from pwa.services.accesos import (
     has_pwa_access_to_comedor,
     is_coordinador_equipo_tecnico_pwa,
     is_pwa_user,

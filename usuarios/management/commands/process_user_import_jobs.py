@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from users.services_user_import_jobs import run_user_import_jobs_worker
+from usuarios.services_user_import_jobs import run_user_import_jobs_worker
 
 
 class Command(BaseCommand):

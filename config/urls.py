@@ -10,7 +10,7 @@ from drf_spectacular.views import (
 )
 from config.views import VatSpectacularAPIView
 from core.v2_frontend import frontend_v2
-from users.views import (
+from usuarios.views import (
     PasswordResetConfirmCustomView,
     SisocPasswordResetCompleteView,
     SisocPasswordResetDoneView,
@@ -43,7 +43,7 @@ urlpatterns = [
     ),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
-    path("", include("users.urls")),
+    path("", include("usuarios.urls")),
     path("", include("django.contrib.auth.urls")),
     path("", include("core.urls")),
     path("", include("dashboard.urls")),
@@ -70,7 +70,7 @@ urlpatterns = [
     path("", include("celiaquia.global_urls")),
     path("celiaquia/", include("celiaquia.urls")),
     # API URLs
-    path("api/users/", include("users.api_urls")),
+    path("api/users/", include("usuarios.api_urls")),
     path("api/vpsl/", include("ver_para_ser_libre.api_urls")),
     path("api/comedores/", include("comedores.api_urls")),
     path("api/territorial/", include("comedores.api_urls_territorial")),

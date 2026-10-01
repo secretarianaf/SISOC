@@ -19,7 +19,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from openpyxl import Workbook
 
-from users.forms import CustomUserChangeForm, UserCreationForm
+from usuarios.forms import CustomUserChangeForm, UserCreationForm
 from users.models import (
     BulkCredentialsJob,
     BulkCredentialsJobRow,
@@ -29,16 +29,16 @@ from users.models import (
 from users.services_bulk_credentials import (
     process_bulk_credentials_file,
 )
-from users.services_bulk_credentials_jobs import (
+from usuarios.services_bulk_credentials_jobs import (
     create_bulk_credentials_job,
     process_bulk_credentials_job,
 )
-from users.services_user_import import (
+from usuarios.services_user_import import (
     USER_IMPORT_TEMPLATE_HEADERS,
     create_user_import_job,
     process_single_user_import_row,
 )
-from users.services_user_import_jobs import process_user_import_job
+from usuarios.services_user_import_jobs import process_user_import_job
 
 User = get_user_model()
 

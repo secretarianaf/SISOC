@@ -31,7 +31,7 @@ from relevamientos.service import (
     _parse_territorial_payload,
     _territorial_user_id_from_uid,
 )
-from users.services_pwa import get_territorial_comedor_users_for_provincia
+from pwa.services.accesos import get_territorial_comedor_users_for_provincia
 
 TIPO_RELEVAMIENTO_INICIAL = "relevamiento_inicial"
 PREFIJO_PNUD = "pnud_"

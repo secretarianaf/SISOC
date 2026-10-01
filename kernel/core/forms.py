@@ -1,9 +1,31 @@
 from django import forms
 
-from core.models import MontoPrestacionPrograma, Programa
+from core.models import MontoPrestacionPrograma, Programa, organismo_model
 
 
 class ProgramaForm(forms.ModelForm):
+    # Campo de formulario, no del modelo: Programa guarda solo ``organismo_id``.
+    organismo = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        label="Organismo",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        modelo = organismo_model()
+        self.fields["organismo"].queryset = (
+            modelo.objects.all() if modelo else Programa.objects.none()
+        )
+        if self.instance.organismo_id and not self.is_bound:
+            self.initial["organismo"] = self.instance.organismo_id
+
+    def save(self, commit=True):
+        organismo = self.cleaned_data.get("organismo")
+        self.instance.organismo_id = organismo.pk if organismo else None
+        return super().save(commit=commit)
+
     class Meta:
         model = Programa
         fields = ["nombre", "estado", "observaciones", "organismo", "descripcion"]
@@ -11,7 +33,6 @@ class ProgramaForm(forms.ModelForm):
             "nombre": forms.TextInput(attrs={"class": "form-control"}),
             "estado": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "observaciones": forms.TextInput(attrs={"class": "form-control"}),
-            "organismo": forms.Select(attrs={"class": "form-control"}),
             "descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
 

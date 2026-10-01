@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 from comedores.models import Comedor
 from core.models import Provincia
 from pwa.models import AuditoriaSesionPWA
-from users.models import AccesoComedorPWA
+from pwa.models import AccesoComedorPWA
 
 
 @pytest.fixture

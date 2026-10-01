@@ -22,7 +22,7 @@ from organizaciones.models import Organizacion, ProyectoOrganizacion
 from rendicioncuentasmensual import filter_config
 from rendicioncuentasmensual import views as module
 from rendicioncuentasmensual.models import RendicionCuentaMensual
-from users.services_territoriales import ROL_TERRITORIAL_PNUD
+from usuarios.services_territoriales import ROL_TERRITORIAL_PNUD
 
 pytestmark = pytest.mark.django_db
 User = get_user_model()

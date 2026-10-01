@@ -10,6 +10,11 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
   no cambian: `config/__init__.py` agrega `kernel/` al `sys.path` (tooling:
   `.pylintrc`, `pytest.ini`, `architecture.yml`). Decision y plan:
   `docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md`.
+- `kernel/users` es identidad y permisos (modelos, middleware, alcance
+  territorial, delegacion, roles). La gestion de usuarios del core (pantallas,
+  formularios, importacion masiva, API de login PWA) vive en `usuarios/`; los
+  accesos PWA (`AccesoComedorPWA` y afines) y su logica, en `pwa/`
+  (`pwa.services.accesos`), con sus tablas `users_*` de siempre.
 
 - Sincronizacion DataCalle: los cambios de main de #2452/#2453 se incorporan a
   development conservando coordinadores PWA y su checkbox maestro. La migracion

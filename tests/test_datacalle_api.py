@@ -338,10 +338,27 @@ def test_catalogos_sirven_el_instrumento_vigente(provincia):
     assert respuesta.status_code == 200
     # Pinneada a propósito: al sincronizar `datacalle/instrumento/` con el
     # contrato hay que subirla acá, así la copia no queda vieja sin que nadie
-    # lo note (pasó con 2.1.0, publicado el 16/9 y tomado el 18/9).
-    assert respuesta.data["version"] == "2.2.0"
+    # lo note (pasó con 2.1.0, publicado el 16/9 y tomado el 18/9; y otra vez
+    # con 2.3.0/3.0.0/3.1.0, que nunca se tomaron).
+    assert respuesta.data["version"] == "4.0.0"
     assert "faseRelevamiento" in respuesta.data["catalogos"]
     assert respuesta.data["cuestionario"]["paginas"]
+
+    # Los dos catálogos que nacen con el formulario FINAL en papel: si la copia
+    # quedó en una versión anterior, no están.
+    assert "programaSocialPropio" in respuesta.data["catalogos"]
+    assert "programaSocialHijos" in respuesta.data["catalogos"]
+
+    # Las 7 franjas etarias del papel, y las retiradas conservadas para leer el
+    # histórico (el contrato pide no borrar ningún código).
+    codigos = {
+        opcion["codigo"]
+        for opcion in respuesta.data["catalogos"]["rangoEtario2026"]["opciones"]
+    }
+    vigentes = {"r0a5", "r6a13", "r14a17", "r18a29", "r30a45", "r46a64", "r65mas"}
+    retiradas = {"r0a14", "r15a18", "r19a59", "r60mas", "r0a13", "r14a18"}
+    assert vigentes <= codigos
+    assert retiradas <= codigos
 
 
 @pytest.mark.django_db
@@ -376,6 +393,7 @@ def test_personas_observadas_solo_cuenta_cabeceras(provincia):
 
 @pytest.mark.django_db
 def test_el_menor_se_distingue_de_la_negativa(provincia):
+    """Caso 2.2.0/3.1.0 guardado: la regla vieja (`esMenorDeEdad`) sigue contando."""
     from datacalle.services import resumen_de_casos
 
     entrevistador = _entrevistador(provincia)
@@ -399,8 +417,69 @@ def test_el_menor_se_distingue_de_la_negativa(provincia):
 
     resumen = resumen_de_casos(relevamiento)
 
-    assert resumen["menores"] == 1
+    assert resumen["sin_entrevista_por_franja"] == 1
     assert resumen["sin_entrevista"] == 1
+
+
+@pytest.mark.django_db
+def test_sin_entrevista_sale_de_la_franja_y_no_de_es_menor_de_edad(provincia):
+    """4.0.0: decide el rango observado, no `esMenorDeEdad` (que ya no decide nada).
+
+    Los tres casos del test son los que conviven en la base después del cambio
+    de instrumento, y cada uno prueba una mitad distinta de la regla.
+    """
+    from datacalle.models import Encuesta
+    from datacalle.services import resumen_de_casos
+
+    entrevistador = _entrevistador(provincia)
+    relevamiento = _relevamiento(provincia, equipo=[entrevistador])
+    client = _cliente(entrevistador)
+
+    # 4.0.0: persona de la franja 6–13. `realizaEntrevista` ni se muestra.
+    nino = {k: v for k, v in RESPUESTAS.items() if k != "realizaEntrevista"}
+    nino["personaEntrevistada"] = "r6a13_mujer#1"
+    nino["esMenorDeEdad"] = "si"
+
+    # 4.0.0: persona de 16 años. Es menor de edad y SÍ se la entrevista: con el
+    # formulario en papel no hay más variante abreviada.
+    adolescente = dict(
+        RESPUESTAS,
+        personaEntrevistada="r14a17_varon#1",
+        esMenorDeEdad="si",
+        realizaEntrevista="si",
+    )
+
+    # 3.1.0 guardado: franja retirada, y sin `esMenorDeEdad` calculado. Lo
+    # salva que el contrato dejó `r0a13` en la lista de prefijos.
+    historico = {k: v for k, v in RESPUESTAS.items() if k != "realizaEntrevista"}
+    historico["personaEntrevistada"] = "r0a13_mujer#2"
+
+    for estado, respuestas in (
+        ("rechazada", nino),
+        ("completa", adolescente),
+        ("rechazada", historico),
+    ):
+        client.put(
+            f"/api/datacalle/encuestas/{uuid.uuid4()}/",
+            _cuerpo(relevamiento, estado=estado, respuestas=respuestas),
+            format="json",
+        )
+
+    resumen = resumen_de_casos(relevamiento)
+
+    assert resumen["sin_entrevista_por_franja"] == 2
+    assert resumen["entrevistas"] == 1
+    assert resumen["sin_entrevista"] == 0
+
+    por_celda = {
+        caso.persona_entrevistada: caso.sin_entrevista_por_franja
+        for caso in Encuesta.objects.filter(relevamiento=relevamiento)
+    }
+    assert por_celda == {
+        "r6a13_mujer#1": True,
+        "r14a17_varon#1": False,
+        "r0a13_mujer#2": True,
+    }
 
 
 @pytest.mark.django_db

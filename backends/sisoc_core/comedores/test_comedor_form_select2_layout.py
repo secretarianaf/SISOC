@@ -3,7 +3,7 @@
 from pathlib import Path
 
 
-STATIC_DIR = Path(__file__).resolve().parents[1] / "static" / "custom"
+STATIC_DIR = Path(__file__).resolve().parents[3] / "static" / "custom"
 
 
 def test_select2_no_modifica_overflow_del_layout_principal():

@@ -5,8 +5,9 @@ import logging
 import re
 import subprocess
 from datetime import date, time
+from pathlib import Path
 
-from django.conf import settings
+from django.apps import apps
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
@@ -1675,8 +1676,7 @@ class ComedorDetailViewSet(
         if not modelo:
             raise Http404("Modelo no encontrado.")
         file_path = (
-            settings.BASE_DIR
-            / "pwa"
+            Path(apps.get_app_config("pwa").path)
             / "files"
             / "rendicion_de_cuentas"
             / modelo["filename"]

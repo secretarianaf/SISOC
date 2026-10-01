@@ -6,7 +6,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CSV_POLICY_PATH = Path("kernel/core/services/csv_export.py")
-CSV_INPUT_VALIDATOR_PATH = Path("insumos/validators.py")
+CSV_INPUT_VALIDATOR_PATH = Path("backends/sisoc_core/insumos/validators.py")
 LOCALIDADES_JS_EXPORT_PATH = Path("static/custom/js/localidades_modal.js")
 VPSL_OPENAPI_PATH = Path("backends/vpsl/ver_para_ser_libre/api_views.py")
 GENERATED_API_TYPES_PATH = Path("frontends/packages/api/src/generated.ts")

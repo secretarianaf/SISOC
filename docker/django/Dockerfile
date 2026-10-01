@@ -69,9 +69,9 @@ FROM base AS source
 COPY . /src
 RUN rm -rf /src/frontends
 
-# SISOC core: todo menos los backends por vertical.
+# SISOC core: su cluster (backends/sisoc_core) sin los backends por vertical.
 FROM source AS core_source
-RUN rm -rf /src/backends
+RUN find /src/backends -mindepth 1 -maxdepth 1 ! -name sisoc_core -exec rm -rf {} +
 
 FROM base AS core
 COPY --from=core_source /src /sisoc

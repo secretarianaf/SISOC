@@ -107,11 +107,25 @@ show_diagnostics() {
   echo "::endgroup::"
 }
 
+backend_services() {
+  python3 -c 'import json,sys; print(" ".join(s["service"] for s in json.load(open(sys.argv[1])).values()))' \
+    "$ROOT_DIR/config/backends.json"
+}
+
 verify_stack() {
+  # Migraciones de la composición completa (core + backends): las aplica y las
+  # verifica el migrador, que tiene todo el grafo.
   if ! wait_for "migraciones de $DEPLOY_ENVIRONMENT" 30 \
-    "${COMPOSE[@]}" exec -T django python manage.py migrate --check; then
+    "${COMPOSE[@]}" --profile migrate run --rm -T migrator python manage.py migrate --check; then
     return 1
   fi
+  local service
+  for service in $(backend_services); do
+    if ! wait_for "salud de $service en $DEPLOY_ENVIRONMENT" 30 \
+      "${COMPOSE[@]}" exec -T "$service" python -c "from urllib.request import urlopen, Request; r = urlopen(Request('http://127.0.0.1:8000/health/', headers={'X-Forwarded-Proto': 'https'}), timeout=2); exit(0 if r.status == 200 else 1)"; then
+      return 1
+    fi
+  done
   wait_for "healthcheck de $DEPLOY_ENVIRONMENT" 30 bash "$HEALTH_SCRIPT"
 }
 
@@ -128,8 +142,10 @@ rollback_on_exit() {
     echo "::error::No se pudo restaurar el checkout anterior."
     exit "$failed_status"
   fi
+  # Diff desde la revision fallida: se recrean los mismos servicios que toco.
   if ! SISOC_ROOT_DIR="$ROOT_DIR" bash "$ROOT_DIR/scripts/operacion/deploy_refresh.sh" \
-    --yes --skip-pull --expected-revision "$previous_revision" --without-mobile; then
+    --yes --skip-pull --expected-revision "$previous_revision" --without-mobile \
+    --diff-base "$EXPECTED_REVISION"; then
     echo "::error::No se pudo reconstruir el stack de la revision anterior."
     exit "$failed_status"
   fi
@@ -145,7 +161,7 @@ trap rollback_on_exit EXIT
 
 echo "Commit previo al deploy para rollback: $previous_revision"
 deployment_started=1
-deploy_args=(--yes --expected-revision "$EXPECTED_REVISION" --without-mobile)
+deploy_args=(--yes --expected-revision "$EXPECTED_REVISION" --without-mobile --diff-base "$previous_revision")
 [[ "$SKIP_PULL" -eq 0 ]] || deploy_args+=(--skip-pull)
 SISOC_ROOT_DIR="$ROOT_DIR" bash "$ROOT_DIR/scripts/operacion/deploy_refresh.sh" "${deploy_args[@]}"
 verify_stack

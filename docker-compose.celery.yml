@@ -12,13 +12,15 @@ services:
       retries: 5
 
   celery_pas_worker:
+    image: sisoc/core:${SISOC_RELEASE_SHA:-local}
     build:
       context: .
       dockerfile: docker/django/Dockerfile
+      target: core
     env_file: [.env]
     environment:
       CELERY_BROKER_URL: redis://redis:6379/0
-    volumes: [".:/sisoc/"]
+    volumes: ["./media:/sisoc/media", "./logs:/sisoc/logs"]
     command: [celery, -A, config.celery:app, worker, -Q, pas, --concurrency=1, --loglevel=INFO, --hostname=pas@%h]
     restart: unless-stopped
     stop_grace_period: 6m
@@ -32,14 +34,16 @@ services:
         condition: service_healthy
 
   celery_beat:
+    image: sisoc/core:${SISOC_RELEASE_SHA:-local}
     build:
       context: .
       dockerfile: docker/django/Dockerfile
+      target: core
     env_file: [.env]
     environment:
       CELERY_BROKER_URL: redis://redis:6379/0
     volumes:
-      - .:/sisoc/
+      - ./logs:/sisoc/logs
       - pas_beat:/beat
     command: [celery, -A, config.celery:app, beat, --loglevel=INFO, --schedule=/beat/schedule]
     restart: unless-stopped

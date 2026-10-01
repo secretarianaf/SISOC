@@ -1,4 +1,4 @@
-FROM python:3.11.15-slim-bookworm
+FROM python:3.11.15-slim-bookworm AS base
 
 WORKDIR /sisoc
 
@@ -60,3 +60,38 @@ COPY ./docker/django/entrypoint.py ./docker/django/entrypoint.py
 
 # Comando de inicio de la aplicación
 CMD ["python", "./docker/django/entrypoint.py"]
+
+
+# --- Imágenes de deploy: el código va adentro, construido desde el SHA. ---
+# Ver docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md.
+
+FROM base AS source
+COPY . /src
+RUN rm -rf /src/frontends
+
+# SISOC core: todo menos los backends por vertical.
+FROM source AS core_source
+RUN rm -rf /src/backends
+
+FROM base AS core
+COPY --from=core_source /src /sisoc
+CMD ["python", "./docker/django/entrypoint.py"]
+
+# Backend de un vertical: kernel, configuración compartida y su carpeta.
+FROM source AS backend_source
+ARG BACKEND
+RUN test -n "$BACKEND" && test -d "/src/backends/$BACKEND"     && mkdir -p /out/backends     && cp -a /src/config /src/kernel /src/templates /src/static /src/docker         /src/manage.py /src/CHANGELOG.md /out/     && cp -a "/src/backends/$BACKEND" /out/backends/
+
+FROM base AS backend
+COPY --from=backend_source /out /sisoc
+CMD ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000"]
+
+# Migrador único: composición completa (config.settings_all). No sirve tráfico.
+FROM base AS migrator
+COPY --from=source /src /sisoc
+ENV DJANGO_SETTINGS_MODULE=config.settings_all
+CMD ["python", "manage.py", "migrate", "--noinput"]
+
+# Desarrollo y CI: el código se monta con bind mount (docker-compose.yml). Es
+# el último stage para que `docker compose build` sin target siga igual.
+FROM base AS dev

@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 from django.contrib.messages import constants as messages
 from django.utils.module_loading import import_string
 from dotenv import load_dotenv
+from config.backends import load_backends_registry
 from config.runtime import is_running_tests
 
 # Cargar variables de entorno
@@ -161,7 +162,11 @@ CDI_FORMULARIOS_VISIBLE = _safe_bool_env("CDI_FORMULARIOS_VISIBLE", False)
 CDI_INTERVENCIONES_VISIBLE = _safe_bool_env("CDI_INTERVENCIONES_VISIBLE", False)
 
 # Apps
-INSTALLED_APPS = [
+# Cada servicio instala SHARED_APPS + KERNEL_APPS + sus apps propias. Este
+# archivo es el settings del SISOC core; los backends (config/backends.json)
+# tienen su propio settings en backends/<vertical>/<vertical>_runtime/ y
+# config/settings_all.py compone todo en un solo proceso (tests y desarrollo).
+SHARED_APPS = [
     # Django
     "django.contrib.admin",
     "django.contrib.auth",
@@ -182,15 +187,20 @@ INSTALLED_APPS = [
     "rest_framework_api_key",
     "drf_spectacular",
     "corsheaders",
-    # Apps propias
+]
+KERNEL_APPS = [
     "users",
-    "usuarios",
     "core",
     "sentry.apps.SentryConfig",
+    "ciudadanos",
+    "audittrail",
+]
+CORE_APPS = [
+    # Gestión de usuarios del core (ver usuarios/apps.py).
+    "usuarios",
     "dashboard.apps.DashboardConfig",
     "comedores",
     "organizaciones",
-    "ciudadanos",
     "duplas",
     "admisiones",
     "intervenciones",
@@ -203,20 +213,18 @@ INSTALLED_APPS = [
     "centrodefamilia",
     "VAT",
     "celiaquia",
-    "audittrail",
     "importarexpediente",
     "comunicados",
     "centrodeinfancia",
     "ver_para_ser_libre",
     "pas",
-    "dispositivos",
-    "datacalle",
     "insumos",
     "pwa",
     "ticketera",
     "ocr",
     "encuestas",
 ]
+INSTALLED_APPS = SHARED_APPS + KERNEL_APPS + CORE_APPS
 
 # Middleware (orden CORS correcto)
 MIDDLEWARE = [
@@ -278,6 +286,16 @@ LOGIN_REDIRECT_URL = "inicio"
 LOGOUT_REDIRECT_URL = "login"
 FRONTEND_V2_UPSTREAMS = {
     "vpsl": os.getenv("FRONT_VPSL_ORIGIN", "http://front_vpsl:8080"),
+}
+# Backends por vertical que el core atiende como proxy (kernel/core/backend_proxy.py).
+# Fuente única: config/backends.json. settings_all.py lo vacía porque ahí cada
+# backend corre dentro del mismo proceso.
+SISOC_BACKENDS = {
+    name: {
+        "url_prefixes": tuple(spec["url_prefixes"]),
+        "origin": os.getenv(spec["origin_env"], spec["default_origin"]),
+    }
+    for name, spec in load_backends_registry().items()
 }
 FRONTEND_V2_HMR_ORIGINS = (
     [

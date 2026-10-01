@@ -56,7 +56,7 @@ CANCELAR_DE_FORMULARIO = {
     "comedores/templates/comedor/actividades_pnud_form.html",
     "comedores/templates/comedor/cursos_app_mobile_form.html",
     "comunicados/templates/comunicados/mailing_form.html",
-    "dispositivos/templates/dispositivos_form.html",
+    "backends/dispositivos/dispositivos/templates/dispositivos_form.html",
     "ocr/templates/ocr/ocr_upload.html",
     "pas/templates/pas/informe_form.html",
     "pas/templates/pas/persona_form.html",

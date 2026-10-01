@@ -17,6 +17,7 @@ MOBILE_DIR=""
 MOBILE_SCRIPT=""
 MOBILE_HTTPS_REMOTE="https://github.com/secretarianaf/Espacios-Comunitarios.git"
 EXPECTED_REVISION=""
+DIFF_BASE=""
 
 usage() {
   cat <<'USAGE'
@@ -37,6 +38,9 @@ Opciones:
                             con la esperada para ENVIRONMENT.
   --skip-pull               No ejecuta git fetch/pull; solo reinicia Docker.
   --expected-revision SHA   Exige que la revision a desplegar sea exactamente SHA.
+  --diff-base SHA           Revision que corre hoy: con ella se decide que
+                            servicios desplegar (deploy_targets.py). Sin
+                            ella, el despliegue es completo.
                             Si origin o HEAD ya avanzaron, bloquea antes de bajar Docker.
   --with-mobile             Tambien despliega SISOC-Mobile.
   --without-mobile          Solo backend; las PWA se coordinan por separado.
@@ -153,6 +157,11 @@ parse_args() {
         shift
         [[ $# -gt 0 ]] || fail "--expected-revision requiere un SHA."
         EXPECTED_REVISION="$1"
+        ;;
+      --diff-base)
+        shift
+        [[ $# -gt 0 ]] || fail "--diff-base requiere un SHA."
+        DIFF_BASE="$1"
         ;;
       --with-mobile) WITH_MOBILE=1 ;;
       --without-mobile) WITHOUT_MOBILE=1 ;;
@@ -372,15 +381,49 @@ main() {
     || fail "No pude resolver la revision a desplegar."
   export VPSL_IMAGE_TAG="sisoc/front-vpsl:$deployed_revision"
   export VITE_RELEASE_SHA="$deployed_revision"
+  # Tag de las imágenes con código (core, backends, migrador): una por SHA.
+  export SISOC_RELEASE_SHA="$deployed_revision"
 
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" config -q
 
-  # Construir el front antes de detener los servicios anteriores.
-  run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" build front_vpsl
+  # Qué desplegar: completo, solo algunos servicios o nada (deploy_targets.py).
+  MODO=completo
+  SERVICIOS=""
+  MIGRAR=1
+  if [[ -n "$DIFF_BASE" ]]; then
+    eval "$(python3 "$ROOT_DIR/scripts/operacion/deploy_targets.py" "$DIFF_BASE" "$deployed_revision")"
+  fi
+  log "plan=$MODO servicios='${SERVICIOS}' migrar=$MIGRAR"
+  local -a compose=("${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR")
+  local -a servicios=()
+  read -r -a servicios <<< "$SERVICIOS"
 
-  run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" "${DOWN_ARGS[@]}"
-
-  run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" up -d --build
+  case "$MODO" in
+    ninguno)
+      log "Sin servicios que desplegar en este rango."
+      ;;
+    selectivo)
+      # Solo se reconstruyen y recrean los servicios afectados: el resto sigue
+      # corriendo con su imagen anterior.
+      run "${compose[@]}" build "${servicios[@]}"
+      if [[ "$MIGRAR" -eq 1 ]]; then
+        run "${compose[@]}" --profile migrate build migrator
+        run "${compose[@]}" --profile migrate run --rm migrator
+      fi
+      run "${compose[@]}" up -d --no-deps "${servicios[@]}"
+      ;;
+    completo)
+      # Construir todo antes de detener los servicios anteriores.
+      run "${compose[@]}" build
+      run "${compose[@]}" --profile migrate build migrator
+      run "${compose[@]}" "${DOWN_ARGS[@]}"
+      run "${compose[@]}" --profile migrate run --rm migrator
+      run "${compose[@]}" up -d
+      ;;
+    *)
+      fail "Plan de deploy desconocido: $MODO"
+      ;;
+  esac
 
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" ps
 

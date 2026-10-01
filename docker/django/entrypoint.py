@@ -306,8 +306,14 @@ def cache_busting():
         Path(__file__).resolve().parent.parent / "static_root"
     )  # Raiz del proyecto
     if static_root.exists() and static_root.is_dir():
-        logger.info("[clean] Eliminando carpeta de estaticos: %s", static_root)
-        shutil.rmtree(static_root)
+        # Se vacía el contenido y no la carpeta: en deploy es un volumen montado
+        # (docker-compose.deploy.yml) y borrar el punto de montaje falla.
+        logger.info("[clean] Vaciando carpeta de estaticos: %s", static_root)
+        for hijo in static_root.iterdir():
+            if hijo.is_dir() and not hijo.is_symlink():
+                shutil.rmtree(hijo)
+            else:
+                hijo.unlink()
     logger.info("[static] Ejecutando collectstatic para cache busting...")
     run_command(
         ["python", "manage.py", "collectstatic", "--noinput"],

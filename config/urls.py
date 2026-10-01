@@ -1,14 +1,15 @@
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
-from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path, re_path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
     SpectacularRedocView,
 )
+from config.urls_dev import dev_urlpatterns
 from config.views import VatSpectacularAPIView
+from core.backend_proxy import backend_proxy_urlpatterns
+from core.url_registry import stub_urlpatterns
 from core.v2_frontend import frontend_v2
 from usuarios.views import (
     PasswordResetConfirmCustomView,
@@ -19,6 +20,8 @@ from usuarios.views import (
 )
 
 urlpatterns = [
+    # Verticales que corren en su propio backend (config/backends.json).
+    *backend_proxy_urlpatterns(),
     re_path(
         r"^v2/(?P<module>[a-z0-9_-]+)(?:/(?P<asset_path>.*))?$",
         frontend_v2,
@@ -63,8 +66,6 @@ urlpatterns = [
     path("expedientespagos/", include("expedientespagos.urls")),
     path("", include("rendicioncuentasfinal.urls")),
     path("", include("relevamientos.urls")),
-    path("", include("datacalle.urls")),
-    path("", include("dispositivos.urls")),
     path("", include("insumos.urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
     path("", include("celiaquia.global_urls")),
@@ -79,7 +80,6 @@ urlpatterns = [
     path("api/comunicados/", include("comunicados.api_urls")),
     path("api/renaper/", include("core.api_urls")),
     path("api/pwa/", include("pwa.api_urls")),
-    path("api/datacalle/", include("datacalle.api_urls")),
     path("api/ticketera/", include("ticketera.api_urls")),
     path("", include("importarexpediente.urls")),
     path("", include("comunicados.urls")),
@@ -87,14 +87,7 @@ urlpatterns = [
     path("", include("encuestas.urls")),
 ]
 
-if settings.DEBUG and not getattr(settings, "RUNNING_TESTS", False):
-    urlpatterns += [path("__debug__/", include("debug_toolbar.urls"))]
-
-    if getattr(settings, "ENABLE_SILK", False):
-        urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
-
-    urlpatterns += staticfiles_urlpatterns()
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += dev_urlpatterns()
 
 if getattr(settings, "ENABLE_API_DOCS", False):
     urlpatterns += [
@@ -122,6 +115,11 @@ if getattr(settings, "ENABLE_API_DOCS", False):
             name="redoc-vat",
         ),
     ]
+
+# Patrones propios del core. Los nombres de los backends se agregan como stubs
+# solo-reverse (core/url_registry.py); config/urls_all.py usa los propios.
+core_urlpatterns = urlpatterns
+urlpatterns = core_urlpatterns + stub_urlpatterns(core_urlpatterns)
 
 handler404 = "config.views.page_not_found"
 handler500 = "config.views.server_error"

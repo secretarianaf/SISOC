@@ -48,14 +48,14 @@
 - `comedores/views_territorial.py`
 - `config/settings.py`
 - `config/urls.py`
+- `docs/contexto/features/pr-2626-refactor-users-kernel-solo-con-identidad-gestion-de-usuarios-a-usuarios-y-accesos-pwa-a-pwa-ola-1a-2309.md`
 - `docs/registro/cambios/2026-10-01-users-identidad-y-usuarios-core.md`
 - `docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md`
+- `docs/registro/prs/PR-2626.md`
 - `kernel/core/views.py`
 - `kernel/users/admin.py`
-- `kernel/users/migrations/0057_accesos_pwa_a_pwa.py`
-- `kernel/users/models.py`
-- `kernel/users/services_auth.py`
-- ... y 100 archivo(s) adicional(es) relacionados.
+- `kernel/users/migrations/0058_accesos_pwa_a_pwa.py`
+- ... y 105 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

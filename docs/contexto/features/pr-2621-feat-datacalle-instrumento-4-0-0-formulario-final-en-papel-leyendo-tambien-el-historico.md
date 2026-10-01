@@ -34,6 +34,7 @@
 
 - Empezar por `docs/registro/prs/PR-2621.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
 - `datacalle/instrumento/README.md`
 - `datacalle/instrumento/catalogos.json`
 - `datacalle/instrumento/cuestionario.json`
@@ -45,11 +46,14 @@
 - `datacalle/templates/datacalle/encuesta_detail.html`
 - `datacalle/templates/datacalle/relevamiento_detail.html`
 - `datacalle/views.py`
+- `docs/contexto/features/pr-2621-feat-datacalle-instrumento-4-0-0-formulario-final-en-papel-leyendo-tambien-el-historico.md`
+- `docs/indice.md`
 - `docs/registro/cambios/2026-10-01-datacalle-instrumento-4.0.0.md`
+- `docs/registro/prs/PR-2621.md`
+- `docs/registro/releases/pending/2026-10-07-pr-2621.md`
 - `tests/test_datacalle_api.py`
 - `tests/test_datacalle_instrumento_4_0_0.py`
 - Documentación sugerida para ampliar contexto:
-- `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`

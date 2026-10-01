@@ -371,7 +371,7 @@ def test_coordinador_valida_y_ve_el_detalle(client, zona):
     )
 
     assert detalle.status_code == 200
-    assert "Funcionamiento" in detalle.content.decode()
+    assert "FUNCIONAMIENTO" in detalle.content.decode()
     assert response.status_code == 302
     seguimiento.refresh_from_db()
     assert seguimiento.estado_validacion == VALIDADO
@@ -567,8 +567,9 @@ def test_detalle_del_coordinador_usa_etiquetas_y_secciones(client, zona):
         )
     ).content.decode()
 
-    assert "Datos del entrevistado del espacio comunitario" in html
-    assert "Nombre y apellido" in html
+    # Textos literales del formulario en papel (FLUJO APP PNUD §7.2).
+    assert "1. DATOS DEL ENTREVISTADO DEL ESPACIO COMUNITARIO" in html
+    assert "Nombre y Apellido" in html
     assert "Ent nombre apellido" not in html
     assert "fila-tecnica-987" not in html  # columnas técnicas de las filas hijas
     assert "Acompañamiento Territorial" in html

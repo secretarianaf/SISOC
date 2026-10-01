@@ -30,8 +30,12 @@
 
 - Empezar por `docs/registro/prs/PR-2622.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
 - `docker-compose.deploy.yml`
 - `docker-compose.yml`
+- `docs/contexto/features/pr-2622-hotfix-infra-el-healthcheck-de-django-seguia-el-redirect-a-https-y-dejaba-el-contenedor-unhealthy.md`
+- `docs/registro/prs/PR-2622.md`
+- `docs/registro/releases/pending/2026-10-07-pr-2622.md`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

@@ -53,9 +53,9 @@
 - `datacalle/templates/datacalle/relevamiento_detail.html`
 - `datacalle/views.py`
 - `docker-compose.deploy.yml`
+- `docker-compose.produccion.yml`
 - `docker-compose.yml`
-- `docs/contexto/features/pr-2596-fix-acompanamiento-qa-28-9-popup-por-programa-acta-complementaria-bloqueo-de-re-revision-y-validacion-del-acta-h1-h5-h12-h16.md`
-- ... y 87 archivo(s) adicional(es) relacionados.
+- ... y 92 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`

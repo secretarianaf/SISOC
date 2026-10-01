@@ -2,6 +2,7 @@ import type { AxiosInstance } from "axios";
 import type {
   AccionResultado,
   AccionRevision,
+  CatalogosRegistroErroneo,
   ComentarioLegajo,
   CupoMovimiento,
   DocumentoLegajo,
@@ -12,6 +13,7 @@ import type {
   Legajo,
   MetricasCupo,
   MotivoPreview,
+  OpcionCatalogo,
   ValidacionRenaper,
   Paginado,
   PagoExpediente,
@@ -138,6 +140,18 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
       http
         .get(`expedientes/${id}/excel-masivo/`, { responseType: "blob" })
         .then((r) => r.data as Blob),
+
+    /** Sexos y nacionalidades, para los desplegables del formulario. */
+    catalogos: () =>
+      http
+        .get<CatalogosRegistroErroneo>("expedientes/catalogos/")
+        .then((r) => r.data),
+
+    /** Municipios, acotados al alcance del usuario. */
+    municipios: (params?: { provincia?: number }) =>
+      http
+        .get<OpcionCatalogo[]>("expedientes/municipios/", { params })
+        .then((r) => r.data),
 
     /**
      * Localidades para los selectores del alta.

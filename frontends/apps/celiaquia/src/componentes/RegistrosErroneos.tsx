@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Collapse from "@mui/material/Collapse";
@@ -15,6 +15,7 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -45,6 +46,16 @@ const etiqueta = (campo: string) =>
  * pantalla sirve para cualquier Excel y no hay que mantener del lado del front
  * la lista de campos que acepta el back.
  */
+/**
+ * Campos que el back guarda como **id**, no como texto.
+ *
+ * El Excel trae "F", "ARGENTINA" o codigos de otro sistema, y por eso falla la
+ * importacion con "municipio 40 no encontrado". Con un input de texto no hay
+ * forma de corregirlo: nadie conoce el id interno. Van como desplegable, igual
+ * que en la pantalla Django.
+ */
+const CAMPOS_CATALOGO = ["sexo", "nacionalidad", "municipio", "localidad"];
+
 function ModalEdicion({
   registro,
   expedienteId,
@@ -58,6 +69,43 @@ function ModalEdicion({
   const [valores, setValores] = useState<Fila>(() => filaDe(registro));
   const [invalidos, setInvalidos] = useState<string[]>([]);
   const [error, setError] = useState("");
+
+  const catalogos = useQuery({
+    queryKey: ["catalogos"],
+    queryFn: () => api.expedientes.catalogos(),
+    staleTime: Infinity,
+  });
+  const municipios = useQuery({
+    queryKey: ["municipios"],
+    queryFn: () => api.expedientes.municipios(),
+    staleTime: Infinity,
+  });
+  // Las localidades son 15.394: se piden solo las del municipio elegido, y solo
+  // si ese municipio existe de verdad. El Excel suele traer un codigo de otro
+  // sistema ("40"), y pedir localidades de un municipio inexistente no sirve.
+  const municipioId = Number(valores.municipio);
+  const municipioValido = (municipios.data ?? []).some(
+    (m) => m.id === municipioId,
+  );
+  const localidades = useQuery({
+    queryKey: ["localidades", municipioId],
+    queryFn: () => api.expedientes.localidades({ municipio: municipioId }),
+    enabled: municipioValido,
+    staleTime: Infinity,
+  });
+
+  const opciones = useMemo(
+    () => ({
+      sexo: catalogos.data?.sexos ?? [],
+      nacionalidad: catalogos.data?.nacionalidades ?? [],
+      municipio: municipios.data ?? [],
+      localidad: (localidades.data ?? []).map((l) => ({
+        id: l.localidad_id,
+        nombre: l.localidad_nombre,
+      })),
+    }),
+    [catalogos.data, municipios.data, localidades.data],
+  );
 
   const guardar = useMutation({
     mutationFn: () =>
@@ -79,6 +127,14 @@ function ModalEdicion({
     },
   });
 
+  const cambiar = (campo: string, valor: string) =>
+    setValores((previo) => ({
+      ...previo,
+      [campo]: valor,
+      // Cambiar de municipio invalida la localidad elegida.
+      ...(campo === "municipio" ? { localidad: "" } : {}),
+    }));
+
   const campos = Object.keys(valores);
 
   return (
@@ -91,23 +147,47 @@ function ModalEdicion({
           </Alert>
         ) : null}
         <Grid container spacing={2}>
-          {campos.map((campo) => (
-            <Grid key={campo} size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                size="small"
-                label={etiqueta(campo)}
-                value={valores[campo] ?? ""}
-                error={invalidos.includes(campo)}
-                onChange={(e) =>
-                  setValores((previo) => ({
-                    ...previo,
-                    [campo]: e.target.value,
-                  }))
-                }
-              />
-            </Grid>
-          ))}
+          {campos.map((campo) => {
+            const esCatalogo = CAMPOS_CATALOGO.includes(campo);
+            const lista = esCatalogo
+              ? opciones[campo as keyof typeof opciones]
+              : [];
+            // El valor del Excel puede no estar en el catalogo (un codigo de
+            // otro sistema). Se muestra vacio para obligar a elegir uno valido,
+            // que es justo lo que destraba la importacion.
+            const valorActual = valores[campo] ?? "";
+            const enLista = lista.some((o) => String(o.id) === valorActual);
+
+            return (
+              <Grid key={campo} size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  select={esCatalogo}
+                  label={etiqueta(campo)}
+                  value={esCatalogo && !enLista ? "" : valorActual}
+                  error={invalidos.includes(campo)}
+                  disabled={campo === "localidad" && !municipioValido}
+                  helperText={
+                    campo === "localidad" && !municipioValido
+                      ? "Elegí primero un municipio válido"
+                      : esCatalogo && valorActual && !enLista
+                        ? `El archivo traía "${valorActual}": elegí el valor correcto`
+                        : undefined
+                  }
+                  onChange={(e) => cambiar(campo, e.target.value)}
+                >
+                  {esCatalogo
+                    ? lista.map((o) => (
+                        <MenuItem key={o.id} value={String(o.id)}>
+                          {o.nombre}
+                        </MenuItem>
+                      ))
+                    : null}
+                </TextField>
+              </Grid>
+            );
+          })}
         </Grid>
         {campos.length === 0 ? (
           <Typography variant="body2" color="text.secondary">

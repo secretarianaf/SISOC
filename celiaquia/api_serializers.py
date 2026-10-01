@@ -436,6 +436,37 @@ class ImportacionResultadoSerializer(serializers.Serializer):
         raise serializers.ValidationError("Serializer de solo lectura.")
 
 
+class OpcionCatalogoSerializer(serializers.Serializer):
+    """Opción de un desplegable: id y etiqueta, nada más.
+
+    El formulario de corrección de registros erróneos guarda **ids**, igual que
+    la pantalla Django: el Excel trae texto libre ("F", "ARGENTINA") o códigos
+    de otro sistema, y por eso falla la importación.
+    """
+
+    id = serializers.IntegerField(read_only=True)
+    nombre = serializers.CharField(read_only=True)
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+
+class CatalogosRegistroErroneoSerializer(serializers.Serializer):
+    """Catálogos chicos que el formulario necesita enteros."""
+
+    sexos = OpcionCatalogoSerializer(many=True)
+    nacionalidades = OpcionCatalogoSerializer(many=True)
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+
 class GuardarValidacionRenaperSerializer(_EntradaSerializer):
     """Resultado que el tecnico elige tras ver la comparacion con RENAPER."""
 

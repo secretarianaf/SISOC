@@ -652,6 +652,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/celiaquia/expedientes/catalogos/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Sexos y nacionalidades para el formulario de corrección.
+         *
+         *     Son chicos (3 y ~190 filas), así que van enteros en una sola llamada.
+         *     Municipios y localidades no: se piden filtrados, porque son 2.264 y
+         *     15.394 y meterlos en la pantalla la vuelve inusable.
+         */
+        get: operations["expedientes_catalogos_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/celiaquia/expedientes/localidades/": {
         parameters: {
             query?: never;
@@ -666,6 +689,23 @@ export interface paths {
          *     provincial no ve localidades de otra provincia.
          */
         get: operations["expedientes_localidades_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/celiaquia/expedientes/municipios/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Municipios, acotados al alcance del usuario y opcionalmente a una provincia. */
+        get: operations["expedientes_municipios_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1184,6 +1224,11 @@ export interface components {
         };
         /** @enum {unknown} */
         BlankEnum: "";
+        /** @description Catálogos chicos que el formulario necesita enteros. */
+        CatalogosRegistroErroneo: {
+            sexos: components["schemas"]["OpcionCatalogo"][];
+            nacionalidades: components["schemas"]["OpcionCatalogo"][];
+        };
         /**
          * @description Comentario del panel de un legajo.
          *
@@ -1409,6 +1454,17 @@ export interface components {
             tipo: string;
             detalle: string;
         };
+        /**
+         * @description Opción de un desplegable: id y etiqueta, nada más.
+         *
+         *     El formulario de corrección de registros erróneos guarda **ids**, igual que
+         *     la pantalla Django: el Excel trae texto libre ("F", "ARGENTINA") o códigos
+         *     de otro sistema, y por eso falla la importación.
+         */
+        OpcionCatalogo: {
+            readonly id: number;
+            readonly nombre: string;
+        };
         Organismo: {
             readonly id: number;
             nombre: string;
@@ -1532,6 +1588,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["LocalidadLookup"][];
+        };
+        PaginatedOpcionCatalogoList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["OpcionCatalogo"][];
         };
         PaginatedPagoExpedienteList: {
             /** @example 123 */
@@ -2797,6 +2868,25 @@ export interface operations {
             };
         };
     };
+    expedientes_catalogos_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogosRegistroErroneo"];
+                };
+            };
+        };
+    };
     expedientes_localidades_list: {
         parameters: {
             query?: {
@@ -2817,6 +2907,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedLocalidadLookupList"];
+                };
+            };
+        };
+    };
+    expedientes_municipios_list: {
+        parameters: {
+            query?: {
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
+                page?: number;
+                provincia?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedOpcionCatalogoList"];
                 };
             };
         };

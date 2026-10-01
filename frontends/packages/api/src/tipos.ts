@@ -58,6 +58,8 @@ export type ImportacionResultado = Schemas["ImportacionResultado"];
 export type ComentarioLegajo = Schemas["ComentarioLegajo"];
 export type MotivoPreview = Schemas["MotivoPreview"];
 export type LocalidadLookup = Schemas["LocalidadLookup"];
+export type OpcionCatalogo = Schemas["OpcionCatalogo"];
+export type CatalogosRegistroErroneo = Schemas["CatalogosRegistroErroneo"];
 
 /**
  * Respuesta de `validar-renaper`.

@@ -47,7 +47,9 @@ from celiaquia.api_serializers import (
     ActualizarRegistroErroneoSerializer,
     GuardarValidacionRenaperSerializer,
     ImportacionResultadoSerializer,
+    CatalogosRegistroErroneoSerializer,
     LocalidadLookupSerializer,
+    OpcionCatalogoSerializer,
     ComentarioLegajoSerializer,
     CrearComentarioTecnicoSerializer,
     MotivoPreviewSerializer,
@@ -90,7 +92,7 @@ from celiaquia.services.asignacion_service import AsignacionService
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService
 from celiaquia.services.documentos_service import DocumentosService
-from core.models import Localidad
+from core.models import Localidad, Municipio, Nacionalidad, Sexo
 from users.territorial_scope import apply_territorial_scope
 from celiaquia.permissions import (
     can_edit_legajo_files,
@@ -436,6 +438,58 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
             'attachment; filename="plantilla_expediente.xlsx"'
         )
         return respuesta
+
+    @extend_schema(responses=CatalogosRegistroErroneoSerializer)
+    @action(detail=False, methods=["get"], url_path="catalogos")
+    def catalogos(self, request):
+        """Sexos y nacionalidades para el formulario de corrección.
+
+        Son chicos (3 y ~190 filas), así que van enteros en una sola llamada.
+        Municipios y localidades no: se piden filtrados, porque son 2.264 y
+        15.394 y meterlos en la pantalla la vuelve inusable.
+        """
+
+        return Response(
+            CatalogosRegistroErroneoSerializer(
+                {
+                    "sexos": [
+                        {"id": s.id, "nombre": s.sexo}
+                        for s in Sexo.objects.all().order_by("sexo")
+                    ],
+                    "nacionalidades": [
+                        {"id": n.id, "nombre": n.nacionalidad}
+                        for n in Nacionalidad.objects.all().order_by("nacionalidad")
+                    ],
+                }
+            ).data
+        )
+
+    @extend_schema(
+        parameters=[OpenApiParameter("provincia", int)],
+        responses=OpcionCatalogoSerializer(many=True),
+    )
+    @action(detail=False, methods=["get"], url_path="municipios")
+    def municipios(self, request):
+        """Municipios, acotados al alcance del usuario y opcionalmente a una provincia."""
+
+        queryset = Municipio.objects.all()
+        if (
+            is_provincial(request.user)
+            and not is_coordinador(request.user)
+            and not is_admin(request.user)
+        ):
+            queryset = apply_territorial_scope(
+                queryset, request.user, provincia_lookup="provincia_id"
+            )
+        provincia_id = (request.query_params.get("provincia") or "").strip()
+        if provincia_id.isdigit():
+            queryset = queryset.filter(provincia_id=int(provincia_id))
+        return Response(
+            OpcionCatalogoSerializer(
+                [{"id": m.id, "nombre": m.nombre} for m in queryset.order_by("nombre")],
+                many=True,
+            ).data
+        )
 
     @extend_schema(
         parameters=[

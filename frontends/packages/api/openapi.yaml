@@ -1116,6 +1116,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/ReprocesoResultado'
           description: ''
+  /api/celiaquia/expedientes/catalogos/:
+    get:
+      operationId: expedientes_catalogos_retrieve
+      description: |-
+        Sexos y nacionalidades para el formulario de corrección.
+
+        Son chicos (3 y ~190 filas), así que van enteros en una sola llamada.
+        Municipios y localidades no: se piden filtrados, porque son 2.264 y
+        15.394 y meterlos en la pantalla la vuelve inusable.
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogosRegistroErroneo'
+          description: ''
   /api/celiaquia/expedientes/localidades/:
     get:
       operationId: expedientes_localidades_list
@@ -1151,6 +1173,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedLocalidadLookupList'
+          description: ''
+  /api/celiaquia/expedientes/municipios/:
+    get:
+      operationId: expedientes_municipios_list
+      description: Municipios, acotados al alcance del usuario y opcionalmente a una
+        provincia.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - in: query
+        name: provincia
+        schema:
+          type: integer
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOpcionCatalogoList'
           description: ''
   /api/celiaquia/expedientes/plantilla-excel/:
     get:
@@ -1976,6 +2027,21 @@ components:
     BlankEnum:
       enum:
       - ''
+    CatalogosRegistroErroneo:
+      type: object
+      description: Catálogos chicos que el formulario necesita enteros.
+      properties:
+        sexos:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpcionCatalogo'
+        nacionalidades:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpcionCatalogo'
+      required:
+      - nacionalidades
+      - sexos
     ComentarioLegajo:
       type: object
       description: |-
@@ -2481,6 +2547,24 @@ components:
       required:
       - detalle
       - tipo
+    OpcionCatalogo:
+      type: object
+      description: |-
+        Opción de un desplegable: id y etiqueta, nada más.
+
+        El formulario de corrección de registros erróneos guarda **ids**, igual que
+        la pantalla Django: el Excel trae texto libre ("F", "ARGENTINA") o códigos
+        de otro sistema, y por eso falla la importación.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nombre:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - nombre
     Organismo:
       type: object
       properties:
@@ -2677,6 +2761,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LocalidadLookup'
+    PaginatedOpcionCatalogoList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpcionCatalogo'
     PaginatedPagoExpedienteList:
       type: object
       required:

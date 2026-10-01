@@ -820,3 +820,64 @@ def test_guardar_validacion_renaper_rechaza_un_estado_invalido(client, territori
     )
 
     assert response.status_code == 400
+
+
+def test_corregir_una_fila_limpia_el_error_viejo(client, territorio):
+    """Al corregir con exito, el mensaje anterior tiene que desaparecer.
+
+    Antes solo se guardaba `datos_raw`: la fila quedaba corregida pero seguia
+    mostrando el error viejo, y parecia que el guardado no habia hecho nada.
+
+    Se mockea la validacion a proposito: lo que se prueba es el efecto del
+    guardado exitoso, no las reglas de validacion (que tienen sus propios
+    tests).
+    """
+
+    owner = _provincial("prov_limpia_error", territorio[0])
+    expediente, _ = _expediente_con_legajo(owner, territorio, "40000030", "LIMPIA")
+    registro = _registro_erroneo(expediente)
+    assert registro.mensaje_error
+    client.force_login(owner)
+
+    with patch(
+        "celiaquia.services.registros_erroneos_service._validar_datos_registro_erroneo"
+    ):
+        response = client.post(
+            reverse(
+                "celiaquia-expediente-actualizar-registro-erroneo",
+                kwargs={"pk": expediente.pk, "registro_id": registro.pk},
+            ),
+            {"datos": {"documento": "20333333338"}},
+            content_type="application/json",
+        )
+
+    assert response.status_code == 200
+    registro.refresh_from_db()
+    assert registro.mensaje_error == ""
+    assert registro.campo_error == ""
+
+
+def test_una_correccion_invalida_deja_el_motivo(client, territorio):
+    """El camino inverso: si sigue mal, el mensaje se actualiza, no se borra."""
+
+    owner = _provincial("prov_error_queda", territorio[0])
+    expediente, _ = _expediente_con_legajo(owner, territorio, "40000031", "QUEDA")
+    registro = _registro_erroneo(expediente)
+    client.force_login(owner)
+
+    with patch(
+        "celiaquia.services.registros_erroneos_service._validar_datos_registro_erroneo",
+        side_effect=DjangoValidationError("Fila 3: documento invalido"),
+    ):
+        response = client.post(
+            reverse(
+                "celiaquia-expediente-actualizar-registro-erroneo",
+                kwargs={"pk": expediente.pk, "registro_id": registro.pk},
+            ),
+            {"datos": {"documento": "x"}},
+            content_type="application/json",
+        )
+
+    assert response.status_code == 400
+    registro.refresh_from_db()
+    assert "documento invalido" in registro.mensaje_error

@@ -486,8 +486,13 @@ def actualizar(expediente, registro, datos, usuario) -> None:
         registro.save(update_fields=["mensaje_error"])
         raise
 
+    # Al fallar se deja el motivo en `mensaje_error`; al funcionar hay que
+    # limpiarlo. Si no, la fila corregida sigue mostrando el error viejo y
+    # parece que el guardado no hizo nada.
     registro.datos_raw = _limpiar_datos_registro_erroneo(datos_normalizados)
-    registro.save(update_fields=["datos_raw"])
+    registro.mensaje_error = ""
+    registro.campo_error = ""
+    registro.save(update_fields=["datos_raw", "mensaje_error", "campo_error"])
 
 
 def campos_invalidos(exc) -> list:

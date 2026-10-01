@@ -18,6 +18,7 @@
 - Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
 - Se modifican templates, con posible impacto visual o de composición UI.
 - Existen cambios de persistencia o migraciones que requieren revisión de datos.
+- El alcance incluye automatización o tooling de CI/CD.
 
 ## Decisiones y supuestos detectados
 
@@ -35,6 +36,7 @@
 
 - Empezar por `docs/registro/prs/PR-2635.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `.github/workflows/tests.yml`
 - `.gitleaksignore`
 - `.pylintrc`
 - `AGENT_REPO_MAP.md`
@@ -54,8 +56,7 @@
 - `backends/sisoc_core/acompanamientos/templates/acompanamientos/partials/comedor_rows.html`
 - `backends/sisoc_core/acompanamientos/templates/acompañamiento_detail.html`
 - `backends/sisoc_core/acompanamientos/templates/hitos/hito_row.html`
-- `backends/sisoc_core/acompanamientos/templates/lista_comedores.html`
-- ... y 836 archivo(s) adicional(es) relacionados.
+- ... y 840 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

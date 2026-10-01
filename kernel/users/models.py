@@ -226,13 +226,8 @@ class Profile(models.Model):
             "Obligatorio cuando es_relevador_calle esta activo."
         ),
     )
-    duplas_asignadas = models.ManyToManyField(
-        "duplas.Dupla",
-        blank=True,
-        related_name="coordinadores",
-        verbose_name="Duplas asignadas",
-        help_text="Duplas (equipos técnicos) asignadas a este coordinador",
-    )
+    # ``duplas_asignadas`` (duplas que coordina este perfil) lo declara
+    # ``duplas.Dupla.coordinadores``: el kernel no conoce el dominio de duplas.
     grupos_asignables = models.ManyToManyField(
         Group,
         blank=True,

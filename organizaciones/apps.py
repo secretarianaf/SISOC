@@ -7,6 +7,7 @@ class OrganizacionesConfig(AppConfig):
 
     def ready(self):
         import organizaciones.audit_signals  # pylint: disable=unused-import, import-outside-toplevel
+        import organizaciones.programa_signals  # pylint: disable=unused-import, import-outside-toplevel
         from organizaciones.user_form_catalog import (  # pylint: disable=import-outside-toplevel
             registrar_user_form_catalog,
         )

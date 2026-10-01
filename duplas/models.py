@@ -56,6 +56,18 @@ class Dupla(SoftDeleteModelMixin, models.Model):
         help_text="Coordinador asignado a esta dupla. Si se elimina el coordinador, este campo quedará vacío.",
     )
 
+    # Antes era ``users.Profile.duplas_asignadas``: se declara de este lado para
+    # que el kernel (users) no dependa de duplas. Misma tabla intermedia, y
+    # ``profile.duplas_asignadas`` / ``dupla.coordinadores`` siguen igual.
+    coordinadores = models.ManyToManyField(
+        "users.Profile",
+        blank=True,
+        related_name="duplas_asignadas",
+        db_table="users_profile_duplas_asignadas",
+        verbose_name="Coordinadores",
+        help_text="Perfiles de coordinador que tienen asignada esta dupla",
+    )
+
     # Manager personalizado
     objects = DuplaManager()
 

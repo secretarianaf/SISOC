@@ -20,7 +20,7 @@ e `intervenciones`, y por eso no arrancaba solo.
     igual, incluidos los filtros por ORM.
   - La señal de sincronización con `Dupla.coordinador` cambia solo su
     `sender`.
-  - Migraciones solo de estado: `duplas.0004` y `users.0058`.
+  - Migraciones solo de estado: `duplas.0004` y `users.0059`.
 - **`core.Programa.organismo`** (FK a `organizaciones`) pasa a ser
   `organismo_id` entero en el estado de Django. La columna, el índice y la FK
   física siguen en la DB (migración `core.0010`, solo estado).

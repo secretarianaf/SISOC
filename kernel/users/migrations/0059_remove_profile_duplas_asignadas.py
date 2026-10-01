@@ -10,7 +10,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("users", "0057_accesos_pwa_a_pwa"),
+        ("users", "0058_accesos_pwa_a_pwa"),
         ("duplas", "0004_dupla_coordinadores"),
     ]
 

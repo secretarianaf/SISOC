@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("duplas", "0001_squashed_0003"),
-        ("users", "0057_accesos_pwa_a_pwa"),
+        ("users", "0058_accesos_pwa_a_pwa"),
     ]
 
     operations = [

@@ -1,4 +1,8 @@
 services:
+  django:
+    healthcheck:
+      start_period: 20m
+
   bulk_credentials_worker:
     build:
       context: .

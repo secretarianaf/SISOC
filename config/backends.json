@@ -1,0 +1,11 @@
+{
+  "dispositivos": {
+    "apps": ["dispositivos", "datacalle"],
+    "url_prefixes": ["dispositivos/", "datacalle/", "api/datacalle/"],
+    "urlconf": "dispositivos_runtime.urls",
+    "origin_env": "BACKEND_DISPOSITIVOS_ORIGIN",
+    "default_origin": "http://backend_dispositivos:8000",
+    "service": "backend_dispositivos",
+    "migrate_service": "backend_dispositivos_migrate"
+  }
+}

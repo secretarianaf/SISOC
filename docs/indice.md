@@ -16,6 +16,7 @@
 - `docs/operacion/integraciones.md`: conexiones con servicios externos, caches y manejo de estáticos/media.
 - `docs/operacion/operaciones.md`: tareas recurrentes, cron jobs y endpoints de health de producción.
 - `docs/operacion/infraestructura.md`: inventario de infraestructura operativo (entornos, arquitectura, networking, deploy, observabilidad, seguridad y roadmap infra).
+- `docs/operacion/backends_por_servicio.md`: backends por vertical (core + proxy + backend), deploy selectivo, migrador único y cómo sumar un backend.
 - `docs/operacion/ver_para_ser_libre_react.md`: arquitectura, arranque, rutas y límites del MVP React/Django de VPSL.
 - `docs/operacion/deploy_automatizado.md`: runbook de deploy por GitHub Actions, runners self-hosted, promoción y rollback por tag estable.
 - `scripts/infra/install_qa_pwa_nginx.sh`: preflight e instalación transaccional de las rutas PWA en el Nginx HTTP de QA.

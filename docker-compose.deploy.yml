@@ -1,14 +1,22 @@
+# Deploy (QA/HML/PRD). Cada imagen lleva su código construido desde el SHA:
+# no se monta el checkout, así que actualizarlo no cambia lo que corre hasta
+# reconstruir el servicio. Solo se montan datos: media, static_root y logs.
+# Ver docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md.
 services:
   django:
+    image: sisoc/core:${SISOC_RELEASE_SHA:-local}
     build:
       context: .
       dockerfile: ./docker/django/Dockerfile
+      target: core
     env_file:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
     volumes:
-      - .:/sisoc/
+      - ./media:/sisoc/media
+      - ./static_root:/sisoc/static_root
+      - ./logs:/sisoc/logs
     restart: unless-stopped
     ports:
       - "8001:8000"
@@ -18,6 +26,53 @@ services:
       timeout: 3s
       start_period: 10m
       retries: 12
+
+  # Backend de Dispositivos (incluye Datacalle). El core le reenvía sus
+  # prefijos (config/backends.json); no publica puertos.
+  backend_dispositivos:
+    image: sisoc/backend-dispositivos:${SISOC_RELEASE_SHA:-local}
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+      target: backend
+      args:
+        BACKEND: dispositivos
+    env_file:
+      - .env
+    environment:
+      TZ: America/Argentina/Buenos_Aires
+      DJANGO_SETTINGS_MODULE: dispositivos_runtime.settings
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_DISPOSITIVOS_WORKERS:-2}", "--log-level", "info"]
+    volumes:
+      - ./media:/sisoc/media
+      # Los estáticos los recolecta el core; el backend solo lee el manifest.
+      - ./static_root:/sisoc/static_root:ro
+      - ./logs:/sisoc/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen, Request; r = urlopen(Request('http://127.0.0.1:8000/health/', headers={'X-Forwarded-Proto': 'https'}), timeout=2); exit(0 if r.status == 200 else 1)"]
+      interval: 10s
+      timeout: 3s
+      start_period: 1m
+      retries: 6
+
+  # Migrador único con la composición completa (config.settings_all). Lo corre
+  # el deploy antes de actualizar servicios: `compose run --rm migrator`.
+  migrator:
+    image: sisoc/migrator:${SISOC_RELEASE_SHA:-local}
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+      target: migrator
+    env_file:
+      - .env
+    environment:
+      TZ: America/Argentina/Buenos_Aires
+    volumes:
+      - ./logs:/sisoc/logs
+    profiles:
+      - migrate
+    restart: "no"
 
   front_vpsl:
     image: ${VPSL_IMAGE_TAG:-sisoc/front-vpsl:local}
@@ -36,14 +91,17 @@ services:
     restart: unless-stopped
 
   ocr_worker:
+    image: sisoc/core:${SISOC_RELEASE_SHA:-local}
     build:
       context: .
       dockerfile: ./docker/django/Dockerfile
+      target: core
     env_file:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SERVICE_ROLE: ocr_worker
     volumes:
-      - .:/sisoc/
+      - ./media:/sisoc/media
+      - ./logs:/sisoc/logs
     restart: unless-stopped

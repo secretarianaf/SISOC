@@ -97,6 +97,14 @@ aceptadas.
     backend que instale `users` necesitaba `comedores`, `organizaciones` y
     `duplas`.
 
+14. **Implementación de la Ola 1** (2026-10-01, *recomendación del agente*).
+    Los nombres de URL entre servicios se resuelven con un registro generado
+    (`config/url_registry.json`), así `reverse()` funciona sin tocar
+    templates. Los ítems del menú que aporta una app del core se registran
+    (`core.services.sidebar_items`). Los estáticos los recolecta el core y
+    los backends los leen en modo solo lectura. Detalle operativo:
+    `docs/operacion/backends_por_servicio.md`.
+
 ## Deuda aceptada (revisar en el futuro)
 
 - **El aislamiento es de proceso, no de datos.** Una sola base MySQL y un solo

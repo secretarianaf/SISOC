@@ -1,4 +1,4 @@
-# Contexto de feature PR #2626 - refactor(users): kernel solo con identidad; gestión de usuarios a usuarios y accesos PWA a pwa (Ola 1a #2309)
+# Contexto de feature PR #2626 - refactor(kernel): users solo identidad y kernel sin dependencias de dominio (Ola 1a+1b #2309)
 
 ## Resumen
 

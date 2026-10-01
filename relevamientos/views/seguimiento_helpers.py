@@ -60,12 +60,31 @@ def resolver_seguimiento(kwargs, queryset=None):
     return seguimiento
 
 
-def aplicar_revision_coordinador(request, registro, etiqueta):
+def aplicar_revision_coordinador(request, registro, etiqueta, mensaje_validado=None):
     """Guarda el resultado de la revisión del coordinador (N16) sobre un
     relevamiento o una instancia de seguimiento.
 
+    Un registro ``Validado`` no admite otra revisión (ni PAC ni PNUD): el
+    coordinador no puede volverlo a "A subsanar". Conviene llamarlo con la fila
+    bloqueada (``select_for_update``) para no cruzarse con una corrección del
+    territorial.
+
     Devuelve el mensaje de error a mostrar, o ``None`` si se guardó.
     """
+    if registro.esta_validado:
+        if mensaje_validado:
+            return mensaje_validado
+        sujeto = etiqueta[:1].upper() + etiqueta[1:]
+        return f"{sujeto} ya está validado: no admite otra revisión."
+    # Un PNUD o un acta asignados desde SISOC nacen vacíos y sin enviar:
+    # validarlos antes de que el territorial los cargue los bloquearía para
+    # siempre (un Validado es definitivo).
+    if getattr(registro, "sin_cargar", False):
+        return (
+            f"Todavía no hay nada que revisar en {etiqueta}: falta la carga del "
+            "territorial desde la app."
+        )
+
     estado = (request.POST.get("estado_validacion") or "").strip()
     observaciones = (request.POST.get("observaciones_coordinador") or "").strip()
     estados_validos = {

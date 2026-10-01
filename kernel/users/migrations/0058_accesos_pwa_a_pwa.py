@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("pwa", "0025_accesos_pwa_desde_users"),
-        ("users", "0056_issue_2444_roles_territoriales_pnud"),
+        ("users", "0057_merge_usuarios_secciones_y_roles_territoriales"),
     ]
 
     operations = [

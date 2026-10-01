@@ -2,7 +2,7 @@
 
 from types import SimpleNamespace
 
-from VAT.sidebar_access import es_usuario_solo_vat
+from iam.roles_vat import es_usuario_solo_vat
 from core.templatetags.custom_filters import is_vat_sidebar_only
 
 
@@ -18,7 +18,7 @@ def test_vat_sidebar_only_delega_en_el_predicado_registrado(mocker):
 
 
 def test_es_usuario_solo_vat_respeta_usuarios_no_autenticados_y_superusuarios(mocker):
-    mocker.patch("VAT.sidebar_access.is_vat_sse", return_value=True)
+    mocker.patch("iam.roles_vat.is_vat_sse", return_value=True)
     user = SimpleNamespace(is_authenticated=True, is_superuser=False)
 
     assert es_usuario_solo_vat(user) is True

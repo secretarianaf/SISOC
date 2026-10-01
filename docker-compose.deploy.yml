@@ -13,6 +13,8 @@ services:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
+      # La DB la prepara el migrador (servicio `migrator`), no la web.
+      SISOC_PREPARAR_DB: "false"
     volumes:
       - ./media:/sisoc/media
       - ./static_root:/sisoc/static_root
@@ -56,6 +58,114 @@ services:
       start_period: 1m
       retries: 6
 
+  # Backend de Ver para Ser Libre (config/backends.json); no publica puertos.
+  backend_vpsl:
+    image: sisoc/backend-vpsl:${SISOC_RELEASE_SHA:-local}
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+      target: backend
+      args:
+        BACKEND: vpsl
+    env_file:
+      - .env
+    environment:
+      TZ: America/Argentina/Buenos_Aires
+      DJANGO_SETTINGS_MODULE: vpsl_runtime.settings
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_VPSL_WORKERS:-2}", "--log-level", "info"]
+    volumes:
+      - ./media:/sisoc/media
+      - ./static_root:/sisoc/static_root:ro
+      - ./logs:/sisoc/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen, Request; r = urlopen(Request('http://127.0.0.1:8000/health/', headers={'X-Forwarded-Proto': 'https'}), timeout=2); exit(0 if r.status == 200 else 1)"]
+      interval: 10s
+      timeout: 3s
+      start_period: 1m
+      retries: 6
+
+  # Backend de PAS (config/backends.json); no publica puertos.
+  backend_pas:
+    image: sisoc/backend-pas:${SISOC_RELEASE_SHA:-local}
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+      target: backend
+      args:
+        BACKEND: pas
+    env_file:
+      - .env
+    environment:
+      TZ: America/Argentina/Buenos_Aires
+      DJANGO_SETTINGS_MODULE: pas_runtime.settings
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_PAS_WORKERS:-2}", "--log-level", "info"]
+    volumes:
+      - ./media:/sisoc/media
+      - ./static_root:/sisoc/static_root:ro
+      - ./logs:/sisoc/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen, Request; r = urlopen(Request('http://127.0.0.1:8000/health/', headers={'X-Forwarded-Proto': 'https'}), timeout=2); exit(0 if r.status == 200 else 1)"]
+      interval: 10s
+      timeout: 3s
+      start_period: 1m
+      retries: 6
+
+  # Backend de VAT (config/backends.json); no publica puertos.
+  backend_vat:
+    image: sisoc/backend-vat:${SISOC_RELEASE_SHA:-local}
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+      target: backend
+      args:
+        BACKEND: vat
+    env_file:
+      - .env
+    environment:
+      TZ: America/Argentina/Buenos_Aires
+      DJANGO_SETTINGS_MODULE: vat_runtime.settings
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_VAT_WORKERS:-2}", "--log-level", "info"]
+    volumes:
+      - ./media:/sisoc/media
+      - ./static_root:/sisoc/static_root:ro
+      - ./logs:/sisoc/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen, Request; r = urlopen(Request('http://127.0.0.1:8000/health/', headers={'X-Forwarded-Proto': 'https'}), timeout=2); exit(0 if r.status == 200 else 1)"]
+      interval: 10s
+      timeout: 3s
+      start_period: 1m
+      retries: 6
+
+  # Backend de Celiaquía (config/backends.json); no publica puertos.
+  backend_celiaquia:
+    image: sisoc/backend-celiaquia:${SISOC_RELEASE_SHA:-local}
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+      target: backend
+      args:
+        BACKEND: celiaquia
+    env_file:
+      - .env
+    environment:
+      TZ: America/Argentina/Buenos_Aires
+      DJANGO_SETTINGS_MODULE: celiaquia_runtime.settings
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_CELIAQUIA_WORKERS:-2}", "--log-level", "info"]
+    volumes:
+      - ./media:/sisoc/media
+      - ./static_root:/sisoc/static_root:ro
+      - ./logs:/sisoc/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen, Request; r = urlopen(Request('http://127.0.0.1:8000/health/', headers={'X-Forwarded-Proto': 'https'}), timeout=2); exit(0 if r.status == 200 else 1)"]
+      interval: 10s
+      timeout: 3s
+      start_period: 1m
+      retries: 6
+
   # Migrador único con la composición completa (config.settings_all). Lo corre
   # el deploy antes de actualizar servicios: `compose run --rm migrator`.
   migrator:
@@ -68,6 +178,7 @@ services:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
+      DJANGO_SERVICE_ROLE: migrator
     volumes:
       - ./logs:/sisoc/logs
     profiles:

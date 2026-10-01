@@ -184,3 +184,37 @@ def test_rutas_por_prefijo_y_csrf_exempt():
     ]
     assert patrones[1].pattern.match("api/datacalle/x") is not None
     assert all(getattr(p.callback, "csrf_exempt", False) for p in patrones)
+
+
+@pytest.mark.django_db
+def test_favoritos_de_seccion_de_backend_se_reenvian(backend, django_user_model):
+    """El core no tiene registrada la sección de un backend: la atiende el backend."""
+    from core.views import filtros_favoritos  # pylint: disable=import-outside-toplevel
+
+    usuario = django_user_model.objects.create_user("fav", password="x")
+    request = RequestFactory().get("/filtros-favoritos/?seccion=seccion_backend")
+    request.user = usuario
+    backends = {
+        "x": {
+            "url_prefixes": ("x/",),
+            "origin": backend,
+            "favorite_sections": ("seccion_backend",),
+        }
+    }
+
+    with override_settings(SISOC_BACKENDS=backends):
+        response = filtros_favoritos(request)
+    datos = json.loads(_contenido(response))
+
+    assert datos["path"] == "/filtros-favoritos/?seccion=seccion_backend"
+
+
+@pytest.mark.django_db
+def test_favoritos_de_seccion_desconocida_siguen_dando_400(django_user_model):
+    from core.views import filtros_favoritos  # pylint: disable=import-outside-toplevel
+
+    request = RequestFactory().get("/filtros-favoritos/?seccion=inexistente")
+    request.user = django_user_model.objects.create_user("fav2", password="x")
+
+    with override_settings(SISOC_BACKENDS={}):
+        assert filtros_favoritos(request).status_code == 400

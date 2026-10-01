@@ -7,7 +7,6 @@ from drf_spectacular.views import (
     SpectacularRedocView,
 )
 from config.urls_dev import dev_urlpatterns
-from config.views import VatSpectacularAPIView
 from core.backend_proxy import backend_proxy_urlpatterns
 from core.url_registry import stub_urlpatterns
 from core.v2_frontend import frontend_v2
@@ -57,26 +56,19 @@ urlpatterns = [
     path("", include("ciudadanos.urls")),
     path("", include("admisiones.urls")),
     path("", include("centrodefamilia.urls")),
-    path("", include("VAT.urls")),
     path("", include("healthcheck.urls")),
     path("", include("centrodeinfancia.urls")),
-    path("", include("ver_para_ser_libre.urls")),
-    path("", include("pas.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
     path("expedientespagos/", include("expedientespagos.urls")),
     path("", include("rendicioncuentasfinal.urls")),
     path("", include("relevamientos.urls")),
     path("", include("insumos.urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
-    path("", include("celiaquia.global_urls")),
-    path("celiaquia/", include("celiaquia.urls")),
     # API URLs
     path("api/users/", include("usuarios.api_urls")),
-    path("api/vpsl/", include("ver_para_ser_libre.api_urls")),
     path("api/comedores/", include("comedores.api_urls")),
     path("api/territorial/", include("comedores.api_urls_territorial")),
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
-    path("api/vat/", include("VAT.api_urls")),
     path("api/comunicados/", include("comunicados.api_urls")),
     path("api/renaper/", include("core.api_urls")),
     path("api/pwa/", include("pwa.api_urls")),
@@ -93,26 +85,15 @@ if getattr(settings, "ENABLE_API_DOCS", False):
     urlpatterns += [
         # Swagger/OpenAPI
         path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-        path("api/schema/VAT/", VatSpectacularAPIView.as_view(), name="schema-vat"),
         path(
             "api/docs/",
             SpectacularSwaggerView.as_view(url_name="schema"),
             name="swagger-ui",
         ),
         path(
-            "api/docs/VAT/",
-            SpectacularSwaggerView.as_view(url_name="schema-vat"),
-            name="swagger-ui-vat",
-        ),
-        path(
             "api/redoc/",
             SpectacularRedocView.as_view(url_name="schema"),
             name="redoc",
-        ),
-        path(
-            "api/redoc/VAT/",
-            SpectacularRedocView.as_view(url_name="schema-vat"),
-            name="redoc-vat",
         ),
     ]
 

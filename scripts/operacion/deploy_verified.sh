@@ -149,6 +149,8 @@ rollback_on_exit() {
     echo "::error::No se pudo reconstruir el stack de la revision anterior."
     exit "$failed_status"
   fi
+  # El rollback verifica con las imágenes de la revisión anterior.
+  export SISOC_RELEASE_SHA="$previous_revision"
   if ! verify_stack; then
     show_diagnostics
     echo "::error::La revision anterior fue recreada, pero no supero la verificacion."
@@ -161,6 +163,9 @@ trap rollback_on_exit EXIT
 
 echo "Commit previo al deploy para rollback: $previous_revision"
 deployment_started=1
+# Tag de las imágenes con código que construye deploy_refresh.sh: verify_stack
+# usa las mismas (el migrador, entre ellas).
+export SISOC_RELEASE_SHA="$EXPECTED_REVISION"
 deploy_args=(--yes --expected-revision "$EXPECTED_REVISION" --without-mobile --diff-base "$previous_revision")
 [[ "$SKIP_PULL" -eq 0 ]] || deploy_args+=(--skip-pull)
 SISOC_ROOT_DIR="$ROOT_DIR" bash "$ROOT_DIR/scripts/operacion/deploy_refresh.sh" "${deploy_args[@]}"

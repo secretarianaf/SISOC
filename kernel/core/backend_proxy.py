@@ -50,7 +50,8 @@ REQUEST_HEADERS_SET_BY_CORE = {
 RESPONSE_HEADERS_SET_BY_CORE = {"set-cookie"}
 
 
-def _outbound_headers(request):
+def outbound_headers(request):
+    """Headers para pedir algo a un backend en nombre del request del usuario."""
     headers = {}
     for key, value in request.META.items():
         if key.startswith("HTTP_"):
@@ -133,7 +134,7 @@ def _forward(request, origin, path):
         upstream = requests.request(
             request.method,
             url,
-            headers=_outbound_headers(request),
+            headers=outbound_headers(request),
             data=_RequestBody(request) if request.META.get("CONTENT_LENGTH") else None,
             allow_redirects=False,
             stream=True,
@@ -156,6 +157,19 @@ def _forward(request, origin, path):
     if session is not None:
         session.modified = False
     return response
+
+
+def backend_de_seccion_favorita(seccion):
+    """Backend dueño de una sección de filtros favoritos, si no es del core."""
+    for spec in getattr(settings, "SISOC_BACKENDS", {}).values():
+        if seccion in spec.get("favorite_sections", ()):
+            return spec
+    return None
+
+
+def reenviar_a_backend(request, spec):
+    """Reenvía este request, tal cual, al backend ``spec``."""
+    return _forward(request, spec["origin"], request.path_info.lstrip("/"))
 
 
 def _proxy_view(origin):

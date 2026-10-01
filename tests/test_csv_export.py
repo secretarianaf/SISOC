@@ -204,7 +204,7 @@ class TestCSVExportMixin:
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="config.urls")
+@override_settings(ROOT_URLCONF="config.urls_all")
 def test_comedor_export_rejects_anonymous_user(client):
     response = client.get(reverse("comedor_export"))
 
@@ -213,7 +213,7 @@ def test_comedor_export_rejects_anonymous_user(client):
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="config.urls")
+@override_settings(ROOT_URLCONF="config.urls_all")
 def test_comedor_export_rejects_list_permission_without_export_permission(client):
     user = User.objects.create_user(username="comedor_export_list")
     user = _grant_permission(user, "admisiones", "view_admision")
@@ -225,7 +225,7 @@ def test_comedor_export_rejects_list_permission_without_export_permission(client
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="config.urls")
+@override_settings(ROOT_URLCONF="config.urls_all")
 def test_comedor_export_rejects_export_role_without_list_permission(client):
     user = User.objects.create_user(username="comedor_export_only")
     user = _grant_export_role(user)
@@ -237,7 +237,7 @@ def test_comedor_export_rejects_export_role_without_list_permission(client):
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="config.urls")
+@override_settings(ROOT_URLCONF="config.urls_all")
 def test_comedor_export_allows_user_with_list_and_export_permissions(client):
     user = User.objects.create_user(username="comedor_export_both")
     user = _grant_permission(user, "admisiones", "view_admision")
@@ -253,7 +253,7 @@ def test_comedor_export_allows_user_with_list_and_export_permissions(client):
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="config.urls")
+@override_settings(ROOT_URLCONF="config.urls_all")
 def test_comedor_export_allows_admin_role_without_explicit_export_pair(client):
     user = User.objects.create_user(username="comedor_export_admin")
     user = _grant_admin_role(user)
@@ -265,7 +265,7 @@ def test_comedor_export_allows_admin_role_without_explicit_export_pair(client):
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="config.urls")
+@override_settings(ROOT_URLCONF="config.urls_all")
 def test_comedor_list_shows_export_button_with_list_and_export_permissions(client):
     user = User.objects.create_user(username="comedor_list_export_button")
     user = _grant_permission(user, "admisiones", "view_admision")
@@ -281,7 +281,7 @@ def test_comedor_list_shows_export_button_with_list_and_export_permissions(clien
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="config.urls")
+@override_settings(ROOT_URLCONF="config.urls_all")
 def test_comedor_list_hides_export_button_with_list_permission_only(client):
     user = User.objects.create_user(username="comedor_list_only_button")
     user = _grant_permission(user, "admisiones", "view_admision")

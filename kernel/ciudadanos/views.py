@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db import IntegrityError, transaction
 from django.db.models import Q
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -18,7 +19,6 @@ from django.views.generic import (
     UpdateView,
 )
 
-from celiaquia.api import obtener_resumen_ciudadano
 from ciudadanos.ciudadanos_filter_config import (
     CHOICE_OPS as CIUDADANOS_CHOICE_OPS,
     FIELD_MAP as CIUDADANOS_FIELD_MAP,
@@ -28,7 +28,12 @@ from ciudadanos.ciudadanos_filter_config import (
     get_filters_ui_config,
 )
 from ciudadanos.forms import CiudadanoFiltroForm, CiudadanoForm, GrupoFamiliarForm
-from ciudadanos.detail_contributions import obtener_contexto_contribucion
+from ciudadanos.detail_contributions import (
+    obtener_contexto_contribucion,
+    es_contribucion_local,
+    renderizar_contribucion,
+    renderizar_contribucion_local,
+)
 from ciudadanos.models import Ciudadano, GrupoFamiliar
 from ciudadanos.api import obtener_datos_ciudadano_desde_renaper
 from core.models import Localidad, Municipio
@@ -205,6 +210,7 @@ class CiudadanosDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
     context_object_name = "ciudadano"
     permission_required = "ciudadanos.view_ciudadano"
     raise_exception = True
+    CONTRIBUCIONES_RENDERIZADAS = ("celiaquia", "vat")
     MESES_NOMBRES = [
         "",
         "Ene",
@@ -232,11 +238,15 @@ class CiudadanosDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
         )
         ctx.update(self.get_programas_context(ciudadano))
         ctx.update(self.get_historial_context(ciudadano))
-        ctx.update(self.get_celiaquia_context(ciudadano))
         ctx.update(self.get_cdf_context(ciudadano))
         ctx.update(self.get_comedor_context(ciudadano))
         ctx.update(self.get_flags_sociales_context(ciudadano))
-        ctx.update(self.get_vat_context(ciudadano))
+        # Secciones de verticales que pueden correr en otro backend: llegan
+        # ya renderizadas (ciudadanos.detail_contributions).
+        ctx["contribuciones_html"] = {
+            nombre: renderizar_contribucion(nombre, self.request, ciudadano, logger)
+            for nombre in self.CONTRIBUCIONES_RENDERIZADAS
+        }
         return ctx
 
     def build_familia(self, ciudadano):
@@ -287,15 +297,6 @@ class CiudadanosDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
             "historial_comedor": [float(h.monto_comedor) for h in historial],
         }
 
-    def get_celiaquia_context(self, ciudadano):
-        try:
-            return {"celiaquia_resumen": obtener_resumen_ciudadano(ciudadano.pk)}
-        except Exception:
-            logger.exception(
-                "Error cargando expedientes celiaquia para ciudadano %s", ciudadano.pk
-            )
-            return {"celiaquia_resumen": None}
-
     def get_cdf_context(self, ciudadano):
         return obtener_contexto_contribucion(
             "centrodefamilia",
@@ -321,19 +322,6 @@ class CiudadanosDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
                 "pertenece_comunidad_indigena": False,
                 "situacion_calle_pwa": False,
                 "persona_con_celiaquia_pwa": False,
-            },
-        )
-
-    def get_vat_context(self, ciudadano):
-        return obtener_contexto_contribucion(
-            "vat",
-            ciudadano,
-            logger,
-            lambda: {
-                "vat_inscripciones": [],
-                "vat_vouchers": [],
-                "vat_inscripciones_oferta": [],
-                "vat_programas": [],
             },
         )
 
@@ -721,4 +709,20 @@ def descartar_revision(request, pk):
         request,
         default=ciudadano.get_absolute_url(),
         target=request.POST.get("next"),
+    )
+
+
+@login_required
+@permission_required("ciudadanos.view_ciudadano", raise_exception=True)
+def contribucion_detalle_ciudadano(request, pk, nombre):
+    """Fragmento HTML de una contribución renderizada de Ciudadano 360.
+
+    Lo sirve el backend dueño de la contribución; el core lo pide al armar el
+    detalle (``renderizar_contribucion``). Mismo permiso que el detalle.
+    """
+    if not es_contribucion_local(nombre):
+        raise Http404("Contribución no disponible en este servicio.")
+    ciudadano = get_object_or_404(Ciudadano, pk=pk)
+    return HttpResponse(
+        renderizar_contribucion_local(nombre, request, ciudadano, logger)
     )

@@ -5402,7 +5402,7 @@
  {
   "name": "app_list",
   "namespace": "admin",
-  "regex": "^admin/(?P<app_label>auth|auditlog|authtoken|rest_framework_api_key|users|core|ciudadanos|dashboard|comedores|organizaciones|duplas|admisiones|intervenciones|historial|acompanamientos|expedientespagos|relevamientos|rendicioncuentasfinal|rendicioncuentasmensual|centrodefamilia|VAT|celiaquia|comunicados|centrodeinfancia|ver_para_ser_libre|pas|insumos|pwa|ocr|encuestas|dispositivos)/$"
+  "regex": "^admin/(?P<app_label>auth|auditlog|authtoken|rest_framework_api_key|users|core|ciudadanos|dashboard|comedores|organizaciones|duplas|admisiones|intervenciones|historial|acompanamientos|expedientespagos|relevamientos|rendicioncuentasfinal|rendicioncuentasmensual|centrodefamilia|comunicados|centrodeinfancia|insumos|pwa|ocr|encuestas|dispositivos|ver_para_ser_libre|pas|VAT|celiaquia)/$"
  },
  {
   "name": "auditlog_logentry_add",

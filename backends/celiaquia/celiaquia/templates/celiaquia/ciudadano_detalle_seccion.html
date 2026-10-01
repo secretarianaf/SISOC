@@ -1,0 +1,94 @@
+{# Sección del detalle de ciudadano (Ciudadano 360). La renderiza el dueño del
+   dato (ciudadanos.detail_contributions) y el detalle la
+   inserta ya renderizada, incluso cuando este vertical corre en otro backend. #}
+                 <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                     <h5 class="mb-3">
+                         <span>Celiaquía</span> <span class="badge"
+style="background: rgba(46, 125, 51, 0.6);
+       color: white;
+       padding: 0.35rem 0.75rem;
+       font-size: 0.75rem;
+       margin-left: 0.5rem">Activo</span>
+                     </h5>
+                     {% if celiaquia_resumen.legajo_actual %}
+                         <div style="display: grid;
+                                     grid-template-columns: 1fr 1fr;
+                                     gap: 1rem;
+                                     margin-bottom: 1.5rem">
+                             <div>
+                                 <small style="color: rgba(255,255,255,0.7);">Estado Expediente</small>
+                                 <div style="font-size: 0.95rem;
+                                             color: rgba(255,255,255,0.95);
+                                             margin-top: 0.25rem">
+                                     {{ celiaquia_resumen.legajo_actual.estado_expediente }}
+                                 </div>
+                             </div>
+                             <div>
+                                 <small style="color: rgba(255,255,255,0.7);">Estado Legajo</small>
+                                 <div style="font-size: 0.95rem;
+                                             color: rgba(255,255,255,0.95);
+                                             margin-top: 0.25rem">
+                                     {{ celiaquia_resumen.legajo_actual.estado_legajo }}
+                                 </div>
+                             </div>
+                             <div>
+                                 <small style="color: rgba(255,255,255,0.7);">Resultado Cruce</small>
+                                 <div style="font-size: 0.95rem;
+                                             color: rgba(255,255,255,0.95);
+                                             margin-top: 0.25rem">
+                                     {{ celiaquia_resumen.legajo_actual.resultado_cruce }}
+                                 </div>
+                             </div>
+                             <div>
+                                 <small style="color: rgba(255,255,255,0.7);">Estado Cupo</small>
+                                 <div style="font-size: 0.95rem;
+                                             color: rgba(255,255,255,0.95);
+                                             margin-top: 0.25rem">
+                                     {{ celiaquia_resumen.legajo_actual.estado_cupo }}
+                                 </div>
+                             </div>
+                             <div>
+                                 <small style="color: rgba(255,255,255,0.7);">Titular Activo</small>
+                                 <div style="font-size: 0.95rem;
+                                             color: rgba(255,255,255,0.95);
+                                             margin-top: 0.25rem">
+                                     {{ celiaquia_resumen.legajo_actual.es_titular_activo|yesno:"Si,No" }}
+                                 </div>
+                             </div>
+                             <div>
+                                 <small style="color: rgba(255,255,255,0.7);">Revision Tecnico</small>
+                                 <div style="font-size: 0.95rem;
+                                             color: rgba(255,255,255,0.95);
+                                             margin-top: 0.25rem">
+                                     {{ celiaquia_resumen.legajo_actual.revision_tecnica }}
+                                 </div>
+                             </div>
+                         </div>
+                         {% if celiaquia_resumen.historial|length > 1 %}
+                             <h6 style="margin-top: 1.5rem;
+                                        margin-bottom: 1rem;
+                                        border-top: 1px solid rgba(255,255,255,0.1);
+                                        padding-top: 1rem">Historial de Expedientes</h6>
+                             <table class="table table-sm">
+                                 <thead>
+                                     <tr>
+                                         <th>Estado</th>
+                                         <th>Cupo</th>
+                                         <th>Fecha</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody>
+                                     {% for legajo in celiaquia_resumen.historial %}
+                                         <tr>
+                                             <td>{{ legajo.estado_legajo }}</td>
+                                             <td>{{ legajo.estado_cupo }}</td>
+                                             <td>{{ legajo.creado_en|date:"d/m/Y H:i" }}</td>
+                                         </tr>
+                                     {% endfor %}
+                                 </tbody>
+                             </table>
+                         {% endif %}
+                     {% else %}
+                         <p style="color: rgba(255,255,255,0.5);">No hay expedientes de celiaquía registrados.</p>
+                     {% endif %}
+                 </div>

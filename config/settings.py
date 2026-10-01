@@ -211,13 +211,9 @@ CORE_APPS = [
     "rendicioncuentasfinal",
     "rendicioncuentasmensual",
     "centrodefamilia",
-    "VAT",
-    "celiaquia",
     "importarexpediente",
     "comunicados",
     "centrodeinfancia",
-    "ver_para_ser_libre",
-    "pas",
     "insumos",
     "pwa",
     "ticketera",
@@ -293,6 +289,8 @@ FRONTEND_V2_UPSTREAMS = {
 SISOC_BACKENDS = {
     name: {
         "url_prefixes": tuple(spec["url_prefixes"]),
+        "favorite_sections": tuple(spec.get("favorite_sections", ())),
+        "ciudadano_contributions": tuple(spec.get("ciudadano_contributions", ())),
         "origin": os.getenv(spec["origin_env"], spec["default_origin"]),
     }
     for name, spec in load_backends_registry().items()

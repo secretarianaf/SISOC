@@ -1,7 +1,17 @@
 # Backends por vertical: cómo corren, se despliegan y se agregan
 
 Guía operativa del ADR `docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md`.
-Primer backend: Dispositivos, que incluye Datacalle (#2309).
+
+| Backend | Apps | Prefijos |
+| --- | --- | --- |
+| `dispositivos` | dispositivos, datacalle | `/dispositivos/`, `/datacalle/`, `/api/datacalle/` |
+| `vpsl` | ver_para_ser_libre | `/ver-para-ser-libre/`, `/api/vpsl/` (el front React sigue en `/v2/vpsl/`) |
+| `pas` | pas (más Celery: `celery_pas_worker`, `celery_beat`) | `/pas/`, `/media/pas/` |
+| `vat` | VAT | `/vat/`, `/api/vat/`, `/api/schema/VAT/`, `/api/docs/VAT/`, `/api/redoc/VAT/` |
+| `celiaquia` | celiaquia | `/celiaquia/`, `/reporter-provincias/` |
+
+Siguen en el core, pendientes de una ola próxima: CDI y CDF, que necesitan
+antes que `organizaciones` e `intervenciones` pasen al kernel.
 
 ## Topología
 
@@ -44,7 +54,19 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
   `tests/test_servicios_backends.py` falla si quedó desactualizado.
 - **Menú lateral.** Los ítems que aporta una app del core, como los tableros
   de `dashboard`, se registran en `core.services.sidebar_items`. En un backend
-  sin esa app, el ítem no aparece.
+  sin esa app, el ítem no aparece. La regla de menú "solo VAT" vive en el
+  kernel (`iam.roles_vat`), así que se aplica en todos lados.
+- **Filtros favoritos.** El endpoint lo sirve el core. Si la sección pertenece
+  a un backend (`favorite_sections`), el core reenvía el pedido a ese backend.
+- **Ciudadano 360.** Las secciones de VAT y Celiaquía son contribuciones
+  renderizadas (`ciudadanos.detail_contributions`): el template de la sección
+  vive en el vertical. Si el vertical corre en otro backend
+  (`ciudadano_contributions`), el core pide el fragmento ya renderizado con la
+  sesión del usuario. Si no responde, la sección queda vacía y el resto del
+  detalle se muestra igual.
+- **Celery** solo lo usa PAS: el worker y el beat corren con la imagen y el
+  settings del backend de PAS. El deploy selectivo de PAS los recrea
+  (`extra_services`).
 
 ## Deploy
 
@@ -66,6 +88,17 @@ nuevo:
   `migrate` con el settings de un backend fallan con `NodeNotFoundError`, y es
   lo esperado: las migraciones del kernel dependen de apps del core. Gunicorn
   y las vistas no usan el grafo. Para migrar, usar siempre el migrador.
+- **Comandos de administración que leen migraciones** (`createsuperuser`,
+  `migrate`, `showmigrations`) se corren en el migrador, porque el core
+  tampoco tiene el grafo completo:
+
+  ```bash
+  docker compose -f docker-compose.deploy.yml --profile migrate run --rm migrator python manage.py createsuperuser
+  ```
+
+  En deploy, la web no prepara la DB (`SISOC_PREPARAR_DB=false`). El migrador
+  (rol `migrator` del entrypoint) aplica migraciones, fixtures,
+  `create_test_users` y `create_groups`.
 - **Rollback.** `deploy_verified.sh` vuelve al SHA anterior y recrea los
   mismos servicios que tocó el deploy fallido. Las migraciones no se revierten
   solas.
@@ -78,8 +111,9 @@ nuevo:
 1. **Código:** `git mv <app> backends/<vertical>/<app>`. Los imports no
    cambian.
 2. **Runtime:** crear `backends/<vertical>/<vertical>_runtime/` con
-   `settings.py` y `urls.py`, copiando el de Dispositivos. El `urls.py` debe
-   exponer `backend_urlpatterns`.
+   `settings.py` (`aplicar(globals(), "<vertical>")`, de
+   `config/backend_settings.py`) y `urls.py`, que define `backend_urlpatterns`
+   y usa `urlpatterns_de_backend` (`config/backend_urls.py`).
 3. **Registro y settings:** sumar la entrada en `config/backends.json`, sacar
    las apps de `CORE_APPS` en `config/settings.py` y agregar la carpeta a
    `pythonpath` en `pytest.ini`.
@@ -88,5 +122,10 @@ nuevo:
 5. **URLs:** si el vertical no tenía prefijo propio, agregarlo y dejar
    redirects 301 desde las URLs viejas, **solo por compatibilidad**.
 6. **Registro de URLs:** regenerar `config/url_registry.json`.
-7. **Verificación:** que pasen `tests/test_servicios_backends.py`,
+7. **Contribuciones a páginas del core:** si el vertical aporta secciones de
+   favoritos o de Ciudadano 360, declararlas en `favorite_sections` o
+   `ciudadano_contributions`. Las de Ciudadano 360 tienen que ser
+   renderizadas, con template propio.
+8. **Verificación:** que pasen `tests/test_servicios_backends.py` (cada backend
+   recorre sus rutas sin argumentos en su propio proceso),
    `tests/test_kernel_arranca_solo.py` y el job `service_images` de CI.

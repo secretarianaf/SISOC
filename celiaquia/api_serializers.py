@@ -436,6 +436,13 @@ class ImportacionResultadoSerializer(serializers.Serializer):
         raise serializers.ValidationError("Serializer de solo lectura.")
 
 
+class GuardarValidacionRenaperSerializer(_EntradaSerializer):
+    """Resultado que el tecnico elige tras ver la comparacion con RENAPER."""
+
+    estado = serializers.ChoiceField(choices=["1", "2", "3"])
+    comentario = serializers.CharField(required=False, allow_blank=True)
+
+
 class LocalidadLookupSerializer(serializers.Serializer):
     """Localidad con su municipio y provincia, para los selectores del alta."""
 

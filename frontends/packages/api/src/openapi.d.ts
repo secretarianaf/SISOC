@@ -911,6 +911,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/celiaquia/legajos/{id}/validacion-renaper/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Confirma el resultado: 1 acepta, 2 rechaza y libera cupo, 3 subsana. */
+        post: operations["legajos_validacion_renaper_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/celiaquia/legajos/{id}/validar-renaper/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Consulta RENAPER y devuelve la comparacion con los datos cargados.
+         *
+         *     No guarda nada: el resultado se confirma con `validacion-renaper`.
+         */
+        post: operations["legajos_validar_renaper_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/celiaquia/organismos/": {
         parameters: {
             query?: never;
@@ -1285,6 +1323,18 @@ export interface components {
             /** Format: date-time */
             readonly fecha: string;
         };
+        /** @description Resultado que el tecnico elige tras ver la comparacion con RENAPER. */
+        GuardarValidacionRenaper: {
+            estado: components["schemas"]["GuardarValidacionRenaperEstadoEnum"];
+            comentario?: string;
+        };
+        /**
+         * @description * `1` - 1
+         *     * `2` - 2
+         *     * `3` - 3
+         * @enum {string}
+         */
+        GuardarValidacionRenaperEstadoEnum: "1" | "2" | "3";
         /** @description Resultado de importar los legajos del Excel masivo ya cargado. */
         ImportacionResultado: {
             validos: number;
@@ -3091,6 +3141,55 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PaginatedSubsanacionList"];
                 };
+            };
+        };
+    };
+    legajos_validacion_renaper_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Un valor de entero único que identifique este Expediente Ciudadano. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardarValidacionRenaper"];
+                "application/x-www-form-urlencoded": components["schemas"]["GuardarValidacionRenaper"];
+                "multipart/form-data": components["schemas"]["GuardarValidacionRenaper"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccionResultado"];
+                };
+            };
+        };
+    };
+    legajos_validar_renaper_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Un valor de entero único que identifique este Expediente Ciudadano. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

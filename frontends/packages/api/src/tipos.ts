@@ -59,6 +59,22 @@ export type ComentarioLegajo = Schemas["ComentarioLegajo"];
 export type MotivoPreview = Schemas["MotivoPreview"];
 export type LocalidadLookup = Schemas["LocalidadLookup"];
 
+/**
+ * Respuesta de `validar-renaper`.
+ *
+ * No sale del schema: el back arma el payload a mano (los campos dependen de lo
+ * que devuelva RENAPER para ese documento), asi que no hay serializer del que
+ * generarlo. Es la unica excepcion a la regla de tipos generados.
+ */
+export type ValidacionRenaper = {
+  success: boolean;
+  datos_provincia: Record<string, string>;
+  datos_renaper: Record<string, string>;
+  datos_ejemplar: Record<string, string>;
+  ciudadano_nombre: string;
+  documento: string;
+};
+
 /* Enums: el back los publica como componentes propios. */
 export type RevisionTecnico = Schemas["RevisionTecnicoEnum"];
 export type EstadoCupo = Schemas["EstadoCupoEnum"];

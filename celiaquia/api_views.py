@@ -45,6 +45,7 @@ from celiaquia.api_serializers import (
     PagoExpedienteSerializer,
     PagoNominaSerializer,
     ActualizarRegistroErroneoSerializer,
+    GuardarValidacionRenaperSerializer,
     ImportacionResultadoSerializer,
     LocalidadLookupSerializer,
     ComentarioLegajoSerializer,
@@ -95,7 +96,7 @@ from celiaquia.permissions import (
     can_edit_legajo_files,
     exigir_acceso_nacion_a_comentarios,
 )
-from celiaquia.services import registros_erroneos_service
+from celiaquia.services import registros_erroneos_service, validacion_renaper_service
 from celiaquia.services.comentarios_tecnicos_service import ComentariosTecnicosService
 from celiaquia.services.subsanacion_service import SubsanacionService
 from celiaquia.services.expediente_service import ExpedienteService
@@ -111,6 +112,15 @@ from celiaquia.services.revision_service import (  # pylint: disable=no-name-in-
 )
 from core.models import Provincia
 from users.models import User
+
+
+def _error_renaper(payload: dict, estado_http: int) -> Exception:
+    """El payload de RENAPER trae el motivo en `error`; se respeta el status."""
+
+    detalle = payload.get("error") or "No se pudo validar con RENAPER."
+    if estado_http == 403:
+        return PermissionDenied(detalle)
+    return ValidationError({"detail": [detalle]})
 
 
 def _traducir_error(exc: Exception) -> ValidationError:
@@ -752,6 +762,52 @@ class LegajoViewSet(viewsets.ReadOnlyModelViewSet):
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+
+    @extend_schema(request=None, responses=None)
+    @action(detail=True, methods=["post"], url_path="validar-renaper")
+    def validar_renaper(self, request, pk=None):
+        """Consulta RENAPER y devuelve la comparacion con los datos cargados.
+
+        No guarda nada: el resultado se confirma con `validacion-renaper`.
+        """
+
+        if not validacion_renaper_service.puede_validar(request.user):
+            raise PermissionDenied("Solo técnica o coordinación validan con RENAPER.")
+        legajo = self.get_object()
+        payload, estado_http = validacion_renaper_service.consultar(
+            legajo, request.user
+        )
+        if not payload.get("success"):
+            # La pantalla devuelve los errores de negocio con HTTP 200; la API
+            # los traduce a 400, que es lo que corresponde en REST.
+            if estado_http == 200:
+                estado_http = 400
+            raise _error_renaper(payload, estado_http)
+        return Response(payload)
+
+    @extend_schema(
+        request=GuardarValidacionRenaperSerializer,
+        responses=AccionResultadoSerializer,
+    )
+    @action(detail=True, methods=["post"], url_path="validacion-renaper")
+    def guardar_validacion_renaper(self, request, pk=None):
+        """Confirma el resultado: 1 acepta, 2 rechaza y libera cupo, 3 subsana."""
+
+        if not validacion_renaper_service.puede_validar(request.user):
+            raise PermissionDenied("Solo técnica o coordinación validan con RENAPER.")
+        legajo = self.get_object()
+        entrada = GuardarValidacionRenaperSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        try:
+            etiqueta = validacion_renaper_service.guardar_estado(
+                legajo,
+                entrada.validated_data["estado"],
+                request.user,
+                comentario=entrada.validated_data.get("comentario", ""),
+            )
+        except DjangoValidationError as exc:
+            raise _traducir_error(exc) from exc
+        return Response({"detalle": f"Validación Renaper guardada: {etiqueta}"})
 
     @extend_schema(responses=ComentarioLegajoSerializer(many=True))
     @action(detail=True, methods=["get"])

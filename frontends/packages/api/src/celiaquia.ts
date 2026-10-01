@@ -12,6 +12,7 @@ import type {
   Legajo,
   MetricasCupo,
   MotivoPreview,
+  ValidacionRenaper,
   Paginado,
   PagoExpediente,
   PagoNomina,
@@ -231,6 +232,30 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
     ) =>
       http
         .post<ComentarioLegajo>(`legajos/${id}/comentarios/tecnico/`, datos)
+        .then((r) => r.data),
+
+    /**
+     * Consulta RENAPER y devuelve la comparacion contra los datos cargados.
+     *
+     * No guarda nada: el tecnico confirma despues con `guardarValidacionRenaper`.
+     * Un error de negocio (sin documento, fallecido, sin match) vuelve como 400.
+     */
+    validarRenaper: (id: number) =>
+      http
+        .post<ValidacionRenaper>(`legajos/${id}/validar-renaper/`)
+        .then((r) => r.data),
+
+    /** Confirma el resultado: "1" acepta, "2" rechaza y libera cupo, "3" subsana. */
+    guardarValidacionRenaper: (
+      id: number,
+      estado: "1" | "2" | "3",
+      comentario?: string,
+    ) =>
+      http
+        .post<AccionResultado>(`legajos/${id}/validacion-renaper/`, {
+          estado,
+          ...(comentario ? { comentario } : {}),
+        })
         .then((r) => r.data),
 
     /** Motivo que se propondria al subsanar o rechazar, ya concatenado. */

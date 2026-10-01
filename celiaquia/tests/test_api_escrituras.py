@@ -720,3 +720,103 @@ def test_el_excel_masivo_solo_lo_descarga_coordinacion(client, territorio):
     )
 
     assert response.status_code == 403
+
+
+# --- Validacion RENAPER ----------------------------------------------------
+# La consulta real se mockea: lo que se prueba es que la API entre por el mismo
+# service que la pantalla y que traduzca bien los errores de negocio.
+
+
+def test_validar_renaper_solo_tecnica_o_coordinacion(client, territorio):
+    owner = _provincial("prov_renaper", territorio[0])
+    _, legajo = _expediente_con_legajo(owner, territorio, "40000020", "REN1")
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("celiaquia-legajo-validar-renaper", kwargs={"pk": legajo.pk})
+    )
+
+    assert response.status_code == 403
+
+
+def test_validar_renaper_devuelve_la_comparacion(client, territorio):
+    owner = _provincial("prov_renaper_2", territorio[0])
+    _, legajo = _expediente_con_legajo(owner, territorio, "40000021", "REN2")
+    client.force_login(_coordinador("coord_renaper"))
+
+    payload = {
+        "success": True,
+        "datos_provincia": {"nombre": "Ana"},
+        "datos_renaper": {"nombre": "ANA"},
+        "datos_ejemplar": {},
+        "ciudadano_nombre": "Ana Perez",
+        "documento": "40000021",
+    }
+    with patch(
+        "celiaquia.services.validacion_renaper_service.consultar",
+        return_value=(payload, 200),
+    ) as consultar:
+        response = client.post(
+            reverse("celiaquia-legajo-validar-renaper", kwargs={"pk": legajo.pk})
+        )
+
+    assert response.status_code == 200
+    assert consultar.called
+    assert response.json()["datos_renaper"] == {"nombre": "ANA"}
+
+
+def test_un_error_de_renaper_sale_como_400_y_no_como_200(client, territorio):
+    """La pantalla devuelve los errores con HTTP 200; la API los traduce."""
+
+    owner = _provincial("prov_renaper_3", territorio[0])
+    _, legajo = _expediente_con_legajo(owner, territorio, "40000022", "REN3")
+    client.force_login(_coordinador("coord_renaper_3"))
+
+    with patch(
+        "celiaquia.services.validacion_renaper_service.consultar",
+        return_value=(
+            {"success": False, "error": "El ciudadano no tiene documento cargado"},
+            200,
+        ),
+    ):
+        response = client.post(
+            reverse("celiaquia-legajo-validar-renaper", kwargs={"pk": legajo.pk})
+        )
+
+    assert response.status_code == 400
+    assert "documento" in str(response.json())
+
+
+def test_guardar_validacion_renaper_subsanar_deja_el_motivo(client, territorio):
+    owner = _provincial("prov_renaper_4", territorio[0])
+    _, legajo = _expediente_con_legajo(owner, territorio, "40000023", "REN4")
+    client.force_login(_coordinador("coord_renaper_4"))
+
+    response = client.post(
+        reverse(
+            "celiaquia-legajo-guardar-validacion-renaper", kwargs={"pk": legajo.pk}
+        ),
+        {"estado": "3", "comentario": "La foto del DNI no coincide"},
+    )
+
+    assert response.status_code == 200
+    legajo.refresh_from_db()
+    assert legajo.estado_validacion_renaper == 3
+    assert legajo.subsanacion_tipo == "RENAPER"
+    assert legajo.revision_tecnico == "SUBSANAR"
+    assert legajo.subsanacion_motivo == "La foto del DNI no coincide"
+
+
+def test_guardar_validacion_renaper_rechaza_un_estado_invalido(client, territorio):
+    owner = _provincial("prov_renaper_5", territorio[0])
+    _, legajo = _expediente_con_legajo(owner, territorio, "40000024", "REN5")
+    client.force_login(_coordinador("coord_renaper_5"))
+
+    response = client.post(
+        reverse(
+            "celiaquia-legajo-guardar-validacion-renaper", kwargs={"pk": legajo.pk}
+        ),
+        {"estado": "9"},
+    )
+
+    assert response.status_code == 400

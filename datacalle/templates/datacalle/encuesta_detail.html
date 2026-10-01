@@ -33,13 +33,14 @@
         </div>
     </div>
 
-    {% if encuesta.sin_entrevista_por_menor %}
+    {% if encuesta.sin_entrevista_por_franja %}
         <div class="dc-seccion mb-3">
             <div class="dc-seccion__body">
                 <p class="dc-dato__valor mb-0">
                     <i class="fas fa-info-circle"></i>
-                    Persona menor de edad: fue observada y cuenta en el grupo, pero no
-                    correspondía entrevistarla.
+                    {# 4.0.0: la franja etaria observada decide a quién no se entrevista. #}
+                    Por su franja etaria no correspondía entrevistarla: fue observada y
+                    cuenta en el grupo{% if encuesta.persona_entrevistada_etiqueta %} ({{ encuesta.persona_entrevistada_etiqueta }}){% endif %}.
                 </p>
             </div>
         </div>
@@ -53,7 +54,13 @@
             <div class="dc-seccion__body">
                 {% for item in pagina.items %}
                     <div class="dc-dato">
-                        <div class="dc-dato__label">{{ item.etiqueta }}</div>
+                        <div class="dc-dato__label">
+                            {{ item.etiqueta }}
+                            {% if item.historico %}
+                                {# El instrumento vigente ya no la pregunta: el dato viene de un relevamiento anterior. #}
+                                <span class="dc-chip dc-chip--zona">pregunta retirada</span>
+                            {% endif %}
+                        </div>
                         <div class="dc-dato__valor {% if not item.valor %}dc-dato__valor--vacio{% endif %}">{{ item.valor|default:"—" }}</div>
                     </div>
                 {% endfor %}

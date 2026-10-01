@@ -72,6 +72,8 @@
 - `docs/flujos/derivar_nomina_centros.md`: flujo y reglas para derivar beneficiarios entre centros (comedores y CDI).
 - `docs/flujos/rendiciones_mensuales_proyectos.md`: estados de revisión, subsanaciones y asociación de rendiciones a proyectos.
 - `docs/integraciones/ticketera_api.md`: contrato server-to-server de la API Ticketera (5 endpoints, dirigido al desarrollador de la Ticketera).
+- `datacalle/instrumento/README.md`: instrumento vigente de DataCalle (versión, cómo sincronizarlo con el contrato de la app y qué no se puede mapear entre versiones).
+- `docs/registro/cambios/2026-10-01-datacalle-instrumento-4.0.0.md`: reemplazo total del instrumento (4.0.0), convivencia con los casos ya guardados y decisiones abiertas con el área.
 
 ### 6. IA, planes y registro spec-as-source
 - `docs/agentes/guia.md`: guía rápida para asistentes automáticos y flujo de documentación.

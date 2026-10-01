@@ -432,6 +432,13 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         blank=True,
         related_name="comedores_responsable_tarjeta",
     )
+    responsable_tarjeta_municipio = models.ForeignKey(
+        to=Municipio,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="comedores_responsable_tarjeta",
+    )
     responsable_tarjeta_provincia = models.ForeignKey(
         to=Provincia,
         on_delete=models.PROTECT,
@@ -1034,6 +1041,7 @@ class PrestacionAlimentariaConformidad(models.Model):
         related_name="conformidades_prestacion_alimentaria",
     )
     creado = models.DateTimeField(auto_now_add=True)
+    dni_certificador = models.CharField(max_length=8, blank=True, null=True)
     certificacion_pdf = models.FileField(
         upload_to="comedores/certificaciones_prestaciones/",
         null=True,

@@ -63,6 +63,9 @@ class AsistenciaActividadView(LoginRequiredMixin, TemplateView):
                 "detalle_url": reverse(
                     "actividadcentro_detail", kwargs={"pk": self.actividad.pk}
                 ),
+                "volver_url": reverse(
+                    "actividadcentro_detail", kwargs={"pk": self.actividad.pk}
+                ),
             }
         )
         return context

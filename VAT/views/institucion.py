@@ -24,6 +24,7 @@ from VAT.forms import (
     InstitucionIdentificadorHistForm,
     InstitucionUbicacionForm,
     build_localidad_queryset_for_centro,
+    build_municipio_queryset_for_centro,
 )
 
 logger = logging.getLogger("django")
@@ -97,6 +98,7 @@ class InstitucionContactoCreateView(LoginRequiredMixin, CreateView):
     form_class = InstitucionContactoForm
     template_name = "vat/institucion/contacto_form.html"
     success_url = reverse_lazy("vat_institucion_contacto_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_contacto_list")}
 
     def get_initial(self):
         initial = super().get_initial()
@@ -140,6 +142,7 @@ class InstitucionContactoUpdateView(LoginRequiredMixin, UpdateView):
     form_class = InstitucionContactoForm
     template_name = "vat/institucion/contacto_form.html"
     success_url = reverse_lazy("vat_institucion_contacto_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_contacto_list")}
 
     def get_template_names(self):
         if _is_ajax_request(self.request):
@@ -209,6 +212,7 @@ class InstitucionIdentificadorHistCreateView(LoginRequiredMixin, CreateView):
     form_class = InstitucionIdentificadorHistForm
     template_name = "vat/institucion/identificador_form.html"
     success_url = reverse_lazy("vat_institucion_identificador_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_identificador_list")}
 
     def get_initial(self):
         initial = super().get_initial()
@@ -233,6 +237,7 @@ class InstitucionIdentificadorHistUpdateView(LoginRequiredMixin, UpdateView):
     form_class = InstitucionIdentificadorHistForm
     template_name = "vat/institucion/identificador_form.html"
     success_url = reverse_lazy("vat_institucion_identificador_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_identificador_list")}
 
     def form_valid(self, form):
         messages.success(self.request, "Identificador actualizado exitosamente.")
@@ -284,6 +289,7 @@ class InstitucionUbicacionCreateView(LoginRequiredMixin, CreateView):
     form_class = InstitucionUbicacionForm
     template_name = "vat/institucion/ubicacion_form.html"
     success_url = reverse_lazy("vat_institucion_ubicacion_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_ubicacion_list")}
 
     def get_initial(self):
         initial = super().get_initial()
@@ -338,6 +344,7 @@ class InstitucionUbicacionUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["return_url"] = self.get_success_url()
+        context["volver_url"] = context["return_url"]
         return context
 
     def form_valid(self, form):
@@ -384,3 +391,28 @@ def localidades_por_centro(request):
 
     data = [{"id": loc.id, "nombre": loc.nombre} for loc in qs]
     return JsonResponse({"localidades": data})
+
+
+def municipios_por_centro(request):
+    """Devuelve los departamentos de la provincia del centro seleccionado.
+
+    Alimenta la cascada departamento -> localidad de ubicacion_form.html
+    cuando el usuario cambia de centro (el campo "centro" no está bloqueado
+    en la edición standalone). Reemplaza el fetch province-wide que antes
+    hacía ese formulario contra `localidades_por_centro`.
+    """
+    centro_id = request.GET.get("centro_id")
+    if not centro_id:
+        return JsonResponse({"municipios": []})
+    try:
+        centro = (
+            Centro.objects.select_related("localidad__municipio")
+            .only("id", "provincia_id", "localidad__municipio__provincia_id")
+            .get(pk=centro_id)
+        )
+    except Centro.DoesNotExist:
+        return JsonResponse({"municipios": []})
+
+    qs = build_municipio_queryset_for_centro(centro)
+    data = [{"id": municipio.id, "nombre": municipio.nombre} for municipio in qs]
+    return JsonResponse({"municipios": data})

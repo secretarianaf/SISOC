@@ -12,14 +12,6 @@
 
     <div class="d-flex justify-content-between mb-3">
         <div>
-            {% if object.id %}
-                <a href="{% url 'organizacion_detalle' object.id %}"
-                   class="btn btn-secondary">Volver</a>
-            {% else %}
-                <a href="{% url 'organizaciones' %}" class="btn btn-secondary">Volver</a>
-            {% endif %}
-        </div>
-        <div>
             <a href="#" data-history-back="true" class="btn btn-secondary">Cancelar</a>
         </div>
     </div>
@@ -250,23 +242,14 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="form-group row">
+                            <div class="col-12">{{ form.territoriales_abordaje_comunitario|as_crispy_field }}</div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Botones sticky -->
                 <div class="sticky-actions">
-                    <div>
-                        {% if object.id %}
-                            <a href="{% url 'organizacion_detalle' object.id %}"
-                               class="btn btn-secondary">
-                                <i class="fas fa-arrow-left mr-1"></i> Volver
-                            </a>
-                        {% else %}
-                            <a href="{% url 'organizaciones' %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left mr-1"></i> Volver
-                            </a>
-                        {% endif %}
-                    </div>
                     <div>
                         <button type="button" data-history-back="true" class="btn btn-secondary mr-2">
                             <i class="fas fa-times mr-1"></i> Cancelar
@@ -367,6 +350,14 @@
     <!-- Scripts externos -->
     <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
     <script src="{% static 'custom/js/organizacionesform.js' %}"></script>
+    <script nonce="{{ request.csp_nonce }}">
+        $(function () {
+            $("#id_territoriales_abordaje_comunitario").select2({
+                width: "100%",
+                placeholder: "Buscar por apellido, nombre o usuario",
+            });
+        });
+    </script>
 
     <script nonce="{{ request.csp_nonce }}">
     (function () {

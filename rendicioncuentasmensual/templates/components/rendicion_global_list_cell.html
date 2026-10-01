@@ -2,6 +2,8 @@
     <td>{{ rendicion.comedor.codigo_de_proyecto|default:"Sin proyecto" }}</td>
 {% elif column_key == "organizacion" %}
     <td>{{ rendicion.comedor.organizacion.nombre|default:"Sin organización" }}</td>
+{% elif column_key == "territorial_asignado" %}
+    <td>{{ rendicion.territoriales_asignados_display|default:"-" }}</td>
 {% elif column_key == "convenio" %}
     <td>{{ rendicion.convenio|default:"-" }}</td>
 {% elif column_key == "numero_rendicion" %}

@@ -7,9 +7,11 @@ Reglas de negocio que implementa este servicio:
 - La Provincia recibe únicamente los que tienen observaciones (``Sí``), y recién
   cuando el técnico solicita una subsanación o rechaza el legajo. Los ``No``
   quedan internos para siempre.
-- El motivo de Subsanar/Rechazar se arma **en backend** concatenando esas
-  observaciones en orden cronológico y sin duplicados. Lo que muestra la
-  pantalla es una previsualización, no la fuente de verdad.
+- En cada Subsanar/Rechazar, Nación **elige** qué observaciones forman parte de
+  esa instancia (issue #2592). Solo esas arman el motivo y se publican; las
+  demás quedan en el historial sin arrastrarse a la instancia nueva.
+- El motivo se arma **en backend** concatenando las elegidas en orden
+  cronológico y sin duplicados.
 """
 
 import logging
@@ -71,6 +73,22 @@ def _clave_dedup(tipo_documento, observacion_codigo, texto):
     """
     texto_normalizado = _ESPACIOS.sub(" ", (texto or "").strip()).casefold()
     return (tipo_documento or "", observacion_codigo or "", texto_normalizado)
+
+
+def _clave(comentario):
+    """Clave de deduplicación de un comentario técnico ya persistido."""
+    return _clave_dedup(
+        comentario.tipo_documento,
+        comentario.observacion_codigo,
+        comentario.comentario,
+    )
+
+
+def _linea(comentario):
+    """Observación como línea de texto, prefijada por su tipo de documento."""
+    etiquetas = dict(TipoDocumentoComentario.choices)
+    etiqueta = etiquetas.get(comentario.tipo_documento, comentario.tipo_documento)
+    return f"{etiqueta}: {comentario.comentario}"
 
 
 class ComentariosTecnicosService:
@@ -170,11 +188,7 @@ class ComentariosTecnicosService:
         vistos = set()
         unicos = []
         for comentario in comentarios:
-            clave = _clave_dedup(
-                comentario.tipo_documento,
-                comentario.observacion_codigo,
-                comentario.comentario,
-            )
+            clave = _clave(comentario)
             if clave in vistos:
                 continue
             vistos.add(clave)
@@ -182,84 +196,138 @@ class ComentariosTecnicosService:
         return unicos
 
     @staticmethod
-    def observaciones_publicables(legajo: ExpedienteCiudadano):
-        """Comentarios técnicos con observaciones (``Sí``), cronológicos y sin
-        duplicados.
+    def opciones_seleccionables(legajo: ExpedienteCiudadano):
+        """Motivos que Nación puede elegir al Subsanar o Rechazar (issue #2592).
 
-        Son los únicos que se le comunican a la Provincia y los que alimentan el
-        motivo de Subsanar y Rechazar.
+        Son las observaciones con ``Sí`` del legajo, de cualquier instancia y
+        sin duplicados. Cada opción apunta al registro más reciente de su
+        observación, y viene marcada como ``pendiente`` si alguno de sus
+        registros sigue interno, es decir, si todavía no se le comunicó a la
+        Provincia. La UI usa esa marca para tildarla de entrada; lo que cuenta
+        es lo que se envía.
+
+        Estructura: ``[{"id", "etiqueta", "pendiente"}, ...]``, en orden
+        cronológico de su último registro.
         """
-        return ComentariosTecnicosService.deduplicar(
-            ComentariosTecnicosService.historial(legajo).filter(
-                tiene_observaciones=True
-            )
-        )
+        grupos = {}
+        for comentario in ComentariosTecnicosService.historial(legajo).filter(
+            tiene_observaciones=True
+        ):
+            grupos.setdefault(_clave(comentario), []).append(comentario)
 
-    @staticmethod
-    def lineas_concatenadas(legajo: ExpedienteCiudadano):
-        """Observaciones publicables como líneas de texto, prefijadas por tipo."""
-        etiquetas = dict(TipoDocumentoComentario.choices)
+        opciones = sorted(
+            (
+                (comentarios[-1], any(c.es_interno for c in comentarios))
+                for comentarios in grupos.values()
+            ),
+            key=lambda par: (par[0].fecha_creacion, par[0].pk),
+        )
         return [
-            f"{etiquetas.get(c.tipo_documento, c.tipo_documento)}: {c.comentario}"
-            for c in ComentariosTecnicosService.observaciones_publicables(legajo)
+            {
+                "id": comentario.pk,
+                "etiqueta": _linea(comentario),
+                "pendiente": pendiente,
+            }
+            for comentario, pendiente in opciones
         ]
 
     @staticmethod
-    def texto_concatenado(legajo: ExpedienteCiudadano) -> str:
-        """Concatenación de las observaciones publicables. "" si no hay ninguna."""
-        return SEPARADOR_OBSERVACIONES.join(
-            ComentariosTecnicosService.lineas_concatenadas(legajo)
+    def resolver_seleccion(legajo: ExpedienteCiudadano, ids):
+        """Comentarios técnicos elegidos para una subsanación o un rechazo.
+
+        Valida que cada id sea un comentario técnico con ``Sí`` de este legajo:
+        los ids llegan del cliente. Devuelve los comentarios en orden
+        cronológico y sin duplicados, o lista vacía si no se eligió ninguno.
+        """
+        try:
+            ids = {int(valor) for valor in ids or [] if str(valor).strip()}
+        except (TypeError, ValueError) as exc:
+            raise ValidationError("La selección de motivos no es válida.") from exc
+        if not ids:
+            return []
+
+        comentarios = list(
+            ComentariosTecnicosService.historial(legajo).filter(
+                tiene_observaciones=True, pk__in=ids
+            )
         )
+        if len(comentarios) != len(ids):
+            raise ValidationError(
+                "Alguno de los motivos seleccionados no corresponde al legajo."
+            )
+        return ComentariosTecnicosService.deduplicar(comentarios)
 
     @staticmethod
-    def componer_motivo(legajo: ExpedienteCiudadano, texto_libre: str = "") -> str:
+    def lineas(comentarios):
+        """Comentarios como líneas de texto, prefijadas por tipo de documento."""
+        return [_linea(comentario) for comentario in comentarios]
+
+    @staticmethod
+    def componer_motivo(comentarios, texto_libre: str = "") -> str:
         """Motivo final de una subsanación o un rechazo.
 
-        Une las observaciones técnicas concatenadas con el texto libre
-        complementario, que es opcional. Si el legajo no tiene observaciones
-        registradas, el texto libre pasa a ser obligatorio: sin ninguno de los
-        dos no hay motivo que comunicar y se corta con `ValidationError` sin
-        tocar el estado del legajo.
+        Une las observaciones **elegidas para esta instancia** con el texto
+        libre complementario. No lee el historial del legajo a propósito: antes
+        del issue #2592 concatenaba todas las observaciones con ``Sí`` y cada
+        subsanación arrastraba los motivos de las anteriores.
+
+        Sin observaciones ni texto libre no hay motivo que comunicar y se corta
+        con `ValidationError`, sin tocar el estado del legajo.
         """
-        concatenado = ComentariosTecnicosService.texto_concatenado(legajo)
+        concatenado = SEPARADOR_OBSERVACIONES.join(
+            ComentariosTecnicosService.lineas(comentarios)
+        )
         libre = (texto_libre or "").strip()
 
         if not concatenado and not libre:
             raise ValidationError(
-                "El legajo no tiene comentarios técnicos con observaciones: "
-                "completá el texto libre para poder continuar."
+                "Seleccioná al menos un motivo o completá la información "
+                "complementaria para poder continuar."
             )
 
         partes = [parte for parte in (concatenado, libre) if parte]
         return SEPARADOR_TEXTO_LIBRE.join(partes)
 
     @staticmethod
-    def publicar(legajo: ExpedienteCiudadano, usuario=None) -> int:
-        """Publica a la Provincia los comentarios técnicos con observaciones.
+    def publicar(legajo: ExpedienteCiudadano, *, comentarios, usuario=None) -> int:
+        """Publica a la Provincia las observaciones elegidas para la instancia.
 
         Baja el flag `es_interno` y sella `publicado_en`/`publicado_por`, que es
-        el registro de auditoría de la publicación. Los comentarios sin
-        observaciones quedan internos, y los ya publicados conservan la fecha y
-        el usuario del evento original.
+        el registro de auditoría de la publicación. Alcanza también a los
+        registros repetidos de una misma observación elegida, para que no
+        vuelva a figurar como pendiente. Lo no elegido queda interno (issue
+        #2592), y los ya publicados conservan la fecha y el usuario del evento
+        original.
 
         Devuelve la cantidad de comentarios publicados en esta llamada.
         """
-        publicados = legajo.historial_comentarios.filter(
-            Q(tipo_comentario=HistorialComentarios.TIPO_COMENTARIO_TECNICO)
-            & Q(tiene_observaciones=True)
-            & Q(es_interno=True)
-        ).update(
+        claves = {_clave(comentario) for comentario in comentarios}
+        if not claves:
+            return 0
+
+        ids = [
+            comentario.pk
+            for comentario in legajo.historial_comentarios.filter(
+                Q(tipo_comentario=HistorialComentarios.TIPO_COMENTARIO_TECNICO)
+                & Q(tiene_observaciones=True)
+                & Q(es_interno=True)
+            )
+            if _clave(comentario) in claves
+        ]
+        if not ids:
+            return 0
+
+        publicados = HistorialComentarios.objects.filter(pk__in=ids).update(
             es_interno=False,
             publicado_en=timezone.now(),
             publicado_por=usuario,
         )
 
-        if publicados:
-            logger.info(
-                "Comentarios técnicos publicados a Provincia: legajo=%s cantidad=%s "
-                "user=%s",
-                legajo.pk,
-                publicados,
-                getattr(usuario, "id", None),
-            )
+        logger.info(
+            "Comentarios técnicos publicados a Provincia: legajo=%s cantidad=%s "
+            "user=%s",
+            legajo.pk,
+            publicados,
+            getattr(usuario, "id", None),
+        )
         return publicados

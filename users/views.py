@@ -261,7 +261,7 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
 
 class UserActiveView(AdminRequiredMixin, UpdateView):
     model = User
-    template_name = "user/user_confirm_delete.html"
+    template_name = "user/user_confirm_active.html"
     success_url = reverse_lazy("usuarios")
     required_permissions = ("auth.delete_user",)
     fields = []
@@ -369,6 +369,7 @@ class BulkCredentialsJobDetailView(AdminRequiredMixin, View):
                 "page_obj": page_obj,
                 "is_resume_available": can_resume_bulk_credentials_job(job),
                 "upload_url": reverse("usuarios_credenciales_masivas"),
+                "volver_url": reverse("usuarios_credenciales_masivas"),
             }
         )
 

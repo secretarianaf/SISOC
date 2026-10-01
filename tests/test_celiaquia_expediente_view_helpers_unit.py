@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from django.http import JsonResponse, QueryDict
+from django.utils.datastructures import MultiValueDict
 
 from celiaquia.views import expediente as module
 
@@ -32,6 +33,14 @@ class _EmptyRelatedManager:
 
     def __iter__(self):
         return iter(())
+
+
+def _post(datos):
+    """POST como QueryDict: `RevisarLegajoView` lee la selección de motivos
+    con `getlist` (issue #2592)."""
+    post = QueryDict(mutable=True)
+    post.update(datos)
+    return post
 
 
 def _user_stub(*, user_id=1, is_admin=False, tec=False, coord=False):
@@ -535,12 +544,19 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
     subs_post["accion"] = "SUBSANAR"
     subs_post["motivo"] = "faltan docs"
     subs_post["tipo_subsanacion"] = "DOCUMENTACION"
+    # `_subsanar` lee la documentación complementaria de `request.FILES`
+    # (issue #2523); el stub necesita el atributo aunque no adjunte nada.
     req_subs = SimpleNamespace(
         user=_user_stub(user_id=1, tec=True),
         POST=subs_post,
+        FILES=MultiValueDict(),
     )
     resp_sub = revisar.post(req_subs, pk=1, legajo_id=3)
     assert resp_sub.status_code == 400
+    # El 400 tiene que seguir siendo el del guard de estado, no el de la
+    # validación de documentación complementaria: con el legajo en APROBADO la
+    # acción se corta antes de llegar a `_subsanar`.
+    assert "estado APROBADO" in json.loads(resp_sub.content)["error"]
 
     leg.revision_tecnico = "APROBADO"
     resp_ap_bloqueado = revisar.post(req_aprobar, pk=1, legajo_id=3)
@@ -548,7 +564,7 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
 
     req_rechazar = SimpleNamespace(
         user=_user_stub(user_id=1, tec=True),
-        POST={"accion": "RECHAZAR", "motivo": "dato invalido"},
+        POST=_post({"accion": "RECHAZAR", "motivo": "dato invalido"}),
     )
     leg.revision_tecnico = "PENDIENTE"
     leg.estado_validacion_renaper = 0
@@ -759,13 +775,15 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
     assert invalid.status_code == 400
 
     no_motivo_req = SimpleNamespace(
-        user=_user_stub(user_id=1, tec=True), POST={"accion": "SUBSANAR", "motivo": ""}
+        user=_user_stub(user_id=1, tec=True),
+        POST=_post({"accion": "SUBSANAR", "motivo": ""}),
     )
     no_motivo = view.post(no_motivo_req, pk=1, legajo_id=3)
     assert no_motivo.status_code == 400
 
     no_motivo_rechazo_req = SimpleNamespace(
-        user=_user_stub(user_id=1, tec=True), POST={"accion": "RECHAZAR", "motivo": ""}
+        user=_user_stub(user_id=1, tec=True),
+        POST=_post({"accion": "RECHAZAR", "motivo": ""}),
     )
     no_motivo_rechazo = view.post(no_motivo_rechazo_req, pk=1, legajo_id=3)
     assert no_motivo_rechazo.status_code == 400
@@ -776,7 +794,7 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
     )
     rechazar_req = SimpleNamespace(
         user=_user_stub(user_id=1, tec=True),
-        POST={"accion": "RECHAZAR", "motivo": "Documento ilegible"},
+        POST=_post({"accion": "RECHAZAR", "motivo": "Documento ilegible"}),
     )
     rechazar = view.post(rechazar_req, pk=1, legajo_id=3)
     assert rechazar.status_code == 200

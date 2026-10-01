@@ -16,6 +16,7 @@
 - `docs/operacion/integraciones.md`: conexiones con servicios externos, caches y manejo de estáticos/media.
 - `docs/operacion/operaciones.md`: tareas recurrentes, cron jobs y endpoints de health de producción.
 - `docs/operacion/infraestructura.md`: inventario de infraestructura operativo (entornos, arquitectura, networking, deploy, observabilidad, seguridad y roadmap infra).
+- `docs/operacion/ver_para_ser_libre_react.md`: arquitectura, arranque, rutas y límites del MVP React/Django de VPSL.
 - `docs/operacion/deploy_automatizado.md`: runbook de deploy por GitHub Actions, runners self-hosted, promoción y rollback por tag estable.
 - `scripts/infra/install_qa_pwa_nginx.sh`: preflight e instalación transaccional de las rutas PWA en el Nginx HTTP de QA.
 - `docs/registro/cambios/2026-09-21-deploy-independiente-satelites.md`: separación de deploys PWA, promoción secuencial y rollback automático.
@@ -48,6 +49,7 @@
 - `docs/implementaciones/filtros_avanzados.md`: comportamiento y consideraciones de filtros avanzados.
 - `docs/implementaciones/preferencias_columnas.md`: preferencias de columnas en listados.
 - `docs/implementaciones/pwa_backend.md`: implementación backend de funcionalidades PWA.
+- `docs/implementaciones/frontend_v2.md`: norma vigente del Front v2 en React: versiones, diseño, API, seguridad, CI y despliegue.
 - `docs/implementaciones/admisiones_informes_tecnicos.md`: contrato de campos, templates dinámicos y publicación de Informes Técnicos.
 - `docs/implementaciones/comedores_certificaciones_prestaciones.md`: generación, fallback y descarga de certificaciones de prestaciones.
 - `docs/implementaciones/usuarios_perfil_iam.md`: implementación de Usuarios/Perfil + IAM por permisos Django y guía para extender nuevas features.

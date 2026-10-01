@@ -11,6 +11,7 @@ from centrodeinfancia.access import (
     aplicar_scope_centros_cdi,
     get_provincias_completas_egp_ids,
 )
+from centrodeinfancia.filter_config import CENTRODEINFANCIA_ADVANCED_FILTER
 from centrodeinfancia.models import CentroDeInfancia
 from centrodeinfancia.services_nomina_ninos_pdf import (
     NominaNinosPDFError,
@@ -81,7 +82,6 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
         return [columns_map[key] for key in active_keys if key in columns_map]
 
     def get_queryset(self):
-        query = self.request.GET.get("busqueda")
         queryset = CentroDeInfancia.objects.select_related(
             "provincia",
             "departamento",
@@ -89,6 +89,13 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
             "localidad",
         )
         queryset = aplicar_scope_centros_cdi(queryset, self.request.user)
+        # El listado migro a filtros combinables y `export_helper.js` reenvia
+        # `?filters=`: el export tiene que aplicar el mismo motor o devuelve el
+        # universo entero del scope aunque el usuario haya filtrado.
+        queryset = CENTRODEINFANCIA_ADVANCED_FILTER.filter_queryset(
+            queryset, self.request
+        )
+        query = self.request.GET.get("busqueda", "").strip()
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query) | Q(organizacion__icontains=query)

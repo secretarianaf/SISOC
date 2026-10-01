@@ -5,18 +5,6 @@
 {% block titulo-pagina %}Editar nómina{% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-end mb-3">
-        <div class="d-flex gap-2">
-            <div>
-                {% if centro %}
-                    <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}"
-                       class="btn btn-secondary">Volver</a>
-                {% else %}
-                    <a href="{% url 'centrodeinfancia' %}" class="btn btn-secondary">Volver</a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
     <form method="post">
         {% csrf_token %}
         {{ form|crispy }}

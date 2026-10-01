@@ -75,6 +75,7 @@ class ComisionCursoWizardView(LoginRequiredMixin, SessionWizardView):
         context["curso"] = self.curso
         context["centro"] = self.curso.centro
         context["wizard_cancel_url"] = self._centro_cursos_url()
+        context["volver_url"] = context["wizard_cancel_url"]
         context["wizard_back_url"] = self._centro_cursos_url()
         step1_data = self.get_cleaned_data_for_step("info") or {}
         step2_data = self.get_cleaned_data_for_step("horarios") or []

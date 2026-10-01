@@ -54,6 +54,9 @@ def serialize_acta(acta, usuario_id=None, con_prestaciones=True):
             else None
         ),
         "fecha_revision_coordinador": _fecha_iso(acta.fecha_revision_coordinador),
+        # Asignada desde SISOC y aun sin contenido: la app ofrece "Completar"
+        # solo si es True (ver ``ActaComplementaria.sin_cargar``).
+        "sin_cargar": acta.sin_cargar,
     }
     if con_prestaciones:
         data["prestaciones"] = [
@@ -190,6 +193,32 @@ class ActasComplementariasTerritorialMixin:
             serialize_acta(acta, request.user.id), status=status.HTTP_201_CREATED
         )
 
+    @staticmethod
+    def _bloqueo_correccion(acta, user):
+        """Respuesta de error si el acta no admite la corrección, o ``None``."""
+        if acta.tecnico_id != user.id:
+            return _error(
+                "Solo el técnico del acta puede corregirla.",
+                status.HTTP_403_FORBIDDEN,
+            )
+        if acta.esta_validado:
+            return _error(
+                "Validado por el coordinador: no admite modificaciones.",
+                status.HTTP_409_CONFLICT,
+                estado_validacion=acta.estado_validacion,
+            )
+        # Acta cargada completa desde el backoffice y aún no enviada a
+        # revisión: la app (1.1.53) no debe pisar ese contenido. Se evalúa
+        # sobre la instancia recién bloqueada, antes de modificarla
+        # (``sin_cargar`` es cached_property).
+        if acta.estado_validacion is None and not acta.sin_cargar:
+            return _error(
+                "El acta ya fue cargada en SISOC y todavía no está enviada "
+                "a revisión: no se puede completar desde la app.",
+                status.HTTP_409_CONFLICT,
+            )
+        return None
+
     @action(
         detail=True,
         methods=["patch"],
@@ -229,17 +258,9 @@ class ActasComplementariasTerritorialMixin:
             )
             if acta is None:
                 return _error("Acta no encontrada.", status.HTTP_404_NOT_FOUND)
-            if acta.tecnico_id != request.user.id:
-                return _error(
-                    "Solo el técnico del acta puede corregirla.",
-                    status.HTTP_403_FORBIDDEN,
-                )
-            if acta.esta_validado:
-                return _error(
-                    "Validado por el coordinador: no admite modificaciones.",
-                    status.HTTP_409_CONFLICT,
-                    estado_validacion=acta.estado_validacion,
-                )
+            bloqueo = self._bloqueo_correccion(acta, request.user)
+            if bloqueo is not None:
+                return bloqueo
             error = self._aplicar_fecha_hora(request, acta)
             if error is not None:
                 return error
@@ -256,4 +277,7 @@ class ActasComplementariasTerritorialMixin:
                         for fila in prestaciones
                     ]
                 )
+        # ``sin_cargar`` es cached_property y se leyó antes de guardar: se
+        # descarta para que la respuesta refleje el acta ya cargada (False).
+        acta.__dict__.pop("sin_cargar", None)
         return Response(serialize_acta(acta, request.user.id))

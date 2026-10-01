@@ -78,6 +78,24 @@ run() {
   "$@"
 }
 
+fetch_root_with_retry() {
+  local attempts=3
+  local attempt
+
+  for ((attempt = 1; attempt <= attempts; attempt++)); do
+    if run git -C "$ROOT_DIR" fetch origin --prune; then
+      return 0
+    fi
+
+    if ((attempt < attempts)); then
+      log "git fetch fallo ($attempt/$attempts); reintentando en 5 segundos."
+      sleep 5
+    fi
+  done
+
+  fail "No se pudo actualizar origin/$CURRENT_BRANCH luego de $attempts intentos."
+}
+
 read_env_value() {
   local key="$1"
   local line value
@@ -330,7 +348,7 @@ main() {
   fi
 
   if [[ "$SKIP_PULL" -eq 0 ]]; then
-    run git -C "$ROOT_DIR" fetch origin --prune
+    fetch_root_with_retry
   fi
 
   validate_expected_revision
@@ -350,7 +368,15 @@ main() {
   # Validarlos despues del fast-forward evita bloquear un checkout anterior.
   configure_compose_command
 
+  deployed_revision="$(git -C "$ROOT_DIR" rev-parse HEAD)" \
+    || fail "No pude resolver la revision a desplegar."
+  export VPSL_IMAGE_TAG="sisoc/front-vpsl:$deployed_revision"
+  export VITE_RELEASE_SHA="$deployed_revision"
+
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" config -q
+
+  # Construir el front antes de detener los servicios anteriores.
+  run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" build front_vpsl
 
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" "${DOWN_ARGS[@]}"
 

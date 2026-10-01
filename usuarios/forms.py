@@ -18,8 +18,6 @@ from core.models import Provincia
 from core.validators import solo_digitos, validate_cuit
 from users.form_catalogs import obtener_queryset_formulario
 from users.models import (
-    AccesoComedorPWA,
-    CoordinadorEquipoTecnicoPWA,
     Profile,
     RelevadorCalleProvincia,
     TerritorialComedorProvincia,
@@ -31,7 +29,18 @@ from users.services_datacalle import (
     validar_alcance_coordinador,
 )
 from users.services_delegation import effective_delegatable_groups_qs
-from users.services_pwa import (
+from users.services_bulk_credentials import get_bulk_credentials_send_type_choices
+from users.territorial_scope import (
+    clean_territorial_scope_payload,
+    get_full_province_scope_ids,
+    serialize_profile_scopes,
+    sync_profile_territorial_scopes,
+)
+from pwa.models import (
+    AccesoComedorPWA,
+    CoordinadorEquipoTecnicoPWA,
+)
+from pwa.services.accesos import (
     PWA_ASSIGNABLE_PERMISSION_CODES,
     PWA_USUARIOS_PERMISSION_CODE,
     deactivate_coordinador_equipo_tecnico_pwa_access,
@@ -40,13 +49,6 @@ from users.services_pwa import (
     is_pwa_user,
     sync_coordinador_equipo_tecnico_pwa_access,
     sync_representante_accesses,
-)
-from users.services_bulk_credentials import get_bulk_credentials_send_type_choices
-from users.territorial_scope import (
-    clean_territorial_scope_payload,
-    get_full_province_scope_ids,
-    serialize_profile_scopes,
-    sync_profile_territorial_scopes,
 )
 
 

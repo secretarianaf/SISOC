@@ -245,7 +245,7 @@ def test_el_coordinador_puede_habilitar_a_un_usuario_existente(provincia):
     salir del perfil: para un usuario que todavía no es relevador sería vacío,
     y clean exige al menos una provincia sobre un campo deshabilitado.
     """
-    from users.forms import CustomUserChangeForm
+    from usuarios.forms import CustomUserChangeForm
 
     coordinador = _coordinador_datacalle(provincia, "coord_habilita")
     existente = get_user_model().objects.create_user(
@@ -284,7 +284,7 @@ def test_editar_no_le_borra_la_provincia_al_relevador(provincia):
     que editar a un relevador de la propia provincia no le pierda esa única
     provincia en el camino.
     """
-    from users.forms import CustomUserChangeForm
+    from usuarios.forms import CustomUserChangeForm
 
     coordinador = _coordinador_datacalle(provincia, "coord_preserva")
     entrevistador = _entrevistador(provincia, "entrev_preserva")
@@ -324,7 +324,7 @@ def test_qa_0015_el_alta_explica_donde_se_define_cada_rol():
     El actor es superusuario porque el selector pasó a ser fail-closed: sin
     actor sólo ofrece "Relevador" (ver ``_roles_datacalle_para_el_actor``).
     """
-    from users.forms import UserCreationForm
+    from usuarios.forms import UserCreationForm
 
     superusuario = get_user_model().objects.create_superuser(
         username="super_ayuda", email="super_ayuda@example.com", password="Sisoc12345!"
@@ -352,7 +352,7 @@ def test_qa_0015_el_alta_explica_donde_se_define_cada_rol():
 @pytest.mark.django_db
 def test_rn02_el_coordinador_solo_puede_crear_relevadores(provincia):
     """RN02: crear coordinadores es exclusivo del Administrador Nacional."""
-    from users.forms import UserCreationForm
+    from usuarios.forms import UserCreationForm
 
     actor = _coordinador_datacalle(provincia, "coord_rn02")
     actor.profile.datacalle_rol = "coordinador"
@@ -367,7 +367,7 @@ def test_rn02_el_coordinador_solo_puede_crear_relevadores(provincia):
 @pytest.mark.django_db
 def test_rn02_el_coordinador_no_puede_forzar_el_rol_por_post(provincia):
     """RN08: no alcanza con no mostrar la opcion; el servidor la rechaza."""
-    from users.forms import UserCreationForm
+    from usuarios.forms import UserCreationForm
 
     actor = _coordinador_datacalle(provincia, "coord_post")
     actor.profile.datacalle_rol = "coordinador"
@@ -391,7 +391,7 @@ def test_rn02_el_coordinador_no_puede_forzar_el_rol_por_post(provincia):
 
 @pytest.mark.django_db
 def test_rn02_el_administrador_si_puede_crear_coordinadores(provincia):
-    from users.forms import UserCreationForm
+    from usuarios.forms import UserCreationForm
 
     actor = _coordinador_datacalle(provincia, "admin_rn02")
     actor.profile.datacalle_rol = "administrador"

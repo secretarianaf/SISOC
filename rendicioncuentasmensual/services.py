@@ -26,7 +26,7 @@ from iam.services import user_has_permission_code
 from organizaciones.models import Organizacion, ProyectoOrganizacion
 from pwa.services.mensajes_service import MOBILE_RENDICION_PERMISSION_CODE
 from pwa.services.push_service import notify_rendicion_revision_push
-from users.services_territoriales import etiqueta_territorial
+from usuarios.services_territoriales import etiqueta_territorial
 from rendicioncuentasmensual.models import (
     DocumentacionAdjunta,
     RendicionCuentaMensual,

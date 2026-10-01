@@ -2,7 +2,7 @@ from django.urls import path
 from django.contrib.auth.views import LogoutView
 from core.decorators import permissions_all_required, permissions_any_required
 from users.services import BULK_CREDENTIALS_PERMISSION_CODE
-from users.views import (
+from usuarios.views import (
     BulkCredentialsJobDetailView,
     BulkCredentialsJobResumeView,
     BulkCredentialsTemplateView,
@@ -21,8 +21,8 @@ from users.views import (
     UsuariosLoginView,
     UserActiveView,
 )
-from users.views_export import UserExportView, GroupExportView
-from users.views_user_import import (
+from usuarios.views_export import UserExportView, GroupExportView
+from usuarios.views_user_import import (
     UserImportJobCreateView,
     UserImportJobDetailView,
     UserImportJobDownloadCSVView,

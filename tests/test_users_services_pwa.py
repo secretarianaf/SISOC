@@ -9,10 +9,10 @@ from comedores.models import Comedor, Programas
 from core.models import Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
-from users.models import AccesoComedorPWA
-from users.models import AuditAccesoComedorPWA
-from users.models import CoordinadorEquipoTecnicoPWA
-from users.services_pwa import (
+from pwa.models import AccesoComedorPWA
+from pwa.models import AuditAccesoComedorPWA
+from pwa.models import CoordinadorEquipoTecnicoPWA
+from pwa.services.accesos import (
     create_operador_for_comedor,
     get_pwa_context,
     deactivate_operador,
@@ -262,7 +262,7 @@ def test_create_operador_for_comedor_handles_integrity_error(comedores, monkeypa
         raise IntegrityError("duplicate key")
 
     monkeypatch.setattr(
-        "users.services_pwa.User.objects.create_user",
+        "pwa.services.accesos.User.objects.create_user",
         _raise_integrity_error,
     )
 

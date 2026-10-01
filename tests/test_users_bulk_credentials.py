@@ -17,13 +17,13 @@ from django.contrib.sessions.middleware import SessionMiddleware
 from django.utils import timezone
 from openpyxl import Workbook, load_workbook
 
-from users.forms import BulkCredentialsUploadForm
+from usuarios.forms import BulkCredentialsUploadForm
 from users.models import BulkCredentialsJob, BulkCredentialsJobRow
 from users.services_bulk_credentials import (
     BulkCredentialsEmailTimeoutError,
     process_bulk_credentials_file,
 )
-from users.services_bulk_credentials_jobs import (
+from usuarios.services_bulk_credentials_jobs import (
     STALE_JOB_ERROR_MESSAGE,
     can_resume_bulk_credentials_job,
     create_bulk_credentials_job,
@@ -33,7 +33,7 @@ from users.services_bulk_credentials_jobs import (
     run_bulk_credentials_jobs_worker,
 )
 from users.services import UsuariosService
-from users.views import (
+from usuarios.views import (
     BulkCredentialsJobDetailView,
     BulkCredentialsJobResumeView,
     BulkCredentialsTemplateView,
@@ -1163,7 +1163,7 @@ def test_bulk_credentials_job_resume_view_sets_job_pending(settings, tmp_path):
 
 def test_process_bulk_credentials_jobs_command_invokes_worker_once(mocker):
     run_worker = mocker.patch(
-        "users.management.commands.process_bulk_credentials_jobs."
+        "usuarios.management.commands.process_bulk_credentials_jobs."
         "run_bulk_credentials_jobs_worker"
     )
 
@@ -1174,10 +1174,10 @@ def test_process_bulk_credentials_jobs_command_invokes_worker_once(mocker):
 
 def test_run_bulk_credentials_jobs_worker_once_processes_single_cycle(mocker):
     close_connections = mocker.patch(
-        "users.services_bulk_credentials_jobs.close_old_connections"
+        "usuarios.services_bulk_credentials_jobs.close_old_connections"
     )
     process_next = mocker.patch(
-        "users.services_bulk_credentials_jobs.process_next_bulk_credentials_job",
+        "usuarios.services_bulk_credentials_jobs.process_next_bulk_credentials_job",
         return_value=True,
     )
 
@@ -1189,10 +1189,10 @@ def test_run_bulk_credentials_jobs_worker_once_processes_single_cycle(mocker):
 
 def test_run_bulk_credentials_jobs_worker_once_reraises_unexpected_error(mocker):
     close_connections = mocker.patch(
-        "users.services_bulk_credentials_jobs.close_old_connections"
+        "usuarios.services_bulk_credentials_jobs.close_old_connections"
     )
     mocker.patch(
-        "users.services_bulk_credentials_jobs.process_next_bulk_credentials_job",
+        "usuarios.services_bulk_credentials_jobs.process_next_bulk_credentials_job",
         side_effect=RuntimeError("boom"),
     )
 

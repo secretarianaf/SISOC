@@ -3,7 +3,7 @@ from django.urls import path
 
 from comedores.api_views import ComedorDetailViewSet
 from pwa.api_views import MensajeEspacioPWAViewSet
-from users.views import UserListView
+from usuarios.views import UserListView
 
 
 def _placeholder_view(request, *args, **kwargs):

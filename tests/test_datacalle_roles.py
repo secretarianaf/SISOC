@@ -112,7 +112,7 @@ def test_el_equipo_del_operativo_solo_ofrece_relevadores(provincia):
     assert [u.username for u in disponibles] == [relevador.username]
 
 
-from users.forms import UserCreationForm
+from usuarios.forms import UserCreationForm
 
 
 @pytest.mark.django_db
@@ -544,7 +544,7 @@ def _datos_edicion(user, **extra):
 
 def _crear_por_formulario(actor, username, rol, provincia=None, **extra):
     """Alta por el formulario real: es el camino que dejaba el alcance roto."""
-    from users.forms import UserCreationForm
+    from usuarios.forms import UserCreationForm
 
     datos = {
         "username": username,
@@ -573,7 +573,7 @@ def test_el_coordinador_puede_guardar_su_propio_registro(provincia):
     ofrecía era "Relevador", que lo degradaba a no-staff y lo expulsaba de
     SISOC en el próximo login.
     """
-    from users.forms import CustomUserChangeForm
+    from usuarios.forms import CustomUserChangeForm
 
     coord = _usuario("coord_autoedita", "coordinador", provincia, staff=True)
 
@@ -610,7 +610,7 @@ def test_sin_actor_el_selector_de_rol_es_fail_closed(provincia):
     Antes devolvía los tres roles (fail-open), así que cualquier camino que
     instanciara el formulario sin actor podía asignar el rol más alto.
     """
-    from users.forms import UserCreationForm
+    from usuarios.forms import UserCreationForm
 
     form = UserCreationForm()
     ofrecidos = [codigo for codigo, _ in form.fields["datacalle_rol"].choices if codigo]
@@ -692,7 +692,7 @@ def test_el_administrador_del_formulario_queda_sin_alcance(provincia):
 @pytest.mark.django_db
 def test_pasar_de_relevador_a_coordinador_limpia_la_tabla_del_relevador(provincia):
     """``_sync_relevador_calle_provincias`` escribía filas para los tres roles."""
-    from users.forms import CustomUserChangeForm
+    from usuarios.forms import CustomUserChangeForm
 
     relevador = _usuario("muta_rol", "entrevistador", provincia)
     assert relevador.profile.relevador_calle_provincias.exists() is True
@@ -740,7 +740,7 @@ def test_un_usuario_provincial_no_puede_cambiarse_la_provincia(provincia):
     """
     import json
 
-    from users.forms import CustomUserChangeForm
+    from usuarios.forms import CustomUserChangeForm
 
     salta = Provincia.objects.create(nombre="Salta")
     coord = _usuario("coord_se_muda", "coordinador", provincia, staff=True)
@@ -781,7 +781,7 @@ def test_el_rol_del_perfil_llega_a_la_api_sin_el_flag(provincia):
     Un perfil con rol y sin flag entra a la API por ``TieneAccesoDataCalle``
     -que mira el rol- y después ``/me/`` le contestaba que no tenía ninguno.
     """
-    from users.api_serializers import UserContextSerializer
+    from usuarios.api_serializers import UserContextSerializer
 
     coord = _usuario("coord_api_rol", "coordinador", provincia, staff=True)
     perfil = coord.profile
@@ -926,7 +926,7 @@ def test_el_rol_coordinador_no_le_borra_las_otras_provincias(provincia):
     Córdoba perdía Salta y Jujuy en todos esos módulos, sin error y sin aviso.
     La decisión es rechazar, no pisar.
     """
-    from users.forms import CustomUserChangeForm
+    from usuarios.forms import CustomUserChangeForm
 
     salta = Provincia.objects.create(nombre="Salta")
     jujuy = Provincia.objects.create(nombre="Jujuy")
@@ -961,7 +961,7 @@ def test_el_rol_administrador_no_deja_irrestricto_al_que_tenia_alcance(provincia
     """El administrador nacional no tiene alcance: quitárselo a un usuario que
     sí lo tenía lo vuelve irrestricto en **todo** el backoffice, no sólo en
     DataCalle."""
-    from users.forms import CustomUserChangeForm
+    from usuarios.forms import CustomUserChangeForm
 
     usuario = _con_alcance("una_provincia", [provincia])
 
@@ -989,7 +989,7 @@ def test_un_alcance_municipal_no_se_ensancha_al_hacerlo_coordinador(provincia):
     """Derivar a provincia completa a quien hoy sólo ve un municipio le
     **ensancha** el acceso en los otros módulos: también es conflicto."""
     from core.models import Municipio
-    from users.forms import CustomUserChangeForm
+    from usuarios.forms import CustomUserChangeForm
 
     municipio = Municipio.objects.create(nombre="Capital", provincia=provincia)
     usuario = _con_alcance("solo_municipio", [provincia], municipio=municipio)
@@ -1036,7 +1036,7 @@ def test_bajar_de_coordinador_a_relevador_saca_el_grupo_de_coordinador(provincia
     cambio de rol y el degradado seguía con permisos de coordinador."""
     from django.contrib.auth.models import Group
 
-    from users.forms import CustomUserChangeForm
+    from usuarios.forms import CustomUserChangeForm
 
     grupo, _ = Group.objects.get_or_create(name="Coordinador DataCalle")
     coord = _usuario("baja_a_relevador", "coordinador", provincia, staff=True)
@@ -1066,7 +1066,7 @@ def test_destildar_datacalle_deja_el_perfil_sin_grupo_ni_rol(provincia):
     en el backoffice."""
     from django.contrib.auth.models import Group
 
-    from users.forms import CustomUserChangeForm
+    from usuarios.forms import CustomUserChangeForm
 
     grupo, _ = Group.objects.get_or_create(name="Coordinador DataCalle")
     coord = _usuario("pierde_datacalle", "coordinador", provincia, staff=True)

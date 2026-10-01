@@ -53,7 +53,7 @@ class TicketeraUsuarioPatchSerializer(serializers.Serializer):
 class TicketeraSolicitarResetSerializer(serializers.Serializer):
     """Payload para iniciar el reset de contraseña desde la Ticketera.
 
-    Mismo XOR que `users.api_serializers.PasswordResetRequestSerializer`: se
+    Mismo XOR que `usuarios.api_serializers.PasswordResetRequestSerializer`: se
     espera exactamente uno de ``username`` o ``email``.
     """
 

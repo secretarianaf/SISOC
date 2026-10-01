@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from django.contrib.auth import get_user_model
 
-from users.models import AccesoComedorPWA, AccesoOrganizacionPWA
-from users.services_pwa import (
+from pwa.models import (
+    AccesoComedorPWA,
+    AccesoOrganizacionPWA,
+)
+from pwa.services.accesos import (
     apply_comedor_organizacion_change,
     preview_organizacion_accesses,
     sync_organizacion_accesses,

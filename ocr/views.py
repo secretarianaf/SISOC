@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 
-from users.views import AdminRequiredMixin
+from usuarios.views import AdminRequiredMixin
 from ocr.forms import OCRUploadForm
 from ocr.models import OCRJob, OCRJobDocument
 from ocr.services_ocr_jobs import create_ocr_job, get_recent_ocr_jobs

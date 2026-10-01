@@ -19,14 +19,16 @@ from django.utils import timezone
 from core.models import Provincia
 from users.form_catalogs import obtener_queryset_formulario
 from users.models import (
+    Profile,
+    TerritorialComedorProvincia,
+)
+from pwa.models import (
     AccesoComedorPWA,
     AccesoOrganizacionPWA,
     AuditAccesoComedorPWA,
     CoordinadorEquipoTecnicoPWA,
-    Profile,
-    TerritorialComedorProvincia,
 )
-from users.pwa_comedores import es_comedor_alimentar_comunidad
+from pwa.services.capacidades_comedores import es_comedor_alimentar_comunidad
 from users.profile_utils import get_profile_or_none
 from iam.services import get_effective_permission_codes
 

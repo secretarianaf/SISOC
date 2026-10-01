@@ -8,5 +8,5 @@ def _ok_view(_request):
 
 urlpatterns = [
     path("inicio/", _ok_view, name="inicio"),
-    path("", include("users.urls")),
+    path("", include("usuarios.urls")),
 ]

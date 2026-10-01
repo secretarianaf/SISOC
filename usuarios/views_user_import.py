@@ -7,21 +7,21 @@ from django.urls import reverse
 from django.views import View
 
 from core.services.csv_export import build_csv_response
-from users.forms import UserImportForm
-from users.models import UserImportJobRow
-from users.views import AdminRequiredMixin
-from users.services_user_import import (
+from usuarios.forms import UserImportForm
+from usuarios.views import AdminRequiredMixin
+from usuarios.services_user_import import (
     USER_IMPORT_TEMPLATE_FILENAME,
     create_user_import_job,
     generate_user_import_job_csv,
     generate_user_import_template,
 )
-from users.services_user_import_jobs import (
+from usuarios.services_user_import_jobs import (
     can_resume_user_import_job,
     get_recent_user_import_jobs,
     get_user_import_job_or_404,
     request_resume_user_import_job,
 )
+from users.models import UserImportJobRow
 
 USER_IMPORT_PERMISSION_CODE = "auth.add_user"
 

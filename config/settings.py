@@ -184,6 +184,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # Apps propias
     "users",
+    "usuarios",
     "core",
     "sentry.apps.SentryConfig",
     "dashboard.apps.DashboardConfig",
@@ -287,7 +288,7 @@ FRONTEND_V2_HMR_ORIGINS = (
     if DEBUG
     else []
 )
-ACCOUNT_FORMS = {"login": "users.forms.UserLoginForm"}
+ACCOUNT_FORMS = {"login": "usuarios.forms.UserLoginForm"}
 INITIAL_PASSWORD_MAX_AGE_HOURS = _safe_int_env("INITIAL_PASSWORD_MAX_AGE_HOURS", 336)
 PASSWORD_RESET_TIMEOUT = _safe_int_env("PASSWORD_RESET_TIMEOUT", 3600)
 

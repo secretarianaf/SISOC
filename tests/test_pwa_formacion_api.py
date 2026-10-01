@@ -13,7 +13,7 @@ from comedores.models import (
 )
 from core.models import Provincia
 from pwa.api_views import CursoAppMobilePWAViewSet
-from users.models import AccesoComedorPWA
+from pwa.models import AccesoComedorPWA
 
 
 pytestmark = pytest.mark.django_db

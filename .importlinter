@@ -25,6 +25,7 @@
 root_packages =
     core
     users
+    usuarios
     ciudadanos
     comedores
     organizaciones
@@ -62,6 +63,7 @@ allow_indirect_imports = True
 source_modules =
     core
 forbidden_modules =
+    usuarios
     ciudadanos
     comedores
     organizaciones
@@ -156,6 +158,7 @@ allow_indirect_imports = True
 source_modules =
     ciudadanos
 forbidden_modules =
+    usuarios
     comedores
     organizaciones
     duplas
@@ -201,6 +204,7 @@ allow_indirect_imports = True
 source_modules =
     users
 forbidden_modules =
+    usuarios
     ciudadanos
     comedores
     organizaciones

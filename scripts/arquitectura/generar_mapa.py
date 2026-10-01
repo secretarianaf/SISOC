@@ -120,7 +120,14 @@ ZONAS = [
         "id": "transversal",
         "nombre": "Servicios al usuario",
         "detalle": "Atraviesan dominios sin ser dueños de ninguno.",
-        "apps": ["dashboard", "comunicados", "encuestas", "ocr", "insumos"],
+        "apps": [
+            "dashboard",
+            "comunicados",
+            "encuestas",
+            "ocr",
+            "insumos",
+            "usuarios",
+        ],
     },
     {
         "id": "integracion",

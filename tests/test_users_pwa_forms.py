@@ -10,21 +10,23 @@ from core.constants import UserGroups
 from core.models import Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
-from users.forms import (
+from usuarios.forms import (
     BackofficeAuthenticationForm,
     CustomUserChangeForm,
     PWA_OPERATION_PERMISSION_FIELDS,
     UserCreationForm,
 )
 from users.models import (
+    RelevadorCalleProvincia,
+    TerritorialComedorProvincia,
+)
+from pwa.models import (
     AccesoComedorPWA,
     AccesoOrganizacionPWA,
     AuditAccesoComedorPWA,
     CoordinadorEquipoTecnicoPWA,
-    RelevadorCalleProvincia,
-    TerritorialComedorProvincia,
 )
-from users.services_pwa import get_access_rows, is_pwa_user
+from pwa.services.accesos import get_access_rows, is_pwa_user
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 

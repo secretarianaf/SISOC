@@ -2667,7 +2667,7 @@ class FormularioCDIHorarioFuncionamiento(models.Model):
 class AccesoCDI(models.Model):
     """Vínculo entre un usuario y un CDI que gestiona.
 
-    Replica el patrón de ``users.AccesoComedorPWA`` para el dominio CDI: un
+    Replica el patrón de ``pwa.AccesoComedorPWA`` para el dominio CDI: un
     usuario provincial genera usuarios "CDI - Referente centro" asociados a un
     centro puntual (relación 1..N, máximo definido en la capa de servicio).
     El rol/permisos los aporta el grupo, no este modelo.

@@ -38,7 +38,7 @@ from organizaciones.models import (
 )
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from rendicioncuentasmensual.services import RendicionesOrganizacionService
-from users.services_territoriales import etiqueta_territorial
+from usuarios.services_territoriales import etiqueta_territorial
 
 MAX_DOCUMENTO_ORGANIZACION_FILE_SIZE = 20 * 1024 * 1024
 DOCUMENTO_ORGANIZACION_FORMATOS_VALIDOS = "PDF, JPG, PNG, Excel o Word"

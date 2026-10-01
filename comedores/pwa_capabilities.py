@@ -4,7 +4,7 @@ from comedores.models import Comedor
 from comedores.services.capacitaciones_certificados_service import (
     is_alimentar_comunidad_program,
 )
-from users.pwa_comedores import registrar_capacidad_alimentar_comunidad
+from pwa.services.capacidades_comedores import registrar_capacidad_alimentar_comunidad
 
 
 def es_comedor_alimentar_comunidad(comedor_id: int) -> bool:

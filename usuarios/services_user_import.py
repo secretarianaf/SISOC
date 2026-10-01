@@ -19,19 +19,19 @@ from openpyxl import Workbook, load_workbook
 from core.constants import UserGroups
 from core.models import Provincia
 from users.models import (
-    AccesoComedorPWA,
     ProfileTerritorialScope,
     UserImportJob,
     UserImportJobRow,
 )
 from users.services_auth import generate_temporary_password_for_user
 from users.services_delegation import effective_delegatable_group_ids
-from users.services_pwa import (
+from users.territorial_scope import sync_profile_territorial_scopes
+from pwa.models import AccesoComedorPWA
+from pwa.services.accesos import (
     get_assignable_pwa_permission_codes,
     sync_representante_accesses,
 )
-from users.territorial_scope import sync_profile_territorial_scopes
-from users.pwa_import_access import (
+from usuarios.pwa_import_access import (
     SeleccionAccesosPWAImportacion,
     resolver_accesos_pwa_importacion,
 )

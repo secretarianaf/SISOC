@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from comedores.models import Comedor
-from users.api import (
+from usuarios.api import (
     obtener_ids_organizaciones_con_acceso_pwa,
     previsualizar_accesos_organizacion,
     sincronizar_accesos_organizacion,

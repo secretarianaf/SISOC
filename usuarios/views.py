@@ -36,10 +36,10 @@ from .forms import (
     UsernameEmailPasswordResetForm,
 )
 from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
-from .models import AccesoComedorPWA
-from .profile_utils import needs_profile_confirmation
-from .services import BULK_CREDENTIALS_PERMISSION_CODE, UsuariosService
-from .services_bulk_credentials import (
+from pwa.models import AccesoComedorPWA
+from users.profile_utils import needs_profile_confirmation
+from users.services import BULK_CREDENTIALS_PERMISSION_CODE, UsuariosService
+from users.services_bulk_credentials import (
     generate_bulk_credentials_template,
     get_bulk_credentials_send_type_config,
     get_bulk_credentials_send_type_contexts,

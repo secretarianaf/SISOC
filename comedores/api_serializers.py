@@ -41,8 +41,8 @@ from rendicioncuentasmensual.services import (
     RendicionCuentaMensualService,
     periodo_fin_maximo,
 )
-from users.models import AccesoComedorPWA
-from users.services_pwa import get_territorial_comedor_provincia_ids
+from pwa.models import AccesoComedorPWA
+from pwa.services.accesos import get_territorial_comedor_provincia_ids
 
 
 class SimpleUbicacionSerializer(serializers.ModelSerializer):

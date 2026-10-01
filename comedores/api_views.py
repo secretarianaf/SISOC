@@ -78,26 +78,8 @@ from rendicioncuentasmensual.services import (
     inferir_linea_programatica,
 )
 from organizaciones.models import ProyectoOrganizacion
-from pwa.models import NominaDestinatariosDocumentoPWA
-from users.api_permissions import (
-    CanViewPwaRendicionesPermission,
-    CanViewPwaUsuariosPermission,
-    HasMobileRendicionPermission,
-    HasPwaPrestacionesMensualesPermission,
-    HasPwaUsuariosPermission,
-    IsPWAUserForComedor,
-    IsPWARepresentativeForComedor,
-    IsPWAWriteAllowed,
-)
-from users.api_serializers import (
-    OperadorCreateResponseSerializer,
-    OperadorCreateSerializer,
-    OperadorListSerializer,
-    OperadorPermissionsUpdateSerializer,
-)
-
-from users.models import AccesoComedorPWA
-from users.services_pwa import (
+from pwa.models import AccesoComedorPWA, NominaDestinatariosDocumentoPWA
+from pwa.services.accesos import (
     create_operador_for_comedor,
     deactivate_operador,
     get_assignable_pwa_permission_codes,
@@ -110,6 +92,22 @@ from users.services_pwa import (
     is_pwa_user,
     list_operadores_for_comedor,
     update_operador_permissions,
+)
+from usuarios.api_permissions import (
+    CanViewPwaRendicionesPermission,
+    CanViewPwaUsuariosPermission,
+    HasMobileRendicionPermission,
+    HasPwaPrestacionesMensualesPermission,
+    HasPwaUsuariosPermission,
+    IsPWAUserForComedor,
+    IsPWARepresentativeForComedor,
+    IsPWAWriteAllowed,
+)
+from usuarios.api_serializers import (
+    OperadorCreateResponseSerializer,
+    OperadorCreateSerializer,
+    OperadorListSerializer,
+    OperadorPermissionsUpdateSerializer,
 )
 
 logger = logging.getLogger("django")

@@ -636,3 +636,235 @@ class NominaObservacionPWA(models.Model):
         return (
             f"Observación nómina {self.nomina_id} {self.fecha_creacion:%Y-%m-%d %H:%M}"
         )
+
+
+# --- Accesos PWA a comedores y organizaciones (antes en users) ---
+
+
+class AccesoComedorPWA(models.Model):
+    """Relación de alcance PWA entre usuario y comedor."""
+
+    ROL_REPRESENTANTE = "representante"
+    ROL_OPERADOR = "operador"
+    TIPO_ASOCIACION_ORGANIZACION = "organizacion"
+    TIPO_ASOCIACION_ESPACIO = "espacio"
+    ROL_CHOICES = (
+        (ROL_REPRESENTANTE, "Representante"),
+        (ROL_OPERADOR, "Operador"),
+    )
+    TIPO_ASOCIACION_CHOICES = (
+        (TIPO_ASOCIACION_ORGANIZACION, "Organización"),
+        (TIPO_ASOCIACION_ESPACIO, "Espacio"),
+    )
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="accesos_pwa",
+    )
+    comedor = models.ForeignKey(
+        "comedores.Comedor",
+        on_delete=models.CASCADE,
+        related_name="accesos_pwa",
+    )
+    organizacion = models.ForeignKey(
+        "organizaciones.Organizacion",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="accesos_pwa",
+    )
+    rol = models.CharField(max_length=20, choices=ROL_CHOICES)
+    tipo_asociacion = models.CharField(
+        max_length=20,
+        choices=TIPO_ASOCIACION_CHOICES,
+        default=TIPO_ASOCIACION_ESPACIO,
+    )
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_pwa_creados",
+    )
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_baja = models.DateTimeField(null=True, blank=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        # Tabla original: el modelo vivía en `users` (kernel) hasta #1931.
+        db_table = "users_accesocomedorpwa"
+        verbose_name = "Acceso PWA a comedor"
+        verbose_name_plural = "Accesos PWA a comedor"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "comedor"],
+                name="unique_pwa_user_comedor",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["user", "activo"]),
+            models.Index(fields=["comedor", "rol", "activo"]),
+            models.Index(fields=["organizacion", "activo"]),
+            models.Index(fields=["creado_por", "activo"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.comedor_id} - {self.rol}"
+
+
+class AccesoOrganizacionPWA(models.Model):
+    """Organizaciones asignadas a un usuario PWA.
+
+    Es la fuente de verdad de la relación usuario-organización: los accesos
+    por comedor (`AccesoComedorPWA` con `tipo_asociacion='organizacion'`) se
+    derivan de esta membresía y se reconcilian cuando cambia la organización
+    de un comedor.
+    """
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="accesos_organizacion_pwa",
+    )
+    organizacion = models.ForeignKey(
+        "organizaciones.Organizacion",
+        on_delete=models.PROTECT,
+        related_name="accesos_organizacion_pwa",
+    )
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_organizacion_pwa_creados",
+    )
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_baja = models.DateTimeField(null=True, blank=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        # Tabla original: el modelo vivía en `users` (kernel) hasta #1931.
+        db_table = "users_accesoorganizacionpwa"
+        verbose_name = "Acceso PWA a organización"
+        verbose_name_plural = "Accesos PWA a organización"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "organizacion"],
+                name="unique_pwa_user_organizacion",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["user", "activo"]),
+            models.Index(fields=["organizacion", "activo"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - organización {self.organizacion_id}"
+
+
+class CoordinadorEquipoTecnicoPWA(models.Model):
+    """Alcance PWA de solo lectura derivado de equipos técnicos."""
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="coordinador_equipo_tecnico_pwa",
+    )
+    duplas = models.ManyToManyField(
+        "duplas.Dupla",
+        related_name="coordinadores_pwa",
+        blank=True,
+        verbose_name="Equipos técnicos",
+    )
+    comedores_adicionales = models.ManyToManyField(
+        "comedores.Comedor",
+        related_name="coordinadores_pwa_adicionales",
+        blank=True,
+        verbose_name="Comedores adicionales",
+    )
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        # Tabla original: el modelo vivía en `users` (kernel) hasta #1931.
+        db_table = "users_coordinadorequipotecnicopwa"
+        verbose_name = "Coordinador de equipo técnico PWA"
+        verbose_name_plural = "Coordinadores de equipo técnico PWA"
+        indexes = [models.Index(fields=["user", "activo"])]
+
+    def __str__(self):
+        return f"{self.user.username} - Coordinador PWA"
+
+
+class AuditAccesoComedorPWA(models.Model):
+    ACCION_CREATE = "create"
+    ACCION_REACTIVATE = "reactivate"
+    ACCION_DEACTIVATE = "deactivate"
+    ACCION_UPDATE_PERMISSIONS = "update_permissions"
+
+    ACCION_CHOICES = (
+        (ACCION_CREATE, "Alta"),
+        (ACCION_REACTIVATE, "Reactivación"),
+        (ACCION_DEACTIVATE, "Baja"),
+        (ACCION_UPDATE_PERMISSIONS, "Edicion de permisos"),
+    )
+
+    acceso = models.ForeignKey(
+        AccesoComedorPWA,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="audit_logs",
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_pwa_audit_logs",
+    )
+    comedor = models.ForeignKey(
+        "comedores.Comedor",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_pwa_audit_logs",
+    )
+    organizacion = models.ForeignKey(
+        "organizaciones.Organizacion",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_pwa_audit_logs",
+    )
+    accion = models.CharField(max_length=20, choices=ACCION_CHOICES, db_index=True)
+    fecha_evento = models.DateTimeField(auto_now_add=True, db_index=True)
+    actor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_pwa_audit_eventos",
+    )
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        # Tabla original: el modelo vivía en `users` (kernel) hasta #1931.
+        db_table = "users_auditaccesocomedorpwa"
+        ordering = ["-fecha_evento", "-id"]
+        verbose_name = "Auditoría de acceso PWA"
+        verbose_name_plural = "Auditorías de accesos PWA"
+        indexes = [
+            models.Index(fields=["user", "fecha_evento"]),
+            models.Index(fields=["comedor", "fecha_evento"]),
+            models.Index(fields=["accion", "fecha_evento"]),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.user_id or '-'} {self.accion} {self.fecha_evento:%Y-%m-%d %H:%M:%S}"
+        )

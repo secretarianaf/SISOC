@@ -1,12 +1,12 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from intervenciones.constants import PROGRAMA_ALIASES_COMEDORES
-from intervenciones.models.intervenciones import (
-    Intervencion,
+from catalogo_intervenciones.constants import PROGRAMA_ALIASES_COMEDORES
+from catalogo_intervenciones.models import (
     SubIntervencion,
     TipoIntervencion,
 )
+from intervenciones.models.intervenciones import Intervencion
 
 
 def _normalize_programa_aliases(aliases):

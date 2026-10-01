@@ -55,6 +55,11 @@ root_packages =
     insumos
     ocr
     pas
+    gestion_organizaciones
+    catalogo_intervenciones
+    datacalle
+    sentry
+    encuestas
 
 [importlinter:contract:core-no-domains]
 name = core no debe importar apps de dominio
@@ -471,17 +476,13 @@ forbidden_modules =
 ignore_imports =
 
 [importlinter:contract:centrodeinfancia-consumes-intervenciones-api]
-name = Centro de Infancia consume el catálogo público de Intervenciones
+name = Centro de Infancia usa el catálogo del kernel, no la app intervenciones (core)
 type = forbidden
 allow_indirect_imports = True
 source_modules =
     centrodeinfancia
 forbidden_modules =
-    intervenciones.constants
-    intervenciones.forms
-    intervenciones.models
-    intervenciones.services_catalogo
-    intervenciones.views
+    intervenciones
 ignore_imports =
 
 [importlinter:contract:vpsl-no-comedores]
@@ -693,3 +694,51 @@ forbidden_modules =
     insumos
     ocr
 ignore_imports =
+
+[importlinter:contract:kernel-no-core-ni-backends]
+name = el kernel no importa apps del core ni de los backends (#1931)
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    core
+    users
+    iam
+    ciudadanos
+    audittrail
+    organizaciones
+    catalogo_intervenciones
+    sentry
+    healthcheck
+forbidden_modules =
+    VAT
+    acompanamientos
+    admisiones
+    celiaquia
+    centrodefamilia
+    centrodeinfancia
+    comedores
+    comunicados
+    dashboard
+    datacalle
+    dispositivos
+    duplas
+    encuestas
+    expedientespagos
+    gestion_organizaciones
+    historial
+    importarexpediente
+    insumos
+    intervenciones
+    ocr
+    pas
+    pwa
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    ticketera
+    usuarios
+    ver_para_ser_libre
+ignore_imports =
+    # Herramientas locales de diagnóstico/benchmark (no corren en runtime).
+    core.debug_queries -> **
+    core.benchmarks.** -> **

@@ -3,7 +3,9 @@ from pathlib import Path
 
 
 def test_subintervencion_fixture_no_contiene_nombres_vacios():
-    path = Path("intervenciones/fixtures/subintervencion_tipointervencion.json")
+    path = Path(
+        "kernel/catalogo_intervenciones/fixtures/subintervencion_tipointervencion.json"
+    )
     data = json.loads(path.read_text())
 
     vacios = [

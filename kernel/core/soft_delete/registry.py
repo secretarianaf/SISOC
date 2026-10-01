@@ -21,7 +21,7 @@ SOFT_DELETE_MODEL_KEYS = [
     "intervenciones.Intervencion",
     "expedientespagos.ExpedientePago",
     "organizaciones.Organizacion",
-    "organizaciones.Firmante",
+    "gestion_organizaciones.Firmante",
     "organizaciones.Aval",
     "centrodefamilia.Centro",
     "centrodefamilia.Categoria",

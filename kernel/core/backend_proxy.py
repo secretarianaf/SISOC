@@ -159,6 +159,41 @@ def _forward(request, origin, path):
     return response
 
 
+def backend_de_app(app_label):
+    """Backend (``SISOC_BACKENDS``) que corre ``app_label``, si no es del core."""
+    from config.backends import (  # pylint: disable=import-outside-toplevel
+        load_backends_registry,
+    )
+
+    for nombre, spec in load_backends_registry().items():
+        if app_label in spec["apps"]:
+            return getattr(settings, "SISOC_BACKENDS", {}).get(nombre)
+    return None
+
+
+def pedir_json_a_backend(request, spec, path, timeout=4):
+    """GET ``path`` al backend ``spec`` con la sesión del usuario; ``None`` si falla.
+
+    Para datos chicos que una pantalla del core muestra de un vertical que corre
+    aparte (p. ej. las métricas de Centro de Familia en el dashboard).
+    """
+    try:
+        respuesta = requests.get(
+            spec["origin"].rstrip("/") + "/" + path.lstrip("/"),
+            headers=outbound_headers(request),
+            timeout=timeout,
+            allow_redirects=False,
+        )
+    except requests.RequestException:
+        return None
+    if respuesta.status_code != 200:
+        return None
+    try:
+        return respuesta.json()
+    except ValueError:
+        return None
+
+
 def backend_de_seccion_favorita(seccion):
     """Backend dueño de una sección de filtros favoritos, si no es del core."""
     for spec in getattr(settings, "SISOC_BACKENDS", {}).values():

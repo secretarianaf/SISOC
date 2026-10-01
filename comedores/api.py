@@ -195,7 +195,7 @@ def buscar_organizaciones_para_destinatarios(
 ) -> PaginaDestinatarios:
     """Organizaciones del alcance dado que matchean los filtros combinables."""
 
-    from organizaciones.filter_config import (  # pylint: disable=import-outside-toplevel
+    from gestion_organizaciones.filter_config import (  # pylint: disable=import-outside-toplevel
         ORGANIZACION_ADVANCED_FILTER,
     )
 
@@ -251,7 +251,7 @@ def get_filtros_destinatarios_config() -> dict:
     from comedores.services.filter_config.impl import (  # pylint: disable=import-outside-toplevel
         get_filters_ui_config as get_comedores_filters_ui_config,
     )
-    from organizaciones.filter_config import (  # pylint: disable=import-outside-toplevel
+    from gestion_organizaciones.filter_config import (  # pylint: disable=import-outside-toplevel
         get_filters_ui_config as get_organizaciones_filters_ui_config,
     )
 

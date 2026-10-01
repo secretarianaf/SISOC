@@ -30,6 +30,8 @@ INSTALLED_APPS = [
     # Kernel
     "users",
     "core",
+    "organizaciones",
+    "catalogo_intervenciones",
     "sentry.apps.SentryConfig",
     "ciudadanos",
     "audittrail",

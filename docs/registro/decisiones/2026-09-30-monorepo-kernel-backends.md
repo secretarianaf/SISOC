@@ -105,6 +105,15 @@ aceptadas.
     los backends los leen en modo solo lectura. Detalle operativo:
     `docs/operacion/backends_por_servicio.md`.
 
+15. **Datos maestros compartidos al kernel** (2026-10-01, *recomendación del
+    agente*). CDI y CDF necesitan `organizaciones` y los catálogos de
+    intervenciones. En vez de duplicarlos o de que esos backends instalen el
+    cluster de Comedores, `organizaciones` pasa a `kernel/organizaciones` y
+    los catálogos a `kernel/catalogo_intervenciones`. Lo que se relaciona con
+    comedores (pantallas de organizaciones y `Firmante`) queda en el core, en
+    `gestion_organizaciones`. Las migraciones son solo de estado y conservan
+    tablas y content types.
+
 ## Deuda aceptada (revisar en el futuro)
 
 - **El aislamiento es de proceso, no de datos.** Una sola base MySQL y un solo
@@ -140,8 +149,11 @@ aceptadas.
   imagen por servicio, deploy selectivo. Piloto con Dispositivos y Datacalle en
   QA y HML. Cortar las dependencias de `core` hacia `comedores`,
   `organizaciones` y otras, para que el kernel no arrastre el cluster.
-- **Ola 2:** VPSL, PAS, CDI, CDF, VAT y Celiaquía, un PR por vertical.
-- **Ola 3:** mover el cluster de Comedores a `backends/sisoc_core/` y cerrar
+- **Ola 2:** VPSL, PAS, VAT y Celiaquía (#2633). CDI y CDF quedaron para
+  la Ola 3, porque antes había que pasar `organizaciones` y los catálogos de
+  intervenciones al kernel (decisión 15).
+- **Ola 3:** CDI y CDF, con `organizaciones` y los catálogos al kernel.
+- **Ola 4:** mover el cluster de Comedores a `backends/sisoc_core/` y cerrar
   #2309, #2251 y #1931.
 
 ## Criterios de aceptación

@@ -362,7 +362,7 @@ def debug_all_views():  # pylint: disable=too-many-locals,too-many-statements,to
     # Debug OrganizacionListView
     logger.info("\n" + "=" * 50)
     try:
-        from organizaciones.views import OrganizacionListView
+        from gestion_organizaciones.views import OrganizacionListView
         from organizaciones.models import Organizacion
 
         success, queries = debug_view_queries(
@@ -379,7 +379,7 @@ def debug_all_views():  # pylint: disable=too-many-locals,too-many-statements,to
     # Debug OrganizacionDetailView
     logger.info("\n" + "=" * 50)
     try:
-        from organizaciones.views import OrganizacionDetailView
+        from gestion_organizaciones.views import OrganizacionDetailView
         from organizaciones.models import Organizacion
 
         success, queries = debug_view_queries(

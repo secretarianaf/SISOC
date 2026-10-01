@@ -6,7 +6,7 @@ from django.test import Client
 from django.urls import reverse
 
 from core.models import Provincia
-from organizaciones.forms import OrganizacionForm
+from gestion_organizaciones.forms import OrganizacionForm
 from organizaciones.models import Organizacion
 from usuarios.services_territoriales import (
     ROL_RESPONSABLE_TERRITORIAL_PNUD,

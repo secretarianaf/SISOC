@@ -27,7 +27,7 @@
  {
   "name": "actividad_create_sola",
   "namespace": "",
-  "regex": "^actividades/nueva/\\Z"
+  "regex": "^centrodefamilia/actividades/nueva/\\Z"
  },
  {
   "name": "actividad_espacio_pwa_crear",
@@ -42,32 +42,32 @@
  {
   "name": "actividadcentro_asistencia",
   "namespace": "",
-  "regex": "^centros/actividades/(?P<pk>[0-9]+)/asistencia/\\Z"
+  "regex": "^centrodefamilia/centros/actividades/(?P<pk>[0-9]+)/asistencia/\\Z"
  },
  {
   "name": "actividadcentro_create",
   "namespace": "",
-  "regex": "^centros/(?P<centro_id>[0-9]+)/actividades/nueva/\\Z"
+  "regex": "^centrodefamilia/centros/(?P<centro_id>[0-9]+)/actividades/nueva/\\Z"
  },
  {
   "name": "actividadcentro_detail",
   "namespace": "",
-  "regex": "^centros/actividades/(?P<pk>[0-9]+)/detalle/\\Z"
+  "regex": "^centrodefamilia/centros/actividades/(?P<pk>[0-9]+)/detalle/\\Z"
  },
  {
   "name": "actividadcentro_edit",
   "namespace": "",
-  "regex": "^centros/actividades/(?P<pk>[0-9]+)/editar/\\Z"
+  "regex": "^centrodefamilia/centros/actividades/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
   "name": "actividadcentro_list",
   "namespace": "",
-  "regex": "^actividades/\\Z"
+  "regex": "^centrodefamilia/actividades/\\Z"
  },
  {
   "name": "actividadcentro_lista_espera",
   "namespace": "",
-  "regex": "^centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/lista\\-espera/\\Z"
+  "regex": "^centrodefamilia/centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/lista\\-espera/\\Z"
  },
  {
   "name": "actividades_pnud_baja",
@@ -172,7 +172,7 @@
  {
   "name": "ajax_cargar_actividades",
   "namespace": "",
-  "regex": "^ajax/actividades/\\Z"
+  "regex": "^centrodefamilia/ajax/actividades/\\Z"
  },
  {
   "name": "ajax_load_localidades",
@@ -667,22 +667,22 @@
  {
   "name": "beneficiarios_crear",
   "namespace": "",
-  "regex": "^beneficiarios/nuevo/\\Z"
+  "regex": "^centrodefamilia/beneficiarios/nuevo/\\Z"
  },
  {
   "name": "beneficiarios_detail",
   "namespace": "",
-  "regex": "^beneficiarios/beneficiarios/(?P<pk>[0-9]+)/\\Z"
+  "regex": "^centrodefamilia/beneficiarios/beneficiarios/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "beneficiarios_export",
   "namespace": "",
-  "regex": "^beneficiarios/beneficiarios/exportar/\\Z"
+  "regex": "^centrodefamilia/beneficiarios/beneficiarios/exportar/\\Z"
  },
  {
   "name": "beneficiarios_list",
   "namespace": "",
-  "regex": "^beneficiarios/beneficiarios/\\Z"
+  "regex": "^centrodefamilia/beneficiarios/beneficiarios/\\Z"
  },
  {
   "name": "borrar_datos_importados",
@@ -692,12 +692,12 @@
  {
   "name": "buscar_cuil",
   "namespace": "",
-  "regex": "^beneficiarios/buscar\\-cuil/\\Z"
+  "regex": "^centrodefamilia/beneficiarios/buscar\\-cuil/\\Z"
  },
  {
   "name": "buscar_responsable",
   "namespace": "",
-  "regex": "^beneficiarios/buscar\\-responsable/\\Z"
+  "regex": "^centrodefamilia/beneficiarios/buscar\\-responsable/\\Z"
  },
  {
   "name": "capacitacion_certificado_estado_ajax",
@@ -707,32 +707,37 @@
  {
   "name": "cdf_centro_generar_usuario",
   "namespace": "",
-  "regex": "^centros/(?P<pk>[0-9]+)/generar\\-usuario/\\Z"
+  "regex": "^centrodefamilia/centros/(?P<pk>[0-9]+)/generar\\-usuario/\\Z"
  },
  {
   "name": "centro_create",
   "namespace": "",
-  "regex": "^centros/nuevo/\\Z"
+  "regex": "^centrodefamilia/centros/nuevo/\\Z"
  },
  {
   "name": "centro_delete",
   "namespace": "",
-  "regex": "^centros/(?P<pk>[0-9]+)/eliminar/\\Z"
+  "regex": "^centrodefamilia/centros/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
   "name": "centro_detail",
   "namespace": "",
-  "regex": "^centros/(?P<pk>[0-9]+)/\\Z"
+  "regex": "^centrodefamilia/centros/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "centro_list",
   "namespace": "",
-  "regex": "^centros/\\Z"
+  "regex": "^centrodefamilia/centros/\\Z"
  },
  {
   "name": "centro_update",
   "namespace": "",
-  "regex": "^centros/(?P<pk>[0-9]+)/editar/\\Z"
+  "regex": "^centrodefamilia/centros/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centrodefamilia_metricas_dashboard",
+  "namespace": "",
+  "regex": "^centrodefamilia/metricas\\-dashboard/\\Z"
  },
  {
   "name": "centrodeinfancia",
@@ -942,7 +947,7 @@
  {
   "name": "centros_ajax",
   "namespace": "",
-  "regex": "^centros/ajax/\\Z"
+  "regex": "^centrodefamilia/centros/ajax/\\Z"
  },
  {
   "name": "certificaciones_prestaciones_historial",
@@ -1887,37 +1892,37 @@
  {
   "name": "informecabal_archivo_centro_detail",
   "namespace": "",
-  "regex": "^centros/(?P<centro_id>[0-9]+)/informecabal/(?P<pk>[0-9]+)/\\Z"
+  "regex": "^centrodefamilia/centros/(?P<centro_id>[0-9]+)/informecabal/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "informecabal_archivo_detail",
   "namespace": "",
-  "regex": "^informecabal/(?P<pk>[0-9]+)/\\Z"
+  "regex": "^centrodefamilia/informecabal/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "informecabal_list",
   "namespace": "",
-  "regex": "^informecabal/\\Z"
+  "regex": "^centrodefamilia/informecabal/\\Z"
  },
  {
   "name": "informecabal_preview",
   "namespace": "",
-  "regex": "^informecabal/preview/\\Z"
+  "regex": "^centrodefamilia/informecabal/preview/\\Z"
  },
  {
   "name": "informecabal_process",
   "namespace": "",
-  "regex": "^informecabal/process/\\Z"
+  "regex": "^centrodefamilia/informecabal/process/\\Z"
  },
  {
   "name": "informecabal_registro_detail",
   "namespace": "",
-  "regex": "^informecabal/registro/(?P<pk>[0-9]+)/\\Z"
+  "regex": "^centrodefamilia/informecabal/registro/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "informecabal_reprocess_center",
   "namespace": "",
-  "regex": "^informecabal/reprocess/\\Z"
+  "regex": "^centrodefamilia/informecabal/reprocess/\\Z"
  },
  {
   "name": "inicio",
@@ -2307,17 +2312,17 @@
  {
   "name": "participanteactividad_create",
   "namespace": "",
-  "regex": "^centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/participantes/crear/\\Z"
+  "regex": "^centrodefamilia/centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/participantes/crear/\\Z"
  },
  {
   "name": "participanteactividad_delete",
   "namespace": "",
-  "regex": "^centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/participantes/(?P<pk>[0-9]+)/eliminar/\\Z"
+  "regex": "^centrodefamilia/centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/participantes/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
   "name": "participanteactividad_promover",
   "namespace": "",
-  "regex": "^centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/lista\\-espera/(?P<pk>[0-9]+)/promover/\\Z"
+  "regex": "^centrodefamilia/centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/lista\\-espera/(?P<pk>[0-9]+)/promover/\\Z"
  },
  {
   "name": "pas_cruces",
@@ -2787,12 +2792,12 @@
  {
   "name": "responsables_detail",
   "namespace": "",
-  "regex": "^beneficiarios/responsables/(?P<pk>[0-9]+)/\\Z"
+  "regex": "^centrodefamilia/beneficiarios/responsables/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "responsables_list",
   "namespace": "",
-  "regex": "^beneficiarios/responsables/\\Z"
+  "regex": "^centrodefamilia/beneficiarios/responsables/\\Z"
  },
  {
   "name": "respuesta_subsanacion_renaper",
@@ -5402,7 +5407,7 @@
  {
   "name": "app_list",
   "namespace": "admin",
-  "regex": "^admin/(?P<app_label>auth|auditlog|authtoken|rest_framework_api_key|users|core|ciudadanos|dashboard|comedores|organizaciones|duplas|admisiones|intervenciones|historial|acompanamientos|expedientespagos|relevamientos|rendicioncuentasfinal|rendicioncuentasmensual|centrodefamilia|comunicados|centrodeinfancia|insumos|pwa|ocr|encuestas|dispositivos|ver_para_ser_libre|pas|VAT|celiaquia)/$"
+  "regex": "^admin/(?P<app_label>auth|auditlog|authtoken|rest_framework_api_key|users|core|organizaciones|catalogo_intervenciones|ciudadanos|dashboard|comedores|gestion_organizaciones|duplas|admisiones|intervenciones|historial|acompanamientos|expedientespagos|relevamientos|rendicioncuentasfinal|rendicioncuentasmensual|comunicados|insumos|pwa|ocr|encuestas|dispositivos|ver_para_ser_libre|pas|VAT|celiaquia|centrodeinfancia|centrodefamilia)/$"
  },
  {
   "name": "auditlog_logentry_add",
@@ -5513,6 +5518,166 @@
   "name": "autocomplete",
   "namespace": "admin",
   "regex": "^admin/autocomplete/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_subintervencion_add",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/subintervencion/add/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_subintervencion_change",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/subintervencion/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_subintervencion_changelist",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/subintervencion/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_subintervencion_delete",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/subintervencion/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_subintervencion_export",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/subintervencion/export/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_subintervencion_history",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/subintervencion/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_subintervencion_import",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/subintervencion/import/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_subintervencion_process_import",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/subintervencion/process_import/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipocontacto_add",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipocontacto/add/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipocontacto_change",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipocontacto/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipocontacto_changelist",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipocontacto/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipocontacto_delete",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipocontacto/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipocontacto_export",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipocontacto/export/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipocontacto_history",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipocontacto/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipocontacto_import",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipocontacto/import/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipocontacto_process_import",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipocontacto/process_import/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipodestinatario_add",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipodestinatario/add/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipodestinatario_change",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipodestinatario/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipodestinatario_changelist",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipodestinatario/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipodestinatario_delete",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipodestinatario/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipodestinatario_export",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipodestinatario/export/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipodestinatario_history",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipodestinatario/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipodestinatario_import",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipodestinatario/import/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipodestinatario_process_import",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipodestinatario/process_import/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipointervencion_add",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipointervencion/add/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipointervencion_change",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipointervencion/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipointervencion_changelist",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipointervencion/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipointervencion_delete",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipointervencion/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipointervencion_export",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipointervencion/export/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipointervencion_history",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipointervencion/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipointervencion_import",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipointervencion/import/\\Z"
+ },
+ {
+  "name": "catalogo_intervenciones_tipointervencion_process_import",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipointervencion/process_import/\\Z"
  },
  {
   "name": "celiaquia_asignaciontecnico_add",
@@ -7600,6 +7765,31 @@
   "regex": "^admin/expedientespagos/expedientepago/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "gestion_organizaciones_firmante_add",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/firmante/add/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_firmante_change",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/firmante/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_firmante_changelist",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/firmante/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_firmante_delete",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/firmante/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_firmante_history",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/firmante/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "historial_historial_add",
   "namespace": "admin",
   "regex": "^admin/historial/historial/add/\\Z"
@@ -7703,166 +7893,6 @@
   "name": "intervenciones_intervencion_history",
   "namespace": "admin",
   "regex": "^admin/intervenciones/intervencion/(?P<object_id>.+)/history/\\Z"
- },
- {
-  "name": "intervenciones_subintervencion_add",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/subintervencion/add/\\Z"
- },
- {
-  "name": "intervenciones_subintervencion_change",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/subintervencion/(?P<object_id>.+)/change/\\Z"
- },
- {
-  "name": "intervenciones_subintervencion_changelist",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/subintervencion/\\Z"
- },
- {
-  "name": "intervenciones_subintervencion_delete",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/subintervencion/(?P<object_id>.+)/delete/\\Z"
- },
- {
-  "name": "intervenciones_subintervencion_export",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/subintervencion/export/\\Z"
- },
- {
-  "name": "intervenciones_subintervencion_history",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/subintervencion/(?P<object_id>.+)/history/\\Z"
- },
- {
-  "name": "intervenciones_subintervencion_import",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/subintervencion/import/\\Z"
- },
- {
-  "name": "intervenciones_subintervencion_process_import",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/subintervencion/process_import/\\Z"
- },
- {
-  "name": "intervenciones_tipocontacto_add",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipocontacto/add/\\Z"
- },
- {
-  "name": "intervenciones_tipocontacto_change",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipocontacto/(?P<object_id>.+)/change/\\Z"
- },
- {
-  "name": "intervenciones_tipocontacto_changelist",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipocontacto/\\Z"
- },
- {
-  "name": "intervenciones_tipocontacto_delete",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipocontacto/(?P<object_id>.+)/delete/\\Z"
- },
- {
-  "name": "intervenciones_tipocontacto_export",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipocontacto/export/\\Z"
- },
- {
-  "name": "intervenciones_tipocontacto_history",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipocontacto/(?P<object_id>.+)/history/\\Z"
- },
- {
-  "name": "intervenciones_tipocontacto_import",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipocontacto/import/\\Z"
- },
- {
-  "name": "intervenciones_tipocontacto_process_import",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipocontacto/process_import/\\Z"
- },
- {
-  "name": "intervenciones_tipodestinatario_add",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipodestinatario/add/\\Z"
- },
- {
-  "name": "intervenciones_tipodestinatario_change",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipodestinatario/(?P<object_id>.+)/change/\\Z"
- },
- {
-  "name": "intervenciones_tipodestinatario_changelist",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipodestinatario/\\Z"
- },
- {
-  "name": "intervenciones_tipodestinatario_delete",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipodestinatario/(?P<object_id>.+)/delete/\\Z"
- },
- {
-  "name": "intervenciones_tipodestinatario_export",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipodestinatario/export/\\Z"
- },
- {
-  "name": "intervenciones_tipodestinatario_history",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipodestinatario/(?P<object_id>.+)/history/\\Z"
- },
- {
-  "name": "intervenciones_tipodestinatario_import",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipodestinatario/import/\\Z"
- },
- {
-  "name": "intervenciones_tipodestinatario_process_import",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipodestinatario/process_import/\\Z"
- },
- {
-  "name": "intervenciones_tipointervencion_add",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipointervencion/add/\\Z"
- },
- {
-  "name": "intervenciones_tipointervencion_change",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipointervencion/(?P<object_id>.+)/change/\\Z"
- },
- {
-  "name": "intervenciones_tipointervencion_changelist",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipointervencion/\\Z"
- },
- {
-  "name": "intervenciones_tipointervencion_delete",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipointervencion/(?P<object_id>.+)/delete/\\Z"
- },
- {
-  "name": "intervenciones_tipointervencion_export",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipointervencion/export/\\Z"
- },
- {
-  "name": "intervenciones_tipointervencion_history",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipointervencion/(?P<object_id>.+)/history/\\Z"
- },
- {
-  "name": "intervenciones_tipointervencion_import",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipointervencion/import/\\Z"
- },
- {
-  "name": "intervenciones_tipointervencion_process_import",
-  "namespace": "admin",
-  "regex": "^admin/intervenciones/tipointervencion/process_import/\\Z"
  },
  {
   "name": "jsi18n",
@@ -7978,31 +8008,6 @@
   "name": "organizaciones_documentacionorganizacion_history",
   "namespace": "admin",
   "regex": "^admin/organizaciones/documentacionorganizacion/(?P<object_id>.+)/history/\\Z"
- },
- {
-  "name": "organizaciones_firmante_add",
-  "namespace": "admin",
-  "regex": "^admin/organizaciones/firmante/add/\\Z"
- },
- {
-  "name": "organizaciones_firmante_change",
-  "namespace": "admin",
-  "regex": "^admin/organizaciones/firmante/(?P<object_id>.+)/change/\\Z"
- },
- {
-  "name": "organizaciones_firmante_changelist",
-  "namespace": "admin",
-  "regex": "^admin/organizaciones/firmante/\\Z"
- },
- {
-  "name": "organizaciones_firmante_delete",
-  "namespace": "admin",
-  "regex": "^admin/organizaciones/firmante/(?P<object_id>.+)/delete/\\Z"
- },
- {
-  "name": "organizaciones_firmante_history",
-  "namespace": "admin",
-  "regex": "^admin/organizaciones/firmante/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "organizaciones_organizacion_add",

@@ -13,13 +13,13 @@ from acompanamientos.acompanamiento_service import AcompanamientoService
 from comedores.services.comedor_service import ComedorService
 from core.security import safe_redirect
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
-from intervenciones.constants import PROGRAMA_ALIASES_COMEDORES
-from intervenciones.models.intervenciones import (
-    Intervencion,
+from catalogo_intervenciones.constants import PROGRAMA_ALIASES_COMEDORES
+from catalogo_intervenciones.models import (
     SubIntervencion,
     TipoIntervencion,
     TipoDestinatario,
 )
+from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm, build_programa_aliases
 
 

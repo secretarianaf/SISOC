@@ -15,5 +15,11 @@ class CoreConfig(AppConfig):
             es_usuario_solo_vat,
         )
 
-        # Menú "solo VAT": regla de kernel, vale en el core y en cada backend.
+        from iam.roles_cdi import (  # pylint: disable=import-outside-toplevel
+            es_usuario_solo_cdi_local,
+        )
+
+        # Reglas de menú de kernel ("solo VAT", "CDI local"): valen en el core
+        # y en cada backend.
         registrar_predicado_sidebar("vat", es_usuario_solo_vat)
+        registrar_predicado_sidebar("cdi_local", es_usuario_solo_cdi_local)

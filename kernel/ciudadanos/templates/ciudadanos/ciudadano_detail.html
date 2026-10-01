@@ -759,7 +759,7 @@
                                 </div>
                                 <div class="info">
                                     <div class="nombre">Centro de Familia</div>
-                                    <div class="monto">${{ costo_total_cdf|default:0|floatformat:2 }}</div>
+                                    <div class="monto">{{ contribuciones_html.centrodefamilia_monto|default:'$0.00'|safe }}</div>
                                 </div>
                             </div>
 
@@ -1437,41 +1437,7 @@
             <div class="tab-pane fade" id="cdf">
                 <div class="row">
                     <div class="col-12">
-                        <div class="tabla-legajo" style="border: 2px solid var(--gold);">
-                            <h5 class="mb-3">Centro de Familia</h5>
-                            {% if participaciones_cdf %}
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Centro</th>
-                                            <th>Actividad</th>
-                                            <th>Estado</th>
-                                            <th>Fecha Registro</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for participacion in participaciones_cdf %}
-                                            <tr>
-                                                <td>{{ participacion.actividad_centro.centro.nombre }}</td>
-                                                <td>{{ participacion.actividad_centro.actividad.nombre }}</td>
-                                                <td>
-                                                    {% if participacion.estado == 'inscrito' %}
-                                                        <span class="badge" style="background: var(--green);">Inscrito</span>
-                                                    {% elif participacion.estado == 'lista_espera' %}
-                                                        <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">Lista Espera</span>
-                                                    {% else %}
-                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">Dado de Baja</span>
-                                                    {% endif %}
-                                                </td>
-                                                <td>{{ participacion.fecha_registro|date:"d/m/Y" }}</td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            {% else %}
-                                <p style="color: rgba(255,255,255,0.5);">No hay participaciones registradas.</p>
-                            {% endif %}
-                        </div>
+                        {{ contribuciones_html.centrodefamilia|safe }}
                         <div class="tabla-legajo">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="mb-0">Interacciones</h5>

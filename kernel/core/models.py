@@ -111,8 +111,8 @@ class Programa(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
     estado = models.BooleanField(default=True)
     observaciones = models.CharField(max_length=500, null=True, blank=True)
-    # Id de ``organizaciones.Organizacion`` y no una FK: ``organizaciones`` es
-    # del core y el kernel no puede depender de ella. La columna y la FK
+    # Id de ``organizaciones.Organizacion`` y no una FK: se cortó cuando
+    # ``organizaciones`` era del core (hoy está en el kernel). La columna y la FK
     # física en la DB siguen iguales (migración core 0010); el SET_NULL al
     # borrar la organización lo hace ``organizaciones.signals``.
     organismo_id = models.IntegerField(

@@ -48,8 +48,8 @@ TAG_RE = re.compile(r"<(a|button)\b[^>]*>(.*?)</\1>", re.I | re.S)
 CANCELAR_DE_FORMULARIO = {
     "admisiones/templates/admisiones/informe_tecnico_complementario_detalle.html",
     "admisiones/templates/admisiones/informe_tecnico_form.html",
-    "centrodeinfancia/templates/centrodeinfancia/intervencion_form.html",
-    "centrodeinfancia/templates/centrodeinfancia/nomina_form.html",
+    "backends/cdi/centrodeinfancia/templates/centrodeinfancia/intervencion_form.html",
+    "backends/cdi/centrodeinfancia/templates/centrodeinfancia/nomina_form.html",
     "kernel/ciudadanos/templates/ciudadanos/ciudadano_form.html",
     "kernel/ciudadanos/templates/ciudadanos/grupofamiliar_form.html",
     "comedores/templates/comedor/actividad_espacio_pwa_form.html",

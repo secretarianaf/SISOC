@@ -4,8 +4,8 @@ import pytest
 from django.utils import timezone
 
 from intervenciones.forms import IntervencionForm
-from intervenciones.models.intervenciones import (
-    Intervencion,
+from intervenciones.models.intervenciones import Intervencion
+from catalogo_intervenciones.models import (
     SubIntervencion,
     TipoContacto,
     TipoDestinatario,

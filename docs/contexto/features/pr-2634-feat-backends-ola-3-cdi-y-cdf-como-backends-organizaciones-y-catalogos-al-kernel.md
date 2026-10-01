@@ -18,6 +18,7 @@
 - Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
 - Se modifican templates, con posible impacto visual o de composición UI.
 - Existen cambios de persistencia o migraciones que requieren revisión de datos.
+- El alcance incluye automatización o tooling de CI/CD.
 
 ## Decisiones y supuestos detectados
 
@@ -35,6 +36,7 @@
 
 - Empezar por `docs/registro/prs/PR-2634.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `.github/workflows/tests.yml`
 - `.importlinter`
 - `AGENT_REPO_MAP.md`
 - `acompanamientos/acompanamiento_service.py`
@@ -54,8 +56,7 @@
 - `backends/cdf/centrodefamilia/forms.py`
 - `backends/cdf/centrodefamilia/forms_generar_usuario.py`
 - `backends/cdf/centrodefamilia/management/commands/__init__.py`
-- `backends/cdf/centrodefamilia/management/commands/cargar_legajos.py`
-- ... y 332 archivo(s) adicional(es) relacionados.
+- ... y 335 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

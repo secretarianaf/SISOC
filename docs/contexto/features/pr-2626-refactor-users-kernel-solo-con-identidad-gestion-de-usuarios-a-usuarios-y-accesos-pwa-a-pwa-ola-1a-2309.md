@@ -41,6 +41,8 @@
 - `comedores/api_serializers.py`
 - `comedores/api_views.py`
 - `comedores/api_views_territorial.py`
+- `comedores/apps.py`
+- `comedores/cache_signals.py`
 - `comedores/management/commands/sincronizar_accesos_pwa_organizaciones.py`
 - `comedores/pwa_capabilities.py`
 - `comedores/pwa_user_import.py`
@@ -49,13 +51,11 @@
 - `config/settings.py`
 - `config/urls.py`
 - `docs/contexto/features/pr-2626-refactor-users-kernel-solo-con-identidad-gestion-de-usuarios-a-usuarios-y-accesos-pwa-a-pwa-ola-1a-2309.md`
+- `docs/registro/cambios/2026-10-01-kernel-sin-relaciones-a-dominios.md`
 - `docs/registro/cambios/2026-10-01-users-identidad-y-usuarios-core.md`
 - `docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md`
 - `docs/registro/prs/PR-2626.md`
-- `kernel/core/views.py`
-- `kernel/users/admin.py`
-- `kernel/users/migrations/0058_accesos_pwa_a_pwa.py`
-- ... y 105 archivo(s) adicional(es) relacionados.
+- ... y 127 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

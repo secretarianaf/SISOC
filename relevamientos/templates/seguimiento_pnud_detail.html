@@ -36,7 +36,7 @@
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto"></div>
         <div class="col-auto">
-            {% if perms.relevamientos.review_relevamiento and not seguimiento.esta_validado %}
+            {% if perms.relevamientos.review_relevamiento and not seguimiento.esta_validado and not seguimiento.sin_cargar %}
                 <button type="button"
                         class="btn btn-warning mr-1"
                         data-bs-toggle="modal"
@@ -55,7 +55,7 @@
             <div class="mt-1">{{ seguimiento.observaciones_coordinador|linebreaksbr }}</div>
         </div>
     {% endif %}
-    {% if perms.relevamientos.review_relevamiento and not seguimiento.esta_validado %}
+    {% if perms.relevamientos.review_relevamiento and not seguimiento.esta_validado and not seguimiento.sin_cargar %}
         <div class="modal fade"
              id="modalRevisionSeguimientoPnud"
              tabindex="-1"

@@ -64,7 +64,7 @@
                 <a href="{% url 'seguimiento_editar' comedor.id relevamiento.id seguimiento.id %}"
                    class="btn btn-primary mr-1">Editar</a>
             {% endif %}
-            {% if perms.relevamientos.review_relevamiento %}
+            {% if perms.relevamientos.review_relevamiento and not seguimiento.esta_validado %}
                 <button type="button"
                         class="btn btn-warning mr-1"
                         data-bs-toggle="modal"
@@ -83,7 +83,7 @@
             <div class="mt-1">{{ seguimiento.observaciones_coordinador|linebreaksbr }}</div>
         </div>
     {% endif %}
-    {% if perms.relevamientos.review_relevamiento %}
+    {% if perms.relevamientos.review_relevamiento and not seguimiento.esta_validado %}
         <div class="modal fade"
              id="modalRevisionSeguimiento"
              tabindex="-1"

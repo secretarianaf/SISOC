@@ -25,6 +25,7 @@ from datacalle.services import (
     get_encuestas_para_listado,
     get_encuestas_queryset,
     get_relevamientos_queryset,
+    observacion_asentamiento_legible,
     respuestas_legibles,
     resumen_de_casos,
     resumen_por_estado,
@@ -107,6 +108,9 @@ class RelevamientoDetailView(RelevamientoScopeMixin, DetailView):
         ]
         context["encuestas"] = get_encuestas_para_listado(self.object)[:50]
         context["resumen_casos"] = resumen_de_casos(self.object)
+        context["observacion_asentamiento"] = observacion_asentamiento_legible(
+            self.object
+        )
         return context
 
 

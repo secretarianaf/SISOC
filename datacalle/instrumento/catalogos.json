@@ -191,10 +191,15 @@
     ]
   },
   "motivoNoTieneDni": {
+    "$comentario": "Formulario FINAL PAPEL (2026-10-01), IV.5 '¿Por qué no lo tiene?'. Las 7 opciones del papel ya existían con el mismo código y la misma etiqueta: solo se reordenan al orden del papel.",
     "opciones": [
       {
         "codigo": "perdidoRobado",
         "etiqueta": "Lo perdió o se lo robaron"
+      },
+      {
+        "codigo": "nuncaTuvo",
+        "etiqueta": "Nunca lo tuvo / nunca lo tramitó"
       },
       {
         "codigo": "tramitando",
@@ -205,16 +210,12 @@
         "etiqueta": "Se lo retuvo una institución (policía, hospital, etc.)"
       },
       {
-        "codigo": "noSabeTramite",
-        "etiqueta": "No sabe cómo hacer el trámite"
-      },
-      {
-        "codigo": "nuncaTuvo",
-        "etiqueta": "Nunca lo tuvo / nunca lo tramitó"
-      },
-      {
         "codigo": "noRecuerda",
         "etiqueta": "No recuerda"
+      },
+      {
+        "codigo": "noSabeTramite",
+        "etiqueta": "No sabe cómo hacer el trámite"
       },
       {
         "codigo": "nsnc",
@@ -223,14 +224,15 @@
     ]
   },
   "identidadGenero": {
+    "$comentario": "Formulario FINAL PAPEL, IV.6. El papel lista 7 opciones y reactiva 'Otra:' (texto libre). `travesti` y `nsnc` quedan retiradas: no están en el papel (DECISIÓN CLIENTE 8.3), se conservan para leer y reenviar el histórico.",
     "opciones": [
-      {
-        "codigo": "varon",
-        "etiqueta": "Varón"
-      },
       {
         "codigo": "mujer",
         "etiqueta": "Mujer"
+      },
+      {
+        "codigo": "varon",
+        "etiqueta": "Varón"
       },
       {
         "codigo": "varonTrans",
@@ -241,27 +243,16 @@
         "etiqueta": "Mujer trans"
       },
       {
-        "codigo": "travesti",
-        "etiqueta": "Travesti"
-      },
-      {
         "codigo": "noBinarie",
-        "etiqueta": "No binario",
+        "etiqueta": "No binarie",
         "legacy": [
-          "No binarie"
+          "No binario"
         ]
       },
       {
-        "codigo": "noSabe",
-        "etiqueta": "No sabe"
-      },
-      {
-        "codigo": "noContesta",
-        "etiqueta": "No contesta"
-      },
-      {
         "codigo": "otra",
-        "etiqueta": "Otra"
+        "etiqueta": "Otra",
+        "otro": true
       },
       {
         "codigo": "prefiereNoResponder",
@@ -269,45 +260,67 @@
         "legacy": [
           "Preﬁere no responder"
         ]
+      },
+      {
+        "codigo": "travesti",
+        "etiqueta": "Travesti",
+        "retirada": true
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "No sabe / no contesta",
+        "retirada": true
+      },
+      {
+        "codigo": "noSabe",
+        "etiqueta": "No sabe",
+        "retirada": true
+      },
+      {
+        "codigo": "noContesta",
+        "etiqueta": "No contesta",
+        "retirada": true
       }
     ]
   },
   "lugarProviene": {
-    "$comentario": "QA-0038 (2026-09-17): se agrega 'En esta localidad' y las opciones pasan de 'De…' a 'En…'. Los textos viejos quedan en legacy.",
+    "$comentario": "Formulario FINAL PAPEL, IV.8 '¿De qué lugar proviene?': vuelven las etiquetas 'De…' (las 'En…' de QA-0038 bajan a legacy). 'En esta localidad' queda retirada: en el papel, quien vivió siempre acá no llega a la 8 (lo resuelve la 7). La regla territorial de QA-0038 (CABA no tiene otras localidades) se conserva (DECISIÓN CLIENTE 8.8).",
     "opciones": [
       {
-        "codigo": "enEstaLocalidad",
-        "etiqueta": "En esta localidad"
-      },
-      {
         "codigo": "otraLocalidadProvincia",
-        "etiqueta": "En otra localidad de esta provincia",
+        "etiqueta": "De otra localidad de esta provincia",
         "legacy": [
-          "De otra localidad de esta provincia"
-        ]
+          "En otra localidad de esta provincia"
+        ],
+        "visibleSi": {
+          "campo": "__provinciaIndec",
+          "noEs": "02"
+        }
       },
       {
         "codigo": "otraProvincia",
-        "etiqueta": "En otra provincia",
+        "etiqueta": "De otra provincia",
         "legacy": [
-          "De otra provincia"
+          "En otra provincia"
         ]
       },
       {
         "codigo": "otroPais",
-        "etiqueta": "En otro país",
+        "etiqueta": "De otro país",
         "legacy": [
-          "De otro país"
+          "En otro país"
         ]
+      },
+      {
+        "codigo": "enEstaLocalidad",
+        "etiqueta": "En esta localidad",
+        "retirada": true
       }
     ]
   },
   "nivelEducativo": {
+    "$comentario": "Formulario FINAL PAPEL, IV.9: las 10 opciones del papel ya existían con el mismo código. 'Otro' y 'No sabe / no contesta' quedan retiradas (el papel no las tiene); se conservan para leer y reenviar el histórico.",
     "opciones": [
-      {
-        "codigo": "nuncaAsistio",
-        "etiqueta": "Nunca asistió"
-      },
       {
         "codigo": "primarioIncompleto",
         "etiqueta": "Primario incompleto"
@@ -345,8 +358,18 @@
         "etiqueta": "Educación especial"
       },
       {
+        "codigo": "nuncaAsistio",
+        "etiqueta": "Nunca asistió"
+      },
+      {
         "codigo": "otro",
-        "etiqueta": "Otro"
+        "etiqueta": "Otro",
+        "retirada": true
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "No sabe / no contesta",
+        "retirada": true
       }
     ]
   },
@@ -408,6 +431,7 @@
     ]
   },
   "motivoNoTieneCertificado": {
+    "$comentario": "Formulario FINAL PAPEL, IV.13. Los 7 códigos del papel ya existían 1:1; solo se reordenan al orden del papel y se toman sus erratas tipográficas ('Esta en trámite', 'Ns/Nc' — DECISIÓN CLIENTE 8.12).",
     "opciones": [
       {
         "codigo": "noSabeComo",
@@ -415,37 +439,38 @@
       },
       {
         "codigo": "enTramite",
-        "etiqueta": "Está en trámite",
+        "etiqueta": "Esta en trámite",
         "legacy": [
-          "Esta en trámite"
+          "Está en trámite"
         ]
-      },
-      {
-        "codigo": "sinDiagnostico",
-        "etiqueta": "No tiene diagnóstico o certificado médico requerido"
       },
       {
         "codigo": "perdidoVencido",
         "etiqueta": "Lo perdió / se le venció y no lo renovó"
       },
       {
-        "codigo": "negado",
-        "etiqueta": "Le negaron el certificado en una evaluación previa"
+        "codigo": "sinDiagnostico",
+        "etiqueta": "No tiene diagnóstico o certificado médico requerido"
       },
       {
         "codigo": "sinAccesoSalud",
         "etiqueta": "No pudo acceder al sistema de salud para iniciar el trámite"
       },
       {
+        "codigo": "negado",
+        "etiqueta": "Le negaron el certificado en una evaluación previa"
+      },
+      {
         "codigo": "nsnc",
-        "etiqueta": "NS/NC",
+        "etiqueta": "Ns/Nc",
         "legacy": [
-          "Ns/Nc"
+          "NS/NC"
         ]
       }
     ]
   },
   "conQuienesVive": {
+    "$comentario": "Formulario FINAL PAPEL, V.17. Los 7 códigos del papel ya existían (venían del instrumento AppSheet) y ningún campo los usaba: se reordenan al orden del papel. 'Hijos', 'Compañeros de alojamiento', 'Personas … del dispositivo' y 'Otra persona' quedan retiradas (el papel no las tiene).",
     "opciones": [
       {
         "codigo": "solo",
@@ -459,18 +484,10 @@
         ]
       },
       {
-        "codigo": "hijos",
-        "etiqueta": "Hijos"
-      },
-      {
-        "codigo": "padreMadre",
-        "etiqueta": "Padre / Madre"
-      },
-      {
         "codigo": "otrosFamiliares",
-        "etiqueta": "Otro/s familiar/es",
+        "etiqueta": "Otro/S familiar/es",
         "legacy": [
-          "Otro/S familiar/es",
+          "Otro/s familiar/es",
           "Hermana",
           "HERMANO/A",
           "Hermano/a",
@@ -488,17 +505,10 @@
         ]
       },
       {
-        "codigo": "companerosAlojamiento",
-        "etiqueta": "Compañeros de alojamiento",
+        "codigo": "padreMadre",
+        "etiqueta": "Padre/Madre",
         "legacy": [
-          "ADULTOS MAYORES DE LA RESIDENCIA"
-        ]
-      },
-      {
-        "codigo": "personasDispositivo",
-        "etiqueta": "Personas que se encuentran habitando en el dispositivo de alojamiento",
-        "legacy": [
-          "´personas que se encuentran habitando en el dispositivo de alojamiento"
+          "Padre / Madre"
         ]
       },
       {
@@ -506,39 +516,66 @@
         "etiqueta": "Mascotas"
       },
       {
-        "codigo": "otraPersona",
-        "etiqueta": "Otra persona (especificar)",
-        "otro": true,
-        "legacy": [
-          "Otra persona (especiﬁcar):"
-        ]
-      },
-      {
         "codigo": "nsnc",
         "etiqueta": "NS/NC",
         "legacy": [
           "No especifica"
         ]
+      },
+      {
+        "codigo": "hijos",
+        "etiqueta": "Hijos",
+        "retirada": true
+      },
+      {
+        "codigo": "companerosAlojamiento",
+        "etiqueta": "Compañeros de alojamiento",
+        "legacy": [
+          "ADULTOS MAYORES DE LA RESIDENCIA"
+        ],
+        "retirada": true
+      },
+      {
+        "codigo": "personasDispositivo",
+        "etiqueta": "Personas que se encuentran habitando en el dispositivo de alojamiento",
+        "legacy": [
+          "´personas que se encuentran habitando en el dispositivo de alojamiento"
+        ],
+        "retirada": true
+      },
+      {
+        "codigo": "otraPersona",
+        "etiqueta": "Otra persona (especificar)",
+        "otro": true,
+        "legacy": [
+          "Otra persona (especiﬁcar):"
+        ],
+        "retirada": true
       }
     ]
   },
   "dondeDuermeNoche": {
+    "$comentario": "Formulario FINAL PAPEL, VI.18. Las 5 opciones del papel ya existían con la misma etiqueta: se reordenan al orden del papel. 'Otro (especificar)' queda retirada.",
     "opciones": [
       {
-        "codigo": "viaPublica",
-        "etiqueta": "Vía pública (incluye estaciones, parques, plazas, etc.)"
-      },
-      {
-        "codigo": "dispositivoAlojamiento",
-        "etiqueta": "Dispositivo de alojamiento (parador, hogar, refugio, centro de integración social, etc.)"
+        "codigo": "viviendaNoPropia",
+        "etiqueta": "Vivienda/habitación no propia"
       },
       {
         "codigo": "pensionHotel",
         "etiqueta": "Pensión/hotel por noche"
       },
       {
-        "codigo": "viviendaNoPropia",
-        "etiqueta": "Vivienda/habitación no propia"
+        "codigo": "dispositivoAlojamiento",
+        "etiqueta": "Dispositivo de alojamiento (parador, hogar, refugio, centro de integración social, etc.)"
+      },
+      {
+        "codigo": "viaPublica",
+        "etiqueta": "Vía pública (incluye estaciones, parques, plazas, etc.)"
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "NS/NC"
       },
       {
         "codigo": "otro",
@@ -546,15 +583,13 @@
         "otro": true,
         "legacy": [
           "Otro (especiﬁcar):"
-        ]
-      },
-      {
-        "codigo": "nsnc",
-        "etiqueta": "NS/NC"
+        ],
+        "retirada": true
       }
     ]
   },
   "primeraVezCalle": {
+    "$comentario": "Formulario FINAL PAPEL, VI.19. Las 3 opciones del papel ya existían tal cual: el catálogo no se toca.",
     "opciones": [
       {
         "codigo": "si",
@@ -574,6 +609,7 @@
     ]
   },
   "desdeCuandoCalle": {
+    "$comentario": "Formulario FINAL PAPEL, VI.20. Las 7 opciones del papel ya existían tal cual y en este orden. NO se reusa `tiempoEnCalle` con este catálogo: es OTRA escala (menos de un mes / 1–3 años / más de 3 años) y cambiarla bajo la misma clave dejaría el histórico leído contra una escala que no es la suya.",
     "opciones": [
       {
         "codigo": "menosSemana",
@@ -606,33 +642,27 @@
     ]
   },
   "motivosVivirCalle": {
-    "$comentario": "'Por conflicto familiar' y 'Conflictos familiares' son dos redacciones de la misma opción (cambió durante la campaña). El resto de valores históricos (97 distintos) es texto libre y va a 'otras' + texto.",
+    "$comentario": "Formulario FINAL PAPEL, VI.21 (respuesta múltiple): 13 opciones, en el orden del papel. 12 ya existían con el mismo código; nace `derrumbeIncendio`. 'Conflictos familiares', 'Exclusión del hogar' y 'Por otras razones' quedan retiradas: el papel no las tiene, se conservan para leer y reenviar el histórico. 'Por conflicto familiar' y 'Conflictos familiares' son dos redacciones de la misma opción (cambió durante la campaña); el resto de valores históricos (97 distintos) es texto libre y fue a 'otras' + texto.",
     "opciones": [
-      {
-        "codigo": "consumo",
-        "etiqueta": "Por consumo de sustancias o adicciones"
-      },
-      {
-        "codigo": "conflictoFamiliar",
-        "etiqueta": "Conflictos familiares",
-        "legacy": [
-          "Por conflicto familiar",
-          "Problemas familiares",
-          "Problemas Familiares",
-          "Por conflicto vincular"
-        ]
-      },
       {
         "codigo": "separacionPareja",
         "etiqueta": "Separación de la pareja"
       },
       {
-        "codigo": "sinPlataAlojamiento",
-        "etiqueta": "Porque no tenían plata para el alojamiento",
-        "legacy": [
-          "No puedo pagar el alquiler",
-          "Economicos"
-        ]
+        "codigo": "violencia",
+        "etiqueta": "Por haber sufrido violencia física/sexual o sus hijos"
+      },
+      {
+        "codigo": "derrumbeIncendio",
+        "etiqueta": "Por derrumbe, incendio, era inhabitable"
+      },
+      {
+        "codigo": "desalojo",
+        "etiqueta": "Por desalojo"
+      },
+      {
+        "codigo": "finAlquiler",
+        "etiqueta": "Finalizó el contrato de alquiler"
       },
       {
         "codigo": "perdioTrabajo",
@@ -642,12 +672,12 @@
         ]
       },
       {
-        "codigo": "desalojo",
-        "etiqueta": "Por desalojo"
+        "codigo": "egresoHospital",
+        "etiqueta": "Por egreso de un hospital/hospital psiquiátrico"
       },
       {
-        "codigo": "finAlquiler",
-        "etiqueta": "Finalizó el contrato de alquiler"
+        "codigo": "privacionLibertad",
+        "etiqueta": "Porque estuviste privado de la libertad"
       },
       {
         "codigo": "cambioLocalidad",
@@ -659,156 +689,214 @@
         ]
       },
       {
-        "codigo": "violencia",
-        "etiqueta": "Por haber sufrido violencia física/sexual o sus hijos"
+        "codigo": "sinPlataAlojamiento",
+        "etiqueta": "Porque no tenían plata para el alojamiento",
+        "legacy": [
+          "No puedo pagar el alquiler",
+          "Economicos"
+        ]
       },
       {
-        "codigo": "privacionLibertad",
-        "etiqueta": "Porque estuviste privado de la libertad"
-      },
-      {
-        "codigo": "exclusionHogar",
-        "etiqueta": "Exclusión del hogar"
-      },
-      {
-        "codigo": "egresoHospital",
-        "etiqueta": "Por egreso de un hospital/hospital psiquiátrico"
+        "codigo": "consumo",
+        "etiqueta": "Por consumo de sustancias o adicciones"
       },
       {
         "codigo": "egresoInstitutoNNyA",
         "etiqueta": "Por dejar de vivir en instituto de NNyA"
       },
       {
-        "codigo": "otras",
-        "etiqueta": "Por otras razones ¿Cuáles?",
-        "otro": true
-      },
-      {
         "codigo": "nsnc",
         "etiqueta": "NS/NC"
+      },
+      {
+        "codigo": "conflictoFamiliar",
+        "etiqueta": "Conflictos familiares",
+        "legacy": [
+          "Por conflicto familiar",
+          "Problemas familiares",
+          "Problemas Familiares",
+          "Por conflicto vincular"
+        ],
+        "retirada": true
+      },
+      {
+        "codigo": "exclusionHogar",
+        "etiqueta": "Exclusión del hogar",
+        "retirada": true
+      },
+      {
+        "codigo": "otras",
+        "etiqueta": "Por otras razones ¿Cuáles?",
+        "otro": true,
+        "retirada": true
       }
     ]
   },
   "asisteComedor": {
+    "$comentario": "Formulario FINAL PAPEL, VI.22: el papel vuelve a la escala anterior, así que `todosLosDias` y `ocasional` dejan de estar retiradas y se recupera la serie AppSheet. Quedan retiradas las frecuencias exactas de 2026-09 (`todosLosDiasExactos`, `unaVezMes`). OJO: conviven dos códigos de 'diario' — `todosLosDias` ('Sí, todos o casi todos los días', vigente) y `todosLosDiasExactos` ('Sí, todos los días', retirado): no se suman ni se convierten.",
     "opciones": [
       {
-        "codigo": "no",
-        "etiqueta": "No"
-      },
-      {
-        "codigo": "ocasional",
-        "etiqueta": "Sí, de manera ocasional"
+        "codigo": "todosLosDias",
+        "etiqueta": "Sí, todos o casi todos los días"
       },
       {
         "codigo": "algunasVecesSemana",
         "etiqueta": "Sí, algunas veces por semana"
       },
       {
-        "codigo": "todosLosDias",
-        "etiqueta": "Sí, todos o casi todos los días"
+        "codigo": "ocasional",
+        "etiqueta": "Sí, de manera ocasional"
+      },
+      {
+        "codigo": "no",
+        "etiqueta": "No"
       },
       {
         "codigo": "nsnc",
-        "etiqueta": "NS/NC",
+        "etiqueta": "Ns/Nc",
         "legacy": [
-          "Ns/Nc"
+          "No sabe / no contesta"
         ]
+      },
+      {
+        "codigo": "todosLosDiasExactos",
+        "etiqueta": "Sí, todos los días",
+        "retirada": true
+      },
+      {
+        "codigo": "unaVezMes",
+        "etiqueta": "Sí, una vez al mes",
+        "retirada": true
       }
     ]
   },
   "actividadEconomica": {
-    "$comentario": "QA-0030 (2026-09-16): conjunto reducido y sin 'Otra (especificar)'. PROPUESTA de la app: QA pidió un conjunto reducido y definido sin listarlo; quedan las 9 con más frecuencia en el histórico AppSheet. Las quitadas van en legacy de la más cercana, para la migración.",
+    "$comentario": "Formulario FINAL PAPEL, VII.23 (respuesta múltiple): el papel vuelve a la lista DESAGREGADA, así que los 8 códigos retirados en 2026-09 (changas, cuidaCoche, ventaAmbulante, cartonero, construccion, trabajoSexual, cuidadoPersonas, arteCallejero) vuelven a estar vigentes y se recupera la serie AppSheet. Nacen `agricultura`, `casasParticulares` y `ninguna`. Las categorías agrupadas de 2026-09 (`trabajoOcasional`, `trabajosAmbulantes`) y `otra` quedan retiradas: no se reparten ni se desagregan automáticamente.",
     "fragmentosIgnorar": [
       "etc.)"
     ],
     "opciones": [
       {
-        "codigo": "changas",
-        "etiqueta": "Changas"
-      },
-      {
-        "codigo": "cuidaCoche",
-        "etiqueta": "Cuida coche"
-      },
-      {
-        "codigo": "ventaAmbulante",
-        "etiqueta": "Venta ambulante"
-      },
-      {
-        "codigo": "pedirDinero",
-        "etiqueta": "Pedir dinero"
+        "codigo": "relacionDependencia",
+        "etiqueta": "Trabajo en relación de dependencia",
+        "legacy": [
+          "Relación de dependencia"
+        ]
       },
       {
         "codigo": "cartonero",
         "etiqueta": "Cartonero/reciclado de elementos"
       },
       {
+        "codigo": "ventaAmbulante",
+        "etiqueta": "Venta ambulante"
+      },
+      {
+        "codigo": "cuidaCoche",
+        "etiqueta": "Cuida coche"
+      },
+      {
+        "codigo": "changas",
+        "etiqueta": "Changas"
+      },
+      {
         "codigo": "construccion",
-        "etiqueta": "Construcción / oficios",
+        "etiqueta": "Actividades vinculadas con la construcción",
         "legacy": [
-          "Actividades vinculadas con la construcción"
+          "Construcción / oficios"
         ]
       },
       {
-        "codigo": "relacionDependencia",
-        "etiqueta": "Trabajo en relación de dependencia",
+        "codigo": "agricultura",
+        "etiqueta": "Actividades vinculadas con la agricultura"
+      },
+      {
+        "codigo": "cuidadoPersonas",
+        "etiqueta": "Actividades vinculadas con el cuidado de personas",
         "legacy": [
-          "Trabajo en casas particulares",
-          "Actividades vinculadas con la agricultura"
+          "Cuidado de personas"
         ]
+      },
+      {
+        "codigo": "arteCallejero",
+        "etiqueta": "Arte callejero (malabares, etc.)",
+        "legacy": [
+          "Arte callejero",
+          "Arte callejero (malabares"
+        ]
+      },
+      {
+        "codigo": "casasParticulares",
+        "etiqueta": "Trabajo en casas particulares"
       },
       {
         "codigo": "trabajoSexual",
         "etiqueta": "Trabajo sexual"
       },
       {
-        "codigo": "cuidadoPersonas",
-        "etiqueta": "Cuidado de personas",
-        "legacy": [
-          "Actividades vinculadas con el cuidado de personas"
-        ]
+        "codigo": "pedirDinero",
+        "etiqueta": "Pedir dinero"
       },
       {
-        "codigo": "arteCallejero",
-        "etiqueta": "Arte callejero",
-        "legacy": [
-          "Arte callejero (malabares",
-          "Otra (especiﬁcar):"
-        ]
+        "codigo": "ninguna",
+        "etiqueta": "Ninguna"
       },
       {
         "codigo": "nsnc",
-        "etiqueta": "NS/NC"
+        "etiqueta": "NS/NC",
+        "legacy": [
+          "No sabe / no contesta"
+        ]
+      },
+      {
+        "codigo": "trabajoOcasional",
+        "etiqueta": "Trabajo ocasional o changas (construcción, casas particulares, agricultura, cuidado de personas)",
+        "retirada": true
+      },
+      {
+        "codigo": "trabajosAmbulantes",
+        "etiqueta": "Trabajos ambulantes (venta, arte callejero, cartonero, cuida coches)",
+        "retirada": true
+      },
+      {
+        "codigo": "otra",
+        "etiqueta": "Otra (especificar)",
+        "otro": true,
+        "retirada": true
       }
     ]
   },
   "ingresoAdicional": {
-    "$comentario": "Las etiquetas originales incluían '(Fin de la encuesta)' para indicar el salto al cierre; en la nueva app el salto es una regla, no parte del texto.",
+    "$comentario": "Formulario FINAL PAPEL, VII.24. El papel anota '(Fin formulario)' en No y Ns/Nc: es ruteo, no texto de opción (DECISIÓN CLIENTE 8.12), y lo resuelve `finalizaSi` del campo.",
     "opciones": [
       {
         "codigo": "si",
-        "etiqueta": "Sí",
+        "etiqueta": "Si",
         "legacy": [
-          "Si"
+          "Sí"
         ]
       },
       {
         "codigo": "no",
         "etiqueta": "No",
         "legacy": [
-          "No (Fin de la encuesta)"
+          "No (Fin de la encuesta)",
+          "No (Fin formulario)"
         ]
       },
       {
         "codigo": "nsnc",
-        "etiqueta": "NS/NC",
+        "etiqueta": "Ns/Nc",
         "legacy": [
-          "Ns/Nc (Fin de la encuesta)"
+          "NS/NC",
+          "Ns/Nc (Fin de la encuesta)",
+          "Ns/Nc (Fin formulario)"
         ]
       }
     ]
   },
   "tipoIngreso": {
+    "$comentario": "Formulario FINAL PAPEL, VII.25, nivel 1 (respuesta múltiple). Nace `alquilerPropiedad`; 'Otro (especificar)' queda retirada. Las subopciones de 'Programa Social' y 'Programa Social para sus hijos/as' viven en `programaSocialPropio` y `programaSocialHijos`.",
     "fragmentosIgnorar": [
       "vejez",
       "etc.)"
@@ -826,6 +914,10 @@
         ]
       },
       {
+        "codigo": "alquilerPropiedad",
+        "etiqueta": "Alquiler de propiedad"
+      },
+      {
         "codigo": "programaSocial",
         "etiqueta": "Programa Social"
       },
@@ -834,16 +926,17 @@
         "etiqueta": "Programa Social para sus hijos/as"
       },
       {
-        "codigo": "otro",
-        "etiqueta": "Otro (especificar)",
-        "otro": true
+        "codigo": "nsnc",
+        "etiqueta": "Ns/Nc",
+        "legacy": [
+          "NS/NC"
+        ]
       },
       {
-        "codigo": "nsnc",
-        "etiqueta": "NS/NC",
-        "legacy": [
-          "Ns/Nc"
-        ]
+        "codigo": "otro",
+        "etiqueta": "Otro (especificar)",
+        "otro": true,
+        "retirada": true
       }
     ]
   },
@@ -917,7 +1010,65 @@
       }
     ]
   },
+  "programaSocialPropio": {
+    "$comentario": "Formulario FINAL PAPEL, VII.25 — subopciones de 'Programa Social'. Los códigos `volverAlTrabajo` y `acompanamientoSocial` son los mismos del catálogo `programaSocial`, que se conserva entero para leer el histórico AppSheet (lista plana, sin padre).",
+    "opciones": [
+      {
+        "codigo": "volverAlTrabajo",
+        "etiqueta": "Volver al trabajo",
+        "legacy": [
+          "Volver al Trabajo",
+          "Programa Social: Volver al trabajo"
+        ]
+      },
+      {
+        "codigo": "acompanamientoSocial",
+        "etiqueta": "Acompañamiento Social",
+        "legacy": [
+          "Programa Social: Acompañamiento Social"
+        ]
+      },
+      {
+        "codigo": "otros",
+        "etiqueta": "Otros"
+      }
+    ]
+  },
+  "programaSocialHijos": {
+    "$comentario": "Formulario FINAL PAPEL, VII.25 — subopciones de 'Programa Social para sus hijos/as'. `auh` y `prestacionAlimentar` son los mismos códigos del catálogo `programaSocial`.",
+    "opciones": [
+      {
+        "codigo": "auh",
+        "etiqueta": "Asignación Universal Por Hijo (AUH)",
+        "legacy": [
+          "Asignación Universal por Hijo (AUH)",
+          "Programa Social para sus hijos/as: Asignación Universal Por Hijo (AUH)"
+        ]
+      },
+      {
+        "codigo": "prestacionAlimentar",
+        "etiqueta": "Prestación Alimentar (Ex Tarjeta Alimentar)",
+        "legacy": [
+          "Prestación Alimentar (ex Tarjeta Alimentar)",
+          "Programa Social para sus hijos/as: Prestación Alimentar (Ex Tarjeta Alimentar)"
+        ]
+      },
+      {
+        "codigo": "primerosAnios",
+        "etiqueta": "Programa Primeros Años"
+      },
+      {
+        "codigo": "milDias",
+        "etiqueta": "Programa Mil Días"
+      },
+      {
+        "codigo": "becaProgresar",
+        "etiqueta": "Beca Progresar"
+      }
+    ]
+  },
   "varianteCuestionario": {
+    "$comentario": "Formulario FINAL PAPEL: hay UN solo cuestionario. `adolescente`, `sietePreguntas` y `finAnticipado` quedan retiradas, conservando código y etiqueta para leer los casos ya guardados.",
     "opciones": [
       {
         "codigo": "completo",
@@ -931,18 +1082,21 @@
         "etiqueta": "Cuestionario breve (7 preguntas)",
         "legacy": [
           "7P"
-        ]
+        ],
+        "retirada": true
       },
       {
         "codigo": "finAnticipado",
         "etiqueta": "Cierre anticipado",
         "legacy": [
           "FIN"
-        ]
+        ],
+        "retirada": true
       },
       {
         "codigo": "adolescente",
-        "etiqueta": "Formulario abreviado (15 a 18 años, autonomía progresiva)"
+        "etiqueta": "Formulario abreviado (menores de 18 años)",
+        "retirada": true
       }
     ]
   },
@@ -1207,35 +1361,70 @@
     ]
   },
   "rangoEtario2026": {
-    "$comentario": "Instrumento 2026 - categorias etarias de CABA. QA-0021 (2026-09-16): fila no-se-observa para cuando la edad no se puede distinguir; en el consentimiento se trata como el rango adolescente. QA-0022 modificado (2026-09-17): el piso de la entrevista abreviada baja de 15 a 14 años, asi que las filas pasan a 0-13 y 14-18 (codigos r0a13 / r14a18; los viejos r0a14 / r15a18 quedan en legacy).",
+    "$comentario": "Formulario FINAL PAPEL (2026-10-01), Módulo II: 7 franjas y NINGUNA fila de 'edad no se observa'. Las franjas de 2026-09 (r0a14, r15a18, r19a59, r60mas, noSeObserva) y las de 2026-09-17 (r0a13, r14a18) quedan retiradas: se muestran SOLO si el grupo ya tiene conteos en ellas, sin migrar ni sumar edades distintas. Los cortes del papel (6–13 / 14–17) NO coinciden con los de `edadEstimada` (6–12 / 13–17): por eso códigos nuevos y no reuso.",
     "opciones": [
+      {
+        "codigo": "r0a5",
+        "etiqueta": "Entre 0 a 5 Años"
+      },
+      {
+        "codigo": "r6a13",
+        "etiqueta": "Entre 6 y 13 años"
+      },
+      {
+        "codigo": "r14a17",
+        "etiqueta": "Entre 14 y 17 años"
+      },
+      {
+        "codigo": "r18a29",
+        "etiqueta": "Entre 18 y 29 años"
+      },
+      {
+        "codigo": "r30a45",
+        "etiqueta": "Entre 30 y 45 años"
+      },
+      {
+        "codigo": "r46a64",
+        "etiqueta": "Entre 46 y 64 años"
+      },
+      {
+        "codigo": "r65mas",
+        "etiqueta": "65 años o más"
+      },
+      {
+        "codigo": "r0a14",
+        "etiqueta": "Entre 0 y 14 años",
+        "retirada": true
+      },
+      {
+        "codigo": "r15a18",
+        "etiqueta": "Entre 15 y 18 años",
+        "retirada": true
+      },
+      {
+        "codigo": "r19a59",
+        "etiqueta": "Entre 19 y 59 años",
+        "retirada": true
+      },
+      {
+        "codigo": "r60mas",
+        "etiqueta": "60 años y más",
+        "retirada": true
+      },
+      {
+        "codigo": "noSeObserva",
+        "etiqueta": "Edad no se observa",
+        "retirada": true
+      },
       {
         "codigo": "r0a13",
         "etiqueta": "Entre 0 y 13 años",
-        "legacy": [
-          "Entre 0 y 14 años",
-          "r0a14"
-        ]
+        "retirada": true
       },
       {
         "codigo": "r14a18",
         "etiqueta": "Entre 14 y 18 años",
-        "legacy": [
-          "Entre 15 y 18 años",
-          "r15a18"
-        ]
-      },
-      {
-        "codigo": "r19a59",
-        "etiqueta": "Entre 19 y 59 años"
-      },
-      {
-        "codigo": "r60mas",
-        "etiqueta": "60 años y más"
-      },
-      {
-        "codigo": "noSeObserva",
-        "etiqueta": "Edad no se observa"
+        "retirada": true
       }
     ]
   },
@@ -1256,15 +1445,11 @@
     ]
   },
   "realizaEntrevista": {
-    "$comentario": "Instrumento 2026, III.1. 'No rotundo' viene de Nación; 'no orientada' de CABA.",
+    "$comentario": "Formulario FINAL PAPEL, III.1. Los cuatro motivos del papel van literales. `noRotundo` y `yaEntrevistada` SE CONSERVAN por decisión del juez (DECISIÓN CLIENTE 8.1): el papel encabeza la pregunta con 'si la persona no quiere o no puede responder', y sin una opción para el rechazo voluntario el encuestador tendría que marcar un motivo falso. `otro` queda retirada, para leer y reenviar el histórico.",
     "opciones": [
       {
         "codigo": "si",
         "etiqueta": "Sí"
-      },
-      {
-        "codigo": "noRotundo",
-        "etiqueta": "No rotundo"
       },
       {
         "codigo": "dormida",
@@ -1279,34 +1464,41 @@
         "etiqueta": "Hay problemas de seguridad"
       },
       {
+        "codigo": "noOrientada",
+        "etiqueta": "No está orientada en tiempo/espacio → avisar a emergencias o 911",
+        "legacy": [
+          "No está orientada en tiempo/espacio (avisar a emergencias o 911)"
+        ]
+      },
+      {
+        "codigo": "noRotundo",
+        "etiqueta": "No quiere responder",
+        "legacy": [
+          "No rotundo"
+        ]
+      },
+      {
         "codigo": "yaEntrevistada",
         "etiqueta": "Dice que ya fue entrevistada en esta ronda"
       },
       {
-        "codigo": "noOrientada",
-        "etiqueta": "No está orientada en tiempo/espacio (avisar a emergencias o 911)"
-      },
-      {
         "codigo": "otro",
         "etiqueta": "Otro (especificar)",
-        "otro": true
+        "otro": true,
+        "retirada": true
       }
     ]
   },
   "tipoDocumento": {
-    "$comentario": "Instrumento 2026, IV.3 (formato CABA sc25b). 'DNI en trámite' confirmado por negocio (2026-09-01). QA-0025 (2026-09-16): se separan tres situaciones que antes se mezclaban: no tener documento (indocumentación, abre la pregunta 6), tener DNI pero no la tarjeta consigo, y no querer informar (negativa, NO es indocumentación). QA-0044 (2026-09-17): se retira dniSinTarjeta — tener el DNI sin la tarjeta encima es estar documentado; la indocumentación real la resuelve la pregunta 6. El código viejo queda en legacy de dniArgentino.",
+    "$comentario": "Formulario FINAL PAPEL, IV.3 — '¿Cuál?'. Nace `pasaporte` (el código viene del catálogo legacy `tipoDni`, no se inventa). `dniEnTramite`, `noTiene`, `otro`, `noSabe`, `noContesta` y `dniSinTarjeta` quedan retiradas: el papel no las tiene y 'no tiene documento' lo resuelve la 2 (`tieneDocumento`). Se conservan para leer y reenviar el histórico.",
     "opciones": [
       {
         "codigo": "dniArgentino",
-        "etiqueta": "Tiene DNI/CI argentino",
-        "legacy": [
-          "Tiene DNI pero no tiene la tarjeta consigo",
-          "dniSinTarjeta"
-        ]
+        "etiqueta": "DNI/CI argentino"
       },
       {
-        "codigo": "dniEnTramite",
-        "etiqueta": "DNI en trámite"
+        "codigo": "pasaporte",
+        "etiqueta": "Pasaporte"
       },
       {
         "codigo": "documentoExtranjero",
@@ -1317,37 +1509,54 @@
         "etiqueta": "Residencia precaria"
       },
       {
+        "codigo": "nsnc",
+        "etiqueta": "NS/NC"
+      },
+      {
+        "codigo": "dniEnTramite",
+        "etiqueta": "DNI en trámite",
+        "retirada": true
+      },
+      {
         "codigo": "noTiene",
-        "etiqueta": "No tiene documento (indocumentado/a)"
+        "etiqueta": "No tiene documento",
+        "legacy": [
+          "No tiene documento (indocumentado/a)"
+        ],
+        "retirada": true
       },
       {
         "codigo": "otro",
         "etiqueta": "Otro",
-        "otro": true
+        "otro": true,
+        "retirada": true
       },
       {
         "codigo": "noSabe",
-        "etiqueta": "No sabe"
+        "etiqueta": "No sabe",
+        "retirada": true
       },
       {
         "codigo": "noContesta",
-        "etiqueta": "Prefiere no informar"
+        "etiqueta": "No contesta",
+        "retirada": true
+      },
+      {
+        "codigo": "dniSinTarjeta",
+        "etiqueta": "Tiene DNI pero no tiene la tarjeta consigo",
+        "retirada": true
       }
     ]
   },
   "dondeNacio": {
-    "$comentario": "QA-0027 (2026-09-16): se quita 'Provincia de Buenos Aires' (opción del instrumento de CABA) y cada nivel abre un selector: localidad de la provincia del operativo, provincia, o país.",
+    "$comentario": "General: cuatro opciones. El abreviado declara Buenos Aires entre sus opciones propias. Valores históricos conservados.",
     "opciones": [
       {
         "codigo": "enEstaLocalidad",
-        "etiqueta": "En esta localidad",
+        "etiqueta": "En esta ciudad",
         "legacy": [
-          "En esta ciudad"
+          "En esta localidad"
         ]
-      },
-      {
-        "codigo": "otraLocalidadProvincia",
-        "etiqueta": "En otra localidad de esta provincia"
       },
       {
         "codigo": "otraProvincia",
@@ -1360,6 +1569,16 @@
       {
         "codigo": "noContesta",
         "etiqueta": "No contesta"
+      },
+      {
+        "codigo": "provinciaBuenosAires",
+        "etiqueta": "En la Provincia de Buenos Aires",
+        "retirada": true
+      },
+      {
+        "codigo": "otraLocalidadProvincia",
+        "etiqueta": "En otra localidad de esta provincia",
+        "retirada": true
       }
     ]
   },
@@ -1385,11 +1604,21 @@
         "codigo": "noPuede",
         "etiqueta": "No puedo realizar esta actividad",
         "corta": "No puede"
+      },
+      {
+        "codigo": "noSabe",
+        "etiqueta": "No sabe",
+        "corta": "No sabe"
+      },
+      {
+        "codigo": "noContesta",
+        "etiqueta": "No contesta",
+        "corta": "No contesta"
       }
     ]
   },
   "tiempoEnCalle2026": {
-    "$comentario": "Instrumento 2026, V.15 (pregunta de CABA sc10).",
+    "$comentario": "General final, V.14; abreviado, pregunta 15. Códigos compartidos.",
     "opciones": [
       {
         "codigo": "menosUnMes",
@@ -1512,32 +1741,38 @@
     ]
   },
   "frecuenciaContactoFamiliar": {
-    "$comentario": "Instrumento 2026, V.20. QA-0005 (2026-09-16): categorías de frecuencia en lugar de cantidades de veces; los legacy mapean las opciones viejas para no perder lo ya cargado.",
+    "$comentario": "General final y abreviado, pregunta 19. Etiquetas con frecuencias cuantificadas; los códigos y etiquetas históricas se conservan.",
     "opciones": [
       {
         "codigo": "ocasional",
-        "etiqueta": "Ocasional",
+        "etiqueta": "Ocasional (1 a 5)",
         "legacy": [
-          "De 1 a 5 veces"
+          "De 1 a 5 veces",
+          "Ocasional"
         ]
       },
       {
         "codigo": "frecuente",
-        "etiqueta": "Frecuente",
+        "etiqueta": "Frecuente (6 a 10)",
         "legacy": [
-          "De 6 a 10 veces"
+          "De 6 a 10 veces",
+          "Frecuente"
         ]
       },
       {
         "codigo": "permanente",
-        "etiqueta": "Permanente",
+        "etiqueta": "Permanente (+10)",
         "legacy": [
-          "Más de 10 veces"
+          "Más de 10 veces",
+          "Permanente"
         ]
       },
       {
         "codigo": "ninguno",
-        "etiqueta": "No tuve ningún contacto"
+        "etiqueta": "No tuve ningún contacto (0)",
+        "legacy": [
+          "No tuve ningún contacto"
+        ]
       },
       {
         "codigo": "nsnc",
@@ -1546,7 +1781,7 @@
     ]
   },
   "ingresoUltimoMes": {
-    "$comentario": "Instrumento 2026, VI.24 - unifica filtro + detalle del formulario anterior.",
+    "$comentario": "General final, VI.23 - unifica filtro + detalle del formulario anterior.",
     "opciones": [
       {
         "codigo": "jubilacionContributiva",

@@ -1,5 +1,4 @@
 import json
-import re
 
 import pytest
 from django.contrib.auth.models import Group, Permission, User
@@ -362,6 +361,12 @@ def test_user_creation_form_limits_groups_and_roles_by_actor_scope():
 
     actor.profile.grupos_asignables.set([allowed_group])
     actor.profile.roles_asignables.set([allowed_role])
+    actor.user_permissions.add(
+        _create_role_permission(
+            "role_usuarios_seccion_administracion",
+            "Usuarios - Sección Administración de accesos",
+        )
+    )
 
     form = UserCreationForm(
         actor=actor,
@@ -1013,10 +1018,9 @@ def test_actor_cdi_no_ve_ni_puede_enviar_campos_administrativos_en_alta(client):
     response = client.get(reverse("usuario_crear"))
 
     assert response.status_code == 200
-    assert b'id="mobile-access-card"' in response.content
-    assert re.search(
-        rb'<div\s+id="mobile-access-card"[^>]*\bhidden\b', response.content
-    )
+    assert b'id="mobile-access-card"' not in response.content
+    assert b'id="territorial-comedor-card"' not in response.content
+    assert b'id="relevador-calle-card"' not in response.content
     assert b"Permisos directos" not in response.content
     assert b"Es Coordinador de Equipo" not in response.content
     assert b"Grupos que puede asignar" not in response.content

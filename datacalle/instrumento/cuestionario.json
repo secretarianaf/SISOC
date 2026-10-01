@@ -1,7 +1,7 @@
 {
   "id": "datacalle-encuesta",
-  "version": "2.2.0",
-  "origen": "Instrumento de recolección de datos — Propuesta 2026 (Nación + CABA) + revisiones QA 2026-09-16 y 2026-09-17",
+  "version": "4.0.0",
+  "origen": "Formulario_PSC_versión_FINAL_PAPEL_1.docx (área sustantiva, 2026-10-01) — docs/FORMULARIO-FINAL-PAPEL.md",
   "entidad": "encuesta",
   "paginas": [
     {
@@ -9,6 +9,7 @@
       "titulo": "Identificación",
       "legacy": "Bloque I",
       "descripcion": "Se completa solo con los datos del operativo y del encuestador. La fecha es editable (carga desde papel).",
+      "nota": "Papel, I. BLOQUE DE IDENTIFICACIÓN: fecha, nombre y DNI del/de la encuestador/a, provincia, localidad, área operativa y fase. Todo baja del operativo planificado en SISOC o de la sesión: no se vuelve a preguntar.",
       "campos": [
         {
           "id": "id",
@@ -25,14 +26,15 @@
           "origen": "contexto",
           "soloLectura": true,
           "requerido": true,
-          "nota": "Provincia, localidad, área operativa y fase vienen del operativo planificado en SISOC (Bloque I del papel)."
+          "nota": "Papel, Bloque I: provincia, localidad, área operativa y fase vienen del operativo planificado en SISOC."
         },
         {
           "id": "fechaInicio",
           "etiqueta": "Fecha y hora de la encuesta",
           "tipo": "fechaHora",
           "origen": "ahora",
-          "requerido": true
+          "requerido": true,
+          "nota": "Papel, Bloque I: 'Fecha'."
         },
         {
           "id": "encuestadorId",
@@ -41,13 +43,15 @@
           "ref": "usuario",
           "origen": "sesion",
           "soloLectura": true,
-          "requerido": true
+          "requerido": true,
+          "nota": "Papel, Bloque I: 'Nombre y Apellido del/de la encuestador/a'."
         },
         {
           "id": "encuestadorDni",
           "tipo": "texto",
           "derivadoDe": "encuestadorId.dni",
-          "soloExportacion": true
+          "soloExportacion": true,
+          "nota": "Papel, Bloque I: 'DNI del/de la encuestador/a'."
         },
         {
           "id": "encuestadorNombre",
@@ -63,7 +67,7 @@
           "calculo": {
             "tipo": "variante"
           },
-          "nota": "QA-0022: 'adolescente' (formulario abreviado) cuando la persona entrevistada tiene entre 15 y 18 años o su edad no se observa; 'completo' en el resto. Lo decide la app, no el encuestador."
+          "nota": "4.0.0: el papel es un solo cuestionario, así que siempre vale 'completo'. Se conserva porque viaja en el envoltorio del PUT y SISOC lo espera; los casos guardados con 'adolescente' se siguen leyendo."
         },
         {
           "id": "grupoId",
@@ -76,6 +80,7 @@
           "id": "esCabeceraGrupo",
           "etiqueta": "Primer caso del grupo",
           "tipo": "siNo",
+          "catalogo": "siNo",
           "soloExportacion": true,
           "nota": "Marca el caso donde se cargó el módulo observacional. Para contar personas observadas sin duplicar, sumar `personasObservadas` SOLO de los casos con esCabeceraGrupo = si."
         }
@@ -89,8 +94,8 @@
         "campo": "esCabeceraGrupo",
         "es": "si"
       },
-      "descripcion": "Sin contacto: lo que ve el/la encuestador/a en este punto. Se carga UNA vez al crear el grupo; las demás personas del grupo lo heredan y no vuelven a pasar por acá.",
-      "nota": "QA-0033: la ubicación y la composición se toman una sola vez, al crear el grupo. QA-0019: la fase viene de la planificación y no se vuelve a preguntar.",
+      "descripcion": "Se completa SIN preguntar, a partir de lo que ve el/la encuestador/a. Se carga UNA vez al crear el grupo; las demás personas del grupo lo heredan y no vuelven a pasar por acá.",
+      "nota": "Papel, II. MÓDULO OBSERVACIONAL (sin contacto). La ubicación y la composición se toman una sola vez, al crear el grupo (QA-0033); la fase viene de la planificación (QA-0019).",
       "campos": [
         {
           "id": "lugarHallazgo",
@@ -102,7 +107,7 @@
           "origen": "contexto",
           "requerido": true,
           "ayuda": "Definido al planificar el operativo en SISOC.",
-          "nota": "QA-0019 (2026-09-16): se muestra bloqueado con la fase del operativo; de este valor depende que se pregunte o no el cuadro de características del lugar de asentamiento (solo en espacio público). Si un recorrido mezcla puntos de calle y de parador, se planifican como dos operativos."
+          "nota": "Papel, Bloque I ('Fase: espacio público / dispositivo de alojamiento'). QA-0019: se muestra bloqueado con la fase del operativo. En el formulario FINAL el cuadro del lugar de asentamiento ya NO depende de la fase: se pregunta siempre."
         },
         {
           "id": "ubicacionGrupo",
@@ -111,7 +116,7 @@
           "deGrupo": true,
           "requerido": true,
           "ayuda": "Se toma con el GPS parado en el lugar y queda asociada a ESTE grupo. Sin señal, cargá calle y altura.",
-          "nota": "QA-0033/QA-0034: una vez por grupo; con carga manual de dirección (`direccion`) y marca `manual` cuando no hubo GPS."
+          "nota": "QA-0033/QA-0034: una vez por grupo; con carga manual de dirección (`direccion`) y marca `manual` cuando no hubo GPS. No está en el papel: es máquina de la app."
         },
         {
           "id": "grupoObservado",
@@ -123,7 +128,7 @@
             "columnas": "generoObservado"
           },
           "requerido": true,
-          "nota": "Categorías etarias de CABA: niñez 0–14, adolescencia 15–18, población activa 19–59, población pasiva 60 y más. QA-0021: fila y columna 'no se observa' para lo que no se puede distinguir."
+          "nota": "Papel, Módulo II, primer cuadro: 7 filas de edad × 3 columnas (Varón / Mujer / No se observa) + Total. El papel NO tiene fila de 'edad no se observa': esa franja queda retirada y solo aparece si el grupo ya tenía conteos en ella."
         },
         {
           "id": "personasObservadas",
@@ -132,77 +137,78 @@
           "calculo": {
             "tipo": "totalMatriz",
             "campo": "grupoObservado"
-          }
+          },
+          "nota": "Papel, Módulo II: columna 'Total'."
         },
         {
           "id": "asentamientoMuebles",
-          "etiqueta": "Muebles / enseres",
+          "etiqueta": "Muebles/Enseres",
           "tipo": "siNo",
+          "catalogo": "siNo",
           "deGrupo": true,
-          "seccion": "Características observadas en el lugar de asentamiento",
-          "visibleSi": {
-            "campo": "lugarHallazgo",
-            "es": "espacioPublico"
-          }
+          "seccion": "En el lugar de asentamiento se observaron:",
+          "nota": "Papel, Módulo II, segundo cuadro, fila 1."
         },
         {
           "id": "asentamientoMascotas",
           "etiqueta": "Mascotas",
           "tipo": "siNo",
+          "catalogo": "siNo",
           "deGrupo": true,
-          "visibleSi": {
-            "campo": "lugarHallazgo",
-            "es": "espacioPublico"
-          }
+          "nota": "Papel, Módulo II, segundo cuadro, fila 2."
         },
         {
           "id": "asentamientoMaterialTrabajo",
           "etiqueta": "Material de trabajo (carro, artículos para la venta, etc.)",
           "tipo": "siNo",
+          "catalogo": "siNo",
           "deGrupo": true,
-          "visibleSi": {
-            "campo": "lugarHallazgo",
-            "es": "espacioPublico"
-          }
+          "nota": "Papel, Módulo II, segundo cuadro, fila 3."
         },
         {
           "id": "asentamientoConstruccionPrecaria",
           "etiqueta": "Construcción precaria (habitáculo de cartón, carpa, etc.)",
           "tipo": "siNo",
+          "catalogo": "siNo",
           "deGrupo": true,
-          "visibleSi": {
-            "campo": "lugarHallazgo",
-            "es": "espacioPublico"
-          }
+          "nota": "Papel, Módulo II, segundo cuadro, fila 4."
+        },
+        {
+          "id": "asentamientoConsumoProblematico",
+          "etiqueta": "Indicios de consumo problemático (conductas alteradas, habla incoherente, etc.)",
+          "tipo": "siNo",
+          "catalogo": "siNo",
+          "deGrupo": true,
+          "nota": "Papel, Módulo II, segundo cuadro, fila 5. Vuelve al cuadro nacional: el 3.1.0 la había eliminado."
+        },
+        {
+          "id": "asentamientoSaludMental",
+          "etiqueta": "Indicios de alteraciones en la salud mental (gritos, desorientación, etc.)",
+          "tipo": "siNo",
+          "catalogo": "siNo",
+          "deGrupo": true,
+          "nota": "Papel, Módulo II, segundo cuadro, fila 6. Vuelve al cuadro nacional: el 3.1.0 la había eliminado."
         },
         {
           "id": "asentamientoOtros",
           "etiqueta": "Otros",
           "tipo": "siNo",
+          "catalogo": "siNo",
           "deGrupo": true,
-          "visibleSi": {
-            "campo": "lugarHallazgo",
-            "es": "espacioPublico"
-          },
-          "nota": "Se eliminan del cuadro nacional 'indicios de consumo problemático' y 'de alteraciones en la salud mental' (alineado con CABA)."
+          "soloHistorico": true,
+          "nota": "El papel fija 6 filas y 'Otros' no está. Se conserva para leer y reenviar lo ya guardado."
         },
         {
           "id": "asentamientoOtrosDetalle",
           "etiqueta": "Especificar otros",
           "tipo": "texto",
           "deGrupo": true,
+          "soloHistorico": true,
           "visibleSi": {
-            "todas": [
-              {
-                "campo": "lugarHallazgo",
-                "es": "espacioPublico"
-              },
-              {
-                "campo": "asentamientoOtros",
-                "es": "si"
-              }
-            ]
-          }
+            "campo": "asentamientoOtros",
+            "es": "si"
+          },
+          "nota": "Detalle de una versión anterior: solo se muestra si ya está guardado."
         }
       ]
     },
@@ -210,8 +216,8 @@
       "id": "consentimiento",
       "titulo": "Consentimiento",
       "legacy": "Bloque III",
-      "descripcion": "El consentimiento es individual: se le pide a UNA persona por vez, la que vas a entrevistar ahora. Cada persona adulta del grupo tiene su propio caso y su propio consentimiento; las que todavía no entrevistaste quedan pendientes en el grupo. A los niños y niñas de 0 a 13 años no se les hacen preguntas: solo quedan registrados como observados.",
-      "nota": "QA-0001: redacción sin ambigüedad sobre a quién se le pide. QA-0022 (mod. 17/9): 14–18 se entrevista con el formulario abreviado; 0–13 no.",
+      "descripcion": "El consentimiento es individual: se le pide a UNA persona por vez, la que vas a entrevistar ahora. Cada persona del grupo tiene su propio caso y su propio consentimiento.",
+      "nota": "Papel, III. MÓDULO DE CONSENTIMIENTO ('mínimo y necesario para iniciar'). Regla de edad del papel (nota entre la 6 y la 7): a las personas de hasta 13 años no se les hace la encuesta.",
       "campos": [
         {
           "id": "personaEntrevistada",
@@ -222,8 +228,8 @@
             "columnas": "generoObservado"
           },
           "requerido": true,
-          "ayuda": "Solo aparecen las personas del grupo que todavía no tienen su caso. Equivale al sexo aparente y la edad estimada del formulario anterior.",
-          "nota": "El valor es la celda de la matriz más el número de persona (p. ej. r19a59_varon#2)."
+          "ayuda": "Solo aparecen las personas del grupo que todavía no tienen su caso.",
+          "nota": "El valor es la celda de la matriz más el número de persona (p. ej. r18a29_varon#2). No está en el papel: es lo que permite un caso por persona del grupo observado."
         },
         {
           "id": "avisoMenorDeEdad",
@@ -231,55 +237,59 @@
           "tipo": "aviso",
           "tono": "alerta",
           "icono": "shield-outline",
-          "texto": "Tiene entre 0 y 13 años: queda registrada como persona observada, sin entrevista. Si está sola, o ves una situación de riesgo, dar aviso a la línea de niñez (102) o al 911 e informarlo a tu coordinación.",
+          "texto": "Tiene hasta 13 años: queda registrada en el Módulo Observacional como persona observada, sin entrevista. Firmá el cierre, guardá el caso y seguí con otra persona del grupo. Si está SOLA, aplicá el protocolo: aviso a la línea de niñez (102) o al 911 e informá a tu coordinación.",
           "visibleSi": {
             "campo": "personaEntrevistada",
             "prefijoEn": [
-              "r0a13"
+              "r0a5",
+              "r6a13",
+              "r0a13",
+              "r0a14"
             ]
-          }
-        },
-        {
-          "id": "avisoAdolescente",
-          "etiqueta": "Formulario abreviado",
-          "tipo": "aviso",
-          "tono": "info",
-          "icono": "school-outline",
-          "texto": "Persona de 14 a 18 años (o edad que no se pudo determinar): si acepta, se le hace el formulario abreviado de autonomía progresiva, sin las preguntas de número de documento ni de ingresos.",
-          "visibleSi": {
-            "campo": "personaEntrevistada",
-            "prefijoEn": [
-              "r14a18",
-              "noSeObserva"
-            ]
-          }
+          },
+          "nota": "Papel, línea entre la 6 y la 7: 'Para NyN menores de 13 años que estén solos NO se realiza la encuesta y se aplica Modulo II y se aplica el protocolo'. DECISIÓN CLIENTE 8.2b: el papel dice 'menores de 13' pero su franja observacional es '6 a 13' y no permite separar a los de 13, así que NO se entrevista la franja r6a13 completa. La condición 'que estén solos' se registra en el aviso pero no habilita entrevistar a un menor acompañado. Los códigos históricos r0a13 / r0a14 siguen el mismo criterio."
         },
         {
           "id": "esMenorDeEdad",
-          "etiqueta": "Persona menor de 14 años",
+          "etiqueta": "Persona menor de 18 años",
           "tipo": "siNo",
+          "catalogo": "siNo",
           "soloExportacion": true,
           "calculo": {
             "tipo": "esMenorDeEdad"
           },
-          "nota": "'si' solo para el rango 0–13 (caso observado sin entrevista; QA-0022 mod. 17/9, antes 0–14). La clave no cambia: sigue siendo `esMenorDeEdad`. Explica por qué el caso quedó 'rechazada' sin `realizaEntrevista`."
+          "nota": "Dato de sistema, no una pregunta del papel: edad cumplida al inicio del relevamiento; 'si' = menor de 18. Sin nacimiento y con rango ambiguo queda null. Desde 4.0.0 NO decide nada (no hay formulario abreviado): quién no se entrevista lo define el rango observado (r0a5 / r6a13)."
         },
         {
           "id": "realizaEntrevista",
-          "etiqueta": "1. ¿La persona acepta realizar la entrevista?",
+          "etiqueta": "1. ¿La persona acepta responder?",
           "tipo": "enum",
           "catalogo": "realizaEntrevista",
           "requerido": true,
+          "ayuda": "Si la persona no quiere o no puede responder por alguno de estos motivos, marcá la opción correspondiente y no avances.",
           "visibleSi": {
             "campo": "personaEntrevistada",
-            "prefijoEn": [
-              "r14a18",
-              "r19a59",
-              "r60mas",
-              "noSeObserva"
+            "prefijoNoEn": [
+              "r0a5",
+              "r6a13",
+              "r0a13",
+              "r0a14"
             ]
           },
-          "nota": "Si no está orientada en tiempo/espacio: avisar a emergencias o 911."
+          "nota": "Papel, III.1. DECISIÓN CLIENTE 8.1: el papel lista solo cuatro motivos; se conservan \"no quiere responder\" y \"ya fue entrevistada\" para no forzar al encuestador a marcar un motivo falso. Si el área confirma que van solo los cuatro del papel, se retiran. Sigue siendo la única pregunta obligatoria del instrumento: es la que abre o cierra el caso entero."
+        },
+        {
+          "id": "avisoProtocoloEmergencia",
+          "etiqueta": "Protocolo de emergencia",
+          "tipo": "aviso",
+          "tono": "alerta",
+          "icono": "medkit-outline",
+          "texto": "Aplicar Protocolo de emergencia, o el reglamento que utilice la provincia.",
+          "visibleSi": {
+            "campo": "realizaEntrevista",
+            "es": "noOrientada"
+          },
+          "nota": "Papel, III.1, pie de la pregunta: '* Aplicar Protocolo de emergencia, o el reglamento que utilice la provincia.'"
         },
         {
           "id": "yaEntrevistadaDatos",
@@ -288,7 +298,8 @@
           "visibleSi": {
             "campo": "realizaEntrevista",
             "es": "yaEntrevistada"
-          }
+          },
+          "nota": "DECISIÓN CLIENTE 8.1: acompaña a la opción 'ya fue entrevistada', que el juez conservó aunque no esté en el papel. Si el área retira esa opción, este campo pasa a soloHistorico."
         },
         {
           "id": "otroMotivoNoEntrevista",
@@ -297,7 +308,9 @@
           "visibleSi": {
             "campo": "realizaEntrevista",
             "es": "otro"
-          }
+          },
+          "soloHistorico": true,
+          "nota": "La opción 'Otro' no está en el papel y quedó retirada: este detalle solo se muestra si ya está guardado."
         }
       ]
     },
@@ -306,11 +319,24 @@
       "titulo": "Identificación y vínculos",
       "legacy": "Bloque III.2",
       "visibleSi": {
-        "campo": "realizaEntrevista",
-        "es": "si"
+        "todas": [
+          {
+            "campo": "realizaEntrevista",
+            "es": "si"
+          },
+          {
+            "campo": "personaEntrevistada",
+            "prefijoNoEn": [
+              "r0a5",
+              "r6a13",
+              "r0a13",
+              "r0a14"
+            ]
+          }
+        ]
       },
-      "descripcion": "2. La app arma el código de identificación con las iniciales y la fecha de nacimiento. El nombre y el apellido se usan solo acá para no equivocar las iniciales: no se guardan ni viajan.",
-      "nota": "QA-0024: nombre completo con anonimización automática. QA-0002: los vínculos se determinan contra las personas ya observadas del grupo.",
+      "descripcion": "Código de identificación personal (alfanumérico). La app lo arma con las iniciales y la fecha de nacimiento. El nombre y el apellido se usan solo acá para no equivocar las iniciales: no se guardan ni viajan.",
+      "nota": "Papel, III, tabla del 'Código de identificación personal': 2 iniciales del nombre + 2 del apellido + día + mes + año de nacimiento + parentesco con el/la entrevistado/a. DECISIÓN CLIENTE 8.12: el papel numera esta pregunta '1.' por segunda vez (artefacto de la lista); se muestra sin número.",
       "campos": [
         {
           "id": "nombre",
@@ -318,14 +344,17 @@
           "tipo": "texto",
           "noPersistir": true,
           "requerido": true,
-          "ayuda": "Podés escribirlo completo: la app se queda solo con las dos primeras letras."
+          "ayuda": "Escribilo completo: la app se queda solo con las dos primeras letras para armar el código. No se guarda ni viaja.",
+          "nota": "Papel: '2 primeras iniciales nombre'. QA-0024 (cerrada el 21/9): el encuestador NO codifica a mano; las iniciales se derivan en `inicialesNombre`."
         },
         {
           "id": "apellido",
           "etiqueta": "Apellido",
           "tipo": "texto",
           "noPersistir": true,
-          "requerido": true
+          "requerido": true,
+          "ayuda": "Completo; la app toma las dos primeras letras.",
+          "nota": "Papel: '2 primeras iniciales apellido'."
         },
         {
           "id": "inicialesNombre",
@@ -350,7 +379,7 @@
           "etiqueta": "Fecha de nacimiento",
           "tipo": "fecha",
           "requerido": true,
-          "nota": "Día (2 dígitos), mes (2) y año (4) componen el código."
+          "nota": "Papel: '2 dígitos para el día / el mes / el año de nacimiento'. DECISIÓN CLIENTE 8.5: el papel pide 2 dígitos de año y la app usa 4 (`fmtDDMMAAAA`). Propuesta por defecto: NO tocar el formato — cambiarlo cambiaría el valor de una clave ya guardada y perdería el siglo."
         },
         {
           "id": "codigoEntrevistado",
@@ -358,15 +387,16 @@
           "tipo": "texto",
           "calculo": {
             "tipo": "codigoDesdeIniciales"
-          }
+          },
+          "nota": "Papel, III: 'Se coloca el CÓDIGO del entrevistado/a, luego de su grupo familiar si está en ese momento con el/la entrevistado/a.'"
         },
         {
           "id": "grupoFamiliar",
           "etiqueta": "Vínculos con las demás personas del grupo",
           "tipo": "grupoFamiliar",
           "catalogo": "parentesco",
-          "ayuda": "Determiná el vínculo con cada integrante del grupo observado que sea familiar. Si la persona está sola o no son familiares, dejalo vacío.",
-          "nota": "QA-0002: cada vínculo apunta a una persona observada del mismo grupo (`persona`, celda de la matriz) más el parentesco. Reemplaza a los vínculos entre encuestas del formulario anterior."
+          "ayuda": "Elegí a cada integrante del grupo observado que sea familiar y su parentesco. Si está solo/a o no son familiares, dejalo vacío.",
+          "nota": "Papel, III: última columna de la tabla, 'Parentesco con el/la entrevistado/a'. DECISIÓN CLIENTE 8.6: el papel repite iniciales y nacimiento por cada fila del grupo familiar; QA-0002 (cerrada el 21/9) los sacó porque salen del caso propio de esa persona. Propuesta por defecto: se mantiene QA-0002 (persona + parentesco); `MiembroGrupoFamiliar` conserva los campos opcionales para leer histórico."
         }
       ]
     },
@@ -375,76 +405,159 @@
       "titulo": "Datos personales y sociales",
       "legacy": "Bloque IV",
       "visibleSi": {
-        "campo": "realizaEntrevista",
-        "es": "si"
+        "todas": [
+          {
+            "campo": "realizaEntrevista",
+            "es": "si"
+          },
+          {
+            "campo": "personaEntrevistada",
+            "prefijoNoEn": [
+              "r0a5",
+              "r6a13",
+              "r0a13",
+              "r0a14"
+            ]
+          }
+        ]
       },
+      "nota": "Papel, IV. DATOS PERSONALES Y SOCIALES (preguntas 2 a 13).",
       "campos": [
         {
+          "id": "tieneDocumento",
+          "etiqueta": "2. ¿Tiene algún documento de Identidad?",
+          "tipo": "enum",
+          "catalogo": "siNoNsnc",
+          "opciones": [
+            {
+              "codigo": "si",
+              "etiqueta": "Si"
+            },
+            {
+              "codigo": "no",
+              "etiqueta": "No"
+            },
+            {
+              "codigo": "nsnc",
+              "etiqueta": "NS/NC"
+            }
+          ],
+          "ayuda": "Marcar una sola opción.",
+          "nota": "Papel, IV.2 ('No → 5', 'NS/NC → 6'). Clave NUEVA: la indocumentación ya NO se lee de `documentoTipo = \"noTiene\"` sino de `tieneDocumento = \"no\"`. El papel escribe 'Si' sin tilde en 2, 10, 12, 14 y 24, y 'Sí' en 1, 19 y 22: la etiqueta se fija por campo, el código interno es siempre si/no/nsnc."
+        },
+        {
           "id": "documentoTipo",
-          "etiqueta": "3. ¿Qué documentación identificatoria tiene (o está tramitando)?",
+          "etiqueta": "3. ¿Cuál?",
           "tipo": "enum",
           "catalogo": "tipoDocumento",
           "requerido": true,
-          "nota": "QA-0025 (16/9) había separado indocumentación / DNI sin tarjeta / negativa. QA-0044 (17/9) retira 'DNI sin tarjeta': tener el DNI sin la tarjeta encima es estar documentado, y la indocumentación real la resuelve la 6. Queda: documentado (abre la 5), indocumentado (abre la 6), negativa (no abre nada)."
+          "ayuda": "Marcar una sola opción.",
+          "visibleSi": {
+            "campo": "tieneDocumento",
+            "es": "si"
+          },
+          "nota": "Papel, IV.3. Misma clave que el 3.1.0, pero cambia de rol: antes mezclaba 'tiene / qué tiene / no tiene'; ahora es solo '¿cuál?'. DECISIÓN CLIENTE 8.9: es una de las tres preguntas que quedan obligatorias, porque vacía contradice el 'Si' de la 2."
         },
         {
           "id": "paisEmisor",
-          "etiqueta": "4. País emisor del documento",
+          "etiqueta": "País emisor del documento",
           "tipo": "enum",
           "catalogo": "paisSudamerica",
+          "selector": true,
+          "soloHistorico": true,
           "visibleSi": {
             "campo": "documentoTipo",
             "es": "documentoExtranjero"
           },
-          "nota": "Para estimar población migrante en situación de calle."
+          "nota": "DECISIÓN CLIENTE 8.4: la 3 del papel no tiene repregunta de país, así que se pierde el país emisor del documento extranjero (QA-0043, pedido el 17/9 para estimar población migrante). Se conserva para leer y reenviar el histórico; corta la serie de migración."
         },
         {
           "id": "paisEmisorOtro",
           "etiqueta": "¿Qué país?",
           "tipo": "texto",
+          "soloHistorico": true,
           "visibleSi": {
-            "campo": "paisEmisor",
-            "es": "otroPais"
-          }
+            "todas": [
+              {
+                "campo": "documentoTipo",
+                "es": "documentoExtranjero"
+              },
+              {
+                "campo": "paisEmisor",
+                "es": "otroPais"
+              }
+            ]
+          },
+          "nota": "Detalle de una versión anterior: solo se muestra si ya está guardado."
         },
         {
           "id": "numeroDocumento",
-          "etiqueta": "5. Número de documento, si desea compartirlo",
-          "tipo": "numero",
+          "etiqueta": "4. ¿Desea compartirnos el número?",
+          "tipo": "texto",
           "visibleSi": {
-            "campo": "documentoTipo",
-            "en": [
-              "dniArgentino",
-              "documentoExtranjero",
-              "residenciaPrecaria",
-              "otro"
-            ]
+            "campo": "tieneDocumento",
+            "es": "si"
           },
-          "nota": "QA-0003: redacción voluntaria. Opcional: si no desea, se deja vacío. No se pregunta a quien no tiene documento ni a quien prefirió no informar."
+          "nota": "Papel, IV.4. Voluntario. Se mantiene `texto` (no `numero`): conserva ceros iniciales y documentos alfanuméricos, y no reconvierte los históricos numéricos al reabrir."
         },
         {
           "id": "motivoNoTieneDocumento",
-          "etiqueta": "6. ¿Por qué no tiene documento?",
+          "etiqueta": "5. ¿Por qué no lo tiene?",
           "tipo": "enum",
           "catalogo": "motivoNoTieneDni",
           "visibleSi": {
-            "campo": "documentoTipo",
-            "es": "noTiene"
-          }
+            "campo": "tieneDocumento",
+            "es": "no"
+          },
+          "nota": "Papel, IV.5: las 7 opciones ya existían con el mismo código y la misma etiqueta; solo se reordenaron al orden del papel."
         },
         {
           "id": "identidadGenero",
-          "etiqueta": "7. De acuerdo a la identidad de género, ¿se considera…?",
+          "etiqueta": "6. ¿Con cuál de estas identidades de género se siente más cómodo/a?",
           "tipo": "enum",
           "catalogo": "identidadGenero",
-          "nota": "QA-0026: incluye 'travesti'."
+          "ayuda": "Marcar una sola opción.",
+          "nota": "Papel, IV.6. DECISIÓN CLIENTE 8.3: el papel no tiene 'Travesti' (la había agregado QA-0026) ni 'No sabe / no contesta': quedan retiradas, se leen del histórico pero no se ofrecen. Vuelve 'Otra:' con texto libre."
+        },
+        {
+          "id": "identidadGeneroOtra",
+          "etiqueta": "¿Cuál?",
+          "tipo": "texto",
+          "visibleSi": {
+            "campo": "identidadGenero",
+            "es": "otra"
+          },
+          "nota": "Papel, IV.6, la línea de 'Otra:'."
+        },
+        {
+          "id": "vivioSiempreLocalidad",
+          "etiqueta": "7. ¿Vivió siempre en {localidad}?",
+          "tipo": "enum",
+          "catalogo": "siNoNsnc",
+          "opciones": [
+            {
+              "codigo": "si",
+              "etiqueta": "Si"
+            },
+            {
+              "codigo": "no",
+              "etiqueta": "No"
+            },
+            {
+              "codigo": "nsnc",
+              "etiqueta": "Ns/Nc"
+            }
+          ],
+          "ayuda": "Mencioná la localidad del operativo. Marcar una sola opción.",
+          "nota": "Papel, IV.7 ('¿Vivió siempre en ______ (mencionar localidad)?'). Clave NUEVA: reemplaza a `dondeNacio`, que preguntaba otra cosa (dónde nació). {localidad} lo resuelve el renderer con la localidad del operativo."
         },
         {
           "id": "dondeNacio",
-          "etiqueta": "8. ¿Dónde nació?",
+          "etiqueta": "¿Dónde nació?",
           "tipo": "enum",
           "catalogo": "dondeNacio",
-          "nota": "QA-0027: cada nivel abre su selector."
+          "soloHistorico": true,
+          "nota": "El papel pregunta '¿vivió siempre acá?' (7), no '¿dónde nació?'. Se conserva para leer y reenviar el histórico; se pierde la serie de lugar de nacimiento."
         },
         {
           "id": "dondeNacioLocalidad",
@@ -454,7 +567,8 @@
             "campo": "dondeNacio",
             "es": "otraLocalidadProvincia"
           },
-          "ayuda": "Localidades de la provincia del operativo."
+          "soloHistorico": true,
+          "nota": "Detalle de una versión anterior: solo se muestra si ya está guardado."
         },
         {
           "id": "dondeNacioProvincia",
@@ -465,7 +579,9 @@
           "visibleSi": {
             "campo": "dondeNacio",
             "es": "otraProvincia"
-          }
+          },
+          "soloHistorico": true,
+          "nota": "Detalle de una versión anterior: solo se muestra si ya está guardado."
         },
         {
           "id": "dondeNacioPais",
@@ -476,33 +592,77 @@
           "visibleSi": {
             "campo": "dondeNacio",
             "es": "otroPais"
-          }
+          },
+          "soloHistorico": true,
+          "nota": "Detalle de una versión anterior: solo se muestra si ya está guardado."
         },
         {
           "id": "dondeNacioPaisOtro",
           "etiqueta": "¿Cuál?",
           "tipo": "texto",
           "visibleSi": {
-            "campo": "dondeNacioPais",
-            "es": "otroPais"
-          }
+            "todas": [
+              {
+                "campo": "dondeNacio",
+                "es": "otroPais"
+              },
+              {
+                "campo": "dondeNacioPais",
+                "es": "otroPais"
+              }
+            ]
+          },
+          "soloHistorico": true,
+          "nota": "Detalle de una versión anterior: solo se muestra si ya está guardado."
         },
         {
           "id": "dondeViviaAntes",
-          "etiqueta": "9. ¿Dónde vivía antes de estar en situación de calle por primera vez?",
+          "etiqueta": "8. ¿De qué lugar proviene?",
           "tipo": "enum",
           "catalogo": "lugarProviene",
-          "nota": "QA-0038 (17/9): sin la aclaración '(solo si no vivió siempre en la localidad actual)'; se agrega 'En esta localidad' y las opciones dicen 'En…'. QA-0004: cada opción abre su pregunta '¿cuál?'."
+          "visibleSi": {
+            "campo": "vivioSiempreLocalidad",
+            "es": "no"
+          },
+          "nota": "Papel, IV.8. Misma clave y mismos códigos que el 3.1.0 (procedencia); cambian la etiqueta (vuelven las de 'De…') y la condición: ahora cuelga de la 7. DECISIÓN CLIENTE 8.8: en CABA se sigue ocultando 'De otra localidad de esta provincia' (regla territorial de QA-0038, no del papel)."
         },
         {
           "id": "dondeViviaAntesLocalidad",
           "etiqueta": "¿Cuál?",
           "tipo": "localidad",
           "visibleSi": {
-            "campo": "dondeViviaAntes",
-            "es": "otraLocalidadProvincia"
+            "todas": [
+              {
+                "campo": "vivioSiempreLocalidad",
+                "es": "no"
+              },
+              {
+                "campo": "dondeViviaAntes",
+                "es": "otraLocalidadProvincia"
+              }
+            ]
           },
-          "ayuda": "Localidades de la provincia del operativo."
+          "soloHistorico": true,
+          "nota": "Guardaba un código de localidad; quedó solo para leer histórico (QA, 21/9)."
+        },
+        {
+          "id": "dondeViviaAntesLocalidadNombre",
+          "etiqueta": "¿Qué localidad?",
+          "tipo": "texto",
+          "visibleSi": {
+            "todas": [
+              {
+                "campo": "vivioSiempreLocalidad",
+                "es": "no"
+              },
+              {
+                "campo": "dondeViviaAntes",
+                "es": "otraLocalidadProvincia"
+              }
+            ]
+          },
+          "ayuda": "Escribila como la nombra la persona; no hace falta que coincida con un listado.",
+          "nota": "Papel, IV.8: la línea en blanco de 'De otra localidad de esta provincia ______'. Campo abierto por pedido explícito de QA (21/9): un selector de localidades es demasiada carga en la calle."
         },
         {
           "id": "dondeViviaAntesProvincia",
@@ -511,9 +671,18 @@
           "catalogo": "provincia",
           "selector": true,
           "visibleSi": {
-            "campo": "dondeViviaAntes",
-            "es": "otraProvincia"
-          }
+            "todas": [
+              {
+                "campo": "vivioSiempreLocalidad",
+                "es": "no"
+              },
+              {
+                "campo": "dondeViviaAntes",
+                "es": "otraProvincia"
+              }
+            ]
+          },
+          "nota": "Papel, IV.8: la línea en blanco de 'De otra provincia ______'."
         },
         {
           "id": "dondeViviaAntesPais",
@@ -522,173 +691,339 @@
           "catalogo": "pais",
           "selector": true,
           "visibleSi": {
-            "campo": "dondeViviaAntes",
-            "es": "otroPais"
-          }
+            "todas": [
+              {
+                "campo": "vivioSiempreLocalidad",
+                "es": "no"
+              },
+              {
+                "campo": "dondeViviaAntes",
+                "es": "otroPais"
+              }
+            ]
+          },
+          "nota": "Papel, IV.8: la línea en blanco de 'De otro país ______'."
         },
         {
           "id": "dondeViviaAntesPaisOtro",
           "etiqueta": "¿Qué país?",
           "tipo": "texto",
           "visibleSi": {
-            "campo": "dondeViviaAntesPais",
-            "es": "otroPais"
+            "todas": [
+              {
+                "campo": "vivioSiempreLocalidad",
+                "es": "no"
+              },
+              {
+                "campo": "dondeViviaAntes",
+                "es": "otroPais"
+              },
+              {
+                "campo": "dondeViviaAntesPais",
+                "es": "otroPais"
+              }
+            ]
           }
         },
         {
           "id": "nivelEducativo",
-          "etiqueta": "10. ¿Cuál es el máximo nivel educativo que cursa o cursó?",
+          "etiqueta": "9. ¿Qué nivel educativo alcanzó/está cursando?",
           "tipo": "enum",
-          "catalogo": "nivelEducativo"
+          "catalogo": "nivelEducativo",
+          "ayuda": "Marcar una sola opción.",
+          "nota": "Papel, IV.9: las 10 opciones del papel ya existían con el mismo código. 'Otro' y 'No sabe / no contesta' quedan retiradas — DECISIÓN CLIENTE 8.9: sin 'NS/NC' la pregunta tiene que poder quedar vacía, así que no es obligatoria."
+        },
+        {
+          "id": "tieneDiscapacidad",
+          "etiqueta": "10. ¿Tiene alguna discapacidad?",
+          "tipo": "enum",
+          "catalogo": "siNoNsnc",
+          "opciones": [
+            {
+              "codigo": "si",
+              "etiqueta": "Si"
+            },
+            {
+              "codigo": "no",
+              "etiqueta": "No"
+            },
+            {
+              "codigo": "nsnc",
+              "etiqueta": "NS/NC"
+            }
+          ],
+          "ayuda": "Marcar una sola opción.",
+          "nota": "Papel, IV.10 ('No → 14'). Clave NUEVA: reemplaza al cuadro del Grupo de Washington (6 dificultades), que deja de preguntarse. DECISIÓN CLIENTE 8.2: el papel no dice qué pasa con NS/NC (solo 'No' tiene flecha), así que NS/NC sigue a la 11 y a la 12. El cambio a `es:\"si\"` es una palabra."
+        },
+        {
+          "id": "cualDiscapacidad",
+          "etiqueta": "11. ¿Nos podría contar cual?",
+          "tipo": "texto",
+          "multilinea": true,
+          "visibleSi": {
+            "campo": "tieneDiscapacidad",
+            "en": [
+              "si",
+              "nsnc"
+            ]
+          },
+          "nota": "Papel, IV.11: una línea abierta, no un catálogo. Texto libre con dato sensible de salud: avisado a SISOC."
         },
         {
           "id": "cuadroDificultades",
-          "etiqueta": "11. ¿Tiene alguna de las siguientes dificultades? ¿En qué grado?",
+          "etiqueta": "¿Tiene alguna de las siguientes dificultades? ¿En qué grado de dificultad?",
           "tipo": "cuadroEnum",
           "catalogo": "gradoDificultad",
           "filas": [
             "dificultadVer",
             "dificultadOir",
             "dificultadCaminar",
+            "dificultadRecordar",
             "dificultadCuidadoPersonal",
             "dificultadComunicarse"
           ],
-          "ayuda": "Set corto del Grupo de Washington: se lee cada dificultad y se marca el grado en la misma fila, como en el papel.",
-          "nota": "Decisión 2026-09-03: se muestra como CUADRO (filas = dificultades, columnas = grados). Cada fila sigue siendo un campo propio (`enCuadro`): el dato exportado no cambia."
+          "deprecado": "El papel reemplaza el set corto del Grupo de Washington por la 10 y la 11. El contenedor no guarda valor propio; las seis filas quedan `soloHistorico`."
         },
         {
           "id": "dificultadVer",
           "etiqueta": "a. Ver, incluso usando lentes",
           "tipo": "enum",
           "catalogo": "gradoDificultad",
-          "enCuadro": "cuadroDificultades"
+          "soloHistorico": true,
+          "nota": "Grupo de Washington (3.1.0): deja de preguntarse, se lee y se reenvía."
         },
         {
           "id": "dificultadOir",
           "etiqueta": "b. Oír, incluso usando audífono",
           "tipo": "enum",
           "catalogo": "gradoDificultad",
-          "enCuadro": "cuadroDificultades"
+          "soloHistorico": true,
+          "nota": "Grupo de Washington (3.1.0): deja de preguntarse, se lee y se reenvía."
         },
         {
           "id": "dificultadCaminar",
           "etiqueta": "c. Caminar o subir escalones",
           "tipo": "enum",
           "catalogo": "gradoDificultad",
-          "enCuadro": "cuadroDificultades"
+          "soloHistorico": true,
+          "nota": "Grupo de Washington (3.1.0): deja de preguntarse, se lee y se reenvía."
+        },
+        {
+          "id": "dificultadRecordar",
+          "etiqueta": "d. Recordar o concentrarse",
+          "tipo": "enum",
+          "catalogo": "gradoDificultad",
+          "soloHistorico": true,
+          "nota": "Grupo de Washington (3.1.0): deja de preguntarse, se lee y se reenvía."
         },
         {
           "id": "dificultadCuidadoPersonal",
-          "etiqueta": "d. Lavarse o vestirse solo/a",
+          "etiqueta": "e. Lavarse o vestirse (autosuficiencia para el cuidado personal)",
           "tipo": "enum",
           "catalogo": "gradoDificultad",
-          "enCuadro": "cuadroDificultades"
+          "soloHistorico": true,
+          "nota": "Grupo de Washington (3.1.0): deja de preguntarse, se lee y se reenvía."
         },
         {
           "id": "dificultadComunicarse",
-          "etiqueta": "e. Comunicarse en su lenguaje habitual",
+          "etiqueta": "f. Comunicarse — entender a los demás o que lo entiendan a usted, usando un lenguaje habitual",
           "tipo": "enum",
           "catalogo": "gradoDificultad",
-          "enCuadro": "cuadroDificultades"
+          "soloHistorico": true,
+          "nota": "Grupo de Washington (3.1.0): deja de preguntarse, se lee y se reenvía."
         },
         {
           "id": "certificadoDiscapacidad",
           "etiqueta": "12. ¿Tiene certificado de discapacidad vigente?",
           "tipo": "enum",
           "catalogo": "siNoNsnc",
+          "opciones": [
+            {
+              "codigo": "si",
+              "etiqueta": "Si"
+            },
+            {
+              "codigo": "no",
+              "etiqueta": "No"
+            },
+            {
+              "codigo": "nsnc",
+              "etiqueta": "NS/NC"
+            }
+          ],
           "visibleSi": {
-            "alguna": [
-              {
-                "campo": "dificultadVer",
-                "noEs": "ninguna"
-              },
-              {
-                "campo": "dificultadOir",
-                "noEs": "ninguna"
-              },
-              {
-                "campo": "dificultadCaminar",
-                "noEs": "ninguna"
-              },
-              {
-                "campo": "dificultadCuidadoPersonal",
-                "noEs": "ninguna"
-              },
-              {
-                "campo": "dificultadComunicarse",
-                "noEs": "ninguna"
-              }
+            "campo": "tieneDiscapacidad",
+            "en": [
+              "si",
+              "nsnc"
             ]
           },
-          "nota": "QA-0045 (17/9): si las cinco dificultades son 'ninguna', se saltan la 12 y la 13 (el papel dice 'pasar a la 14', que no existe: la siguiente es la 15). Matiza QA-0028 (16/9, 'siempre'): se pregunta siempre SALVO ese caso. Con alguna fila sin responder se sigue preguntando."
+          "nota": "Papel, IV.12 ('Si → 14', 'NS/NC → 14'). Misma clave y misma escala que el 3.1.0; cambia la condición: deja de depender de las seis dificultades y pasa a depender de la 10."
         },
         {
           "id": "motivoNoTieneCertificado",
-          "etiqueta": "13. ¿Por qué no lo tiene? (certificado de discapacidad)",
+          "etiqueta": "13. ¿Por qué no lo tiene?",
           "tipo": "enum",
           "catalogo": "motivoNoTieneCertificado",
+          "ayuda": "Marcar una sola opción.",
           "visibleSi": {
             "todas": [
               {
-                "campo": "certificadoDiscapacidad",
-                "es": "no"
+                "campo": "tieneDiscapacidad",
+                "en": [
+                  "si",
+                  "nsnc"
+                ]
               },
               {
-                "alguna": [
-                  {
-                    "campo": "dificultadVer",
-                    "noEs": "ninguna"
-                  },
-                  {
-                    "campo": "dificultadOir",
-                    "noEs": "ninguna"
-                  },
-                  {
-                    "campo": "dificultadCaminar",
-                    "noEs": "ninguna"
-                  },
-                  {
-                    "campo": "dificultadCuidadoPersonal",
-                    "noEs": "ninguna"
-                  },
-                  {
-                    "campo": "dificultadComunicarse",
-                    "noEs": "ninguna"
-                  }
-                ]
+                "campo": "certificadoDiscapacidad",
+                "es": "no"
               }
             ]
           },
-          "nota": "QA-0045: sigue el mismo salto que la 12."
+          "nota": "Papel, IV.13: los 7 códigos ya existían 1:1; solo se reordenaron al orden del papel."
+        }
+      ]
+    },
+    {
+      "id": "situacionFamiliar",
+      "titulo": "Situación familiar",
+      "legacy": "Bloque V",
+      "visibleSi": {
+        "todas": [
+          {
+            "campo": "realizaEntrevista",
+            "es": "si"
+          },
+          {
+            "campo": "personaEntrevistada",
+            "prefijoNoEn": [
+              "r0a5",
+              "r6a13",
+              "r0a13",
+              "r0a14"
+            ]
+          }
+        ]
+      },
+      "nota": "Papel, V. SITUACIÓN FAMILIAR (preguntas 14 a 17).",
+      "campos": [
+        {
+          "id": "tieneHijos",
+          "etiqueta": "14. ¿Tiene hijos?",
+          "tipo": "siNo",
+          "catalogo": "siNo",
+          "opciones": [
+            {
+              "codigo": "si",
+              "etiqueta": "Si"
+            },
+            {
+              "codigo": "no",
+              "etiqueta": "No"
+            }
+          ],
+          "nota": "Papel, V.14. El papel no escribe el salto, pero la 15 y la 16 solo tienen sentido si contestó que sí."
+        },
+        {
+          "id": "cantidadHijos",
+          "etiqueta": "15. ¿Cuántos?",
+          "tipo": "numero",
+          "visibleSi": {
+            "campo": "tieneHijos",
+            "es": "si"
+          },
+          "nota": "Papel, V.15. DECISIÓN CLIENTE 8.10: el papel no pone tope ni relación con la 16; se valida 0–30."
+        },
+        {
+          "id": "cantidadHijosConviven",
+          "etiqueta": "16. ¿Cuantos viven con usted?",
+          "tipo": "numero",
+          "visibleSi": {
+            "campo": "tieneHijos",
+            "es": "si"
+          },
+          "nota": "Papel, V.16 (sin tilde en 'Cuantos', literal — DECISIÓN CLIENTE 8.12). DECISIÓN CLIENTE 8.10: se valida que no supere a la 15 y que no pase de 30."
+        },
+        {
+          "id": "conQuienesVive",
+          "etiqueta": "17. ¿Quiénes conviven con Ud.?",
+          "tipo": "enumMulti",
+          "catalogo": "conQuienesVive",
+          "ayuda": "Leer opciones y marcar las que correspondan.",
+          "nota": "Papel, V.17 (respuesta múltiple). Clave NUEVA; el catálogo ya existía con los 7 códigos del papel, del instrumento AppSheet, y ningún campo lo usaba."
         }
       ]
     },
     {
       "id": "trayectoriaCalle",
-      "titulo": "Trayectoria habitacional",
-      "legacy": "Bloque V",
+      "titulo": "Trayectoria en calle",
+      "legacy": "Bloque VI",
       "visibleSi": {
-        "campo": "realizaEntrevista",
-        "es": "si"
+        "todas": [
+          {
+            "campo": "realizaEntrevista",
+            "es": "si"
+          },
+          {
+            "campo": "personaEntrevistada",
+            "prefijoNoEn": [
+              "r0a5",
+              "r6a13",
+              "r0a13",
+              "r0a14"
+            ]
+          }
+        ]
       },
+      "nota": "Papel, VI. TRAYECTORIA EN CALLE (preguntas 18 a 22).",
       "campos": [
         {
-          "id": "tiempoEnCalle",
-          "etiqueta": "15. Actualmente, ¿cuánto tiempo hace que vive en situación de calle?",
+          "id": "dondeDuermeEstaNoche",
+          "etiqueta": "18. ¿Dónde va a dormir esta noche?",
           "tipo": "enum",
-          "catalogo": "tiempoEnCalle2026"
+          "catalogo": "dondeDuermeNoche",
+          "ayuda": "Marcar una sola opción.",
+          "nota": "Papel, VI.18. Clave NUEVA; el catálogo ya existía con las 5 opciones del papel y ningún campo lo usaba."
+        },
+        {
+          "id": "primeraVezCalle",
+          "etiqueta": "19. ¿Es la primera vez que está en situación de calle?",
+          "tipo": "enum",
+          "catalogo": "primeraVezCalle",
+          "ayuda": "Marcar una sola opción.",
+          "nota": "Papel, VI.19. Clave NUEVA; el catálogo ya existía con exactamente esas 3 opciones. Reemplaza, junto con la 20, a `edadPrimeraVezCalle`."
+        },
+        {
+          "id": "desdeCuandoCalle",
+          "etiqueta": "20. ¿Desde cuándo está en situación de calle?",
+          "tipo": "enum",
+          "catalogo": "desdeCuandoCalle",
+          "ayuda": "Marcar una sola opción.",
+          "nota": "Papel, VI.20. Clave NUEVA a propósito: `tiempoEnCalle` pregunta lo mismo pero con OTRA escala (menos de un mes / 1–3 años / más de 3 años). Cambiarle el catálogo bajo la misma clave dejaría el histórico leído contra una escala que no es la suya. Los tableros de permanencia hay que rehacerlos."
+        },
+        {
+          "id": "tiempoEnCalle",
+          "etiqueta": "Actualmente, ¿cuánto tiempo hace que vive en situación de calle?",
+          "tipo": "enum",
+          "catalogo": "tiempoEnCalle2026",
+          "soloHistorico": true,
+          "nota": "Escala 2026-09, reemplazada por la 20 del papel (otra escala, cero comparabilidad). Se lee y se reenvía."
         },
         {
           "id": "diasDurmioCalleSemana",
-          "etiqueta": "16. La semana pasada, ¿cuántos días durmió en la calle?",
+          "etiqueta": "La semana pasada, ¿cuántos días durmió en la calle?",
           "tipo": "enum",
-          "catalogo": "diasDurmioSemana"
+          "catalogo": "diasDurmioSemana",
+          "soloHistorico": true,
+          "nota": "No está en el papel FINAL. Se lee y se reenvía."
         },
         {
           "id": "dondePasoNoche",
-          "etiqueta": "17. En esa semana, cuando no durmió en la calle, ¿dónde pasó la noche?",
+          "etiqueta": "En esa semana, cuando no durmió en la calle, ¿dónde pasó la noche?",
           "tipo": "enum",
           "catalogo": "dondePasoNoche",
+          "soloHistorico": true,
           "visibleSi": {
             "campo": "diasDurmioCalleSemana",
             "en": [
@@ -699,26 +1034,37 @@
               "soloUnDia"
             ]
           },
-          "nota": "Decisión 2026-09-01: literal del enunciado ('cuando NO durmió en la calle') — oculta si respondió 'Todos los días' o NS/NC."
+          "nota": "No está en el papel FINAL. Se lee y se reenvía."
         },
         {
           "id": "desdeQueNacioEnCalle",
-          "etiqueta": "18. ¿Está en situación de calle desde que nació?",
+          "etiqueta": "¿Está en situación de calle desde que nació?",
           "tipo": "siNo",
-          "deprecado": "QA-0029 (2026-09-16): pregunta que no forma parte del relevamiento definido; se retira. La 18.b queda sin condición."
+          "catalogo": "siNo",
+          "deprecado": "No se usó nunca: el 0 de `edadPrimeraVezCalle` representaba 'desde que nació'. El papel FINAL no lo pregunta."
         },
         {
           "id": "edadPrimeraVezCalle",
-          "etiqueta": "18. ¿Qué edad tenía la primera vez que estuvo en situación de calle? (años)",
+          "etiqueta": "¿Qué edad tenía la primera vez que estuvo en situación de calle? (años)",
           "tipo": "numero",
-          "nota": "CABA: si la diferencia con la edad actual es ≤ 1 año, se considera primera vez en situación de calle."
+          "soloHistorico": true,
+          "nota": "Reemplazada por la 19 (Sí/No) + la 20 (desde cuándo). Se lee y se reenvía."
+        },
+        {
+          "id": "motivosCalle",
+          "etiqueta": "21. ¿Cuáles son los motivos por los que se vió forzado/a u obligado/a a vivir en la calle?",
+          "tipo": "enumMulti",
+          "catalogo": "motivosVivirCalle",
+          "ayuda": "Respuesta múltiple.",
+          "nota": "Papel, VI.21 (literal, con 'vió' — DECISIÓN CLIENTE 8.12). Clave NUEVA: `motivoPrincipalCalle` era UNA sola opción y con categorías agrupadas de CABA; distinta cardinalidad y distinta escala, no se reusa. DECISIÓN CLIENTE 8.11: el papel no dice que 'NS/NC' sea excluyente, así que no se fuerza exclusividad."
         },
         {
           "id": "motivoPrincipalCalle",
-          "etiqueta": "19. ¿Cuál es el principal motivo por el que se encuentra durmiendo en la calle?",
+          "etiqueta": "¿Cuál es el principal motivo por el que se encuentra durmiendo en la calle?",
           "tipo": "enum",
           "catalogo": "motivoPrincipalCalle",
-          "nota": "Una sola opción (antes era multi): categorías agrupadas de CABA (sc30)."
+          "soloHistorico": true,
+          "nota": "Una sola opción, categorías agrupadas de CABA. Reemplazada por la 21, que es múltiple y con otra escala. Se lee y se reenvía; se rompe la serie del motivo principal."
         },
         {
           "id": "otroMotivoCalle",
@@ -727,63 +1073,169 @@
           "visibleSi": {
             "campo": "motivoPrincipalCalle",
             "es": "otro"
-          }
+          },
+          "soloHistorico": true,
+          "nota": "Detalle de una versión anterior: solo se muestra si ya está guardado."
         },
         {
           "id": "contactoFamiliares",
-          "etiqueta": "20. En el último año, ¿con qué frecuencia mantuvo contacto (personalmente, por teléfono, etc.) con familiares que no viven con usted?",
+          "etiqueta": "En el último año, ¿con qué frecuencia mantuvo contacto (personalmente, por teléfono, etc.) con familiares que no viven con usted?",
           "tipo": "enum",
           "catalogo": "frecuenciaContactoFamiliar",
-          "nota": "QA-0005: categorías de frecuencia."
+          "soloHistorico": true,
+          "nota": "No está en el papel FINAL. Se lee y se reenvía."
         },
         {
           "id": "asisteComedor",
-          "etiqueta": "21. ¿Asiste actualmente a algún comedor comunitario o popular?",
+          "etiqueta": "22. ¿Asiste actualmente a algún comedor comunitario o popular?",
           "tipo": "enum",
-          "catalogo": "asisteComedor"
+          "catalogo": "asisteComedor",
+          "ayuda": "Marcar una sola opción.",
+          "nota": "Papel, VI.22. Misma clave y mismos códigos: el papel vuelve a la escala anterior ('todos o casi todos los días', 'de manera ocasional'), así que se RECUPERA la serie AppSheet. Ojo: conviven dos códigos de 'diario' (`todosLosDias` vigente, `todosLosDiasExactos` retirado): no se suman."
         }
       ]
     },
     {
       "id": "actividadEconomica",
       "titulo": "Ingresos y actividad económica",
-      "legacy": "Bloque VI",
+      "legacy": "Bloque VII",
       "visibleSi": {
-        "campo": "realizaEntrevista",
-        "es": "si"
+        "todas": [
+          {
+            "campo": "realizaEntrevista",
+            "es": "si"
+          },
+          {
+            "campo": "personaEntrevistada",
+            "prefijoNoEn": [
+              "r0a5",
+              "r6a13",
+              "r0a13",
+              "r0a14"
+            ]
+          }
+        ]
       },
+      "nota": "Papel, VII. INGRESOS Y ACTIVIDAD ECONÓMICA (la pregunta de actividad va sin número en el papel, más las 23, 24 y 25).",
       "campos": [
         {
           "id": "actividadDineroUltimoMes",
-          "etiqueta": "22. ¿Realizó alguna actividad para obtener dinero en el último mes?",
+          "etiqueta": "En el último mes, ¿realizó alguna actividad para conseguir dinero?",
           "tipo": "enum",
           "catalogo": "siNoNsnc",
-          "nota": "Población de 13 años y más."
+          "opciones": [
+            {
+              "codigo": "si",
+              "etiqueta": "Sí"
+            },
+            {
+              "codigo": "no",
+              "etiqueta": "No"
+            },
+            {
+              "codigo": "nsnc",
+              "etiqueta": "NS/NC"
+            }
+          ],
+          "ayuda": "Marcar una sola opción.",
+          "nota": "Papel, VII, pregunta sin número entre el título del bloque y la 23 ('No → 24', 'NS/NC → 24'). ATENCIÓN: se INVIERTE el salto del 3.1.0 — antes 'NS/NC' también abría el detalle (`en: [\"si\",\"nsnc\"]`); el papel manda que solo 'Sí' abra la 23."
         },
         {
           "id": "queActividad",
-          "etiqueta": "23. ¿Qué actividad realizó?",
+          "etiqueta": "23. ¿Qué actividad?",
           "tipo": "enumMulti",
           "catalogo": "actividadEconomica",
+          "requerido": true,
+          "ayuda": "Respuesta múltiple.",
           "visibleSi": {
             "campo": "actividadDineroUltimoMes",
             "es": "si"
           },
-          "requerido": true,
-          "nota": "QA-0030: conjunto reducido, sin 'Otra'."
+          "nota": "Papel, VII.23 (14 opciones). Misma clave: el papel vuelve a la lista desagregada, así que los 8 códigos retirados en 2026-09 vuelven a estar vigentes y se recupera la serie AppSheet. DECISIÓN CLIENTE 8.9: obligatoria, porque vacía contradice el 'Sí' de la pregunta anterior. DECISIÓN CLIENTE 8.11: 'Ninguna' y 'NS/NC' no se fuerzan como excluyentes (se van a ver marcas como 'Ninguna + Changas')."
         },
         {
           "id": "otraActividad",
           "etiqueta": "Especificar otra actividad",
           "tipo": "texto",
-          "deprecado": "QA-0030 (2026-09-16): se quitó la opción 'Otra (especificar)'."
+          "soloHistorico": true,
+          "visibleSi": {
+            "campo": "queActividad",
+            "incluye": "otra"
+          },
+          "nota": "La 23 del papel no tiene 'Otra (especificar)': solo se muestra si ya está guardado."
+        },
+        {
+          "id": "ingresoAdicional",
+          "etiqueta": "24. ¿Tiene algún ingreso adicional?",
+          "tipo": "enum",
+          "catalogo": "ingresoAdicional",
+          "ayuda": "Marcar una sola opción.",
+          "finalizaSi": [
+            "no",
+            "nsnc"
+          ],
+          "nota": "Papel, VII.24 ('No (Fin formulario)', 'Ns/Nc (Fin formulario)'). Clave NUEVA: el 3.1.0 había unificado filtro y detalle en `ingresosUltimoMes`; el papel los vuelve a separar (24 + 25). El '(Fin formulario)' es ruteo, no texto de opción: lo resuelve `finalizaSi`."
+        },
+        {
+          "id": "tipoIngresoAdicional",
+          "etiqueta": "25. ¿Cuál?",
+          "tipo": "enumMulti",
+          "catalogo": "tipoIngreso",
+          "requerido": true,
+          "ayuda": "Respuesta múltiple.",
+          "visibleSi": {
+            "campo": "ingresoAdicional",
+            "es": "si"
+          },
+          "nota": "Papel, VII.25, nivel 1. DECISIÓN CLIENTE 8.9: obligatoria, porque vacía contradice el 'Si' de la 24. Las subopciones del papel se modelan como dos campos con sangría (DECISIÓN CLIENTE 8.11b): dan un dato inequívoco de a qué programa pertenece cada marca, sin renderer nuevo."
+        },
+        {
+          "id": "programaSocialCual",
+          "etiqueta": "Programa Social · ¿cuál?",
+          "tipo": "enumMulti",
+          "catalogo": "programaSocialPropio",
+          "sangria": true,
+          "visibleSi": {
+            "todas": [
+              {
+                "campo": "ingresoAdicional",
+                "es": "si"
+              },
+              {
+                "campo": "tipoIngresoAdicional",
+                "incluye": "programaSocial"
+              }
+            ]
+          },
+          "nota": "Papel, VII.25, subopciones de 'Programa Social': Volver al trabajo · Acompañamiento Social · Otros."
+        },
+        {
+          "id": "programaSocialHijosCual",
+          "etiqueta": "Programa Social para sus hijos/as · ¿cuáles?",
+          "tipo": "enumMulti",
+          "catalogo": "programaSocialHijos",
+          "sangria": true,
+          "visibleSi": {
+            "todas": [
+              {
+                "campo": "ingresoAdicional",
+                "es": "si"
+              },
+              {
+                "campo": "tipoIngresoAdicional",
+                "incluye": "programaSocialHijos"
+              }
+            ]
+          },
+          "nota": "Papel, VII.25, subopciones de 'Programa Social para sus hijos/as': AUH · Prestación Alimentar · Primeros Años · Mil Días · Beca Progresar."
         },
         {
           "id": "ingresosUltimoMes",
-          "etiqueta": "24. En el último mes, ¿recibió ingresos por…?",
+          "etiqueta": "En el último mes, ¿recibió ingresos por…?",
           "tipo": "enumMulti",
           "catalogo": "ingresoUltimoMes",
-          "nota": "Unifica el filtro '¿tiene algún ingreso adicional?' + '¿cuál?' del formulario anterior."
+          "soloHistorico": true,
+          "nota": "Unificaba el filtro y el detalle; el papel los vuelve a separar en la 24 y la 25. Se lee entero y se reenvía: no se reparte en los campos nuevos (mapear `auh` de la lista plana a `programaSocialHijosCual` sería inventar el padre)."
         },
         {
           "id": "programaProvincialCual",
@@ -793,15 +1245,26 @@
             "campo": "ingresosUltimoMes",
             "incluye": "programasProvinciales"
           },
-          "nota": "QA-0031."
+          "soloHistorico": true,
+          "nota": "QA-0031. Detalle de una versión anterior: solo se muestra si ya está guardado."
         }
       ]
     },
     {
       "id": "cierre",
       "titulo": "Cierre",
-      "descripcion": "Registro de la app (no está en el instrumento papel).",
+      "descripcion": "Agradecimiento y finalización de la entrevista.",
+      "nota": "Papel, CIERRE. La fecha/hora de cierre y la firma son máquina de la app, no están en el instrumento papel (DECISIÓN CLIENTE 8.7: la firma se mantiene).",
       "campos": [
+        {
+          "id": "avisoCierre",
+          "etiqueta": "Cierre",
+          "tipo": "aviso",
+          "tono": "info",
+          "icono": "checkmark-done-outline",
+          "texto": "Agradecimiento y finalización de la entrevista.",
+          "nota": "Papel, CIERRE, literal."
+        },
         {
           "id": "fechaHoraFin",
           "etiqueta": "Fecha y hora de cierre",
@@ -813,69 +1276,20 @@
           "id": "firmaEncuestador",
           "etiqueta": "Firma del encuestador/a",
           "tipo": "firma",
-          "requerido": true
+          "requerido": true,
+          "nota": "DECISIÓN CLIENTE 8.7: no está en el papel; se mantiene como registro de la app."
         }
       ]
     }
   ],
   "variantes": {
-    "$comentario": "QA-0022 (2026-09-16, modificado el 17/9: piso 14): formulario abreviado para 14–18 (autonomía progresiva). El conjunto de preguntas es una PROPUESTA de la app — QA pidió 'aplicar el formulario abreviado previamente definido' pero ese formulario no existe todavía. Se excluyen las preguntas de número de documento e ingresos; el resto del instrumento se mantiene. Cambiar el conjunto es editar la lista `campos` de `adolescente`, sin tocar código.",
-    "reglas": [
-      {
-        "cuando": {
-          "campo": "personaEntrevistada",
-          "prefijoEn": [
-            "r14a18",
-            "noSeObserva"
-          ]
-        },
-        "variante": "adolescente"
-      }
-    ],
+    "$comentario": "Formulario FINAL PAPEL: un solo cuestionario. La variante `adolescente` (2026-09) queda eliminada — el papel no tiene versión abreviada. El catálogo `varianteCuestionario` conserva el código para leer los casos ya guardados: `varianteEfectiva` devuelve 'completo' para ellos, que es lo correcto.",
     "completo": {
       "todos": true
-    },
-    "adolescente": {
-      "descripcion": "Formulario abreviado (14 a 18 años / edad no observada).",
-      "campos": [
-        "nombre",
-        "apellido",
-        "fechaNacimiento",
-        "grupoFamiliar",
-        "documentoTipo",
-        "paisEmisor",
-        "paisEmisorOtro",
-        "motivoNoTieneDocumento",
-        "identidadGenero",
-        "dondeNacio",
-        "dondeNacioLocalidad",
-        "dondeNacioProvincia",
-        "dondeNacioPais",
-        "dondeNacioPaisOtro",
-        "dondeViviaAntes",
-        "dondeViviaAntesLocalidad",
-        "dondeViviaAntesProvincia",
-        "dondeViviaAntesPais",
-        "dondeViviaAntesPaisOtro",
-        "nivelEducativo",
-        "cuadroDificultades",
-        "certificadoDiscapacidad",
-        "motivoNoTieneCertificado",
-        "tiempoEnCalle",
-        "diasDurmioCalleSemana",
-        "dondePasoNoche",
-        "edadPrimeraVezCalle",
-        "motivoPrincipalCalle",
-        "otroMotivoCalle",
-        "contactoFamiliares",
-        "asisteComedor",
-        "actividadDineroUltimoMes",
-        "queActividad"
-      ]
     }
   },
   "estados": {
-    "$comentario": "Se evalúan en orden: 'rechazada' primero. Un caso de 0–13 años se cierra sin entrevista y cuenta como observado, no como respondido.",
+    "$comentario": "Se evalúan en orden: 'rechazada' primero. Un caso de hasta 13 años se cierra sin entrevista y cuenta como persona observada, no como respondida. Para contarlos: estado rechazada con `personaEntrevistada` de prefijo r0a5 o r6a13 (o r0a13 / r0a14 en los casos anteriores a 4.0.0). Los códigos retirados `noRotundo`, `yaEntrevistada` y `otro` SIGUEN listados: si no, un caso histórico caería a 'borrador' al reguardarse.",
     "rechazada": {
       "alguna": [
         {
@@ -893,7 +1307,10 @@
         {
           "campo": "personaEntrevistada",
           "prefijoEn": [
-            "r0a13"
+            "r0a5",
+            "r6a13",
+            "r0a13",
+            "r0a14"
           ]
         }
       ]

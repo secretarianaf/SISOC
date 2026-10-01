@@ -262,6 +262,31 @@ class Encuesta(SoftDeleteModelMixin, models.Model):
         return str(self.id)
 
     @property
-    def sin_entrevista_por_menor(self) -> bool:
-        """Separa al menor de edad de quien se negó o no pudo responder (D2.9)."""
-        return bool(self.es_menor_de_edad) and not self.realiza_entrevista
+    def persona_entrevistada_etiqueta(self) -> str:
+        """Franja y género de la celda observada, con las etiquetas del catálogo."""
+        from datacalle.services.instrumento import persona_entrevistada_legible
+
+        return persona_entrevistada_legible(self.persona_entrevistada)
+
+    @property
+    def sin_entrevista_por_franja(self) -> bool:
+        """Separa a quien no se entrevista por su edad de quien se negó (D2.9).
+
+        Desde el instrumento 4.0.0 eso lo decide la franja etaria observada
+        (`personaEntrevistada`), no `esMenorDeEdad`: no hay más formulario
+        abreviado, así que una persona de 16 años sí se entrevista y una de 13
+        no. La contraparte en SQL es
+        `datacalle.services.encuestas.filtro_sin_entrevista_por_franja`, que
+        tiene el detalle de por qué se conserva la condición vieja en OR.
+
+        El import es local a propósito: `services.encuestas` importa este
+        módulo, y el de `instrumento` entra por el paquete `services`.
+        """
+        from datacalle.services.instrumento import franjas_sin_entrevista
+
+        if self.realiza_entrevista:
+            return False
+        franja = self.persona_entrevistada or ""
+        if franja.startswith(franjas_sin_entrevista()):
+            return True
+        return bool(self.es_menor_de_edad)

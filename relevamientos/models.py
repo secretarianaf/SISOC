@@ -6,6 +6,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.forms import ValidationError
 from django.utils import timezone
+from django.utils.functional import cached_property
 
 from comedores.models import CategoriaComedor, Comedor, Referente, TipoDeComedor
 from core.soft_delete import SoftDeleteModelMixin
@@ -2009,12 +2010,13 @@ class ClasificacionComedor(models.Model):
         verbose_name_plural = "Clasificaciones de Comedor"
 
 
-class ActaComplementaria(OrigenRegistroMixin, models.Model):
+class ActaComplementaria(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Model):
     """Acta complementaria extraordinaria (§12 / §18.5).
 
     Registra, **fuera del ciclo de visitas**, un cambio en la prestación del
-    comedor. Es espontánea: no hay asignación previa desde SISOC, la crea el
-    territorial desde la app sobre un comedor de su zona.
+    comedor. La crea el territorial desde la app sobre un comedor de su zona o
+    se la asigna SISOC desde el popup del backoffice. Pasa por el mismo ciclo
+    de validación del coordinador (N16) que relevamientos y seguimientos.
     """
 
     comedor = models.ForeignKey(
@@ -2044,6 +2046,24 @@ class ActaComplementaria(OrigenRegistroMixin, models.Model):
     def __str__(self):
         comedor = self.comedor.nombre if self.comedor_id else "Sin comedor"
         return f"Acta complementaria ({comedor})"
+
+    @cached_property
+    def sin_cargar(self):
+        """Sin enviar y sin contenido (p. ej. recién asignada desde SISOC): el
+        coordinador no tiene nada que revisar, y un ``Validado`` es definitivo.
+
+        Se calcula una vez por instancia (el detalle lo consulta varias veces):
+        usa el ``prefetch_related("prestaciones")`` si está y, si no, un solo
+        ``exists()``.
+        """
+        if self.estado_validacion is not None:
+            return False
+        if self.observaciones or self.firma or self.fecha_hora:
+            return False
+        cache = getattr(self, "_prefetched_objects_cache", None) or {}
+        if "prestaciones" in cache:
+            return not cache["prestaciones"]
+        return not self.prestaciones.exists()
 
 
 class PrestacionActaComplementaria(models.Model):
@@ -2128,3 +2148,10 @@ class SeguimientoPnud(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Mo
     def __str__(self):
         comedor = self.comedor.nombre if self.comedor_id else "Sin comedor"
         return f"{self.get_formulario_display()} ({comedor})"
+
+    @property
+    def sin_cargar(self):
+        """Sin enviar y sin respuestas (asignado desde SISOC y todavía no
+        completado en la app): el coordinador no tiene nada que revisar, y un
+        ``Validado`` es definitivo."""
+        return self.estado_validacion is None and not self.datos

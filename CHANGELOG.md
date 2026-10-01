@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-10-07 -->
+# Versión SISOC 07.10.2026
+
+## Actualizaciones
+
+- [sin-area] hotfix(infra): el healthcheck de django seguía el redirect a HTTPS y dejaba el contenedor unhealthy. (PR #2622)
+<!-- AUTO-GENERATED RELEASE END: 2026-10-07 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-09-30 -->
 # Versión SISOC 30.09.2026
 

@@ -54,9 +54,7 @@
                                     {% if voucher_ref %}
                                         <a href="{% url 'vat_voucher_detail' voucher_ref.pk %}"
                                            style="color: #E7BA61;
-                                                  text-decoration: underline">
-                                            #{{ voucher_ref.pk }}
-                                        </a>
+                                                  text-decoration: underline">#{{ voucher_ref.pk }}</a>
                                         <span style="color: rgba(255,255,255,0.7);">({{ voucher_ref.get_estado_display }})</span>
                                     {% else %}
                                         -
@@ -68,25 +66,19 @@
                             <small style="color: rgba(255,255,255,0.7);">Créditos totales</small>
                             <div style="font-size: 0.95rem;
                                         color: rgba(255,255,255,0.95);
-                                        margin-top: 0.25rem">
-                                {{ programa_vat.creditos_totales }}
-                            </div>
+                                        margin-top: 0.25rem">{{ programa_vat.creditos_totales }}</div>
                         </div>
                         <div>
                             <small style="color: rgba(255,255,255,0.7);">Créditos actuales</small>
                             <div style="font-size: 0.95rem;
                                         color: rgba(255,255,255,0.95);
-                                        margin-top: 0.25rem">
-                                {{ programa_vat.creditos_actuales }}
-                            </div>
+                                        margin-top: 0.25rem">{{ programa_vat.creditos_actuales }}</div>
                         </div>
                         <div>
                             <small style="color: rgba(255,255,255,0.7);">Cursos asignados</small>
                             <div style="font-size: 0.95rem;
                                         color: rgba(255,255,255,0.95);
-                                        margin-top: 0.25rem">
-                                {{ programa_vat.cursos_asignados }}
-                            </div>
+                                        margin-top: 0.25rem">{{ programa_vat.cursos_asignados }}</div>
                         </div>
                         <div>
                             <small style="color: rgba(255,255,255,0.7);">Asistencia</small>

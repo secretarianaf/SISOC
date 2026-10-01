@@ -64,6 +64,8 @@ def planificar(archivos: list[str]) -> tuple[str, list[str], bool]:
             if partes[2] == "tests":
                 continue
             servicios.add(backends[partes[1]]["service"])
+            # Procesos que corren el mismo código (p. ej. Celery de PAS).
+            servicios.update(backends[partes[1]].get("extra_services", []))
             migrar = True
             continue
         if partes[0] == "frontends":

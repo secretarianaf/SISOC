@@ -11,6 +11,12 @@ Cada entrada describe un backend en ``backends/<nombre>/``:
 - ``origin_env`` / ``default_origin``: dónde escucha el backend en la red de
   Compose.
 - ``service`` / ``migrate_service``: servicios de Compose de web y migración.
+- ``extra_services``: otros servicios con el mismo código (Celery de PAS);
+  el deploy selectivo los recrea junto con el backend.
+- ``favorite_sections``: secciones de filtros favoritos del backend; el core
+  le reenvía esos pedidos.
+- ``ciudadano_contributions``: secciones de Ciudadano 360 que el core le pide
+  ya renderizadas (ciudadanos.detail_contributions).
 """
 
 import json

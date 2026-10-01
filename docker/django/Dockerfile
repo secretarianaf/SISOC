@@ -90,7 +90,8 @@ CMD ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000"]
 FROM base AS migrator
 COPY --from=source /src /sisoc
 ENV DJANGO_SETTINGS_MODULE=config.settings_all
-CMD ["python", "manage.py", "migrate", "--noinput"]
+ENV DJANGO_SERVICE_ROLE=migrator
+CMD ["python", "./docker/django/entrypoint.py"]
 
 # Desarrollo y CI: el código se monta con bind mount (docker-compose.yml). Es
 # el último stage para que `docker compose build` sin target siga igual.

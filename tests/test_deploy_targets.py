@@ -26,6 +26,10 @@ _spec.loader.exec_module(deploy_targets)
         ),
         (["frontends/apps/vpsl/src/App.tsx"], ("selectivo", ["front_vpsl"], False)),
         (
+            ["backends/pas/pas/tasks.py"],
+            ("selectivo", ["backend_pas", "celery_beat", "celery_pas_worker"], True),
+        ),
+        (
             ["backends/dispositivos/datacalle/models.py", "frontends/apps/vpsl/a.ts"],
             ("selectivo", ["backend_dispositivos", "front_vpsl"], True),
         ),

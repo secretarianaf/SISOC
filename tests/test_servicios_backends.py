@@ -7,6 +7,8 @@
 
 import os
 import subprocess
+
+import pytest
 import sys
 from pathlib import Path
 
@@ -59,14 +61,15 @@ def test_el_core_no_instala_apps_de_backends():
 
 
 SCRIPT_BACKEND = """
-import os
 import config, django
-from django.conf import settings
 django.setup()
 from django.apps import apps
 from django.core.management import call_command
 from django.db import connections
 from django.test import Client, override_settings
+from django.urls import URLPattern, URLResolver
+from importlib import import_module
+from django.conf import settings
 
 class SinMigraciones(dict):
     def __contains__(self, key):
@@ -76,6 +79,19 @@ class SinMigraciones(dict):
 
 for app in {core_apps!r}:
     assert not apps.is_installed(app.split(".")[0]), app
+
+def rutas_sin_argumentos(patrones, prefijo=""):
+    for entry in patrones:
+        if isinstance(entry, URLResolver):
+            ruta = str(entry.pattern)
+            if "<" in ruta or "(" in ruta:
+                continue
+            yield from rutas_sin_argumentos(entry.url_patterns, prefijo + ruta)
+        elif isinstance(entry, URLPattern):
+            ruta = str(entry.pattern)
+            if "<" in ruta or "(" in ruta or "^" in ruta:
+                continue
+            yield "/" + prefijo + ruta
 
 with override_settings(
     MIGRATION_MODULES=SinMigraciones(),
@@ -94,27 +110,27 @@ with override_settings(
     usuario = User.objects.create_superuser("probe", "p@example.com", "x")
     cliente = Client(raise_request_exception=True)
     cliente.force_login(usuario)
-    for path in {paths!r}:
-        respuesta = cliente.get(path)
-        assert respuesta.status_code == 200, (path, respuesta.status_code)
-    assert cliente.get("/comedores/").status_code == 404
+    propias = import_module(settings.ROOT_URLCONF).backend_urlpatterns
+    rutas = sorted(set(rutas_sin_argumentos(propias)))
+    assert rutas, "sin rutas sin argumentos"
+    for ruta in rutas:
+        try:
+            respuesta = cliente.get(ruta)
+        except Exception as exc:
+            raise AssertionError(f"{{ruta}}: {{type(exc).__name__}}: {{exc}}") from exc
+        assert respuesta.status_code < 500, (ruta, respuesta.status_code)
+    assert cliente.get("/health/").status_code == 200
+    print("RUTAS", len(rutas))
 print("BACKEND_OK")
 """
 
 
-def test_backend_dispositivos_arranca_y_renderiza_sus_paginas():
+@pytest.mark.parametrize("backend", sorted(BACKENDS))
+def test_backend_arranca_y_sus_paginas_no_fallan(backend):
+    """Cada backend, en su propio proceso, sirve sus rutas sin errores."""
     from config.settings import CORE_APPS  # pylint: disable=import-outside-toplevel
 
-    script = SCRIPT_BACKEND.format(
-        core_apps=CORE_APPS,
-        paths=[
-            "/health/",
-            "/dispositivos/",
-            "/dispositivos/crear",
-            "/datacalle/relevamientos/",
-            "/datacalle/relevamientos/crear/",
-        ],
-    )
-    resultado = _correr("dispositivos_runtime.settings", script)
+    settings_module = BACKENDS[backend]["urlconf"].split(".")[0] + ".settings"
+    resultado = _correr(settings_module, SCRIPT_BACKEND.format(core_apps=CORE_APPS))
 
     assert "BACKEND_OK" in resultado.stdout, resultado.stdout + resultado.stderr[-4000:]

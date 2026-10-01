@@ -19,6 +19,8 @@ SERVICE_ROLE_MAILING_WORKER = "mailing_worker"
 SERVICE_ROLE_USER_IMPORT_WORKER = "user_import_worker"
 SERVICE_ROLE_OCR_WORKER = "ocr_worker"
 SERVICE_ROLE_ENCUESTAS_WORKER = "encuestas_worker"
+# Prepara la DB de la composición completa (config.settings_all) y termina.
+SERVICE_ROLE_MIGRATOR = "migrator"
 
 
 def run_command(cmd, *, stage, **kwargs):
@@ -140,10 +142,12 @@ def fix_migration_history():
             pass
 
 
-def run_django_commands():
-    """
-    Ejecuta los comandos de Django necesarios para la preparacion
-    y el funcionamiento de la aplicacion.
+def preparar_db():
+    """Migraciones, fixtures y grupos: todo lo que deja lista la DB.
+
+    En deploy lo hace solo el migrador (docker-compose.deploy.yml), con el
+    grafo completo: el core sin los backends no puede cargar el grafo de
+    migraciones (docs/operacion/backends_por_servicio.md).
     """
     environment = os.getenv("ENVIRONMENT", "dev").lower()
     run_makemigrations_on_start = (
@@ -175,6 +179,17 @@ def run_django_commands():
         stage="create_test_users",
     )
     run_command(["python", "manage.py", "create_groups"], stage="create_groups")
+
+
+def run_django_commands():
+    """
+    Prepara la DB (salvo SISOC_PREPARAR_DB=false, como en deploy, donde lo hace
+    el migrador) e inicia el servidor.
+    """
+    if os.getenv("SISOC_PREPARAR_DB", "true").lower() == "true":
+        preparar_db()
+    else:
+        logger.info("[skip] La DB la prepara el migrador (SISOC_PREPARAR_DB=false).")
     run_server()
 
 
@@ -252,6 +267,9 @@ def main():
         return
     if service_role == SERVICE_ROLE_ENCUESTAS_WORKER:
         run_encuestas_worker()
+        return
+    if service_role == SERVICE_ROLE_MIGRATOR:
+        preparar_db()
         return
     run_django_commands()
 

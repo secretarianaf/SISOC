@@ -449,19 +449,23 @@ def test_ciudadanos_list_view_build_page_range_sin_total():
 def test_ciudadanos_detail_helpers_contexts(mocker):
     ciudadano = SimpleNamespace(pk=7)
 
+    # La sección de Celiaquía es una contribución renderizada del vertical.
+    from celiaquia import ciudadano_detail  # pylint: disable=import-outside-toplevel
+
     mocker.patch(
-        "ciudadanos.views.obtener_resumen_ciudadano", side_effect=Exception("boom")
+        "celiaquia.ciudadano_detail.obtener_resumen_ciudadano",
+        side_effect=Exception("boom"),
     )
-    log_exc = mocker.patch("ciudadanos.views.logger.exception")
-    out_err = module.CiudadanosDetailView().get_celiaquia_context(ciudadano)
+    logger = Mock()
+    out_err = ciudadano_detail.obtener_contexto(ciudadano, logger)
     assert out_err == {"celiaquia_resumen": None}
-    assert log_exc.called
+    assert logger.exception.called
 
     resumen = SimpleNamespace(legajo_actual=SimpleNamespace())
     obtener_resumen = mocker.patch(
-        "ciudadanos.views.obtener_resumen_ciudadano", return_value=resumen
+        "celiaquia.ciudadano_detail.obtener_resumen_ciudadano", return_value=resumen
     )
-    out_ok = module.CiudadanosDetailView().get_celiaquia_context(ciudadano)
+    out_ok = ciudadano_detail.obtener_contexto(ciudadano, logger)
 
     assert out_ok == {"celiaquia_resumen": resumen}
     obtener_resumen.assert_called_once_with(ciudadano.pk)
@@ -487,7 +491,7 @@ def test_ciudadano_detail_renderiza_resumen_publico_celiaquia(
         creado_en=datetime(2026, 8, 7, 10, 30),
     )
     mocker.patch(
-        "ciudadanos.views.obtener_resumen_ciudadano",
+        "celiaquia.ciudadano_detail.obtener_resumen_ciudadano",
         return_value=ResumenCiudadano(legajo_actual=legajo, historial=(legajo,)),
     )
     client.force_login(superuser)
@@ -896,7 +900,11 @@ def test_ciudadanos_detail_vat_context_resume_por_programa(mocker):
         return_value=_QueryChain(asistencias),
     )
 
-    context = module.CiudadanosDetailView().get_vat_context(ciudadano)
+    from VAT.ciudadano_detail import (  # pylint: disable=import-outside-toplevel
+        obtener_contexto,
+    )
+
+    context = obtener_contexto(ciudadano, Mock())
 
     assert context["vat_creditos_totales"] == 17
     assert context["vat_creditos_disponibles"] == 4

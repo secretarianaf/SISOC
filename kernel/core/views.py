@@ -4,6 +4,7 @@
 import json
 import re
 import logging
+from functools import wraps
 from datetime import datetime
 from pathlib import Path
 
@@ -47,6 +48,7 @@ from core.services.favorite_filters import (
     obtener_configuracion_seccion,
     obtener_items_obsoletos,
 )
+from core.backend_proxy import backend_de_seccion_favorita, reenviar_a_backend
 from users.territorial_scope import get_geography_scope_map
 
 logger = logging.getLogger(__name__)
@@ -268,9 +270,41 @@ def _filtros_favoritos_post(request):
     return JsonResponse(response_data, status=status_code)
 
 
+def _reenviar_seccion_de_backend(vista):
+    """Reenvía al backend dueño los favoritos de secciones que el core no tiene.
+
+    Cada app registra la configuración de sus secciones al arrancar. Una
+    sección de un backend (config/backends.json, ``favorite_sections``) no está
+    registrada en el core, así que el pedido se atiende allá, con el mismo
+    proxy que sus páginas.
+    """
+
+    @wraps(vista)
+    def envoltura(request, *args, **kwargs):
+        if "pk" in kwargs:
+            seccion = (
+                FiltroFavorito.objects.filter(pk=kwargs["pk"], usuario=request.user)
+                .values_list("seccion", flat=True)
+                .first()
+            )
+        elif request.method == "GET":
+            seccion = request.GET.get("seccion")
+        else:
+            seccion = _parsear_datos_request(request).get("seccion")
+        seccion = str(seccion or "").strip()
+        if seccion and obtener_configuracion_seccion(seccion) is None:
+            backend = backend_de_seccion_favorita(seccion)
+            if backend is not None:
+                return reenviar_a_backend(request, backend)
+        return vista(request, *args, **kwargs)
+
+    return envoltura
+
+
 @ensure_csrf_cookie
 @login_required
 @require_http_methods(["GET", "POST"])
+@_reenviar_seccion_de_backend
 def filtros_favoritos(request):
     """Lista o crea filtros favoritos para el usuario actual."""
     if request.method == "GET":
@@ -292,6 +326,7 @@ def columnas_preferencias(request):
 
 @login_required
 @require_http_methods(["GET", "DELETE"])
+@_reenviar_seccion_de_backend
 def detalle_filtro_favorito(request, pk):
     """Devuelve o elimina un filtro favorito."""
     favorito = FiltroFavorito.objects.filter(pk=pk, usuario=request.user).first()

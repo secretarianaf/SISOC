@@ -6,10 +6,11 @@ reglas de negocio del upsert (D2.5 y D2.7).
 """
 
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from datacalle.models import Encuesta, Relevamiento
+from datacalle.services.instrumento import franjas_sin_entrevista
 
 
 def _texto(respuestas, clave):
@@ -204,6 +205,27 @@ def get_encuestas_para_listado(relevamiento):
     )
 
 
+def filtro_sin_entrevista_por_franja():
+    """Casos cerrados sin entrevista porque la franja etaria no la admite.
+
+    Desde el instrumento 4.0.0 quién no se entrevista lo decide el rango
+    observado, no ``esMenorDeEdad``: a esas personas el formulario ni siquiera
+    les muestra ``realizaEntrevista``, así que tampoco se les pregunta la fecha
+    de nacimiento de la que salía aquel cálculo. La lista de prefijos la publica
+    el propio cuestionario y ya incluye los de las versiones anteriores
+    (``r0a13`` / ``r0a14``), que es lo que hace que la misma regla cuente bien
+    las dos generaciones de casos que conviven en la base.
+
+    Se conserva en OR la condición vieja (``esMenorDeEdad`` sin
+    ``realizaEntrevista``) para los casos 3.1.0 y anteriores cargados bajo la
+    regla F1, que no siempre dejan la franja en un prefijo de la lista.
+    """
+    por_franja = Q()
+    for prefijo in franjas_sin_entrevista():
+        por_franja |= Q(persona_entrevistada__startswith=prefijo)
+    return Q(realiza_entrevista="") & (por_franja | Q(es_menor_de_edad=True))
+
+
 def resumen_de_casos(relevamiento):
     """Números del operativo, con las reglas de conteo del instrumento 2026.
 
@@ -222,11 +244,14 @@ def resumen_de_casos(relevamiento):
         "casos": casos.count(),
         "personas_observadas": personas,
         "entrevistas": casos.filter(realiza_entrevista="si").count(),
-        # "Rechazada" mezcla dos cosas: quien no quiso o no pudo responder y el
-        # menor de edad a quien no correspondía preguntarle. Se separan mirando
-        # si `realizaEntrevista` llegó o no.
+        # "Rechazada" mezcla dos cosas: quien no quiso o no pudo responder y la
+        # persona a la que no correspondía preguntarle por su edad. Se separan
+        # mirando si `realizaEntrevista` llegó o no, así que los dos conteos son
+        # excluyentes por construcción.
         "sin_entrevista": casos.filter(estado=Encuesta.Estado.RECHAZADA)
         .exclude(realiza_entrevista="")
         .count(),
-        "menores": casos.filter(es_menor_de_edad=True, realiza_entrevista="").count(),
+        "sin_entrevista_por_franja": casos.filter(
+            filtro_sin_entrevista_por_franja()
+        ).count(),
     }

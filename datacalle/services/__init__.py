@@ -17,6 +17,7 @@ from datacalle.services.encuestas import (  # noqa: F401
     RelevamientoNoIniciado,
     aplicar_columnas_indexadas,
     cerrar_relevamiento,
+    filtro_sin_entrevista_por_franja,
     puede_recibir_casos,
     get_encuestas_para_listado,
     get_encuestas_queryset,
@@ -24,8 +25,13 @@ from datacalle.services.encuestas import (  # noqa: F401
     upsert_encuesta,
 )
 from datacalle.services.instrumento import (  # noqa: F401
+    etiqueta_de_celda,
+    franjas_sin_entrevista,
     get_catalogos,
     get_cuestionario,
+    get_diccionario,
     get_version,
+    observacion_asentamiento_legible,
+    persona_entrevistada_legible,
     respuestas_legibles,
 )

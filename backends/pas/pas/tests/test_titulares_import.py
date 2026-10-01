@@ -30,7 +30,9 @@ from pas.services.titulares_import_service import importar_titulares_csv
 def catalogo_importacion():
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
-    estado = PasEstado.objects.create(nombre="Activo")
+    # get_or_create: en MySQL con transaction=True puede seguir la fila que
+    # siembra la migración de PAS si ningún test transaccional vació la DB antes.
+    estado, _ = PasEstado.objects.get_or_create(nombre="Activo")
     return provincia, municipio, estado
 
 

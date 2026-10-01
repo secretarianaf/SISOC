@@ -299,7 +299,7 @@ jobs:
                   def ok(image, *cmd, settings=None):
                       extra = ["-e", f"DJANGO_SETTINGS_MODULE={settings}"] if settings else []
                       return subprocess.run(["docker", "run", "--rm", *env, *extra, image, *cmd]).returncode == 0
-                  core_apps = ["comedores", "organizaciones", "duplas", "pwa", "usuarios"]
+                  core_apps = ["comedores", "gestion_organizaciones", "duplas", "pwa", "usuarios"]
                   for name, spec in backends.items():
                       image = f"sisoc-ci/backend-{name}"
                       settings = spec["urlconf"].split(".")[0] + ".settings"

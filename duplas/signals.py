@@ -3,7 +3,7 @@ Signals para mantener la sincronización bidireccional entre Dupla y Profile.
 
 La relación coordinador <-> duplas es bidireccional:
 - Dupla.coordinador (ForeignKey)
-- Profile.duplas_asignadas (ManyToMany)
+- Dupla.coordinadores (ManyToMany; desde el perfil, profile.duplas_asignadas)
 
 Estos signals aseguran que cuando se modifica uno, el otro se actualice automáticamente.
 """
@@ -11,10 +11,9 @@ Estos signals aseguran que cuando se modifica uno, el otro se actualice automát
 from django.db.models.signals import m2m_changed, post_save, pre_save, post_delete
 from django.dispatch import receiver
 from duplas.models import Dupla
-from users.models import Profile
 
 
-@receiver(m2m_changed, sender=Profile.duplas_asignadas.through)
+@receiver(m2m_changed, sender=Dupla.coordinadores.through)
 def sync_profile_duplas_to_dupla_coordinador(
     sender, instance, action, pk_set, **kwargs
 ):

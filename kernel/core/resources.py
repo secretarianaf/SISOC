@@ -5,7 +5,7 @@ nombre. Los catálogos de un único campo usan el ``ModelResource`` por defecto.
 """
 
 from import_export import fields, resources
-from import_export.widgets import ForeignKeyWidget
+from import_export.widgets import ForeignKeyWidget, Widget
 
 from core.models import (
     Localidad,
@@ -13,6 +13,7 @@ from core.models import (
     Municipio,
     Programa,
     Provincia,
+    organismo_model,
 )
 
 MUNICIPIO_CAMPOS = ("id", "nombre", "provincia")
@@ -62,14 +63,31 @@ class LocalidadResource(resources.ModelResource):
         return str(provincia) if provincia else ""
 
 
+class OrganismoPorNombreWidget(Widget):
+    """``organismo_id`` de Programa, importado y exportado por nombre.
+
+    Resuelve el modelo al usarse y no al importar el módulo: este admin se
+    carga también en backends que no instalan ``organizaciones``.
+    """
+
+    def clean(self, value, row=None, **kwargs):
+        if not value:
+            return None
+        return organismo_model().objects.get(nombre=value).pk
+
+    def render(self, value, obj=None, **kwargs):
+        modelo = organismo_model()
+        if value is None or modelo is None:
+            return ""
+        organismo = modelo.objects.filter(pk=value).first()
+        return organismo.nombre if organismo else ""
+
+
 class ProgramaResource(resources.ModelResource):
-    # Se resuelve el modelo por el FK para no importar `organizaciones` desde core.
     organismo = fields.Field(
         column_name="organismo",
-        attribute="organismo",
-        widget=ForeignKeyWidget(
-            Programa._meta.get_field("organismo").related_model, "nombre"
-        ),
+        attribute="organismo_id",
+        widget=OrganismoPorNombreWidget(),
     )
 
     class Meta:

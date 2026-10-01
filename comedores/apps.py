@@ -8,6 +8,18 @@ class ComedoresConfig(AppConfig):
     def ready(self):
         import comedores.audit_signals  # pylint: disable=unused-import, import-outside-toplevel
         import comedores.signals  # pylint: disable=unused-import, import-outside-toplevel
+        import comedores.cache_signals  # pylint: disable=unused-import, import-outside-toplevel
+        from comedores.cache_signals import (  # pylint: disable=import-outside-toplevel
+            invalidate_comedor_cache_on_soft_delete,
+        )
+        from core.soft_delete.registry import (  # pylint: disable=import-outside-toplevel
+            registrar_backfill_side_effect_handler,
+        )
+
+        registrar_backfill_side_effect_handler(
+            "comedores.invalidate_comedor_cache",
+            invalidate_comedor_cache_on_soft_delete,
+        )
         from comedores.favorite_filters import (  # pylint: disable=import-outside-toplevel
             registrar_filtros_favoritos,
         )

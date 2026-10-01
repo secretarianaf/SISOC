@@ -33,6 +33,7 @@ def test_register_tracked_models_uses_single_source_definitions(mocker):
     fake_definition = SimpleNamespace(
         get_model=lambda: fake_model,
         get_excluded_fields=lambda: ["password"],
+        is_installed=lambda: True,
     )
     register_mock = mocker.Mock()
 
@@ -46,3 +47,38 @@ def test_register_tracked_models_uses_single_source_definitions(mocker):
     registry.register_tracked_models()
 
     register_mock.assert_called_once_with(fake_model, exclude_fields=["password"])
+
+
+def test_register_tracked_models_omite_modelos_de_apps_no_instaladas(mocker):
+    """Un backend no registra modelos de apps que viven en otro proceso."""
+    instalada = SimpleNamespace(
+        get_model=mocker.MagicMock,
+        get_excluded_fields=list,
+        is_installed=lambda: True,
+    )
+    ajena = SimpleNamespace(
+        get_model=mocker.Mock(side_effect=AssertionError("no debe importarse")),
+        get_excluded_fields=list,
+        is_installed=lambda: False,
+    )
+    register_mock = mocker.Mock()
+    mocker.patch(
+        "audittrail.registry.get_tracked_model_definitions",
+        return_value=[instalada, ajena],
+    )
+    mocker.patch.object(registry.auditlog, "_registry", {}, create=True)
+    mocker.patch.object(registry.auditlog, "register", register_mock)
+
+    registry.register_tracked_models()
+
+    assert register_mock.call_count == 1
+
+
+def test_la_clave_estatica_no_importa_el_modelo():
+    definicion = next(
+        d
+        for d in constants.get_tracked_model_definitions()
+        if d.label == "Relevamiento DataCalle"
+    )
+
+    assert definicion.get_model_key() == ("datacalle", "relevamiento")

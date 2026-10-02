@@ -38,3 +38,28 @@ configurada con el total correcto, y después se eliminó el registro de prueba.
 - `pytest -n auto`: **5581 passed, 14 skipped**. 2 tests nuevos.
 - Front: **67 tests**, 5 nuevos sobre el cuadro de cupos.
 - `lint`, `typecheck`, `build` y `api:check` en verde.
+
+## Tope del cupo
+
+Cargar un número grande tiraba un 500: `ProvinciaCupo.total_asignado` es un
+`PositiveIntegerField` y en MySQL la columna es `UNSIGNED INT`, con tope
+4.294.967.295. Pasarse hacía que la base devolviera
+`DataError: Out of range value for column 'total_asignado'`, una excepción sin
+manejar.
+
+El tope **se deriva del propio campo**, leyendo su `MaxValueValidator`
+(`TOTAL_ASIGNADO_MAXIMO` en `cupo_service`). Hardcodear 4.294.967.295
+significaría que si el campo cambia de tipo, el límite queda viejo y vuelve el
+error.
+
+Se valida en tres lugares, y cada uno cubre una entrada distinta:
+
+| Dónde | Qué cubre |
+| --- | --- |
+| `ConfigurarCupoSerializer` | la API: devuelve 400 con el error en el campo |
+| `CupoService.configurar_total` | la pantalla Django, que entra por el service |
+| El input de React | avisa mientras se escribe, sin viaje al servidor |
+
+Verificado por los bordes: 4.294.967.295 se acepta, 4.294.967.296 da 400. El
+front deshabilita Guardar y muestra el rango; también rechaza decimales, porque
+la columna guarda enteros.

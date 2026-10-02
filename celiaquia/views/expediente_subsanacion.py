@@ -1,6 +1,7 @@
 import logging
 from django.views import View
 from django.http import HttpResponseNotAllowed
+from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
@@ -46,42 +47,10 @@ class ExpedienteConfirmSubsanacionView(View):
             expediente=exp,
             revision_tecnico=RevisionTecnico.SUBSANAR,
         )
-
-        if legajo.estado_validacion_renaper == 3:
-            return error_response(
-                "El legajo tiene una subsanación Renaper pendiente.",
-                status=400,
-            )
-
-        # Verificar que tenga los archivos obligatorios
-        if not legajo.archivo2 or not legajo.archivo3:
-            return error_response(
-                "El legajo no tiene los archivos obligatorios (archivo2 y archivo3).",
-                status=400,
-            )
-
-        # Debe haberse cargado al menos un archivo de subsanación (evidencia
-        # nueva) antes de confirmar.
-        if not SubsanacionService.tiene_evidencia(legajo):
-            return error_response(
-                "Debés adjuntar al menos un archivo de subsanación antes de "
-                "confirmar.",
-                status=400,
-            )
-
-        # Cambiar a SUBSANADO
-        legajo.revision_tecnico = RevisionTecnico.SUBSANADO
-        legajo.modificado_en = timezone.now()
-        legajo.subsanacion_enviada_en = timezone.now()
-        legajo.subsanacion_usuario = request.user
-        legajo.save()
-
-        logger.info(
-            "Subsanación individual confirmada - Legajo: %s, Usuario: %s",
-            legajo.pk,
-            request.user.id,
-        )
-
+        try:
+            SubsanacionService.confirmar(legajo, request.user)
+        except ValidationError as exc:
+            return error_response("; ".join(exc.messages), status=400)
         return success_response("Subsanación confirmada correctamente.")
 
     def _confirmar_masiva(self, request, exp):

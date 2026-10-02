@@ -1458,6 +1458,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/ComentarioLegajo'
           description: ''
+  /api/celiaquia/legajos/{id}/confirmar-subsanacion/:
+    post:
+      operationId: legajos_confirmar_subsanacion_create
+      description: |-
+        Pasa el legajo de SUBSANAR a SUBSANADO.
+
+        Es el paso que faltaba: responder una subsanacion sube la evidencia y
+        marca la subsanacion como RESPONDIDA, pero **no cambia el estado del
+        legajo**. Sin confirmar, el legajo sigue en SUBSANAR y la tecnica no
+        puede volver a aprobarlo ni rechazarlo.
+
+        Exige lo mismo que la pantalla: archivos obligatorios cargados,
+        evidencia de subsanacion adjunta y que no haya una subsanacion RENAPER
+        pendiente.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente Ciudadano.
+        required: true
+      tags:
+      - legajos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Legajo'
+          description: ''
   /api/celiaquia/legajos/{id}/documentos/:
     get:
       operationId: legajos_documentos_list

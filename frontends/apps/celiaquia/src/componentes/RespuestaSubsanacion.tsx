@@ -41,6 +41,18 @@ export function RespuestaSubsanacion({
   const [error, setError] = useState("");
   const [aviso, setAviso] = useState("");
 
+  const confirmar = useMutation({
+    mutationFn: () => api.legajos.confirmarSubsanacion(legajoId),
+    onSuccess: () => {
+      setError("");
+      setAviso("Subsanación confirmada: el legajo vuelve a revisión técnica.");
+      queryClient.invalidateQueries({
+        queryKey: ["expediente", expedienteId, "legajos"],
+      });
+    },
+    onError: (e) => setError(mensajeDeError(e)),
+  });
+
   const responder = useMutation({
     mutationFn: () =>
       api.legajos.responderSubsanacion(legajoId, archivos, {
@@ -48,7 +60,10 @@ export function RespuestaSubsanacion({
       }),
     onSuccess: (r) => {
       setError("");
-      setAviso(r.detail ?? "Archivos cargados.");
+      setAviso(
+        `${r.detail ?? "Archivos cargados."} ` +
+          "Falta confirmar para que vuelva a revisión técnica.",
+      );
       setArchivos([]);
       setDescripcion("");
       queryClient.invalidateQueries({
@@ -140,6 +155,23 @@ export function RespuestaSubsanacion({
             Adjuntá al menos un archivo
           </Typography>
         ) : null}
+      </Stack>
+
+      <Stack spacing={0.5}>
+        <Button
+          variant="outlined"
+          size="small"
+          color="success"
+          disabled={deshabilitado || confirmar.isPending}
+          onClick={() => confirmar.mutate()}
+          sx={{ alignSelf: "flex-start" }}
+        >
+          {confirmar.isPending ? "Confirmando…" : "Confirmar subsanación"}
+        </Button>
+        <Typography variant="caption" color="text.secondary">
+          Subir la evidencia no alcanza: hasta que no confirmes, el legajo sigue
+          en SUBSANAR y no se puede aprobar ni rechazar.
+        </Typography>
       </Stack>
     </Stack>
   );

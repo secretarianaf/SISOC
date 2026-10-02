@@ -64,6 +64,31 @@ forma asincrónica, así que las aserciones sobre la llamada van con `waitFor`. 
 `input.files` es de solo lectura en jsdom: hay que definirlo con
 `Object.defineProperty`.
 
+## Faltaba el paso de confirmar la subsanación
+
+Reportado como "cargo los archivos, envío el comentario y el estado no cambia,
+así que no puedo aprobar ni desaprobar".
+
+`SubsanacionService.responder` sube la evidencia y marca la **subsanación** como
+RESPONDIDA, pero **no toca `legajo.revision_tecnico`**, que sigue en `SUBSANAR`.
+Lo que mueve el estado a `SUBSANADO` —y con eso habilita volver a evaluar— es
+un paso aparte: `confirmar-subsanacion`, que estaba en Django y no en la API.
+
+La lógica vivía inline en `ExpedienteConfirmSubsanacionView`. Se extrajo a
+`SubsanacionService.confirmar` y `exigir_puede_confirmar`, con sus cuatro
+guards: el legajo en SUBSANAR, sin subsanación RENAPER pendiente, con archivo2 y
+archivo3 cargados, y con evidencia adjunta. La vista Django delega.
+
+Endpoint nuevo: `POST legajos/{id}/confirmar-subsanacion/`.
+
+**Quién confirma: la provincia o un admin, no coordinación.** Es quien sube la
+evidencia. Lo descubrí porque mi primer test usaba un coordinador y daba 403;
+quedó un test que fija esa regla.
+
+En la pantalla, el botón va acompañado de una línea explícita —"subir la
+evidencia no alcanza"— y el aviso posterior a enviar los archivos dice que falta
+confirmar. El paso es poco intuitivo y esconderlo fue justamente el bug.
+
 ## Pendiente
 
 - La pantalla **Django** de detalle pesa 3,9 MB con 5 filas con error, porque

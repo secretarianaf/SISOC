@@ -99,6 +99,7 @@ from celiaquia.services.documentos_service import DocumentosService
 from core.models import Localidad, Municipio, Nacionalidad, Sexo
 from users.territorial_scope import apply_territorial_scope
 from celiaquia.permissions import (
+    can_confirm_subsanacion,
     can_edit_legajo_files,
     exigir_acceso_nacion_a_comentarios,
 )
@@ -932,6 +933,35 @@ class LegajoViewSet(viewsets.ReadOnlyModelViewSet):
                     "motivo": ComentariosTecnicosService.texto_concatenado(legajo),
                 }
             ).data
+        )
+
+    @extend_schema(request=None, responses=LegajoSerializer)
+    @action(detail=True, methods=["post"], url_path="confirmar-subsanacion")
+    def confirmar_subsanacion(self, request, pk=None):
+        """Pasa el legajo de SUBSANAR a SUBSANADO.
+
+        Es el paso que faltaba: responder una subsanacion sube la evidencia y
+        marca la subsanacion como RESPONDIDA, pero **no cambia el estado del
+        legajo**. Sin confirmar, el legajo sigue en SUBSANAR y la tecnica no
+        puede volver a aprobarlo ni rechazarlo.
+
+        Exige lo mismo que la pantalla: archivos obligatorios cargados,
+        evidencia de subsanacion adjunta y que no haya una subsanacion RENAPER
+        pendiente.
+        """
+
+        legajo = self.get_object()
+        try:
+            can_confirm_subsanacion(request.user, legajo.expediente)
+        except DjangoPermissionDenied as exc:
+            raise PermissionDenied(str(exc) or "Permiso denegado.") from exc
+        try:
+            SubsanacionService.confirmar(legajo, request.user)
+        except DjangoValidationError as exc:
+            raise _traducir_error(exc) from exc
+        legajo.refresh_from_db()
+        return Response(
+            LegajoSerializer(legajo, context=self.get_serializer_context()).data
         )
 
     @extend_schema(

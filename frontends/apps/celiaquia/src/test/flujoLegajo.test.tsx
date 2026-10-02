@@ -22,6 +22,9 @@ const guardarValidacionRenaper = vi
 const responderSubsanacion = vi
   .fn()
   .mockResolvedValue({ detail: "Archivos cargados." });
+const confirmarSubsanacion = vi
+  .fn()
+  .mockResolvedValue({ id: 9, revision_tecnico: "SUBSANADO" });
 const tecnicos = vi
   .fn()
   .mockResolvedValue([{ id: 3, nombre: "Lopez, Juan" }]);
@@ -29,7 +32,12 @@ const asignarTecnico = vi.fn().mockResolvedValue({});
 
 vi.mock("../api", () => ({
   api: {
-    legajos: { validarRenaper, guardarValidacionRenaper, responderSubsanacion },
+    legajos: {
+      validarRenaper,
+      guardarValidacionRenaper,
+      responderSubsanacion,
+      confirmarSubsanacion,
+    },
     expedientes: { tecnicos, asignarTecnico, desasignarTecnico: vi.fn() },
   },
 }));
@@ -115,6 +123,36 @@ describe("RespuestaSubsanacion", () => {
 
     expect(screen.getByRole("button", { name: /Enviar respuesta/ })).toBeDisabled();
     expect(screen.getByText(/Adjuntá al menos un archivo/)).toBeInTheDocument();
+  });
+
+  it("confirmar es un paso aparte: subir la evidencia no cambia el estado", async () => {
+    // Era el bug: se subian los archivos, se enviaba el comentario, y el
+    // legajo seguia en SUBSANAR, asi que no se podia aprobar ni rechazar.
+    envolver(<RespuestaSubsanacion legajoId={9} expedienteId={4} motivo="x" />);
+
+    const confirmar = screen.getByRole("button", {
+      name: /Confirmar subsanación/,
+    });
+    expect(confirmar).toBeEnabled();
+    fireEvent.click(confirmar);
+
+    await waitFor(() => expect(confirmarSubsanacion).toHaveBeenCalledWith(9));
+    expect(
+      await screen.findByText(/vuelve a revisión técnica/),
+    ).toBeInTheDocument();
+  });
+
+  it("avisa que falta confirmar despues de subir la evidencia", async () => {
+    const { container } = envolver(
+      <RespuestaSubsanacion legajoId={9} expedienteId={4} motivo="x" />,
+    );
+    const input = container.querySelector('input[type="file"]')!;
+    const a = new File(["x"], "frente.pdf");
+    Object.defineProperty(input, "files", { value: [a], configurable: true });
+    fireEvent.change(input);
+    fireEvent.click(screen.getByRole("button", { name: /Enviar respuesta/ }));
+
+    expect(await screen.findByText(/Falta confirmar/)).toBeInTheDocument();
   });
 
   it("acepta varios archivos a la vez, porque son evidencia nueva", async () => {

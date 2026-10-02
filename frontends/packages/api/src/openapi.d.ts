@@ -883,6 +883,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/celiaquia/legajos/{id}/confirmar-subsanacion/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Pasa el legajo de SUBSANAR a SUBSANADO.
+         *
+         *     Es el paso que faltaba: responder una subsanacion sube la evidencia y
+         *     marca la subsanacion como RESPONDIDA, pero **no cambia el estado del
+         *     legajo**. Sin confirmar, el legajo sigue en SUBSANAR y la tecnica no
+         *     puede volver a aprobarlo ni rechazarlo.
+         *
+         *     Exige lo mismo que la pantalla: archivos obligatorios cargados,
+         *     evidencia de subsanacion adjunta y que no haya una subsanacion RENAPER
+         *     pendiente.
+         */
+        post: operations["legajos_confirmar_subsanacion_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/celiaquia/legajos/{id}/documentos/": {
         parameters: {
             query?: never;
@@ -3230,6 +3258,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ComentarioLegajo"];
+                };
+            };
+        };
+    };
+    legajos_confirmar_subsanacion_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Un valor de entero único que identifique este Expediente Ciudadano. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Legajo"];
                 };
             };
         };

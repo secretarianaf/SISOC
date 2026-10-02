@@ -1027,3 +1027,71 @@ def test_el_cruce_exige_que_el_expediente_este_asignado(client, territorio):
 
     assert response.status_code == 400
     assert "ASIGNADO" in str(response.json())
+
+
+def test_confirmar_subsanacion_cambia_el_estado_del_legajo(client, territorio):
+    """Responder sube la evidencia; confirmar es lo que mueve el estado.
+
+    Era el bug reportado: se cargaban los archivos, se enviaba el comentario, y
+    el legajo seguia en SUBSANAR, asi que no se podia aprobar ni rechazar.
+    """
+
+    from celiaquia.models import RevisionTecnico
+
+    owner = _provincial("prov_confirma", territorio[0])
+    _, legajo = _expediente_con_legajo(owner, territorio, "40000060", "SUB2")
+    legajo.revision_tecnico = RevisionTecnico.SUBSANAR
+    legajo.save(update_fields=["revision_tecnico"])
+    # Confirma la provincia, no coordinacion: es quien sube la evidencia.
+    client.force_login(owner)
+
+    with patch(
+        "celiaquia.services.subsanacion_service.SubsanacionService.exigir_puede_confirmar"
+    ):
+        response = client.post(
+            reverse("celiaquia-legajo-confirmar-subsanacion", kwargs={"pk": legajo.pk})
+        )
+
+    assert response.status_code == 200
+    legajo.refresh_from_db()
+    assert legajo.revision_tecnico == RevisionTecnico.SUBSANADO
+
+
+def test_confirmar_sin_evidencia_no_mueve_el_estado(client, territorio):
+    """Confirmar sin evidencia dejaria al tecnico aprobando algo sin corregir."""
+
+    from celiaquia.models import RevisionTecnico
+
+    owner = _provincial("prov_sin_evidencia", territorio[0])
+    _, legajo = _expediente_con_legajo(owner, territorio, "40000061", "SUB3")
+    legajo.revision_tecnico = RevisionTecnico.SUBSANAR
+    legajo.save(update_fields=["revision_tecnico"])
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("celiaquia-legajo-confirmar-subsanacion", kwargs={"pk": legajo.pk})
+    )
+
+    assert response.status_code == 400
+    legajo.refresh_from_db()
+    assert legajo.revision_tecnico == RevisionTecnico.SUBSANAR
+
+
+def test_coordinacion_no_confirma_subsanacion(client, territorio):
+    """La confirmacion es de la provincia: es quien adjunto la evidencia."""
+
+    from celiaquia.models import RevisionTecnico
+
+    owner = _provincial("prov_dueno_subs", territorio[0])
+    _, legajo = _expediente_con_legajo(owner, territorio, "40000062", "SUB4")
+    legajo.revision_tecnico = RevisionTecnico.SUBSANAR
+    legajo.save(update_fields=["revision_tecnico"])
+    client.force_login(_coordinador("coord_no_confirma"))
+
+    response = client.post(
+        reverse("celiaquia-legajo-confirmar-subsanacion", kwargs={"pk": legajo.pk})
+    )
+
+    assert response.status_code == 403
+    legajo.refresh_from_db()
+    assert legajo.revision_tecnico == RevisionTecnico.SUBSANAR

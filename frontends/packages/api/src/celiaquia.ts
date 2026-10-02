@@ -308,6 +308,18 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
         .get<MotivoPreview>(`legajos/${id}/motivo-preview/`)
         .then((r) => r.data),
 
+    /**
+     * Pasa el legajo de SUBSANAR a SUBSANADO.
+     *
+     * Responder una subsanacion sube la evidencia pero **no cambia el estado
+     * del legajo**: sin este paso sigue en SUBSANAR y la tecnica no puede
+     * volver a aprobarlo ni rechazarlo.
+     */
+    confirmarSubsanacion: (id: number) =>
+      http
+        .post<Legajo>(`legajos/${id}/confirmar-subsanacion/`)
+        .then((r) => r.data),
+
     /** La provincia adjunta evidencia nueva para la subsanacion activa. */
     responderSubsanacion: (
       id: number,

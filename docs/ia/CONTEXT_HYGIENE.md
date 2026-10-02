@@ -129,14 +129,14 @@ Expandir si hace falta:
 
 ```bash
 bash scripts/ai/preflight.sh general
-bash scripts/ai/preflight.sh bugfix-view core/views.py
-bash scripts/ai/preflight.sh feature-api comunicados/api_views.py
+bash scripts/ai/preflight.sh bugfix-view kernel/core/views.py
+bash scripts/ai/preflight.sh feature-api backends/sisoc_core/comunicados/api_views.py
 ```
 
 Para consultar o refrescar memoria operativa manualmente:
 
 ```bash
-python scripts/ai/context_memory.py preflight --target core/views.py
+python scripts/ai/context_memory.py preflight --target kernel/core/views.py
 python scripts/ai/context_memory.py scaffold --slug core --title "Core" --summary "Resumen operativo de core" --path core/ --path tests/test_core_*.py
 python scripts/ai/context_memory.py refresh --file docs/contexto/memoria/core.md
 ```

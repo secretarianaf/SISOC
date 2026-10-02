@@ -216,7 +216,15 @@ def get_changed_files() -> list[Path]:
         # Tres puntos: diff desde el merge-base de base..head hasta head.
         # Evita capturar commits ajenos de la rama base cuando ésta avanzó
         # después de que se creó la rama del PR.
-        result = run_git_command("diff", "--name-only", f"{base_sha}...{head_sha}")
+        # -M100% + ACM: un archivo movido sin cambios (rename exacto) no se
+        # vuelve a lintear ni formatear; uno movido y editado sí (queda como A).
+        result = run_git_command(
+            "diff",
+            "--name-only",
+            "-M100%",
+            "--diff-filter=ACM",
+            f"{base_sha}...{head_sha}",
+        )
         return parse_git_paths(result.stdout)
 
     print(

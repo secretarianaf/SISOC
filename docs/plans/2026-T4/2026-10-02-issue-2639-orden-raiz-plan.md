@@ -2,7 +2,7 @@
 
 - **Issue:** #2639
 - **Fecha:** 2026-10-02
-- **Estado:** aprobado por el responsable técnico (juanikitro), pendiente de implementación
+- **Estado:** aprobado por el responsable técnico (juanikitro), implementado en el PR de #2639 (ver "Ajustes durante la implementación")
 - **Base:** `development` @ `9f5af3332`
 
 ## Decisiones cerradas
@@ -142,6 +142,21 @@ Se hace con `git mv`, así `git log --follow` sigue funcionando.
 | Cada movimiento actualiza sus referencias, y la suite, el CI y el deploy a QA pasan | `git grep`, `pytest`, CI y deploy a QA |
 | La decisión sobre `src/` queda registrada | ADR de la fase 6 |
 | `README.md` tiene el mapa de primer nivel | Fase 6 |
+
+## Ajustes durante la implementación
+
+Surgieron de evidencia del repo y los confirmó el responsable técnico:
+
+- **Estáticos por vertical:** el core era el único que corría `collectstatic` y su imagen no trae verticales. Se repartieron igual y `collectstatic` pasó al migrador (composición completa); el core monta `static_root/` en solo lectura.
+- **`PYTHONPATH`:** las imágenes usan `ENV PYTHONPATH=/sisoc/src/backends` para que gunicorn, celery y `manage.py` encuentren `config`.
+- **`docs/contexto/features/`:** duplicaba `docs/registro/prs/`; se borró y el bot dejó de generarlo, en lugar de ordenarlo por trimestre.
+
+Decisiones de implementación menores:
+
+- Los fixtures de `tests/conftest.py` pasaron al `conftest.py` raíz para que los tests movidos a los verticales los sigan viendo.
+- Se borró el `package-lock.json` vacío de la raíz (el lockfile real es `src/frontends/package-lock.json`).
+- `CODEX.md`, `LLM.md` y `docs/agentes/guia.md` se fusionaron en `AGENTS.md`; `docs/superpowers/plans/`, `docs/ocr.md` y dos análisis sueltos se movieron a `docs/plans/`, `docs/implementaciones/` y `docs/analisis/`.
+- El spike de archivos para agentes es #2645.
 
 ## Riesgos
 

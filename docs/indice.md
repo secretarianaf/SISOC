@@ -85,6 +85,7 @@
 - `docs/registro/README.md`: reglas para registrar cambios y decisiones importantes en `docs/`.
 - `docs/registro/cambios/AAAA-TN/`: historial de cambios importantes, por trimestre.
 - `docs/registro/decisiones/`: decisiones relevantes (ADR livianas).
+- `docs/registro/decisiones/2026-10-02-estructura-src-backends.md`: estructura del repo (`src/backends/`, `src/frontends/`), compose, registros por trimestre y skills.
 - `docs/registro/decisiones/2026-07-28-pas-circuito-cruces.md`: alcance y límites del circuito mensual SINTyS de PAS.
 - `docs/registro/decisiones/2026-07-29-pas-supervivencia-renaper.md`: control diario RENAPER e incompatibilidades de supervivencia PAS.
 - `docs/registro/decisiones/2026-07-16-pas-formacion-vat.md`: Formación PAS permanece desacoplada hasta definir el contrato de integración.

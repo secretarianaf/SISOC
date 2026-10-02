@@ -281,7 +281,7 @@ Son las mismas que ya usa el repo:
 
 ## 10. Calidad y CI
 
-Cuando cambia `frontends/**` o una API consumida por `/v2/`, CI corre:
+Cuando cambia `src/frontends/**` o una API consumida por `/v2/`, CI corre:
 `npm ci`, `lint`, `typecheck`, `test` (Vitest + Testing Library), `build` y el
 chequeo de contrato.
 

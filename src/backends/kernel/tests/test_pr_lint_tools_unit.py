@@ -2,7 +2,10 @@
 
 from pathlib import Path
 import json
+import shutil
 import subprocess
+
+import pytest
 
 from scripts.ci import pr_lint_tools
 
@@ -106,3 +109,47 @@ def test_list_changed_files_excluye_artefactos_generados(monkeypatch, capsys):
     assert pr_lint_tools.list_changed_files("templates") == 0
     emitidos = [Path(item) for item in json.loads(capsys.readouterr().out)]
     assert emitidos == [Path("src/backends/kernel/templates/changelog.html")]
+
+
+@pytest.mark.skipif(
+    shutil.which("git") is None,
+    reason="requiere el ejecutable git para armar el historial",
+)
+def test_get_changed_files_ignora_renames_exactos(tmp_path, monkeypatch):
+    """Un archivo movido sin cambios no se re-lintea; uno movido y editado, sí."""
+
+    def git(*args):
+        subprocess.run(
+            ["git", "-c", "user.email=t@t", "-c", "user.name=t", *args],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+    git("init", "-q")
+    (tmp_path / "movido.html").write_text("<p>igual</p>\n", encoding="utf-8")
+    (tmp_path / "editado.html").write_text("<p>antes</p>\n" * 5, encoding="utf-8")
+    (tmp_path / "tocado.py").write_text("x = 1\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-q", "-m", "base")
+    base = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=tmp_path, capture_output=True, text=True
+    ).stdout.strip()
+
+    (tmp_path / "src").mkdir()
+    git("mv", "movido.html", "src/movido.html")
+    git("mv", "editado.html", "src/editado.html")
+    (tmp_path / "src/editado.html").write_text(
+        "<p>antes</p>\n" * 4 + "<p>despues</p>\n", encoding="utf-8"
+    )
+    (tmp_path / "tocado.py").write_text("x = 2\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-q", "-m", "mover")
+
+    monkeypatch.setattr(pr_lint_tools, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(pr_lint_tools, "get_diff_range", lambda: (base, "HEAD"))
+
+    assert sorted(pr_lint_tools.get_changed_files()) == [
+        Path("src/editado.html"),
+        Path("tocado.py"),
+    ]

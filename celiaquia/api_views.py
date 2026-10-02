@@ -57,6 +57,7 @@ from celiaquia.api_serializers import (
     MotivoPreviewSerializer,
     ResponderSubsanacionSerializer,
     PreviewExcelResultadoSerializer,
+    ReporteSerializer,
     ReprocesoResultadoSerializer,
     PreviewExcelSerializer,
     ProvinciaCupoSerializer,
@@ -105,6 +106,7 @@ from celiaquia.permissions import (
 )
 from celiaquia.services import registros_erroneos_service, validacion_renaper_service
 from celiaquia.services.comentarios_tecnicos_service import ComentariosTecnicosService
+from celiaquia.services.reporte_service import build_report_payload
 from celiaquia.services.subsanacion_service import SubsanacionService
 from celiaquia.services.expediente_service import ExpedienteService
 from celiaquia.services.familia_service import FamiliaService
@@ -790,6 +792,32 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
         except DjangoValidationError as exc:
             raise _traducir_error(exc) from exc
         return Response({"detail": "Tecnico desasignado."})
+
+
+class ReporteViewSet(viewsets.ViewSet):
+    """Reporte de Celiaquia.
+
+    Delega entero en `reporte_service`, el mismo que usa la pantalla Django:
+    las reglas de que cuenta como persona unica o como dupla no se replican.
+    El alcance territorial tambien lo aplica el service.
+    """
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("provincia", int),
+            OpenApiParameter("fecha_desde", str),
+            OpenApiParameter("fecha_hasta", str),
+            OpenApiParameter("expediente_numero", str),
+            OpenApiParameter("documento_persona", str),
+            OpenApiParameter("revision_tecnico", str),
+            OpenApiParameter("resultado_sintys", str),
+            OpenApiParameter("estado_cupo", str),
+            OpenApiParameter("page", int),
+        ],
+        responses=ReporteSerializer,
+    )
+    def list(self, request):
+        return Response(ReporteSerializer(build_report_payload(request)).data)
 
 
 class LegajoViewSet(viewsets.ReadOnlyModelViewSet):

@@ -1944,6 +1944,67 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/celiaquia/reporte/:
+    get:
+      operationId: reporte_list
+      description: |-
+        Reporte de Celiaquia.
+
+        Delega entero en `reporte_service`, el mismo que usa la pantalla Django:
+        las reglas de que cuenta como persona unica o como dupla no se replican.
+        El alcance territorial tambien lo aplica el service.
+      parameters:
+      - in: query
+        name: documento_persona
+        schema:
+          type: string
+      - in: query
+        name: estado_cupo
+        schema:
+          type: string
+      - in: query
+        name: expediente_numero
+        schema:
+          type: string
+      - in: query
+        name: fecha_desde
+        schema:
+          type: string
+      - in: query
+        name: fecha_hasta
+        schema:
+          type: string
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: provincia
+        schema:
+          type: integer
+      - in: query
+        name: resultado_sintys
+        schema:
+          type: string
+      - in: query
+        name: revision_tecnico
+        schema:
+          type: string
+      tags:
+      - reporte
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reporte'
+          description: ''
   /api/celiaquia/tipos-cruce/:
     get:
       operationId: tipos_cruce_list
@@ -3325,6 +3386,156 @@ components:
       - fila_excel
       - id
       - mensaje_error
+    Reporte:
+      type: object
+      description: |-
+        Reporte de Celiaquia.
+
+        Las agregaciones las calcula `reporte_service`, el mismo que usa la
+        pantalla Django. Acá solo se les da forma JSON: las reglas de qué cuenta
+        como persona única o como dupla no se replican.
+      properties:
+        total_casos:
+          type: integer
+        casos_documentos_ok:
+          type: integer
+        casos_documentos_incompletos:
+          type: integer
+        porcentaje_documentos_ok:
+          type: number
+          format: double
+        porcentaje_documentos_incompletos:
+          type: number
+          format: double
+        casos_con_comentarios:
+          type: integer
+        metricas_principales:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        casos_por_instancia:
+          type: object
+          additionalProperties: {}
+        resumen_validacion:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        resumen_sintys:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        resumen_cupo:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        clasificacion_aprobados:
+          type: object
+          additionalProperties: {}
+        tendencia_mensual:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        expedientes_por_provincia:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        casos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReporteCaso'
+        page:
+          type: integer
+        page_size:
+          type: integer
+        detalle_desde:
+          type: integer
+        detalle_hasta:
+          type: integer
+        es_usuario_provincial:
+          type: boolean
+        provincias:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        filtros_activos:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - casos
+      - casos_con_comentarios
+      - casos_documentos_incompletos
+      - casos_documentos_ok
+      - casos_por_instancia
+      - clasificacion_aprobados
+      - detalle_desde
+      - detalle_hasta
+      - es_usuario_provincial
+      - expedientes_por_provincia
+      - filtros_activos
+      - metricas_principales
+      - page
+      - page_size
+      - porcentaje_documentos_incompletos
+      - porcentaje_documentos_ok
+      - provincias
+      - resumen_cupo
+      - resumen_sintys
+      - resumen_validacion
+      - tendencia_mensual
+      - total_casos
+    ReporteCaso:
+      type: object
+      description: Una fila del detalle del reporte, ya clasificada por el service.
+      properties:
+        id:
+          type: integer
+        ciudadano:
+          type: string
+        documento:
+          type: string
+        provincia:
+          type: string
+        expediente_id:
+          type: integer
+          nullable: true
+        expediente_numero:
+          type: string
+        revision_tecnico:
+          type: string
+        resultado_sintys:
+          type: string
+        estado_cupo:
+          type: string
+        archivos_ok:
+          type: boolean
+        clasificacion:
+          type: string
+        creado_en:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - archivos_ok
+      - ciudadano
+      - clasificacion
+      - creado_en
+      - documento
+      - estado_cupo
+      - expediente_id
+      - expediente_numero
+      - id
+      - provincia
+      - resultado_sintys
+      - revision_tecnico
     ReprocesoResultado:
       type: object
       description: Resumen de `registros-erroneos/reprocesar`.

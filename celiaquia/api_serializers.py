@@ -147,6 +147,67 @@ class AsignacionTecnicoSerializer(serializers.ModelSerializer):
 # --- Legajos ---------------------------------------------------------------
 
 
+class ReporteCasoSerializer(serializers.Serializer):
+    """Una fila del detalle del reporte, ya clasificada por el service."""
+
+    id = serializers.IntegerField()
+    ciudadano = serializers.CharField(allow_blank=True)
+    documento = serializers.CharField(allow_blank=True)
+    provincia = serializers.CharField(allow_blank=True)
+    expediente_id = serializers.IntegerField(allow_null=True)
+    expediente_numero = serializers.CharField(allow_blank=True)
+    revision_tecnico = serializers.CharField(allow_blank=True)
+    resultado_sintys = serializers.CharField(allow_blank=True)
+    estado_cupo = serializers.CharField(allow_blank=True)
+    archivos_ok = serializers.BooleanField()
+    clasificacion = serializers.CharField(allow_blank=True)
+    creado_en = serializers.DateTimeField(allow_null=True)
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+
+class ReporteSerializer(serializers.Serializer):
+    """Reporte de Celiaquia.
+
+    Las agregaciones las calcula `reporte_service`, el mismo que usa la
+    pantalla Django. Acá solo se les da forma JSON: las reglas de qué cuenta
+    como persona única o como dupla no se replican.
+    """
+
+    total_casos = serializers.IntegerField()
+    casos_documentos_ok = serializers.IntegerField()
+    casos_documentos_incompletos = serializers.IntegerField()
+    porcentaje_documentos_ok = serializers.FloatField()
+    porcentaje_documentos_incompletos = serializers.FloatField()
+    casos_con_comentarios = serializers.IntegerField()
+    metricas_principales = serializers.ListField(child=serializers.DictField())
+    casos_por_instancia = serializers.DictField()
+    resumen_validacion = serializers.ListField(child=serializers.DictField())
+    resumen_sintys = serializers.ListField(child=serializers.DictField())
+    resumen_cupo = serializers.ListField(child=serializers.DictField())
+    clasificacion_aprobados = serializers.DictField()
+    tendencia_mensual = serializers.ListField(child=serializers.DictField())
+    expedientes_por_provincia = serializers.ListField(child=serializers.DictField())
+    casos = ReporteCasoSerializer(many=True)
+    page = serializers.IntegerField()
+    page_size = serializers.IntegerField()
+    detalle_desde = serializers.IntegerField()
+    detalle_hasta = serializers.IntegerField()
+    es_usuario_provincial = serializers.BooleanField()
+    provincias = serializers.ListField(child=serializers.DictField())
+    filtros_activos = serializers.ListField(child=serializers.DictField())
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+
 class ArchivoLegajoSerializer(serializers.Serializer):
     """Estado de uno de los tres slots de documentacion de un legajo.
 

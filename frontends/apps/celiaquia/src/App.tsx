@@ -8,6 +8,7 @@ import { CupoDashboardPage } from "./pages/CupoDashboardPage";
 import { CupoProvinciaPage } from "./pages/CupoProvinciaPage";
 import { PagoListPage } from "./pages/PagoListPage";
 import { PagoDetailPage } from "./pages/PagoDetailPage";
+import { ReportePage } from "./pages/ReportePage";
 import { SinPermisoPage } from "./pages/SinPermisoPage";
 
 export function App() {
@@ -22,6 +23,7 @@ export function App() {
         <Route path="cupos/:provinciaId" element={<CupoProvinciaPage />} />
         <Route path="pagos/:provinciaId" element={<PagoListPage />} />
         <Route path="pagos/expediente/:id" element={<PagoDetailPage />} />
+        <Route path="reporte" element={<ReportePage />} />
         <Route path="sin-permiso" element={<SinPermisoPage />} />
         <Route path="*" element={<Navigate to="/expedientes" replace />} />
       </Routes>

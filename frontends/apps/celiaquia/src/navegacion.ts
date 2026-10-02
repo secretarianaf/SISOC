@@ -30,6 +30,7 @@ export const secciones: NavSection[] = [
         children: [
           { label: "Expedientes", href: "/expedientes" },
           { label: "Cupos por provincia", href: "/cupos" },
+          { label: "Reporte", href: "/reporte" },
         ],
       },
     ],

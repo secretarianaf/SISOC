@@ -22,6 +22,7 @@ import type {
   PreviewExcel,
   ProcesamientoResultado,
   ProvinciaCupo,
+  Reporte,
   UsuarioResumen,
   RegistroErroneo,
   ReprocesoResultado,
@@ -240,6 +241,26 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
       http
         .get(`expedientes/${id}/padron-final/`, { responseType: "blob" })
         .then((r) => r.data as Blob),
+  },
+
+  reporte: {
+    /**
+     * Reporte por provincia, con los mismos numeros que la pantalla Django.
+     *
+     * Las agregaciones las calcula el back: aca no se suma nada, porque las
+     * reglas de persona unica y dupla viven en `reporte_service`.
+     */
+    obtener: (params?: {
+      provincia?: number;
+      fecha_desde?: string;
+      fecha_hasta?: string;
+      expediente_numero?: string;
+      documento_persona?: string;
+      revision_tecnico?: string;
+      resultado_sintys?: string;
+      estado_cupo?: string;
+      page?: number;
+    }) => http.get<Reporte>("reporte/", { params }).then((r) => r.data),
   },
 
   legajos: {

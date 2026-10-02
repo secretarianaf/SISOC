@@ -62,6 +62,62 @@ class CupoService:
         }
 
     @staticmethod
+    def filas_dashboard() -> list:
+        """Una fila por **cada provincia**, tenga cupo configurado o no.
+
+        Las que no tienen `ProvinciaCupo` van con los contadores en `None`: es
+        lo que permite entrar y configurarlas por primera vez. Si solo se
+        listaran las configuradas, una provincia nueva nunca podria recibir
+        cupo desde la pantalla.
+
+        Vivia en `CupoDashboardView`; se extrae para que la API liste lo mismo.
+        """
+
+        filas = []
+        configuradas = (
+            ProvinciaCupo.objects.select_related("provincia")
+            .all()
+            .order_by("provincia__nombre")
+        )
+        for pc in configuradas:
+            try:
+                metricas = CupoService.metrics_por_provincia(pc.provincia)
+            except CupoNoConfigurado:
+                # Defensivo: el registro existe pero quedo inconsistente.
+                metricas = {
+                    "total_asignado": 0,
+                    "usados": 0,
+                    "disponibles": 0,
+                    "fuera": 0,
+                }
+            filas.append(
+                {
+                    "provincia": pc.provincia,
+                    "cupo_id": pc.pk,
+                    "total_asignado": metricas.get("total_asignado", 0),
+                    "usados": metricas.get("usados", 0),
+                    "disponibles": metricas.get("disponibles", 0),
+                    "fuera": metricas.get("fuera", 0),
+                }
+            )
+
+        sin_cupo = Provincia.objects.exclude(
+            id__in=configuradas.values_list("provincia_id", flat=True)
+        ).order_by("nombre")
+        for provincia in sin_cupo:
+            filas.append(
+                {
+                    "provincia": provincia,
+                    "cupo_id": None,
+                    "total_asignado": None,
+                    "usados": None,
+                    "disponibles": None,
+                    "fuera": None,
+                }
+            )
+        return filas
+
+    @staticmethod
     def lista_ocupados_por_provincia(provincia: Provincia):
         """
         Titulares activos que ocupan cupo.

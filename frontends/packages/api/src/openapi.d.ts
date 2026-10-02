@@ -1177,6 +1177,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/celiaquia/reporte/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Reporte de Celiaquia.
+         *
+         *     Delega entero en `reporte_service`, el mismo que usa la pantalla Django:
+         *     las reglas de que cuenta como persona unica o como dupla no se replican.
+         *     El alcance territorial tambien lo aplica el service.
+         */
+        get: operations["reporte_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/celiaquia/tipos-cruce/": {
         parameters: {
             query?: never;
@@ -1912,6 +1935,75 @@ export interface components {
             readonly creado_en: string;
             /** Format: date-time */
             procesado_en?: string | null;
+        };
+        /**
+         * @description Reporte de Celiaquia.
+         *
+         *     Las agregaciones las calcula `reporte_service`, el mismo que usa la
+         *     pantalla Django. Acá solo se les da forma JSON: las reglas de qué cuenta
+         *     como persona única o como dupla no se replican.
+         */
+        Reporte: {
+            total_casos: number;
+            casos_documentos_ok: number;
+            casos_documentos_incompletos: number;
+            /** Format: double */
+            porcentaje_documentos_ok: number;
+            /** Format: double */
+            porcentaje_documentos_incompletos: number;
+            casos_con_comentarios: number;
+            metricas_principales: {
+                [key: string]: unknown;
+            }[];
+            casos_por_instancia: {
+                [key: string]: unknown;
+            };
+            resumen_validacion: {
+                [key: string]: unknown;
+            }[];
+            resumen_sintys: {
+                [key: string]: unknown;
+            }[];
+            resumen_cupo: {
+                [key: string]: unknown;
+            }[];
+            clasificacion_aprobados: {
+                [key: string]: unknown;
+            };
+            tendencia_mensual: {
+                [key: string]: unknown;
+            }[];
+            expedientes_por_provincia: {
+                [key: string]: unknown;
+            }[];
+            casos: components["schemas"]["ReporteCaso"][];
+            page: number;
+            page_size: number;
+            detalle_desde: number;
+            detalle_hasta: number;
+            es_usuario_provincial: boolean;
+            provincias: {
+                [key: string]: unknown;
+            }[];
+            filtros_activos: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** @description Una fila del detalle del reporte, ya clasificada por el service. */
+        ReporteCaso: {
+            id: number;
+            ciudadano: string;
+            documento: string;
+            provincia: string;
+            expediente_id: number | null;
+            expediente_numero: string;
+            revision_tecnico: string;
+            resultado_sintys: string;
+            estado_cupo: string;
+            archivos_ok: boolean;
+            clasificacion: string;
+            /** Format: date-time */
+            creado_en: string | null;
         };
         /** @description Resumen de `registros-erroneos/reprocesar`. */
         ReprocesoResultado: {
@@ -3667,6 +3759,35 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    reporte_list: {
+        parameters: {
+            query?: {
+                documento_persona?: string;
+                estado_cupo?: string;
+                expediente_numero?: string;
+                fecha_desde?: string;
+                fecha_hasta?: string;
+                page?: number;
+                provincia?: number;
+                resultado_sintys?: string;
+                revision_tecnico?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Reporte"][];
+                };
             };
         };
     };

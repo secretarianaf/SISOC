@@ -15,12 +15,14 @@ from celiaquia.api_views import (
     OrganismoViewSet,
     PagoExpedienteViewSet,
     ProvinciaCupoViewSet,
+    ReporteViewSet,
     TipoCruceViewSet,
     TipoDocumentoViewSet,
 )
 
 router = DefaultRouter()
 router.register("expedientes", ExpedienteViewSet, basename="celiaquia-expediente")
+router.register(r"reporte", ReporteViewSet, basename="celiaquia-reporte")
 router.register("legajos", LegajoViewSet, basename="celiaquia-legajo")
 router.register("cupos", ProvinciaCupoViewSet, basename="celiaquia-cupo")
 router.register(

@@ -147,23 +147,29 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
         .get<CatalogosRegistroErroneo>("expedientes/catalogos/")
         .then((r) => r.data),
 
-    /** Municipios, acotados al alcance del usuario. */
-    municipios: (params?: { provincia?: number }) =>
+    /**
+     * Municipios que la correccion de este expediente va a aceptar.
+     *
+     * Van acotados a la provincia del expediente, no al pais: el validador de
+     * la importacion rechaza los de otra provincia con "municipio N no
+     * encontrado".
+     */
+    municipios: (id: number) =>
       http
-        .get<OpcionCatalogo[]>("expedientes/municipios/", { params })
+        .get<OpcionCatalogo[]>(`expedientes/${id}/municipios/`)
         .then((r) => r.data),
 
     /**
-     * Localidades para los selectores del alta.
+     * Localidades que la correccion de este expediente va a aceptar.
      *
-     * El back las acota al alcance territorial del usuario, asi que no hace
-     * falta filtrar de este lado.
+     * Acotadas a la provincia del expediente. Con `municipio` se filtra ademas
+     * a ese municipio (campo del beneficiario); sin el devuelve toda la
+     * provincia, que es lo que necesita `localidad_responsable`.
      */
-    localidades: (params?: { provincia?: number; municipio?: number }) =>
+    localidades: (id: number, params?: { municipio?: number }) =>
       http
-        .get<LocalidadLookup[]>("expedientes/localidades/", { params })
+        .get<LocalidadLookup[]>(`expedientes/${id}/localidades/`, { params })
         .then((r) => r.data),
-
     /** Descarta una fila sin importarla. */
     eliminarRegistroErroneo: (id: number, registroId: number) =>
       http

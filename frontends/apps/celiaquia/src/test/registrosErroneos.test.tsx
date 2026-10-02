@@ -25,11 +25,20 @@ vi.mock("../api", () => ({
         ],
         nacionalidades: [{ id: 9, nombre: "ARGENTINA" }],
       }),
-      municipios: vi
-        .fn()
-        .mockResolvedValue([{ id: 129, nombre: "La Plata" }]),
+      municipios: vi.fn().mockResolvedValue([{ id: 129, nombre: "La Plata" }]),
       localidades: vi.fn().mockResolvedValue([
-        { localidad_id: 4468, localidad_nombre: "Tolosa", municipio_id: 129 },
+        {
+          localidad_id: 4468,
+          localidad_nombre: "Tolosa",
+          municipio_id: 129,
+          municipio_nombre: "La Plata",
+        },
+        {
+          localidad_id: 9001,
+          localidad_nombre: "Berisso",
+          municipio_id: 130,
+          municipio_nombre: "Berisso",
+        },
       ]),
       actualizarRegistroErroneo: vi.fn().mockResolvedValue({}),
       reprocesarRegistrosErroneos: vi.fn().mockResolvedValue({}),
@@ -53,6 +62,9 @@ const registro: RegistroErroneo = {
     municipio: "40",
     localidad: "",
     calle: "RUTA 40",
+    nombre_responsable: "Juan",
+    sexo_responsable: "M",
+    localidad_responsable: "Tolosa (Buenos Aires)",
   },
   campo_error: "",
   mensaje_error: "Error al reprocesar: ['municipio 40 no encontrado']",
@@ -133,5 +145,57 @@ describe("RegistrosErroneos", () => {
     expect(
       within(modal).getByText(/no tiene datos para editar/),
     ).toBeInTheDocument();
+  });
+});
+
+
+describe("campos del responsable", () => {
+  it("sexo del responsable es desplegable, no texto libre", async () => {
+    montar();
+    const modal = await abrirEditor();
+
+    expect(
+      within(modal).queryByRole("combobox", { name: /Sexo responsable/ }) !==
+        null ||
+        within(modal)
+          .getByLabelText(/Sexo responsable/)
+          .closest(".MuiSelect-root") !== null,
+    ).toBe(true);
+  });
+
+  it("la localidad del responsable tiene buscador, no un desplegable largo", async () => {
+    // Una provincia llega a 2.699 localidades: con <Select> la pantalla se
+    // vuelve inusable, que es el mismo problema que tiene el front viejo.
+    montar();
+    const modal = await abrirEditor();
+
+    const control = await within(modal).findByRole("combobox", {
+      name: /Localidad responsable/,
+    });
+    expect(control).toHaveAttribute("aria-autocomplete", "list");
+  });
+
+  it("avisa si el texto del Excel no coincide con ninguna localidad", async () => {
+    montar();
+    await abrirEditor();
+
+    expect(
+      await screen.findByText(/El archivo traía "Tolosa \(Buenos Aires\)"/),
+    ).toBeInTheDocument();
+  });
+
+  it("elegir una localidad guarda su id, no el nombre", async () => {
+    // El validador acepta nombre, pero si hay dos iguales falla con
+    // "Localidad responsable ambigua". Mandar el id lo evita.
+    montar();
+    const modal = await abrirEditor();
+
+    const control = await within(modal).findByRole("combobox", {
+      name: /Localidad responsable/,
+    });
+    fireEvent.change(control, { target: { value: "Berisso" } });
+    fireEvent.click(await screen.findByText(/Berisso \(Berisso\)/));
+
+    expect(control).toHaveValue("Berisso (Berisso)");
   });
 });

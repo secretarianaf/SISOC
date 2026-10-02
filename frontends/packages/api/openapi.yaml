@@ -896,6 +896,91 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedLegajoList'
           description: ''
+  /api/celiaquia/expedientes/{id}/localidades/:
+    get:
+      operationId: expedientes_localidades_list
+      description: |-
+        Localidades que la correccion de este expediente va a aceptar.
+
+        Acotadas a la **provincia del expediente**, por lo mismo que los
+        municipios: el validador resuelve `localidad_responsable` contra
+        `Localidad.objects.filter(municipio__provincia_id=provincia_usuario_id)`.
+
+        Con `?municipio=` se acota ademas a ese municipio, que es lo que usa el
+        campo `localidad` del beneficiario. Sin el parametro devuelve toda la
+        provincia, que es lo que necesita `localidad_responsable`: ese campo no
+        tiene municipio propio, el validador lo deriva de la localidad elegida.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      - in: query
+        name: municipio
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLocalidadLookupList'
+          description: ''
+  /api/celiaquia/expedientes/{id}/municipios/:
+    get:
+      operationId: expedientes_municipios_list
+      description: |-
+        Municipios que la corrección de un registro erróneo va a aceptar.
+
+        Va acotado a la **provincia del expediente**, no al país: el validador
+        de la importación arma su caché con
+        `Municipio.objects.filter(provincia_id=provincia_usuario_id)`, así que
+        un municipio de otra provincia se rechaza con "municipio N no
+        encontrado". Ofrecer opciones que después no se aceptan es peor que no
+        ofrecer ninguna.
+
+        Se resuelve la provincia con la misma función que usa la validación,
+        para que el desplegable y el validador no puedan desalinearse.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este Expediente.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOpcionCatalogoList'
+          description: ''
   /api/celiaquia/expedientes/{id}/nomina-sintys/:
     get:
       operationId: expedientes_nomina_sintys_retrieve
@@ -1137,71 +1222,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CatalogosRegistroErroneo'
-          description: ''
-  /api/celiaquia/expedientes/localidades/:
-    get:
-      operationId: expedientes_localidades_list
-      description: |-
-        Localidades para los selectores del alta, acotadas al alcance.
-
-        El filtro territorial es el mismo que aplica la pantalla: un usuario
-        provincial no ve localidades de otra provincia.
-      parameters:
-      - in: query
-        name: municipio
-        schema:
-          type: integer
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      - in: query
-        name: provincia
-        schema:
-          type: integer
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedLocalidadLookupList'
-          description: ''
-  /api/celiaquia/expedientes/municipios/:
-    get:
-      operationId: expedientes_municipios_list
-      description: Municipios, acotados al alcance del usuario y opcionalmente a una
-        provincia.
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      - in: query
-        name: provincia
-        schema:
-          type: integer
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedOpcionCatalogoList'
           description: ''
   /api/celiaquia/expedientes/plantilla-excel/:
     get:

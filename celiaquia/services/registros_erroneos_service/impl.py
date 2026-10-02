@@ -443,6 +443,17 @@ def _build_resumen_importacion_alerta(*, creados_total=0, errores_actuales=0):
 # --- Operaciones -----------------------------------------------------------
 
 
+def provincia_de(usuario, expediente):
+    """Provincia con la que se valida este expediente.
+
+    Es la que usa `_cargar_municipios_cache` para decidir que municipios acepta
+    la importacion. Se expone para que los desplegables de la pantalla ofrezcan
+    exactamente esos y no otros.
+    """
+
+    return _resolver_provincia_id_registro_erroneo(usuario, expediente)
+
+
 def puede_gestionar(usuario) -> bool:
     """Quien puede tocar los registros erroneos de un expediente."""
 

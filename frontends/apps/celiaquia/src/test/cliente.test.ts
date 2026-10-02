@@ -183,10 +183,18 @@ describe("requests de comentarios, subsanacion y lookups", () => {
     expect(llamadas[0].config).toEqual({ responseType: "blob" });
   });
 
-  it("el lookup de localidades propaga los filtros", async () => {
+  it("el lookup de localidades va por expediente y propaga el municipio", async () => {
+    // Las localidades se acotan a la provincia del expediente: el validador
+    // rechaza las de otra provincia.
     const { llamadas, http } = clienteFalso();
-    await celiaquiaApi(http).expedientes.localidades({ provincia: 3 });
-    expect(llamadas[0].url).toBe("expedientes/localidades/");
-    expect(llamadas[0].config).toEqual({ params: { provincia: 3 } });
+    await celiaquiaApi(http).expedientes.localidades(7, { municipio: 129 });
+    expect(llamadas[0].url).toBe("expedientes/7/localidades/");
+    expect(llamadas[0].config).toEqual({ params: { municipio: 129 } });
+  });
+
+  it("los municipios tambien van por expediente", async () => {
+    const { llamadas, http } = clienteFalso();
+    await celiaquiaApi(http).expedientes.municipios(7);
+    expect(llamadas[0].url).toBe("expedientes/7/municipios/");
   });
 });

@@ -464,26 +464,27 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
             ).data
         )
 
-    @extend_schema(
-        parameters=[OpenApiParameter("provincia", int)],
-        responses=OpcionCatalogoSerializer(many=True),
-    )
-    @action(detail=False, methods=["get"], url_path="municipios")
-    def municipios(self, request):
-        """Municipios, acotados al alcance del usuario y opcionalmente a una provincia."""
+    @extend_schema(responses=OpcionCatalogoSerializer(many=True))
+    @action(detail=True, methods=["get"], url_path="municipios")
+    def municipios(self, request, pk=None):
+        """Municipios que la corrección de un registro erróneo va a aceptar.
 
+        Va acotado a la **provincia del expediente**, no al país: el validador
+        de la importación arma su caché con
+        `Municipio.objects.filter(provincia_id=provincia_usuario_id)`, así que
+        un municipio de otra provincia se rechaza con "municipio N no
+        encontrado". Ofrecer opciones que después no se aceptan es peor que no
+        ofrecer ninguna.
+
+        Se resuelve la provincia con la misma función que usa la validación,
+        para que el desplegable y el validador no puedan desalinearse.
+        """
+
+        expediente = self.get_object()
+        provincia_id = registros_erroneos_service.provincia_de(request.user, expediente)
         queryset = Municipio.objects.all()
-        if (
-            is_provincial(request.user)
-            and not is_coordinador(request.user)
-            and not is_admin(request.user)
-        ):
-            queryset = apply_territorial_scope(
-                queryset, request.user, provincia_lookup="provincia_id"
-            )
-        provincia_id = (request.query_params.get("provincia") or "").strip()
-        if provincia_id.isdigit():
-            queryset = queryset.filter(provincia_id=int(provincia_id))
+        if provincia_id:
+            queryset = queryset.filter(provincia_id=provincia_id)
         return Response(
             OpcionCatalogoSerializer(
                 [{"id": m.id, "nombre": m.nombre} for m in queryset.order_by("nombre")],
@@ -492,44 +493,34 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
     @extend_schema(
-        parameters=[
-            OpenApiParameter("provincia", int),
-            OpenApiParameter("municipio", int),
-        ],
+        parameters=[OpenApiParameter("municipio", int)],
         responses=LocalidadLookupSerializer(many=True),
     )
-    @action(detail=False, methods=["get"], url_path="localidades")
-    def localidades(self, request):
-        """Localidades para los selectores del alta, acotadas al alcance.
+    @action(detail=True, methods=["get"], url_path="localidades")
+    def localidades(self, request, pk=None):
+        """Localidades que la correccion de este expediente va a aceptar.
 
-        El filtro territorial es el mismo que aplica la pantalla: un usuario
-        provincial no ve localidades de otra provincia.
+        Acotadas a la **provincia del expediente**, por lo mismo que los
+        municipios: el validador resuelve `localidad_responsable` contra
+        `Localidad.objects.filter(municipio__provincia_id=provincia_usuario_id)`.
+
+        Con `?municipio=` se acota ademas a ese municipio, que es lo que usa el
+        campo `localidad` del beneficiario. Sin el parametro devuelve toda la
+        provincia, que es lo que necesita `localidad_responsable`: ese campo no
+        tiene municipio propio, el validador lo deriva de la localidad elegida.
         """
 
+        expediente = self.get_object()
+        provincia_id = registros_erroneos_service.provincia_de(request.user, expediente)
         queryset = Localidad.objects.select_related("municipio__provincia")
-        if (
-            is_provincial(request.user)
-            and not is_coordinador(request.user)
-            and not is_admin(request.user)
-        ):
-            queryset = apply_territorial_scope(
-                queryset,
-                request.user,
-                provincia_lookup="municipio__provincia_id",
-                municipio_lookup="municipio_id",
-                localidad_lookup="id",
-            )
+        if provincia_id:
+            queryset = queryset.filter(municipio__provincia_id=provincia_id)
 
-        provincia_id = (request.query_params.get("provincia") or "").strip()
-        if provincia_id.isdigit():
-            queryset = queryset.filter(municipio__provincia_id=int(provincia_id))
         municipio_id = (request.query_params.get("municipio") or "").strip()
         if municipio_id.isdigit():
             queryset = queryset.filter(municipio_id=int(municipio_id))
 
-        queryset = queryset.order_by(
-            "municipio__provincia__nombre", "municipio__nombre", "nombre"
-        )
+        queryset = queryset.order_by("municipio__nombre", "nombre")
         return Response(LocalidadLookupSerializer(queryset, many=True).data)
 
     @extend_schema(responses={(200, "application/octet-stream"): bytes})

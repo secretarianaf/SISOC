@@ -15,6 +15,7 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import Autocomplete from "@mui/material/Autocomplete";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -54,7 +55,20 @@ const etiqueta = (campo: string) =>
  * forma de corregirlo: nadie conoce el id interno. Van como desplegable, igual
  * que en la pantalla Django.
  */
-const CAMPOS_CATALOGO = ["sexo", "nacionalidad", "municipio", "localidad"];
+const CAMPOS_CATALOGO = [
+  "sexo",
+  "nacionalidad",
+  "municipio",
+  "localidad",
+  "sexo_responsable",
+];
+
+/**
+ * La localidad del responsable no tiene municipio propio: el validador lo
+ * deriva de la localidad elegida. Asi que hay que ofrecer toda la provincia,
+ * que llega a 2.699 opciones. Con buscador, no con un desplegable largo.
+ */
+const CAMPO_LOCALIDAD_RESPONSABLE = "localidad_responsable";
 
 function ModalEdicion({
   registro,
@@ -76,8 +90,8 @@ function ModalEdicion({
     staleTime: Infinity,
   });
   const municipios = useQuery({
-    queryKey: ["municipios"],
-    queryFn: () => api.expedientes.municipios(),
+    queryKey: ["municipios", expedienteId],
+    queryFn: () => api.expedientes.municipios(expedienteId),
     staleTime: Infinity,
   });
   // Las localidades son 15.394: se piden solo las del municipio elegido, y solo
@@ -89,8 +103,16 @@ function ModalEdicion({
   );
   const localidades = useQuery({
     queryKey: ["localidades", municipioId],
-    queryFn: () => api.expedientes.localidades({ municipio: municipioId }),
+    queryFn: () =>
+      api.expedientes.localidades(expedienteId, { municipio: municipioId }),
     enabled: municipioValido,
+    staleTime: Infinity,
+  });
+
+  const localidadesProvincia = useQuery({
+    queryKey: ["localidades-provincia", expedienteId],
+    queryFn: () => api.expedientes.localidades(expedienteId),
+    enabled: CAMPO_LOCALIDAD_RESPONSABLE in valores,
     staleTime: Infinity,
   });
 
@@ -99,6 +121,7 @@ function ModalEdicion({
       sexo: catalogos.data?.sexos ?? [],
       nacionalidad: catalogos.data?.nacionalidades ?? [],
       municipio: municipios.data ?? [],
+      sexo_responsable: catalogos.data?.sexos ?? [],
       localidad: (localidades.data ?? []).map((l) => ({
         id: l.localidad_id,
         nombre: l.localidad_nombre,
@@ -157,6 +180,44 @@ function ModalEdicion({
             // que es justo lo que destraba la importacion.
             const valorActual = valores[campo] ?? "";
             const enLista = lista.some((o) => String(o.id) === valorActual);
+
+            if (campo === CAMPO_LOCALIDAD_RESPONSABLE) {
+              const lista = localidadesProvincia.data ?? [];
+              const elegida =
+                lista.find((l) => String(l.localidad_id) === valorActual) ?? null;
+              return (
+                <Grid key={campo} size={{ xs: 12, sm: 6 }}>
+                  <Autocomplete
+                    options={lista}
+                    value={elegida}
+                    // El municipio se repite entre provincias y los nombres de
+                    // localidad tambien: se muestra el municipio para desambiguar.
+                    getOptionLabel={(o) =>
+                      `${o.localidad_nombre} (${o.municipio_nombre})`
+                    }
+                    isOptionEqualToValue={(o, v) =>
+                      o.localidad_id === v.localidad_id
+                    }
+                    onChange={(_, o) =>
+                      cambiar(campo, o ? String(o.localidad_id) : "")
+                    }
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        size="small"
+                        label={etiqueta(campo)}
+                        error={invalidos.includes(campo)}
+                        helperText={
+                          valorActual && !elegida
+                            ? `El archivo traía "${valorActual}": elegí la localidad`
+                            : undefined
+                        }
+                      />
+                    )}
+                  />
+                </Grid>
+              );
+            }
 
             return (
               <Grid key={campo} size={{ xs: 12, sm: 6 }}>

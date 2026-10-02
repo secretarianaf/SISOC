@@ -684,21 +684,50 @@ def test_responder_subsanacion_exige_subsanacion_activa(client, territorio):
     assert response.status_code in (400, 403)
 
 
-def test_las_localidades_se_acotan_al_alcance_del_usuario(client, territorio):
-    """El lookup del alta no puede devolver localidades de otra provincia."""
+def test_las_localidades_se_acotan_a_la_provincia_del_expediente(client, territorio):
+    """El desplegable solo puede ofrecer lo que el validador acepta.
 
-    provincia, municipio, localidad = territorio
+    El validador resuelve municipio y localidad contra la provincia del
+    expediente. Ofrecer las del pais entero hacia que el usuario eligiera una
+    valida a la vista y el guardado fallara con "municipio N no encontrado".
+    """
+
+    provincia, _municipio, localidad = territorio
     otra = Provincia.objects.create(nombre="Salta")
     otro_municipio = Municipio.objects.create(nombre="Cafayate", provincia=otra)
     Localidad.objects.create(nombre="Animaná", municipio=otro_municipio)
 
-    client.force_login(_provincial("prov_loc", provincia))
-    response = client.get(reverse("celiaquia-expediente-localidades"))
+    owner = _provincial("prov_loc", provincia)
+    expediente, _ = _expediente_con_legajo(owner, territorio, "40000040", "LOC1")
+    client.force_login(owner)
+
+    response = client.get(
+        reverse("celiaquia-expediente-localidades", kwargs={"pk": expediente.pk})
+    )
 
     assert response.status_code == 200
     nombres = {fila["localidad_nombre"] for fila in response.json()}
     assert localidad.nombre in nombres
     assert "Animaná" not in nombres
+
+
+def test_los_municipios_coinciden_con_los_que_acepta_el_validador(client, territorio):
+    provincia, municipio, _localidad = territorio
+    otra = Provincia.objects.create(nombre="Chubut")
+    Municipio.objects.create(nombre="Rawson", provincia=otra)
+
+    owner = _provincial("prov_muni", provincia)
+    expediente, _ = _expediente_con_legajo(owner, territorio, "40000041", "MUN1")
+    client.force_login(owner)
+
+    response = client.get(
+        reverse("celiaquia-expediente-municipios", kwargs={"pk": expediente.pk})
+    )
+
+    assert response.status_code == 200
+    nombres = {fila["nombre"] for fila in response.json()}
+    assert municipio.nombre in nombres
+    assert "Rawson" not in nombres
 
 
 def test_la_plantilla_de_excel_se_descarga(client, territorio):

@@ -516,6 +516,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/celiaquia/expedientes/{id}/localidades/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Localidades que la correccion de este expediente va a aceptar.
+         *
+         *     Acotadas a la **provincia del expediente**, por lo mismo que los
+         *     municipios: el validador resuelve `localidad_responsable` contra
+         *     `Localidad.objects.filter(municipio__provincia_id=provincia_usuario_id)`.
+         *
+         *     Con `?municipio=` se acota ademas a ese municipio, que es lo que usa el
+         *     campo `localidad` del beneficiario. Sin el parametro devuelve toda la
+         *     provincia, que es lo que necesita `localidad_responsable`: ese campo no
+         *     tiene municipio propio, el validador lo deriva de la localidad elegida.
+         */
+        get: operations["expedientes_localidades_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/celiaquia/expedientes/{id}/municipios/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Municipios que la corrección de un registro erróneo va a aceptar.
+         *
+         *     Va acotado a la **provincia del expediente**, no al país: el validador
+         *     de la importación arma su caché con
+         *     `Municipio.objects.filter(provincia_id=provincia_usuario_id)`, así que
+         *     un municipio de otra provincia se rechaza con "municipio N no
+         *     encontrado". Ofrecer opciones que después no se aceptan es peor que no
+         *     ofrecer ninguna.
+         *
+         *     Se resuelve la provincia con la misma función que usa la validación,
+         *     para que el desplegable y el validador no puedan desalinearse.
+         */
+        get: operations["expedientes_municipios_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/celiaquia/expedientes/{id}/nomina-sintys/": {
         parameters: {
             query?: never;
@@ -667,45 +724,6 @@ export interface paths {
          *     15.394 y meterlos en la pantalla la vuelve inusable.
          */
         get: operations["expedientes_catalogos_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/celiaquia/expedientes/localidades/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * @description Localidades para los selectores del alta, acotadas al alcance.
-         *
-         *     El filtro territorial es el mismo que aplica la pantalla: un usuario
-         *     provincial no ve localidades de otra provincia.
-         */
-        get: operations["expedientes_localidades_list"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/celiaquia/expedientes/municipios/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Municipios, acotados al alcance del usuario y opcionalmente a una provincia. */
-        get: operations["expedientes_municipios_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2682,6 +2700,57 @@ export interface operations {
             };
         };
     };
+    expedientes_localidades_list: {
+        parameters: {
+            query?: {
+                municipio?: number;
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
+                page?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Un valor de entero único que identifique este Expediente. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedLocalidadLookupList"];
+                };
+            };
+        };
+    };
+    expedientes_municipios_list: {
+        parameters: {
+            query?: {
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
+                page?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Un valor de entero único que identifique este Expediente. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedOpcionCatalogoList"];
+                };
+            };
+        };
+    };
     expedientes_nomina_sintys_retrieve: {
         parameters: {
             query?: never;
@@ -2883,53 +2952,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CatalogosRegistroErroneo"];
-                };
-            };
-        };
-    };
-    expedientes_localidades_list: {
-        parameters: {
-            query?: {
-                municipio?: number;
-                /** @description Un número de página dentro del conjunto de resultados paginado. */
-                page?: number;
-                provincia?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedLocalidadLookupList"];
-                };
-            };
-        };
-    };
-    expedientes_municipios_list: {
-        parameters: {
-            query?: {
-                /** @description Un número de página dentro del conjunto de resultados paginado. */
-                page?: number;
-                provincia?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedOpcionCatalogoList"];
                 };
             };
         };

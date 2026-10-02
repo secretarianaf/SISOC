@@ -40,7 +40,23 @@ _spec.loader.exec_module(deploy_targets)
         (["requirements/base.txt"], ("completo", [], True)),
         (["docker-compose.deploy.yml"], ("completo", [], True)),
         (["CHANGELOG.md"], ("completo", [], True)),
-        (["backends/sisoc_core/comedores/views.py"], ("completo", [], True)),
+        # El core se despliega solo: el marcador lo resuelve deploy_refresh.sh.
+        (
+            ["backends/sisoc_core/comedores/views.py"],
+            ("selectivo", ["@core"], True),
+        ),
+        (
+            ["backends/sisoc_core/comedores/views.py", "backends/pas/pas/views.py"],
+            (
+                "selectivo",
+                ["@core", "backend_pas", "celery_beat", "celery_pas_worker"],
+                True,
+            ),
+        ),
+        (
+            ["backends/sisoc_core/comedores/views.py", "kernel/core/views.py"],
+            ("completo", [], True),
+        ),
         # Documentación, tests y CI no reinician nada.
         (["docs/registro/prs/PR-1.md", "README.md"], ("ninguno", [], False)),
         (
@@ -58,3 +74,17 @@ def test_sha_desconocido_es_despliegue_completo(capsys):
     deploy_targets.main(["0" * 40, "f" * 40])
 
     assert capsys.readouterr().out.startswith("MODO=completo")
+
+
+def test_servicios_core_son_los_que_corren_la_imagen_del_core():
+    config = {
+        "services": {
+            "django": {"image": "sisoc/core:abc"},
+            "mailing_worker": {"image": "sisoc/core:abc"},
+            "backend_vat": {"image": "sisoc/backend-vat:abc"},
+            "redis": {"image": "redis:7"},
+            "sin_imagen": {},
+        }
+    }
+
+    assert deploy_targets.servicios_core(config) == ["django", "mailing_worker"]

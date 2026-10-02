@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -82,6 +83,7 @@ case "$1 ${2:-} ${3:-}" in
     fi
     exit 0
     ;;
+  "diff --name-only "*) cat "$repo/.diff" ;;
   *) printf 'git falso: comando inesperado: %s\\n' "$*" >&2; exit 2 ;;
 esac
 """,
@@ -278,3 +280,89 @@ def test_checkout_viejo_actualiza_antes_de_exigir_compose_celery(tmp_path):
     assert result.stdout.index(
         "merge --ff-only origin/development"
     ) < result.stdout.index("docker compose -f")
+
+
+CORE_COMPOSE_JSON = json.dumps(
+    {
+        "services": {
+            "django": {"image": "sisoc/core:" + EXPECTED_REVISION},
+            "ocr_worker": {"image": "sisoc/core:" + EXPECTED_REVISION},
+            "backend_pas": {"image": "sisoc/backend-pas:" + EXPECTED_REVISION},
+        }
+    }
+)
+
+
+def _run_selectivo(tmp_path, archivos, compose_json):
+    """Deploy en dry-run con --diff-base: el plan sale de deploy_targets.py."""
+    checkout = _backend_checkout(tmp_path)
+    operacion = checkout / "scripts" / "operacion"
+    (operacion / "deploy_targets.py").write_bytes(
+        (REPO_ROOT / "scripts" / "operacion" / "deploy_targets.py").read_bytes()
+    )
+    (checkout / "config").mkdir()
+    (checkout / "config" / "backends.json").write_bytes(
+        (REPO_ROOT / "config" / "backends.json").read_bytes()
+    )
+    (checkout / ".diff").write_text("\n".join(archivos) + "\n", encoding="utf-8")
+    env_file = tmp_path / ".env"
+    env_file.write_text("ENVIRONMENT=qa\n", encoding="utf-8")
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    _fake_git(fake_bin)
+    compose_config = tmp_path / "compose.json"
+    compose_config.write_text(compose_json, encoding="utf-8")
+    docker = fake_bin / "docker"
+    docker.write_text(
+        "#!/usr/bin/env bash\n"
+        'if [[ "$*" == *"config --format json"* ]]; then\n'
+        f'  cat "{compose_config}"\n'
+        "fi\n"
+        "exit 0\n",
+        encoding="utf-8",
+    )
+    docker.chmod(0o755)
+    env = os.environ.copy()
+    env["ENV_FILE"] = str(env_file)
+    env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
+    return subprocess.run(
+        [
+            "bash",
+            str(operacion / "deploy_refresh.sh"),
+            "--dry-run",
+            "--yes",
+            "--allow-dirty",
+            "--allow-branch-mismatch",
+            "--without-mobile",
+            "--diff-base",
+            "b" * 40,
+        ],
+        cwd=checkout,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
+def test_cambio_en_sisoc_core_recrea_solo_los_servicios_del_core(tmp_path):
+    resultado = _run_selectivo(
+        tmp_path, ["backends/sisoc_core/comedores/views.py"], CORE_COMPOSE_JSON
+    )
+
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "servicios del core: django ocr_worker" in resultado.stdout
+    assert "up -d --no-deps django ocr_worker" in resultado.stdout
+    assert "run --rm migrator" in resultado.stdout
+    assert "backend_pas" not in resultado.stdout
+
+
+def test_sin_servicios_del_core_resueltos_hace_deploy_completo(tmp_path):
+    resultado = _run_selectivo(
+        tmp_path, ["backends/sisoc_core/comedores/views.py"], '{"services": {}}'
+    )
+
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "No se pudieron resolver los servicios del core" in resultado.stdout
+    assert "--no-deps" not in resultado.stdout
+    assert " up -d" in resultado.stdout

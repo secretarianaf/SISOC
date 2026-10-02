@@ -671,7 +671,7 @@ def asincronia() -> dict:
         return re.findall(r"^  ([a-z_]+):", contenido, re.M)
 
     servicios = servicios_de("docker-compose.yml")
-    servicios_celery = servicios_de("docker-compose.celery.yml")
+    servicios_celery = servicios_de("docker/compose/docker-compose.celery.yml")
 
     return {
         "roles_contenedor": roles,

@@ -61,7 +61,7 @@ Stacks activos:
 
 | Proyecto | Config | Servicios activos |
 | --- | --- | --- |
-| `sisoc` | `docker-compose.deploy.yml` + `docker-compose.produccion.yml` | Django, OCR, mailing, importacion de usuarios, importacion de ciudadanos y credenciales masivas |
+| `sisoc` | `docker/compose/docker-compose.deploy.yml` + `docker/compose/docker-compose.produccion.yml` | Django, OCR, mailing, importacion de usuarios, importacion de ciudadanos y credenciales masivas |
 | `sisoc-mobile` | `/sisoc/SISOC-Mobile/compose.prod.yaml` | frontend mobile |
 
 Los siete contenedores estaban activos; mobile reportaba healthy. Los seis

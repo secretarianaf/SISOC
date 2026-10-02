@@ -97,7 +97,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Item | Estado | Evidencia |
 | --- | --- | --- |
 | Docker Compose para local | Hecho observado | `docker-compose.yml` |
-| Compose separado para deploy | Hecho observado | `docker-compose.deploy.yml`, `docker-compose.produccion.yml` |
+| Compose separado para deploy | Hecho observado | `docker/compose/docker-compose.deploy.yml`, `docker/compose/docker-compose.produccion.yml` |
 | GitHub Actions para lint/tests/arquitectura/release sanity | Hecho observado | `.github/workflows/` |
 | Promoción event-driven y sincronización descendente con gates | Hecho observado | `.github/workflows/release-orchestrator.yml`, `.github/workflows/deploy.yml`, `docs/operacion/deploy_automatizado.md` |
 | Helpers de Codex/worktrees | Hecho observado | `scripts/ai/`, `.codex/environments/environment.toml` |
@@ -207,7 +207,7 @@ SISOC/
 
 ### Hechos observados
 
-- PAS usa Celery/Redis mediante `docker-compose.celery.yml`; mantiene un solo
+- PAS usa Celery/Redis mediante `docker/compose/docker-compose.celery.yml`; mantiene un solo
   lote activo global y paralelismo acotado dentro del lote.
 - El resto de la asincronia sigue siendo "simple":
   - hilos / `ThreadPoolExecutor` en syncs (`backends/sisoc_core/comedores/tasks.py`, `backends/sisoc_core/relevamientos/tasks.py`);
@@ -231,7 +231,7 @@ SISOC/
 - `.env.example`: base local canonicamente documentada.
 - No hay `.env` por entorno versionados: cada servidor usa su `.env` local creado desde `.env.example`.
 - `docker-compose.yml`: local.
-- `docker-compose.deploy.yml`, `docker-compose.produccion.yml`: deploy.
+- `docker/compose/docker-compose.deploy.yml`, `docker/compose/docker-compose.produccion.yml`: deploy.
 
 ### Variables clave
 
@@ -810,10 +810,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Build/deploy
 
 - Local: `docker compose up`
-- Front v2 local: `docker compose up --build front_vpsl`; hot reload con `docker-compose.frontends.dev.yml` como segundo archivo. Desde `frontends/`: `npm ci`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm run test:e2e` y `npm audit --audit-level=low`.
+- Front v2 local: `docker compose up --build front_vpsl`; hot reload con `docker/compose/docker-compose.frontends.dev.yml` como segundo archivo. Desde `frontends/`: `npm ci`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm run test:e2e` y `npm audit --audit-level=low`.
 - Contrato VPSL: `FRONTEND_V2_SCHEMA_ONLY=1 python manage.py spectacular --file frontends/packages/api/openapi.yaml --format openapi`; luego `npm run types:generate` en `frontends/`.
-- Deploy versionado: `docker compose -f docker-compose.deploy.yml ...`
-- Produccion: override `docker-compose.produccion.yml`
+- Deploy versionado: `docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml ...`
+- Produccion: override `docker/compose/docker-compose.produccion.yml`
 - Sanity de release a `main` valida `check --deploy`, OpenAPI y `collectstatic`
 
 ## Comandos utiles detectados
@@ -1025,5 +1025,5 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 
 ## PAS Celery mensual
 - `config/celery.py`, `backends/pas/pas/tasks.py`, `backends/pas/pas/services/supervivencia_jobs.py`: programación, reconciliación y un lote exclusivo por MySQL GET_LOCK; dentro del lote, ventanas transaccionales, dos clientes por hilo y límite agregado inicial de 16 solicitudes/s.
-- `docker-compose.celery.yml` se incorpora desde deploy_refresh; Redis persistente, Beat único y worker PAS.
+- `docker/compose/docker-compose.celery.yml` se incorpora desde deploy_refresh; Redis persistente, Beat único y worker PAS.
 - Runbook funcional: `docs/implementaciones/pas_control_mensual_celery.md`; retirada cron: `scripts/infra/remove_pas_cron.sh`.

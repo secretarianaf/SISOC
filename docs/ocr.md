@@ -149,10 +149,10 @@ python manage.py process_ocr_jobs --once
 
 ### Docker (producción)
 
-El servicio `ocr_worker` en `docker-compose.produccion.yml` arranca el worker automáticamente:
+El servicio `ocr_worker` en `docker/compose/docker-compose.produccion.yml` arranca el worker automáticamente:
 
 ```bash
-docker compose -f docker-compose.produccion.yml up ocr_worker
+docker compose --project-directory . -f docker/compose/docker-compose.produccion.yml up ocr_worker
 ```
 
 La variable de entorno que lo activa es:

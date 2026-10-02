@@ -143,7 +143,7 @@ def fix_migration_history():
 def preparar_db():
     """Migraciones, fixtures y grupos: todo lo que deja lista la DB.
 
-    En deploy lo hace solo el migrador (docker-compose.deploy.yml), con el
+    En deploy lo hace solo el migrador (docker/compose/docker-compose.deploy.yml), con el
     grafo completo: el core sin los backends no puede cargar el grafo de
     migraciones (docs/operacion/backends_por_servicio.md).
     """

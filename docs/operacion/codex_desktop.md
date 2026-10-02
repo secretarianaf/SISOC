@@ -51,7 +51,7 @@ Ese bootstrap:
 - levanta `mysql` y `django` en modo Docker-first cuando no se usa `-NoStart`
 - si Docker no esta disponible, intenta fallback local con `.venv`
 
-Por defecto los comandos de Codex usan `docker-compose.codex.yml`, que elimina puertos publicados para evitar choques entre worktrees. Para abrir la app en el navegador, levantar con puertos explicitamente:
+Por defecto los comandos de Codex usan `docker/compose/docker-compose.codex.yml`, que elimina puertos publicados para evitar choques entre worktrees. Para abrir la app en el navegador, levantar con puertos explicitamente:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 up --expose-ports

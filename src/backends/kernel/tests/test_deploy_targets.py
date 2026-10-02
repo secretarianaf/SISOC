@@ -39,7 +39,7 @@ _spec.loader.exec_module(deploy_targets)
         (["src/backends/kernel/templates/includes/main.html"], ("completo", [], True)),
         (["src/backends/kernel/static/custom/js/base.js"], ("completo", [], True)),
         (["requirements/base.txt"], ("completo", [], True)),
-        (["docker-compose.deploy.yml"], ("completo", [], True)),
+        (["docker/compose/docker-compose.deploy.yml"], ("completo", [], True)),
         (["CHANGELOG.md"], ("completo", [], True)),
         # El core se despliega solo: el marcador lo resuelve deploy_refresh.sh.
         (

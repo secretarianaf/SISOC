@@ -50,10 +50,9 @@ RUN echo "es_AR.UTF-8 UTF-8" >> /etc/locale.gen && \
     echo "LC_ALL=es_AR.UTF-8" >> /etc/default/locale
 
 # Instalación de dependencias de la aplicación
-COPY ./requirements.txt .
 COPY ./requirements ./requirements
 RUN python -m pip install --upgrade pip setuptools wheel
-RUN python -m pip install --no-cache-dir --retries 5 --timeout 60 -r requirements.txt
+RUN python -m pip install --no-cache-dir --retries 5 --timeout 60 -r requirements/all.txt
 
 # El código vive en src/backends/: así gunicorn, celery y manage.py encuentran
 # `config`, que a su vez agrega el kernel y los verticales al sys.path.

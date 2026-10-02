@@ -235,7 +235,7 @@ Artefactos principales:
 
 - `.github/workflows/deploy.yml`.
 - `scripts/operacion/deploy_refresh.sh`.
-- `docker-compose.deploy.yml`.
+- `docker/compose/docker-compose.deploy.yml`.
 - `docker/django/entrypoint.py`.
 - `scripts/crontab` como contrato versionado, no como prueba de instalacion.
 

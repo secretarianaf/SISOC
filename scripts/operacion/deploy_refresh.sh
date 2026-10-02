@@ -53,11 +53,11 @@ Opciones:
 
 Mapeo por entorno:
   ENVIRONMENT=dev|local|development -> docker-compose.yml
-  ENVIRONMENT=qa                    -> docker-compose.deploy.yml
+  ENVIRONMENT=qa                    -> docker/compose/docker-compose.deploy.yml
   ENVIRONMENT=homologacion|hml|staging
-                                  -> docker-compose.deploy.yml + docker-compose.produccion.yml
+                                  -> docker/compose/docker-compose.deploy.yml + docker/compose/docker-compose.produccion.yml
                                      + SISOC-Mobile
-  ENVIRONMENT=prd|prod|production   -> docker-compose.deploy.yml + docker-compose.produccion.yml
+  ENVIRONMENT=prd|prod|production   -> docker/compose/docker-compose.deploy.yml + docker/compose/docker-compose.produccion.yml
 USAGE
 }
 
@@ -263,16 +263,16 @@ compose_for_environment() {
       EXPECTED_BRANCH="${DEV_BRANCH:-development}"
       ;;
     qa)
-      COMPOSE_FILES=("docker-compose.deploy.yml")
+      COMPOSE_FILES=("docker/compose/docker-compose.deploy.yml")
       EXPECTED_BRANCH="${QA_BRANCH:-development}"
       ;;
     homologacion|hml|staging)
-      COMPOSE_FILES=("docker-compose.deploy.yml" "docker-compose.produccion.yml")
+      COMPOSE_FILES=("docker/compose/docker-compose.deploy.yml" "docker/compose/docker-compose.produccion.yml")
       EXPECTED_BRANCH="${HOMOLOGACION_BRANCH:-homologacion}"
       WITH_MOBILE=1
       ;;
     prd|prod|production|produccion)
-      COMPOSE_FILES=("docker-compose.deploy.yml" "docker-compose.produccion.yml")
+      COMPOSE_FILES=("docker/compose/docker-compose.deploy.yml" "docker/compose/docker-compose.produccion.yml")
       EXPECTED_BRANCH="${PROD_BRANCH:-main}"
       ;;
     *)
@@ -280,7 +280,7 @@ compose_for_environment() {
       ;;
   esac
 
-  COMPOSE_FILES+=("docker-compose.celery.yml")
+  COMPOSE_FILES+=("docker/compose/docker-compose.celery.yml")
 }
 
 configure_compose_command() {

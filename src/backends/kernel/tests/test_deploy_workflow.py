@@ -6,7 +6,7 @@ from django.db.migrations.loader import MigrationLoader
 REPO_ROOT = Path(__file__).resolve().parents[4]
 DEPLOY_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "deploy.yml"
 VERIFIED_DEPLOY = REPO_ROOT / "scripts" / "operacion" / "deploy_verified.sh"
-DEPLOY_COMPOSE = REPO_ROOT / "docker-compose.deploy.yml"
+DEPLOY_COMPOSE = REPO_ROOT / "docker" / "compose" / "docker-compose.deploy.yml"
 
 
 def _workflow() -> str:

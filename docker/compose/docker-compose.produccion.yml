@@ -1,4 +1,4 @@
-# Workers de HML/PRD: misma imagen del core que `django` (docker-compose.deploy.yml).
+# Workers de HML/PRD: misma imagen del core que `django` (docker/compose/docker-compose.deploy.yml).
 services:
   django:
     healthcheck:

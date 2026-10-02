@@ -38,11 +38,13 @@ def _backend_checkout(tmp_path: Path, *, include_celery: bool = True) -> Path:
     script = checkout / "scripts" / "operacion" / "deploy_refresh.sh"
     script.parent.mkdir(parents=True)
     script.write_bytes(DEPLOY_SCRIPT.read_bytes().replace(b"\r\n", b"\n"))
+    compose = checkout / "docker" / "compose"
+    compose.mkdir(parents=True)
     if include_celery:
-        (checkout / "docker-compose.celery.yml").write_text(
+        (compose / "docker-compose.celery.yml").write_text(
             "services: {}\n", encoding="utf-8"
         )
-    (checkout / "docker-compose.deploy.yml").write_text(
+    (compose / "docker-compose.deploy.yml").write_text(
         "services: {}\n",
         encoding="utf-8",
     )
@@ -79,7 +81,7 @@ case "$1 ${2:-} ${3:-}" in
   "rev-parse HEAD ") printf '%s\\n' "${FAKE_HEAD_SHA:-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}" ;;
   "merge --ff-only origin/development")
     if [[ "${FAKE_CREATE_CELERY_ON_MERGE:-0}" == "1" ]]; then
-      printf 'services: {}\n' > "$repo/docker-compose.celery.yml"
+      printf 'services: {}\n' > "$repo/docker/compose/docker-compose.celery.yml"
     fi
     exit 0
     ;;

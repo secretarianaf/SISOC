@@ -69,8 +69,8 @@ powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 djlint-check <
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 pylint <archivo.py>
 
 # Fallback Docker directo si este script se ejecuta sin PowerShell disponible
-docker compose -f docker-compose.yml -f docker-compose.codex.yml run --rm --no-deps django pytest -m smoke
-docker compose -f docker-compose.yml -f docker-compose.codex.yml run --rm --no-deps django python manage.py makemigrations --check --dry-run
+docker compose -f docker-compose.yml -f docker/compose/docker-compose.codex.yml run --rm --no-deps django pytest -m smoke
+docker compose -f docker-compose.yml -f docker/compose/docker-compose.codex.yml run --rm --no-deps django python manage.py makemigrations --check --dry-run
 python scripts/ai/context_memory.py preflight --target <path>
 python scripts/ai/context_memory.py scaffold --slug <slug> --title <titulo> --summary <resumen> --path <path>
 CMDS

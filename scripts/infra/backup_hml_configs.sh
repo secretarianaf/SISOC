@@ -57,7 +57,7 @@ main() {
   local relative
   for relative in \
     .github/workflows/deploy.yml \
-    docker-compose.deploy.yml \
+    docker/compose/docker-compose.deploy.yml \
     docker/django/Dockerfile \
     docker/django/entrypoint.py \
     scripts/operacion/deploy_refresh.sh \

@@ -115,7 +115,7 @@ nuevo:
   tampoco tiene el grafo completo:
 
   ```bash
-  docker compose -f docker-compose.deploy.yml --profile migrate run --rm migrator python manage.py createsuperuser
+  docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml --profile migrate run --rm migrator python manage.py createsuperuser
   ```
 
   En deploy, la web no prepara la DB (`SISOC_PREPARAR_DB=false`). El migrador
@@ -139,7 +139,7 @@ nuevo:
 3. **Registro y settings:** sumar la entrada en `config/backends.json`, sacar
    las apps de `CORE_APPS` en `config/settings.py` y agregar la carpeta a
    `pythonpath` en `pytest.ini`.
-4. **Compose:** sumar el servicio en `docker-compose.deploy.yml`, copiando
+4. **Compose:** sumar el servicio en `docker/compose/docker-compose.deploy.yml`, copiando
    `backend_dispositivos`.
 5. **URLs:** si el vertical no tenía prefijo propio, agregarlo y dejar
    redirects 301 desde las URLs viejas, **solo por compatibilidad**.

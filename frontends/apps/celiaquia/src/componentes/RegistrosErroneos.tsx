@@ -22,18 +22,35 @@ import Typography from "@mui/material/Typography";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import ReplayIcon from "@mui/icons-material/Replay";
-import { SectionCard, Stack, StateChip } from "@sisoc/ui";
+import {
+  normalizarFechaEditable,
+  SectionCard,
+  Stack,
+  StateChip,
+} from "@sisoc/ui";
 import { camposInvalidosDeError, mensajeDeError } from "@sisoc/api";
 import type { RegistroErroneo } from "@sisoc/api";
 import { api } from "../api";
 
 type Fila = Record<string, string>;
 
-/** `datos_raw` es la fila cruda del Excel: sus claves son las columnas. */
+/** Los campos de fecha se muestran y se editan en DD/MM/YYYY. */
+const esFecha = (campo: string) => campo.startsWith("fecha_");
+
+/**
+ * `datos_raw` es la fila cruda del Excel: sus claves son las columnas.
+ *
+ * Las fechas vienen como las dejo el archivo (`2000-06-25 00:00:00`), asi que se
+ * normalizan para que el formulario sea legible. El back acepta los dos
+ * formatos, pero un timestamp crudo en un input no se puede corregir a ojo.
+ */
 const filaDe = (registro: RegistroErroneo): Fila => {
   const crudo = (registro.datos_raw ?? {}) as Record<string, unknown>;
   return Object.fromEntries(
-    Object.entries(crudo).map(([k, v]) => [k, v == null ? "" : String(v)]),
+    Object.entries(crudo).map(([k, v]) => {
+      const texto = v == null ? "" : String(v);
+      return [k, esFecha(k) ? normalizarFechaEditable(texto) : texto];
+    }),
   );
 };
 
@@ -229,9 +246,12 @@ function ModalEdicion({
                   value={esCatalogo && !enLista ? "" : valorActual}
                   error={invalidos.includes(campo)}
                   disabled={campo === "localidad" && !municipioValido}
+                  placeholder={esFecha(campo) ? "DD/MM/AAAA" : undefined}
                   helperText={
-                    campo === "localidad" && !municipioValido
-                      ? "Elegí primero un municipio válido"
+                    esFecha(campo)
+                      ? "Formato DD/MM/AAAA"
+                      : campo === "localidad" && !municipioValido
+                        ? "Elegí primero un municipio válido"
                       : esCatalogo && valorActual && !enLista
                         ? `El archivo traía "${valorActual}": elegí el valor correcto`
                         : undefined

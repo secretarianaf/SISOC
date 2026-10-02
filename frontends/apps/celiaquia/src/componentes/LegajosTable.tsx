@@ -23,15 +23,7 @@ import Typography from "@mui/material/Typography";
 import DeleteIcon from "@mui/icons-material/Delete";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import {
-  SearchField,
-  SectionCard,
-  Stack,
-  StateChip,
-  toneCupo,
-  toneRevision,
-  toneSintys,
-} from "@sisoc/ui";
+import { SearchField, SectionCard, Stack, StateChip, formatearFecha, toneCupo, toneRevision, toneSintys } from "@sisoc/ui";
 import type { AccionRevision, Legajo } from "@sisoc/api";
 import { TablaCargando } from "./Estados";
 
@@ -187,7 +179,7 @@ function FilaLegajo({
                         CUIL {leg.documento ?? "—"}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Alta {new Date(leg.creado_en).toLocaleDateString("es-AR")}
+                        Alta {formatearFecha(leg.creado_en)}
                       </Typography>
                     </Stack>
                     <Divider sx={{ my: 1.5 }} />

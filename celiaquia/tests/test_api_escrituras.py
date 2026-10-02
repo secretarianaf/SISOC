@@ -973,7 +973,9 @@ def test_procesar_devuelve_el_resumen_con_las_exclusiones(client, territorio):
 
 def test_procesar_sin_excel_no_rompe_y_explica(client, territorio):
     owner = _provincial("prov_sin_excel", territorio[0])
-    expediente, _ = _expediente_con_legajo(owner, territorio, "40000051", "PROC2")
+    expediente, _ = _expediente_con_legajo(
+        owner, territorio, "40000051", "PROC2", estado="CREADO"
+    )
     client.force_login(owner)
 
     response = client.post(
@@ -982,3 +984,46 @@ def test_procesar_sin_excel_no_rompe_y_explica(client, territorio):
 
     assert response.status_code == 400
     assert "Excel" in str(response.json())
+
+
+def test_no_se_puede_procesar_dos_veces_un_expediente(client, territorio):
+    """La regla estaba solo en el template: el boton se ocultaba, nada mas.
+
+    Por la API se podia reprocesar un expediente ya cruzado y mandarlo de vuelta
+    a EN_ESPERA, perdiendo el avance.
+    """
+
+    owner = _provincial("prov_reproc", territorio[0])
+    expediente, _ = _expediente_con_legajo(
+        owner, territorio, "40000052", "PROC3", estado="CRUCE_FINALIZADO"
+    )
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("celiaquia-expediente-procesar", kwargs={"pk": expediente.pk})
+    )
+
+    assert response.status_code == 400
+    detalle = str(response.json())
+    assert "CRUCE_FINALIZADO" in detalle
+    assert "CREADO" in detalle
+
+
+def test_el_cruce_exige_que_el_expediente_este_asignado(client, territorio):
+    """Subir el cruce antes de asignar tecnico deja el expediente inconsistente."""
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    owner = _provincial("prov_cruce", territorio[0])
+    expediente, _ = _expediente_con_legajo(
+        owner, territorio, "40000053", "CRU1", estado="CREADO"
+    )
+    client.force_login(_coordinador("coord_cruce"))
+
+    response = client.post(
+        reverse("celiaquia-expediente-cruce", kwargs={"pk": expediente.pk}),
+        {"archivo": SimpleUploadedFile("cruce.xlsx", b"x")},
+    )
+
+    assert response.status_code == 400
+    assert "ASIGNADO" in str(response.json())

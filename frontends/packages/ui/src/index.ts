@@ -26,3 +26,8 @@ export {
   toneMovimiento,
 } from "./components/StateChip";
 export type { StateTone } from "./components/StateChip";
+export {
+  formatearFecha,
+  formatearFechaHora,
+  normalizarFechaEditable,
+} from "./fechas";

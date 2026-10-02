@@ -18,13 +18,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DownloadIcon from "@mui/icons-material/Download";
 import HistoryIcon from "@mui/icons-material/History";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import {
-  PageHeader,
-  SectionCard,
-  Stack,
-  StateChip,
-  toneExpediente,
-} from "@sisoc/ui";
+import { PageHeader, SectionCard, Stack, StateChip, formatearFecha, formatearFechaHora, toneExpediente } from "@sisoc/ui";
 import { descargarBlob, mensajeDeError } from "@sisoc/api";
 import { api } from "../api";
 import { Aviso, Cargando, ErrorPanel } from "../componentes/Estados";
@@ -242,7 +236,7 @@ export function ExpedienteDetailPage() {
               </Dato>
               <Dato label="Estado">{nombreEstado}</Dato>
               <Dato label="Fecha de creación">
-                {new Date(exp.fecha_creacion).toLocaleDateString("es-AR")}
+                {formatearFecha(exp.fecha_creacion)}
               </Dato>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
@@ -315,7 +309,7 @@ export function ExpedienteDetailPage() {
                   {historial.data.map((h) => (
                     <TableRow key={h.id} hover>
                       <TableCell>
-                        {new Date(h.fecha).toLocaleString("es-AR")}
+                        {formatearFechaHora(h.fecha)}
                       </TableCell>
                       <TableCell>{h.estado}</TableCell>
                       <TableCell>{h.usuario?.nombre ?? "—"}</TableCell>

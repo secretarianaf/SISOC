@@ -13,7 +13,7 @@ import Typography from "@mui/material/Typography";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { PageHeader, SectionCard, StateChip } from "@sisoc/ui";
+import { PageHeader, SectionCard, StateChip, formatearFecha } from "@sisoc/ui";
 import type { StateTone } from "@sisoc/ui";
 import { mensajeDeError } from "@sisoc/api";
 import { api } from "../api";
@@ -143,7 +143,7 @@ export function PagoListPage() {
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      {new Date(p.creado_en).toLocaleDateString("es-AR")}
+                      {formatearFecha(p.creado_en)}
                     </TableCell>
                     <TableCell align="right">
                       <Button

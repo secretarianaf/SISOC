@@ -18,15 +18,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import SettingsIcon from "@mui/icons-material/Settings";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import {
-  FilterChipGroup,
-  PageHeader,
-  SearchField,
-  SectionCard,
-  Stack,
-  StateChip,
-  toneExpediente,
-} from "@sisoc/ui";
+import { FilterChipGroup, PageHeader, SearchField, SectionCard, Stack, StateChip, formatearFechaHora, toneExpediente } from "@sisoc/ui";
 import { mensajeDeError } from "@sisoc/api";
 import { api } from "../api";
 import { Aviso, ErrorPanel, TablaCargando } from "../componentes/Estados";
@@ -161,7 +153,7 @@ export function ExpedienteListPage() {
                       <TableCell>{e.id}</TableCell>
                       <TableCell>{e.numero_expediente ?? "—"}</TableCell>
                       <TableCell>
-                        {new Date(e.fecha_creacion).toLocaleString("es-AR")}
+                        {formatearFechaHora(e.fecha_creacion)}
                       </TableCell>
                       <TableCell>{e.provincia ?? "—"}</TableCell>
                       <TableCell>

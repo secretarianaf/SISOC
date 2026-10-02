@@ -153,6 +153,33 @@ def _build_observaciones_importacion(result: dict) -> str:
     )
 
 
+#: Estados desde los que se puede ejecutar cada operación.
+#:
+#: Estas reglas estaban **solo en el template**: `expediente_detail.html`
+#: muestra el botón según el estado, pero ni la vista ni el service lo
+#: verificaban. Por la API se podía procesar dos veces un expediente ya cruzado
+#: y mandarlo de vuelta a EN_ESPERA, perdiendo el avance.
+ESTADOS_PARA_PROCESAR = ("CREADO",)
+ESTADOS_PARA_CRUCE = ("ASIGNADO", "PROCESO_DE_CRUCE")
+ESTADOS_PARA_NOMINA_SINTYS = ("ASIGNADO", "PROCESO_DE_CRUCE", "CRUCE_FINALIZADO")
+
+
+def exigir_estado(expediente, estados, accion: str) -> None:
+    """Valida la transición. Lanza `ValidationError` con el estado actual.
+
+    Vive acá y no en las vistas para que la pantalla Django y la API apliquen la
+    misma regla: esconder un botón no es una validación.
+    """
+
+    actual = getattr(getattr(expediente, "estado", None), "nombre", None)
+    if actual not in estados:
+        esperados = " o ".join(estados)
+        raise ValidationError(
+            f"No se puede {accion}: el expediente está en {actual or 'sin estado'} "
+            f"y se requiere {esperados}."
+        )
+
+
 class ExpedienteService:
     @staticmethod
     @transaction.atomic
@@ -178,6 +205,7 @@ class ExpedienteService:
     @staticmethod
     @transaction.atomic
     def procesar_expediente(expediente: Expediente, usuario):
+        exigir_estado(expediente, ESTADOS_PARA_PROCESAR, "procesar el expediente")
         if not expediente.excel_masivo:
             raise ValidationError("No hay archivo Excel cargado para procesar.")
 

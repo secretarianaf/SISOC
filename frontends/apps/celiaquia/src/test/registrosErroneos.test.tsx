@@ -65,6 +65,7 @@ const registro: RegistroErroneo = {
     nombre_responsable: "Juan",
     sexo_responsable: "M",
     localidad_responsable: "Tolosa (Buenos Aires)",
+    fecha_nacimiento: "2000-06-25 00:00:00",
   },
   campo_error: "",
   mensaje_error: "Error al reprocesar: ['municipio 40 no encontrado']",
@@ -197,5 +198,25 @@ describe("campos del responsable", () => {
     fireEvent.click(await screen.findByText(/Berisso \(Berisso\)/));
 
     expect(control).toHaveValue("Berisso (Berisso)");
+  });
+});
+
+
+describe("campos de fecha", () => {
+  it("se editan en DD/MM/YYYY, no como el timestamp crudo del Excel", async () => {
+    montar();
+    const modal = await abrirEditor();
+
+    const fecha = within(modal).getByLabelText("Fecha nacimiento");
+    expect(fecha).toHaveValue("25/06/2000");
+  });
+
+  it("siguen siendo editables", async () => {
+    montar();
+    const modal = await abrirEditor();
+
+    const fecha = within(modal).getByLabelText("Fecha nacimiento");
+    fireEvent.change(fecha, { target: { value: "01/01/1990" } });
+    expect(fecha).toHaveValue("01/01/1990");
   });
 });

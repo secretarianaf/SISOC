@@ -1,57 +1,74 @@
+# Workers de HML/PRD: misma imagen del core que `django` (docker-compose.deploy.yml).
 services:
+  django:
+    healthcheck:
+      start_period: 20m
+
   bulk_credentials_worker:
+    image: sisoc/core:${SISOC_RELEASE_SHA:-local}
     build:
       context: .
       dockerfile: ./docker/django/Dockerfile
+      target: core
     env_file:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SERVICE_ROLE: bulk_credentials_worker
     volumes:
-      - .:/sisoc/
+      - ./media:/sisoc/media
+      - ./logs:/sisoc/logs
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
     restart: unless-stopped
 
   ciudadanos_import_worker:
     scale: 2
+    image: sisoc/core:${SISOC_RELEASE_SHA:-local}
     build:
       context: .
       dockerfile: ./docker/django/Dockerfile
+      target: core
     env_file:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SERVICE_ROLE: ciudadanos_import_worker
     volumes:
-      - .:/sisoc/
+      - ./media:/sisoc/media
+      - ./logs:/sisoc/logs
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
     restart: unless-stopped
 
   mailing_worker:
+    image: sisoc/core:${SISOC_RELEASE_SHA:-local}
     build:
       context: .
       dockerfile: ./docker/django/Dockerfile
+      target: core
     env_file:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SERVICE_ROLE: mailing_worker
     volumes:
-      - .:/sisoc/
+      - ./media:/sisoc/media
+      - ./logs:/sisoc/logs
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
     restart: unless-stopped
 
   user_import_worker:
+    image: sisoc/core:${SISOC_RELEASE_SHA:-local}
     build:
       context: .
       dockerfile: ./docker/django/Dockerfile
+      target: core
     env_file:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SERVICE_ROLE: user_import_worker
     volumes:
-      - .:/sisoc/
+      - ./media:/sisoc/media
+      - ./logs:/sisoc/logs
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
     restart: unless-stopped

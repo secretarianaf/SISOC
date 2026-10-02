@@ -485,9 +485,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ===== PREVISUALIZACIÓN DEL MOTIVO (subsanar / rechazar) =====
-     El motivo definitivo lo arma el backend a partir de los comentarios
-     técnicos del legajo; esto es sólo lo que se muestra en pantalla. */
+  /* ===== MOTIVOS DE SUBSANAR / RECHAZAR (issue #2592) =====
+     Multiselect con las observaciones técnicas del legajo. Vienen tildadas
+     las que todavía no se comunicaron a la Provincia; las de instancias
+     anteriores se ofrecen sin tildar. Sólo viajan los ids elegidos: el motivo
+     definitivo lo arma el backend. */
   async function cargarPreviewMotivo(legajoId, contenedor) {
     if (!contenedor) return;
     contenedor.innerHTML = '<span class="text-muted small">Cargando…</span>';
@@ -515,15 +517,33 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      contenedor.innerHTML =
-        '<ul class="mb-0 ps-3 small">' +
-        data.lineas.map((linea) => `<li>${escapeHtmlPreview(linea)}</li>`).join('') +
-        '</ul>';
+      contenedor.innerHTML = data.opciones.map((opcion) => {
+        const inputId = `${contenedor.id}-${opcion.id}`;
+        const nota = opcion.pendiente
+          ? ''
+          : ' <span class="text-muted">(ya comunicada en una instancia anterior)</span>';
+        return (
+          '<div class="form-check small mb-1">' +
+          `<input class="form-check-input" type="checkbox" name="observaciones_ids" ` +
+          `id="${inputId}" value="${escapeHtmlPreview(opcion.id)}"${opcion.pendiente ? ' checked' : ''}>` +
+          `<label class="form-check-label" for="${inputId}">${escapeHtmlPreview(opcion.etiqueta)}${nota}</label>` +
+          '</div>'
+        );
+      }).join('');
     } catch (err) {
       console.error('Previsualización del motivo:', err);
       contenedor.innerHTML = '<span class="text-danger small">No se pudo cargar la previsualización.</span>';
     }
   }
+
+  function motivosSeleccionados(contenedor) {
+    return Array.from(
+      contenedor?.querySelectorAll('input[name="observaciones_ids"]:checked') || []
+    ).map((input) => input.value);
+  }
+
+  const MENSAJE_SIN_MOTIVO =
+    'Seleccioná al menos un motivo o completá la información complementaria.';
 
   function escapeHtmlPreview(value) {
     return String(value ?? '')
@@ -532,6 +552,72 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  /* Validación en el cliente de la documentación complementaria (issue #2523).
+
+     El `accept` del input hace que el explorador filtre los formatos no
+     permitidos, pero eso es mudo: el usuario no entiende por qué su archivo no
+     aparece. Esto avisa en el momento por los tres motivos posibles. El backend
+     revalida igual: esto es comodidad, no control. */
+  function validarDocumentacionComplementaria(input) {
+    const cont = document.getElementById('subsanar-documentacion-error');
+    if (!input || !cont) return true;
+
+    const maxArchivos = parseInt(input.dataset.maxArchivos, 10) || 5;
+    const maxMb = parseInt(input.dataset.maxMb, 10) || 10;
+    const extensiones = (input.dataset.extensiones || '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+
+    const archivos = Array.from(input.files || []);
+    const errores = [];
+
+    if (archivos.length > maxArchivos) {
+      errores.push(`Podés adjuntar hasta ${maxArchivos} archivos (elegiste ${archivos.length}).`);
+    }
+
+    const invalidos = archivos.filter((a) => {
+      const punto = a.name.lastIndexOf('.');
+      const ext = punto === -1 ? '' : a.name.slice(punto).toLowerCase();
+      return !extensiones.includes(ext);
+    });
+    if (invalidos.length) {
+      errores.push(
+        `Solo se permiten archivos ${extensiones.join(', ')}. ` +
+        `No se puede adjuntar: ${invalidos.map((a) => a.name).join(', ')}.`
+      );
+    }
+
+    const pesados = archivos.filter((a) => a.size > maxMb * 1024 * 1024);
+    if (pesados.length) {
+      errores.push(
+        `Cada archivo puede pesar hasta ${maxMb} MB. ` +
+        `Supera el límite: ${pesados.map((a) => a.name).join(', ')}.`
+      );
+    }
+
+    cont.textContent = errores.join(' ');
+    input.classList.toggle('is-invalid', errores.length > 0);
+    return errores.length === 0;
+  }
+
+  /* El modal tapa la zona de alertas de la página, así que los errores del
+     submit se muestran también adentro. */
+  function mostrarErrorEnModal(contenedorId, mensaje) {
+    const cont = document.getElementById(contenedorId);
+    if (!cont) return;
+    cont.textContent = mensaje || '';
+    cont.hidden = !mensaje;
+  }
+
+  function mostrarErrorSubsanar(mensaje) {
+    mostrarErrorEnModal('subsanar-error', mensaje);
+  }
+
+  function mostrarErrorRechazar(mensaje) {
+    mostrarErrorEnModal('rechazar-error', mensaje);
   }
 
   /* ===== MODAL SUBSANAR (técnico) ===== */
@@ -546,8 +632,18 @@ document.addEventListener('DOMContentLoaded', () => {
       modalSubsanar.querySelector('#subsanar-legajo-id').value = legajoId;
       const ta = modalSubsanar.querySelector('#subsanar-motivo');
       if (ta) ta.value = '';
+      const docs = modalSubsanar.querySelector('#subsanar-documentacion');
+      if (docs) {
+        docs.value = '';
+        validarDocumentacionComplementaria(docs);
+      }
+      mostrarErrorSubsanar('');
       cargarPreviewMotivo(legajoId, previewSubsanar);
     });
+
+    modalSubsanar
+      .querySelector('#subsanar-documentacion')
+      ?.addEventListener('change', (e) => validarDocumentacionComplementaria(e.target));
 
     const formSubsanar = document.getElementById('form-subsanar');
     formSubsanar.addEventListener('submit', async (e) => {
@@ -567,17 +663,40 @@ document.addEventListener('DOMContentLoaded', () => {
         showAlert('danger', 'No se configuró la URL de subsanación.');
         return;
       }
+
+      mostrarErrorSubsanar('');
+
+      const motivos = motivosSeleccionados(previewSubsanar);
+      if (!motivos.length && !textoLibre) {
+        mostrarErrorSubsanar(MENSAJE_SIN_MOTIVO);
+        return;
+      }
+
+      const inputDocs = modalSubsanar.querySelector('#subsanar-documentacion');
+      if (!validarDocumentacionComplementaria(inputDocs)) {
+        mostrarErrorSubsanar('Revisá la documentación complementaria antes de continuar.');
+        return;
+      }
+
       const url = window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId);
 
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando…';
 
       try {
-        // El motivo lo arma el backend con los comentarios técnicos del
-        // legajo; desde acá sólo viaja el texto libre complementario.
+        // El motivo lo arma el backend con los comentarios técnicos
+        // elegidos; desde acá viajan sus ids y el texto libre complementario.
         const fd = new FormData();
         fd.append('accion', 'SUBSANAR');
         fd.append('texto_libre', textoLibre);
+        motivos.forEach((id) => fd.append('observaciones_ids', id));
+
+        // Documentación complementaria (opcional): acompaña a la solicitud
+        // entera, no a una observación puntual. El backend valida formato,
+        // tamaño y cantidad.
+        for (const archivo of inputDocs?.files || []) {
+          fd.append('documentacion_complementaria', archivo);
+        }
 
         const resp = await fetch(url, {
           method: 'POST',
@@ -618,6 +737,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       } catch (err) {
         console.error('Subsanar legajo:', err);
+        mostrarErrorSubsanar(`No se pudo solicitar la subsanación. ${err.message}`);
         showAlert('danger', 'No se pudo solicitar la subsanación. ', err.message);
       } finally {
         btn.disabled = false;
@@ -829,6 +949,7 @@ document.addEventListener('DOMContentLoaded', () => {
       modalRechazar.querySelector('#rechazar-legajo-id').value = legajoId;
       const ta = modalRechazar.querySelector('#rechazar-motivo');
       if (ta) ta.value = '';
+      mostrarErrorRechazar('');
       cargarPreviewMotivo(legajoId, previewRechazar);
     });
 
@@ -850,17 +971,26 @@ document.addEventListener('DOMContentLoaded', () => {
         showAlert('danger', 'No se configuró la URL de revisión de legajos.');
         return;
       }
+
+      mostrarErrorRechazar('');
+      const motivos = motivosSeleccionados(previewRechazar);
+      if (!motivos.length && !textoLibre) {
+        mostrarErrorRechazar(MENSAJE_SIN_MOTIVO);
+        return;
+      }
+
       const url = window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId);
 
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando…';
 
       try {
-        // El motivo lo arma el backend con los comentarios técnicos del
-        // legajo; desde acá sólo viaja el texto libre complementario.
+        // El motivo lo arma el backend con los comentarios técnicos
+        // elegidos; desde acá viajan sus ids y el texto libre complementario.
         const fd = new FormData();
         fd.append('accion', 'RECHAZAR');
         fd.append('texto_libre', textoLibre);
+        motivos.forEach((id) => fd.append('observaciones_ids', id));
 
         const resp = await fetch(url, {
           method: 'POST',
@@ -897,6 +1027,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       } catch (err) {
         console.error('Rechazar legajo:', err);
+        mostrarErrorRechazar(`No se pudo registrar el rechazo. ${err.message}`);
         showAlert('danger', 'No se pudo registrar el rechazo. ', err.message);
       } finally {
         btn.disabled = false;
@@ -1137,6 +1268,9 @@ document.addEventListener('DOMContentLoaded', () => {
             data.estado || (accion === 'APROBAR' ? 'APROBADO' : 'RECHAZADO'),
           );
           showAlert('success', 'Legajo ', legajoId, ': estado actualizado a ', data.estado, '.');
+          // Recargar como Subsanar/Rechazar/Corregir: la fila (borde, badge,
+          // observación y botones) se arma en el template según el estado.
+          setTimeout(() => window.location.reload(), 800);
 
         } catch (err) {
           console.error('Revisión de legajo:', err);

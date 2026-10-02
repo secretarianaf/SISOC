@@ -6,7 +6,12 @@ from pathlib import Path
 def test_ciudadano_detail_template_incluye_accion_eliminar():
     repo_root = Path(__file__).resolve().parents[1]
     template_path = (
-        repo_root / "ciudadanos" / "templates" / "ciudadanos" / "ciudadano_detail.html"
+        repo_root
+        / "kernel"
+        / "ciudadanos"
+        / "templates"
+        / "ciudadanos"
+        / "ciudadano_detail.html"
     )
 
     content = template_path.read_text(encoding="utf-8")
@@ -17,7 +22,12 @@ def test_ciudadano_detail_template_incluye_accion_eliminar():
 def test_ciudadano_detail_template_usa_admision_comedor_con_guardas():
     repo_root = Path(__file__).resolve().parents[1]
     template_path = (
-        repo_root / "ciudadanos" / "templates" / "ciudadanos" / "ciudadano_detail.html"
+        repo_root
+        / "kernel"
+        / "ciudadanos"
+        / "templates"
+        / "ciudadanos"
+        / "ciudadano_detail.html"
     )
 
     content = template_path.read_text(encoding="utf-8")
@@ -31,27 +41,57 @@ def test_ciudadano_detail_template_usa_admision_comedor_con_guardas():
 def test_ciudadano_detail_template_incluye_pestana_vat():
     repo_root = Path(__file__).resolve().parents[1]
     template_path = (
-        repo_root / "ciudadanos" / "templates" / "ciudadanos" / "ciudadano_detail.html"
+        repo_root
+        / "kernel"
+        / "ciudadanos"
+        / "templates"
+        / "ciudadanos"
+        / "ciudadano_detail.html"
     )
 
     content = template_path.read_text(encoding="utf-8")
+    seccion = (
+        repo_root
+        / "backends"
+        / "vat"
+        / "VAT"
+        / "templates"
+        / "vat"
+        / "ciudadano_detalle_seccion.html"
+    ).read_text(encoding="utf-8")
 
     assert 'href="#vat"' in content
     assert 'id="vat"' in content
-    assert "Cursos asignados" in content
-    assert "Créditos actuales" in content
+    assert "contribuciones_html.vat" in content
+    assert "Cursos asignados" in seccion
+    assert "Créditos actuales" in seccion
 
 
 def test_ciudadano_detail_template_usa_el_resumen_publico_de_celiaquia():
     repo_root = Path(__file__).resolve().parents[1]
     template_path = (
-        repo_root / "ciudadanos" / "templates" / "ciudadanos" / "ciudadano_detail.html"
+        repo_root
+        / "kernel"
+        / "ciudadanos"
+        / "templates"
+        / "ciudadanos"
+        / "ciudadano_detail.html"
     )
 
     content = template_path.read_text(encoding="utf-8")
+    seccion = (
+        repo_root
+        / "backends"
+        / "celiaquia"
+        / "celiaquia"
+        / "templates"
+        / "celiaquia"
+        / "ciudadano_detalle_seccion.html"
+    ).read_text(encoding="utf-8")
 
-    assert "celiaquia_resumen.legajo_actual" in content
-    assert "celiaquia_resumen.historial" in content
+    assert "contribuciones_html.celiaquia" in content
+    assert "celiaquia_resumen.legajo_actual" in seccion
+    assert "celiaquia_resumen.historial" in seccion
     assert "expediente_actual" not in content
     assert "expedientes_celiaquia" not in content
 
@@ -59,7 +99,12 @@ def test_ciudadano_detail_template_usa_el_resumen_publico_de_celiaquia():
 def test_ciudadano_list_template_incluye_filtro_estado_revision_dinamico():
     repo_root = Path(__file__).resolve().parents[1]
     template_path = (
-        repo_root / "ciudadanos" / "templates" / "ciudadanos" / "ciudadano_list.html"
+        repo_root
+        / "kernel"
+        / "ciudadanos"
+        / "templates"
+        / "ciudadanos"
+        / "ciudadano_list.html"
     )
 
     content = template_path.read_text(encoding="utf-8")

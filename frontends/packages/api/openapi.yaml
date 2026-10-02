@@ -4,240 +4,59 @@ info:
   version: 1.0.0
   description: API de gestión de comedores, centros de familia y más
 paths:
-  /api/celiaquia/cupos/:
+  /api/vpsl/actions/{kind}/{id}/:
     get:
-      operationId: cupos_list
-      description: 'Cupos por provincia. Solo lectura: el alta la hace `CupoService`.'
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - cupos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedProvinciaCupoList'
-          description: ''
-  /api/celiaquia/cupos-movimientos/:
-    get:
-      operationId: cupos_movimientos_list
-      description: Auditoria de movimientos de cupo.
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - cupos-movimientos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedCupoMovimientoList'
-          description: ''
-  /api/celiaquia/cupos-movimientos/{id}/:
-    get:
-      operationId: cupos_movimientos_retrieve
-      description: Auditoria de movimientos de cupo.
+      operationId: actions_retrieve
       parameters:
       - in: path
         name: id
         schema:
           type: integer
-        description: Un valor de entero único que identifique este Movimiento de Cupo.
         required: true
-      tags:
-      - cupos-movimientos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CupoMovimiento'
-          description: ''
-  /api/celiaquia/cupos/{id}/:
-    get:
-      operationId: cupos_retrieve
-      description: 'Cupos por provincia. Solo lectura: el alta la hace `CupoService`.'
-      parameters:
       - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Cupo por Provincia.
-        required: true
-      tags:
-      - cupos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProvinciaCupo'
-          description: ''
-  /api/celiaquia/cupos/{id}/metricas/:
-    get:
-      operationId: cupos_metricas_retrieve
-      description: Metricas calculadas por `CupoService`, no el contador crudo.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Cupo por Provincia.
-        required: true
-      tags:
-      - cupos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProvinciaCupo'
-          description: ''
-  /api/celiaquia/cupos/{id}/ocupados/:
-    get:
-      operationId: cupos_ocupados_list
-      description: 'Cupos por provincia. Solo lectura: el alta la hace `CupoService`.'
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Cupo por Provincia.
-        required: true
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - cupos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedLegajoList'
-          description: ''
-  /api/celiaquia/cupos/{id}/suspendidos/:
-    get:
-      operationId: cupos_suspendidos_list
-      description: 'Cupos por provincia. Solo lectura: el alta la hace `CupoService`.'
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Cupo por Provincia.
-        required: true
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - cupos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedLegajoList'
-          description: ''
-  /api/celiaquia/cupos/dashboard/:
-    get:
-      operationId: cupos_dashboard_list
-      description: |-
-        Cuadro de cupos: **todas** las provincias, con cupo o sin él.
-
-        El listado principal (`GET cupos/`) solo devuelve las configuradas,
-        porque son los `ProvinciaCupo` que existen. Para poder asignar cupo a
-        una provincia nueva hace falta verla: esto replica lo que muestra la
-        pantalla Django.
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - cupos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedFilaCupoProvinciaList'
-          description: ''
-  /api/celiaquia/cupos/legajos/{legajo_id}/baja/:
-    post:
-      operationId: cupos_legajos_baja_create
-      description: Libera definitivamente el cupo del titular.
-      parameters:
-      - in: path
-        name: legajo_id
+        name: kind
         schema:
           type: string
-          pattern: ^\d+$
         required: true
       tags:
-      - cupos
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeletePreview'
+          description: ''
+    post:
+      operationId: actions_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: kind
+        schema:
+          type: string
+        required: true
+      tags:
+      - vpsl
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Motivo'
+              $ref: '#/components/schemas/ActionInput'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Motivo'
+              $ref: '#/components/schemas/ActionInput'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Motivo'
+              $ref: '#/components/schemas/ActionInput'
       security:
       - tokenAuth: []
       - cookieAuth: []
@@ -247,150 +66,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccionResultado'
+                $ref: '#/components/schemas/ActionResult'
           description: ''
-  /api/celiaquia/cupos/legajos/{legajo_id}/reactivar/:
-    post:
-      operationId: cupos_legajos_reactivar_create
-      description: Reactiva un titular suspendido.
-      parameters:
-      - in: path
-        name: legajo_id
-        schema:
-          type: string
-          pattern: ^\d+$
-        required: true
-      tags:
-      - cupos
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Motivo'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Motivo'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Motivo'
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccionResultado'
-          description: ''
-  /api/celiaquia/cupos/legajos/{legajo_id}/suspender/:
-    post:
-      operationId: cupos_legajos_suspender_create
-      description: Suspende al titular sin liberar el cupo.
-      parameters:
-      - in: path
-        name: legajo_id
-        schema:
-          type: string
-          pattern: ^\d+$
-        required: true
-      tags:
-      - cupos
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Motivo'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Motivo'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Motivo'
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccionResultado'
-          description: ''
-  /api/celiaquia/cupos/provincia/{provincia_id}/:
-    post:
-      operationId: cupos_provincia_create
-      description: |-
-        Fija el total asignado de una provincia. Crea el cupo si no existia.
-
-        Va por provincia y no por pk del cupo porque la provincia puede todavia
-        no tener `ProvinciaCupo`: es justamente el caso de "sin configurar".
-      parameters:
-      - in: path
-        name: provincia_id
-        schema:
-          type: string
-          pattern: ^\d+$
-        required: true
-      tags:
-      - cupos
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConfigurarCupo'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ConfigurarCupo'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ConfigurarCupo'
-        required: true
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProvinciaCupo'
-          description: ''
-  /api/celiaquia/estados-expediente/:
+  /api/vpsl/exports/{kind}/{id}/:
     get:
-      operationId: estados_expediente_list
-      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
-      tags:
-      - estados-expediente
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EstadoExpediente'
-          description: ''
-  /api/celiaquia/estados-expediente/{id}/:
-    get:
-      operationId: estados_expediente_retrieve
-      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
+      operationId: exports_retrieve
       parameters:
       - in: path
         name: id
         schema:
           type: integer
-        description: Un valor de entero único que identifique este Estado del Expediente.
+        required: true
+      - in: path
+        name: kind
+        schema:
+          type: string
         required: true
       tags:
-      - estados-expediente
+      - vpsl
       security:
       - tokenAuth: []
       - cookieAuth: []
@@ -398,42 +91,27 @@ paths:
       responses:
         '200':
           content:
-            application/json:
+            text/csv:
               schema:
-                $ref: '#/components/schemas/EstadoExpediente'
+                type: string
+                format: binary
           description: ''
-  /api/celiaquia/estados-legajo/:
+  /api/vpsl/forms/{kind}/{id}/:
     get:
-      operationId: estados_legajo_list
-      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
-      tags:
-      - estados-legajo
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EstadoLegajo'
-          description: ''
-  /api/celiaquia/estados-legajo/{id}/:
-    get:
-      operationId: estados_legajo_retrieve
-      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
+      operationId: forms_retrieve
       parameters:
       - in: path
         name: id
         schema:
           type: integer
-        description: Un valor de entero único que identifique este Estado del Legajo.
+        required: true
+      - in: path
+        name: kind
+        schema:
+          type: string
         required: true
       tags:
-      - estados-legajo
+      - vpsl
       security:
       - tokenAuth: []
       - cookieAuth: []
@@ -443,1565 +121,51 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EstadoLegajo'
+                $ref: '#/components/schemas/FormSchema'
           description: ''
-  /api/celiaquia/expedientes/:
+    post:
+      operationId: forms_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: kind
+        schema:
+          type: string
+        required: true
+      tags:
+      - vpsl
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VpslFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VpslFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VpslFormInput'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResult'
+          description: ''
+  /api/vpsl/itinerarios/:
     get:
-      operationId: expedientes_list
-      description: Expedientes visibles para el usuario, con sus transiciones de estado.
+      operationId: vpsl_itinerarios_list
       parameters:
       - in: query
         name: estado
-        schema:
-          type: string
-        description: Nombre exacto del estado.
-      - in: query
-        name: numero_expediente
-        schema:
-          type: string
-        description: Coincidencia parcial.
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedExpedienteList'
-          description: ''
-    post:
-      operationId: expedientes_create
-      description: |-
-        Alta del expediente, opcionalmente con su Excel masivo.
-
-        El alta la hace la provincia: el expediente queda a nombre del usuario
-        que lo crea y es lo que despues determina su alcance.
-      tags:
-      - expedientes
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ExpedienteCreate'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ExpedienteCreate'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ExpedienteCreate'
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Expediente'
-          description: ''
-  /api/celiaquia/expedientes/{id}/:
-    get:
-      operationId: expedientes_retrieve
-      description: Expedientes visibles para el usuario, con sus transiciones de estado.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Expediente'
-          description: ''
-    patch:
-      operationId: expedientes_partial_update
-      description: Edicion de metadatos. Solo mientras el expediente esta en CREADO.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedExpedienteUpdate'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedExpedienteUpdate'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedExpedienteUpdate'
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Expediente'
-          description: ''
-    delete:
-      operationId: expedientes_destroy
-      description: Baja del expediente. Reservada a coordinacion y admin.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/celiaquia/expedientes/{id}/asignaciones/:
-    get:
-      operationId: expedientes_asignaciones_list
-      description: Expedientes visibles para el usuario, con sus transiciones de estado.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedAsignacionTecnicoList'
-          description: ''
-  /api/celiaquia/expedientes/{id}/asignar-tecnico/:
-    post:
-      operationId: expedientes_asignar_tecnico_create
-      description: Expedientes visibles para el usuario, con sus transiciones de estado.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AsignarTecnico'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AsignarTecnico'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AsignarTecnico'
-        required: true
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccionResultado'
-          description: ''
-  /api/celiaquia/expedientes/{id}/confirmar-envio/:
-    post:
-      operationId: expedientes_confirmar_envio_create
-      description: Cierra la carga provincial y envia el expediente a revision.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccionResultado'
-          description: ''
-  /api/celiaquia/expedientes/{id}/crear-legajos/:
-    post:
-      operationId: expedientes_crear_legajos_create
-      description: Alta manual de legajos a partir de filas ya previsualizadas.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CrearLegajos'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CrearLegajos'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CrearLegajos'
-        required: true
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/celiaquia/expedientes/{id}/cruce/:
-    post:
-      operationId: expedientes_cruce_create
-      description: Sube el Excel de respuesta de Sintys y ejecuta el cruce por CUIT.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Archivo'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Archivo'
-        required: true
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/celiaquia/expedientes/{id}/desasignar-tecnico/:
-    post:
-      operationId: expedientes_desasignar_tecnico_create
-      description: Expedientes visibles para el usuario, con sus transiciones de estado.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccionResultado'
-          description: ''
-  /api/celiaquia/expedientes/{id}/estructura-familiar/:
-    get:
-      operationId: expedientes_estructura_familiar_retrieve
-      description: Responsables e hijos a cargo del expediente.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/celiaquia/expedientes/{id}/excel-masivo/:
-    get:
-      operationId: expedientes_excel_masivo_retrieve
-      description: Descarga la copia del Excel masivo vigente del expediente.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-          description: ''
-  /api/celiaquia/expedientes/{id}/fuera-de-cupo/:
-    get:
-      operationId: expedientes_fuera_de_cupo_list
-      description: Expedientes visibles para el usuario, con sus transiciones de estado.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedLegajoList'
-          description: ''
-  /api/celiaquia/expedientes/{id}/historial-estados/:
-    get:
-      operationId: expedientes_historial_estados_list
-      description: Expedientes visibles para el usuario, con sus transiciones de estado.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedExpedienteEstadoHistorialList'
-          description: ''
-  /api/celiaquia/expedientes/{id}/importar/:
-    post:
-      operationId: expedientes_importar_create
-      description: |-
-        Importa los legajos del Excel masivo ya cargado en el expediente.
-
-        La pantalla Django devuelve los totales por `messages`; aca se devuelven
-        como JSON para que el front pueda mostrar validos, errores y
-        advertencias sin parsear texto.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ImportacionResultado'
-          description: ''
-  /api/celiaquia/expedientes/{id}/legajos/:
-    get:
-      operationId: expedientes_legajos_list
-      description: Legajos del expediente (`ExpedienteCiudadano`).
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedLegajoList'
-          description: ''
-  /api/celiaquia/expedientes/{id}/localidades/:
-    get:
-      operationId: expedientes_localidades_list
-      description: |-
-        Localidades que la correccion de este expediente va a aceptar.
-
-        Acotadas a la **provincia del expediente**, por lo mismo que los
-        municipios: el validador resuelve `localidad_responsable` contra
-        `Localidad.objects.filter(municipio__provincia_id=provincia_usuario_id)`.
-
-        Con `?municipio=` se acota ademas a ese municipio, que es lo que usa el
-        campo `localidad` del beneficiario. Sin el parametro devuelve toda la
-        provincia, que es lo que necesita `localidad_responsable`: ese campo no
-        tiene municipio propio, el validador lo deriva de la localidad elegida.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      - in: query
-        name: municipio
-        schema:
-          type: integer
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedLocalidadLookupList'
-          description: ''
-  /api/celiaquia/expedientes/{id}/municipios/:
-    get:
-      operationId: expedientes_municipios_list
-      description: |-
-        Municipios que la corrección de un registro erróneo va a aceptar.
-
-        Va acotado a la **provincia del expediente**, no al país: el validador
-        de la importación arma su caché con
-        `Municipio.objects.filter(provincia_id=provincia_usuario_id)`, así que
-        un municipio de otra provincia se rechaza con "municipio N no
-        encontrado". Ofrecer opciones que después no se aceptan es peor que no
-        ofrecer ninguna.
-
-        Se resuelve la provincia con la misma función que usa la validación,
-        para que el desplegable y el validador no puedan desalinearse.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedOpcionCatalogoList'
-          description: ''
-  /api/celiaquia/expedientes/{id}/nomina-sintys/:
-    get:
-      operationId: expedientes_nomina_sintys_retrieve
-      description: Excel con la nomina a enviar a Sintys.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: string
-                format: binary
-          description: ''
-  /api/celiaquia/expedientes/{id}/padron-final/:
-    get:
-      operationId: expedientes_padron_final_retrieve
-      description: Excel con los legajos aprobados del expediente.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: string
-                format: binary
-          description: ''
-  /api/celiaquia/expedientes/{id}/procesar/:
-    post:
-      operationId: expedientes_procesar_create
-      description: Procesa el Excel masivo y crea los legajos.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProcesarExpedienteRespuesta'
-          description: ''
-  /api/celiaquia/expedientes/{id}/recepcionar/:
-    post:
-      operationId: expedientes_recepcionar_create
-      description: Nacion toma el expediente que la provincia confirmo.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccionResultado'
-          description: ''
-  /api/celiaquia/expedientes/{id}/registros-erroneos/:
-    get:
-      operationId: expedientes_registros_erroneos_list
-      description: Filas del Excel que no pudieron importarse.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedRegistroErroneoList'
-          description: ''
-  /api/celiaquia/expedientes/{id}/registros-erroneos/{registro_id}/:
-    delete:
-      operationId: expedientes_registros_erroneos_destroy
-      description: Descarta una fila erronea sin importarla.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      - in: path
-        name: registro_id
-        schema:
-          type: string
-          pattern: ^[0-9]+$
-        required: true
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/celiaquia/expedientes/{id}/registros-erroneos/{registro_id}/actualizar/:
-    post:
-      operationId: expedientes_registros_erroneos_actualizar_create
-      description: Corrige una fila erronea, con la misma validacion que la pantalla.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      - in: path
-        name: registro_id
-        schema:
-          type: string
-          pattern: ^[0-9]+$
-        required: true
-      tags:
-      - expedientes
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ActualizarRegistroErroneo'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ActualizarRegistroErroneo'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ActualizarRegistroErroneo'
-        required: true
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccionResultado'
-          description: ''
-  /api/celiaquia/expedientes/{id}/registros-erroneos/reprocesar/:
-    post:
-      operationId: expedientes_registros_erroneos_reprocesar_create
-      description: Reintenta crear los legajos de las filas que quedaron con error.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente.
-        required: true
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReprocesoResultado'
-          description: ''
-  /api/celiaquia/expedientes/catalogos/:
-    get:
-      operationId: expedientes_catalogos_retrieve
-      description: |-
-        Sexos y nacionalidades para el formulario de corrección.
-
-        Son chicos (3 y ~190 filas), así que van enteros en una sola llamada.
-        Municipios y localidades no: se piden filtrados, porque son 2.264 y
-        15.394 y meterlos en la pantalla la vuelve inusable.
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CatalogosRegistroErroneo'
-          description: ''
-  /api/celiaquia/expedientes/plantilla-excel/:
-    get:
-      operationId: expedientes_plantilla_excel_retrieve
-      description: Excel vacio con las columnas que espera la importacion masiva.
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
-              schema:
-                type: string
-                format: binary
-          description: ''
-  /api/celiaquia/expedientes/preview-excel/:
-    post:
-      operationId: expedientes_preview_excel_create
-      description: |-
-        Lee el Excel y devuelve las filas, sin crear nada.
-
-        Es la previsualizacion del alta: permite corregir el archivo antes de
-        que exista un expediente.
-      tags:
-      - expedientes
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PreviewExcel'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PreviewExcel'
-        required: true
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PreviewExcelResultado'
-          description: ''
-  /api/celiaquia/expedientes/tecnicos/:
-    get:
-      operationId: expedientes_tecnicos_list
-      description: |-
-        Tecnicos que se pueden asignar a un expediente.
-
-        Solo coordinacion y admin asignan, asi que solo ellos ven la lista: un
-        provincial no tiene por que conocer la nomina de tecnicos.
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - expedientes
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedUsuarioResumenList'
-          description: ''
-  /api/celiaquia/legajos/:
-    get:
-      operationId: legajos_list
-      description: Legajos, acotados a los expedientes que el usuario puede ver.
-      parameters:
-      - in: query
-        name: estado_cupo
-        schema:
-          type: string
-      - in: query
-        name: expediente
-        schema:
-          type: integer
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      - in: query
-        name: revision_tecnico
-        schema:
-          type: string
-      tags:
-      - legajos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedLegajoList'
-          description: ''
-  /api/celiaquia/legajos/{id}/:
-    get:
-      operationId: legajos_retrieve
-      description: Legajos, acotados a los expedientes que el usuario puede ver.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente Ciudadano.
-        required: true
-      tags:
-      - legajos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Legajo'
-          description: ''
-  /api/celiaquia/legajos/{id}/archivos/:
-    post:
-      operationId: legajos_archivos_create
-      description: Sube un archivo al legajo, en el slot indicado (1, 2 o 3).
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente Ciudadano.
-        required: true
-      tags:
-      - legajos
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SubirArchivoLegajo'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SubirArchivoLegajo'
-        required: true
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/celiaquia/legajos/{id}/comentarios/:
-    get:
-      operationId: legajos_comentarios_list
-      description: Historial de comentarios del legajo, deduplicado como la pantalla.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente Ciudadano.
-        required: true
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - legajos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedComentarioLegajoList'
-          description: ''
-  /api/celiaquia/legajos/{id}/comentarios/tecnico/:
-    post:
-      operationId: legajos_comentarios_tecnico_create
-      description: |-
-        Alta de un comentario tecnico interno sobre el legajo.
-
-        Solo el tecnico asignado, el coordinador o un admin: la provincia ve el
-        panel pero no escribe, igual que en la pantalla.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente Ciudadano.
-        required: true
-      tags:
-      - legajos
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CrearComentarioTecnico'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CrearComentarioTecnico'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CrearComentarioTecnico'
-        required: true
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ComentarioLegajo'
-          description: ''
-  /api/celiaquia/legajos/{id}/confirmar-subsanacion/:
-    post:
-      operationId: legajos_confirmar_subsanacion_create
-      description: |-
-        Pasa el legajo de SUBSANAR a SUBSANADO.
-
-        Es el paso que faltaba: responder una subsanacion sube la evidencia y
-        marca la subsanacion como RESPONDIDA, pero **no cambia el estado del
-        legajo**. Sin confirmar, el legajo sigue en SUBSANAR y la tecnica no
-        puede volver a aprobarlo ni rechazarlo.
-
-        Exige lo mismo que la pantalla: archivos obligatorios cargados,
-        evidencia de subsanacion adjunta y que no haya una subsanacion RENAPER
-        pendiente.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente Ciudadano.
-        required: true
-      tags:
-      - legajos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Legajo'
-          description: ''
-  /api/celiaquia/legajos/{id}/documentos/:
-    get:
-      operationId: legajos_documentos_list
-      description: Legajos, acotados a los expedientes que el usuario puede ver.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente Ciudadano.
-        required: true
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - legajos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedDocumentoLegajoList'
-          description: ''
-  /api/celiaquia/legajos/{id}/motivo-preview/:
-    get:
-      operationId: legajos_motivo_preview_retrieve
-      description: Motivo que se propondria al subsanar o rechazar, ya concatenado.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente Ciudadano.
-        required: true
-      tags:
-      - legajos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MotivoPreview'
-          description: ''
-  /api/celiaquia/legajos/{id}/responder-subsanacion/:
-    post:
-      operationId: legajos_responder_subsanacion_create
-      description: La provincia adjunta evidencia nueva para la subsanacion activa.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente Ciudadano.
-        required: true
-      tags:
-      - legajos
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ResponderSubsanacion'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ResponderSubsanacion'
-        required: true
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccionResultado'
-          description: ''
-  /api/celiaquia/legajos/{id}/revisar/:
-    post:
-      operationId: legajos_revisar_create
-      description: |-
-        Revision tecnica: aprobar, rechazar, subsanar o eliminar.
-
-        Todo el flujo (permisos, transiciones, liberacion de cupo, historial y
-        publicacion de observaciones) vive en `RevisionService`, el mismo que
-        usa la pantalla.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente Ciudadano.
-        required: true
-      tags:
-      - legajos
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RevisarLegajo'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/RevisarLegajo'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/RevisarLegajo'
-        required: true
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/celiaquia/legajos/{id}/solicitar-subsanacion/:
-    post:
-      operationId: legajos_solicitar_subsanacion_create
-      description: Marca el legajo para subsanar. Es una accion del tecnico revisor.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente Ciudadano.
-        required: true
-      tags:
-      - legajos
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SolicitarSubsanacion'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SolicitarSubsanacion'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SolicitarSubsanacion'
-        required: true
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccionResultado'
-          description: ''
-  /api/celiaquia/legajos/{id}/subsanaciones/:
-    get:
-      operationId: legajos_subsanaciones_list
-      description: Legajos, acotados a los expedientes que el usuario puede ver.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente Ciudadano.
-        required: true
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - legajos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedSubsanacionList'
-          description: ''
-  /api/celiaquia/legajos/{id}/validacion-renaper/:
-    post:
-      operationId: legajos_validacion_renaper_create
-      description: 'Confirma el resultado: 1 acepta, 2 rechaza y libera cupo, 3 subsana.'
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente Ciudadano.
-        required: true
-      tags:
-      - legajos
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GuardarValidacionRenaper'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/GuardarValidacionRenaper'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/GuardarValidacionRenaper'
-        required: true
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccionResultado'
-          description: ''
-  /api/celiaquia/legajos/{id}/validar-renaper/:
-    post:
-      operationId: legajos_validar_renaper_create
-      description: |-
-        Consulta RENAPER y devuelve la comparacion con los datos cargados.
-
-        No guarda nada: el resultado se confirma con `validacion-renaper`.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente Ciudadano.
-        required: true
-      tags:
-      - legajos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/celiaquia/organismos/:
-    get:
-      operationId: organismos_list
-      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
-      tags:
-      - organismos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organismo'
-          description: ''
-  /api/celiaquia/organismos/{id}/:
-    get:
-      operationId: organismos_retrieve
-      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Organismo de Cruce.
-        required: true
-      tags:
-      - organismos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organismo'
-          description: ''
-  /api/celiaquia/pagos/:
-    get:
-      operationId: pagos_list
-      description: Lotes de pago y su nomina.
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - pagos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedPagoExpedienteList'
-          description: ''
-    post:
-      operationId: pagos_create
-      description: Arma el lote de pago de una provincia con su nomina activa.
-      tags:
-      - pagos
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CrearPago'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CrearPago'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CrearPago'
-        required: true
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PagoExpediente'
-          description: ''
-  /api/celiaquia/pagos/{id}/:
-    get:
-      operationId: pagos_retrieve
-      description: Lotes de pago y su nomina.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente de Pago.
-        required: true
-      tags:
-      - pagos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PagoExpediente'
-          description: ''
-  /api/celiaquia/pagos/{id}/exportar-nomina/:
-    get:
-      operationId: pagos_exportar_nomina_retrieve
-      description: Excel con la nomina activa de la provincia del lote.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente de Pago.
-        required: true
-      tags:
-      - pagos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: string
-                format: binary
-          description: ''
-  /api/celiaquia/pagos/{id}/nomina/:
-    get:
-      operationId: pagos_nomina_list
-      description: Lotes de pago y su nomina.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente de Pago.
-        required: true
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
-      tags:
-      - pagos
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedPagoNominaList'
-          description: ''
-  /api/celiaquia/pagos/{id}/procesar-respuesta/:
-    post:
-      operationId: pagos_procesar_respuesta_create
-      description: Cruza la respuesta de Sintys contra la nomina del lote.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Un valor de entero único que identifique este Expediente de Pago.
-        required: true
-      tags:
-      - pagos
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Archivo'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Archivo'
-        required: true
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/celiaquia/reporte/:
-    get:
-      operationId: reporte_list
-      description: |-
-        Reporte de Celiaquia.
-
-        Delega entero en `reporte_service`, el mismo que usa la pantalla Django:
-        las reglas de que cuenta como persona unica o como dupla no se replican.
-        El alcance territorial tambien lo aplica el service.
-      parameters:
-      - in: query
-        name: documento_persona
-        schema:
-          type: string
-      - in: query
-        name: estado_cupo
-        schema:
-          type: string
-      - in: query
-        name: expediente_numero
-        schema:
-          type: string
-      - in: query
-        name: fecha_desde
-        schema:
-          type: string
-      - in: query
-        name: fecha_hasta
         schema:
           type: string
       - in: query
@@ -2009,64 +173,81 @@ paths:
         schema:
           type: integer
       - in: query
-        name: provincia
+        name: page_size
         schema:
           type: integer
       - in: query
-        name: resultado_sintys
+        name: q
+        schema:
+          type: string
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItinerarioPage'
+          description: ''
+    post:
+      operationId: vpsl_itinerarios_create
+      parameters:
+      - in: query
+        name: estado
         schema:
           type: string
       - in: query
-        name: revision_tecnico
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+      - in: query
+        name: q
         schema:
           type: string
       tags:
-      - reporte
+      - vpsl
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItinerarioInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ItinerarioInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ItinerarioInput'
+        required: true
       security:
       - tokenAuth: []
       - cookieAuth: []
       - ApiKeyAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Reporte'
+                $ref: '#/components/schemas/Itinerario'
           description: ''
-  /api/celiaquia/tipos-cruce/:
+  /api/vpsl/itinerarios/{id}/:
     get:
-      operationId: tipos_cruce_list
-      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
-      tags:
-      - tipos-cruce
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TipoCruce'
-          description: ''
-  /api/celiaquia/tipos-cruce/{id}/:
-    get:
-      operationId: tipos_cruce_retrieve
-      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
+      operationId: vpsl_itinerario_detail
       parameters:
       - in: path
         name: id
         schema:
           type: integer
-        description: Un valor de entero único que identifique este Tipo de Cruce.
         required: true
       tags:
-      - tipos-cruce
+      - vpsl
       security:
       - tokenAuth: []
       - cookieAuth: []
@@ -2076,40 +257,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TipoCruce'
+                $ref: '#/components/schemas/Itinerario'
           description: ''
-  /api/celiaquia/tipos-documento/:
+  /api/vpsl/jornadas/{id}/:
     get:
-      operationId: tipos_documento_list
-      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
-      tags:
-      - tipos-documento
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - ApiKeyAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TipoDocumento'
-          description: ''
-  /api/celiaquia/tipos-documento/{id}/:
-    get:
-      operationId: tipos_documento_retrieve
-      description: 'Catalogos: los lee cualquier usuario autenticado del modulo.'
+      operationId: jornadas_retrieve
       parameters:
       - in: path
         name: id
         schema:
           type: integer
-        description: Un valor de entero único que identifique este Tipo de Documento.
         required: true
       tags:
-      - tipos-documento
+      - vpsl
       security:
       - tokenAuth: []
       - cookieAuth: []
@@ -2119,1779 +279,1379 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TipoDocumento'
+                $ref: '#/components/schemas/Jornada'
+          description: ''
+  /api/vpsl/jornadas/{id}/laboratorio/:
+    get:
+      operationId: jornadas_laboratorio_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LaboratorioPage'
+          description: ''
+  /api/vpsl/jornadas/{id}/registros/:
+    get:
+      operationId: jornadas_registros_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistroPage'
+          description: ''
+  /api/vpsl/options/:
+    get:
+      operationId: options_retrieve
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Options'
+          description: ''
+  /api/vpsl/renaper/:
+    get:
+      operationId: renaper_retrieve
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Renaper'
+          description: ''
+  /api/vpsl/sedes/:
+    get:
+      operationId: vpsl_sedes
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SedePage'
+          description: ''
+  /api/vpsl/sedes/{id}/:
+    get:
+      operationId: vpsl_sede_detail
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sede'
+          description: ''
+  /api/vpsl/session/:
+    get:
+      operationId: session_retrieve
+      tags:
+      - vpsl
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+          description: ''
+  /api/vpsl/ubicacion/:
+    post:
+      operationId: ubicacion_create
+      tags:
+      - vpsl
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LocationInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LocationInput'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationPreview'
           description: ''
 components:
   schemas:
-    AccionEnum:
+    AccionEvaluacionEnum:
       enum:
-      - APROBAR
-      - RECHAZAR
-      - SUBSANAR
-      - ELIMINAR
+      - aprobar
+      - subsanar
+      - rechazar
       type: string
       description: |-
-        * `APROBAR` - APROBAR
-        * `RECHAZAR` - RECHAZAR
-        * `SUBSANAR` - SUBSANAR
-        * `ELIMINAR` - ELIMINAR
-    AccionResultado:
+        * `aprobar` - aprobar
+        * `subsanar` - subsanar
+        * `rechazar` - rechazar
+    ActionInput:
       type: object
-      description: Respuesta uniforme de las acciones que delegan en un service.
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
       properties:
-        detail:
+        accion_evaluacion:
+          $ref: '#/components/schemas/AccionEvaluacionEnum'
+        carta_archivo_estado:
           type: string
-        expediente:
-          $ref: '#/components/schemas/Expediente'
-      required:
-      - detail
-    ActualizarRegistroErroneo:
-      type: object
-      description: |-
-        Correccion de una fila que quedo con error en la importacion.
-
-        Las claves dependen del Excel, asi que se acepta el diccionario entero y la
-        validacion real la hace `registros_erroneos_service`, que es el mismo camino
-        que usa la pantalla.
-      properties:
-        datos:
-          type: object
-          additionalProperties:
-            type: string
-      required:
-      - datos
-    Archivo:
-      type: object
-      description: Subida generica de un archivo (cruce, respuesta de Sintys).
-      properties:
-        archivo:
+        carta_referencia_estado:
           type: string
-          format: uri
-      required:
-      - archivo
-    ArchivoLegajo:
-      type: object
-      description: |-
-        Estado de uno de los tres slots de documentacion de un legajo.
-
-        Cuales se piden depende del rol (beneficiario, responsable o ambos) y lo
-        decide `LegajoService.get_archivos_requeridos_por_legajo`. Sin esto el front
-        no sabe que subir ni con que etiqueta.
-      properties:
-        slot:
-          type: integer
-        campo:
+        subsanacion_observaciones:
           type: string
-        etiqueta:
-          type: string
-        cargado:
-          type: boolean
-        url:
-          type: string
-      required:
-      - campo
-      - cargado
-      - etiqueta
-      - slot
-      - url
-    AsignacionTecnico:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        tecnico:
-          allOf:
-          - $ref: '#/components/schemas/UsuarioResumen'
-          readOnly: true
-        fecha_asignacion:
-          type: string
-          format: date-time
-          readOnly: true
-        activa:
-          type: boolean
-          description: Indica si la asignación está activa
-      required:
-      - fecha_asignacion
-      - id
-      - tecnico
-    AsignarTecnico:
-      type: object
-      properties:
-        tecnico_id:
-          type: integer
-      required:
-      - tecnico_id
-    BlankEnum:
-      enum:
-      - ''
-    CatalogosRegistroErroneo:
-      type: object
-      description: Catálogos chicos que el formulario necesita enteros.
-      properties:
-        sexos:
-          type: array
-          items:
-            $ref: '#/components/schemas/OpcionCatalogo'
-        nacionalidades:
-          type: array
-          items:
-            $ref: '#/components/schemas/OpcionCatalogo'
-      required:
-      - nacionalidades
-      - sexos
-    ComentarioLegajo:
-      type: object
-      description: |-
-        Comentario del panel de un legajo.
-
-        Los comentarios tecnicos estructurados (issue #2318) traen ademas tipo de
-        documento y observacion; en el resto esos campos vienen vacios.
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        comentario:
-          type: string
-        usuario:
-          allOf:
-          - $ref: '#/components/schemas/UsuarioResumen'
-          readOnly: true
-        fecha_creacion:
-          type: string
-          format: date-time
-          readOnly: true
-        es_interno:
-          type: boolean
-          description: 'Comentario interno: visible solo para usuarios de Nación'
-        es_comentario_tecnico:
-          type: boolean
-          readOnly: true
-        tipo_comentario:
-          $ref: '#/components/schemas/TipoComentarioEnum'
-        tipo_documento:
-          nullable: true
-          description: |-
-            Tipo de documento revisado (solo en comentarios técnicos)
-
-            * `RENAPER` - RENAPER
-            * `ANSES` - ANSES
-            * `CONDICION_DIAGNOSTICA` - Condición diagnóstica
-          oneOf:
-          - $ref: '#/components/schemas/TipoDocumentoEnum'
-          - $ref: '#/components/schemas/BlankEnum'
-          - $ref: '#/components/schemas/NullEnum'
-        tipo_documento_display:
-          type: string
-          readOnly: true
-        archivo_url:
-          type: string
-          readOnly: true
-      required:
-      - archivo_url
-      - comentario
-      - es_comentario_tecnico
-      - fecha_creacion
-      - id
-      - tipo_comentario
-      - tipo_documento_display
-      - usuario
-    ConfigurarCupo:
-      type: object
-      description: |-
-        Base de los serializers de solo entrada: no persisten nada.
-
-        Las escrituras de este modulo pasan siempre por `celiaquia/services/`, asi
-        que `create`/`update` no deben existir. Se centraliza el rechazo para no
-        repetirlo en cada serializer.
-      properties:
-        total_asignado:
-          type: integer
-          minimum: 0
-      required:
-      - total_asignado
-    CrearComentarioTecnico:
-      type: object
-      description: |-
-        Alta estructurada: tipo de documento + Si/No + observacion.
-
-        La combinacion valida la decide `ComentariosTecnicosService.registrar`, que
-        es el mismo camino que usa la pantalla.
-      properties:
-        tipo_documento:
-          type: string
-        tiene_observaciones:
-          type: string
-        observacion_codigo:
-          type: string
-          nullable: true
-        observacion_libre:
-          type: string
-      required:
-      - tiene_observaciones
-      - tipo_documento
-    CrearLegajos:
-      type: object
-      description: Alta manual de legajos desde las filas previsualizadas.
-      properties:
-        rows:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-      required:
-      - rows
-    CrearPago:
-      type: object
-      description: |-
-        Base de los serializers de solo entrada: no persisten nada.
-
-        Las escrituras de este modulo pasan siempre por `celiaquia/services/`, asi
-        que `create`/`update` no deben existir. Se centraliza el rechazo para no
-        repetirlo en cada serializer.
-      properties:
-        provincia_id:
-          type: integer
-        periodo:
-          type: string
-          maxLength: 7
-      required:
-      - provincia_id
-    CupoMovimiento:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        provincia:
-          type: string
-          readOnly: true
-        expediente_id:
-          type: integer
-          nullable: true
-          readOnly: true
-        legajo_id:
-          type: integer
-          nullable: true
-          readOnly: true
-        tipo:
-          $ref: '#/components/schemas/TipoEnum'
-        delta:
-          type: integer
-          maximum: 2147483647
-          minimum: -2147483648
-        motivo:
-          type: string
-          maxLength: 255
-        usuario:
-          allOf:
-          - $ref: '#/components/schemas/UsuarioResumen'
-          readOnly: true
-        creado_en:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - creado_en
-      - delta
-      - expediente_id
-      - id
-      - legajo_id
-      - provincia
-      - tipo
-      - usuario
-    DocumentoLegajo:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        legajo_id:
-          type: integer
-          readOnly: true
-        tipo_documento:
-          type: string
-          readOnly: true
-        archivo_url:
-          type: string
-          description: URL absoluta del archivo; nunca la ruta de almacenamiento.
-          readOnly: true
-        observaciones:
-          type: string
-        usuario_carga:
-          allOf:
-          - $ref: '#/components/schemas/UsuarioResumen'
-          readOnly: true
-        fecha_carga:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - archivo_url
-      - fecha_carga
-      - id
-      - legajo_id
-      - tipo_documento
-      - usuario_carga
-    EstadoCupoEnum:
-      enum:
-      - NO_EVAL
-      - DENTRO
-      - FUERA
-      type: string
-      description: |-
-        * `NO_EVAL` - No evaluado
-        * `DENTRO` - Dentro de cupo
-        * `FUERA` - Fuera de cupo
-    EstadoExpediente:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        nombre:
-          type: string
-          maxLength: 50
-      required:
-      - id
-      - nombre
-    EstadoLegajo:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        nombre:
-          type: string
-          maxLength: 50
-      required:
-      - id
-      - nombre
-    ExclusionImportacion:
-      type: object
-      description: |-
-        Fila que no se importó porque la persona ya está en el programa.
-
-        No es un "registro erróneo": la fila está bien formada, pero el beneficiario
-        ya existe. El Excel no se puede arreglar para que entre, así que no aparece
-        en la grilla de errores y antes se perdía en silencio.
-      properties:
-        fila:
-          type: integer
-        documento:
-          type: string
-        nombre:
-          type: string
-        apellido:
-          type: string
-        motivo:
-          type: string
-        expediente_origen_id:
-          type: integer
-          nullable: true
-        estado_expediente_origen:
-          type: string
-      required:
-      - apellido
-      - documento
-      - fila
-      - motivo
-      - nombre
-    Expediente:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        numero_expediente:
-          type: string
-          nullable: true
-          maxLength: 100
-        estado:
-          type: string
-          readOnly: true
-        provincia:
-          type: string
-          description: |-
-            Provincia derivada del perfil de quien creo el expediente.
-
-            El listado web la deriva de los ciudadanos con un Subquery; aca se usa
-            el valor anotado cuando el ViewSet lo provee y se cae al perfil.
-          readOnly: true
-        usuario_provincia:
-          allOf:
-          - $ref: '#/components/schemas/UsuarioResumen'
-          readOnly: true
-        observaciones:
-          type: string
-          nullable: true
-        legajos_total:
-          type: integer
-          readOnly: true
-        fecha_creacion:
-          type: string
-          format: date-time
-          readOnly: true
-        fecha_modificacion:
-          type: string
-          format: date-time
-          readOnly: true
-        fecha_cierre:
-          type: string
-          format: date-time
-          nullable: true
-      required:
-      - estado
-      - fecha_creacion
-      - fecha_modificacion
-      - id
-      - legajos_total
-      - provincia
-      - usuario_provincia
-    ExpedienteCreate:
-      type: object
-      description: Alta del expediente con su Excel masivo.
-      properties:
-        numero_expediente:
-          type: string
-          maxLength: 100
-        observaciones:
-          type: string
-        excel_masivo:
-          type: string
-          format: uri
-    ExpedienteEstadoHistorial:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        estado:
-          type: string
-          readOnly: true
-        usuario:
-          allOf:
-          - $ref: '#/components/schemas/UsuarioResumen'
-          readOnly: true
-        fecha:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - estado
-      - fecha
-      - id
-      - usuario
-    FilaCupoProvincia:
-      type: object
-      description: |-
-        Una provincia en el cuadro de cupos, tenga cupo configurado o no.
-
-        Las no configuradas vienen con los contadores en `null` y `cupo_id` vacío:
-        es lo que permite entrar y asignarles cupo por primera vez. Si solo se
-        listaran las configuradas, una provincia nueva nunca podría recibirlo.
-      properties:
-        provincia_id:
-          type: integer
-        provincia:
-          type: string
-        cupo_id:
-          type: integer
-          nullable: true
-        total_asignado:
-          type: integer
-          nullable: true
-        usados:
-          type: integer
-          nullable: true
-        disponibles:
-          type: integer
-          nullable: true
-        fuera:
-          type: integer
-          nullable: true
-        configurado:
-          type: boolean
-      required:
-      - configurado
-      - cupo_id
-      - disponibles
-      - fuera
-      - provincia
-      - provincia_id
-      - total_asignado
-      - usados
-    GuardarValidacionRenaper:
-      type: object
-      description: Resultado que el tecnico elige tras ver la comparacion con RENAPER.
-      properties:
-        estado:
-          $ref: '#/components/schemas/GuardarValidacionRenaperEstadoEnum'
-        comentario:
-          type: string
-      required:
-      - estado
-    GuardarValidacionRenaperEstadoEnum:
-      enum:
-      - '1'
-      - '2'
-      - '3'
-      type: string
-      description: |-
-        * `1` - 1
-        * `2` - 2
-        * `3` - 3
-    ImportacionResultado:
-      type: object
-      description: Resultado de importar los legajos del Excel masivo ya cargado.
-      properties:
-        validos:
-          type: integer
-        errores:
-          type: integer
-        detalles_errores:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        warnings:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-      required:
-      - errores
-      - validos
-    Legajo:
-      type: object
-      description: '`ExpedienteCiudadano` es el legajo de una persona dentro del expediente.'
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        expediente_id:
-          type: integer
-          readOnly: true
-        ciudadano_id:
-          type: integer
-          readOnly: true
-        ciudadano:
-          type: string
-          readOnly: true
-        documento:
-          type: string
-          readOnly: true
-        estado:
-          type: string
-          readOnly: true
-        rol:
-          $ref: '#/components/schemas/RolEnum'
-        archivos_ok:
-          type: boolean
-        archivos:
-          type: array
-          items:
-            $ref: '#/components/schemas/ArchivoLegajo'
-          readOnly: true
-        cruce_ok:
-          type: boolean
-          nullable: true
-        observacion_cruce:
-          type: string
-          nullable: true
-          maxLength: 255
-        revision_tecnico:
-          $ref: '#/components/schemas/RevisionTecnicoEnum'
-        resultado_sintys:
-          $ref: '#/components/schemas/ResultadoSintysEnum'
-        estado_cupo:
-          $ref: '#/components/schemas/EstadoCupoEnum'
-        es_titular_activo:
-          type: boolean
-        estado_validacion_renaper:
-          type: integer
-          maximum: 2147483647
-          minimum: -2147483648
-          description: 0=no validado, 1=aceptado, 2=rechazado, 3=subsanar
-        subsanacion_tipo:
-          type: string
-          nullable: true
-          maxLength: 50
-        subsanacion_motivo:
-          type: string
-          nullable: true
-        subsanacion_solicitada_en:
-          type: string
-          format: date-time
-          nullable: true
-        subsanacion_enviada_en:
-          type: string
-          format: date-time
-          nullable: true
-        creado_en:
-          type: string
-          format: date-time
-          readOnly: true
-        modificado_en:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - archivos
-      - ciudadano
-      - ciudadano_id
-      - creado_en
-      - documento
-      - estado
-      - expediente_id
-      - id
-      - modificado_en
-    LocalidadLookup:
-      type: object
-      description: Localidad con su municipio y provincia, para los selectores del
-        alta.
-      properties:
-        localidad_id:
-          type: integer
-          readOnly: true
-        localidad_nombre:
-          type: string
-          readOnly: true
-        municipio_id:
-          type: integer
-          readOnly: true
-        municipio_nombre:
-          type: string
-          readOnly: true
-          default: ''
-        provincia_id:
-          type: integer
-          readOnly: true
-        provincia_nombre:
-          type: string
-          readOnly: true
-          default: ''
-      required:
-      - localidad_id
-      - localidad_nombre
-      - municipio_id
-      - municipio_nombre
-      - provincia_id
-      - provincia_nombre
-    Motivo:
-      type: object
-      description: Motivo de una baja, suspension o reactivacion de cupo.
-      properties:
-        motivo:
-          type: string
-          default: ''
-          maxLength: 2000
-    MotivoPreview:
-      type: object
-      description: Motivo que se propondria al subsanar o rechazar, ya concatenado.
-      properties:
-        lineas:
-          type: array
-          items:
-            type: string
-        motivo:
-          type: string
-      required:
-      - lineas
-      - motivo
-    NullEnum:
-      enum:
-      - null
-    ObservacionSubsanacion:
-      type: object
-      description: |-
-        Base de los serializers de solo entrada: no persisten nada.
-
-        Las escrituras de este modulo pasan siempre por `celiaquia/services/`, asi
-        que `create`/`update` no deben existir. Se centraliza el rechazo para no
-        repetirlo en cada serializer.
-      properties:
-        tipo:
-          type: string
-          maxLength: 50
-        detalle:
-          type: string
-          maxLength: 500
-      required:
-      - detalle
-      - tipo
-    OpcionCatalogo:
-      type: object
-      description: |-
-        Opción de un desplegable: id y etiqueta, nada más.
-
-        El formulario de corrección de registros erróneos guarda **ids**, igual que
-        la pantalla Django: el Excel trae texto libre ("F", "ARGENTINA") o códigos
-        de otro sistema, y por eso falla la importación.
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        nombre:
-          type: string
-          readOnly: true
-      required:
-      - id
-      - nombre
-    Organismo:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        nombre:
-          type: string
-          maxLength: 100
-      required:
-      - id
-      - nombre
-    PaginatedAsignacionTecnicoList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/AsignacionTecnico'
-    PaginatedComentarioLegajoList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/ComentarioLegajo'
-    PaginatedCupoMovimientoList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/CupoMovimiento'
-    PaginatedDocumentoLegajoList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/DocumentoLegajo'
-    PaginatedExpedienteEstadoHistorialList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/ExpedienteEstadoHistorial'
-    PaginatedExpedienteList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Expediente'
-    PaginatedFilaCupoProvinciaList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/FilaCupoProvincia'
-    PaginatedLegajoList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Legajo'
-    PaginatedLocalidadLookupList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/LocalidadLookup'
-    PaginatedOpcionCatalogoList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/OpcionCatalogo'
-    PaginatedPagoExpedienteList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/PagoExpediente'
-    PaginatedPagoNominaList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/PagoNomina'
-    PaginatedProvinciaCupoList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProvinciaCupo'
-    PaginatedRegistroErroneoList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/RegistroErroneo'
-    PaginatedSubsanacionList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Subsanacion'
-    PaginatedUsuarioResumenList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/UsuarioResumen'
-    PagoExpediente:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        provincia:
-          type: string
-          readOnly: true
-        periodo:
-          type: string
-          description: YYYY-MM
-          maxLength: 7
-        estado:
-          $ref: '#/components/schemas/PagoExpedienteEstadoEnum'
-        total_candidatos:
-          type: integer
-          maximum: 4294967295
-          minimum: 0
-          format: int64
-        total_validados:
-          type: integer
-          maximum: 4294967295
-          minimum: 0
-          format: int64
-        total_excluidos:
-          type: integer
-          maximum: 4294967295
-          minimum: 0
-          format: int64
-        creado_en:
-          type: string
-          format: date-time
-          readOnly: true
-        modificado_en:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - creado_en
-      - id
-      - modificado_en
-      - periodo
-      - provincia
-    PagoExpedienteEstadoEnum:
-      enum:
-      - BORRADOR
-      - ENVIADO
-      - PROCESADO
-      - CERRADO
-      type: string
-      description: |-
-        * `BORRADOR` - Borrador
-        * `ENVIADO` - Enviado a Sintys
-        * `PROCESADO` - Cruce procesado
-        * `CERRADO` - Cerrado
-    PagoNomina:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        pago_id:
-          type: integer
-          readOnly: true
-        legajo_id:
-          type: integer
-          readOnly: true
-        documento:
-          type: string
-          maxLength: 16
-        nombre:
-          type: string
-          maxLength: 80
-        apellido:
-          type: string
-          maxLength: 80
-        estado:
-          $ref: '#/components/schemas/PagoNominaEstadoEnum'
-        observacion:
-          type: string
-          maxLength: 255
-        creado_en:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - creado_en
-      - documento
-      - id
-      - legajo_id
-      - pago_id
-    PagoNominaEstadoEnum:
-      enum:
-      - VALIDADO
-      - EXCLUIDO
-      type: string
-      description: |-
-        * `VALIDADO` - Validado para pago
-        * `EXCLUIDO` - Excluido por cruce
-    PatchedExpedienteUpdate:
-      type: object
-      description: Metadatos editables mientras el expediente esta en CREADO.
-      properties:
-        numero_expediente:
-          type: string
-          maxLength: 100
-        observaciones:
-          type: string
-    PreviewExcel:
-      type: object
-      description: Previsualizacion del Excel antes de crear el expediente.
-      properties:
-        excel_masivo:
-          type: string
-          format: uri
-        limit:
-          type: integer
-          maximum: 5000
-          minimum: 1
-      required:
-      - excel_masivo
-    PreviewExcelResultado:
-      type: object
-      description: |-
-        Respuesta de `preview-excel/`.
-
-        Sin esto, drf-spectacular documentaba el serializer de **entrada** como si
-        fuera la respuesta, y los tipos generados para el front quedaban al reves.
-
-        No se expone `all_rows`, que el servicio devuelve para que la vista web lo
-        guarde en sesion: son hasta 5000 filas duplicadas que ningun cliente de la
-        API consume.
-      properties:
-        headers:
-          type: array
-          items:
-            type: string
-        rows:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        total_rows:
-          type: integer
-        shown_rows:
-          type: integer
-      required:
-      - headers
-      - rows
-      - shown_rows
-      - total_rows
-    ProcesamientoResultado:
-      type: object
-      description: |-
-        Resultado de procesar el Excel masivo.
-
-        `ExpedienteService.procesar_expediente` ya devolvía esto; la API lo
-        descartaba y respondía solo "Expediente procesado". El front no tenía forma
-        de saber cuántas filas quedaron afuera ni por qué.
-      properties:
-        creados:
-          type: integer
-        errores:
-          type: integer
-        excluidos:
-          type: integer
-        excluidos_detalle:
-          type: array
-          items:
-            $ref: '#/components/schemas/ExclusionImportacion'
-      required:
-      - creados
-      - errores
-      - excluidos
-      - excluidos_detalle
-    ProcesarExpedienteRespuesta:
-      type: object
-      description: 'Respuesta de `procesar/`: el expediente actualizado y el resumen.'
-      properties:
-        detail:
-          type: string
-        expediente:
-          $ref: '#/components/schemas/Expediente'
-        resultado:
-          $ref: '#/components/schemas/ProcesamientoResultado'
-      required:
-      - detail
-      - expediente
-      - resultado
-    ProvinciaCupo:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        provincia:
-          type: string
-          readOnly: true
-        provincia_id:
-          type: integer
-          readOnly: true
-        total_asignado:
-          type: integer
-          maximum: 4294967295
-          minimum: 0
-          format: int64
-        usados:
-          type: integer
-          maximum: 4294967295
-          minimum: 0
-          format: int64
-        disponibles:
-          type: integer
-          readOnly: true
-      required:
-      - disponibles
-      - id
-      - provincia
-      - provincia_id
-    RegistroErroneo:
-      type: object
-      description: |-
-        Fila del Excel que no pudo importarse.
-
-        `datos_raw` sale tal cual entro: es lo que el usuario tiene que corregir.
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        expediente:
-          type: integer
-        fila_excel:
-          type: integer
-          maximum: 4294967295
-          minimum: 0
-          format: int64
-        datos_raw: {}
-        campo_error:
-          type: string
-          maxLength: 100
-        mensaje_error:
-          type: string
-        procesado:
-          type: boolean
-        creado_en:
-          type: string
-          format: date-time
-          readOnly: true
-        procesado_en:
-          type: string
-          format: date-time
-          nullable: true
-      required:
-      - creado_en
-      - datos_raw
-      - expediente
-      - fila_excel
-      - id
-      - mensaje_error
-    Reporte:
-      type: object
-      description: |-
-        Reporte de Celiaquia.
-
-        Las agregaciones las calcula `reporte_service`, el mismo que usa la
-        pantalla Django. Acá solo se les da forma JSON: las reglas de qué cuenta
-        como persona única o como dupla no se replican.
-      properties:
-        total_casos:
-          type: integer
-        casos_documentos_ok:
-          type: integer
-        casos_documentos_incompletos:
-          type: integer
-        porcentaje_documentos_ok:
-          type: number
-          format: double
-        porcentaje_documentos_incompletos:
-          type: number
-          format: double
-        casos_con_comentarios:
-          type: integer
-        metricas_principales:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        casos_por_instancia:
-          type: object
-          additionalProperties: {}
-        resumen_validacion:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        resumen_sintys:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        resumen_cupo:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        clasificacion_aprobados:
-          type: object
-          additionalProperties: {}
-        tendencia_mensual:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        expedientes_por_provincia:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
         casos:
           type: array
           items:
-            $ref: '#/components/schemas/ReporteCaso'
-        page:
-          type: integer
-        page_size:
-          type: integer
-        detalle_desde:
-          type: integer
-        detalle_hasta:
-          type: integer
-        es_usuario_provincial:
-          type: boolean
-        provincias:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        filtros_activos:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-      required:
-      - casos
-      - casos_con_comentarios
-      - casos_documentos_incompletos
-      - casos_documentos_ok
-      - casos_por_instancia
-      - clasificacion_aprobados
-      - detalle_desde
-      - detalle_hasta
-      - es_usuario_provincial
-      - expedientes_por_provincia
-      - filtros_activos
-      - metricas_principales
-      - page
-      - page_size
-      - porcentaje_documentos_incompletos
-      - porcentaje_documentos_ok
-      - provincias
-      - resumen_cupo
-      - resumen_sintys
-      - resumen_validacion
-      - tendencia_mensual
-      - total_casos
-    ReporteCaso:
+            type: integer
+        fecha:
+          type: string
+          format: date
+        responsable:
+          type: string
+    ActionResult:
       type: object
-      description: Una fila del detalle del reporte, ya clasificada por el service.
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        ok:
+          type: boolean
+        message:
+          type: string
+        redirect:
+          type: string
+      required:
+      - ok
+    Checklist:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        item:
+          type: string
+        descripcion:
+          type: string
+        cumple:
+          type: boolean
+          nullable: true
+        observacion:
+          type: string
+        evidencia_url:
+          type: string
+        historial:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChecklistHistory'
+      required:
+      - cumple
+      - descripcion
+      - evidencia_url
+      - historial
+      - item
+      - observacion
+    ChecklistHistory:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        fecha:
+          type: string
+          format: date-time
+        antes:
+          type: boolean
+          nullable: true
+        despues:
+          type: boolean
+          nullable: true
+        observacion:
+          type: string
+        responsable:
+          type: string
+      required:
+      - antes
+      - despues
+      - fecha
+      - observacion
+      - responsable
+    ChecklistInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        electricidad_cumple:
+          type: string
+        electricidad_observacion:
+          type: string
+        electricidad_evidencia:
+          type: string
+          format: uri
+        viandas_cumple:
+          type: string
+        viandas_observacion:
+          type: string
+        viandas_evidencia:
+          type: string
+          format: uri
+        seguridad_cumple:
+          type: string
+        seguridad_observacion:
+          type: string
+        seguridad_evidencia:
+          type: string
+          format: uri
+      required:
+      - electricidad_cumple
+      - seguridad_cumple
+      - viandas_cumple
+    Choice:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+      required:
+      - label
+      - value
+    Cierre:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
       properties:
         id:
           type: integer
-        ciudadano:
+        consistente:
+          type: boolean
+        responsable:
           type: string
-        documento:
+        atenciones:
+          type: integer
+        lentes:
+          type: integer
+        casos:
+          type: integer
+        observaciones:
+          type: string
+        acta_adjunta_url:
+          type: string
+        historial:
+          type: array
+          items:
+            $ref: '#/components/schemas/CierreHistory'
+      required:
+      - acta_adjunta_url
+      - atenciones
+      - casos
+      - consistente
+      - historial
+      - id
+      - lentes
+      - observaciones
+      - responsable
+    CierreHistory:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        fecha:
+          type: string
+          format: date-time
+        responsable:
+          type: string
+        atenciones:
+          type: integer
+        lentes:
+          type: integer
+        casos:
+          type: integer
+        acta_adjunta_url:
+          type: string
+      required:
+      - acta_adjunta_url
+      - atenciones
+      - casos
+      - fecha
+      - lentes
+      - responsable
+    CierreInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        cantidad_atenciones_registradas:
+          type: integer
+        cantidad_lentes_entregados_dia:
+          type: integer
+        cantidad_casos_laboratorio_reportados:
+          type: integer
+        responsable_cierre:
+          type: string
+        acta_adjunta:
+          type: string
+          format: uri
+        observaciones:
+          type: string
+      required:
+      - cantidad_atenciones_registradas
+      - cantidad_casos_laboratorio_reportados
+      - cantidad_lentes_entregados_dia
+      - responsable_cierre
+    DeleteBreakdown:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        modelo_key:
+          type: string
+        modelo:
+          type: string
+        cantidad:
+          type: integer
+        modo:
+          $ref: '#/components/schemas/ModoEnum'
+        ejemplos:
+          type: array
+          items:
+            type: string
+      required:
+      - cantidad
+      - ejemplos
+      - modelo
+      - modelo_key
+      - modo
+    DeletePreview:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        preview:
+          $ref: '#/components/schemas/DeleteSummary'
+      required:
+      - preview
+    DeleteSummary:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        operacion:
+          $ref: '#/components/schemas/OperacionEnum'
+        total_afectados:
+          type: integer
+        total_baja_logica:
+          type: integer
+        total_borrado_fisico:
+          type: integer
+        desglose_por_modelo:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeleteBreakdown'
+        ejemplos_por_modelo:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+      - desglose_por_modelo
+      - ejemplos_por_modelo
+      - operacion
+      - total_afectados
+      - total_baja_logica
+      - total_borrado_fisico
+    FormField:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        name:
+          type: string
+        label:
+          type: string
+        type:
+          type: string
+        required:
+          type: boolean
+        disabled:
+          type: boolean
+        help:
+          type: string
+        value: {}
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Choice'
+        min:
+          type: string
+        max:
+          type: string
+        step:
+          type: string
+        graduacion_opcional:
+          type: boolean
+        file_url:
+          type: string
+      required:
+      - choices
+      - disabled
+      - file_url
+      - graduacion_opcional
+      - help
+      - label
+      - max
+      - min
+      - name
+      - required
+      - step
+      - type
+      - value
+    FormSchema:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        kind:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/FormField'
+        back:
+          type: string
+        instrucciones:
+          type: string
+      required:
+      - back
+      - fields
+      - instrucciones
+      - kind
+    Itinerario:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        id:
+          type: integer
+        codigo:
           type: string
         provincia:
           type: string
-        expediente_id:
-          type: integer
-          nullable: true
-        expediente_numero:
+        estado:
           type: string
-        revision_tecnico:
+        estado_label:
           type: string
-        resultado_sintys:
+        fecha_inicio:
           type: string
-        estado_cupo:
+          format: date
+        fecha_fin:
           type: string
-        archivos_ok:
-          type: boolean
-        clasificacion:
+          format: date
+        referente:
           type: string
-        creado_en:
+        localidades:
           type: string
-          format: date-time
-          nullable: true
-      required:
-      - archivos_ok
-      - ciudadano
-      - clasificacion
-      - creado_en
-      - documento
-      - estado_cupo
-      - expediente_id
-      - expediente_numero
-      - id
-      - provincia
-      - resultado_sintys
-      - revision_tecnico
-    ReprocesoResultado:
-      type: object
-      description: Resumen de `registros-erroneos/reprocesar`.
-      properties:
-        creados:
-          type: integer
-        errores:
-          type: integer
-        errores_detalle:
-          type: array
-          items:
-            type: string
-        excluidos:
-          type: integer
-        excluidos_detalle:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        registros_restantes:
-          type: integer
-        alerta_resumen:
-          type: string
-      required:
-      - alerta_resumen
-      - creados
-      - errores
-      - errores_detalle
-      - excluidos
-      - excluidos_detalle
-      - registros_restantes
-    ResponderSubsanacion:
-      type: object
-      description: 'Respuesta de la provincia: uno o varios archivos como evidencia
-        nueva.'
-      properties:
-        archivos:
-          type: array
-          items:
-            type: string
-            format: uri
-        descripcion:
-          type: string
-        observacion_id:
-          type: integer
-          nullable: true
-      required:
-      - archivos
-    ResultadoSintysEnum:
-      enum:
-      - SIN_CRUCE
-      - MATCH
-      - NO_MATCH
-      type: string
-      description: |-
-        * `SIN_CRUCE` - Sin cruce
-        * `MATCH` - Matcheado
-        * `NO_MATCH` - No matcheado
-    RevisarLegajo:
-      type: object
-      description: |-
-        Entrada de la revision tecnica de un legajo.
-
-        `texto_libre` es solo el complemento: el motivo final lo compone el service
-        concatenando las observaciones tecnicas del legajo. Lo que mande el cliente
-        no es la fuente de verdad.
-      properties:
-        accion:
-          $ref: '#/components/schemas/AccionEnum'
-        texto_libre:
-          type: string
-          maxLength: 2000
-        tipo_subsanacion:
-          type: string
-          maxLength: 50
         observaciones:
+          type: string
+        referente_telefono:
+          type: string
+        referente_email:
+          type: string
+        jornadas_total:
+          type: integer
+          nullable: true
+        jornadas:
           type: array
           items:
-            $ref: '#/components/schemas/ObservacionSubsanacion'
-      required:
-      - accion
-    RevisionTecnicoEnum:
-      enum:
-      - PENDIENTE
-      - APROBADO
-      - RECHAZADO
-      - SUBSANAR
-      - SUBSANADO
-      type: string
-      description: |-
-        * `PENDIENTE` - Pendiente
-        * `APROBADO` - Aprobado por el tecnico
-        * `RECHAZADO` - Rechazado por el tecnico
-        * `SUBSANAR` - Subsanar
-        * `SUBSANADO` - Subsanado
-    RolEnum:
-      enum:
-      - beneficiario
-      - responsable
-      - beneficiario_y_responsable
-      type: string
-      description: |-
-        * `beneficiario` - Solo Beneficiario
-        * `responsable` - Solo Responsable
-        * `beneficiario_y_responsable` - Beneficiario y Responsable
-    SolicitarSubsanacion:
-      type: object
-      properties:
-        motivo:
+            $ref: '#/components/schemas/Jornada'
+        carta_archivo_estado:
           type: string
-          maxLength: 2000
+        carta_referencia_estado:
+          type: string
+        carta_archivo_url:
+          type: string
+        carta_referencia:
+          type: string
+        subsanacion_observaciones:
+          type: string
+        estados_evaluacion:
+          type: array
+          items:
+            $ref: '#/components/schemas/Choice'
       required:
-      - motivo
-    SubirArchivoLegajo:
+      - codigo
+      - estado
+      - estado_label
+      - fecha_fin
+      - fecha_inicio
+      - id
+      - jornadas_total
+      - localidades
+      - observaciones
+      - provincia
+      - referente
+      - referente_email
+      - referente_telefono
+    ItinerarioEditInput:
       type: object
-      description: Documentacion de un legajo. El slot es el campo archivo1/2/3.
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
       properties:
-        archivo:
+        provincia:
+          type: integer
+        fecha_inicio:
+          type: string
+          format: date
+        fecha_fin:
+          type: string
+          format: date
+        referente_nombre:
+          type: string
+        referente_apellido:
+          type: string
+        referente_telefono:
+          type: string
+        referente_email:
+          type: string
+        carta_archivo:
           type: string
           format: uri
-        slot:
-          type: integer
-          maximum: 3
-          minimum: 1
+        observaciones:
+          type: string
       required:
-      - archivo
-    Subsanacion:
+      - fecha_fin
+      - fecha_inicio
+      - provincia
+      - referente_nombre
+    ItinerarioInput:
       type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        provincia:
+          type: integer
+        fecha_inicio:
+          type: string
+          format: date
+        fecha_fin:
+          type: string
+          format: date
+        referente_nombre:
+          type: string
+        referente_apellido:
+          type: string
+        referente_telefono:
+          type: string
+        referente_email:
+          type: string
+        carta_archivo:
+          type: string
+          format: uri
+        observaciones:
+          type: string
+      required:
+      - fecha_fin
+      - fecha_inicio
+      - provincia
+      - referente_nombre
+    ItinerarioPage:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Itinerario'
+        estados:
+          type: array
+          items:
+            $ref: '#/components/schemas/Choice'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    Jornada:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
       properties:
         id:
           type: integer
-          readOnly: true
-        legajo_id:
+        itinerario_id:
           type: integer
-          readOnly: true
+        fecha:
+          type: string
+          format: date
+        sede:
+          type: string
+        localidad:
+          type: string
+        ubicacion_url:
+          type: string
+        latitud:
+          type: string
+        longitud:
+          type: string
+        vehiculos:
+          type: array
+          items:
+            type: string
+        direccion:
+          type: string
         estado:
-          $ref: '#/components/schemas/SubsanacionEstadoEnum'
-        motivo_general:
+          type: string
+        estado_label:
+          type: string
+        referente:
+          type: string
+        referente_telefono:
+          type: string
+        equipo_asignado:
+          type: string
+        observaciones:
+          type: string
+        registros_total:
+          type: integer
+          nullable: true
+        mapa_query:
+          type: string
+        checklist:
+          type: array
+          items:
+            $ref: '#/components/schemas/Checklist'
+        registros:
+          type: array
+          items:
+            $ref: '#/components/schemas/Registro'
+        laboratorio:
+          type: array
+          items:
+            $ref: '#/components/schemas/Laboratorio'
+        cierre:
+          allOf:
+          - $ref: '#/components/schemas/Cierre'
+          nullable: true
+      required:
+      - direccion
+      - equipo_asignado
+      - estado
+      - estado_label
+      - fecha
+      - id
+      - itinerario_id
+      - latitud
+      - localidad
+      - longitud
+      - observaciones
+      - referente
+      - referente_telefono
+      - registros_total
+      - sede
+      - ubicacion_url
+      - vehiculos
+    JornadaHistoricalInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        fecha:
+          type: string
+          format: date
+        sede:
+          type: string
+        localidad:
+          type: integer
+          nullable: true
+        ubicacion_url:
+          type: string
+        direccion:
+          type: string
+        vehiculos:
+          type: array
+          items:
+            type: integer
+        horario_inicio:
+          type: string
+          format: time
+          nullable: true
+        horario_fin:
+          type: string
+          format: time
+          nullable: true
+        referente_dni:
+          type: string
+        referente_sexo:
+          type: string
+        referente_telefono:
+          type: string
+        observaciones:
+          type: string
+      required:
+      - fecha
+      - sede
+      - ubicacion_url
+    JornadaInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        renaper_estado:
+          type: string
+        referente_nombre_renaper:
+          type: string
+        referente_apellido_renaper:
+          type: string
+        fecha:
+          type: string
+          format: date
+        sede:
+          type: string
+        localidad:
+          type: integer
+          nullable: true
+        ubicacion_url:
+          type: string
+        direccion:
+          type: string
+        vehiculos:
+          type: array
+          items:
+            type: integer
+        horario_inicio:
+          type: string
+          format: time
+          nullable: true
+        horario_fin:
+          type: string
+          format: time
+          nullable: true
+        referente_dni:
+          type: string
+        referente_sexo:
+          type: string
+        referente_telefono:
+          type: string
+        observaciones:
+          type: string
+      required:
+      - fecha
+      - sede
+      - ubicacion_url
+    Laboratorio:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        id:
+          type: integer
+        registro_id:
+          type: integer
+        persona:
+          type: string
+        estado:
+          type: string
+        siguiente:
           type: string
           nullable: true
-          description: Motivo general/observación libre
-        solicitada_por:
-          allOf:
-          - $ref: '#/components/schemas/UsuarioResumen'
-          readOnly: true
-        solicitada_en:
+        historial:
+          type: array
+          items:
+            $ref: '#/components/schemas/LaboratorioHistory'
+      required:
+      - estado
+      - historial
+      - id
+      - persona
+      - registro_id
+      - siguiente
+    LaboratorioHistory:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        fecha:
           type: string
           format: date-time
-          readOnly: true
-        respondida_por:
-          allOf:
-          - $ref: '#/components/schemas/UsuarioResumen'
-          readOnly: true
-        respondida_en:
+        antes:
           type: string
-          format: date-time
+        despues:
+          type: string
+        responsable:
+          type: string
+      required:
+      - antes
+      - despues
+      - fecha
+      - responsable
+    LaboratorioInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        estado:
+          type: string
+        fecha:
+          type: string
+          format: date
+        responsable:
+          type: string
+      required:
+      - estado
+      - fecha
+      - responsable
+    LaboratorioPage:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
           nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Laboratorio'
       required:
-      - id
-      - legajo_id
-      - respondida_por
-      - solicitada_en
-      - solicitada_por
-    SubsanacionEstadoEnum:
-      enum:
-      - PENDIENTE
-      - RESPONDIDA
-      type: string
-      description: |-
-        * `PENDIENTE` - Pendiente de respuesta
-        * `RESPONDIDA` - Respondida por la provincia
-    TipoComentarioEnum:
-      enum:
-      - VALIDACION_TECNICA
-      - SUBSANACION_MOTIVO
-      - SUBSANACION_RESPUESTA
-      - RENAPER_VALIDACION
-      - OBSERVACION_GENERAL
-      - CRUCE_SINTYS
-      - PAGO_OBSERVACION
-      - COMENTARIO_TECNICO
-      type: string
-      description: |-
-        * `VALIDACION_TECNICA` - Validación Técnica
-        * `SUBSANACION_MOTIVO` - Motivo de Subsanación
-        * `SUBSANACION_RESPUESTA` - Respuesta de Subsanación
-        * `RENAPER_VALIDACION` - Validación RENAPER
-        * `OBSERVACION_GENERAL` - Observación General
-        * `CRUCE_SINTYS` - Cruce SINTYS
-        * `PAGO_OBSERVACION` - Observación de Pago
-        * `COMENTARIO_TECNICO` - Comentario Técnico
-    TipoCruce:
+      - count
+      - next
+      - previous
+      - results
+    LocationInput:
       type: object
       properties:
-        id:
-          type: integer
-          readOnly: true
-        nombre:
+        ubicacion_url:
           type: string
-          maxLength: 50
       required:
-      - id
-      - nombre
-    TipoDocumento:
+      - ubicacion_url
+    LocationPreview:
       type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
       properties:
-        id:
-          type: integer
-          readOnly: true
-        nombre:
-          type: string
-          maxLength: 100
-        descripcion:
-          type: string
-        requerido:
+        success:
           type: boolean
-        orden:
-          type: integer
-          maximum: 4294967295
-          minimum: 0
-          format: int64
-          description: Orden de presentación
-        activo:
-          type: boolean
+        ubicacion_url:
+          type: string
+        query:
+          type: string
+        direccion:
+          type: string
+        latitud:
+          type: string
+        longitud:
+          type: string
       required:
-      - id
-      - nombre
-    TipoDocumentoEnum:
+      - direccion
+      - latitud
+      - longitud
+      - query
+      - success
+      - ubicacion_url
+    ModoEnum:
       enum:
-      - RENAPER
-      - ANSES
-      - CONDICION_DIAGNOSTICA
+      - baja_logica
+      - borrado_fisico
       type: string
       description: |-
-        * `RENAPER` - RENAPER
-        * `ANSES` - ANSES
-        * `CONDICION_DIAGNOSTICA` - Condición diagnóstica
-    TipoEnum:
+        * `baja_logica` - baja_logica
+        * `borrado_fisico` - borrado_fisico
+    OperacionEnum:
       enum:
-      - ALTA
-      - REACTIVACION
-      - BAJA
-      - AJUSTE
-      - SUSPENDIDO
+      - delete
       type: string
-      description: |-
-        * `ALTA` - Alta
-        * `REACTIVACION` - Reactivacion
-        * `BAJA` - Baja
-        * `AJUSTE` - Ajuste
-        * `SUSPENDIDO` - Suspendido
-    UsuarioResumen:
+      description: '* `delete` - delete'
+    Options:
       type: object
-      description: 'Identidad minima de un usuario: nunca mail, permisos ni credenciales.'
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        provincias:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProvinceOption'
+      required:
+      - provincias
+    ProvinceOption:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
       properties:
         id:
           type: integer
-          readOnly: true
         nombre:
           type: string
-          readOnly: true
       required:
       - id
       - nombre
+    Registro:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        id:
+          type: integer
+        dni:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+        numero_acta:
+          type: string
+        resultado:
+          type: string
+        cantidad_lentes:
+          type: integer
+        graduacion_izquierda:
+          type: string
+        graduacion_derecha:
+          type: string
+      required:
+      - apellido
+      - cantidad_lentes
+      - dni
+      - graduacion_derecha
+      - graduacion_izquierda
+      - id
+      - nombre
+      - numero_acta
+      - resultado
+    RegistroHistoricalInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        dni:
+          type: string
+        sexo:
+          type: string
+        identificador_alternativo:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+        edad:
+          type: integer
+          nullable: true
+        genero:
+          type: string
+        telefono:
+          type: string
+        escuela_sede:
+          type: string
+        numero_acta:
+          type: string
+        numero_sobre:
+          type: string
+        fecha_atencion:
+          type: string
+          format: date
+        graduacion_izquierda:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          nullable: true
+        graduacion_derecha:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          nullable: true
+        resultado:
+          type: string
+        cantidad_lentes:
+          type: integer
+        adjunto:
+          type: string
+          format: uri
+        primera_vez_anteojos:
+          type: boolean
+        observaciones:
+          type: string
+      required:
+      - apellido
+      - cantidad_lentes
+      - fecha_atencion
+      - nombre
+      - numero_acta
+      - resultado
+    RegistroInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        renaper_estado:
+          type: string
+        guardar_continuar:
+          type: string
+        dni:
+          type: string
+        sexo:
+          type: string
+        identificador_alternativo:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+        edad:
+          type: integer
+          nullable: true
+        genero:
+          type: string
+        telefono:
+          type: string
+        escuela_sede:
+          type: string
+        numero_acta:
+          type: string
+        numero_sobre:
+          type: string
+        fecha_atencion:
+          type: string
+          format: date
+        graduacion_izquierda:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          nullable: true
+        graduacion_derecha:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          nullable: true
+        resultado:
+          type: string
+        cantidad_lentes:
+          type: integer
+        adjunto:
+          type: string
+          format: uri
+        primera_vez_anteojos:
+          type: boolean
+        observaciones:
+          type: string
+      required:
+      - apellido
+      - cantidad_lentes
+      - fecha_atencion
+      - nombre
+      - numero_acta
+      - resultado
+    RegistroPage:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Registro'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    Renaper:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          additionalProperties: {}
+        datos_api:
+          nullable: true
+        ciudadano_created:
+          type: boolean
+        ciudadano_pendiente_creacion:
+          type: boolean
+      required:
+      - message
+      - success
+    Sede:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        cueanexo:
+          type: string
+          nullable: true
+        jurisdiccion:
+          type: string
+        localidad:
+          type: string
+        domicilio:
+          type: string
+        telefono:
+          type: string
+        mail:
+          type: string
+        checklist_aprobado:
+          type: boolean
+        mapa_query:
+          type: string
+      required:
+      - checklist_aprobado
+      - cueanexo
+      - domicilio
+      - id
+      - jurisdiccion
+      - localidad
+      - mail
+      - mapa_query
+      - nombre
+      - telefono
+    SedeInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        sector:
+          type: string
+        ambito:
+          type: string
+        departamento:
+          type: string
+        codigo_departamento:
+          type: string
+        localidad:
+          type: string
+        codigo_localidad:
+          type: string
+        cueanexo:
+          type: string
+        nombre:
+          type: string
+        domicilio:
+          type: string
+        codigo_postal:
+          type: string
+        telefono:
+          type: string
+        mail:
+          type: string
+        provincia:
+          type: integer
+        electricidad_cumple:
+          type: string
+        electricidad_observacion:
+          type: string
+        electricidad_evidencia:
+          type: string
+          format: uri
+        viandas_cumple:
+          type: string
+        viandas_observacion:
+          type: string
+        viandas_evidencia:
+          type: string
+          format: uri
+        seguridad_cumple:
+          type: string
+        seguridad_observacion:
+          type: string
+        seguridad_evidencia:
+          type: string
+          format: uri
+      required:
+      - domicilio
+      - localidad
+      - nombre
+      - provincia
+    SedePage:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sede'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    SedeUpdateInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        sector:
+          type: string
+        ambito:
+          type: string
+        departamento:
+          type: string
+        codigo_departamento:
+          type: string
+        localidad:
+          type: string
+        codigo_localidad:
+          type: string
+        cueanexo:
+          type: string
+        nombre:
+          type: string
+        domicilio:
+          type: string
+        codigo_postal:
+          type: string
+        telefono:
+          type: string
+        mail:
+          type: string
+        provincia:
+          type: integer
+      required:
+      - domicilio
+      - localidad
+      - nombre
+      - provincia
+    Session:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        username:
+          type: string
+        can_view_itinerarios:
+          type: boolean
+        can_add_itinerarios:
+          type: boolean
+        can_view_sedes:
+          type: boolean
+        can_export:
+          type: boolean
+        permissions:
+          type: object
+          additionalProperties:
+            type: boolean
+      required:
+      - can_add_itinerarios
+      - can_export
+      - can_view_itinerarios
+      - can_view_sedes
+      - permissions
+      - username
+    SubsanacionInput:
+      type: object
+      description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
+      properties:
+        carta_archivo:
+          type: string
+          format: uri
+      required:
+      - carta_archivo
+    VpslFormInput:
+      oneOf:
+      - $ref: '#/components/schemas/ItinerarioInput'
+      - $ref: '#/components/schemas/SedeInput'
+      - $ref: '#/components/schemas/JornadaInput'
+      - $ref: '#/components/schemas/RegistroInput'
+      - $ref: '#/components/schemas/ChecklistInput'
+      - $ref: '#/components/schemas/LaboratorioInput'
+      - $ref: '#/components/schemas/CierreInput'
+      - $ref: '#/components/schemas/SubsanacionInput'
+      - $ref: '#/components/schemas/ItinerarioEditInput'
+      - $ref: '#/components/schemas/SedeUpdateInput'
+      - $ref: '#/components/schemas/RegistroHistoricalInput'
+      - $ref: '#/components/schemas/JornadaHistoricalInput'
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

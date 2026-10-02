@@ -15,7 +15,7 @@ from pwa.models import (
     CatalogoActividadPWA,
     InscriptoActividadEspacioPWA,
 )
-from users.models import AccesoComedorPWA
+from pwa.models import AccesoComedorPWA
 
 
 @pytest.fixture

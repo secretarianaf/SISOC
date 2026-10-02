@@ -4,14 +4,30 @@ import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 
+/**
+ * Config compartida por las dos apps del monorepo.
+ *
+ * De VPSL: los ignores de `.npm-cache` y del `generated.ts` (es generado,
+ * lintearlo no aporta) y los globals de node, que usan sus configs de Vite.
+ * De Celiaquia: las reglas de react-hooks y react-refresh.
+ */
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/node_modules/**"] },
+  {
+    ignores: [
+      "**/dist/**",
+      "**/node_modules/**",
+      ".npm-cache/**",
+      // Generados desde el contrato OpenAPI.
+      "packages/api/src/generated.ts",
+      "packages/api/src/openapi.d.ts",
+    ],
+  },
   {
     files: ["**/*.{ts,tsx}"],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     languageOptions: {
       ecmaVersion: 2022,
-      globals: globals.browser,
+      globals: { ...globals.browser, ...globals.node },
     },
     plugins: {
       "react-hooks": reactHooks,

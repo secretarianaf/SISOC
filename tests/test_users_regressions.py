@@ -1,5 +1,4 @@
 import json
-import re
 
 import pytest
 from django.contrib.auth.models import Group, Permission, User
@@ -11,11 +10,11 @@ from django.urls import reverse
 from centrodeinfancia.models import AccesoCDI, CentroDeInfancia, Trabajador
 from core.constants import UserGroups
 from core.models import Localidad, Municipio, Provincia
-from users.forms import CustomUserChangeForm, UserCreationForm
+from usuarios.forms import CustomUserChangeForm, UserCreationForm
 from users.models import ProfileTerritorialScope
 from users.services import UsuariosService
 from users.territorial_scope import apply_territorial_scope
-from users.views_export import UserExportView
+from usuarios.views_export import UserExportView
 
 
 def _create_role_permission(codename: str, name: str) -> Permission:
@@ -362,6 +361,12 @@ def test_user_creation_form_limits_groups_and_roles_by_actor_scope():
 
     actor.profile.grupos_asignables.set([allowed_group])
     actor.profile.roles_asignables.set([allowed_role])
+    actor.user_permissions.add(
+        _create_role_permission(
+            "role_usuarios_seccion_administracion",
+            "Usuarios - Sección Administración de accesos",
+        )
+    )
 
     form = UserCreationForm(
         actor=actor,
@@ -1013,10 +1018,9 @@ def test_actor_cdi_no_ve_ni_puede_enviar_campos_administrativos_en_alta(client):
     response = client.get(reverse("usuario_crear"))
 
     assert response.status_code == 200
-    assert b'id="mobile-access-card"' in response.content
-    assert re.search(
-        rb'<div\s+id="mobile-access-card"[^>]*\bhidden\b', response.content
-    )
+    assert b'id="mobile-access-card"' not in response.content
+    assert b'id="territorial-comedor-card"' not in response.content
+    assert b'id="relevador-calle-card"' not in response.content
     assert b"Permisos directos" not in response.content
     assert b"Es Coordinador de Equipo" not in response.content
     assert b"Grupos que puede asignar" not in response.content
@@ -1119,7 +1123,7 @@ def _import_row_data(correo):
 def test_import_pwa_crea_usuario_sin_staff():
     from comedores.models import Comedor
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_user(username="import_admin_pwa", password="x")
     comedor = Comedor.objects.create(nombre="Comedor PWA Staff")
@@ -1149,7 +1153,7 @@ def test_import_pwa_crea_usuario_sin_staff():
 @pytest.mark.django_db
 def test_import_no_pwa_crea_usuario_staff():
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_user(username="import_admin_staff", password="x")
     job = UserImportJob(
@@ -1172,7 +1176,7 @@ def test_import_no_pwa_crea_usuario_staff():
 @pytest.mark.django_db
 def test_import_actor_sin_delegacion_no_puede_asignar_grupos():
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     actor = User.objects.create_user(username="import_sin_delegacion", password="x")
     grupo = Group.objects.create(name="Grupo fuera de alcance import")
@@ -1192,7 +1196,7 @@ def test_import_actor_sin_delegacion_no_puede_asignar_grupos():
 @pytest.mark.django_db
 def test_import_actor_sin_delegacion_preserva_grupos_existentes():
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     actor = User.objects.create_user(username="import_sin_scope_replace", password="x")
     grupo = Group.objects.create(name="Grupo existente fuera de alcance")
@@ -1220,7 +1224,7 @@ def test_import_actor_sin_delegacion_preserva_grupos_existentes():
 @pytest.mark.django_db
 def test_import_egp_sin_provincia_es_rechazado():
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     actor = User.objects.create_user(username="import_equipo_nacional", password="x")
     equipo = Group.objects.create(name=UserGroups.SIMEPI_EQUIPO_NACIONAL)
@@ -1242,7 +1246,7 @@ def test_import_egp_sin_provincia_es_rechazado():
 @pytest.mark.django_db
 def test_import_egp_existente_sincroniza_scope_provincial():
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     provincia = Provincia.objects.create(nombre="Provincia EGP import")
     provincia_legacy = Provincia.objects.create(nombre="Provincia EGP legacy")
@@ -1283,7 +1287,7 @@ def test_import_egp_existente_sincroniza_scope_provincial():
 @pytest.mark.django_db
 def test_import_egp_sincroniza_multiples_scopes_provinciales():
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     provincias = [
         Provincia.objects.create(nombre="Provincia EGP import A"),
@@ -1315,7 +1319,7 @@ def test_import_egp_sincroniza_multiples_scopes_provinciales():
 def test_import_username_configurable_se_usa_tal_cual():
     """Si la fila trae Username, se usa ese valor y no se autogenera."""
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_user(username="import_admin_username", password="x")
     job = UserImportJob(
@@ -1338,7 +1342,7 @@ def test_import_username_configurable_se_usa_tal_cual():
 def test_import_username_vacio_se_autogenera():
     """Si la fila no trae Username, se genera automaticamente a partir del nombre."""
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_user(username="import_admin_autouser", password="x")
     job = UserImportJob(
@@ -1361,7 +1365,7 @@ def test_import_username_renombra_usuario_existente_matcheado_por_correo():
     """Si una fila matchea un usuario existente por correo y trae un Username
     distinto al actual, el importador debe renombrar el usuario."""
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_user(username="import_admin_rename", password="x")
     existente = User.objects.create_user(
@@ -1393,8 +1397,9 @@ def test_import_pwa_asigna_organizaciones_y_comedores():
     puntuales indicados."""
     from organizaciones.models import Organizacion, TipoEntidad
     from comedores.models import Comedor
-    from users.models import AccesoComedorPWA, UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from users.models import UserImportJob
+    from pwa.models import AccesoComedorPWA
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_user(username="import_admin_orgs", password="x")
     tipo = TipoEntidad.objects.create(nombre="Personeria Juridica")
@@ -1440,7 +1445,7 @@ def test_import_pwa_permiso_autorizado_se_asigna_directo():
     permiso directo del usuario, no como grupo."""
     from comedores.models import Comedor
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_superuser(
         username="import_admin_pwa_perm", password="x", email="admin@example.com"
@@ -1470,7 +1475,7 @@ def test_import_pwa_permiso_no_autorizado_lanza_error():
     """Si el actor no puede delegar el permiso PWA solicitado, la fila falla."""
     from django.core.exceptions import ValidationError
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_user(username="import_admin_sin_perm", password="x")
 
@@ -1494,7 +1499,7 @@ def test_import_pwa_sin_organizaciones_ni_comedores_lanza_error():
     crearse, porque quedaria sin ningun acceso PWA activo (no podria loguear)."""
     from django.core.exceptions import ValidationError
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_user(username="import_admin_sin_espacio", password="x")
 
@@ -1520,7 +1525,7 @@ def test_import_pwa_organizacion_sin_comedores_lanza_error():
     from django.core.exceptions import ValidationError
     from organizaciones.models import Organizacion, TipoEntidad
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_user(username="import_admin_org_vacia", password="x")
     tipo = TipoEntidad.objects.create(nombre="Personeria Juridica")
@@ -1551,9 +1556,10 @@ def test_import_pwa_organizacion_sin_comedores_no_borra_accesos_existentes():
     from django.core.exceptions import ValidationError
     from comedores.models import Comedor
     from organizaciones.models import Organizacion, TipoEntidad
-    from users.models import AccesoComedorPWA, UserImportJob
-    from users.services_pwa import sync_representante_accesses
-    from users.services_user_import import process_single_user_import_row
+    from users.models import UserImportJob
+    from pwa.models import AccesoComedorPWA
+    from pwa.services.accesos import sync_representante_accesses
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_user(
         username="import_admin_org_vacia_update", password="x"
@@ -1602,7 +1608,7 @@ def test_import_pwa_username_configurable_se_usa_tal_cual():
     ese valor tal cual y no se autogenera a partir de nombre/apellido."""
     from comedores.models import Comedor
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_user(username="import_admin_pwa_username", password="x")
     comedor = Comedor.objects.create(nombre="Comedor PWA Username")
@@ -1630,7 +1636,7 @@ def test_import_pwa_grupo_autorizado_se_asigna():
     se resuelve como grupo, igual que en import no-PWA."""
     from comedores.models import Comedor
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_superuser(
         username="import_admin_pwa_grupo",
@@ -1662,7 +1668,7 @@ def test_import_no_pwa_permiso_autorizado_se_asigna_directo():
     """En un import no-PWA, un token de 'Permisos' que matchea un permiso PWA
     delegable por el actor se asigna como permiso directo (no requiere grupo)."""
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_superuser(
         username="import_admin_staff_perm",
@@ -1694,7 +1700,7 @@ def test_import_pwa_mezcla_grupo_y_permiso():
     permiso PWA separados por ';', tambien en filas PWA."""
     from comedores.models import Comedor
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_superuser(
         username="import_admin_pwa_mix", password="x", email="admin_pwa_mix@example.com"
@@ -1725,7 +1731,7 @@ def test_import_no_pwa_mezcla_grupo_y_permiso():
     """Igual que en PWA, una fila no-PWA puede mezclar grupo y permiso en el
     mismo token 'Permisos'."""
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_superuser(
         username="import_admin_staff_mix",
@@ -1757,7 +1763,7 @@ def test_import_no_pwa_permiso_no_autorizado_lanza_error():
     solicitado, la fila falla aunque no sea import PWA."""
     from django.core.exceptions import ValidationError
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_user(
         username="import_admin_staff_sin_perm", password="x"
@@ -1783,7 +1789,7 @@ def test_import_token_no_matchea_grupo_ni_permiso_lanza_error():
     lanza un error claro identificando el token."""
     from django.core.exceptions import ValidationError
     from users.models import UserImportJob
-    from users.services_user_import import process_single_user_import_row
+    from usuarios.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_user(
         username="import_admin_token_invalido", password="x"

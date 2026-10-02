@@ -438,3 +438,6 @@ tmp_ocr_eval/
 
 # Ajustes locales de docker compose (puertos, montajes): no se comparten.
 docker-compose.override.yml
+# Front v2 browser test artifacts
+frontends/test-results/
+frontends/playwright-report/

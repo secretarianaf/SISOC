@@ -1,0 +1,313 @@
+from datetime import date
+from importlib import import_module
+from pathlib import Path
+
+import pytest
+
+from centrodeinfancia.tests.test_destinatario_form import datos_validos
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.test import RequestFactory
+from django.urls import reverse
+
+from ciudadanos.models import Ciudadano
+from centrodeinfancia.forms import NominaCentroInfanciaCreateForm
+from centrodeinfancia.models import CentroDeInfancia, NominaCentroInfancia
+from centrodeinfancia.services import MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO
+from centrodeinfancia.views import NominaCentroInfanciaCreateView
+from core.models import Localidad, Municipio, Provincia, Sexo
+
+
+@pytest.mark.django_db(transaction=True)
+def test_crear_nomina_con_bloqueo_evitar_duplicados():
+    provincia = Provincia.objects.create(nombre="Rio Negro")
+    centro = CentroDeInfancia.objects.create(nombre="CDI RN", provincia=provincia)
+    ciudadano = Ciudadano.objects.create(
+        apellido="Lopez",
+        nombre="Ana",
+        fecha_nacimiento=date(2012, 5, 10),
+        documento=33333333,
+    )
+
+    def _cleaned_data(estado, observaciones):
+        return {
+            "estado": estado,
+            "observaciones": observaciones,
+        }
+
+    class _FormStub:
+        def __init__(self, **attrs):
+            self._attrs = attrs
+
+        def save(self, commit=False):
+            assert commit is False
+            return NominaCentroInfancia(**self._attrs)
+
+    with transaction.atomic():
+        creado_1, motivo_1 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
+            centro=centro,
+            ciudadano=ciudadano,
+            form=_FormStub(
+                **_cleaned_data(
+                    NominaCentroInfancia.ESTADO_ACTIVO,
+                    "Alta inicial",
+                )
+            ),
+        )
+
+    with transaction.atomic():
+        creado_2, motivo_2 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
+            centro=centro,
+            ciudadano=ciudadano,
+            form=_FormStub(
+                **_cleaned_data(
+                    NominaCentroInfancia.ESTADO_ACTIVO,
+                    "Intento duplicado",
+                )
+            ),
+        )
+
+    assert creado_1 is True
+    assert motivo_1 is None
+    assert creado_2 is False
+    assert motivo_2 == MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO
+    assert (
+        NominaCentroInfancia.objects.filter(
+            centro=centro,
+            ciudadano=ciudadano,
+            deleted_at__isnull=True,
+        ).count()
+        == 1
+    )
+
+
+@pytest.mark.django_db
+def test_nomina_legacy_pueblo_originario_no_impone_detalle_sin_indigena():
+    # El mecanismo legacy (pertenece_pueblo_originario) no impone validación
+    # por sí solo. El nuevo mecanismo usa grupo_pertenencia: si "indigena" no
+    # está presente, clean() limpia pueblo_originario_cual sin levantar error.
+    nomina = NominaCentroInfancia(
+        pertenece_pueblo_originario=NominaCentroInfancia.RespuestaSiNoNsNc.SI,
+        pueblo_originario_cual="Mapuche",
+        tiene_discapacidad=NominaCentroInfancia.RespuestaSiNoNsNc.NO,
+    )
+    nomina.clean()
+    assert nomina.pueblo_originario_cual is None
+
+
+@pytest.mark.django_db
+def test_nomina_indigena_requiere_detalle_pueblo_originario():
+    nomina = NominaCentroInfancia(
+        grupo_pertenencia=["indigena"],
+        tiene_discapacidad=NominaCentroInfancia.RespuestaSiNoNsNc.NO,
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        nomina.clean()
+
+    assert "pueblo_originario_cual" in exc_info.value.message_dict
+
+
+@pytest.mark.django_db
+def test_nomina_indigena_preserva_detalle_pueblo_originario():
+    nomina = NominaCentroInfancia(
+        grupo_pertenencia=["indigena"],
+        pueblo_originario_cual="Mapuche",
+        tiene_discapacidad=NominaCentroInfancia.RespuestaSiNoNsNc.NO,
+    )
+
+    nomina.clean()
+
+    assert nomina.pueblo_originario_cual == "Mapuche"
+
+
+@pytest.mark.django_db
+def test_migracion_pueblo_originario_legacy_agrega_indigena_y_preserva_detalle():
+    provincia = Provincia.objects.create(nombre="Neuquen")
+    centro = CentroDeInfancia.objects.create(nombre="CDI Legacy", provincia=provincia)
+    ciudadano = Ciudadano.objects.create(
+        apellido="Antipan",
+        nombre="Malen",
+        fecha_nacimiento=date(2020, 2, 1),
+        documento=42111222,
+    )
+    nomina = NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=ciudadano,
+        pertenece_pueblo_originario=NominaCentroInfancia.RespuestaSiNoNsNc.SI,
+        pueblo_originario_cual="Mapuche",
+        grupo_pertenencia=[],
+        tiene_discapacidad=NominaCentroInfancia.RespuestaSiNoNsNc.NO,
+    )
+    migration = import_module(
+        "centrodeinfancia.migrations.0035_migrar_pueblo_originario_legacy"
+    )
+
+    class Apps:
+        @staticmethod
+        def get_model(app_label, model_name):
+            assert app_label == "centrodeinfancia"
+            assert model_name == "NominaCentroInfancia"
+            return NominaCentroInfancia
+
+    migration.migrar_pueblo_originario_legacy(Apps(), None)
+    nomina.refresh_from_db()
+
+    assert nomina.grupo_pertenencia == ["indigena"]
+    assert nomina.pueblo_originario_cual == "Mapuche"
+
+
+@pytest.mark.django_db
+def test_form_nomina_calcula_edad_y_habilita_geografia():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    sexo = Sexo.objects.create(sexo="Femenino")
+
+    form = NominaCentroInfanciaCreateForm(
+        data={
+            "estado": NominaCentroInfancia.ESTADO_ACTIVO,
+            "dni": 30111222,
+            "apellido": "Lopez",
+            "nombre": "Ana",
+            "fecha_nacimiento": "2018-05-10",
+            "sexo": sexo.sexo,
+            "provincia_domicilio": provincia.id,
+        }
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["edad_calculada"] is not None
+    municipio_ids = set(
+        form.fields["municipio_domicilio"].queryset.values_list("id", flat=True)
+    )
+    assert municipio_ids == set()
+
+
+@pytest.mark.django_db
+def test_form_nomina_resuelve_geografia_inicial_desde_texto():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Tolosa", municipio=municipio)
+    sexo = Sexo.objects.create(sexo="Femenino")
+
+    form = NominaCentroInfanciaCreateForm(
+        initial={
+            "estado": NominaCentroInfancia.ESTADO_ACTIVO,
+            "dni": 30111222,
+            "apellido": "Lopez",
+            "nombre": "Ana",
+            "fecha_nacimiento": date(2018, 5, 10),
+            "sexo": sexo.sexo,
+            "provincia_domicilio": "Buenos Aires",
+            "municipio_domicilio": "La Plata",
+            "localidad_domicilio": "Tolosa",
+        }
+    )
+
+    assert form.fields["provincia_domicilio"].initial == provincia
+    assert form.fields["municipio_domicilio"].initial == municipio
+    assert form.fields["localidad_domicilio"].initial == localidad
+
+
+@pytest.mark.django_db
+def test_create_view_precarga_fecha_renaper_desde_contrato_servicio(mocker):
+    user = User.objects.create_superuser(
+        username="super-cdi-renaper",
+        email="super-cdi-renaper@example.com",
+        password="test1234",
+    )
+    centro = CentroDeInfancia.objects.create(nombre="CDI RENAPER")
+    request = RequestFactory().get(
+        reverse("centrodeinfancia_nomina_crear", kwargs={"pk": centro.pk}),
+        {"query": "30111222"},
+    )
+    request.user = user
+    mock_obtener = mocker.patch(
+        "centrodeinfancia.views.obtener_datos_ciudadano_desde_renaper",
+        return_value={
+            "success": True,
+            "data": {
+                "documento": 30111222,
+                "apellido": "Lopez",
+                "nombre": "Ana",
+                "sexo": "Femenino",
+            },
+            "datos_api": {
+                "fechaNacimiento": "2018-05-10",
+            },
+        },
+    )
+
+    view = NominaCentroInfanciaCreateView()
+    view.setup(request, pk=centro.pk)
+    view.object = None
+    context = view.get_context_data()
+    initial = context["form"].initial
+
+    assert initial["dni"] == 30111222
+    assert initial["apellido"] == "Lopez"
+    assert initial["nombre"] == "Ana"
+    assert initial["fecha_nacimiento"] == date(2018, 5, 10)
+    fecha_html = str(context["form"]["fecha_nacimiento"])
+    assert 'type="date"' in fecha_html
+    assert 'value="2018-05-10"' in fecha_html
+    assert context["renaper_precarga"] is True
+    mock_obtener.assert_called_once_with("30111222")
+
+
+@pytest.mark.django_db
+def test_create_view_crea_ficha_cdi_para_ciudadano_existente(client):
+    user = User.objects.create_superuser(
+        username="super-cdi-nomina",
+        email="super-cdi-nomina@example.com",
+        password="test1234",
+    )
+    client.force_login(user)
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    sexo = Sexo.objects.create(sexo="Femenino")
+    centro = CentroDeInfancia.objects.create(nombre="CDI Norte", provincia=provincia)
+    ciudadano = Ciudadano.objects.create(
+        apellido="Perez",
+        nombre="Nina",
+        fecha_nacimiento=date(2020, 4, 2),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111222,
+        sexo=sexo,
+    )
+
+    response = client.post(
+        reverse("centrodeinfancia_nomina_crear", kwargs={"pk": centro.pk}),
+        data=datos_validos(
+            centro,
+            ciudadano_id=ciudadano.id,
+            estado=NominaCentroInfancia.ESTADO_ACTIVO,
+            dni=ciudadano.documento,
+            apellido=ciudadano.apellido,
+            nombre=ciudadano.nombre,
+            fecha_nacimiento="2020-04-02",
+            sexo=sexo.sexo,
+            sala="Sala Roja",
+            posee_cud="false",
+        ),
+    )
+
+    assert response.status_code == 302
+    nomina = NominaCentroInfancia.objects.get(centro=centro, ciudadano=ciudadano)
+    assert nomina.sala == "Sala Roja"
+    assert nomina.posee_cud is False
+
+
+def test_nomina_crear_template_conserva_ajax_nativo_ubicacion():
+    template_path = (
+        Path(settings.BASE_DIR)
+        / "backends/cdi/centrodeinfancia/templates/centrodeinfancia/nomina_form.html"
+    )
+    content = template_path.read_text(encoding="utf-8")
+
+    assert "ajaxLoadMunicipiosUrl" in content
+    assert "ajaxLoadLocalidadesUrl" in content
+    assert "id_provincia_domicilio" in content
+    assert "id_municipio_domicilio" in content
+    assert "id_localidad_domicilio" in content
+    assert "fetch(url" in content

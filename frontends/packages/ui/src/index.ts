@@ -1,5 +1,19 @@
-export { buildTheme } from "./theme";
-export { severidad } from "./theme";
+/**
+ * Superficie publica de @sisoc/ui.
+ *
+ * Conviven las dos apps del monorepo: VPSL usa `getTheme` y `V2Layout`;
+ * Celiaquia usa `buildTheme`, su propio AppShell y los componentes de abajo.
+ * No hay colision de nombres, asi que se exportan los dos conjuntos.
+ */
+
+// --- VPSL ------------------------------------------------------------------
+export { brand, getTheme } from "./theme";
+export { V2Layout } from "./layout";
+export type { V2Module } from "./layout";
+
+// --- Celiaquia -------------------------------------------------------------
+export { buildTheme } from "./theme.celiaquia";
+export { severidad } from "./theme.celiaquia";
 export { ThemeProvider, useColorMode } from "./ThemeProvider";
 
 export { AppShell } from "./layout/AppShell";

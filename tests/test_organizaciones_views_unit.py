@@ -1,4 +1,4 @@
-"""Tests unitarios para organizaciones.views."""
+"""Tests unitarios para gestion_organizaciones.views."""
 
 import json
 from types import SimpleNamespace
@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from django.forms import ValidationError
 from django.http import JsonResponse
 
-from organizaciones import views as module
+from gestion_organizaciones import views as module
 
 
 class _QS:
@@ -67,19 +67,22 @@ class _PaginatorFake:
 
 def test_organizacion_list_view_uses_shared_builder(mocker):
     builder = mocker.patch(
-        "organizaciones.views._build_organizacion_list_queryset", return_value="qs"
+        "gestion_organizaciones.views._build_organizacion_list_queryset",
+        return_value="qs",
     )
 
     view = module.OrganizacionListView()
     user = SimpleNamespace(is_superuser=False, is_authenticated=True)
-    view.request = SimpleNamespace(GET={"busqueda": "abc"}, user=user)
+    request = SimpleNamespace(GET={"busqueda": "abc"}, user=user)
+    view.request = request
     assert view.get_queryset() == "qs"
-    builder.assert_called_once_with("abc", user)
+    # El request tambien viaja: habilita los filtros combinables (issue #2505).
+    builder.assert_called_once_with("abc", user, request_or_get=request)
 
 
 def test_organizacion_list_view_paginates_without_count(mocker):
     hydrate = mocker.patch(
-        "organizaciones.views._hydrate_organizaciones_page",
+        "gestion_organizaciones.views._hydrate_organizaciones_page",
         return_value=["row1", "row2"],
     )
     view = module.OrganizacionListView()
@@ -106,7 +109,8 @@ def test_organizacion_list_context_adds_page_range_for_no_count(mocker):
         return_value={"page_obj": page_obj},
     )
     range_builder = mocker.patch(
-        "organizaciones.views.build_no_count_page_range", return_value=[1, 2, "…"]
+        "gestion_organizaciones.views.build_no_count_page_range",
+        return_value=[1, 2, "…"],
     )
 
     view = module.OrganizacionListView()
@@ -114,7 +118,9 @@ def test_organizacion_list_context_adds_page_range_for_no_count(mocker):
         GET={"busqueda": "abc"},
         user=SimpleNamespace(is_superuser=False, is_authenticated=True),
     )
-    mocker.patch("organizaciones.views.user_has_permission_code", return_value=False)
+    mocker.patch(
+        "gestion_organizaciones.views.user_has_permission_code", return_value=False
+    )
 
     ctx = view.get_context_data()
     assert ctx["query"] == "abc"
@@ -127,13 +133,14 @@ def test_firmante_create_roles_form_and_valid_paths(mocker):
 
     # get_allowed_roles_queryset branches
     none_qs = mocker.patch(
-        "organizaciones.views.RolFirmante.objects.none", return_value="none"
+        "gestion_organizaciones.views.RolFirmante.objects.none", return_value="none"
     )
     all_qs = mocker.patch(
-        "organizaciones.views.RolFirmante.objects.all", return_value="all"
+        "gestion_organizaciones.views.RolFirmante.objects.all", return_value="all"
     )
     filt = mocker.patch(
-        "organizaciones.views.RolFirmante.objects.filter", return_value="filtered"
+        "gestion_organizaciones.views.RolFirmante.objects.filter",
+        return_value="filtered",
     )
 
     assert view.get_allowed_roles_queryset(None) == "none"
@@ -149,7 +156,7 @@ def test_firmante_create_roles_form_and_valid_paths(mocker):
     form = SimpleNamespace(fields={"rol": SimpleNamespace(queryset=None)})
     mocker.patch("django.views.generic.edit.ModelFormMixin.get_form", return_value=form)
     mocker.patch(
-        "organizaciones.views.Organizacion.objects.select_related",
+        "gestion_organizaciones.views.Organizacion.objects.select_related",
         return_value=SimpleNamespace(get=lambda **kwargs: org_pj),
     )
     mocker.patch.object(view, "get_allowed_roles_queryset", return_value="roles")
@@ -164,7 +171,7 @@ def test_firmante_create_roles_form_and_valid_paths(mocker):
     )
     view.request = SimpleNamespace(POST={}, GET={})
     view.kwargs = {}
-    mocker.patch("organizaciones.views.messages.error")
+    mocker.patch("gestion_organizaciones.views.messages.error")
     mocker.patch.object(view, "form_invalid", return_value="invalid")
     assert view.form_valid(bad_form) == "invalid"
 
@@ -176,7 +183,7 @@ def test_firmante_create_roles_form_and_valid_paths(mocker):
     )
     view.request = SimpleNamespace(POST={"organizacion_id": "9"}, GET={})
     mocker.patch(
-        "organizaciones.views.Firmante.objects.filter",
+        "gestion_organizaciones.views.Firmante.objects.filter",
         return_value=SimpleNamespace(exists=lambda: True),
     )
     assert view.form_valid(dup_form) == "invalid"
@@ -192,17 +199,19 @@ def test_firmante_create_roles_form_and_valid_paths(mocker):
         POST={"organizacion_id": "9", "guardar_otro": "1"}, GET={}
     )
     mocker.patch(
-        "organizaciones.views.Firmante.objects.filter",
+        "gestion_organizaciones.views.Firmante.objects.filter",
         return_value=SimpleNamespace(exists=lambda: False),
     )
-    mocker.patch("organizaciones.views.reverse", return_value="/firmantes/nuevo/")
+    mocker.patch(
+        "gestion_organizaciones.views.reverse", return_value="/firmantes/nuevo/"
+    )
     resp = view.form_valid(ok_form)
     assert resp.status_code == 302
 
 
 def test_aval_create_view_form_valid_paths(mocker):
     view = module.AvalCreateView()
-    mocker.patch("organizaciones.views.messages.error")
+    mocker.patch("gestion_organizaciones.views.messages.error")
     mocker.patch.object(view, "form_invalid", return_value="invalid")
 
     form_missing = SimpleNamespace(instance=SimpleNamespace(), save=lambda: None)
@@ -217,7 +226,7 @@ def test_aval_create_view_form_valid_paths(mocker):
     view.request = SimpleNamespace(
         POST={"organizacion_id": "3", "guardar_otro": "1"}, GET={}
     )
-    mocker.patch("organizaciones.views.reverse", return_value="/avales/nuevo/")
+    mocker.patch("gestion_organizaciones.views.reverse", return_value="/avales/nuevo/")
     out = view.form_valid(form_ok)
     assert out.status_code == 302
 
@@ -228,8 +237,8 @@ def test_organizacion_delete_post_success_and_validation_error(mocker):
     view.success_url = "/ok"
 
     req = SimpleNamespace()
-    msg_success = mocker.patch("organizaciones.views.messages.success")
-    msg_error = mocker.patch("organizaciones.views.messages.error")
+    msg_success = mocker.patch("gestion_organizaciones.views.messages.success")
+    msg_error = mocker.patch("gestion_organizaciones.views.messages.error")
     mocker.patch.object(view, "get_object", return_value=obj)
     mocker.patch.object(view, "render_to_response", return_value="rendered")
     mocker.patch.object(view, "get_context_data", return_value={})
@@ -251,7 +260,7 @@ def test_ajax_views_subtipo_and_organizaciones(mocker):
     # sub_tipo_entidad_ajax
     subtipos = [SimpleNamespace(id=1, nombre="Sub1")]
     mocker.patch(
-        "organizaciones.views.SubtipoEntidad.objects.filter",
+        "gestion_organizaciones.views.SubtipoEntidad.objects.filter",
         return_value=SimpleNamespace(order_by=lambda *_a, **_k: subtipos),
     )
     req = SimpleNamespace(
@@ -264,25 +273,29 @@ def test_ajax_views_subtipo_and_organizaciones(mocker):
     # organizaciones_ajax con paginacion sin count exacto
     org_qs = _QS()
     mocker.patch(
-        "organizaciones.views._build_organizacion_list_queryset", return_value=org_qs
+        "gestion_organizaciones.views._build_organizacion_list_queryset",
+        return_value=org_qs,
     )
     mocker.patch(
-        "organizaciones.views._hydrate_organizaciones_page",
+        "gestion_organizaciones.views._hydrate_organizaciones_page",
         return_value=["org-1", "org-2"],
     )
-    mocker.patch("organizaciones.views.NoCountPaginator", _PaginatorFake)
+    mocker.patch("gestion_organizaciones.views.NoCountPaginator", _PaginatorFake)
     mocker.patch(
-        "organizaciones.views.build_no_count_page_range", return_value=[1, "…"]
+        "gestion_organizaciones.views.build_no_count_page_range", return_value=[1, "…"]
     )
     mocker.patch(
-        "organizaciones.views.render_to_string", side_effect=["<rows>", "<pager>"]
+        "gestion_organizaciones.views.render_to_string",
+        side_effect=["<rows>", "<pager>"],
     )
 
     req2 = SimpleNamespace(
         GET={"busqueda": "abc", "page": "bad"},
         user=SimpleNamespace(is_authenticated=True, is_superuser=False),
     )
-    mocker.patch("organizaciones.views.user_has_permission_code", return_value=False)
+    mocker.patch(
+        "gestion_organizaciones.views.user_has_permission_code", return_value=False
+    )
     out = module.organizaciones_ajax.__wrapped__(req2)
     assert out.status_code == 200
     payload = json.loads(out.content)

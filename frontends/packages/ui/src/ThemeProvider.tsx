@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import type { PaletteMode } from "@mui/material";
-import { buildTheme } from "./theme";
+import { buildTheme } from "./theme.celiaquia";
 
 const STORAGE_KEY = "app.theme";
 

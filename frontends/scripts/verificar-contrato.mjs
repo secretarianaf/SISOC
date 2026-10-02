@@ -17,7 +17,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const raiz = resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
-const schema = join(raiz, "packages/api/openapi.yaml");
+const schema = join(raiz, "packages/api/openapi.celiaquia.yaml");
 const versionado = join(raiz, "packages/api/src/openapi.d.ts");
 
 const temporal = mkdtempSync(join(tmpdir(), "sisoc-contrato-"));
@@ -36,7 +36,7 @@ try {
   if (esperado !== actual) {
     console.error(
       [
-        "Los tipos versionados no coinciden con packages/api/openapi.yaml.",
+        "Los tipos versionados no coinciden con packages/api/openapi.celiaquia.yaml.",
         "",
         "Regeneralos y commiteá el resultado:",
         "  npm run api:types --prefix frontends",

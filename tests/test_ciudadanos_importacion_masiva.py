@@ -776,7 +776,7 @@ def test_ciudadanos_import_upload_view_creates_job_without_processing():
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="config.urls")
+@override_settings(ROOT_URLCONF="config.urls_all")
 def test_ciudadanos_list_context_shows_import_button_only_with_add_permission():
     user = User.objects.create_user(username="ciudadanos_button")
     request = _build_request("get", "/ciudadanos/listar", user)

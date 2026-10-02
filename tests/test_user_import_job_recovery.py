@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from users.models import UserImportJob, UserImportJobRow
-from users.services_user_import_jobs import (
+from usuarios.services_user_import_jobs import (
     LostImportLease,
     _start_job_row_attempt,
     claim_next_user_import_job,
@@ -62,18 +62,18 @@ def test_user_import_yields_to_other_job_and_resumes(mocker):
         send_credentials=False,
     )
     mocker.patch(
-        "users.services_user_import_jobs.get_user_import_job_slice_seconds",
+        "usuarios.services_user_import_jobs.get_user_import_job_slice_seconds",
         return_value=0,
     )
     mocker.patch(
-        "users.services_user_import_jobs._load_job_rows",
+        "usuarios.services_user_import_jobs._load_job_rows",
         side_effect=lambda job: [
             {"fila": index + 2, "correo": f"persona{index}@example.com"}
             for index in range(2 if job.pk == large.pk else 1)
         ],
     )
     mocker.patch(
-        "users.services_user_import_jobs.process_single_user_import_row",
+        "usuarios.services_user_import_jobs.process_single_user_import_row",
         return_value={"status": UserImportJobRow.Status.SKIPPED, "mensaje": "Omitido"},
     )
 
@@ -108,7 +108,7 @@ def test_user_creation_rolls_back_if_row_checkpoint_fails(mocker):
         send_credentials=False,
     )
     mocker.patch(
-        "users.services_user_import_jobs._load_job_rows",
+        "usuarios.services_user_import_jobs._load_job_rows",
         return_value=[{"fila": 2, "correo": "nueva@example.com"}],
     )
 
@@ -124,11 +124,11 @@ def test_user_creation_rolls_back_if_row_checkpoint_fails(mocker):
         }
 
     mocker.patch(
-        "users.services_user_import_jobs.process_single_user_import_row",
+        "usuarios.services_user_import_jobs.process_single_user_import_row",
         side_effect=create_user,
     )
     mocker.patch(
-        "users.services_user_import_jobs._record_row_created",
+        "usuarios.services_user_import_jobs._record_row_created",
         side_effect=RuntimeError("checkpoint falló"),
     )
 

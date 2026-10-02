@@ -19,7 +19,7 @@ def test_upsert_fixture_reintenta_fk_hijo_antes_de_padre(tmp_path):
     fixture_path = tmp_path / "intervenciones_desordenadas.json"
     fixture_data = [
         {
-            "model": "intervenciones.subintervencion",
+            "model": "catalogo_intervenciones.subintervencion",
             "pk": sub_pk,
             "fields": {
                 "nombre": "Sub intervención de prueba",
@@ -27,7 +27,7 @@ def test_upsert_fixture_reintenta_fk_hijo_antes_de_padre(tmp_path):
             },
         },
         {
-            "model": "intervenciones.tipointervencion",
+            "model": "catalogo_intervenciones.tipointervencion",
             "pk": tipo_pk,
             "fields": {"nombre": "Tipo intervención de prueba", "programa": "cdi"},
         },
@@ -39,8 +39,8 @@ def test_upsert_fixture_reintenta_fk_hijo_antes_de_padre(tmp_path):
 
     Command().upsert_fixture(str(fixture_path))
 
-    tipo_model = apps.get_model("intervenciones", "TipoIntervencion")
-    sub_model = apps.get_model("intervenciones", "SubIntervencion")
+    tipo_model = apps.get_model("catalogo_intervenciones", "TipoIntervencion")
+    sub_model = apps.get_model("catalogo_intervenciones", "SubIntervencion")
     tipo = tipo_model.objects.get(pk=tipo_pk)
     sub = sub_model.objects.get(pk=sub_pk)
 

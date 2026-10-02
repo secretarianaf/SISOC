@@ -1,0 +1,76 @@
+from django.urls import path
+
+from core.decorators import permissions_any_required
+from datacalle.views import (
+    EncuestaDetailView,
+    cargar_dispositivos,
+    cargar_relevadores,
+    RelevamientoCerrarView,
+    RelevamientoCreateView,
+    RelevamientoDeleteView,
+    RelevamientoDetailView,
+    RelevamientoListView,
+    RelevamientoUpdateView,
+)
+
+urlpatterns = [
+    path(
+        "datacalle/relevamientos/",
+        permissions_any_required(["datacalle.view_relevamiento"])(
+            RelevamientoListView.as_view()
+        ),
+        name="datacalle_relevamientos_listar",
+    ),
+    path(
+        "datacalle/relevamientos/crear/",
+        permissions_any_required(["datacalle.add_relevamiento"])(
+            RelevamientoCreateView.as_view()
+        ),
+        name="datacalle_relevamientos_crear",
+    ),
+    path(
+        "datacalle/relevamientos/<uuid:pk>/",
+        permissions_any_required(["datacalle.view_relevamiento"])(
+            RelevamientoDetailView.as_view()
+        ),
+        name="datacalle_relevamientos_detalle",
+    ),
+    path(
+        "datacalle/relevamientos/<uuid:pk>/editar/",
+        permissions_any_required(["datacalle.change_relevamiento"])(
+            RelevamientoUpdateView.as_view()
+        ),
+        name="datacalle_relevamientos_editar",
+    ),
+    path(
+        "datacalle/relevamientos/<uuid:pk>/cerrar/",
+        permissions_any_required(["datacalle.change_relevamiento"])(
+            RelevamientoCerrarView.as_view()
+        ),
+        name="datacalle_relevamientos_cerrar",
+    ),
+    path(
+        "datacalle/relevamientos/<uuid:pk>/eliminar/",
+        permissions_any_required(["datacalle.delete_relevamiento"])(
+            RelevamientoDeleteView.as_view()
+        ),
+        name="datacalle_relevamientos_eliminar",
+    ),
+    path(
+        "datacalle/casos/<uuid:pk>/",
+        permissions_any_required(["datacalle.view_encuesta"])(
+            EncuestaDetailView.as_view()
+        ),
+        name="datacalle_casos_detalle",
+    ),
+    path(
+        "datacalle/ajax/dispositivos/",
+        permissions_any_required(["datacalle.view_relevamiento"])(cargar_dispositivos),
+        name="datacalle_ajax_dispositivos",
+    ),
+    path(
+        "datacalle/ajax/relevadores/",
+        permissions_any_required(["datacalle.view_relevamiento"])(cargar_relevadores),
+        name="datacalle_ajax_relevadores",
+    ),
+]

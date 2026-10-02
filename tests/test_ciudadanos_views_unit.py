@@ -449,19 +449,23 @@ def test_ciudadanos_list_view_build_page_range_sin_total():
 def test_ciudadanos_detail_helpers_contexts(mocker):
     ciudadano = SimpleNamespace(pk=7)
 
+    # La sección de Celiaquía es una contribución renderizada del vertical.
+    from celiaquia import ciudadano_detail  # pylint: disable=import-outside-toplevel
+
     mocker.patch(
-        "ciudadanos.views.obtener_resumen_ciudadano", side_effect=Exception("boom")
+        "celiaquia.ciudadano_detail.obtener_resumen_ciudadano",
+        side_effect=Exception("boom"),
     )
-    log_exc = mocker.patch("ciudadanos.views.logger.exception")
-    out_err = module.CiudadanosDetailView().get_celiaquia_context(ciudadano)
+    logger = Mock()
+    out_err = ciudadano_detail.obtener_contexto(ciudadano, logger)
     assert out_err == {"celiaquia_resumen": None}
-    assert log_exc.called
+    assert logger.exception.called
 
     resumen = SimpleNamespace(legajo_actual=SimpleNamespace())
     obtener_resumen = mocker.patch(
-        "ciudadanos.views.obtener_resumen_ciudadano", return_value=resumen
+        "celiaquia.ciudadano_detail.obtener_resumen_ciudadano", return_value=resumen
     )
-    out_ok = module.CiudadanosDetailView().get_celiaquia_context(ciudadano)
+    out_ok = ciudadano_detail.obtener_contexto(ciudadano, logger)
 
     assert out_ok == {"celiaquia_resumen": resumen}
     obtener_resumen.assert_called_once_with(ciudadano.pk)
@@ -487,7 +491,7 @@ def test_ciudadano_detail_renderiza_resumen_publico_celiaquia(
         creado_en=datetime(2026, 8, 7, 10, 30),
     )
     mocker.patch(
-        "ciudadanos.views.obtener_resumen_ciudadano",
+        "celiaquia.ciudadano_detail.obtener_resumen_ciudadano",
         return_value=ResumenCiudadano(legajo_actual=legajo, historial=(legajo,)),
     )
     client.force_login(superuser)
@@ -733,19 +737,18 @@ def test_grupofamiliar_delete_get_success_url_uses_safe_redirect(mocker):
 def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
     ciudadano = SimpleNamespace(pk=9)
 
-    # CDF import error
-    orig_import = __import__
+    # CDF es una contribución renderizada del vertical (centrodefamilia.ciudadano_detail).
+    from centrodefamilia import (  # pylint: disable=import-outside-toplevel
+        ciudadano_detail as cdf_detail,
+    )
 
-    def fake_import(name, *args, **kwargs):
-        if name == "centrodefamilia.models":
-            raise ImportError("no cdf")
-        return orig_import(name, *args, **kwargs)
-
-    mocker.patch("builtins.__import__", side_effect=fake_import)
-    cdf_ctx = module.CiudadanosDetailView().get_cdf_context(ciudadano)
+    mocker.patch(
+        "centrodefamilia.models.ParticipanteActividad.objects.filter",
+        side_effect=Exception("boom"),
+    )
+    cdf_ctx = cdf_detail.obtener_contexto(ciudadano, Mock())
     assert cdf_ctx == {"participaciones_cdf": [], "costo_total_cdf": 0}
 
-    mocker.patch("builtins.__import__", side_effect=orig_import)
     part_qs = _ExpedientesList([SimpleNamespace(id=1)])
     mocker.patch(
         "centrodefamilia.models.ParticipanteActividad.objects.filter",
@@ -758,8 +761,10 @@ def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
             SimpleNamespace(aggregate=lambda **_k: {"total": 1200}),
         ],
     )
-    cdf_ok = module.CiudadanosDetailView().get_cdf_context(ciudadano)
+    cdf_ok = cdf_detail.obtener_contexto(ciudadano, Mock())
     assert cdf_ok["costo_total_cdf"] == 1200
+
+    orig_import = __import__
 
     # Comedor import error
     def fake_import2(name, *args, **kwargs):
@@ -896,7 +901,11 @@ def test_ciudadanos_detail_vat_context_resume_por_programa(mocker):
         return_value=_QueryChain(asistencias),
     )
 
-    context = module.CiudadanosDetailView().get_vat_context(ciudadano)
+    from VAT.ciudadano_detail import (  # pylint: disable=import-outside-toplevel
+        obtener_contexto,
+    )
+
+    context = obtener_contexto(ciudadano, Mock())
 
     assert context["vat_creditos_totales"] == 17
     assert context["vat_creditos_disponibles"] == 4

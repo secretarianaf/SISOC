@@ -1,0 +1,257 @@
+"""Lógica de negocio de los casos (encuestas) de DataCalle.
+
+El instrumento viaja completo en ``respuestas``; acá sólo se copian a columnas
+indexadas los pocos datos que necesitan tableros y filtros, y se resuelven las
+reglas de negocio del upsert (D2.5 y D2.7).
+"""
+
+from django.db import transaction
+from django.db.models import Q, Sum
+from django.utils import timezone
+
+from datacalle.models import Encuesta, Relevamiento
+from datacalle.services.instrumento import franjas_sin_entrevista
+
+
+def _texto(respuestas, clave):
+    valor = respuestas.get(clave)
+    if valor in (None, ""):
+        return ""
+    return str(valor)[:64]
+
+
+def _si_no(respuestas, clave):
+    """Los catálogos usan ``si``/``no``; devuelve ``None`` si no vino la clave."""
+    valor = respuestas.get(clave)
+    if valor is None:
+        return None
+    return str(valor).strip().lower() == "si"
+
+
+def _entero(respuestas, clave):
+    try:
+        return int(respuestas.get(clave))
+    except (TypeError, ValueError):
+        return None
+
+
+def _coordenadas(respuestas):
+    """Saca lat/lon de ``ubicacionGrupo`` descartando el 0,0 y los fuera de rango."""
+    ubicacion = respuestas.get("ubicacionGrupo")
+    if not isinstance(ubicacion, dict):
+        return None, None
+    try:
+        lat = float(ubicacion.get("lat"))
+        lon = float(ubicacion.get("lon"))
+    except (TypeError, ValueError):
+        return None, None
+    if abs(lat) > 90 or abs(lon) > 180:
+        return None, None
+    if lat == 0 and lon == 0:
+        return None, None
+    return lat, lon
+
+
+def aplicar_columnas_indexadas(encuesta):
+    """Copia de ``respuestas`` a las columnas indexadas (D2.9)."""
+    respuestas = encuesta.respuestas or {}
+    encuesta.grupo_id = _texto(respuestas, "grupoId")
+    encuesta.es_cabecera_grupo = bool(_si_no(respuestas, "esCabeceraGrupo"))
+    encuesta.persona_entrevistada = _texto(respuestas, "personaEntrevistada")
+    encuesta.personas_observadas = _entero(respuestas, "personasObservadas")
+    encuesta.realiza_entrevista = _texto(respuestas, "realizaEntrevista")
+    encuesta.codigo_entrevistado = _texto(respuestas, "codigoEntrevistado")
+    encuesta.lugar_hallazgo = _texto(respuestas, "lugarHallazgo")
+    encuesta.es_menor_de_edad = _si_no(respuestas, "esMenorDeEdad")
+    encuesta.lat, encuesta.lon = _coordenadas(respuestas)
+    return encuesta
+
+
+class RelevamientoCerrado(Exception):
+    """El operativo ya está finalizado y no admite más casos (409)."""
+
+
+class RelevamientoNoIniciado(Exception):
+    """El operativo todavía no empezó y no admite casos (409).
+
+    QA-0012: la app ya lo bloquea, pero el servidor no puede confiar en eso.
+    Corrige D2.7, que decía que las fechas eran sólo planificación.
+    """
+
+
+def puede_recibir_casos(relevamiento) -> bool:
+    """Si el operativo está en condiciones de recibir casos hoy (QA-0012).
+
+    Ninguna de las dos fechas le gana al estado. La de fin no corta porque un
+    operativo puede estirarse. La de inicio sólo corta mientras sigue
+    ``planificado``: cargar antes de empezar es un error de la app. Una vez que
+    arrancó, adelantar la fecha de inicio no puede volver a rechazar los casos
+    de un operativo que ya está en curso.
+
+    Es la misma regla que aplica ``upsert_encuesta`` y que la API publica como
+    ``puede_iniciar``: viven juntas para que no se separen.
+    """
+    if relevamiento.estado == Relevamiento.Estado.FINALIZADO:
+        return False
+    return not (
+        relevamiento.estado == Relevamiento.Estado.PLANIFICADO
+        and relevamiento.fecha_inicio
+        and timezone.localdate() < relevamiento.fecha_inicio
+    )
+
+
+@transaction.atomic
+def upsert_encuesta(*, encuesta_id, relevamiento, datos, user, origen=None):
+    """Alta o actualización idempotente de un caso por UUID.
+
+    Reintentar con el mismo UUID actualiza, no duplica. Con el primer caso el
+    relevamiento pasa a ``en_curso``.
+    """
+    if relevamiento.estado == Relevamiento.Estado.FINALIZADO:
+        raise RelevamientoCerrado()
+    if not puede_recibir_casos(relevamiento):
+        raise RelevamientoNoIniciado()
+
+    encuesta = Encuesta.all_objects.filter(pk=encuesta_id).first()
+    creada = encuesta is None
+    if creada:
+        encuesta = Encuesta(id=encuesta_id, relevamiento=relevamiento)
+        encuesta.origen = origen or Encuesta.Origen.APP
+        encuesta.relevador = user
+    elif encuesta.deleted_at is not None:
+        # Reenviar un caso borrado lo revive: la app es la fuente de verdad.
+        encuesta.deleted_at = None
+        encuesta.deleted_by = None
+
+    encuesta.relevamiento = relevamiento
+    for campo in ("variante", "estado", "fecha_inicio", "fecha_hora_fin"):
+        if campo in datos:
+            setattr(encuesta, campo, datos[campo])
+    if "respuestas" in datos:
+        encuesta.respuestas = datos["respuestas"] or {}
+
+    aplicar_columnas_indexadas(encuesta)
+    encuesta.save()
+
+    if relevamiento.estado == Relevamiento.Estado.PLANIFICADO:
+        relevamiento.estado = Relevamiento.Estado.EN_CURSO
+        relevamiento.save(update_fields=["estado", "updated_at"])
+
+    return encuesta, creada
+
+
+@transaction.atomic
+def cerrar_relevamiento(*, relevamiento, user, datos=None):
+    """Cierre desde la app, con los datos de campo del recorrido (D2.5).
+
+    Es idempotente: cerrar dos veces no es un error para la app, que reintenta
+    desde la outbox.
+    """
+    datos = datos or {}
+    ya_estaba_cerrado = relevamiento.estado == Relevamiento.Estado.FINALIZADO
+    if ya_estaba_cerrado:
+        return relevamiento, False
+
+    relevamiento.estado = Relevamiento.Estado.FINALIZADO
+    relevamiento.fecha_cierre = datos.get("fecha_cierre") or timezone.now()
+    relevamiento.cerrado_por = user
+    if datos.get("lat") is not None:
+        relevamiento.lat = datos["lat"]
+    if datos.get("lon") is not None:
+        relevamiento.lon = datos["lon"]
+    if datos.get("observacion_asentamiento") is not None:
+        relevamiento.observacion_asentamiento = datos["observacion_asentamiento"]
+    if datos.get("otra_observacion") is not None:
+        relevamiento.otra_observacion = datos["otra_observacion"] or ""
+    relevamiento.save()
+    return relevamiento, True
+
+
+# Columnas que alcanzan para listar casos. Ordenar filas que arrastran el JSON
+# del instrumento agota el sort buffer de MySQL (error 1038) incluso sin filas:
+# el motor decide por el ancho de la fila, no por la cantidad.
+CAMPOS_LISTADO = (
+    "id",
+    "relevamiento_id",
+    "estado",
+    "fecha_inicio",
+    "codigo_entrevistado",
+    "persona_entrevistada",
+    "lugar_hallazgo",
+    "es_menor_de_edad",
+    "realiza_entrevista",
+)
+
+
+def get_encuestas_queryset(relevamiento=None):
+    """Casos completos, con `respuestas`.
+
+    Sin ``select_related``: los serializers usan ``relevamiento_id`` y
+    ``relevador_id``, que son columnas locales, y traer el relevamiento entero
+    sólo engorda la fila del ``ORDER BY``.
+    """
+    queryset = Encuesta.objects.all()
+    if relevamiento is not None:
+        queryset = queryset.filter(relevamiento=relevamiento)
+    return queryset
+
+
+def get_encuestas_para_listado(relevamiento):
+    """Queryset liviano para las tablas del backoffice: sin el JSON."""
+    return (
+        Encuesta.objects.filter(relevamiento=relevamiento)
+        .only(*CAMPOS_LISTADO)
+        .order_by("-fecha_inicio")
+    )
+
+
+def filtro_sin_entrevista_por_franja():
+    """Casos cerrados sin entrevista porque la franja etaria no la admite.
+
+    Desde el instrumento 4.0.0 quién no se entrevista lo decide el rango
+    observado, no ``esMenorDeEdad``: a esas personas el formulario ni siquiera
+    les muestra ``realizaEntrevista``, así que tampoco se les pregunta la fecha
+    de nacimiento de la que salía aquel cálculo. La lista de prefijos la publica
+    el propio cuestionario y ya incluye los de las versiones anteriores
+    (``r0a13`` / ``r0a14``), que es lo que hace que la misma regla cuente bien
+    las dos generaciones de casos que conviven en la base.
+
+    Se conserva en OR la condición vieja (``esMenorDeEdad`` sin
+    ``realizaEntrevista``) para los casos 3.1.0 y anteriores cargados bajo la
+    regla F1, que no siempre dejan la franja en un prefijo de la lista.
+    """
+    por_franja = Q()
+    for prefijo in franjas_sin_entrevista():
+        por_franja |= Q(persona_entrevistada__startswith=prefijo)
+    return Q(realiza_entrevista="") & (por_franja | Q(es_menor_de_edad=True))
+
+
+def resumen_de_casos(relevamiento):
+    """Números del operativo, con las reglas de conteo del instrumento 2026.
+
+    "Personas observadas" se suma **sólo** de los casos cabecera de grupo: el
+    módulo observacional se carga una vez y los demás casos del grupo lo
+    heredan, así que sumar todos multiplicaría el total (D2.9).
+    """
+    casos = get_encuestas_queryset(relevamiento)
+    personas = (
+        casos.filter(es_cabecera_grupo=True).aggregate(
+            total=Sum("personas_observadas")
+        )["total"]
+        or 0
+    )
+    return {
+        "casos": casos.count(),
+        "personas_observadas": personas,
+        "entrevistas": casos.filter(realiza_entrevista="si").count(),
+        # "Rechazada" mezcla dos cosas: quien no quiso o no pudo responder y la
+        # persona a la que no correspondía preguntarle por su edad. Se separan
+        # mirando si `realizaEntrevista` llegó o no, así que los dos conteos son
+        # excluyentes por construcción.
+        "sin_entrevista": casos.filter(estado=Encuesta.Estado.RECHAZADA)
+        .exclude(realiza_entrevista="")
+        .count(),
+        "sin_entrevista_por_franja": casos.filter(
+            filtro_sin_entrevista_por_franja()
+        ).count(),
+    }

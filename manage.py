@@ -4,6 +4,10 @@ import logging
 import os
 import sys
 
+# Agrega kernel/ y backends/<vertical>/ al sys.path antes de cargar el settings,
+# que puede vivir en un backend (p. ej. dispositivos_runtime.settings).
+import config  # noqa: F401  pylint: disable=unused-import
+
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("django")

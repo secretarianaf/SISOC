@@ -1,0 +1,280 @@
+from django import forms
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
+from .models import Comunicado, ComunicadoAdjunto, TipoComunicado, SubtipoComunicado
+from .permissions import (
+    es_tecnico,
+    is_admin,
+    get_ids_comedores_del_usuario,
+    get_ids_organizaciones_del_usuario,
+    can_create_comunicado_interno,
+)
+
+MAX_ADJUNTO_SIZE_BYTES = 10 * 1024 * 1024
+ALLOWED_ADJUNTO_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class CommaSeparatedIdsInput(forms.HiddenInput):
+    """Un solo input oculto con los ids separados por coma.
+
+    Un input por id hace que selecciones grandes superen
+    ``DATA_UPLOAD_MAX_NUMBER_FIELDS`` y Django responda 400. Se sigue aceptando
+    el formato de valores repetidos (``getlist``) por compatibilidad.
+    """
+
+    def format_value(self, value):
+        if not value:
+            return ""
+        if isinstance(value, (list, tuple)):
+            return ",".join(str(item) for item in value)
+        return str(value)
+
+    def value_from_datadict(self, data, files, name):
+        raw_values = data.getlist(name) if hasattr(data, "getlist") else data.get(name)
+        if raw_values is None:
+            return []
+        if not isinstance(raw_values, (list, tuple)):
+            raw_values = [raw_values]
+        return [
+            item.strip()
+            for raw in raw_values
+            for item in str(raw).split(",")
+            if item.strip()
+        ]
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        # Si no hay datos, retornar lista vacía
+        if not data:
+            return []
+
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            # Filtrar valores vacíos/None de la lista
+            result = [single_file_clean(d, initial) for d in data if d]
+        else:
+            # Un solo archivo
+            result = [single_file_clean(data, initial)]
+        return result
+
+
+class ComunicadoForm(forms.ModelForm):
+    # Campo para subir múltiples archivos a la vez
+    archivos_adjuntos = MultipleFileField(
+        required=False,
+        widget=MultipleFileInput(attrs={"class": "form-control", "multiple": True}),
+    )
+
+    class Meta:
+        model = Comunicado
+        fields = [
+            "titulo",
+            "cuerpo",
+            "tipo",
+            "subtipo",
+            "destacado",
+            "para_todos_comedores",
+            "comedores",
+            "organizaciones",
+            "fecha_vencimiento",
+        ]
+        widgets = {
+            "cuerpo": forms.Textarea(attrs={"rows": 6}),
+            "tipo": forms.Select(attrs={"class": "form-select"}),
+            "subtipo": forms.Select(attrs={"class": "form-select"}),
+            "fecha_vencimiento": forms.DateTimeInput(
+                attrs={"type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M",
+            ),
+            "destacado": forms.CheckboxInput(
+                attrs={"class": "form-check-input", "role": "switch"}
+            ),
+            "para_todos_comedores": forms.CheckboxInput(
+                attrs={"class": "form-check-input", "role": "switch"}
+            ),
+            # El selector de destinatarios (issue #2505) es un panel propio con
+            # filtros combinables: el front administra inputs ocultos con los ids
+            # elegidos en lugar de renderizar el universo completo en un <select>.
+            "comedores": CommaSeparatedIdsInput(),
+            "organizaciones": CommaSeparatedIdsInput(),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        self._apply_bootstrap_styles()
+        self._configure_fields_for_user()
+
+        # Formatear fecha_vencimiento para el input datetime-local
+        if self.instance and self.instance.fecha_vencimiento:
+            self.initial["fecha_vencimiento"] = (
+                self.instance.fecha_vencimiento.strftime("%Y-%m-%dT%H:%M")
+            )
+
+    def _configure_fields_for_user(self):
+        """Configura los campos según los permisos del usuario."""
+        if not self.user:
+            return
+
+        # Filtrar comedores según permisos del usuario
+        self.fields["comedores"].queryset = self.fields["comedores"].queryset.filter(
+            pk__in=get_ids_comedores_del_usuario(self.user)
+        )
+        self.fields["organizaciones"].queryset = (
+            self.fields["organizaciones"]
+            .queryset.filter(pk__in=get_ids_organizaciones_del_usuario(self.user))
+            .order_by("nombre")
+        )
+
+        # Si es técnico (no admin), solo puede crear comunicados externos a comedores
+        if es_tecnico(self.user) and not is_admin(self.user):
+            self.fields["tipo"].choices = [
+                (TipoComunicado.EXTERNO, "Comunicación Externa")
+            ]
+            self.fields["tipo"].initial = TipoComunicado.EXTERNO
+            self.fields["subtipo"].choices = [
+                (SubtipoComunicado.COMEDORES, "Comunicación a Comedores"),
+                (
+                    SubtipoComunicado.ORGANIZACIONES,
+                    "Comunicación a Organizaciones",
+                ),
+            ]
+            self.fields["subtipo"].initial = SubtipoComunicado.COMEDORES
+            # Ocultar destacado para técnicos (solo aplica a internos)
+            self.fields["destacado"].widget = forms.HiddenInput()
+            self.fields["destacado"].initial = False
+
+        # Si no puede crear internos, forzar externo
+        elif not can_create_comunicado_interno(self.user):
+            self.fields["tipo"].choices = [
+                (TipoComunicado.EXTERNO, "Comunicación Externa")
+            ]
+            self.fields["tipo"].initial = TipoComunicado.EXTERNO
+
+    def _apply_bootstrap_styles(self):
+        text_like = (
+            forms.TextInput,
+            forms.NumberInput,
+            forms.EmailInput,
+            forms.URLInput,
+            forms.PasswordInput,
+            forms.DateInput,
+            forms.TimeInput,
+            forms.DateTimeInput,
+            forms.Textarea,
+        )
+        select_like = (forms.Select, forms.SelectMultiple)
+        for field in self.fields.values():
+            widget = field.widget
+            css = widget.attrs.get("class", "")
+            if isinstance(widget, text_like):
+                widget.attrs["class"] = f"{css} form-control".strip()
+            elif isinstance(widget, select_like):
+                widget.attrs["class"] = f"{css} form-select".strip()
+            elif isinstance(widget, forms.CheckboxInput):
+                widget.attrs["class"] = f"{css} form-check-input".strip()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        tipo = cleaned_data.get("tipo")
+        subtipo = cleaned_data.get("subtipo")
+        para_todos_comedores = cleaned_data.get("para_todos_comedores")
+        comedores = cleaned_data.get("comedores")
+        organizaciones = cleaned_data.get("organizaciones")
+
+        if (
+            tipo == TipoComunicado.EXTERNO
+            and subtipo == SubtipoComunicado.COMEDORES
+            and not para_todos_comedores
+            and (not comedores or len(comedores) == 0)
+        ):
+            self.add_error(
+                "comedores",
+                "Debe seleccionar al menos un comedor o marcar 'Enviar a todos los comedores'.",
+            )
+
+        if (
+            tipo == TipoComunicado.EXTERNO
+            and subtipo == SubtipoComunicado.ORGANIZACIONES
+            and (not organizaciones or len(organizaciones) == 0)
+        ):
+            self.add_error(
+                "organizaciones",
+                "Debe seleccionar al menos una organización.",
+            )
+
+        return cleaned_data
+
+    def clean_archivos_adjuntos(self):
+        archivos = self.cleaned_data.get("archivos_adjuntos", [])
+        for archivo in archivos:
+            extension = (
+                f".{archivo.name.rsplit('.', 1)[-1].lower()}"
+                if "." in archivo.name
+                else ""
+            )
+            if extension not in ALLOWED_ADJUNTO_EXTENSIONS:
+                raise ValidationError(
+                    f"El archivo '{archivo.name}' tiene una extensión no permitida."
+                )
+            if archivo.size > MAX_ADJUNTO_SIZE_BYTES:
+                raise ValidationError(
+                    f"El archivo '{archivo.name}' supera el tamaño máximo de 10 MB."
+                )
+        return archivos
+
+
+class ComunicadoAdjuntoForm(forms.ModelForm):
+    class Meta:
+        model = ComunicadoAdjunto
+        fields = ["archivo"]
+        widgets = {
+            "archivo": forms.FileInput(attrs={"class": "form-control"}),
+        }
+
+
+# Formset para manejar múltiples adjuntos
+ComunicadoAdjuntoFormSet = forms.inlineformset_factory(
+    Comunicado,
+    ComunicadoAdjunto,
+    form=ComunicadoAdjuntoForm,
+    extra=1,
+    can_delete=True,
+)
+
+
+class MailingUploadForm(forms.Form):
+    asunto = forms.CharField(
+        label="Asunto",
+        max_length=255,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+        help_text="El asunto que tendrá el correo electrónico.",
+    )
+    cuerpo = forms.CharField(
+        label="Cuerpo",
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 10}),
+        help_text="El contenido del correo electrónico.",
+    )
+    archivo = forms.FileField(
+        label="Archivo Excel",
+        validators=[FileExtensionValidator(["xlsx"])],
+        widget=forms.ClearableFileInput(
+            attrs={"accept": ".xlsx", "class": "form-control"}
+        ),
+        help_text="Cargue un archivo .xlsx con una columna 'mail'.",
+    )
+    archivos_adjuntos = MultipleFileField(
+        label="Archivos adjuntos",
+        required=False,
+        widget=MultipleFileInput(attrs={"class": "form-control", "multiple": True}),
+        help_text="Opcionalmente, seleccione uno o más archivos para adjuntar al correo.",
+    )

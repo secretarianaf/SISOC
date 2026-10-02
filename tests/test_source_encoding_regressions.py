@@ -6,7 +6,7 @@ import pytest
 MOJIBAKE_MARKERS = ("Ã", "Â", "â", "�")
 FILES_WITH_ASCII_SAFE_TEXT = (
     Path("docker/django/entrypoint.py"),
-    Path("users/services_auth.py"),
+    Path("kernel/users/services_auth.py"),
 )
 
 

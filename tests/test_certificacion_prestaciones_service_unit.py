@@ -34,6 +34,8 @@ def test_fallback_inserta_leyenda_en_plantilla(monkeypatch, tmp_path):
     )
     template_path = (
         Path(__file__).resolve().parents[1]
+        / "backends"
+        / "sisoc_core"
         / "pwa"
         / "files"
         / "varios"
@@ -76,6 +78,8 @@ def test_completar_plantilla_usa_dni_certificador(monkeypatch, tmp_path):
     )
     template_path = (
         Path(__file__).resolve().parents[1]
+        / "backends"
+        / "sisoc_core"
         / "pwa"
         / "files"
         / "varios"

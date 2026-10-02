@@ -1,0 +1,647 @@
+from datetime import time
+from pathlib import Path
+
+from django import forms
+from django.core.exceptions import ValidationError
+from django.db.models import Q
+
+from core.models import Localidad, Provincia
+from ver_para_ser_libre.models import (
+    CasoLaboratorioVPSL,
+    ChecklistJornadaVPSL,
+    CierreDiarioVPSL,
+    EstadoEvaluacionVPSL,
+    EstadoItinerario,
+    EstadoLaboratorio,
+    ItinerarioVPSL,
+    JornadaVPSL,
+    RegistroNominalVPSL,
+    ResultadoAtencion,
+    SedeVPSL,
+    VehiculoVPSL,
+)
+from ver_para_ser_libre.services.map_location import resolve_google_maps_location
+from ver_para_ser_libre.services.sedes import CABA_JURISDICCIONES
+
+
+class BootstrapModelForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            if isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs.setdefault("class", "form-check-input")
+            elif isinstance(field.widget, forms.FileInput):
+                field.widget.attrs.setdefault("class", "form-control")
+            else:
+                field.widget.attrs.setdefault("class", "form-control")
+
+
+class VPSLClearableFileInput(forms.ClearableFileInput):
+    template_name = "ver_para_ser_libre/widgets/clearable_file_input.html"
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        if value:
+            context["widget"]["file_name"] = Path(
+                getattr(value, "name", str(value))
+            ).name
+        return context
+
+
+class ItinerarioVPSLForm(BootstrapModelForm):
+    class Meta:
+        model = ItinerarioVPSL
+        fields = [
+            "provincia",
+            "fecha_inicio",
+            "fecha_fin",
+            "referente_nombre",
+            "referente_apellido",
+            "referente_telefono",
+            "referente_email",
+            "carta_archivo",
+            "observaciones",
+        ]
+        widgets = {
+            "fecha_inicio": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={"type": "date"},
+            ),
+            "fecha_fin": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={"type": "date"},
+            ),
+            "observaciones": forms.Textarea(attrs={"rows": 3}),
+            "carta_archivo": VPSLClearableFileInput(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.freeze_completed_fields = kwargs.pop("freeze_completed_fields", False)
+        self.provincia_bloqueada = kwargs.pop("provincia_bloqueada", None)
+        self.subsanacion_only = kwargs.pop("subsanacion_only", False)
+        self.subsanacion_carta_archivo = False
+        super().__init__(*args, **kwargs)
+        self.fields["carta_archivo"].required = not bool(
+            self.instance and self.instance.carta_archivo
+        )
+        self.fields["carta_archivo"].help_text = "Adjunte la carta obligatoria."
+        self.fields["referente_nombre"].label = "Nombre del referente"
+        self.fields["referente_apellido"].label = "Apellido del referente"
+        self.fields["referente_telefono"].label = "Teléfono"
+        self.fields["referente_email"].label = "Correo electrónico"
+        if self.provincia_bloqueada:
+            self.fields["provincia"].initial = self.provincia_bloqueada.pk
+            self.fields["provincia"].disabled = True
+            css_class = self.fields["provincia"].widget.attrs.get("class", "")
+            self.fields["provincia"].widget.attrs[
+                "class"
+            ] = f"{css_class} bg-dark text-white".strip()
+            self.fields["provincia"].help_text = (
+                "Provincia asignada al usuario provincial."
+            )
+        elif not self.instance.pk:
+            self.fields["provincia"].queryset = Provincia.objects.order_by("nombre")
+            self.fields["provincia"].empty_label = "Seleccione una provincia"
+            self.fields["provincia"].widget.attrs[
+                "class"
+            ] = "form-control select2-provincia-vpsl"
+        if self.freeze_completed_fields:
+            self._freeze_completed_fields()
+        if self.subsanacion_only:
+            self._configure_subsanacion_fields()
+
+    def _freeze_completed_fields(self):
+        for field_name in self.fields:
+            current_value = getattr(self.instance, field_name, None)
+            has_value = bool(current_value)
+            if field_name == "carta_archivo":
+                has_value = bool(self.instance.carta_archivo)
+            if has_value:
+                self.fields[field_name].disabled = True
+                css_class = self.fields[field_name].widget.attrs.get("class", "")
+                self.fields[field_name].widget.attrs[
+                    "class"
+                ] = f"{css_class} bg-dark text-white".strip()
+                self.fields[field_name].help_text = (
+                    "Este campo ya estaba completo al aprobarse y no puede modificarse."
+                )
+
+    def _configure_subsanacion_fields(self):
+        allowed_fields = []
+        if self.instance.carta_archivo_estado == EstadoEvaluacionVPSL.SUBSANAR:
+            allowed_fields.append("carta_archivo")
+            self.subsanacion_carta_archivo = True
+            self.fields["carta_archivo"].required = True
+            self.fields["carta_archivo"].label = "Nueva carta archivo *"
+            self.fields["carta_archivo"].help_text = (
+                "Adjunte el archivo corregido solicitado por Nacion."
+            )
+
+        for field_name in list(self.fields):
+            if field_name not in allowed_fields:
+                self.fields.pop(field_name)
+
+    def save(self, commit=True):
+        instance = super().save(commit=commit)
+        if commit and self.subsanacion_only:
+            if self.subsanacion_carta_archivo:
+                instance.carta_archivo_estado = EstadoEvaluacionVPSL.PENDIENTE
+                instance.save(update_fields=["carta_archivo_estado"])
+        return instance
+
+    def clean(self):
+        cleaned_data = super().clean()
+        fecha_inicio = cleaned_data.get("fecha_inicio")
+        fecha_fin = cleaned_data.get("fecha_fin")
+        if fecha_inicio and fecha_fin and fecha_fin < fecha_inicio:
+            self.add_error(
+                "fecha_fin", "La fecha de fin no puede ser anterior al inicio."
+            )
+        if self.instance and self.instance.estado == EstadoItinerario.APROBADO:
+            return cleaned_data
+        if not cleaned_data.get("carta_archivo") and not (
+            self.instance and self.instance.carta_archivo
+        ):
+            self.add_error("carta_archivo", "Debe adjuntar Carta archivo.")
+        return cleaned_data
+
+
+class JornadaVPSLForm(BootstrapModelForm):
+    SEXO_CHOICES = (
+        ("", "Seleccionar"),
+        ("M", "Masculino"),
+        ("F", "Femenino"),
+        ("X", "X"),
+    )
+    ubicacion_url = forms.CharField(
+        required=True,
+        label="Enlace de Google Maps o coordenadas",
+    )
+    vehiculos = forms.ModelMultipleChoiceField(
+        queryset=VehiculoVPSL.objects.none(),
+        required=False,
+        label="Vehículos",
+        widget=forms.SelectMultiple(
+            attrs={
+                "class": "form-control select2-vehiculos-vpsl",
+                "data-placeholder": "Seleccione uno o más vehículos",
+            }
+        ),
+    )
+
+    class Meta:
+        model = JornadaVPSL
+        fields = [
+            "fecha",
+            "sede",
+            "localidad",
+            "ubicacion_url",
+            "direccion",
+            "vehiculos",
+            "horario_inicio",
+            "horario_fin",
+            "referente_dni",
+            "referente_sexo",
+            "referente_telefono",
+            "observaciones",
+        ]
+        widgets = {
+            "fecha": forms.DateInput(attrs={"type": "date"}),
+            "horario_inicio": forms.TimeInput(attrs={"type": "time"}),
+            "horario_fin": forms.TimeInput(attrs={"type": "time"}),
+            "observaciones": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.itinerario = kwargs.pop("itinerario", None)
+        super().__init__(*args, **kwargs)
+        vehiculos_disponibles = VehiculoVPSL.objects.filter(activo=True)
+        if self.instance.pk:
+            vehiculos_disponibles = VehiculoVPSL.objects.filter(
+                Q(activo=True) | Q(jornadas=self.instance)
+            )
+        self.fields["vehiculos"].queryset = vehiculos_disponibles.distinct().order_by(
+            "orden", "nombre", "pk"
+        )
+        if self.itinerario:
+            self.fields["fecha"].widget.attrs.update(
+                {
+                    "min": self.itinerario.fecha_inicio.isoformat(),
+                    "max": self.itinerario.fecha_fin.isoformat(),
+                }
+            )
+            localidades = Localidad.objects.filter(
+                municipio__provincia=self.itinerario.provincia
+            )
+            if self.instance.localidad_id:
+                localidades = Localidad.objects.filter(
+                    Q(municipio__provincia=self.itinerario.provincia)
+                    | Q(pk=self.instance.localidad_id)
+                )
+            self.fields["localidad"].queryset = localidades.order_by("nombre")
+        else:
+            self.fields["localidad"].queryset = Localidad.objects.none()
+        self.fields["sede"].label = "Nombre de la sede"
+        self.fields["sede"].required = True
+        self.fields["sede"].widget.attrs["placeholder"] = "Ej.: Escuela N.° 123"
+        # Las jornadas previas a este flujo no tienen localidad ni ubicacion;
+        # se exigen al crear y no se pueden quitar una vez informadas.
+        es_alta = not self.instance.pk
+        self.fields["localidad"].label = "Localidad"
+        self.fields["localidad"].required = es_alta or bool(self.instance.localidad_id)
+        self.fields["localidad"].empty_label = "Seleccione una localidad"
+        self.fields["localidad"].widget.attrs.update(
+            {
+                "class": "form-control select2-localidad-jornada-vpsl",
+                "data-placeholder": "Seleccione una localidad",
+            }
+        )
+        self.fields["ubicacion_url"].label = "Enlace de Google Maps o coordenadas"
+        self.fields["ubicacion_url"].required = es_alta or bool(
+            self.instance.ubicacion_url
+        )
+        self.fields["ubicacion_url"].widget.attrs[
+            "placeholder"
+        ] = "https://maps.app.goo.gl/..."
+        self.fields["ubicacion_url"].help_text = (
+            "Use maps.app.goo.gl/identificador, una URL oficial de Street View "
+            "o coordenadas como -34.603689, -58.381596."
+        )
+        self.fields["direccion"].label = "Dirección"
+        self.fields["direccion"].required = False
+        self.fields["direccion"].help_text = (
+            "Se completa desde el enlace cuando está disponible; puede corregirla."
+        )
+        self.fields["referente_dni"].label = "DNI"
+        self.fields["referente_sexo"].label = "Género referente"
+        self.fields["referente_telefono"].label = "Teléfono"
+        self.fields["referente_sexo"].widget = forms.Select(
+            choices=self.SEXO_CHOICES,
+            attrs={"class": "form-control"},
+        )
+        if not self.is_bound and not self.instance.pk:
+            self.fields["horario_inicio"].initial = time(9, 0)
+            self.fields["horario_fin"].initial = time(18, 0)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        location_url = cleaned_data.get("ubicacion_url")
+        if not location_url:
+            return cleaned_data
+        if (
+            self.instance.pk
+            and location_url == self.initial.get("ubicacion_url")
+            and (
+                self.instance.latitud is not None
+                or self.instance.longitud is not None
+                or self.instance.direccion
+            )
+        ):
+            return cleaned_data
+        try:
+            location = resolve_google_maps_location(location_url)
+        except ValidationError as exc:
+            self.add_error("ubicacion_url", exc)
+            return cleaned_data
+        self.instance.ubicacion_url = location.original_url
+        cleaned_data["ubicacion_url"] = location.original_url
+        self.instance.latitud = location.latitude
+        self.instance.longitud = location.longitude
+        # Si el usuario no edito la direccion, se toma la del nuevo enlace para
+        # no exportar coordenadas nuevas con la direccion anterior.
+        direccion_sin_editar = cleaned_data.get("direccion") in (
+            "",
+            None,
+            self.initial.get("direccion"),
+        )
+        if location.address and direccion_sin_editar:
+            cleaned_data["direccion"] = location.address
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
+
+
+class ChecklistSedeVPSLForm(forms.Form):
+    ITEMS = (
+        (
+            ChecklistJornadaVPSL.Item.ELECTRICIDAD,
+            "Electricidad e infraestructura",
+        ),
+        (ChecklistJornadaVPSL.Item.VIANDAS, "Provision de viandas"),
+        (
+            ChecklistJornadaVPSL.Item.SEGURIDAD,
+            "Seguridad y resguardo del movil",
+        ),
+    )
+
+    def __init__(self, *args, sede=None, jornada=None, required=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.sede = sede
+        self.jornada = jornada
+        owner_checklist = (
+            jornada.checklist.all()
+            if jornada
+            else (sede.checklist.all() if sede else ChecklistJornadaVPSL.objects.none())
+        )
+        existing = {item.item: item for item in owner_checklist}
+        for item_code, label in self.ITEMS:
+            checklist = existing.get(item_code)
+            prefix = item_code
+            self.fields[f"{prefix}_cumple"] = forms.TypedChoiceField(
+                label=f"{label}{' *' if required else ''}",
+                choices=(("", "Seleccionar"), ("true", "Si"), ("false", "No")),
+                coerce=lambda value: value == "true",
+                empty_value=None,
+                required=required,
+                widget=forms.Select(attrs={"class": "form-control"}),
+                initial=(
+                    None
+                    if checklist is None or checklist.cumple is None
+                    else str(checklist.cumple).lower()
+                ),
+            )
+            self.fields[f"{prefix}_observacion"] = forms.CharField(
+                label="Observacion",
+                required=False,
+                widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+                initial=getattr(checklist, "observacion", ""),
+            )
+            self.fields[f"{prefix}_evidencia"] = forms.FileField(
+                label="Evidencia",
+                required=False,
+                widget=forms.FileInput(attrs={"class": "form-control"}),
+            )
+        self.field_groups = [
+            {
+                "title": label,
+                "cumple": self[f"{item_code}_cumple"],
+                "observacion": self[f"{item_code}_observacion"],
+                "evidencia": self[f"{item_code}_evidencia"],
+            }
+            for item_code, label in self.ITEMS
+        ]
+
+
+class RegistroNominalVPSLForm(BootstrapModelForm):
+    SEXO_CHOICES = (
+        ("", "Seleccionar"),
+        ("M", "Masculino"),
+        ("F", "Femenino"),
+        ("X", "X"),
+    )
+
+    @staticmethod
+    def siguiente_numero_acta(jornada):
+        registros = list(jornada.registros.order_by("created_at", "pk"))
+        siguiente = len(registros) + 1
+        if not registros:
+            return "-1"
+        acta_base = registros[0].numero_acta or ""
+        base, separador, sufijo = acta_base.rpartition("-")
+        if separador and sufijo.isdigit():
+            acta_base = base
+        return f"{acta_base}-{siguiente}" if acta_base else f"-{siguiente}"
+
+    class Meta:
+        model = RegistroNominalVPSL
+        fields = [
+            "dni",
+            "sexo",
+            "identificador_alternativo",
+            "nombre",
+            "apellido",
+            "edad",
+            "genero",
+            "telefono",
+            "escuela_sede",
+            "numero_acta",
+            "numero_sobre",
+            "fecha_atencion",
+            "graduacion_izquierda",
+            "graduacion_derecha",
+            "resultado",
+            "cantidad_lentes",
+            "adjunto",
+            "primera_vez_anteojos",
+            "observaciones",
+        ]
+        widgets = {
+            "fecha_atencion": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={"type": "date"},
+            ),
+            "graduacion_izquierda": forms.NumberInput(
+                attrs={"min": "-6", "max": "6", "step": "0.25"}
+            ),
+            "graduacion_derecha": forms.NumberInput(
+                attrs={"min": "-6", "max": "6", "step": "0.25"}
+            ),
+            "observaciones": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, jornada=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.jornada = jornada
+        self.fields["sexo"].widget = forms.Select(
+            choices=self.SEXO_CHOICES,
+            attrs={"class": "form-control"},
+        )
+        self.fields["sexo"].label = "Sexo"
+        self.fields["genero"].label = "Sexo"
+        self.fields["primera_vez_anteojos"].label = "Primera vez que utiliza anteojos"
+        self.fields["graduacion_izquierda"].label = "Izquierda"
+        self.fields["graduacion_derecha"].label = "Derecha"
+        if getattr(self.instance, "previo_a_graduacion", False):
+            for field_name in ("graduacion_izquierda", "graduacion_derecha"):
+                self.fields[field_name].widget.attrs["data-graduacion-opcional"] = "1"
+                self.fields[field_name].help_text = (
+                    "Registro previo a la carga de graduacion: es opcional."
+                )
+        self.fields["cantidad_lentes"].widget.attrs.update({"min": "0", "max": "2"})
+        for field_name in ("nombre", "apellido", "edad", "genero"):
+            attrs = self.fields[field_name].widget.attrs
+            attrs["readonly"] = "readonly"
+            attrs["title"] = (
+                "Este campo se completa automaticamente al verificar RENAPER."
+            )
+            css_class = attrs.get("class", "")
+            attrs["class"] = f"{css_class} bg-dark text-white".strip()
+        if jornada and not self.is_bound and not self.instance.pk:
+            self.fields["fecha_atencion"].initial = jornada.fecha
+            self.fields["escuela_sede"].initial = jornada.sede
+            numero_acta = self.siguiente_numero_acta(jornada)
+            self.initial["numero_acta"] = numero_acta
+            self.fields["numero_acta"].initial = numero_acta
+
+    def clean(self):
+        cleaned_data = super().clean()
+        resultado = cleaned_data.get("resultado")
+        cantidad_lentes = cleaned_data.get("cantidad_lentes") or 0
+        if resultado == ResultadoAtencion.NO_REQUIERE:
+            cleaned_data["cantidad_lentes"] = 0
+            cleaned_data["graduacion_izquierda"] = None
+            cleaned_data["graduacion_derecha"] = None
+        elif cantidad_lentes > 2:
+            self.add_error("cantidad_lentes", "La cantidad maxima de lentes es 2.")
+        return cleaned_data
+
+
+class SedeVPSLForm(BootstrapModelForm):
+    class Meta:
+        model = SedeVPSL
+        fields = [
+            "jurisdiccion",
+            "sector",
+            "ambito",
+            "departamento",
+            "codigo_departamento",
+            "localidad",
+            "codigo_localidad",
+            "cueanexo",
+            "nombre",
+            "domicilio",
+            "codigo_postal",
+            "telefono",
+            "mail",
+        ]
+
+    def clean_cueanexo(self):
+        return self.cleaned_data["cueanexo"] or None
+
+
+class SedeCreateVPSLForm(SedeVPSLForm):
+    LEGACY_PROVINCE_NAMES = {
+        CABA_JURISDICCIONES[1]: CABA_JURISDICCIONES[0],
+        "Tierra del Fuego": "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
+    }
+    provincia = forms.ModelChoiceField(
+        label="Provincia",
+        queryset=Provincia.objects.order_by("nombre"),
+        empty_label="Seleccioná una provincia",
+    )
+    localidad = forms.ChoiceField(
+        label="Localidad",
+        choices=(("", "Seleccioná una localidad"),),
+        widget=forms.Select(attrs={"class": "select2-localidad-vpsl"}),
+    )
+    mail = forms.EmailField(
+        label="Correo electrónico",
+        required=False,
+        max_length=254,
+        widget=forms.EmailInput(attrs={"size": 40}),
+    )
+
+    class Meta(SedeVPSLForm.Meta):
+        fields = [
+            field for field in SedeVPSLForm.Meta.fields if field != "jurisdiccion"
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        provincia_actual = None
+        if self.instance.pk:
+            nombre_provincia = self.LEGACY_PROVINCE_NAMES.get(
+                self.instance.jurisdiccion, self.instance.jurisdiccion
+            )
+            provincia_actual = Provincia.objects.filter(
+                nombre__iexact=nombre_provincia
+            ).first()
+            if provincia_actual:
+                self.fields["provincia"].initial = provincia_actual.pk
+                self.fields["localidad"].initial = self.instance.localidad
+        provincia_id = (
+            self.data.get("provincia")
+            if self.is_bound
+            else (provincia_actual.pk if provincia_actual else None)
+        )
+        if provincia_id and str(provincia_id).isdigit():
+            localidades = list(
+                Localidad.objects.filter(municipio__provincia_id=provincia_id)
+                .order_by("nombre")
+                .values_list("nombre", flat=True)
+                .distinct()
+            )
+            if (
+                self.instance.pk
+                and provincia_actual
+                and str(provincia_id) == str(provincia_actual.pk)
+                and self.instance.localidad
+                and self.instance.localidad not in localidades
+            ):
+                localidades.append(self.instance.localidad)
+            self.fields["localidad"].choices = [
+                ("", "Seleccioná una localidad"),
+                *((nombre, nombre) for nombre in localidades),
+            ]
+        self.fields["domicilio"].label = "Domicilio"
+        self.fields["domicilio"].widget.attrs["placeholder"] = "Calle y altura"
+        self.fields["telefono"].required = True
+        self.fields["telefono"].label = "Teléfono"
+
+    def save(self, commit=True):
+        if self.instance.pk and set(self.changed_data).intersection(
+            {"domicilio", "localidad", "provincia", "departamento", "codigo_postal"}
+        ):
+            self.instance.latitud = None
+            self.instance.longitud = None
+        self.instance.jurisdiccion = self.cleaned_data["provincia"].nombre
+        return super().save(commit=commit)
+
+
+class SedeUpdateVPSLForm(SedeCreateVPSLForm):
+    mail = forms.CharField(
+        label="Correo electrónico",
+        required=False,
+        widget=forms.TextInput(attrs={"size": 40}),
+    )
+
+
+class CasoLaboratorioVPSLForm(BootstrapModelForm):
+    fecha = forms.DateField(
+        required=True,
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+    )
+    responsable = forms.CharField(required=True, max_length=255)
+
+    class Meta:
+        model = CasoLaboratorioVPSL
+        fields = ["estado", "fecha", "responsable"]
+
+    def __init__(self, *args, next_state=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if next_state:
+            self.fields["estado"].initial = next_state
+            self.fields["estado"].disabled = True
+        self.fields["estado"].choices = EstadoLaboratorio.choices
+
+
+class CierreDiarioVPSLForm(BootstrapModelForm):
+    class Meta:
+        model = CierreDiarioVPSL
+        fields = [
+            "cantidad_atenciones_registradas",
+            "cantidad_lentes_entregados_dia",
+            "cantidad_casos_laboratorio_reportados",
+            "responsable_cierre",
+            "acta_adjunta",
+            "observaciones",
+        ]
+        widgets = {"observaciones": forms.Textarea(attrs={"rows": 3})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        required_labels = {
+            "cantidad_atenciones_registradas",
+            "cantidad_lentes_entregados_dia",
+            "cantidad_casos_laboratorio_reportados",
+            "responsable_cierre",
+            "acta_adjunta",
+        }
+        for name in required_labels:
+            self.fields[name].required = True
+            self.fields[name].label = f"{self.fields[name].label} *"

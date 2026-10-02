@@ -1,0 +1,418 @@
+import logging
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse, reverse_lazy
+from django.views.generic import (
+    ListView,
+    CreateView,
+    DetailView,
+    UpdateView,
+    DeleteView,
+)
+from django.contrib import messages
+from django.db.models import Q
+from django.http import JsonResponse
+
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from VAT.models import (
+    Centro,
+    InstitucionContacto,
+    InstitucionIdentificadorHist,
+    InstitucionUbicacion,
+)
+from VAT.forms import (
+    InstitucionContactoForm,
+    InstitucionIdentificadorHistForm,
+    InstitucionUbicacionForm,
+    build_localidad_queryset_for_centro,
+    build_municipio_queryset_for_centro,
+)
+
+logger = logging.getLogger("django")
+
+
+def _is_ajax_request(request):
+    return request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+
+def _serialize_form_errors(form):
+    return {
+        field_name: [error["message"] for error in errors]
+        for field_name, errors in form.errors.get_json_data().items()
+    }
+
+
+def _modal_json_error_response(form, message):
+    return JsonResponse(
+        {
+            "ok": False,
+            "message": message,
+            "errors": _serialize_form_errors(form),
+        },
+        status=400,
+    )
+
+
+def _modal_json_success_response(redirect_url, message):
+    return JsonResponse(
+        {
+            "ok": True,
+            "message": message,
+            "redirect_url": redirect_url,
+        }
+    )
+
+
+# ============================================================================
+# INSTITUCIÓN CONTACTO VIEWS
+# ============================================================================
+
+
+class InstitucionContactoListView(LoginRequiredMixin, ListView):
+    model = InstitucionContacto
+    template_name = "vat/institucion/contacto_list.html"
+    context_object_name = "contactos"
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = InstitucionContacto.objects.select_related("centro").order_by(
+            "centro", "tipo"
+        )
+        centro_id = self.request.GET.get("centro_id")
+        tipo = self.request.GET.get("tipo")
+        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
+
+        if centro_id:
+            queryset = queryset.filter(centro_id=centro_id)
+        if tipo:
+            queryset = queryset.filter(tipo=tipo)
+        if buscar:
+            queryset = queryset.filter(
+                Q(valor__icontains=buscar) | Q(centro__nombre__icontains=buscar)
+            )
+
+        return queryset
+
+
+class InstitucionContactoCreateView(LoginRequiredMixin, CreateView):
+    model = InstitucionContacto
+    form_class = InstitucionContactoForm
+    template_name = "vat/institucion/contacto_form.html"
+    success_url = reverse_lazy("vat_institucion_contacto_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_contacto_list")}
+
+    def get_initial(self):
+        initial = super().get_initial()
+        centro_id = self.request.GET.get("centro")
+        if centro_id:
+            initial["centro"] = centro_id
+        return initial
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        centro_id = self.request.GET.get("centro")
+        if centro_id:
+            kwargs["lock_centro"] = True
+        return kwargs
+
+    def form_valid(self, form):
+        success_message = "Contacto creado exitosamente."
+        messages.success(self.request, success_message)
+        if _is_ajax_request(self.request):
+            self.object = form.save()
+            return _modal_json_success_response(self.get_success_url(), success_message)
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if _is_ajax_request(self.request):
+            return _modal_json_error_response(
+                form,
+                "No se pudo guardar el contacto. Revisá los datos e intentá nuevamente.",
+            )
+        return super().form_invalid(form)
+
+
+class InstitucionContactoDetailView(LoginRequiredMixin, DetailView):
+    model = InstitucionContacto
+    template_name = "vat/institucion/contacto_detail.html"
+    context_object_name = "contacto"
+
+
+class InstitucionContactoUpdateView(LoginRequiredMixin, UpdateView):
+    model = InstitucionContacto
+    form_class = InstitucionContactoForm
+    template_name = "vat/institucion/contacto_form.html"
+    success_url = reverse_lazy("vat_institucion_contacto_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_contacto_list")}
+
+    def get_template_names(self):
+        if _is_ajax_request(self.request):
+            return ["vat/institucion/contacto_form_modal.html"]
+        return [self.template_name]
+
+    def form_valid(self, form):
+        success_message = "Contacto actualizado exitosamente."
+        messages.success(self.request, success_message)
+        if _is_ajax_request(self.request):
+            self.object = form.save()
+            return _modal_json_success_response(self.get_success_url(), success_message)
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if _is_ajax_request(self.request):
+            return _modal_json_error_response(
+                form,
+                "No se pudo actualizar el contacto. Revisá los datos e intentá nuevamente.",
+            )
+        return super().form_invalid(form)
+
+
+class InstitucionContactoDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
+    model = InstitucionContacto
+    template_name = "vat/institucion/contacto_confirm_delete.html"
+    context_object_name = "contacto"
+    success_url = reverse_lazy("vat_institucion_contacto_list")
+
+
+# ============================================================================
+# INSTITUCIÓN IDENTIFICADOR HISTÓRICO VIEWS
+# ============================================================================
+
+
+class InstitucionIdentificadorHistListView(LoginRequiredMixin, ListView):
+    model = InstitucionIdentificadorHist
+    template_name = "vat/institucion/identificador_list.html"
+    context_object_name = "identificadores"
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = InstitucionIdentificadorHist.objects.select_related(
+            "centro"
+        ).order_by("-es_actual", "centro")
+        centro_id = self.request.GET.get("centro_id")
+        tipo = self.request.GET.get("tipo_identificador")
+        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
+
+        if centro_id:
+            queryset = queryset.filter(centro_id=centro_id)
+        if tipo:
+            queryset = queryset.filter(tipo_identificador=tipo)
+        if buscar:
+            queryset = queryset.filter(
+                Q(valor_identificador__icontains=buscar)
+                | Q(centro__nombre__icontains=buscar)
+            )
+
+        return queryset
+
+
+class InstitucionIdentificadorHistCreateView(LoginRequiredMixin, CreateView):
+    model = InstitucionIdentificadorHist
+    form_class = InstitucionIdentificadorHistForm
+    template_name = "vat/institucion/identificador_form.html"
+    success_url = reverse_lazy("vat_institucion_identificador_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_identificador_list")}
+
+    def get_initial(self):
+        initial = super().get_initial()
+        centro_id = self.request.GET.get("centro")
+        if centro_id:
+            initial["centro"] = centro_id
+        return initial
+
+    def form_valid(self, form):
+        messages.success(self.request, "Identificador creado exitosamente.")
+        return super().form_valid(form)
+
+
+class InstitucionIdentificadorHistDetailView(LoginRequiredMixin, DetailView):
+    model = InstitucionIdentificadorHist
+    template_name = "vat/institucion/identificador_detail.html"
+    context_object_name = "identificador"
+
+
+class InstitucionIdentificadorHistUpdateView(LoginRequiredMixin, UpdateView):
+    model = InstitucionIdentificadorHist
+    form_class = InstitucionIdentificadorHistForm
+    template_name = "vat/institucion/identificador_form.html"
+    success_url = reverse_lazy("vat_institucion_identificador_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_identificador_list")}
+
+    def form_valid(self, form):
+        messages.success(self.request, "Identificador actualizado exitosamente.")
+        return super().form_valid(form)
+
+
+class InstitucionIdentificadorHistDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
+    model = InstitucionIdentificadorHist
+    template_name = "vat/institucion/identificador_confirm_delete.html"
+    context_object_name = "identificador"
+    success_url = reverse_lazy("vat_institucion_identificador_list")
+
+
+# ============================================================================
+# INSTITUCIÓN UBICACIÓN VIEWS
+# ============================================================================
+
+
+class InstitucionUbicacionListView(LoginRequiredMixin, ListView):
+    model = InstitucionUbicacion
+    template_name = "vat/institucion/ubicacion_list.html"
+    context_object_name = "ubicaciones"
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = InstitucionUbicacion.objects.select_related(
+            "centro", "localidad"
+        ).order_by("-es_principal", "centro")
+        centro_id = self.request.GET.get("centro_id")
+        rol = self.request.GET.get("rol_ubicacion")
+        buscar = self.request.GET.get("busqueda") or self.request.GET.get("q")
+
+        if centro_id:
+            queryset = queryset.filter(centro_id=centro_id)
+        if rol:
+            queryset = queryset.filter(rol_ubicacion=rol)
+        if buscar:
+            queryset = queryset.filter(
+                Q(domicilio__icontains=buscar) | Q(centro__nombre__icontains=buscar)
+            )
+
+        return queryset
+
+
+class InstitucionUbicacionCreateView(LoginRequiredMixin, CreateView):
+    model = InstitucionUbicacion
+    form_class = InstitucionUbicacionForm
+    template_name = "vat/institucion/ubicacion_form.html"
+    success_url = reverse_lazy("vat_institucion_ubicacion_list")
+    extra_context = {"volver_url": reverse_lazy("vat_institucion_ubicacion_list")}
+
+    def get_initial(self):
+        initial = super().get_initial()
+        centro_id = self.request.GET.get("centro")
+        if centro_id:
+            initial["centro"] = centro_id
+        return initial
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        centro_id = self.request.GET.get("centro")
+        if centro_id:
+            kwargs["lock_centro"] = True
+        return kwargs
+
+    def form_valid(self, form):
+        success_message = "Ubicación creada exitosamente."
+        messages.success(self.request, success_message)
+        if _is_ajax_request(self.request):
+            self.object = form.save()
+            return _modal_json_success_response(self.get_success_url(), success_message)
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if _is_ajax_request(self.request):
+            return _modal_json_error_response(
+                form,
+                "No se pudo guardar la ubicación. Revisá los datos e intentá nuevamente.",
+            )
+        return super().form_invalid(form)
+
+
+class InstitucionUbicacionDetailView(LoginRequiredMixin, DetailView):
+    model = InstitucionUbicacion
+    template_name = "vat/institucion/ubicacion_detail.html"
+    context_object_name = "ubicacion"
+
+
+class InstitucionUbicacionUpdateView(LoginRequiredMixin, UpdateView):
+    model = InstitucionUbicacion
+    form_class = InstitucionUbicacionForm
+    template_name = "vat/institucion/ubicacion_form.html"
+
+    def get_template_names(self):
+        if _is_ajax_request(self.request):
+            return ["vat/institucion/ubicacion_form_modal.html"]
+        return [self.template_name]
+
+    def get_success_url(self):
+        return reverse("vat_centro_detail", kwargs={"pk": self.object.centro_id})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["return_url"] = self.get_success_url()
+        context["volver_url"] = context["return_url"]
+        return context
+
+    def form_valid(self, form):
+        success_message = "Ubicación actualizada exitosamente."
+        messages.success(self.request, success_message)
+        if _is_ajax_request(self.request):
+            self.object = form.save()
+            return _modal_json_success_response(self.get_success_url(), success_message)
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if _is_ajax_request(self.request):
+            return _modal_json_error_response(
+                form,
+                "No se pudo actualizar la ubicación. Revisá los datos e intentá nuevamente.",
+            )
+        return super().form_invalid(form)
+
+
+class InstitucionUbicacionDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
+    model = InstitucionUbicacion
+    template_name = "vat/institucion/ubicacion_confirm_delete.html"
+    context_object_name = "ubicacion"
+    success_url = reverse_lazy("vat_institucion_ubicacion_list")
+
+
+def localidades_por_centro(request):
+    """Devuelve localidades filtradas por el municipio/provincia del centro seleccionado."""
+    centro_id = request.GET.get("centro_id")
+    if not centro_id:
+        return JsonResponse({"localidades": []})
+    try:
+        centro = Centro.objects.select_related("municipio", "provincia").get(
+            pk=centro_id
+        )
+    except Centro.DoesNotExist:
+        return JsonResponse({"localidades": []})
+
+    qs = build_localidad_queryset_for_centro(centro).select_related(
+        "municipio__provincia"
+    )
+
+    data = [{"id": loc.id, "nombre": loc.nombre} for loc in qs]
+    return JsonResponse({"localidades": data})
+
+
+def municipios_por_centro(request):
+    """Devuelve los departamentos de la provincia del centro seleccionado.
+
+    Alimenta la cascada departamento -> localidad de ubicacion_form.html
+    cuando el usuario cambia de centro (el campo "centro" no está bloqueado
+    en la edición standalone). Reemplaza el fetch province-wide que antes
+    hacía ese formulario contra `localidades_por_centro`.
+    """
+    centro_id = request.GET.get("centro_id")
+    if not centro_id:
+        return JsonResponse({"municipios": []})
+    try:
+        centro = (
+            Centro.objects.select_related("localidad__municipio")
+            .only("id", "provincia_id", "localidad__municipio__provincia_id")
+            .get(pk=centro_id)
+        )
+    except Centro.DoesNotExist:
+        return JsonResponse({"municipios": []})
+
+    qs = build_municipio_queryset_for_centro(centro)
+    data = [{"id": municipio.id, "nombre": municipio.nombre} for municipio in qs]
+    return JsonResponse({"municipios": data})

@@ -39,6 +39,8 @@ jobs:
                   pip install -r requirements/arch.txt
 
             - name: Run import-linter
+              # kernel/ y backends/<vertical>/ se importan como `core`, `dispositivos`, etc.
               run: |
+                  export PYTHONPATH="kernel$(printf ':%s' backends/*/)"
                   lint-imports
                   lint-imports --config .importlinter_celiaquia_config

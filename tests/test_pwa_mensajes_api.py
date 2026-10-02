@@ -25,7 +25,7 @@ from rendicioncuentasmensual.services import (
     RendicionCuentaMensualService,
     RendicionProcesoService,
 )
-from users.models import (
+from pwa.models import (
     AccesoComedorPWA,
     AccesoOrganizacionPWA,
     CoordinadorEquipoTecnicoPWA,

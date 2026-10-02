@@ -1,7 +1,8 @@
 {
-  "name": "@sisoc/frontends",
+  "name": "sisoc-frontends",
   "private": true,
   "type": "module",
+  "version": "0.1.0",
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -9,23 +10,35 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "npm run test --workspaces --if-present",
+    "test": "vitest run",
     "build": "npm run build --workspaces --if-present",
     "dev:celiaquia": "npm run dev --workspace @sisoc/celiaquia",
-    "api:types": "openapi-typescript packages/api/openapi.yaml -o packages/api/src/openapi.d.ts",
+    "types:generate": "openapi-typescript packages/api/openapi.yaml -o packages/api/src/generated.ts",
+    "types:check": "npm run types:generate && git diff --exit-code -- packages/api/src/generated.ts",
+    "api:types": "openapi-typescript packages/api/openapi.celiaquia.yaml -o packages/api/src/openapi.d.ts",
     "api:check": "node scripts/verificar-contrato.mjs",
-    "api:schema": "echo \"Correr desde la raiz del repo: docker compose exec django python manage.py spectacular --urlconf config.urls_frontend_v2 --file frontends/packages/api/openapi.yaml\""
+    "api:schema": "echo \"Correr desde la raiz del repo: docker compose exec django python manage.py spectacular --urlconf config.urls_frontend_v2 --file frontends/packages/api/openapi.celiaquia.yaml\"",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.63.0",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
     "@types/node": "24.10.1",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "5.1.4",
     "eslint": "10.11.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-react-refresh": "0.5.7",
     "globals": "16.5.0",
+    "jsdom": "29.1.1",
     "openapi-typescript": "7.13.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.70.1"
+    "typescript-eslint": "8.70.1",
+    "vite": "7.3.6",
+    "vitest": "4.1.11"
   }
 }

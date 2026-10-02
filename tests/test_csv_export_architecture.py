@@ -5,13 +5,17 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-CSV_POLICY_PATH = Path("core/services/csv_export.py")
-CSV_INPUT_VALIDATOR_PATH = Path("insumos/validators.py")
+CSV_POLICY_PATH = Path("kernel/core/services/csv_export.py")
+CSV_INPUT_VALIDATOR_PATH = Path("backends/sisoc_core/insumos/validators.py")
 LOCALIDADES_JS_EXPORT_PATH = Path("static/custom/js/localidades_modal.js")
+VPSL_OPENAPI_PATH = Path("backends/vpsl/ver_para_ser_libre/api_views.py")
+GENERATED_API_TYPES_PATH = Path("frontends/packages/api/src/generated.ts")
 ALLOWED_CSV_MIME_PATHS = {
     CSV_POLICY_PATH,
     CSV_INPUT_VALIDATOR_PATH,
     LOCALIDADES_JS_EXPORT_PATH,
+    # Tipos generados desde OpenAPI: no construyen respuestas HTTP.
+    GENERATED_API_TYPES_PATH,
 }
 CSV_MIME_LITERAL = re.compile(r"text/csv", flags=re.IGNORECASE)
 SOURCE_SUFFIXES = {".py", ".js", ".ts", ".tsx"}
@@ -33,6 +37,10 @@ def test_exportadores_csv_http_reutilizan_la_politica_central():
         ):
             continue
         content = path.read_text(encoding="utf-8")
+        if relative_path == VPSL_OPENAPI_PATH:
+            # Esta declaracion describe el contrato; el endpoint delega la
+            # respuesta a CSVExportMixin. Seguir revisando el resto del archivo.
+            content = content.replace('responses={(200, "text/csv"): bytes}', "")
         if CSV_MIME_LITERAL.search(content):
             findings.append(str(relative_path))
 

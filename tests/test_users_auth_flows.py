@@ -20,12 +20,12 @@ from core.decorators import permissions_any_required
 from core.permissions.registry import resolve_permission_codes
 from iam.services import user_has_permission_code
 from organizaciones.models import Organizacion
-from users.forms import CustomUserChangeForm, GroupForm, UserCreationForm
-from users.models import AccesoComedorPWA
+from usuarios.forms import CustomUserChangeForm, GroupForm, UserCreationForm
+from pwa.models import AccesoComedorPWA
 from users.services import UsuariosService
 from users.services_auth import build_password_reset_link, send_password_reset_link
 from users.services_group_permissions import sync_permissions_for_group
-from users.temporary_passwords import store_temporary_password
+from usuarios.temporary_passwords import store_temporary_password
 
 User = get_user_model()
 
@@ -680,7 +680,7 @@ def test_user_create_view_redirects_with_temporary_password_visible(
         content_type__app_label="auth",
         codename="change_user",
     )
-    monkeypatch.setattr("users.forms.get_random_string", lambda _: "Temporal123!")
+    monkeypatch.setattr("usuarios.forms.get_random_string", lambda _: "Temporal123!")
     admin.user_permissions.add(add_user_permission)
     admin.user_permissions.add(change_user_permission)
 

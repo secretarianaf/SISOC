@@ -1,6 +1,6 @@
 import pytest
 
-from users import pwa_comedores
+from pwa.services import capacidades_comedores as pwa_comedores
 
 
 def test_es_comedor_alimentar_comunidad_no_consulta_sin_id(monkeypatch):

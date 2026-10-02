@@ -296,4 +296,5 @@ jobs:
 
             - name: Run pylint
               run: |
-                  pylint **/*.py --rcfile=.pylintrc
+                  # Sin globstar, **/*.py solo cubre un nivel: se listan kernel/ y backends/.
+                  pylint **/*.py kernel/*/*.py backends/*/*/*.py --rcfile=.pylintrc

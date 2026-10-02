@@ -1,7 +1,7 @@
 # Front v2 (React) — reglas para migrar módulos
 
 Estado: **vigente como regla; implementación pendiente**. Todavía no existe
-`frontends/` en el repo. La primera tarea de la épica crea la base descrita acá.
+`src/frontends/` en el repo. La primera tarea de la épica crea la base descrita acá.
 
 Decisión y alternativas descartadas: `docs/registro/decisiones/2026-09-24-frontend-v2-react.md`.
 
@@ -25,7 +25,7 @@ PAS; al final, todos). Si una tarea necesita romper una regla, se discute en la
 ## 2. Estructura en el monorepo
 
 ```text
-frontends/
+src/frontends/
   package.json          # npm workspaces + scripts comunes
   package-lock.json     # único lockfile de todo el front v2
   .nvmrc                # 22.14.0
@@ -124,7 +124,7 @@ Política de actualización:
 - No se suben versiones dentro de un PR de pantallas.
 - Los parches y las correcciones de seguridad van en un PR dedicado.
 - Las versiones mayores se deciden en la épica.
-- Todas las apps de `frontends/` comparten las mismas versiones.
+- Todas las apps de `src/frontends/` comparten las mismas versiones.
 
 ## 4. Diseño (skill `tema-verde-institucional`)
 
@@ -146,7 +146,7 @@ Política de actualización:
 ## 5. Layout y navegación de `/v2/`
 
 - El layout (AppBar + Drawer) es **propio de `/v2/`**: vive en `@sisoc/ui` y no
-  reutiliza ni modifica el sidebar viejo (`templates/includes/sidebar/opciones.html`).
+  reutiliza ni modifica el sidebar viejo (`src/backends/kernel/templates/includes/sidebar/opciones.html`).
 - El Drawer lista los módulos de `/v2/` que el usuario tiene permitidos, según
   el contexto de usuario que devuelve la API.
 - Pasar de un módulo a otro (`/v2/celiaquia/` → `/v2/pas/`) es una navegación de
@@ -230,7 +230,7 @@ Son las mismas que ya usa el repo:
 - El schema de drf-spectacular es la fuente de verdad.
   - Se genera con `python manage.py spectacular`, porque `/api/schema/` solo se
     expone con `ENABLE_API_DOCS`.
-  - Se versiona en `frontends/packages/api/openapi.yaml`.
+  - Se versiona en `src/frontends/packages/api/openapi.yaml`.
 - Los tipos TS se generan desde ese archivo con `openapi-typescript`. No se
   escriben a mano.
 - **CI** falla si:
@@ -253,7 +253,7 @@ Son las mismas que ya usa el repo:
   usuario (por ejemplo, la provincia en Celiaquía).
   - Ocultar un botón no es control de acceso.
   - Entrar por URL a `/v2/` no saltea nada.
-- **CSP:** el front respeta el CSP vigente (`config/middlewares/csp.py`).
+- **CSP:** el front respeta el CSP vigente (`src/backends/config/middlewares/csp.py`).
   - Sin scripts inline en `index.html` (el build de Vite no los genera).
   - Sin CDNs fuera de los permitidos; fuentes autoalojadas.
 - **Secretos:** el build no lleva secretos. Toda variable `VITE_*` es pública
@@ -262,7 +262,7 @@ Son las mismas que ya usa el repo:
 ## 9. Docker Compose y desarrollo local
 
 - **Servicio:** cada app es un servicio propio, llamado `front_<modulo>` (por
-  ejemplo `front_celiaquia`), con imagen construida desde `frontends/Dockerfile`
+  ejemplo `front_celiaquia`), con imagen construida desde `src/frontends/Dockerfile`
   (`ARG APP`).
 - **Dependencia del back:** declara
   `depends_on: { django: { condition: service_healthy } }`.

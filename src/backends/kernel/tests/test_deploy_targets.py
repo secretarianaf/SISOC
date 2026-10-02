@@ -71,6 +71,8 @@ _spec.loader.exec_module(deploy_targets)
                 "src/backends/kernel/tests/test_x.py",
                 "src/backends/dispositivos/tests/test_y.py",
                 "src/backends/sisoc_core/tests/test_z.py",
+                "src/backends/kernel/core/benchmarks/baselines/default.json",
+                "docs/api/postman/SISOC APIs.postman_collection.json",
             ],
             ("ninguno", [], False),
         ),

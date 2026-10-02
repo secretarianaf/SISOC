@@ -260,7 +260,7 @@ artefacto frontend servido por NGINX.
 El checkout productivo auditado conserva el commit `980c2b053...` y todavia no
 ejecuto el cambio posterior que agrega `--with-mobile`. GitHub `main` ya incluye
 el deploy coordinado backend/mobile; su primer uso queda preparado por el
-runbook `docs/plans/2026-07-14-produccion-ventana-nocturna-design.md` y requiere
+runbook `docs/plans/2026-T3/2026-07-14-produccion-ventana-nocturna-design.md` y requiere
 Environment `production`, backup y ventana. No es un cambio local aplicado.
 
 ## Dependencias externas criticas

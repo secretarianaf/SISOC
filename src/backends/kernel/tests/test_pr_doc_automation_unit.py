@@ -26,9 +26,10 @@ def test_pr_docs_workflow_detecta_artefactos_nuevos_no_trackeados():
     assert "- homologacion" in workflow
     assert "- main" in workflow
     assert "git status --porcelain --untracked-files=all --" in workflow
-    assert (
-        "git diff --quiet -- docs/registro/prs docs/contexto/features" not in workflow
-    )
+    assert "git diff --quiet -- docs/registro/prs" not in workflow
+    # El contexto de features duplicaba el registro del PR y se dejó de generar.
+    assert "docs/contexto/features" not in workflow
+    assert "docs/registro/prs/[0-9]{4}-T[1-4]/PR-" in workflow
     assert "generate_pr_artifacts:" in workflow
     assert "contents: write" in workflow
     assert "github.event.sender.login != 'github-actions[bot]'" in workflow
@@ -75,12 +76,12 @@ def test_git_status_detecta_los_artefactos_nuevos_que_git_diff_omite(tmp_path):
     """Reproduce el estado no trackeado que impedía el commit automático."""
 
     subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
-    record_path = tmp_path / "docs/registro/prs/PR-2260.md"
-    feature_path = tmp_path / "docs/contexto/features/pr-2260-cdi-nomina-restriccion.md"
+    record_path = tmp_path / "docs/registro/prs/2026-T3/PR-2260.md"
+    pending_path = tmp_path / "docs/registro/releases/pending/2026-08-12-pr-2260.md"
     record_path.parent.mkdir(parents=True)
-    feature_path.parent.mkdir(parents=True)
+    pending_path.parent.mkdir(parents=True)
     record_path.write_text("registro\n", encoding="utf-8")
-    feature_path.write_text("contexto\n", encoding="utf-8")
+    pending_path.write_text("release\n", encoding="utf-8")
 
     diff = subprocess.run(
         [
@@ -89,7 +90,7 @@ def test_git_status_detecta_los_artefactos_nuevos_que_git_diff_omite(tmp_path):
             "--quiet",
             "--",
             "docs/registro/prs",
-            "docs/contexto/features",
+            "docs/registro/releases/pending",
         ],
         cwd=tmp_path,
         check=False,
@@ -102,7 +103,7 @@ def test_git_status_detecta_los_artefactos_nuevos_que_git_diff_omite(tmp_path):
             "--untracked-files=all",
             "--",
             "docs/registro/prs",
-            "docs/contexto/features",
+            "docs/registro/releases/pending",
         ],
         cwd=tmp_path,
         check=True,
@@ -111,10 +112,8 @@ def test_git_status_detecta_los_artefactos_nuevos_que_git_diff_omite(tmp_path):
     )
 
     assert diff.returncode == 0
-    assert "?? docs/registro/prs/PR-2260.md" in status.stdout
-    assert (
-        "?? docs/contexto/features/pr-2260-cdi-nomina-restriccion.md" in status.stdout
-    )
+    assert "?? docs/registro/prs/2026-T3/PR-2260.md" in status.stdout
+    assert "?? docs/registro/releases/pending/2026-08-12-pr-2260.md" in status.stdout
 
 
 def test_parse_pr_body_metadata_extrae_campos_relevantes():
@@ -343,15 +342,10 @@ def test_fetch_changed_files_consulta_endpoint_de_pulls_sin_codificar_la_barra(
 def test_sync_pr_artifacts_genera_docs_y_changelog_para_pr_a_main(
     tmp_path, monkeypatch
 ):
-    """Genera los artefactos esperados y elimina slugs previos del mismo PR."""
+    """Genera el registro trimestral, la nota de release y el changelog."""
 
     monkeypatch.setattr(
         pr_doc_automation, "DOCS_PR_DIR", tmp_path / "docs/registro/prs"
-    )
-    monkeypatch.setattr(
-        pr_doc_automation,
-        "DOCS_FEATURE_DIR",
-        tmp_path / "docs/contexto/features",
     )
     monkeypatch.setattr(
         pr_doc_automation,
@@ -371,10 +365,6 @@ def test_sync_pr_artifacts_genera_docs_y_changelog_para_pr_a_main(
             "src/backends/kernel/templates/core/home.html",
         ],
     )
-
-    stale_feature = tmp_path / "docs/contexto/features/pr-15-nombre-viejo.md"
-    stale_feature.parent.mkdir(parents=True, exist_ok=True)
-    stale_feature.write_text("viejo", encoding="utf-8")
 
     pr = pr_doc_automation.PullRequestData(
         number=15,
@@ -396,17 +386,19 @@ def test_sync_pr_artifacts_genera_docs_y_changelog_para_pr_a_main(
 
     pr_doc_automation.sync_pr_artifacts(pr, token="fake-token", today=date(2026, 3, 13))
 
-    pr_doc = (tmp_path / "docs/registro/prs/PR-15.md").read_text(encoding="utf-8")
-    feature_files = list((tmp_path / "docs/contexto/features").glob("pr-15-*.md"))
+    pr_doc = (tmp_path / "docs/registro/prs/2026-T1/PR-15.md").read_text(
+        encoding="utf-8"
+    )
     pending_files = list(
         (tmp_path / "docs/registro/releases/pending").glob("2026-03-18-pr-15.md")
     )
     changelog = (tmp_path / "CHANGELOG.md").read_text(encoding="utf-8")
 
     assert "Nueva automatizacion para PR" in pr_doc
-    assert len(feature_files) == 1
-    assert feature_files[0].name == "pr-15-nueva-automatizacion-para-pr.md"
-    assert not stale_feature.exists()
+    # Las notas de arquitectura y UI viven en el registro del PR.
+    assert "## Arquitectura tocada" in pr_doc
+    assert "## Design system y UI" in pr_doc
+    assert not (tmp_path / "docs/contexto/features").exists()
     assert len(pending_files) == 1
     assert "Genera documentación de PR y changelog" in pending_files[0].read_text(
         encoding="utf-8"
@@ -415,18 +407,13 @@ def test_sync_pr_artifacts_genera_docs_y_changelog_para_pr_a_main(
     assert "Genera documentación de PR y changelog" in changelog
 
 
-def test_sync_pr_artifacts_genera_los_dos_artefactos_para_pr_a_development(
+def test_sync_pr_artifacts_genera_el_registro_para_pr_a_development(
     tmp_path, monkeypatch
 ):
-    """Los PR a development también producen registro y contexto de feature."""
+    """Los PR a development producen solo el registro, en su trimestre."""
 
     monkeypatch.setattr(
         pr_doc_automation, "DOCS_PR_DIR", tmp_path / "docs/registro/prs"
-    )
-    monkeypatch.setattr(
-        pr_doc_automation,
-        "DOCS_FEATURE_DIR",
-        tmp_path / "docs/contexto/features",
     )
     monkeypatch.setattr(
         pr_doc_automation,
@@ -454,13 +441,12 @@ def test_sync_pr_artifacts_genera_los_dos_artefactos_para_pr_a_development(
     pr_doc_automation.sync_pr_artifacts(
         pr,
         token="fake-token",
+        today=date(2026, 8, 10),
         changed_files=["centrodesarrollo/views.py"],
     )
 
-    assert (tmp_path / "docs/registro/prs/PR-2260.md").is_file()
-    feature_files = list((tmp_path / "docs/contexto/features").glob("pr-2260-*.md"))
-
-    assert [path.name for path in feature_files] == ["pr-2260-nomina-cdi.md"]
+    assert (tmp_path / "docs/registro/prs/2026-T3/PR-2260.md").is_file()
+    assert not (tmp_path / "docs/contexto/features").exists()
     assert not list((tmp_path / "docs/registro/releases/pending").glob("*.md"))
     assert not (tmp_path / "CHANGELOG.md").exists()
 
@@ -472,11 +458,6 @@ def test_sync_pr_artifacts_ignora_updated_at_para_evitar_autocommits_en_bucle(
 
     monkeypatch.setattr(
         pr_doc_automation, "DOCS_PR_DIR", tmp_path / "docs/registro/prs"
-    )
-    monkeypatch.setattr(
-        pr_doc_automation,
-        "DOCS_FEATURE_DIR",
-        tmp_path / "docs/contexto/features",
     )
     monkeypatch.setattr(
         pr_doc_automation,
@@ -504,18 +485,24 @@ def test_sync_pr_artifacts_ignora_updated_at_para_evitar_autocommits_en_bucle(
     pr_doc_automation.sync_pr_artifacts(
         pr,
         token="fake-token",
+        today=date(2026, 9, 30),
         changed_files=[".github/workflows/pr-docs.yml"],
     )
-    document_path = tmp_path / "docs/registro/prs/PR-2264.md"
+    document_path = tmp_path / "docs/registro/prs/2026-T3/PR-2264.md"
     first_content = document_path.read_text(encoding="utf-8")
 
+    # Una corrida en el trimestre siguiente no mueve ni duplica el registro.
     pr_doc_automation.sync_pr_artifacts(
         replace(pr, updated_at="2026-08-10T18:35:35Z"),
         token="fake-token",
+        today=date(2026, 10, 1),
         changed_files=[".github/workflows/pr-docs.yml"],
     )
 
     assert document_path.read_text(encoding="utf-8") == first_content
+    assert list((tmp_path / "docs/registro/prs").glob("*/PR-2264.md")) == [
+        document_path
+    ]
 
 
 def test_sync_pr_artifacts_mueve_pr_de_fecha_y_limpia_bloque_obsoleto(
@@ -525,11 +512,6 @@ def test_sync_pr_artifacts_mueve_pr_de_fecha_y_limpia_bloque_obsoleto(
 
     monkeypatch.setattr(
         pr_doc_automation, "DOCS_PR_DIR", tmp_path / "docs/registro/prs"
-    )
-    monkeypatch.setattr(
-        pr_doc_automation,
-        "DOCS_FEATURE_DIR",
-        tmp_path / "docs/contexto/features",
     )
     monkeypatch.setattr(
         pr_doc_automation,
@@ -599,11 +581,6 @@ def test_manifest_de_diff_reemplaza_la_consulta_remota_de_archivos(
     )
     monkeypatch.setattr(
         pr_doc_automation,
-        "DOCS_FEATURE_DIR",
-        tmp_path / "docs/contexto/features",
-    )
-    monkeypatch.setattr(
-        pr_doc_automation,
         "DOCS_RELEASE_PENDING_DIR",
         tmp_path / "docs/registro/releases/pending",
     )
@@ -645,6 +622,22 @@ def test_manifest_de_diff_reemplaza_la_consulta_remota_de_archivos(
         changed_files=changed_files,
     )
 
-    generated = (tmp_path / "docs/registro/prs/PR-16.md").read_text(encoding="utf-8")
+    generated = (tmp_path / "docs/registro/prs/2026-T1/PR-16.md").read_text(
+        encoding="utf-8"
+    )
     assert "`core/views.py`" in generated
     assert "`src/backends/kernel/templates/core/home.html`" in generated
+
+
+@pytest.mark.parametrize(
+    ("dia", "esperado"),
+    [
+        (date(2026, 1, 1), "2026-T1"),
+        (date(2026, 3, 31), "2026-T1"),
+        (date(2026, 4, 1), "2026-T2"),
+        (date(2026, 9, 30), "2026-T3"),
+        (date(2026, 12, 31), "2026-T4"),
+    ],
+)
+def test_quarter_dir_name(dia, esperado):
+    assert pr_doc_automation.quarter_dir_name(dia) == esperado

@@ -825,7 +825,7 @@ OCR_TESSDATA_DIR = os.getenv("OCR_TESSDATA_DIR", "")
 
 # Correccion ortografica local (offline, pyspellchecker) del texto OCR.
 # Conservadora pero off por default: en escaneos puede tocar plurales/terminos
-# fuera de diccionario. Ver docs/ocr.md.
+# fuera de diccionario. Ver docs/implementaciones/ocr.md.
 OCR_SPELLCHECK = _safe_bool_env("OCR_SPELLCHECK", False)
 
 # Auto-correccion de orientacion (OSD de Tesseract) antes del OCR. Best-effort:
@@ -838,7 +838,7 @@ OCR_REMOVE_COLOR_STAMPS = _safe_bool_env("OCR_REMOVE_COLOR_STAMPS", False)
 OCR_COLOR_SAT_THRESHOLD = _safe_int_env("OCR_COLOR_SAT_THRESHOLD", 90)
 
 # Parametros de Tesseract. Valores < 0 omiten la flag (default de Tesseract:
-# psm 3, oem 3). El default de SISOC se elige por evidencia (ver docs/ocr.md).
+# psm 3, oem 3). El default de SISOC se elige por evidencia (ver docs/implementaciones/ocr.md).
 OCR_TESSERACT_PSM = _safe_int_env("OCR_TESSERACT_PSM", -1)
 OCR_TESSERACT_OEM = _safe_int_env("OCR_TESSERACT_OEM", -1)
 

@@ -33,7 +33,7 @@ class OCRJob(models.Model):
     last_error_message = models.TextField(blank=True)
 
     # Opciones de calidad por lote (toggles de la UI). Todas ON por default;
-    # apagarlas degrada la calidad del OCR (ver docs/ocr.md).
+    # apagarlas degrada la calidad del OCR (ver docs/implementaciones/ocr.md).
     opt_preprocess = models.BooleanField(
         default=True, verbose_name="Preprocesado de imagen"
     )

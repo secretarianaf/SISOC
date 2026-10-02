@@ -39,7 +39,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
-SIN_DEPLOY_PREFIJOS = ("docs/", ".github/", "postman/", "benchmarks/")
+SIN_DEPLOY_PREFIJOS = (
+    "docs/",
+    ".github/",
+    # Baseline versionado de benchmarks: no corre en runtime.
+    "src/backends/kernel/core/benchmarks/baselines/",
+)
 
 # Carpetas de src/backends/ que no son verticales: un cambio ahí es completo.
 NO_VERTICALES = ("config", "kernel")

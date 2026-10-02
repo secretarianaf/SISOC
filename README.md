@@ -76,11 +76,11 @@ docker compose up
 
 ## Estructura de Carpetas
 
-- **`config/`** → configuración global de Django  
+- **`src/backends/config/`** → configuración global de Django  
 - **`docker/`** → archivos de contenedores  
 - **`apps/`** (`comedores/`, `relevamientos/`, `users/`, …) → aplicaciones Django  
-- **`templates/`** y **`**/templates/`** → plantillas HTML  
-- **`templates/components`** → Componentes HTML  
+- **`src/backends/kernel/templates/`** y **`**/templates/`** → plantillas HTML  
+- **`src/backends/kernel/templates/components`** → Componentes HTML  
 - **`static/`** → archivos estáticos (CSS, JS, imágenes)  
 - **`**/tests/`** → pruebas automáticas  
 

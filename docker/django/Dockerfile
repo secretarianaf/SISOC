@@ -36,7 +36,7 @@ RUN apt-get update && \
 
 # Modelo Tesseract de máxima precisión (tessdata_best, español). Queda
 # disponible pero NO activo: el OCR usa el modelo del sistema por defecto. Para
-# activarlo, definir OCR_TESSDATA_DIR=/usr/share/tessdata-best (ver docs/ocr.md;
+# activarlo, definir OCR_TESSDATA_DIR=/usr/share/tessdata-best (ver docs/implementaciones/ocr.md;
 # en pruebas sobre escaneos sellados el modelo best degradó el recall).
 RUN mkdir -p /usr/share/tessdata-best && \
     wget -q -O /usr/share/tessdata-best/spa.traineddata \

@@ -18,7 +18,7 @@ del cuestionario nunca pierde datos: sólo muestra la clave cruda.
 ## Cómo sincronizar
 
 Copiar los tres archivos desde `contrato/` y **subir la versión pinneada** en
-`tests/test_datacalle_api.py::test_catalogos_sirven_el_instrumento_vigente`.
+`src/backends/dispositivos/tests/test_datacalle_api.py::test_catalogos_sirven_el_instrumento_vigente`.
 El pin está ahí para que una copia vieja falle en CI en vez de pasar inadvertida:
 pasó con la 2.1.0 (publicada el 16/9, tomada el 18/9) y otra vez con la 2.3.0,
 3.0.0 y 3.1.0, que nunca se tomaron y dejaron el endpoint cuatro versiones atrás.

@@ -109,7 +109,7 @@ def test_build_payload_and_baseline_only_include_measured_results():
         thresholds=RegressionThresholds(),
         samples=5,
         warmups=1,
-        baseline_path=Path("benchmarks/baselines/default.json"),
+        baseline_path=Path("src/backends/kernel/core/benchmarks/baselines/default.json"),
     )
 
     baseline = build_baseline_payload(payload)

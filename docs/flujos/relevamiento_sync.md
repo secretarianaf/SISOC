@@ -127,5 +127,5 @@ Si no viene `documento` ni `sisoc_id`, cae al patron previo de busqueda por nomb
 
 ## Tests
 
-- `tests/test_primer_seguimiento_relevamientos.py`: modelos, servicio, payload y API de primer seguimiento.
+- `src/backends/sisoc_core/tests/test_primer_seguimiento_relevamientos.py`: modelos, servicio, payload y API de primer seguimiento.
 - `comedores/tests.py`: endpoint AJAX usado por el modal de relevamientos.

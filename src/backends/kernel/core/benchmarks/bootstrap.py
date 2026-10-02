@@ -370,7 +370,7 @@ def has_field(model, field_name: str) -> bool:
 
 def default_baseline_path() -> Path:
     """Devuelve la ubicación default del baseline versionado."""
-    return Path("benchmarks") / "baselines" / "default.json"
+    return Path("src/backends/kernel/core/benchmarks/baselines/default.json")
 
 
 def default_output_path() -> Path:

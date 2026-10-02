@@ -49,7 +49,7 @@ def preprocess_for_ocr(pil_image: Image.Image) -> Image.Image:
     Nota: no se aplica corrección de inclinación (deskew). Se evaluó con
     `cv2.minAreaRect` sobre documentos reales y no mejoró el reconocimiento
     (incluso lo empeoró levemente), además de ser propenso a rotaciones
-    catastróficas. Ver docs/ocr.md.
+    catastróficas. Ver docs/implementaciones/ocr.md.
     """
     try:
         rgb = np.array(pil_image.convert("RGB"))
@@ -81,7 +81,7 @@ def _maybe_remove_color_stamps(rgb: np.ndarray) -> np.ndarray:
     activo. Best-effort: ante error devuelve la imagen sin tocar.
 
     Limitación conocida: los sellos **negros** tienen baja saturación, igual que
-    el texto, y NO pueden separarse con este método. Ver docs/ocr.md.
+    el texto, y NO pueden separarse con este método. Ver docs/implementaciones/ocr.md.
     """
     if not getattr(settings, "OCR_REMOVE_COLOR_STAMPS", False):
         return rgb

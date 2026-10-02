@@ -120,5 +120,5 @@ subsanación de Territorial y otra de Auditoría antes de promover a producción
 
 - `rendicioncuentasmensual/services.py`
 - `organizaciones/views.py`
-- `docs/registro/cambios/2026-08-10-fixes-admisiones-pwa-rendiciones.md`
-- `docs/registro/cambios/2026-08-12-correcciones-issues-reabiertos.md`
+- `docs/registro/cambios/2026-T3/2026-08-10-fixes-admisiones-pwa-rendiciones.md`
+- `docs/registro/cambios/2026-T3/2026-08-12-correcciones-issues-reabiertos.md`

@@ -85,13 +85,13 @@ modifican pero pueden bloquear derivaciones posteriores.
 - `centrodeinfancia/tests/test_asistencia_nomina.py` y
   `centrodeinfancia/tests/test_trabajadores_views.py`: regresión de asistencia
   y flujo de trabajador.
-- `docs/registro/cambios/2026-07-16-cdi-validaciones-trabajador.md`:
+- `docs/registro/cambios/2026-T3/2026-07-16-cdi-validaciones-trabajador.md`:
   validaciones, migraciones y contrato RENAPER.
-- `docs/registro/cambios/2026-07-17-cdi-asistencia-nomina.md`: reglas de
+- `docs/registro/cambios/2026-T3/2026-07-17-cdi-asistencia-nomina.md`: reglas de
   negocio y compatibilidad de asistencia.
-- `docs/registro/cambios/2026-07-15-cdi-enforcement-alcances.md`: alcance por
+- `docs/registro/cambios/2026-T3/2026-07-15-cdi-enforcement-alcances.md`: alcance por
   rol y restricción de Auditoría.
-- `docs/registro/cambios/2026-08-07-cdi-nomina-vigente-en-un-solo-centro.md`:
+- `docs/registro/cambios/2026-T3/2026-08-07-cdi-nomina-vigente-en-un-solo-centro.md`:
   alcance, concurrencia, límites y rollback de la exclusividad de vigencia.
 - `docs/qa/2038-roles-simepi-cdi-guia-testeo.md`: guía funcional de roles.
 

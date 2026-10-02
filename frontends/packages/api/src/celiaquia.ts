@@ -8,6 +8,7 @@ import type {
   CupoMovimiento,
   DocumentoLegajo,
   Expediente,
+  FilaCupoProvincia,
   HistorialEstado,
   ImportacionResultado,
   LocalidadLookup,
@@ -397,6 +398,17 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
 
     suspendidos: (id: number) =>
       http.get<Legajo[]>(`cupos/${id}/suspendidos/`).then((r) => r.data),
+
+    /**
+     * Cuadro de cupos: **todas** las provincias, con cupo o sin el.
+     *
+     * `listar` solo trae las configuradas (son los ProvinciaCupo que existen).
+     * Para asignarle cupo a una provincia nueva hay que poder verla.
+     */
+    dashboard: () =>
+      http
+        .get<FilaCupoProvincia[]>("cupos/dashboard/")
+        .then((r) => r.data),
 
     configurar: (provinciaId: number, total_asignado: number) =>
       http

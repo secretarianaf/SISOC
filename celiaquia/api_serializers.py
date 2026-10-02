@@ -11,6 +11,7 @@ Los serializers son de lectura: las escrituras pasan por
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from celiaquia.services.cupo_service import TOTAL_ASIGNADO_MAXIMO
 from celiaquia.models import (
     AsignacionTecnico,
     HistorialComentarios,
@@ -377,6 +378,30 @@ class ProvinciaCupoSerializer(serializers.ModelSerializer):
 
     def get_disponibles(self, obj) -> int:
         return max((obj.total_asignado or 0) - (obj.usados or 0), 0)
+
+
+class FilaCupoProvinciaSerializer(serializers.Serializer):
+    """Una provincia en el cuadro de cupos, tenga cupo configurado o no.
+
+    Las no configuradas vienen con los contadores en `null` y `cupo_id` vacío:
+    es lo que permite entrar y asignarles cupo por primera vez. Si solo se
+    listaran las configuradas, una provincia nueva nunca podría recibirlo.
+    """
+
+    provincia_id = serializers.IntegerField()
+    provincia = serializers.CharField()
+    cupo_id = serializers.IntegerField(allow_null=True)
+    total_asignado = serializers.IntegerField(allow_null=True)
+    usados = serializers.IntegerField(allow_null=True)
+    disponibles = serializers.IntegerField(allow_null=True)
+    fuera = serializers.IntegerField(allow_null=True)
+    configurado = serializers.BooleanField()
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
 
 
 class CupoMovimientoSerializer(serializers.ModelSerializer):
@@ -804,7 +829,16 @@ class SubirArchivoLegajoSerializer(_EntradaSerializer):
 
 
 class ConfigurarCupoSerializer(_EntradaSerializer):
-    total_asignado = serializers.IntegerField(min_value=0)
+    """Cupo total de una provincia.
+
+    El tope sale del propio modelo: pasarse hacía que MySQL tirara
+    `Out of range value`, que llegaba al usuario como un 500 en vez de un error
+    de validación.
+    """
+
+    total_asignado = serializers.IntegerField(
+        min_value=0, max_value=TOTAL_ASIGNADO_MAXIMO
+    )
 
 
 class MotivoSerializer(_EntradaSerializer):

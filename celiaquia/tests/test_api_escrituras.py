@@ -1095,3 +1095,94 @@ def test_coordinacion_no_confirma_subsanacion(client, territorio):
     assert response.status_code == 403
     legajo.refresh_from_db()
     assert legajo.revision_tecnico == RevisionTecnico.SUBSANAR
+
+
+# --- Cupos por provincia ---------------------------------------------------
+
+
+def test_el_dashboard_lista_las_provincias_sin_cupo(client, territorio):
+    """Sin esto no habia forma de asignarle cupo a una provincia nueva.
+
+    `GET cupos/` solo devuelve los `ProvinciaCupo` que existen. La pantalla
+    Django lista **todas** las provincias, con los contadores vacios para las
+    que no tienen: es lo que permite configurarlas por primera vez.
+    """
+
+    provincia, _m, _l = territorio
+    Provincia.objects.create(nombre="Tierra del Fuego")
+    client.force_login(_coordinador("coord_cupos"))
+
+    response = client.get(reverse("celiaquia-cupo-dashboard"))
+
+    assert response.status_code == 200
+    filas = response.json()
+    nombres = {f["provincia"] for f in filas}
+    assert provincia.nombre in nombres
+    assert "Tierra del Fuego" in nombres
+    sin_configurar = [f for f in filas if not f["configurado"]]
+    assert sin_configurar
+    assert sin_configurar[0]["total_asignado"] is None
+    assert sin_configurar[0]["cupo_id"] is None
+
+
+def test_asignar_cupo_a_una_provincia_sin_configurar(client, territorio):
+    from celiaquia.models import ProvinciaCupo
+
+    provincia, _m, _l = territorio
+    client.force_login(_coordinador("coord_asigna_cupo"))
+    assert not ProvinciaCupo.objects.filter(provincia=provincia).exists()
+
+    response = client.post(
+        reverse(
+            "celiaquia-cupo-configurar",
+            kwargs={"provincia_id": provincia.id},
+        ),
+        {"total_asignado": 500},
+    )
+
+    assert response.status_code == 200
+    cupo = ProvinciaCupo.objects.get(provincia=provincia)
+    assert cupo.total_asignado == 500
+
+    # Y ahora aparece como configurada en el cuadro.
+    filas = client.get(reverse("celiaquia-cupo-dashboard")).json()
+    fila = next(f for f in filas if f["provincia_id"] == provincia.id)
+    assert fila["configurado"] is True
+    assert fila["total_asignado"] == 500
+
+
+def test_el_cupo_no_puede_superar_el_maximo_de_la_columna(client, territorio):
+    """Pasarse hacia que MySQL tirara `Out of range value`: un 500, no un 400.
+
+    El tope sale del `MaxValueValidator` del propio campo, asi que si el modelo
+    cambia de tipo el limite lo sigue.
+    """
+
+    from celiaquia.services.cupo_service import TOTAL_ASIGNADO_MAXIMO
+
+    provincia, _m, _l = territorio
+    client.force_login(_coordinador("coord_tope_cupo"))
+    url = reverse("celiaquia-cupo-configurar", kwargs={"provincia_id": provincia.id})
+
+    pasado = client.post(url, {"total_asignado": TOTAL_ASIGNADO_MAXIMO + 1})
+    assert pasado.status_code == 400
+    assert "total_asignado" in pasado.json()
+
+    # El borde exacto se acepta.
+    borde = client.post(url, {"total_asignado": TOTAL_ASIGNADO_MAXIMO})
+    assert borde.status_code == 200
+
+
+def test_el_service_tambien_frena_el_tope(client, territorio):
+    """La pantalla Django entra por el service, no por el serializer."""
+
+    from django.core.exceptions import ValidationError as DjangoValidationError
+
+    from celiaquia.services.cupo_service import (
+        CupoService,
+        TOTAL_ASIGNADO_MAXIMO,
+    )
+
+    provincia, _m, _l = territorio
+    with pytest.raises(DjangoValidationError):
+        CupoService.configurar_total(provincia, TOTAL_ASIGNADO_MAXIMO + 1)

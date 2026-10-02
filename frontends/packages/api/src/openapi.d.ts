@@ -123,6 +123,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/celiaquia/cupos/dashboard/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Cuadro de cupos: **todas** las provincias, con cupo o sin él.
+         *
+         *     El listado principal (`GET cupos/`) solo devuelve las configuradas,
+         *     porque son los `ProvinciaCupo` que existen. Para poder asignar cupo a
+         *     una provincia nueva hace falta verla: esto replica lo que muestra la
+         *     pantalla Django.
+         */
+        get: operations["cupos_dashboard_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/celiaquia/cupos/legajos/{legajo_id}/baja/": {
         parameters: {
             query?: never;
@@ -1489,6 +1513,23 @@ export interface components {
             /** Format: date-time */
             readonly fecha: string;
         };
+        /**
+         * @description Una provincia en el cuadro de cupos, tenga cupo configurado o no.
+         *
+         *     Las no configuradas vienen con los contadores en `null` y `cupo_id` vacío:
+         *     es lo que permite entrar y asignarles cupo por primera vez. Si solo se
+         *     listaran las configuradas, una provincia nueva nunca podría recibirlo.
+         */
+        FilaCupoProvincia: {
+            provincia_id: number;
+            provincia: string;
+            cupo_id: number | null;
+            total_asignado: number | null;
+            usados: number | null;
+            disponibles: number | null;
+            fuera: number | null;
+            configurado: boolean;
+        };
         /** @description Resultado que el tecnico elige tras ver la comparacion con RENAPER. */
         GuardarValidacionRenaper: {
             estado: components["schemas"]["GuardarValidacionRenaperEstadoEnum"];
@@ -1680,6 +1721,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Expediente"][];
+        };
+        PaginatedFilaCupoProvinciaList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["FilaCupoProvincia"][];
         };
         PaginatedLegajoList: {
             /** @example 123 */
@@ -2301,6 +2357,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedLegajoList"];
+                };
+            };
+        };
+    };
+    cupos_dashboard_list: {
+        parameters: {
+            query?: {
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedFilaCupoProvinciaList"];
                 };
             };
         };

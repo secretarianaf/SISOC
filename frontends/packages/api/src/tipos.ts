@@ -42,6 +42,7 @@ export type ArchivoLegajo = Schemas["ArchivoLegajo"];
 export type Reporte = Schemas["Reporte"];
 export type ReporteCaso = Schemas["ReporteCaso"];
 export type ProvinciaCupo = Schemas["ProvinciaCupo"];
+export type FilaCupoProvincia = Schemas["FilaCupoProvincia"];
 export type CupoMovimiento = Schemas["CupoMovimiento"];
 export type PagoExpediente = Schemas["PagoExpediente"];
 export type PagoNomina = Schemas["PagoNomina"];

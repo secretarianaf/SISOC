@@ -26,6 +26,29 @@ class CupoNoConfigurado(Exception):
     pass
 
 
+def _tope_total_asignado() -> int:
+    """Maximo que acepta la columna `ProvinciaCupo.total_asignado`.
+
+    Se lee del `MaxValueValidator` que Django le pone al `PositiveIntegerField`
+    segun el motor (en MySQL, 4.294.967.295). Hardcodearlo significaria que si
+    el campo cambia de tipo, el tope queda viejo y vuelve el error de columna
+    fuera de rango.
+    """
+
+    from django.core.validators import MaxValueValidator
+
+    campo = ProvinciaCupo._meta.get_field("total_asignado")
+    for validador in campo.validators:
+        if isinstance(validador, MaxValueValidator):
+            return int(validador.limit_value)
+    return 2_147_483_647
+
+
+#: Tope de cupo por provincia. Pasarse hacia que MySQL tirara
+#: `DataError: Out of range value`, que llegaba al usuario como un 500.
+TOTAL_ASIGNADO_MAXIMO = _tope_total_asignado()
+
+
 class CupoService:
     # -------------------- MÉTRICAS Y LISTADOS --------------------
 
@@ -171,6 +194,13 @@ class CupoService:
             raise ValidationError("El total asignado debe ser un entero válido.")
         if total < 0:
             raise ValidationError("El total asignado debe ser un entero ≥ 0.")
+        if total > TOTAL_ASIGNADO_MAXIMO:
+            raise ValidationError(
+                f"El total asignado no puede superar {TOTAL_ASIGNADO_MAXIMO:,}".replace(
+                    ",", "."
+                )
+                + "."
+            )
         pc, created = ProvinciaCupo.objects.get_or_create(
             provincia=provincia,
             defaults={"total_asignado": total},

@@ -46,6 +46,7 @@ from celiaquia.api_serializers import (
     PagoNominaSerializer,
     ActualizarRegistroErroneoSerializer,
     GuardarValidacionRenaperSerializer,
+    FilaCupoProvinciaSerializer,
     ImportacionResultadoSerializer,
     ProcesamientoResultadoSerializer,
     ProcesarExpedienteRespuestaSerializer,
@@ -1163,6 +1164,32 @@ class ProvinciaCupoViewSet(viewsets.ReadOnlyModelViewSet):
         return ProvinciaCupo.objects.select_related("provincia").order_by(
             "provincia__nombre"
         )
+
+    @extend_schema(responses=FilaCupoProvinciaSerializer(many=True))
+    @action(detail=False, methods=["get"])
+    def dashboard(self, request):
+        """Cuadro de cupos: **todas** las provincias, con cupo o sin él.
+
+        El listado principal (`GET cupos/`) solo devuelve las configuradas,
+        porque son los `ProvinciaCupo` que existen. Para poder asignar cupo a
+        una provincia nueva hace falta verla: esto replica lo que muestra la
+        pantalla Django.
+        """
+
+        filas = [
+            {
+                "provincia_id": fila["provincia"].id,
+                "provincia": fila["provincia"].nombre,
+                "cupo_id": fila["cupo_id"],
+                "total_asignado": fila["total_asignado"],
+                "usados": fila["usados"],
+                "disponibles": fila["disponibles"],
+                "fuera": fila["fuera"],
+                "configurado": fila["cupo_id"] is not None,
+            }
+            for fila in CupoService.filas_dashboard()
+        ]
+        return Response(FilaCupoProvinciaSerializer(filas, many=True).data)
 
     @extend_schema(responses=ProvinciaCupoSerializer)
     @action(detail=True, methods=["get"])

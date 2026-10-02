@@ -184,6 +184,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedLegajoList'
           description: ''
+  /api/celiaquia/cupos/dashboard/:
+    get:
+      operationId: cupos_dashboard_list
+      description: |-
+        Cuadro de cupos: **todas** las provincias, con cupo o sin él.
+
+        El listado principal (`GET cupos/`) solo devuelve las configuradas,
+        porque son los `ProvinciaCupo` que existen. Para poder asignar cupo a
+        una provincia nueva hace falta verla: esto replica lo que muestra la
+        pantalla Django.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - cupos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFilaCupoProvinciaList'
+          description: ''
   /api/celiaquia/cupos/legajos/{legajo_id}/baja/:
     post:
       operationId: cupos_legajos_baja_create
@@ -2552,6 +2582,45 @@ components:
       - fecha
       - id
       - usuario
+    FilaCupoProvincia:
+      type: object
+      description: |-
+        Una provincia en el cuadro de cupos, tenga cupo configurado o no.
+
+        Las no configuradas vienen con los contadores en `null` y `cupo_id` vacío:
+        es lo que permite entrar y asignarles cupo por primera vez. Si solo se
+        listaran las configuradas, una provincia nueva nunca podría recibirlo.
+      properties:
+        provincia_id:
+          type: integer
+        provincia:
+          type: string
+        cupo_id:
+          type: integer
+          nullable: true
+        total_asignado:
+          type: integer
+          nullable: true
+        usados:
+          type: integer
+          nullable: true
+        disponibles:
+          type: integer
+          nullable: true
+        fuera:
+          type: integer
+          nullable: true
+        configurado:
+          type: boolean
+      required:
+      - configurado
+      - cupo_id
+      - disponibles
+      - fuera
+      - provincia
+      - provincia_id
+      - total_asignado
+      - usados
     GuardarValidacionRenaper:
       type: object
       description: Resultado que el tecnico elige tras ver la comparacion con RENAPER.
@@ -2919,6 +2988,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Expediente'
+    PaginatedFilaCupoProvinciaList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilaCupoProvincia'
     PaginatedLegajoList:
       type: object
       required:

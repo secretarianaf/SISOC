@@ -104,6 +104,7 @@ logger = logging.getLogger("django")
 # para que la API REST y estas pantallas apliquen exactamente lo mismo. Se
 # reexportan con sus nombres viejos porque el resto del modulo (y sus tests)
 # las usa asi.
+from celiaquia.scope import tecnicos_asignables as _tecnicos_queryset  # noqa: E402
 from celiaquia.services import registros_erroneos_service  # noqa: E402
 from celiaquia.services.registros_erroneos_service import (  # noqa: E402
     _actualizar_alerta_importacion_persistente,
@@ -264,23 +265,6 @@ def _get_provincial_expediente_or_404(user, pk):
         _apply_provincial_expediente_scope(Expediente.objects.all(), user),
         pk=pk,
     )
-
-
-def _tecnicos_queryset():
-    qs = User.objects.filter(
-        Q(
-            user_permissions__content_type__app_label="auth",
-            user_permissions__codename="role_tecnicoceliaquia",
-        )
-        | Q(
-            groups__permissions__content_type__app_label="auth",
-            groups__permissions__codename="role_tecnicoceliaquia",
-        )
-    )
-    distinct = getattr(qs, "distinct", None)
-    if callable(distinct):
-        return distinct()
-    return qs
 
 
 def _parse_limit(value, default=None, max_cap=5000):

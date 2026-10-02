@@ -38,6 +38,7 @@ export type Expediente = Schemas["Expediente"];
 export type ExpedienteCreate = Schemas["ExpedienteCreate"];
 export type Legajo = Schemas["Legajo"];
 export type DocumentoLegajo = Schemas["DocumentoLegajo"];
+export type ArchivoLegajo = Schemas["ArchivoLegajo"];
 export type ProvinciaCupo = Schemas["ProvinciaCupo"];
 export type CupoMovimiento = Schemas["CupoMovimiento"];
 export type PagoExpediente = Schemas["PagoExpediente"];

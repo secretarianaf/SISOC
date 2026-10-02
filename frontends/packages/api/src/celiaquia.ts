@@ -1,6 +1,7 @@
 import type { AxiosInstance } from "axios";
 import type {
   AccionResultado,
+  AsignacionTecnico,
   AccionRevision,
   CatalogosRegistroErroneo,
   ComentarioLegajo,
@@ -21,6 +22,7 @@ import type {
   PreviewExcel,
   ProcesamientoResultado,
   ProvinciaCupo,
+  UsuarioResumen,
   RegistroErroneo,
   ReprocesoResultado,
 } from "./tipos";
@@ -142,6 +144,10 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
         .get(`expedientes/${id}/excel-masivo/`, { responseType: "blob" })
         .then((r) => r.data as Blob),
 
+    /** Tecnicos asignables. Solo coordinacion y admin. */
+    tecnicos: () =>
+      http.get<UsuarioResumen[]>("expedientes/tecnicos/").then((r) => r.data),
+
     /** Sexos y nacionalidades, para los desplegables del formulario. */
     catalogos: () =>
       http
@@ -203,6 +209,12 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
 
     recepcionar: (id: number) =>
       http.post(`expedientes/${id}/recepcionar/`).then((r) => r.data),
+
+    /** Asignaciones del expediente, activa e historicas. */
+    asignaciones: (id: number) =>
+      http
+        .get<AsignacionTecnico[]>(`expedientes/${id}/asignaciones/`)
+        .then((r) => r.data),
 
     asignarTecnico: (id: number, tecnico_id: number) =>
       http
@@ -323,6 +335,13 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
       },
     ) => http.post(`legajos/${id}/revisar/`, datos).then((r) => r.data),
 
+    /**
+     * Sube un archivo al legajo, en el slot indicado (1, 2 o 3).
+     *
+     * Que slots pide cada legajo viene en `legajo.archivos`: depende del rol
+     * (beneficiario, responsable o ambos). Sin `slot` el back lo pone en el
+     * primero que este libre.
+     */
     subirArchivo: (id: number, archivo: File, slot?: number) => {
       const form = new FormData();
       form.append("archivo", archivo);

@@ -1271,6 +1271,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/PreviewExcelResultado'
           description: ''
+  /api/celiaquia/expedientes/tecnicos/:
+    get:
+      operationId: expedientes_tecnicos_list
+      description: |-
+        Tecnicos que se pueden asignar a un expediente.
+
+        Solo coordinacion y admin asignan, asi que solo ellos ven la lista: un
+        provincial no tiene por que conocer la nomina de tecnicos.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - expedientes
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUsuarioResumenList'
+          description: ''
   /api/celiaquia/legajos/:
     get:
       operationId: legajos_list
@@ -2016,6 +2044,31 @@ components:
           format: uri
       required:
       - archivo
+    ArchivoLegajo:
+      type: object
+      description: |-
+        Estado de uno de los tres slots de documentacion de un legajo.
+
+        Cuales se piden depende del rol (beneficiario, responsable o ambos) y lo
+        decide `LegajoService.get_archivos_requeridos_por_legajo`. Sin esto el front
+        no sabe que subir ni con que etiqueta.
+      properties:
+        slot:
+          type: integer
+        campo:
+          type: string
+        etiqueta:
+          type: string
+        cargado:
+          type: boolean
+        url:
+          type: string
+      required:
+      - campo
+      - cargado
+      - etiqueta
+      - slot
+      - url
     AsignacionTecnico:
       type: object
       properties:
@@ -2471,6 +2524,11 @@ components:
           $ref: '#/components/schemas/RolEnum'
         archivos_ok:
           type: boolean
+        archivos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArchivoLegajo'
+          readOnly: true
         cruce_ok:
           type: boolean
           nullable: true
@@ -2515,6 +2573,7 @@ components:
           format: date-time
           readOnly: true
       required:
+      - archivos
       - ciudadano
       - ciudadano_id
       - creado_en
@@ -2949,6 +3008,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Subsanacion'
+    PaginatedUsuarioResumenList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsuarioResumen'
     PagoExpediente:
       type: object
       properties:

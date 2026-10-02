@@ -771,6 +771,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/celiaquia/expedientes/tecnicos/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Tecnicos que se pueden asignar a un expediente.
+         *
+         *     Solo coordinacion y admin asignan, asi que solo ellos ven la lista: un
+         *     provincial no tiene por que conocer la nomina de tecnicos.
+         */
+        get: operations["expedientes_tecnicos_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/celiaquia/legajos/": {
         parameters: {
             query?: never;
@@ -1229,6 +1251,20 @@ export interface components {
             /** Format: uri */
             archivo: string;
         };
+        /**
+         * @description Estado de uno de los tres slots de documentacion de un legajo.
+         *
+         *     Cuales se piden depende del rol (beneficiario, responsable o ambos) y lo
+         *     decide `LegajoService.get_archivos_requeridos_por_legajo`. Sin esto el front
+         *     no sabe que subir ni con que etiqueta.
+         */
+        ArchivoLegajo: {
+            slot: number;
+            campo: string;
+            etiqueta: string;
+            cargado: boolean;
+            url: string;
+        };
         AsignacionTecnico: {
             readonly id: number;
             readonly tecnico: components["schemas"]["UsuarioResumen"];
@@ -1435,6 +1471,7 @@ export interface components {
             readonly estado: string;
             rol?: components["schemas"]["RolEnum"];
             archivos_ok?: boolean;
+            readonly archivos: components["schemas"]["ArchivoLegajo"][];
             cruce_ok?: boolean | null;
             observacion_cruce?: string | null;
             revision_tecnico?: components["schemas"]["RevisionTecnicoEnum"];
@@ -1712,6 +1749,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Subsanacion"][];
+        };
+        PaginatedUsuarioResumenList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["UsuarioResumen"][];
         };
         PagoExpediente: {
             readonly id: number;
@@ -3030,6 +3082,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PreviewExcelResultado"];
+                };
+            };
+        };
+    };
+    expedientes_tecnicos_list: {
+        parameters: {
+            query?: {
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedUsuarioResumenList"];
                 };
             };
         };

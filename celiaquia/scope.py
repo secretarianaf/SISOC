@@ -116,3 +116,28 @@ __all__ = [
     "scope_expedientes",
     "user_has_permission",
 ]
+
+
+def tecnicos_asignables():
+    """Usuarios con el rol técnico, por permiso directo o por grupo.
+
+    Vivía como `_tecnicos_queryset` en `celiaquia/views/expediente.py`. Se
+    extrae para que la API ofrezca exactamente los mismos que el listado
+    Django: si las dos consultas divergen, se puede asignar por la API un
+    usuario que la pantalla no ofrece.
+    """
+
+    from django.contrib.auth.models import User
+
+    queryset = User.objects.filter(
+        Q(
+            user_permissions__content_type__app_label="auth",
+            user_permissions__codename="role_tecnicoceliaquia",
+        )
+        | Q(
+            groups__permissions__content_type__app_label="auth",
+            groups__permissions__codename="role_tecnicoceliaquia",
+        )
+    )
+    distinct = getattr(queryset, "distinct", None)
+    return distinct() if callable(distinct) else queryset

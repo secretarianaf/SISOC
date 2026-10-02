@@ -67,6 +67,7 @@ from celiaquia.api_serializers import (
     SubsanacionSerializer,
     TipoCruceSerializer,
     TipoDocumentoSerializer,
+    UsuarioResumenSerializer,
 )
 from celiaquia.models import (
     CupoMovimiento,
@@ -89,6 +90,7 @@ from celiaquia.scope import (
     is_provincial,
     is_tecnico,
     scope_expedientes,
+    tecnicos_asignables,
 )
 from celiaquia.services.asignacion_service import AsignacionService
 from celiaquia.services.cruce_service import CruceService
@@ -443,6 +445,20 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
             'attachment; filename="plantilla_expediente.xlsx"'
         )
         return respuesta
+
+    @extend_schema(responses=UsuarioResumenSerializer(many=True))
+    @action(detail=False, methods=["get"], url_path="tecnicos")
+    def tecnicos(self, request):
+        """Tecnicos que se pueden asignar a un expediente.
+
+        Solo coordinacion y admin asignan, asi que solo ellos ven la lista: un
+        provincial no tiene por que conocer la nomina de tecnicos.
+        """
+
+        if not (is_admin(request.user) or is_coordinador(request.user)):
+            raise PermissionDenied("Solo coordinación asigna técnicos.")
+        queryset = tecnicos_asignables().order_by("last_name", "first_name")
+        return Response(UsuarioResumenSerializer(queryset, many=True).data)
 
     @extend_schema(responses=CatalogosRegistroErroneoSerializer)
     @action(detail=False, methods=["get"], url_path="catalogos")

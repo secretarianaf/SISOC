@@ -24,6 +24,9 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { SearchField, SectionCard, Stack, StateChip, formatearFecha, toneCupo, toneRevision, toneSintys } from "@sisoc/ui";
+import { ArchivosLegajo } from "./ArchivosLegajo";
+import { RespuestaSubsanacion } from "./RespuestaSubsanacion";
+import { ValidacionRenaper } from "./ValidacionRenaper";
 import type { AccionRevision, Legajo } from "@sisoc/api";
 import { TablaCargando } from "./Estados";
 
@@ -191,6 +194,34 @@ function FilaLegajo({
                       }
                       tone={leg.es_titular_activo ? "success" : "neutral"}
                     />
+                  </Paper>
+                </Grid>
+
+                <Grid size={{ xs: 12 }}>
+                  <Paper variant="outlined" sx={{ p: 2 }}>
+                    <ArchivosLegajo
+                      legajoId={leg.id}
+                      expedienteId={leg.expediente_id}
+                      archivos={leg.archivos ?? []}
+                      deshabilitado={deshabilitado}
+                    />
+                    <Divider sx={{ my: 2 }} />
+                    <ValidacionRenaper
+                      legajoId={leg.id}
+                      expedienteId={leg.expediente_id}
+                      deshabilitado={deshabilitado}
+                    />
+                    {revision === "SUBSANAR" ? (
+                      <>
+                        <Divider sx={{ my: 2 }} />
+                        <RespuestaSubsanacion
+                          legajoId={leg.id}
+                          expedienteId={leg.expediente_id}
+                          motivo={leg.subsanacion_motivo}
+                          deshabilitado={deshabilitado}
+                        />
+                      </>
+                    ) : null}
                   </Paper>
                 </Grid>
 

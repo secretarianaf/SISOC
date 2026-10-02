@@ -26,6 +26,7 @@ import { LegajosTable } from "../componentes/LegajosTable";
 import type { RevisionPedida } from "../componentes/LegajosTable";
 import { RegistrosErroneos } from "../componentes/RegistrosErroneos";
 import { ExclusionesImportacion } from "../componentes/ExclusionesImportacion";
+import { AsignacionTecnico } from "../componentes/AsignacionTecnico";
 
 function Dato({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -59,6 +60,12 @@ export function ExpedienteDetailPage() {
   const legajos = useQuery({
     queryKey: ["expediente", expedienteId, "legajos"],
     queryFn: () => api.expedientes.legajos(expedienteId),
+    enabled: Number.isFinite(expedienteId),
+  });
+
+  const asignaciones = useQuery({
+    queryKey: ["expediente", expedienteId, "asignaciones"],
+    queryFn: () => api.expedientes.asignaciones(expedienteId),
     enabled: Number.isFinite(expedienteId),
   });
 
@@ -253,6 +260,13 @@ export function ExpedienteDetailPage() {
           onRevisar={(pedido) => revisar.mutate(pedido)}
           revisando={revisar.isPending}
         />
+
+        {asignaciones.data ? (
+          <AsignacionTecnico
+            expedienteId={expedienteId}
+            asignaciones={asignaciones.data}
+          />
+        ) : null}
 
         {procesar.isError ? (
           <Aviso

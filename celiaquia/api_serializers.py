@@ -8,6 +8,7 @@ Los serializers son de lectura: las escrituras pasan por
 `celiaquia/services/`, donde vive la maquina de estados.
 """
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from celiaquia.models import (
@@ -146,6 +147,27 @@ class AsignacionTecnicoSerializer(serializers.ModelSerializer):
 # --- Legajos ---------------------------------------------------------------
 
 
+class ArchivoLegajoSerializer(serializers.Serializer):
+    """Estado de uno de los tres slots de documentacion de un legajo.
+
+    Cuales se piden depende del rol (beneficiario, responsable o ambos) y lo
+    decide `LegajoService.get_archivos_requeridos_por_legajo`. Sin esto el front
+    no sabe que subir ni con que etiqueta.
+    """
+
+    slot = serializers.IntegerField()
+    campo = serializers.CharField()
+    etiqueta = serializers.CharField()
+    cargado = serializers.BooleanField()
+    url = serializers.CharField(allow_blank=True)
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+
 class LegajoSerializer(serializers.ModelSerializer):
     """`ExpedienteCiudadano` es el legajo de una persona dentro del expediente."""
 
@@ -153,6 +175,7 @@ class LegajoSerializer(serializers.ModelSerializer):
     ciudadano_id = serializers.IntegerField(read_only=True)
     ciudadano = serializers.SerializerMethodField()
     documento = serializers.SerializerMethodField()
+    archivos = serializers.SerializerMethodField()
 
     class Meta:
         model = ExpedienteCiudadano
@@ -165,6 +188,7 @@ class LegajoSerializer(serializers.ModelSerializer):
             "estado",
             "rol",
             "archivos_ok",
+            "archivos",
             "cruce_ok",
             "observacion_cruce",
             "revision_tecnico",
@@ -187,6 +211,37 @@ class LegajoSerializer(serializers.ModelSerializer):
 
     def get_documento(self, obj) -> str:
         return str(getattr(obj.ciudadano, "documento", "") or "")
+
+    @extend_schema_field(ArchivoLegajoSerializer(many=True))
+    def get_archivos(self, obj):
+        """Slots que este legajo tiene que presentar, con su estado.
+
+        No hace consultas: los requeridos salen del rol del legajo y los
+        archivos son campos del propio modelo.
+        """
+
+        from celiaquia.services.legajo_service import LegajoService
+
+        requeridos = LegajoService.get_archivos_requeridos_por_legajo(obj)
+        request = self.context.get("request")
+        salida = []
+        for campo, etiqueta in requeridos.items():
+            archivo = getattr(obj, campo, None)
+            url = ""
+            if archivo:
+                url = (
+                    request.build_absolute_uri(archivo.url) if request else archivo.url
+                )
+            salida.append(
+                {
+                    "slot": int(campo.replace("archivo", "")),
+                    "campo": campo,
+                    "etiqueta": etiqueta,
+                    "cargado": bool(archivo),
+                    "url": url,
+                }
+            )
+        return salida
 
 
 class DocumentoLegajoSerializer(serializers.ModelSerializer):

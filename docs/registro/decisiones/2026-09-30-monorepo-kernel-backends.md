@@ -121,8 +121,9 @@ aceptadas.
     configuración (`config/`), `kernel/`, `backends/`, `frontends/` y recursos
     compartidos (`templates/`, `static/`, `docs/`, `scripts/`, `tests/`). El
     core no es un backend detrás del proxy, sino el proceso de entrada. Por
-    eso no está en `config/backends.json`, y un cambio en sus apps hace un
-    deploy completo, igual que antes.
+    eso no está en `config/backends.json`. Un cambio solo en sus apps recrea
+    solo los servicios con imagen `sisoc/core` (2026-10-02): ninguna imagen
+    de vertical incluye `sisoc_core`, así que los backends no se tocan.
 
 ## Deuda aceptada (revisar en el futuro)
 

@@ -16,8 +16,8 @@ Guía operativa del ADR `docs/registro/decisiones/2026-09-30-monorepo-kernel-bac
 (comedores, admisiones, relevamientos, intervenciones, rendiciones, etc.) y
 los servicios propios del core (dashboard, comunicados, encuestas, OCR, PWA,
 usuarios). No es un backend detrás del proxy: es el proceso que recibe el
-tráfico. Por eso no figura en `config/backends.json`, y un cambio en
-`backends/sisoc_core/**` hace un deploy completo.
+tráfico. Por eso no figura en `config/backends.json`. Un cambio solo en
+`backends/sisoc_core/**` recrea solo los servicios del core (ver Deploy).
 
 **Datos maestros en el kernel.** `organizaciones` (Organizacion, roles,
 avales) y `catalogo_intervenciones` (tipos, subtipos, destinatarios y
@@ -98,6 +98,7 @@ nuevo:
 | Cambio | Plan |
 | --- | --- |
 | Solo `backends/<x>/**` | **Selectivo:** construye ese backend y el migrador, migra, y recrea solo ese servicio (`up --no-deps`). |
+| Solo `backends/sisoc_core/**` | **Selectivo:** construye la imagen del core y el migrador, migra, y recrea solo los servicios con imagen `sisoc/core` del entorno (en QA, `django` y `ocr_worker`; en PRD, además los workers de importación, credenciales y mailing). Los backends no se reinician. Si no se pueden resolver esos servicios, hace un deploy completo. |
 | Solo `frontends/apps/<x>/**` | **Selectivo:** solo `front_<x>`. |
 | Solo docs, tests o `.github/` | **Ninguno:** no se reinicia nada. |
 | Cualquier otra cosa (kernel, core, config, templates, static, requirements, docker, compose, `CHANGELOG.md`) | **Completo:** construye todo, baja el stack, migra y levanta. |

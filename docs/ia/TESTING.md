@@ -148,7 +148,7 @@ docker compose exec django pytest -m smoke
 
 # Un archivo o subset (ejemplo)
 
-docker compose exec django pytest -n auto core/tests/test_monto_prestacion_views.py
+docker compose exec django pytest -n auto kernel/core/tests/test_monto_prestacion_views.py
 ```
 
 ## CI (referencia)

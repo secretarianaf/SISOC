@@ -36,7 +36,7 @@ con enlaces guardados: no hay que usarlas en código nuevo.
 ```
 Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
                      │  rutas propias del core
-                     └─► proxy por prefijo (core/backend_proxy.py)
+                     └─► proxy por prefijo (kernel/core/backend_proxy.py)
                            └─► backend_dispositivos (imagen sisoc/backend-dispositivos:<sha>)
                                  /dispositivos/, /datacalle/, /api/datacalle/
 ```

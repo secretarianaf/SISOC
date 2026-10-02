@@ -241,6 +241,11 @@ def detect_affected_areas(changed_files: list[str]) -> list[str]:
     detected: set[str] = set()
     for file_path in changed_files:
         parts = Path(file_path).parts
+        if parts[:2] == ("src", "backends") and len(parts) > 3:
+            # src/backends/<x>/<app>/... -> <app>; config y archivos sueltos -> <x>.
+            parts = parts[3:] if parts[2] != "config" and len(parts) > 4 else parts[2:]
+        elif parts[:1] == ("src",):
+            parts = parts[1:]
         if not parts:
             continue
         first = parts[0]
@@ -287,9 +292,7 @@ def build_architecture_notes(changed_files: list[str]) -> list[str]:
         notes.append(
             "Hay cambios en vistas web y puede existir impacto en permisos o renderizado."
         )
-    if any(
-        "/templates/" in path or path.startswith("templates/") for path in changed_files
-    ):
+    if any("/templates/" in path for path in changed_files):
         notes.append(
             "Se modifican templates, con posible impacto visual o de composición UI."
         )
@@ -314,9 +317,8 @@ def build_design_system_notes(changed_files: list[str]) -> list[str]:
     visual_files = [
         path
         for path in changed_files
-        if path.startswith("templates/")
-        or "/templates/" in path
-        or path.startswith("static/")
+        if "/templates/" in path
+        or "/static/" in path
         or path.endswith((".css", ".scss", ".js"))
     ]
     if not visual_files:

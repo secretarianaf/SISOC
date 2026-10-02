@@ -437,5 +437,5 @@ tmp_ocr_eval/
 /_templates_providencias/
 
 # Front v2 browser test artifacts
-frontends/test-results/
-frontends/playwright-report/
+src/frontends/test-results/
+src/frontends/playwright-report/

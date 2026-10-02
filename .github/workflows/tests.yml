@@ -282,7 +282,7 @@ jobs:
               run: |
                   docker build -q -f docker/django/Dockerfile --target core -t sisoc-ci/core .
                   docker build -q -f docker/django/Dockerfile --target migrator -t sisoc-ci/migrator .
-                  for backend in $(python3 -c 'import json; print(" ".join(json.load(open("config/backends.json"))))'); do
+                  for backend in $(python3 -c 'import json; print(" ".join(json.load(open("src/backends/config/backends.json"))))'); do
                       docker build -q -f docker/django/Dockerfile --target backend \
                           --build-arg BACKEND="$backend" -t "sisoc-ci/backend-$backend" .
                   done
@@ -290,12 +290,12 @@ jobs:
             - name: Verificar aislamiento y arranque
               run: |
                   set -euo pipefail
-                  # El core trae solo su cluster (backends/sisoc_core), ningún vertical.
-                  docker run --rm $CHECK_ENV sisoc-ci/core sh -c 'test "$(ls /sisoc/backends)" = sisoc_core'
+                  # El core trae config, kernel y su cluster (sisoc_core), ningún vertical.
+                  docker run --rm $CHECK_ENV sisoc-ci/core sh -c 'test "$(ls /sisoc/src/backends | tr "\n" " ")" = "config kernel sisoc_core "'
                   docker run --rm $CHECK_ENV sisoc-ci/core python manage.py check
                   python3 - <<'PY'
                   import json, subprocess
-                  backends = json.load(open("config/backends.json"))
+                  backends = json.load(open("src/backends/config/backends.json"))
                   env = ["-e", "DJANGO_SECRET_KEY=ci", "-e", "WAIT_FOR_DB=false"]
                   def ok(image, *cmd, settings=None):
                       extra = ["-e", f"DJANGO_SETTINGS_MODULE={settings}"] if settings else []
@@ -330,11 +330,14 @@ jobs:
             - name: Ejecutar pruebas de automatizacion de release
               run: node --test .github/scripts/release_orchestrator.test.js .github/scripts/sync_main_downstream.test.js
 
-            # Se listan los archivos en vez de la carpeta: tests/js/user_mobile_access.test.js
-            # ya venia fallando antes de este PR (su stub de DOM no implementa
-            # querySelector) y sumarlo aca pondria el CI en rojo por algo ajeno.
+            # Los tests de JS viven junto al vertical dueño del estático que prueban.
             - name: Ejecutar pruebas de JavaScript
-              run: node --test tests/js/volver.test.js tests/js/showAlert.test.js tests/js/informeTecnicoCambiosSinGuardar.test.js
+              run: >-
+                  node --test
+                  src/backends/kernel/tests/js/volver.test.js
+                  src/backends/celiaquia/tests/js/showAlert.test.js
+                  src/backends/sisoc_core/tests/js/informeTecnicoCambiosSinGuardar.test.js
+                  src/backends/sisoc_core/tests/js/user_mobile_access.test.js
 
             - name: Validate required CI checks
               uses: actions/github-script@v8

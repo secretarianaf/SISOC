@@ -13,7 +13,7 @@ services:
 
   celery_pas_worker:
     # Celery solo lo usa PAS: worker y beat corren con la imagen y el settings
-    # del backend de PAS (config/backends.json).
+    # del backend de PAS (src/backends/config/backends.json).
     image: sisoc/backend-pas:${SISOC_RELEASE_SHA:-local}
     build:
       context: .
@@ -40,7 +40,7 @@ services:
 
   celery_beat:
     # Celery solo lo usa PAS: worker y beat corren con la imagen y el settings
-    # del backend de PAS (config/backends.json).
+    # del backend de PAS (src/backends/config/backends.json).
     image: sisoc/backend-pas:${SISOC_RELEASE_SHA:-local}
     build:
       context: .

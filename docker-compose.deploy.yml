@@ -17,7 +17,9 @@ services:
       SISOC_PREPARAR_DB: "false"
     volumes:
       - ./media:/sisoc/media
-      - ./static_root:/sisoc/static_root
+      # collectstatic lo corre el migrador, que tiene los estáticos de todos
+      # los verticales; acá solo se lee el manifest.
+      - ./static_root:/sisoc/static_root:ro
       - ./logs:/sisoc/logs
     restart: unless-stopped
     ports:
@@ -30,7 +32,7 @@ services:
       retries: 12
 
   # Backend de Dispositivos (incluye Datacalle). El core le reenvía sus
-  # prefijos (config/backends.json); no publica puertos.
+  # prefijos (src/backends/config/backends.json); no publica puertos.
   backend_dispositivos:
     image: sisoc/backend-dispositivos:${SISOC_RELEASE_SHA:-local}
     build:
@@ -58,7 +60,7 @@ services:
       start_period: 1m
       retries: 6
 
-  # Backend de Ver para Ser Libre (config/backends.json); no publica puertos.
+  # Backend de Ver para Ser Libre (src/backends/config/backends.json); no publica puertos.
   backend_vpsl:
     image: sisoc/backend-vpsl:${SISOC_RELEASE_SHA:-local}
     build:
@@ -85,7 +87,7 @@ services:
       start_period: 1m
       retries: 6
 
-  # Backend de PAS (config/backends.json); no publica puertos.
+  # Backend de PAS (src/backends/config/backends.json); no publica puertos.
   backend_pas:
     image: sisoc/backend-pas:${SISOC_RELEASE_SHA:-local}
     build:
@@ -112,7 +114,7 @@ services:
       start_period: 1m
       retries: 6
 
-  # Backend de VAT (config/backends.json); no publica puertos.
+  # Backend de VAT (src/backends/config/backends.json); no publica puertos.
   backend_vat:
     image: sisoc/backend-vat:${SISOC_RELEASE_SHA:-local}
     build:
@@ -139,7 +141,7 @@ services:
       start_period: 1m
       retries: 6
 
-  # Backend de Celiaquía (config/backends.json); no publica puertos.
+  # Backend de Celiaquía (src/backends/config/backends.json); no publica puertos.
   backend_celiaquia:
     image: sisoc/backend-celiaquia:${SISOC_RELEASE_SHA:-local}
     build:
@@ -166,7 +168,7 @@ services:
       start_period: 1m
       retries: 6
 
-  # Backend de Centro de Infancia (con Ticketera) (config/backends.json); no publica puertos.
+  # Backend de Centro de Infancia (con Ticketera) (src/backends/config/backends.json); no publica puertos.
   backend_cdi:
     image: sisoc/backend-cdi:${SISOC_RELEASE_SHA:-local}
     build:
@@ -193,7 +195,7 @@ services:
       start_period: 1m
       retries: 6
 
-  # Backend de Centro de Familia (config/backends.json); no publica puertos.
+  # Backend de Centro de Familia (src/backends/config/backends.json); no publica puertos.
   backend_cdf:
     image: sisoc/backend-cdf:${SISOC_RELEASE_SHA:-local}
     build:
@@ -222,6 +224,8 @@ services:
 
   # Migrador único con la composición completa (config.settings_all). Lo corre
   # el deploy antes de actualizar servicios: `compose run --rm migrator`.
+  # También corre collectstatic sobre static_root: es la única imagen con los
+  # estáticos de todos los verticales (src/backends/<x>/<app>/static/).
   migrator:
     image: sisoc/migrator:${SISOC_RELEASE_SHA:-local}
     build:
@@ -234,6 +238,7 @@ services:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SERVICE_ROLE: migrator
     volumes:
+      - ./static_root:/sisoc/static_root
       - ./logs:/sisoc/logs
     profiles:
       - migrate
@@ -242,7 +247,7 @@ services:
   front_vpsl:
     image: ${VPSL_IMAGE_TAG:-sisoc/front-vpsl:local}
     build:
-      context: ./frontends
+      context: ./src/frontends
       dockerfile: Dockerfile
       target: prod
       args:

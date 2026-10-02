@@ -53,7 +53,7 @@ echo
 print_header "Recordatorios criticos del repo"
 echo "- Logica de negocio preferentemente en services/"
 echo "- Coexisten Django views y DRF"
-echo "- Logging custom en config/settings.py + core/utils.py"
+echo "- Logging custom en src/backends/config/settings.py + core/utils.py"
 echo "- No se usa Celery actualmente"
 echo "- Crear worktrees de tarea fuera del repo principal"
 
@@ -104,7 +104,7 @@ case "$TASK_KIND" in
     echo "- docs/indice.md"
     echo "- archivo afectado"
     echo "- docs/ia/ERRORS_LOGGING.md"
-    echo "- config/settings.py / core/utils.py si aplica"
+    echo "- src/backends/config/settings.py / core/utils.py si aplica"
     ;;
   migration|modelo)
     echo "- AGENTS.md"

@@ -8,7 +8,7 @@ services:
       target: dev
     command: ["sh", "-c", "npm ci && npm run dev -w @sisoc/vpsl -- --host 0.0.0.0"]
     volumes:
-      - ./frontends:/app
+      - ./src/frontends:/app
       - front_vpsl_node_modules:/app/node_modules
     ports:
       - "127.0.0.1:5173:5173"

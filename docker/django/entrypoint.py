@@ -1,9 +1,7 @@
 import logging
 import os
-import shutil
 import subprocess
 import time
-from pathlib import Path
 
 import pymysql
 
@@ -270,6 +268,8 @@ def main():
         return
     if service_role == SERVICE_ROLE_MIGRATOR:
         preparar_db()
+        if os.getenv("ENVIRONMENT", "dev").lower() in DEPLOY_GUNICORN_ENVIRONMENTS:
+            cache_busting()
         return
     run_django_commands()
 
@@ -294,7 +294,6 @@ def run_server():
         )
 
     if deploy_gunicorn:
-        cache_busting()
         logger.info("[server] Iniciando Django en modo produccion con Gunicorn...")
         workers = os.getenv("GUNICORN_WORKERS", "4")
         threads = os.getenv("GUNICORN_THREADS", "1")
@@ -320,18 +319,14 @@ def run_server():
 
 
 def cache_busting():
-    static_root = (
-        Path(__file__).resolve().parent.parent / "static_root"
-    )  # Raiz del proyecto
-    if static_root.exists() and static_root.is_dir():
-        # Se vacía el contenido y no la carpeta: en deploy es un volumen montado
-        # (docker-compose.deploy.yml) y borrar el punto de montaje falla.
-        logger.info("[clean] Vaciando carpeta de estaticos: %s", static_root)
-        for hijo in static_root.iterdir():
-            if hijo.is_dir() and not hijo.is_symlink():
-                shutil.rmtree(hijo)
-            else:
-                hijo.unlink()
+    """collectstatic sobre static_root, que Nginx publica en /static/.
+
+    Lo corre el migrador en deploy: es la única imagen con los estáticos de
+    todos los verticales (cada uno vive en ``<app>/static/``), y el manifest que
+    deja lo leen todos los servicios. No se vacía static_root: collectstatic
+    sobrescribe, y en un deploy selectivo los servicios que siguen corriendo
+    pueden seguir pidiendo los nombres con hash anteriores.
+    """
     logger.info("[static] Ejecutando collectstatic para cache busting...")
     run_command(
         ["python", "manage.py", "collectstatic", "--noinput"],

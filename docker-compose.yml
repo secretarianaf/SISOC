@@ -25,7 +25,7 @@ services:
       dockerfile: ./docker/django/Dockerfile
     environment:
       TZ: America/Argentina/Buenos_Aires
-      # Desarrollo: core + backends en un solo proceso (config/settings_all.py).
+      # Desarrollo: core + backends en un solo proceso (src/backends/config/settings_all.py).
       DJANGO_SETTINGS_MODULE: config.settings_all
     env_file:
       - .env
@@ -48,7 +48,7 @@ services:
   front_vpsl:
     image: ${VPSL_IMAGE_TAG:-sisoc/front-vpsl:local}
     build:
-      context: ./frontends
+      context: ./src/frontends
       dockerfile: Dockerfile
       target: prod
       args:
@@ -67,7 +67,7 @@ services:
       dockerfile: ./docker/django/Dockerfile
     environment:
       TZ: America/Argentina/Buenos_Aires
-      # Desarrollo: core + backends en un solo proceso (config/settings_all.py).
+      # Desarrollo: core + backends en un solo proceso (src/backends/config/settings_all.py).
       DJANGO_SETTINGS_MODULE: config.settings_all
       DJANGO_SERVICE_ROLE: ocr_worker
     env_file:
@@ -86,7 +86,7 @@ services:
       dockerfile: ./docker/django/Dockerfile
     environment:
       TZ: America/Argentina/Buenos_Aires
-      # Desarrollo: core + backends en un solo proceso (config/settings_all.py).
+      # Desarrollo: core + backends en un solo proceso (src/backends/config/settings_all.py).
       DJANGO_SETTINGS_MODULE: config.settings_all
       DJANGO_SERVICE_ROLE: encuestas_worker
     env_file:

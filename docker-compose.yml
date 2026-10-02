@@ -27,6 +27,9 @@ services:
       TZ: America/Argentina/Buenos_Aires
       # Desarrollo: core + backends en un solo proceso (config/settings_all.py).
       DJANGO_SETTINGS_MODULE: config.settings_all
+      # Allowlist del router /v2/: que modulos puede reenviar Django y adonde.
+      # Va aca y no en .env para que /v2/ funcione sin configuracion previa.
+      FRONTEND_V2_SERVICIOS: ${FRONTEND_V2_SERVICIOS:-celiaquia=http://front_celiaquia:8080/}
     env_file:
       - .env
     ports:
@@ -36,6 +39,7 @@ services:
       - .:/sisoc/
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
     restart: "no"
+    # El front v2 espera a que Django este sano antes de levantar.
     healthcheck:
       test: ["CMD", "python", "-c", "from urllib.request import urlopen, Request; r = urlopen(Request('http://127.0.0.1:8000/health/', headers={'X-Forwarded-Proto': 'https'}), timeout=2); exit(0 if r.status == 200 else 1)"]
       interval: 10s
@@ -56,6 +60,24 @@ services:
         VITE_SENTRY_DSN: ${SENTRY_DSN:-}
         VITE_SENTRY_ENVIRONMENT: ${ENVIRONMENT:-dev}
         VITE_RELEASE_SHA: ${VITE_RELEASE_SHA:-local}
+    depends_on:
+      django:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Front v2 del modulo. Puerto interno: no se expone al host, solo lo alcanza
+  # Django por la red de compose (FRONTEND_V2_SERVICIOS).
+  front_celiaquia:
+    build:
+      context: ./frontends
+      dockerfile: Dockerfile
+      target: ${FRONT_TARGET:-prod}
+      args:
+        APP: celiaquia
+    image: sisoc-front-celiaquia
+    expose:
+      - "8080"
+    # Reiniciar el front no reinicia django, y viceversa (frontend_v2.md, 9).
     depends_on:
       django:
         condition: service_healthy

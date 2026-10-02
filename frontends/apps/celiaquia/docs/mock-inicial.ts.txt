@@ -1,0 +1,572 @@
+/**
+ * Datos de maqueta. No hay requests: todas las pantallas leen de acá.
+ * Los nombres de campo siguen los del backend de celiaquía para que el
+ * reemplazo por datos reales sea un cambio de origen, no de componente.
+ */
+
+export type EstadoExpediente =
+  | "CREADO"
+  | "EN_ESPERA"
+  | "CONFIRMACION_DE_ENVIO"
+  | "RECEPCIONADO"
+  | "ASIGNADO"
+  | "PROCESO_DE_CRUCE"
+  | "CRUCE_FINALIZADO";
+
+export const displayEstado: Record<EstadoExpediente, string> = {
+  CREADO: "Creado",
+  EN_ESPERA: "En espera",
+  CONFIRMACION_DE_ENVIO: "Confirmación de envío",
+  RECEPCIONADO: "Recepcionado",
+  ASIGNADO: "Asignado",
+  PROCESO_DE_CRUCE: "Proceso de cruce",
+  CRUCE_FINALIZADO: "Cruce finalizado",
+};
+
+export type Expediente = {
+  id: number;
+  numero_expediente: string;
+  fecha_creacion: string;
+  provincia: string;
+  estado: EstadoExpediente;
+  legajos_subsanar_count: number;
+  legajos_subsanado_count: number;
+  tecnicos: string[];
+  excel_masivo?: {
+    nombre: string;
+    cargado_por: string;
+    cargado_en: string;
+    procesado_por: string | null;
+    procesado_en: string | null;
+  };
+};
+
+export const expedientes: Expediente[] = [
+  {
+    id: 1042,
+    numero_expediente: "EX-2026-00184512",
+    fecha_creacion: "12/03/2026 09:14",
+    provincia: "Catamarca",
+    estado: "CRUCE_FINALIZADO",
+    legajos_subsanar_count: 0,
+    legajos_subsanado_count: 6,
+    tecnicos: ["Laura Benítez", "Diego Suárez"],
+    excel_masivo: {
+      nombre: "padron_catamarca_marzo.xlsx",
+      cargado_por: "M. Gómez",
+      cargado_en: "12/03/2026 09:14",
+      procesado_por: "Laura Benítez",
+      procesado_en: "12/03/2026 11:02",
+    },
+  },
+  {
+    id: 1041,
+    numero_expediente: "EX-2026-00184498",
+    fecha_creacion: "11/03/2026 16:40",
+    provincia: "Chaco",
+    estado: "PROCESO_DE_CRUCE",
+    legajos_subsanar_count: 4,
+    legajos_subsanado_count: 2,
+    tecnicos: ["Diego Suárez"],
+    excel_masivo: {
+      nombre: "padron_chaco_marzo.xlsx",
+      cargado_por: "R. Ledesma",
+      cargado_en: "11/03/2026 16:40",
+      procesado_por: "Diego Suárez",
+      procesado_en: "11/03/2026 18:05",
+    },
+  },
+  {
+    id: 1039,
+    numero_expediente: "EX-2026-00184390",
+    fecha_creacion: "10/03/2026 10:22",
+    provincia: "Misiones",
+    estado: "ASIGNADO",
+    legajos_subsanar_count: 9,
+    legajos_subsanado_count: 0,
+    tecnicos: ["Laura Benítez"],
+  },
+  {
+    id: 1037,
+    numero_expediente: "EX-2026-00184311",
+    fecha_creacion: "09/03/2026 14:05",
+    provincia: "Salta",
+    estado: "CONFIRMACION_DE_ENVIO",
+    legajos_subsanar_count: 0,
+    legajos_subsanado_count: 0,
+    tecnicos: [],
+  },
+  {
+    id: 1035,
+    numero_expediente: "EX-2026-00184220",
+    fecha_creacion: "06/03/2026 08:47",
+    provincia: "Catamarca",
+    estado: "EN_ESPERA",
+    legajos_subsanar_count: 2,
+    legajos_subsanado_count: 1,
+    tecnicos: [],
+  },
+  {
+    id: 1033,
+    numero_expediente: "—",
+    fecha_creacion: "05/03/2026 17:30",
+    provincia: "Catamarca",
+    estado: "CREADO",
+    legajos_subsanar_count: 0,
+    legajos_subsanado_count: 0,
+    tecnicos: [],
+  },
+];
+
+export type RevisionTecnico =
+  | "PENDIENTE"
+  | "APROBADO"
+  | "RECHAZADO"
+  | "SUBSANAR"
+  | "SUBSANADO";
+
+export type DocIndicador = { nombre: string; cargado: boolean };
+
+export type Legajo = {
+  id: number;
+  nombre: string;
+  apellido: string;
+  documento: string;
+  rol: "beneficiario" | "responsable";
+  es_doble_rol: boolean;
+  es_responsable: boolean;
+  responsable_id: number | null;
+  hijos_a_cargo: number;
+  edad: number;
+  alertas: string[];
+  revision_tecnico: RevisionTecnico;
+  resultado_sintys: "MATCH" | "NO_MATCH" | "SIN_CRUZAR";
+  estado_cupo: "DENTRO" | "FUERA" | "SIN_ASIGNAR";
+  es_titular_activo: boolean;
+  doc_indicadores: DocIndicador[];
+  observacion_titulo?: string;
+  observacion_texto?: string;
+  expediente: string;
+};
+
+export const legajos: Legajo[] = [
+  {
+    id: 8801,
+    nombre: "Marcela",
+    apellido: "Quiroga",
+    documento: "27-30456789-4",
+    rol: "responsable",
+    es_doble_rol: true,
+    es_responsable: true,
+    responsable_id: null,
+    hijos_a_cargo: 2,
+    edad: 41,
+    alertas: [],
+    revision_tecnico: "APROBADO",
+    resultado_sintys: "MATCH",
+    estado_cupo: "DENTRO",
+    es_titular_activo: true,
+    doc_indicadores: [
+      { nombre: "DNI frente", cargado: true },
+      { nombre: "Certificado médico", cargado: true },
+      { nombre: "Constancia CUIL", cargado: true },
+    ],
+    expediente: "EX-2026-00184512",
+  },
+  {
+    id: 8802,
+    nombre: "Tomás",
+    apellido: "Quiroga",
+    documento: "20-52998321-7",
+    rol: "beneficiario",
+    es_doble_rol: false,
+    es_responsable: false,
+    responsable_id: 8801,
+    hijos_a_cargo: 0,
+    edad: 9,
+    alertas: [],
+    revision_tecnico: "APROBADO",
+    resultado_sintys: "MATCH",
+    estado_cupo: "DENTRO",
+    es_titular_activo: true,
+    doc_indicadores: [
+      { nombre: "DNI frente", cargado: true },
+      { nombre: "Certificado médico", cargado: true },
+      { nombre: "Constancia CUIL", cargado: false },
+    ],
+    expediente: "EX-2026-00184512",
+  },
+  {
+    id: 8803,
+    nombre: "Celeste",
+    apellido: "Ferreyra",
+    documento: "27-44810233-1",
+    rol: "beneficiario",
+    es_doble_rol: false,
+    es_responsable: false,
+    responsable_id: null,
+    hijos_a_cargo: 0,
+    edad: 16,
+    alertas: ["Menor sin adulto responsable"],
+    revision_tecnico: "SUBSANAR",
+    resultado_sintys: "SIN_CRUZAR",
+    estado_cupo: "SIN_ASIGNAR",
+    es_titular_activo: false,
+    doc_indicadores: [
+      { nombre: "DNI frente", cargado: true },
+      { nombre: "Certificado médico", cargado: false },
+      { nombre: "Constancia CUIL", cargado: false },
+    ],
+    observacion_titulo: "Documentación incompleta",
+    observacion_texto:
+      "Falta certificado médico vigente y la constancia de CUIL del adulto responsable.",
+    expediente: "EX-2026-00184512",
+  },
+  {
+    id: 8804,
+    nombre: "Ramón",
+    apellido: "Ávalos",
+    documento: "20-10233455-9",
+    rol: "beneficiario",
+    es_doble_rol: false,
+    es_responsable: false,
+    responsable_id: null,
+    hijos_a_cargo: 0,
+    edad: 65,
+    alertas: ["Adulto mayor de 65 años"],
+    revision_tecnico: "SUBSANADO",
+    resultado_sintys: "MATCH",
+    estado_cupo: "DENTRO",
+    es_titular_activo: true,
+    doc_indicadores: [
+      { nombre: "DNI frente", cargado: true },
+      { nombre: "Certificado médico", cargado: true },
+      { nombre: "Constancia CUIL", cargado: true },
+    ],
+    observacion_titulo: "Subsanación recibida",
+    observacion_texto:
+      "La provincia adjuntó el certificado corregido el 10/03/2026.",
+    expediente: "EX-2026-00184512",
+  },
+  {
+    id: 8805,
+    nombre: "Vanina",
+    apellido: "Coronel",
+    documento: "27-38771002-5",
+    rol: "beneficiario",
+    es_doble_rol: false,
+    es_responsable: false,
+    responsable_id: null,
+    hijos_a_cargo: 0,
+    edad: 33,
+    alertas: [],
+    revision_tecnico: "RECHAZADO",
+    resultado_sintys: "NO_MATCH",
+    estado_cupo: "FUERA",
+    es_titular_activo: false,
+    doc_indicadores: [
+      { nombre: "DNI frente", cargado: true },
+      { nombre: "Certificado médico", cargado: false },
+      { nombre: "Constancia CUIL", cargado: true },
+    ],
+    observacion_titulo: "Sin coincidencia en Sintys",
+    observacion_texto: "El CUIL informado no coincide con el padrón de RENAPER.",
+    expediente: "EX-2026-00184512",
+  },
+  {
+    id: 8806,
+    nombre: "Joaquín",
+    apellido: "Herrera",
+    documento: "20-47112908-3",
+    rol: "beneficiario",
+    es_doble_rol: false,
+    es_responsable: false,
+    responsable_id: null,
+    hijos_a_cargo: 0,
+    edad: 22,
+    alertas: [],
+    revision_tecnico: "PENDIENTE",
+    resultado_sintys: "SIN_CRUZAR",
+    estado_cupo: "SIN_ASIGNAR",
+    es_titular_activo: false,
+    doc_indicadores: [
+      { nombre: "DNI frente", cargado: true },
+      { nombre: "Certificado médico", cargado: true },
+      { nombre: "Constancia CUIL", cargado: false },
+    ],
+    expediente: "EX-2026-00184512",
+  },
+];
+
+export type RegistroErroneo = {
+  id: number;
+  fila_excel: number;
+  datos: Record<string, string>;
+  error: string;
+  invalid_fields: string[];
+};
+
+export const registrosErroneos: RegistroErroneo[] = [
+  {
+    id: 1,
+    fila_excel: 18,
+    datos: {
+      apellido: "Paz",
+      nombre: "Lucía",
+      documento: "2744",
+      fecha_nacimiento: "31/02/2011",
+    },
+    error: "Documento inválido (longitud) · Fecha de nacimiento inexistente",
+    invalid_fields: ["documento", "fecha_nacimiento"],
+  },
+  {
+    id: 2,
+    fila_excel: 31,
+    datos: {
+      apellido: "Ojeda",
+      nombre: "",
+      documento: "20-39112445-8",
+      fecha_nacimiento: "05/07/1998",
+    },
+    error: "Falta el nombre del titular",
+    invalid_fields: ["nombre"],
+  },
+];
+
+export type FilaCupo = {
+  provincia_id: number;
+  provincia: string;
+  total_asignado: number | null;
+  usados: number | null;
+  disponibles: number | null;
+  fuera: number | null;
+};
+
+export const cupos: FilaCupo[] = [
+  {
+    provincia_id: 1,
+    provincia: "Catamarca",
+    total_asignado: 500,
+    usados: 412,
+    disponibles: 88,
+    fuera: 37,
+  },
+  {
+    provincia_id: 2,
+    provincia: "Chaco",
+    total_asignado: 900,
+    usados: 900,
+    disponibles: 0,
+    fuera: 126,
+  },
+  {
+    provincia_id: 3,
+    provincia: "Misiones",
+    total_asignado: 640,
+    usados: 318,
+    disponibles: 322,
+    fuera: 0,
+  },
+  {
+    provincia_id: 4,
+    provincia: "Salta",
+    total_asignado: null,
+    usados: null,
+    disponibles: null,
+    fuera: null,
+  },
+];
+
+export const provinciaPorId = (id: number) =>
+  cupos.find((c) => c.provincia_id === id) ?? cupos[0];
+
+export type Movimiento = {
+  id: number;
+  fecha: string;
+  documento: string;
+  nombre: string;
+  apellido: string;
+  expediente: string;
+  tipo: "ALTA" | "BAJA" | "SUSPENDIDO" | "REACTIVADO" | "AJUSTE";
+  delta: number | null;
+  motivo: string;
+  usuario: string;
+  revision_tecnico: RevisionTecnico;
+  resultado_sintys: "MATCH" | "NO_MATCH" | "SIN_CRUZAR";
+  estado_cupo: "DENTRO" | "FUERA" | "SIN_ASIGNAR";
+  es_titular_activo: boolean;
+};
+
+export const movimientos: Movimiento[] = [
+  {
+    id: 1,
+    fecha: "12/03/2026 11:40",
+    documento: "27-30456789-4",
+    nombre: "Marcela",
+    apellido: "Quiroga",
+    expediente: "EX-2026-00184512",
+    tipo: "ALTA",
+    delta: 1,
+    motivo: "Alta por cruce finalizado",
+    usuario: "Laura Benítez",
+    revision_tecnico: "APROBADO",
+    resultado_sintys: "MATCH",
+    estado_cupo: "DENTRO",
+    es_titular_activo: true,
+  },
+  {
+    id: 2,
+    fecha: "11/03/2026 09:12",
+    documento: "27-38771002-5",
+    nombre: "Vanina",
+    apellido: "Coronel",
+    expediente: "EX-2026-00184512",
+    tipo: "BAJA",
+    delta: -1,
+    motivo: "Sin coincidencia en Sintys",
+    usuario: "Diego Suárez",
+    revision_tecnico: "RECHAZADO",
+    resultado_sintys: "NO_MATCH",
+    estado_cupo: "FUERA",
+    es_titular_activo: false,
+  },
+  {
+    id: 3,
+    fecha: "09/03/2026 15:55",
+    documento: "20-10233455-9",
+    nombre: "Ramón",
+    apellido: "Ávalos",
+    expediente: "EX-2026-00184390",
+    tipo: "SUSPENDIDO",
+    delta: null,
+    motivo: "Documentación vencida",
+    usuario: "Laura Benítez",
+    revision_tecnico: "SUBSANADO",
+    resultado_sintys: "MATCH",
+    estado_cupo: "DENTRO",
+    es_titular_activo: false,
+  },
+];
+
+export type Pago = {
+  id: number;
+  periodo: string;
+  estado: "BORRADOR" | "ENVIADO" | "VALIDADO" | "CERRADO";
+  total_candidatos: number;
+  total_validados: number;
+  total_excluidos: number;
+  creado_en: string;
+  archivo_envio: boolean;
+};
+
+export const pagos: Pago[] = [
+  {
+    id: 77,
+    periodo: "2026-03",
+    estado: "VALIDADO",
+    total_candidatos: 412,
+    total_validados: 398,
+    total_excluidos: 14,
+    creado_en: "2026-03-05",
+    archivo_envio: true,
+  },
+  {
+    id: 71,
+    periodo: "2026-02",
+    estado: "CERRADO",
+    total_candidatos: 405,
+    total_validados: 405,
+    total_excluidos: 0,
+    creado_en: "2026-02-04",
+    archivo_envio: true,
+  },
+  {
+    id: 66,
+    periodo: "2026-01",
+    estado: "BORRADOR",
+    total_candidatos: 388,
+    total_validados: 0,
+    total_excluidos: 0,
+    creado_en: "2026-01-08",
+    archivo_envio: false,
+  },
+];
+
+export const pagoPorId = (id: number) => pagos.find((p) => p.id === id) ?? pagos[0];
+
+export type FilaNomina = {
+  documento: string;
+  nombre: string;
+  apellido: string;
+  estado: "VALIDADO" | "EXCLUIDO";
+  observacion: string;
+};
+
+export const nomina: FilaNomina[] = [
+  {
+    documento: "27-30456789-4",
+    nombre: "Marcela",
+    apellido: "Quiroga",
+    estado: "VALIDADO",
+    observacion: "",
+  },
+  {
+    documento: "20-52998321-7",
+    nombre: "Tomás",
+    apellido: "Quiroga",
+    estado: "VALIDADO",
+    observacion: "",
+  },
+  {
+    documento: "27-38771002-5",
+    nombre: "Vanina",
+    apellido: "Coronel",
+    estado: "EXCLUIDO",
+    observacion: "Incompatibilidad con otro programa",
+  },
+];
+
+export const previewExcel = {
+  headers: [
+    "apellido",
+    "nombre",
+    "documento",
+    "fecha_nacimiento",
+    "sexo",
+    "localidad",
+  ],
+  rows: [
+    {
+      apellido: "Quiroga",
+      nombre: "Marcela",
+      documento: "27-30456789-4",
+      fecha_nacimiento: "14/06/1984",
+      sexo: "Femenino",
+      localidad: "San Fernando del Valle",
+    },
+    {
+      apellido: "Quiroga",
+      nombre: "Tomás",
+      documento: "20-52998321-7",
+      fecha_nacimiento: "02/11/2016",
+      sexo: "Masculino",
+      localidad: "San Fernando del Valle",
+    },
+    {
+      apellido: "Ferreyra",
+      nombre: "Celeste",
+      documento: "27-44810233-1",
+      fecha_nacimiento: "23/09/2009",
+      sexo: "Femenino",
+      localidad: "Valle Viejo",
+    },
+    {
+      apellido: "Ávalos",
+      nombre: "Ramón",
+      documento: "20-10233455-9",
+      fecha_nacimiento: "07/01/1961",
+      sexo: "Masculino",
+      localidad: "Fray Mamerto Esquiú",
+    },
+  ] as Record<string, string>[],
+};

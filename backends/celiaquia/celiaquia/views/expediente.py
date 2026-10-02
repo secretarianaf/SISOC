@@ -78,13 +78,15 @@ from celiaquia.services.expediente_filter_config import (  # pylint: disable=no-
 from celiaquia.services.padron_final_service import (  # pylint: disable=no-name-in-module
     PadronFinalService,
 )
+from celiaquia.services.revision_service import (  # pylint: disable=no-name-in-module
+    RevisionService,
+)
 from celiaquia.services.subsanacion_service import SubsanacionService
 from celiaquia.services.validacion_edad_service import ValidacionEdadService
 from celiaquia.validators import (
     COMPLEMENTARIA_ACCEPT_ATTR,
     COMPLEMENTARIA_MAX_ARCHIVOS,
     COMPLEMENTARIA_MAX_SIZE_MB,
-    validar_archivos_complementarios,
 )
 from django.utils import timezone
 from django.db import transaction
@@ -92,6 +94,7 @@ from core.models import Nacionalidad, Provincia, Localidad
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import is_soft_deletable_instance
+from celiaquia.scope import apply_provincial_expediente_scope
 from users.territorial_scope import (
     apply_territorial_scope,
     build_territorial_scope_q,
@@ -101,6 +104,34 @@ from users.territorial_scope import (
 )
 
 logger = logging.getLogger("django")
+
+# Estas reglas viven ahora en `celiaquia/services/registros_erroneos_service/`,
+# para que la API REST y estas pantallas apliquen exactamente lo mismo. Se
+# reexportan con sus nombres viejos porque el resto del modulo (y sus tests)
+# las usa asi.
+from celiaquia.scope import tecnicos_asignables as _tecnicos_queryset  # noqa: E402
+from celiaquia.services import registros_erroneos_service  # noqa: E402
+from celiaquia.services.registros_erroneos_service import (  # noqa: E402
+    _actualizar_alerta_importacion_persistente,
+    _aplicar_defaults_registro_erroneo,
+    _build_excluidos_importacion_alerta,
+    _build_resumen_importacion_alerta,
+    _campos_invalidos_desde_mensaje_error,
+    _can_manage_registros_erroneos,
+    _consolidar_datos_registro_erroneo,
+    _deduplicar_excluidos_alerta,
+    _limpiar_datos_registro_erroneo,
+    _normalizar_datos_registro_erroneo,
+    _normalizar_mensaje_error_invalid_fields,
+    _registro_erroneo_responsable_requerido,
+    _resolver_localidad_registro_erroneo,
+    _resolver_municipio_id_desde_localidad,
+    _resolver_nacionalidad_id_registro_erroneo,
+    _resolver_nacionalidad_registro_erroneo,
+    _resolver_provincia_id_registro_erroneo,
+    _user_provincia,
+    _validar_datos_registro_erroneo,
+)
 
 ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"
 ROLE_TECNICO_CELIAQUIA_PERMISSION = "auth.role_tecnicoceliaquia"
@@ -186,14 +217,6 @@ def _is_provincial(user) -> bool:
         return False
 
 
-def _can_manage_registros_erroneos(user) -> bool:
-    return bool(
-        _is_admin(user)
-        or _is_provincial(user)
-        or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
-    )
-
-
 def _can_manage_excel_masivo_audit(user) -> bool:
     """Roles que ven la metadata de carga y procesamiento del Excel."""
     return bool(
@@ -236,331 +259,6 @@ def _get_nacionalidad_argentina_id():
     return getattr(argentina, "pk", "") or ""
 
 
-def _resolver_localidad_registro_erroneo(localidad_value):
-    if localidad_value in (None, ""):
-        return None
-
-    localidad_str = str(localidad_value).strip()
-    if not localidad_str:
-        return None
-
-    localidades = Localidad.objects.select_related("municipio")
-    if localidad_str.isdigit():
-        return localidades.filter(pk=int(localidad_str)).first()
-    return localidades.filter(nombre__iexact=localidad_str).first()
-
-
-def _resolver_nacionalidad_registro_erroneo(nacionalidad_value):
-    if nacionalidad_value in (None, ""):
-        return None
-
-    payload = {"nacionalidad": nacionalidad_value}
-    try:
-        _resolver_nacionalidad_payload_importacion(
-            payload,
-            nacionalidades_cache=_cargar_nacionalidades_cache(),
-            paises_a_nacionalidad=_cargar_paises_a_nacionalidad_importacion(),
-        )
-    except ValidationError:
-        return None
-
-    nacionalidad_id = payload.get("nacionalidad")
-    if not nacionalidad_id:
-        return None
-    return Nacionalidad.objects.filter(pk=nacionalidad_id).first()
-
-
-def _resolver_nacionalidad_id_registro_erroneo(nacionalidad_value):
-    nacionalidad = _resolver_nacionalidad_registro_erroneo(nacionalidad_value)
-    if not nacionalidad:
-        return ""
-    return str(nacionalidad.pk)
-
-
-def _resolver_municipio_id_desde_localidad(localidad_value):
-    localidad = _resolver_localidad_registro_erroneo(localidad_value)
-    if not localidad or not localidad.municipio_id:
-        return ""
-    return str(localidad.municipio_id)
-
-
-def _normalizar_mensaje_error_invalid_fields(message):
-    if isinstance(message, ValidationError):
-        mensajes = getattr(message, "messages", None) or [str(message)]
-        msg = " ".join(str(item) for item in mensajes if item)
-    else:
-        msg = str(message or "")
-
-    msg = msg.strip()
-    if msg.startswith("[") and msg.endswith("]"):
-        msg = msg[1:-1].strip()
-    msg = msg.strip("'\" ")
-
-    prefijo_reproceso = "error al reprocesar:"
-    if msg.lower().startswith(prefijo_reproceso):
-        msg = msg[len(prefijo_reproceso) :].strip()
-
-    return msg
-
-
-def _campos_invalidos_desde_mensaje_error(message):
-    if not message:
-        return []
-
-    msg = _normalizar_mensaje_error_invalid_fields(message)
-    msg_lower = msg.lower()
-    campos = []
-
-    faltantes_match = re.search(
-        r"faltan campos obligatorios:\s*(?P<faltantes>.+)$",
-        msg,
-        flags=re.IGNORECASE,
-    )
-    if faltantes_match:
-        faltantes = faltantes_match.group("faltantes")
-        return [
-            campo.strip()
-            for campo in faltantes.split(",")
-            if campo and campo.strip() in IMPORTACION_EDITABLE_FIELDS
-        ]
-
-    patrones = [
-        (
-            r"\bfecha_nacimiento_responsable\b|fecha de nacimiento responsable",
-            "fecha_nacimiento_responsable",
-        ),
-        (r"\bdocumento_responsable\b|documento responsable", "documento_responsable"),
-        (r"\bapellido_responsable\b|apellido responsable", "apellido_responsable"),
-        (r"\bnombre_responsable\b|nombre responsable", "nombre_responsable"),
-        (r"\bsexo_responsable\b|sexo responsable", "sexo_responsable"),
-        (r"\bdomicilio_responsable\b|domicilio responsable", "domicilio_responsable"),
-        (r"\blocalidad_responsable\b|localidad responsable", "localidad_responsable"),
-        (
-            r"\btelefono_responsable\b|telefono responsable",
-            "telefono_responsable",
-        ),
-        (r"\bemail_responsable\b|email responsable", "email_responsable"),
-        (r"\bcontacto_responsable\b|contacto responsable", "contacto_responsable"),
-        (r"\bfecha_nacimiento\b|fecha de nacimiento", "fecha_nacimiento"),
-        (r"\bdocumento\b", "documento"),
-        (r"\bsexo\b", "sexo"),
-        (r"\bnacionalidad\b", "nacionalidad"),
-        (r"\bmunicipio\b", "municipio"),
-        (r"\blocalidad\b", "localidad"),
-        (r"\bcodigo_postal\b|codigo postal", "codigo_postal"),
-        (r"\bcalle\b", "calle"),
-        (r"\baltura\b", "altura"),
-        (r"\btelefono\b", "telefono"),
-        (r"\bemail\b", "email"),
-    ]
-    for patron, campo in patrones:
-        if re.search(patron, msg_lower) and campo in IMPORTACION_EDITABLE_FIELDS:
-            campos.append(campo)
-
-    if "debe tener un responsable" in msg_lower:
-        campos.extend(
-            [
-                "apellido_responsable",
-                "nombre_responsable",
-                "documento_responsable",
-                "fecha_nacimiento_responsable",
-                "sexo_responsable",
-                "domicilio_responsable",
-                "localidad_responsable",
-            ]
-        )
-
-    return list(dict.fromkeys(campos))
-
-
-def _aplicar_defaults_registro_erroneo(datos):
-    datos_con_defaults = dict(datos)
-
-    municipio_id = _resolver_municipio_id_desde_localidad(
-        datos_con_defaults.get("localidad")
-    )
-    if municipio_id:
-        datos_con_defaults["municipio"] = municipio_id
-
-    return datos_con_defaults
-
-
-def _normalizar_datos_registro_erroneo(payload):
-    datos_normalizados = {}
-    for field in IMPORTACION_EDITABLE_FIELDS:
-        if field not in payload:
-            continue
-        value = payload.get(field)
-        if isinstance(value, str):
-            value = value.strip()
-        datos_normalizados[field] = value
-    return datos_normalizados
-
-
-def _limpiar_datos_registro_erroneo(payload):
-    return {k: v for k, v in payload.items() if v not in (None, "")}
-
-
-def _consolidar_datos_registro_erroneo(datos_previos, datos_nuevos):
-    datos_consolidados = _normalizar_datos_registro_erroneo(datos_previos or {})
-    for field in IMPORTACION_EDITABLE_FIELDS:
-        if field not in datos_nuevos:
-            continue
-        value = datos_nuevos.get(field)
-        if value in (None, ""):
-            datos_consolidados.pop(field, None)
-            continue
-        datos_consolidados[field] = value
-
-    responsable_tocado = any(
-        field in datos_nuevos for field in IMPORTACION_RESPONSABLE_FIELDS
-    )
-    responsable_vacio = not any(
-        datos_consolidados.get(field) not in (None, "")
-        for field in IMPORTACION_RESPONSABLE_FIELDS
-    )
-    if responsable_tocado and responsable_vacio:
-        for field in IMPORTACION_RESPONSABLE_FIELDS:
-            datos_consolidados.pop(field, None)
-
-    return _aplicar_defaults_registro_erroneo(datos_consolidados)
-
-
-def _resolver_provincia_id_registro_erroneo(user, expediente):
-    provincia = _user_provincia(user) or getattr(expediente, "provincia", None)
-    if provincia is None and _is_provincial(user):
-        provincia_ids = {scope.provincia_id for scope in get_effective_scopes(user)}
-        if len(provincia_ids) == 1:
-            return next(iter(provincia_ids))
-    if provincia is None:
-        try:
-            provincia = expediente.usuario_provincia.profile.provincia
-        except Exception:
-            provincia = None
-    for attr in ("pk", "id"):
-        provincia_id = getattr(provincia, attr, None)
-        if provincia_id is not None:
-            return provincia_id
-    return provincia
-
-
-def _deduplicar_excluidos_alerta(excluidos):
-    vistos = set()
-    resultado = []
-    for item in excluidos or []:
-        if isinstance(item, dict):
-            key = (
-                item.get("ciudadano_id"),
-                item.get("documento"),
-                item.get("expediente_origen_id"),
-                item.get("estado_programa"),
-                item.get("estado_legajo_origen"),
-                item.get("motivo"),
-            )
-        else:
-            key = ("raw", str(item))
-        if key in vistos:
-            continue
-        vistos.add(key)
-        resultado.append(item)
-    return resultado
-
-
-def _build_excluidos_importacion_alerta(excluidos):
-    excluidos_lineas = []
-    if excluidos:
-        cantidad = len(excluidos)
-        sujeto = (
-            "No se creó 1 legajo"
-            if cantidad == 1
-            else f"No se crearon {cantidad} legajos"
-        )
-        predicado = (
-            "porque pertenece a otro expediente."
-            if cantidad == 1
-            else "porque pertenecen a otro expediente."
-        )
-        excluidos_lineas.append(f"{sujeto} {predicado}")
-        for item in excluidos[:10]:
-            if not isinstance(item, dict):
-                excluidos_lineas.append(str(item))
-                continue
-            documento = item.get("documento", "-")
-            apellido = item.get("apellido", "-")
-            nombre = item.get("nombre", "-")
-            estado = (
-                item.get("estado_programa")
-                or item.get("estado_legajo_origen")
-                or item.get("motivo")
-                or "-"
-            )
-            expediente_origen = item.get("expediente_origen_id", "-")
-            excluidos_lineas.append(
-                f"- Documento {documento} - {apellido}, {nombre} - Estado legajo: {estado} - Exp #{expediente_origen}"
-            )
-        restantes = len(excluidos) - 10
-        if restantes > 0:
-            excluidos_lineas.append(f"... y {restantes} mas.")
-    return "\n".join(excluidos_lineas)
-
-
-def _actualizar_alerta_importacion_persistente(
-    expediente, *, creados_incremento=0, errores_actuales=None, excluidos_nuevos=None
-):
-    historial_qs = (
-        expediente.historial.filter(estado_nuevo=expediente.estado)
-        .exclude(observaciones__isnull=True)
-        .exclude(observaciones="")
-        .order_by("-fecha")
-    )
-    historial_actual = historial_qs.first()
-    if not historial_actual:
-        return
-
-    try:
-        payload = json.loads(historial_actual.observaciones)
-    except (TypeError, ValueError):
-        return
-
-    if not isinstance(payload, dict):
-        return
-
-    creados_total = int(payload.get("creados_total") or 0) + int(
-        creados_incremento or 0
-    )
-    errores_vigentes = (
-        int(errores_actuales)
-        if errores_actuales is not None
-        else int(payload.get("errores_actuales") or 0)
-    )
-
-    payload["resumen"] = _build_resumen_importacion_alerta(
-        creados_total=creados_total,
-        errores_actuales=errores_vigentes,
-    )
-    excluidos_detalle = _deduplicar_excluidos_alerta(
-        (payload.get("excluidos_detalle") or []) + (excluidos_nuevos or [])
-    )
-    payload["excluidos_detalle"] = excluidos_detalle
-    payload["excluidos"] = _build_excluidos_importacion_alerta(excluidos_detalle)
-    payload["tiene_errores"] = bool(errores_vigentes)
-    payload["creados_total"] = creados_total
-    payload["errores_actuales"] = errores_vigentes
-
-    historial_actual.observaciones = json.dumps(payload)
-    historial_actual.save(update_fields=["observaciones"])
-    return payload
-
-
-def _build_resumen_importacion_alerta(*, creados_total=0, errores_actuales=0):
-    resumen_lineas = [
-        f"Importacion procesada. Se crearon {creados_total} legajos y el expediente paso a EN ESPERA."
-    ]
-    if errores_actuales:
-        resumen_lineas.append(f"Errores detectados: {errores_actuales}.")
-    return "\n".join(resumen_lineas)
-
-
 def _formatear_observaciones_historial(observaciones):
     if not observaciones:
         return ""
@@ -581,48 +279,6 @@ def _formatear_observaciones_historial(observaciones):
     return "\n".join(partes) or observaciones
 
 
-def _validar_datos_registro_erroneo(
-    payload, provincia_id, fila_excel=0, provincias_permitidas_ids=None
-):
-    return validar_y_normalizar_payloads_importacion(
-        payload=payload,
-        provincia_usuario_id=provincia_id,
-        provincias_permitidas_ids=provincias_permitidas_ids,
-        offset=fila_excel,
-    )
-
-
-def _registro_erroneo_responsable_requerido(payload):
-    fecha_nacimiento = payload.get("fecha_nacimiento")
-    if fecha_nacimiento in (None, ""):
-        return False
-    try:
-        payload_normalizado = dict(payload)
-        payload_normalizado["fecha_nacimiento"] = CiudadanoService._to_date(
-            fecha_nacimiento
-        )
-    except ValidationError:
-        return False
-    return _beneficiario_requiere_responsable_importacion(payload_normalizado)
-
-
-def _user_provincia(user):
-    try:
-        provincia = user.profile.provincia
-    except (AttributeError, ObjectDoesNotExist):
-        provincia = None
-    if provincia:
-        return provincia
-
-    try:
-        provincia_id = get_single_full_province_scope_id(user)
-    except ObjectDoesNotExist:
-        provincia_id = None
-    if not provincia_id:
-        return None
-    return Provincia.objects.filter(pk=provincia_id).first()
-
-
 def _user_scope_provincias(user):
     provincia_ids = sorted({scope.provincia_id for scope in get_effective_scopes(user)})
     if not provincia_ids:
@@ -631,33 +287,8 @@ def _user_scope_provincias(user):
 
 
 def _apply_provincial_expediente_scope(queryset, user):
-    if getattr(user, "is_superuser", False):
-        return queryset
-    if not is_territorial_user(user):
-        # Tiene role_provinciaceliaquia pero no scope territorial configurado;
-        # restringir a expedientes propios.
-        return queryset.filter(usuario_provincia=user).distinct()
-
-    # Un expediente es visible si tiene al menos un ciudadano dentro del alcance
-    # territorial del usuario. NO se incluyen los expedientes propios fuera de
-    # alcance (sin include_own): un expediente cargado por el usuario con
-    # ciudadanos de otra provincia no debe listarse (seguimiento del issue #1793).
-    scope_q = build_territorial_scope_q(
-        get_effective_scopes(user),
-        provincia_lookup="expediente_ciudadanos__ciudadano__provincia_id",
-        municipio_lookup="expediente_ciudadanos__ciudadano__municipio_id",
-        localidad_lookup="expediente_ciudadanos__ciudadano__localidad_id",
-    )
-    # Excepcion: sus propios expedientes recien creados, aun sin legajos
-    # importados (sin provincia derivable todavia), deben seguir siendo accesibles
-    # para poder cargar/procesar el Excel.
-    propios_sin_legajos_q = Q(
-        usuario_provincia=user, expediente_ciudadanos__isnull=True
-    )
-    combined_q = (
-        propios_sin_legajos_q if scope_q is None else scope_q | propios_sin_legajos_q
-    )
-    return queryset.filter(combined_q).distinct()
+    # Las reglas viven en celiaquia/scope.py: las comparte con la API REST.
+    return apply_provincial_expediente_scope(queryset, user)
 
 
 def _get_provincial_expediente_or_404(user, pk):
@@ -665,23 +296,6 @@ def _get_provincial_expediente_or_404(user, pk):
         _apply_provincial_expediente_scope(Expediente.objects.all(), user),
         pk=pk,
     )
-
-
-def _tecnicos_queryset():
-    qs = User.objects.filter(
-        Q(
-            user_permissions__content_type__app_label="auth",
-            user_permissions__codename="role_tecnicoceliaquia",
-        )
-        | Q(
-            groups__permissions__content_type__app_label="auth",
-            groups__permissions__codename="role_tecnicoceliaquia",
-        )
-    )
-    distinct = getattr(qs, "distinct", None)
-    if callable(distinct):
-        return distinct()
-    return qs
 
 
 def _parse_limit(value, default=None, max_cap=5000):
@@ -1034,22 +648,9 @@ class CrearLegajosView(View):
         except json.JSONDecodeError:
             return HttpResponseBadRequest("JSON inválido.")
 
-        estado_inicial, _ = EstadoLegajo.objects.get_or_create(
-            nombre="DOCUMENTO_PENDIENTE"
+        return JsonResponse(
+            ExpedienteService.crear_legajos_desde_filas(expediente, rows, user)
         )
-        creados = existentes = 0
-        for datos in rows:
-            ciudadano = CiudadanoService.get_or_create_ciudadano(datos, user)
-            _, was_created = ExpedienteCiudadano.objects.get_or_create(
-                expediente=expediente,
-                ciudadano=ciudadano,
-                defaults={"estado": estado_inicial},
-            )
-            if was_created:
-                creados += 1
-            else:
-                existentes += 1
-        return JsonResponse({"creados": creados, "existentes": existentes})
 
 
 class ExpedientePlantillaExcelView(View):
@@ -1826,14 +1427,14 @@ class RecepcionarExpedienteView(View):
             )
 
         expediente = get_object_or_404(Expediente, pk=pk)
-        if expediente.estado.nombre != "CONFIRMACION_DE_ENVIO":
-            msg = "El expediente no está pendiente de recepción."
+        try:
+            ExpedienteService.recepcionar(expediente, user)
+        except ValidationError as exc:
+            msg = "; ".join(exc.messages)
             if _is_ajax(request):
                 return JsonResponse({"success": False, "error": msg}, status=400)
             messages.warning(request, msg)
             return redirect("expediente_detail", pk=pk)
-
-        _set_estado(expediente, "RECEPCIONADO", user)
 
         if _is_ajax(request):
             return JsonResponse(
@@ -2039,31 +1640,13 @@ ESTADOS_CON_COMENTARIOS_PUBLICADOS = {
     RevisionTecnico.APROBADO,
 }
 
-#: Los comentarios técnicos se registran por tipo de documento; las
-#: observaciones de la Fase 2 usan las categorías previas. ANSES y condición
-#: diagnóstica son ambas cuestiones de documentación respaldatoria.
-MAPA_TIPO_DOCUMENTO_A_SUBSANACION = {
-    TipoDocumentoComentario.RENAPER.value: TipoSubsanacion.RENAPER,
-    TipoDocumentoComentario.ANSES.value: TipoSubsanacion.DOCUMENTACION,
-    TipoDocumentoComentario.CONDICION_DIAGNOSTICA.value: TipoSubsanacion.DOCUMENTACION,
-}
-
 
 def _observaciones_desde_comentarios_tecnicos(comentarios):
     """Observaciones (tipo, detalle) derivadas de los comentarios técnicos.
 
-    Traduce los comentarios elegidos para la subsanación al formato que
-    consumen `Subsanacion`/`SubsanacionObservacion`. Lista vacía si no se
-    eligió ninguno."""
-    return [
-        (
-            MAPA_TIPO_DOCUMENTO_A_SUBSANACION.get(
-                comentario.tipo_documento, TipoSubsanacion.OTROS
-            ),
-            comentario.comentario,
-        )
-        for comentario in comentarios
-    ]
+    Alias del service, que es donde vive la traducción. Se conserva el nombre
+    porque lo usan los tests y el resto del módulo."""
+    return RevisionService.observaciones_desde_comentarios_tecnicos(comentarios)
 
 
 def _parse_observaciones_subsanacion(request, motivo_general):
@@ -2140,217 +1723,66 @@ class RevisarLegajoView(View):
         return motivo, comentarios, None
 
     def _rechazar(self, user, leg, motivo, comentarios):
-        """Rechaza el legajo, registra la auditoría y publica las observaciones
-        elegidas como motivo del rechazo."""
-        estado_anterior = leg.revision_tecnico
-        leg.revision_tecnico = "RECHAZADO"
-        # Marcar RENAPER como rechazado también
-        if getattr(leg, "estado_validacion_renaper", 0) == 0:
-            leg.estado_validacion_renaper = 2
-
-        with transaction.atomic():
-            leg.save(
-                update_fields=[
-                    "revision_tecnico",
-                    "estado_validacion_renaper",
-                    "modificado_en",
-                    "estado_cupo",
-                    "es_titular_activo",
-                ]
-            )
-
-            HistorialValidacionTecnica.objects.create(
-                legajo=leg,
-                estado_anterior=estado_anterior,
-                estado_nuevo="RECHAZADO",
-                usuario=user,
-                motivo=motivo,
-            )
-
-            publicados = ComentariosTecnicosService.publicar(
-                leg, comentarios=comentarios, usuario=user
-            )
-
+        """Rechaza el legajo. La regla vive en `RevisionService.rechazar`."""
         return JsonResponse(
-            {
-                "success": True,
-                "estado": leg.revision_tecnico,
-                "cupo_liberado": True,
-                "comentarios_publicados": publicados,
-            }
+            RevisionService.rechazar(leg, user, motivo, comentarios=comentarios)
         )
 
     def _subsanar(  # pylint: disable=too-many-arguments
         self, request, user, leg, motivo, comentarios
     ):
-        """Solicita la subsanación: estado, observaciones, documentación y
-        publicación. `comentarios` son los comentarios técnicos elegidos para
-        esta instancia."""
-        tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
+        """Solicita la subsanación. La vista solo parsea el POST.
 
-        # Documentación complementaria de Nación (issue #2523): opcional, y se
-        # valida antes de tocar el estado del legajo para no dejar la
-        # subsanación hecha a medias por un archivo inválido.
+        `comentarios` son los comentarios técnicos elegidos para esta
+        instancia (issue #2592). El fallback por request cubre los legajos
+        previos al issue #2318, que todavía no tienen comentarios: el service
+        lo usa solo si no se eligió ninguno."""
+        tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
         try:
-            complementaria = validar_archivos_complementarios(
-                request.FILES.getlist("documentacion_complementaria")
+            return JsonResponse(
+                RevisionService.subsanar(
+                    leg,
+                    user,
+                    motivo,
+                    tipo_subsanacion=tipo_subsanacion,
+                    comentarios=comentarios,
+                    documentacion_complementaria=request.FILES.getlist(
+                        "documentacion_complementaria"
+                    ),
+                    observaciones_fallback=_parse_observaciones_subsanacion(
+                        request, motivo
+                    ),
+                )
             )
         except ValidationError as exc:
+            # Documentación complementaria inválida (issue #2523): se corta
+            # antes de tocar el estado del legajo.
             return JsonResponse(
                 {"success": False, "error": "; ".join(exc.messages)}, status=400
             )
 
-        # Las observaciones salen de los comentarios técnicos elegidos. Si no se
-        # eligió ninguno (solo texto libre, o legajos previos al issue #2318),
-        # se cae al parseo del POST para no romper el flujo anterior.
-        observaciones = _observaciones_desde_comentarios_tecnicos(
-            comentarios
-        ) or _parse_observaciones_subsanacion(request, motivo)
-
-        estado_anterior = leg.revision_tecnico
-        leg.revision_tecnico = RevisionTecnico.SUBSANAR
-        # Campos legacy: se preserva el primer tipo y el motivo general para
-        # compatibilidad con la UI y los datos previos a la Fase 1.
-        leg.subsanacion_tipo = (
-            observaciones[0][0] if observaciones else (tipo_subsanacion or None)
-        )
-        leg.subsanacion_motivo = motivo
-        leg.subsanacion_solicitada_en = timezone.now()
-        leg.subsanacion_usuario = user
-        # Nota: la subsanación técnica ya no marca estado_validacion_renaper=3.
-        # Ese estado queda reservado para la validación RENAPER real
-        # (ValidacionRenaperView). Así la respuesta se gestiona por el flujo
-        # unificado de subsanación (multi-archivo) en lugar del modal RENAPER.
-
-        with transaction.atomic():
-            leg.save(
-                update_fields=[
-                    "revision_tecnico",
-                    "subsanacion_tipo",
-                    "subsanacion_motivo",
-                    "subsanacion_solicitada_en",
-                    "subsanacion_usuario",
-                    "modificado_en",
-                    "estado_cupo",
-                    "es_titular_activo",
-                ]
-            )
-
-            HistorialValidacionTecnica.objects.create(
-                legajo=leg,
-                estado_anterior=estado_anterior,
-                estado_nuevo=RevisionTecnico.SUBSANAR,
-                usuario=user,
-                motivo=motivo,
-            )
-
-            subsanacion = Subsanacion.objects.create(
-                legajo=leg,
-                estado=SubsanacionEstado.PENDIENTE,
-                motivo_general=motivo,
-                solicitada_por=user,
-            )
-            SubsanacionObservacion.objects.bulk_create(
-                [
-                    SubsanacionObservacion(
-                        subsanacion=subsanacion, tipo=tipo, detalle=detalle
-                    )
-                    for tipo, detalle in observaciones
-                ]
-            )
-
-            adjuntos = SubsanacionService.adjuntar_documentacion_complementaria(
-                subsanacion, complementaria, usuario=user
-            )
-
-            publicados = ComentariosTecnicosService.publicar(
-                leg, comentarios=comentarios, usuario=user
-            )
-
-        return JsonResponse(
-            {
-                "success": True,
-                "estado": str(RevisionTecnico.SUBSANAR),
-                "cupo_liberado": True,
-                "subsanacion_id": subsanacion.pk,
-                "observaciones": len(observaciones),
-                "documentacion_complementaria": len(adjuntos),
-                "comentarios_publicados": publicados,
-            }
-        )
-
     def _eliminar_legajo(self, request, user, leg, *, revalidar_baja_provincial=False):
-        """Elimina un legajo (baja lógica en cascada) liberando el cupo si estaba
-        ocupado. Soporta el modo `preview` para confirmar antes de eliminar y
-        registra la acción. Devuelve siempre una JsonResponse."""
+        """Elimina un legajo delegando en `RevisionService.eliminar`.
+
+        La vista conserva el modo `preview` (que es de la UI) y la traducción de
+        los errores a JsonResponse. Devuelve siempre una JsonResponse."""
         try:
             get_data = getattr(request, "GET", {})
             post_data = getattr(request, "POST", {})
             preview_enabled = str(
                 post_data.get("preview") or get_data.get("preview") or ""
             )
-            if preview_enabled in {
-                "1",
-                "true",
-                "True",
-            } and is_soft_deletable_instance(leg):
-                payload = {
-                    "success": True,
-                    "preview": build_delete_preview(leg),
-                }
-                advertencia = ValidacionEdadService.advertencia_por_eliminacion(leg)
-                if advertencia:
-                    payload["menores_sin_responsable"] = advertencia
-                return JsonResponse(payload)
+            if preview_enabled in {"1", "true", "True"}:
+                payload = RevisionService.preview_eliminacion(leg)
+                if payload is not None:
+                    return JsonResponse(payload)
 
-            with transaction.atomic():
-                if revalidar_baja_provincial:
-                    expediente_bloqueado = (
-                        Expediente.objects.select_for_update()
-                        .select_related("estado")
-                        .get(pk=leg.expediente_id)
-                    )
-                    leg = (
-                        ExpedienteCiudadano.objects.select_for_update()
-                        .select_related("ciudadano")
-                        .get(pk=leg.pk, expediente=expediente_bloqueado)
-                    )
-                    can_delete_legajo(user, expediente_bloqueado, leg)
-
-                estado_expediente = getattr(
-                    getattr(leg.expediente, "estado", None), "nombre", ""
-                )
-
-                # Liberar cupo si estaba ocupado
-                if leg.estado_cupo == "DENTRO":
-                    try:
-                        CupoService.liberar_slot(
-                            legajo=leg,
-                            usuario=user,
-                            motivo="Eliminación de legajo del expediente",
-                        )
-                    except Exception as e:
-                        logger.error(
-                            "Error al liberar cupo para legajo %s: %s",
-                            leg.pk,
-                            e,
-                            exc_info=True,
-                        )
-
-                if is_soft_deletable_instance(leg):
-                    leg.delete(user=user, cascade=True)
-                else:
-                    leg.delete()
-
-            logger.info(
-                "Legajo %s eliminado por user=%s (expediente=%s, estado=%s).",
-                leg.pk,
-                getattr(user, "id", None),
-                leg.expediente_id,
-                estado_expediente,
-            )
             return JsonResponse(
-                {"success": True, "message": "Legajo eliminado correctamente."}
+                RevisionService.eliminar(
+                    leg,
+                    user,
+                    revalidar_baja_provincial=revalidar_baja_provincial,
+                )
             )
         except PermissionDenied as exc:
             return JsonResponse({"success": False, "error": str(exc)}, status=403)
@@ -2365,28 +1797,30 @@ class RevisarLegajoView(View):
             )
 
     def post(self, request, pk, legajo_id):
+        """Punto de entrada de la pantalla. Las reglas viven en RevisionService."""
         user = request.user
         expediente = get_object_or_404(Expediente, pk=pk)
+
+        accion = (request.POST.get("accion") or "").upper()
 
         es_admin = _is_admin(user)
         es_tecnico = _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
         es_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
         es_prov = _is_provincial(user)
+        solo_provincia = es_prov and not (es_admin or es_tecnico or es_coord)
 
-        accion = (request.POST.get("accion") or "").upper()
+        try:
+            RevisionService.verificar_permiso(user, expediente, accion)
+        except PermissionDenied as exc:
+            return JsonResponse({"success": False, "error": str(exc)}, status=403)
 
-        # Provincia (sin rol técnico/coordinador/admin): únicamente puede
-        # ELIMINAR legajos y solo antes del envío del expediente. Las acciones de
-        # revisión (APROBAR/RECHAZAR/SUBSANAR) quedan reservadas a técnicos y
-        # coordinadores.
-        if es_prov and not (es_admin or es_tecnico or es_coord):
-            if accion != "ELIMINAR":
-                return JsonResponse(
-                    {"success": False, "error": "Permiso denegado."}, status=403
-                )
-            leg = get_object_or_404(
-                ExpedienteCiudadano, pk=legajo_id, expediente=expediente
-            )
+        leg = get_object_or_404(
+            ExpedienteCiudadano, pk=legajo_id, expediente=expediente
+        )
+
+        # La provincia solo elimina, y con la validación extra de `can_delete_legajo`
+        # tanto acá como al confirmar, con el expediente bloqueado.
+        if solo_provincia:
             try:
                 can_delete_legajo(user, expediente, leg)
             except PermissionDenied as exc:
@@ -2395,63 +1829,13 @@ class RevisarLegajoView(View):
                 request, user, leg, revalidar_baja_provincial=True
             )
 
-        # Permisos: admin, técnico o coordinador
-        if not (es_admin or es_tecnico or es_coord):
+        try:
+            accion = RevisionService.validar_accion(accion)
+            RevisionService.validar_transicion(leg, accion)
+        except ValidationError as exc:
             return JsonResponse(
-                {"success": False, "error": "Permiso denegado."}, status=403
+                {"success": False, "error": "; ".join(exc.messages)}, status=400
             )
-
-        # Técnicos deben estar asignados; coordinadores quedan exceptuados
-        if not (es_admin or es_coord):
-            # Usar prefetch para evitar query adicional
-            tecnicos_ids = [
-                t.tecnico_id for t in expediente.asignaciones_tecnicos.all()
-            ]
-            if user.id not in tecnicos_ids:
-                return JsonResponse(
-                    {"success": False, "error": "No sos un técnico asignado."},
-                    status=403,
-                )
-
-        leg = get_object_or_404(
-            ExpedienteCiudadano, pk=legajo_id, expediente=expediente
-        )
-
-        if accion not in ("APROBAR", "RECHAZAR", "SUBSANAR", "ELIMINAR"):
-            return JsonResponse(
-                {"success": False, "error": "Acción inválida."}, status=400
-            )
-
-        estado_actual = leg.revision_tecnico
-        if accion in ("APROBAR", "RECHAZAR", "SUBSANAR"):
-            if estado_actual in (
-                RevisionTecnico.APROBADO,
-                RevisionTecnico.RECHAZADO,
-            ):
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": f"No se puede modificar un legajo en estado {estado_actual}.",
-                    },
-                    status=400,
-                )
-
-            transiciones_permitidas = {
-                RevisionTecnico.PENDIENTE: {"APROBAR", "RECHAZAR", "SUBSANAR"},
-                RevisionTecnico.SUBSANADO: {"APROBAR", "RECHAZAR", "SUBSANAR"},
-            }
-            acciones_permitidas = transiciones_permitidas.get(estado_actual, set())
-            if accion not in acciones_permitidas:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": (
-                            "La acción solicitada no es válida para el estado actual "
-                            f"del legajo ({estado_actual})."
-                        ),
-                    },
-                    status=400,
-                )
 
         # El motivo se compone antes de tocar el cupo y el estado: si no hay
         # nada que comunicar, el legajo tiene que quedar intacto.
@@ -2462,69 +1846,15 @@ class RevisarLegajoView(View):
             if error:
                 return error
 
-        # Si RECHAZAR / SUBSANAR y estaba dentro de cupo -> liberar
-        if accion in ("RECHAZAR", "SUBSANAR") and leg.estado_cupo == "DENTRO":
-            try:
-                CupoService.liberar_slot(
-                    legajo=leg,
-                    usuario=user,
-                    motivo=f"Salida del cupo por {accion.lower()} técnico en expediente",
-                )
-                leg.estado_cupo = "NO_EVAL"
-                leg.es_titular_activo = False
-            except Exception as e:
-                logger.error(
-                    "Error al liberar cupo para legajo %s: %s", leg.pk, e, exc_info=True
-                )
+        RevisionService.liberar_cupo_si_corresponde(leg, user, accion)
 
         if accion == "APROBAR":
-            estado_anterior = leg.revision_tecnico
-            leg.revision_tecnico = "APROBADO"
-            # Asegurar que RENAPER esté validado
-            if getattr(leg, "estado_validacion_renaper", 0) == 0:
-                leg.estado_validacion_renaper = 1
-            leg.save(
-                update_fields=[
-                    "revision_tecnico",
-                    "estado_validacion_renaper",
-                    "modificado_en",
-                    "estado_cupo",
-                    "es_titular_activo",
-                ]
-            )
-
-            HistorialValidacionTecnica.objects.create(
-                legajo=leg,
-                estado_anterior=estado_anterior,
-                estado_nuevo="APROBADO",
-                usuario=user,
-                motivo=None,
-            )
-
-            return JsonResponse(
-                {
-                    "success": True,
-                    "estado": leg.revision_tecnico,
-                    "cupo_liberado": False,
-                }
-            )
+            return JsonResponse(RevisionService.aprobar(leg, user))
 
         if accion == "RECHAZAR":
             return self._rechazar(user, leg, motivo, comentarios)
 
-        # ELIMINAR - Solo coordinadores y admin (técnicos no eliminan)
         if accion == "ELIMINAR":
-            if not (
-                _is_admin(user)
-                or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
-            ):
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": "Solo coordinadores pueden eliminar legajos.",
-                    },
-                    status=403,
-                )
             return self._eliminar_legajo(request, user, leg)
 
         # SUBSANAR
@@ -2687,35 +2017,19 @@ class ActualizarRegistroErroneoView(View):
         )
 
         try:
-            datos_actualizados = json.loads(request.body)
-            datos_nuevos = _normalizar_datos_registro_erroneo(datos_actualizados)
-            datos_normalizados = _consolidar_datos_registro_erroneo(
-                registro.datos_raw, datos_nuevos
+            registros_erroneos_service.actualizar(
+                expediente, registro, json.loads(request.body), user
             )
-
-            provincia_id = _resolver_provincia_id_registro_erroneo(user, expediente)
-            _validar_datos_registro_erroneo(
-                datos_normalizados,
-                provincia_id=provincia_id,
-                fila_excel=registro.fila_excel,
-                provincias_permitidas_ids=_obtener_provincias_permitidas_ids(user),
-            )
-            datos_limpios = _limpiar_datos_registro_erroneo(datos_normalizados)
-            registro.datos_raw = datos_limpios
-            registro.save(update_fields=["datos_raw"])
-
             return JsonResponse(
                 {"success": True, "message": "Registro actualizado correctamente."}
             )
         except ValidationError as exc:
-            registro.mensaje_error = str(exc)
-            registro.save(update_fields=["mensaje_error"])
             return JsonResponse(
                 {
                     "success": False,
                     "saved_partial": True,
                     "error": str(exc),
-                    "invalid_fields": _campos_invalidos_desde_mensaje_error(exc),
+                    "invalid_fields": registros_erroneos_service.campos_invalidos(exc),
                 },
                 status=400,
             )
@@ -2731,7 +2045,7 @@ class ActualizarRegistroErroneoView(View):
 
 
 class ReprocesarRegistrosErroneosView(View):
-    @transaction.atomic
+    # La transaccion la abre el service, que es el dueño de la operacion.
     def post(self, request, pk):
         user = request.user
 
@@ -2749,225 +2063,13 @@ class ReprocesarRegistrosErroneosView(View):
         else:
             expediente = _get_provincial_expediente_or_404(user, pk)
 
-        registros = expediente.registros_erroneos.filter(procesado=False)
-
-        if not registros.exists():
+        try:
+            resumen = registros_erroneos_service.reprocesar(expediente, user)
+        except ValidationError as exc:
             return JsonResponse(
-                {
-                    "success": False,
-                    "error": "No hay registros erróneos para reprocesar.",
-                },
-                status=400,
+                {"success": False, "error": exc.messages[0]}, status=400
             )
-
-        creados = 0
-        errores = 0
-        errores_detalle = []
-        excluidos_detalle = []
-        relaciones_crear = []
-
-        estado_inicial = EstadoLegajo.objects.get(nombre="DOCUMENTO_PENDIENTE")
-        existentes_ids, en_programa, abiertos = (
-            _precargar_conflictos_y_existentes_importacion(expediente)
-        )
-
-        provincia_id = _resolver_provincia_id_registro_erroneo(user, expediente)
-        provincias_permitidas_ids = _obtener_provincias_permitidas_ids(user)
-
-        for registro in registros:
-            datos = _aplicar_defaults_registro_erroneo(
-                _normalizar_datos_registro_erroneo(registro.datos_raw.copy())
-            )
-            try:
-                (
-                    datos_beneficiario,
-                    datos_responsable,
-                    es_mismo_documento,
-                ) = _validar_datos_registro_erroneo(
-                    datos,
-                    provincia_id=provincia_id,
-                    fila_excel=registro.fila_excel,
-                    provincias_permitidas_ids=provincias_permitidas_ids,
-                )
-
-                with transaction.atomic():
-                    ciudadano = CiudadanoService.get_or_create_ciudadano(
-                        datos=datos_beneficiario,
-                        usuario=user,
-                        expediente=expediente,
-                    )
-
-                    if ciudadano and ciudadano.pk:
-                        if _beneficiario_tiene_conflicto_importacion(
-                            ciudadano=ciudadano,
-                            offset=registro.fila_excel,
-                            existentes_ids=existentes_ids,
-                            en_programa=en_programa,
-                            abiertos=abiertos,
-                            excluidos=excluidos_detalle,
-                        ):
-                            registro.procesado = True
-                            registro.procesado_en = timezone.now()
-                            registro.mensaje_error = ""
-                            registro.save(
-                                update_fields=[
-                                    "procesado",
-                                    "procesado_en",
-                                    "mensaje_error",
-                                ]
-                            )
-                            continue
-
-                        rol_beneficiario = (
-                            ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
-                            if es_mismo_documento
-                            else ExpedienteCiudadano.ROLE_BENEFICIARIO
-                        )
-                        legajo, created = ExpedienteCiudadano.objects.get_or_create(
-                            expediente=expediente,
-                            ciudadano=ciudadano,
-                            defaults={
-                                "estado": estado_inicial,
-                                "rol": rol_beneficiario,
-                            },
-                        )
-
-                        if not created and legajo.rol != rol_beneficiario:
-                            legajo.rol = rol_beneficiario
-                            legajo.save(update_fields=["rol"])
-
-                        if created:
-                            creados += 1
-                            existentes_ids.add(ciudadano.pk)
-
-                        if datos_responsable and not es_mismo_documento:
-                            responsable = CiudadanoService.get_or_create_ciudadano(
-                                datos=datos_responsable,
-                                usuario=user,
-                                expediente=expediente,
-                            )
-
-                            if responsable and responsable.pk:
-                                legajo_responsable, created_resp = (
-                                    ExpedienteCiudadano.objects.get_or_create(
-                                        expediente=expediente,
-                                        ciudadano=responsable,
-                                        defaults={
-                                            "estado": estado_inicial,
-                                            "rol": ExpedienteCiudadano.ROLE_RESPONSABLE,
-                                        },
-                                    )
-                                )
-                                if (
-                                    not created_resp
-                                    and legajo_responsable.rol
-                                    == ExpedienteCiudadano.ROLE_BENEFICIARIO
-                                ):
-                                    legajo_responsable.rol = (
-                                        ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
-                                    )
-                                    legajo_responsable.save(update_fields=["rol"])
-
-                                relaciones_crear.append(
-                                    {
-                                        "responsable_id": responsable.pk,
-                                        "hijo_id": ciudadano.pk,
-                                    }
-                                )
-
-                        registro.procesado = True
-                        registro.procesado_en = timezone.now()
-                        registro.mensaje_error = ""
-                        registro.save(
-                            update_fields=["procesado", "procesado_en", "mensaje_error"]
-                        )
-                    else:
-                        errores += 1
-                        errores_detalle.append(
-                            f"Fila {registro.fila_excel}: No se pudo crear el ciudadano"
-                        )
-
-            except Exception as e:
-                errores += 1
-                if "Field" in str(e) and "expected" in str(e):
-                    error_msg = str(e)
-                elif "IntegrityError" in str(type(e).__name__):
-                    error_msg = (
-                        "Error de integridad: registro duplicado o datos inconsistentes"
-                    )
-                elif "ValidationError" in str(type(e).__name__):
-                    error_msg = str(e)
-                else:
-                    error_msg = (
-                        registro.mensaje_error
-                        if registro.mensaje_error
-                        else "Error interno al procesar registro"
-                    )
-
-                errores_detalle.append(f"Fila {registro.fila_excel}: {error_msg}")
-                if not isinstance(e, ValidationError):
-                    logger.error(
-                        "Error reprocesando registro %s: %s - Datos: %s",
-                        registro.pk,
-                        e,
-                        datos,
-                        exc_info=True,
-                    )
-                registro.mensaje_error = f"Error al reprocesar: {error_msg}"
-                registro.save(update_fields=["mensaje_error"])
-
-        if relaciones_crear:
-            try:
-                from ciudadanos.models import GrupoFamiliar
-
-                relaciones_creadas = 0
-                for rel in relaciones_crear:
-                    _, created = GrupoFamiliar.objects.get_or_create(
-                        ciudadano_1_id=rel["responsable_id"],
-                        ciudadano_2_id=rel["hijo_id"],
-                        defaults={
-                            "vinculo": GrupoFamiliar.RELACION_PADRE,
-                            "estado_relacion": GrupoFamiliar.ESTADO_BUENO,
-                            "conviven": True,
-                            "cuidador_principal": True,
-                        },
-                    )
-                    if created:
-                        relaciones_creadas += 1
-
-                logger.info(
-                    "Creadas %s relaciones familiares al reprocesar",
-                    relaciones_creadas,
-                )
-            except Exception as e:
-                logger.error(
-                    "Error creando relaciones familiares al reprocesar: %s",
-                    e,
-                    exc_info=True,
-                )
-
-        registros_restantes = expediente.registros_erroneos.filter(
-            procesado=False
-        ).count()
-        alerta_actualizada = _actualizar_alerta_importacion_persistente(
-            expediente,
-            creados_incremento=creados,
-            errores_actuales=registros_restantes,
-            excluidos_nuevos=excluidos_detalle,
-        )
-
-        return JsonResponse(
-            {
-                "success": True,
-                "creados": creados,
-                "errores": errores,
-                "errores_detalle": errores_detalle,
-                "excluidos": len(excluidos_detalle),
-                "excluidos_detalle": excluidos_detalle,
-                "registros_restantes": registros_restantes,
-                "alerta_resumen": (alerta_actualizada or {}).get("resumen", ""),
-            }
-        )
+        return JsonResponse({"success": True, **resumen})
 
 
 class EliminarRegistroErroneoView(View):

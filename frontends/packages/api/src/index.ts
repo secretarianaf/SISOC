@@ -1,5 +1,41 @@
+/**
+ * Superficie publica de `@sisoc/api`.
+ *
+ * Conviven dos clientes porque cada app los necesita distintos y ninguno de los
+ * dos es "el viejo": VPSL usa el cliente axios de abajo (`get`/`postForm`) y
+ * Celiaquia el cliente tipado contra el contrato OpenAPI (`crearCliente`).
+ * No hay nombres en comun entre `./tipos` y `./types`, asi que se reexportan
+ * los dos.
+ */
 import axios, { AxiosError } from "axios";
 
+// --- Cliente tipado (Celiaquia) ---------------------------------------------
+export {
+  camposInvalidosDeError,
+  crearCliente,
+  leerCookie,
+  mensajeDeError,
+  redirigirALogin,
+  SinPermiso,
+} from "./client";
+export { celiaquiaApi } from "./celiaquia";
+export { iniciarObservabilidad } from "./observabilidad";
+export type { CeliaquiaApi } from "./celiaquia";
+export * from "./tipos";
+
+/** Descarga un blob que devolvio la API con el nombre indicado. */
+export const descargarBlob = (blob: Blob, nombre: string) => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nombre;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+};
+
+// --- Cliente axios (VPSL) ----------------------------------------------------
 export type { Itinerario, Jornada, Sede, Page, Session, Options, FormField, FormSchema, Registro, Laboratorio } from "./types";
 
 const http = axios.create({

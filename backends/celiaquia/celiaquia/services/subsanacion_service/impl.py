@@ -85,6 +85,68 @@ class SubsanacionService:
         ]
 
     @staticmethod
+    @staticmethod
+    def exigir_puede_confirmar(legajo) -> None:
+        """Guard previo a pasar un legajo de SUBSANAR a SUBSANADO.
+
+        Vivia dentro de `ExpedienteConfirmSubsanacionView`. Se extrae para que
+        la API aplique lo mismo: confirmar sin evidencia dejaria al tecnico
+        aprobando un legajo que nadie corrigio.
+        """
+
+        from celiaquia.models import RevisionTecnico
+
+        if legajo.revision_tecnico != RevisionTecnico.SUBSANAR:
+            raise ValidationError("El legajo no tiene una subsanación pendiente.")
+        if legajo.estado_validacion_renaper == 3:
+            raise ValidationError("El legajo tiene una subsanación Renaper pendiente.")
+        if not legajo.archivo2 or not legajo.archivo3:
+            raise ValidationError(
+                "El legajo no tiene los archivos obligatorios (archivo2 y archivo3)."
+            )
+        if not SubsanacionService.tiene_evidencia(legajo):
+            raise ValidationError(
+                "Debés adjuntar al menos un archivo de subsanación antes de confirmar."
+            )
+
+    @staticmethod
+    @transaction.atomic
+    def confirmar(legajo, usuario):
+        """Pasa el legajo a SUBSANADO, que es lo que habilita volver a evaluarlo."""
+
+        from celiaquia.models import RevisionTecnico
+
+        SubsanacionService.exigir_puede_confirmar(legajo)
+        legajo.revision_tecnico = RevisionTecnico.SUBSANADO
+        legajo.modificado_en = timezone.now()
+        legajo.subsanacion_enviada_en = timezone.now()
+        legajo.subsanacion_usuario = usuario
+        legajo.save()
+        logger.info(
+            "Subsanacion confirmada - Legajo: %s, Usuario: %s",
+            legajo.pk,
+            getattr(usuario, "id", None),
+        )
+        return legajo
+
+    @staticmethod
+    def exigir_puede_responder(legajo: ExpedienteCiudadano) -> None:
+        """Guard previo a responder una subsanacion.
+
+        Vivia en `SubsanacionRespuestaUploadView`. Se extrae para que la API y
+        la pantalla rechacen exactamente los mismos casos: sin esto, un legajo
+        con subsanacion Renaper pendiente podria responderse por la API y no por
+        la pantalla.
+        """
+
+        from celiaquia.models import RevisionTecnico
+
+        if legajo.revision_tecnico != RevisionTecnico.SUBSANAR:
+            raise ValidationError("El legajo no tiene una subsanación técnica activa.")
+        if legajo.estado_validacion_renaper == 3:
+            raise ValidationError("El legajo tiene una subsanación Renaper pendiente.")
+
+    @staticmethod
     def adjuntar_documentacion_complementaria(subsanacion, archivos, usuario=None):
         """Documentación complementaria que Nación adjunta al pedir la subsanación.
 

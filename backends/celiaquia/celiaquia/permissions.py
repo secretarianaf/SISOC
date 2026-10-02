@@ -188,3 +188,39 @@ def can_confirm_subsanacion(user, expediente):
             )
 
     return True
+
+
+def exigir_acceso_nacion_a_comentarios(user, legajo):
+    """Quien puede leer y escribir los comentarios internos de un legajo.
+
+    Vivia en `_resolver_legajo_para_nacion`, dentro de la vista de comentarios.
+    Se extrae para que la API aplique la misma regla; duplicarla significaria
+    que un usuario provincial pueda leer por la API un comentario interno que la
+    pantalla le oculta hasta que se publica al subsanar o rechazar.
+
+    Reglas, en orden:
+
+    1. El perfil territorial define a un usuario de Provincia aunque acumule
+       permisos de Nacion: no ve comentarios internos.
+    2. Solo admin, coordinador o tecnico.
+    3. El tecnico, ademas, tiene que estar asignado al expediente.
+    """
+
+    if not getattr(user, "is_authenticated", False):
+        raise PermissionDenied("Autenticación requerida.")
+
+    if is_territorial_user(user):
+        raise PermissionDenied("Permiso denegado.")
+
+    es_admin = user.is_superuser
+    es_coord = _has_permission(user, ROLE_COORDINADOR_PERMISSION)
+    es_tecnico = _has_permission(user, ROLE_TECNICO_PERMISSION)
+
+    if not (es_admin or es_coord or es_tecnico):
+        raise PermissionDenied("Permiso denegado.")
+
+    if es_tecnico and not (es_admin or es_coord):
+        if not legajo.expediente.asignaciones_tecnicos.filter(tecnico=user).exists():
+            raise PermissionDenied("No sos el técnico asignado a este expediente.")
+
+    return True

@@ -1,7 +1,8 @@
 # Front v2 (React) — reglas para migrar módulos
 
-Estado: **vigente como regla; implementación pendiente**. Todavía no existe
-`frontends/` en el repo. La primera tarea de la épica crea la base descrita acá.
+Estado: **vigente como regla; base implementada**. `frontends/` existe, con
+`packages/ui`, `packages/api` y `apps/celiaquia`. El router `/v2/` vive en
+`core/frontend_v2.py`. Ver `docs/registro/cambios/2026-09-29-front-celiaquia-conectado.md`.
 
 Decisión y alternativas descartadas: `docs/registro/decisiones/2026-09-24-frontend-v2-react.md`.
 
@@ -94,7 +95,7 @@ La capa visual sigue la skill de UI/UX `tema-verde-institucional`.
 | eslint-plugin-react-refresh | 0.5.7 |
 | globals | 16.5.0 |
 | openapi-typescript | 7.13.0 |
-| vitest | 4.1.11 |
+| vitest | 4.0.6 |
 | jsdom | 29.1.1 |
 | @testing-library/react | 16.3.3 |
 | @testing-library/dom | 10.4.1 |
@@ -116,8 +117,15 @@ Qué se verificó:
 - La combinación completa se instaló y pasó `tsc`, `vite build`, `vitest run` y
   `eslint`, con el `theme.ts` de la skill sin modificar, sobre Node 24 local
   (2026-09-24).
-- Falta repetir esa corrida sobre Node 22.14.0 dentro del contenedor. Se hace
-  en la primera tarea.
+- **Repetido sobre Node 22.14.0 en contenedor (2026-09-29): pasa**, con una
+  corrección obligada.
+
+**Corrección: vitest 4.1.11 → 4.0.6.** `vitest@4.1.11` **no se puede instalar**
+con el npm que trae Node 22.14.0 (npm 10.9.2): `npm install vitest@4.1.11` corta
+con `Cannot read properties of null (reading 'edgesOut')`, un bug de arborist
+resolviendo su grafo de peers. Falla igual con npm 11.5.1 sobre Node 24, o sea
+que no es del runtime. Se probó: `4.1.11` falla, `4.0.6` y `3.2.4` instalan bien.
+Queda en **4.0.6**; volver a 4.1.x cuando npm publique el arreglo.
 
 Política de actualización:
 
@@ -313,13 +321,25 @@ Sentry usa el **mismo proyecto que el back**, configurado con `@sisoc/api` /
   anterior.
 - No hay cambios en el Nginx del host.
 
-## Pendientes (se resuelven en la primera tarea de la épica)
+## Pendientes
+
+Resueltos:
+
+- ~~Ubicación del router `/v2/` en el back~~: está en `core/frontend_v2.py`, sin
+  imports de dominio y con los destinos en `settings.FRONTEND_V2_SERVICIOS`.
+- ~~Validar la matriz de versiones sobre Node 22.14.0 dentro del contenedor~~:
+  hecho, con el cambio de vitest documentado arriba.
+
+Abiertos:
 
 - Contexto de usuario con sesión: `/api/users/me/` hoy acepta solo
   `TokenAuthentication`. Hay que habilitarlo con sesión o definir un endpoint
-  equivalente. Es un cambio de autenticación: requiere revisión.
-- Ubicación del router `/v2/` en el back (propuesta: `core/`, sin imports de
-  dominio, con los destinos en `settings`).
-- Filtrado del schema versionado a las rutas que consume `/v2/`, si el schema
-  completo genera ruido en CI.
-- Validar la matriz de versiones sobre Node 22.14.0 dentro del contenedor.
+  equivalente. Es un cambio de autenticación: requiere revisión. **Mientras
+  tanto el Drawer de `/v2/` no filtra por permisos del usuario**: muestra el
+  árbol fijo del módulo.
+- `packages/api/openapi.yaml` y la generación de tipos con `openapi-typescript`.
+  Hoy los tipos de `@sisoc/api` están escritos a mano y **no hay chequeo de
+  contrato en CI**.
+- Filtrado del schema versionado a las rutas que consume `/v2/`.
+- Agregar `front_celiaquia` al compose de deploy y al workflow de deploy: hoy
+  solo está en el `docker-compose.yml` de desarrollo.

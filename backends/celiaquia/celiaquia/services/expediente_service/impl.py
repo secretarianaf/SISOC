@@ -153,6 +153,33 @@ def _build_observaciones_importacion(result: dict) -> str:
     )
 
 
+#: Estados desde los que se puede ejecutar cada operación.
+#:
+#: Estas reglas estaban **solo en el template**: `expediente_detail.html`
+#: muestra el botón según el estado, pero ni la vista ni el service lo
+#: verificaban. Por la API se podía procesar dos veces un expediente ya cruzado
+#: y mandarlo de vuelta a EN_ESPERA, perdiendo el avance.
+ESTADOS_PARA_PROCESAR = ("CREADO",)
+ESTADOS_PARA_CRUCE = ("ASIGNADO", "PROCESO_DE_CRUCE")
+ESTADOS_PARA_NOMINA_SINTYS = ("ASIGNADO", "PROCESO_DE_CRUCE", "CRUCE_FINALIZADO")
+
+
+def exigir_estado(expediente, estados, accion: str) -> None:
+    """Valida la transición. Lanza `ValidationError` con el estado actual.
+
+    Vive acá y no en las vistas para que la pantalla Django y la API apliquen la
+    misma regla: esconder un botón no es una validación.
+    """
+
+    actual = getattr(getattr(expediente, "estado", None), "nombre", None)
+    if actual not in estados:
+        esperados = " o ".join(estados)
+        raise ValidationError(
+            f"No se puede {accion}: el expediente está en {actual or 'sin estado'} "
+            f"y se requiere {esperados}."
+        )
+
+
 class ExpedienteService:
     @staticmethod
     @transaction.atomic
@@ -178,6 +205,7 @@ class ExpedienteService:
     @staticmethod
     @transaction.atomic
     def procesar_expediente(expediente: Expediente, usuario):
+        exigir_estado(expediente, ESTADOS_PARA_PROCESAR, "procesar el expediente")
         if not expediente.excel_masivo:
             raise ValidationError("No hay archivo Excel cargado para procesar.")
 
@@ -270,6 +298,65 @@ class ExpedienteService:
             "Expediente %s confirmado (ENVÍO). Legajos=%s", expediente.pk, total
         )
         return {"validos": total, "errores": 0}
+
+    @staticmethod
+    @transaction.atomic
+    def crear_legajos_desde_filas(expediente: Expediente, filas, usuario) -> dict:
+        """Alta manual de legajos a partir de filas ya previsualizadas.
+
+        Vivia en `CrearLegajosView`. Se trae aca porque la API necesita el mismo
+        alta y porque el `get_or_create` por ciudadano es la regla que evita
+        duplicar una persona dentro del mismo expediente.
+        """
+
+        from celiaquia.models import (  # pylint: disable=import-outside-toplevel
+            EstadoLegajo,
+            ExpedienteCiudadano,
+        )
+        from celiaquia.services.ciudadano_service import (  # pylint: disable=import-outside-toplevel
+            CiudadanoService,
+        )
+
+        estado_inicial, _ = EstadoLegajo.objects.get_or_create(
+            nombre="DOCUMENTO_PENDIENTE"
+        )
+        creados = existentes = 0
+        for datos in filas:
+            ciudadano = CiudadanoService.get_or_create_ciudadano(datos, usuario)
+            _, was_created = ExpedienteCiudadano.objects.get_or_create(
+                expediente=expediente,
+                ciudadano=ciudadano,
+                defaults={"estado": estado_inicial},
+            )
+            if was_created:
+                creados += 1
+            else:
+                existentes += 1
+
+        logger.info(
+            "Expediente %s: %s legajos creados, %s ya existian.",
+            expediente.pk,
+            creados,
+            existentes,
+        )
+        return {"creados": creados, "existentes": existentes}
+
+    @staticmethod
+    @transaction.atomic
+    def recepcionar(expediente: Expediente, usuario):
+        """Nacion toma el expediente que la provincia confirmo.
+
+        La regla vivia suelta en `RecepcionarExpedienteView`. Se trae aca para
+        que la API y la pantalla compartan la misma guarda de estado: solo se
+        recepciona lo que esta en CONFIRMACION_DE_ENVIO.
+        """
+
+        if expediente.estado.nombre != "CONFIRMACION_DE_ENVIO":
+            raise ValidationError("El expediente no está pendiente de recepción.")
+
+        _set_estado(expediente, "RECEPCIONADO", usuario)
+        logger.info("Expediente %s recepcionado por %s", expediente.pk, usuario)
+        return expediente
 
     @staticmethod
     @transaction.atomic

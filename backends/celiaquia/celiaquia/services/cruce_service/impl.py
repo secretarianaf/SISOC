@@ -77,6 +77,26 @@ DOCUMENTO_COL_CANDIDATAS = {
 }
 
 
+def _exigir_estado_cruce(expediente) -> None:
+    """La regla vive en `expediente_service`: acá solo se aplica."""
+
+    from celiaquia.services.expediente_service import (
+        ESTADOS_PARA_CRUCE,
+        exigir_estado,
+    )
+
+    exigir_estado(expediente, ESTADOS_PARA_CRUCE, "subir el cruce")
+
+
+def _exigir_estado_nomina(expediente) -> None:
+    from celiaquia.services.expediente_service import (
+        ESTADOS_PARA_NOMINA_SINTYS,
+        exigir_estado,
+    )
+
+    exigir_estado(expediente, ESTADOS_PARA_NOMINA_SINTYS, "exportar la nómina")
+
+
 class CruceService:
     @staticmethod
     def normalize_cuit_str(val) -> str:
@@ -632,6 +652,7 @@ class CruceService:
     def procesar_cruce_por_cuit(expediente: Expediente, archivo_excel, usuario) -> dict:
         if not expediente:
             raise ValidationError("Expediente inválido.")
+        _exigir_estado_cruce(expediente)
 
         estado_actual = expediente.estado.nombre
         estados_permitidos = ("ASIGNADO", "PROCESO_DE_CRUCE", "CRUCE_FINALIZADO")

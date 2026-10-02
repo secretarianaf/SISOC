@@ -1,11 +1,13 @@
 import logging
 from django.views import View
+from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
+from celiaquia.permissions import exigir_acceso_nacion_a_comentarios
 from celiaquia.models import ExpedienteCiudadano, HistorialComentarios
 from celiaquia.services.comentarios_tecnicos_service import ComentariosTecnicosService
 from iam.services import user_has_permission_code
@@ -70,49 +72,19 @@ def _resolver_legajo_para_nacion(request, expediente_id, legajo_id):
     """Valida que el usuario sea Nación con acceso al legajo.
 
     Devuelve ``(legajo, None)`` cuando puede operar, o ``(None, JsonResponse)``
-    con el error a devolver. Centraliza el chequeo que comparten las tres vistas
-    de comentarios técnicos.
+    con el error a devolver. La regla vive en `celiaquia/permissions.py`, para
+    que la API REST aplique exactamente la misma.
     """
-    user = request.user
-
-    if not user.is_authenticated:
-        return None, JsonResponse(
-            {"success": False, "message": "Autenticación requerida."}, status=403
-        )
-
-    # El perfil territorial define a un usuario de Provincia, aun cuando por
-    # configuración acumule permisos de Nación. Estos endpoints crean o
-    # anticipan comentarios internos, por lo que no deben exponerlos antes de
-    # su publicación durante Subsanar/Rechazar.
-    if is_territorial_user(user):
-        return None, JsonResponse(
-            {"success": False, "message": "Permiso denegado."}, status=403
-        )
-
-    is_admin = user.is_superuser
-    is_coord = _has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
-    is_tec = _has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
-
-    if not (is_admin or is_coord or is_tec):
-        return None, JsonResponse(
-            {"success": False, "message": "Permiso denegado."}, status=403
-        )
 
     legajo = get_object_or_404(
         ExpedienteCiudadano, pk=legajo_id, expediente__pk=expediente_id
     )
-
-    # Validar que el técnico esté asignado
-    if is_tec and not (is_admin or is_coord):
-        if not legajo.expediente.asignaciones_tecnicos.filter(tecnico=user).exists():
-            return None, JsonResponse(
-                {
-                    "success": False,
-                    "message": "No sos el técnico asignado a este expediente.",
-                },
-                status=403,
-            )
-
+    try:
+        exigir_acceso_nacion_a_comentarios(request.user, legajo)
+    except PermissionDenied as exc:
+        return None, JsonResponse(
+            {"success": False, "message": str(exc) or "Permiso denegado."}, status=403
+        )
     return legajo, None
 
 

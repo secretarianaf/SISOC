@@ -29,45 +29,9 @@ class CupoDashboardView(View):
     """
 
     def get(self, request):
-        rows = []
-        qs = (
-            ProvinciaCupo.objects.select_related("provincia")
-            .all()
-            .order_by("provincia__nombre")
-        )
-        for pc in qs:
-            try:
-                metrics = CupoService.metrics_por_provincia(pc.provincia)
-            except CupoNoConfigurado:
-                metrics = {
-                    "total_asignado": 0,
-                    "usados": 0,
-                    "disponibles": 0,
-                    "fuera": 0,
-                }
-            rows.append(
-                {
-                    "provincia": pc.provincia,
-                    "total_asignado": metrics.get("total_asignado", 0),
-                    "usados": metrics.get("usados", 0),
-                    "disponibles": metrics.get("disponibles", 0),
-                    "fuera": metrics.get("fuera", 0),
-                }
-            )
-        # Provincias sin registro de cupo (opcional: listarlas con 0)
-        sin_cupo = Provincia.objects.exclude(
-            id__in=qs.values_list("provincia_id", flat=True)
-        )
-        for p in sin_cupo:
-            rows.append(
-                {
-                    "provincia": p,
-                    "total_asignado": None,
-                    "usados": None,
-                    "disponibles": None,
-                    "fuera": None,
-                }
-            )
+        # Las filas las arma `CupoService.filas_dashboard`, para que la API
+        # liste exactamente lo mismo (incluidas las provincias sin cupo).
+        rows = CupoService.filas_dashboard()
         return render(request, "celiaquia/cupo_dashboard.html", {"rows": rows})
 
 

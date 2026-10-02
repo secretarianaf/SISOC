@@ -19,6 +19,7 @@ import type {
   PagoExpediente,
   PagoNomina,
   PreviewExcel,
+  ProcesamientoResultado,
   ProvinciaCupo,
   RegistroErroneo,
   ReprocesoResultado,
@@ -183,8 +184,19 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
         .get<Record<string, unknown>>(`expedientes/${id}/estructura-familiar/`)
         .then((r) => r.data),
 
+    /**
+     * Procesa el Excel masivo y crea los legajos.
+     *
+     * Devuelve el resumen con las filas **excluidas**: personas que ya estan en
+     * el programa en otro expediente. No son registros erroneos (el Excel esta
+     * bien), asi que no aparecen en esa grilla y hay que mostrarlas aparte.
+     */
     procesar: (id: number) =>
-      http.post(`expedientes/${id}/procesar/`).then((r) => r.data),
+      http
+        .post<{ detail: string; resultado: ProcesamientoResultado }>(
+          `expedientes/${id}/procesar/`,
+        )
+        .then((r) => r.data),
 
     confirmarEnvio: (id: number) =>
       http.post(`expedientes/${id}/confirmar-envio/`).then((r) => r.data),

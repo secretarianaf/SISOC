@@ -419,6 +419,57 @@ class PreviewExcelResultadoSerializer(serializers.Serializer):
         raise serializers.ValidationError("Serializer de solo lectura.")
 
 
+class ExclusionImportacionSerializer(serializers.Serializer):
+    """Fila que no se importó porque la persona ya está en el programa.
+
+    No es un "registro erróneo": la fila está bien formada, pero el beneficiario
+    ya existe. El Excel no se puede arreglar para que entre, así que no aparece
+    en la grilla de errores y antes se perdía en silencio.
+    """
+
+    fila = serializers.IntegerField()
+    documento = serializers.CharField(allow_blank=True)
+    nombre = serializers.CharField(allow_blank=True)
+    apellido = serializers.CharField(allow_blank=True)
+    motivo = serializers.CharField()
+    expediente_origen_id = serializers.IntegerField(required=False, allow_null=True)
+    estado_expediente_origen = serializers.CharField(required=False, allow_blank=True)
+
+
+class ProcesamientoResultadoSerializer(serializers.Serializer):
+    """Resultado de procesar el Excel masivo.
+
+    `ExpedienteService.procesar_expediente` ya devolvía esto; la API lo
+    descartaba y respondía solo "Expediente procesado". El front no tenía forma
+    de saber cuántas filas quedaron afuera ni por qué.
+    """
+
+    creados = serializers.IntegerField()
+    errores = serializers.IntegerField()
+    excluidos = serializers.IntegerField()
+    excluidos_detalle = ExclusionImportacionSerializer(many=True)
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+
+class ProcesarExpedienteRespuestaSerializer(serializers.Serializer):
+    """Respuesta de `procesar/`: el expediente actualizado y el resumen."""
+
+    detail = serializers.CharField()
+    expediente = ExpedienteSerializer()
+    resultado = ProcesamientoResultadoSerializer()
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+
 class ImportacionResultadoSerializer(serializers.Serializer):
     """Resultado de importar los legajos del Excel masivo ya cargado."""
 

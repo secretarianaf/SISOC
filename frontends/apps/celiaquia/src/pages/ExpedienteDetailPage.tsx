@@ -31,6 +31,7 @@ import { Aviso, Cargando, ErrorPanel } from "../componentes/Estados";
 import { LegajosTable } from "../componentes/LegajosTable";
 import type { RevisionPedida } from "../componentes/LegajosTable";
 import { RegistrosErroneos } from "../componentes/RegistrosErroneos";
+import { ExclusionesImportacion } from "../componentes/ExclusionesImportacion";
 
 function Dato({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -82,6 +83,16 @@ export function ExpedienteDetailPage() {
   const refrescar = () => {
     queryClient.invalidateQueries({ queryKey: ["expediente", expedienteId] });
   };
+
+  // Procesar corre la importacion: ahi es donde se aplican las validaciones del
+  // Excel (campos obligatorios, CUIL, edad, y el duplicado por documento contra
+  // el resto de los expedientes). Sin este paso no se valida nada.
+  const procesar = useMutation({
+    mutationFn: () => api.expedientes.procesar(expedienteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["expediente", expedienteId] });
+    },
+  });
 
   const revisar = useMutation({
     mutationFn: (pedido: RevisionPedida) =>
@@ -160,6 +171,17 @@ export function ExpedienteDetailPage() {
             >
               Volver
             </Button>
+            {nombreEstado === "CREADO" ? (
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<UploadFileIcon />}
+                disabled={procesar.isPending}
+                onClick={() => procesar.mutate()}
+              >
+                {procesar.isPending ? "Procesando…" : "Procesar expediente"}
+              </Button>
+            ) : null}
             <Button
               size="small"
               variant="outlined"
@@ -237,6 +259,30 @@ export function ExpedienteDetailPage() {
           onRevisar={(pedido) => revisar.mutate(pedido)}
           revisando={revisar.isPending}
         />
+
+        {procesar.isError ? (
+          <Aviso
+            mensaje={mensajeDeError(procesar.error)}
+            severidad="error"
+            onClose={() => procesar.reset()}
+          />
+        ) : null}
+        {procesar.data ? (
+          <Aviso
+            mensaje={
+              `Se crearon ${procesar.data.resultado.creados} legajos. ` +
+              `${procesar.data.resultado.errores} filas con error y ` +
+              `${procesar.data.resultado.excluidos} personas ya en el programa.`
+            }
+            severidad="success"
+            onClose={() => procesar.reset()}
+          />
+        ) : null}
+        {procesar.data?.resultado.excluidos_detalle?.length ? (
+          <ExclusionesImportacion
+            exclusiones={procesar.data.resultado.excluidos_detalle}
+          />
+        ) : null}
 
         {registros.data ? (
           <RegistrosErroneos

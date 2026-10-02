@@ -910,3 +910,75 @@ def test_una_correccion_invalida_deja_el_motivo(client, territorio):
     assert response.status_code == 400
     registro.refresh_from_db()
     assert "documento invalido" in registro.mensaje_error
+
+
+# --- Procesamiento del Excel -----------------------------------------------
+# Las validaciones del Excel (22: campos obligatorios, CUIL, edad, provincia
+# fuera de alcance, y el duplicado por documento contra el resto de los
+# expedientes) viven en `ImportacionService` y corren al procesar. Lo que se
+# prueba aca es que el front pueda verlas: antes la API descartaba el resumen
+# y respondia solo "Expediente procesado".
+
+
+def test_procesar_devuelve_el_resumen_con_las_exclusiones(client, territorio):
+    """Una persona ya cargada en otro expediente no entra, y hay que decirlo.
+
+    No es un registro erroneo: el Excel esta bien. Si el resumen no vuelve, el
+    usuario ve "se crearon N legajos" sin saber por que faltan los demas.
+    """
+
+    owner = _provincial("prov_procesa", territorio[0])
+    expediente, _ = _expediente_con_legajo(owner, territorio, "40000050", "PROC1")
+    client.force_login(owner)
+
+    resumen = {
+        "creados": 3,
+        "errores": 1,
+        "excluidos": 2,
+        "excluidos_detalle": [
+            {
+                "fila": 5,
+                "documento": "20111111112",
+                "nombre": "Ana",
+                "apellido": "Perez",
+                "motivo": "Ya está dentro del programa en otro expediente",
+                "expediente_origen_id": 7,
+            },
+            {
+                "fila": 9,
+                "documento": "20111111113",
+                "nombre": "Luis",
+                "apellido": "Gomez",
+                "motivo": "Ya existe en este expediente",
+            },
+        ],
+    }
+    with patch(
+        "celiaquia.services.expediente_service.ExpedienteService.procesar_expediente",
+        return_value=resumen,
+    ):
+        response = client.post(
+            reverse("celiaquia-expediente-procesar", kwargs={"pk": expediente.pk})
+        )
+
+    assert response.status_code == 200
+    resultado = response.json()["resultado"]
+    assert resultado["creados"] == 3
+    assert resultado["excluidos"] == 2
+    motivos = {e["motivo"] for e in resultado["excluidos_detalle"]}
+    assert "Ya está dentro del programa en otro expediente" in motivos
+    # El expediente de origen permite ir a ver donde esta cargada la persona.
+    assert resultado["excluidos_detalle"][0]["expediente_origen_id"] == 7
+
+
+def test_procesar_sin_excel_no_rompe_y_explica(client, territorio):
+    owner = _provincial("prov_sin_excel", territorio[0])
+    expediente, _ = _expediente_con_legajo(owner, territorio, "40000051", "PROC2")
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("celiaquia-expediente-procesar", kwargs={"pk": expediente.pk})
+    )
+
+    assert response.status_code == 400
+    assert "Excel" in str(response.json())

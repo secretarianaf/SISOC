@@ -47,6 +47,8 @@ from celiaquia.api_serializers import (
     ActualizarRegistroErroneoSerializer,
     GuardarValidacionRenaperSerializer,
     ImportacionResultadoSerializer,
+    ProcesamientoResultadoSerializer,
+    ProcesarExpedienteRespuestaSerializer,
     CatalogosRegistroErroneoSerializer,
     LocalidadLookupSerializer,
     OpcionCatalogoSerializer,
@@ -296,7 +298,7 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
             raise _traducir_error(exc) from exc
         return Response(ImportacionResultadoSerializer(resultado).data)
 
-    @extend_schema(request=None, responses=AccionResultadoSerializer)
+    @extend_schema(request=None, responses=ProcesarExpedienteRespuestaSerializer)
     @action(detail=True, methods=["post"])
     def procesar(self, request, pk=None):
         """Procesa el Excel masivo y crea los legajos."""
@@ -304,16 +306,19 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
         self._exigir_gestion()
         expediente = self.get_object()
         try:
-            ExpedienteService.procesar_expediente(expediente, request.user)
+            resultado = ExpedienteService.procesar_expediente(expediente, request.user)
         except DjangoValidationError as exc:
             raise _traducir_error(exc) from exc
         expediente.refresh_from_db()
+        # El resumen incluye las filas excluidas por duplicado: son validaciones
+        # que corrieron y que el front tiene que poder mostrar.
         return Response(
             {
                 "detail": "Expediente procesado.",
                 "expediente": ExpedienteSerializer(
                     expediente, context=self.get_serializer_context()
                 ).data,
+                "resultado": ProcesamientoResultadoSerializer(resultado).data,
             }
         )
 

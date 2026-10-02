@@ -1053,7 +1053,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccionResultado'
+                $ref: '#/components/schemas/ProcesarExpedienteRespuesta'
           description: ''
   /api/celiaquia/expedientes/{id}/recepcionar/:
     post:
@@ -2289,6 +2289,36 @@ components:
       required:
       - id
       - nombre
+    ExclusionImportacion:
+      type: object
+      description: |-
+        Fila que no se importó porque la persona ya está en el programa.
+
+        No es un "registro erróneo": la fila está bien formada, pero el beneficiario
+        ya existe. El Excel no se puede arreglar para que entre, así que no aparece
+        en la grilla de errores y antes se perdía en silencio.
+      properties:
+        fila:
+          type: integer
+        documento:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+        motivo:
+          type: string
+        expediente_origen_id:
+          type: integer
+          nullable: true
+        estado_expediente_origen:
+          type: string
+      required:
+      - apellido
+      - documento
+      - fila
+      - motivo
+      - nombre
     Expediente:
       type: object
       properties:
@@ -3071,6 +3101,44 @@ components:
       - rows
       - shown_rows
       - total_rows
+    ProcesamientoResultado:
+      type: object
+      description: |-
+        Resultado de procesar el Excel masivo.
+
+        `ExpedienteService.procesar_expediente` ya devolvía esto; la API lo
+        descartaba y respondía solo "Expediente procesado". El front no tenía forma
+        de saber cuántas filas quedaron afuera ni por qué.
+      properties:
+        creados:
+          type: integer
+        errores:
+          type: integer
+        excluidos:
+          type: integer
+        excluidos_detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExclusionImportacion'
+      required:
+      - creados
+      - errores
+      - excluidos
+      - excluidos_detalle
+    ProcesarExpedienteRespuesta:
+      type: object
+      description: 'Respuesta de `procesar/`: el expediente actualizado y el resumen.'
+      properties:
+        detail:
+          type: string
+        expediente:
+          $ref: '#/components/schemas/Expediente'
+        resultado:
+          $ref: '#/components/schemas/ProcesamientoResultado'
+      required:
+      - detail
+      - expediente
+      - resultado
     ProvinciaCupo:
       type: object
       properties:

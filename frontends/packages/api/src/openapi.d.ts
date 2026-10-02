@@ -1351,6 +1351,22 @@ export interface components {
             readonly id: number;
             nombre: string;
         };
+        /**
+         * @description Fila que no se importó porque la persona ya está en el programa.
+         *
+         *     No es un "registro erróneo": la fila está bien formada, pero el beneficiario
+         *     ya existe. El Excel no se puede arreglar para que entre, así que no aparece
+         *     en la grilla de errores y antes se perdía en silencio.
+         */
+        ExclusionImportacion: {
+            fila: number;
+            documento: string;
+            nombre: string;
+            apellido: string;
+            motivo: string;
+            expediente_origen_id?: number | null;
+            estado_expediente_origen?: string;
+        };
         Expediente: {
             readonly id: number;
             numero_expediente?: string | null;
@@ -1768,6 +1784,25 @@ export interface components {
             }[];
             total_rows: number;
             shown_rows: number;
+        };
+        /**
+         * @description Resultado de procesar el Excel masivo.
+         *
+         *     `ExpedienteService.procesar_expediente` ya devolvía esto; la API lo
+         *     descartaba y respondía solo "Expediente procesado". El front no tenía forma
+         *     de saber cuántas filas quedaron afuera ni por qué.
+         */
+        ProcesamientoResultado: {
+            creados: number;
+            errores: number;
+            excluidos: number;
+            excluidos_detalle: components["schemas"]["ExclusionImportacion"][];
+        };
+        /** @description Respuesta de `procesar/`: el expediente actualizado y el resumen. */
+        ProcesarExpedienteRespuesta: {
+            detail: string;
+            expediente: components["schemas"]["Expediente"];
+            resultado: components["schemas"]["ProcesamientoResultado"];
         };
         ProvinciaCupo: {
             readonly id: number;
@@ -2812,7 +2847,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccionResultado"];
+                    "application/json": components["schemas"]["ProcesarExpedienteRespuesta"];
                 };
             };
         };

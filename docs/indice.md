@@ -78,6 +78,8 @@
 
 ### 6. IA, planes y registro spec-as-source
 - `docs/ia/`: guías especializadas para asistentes (arquitectura, testing, seguridad, etc.).
+- `docs/ia/SKILLS.md`: skills del repo (fuente en `.agents/skills/`, copia generada en `.claude/skills/`) y cómo agregarlas.
+- `docs/ia/AGENT_REPO_MAP.md`: mapa detallado del repo para agentes (hotspots, flujos, comandos).
 - `docs/ia/MODULAR_BOUNDARIES.md`: regla para que módulos nuevos queden extraíbles sin crear todavía repositorios, deployables ni bases separadas.
 - `docs/plans/AAAA-TN/`: diseños y planes de trabajo, por trimestre.
 - `docs/registro/README.md`: reglas para registrar cambios y decisiones importantes en `docs/`.

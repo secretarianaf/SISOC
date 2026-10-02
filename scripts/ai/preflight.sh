@@ -54,7 +54,7 @@ print_header "Recordatorios criticos del repo"
 echo "- Logica de negocio preferentemente en services/"
 echo "- Coexisten Django views y DRF"
 echo "- Logging custom en src/backends/config/settings.py + core/utils.py"
-echo "- No se usa Celery actualmente"
+echo "- Celery solo para PAS (docker/compose/docker-compose.celery.yml)"
 echo "- Crear worktrees de tarea fuera del repo principal"
 
 print_header "Comandos utiles"
@@ -148,6 +148,14 @@ elif command -v python >/dev/null 2>&1; then
   fi
 else
   echo "No se encontro python/python3 para resolver memoria operativa."
+fi
+
+print_header "Skills del repo"
+# .claude/skills/ es copia generada de .agents/skills/ (docs/ia/SKILLS.md).
+if command -v python3 >/dev/null 2>&1; then
+  python3 scripts/ai/sync_skills.py --check || echo "Correr: python3 scripts/ai/sync_skills.py"
+elif command -v python >/dev/null 2>&1; then
+  python scripts/ai/sync_skills.py --check || echo "Correr: python scripts/ai/sync_skills.py"
 fi
 
 print_header "Fin"

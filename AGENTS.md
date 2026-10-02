@@ -72,4 +72,6 @@ Si el cambio modifica comportamiento, agregar o actualizar tests cercanos cuando
 - `docs/ia/TESTING.md`
 - `docs/ia/SECURITY_AI.md`
 - `docs/ia/ERRORS_LOGGING.md`
+- `docs/ia/SKILLS.md`
+- `docs/ia/AGENT_REPO_MAP.md`
 - `docs/registro/README.md`

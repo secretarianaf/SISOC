@@ -5,7 +5,7 @@
 
 ## Variables de entorno
 - Copiar `.env.example` a `.env` y completar Django, base de datos, puertos y claves de GESTIONAR/RENAPER. Evidencia: .env.example:1-114.
-- Los archivos `.env.qa`, `.env.homologacion` y `.env.prod` quedan trackeados en git como bases saneadas de referencia; no deben llevar credenciales ni datos reales.
+- No hay archivos `.env` por entorno versionados (los `.env.qa`, `.env.homologacion` y `.env.prod` se borraron en #2639). La unica plantilla es `.env.example`.
 - En deploys versionados tambien se usa el `.env` normal del servidor/checkout; el valor de `ENVIRONMENT` dentro de ese archivo define si el runtime queda en `qa`, `homologacion` o `prd`.
 
 ## Despliegue local con Docker Compose
@@ -17,7 +17,7 @@
 - Compose base versionado: `docker-compose.deploy.yml` con el servicio `django` y `env_file: .env`.
 - Override versionado adicional hoy presente en el repo:
   - `docker-compose.produccion.yml`
-- Los archivos `.env.qa`, `.env.homologacion` y `.env.prod` quedan trackeados en git como bases saneadas de referencia; no deben llevar credenciales ni datos reales.
+- Diferencias por entorno: cada servidor tiene su propio `.env` (no versionado) creado a partir de `.env.example`. Lo que cambia entre QA, HML y PRD es `ENVIRONMENT` (`qa`, `homologacion` o `prd`), `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`/`DJANGO_CSRF_TRUSTED_ORIGINS`, las credenciales `DATABASE_*` y las claves de integraciones (GESTIONAR, RENAPER, Sentry, SMTP, web push). Ninguno de esos valores se versiona.
 - En deploys versionados se usa el `.env` normal del servidor/checkout; `ENVIRONMENT` define si el runtime queda en `qa`, `homologacion` o `prd`.
 - Comandos de referencia:
   - Base comun: `docker compose -f docker-compose.deploy.yml up -d --build`

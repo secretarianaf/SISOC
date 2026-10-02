@@ -229,7 +229,7 @@ SISOC/
 ### Archivos
 
 - `.env.example`: base local canonicamente documentada.
-- `.env.qa`, `.env.homologacion`, `.env.prod`: plantillas saneadas versionadas; no tratarlas como origen de secretos.
+- No hay `.env` por entorno versionados: cada servidor usa su `.env` local creado desde `.env.example`.
 - `docker-compose.yml`: local.
 - `docker-compose.deploy.yml`, `docker-compose.produccion.yml`: deploy.
 
@@ -877,7 +877,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ## Que archivos NO conviene tocar salvo necesidad clara
 
-- `.env`, `.env.qa`, `.env.homologacion`, `.env.prod`
+- `.env`
 - `docker/mysql/local-dump.sql`
 - `migrations/` existentes solo para "ordenar"
 - `static/dist/`, `static/debug_toolbar/`, `static/silk/` salvo motivo concreto

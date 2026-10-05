@@ -7,18 +7,22 @@ import os
 import sys
 import django
 
-from celiaquia.services.cruce_service import CruceService
-from celiaquia.models import ExpedienteCiudadano
-from ciudadanos.models import Ciudadano
-
 # Configurar Django - usar path relativo
 sys.path.append(
     os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "backends"
     )
 )
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings_all")
 django.setup()
+
+# Los modelos requieren que las rutas y el registro de apps estén preparados.
+# pylint: disable=wrong-import-position
+from celiaquia.services.cruce_service import CruceService
+from celiaquia.models import ExpedienteCiudadano
+from ciudadanos.models import Ciudadano
+
+# pylint: enable=wrong-import-position
 
 if not logging.getLogger().handlers:
     logging.basicConfig(level=logging.INFO, format="%(message)s")

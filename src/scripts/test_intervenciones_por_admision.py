@@ -3,7 +3,7 @@ Script manual para verificar que las intervenciones quedan atadas a cada
 admision y no al comedor en general.
 
 Uso:
-    python manage.py shell < scripts/test_intervenciones_por_admision.py
+    python manage.py shell < src/scripts/test_intervenciones_por_admision.py
 """
 
 from acompanamientos.acompanamiento_service import AcompanamientoService

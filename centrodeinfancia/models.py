@@ -167,6 +167,9 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
     cuil_referente = models.CharField(
         max_length=16, blank=True, null=True, verbose_name="CUIL del referente"
     )
+    # Campos del referente que vinieron de RENAPER (alta o validación posterior).
+    # Quedan bloqueados en la edición; email y teléfono siguen editables.
+    campos_verificados_renaper = models.JSONField(default=list, blank=True)
     meses_funcionamiento = models.JSONField(default=list, blank=True)
     dias_funcionamiento = models.JSONField(default=list, blank=True)
     tipo_jornada = models.CharField(
@@ -1718,6 +1721,10 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
     )
+
+    # Campos del niño/a y de los responsables que vinieron de RENAPER. Quedan
+    # bloqueados en la edición; los teléfonos siguen editables.
+    campos_verificados_renaper = models.JSONField(default=list, blank=True)
 
     class Meta:
         verbose_name = "Nómina Centro de Desarrollo Infantil"

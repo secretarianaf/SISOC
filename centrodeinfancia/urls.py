@@ -27,6 +27,7 @@ from centrodeinfancia.views import (
     TrabajadorCentroInfanciaDetailView,
     TrabajadorCentroInfanciaUpdateView,
     centrodeinfancia_ajax,
+    consultar_renaper_bloque,
     asistencia_nomina_calendario,
     load_departamentos_ipi,
     eliminar_archivo_intervencion_centrodeinfancia,
@@ -136,6 +137,18 @@ urlpatterns = [
             load_departamentos_ipi
         ),
         name="centrodeinfancia_ajax_load_departamentos_ipi",
+    ),
+    path(
+        "centrodeinfancia/ajax/renaper/<str:bloque>/",
+        permissions_any_required(
+            [
+                "centrodeinfancia.add_centrodeinfancia",
+                "centrodeinfancia.change_centrodeinfancia",
+                "centrodeinfancia.add_nominacentroinfancia",
+                "centrodeinfancia.change_nominacentroinfancia",
+            ]
+        )(consultar_renaper_bloque),
+        name="centrodeinfancia_renaper_bloque",
     ),
     path(
         "centrodeinfancia/<int:pk>/nomina/",

@@ -51,6 +51,11 @@ from centrodeinfancia.services import (
     MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO,
     tiene_nomina_cdi_vigente_en_otro_centro,
 )
+from centrodeinfancia.services_renaper_bloques import (
+    BLOQUE_REFERENTE,
+    BLOQUES_NOMINA,
+    bloques_verificados,
+)
 from centrodeinfancia.forms_observacion import ObservacionCentroInfanciaForm
 from centrodeinfancia.forms_formulario_cdi import (
     FormularioCDIForm,
@@ -86,7 +91,48 @@ __all__ = [
 ]
 
 
-class CentroDeInfanciaForm(forms.ModelForm):
+class CamposRenaperFormMixin:
+    """Bloquea los campos de identidad verificados por RENAPER.
+
+    Se bloquean los campos que la instancia ya tenía verificados más los que
+    llegan en ``valores_renaper`` (precarga o validación nueva, siempre desde un
+    origen confiable: token firmado o ciudadano validado). Django ignora el POST
+    de los campos ``disabled`` y toma el initial, así que no se pueden alterar
+    desde el navegador.
+    """
+
+    BLOQUES_RENAPER = ()
+
+    def _bloquear_campos_renaper(self, valores_renaper=None):
+        campos = list(getattr(self.instance, "campos_verificados_renaper", None) or [])
+        for campo, valor in (valores_renaper or {}).items():
+            field = self.fields.get(campo)
+            if not field:
+                continue
+            try:
+                self.initial[campo] = field.to_python(valor)
+            except ValidationError:
+                continue
+            if campo not in campos:
+                campos.append(campo)
+        for campo in campos:
+            field = self.fields.get(campo)
+            if not field:
+                continue
+            field.disabled = True
+            field.help_text = "Dato verificado por RENAPER."
+            field.widget.attrs["data-renaper"] = "1"
+        self.campos_verificados_renaper = campos
+        self.bloques_verificados_renaper = bloques_verificados(
+            campos, self.BLOQUES_RENAPER
+        )
+
+    def es_campo_renaper(self, campo):
+        return campo in self.campos_verificados_renaper
+
+
+class CentroDeInfanciaForm(CamposRenaperFormMixin, forms.ModelForm):
+    BLOQUES_RENAPER = (BLOQUE_REFERENTE,)
     SOLO_DIGITOS_ERROR = "Ingrese solo números (sin espacios ni signos)."
     DIAS_SEMANA = list(OPCIONES_DIAS_SEMANA)
     ANIO_INICIO_MINIMO = 1900
@@ -161,7 +207,9 @@ class CentroDeInfanciaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.current_user = kwargs.pop("user", None)
         self.lock_provincia_from_user = kwargs.pop("lock_provincia_from_user", False)
+        valores_renaper = kwargs.pop("valores_renaper", None)
         super().__init__(*args, **kwargs)
+        self._bloquear_campos_renaper(valores_renaper)
         self._configurar_campos_dinamicos_horarios()
         self._popular_campos_ubicacion()
         self._aplicar_provincia_usuario()
@@ -403,7 +451,8 @@ class CentroDeInfanciaForm(forms.ModelForm):
 
     def _clean_solo_letras(self, field_name):
         value = (self.cleaned_data.get(field_name) or "").strip()
-        if not value:
+        # Un dato bloqueado de RENAPER no se rechaza: no se puede corregir.
+        if not value or self.es_campo_renaper(field_name):
             return value
         try:
             return validate_solo_letras(value)
@@ -592,6 +641,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
         return cleaned_data
 
     def save(self, commit=True):
+        self.instance.campos_verificados_renaper = list(self.campos_verificados_renaper)
         instance = super().save(commit=commit)
         if not commit:
             return instance
@@ -770,7 +820,9 @@ class NominaCentroInfanciaFormEdit(forms.ModelForm):
         }
 
 
-class NominaCentroInfanciaBaseForm(forms.ModelForm):
+class NominaCentroInfanciaBaseForm(CamposRenaperFormMixin, forms.ModelForm):
+    BLOQUES_RENAPER = BLOQUES_NOMINA
+
     edad_calculada = forms.IntegerField(
         label="Edad",
         required=False,
@@ -845,9 +897,10 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             "observaciones": forms.Textarea(attrs={"rows": 3}),
         }
 
-    def __init__(self, *args, actor=None, **kwargs):
+    def __init__(self, *args, actor=None, valores_renaper=None, **kwargs):
         self.actor = actor
         super().__init__(*args, **kwargs)
+        self._bloquear_campos_renaper(valores_renaper)
         self._configure_sala_choices()
         self._configure_boolean_fields()
         self._configure_apoyo_desarrollo_unificado()
@@ -1782,7 +1835,9 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
     def _validar_campos_de_texto(self, cleaned_data):
         for field_name in self.CAMPOS_SOLO_LETRAS:
             valor = (cleaned_data.get(field_name) or "").strip()
-            if not valor:
+            # Los nombres de RENAPER pueden traer apóstrofos u otros signos: no
+            # se rechaza un dato bloqueado que la persona usuaria no puede corregir.
+            if not valor or self.es_campo_renaper(field_name):
                 continue
             try:
                 cleaned_data[field_name] = validate_solo_letras(valor)
@@ -1893,6 +1948,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
+        instance.campos_verificados_renaper = list(self.campos_verificados_renaper)
         instance.vacunacion_nomivac = self.cleaned_data.get("vacunacion_nomivac", {})
         if commit:
             instance.save()

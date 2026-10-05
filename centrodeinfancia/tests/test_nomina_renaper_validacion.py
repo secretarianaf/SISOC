@@ -117,15 +117,20 @@ def test_alta_no_confia_en_origen_del_post(client, alta, caso):
         ("fecha_nacimiento", (date.today() - timedelta(days=800)).isoformat()),
     ],
 )
-def test_token_no_valida_identidad_modificada(client, alta, campo, valor):
+def test_alta_ignora_identidad_alterada_en_post(client, alta, campo, valor):
+    # Con token vigente la identidad queda bloqueada: lo que llegue en el POST
+    # para esos campos se descarta y se guarda lo que devolvió RENAPER.
     url, data, token, _ = alta
     response = client.post(url, {**data, campo: valor, "renaper_prefill_token": token})
     assert response.status_code == 302
-    ciudadano = Ciudadano.objects.get(
-        documento=valor if campo == "dni" else data["dni"]
+    nomina = NominaCentroInfancia.objects.get()
+    assert str(getattr(nomina, campo)) == str(data[campo])
+    assert {"dni", "apellido", "nombre", "fecha_nacimiento"} <= set(
+        nomina.campos_verificados_renaper
     )
-    assert ciudadano.estado_validacion_renaper == Ciudadano.RENAPER_NO_CONSULTADO
-    assert ciudadano.origen_dato == "manual"
+    ciudadano = Ciudadano.objects.get(documento=data["dni"])
+    assert ciudadano.estado_validacion_renaper == Ciudadano.RENAPER_VALIDADO
+    assert ciudadano.origen_dato == "renaper"
 
 
 @pytest.mark.parametrize("seleccionado", [True, False])
@@ -156,7 +161,7 @@ def test_post_invalido_conserva_token_sin_reconsultar(client, alta):
         "centrodeinfancia.views.obtener_datos_ciudadano_desde_renaper"
     ) as consultar:
         response = client.post(
-            url, {**data, "nombre": "", "renaper_prefill_token": token}
+            url, {**data, "calle_domicilio": "", "renaper_prefill_token": token}
         )
     assert response.status_code == 200
     assert response.context["renaper_prefill_token"] == token

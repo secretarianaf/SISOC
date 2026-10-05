@@ -311,7 +311,7 @@ jobs:
 
             - name: Run pylint
               run: |
-                  # Sin globstar, **/*.py solo cubre un nivel: se listan config (src/backends/config/*.py)
-                  # y las apps del kernel y de cada vertical (src/backends/<x>/<app>/*.py).
+                  # Los scripts de primer nivel viven en src/scripts; se conserva
+                  # la cobertura de config y apps del kernel y de cada vertical.
                   shopt -s extglob
-                  pylint **/*.py src/backends/config/*.py src/backends/!(config)/*/*.py --rcfile=.pylintrc
+                  pylint src/scripts/*.py src/backends/config/*.py src/backends/!(config)/*/*.py --rcfile=.pylintrc

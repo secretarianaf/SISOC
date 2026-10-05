@@ -8,7 +8,7 @@
  * Regenera los tipos en un archivo temporal y los compara con el commiteado.
  * No toca `packages/api/src/openapi.d.ts`.
  *
- *   node scripts/verificar-contrato.mjs
+ *   node src/scripts/frontends/verificar-contrato.mjs
  */
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -16,7 +16,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const raiz = resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
+const raiz = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../frontends");
 const schema = join(raiz, "packages/api/openapi.celiaquia.yaml");
 const versionado = join(raiz, "packages/api/src/openapi.d.ts");
 
@@ -25,13 +25,14 @@ const generado = join(temporal, "openapi.d.ts");
 
 try {
   execFileSync(
-    "npx",
-    ["openapi-typescript", schema, "-o", generado],
+    process.execPath,
+    [join(raiz, "node_modules/openapi-typescript/bin/cli.js"), schema, "-o", generado],
     { cwd: raiz, stdio: "pipe" },
   );
 
-  const esperado = readFileSync(generado, "utf8");
-  const actual = readFileSync(versionado, "utf8");
+  // Git puede materializar el archivo con CRLF en Windows: no cambia el contrato.
+  const esperado = readFileSync(generado, "utf8").replace(/\r\n/g, "\n");
+  const actual = readFileSync(versionado, "utf8").replace(/\r\n/g, "\n");
 
   if (esperado !== actual) {
     console.error(

@@ -3,7 +3,7 @@
 # Imagen compartida por todas las apps de src/frontends/. El modulo se elige con
 # `ARG APP`, asi que agregar una app no agrega un Dockerfile.
 #
-#   docker build --build-arg APP=celiaquia --target prod -f src/frontends/Dockerfile src/frontends/
+#   docker build --build-arg APP=celiaquia --target prod -f docker/frontends/Dockerfile .
 ARG APP=vpsl
 
 # --- Desarrollo: Vite con hot reload -----------------------------------------
@@ -12,8 +12,9 @@ ARG APP=vpsl
 FROM node:22.14.0 AS dev
 ARG APP
 ENV APP=${APP}
-WORKDIR /app
-COPY . .
+WORKDIR /app/src/frontends
+COPY src/frontends/ .
+COPY src/scripts/frontends/ ../scripts/frontends/
 RUN npm ci
 EXPOSE 5173
 CMD ["sh", "-c", "npm run dev -w @sisoc/${APP} -- --host 0.0.0.0"]
@@ -30,8 +31,8 @@ RUN npm run build -w @sisoc/${APP}
 # las rutas de los assets con hash; servirlo desde la raiz los rompe.
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS prod
 ARG APP
-COPY --from=build /app/apps/${APP}/dist /usr/share/nginx/html/v2/${APP}
-COPY nginx.conf.template /tmp/default.conf.template
+COPY --from=build /app/src/frontends/apps/${APP}/dist /usr/share/nginx/html/v2/${APP}
+COPY docker/frontends/nginx.conf.template /tmp/default.conf.template
 RUN sed "s/@APP@/${APP}/g" /tmp/default.conf.template > /etc/nginx/conf.d/default.conf
 # Puerto interno: solo lo alcanza Django por la red de compose.
 EXPOSE 8080

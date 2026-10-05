@@ -441,3 +441,8 @@ docker-compose.override.yml
 # Front v2 browser test artifacts
 src/frontends/test-results/
 src/frontends/playwright-report/
+
+# Cachés y artefactos del workspace frontend (reglas comunes del monorepo).
+.npm-cache/
+.vite/
+*.local

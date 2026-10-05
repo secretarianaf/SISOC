@@ -12,7 +12,11 @@ from celiaquia.models import ExpedienteCiudadano
 from ciudadanos.models import Ciudadano
 
 # Configurar Django - usar path relativo
-sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "backends"))
+sys.path.append(
+    os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "backends"
+    )
+)
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 

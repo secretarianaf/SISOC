@@ -15,7 +15,9 @@ BASH = (
     if os.name == "nt"
     else shutil.which("bash")
 )
-pytestmark = pytest.mark.skipif(not BASH or not Path(BASH).is_file(), reason="Requiere Bash")
+pytestmark = pytest.mark.skipif(
+    not BASH or not Path(BASH).is_file(), reason="Requiere Bash"
+)
 PREVIOUS = "a" * 40
 EXPECTED = "b" * 40
 
@@ -49,7 +51,7 @@ def test_wrapper_transicion_y_rollback(tmp_path, rollback_legacy, fail_health):
     fake_bin = tmp_path / "bin"
     _script(
         fake_bin / "git",
-        '''[[ "$1" == "-C" ]]
+        """[[ "$1" == "-C" ]]
 repo="$2"
 shift 2
 case "$1" in
@@ -70,15 +72,15 @@ case "$1" in
     echo "$MOCK_PREVIOUS" > "$repo/.head" ;;
   *) exit 2 ;;
 esac
-''',
+""",
     )
     _script(
         fake_bin / "docker",
-        '''if [[ "$MOCK_FAIL" == 1 && "$SISOC_RELEASE_SHA" == "$MOCK_EXPECTED" && "$*" == *"migrate --check"* ]]; then
+        """if [[ "$MOCK_FAIL" == 1 && "$SISOC_RELEASE_SHA" == "$MOCK_EXPECTED" && "$*" == *"migrate --check"* ]]; then
   exit 1
 fi
 exit 0
-''',
+""",
     )
     _script(fake_bin / "python3", '[[ -f "$3" ]]\necho backend_demo\n')
     _script(fake_bin / "sleep", "exit 0\n")
@@ -97,13 +99,18 @@ exit 0
     env.pop("GITHUB_STEP_SUMMARY", None)
     result = subprocess.run(
         [
-            BASH, "-c",
+            BASH,
+            "-c",
             'if command -v cygpath >/dev/null; then MOCK_BIN=$(cygpath -u "$MOCK_BIN"); fi; '
             'export PATH="$MOCK_BIN:$PATH"; '
             '[[ "$(command -v git)" == "$MOCK_BIN/git" ]] || exit 99; '
             'exec bash "$@"',
-            "_", WRAPPER.as_posix(), "--environment", "homologacion",
-            "--expected-revision", EXPECTED,
+            "_",
+            WRAPPER.as_posix(),
+            "--environment",
+            "homologacion",
+            "--expected-revision",
+            EXPECTED,
         ],
         env=env,
         capture_output=True,

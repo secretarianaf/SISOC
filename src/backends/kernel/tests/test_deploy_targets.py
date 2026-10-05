@@ -6,7 +6,11 @@ from pathlib import Path
 import pytest
 
 _RUTA = (
-    Path(__file__).resolve().parents[4] / "src" / "scripts" / "operacion" / "deploy_targets.py"
+    Path(__file__).resolve().parents[4]
+    / "src"
+    / "scripts"
+    / "operacion"
+    / "deploy_targets.py"
 )
 _spec = importlib.util.spec_from_file_location("deploy_targets", _RUTA)
 deploy_targets = importlib.util.module_from_spec(_spec)

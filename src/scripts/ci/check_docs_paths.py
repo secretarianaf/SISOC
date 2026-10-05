@@ -47,11 +47,10 @@ def documentos(root):
     yield root / "CLAUDE.md"
     yield root / "README.md"
     for path in sorted((root / "docs").rglob("*.md")):
-        if (
-            not HISTORICOS.intersection(path.relative_to(root / "docs").parts)
-            and not path.read_text(encoding="utf-8").startswith(
-                "<!-- docs-paths: documento histórico -->"
-            )
+        if not HISTORICOS.intersection(
+            path.relative_to(root / "docs").parts
+        ) and not path.read_text(encoding="utf-8").startswith(
+            "<!-- docs-paths: documento histórico -->"
         ):
             yield path
 
@@ -85,7 +84,9 @@ def main():
     cantidad = 0
     for path in documentos(ROOT):
         cantidad += 1
-        for linea, ruta, destino in detectar(path.read_text(encoding="utf-8"), destinos):
+        for linea, ruta, destino in detectar(
+            path.read_text(encoding="utf-8"), destinos
+        ):
             print(f"{path.relative_to(ROOT).as_posix()}:{linea}: {ruta} -> {destino}")
             hallazgos += 1
     print(f"{cantidad} documentos vigentes; {hallazgos} referencias obsoletas.")

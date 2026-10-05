@@ -21,8 +21,8 @@ Este documento describe cómo reutilizar el motor de filtros avanzados, la confi
 1. Agregar una entrada en `core/services/favorite_filters.py::SeccionesFiltrosFavoritos` y proveer su configuración (`ConfiguracionFiltrosSeccion`) con los mapeos de tipos y operadores definidos en el paso anterior. Esto permite validar filtros salvados y cargar los controles.
 2. El endpoint genérico `core.views.filtros_favoritos` (GET/POST) y `detalle_filtro_favorito` (GET/DELETE) ya se encargan de persistir `core.models.FiltroFavorito` y limpiar la caché (`TTL_CACHE_FILTROS_FAVORITOS`).
 3. El frontend carga una sola sección por formulario:
-   - Usar el componente `templates/components/search_bar.html` con `filters_mode=True` y pasar `seccion_filtros_favoritos`, `filters_config`, `filters_action`, `filters_js`, `reset_url`, `filters_action`, etc.
-   - El modal de favoritos se renderiza automáticamente y el script `static/custom/js/favorite_filters.js` se encarga de cargar/guardar/aplicar/eliminar favoritos.
+   - Usar el componente `src/backends/kernel/templates/components/search_bar.html` con `filters_mode=True` y pasar `seccion_filtros_favoritos`, `filters_config`, `filters_action`, `filters_js`, `reset_url`, `filters_action`, etc.
+   - El modal de favoritos se renderiza automáticamente y el script `src/backends/kernel/static/custom/js/favorite_filters.js` se encarga de cargar/guardar/aplicar/eliminar favoritos.
    - Al guardar, `favorite_filters.js` manda POST a `core:filrtros_favoritos` con `seccion`, `nombre` y la carga serializada; al aplicar, consume `core:detalle_filtro_favorito` y recarga el listado con `filters`.
    - Además mantiene el favorito activo en `localStorage` y lo reaplica automáticamente (si no hay `filters` en la URL).
 

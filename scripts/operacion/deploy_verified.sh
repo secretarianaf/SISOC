@@ -45,17 +45,17 @@ fi
 case "$DEPLOY_ENVIRONMENT" in
   qa)
     EXPECTED_BRANCH=development
-    COMPOSE_FILES=(-f "$ROOT_DIR/docker-compose.deploy.yml")
+    COMPOSE_FILES=(-f "$ROOT_DIR/docker/compose/docker-compose.deploy.yml")
     HEALTH_SCRIPT="$ROOT_DIR/scripts/infra/healthcheck_qa.sh"
     ;;
   homologacion)
     EXPECTED_BRANCH=homologacion
-    COMPOSE_FILES=(-f "$ROOT_DIR/docker-compose.deploy.yml" -f "$ROOT_DIR/docker-compose.produccion.yml")
+    COMPOSE_FILES=(-f "$ROOT_DIR/docker/compose/docker-compose.deploy.yml" -f "$ROOT_DIR/docker/compose/docker-compose.produccion.yml")
     HEALTH_SCRIPT="$ROOT_DIR/scripts/infra/healthcheck_hml.sh"
     ;;
   production)
     EXPECTED_BRANCH=main
-    COMPOSE_FILES=(-f "$ROOT_DIR/docker-compose.deploy.yml" -f "$ROOT_DIR/docker-compose.produccion.yml")
+    COMPOSE_FILES=(-f "$ROOT_DIR/docker/compose/docker-compose.deploy.yml" -f "$ROOT_DIR/docker/compose/docker-compose.produccion.yml")
     HEALTH_SCRIPT="$ROOT_DIR/scripts/infra/healthcheck_prod.sh"
     ;;
   *)

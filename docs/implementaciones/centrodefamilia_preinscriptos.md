@@ -50,5 +50,5 @@ flujo operativo CDF.
   permisos y render.
 
 Los cambios que introdujeron este contrato se registran en
-`docs/registro/cambios/2026-07-27-cdf-exportacion-beneficiarios.md` y
-`docs/registro/cambios/2026-07-31-cdf-beneficiarios-columnas-y-export-sse.md`.
+`docs/registro/cambios/2026-T3/2026-07-27-cdf-exportacion-beneficiarios.md` y
+`docs/registro/cambios/2026-T3/2026-07-31-cdf-beneficiarios-columnas-y-export-sse.md`.

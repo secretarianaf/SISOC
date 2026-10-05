@@ -74,7 +74,7 @@ systemctl is-active docker containerd nginx cron
 git -C "$APP_ROOT" branch --show-current
 git -C "$APP_ROOT" rev-parse HEAD
 GIT_OPTIONAL_LOCKS=0 git -C "$APP_ROOT" status --short --branch
-docker compose -f "$APP_ROOT/docker-compose.deploy.yml" ps
+docker compose --project-directory "$APP_ROOT" -f "$APP_ROOT/docker/compose/docker-compose.deploy.yml" ps
 docker compose -f "$MOBILE_ROOT/compose.prod.yaml" ps
 nginx -t
 ss -lntup

@@ -50,7 +50,7 @@ jobs:
               env:
                   PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
               run: |
-                  changes="$(git status --porcelain --untracked-files=all -- docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md)"
+                  changes="$(git status --porcelain --untracked-files=all -- docs/registro/prs docs/registro/releases/pending CHANGELOG.md)"
                   if [ -z "$changes" ]; then
                     echo "No hay cambios generados para commitear."
                     exit 0
@@ -59,7 +59,7 @@ jobs:
                   git config user.name "github-actions[bot]"
                   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-                  git add docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md
+                  git add docs/registro/prs docs/registro/releases/pending CHANGELOG.md
                   git commit -m "docs(ci): actualizar artefactos automaticos del PR #${{ github.event.pull_request.number }}"
 
                   for attempt in 1 2 3; do
@@ -104,16 +104,13 @@ jobs:
                     git fetch --no-tags origin "+refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/origin/pr-head"
                   fi
 
-                  paths="$(git ls-tree -r --name-only refs/remotes/origin/pr-head -- docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md)"
-                  record_path="docs/registro/prs/PR-${{ github.event.pull_request.number }}.md"
-                  feature_pattern="^docs/contexto/features/pr-${{ github.event.pull_request.number }}-.*\\.md$"
+                  paths="$(git ls-tree -r --name-only refs/remotes/origin/pr-head -- docs/registro/prs docs/registro/releases/pending CHANGELOG.md)"
+                  # El registro vive en la carpeta del trimestre: docs/registro/prs/AAAA-TN/PR-N.md.
+                  record_pattern="^docs/registro/prs/[0-9]{4}-T[1-4]/PR-${{ github.event.pull_request.number }}\\.md$"
                   missing=()
 
-                  if ! grep -Fxq "$record_path" <<< "$paths"; then
-                    missing+=("$record_path")
-                  fi
-                  if ! grep -Eq "$feature_pattern" <<< "$paths"; then
-                    missing+=("docs/contexto/features/pr-${{ github.event.pull_request.number }}-*.md")
+                  if ! grep -Eq "$record_pattern" <<< "$paths"; then
+                    missing+=("docs/registro/prs/AAAA-TN/PR-${{ github.event.pull_request.number }}.md")
                   fi
                   if [ "${{ github.event.pull_request.base.ref }}" = "main" ]; then
                     release_pattern="^docs/registro/releases/pending/.*-pr-${{ github.event.pull_request.number }}\\.md$"

@@ -88,7 +88,7 @@ pendiente de validación en destino. Aplica tanto a `comedores.Nomina` como a
 ## UI
 - Templates: `comedores/templates/comedor/nomina_detail.html` y
   `centrodeinfancia/templates/centrodeinfancia/nomina_detail.html`.
-- JS común: `static/custom/js/nomina_derivar.js` (ambos templates incluyen el
+- JS común: `src/backends/kernel/static/custom/js/nomina_derivar.js` (ambos templates incluyen el
   mismo script). El payload POST usa la clave `centro_destino_id`.
 
 ## Decisiones de diseño

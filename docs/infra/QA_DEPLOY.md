@@ -57,7 +57,7 @@ No ejecutar este comando como parte de una auditoria o health check.
 
 ```bash
 /home/sisoc-deploy/bin/healthcheck_qa.sh
-docker compose -f docker-compose.deploy.yml ps
+docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml ps
 git rev-parse HEAD
 df -h /
 ```

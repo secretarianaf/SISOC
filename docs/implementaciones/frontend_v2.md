@@ -1,8 +1,8 @@
 # Front v2 (React) — reglas para migrar módulos
 
-Estado: **vigente como regla; base implementada**. `frontends/` existe, con
+Estado: **vigente como regla; base implementada**. `src/frontends/` existe, con
 `packages/ui`, `packages/api`, `apps/vpsl` y `apps/celiaquia`. El router `/v2/`
-vive en `kernel/core/v2_frontend.py`, con los destinos en
+vive en `src/backends/kernel/core/v2_frontend.py`, con los destinos en
 `settings.FRONTEND_V2_UPSTREAMS`.
 
 Decisión y alternativas descartadas: `docs/registro/decisiones/2026-09-24-frontend-v2-react.md`.
@@ -27,7 +27,7 @@ PAS; al final, todos). Si una tarea necesita romper una regla, se discute en la
 ## 2. Estructura en el monorepo
 
 ```text
-frontends/
+src/frontends/
   package.json          # npm workspaces + scripts comunes
   package-lock.json     # único lockfile de todo el front v2
   .nvmrc                # 22.14.0
@@ -119,14 +119,14 @@ Qué se verificó:
   `eslint`, con el `theme.ts` de la skill sin modificar, sobre Node 24 local
   (2026-09-24).
 - Repetido sobre Node 22.14.0 en contenedor: pasa. El `package-lock.json` de
-  `frontends/` es el que fija las versiones reales.
+  `src/frontends/` es el que fija las versiones reales.
 
 Política de actualización:
 
 - No se suben versiones dentro de un PR de pantallas.
 - Los parches y las correcciones de seguridad van en un PR dedicado.
 - Las versiones mayores se deciden en la épica.
-- Todas las apps de `frontends/` comparten las mismas versiones.
+- Todas las apps de `src/frontends/` comparten las mismas versiones.
 
 ## 4. Diseño (skill `tema-verde-institucional`)
 
@@ -148,7 +148,7 @@ Política de actualización:
 ## 5. Layout y navegación de `/v2/`
 
 - El layout (AppBar + Drawer) es **propio de `/v2/`**: vive en `@sisoc/ui` y no
-  reutiliza ni modifica el sidebar viejo (`templates/includes/sidebar/opciones.html`).
+  reutiliza ni modifica el sidebar viejo (`src/backends/kernel/templates/includes/sidebar/opciones.html`).
 - El Drawer lista los módulos de `/v2/` que el usuario tiene permitidos, según
   el contexto de usuario que devuelve la API.
 - Pasar de un módulo a otro (`/v2/celiaquia/` → `/v2/pas/`) es una navegación de
@@ -232,7 +232,7 @@ Son las mismas que ya usa el repo:
 - El schema de drf-spectacular es la fuente de verdad.
   - Se genera con `python manage.py spectacular`, porque `/api/schema/` solo se
     expone con `ENABLE_API_DOCS`.
-  - Se versiona en `frontends/packages/api/openapi.yaml`.
+  - Se versiona en `src/frontends/packages/api/openapi.yaml`.
 - Los tipos TS se generan desde ese archivo con `openapi-typescript`. No se
   escriben a mano.
 - **CI** falla si:
@@ -255,7 +255,7 @@ Son las mismas que ya usa el repo:
   usuario (por ejemplo, la provincia en Celiaquía).
   - Ocultar un botón no es control de acceso.
   - Entrar por URL a `/v2/` no saltea nada.
-- **CSP:** el front respeta el CSP vigente (`config/middlewares/csp.py`).
+- **CSP:** el front respeta el CSP vigente (`src/backends/config/middlewares/csp.py`).
   - Sin scripts inline en `index.html` (el build de Vite no los genera).
   - Sin CDNs fuera de los permitidos; fuentes autoalojadas.
 - **Secretos:** el build no lleva secretos. Toda variable `VITE_*` es pública
@@ -264,7 +264,7 @@ Son las mismas que ya usa el repo:
 ## 9. Docker Compose y desarrollo local
 
 - **Servicio:** cada app es un servicio propio, llamado `front_<modulo>` (por
-  ejemplo `front_celiaquia`), con imagen construida desde `frontends/Dockerfile`
+  ejemplo `front_celiaquia`), con imagen construida desde `src/frontends/Dockerfile`
   (`ARG APP`).
 - **Dependencia del back:** declara
   `depends_on: { django: { condition: service_healthy } }`.
@@ -283,7 +283,7 @@ Son las mismas que ya usa el repo:
 
 ## 10. Calidad y CI
 
-Cuando cambia `frontends/**` o una API consumida por `/v2/`, CI corre:
+Cuando cambia `src/frontends/**` o una API consumida por `/v2/`, CI corre:
 `npm ci`, `lint`, `typecheck`, `test` (Vitest + Testing Library), `build` y el
 chequeo de contrato.
 
@@ -319,7 +319,7 @@ Sentry usa el **mismo proyecto que el back**, configurado con `@sisoc/api` /
 
 Resueltos:
 
-- ~~Ubicación del router `/v2/` en el back~~: está en `kernel/core/v2_frontend.py`,
+- ~~Ubicación del router `/v2/` en el back~~: está en `src/backends/kernel/core/v2_frontend.py`,
   sin imports de dominio y con los destinos en `settings.FRONTEND_V2_UPSTREAMS`.
 - ~~Validar la matriz de versiones sobre Node 22.14.0 dentro del contenedor~~:
   hecho, con el cambio de vitest documentado arriba.
@@ -337,4 +337,4 @@ Abiertos:
   `.github/workflows/frontend-v2.yml` falla si el schema o los tipos quedaron
   viejos.
 - ~~`front_celiaquia` en el compose de deploy~~: está en
-  `docker-compose.deploy.yml`, con el mismo esquema que `front_vpsl`.
+  `docker/compose/docker-compose.deploy.yml`, con el mismo esquema que `front_vpsl`.

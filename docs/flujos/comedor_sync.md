@@ -3,6 +3,8 @@
 ## Objetivo
 Mantener datos de comedores en SISOC y sincronizarlos con el sistema externo GESTIONAR en altas, actualizaciones y bajas.
 
+Las rutas de evidencia (`comedores/...`) son relativas a `src/backends/sisoc_core/`; los numeros de linea pueden haberse corrido.
+
 ## Entrada / Salida
 - Entrada: creación/edición/eliminación de `comedores.models.Comedor` (formularios Django/DRF). Evidencia: comedores/models.py:203-405.
 - Salida: payload HTTP enviado a GESTIONAR (`build_comedor_payload`) o solicitud de borrado. Evidencia: comedores/tasks.py:20-66,129-165.
@@ -30,4 +32,4 @@ Mantener datos de comedores en SISOC y sincronizarlos con el sistema externo GES
 - Si cambios no disparan sync (solo `foto_legajo`), es esperado (campo excluido). Evidencia: comedores/signals.py:53-59.
 
 ## Tests existentes
-- No se detectaron tests específicos para sincronización de comedores. Evidencia: DESCONOCIDO (buscar en tests/comedores).***
+- `src/backends/sisoc_core/tests/test_comedores_tasks_unit.py` cubre las tareas de envío y baja a GESTIONAR; `src/backends/sisoc_core/importarexpediente/tests/test_import_flow.py` las mockea en la importación.

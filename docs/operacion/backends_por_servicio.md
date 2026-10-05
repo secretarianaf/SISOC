@@ -12,16 +12,16 @@ Guía operativa del ADR `docs/registro/decisiones/2026-09-30-monorepo-kernel-bac
 | `cdi` | centrodeinfancia, ticketera | `/centrodeinfancia/`, `/simepi/`, `/api/ticketera/` |
 | `cdf` | centrodefamilia | `/centrodefamilia/`, `/api/centrodefamilia/` |
 
-**El core** corre las apps de `backends/sisoc_core/`: el cluster de Comedores
+**El core** corre las apps de `src/backends/sisoc_core/`: el cluster de Comedores
 (comedores, admisiones, relevamientos, intervenciones, rendiciones, etc.) y
 los servicios propios del core (dashboard, comunicados, encuestas, OCR, PWA,
 usuarios). No es un backend detrás del proxy: es el proceso que recibe el
-tráfico. Por eso no figura en `config/backends.json`. Un cambio solo en
-`backends/sisoc_core/**` recrea solo los servicios del core (ver Deploy).
+tráfico. Por eso no figura en `src/backends/config/backends.json`. Un cambio solo en
+`src/backends/sisoc_core/**` recrea solo los servicios del core (ver Deploy).
 
 **Datos maestros en el kernel.** `organizaciones` (Organizacion, roles,
 avales) y `catalogo_intervenciones` (tipos, subtipos, destinatarios y
-contactos) viven en `kernel/`, porque los usan CDI, CDF y el core. Las
+contactos) viven en `src/backends/kernel/`, porque los usan CDI, CDF y el core. Las
 pantallas de organizaciones y el modelo `Firmante`, que se relaciona con
 comedores, quedan en el core (`gestion_organizaciones`). Las tablas no
 cambiaron de nombre.
@@ -36,7 +36,7 @@ con enlaces guardados: no hay que usarlas en código nuevo.
 ```
 Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
                      │  rutas propias del core
-                     └─► proxy por prefijo (kernel/core/backend_proxy.py)
+                     └─► proxy por prefijo (src/backends/kernel/core/backend_proxy.py)
                            └─► backend_dispositivos (imagen sisoc/backend-dispositivos:<sha>)
                                  /dispositivos/, /datacalle/, /api/datacalle/
 ```
@@ -52,7 +52,7 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
 
 ## Configuración
 
-- **`config/backends.json`** es la fuente única. Por cada backend declara sus
+- **`src/backends/config/backends.json`** es la fuente única. Por cada backend declara sus
   apps, prefijos de URL, URLconf, origen en la red de Compose y servicios de
   Compose. De ahí leen los settings, el proxy y el deploy.
 - **Settings por proceso:**
@@ -60,7 +60,7 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
   - `<vertical>_runtime.settings`: el kernel más las apps del backend.
   - `config.settings_all`: todo en un proceso; lo usan los tests, el
     desarrollo local y el migrador.
-- **Nombres de URL entre servicios.** `config/url_registry.json` permite que
+- **Nombres de URL entre servicios.** `src/backends/config/url_registry.json` permite que
   `{% url %}`, `redirect()` y `LOGIN_URL` resuelvan nombres de otro servicio.
   Cada proceso agrega rutas solo-`reverse()` para los nombres que no tiene.
   Si cambiás URLs, regenerálo:
@@ -69,7 +69,7 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
   docker compose exec -e DJANGO_SETTINGS_MODULE=config.settings_all django python manage.py generar_registro_urls
   ```
 
-  `tests/test_servicios_backends.py` falla si quedó desactualizado.
+  `src/backends/kernel/tests/test_servicios_backends.py` falla si quedó desactualizado.
 - **Menú lateral.** Los ítems que aporta una app del core, como los tableros
   de `dashboard`, se registran en `core.services.sidebar_items`. En un backend
   sin esa app, el ítem no aparece. La regla de menú "solo VAT" vive en el
@@ -97,9 +97,9 @@ nuevo:
 
 | Cambio | Plan |
 | --- | --- |
-| Solo `backends/<x>/**` | **Selectivo:** construye ese backend y el migrador, migra, y recrea solo ese servicio (`up --no-deps`). |
-| Solo `backends/sisoc_core/**` | **Selectivo:** construye la imagen del core y el migrador, migra, y recrea solo los servicios con imagen `sisoc/core` del entorno (en QA, `django` y `ocr_worker`; en PRD, además los workers de importación, credenciales y mailing). Los backends no se reinician. Si no se pueden resolver esos servicios, hace un deploy completo. |
-| Solo `frontends/apps/<x>/**` | **Selectivo:** solo `front_<x>`. |
+| Solo `src/backends/<x>/**` | **Selectivo:** construye ese backend y el migrador, migra, y recrea solo ese servicio (`up --no-deps`). |
+| Solo `src/backends/sisoc_core/**` | **Selectivo:** construye la imagen del core y el migrador, migra, y recrea solo los servicios con imagen `sisoc/core` del entorno (en QA, `django` y `ocr_worker`; en PRD, además los workers de importación, credenciales y mailing). Los backends no se reinician. Si no se pueden resolver esos servicios, hace un deploy completo. |
+| Solo `src/frontends/apps/<x>/**` | **Selectivo:** solo `front_<x>`. |
 | Solo docs, tests o `.github/` | **Ninguno:** no se reinicia nada. |
 | Cualquier otra cosa (kernel, core, config, templates, static, requirements, docker, compose, `CHANGELOG.md`) | **Completo:** construye todo, baja el stack, migra y levanta. |
 
@@ -115,7 +115,7 @@ nuevo:
   tampoco tiene el grafo completo:
 
   ```bash
-  docker compose -f docker-compose.deploy.yml --profile migrate run --rm migrator python manage.py createsuperuser
+  docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml --profile migrate run --rm migrator python manage.py createsuperuser
   ```
 
   En deploy, la web no prepara la DB (`SISOC_PREPARAR_DB=false`). El migrador
@@ -130,24 +130,24 @@ nuevo:
 
 ## Agregar un backend
 
-1. **Código:** `git mv <app> backends/<vertical>/<app>`. Los imports no
+1. **Código:** `git mv <app> src/backends/<vertical>/<app>`. Los imports no
    cambian.
-2. **Runtime:** crear `backends/<vertical>/<vertical>_runtime/` con
+2. **Runtime:** crear `src/backends/<vertical>/<vertical>_runtime/` con
    `settings.py` (`aplicar(globals(), "<vertical>")`, de
-   `config/backend_settings.py`) y `urls.py`, que define `backend_urlpatterns`
-   y usa `urlpatterns_de_backend` (`config/backend_urls.py`).
-3. **Registro y settings:** sumar la entrada en `config/backends.json`, sacar
-   las apps de `CORE_APPS` en `config/settings.py` y agregar la carpeta a
+   `src/backends/config/backend_settings.py`) y `urls.py`, que define `backend_urlpatterns`
+   y usa `urlpatterns_de_backend` (`src/backends/config/backend_urls.py`).
+3. **Registro y settings:** sumar la entrada en `src/backends/config/backends.json`, sacar
+   las apps de `CORE_APPS` en `src/backends/config/settings.py` y agregar la carpeta a
    `pythonpath` en `pytest.ini`.
-4. **Compose:** sumar el servicio en `docker-compose.deploy.yml`, copiando
+4. **Compose:** sumar el servicio en `docker/compose/docker-compose.deploy.yml`, copiando
    `backend_dispositivos`.
 5. **URLs:** si el vertical no tenía prefijo propio, agregarlo y dejar
    redirects 301 desde las URLs viejas, **solo por compatibilidad**.
-6. **Registro de URLs:** regenerar `config/url_registry.json`.
+6. **Registro de URLs:** regenerar `src/backends/config/url_registry.json`.
 7. **Contribuciones a páginas del core:** si el vertical aporta secciones de
    favoritos o de Ciudadano 360, declararlas en `favorite_sections` o
    `ciudadano_contributions`. Las de Ciudadano 360 tienen que ser
    renderizadas, con template propio.
-8. **Verificación:** que pasen `tests/test_servicios_backends.py` (cada backend
+8. **Verificación:** que pasen `src/backends/kernel/tests/test_servicios_backends.py` (cada backend
    recorre sus rutas sin argumentos en su propio proceso),
-   `tests/test_kernel_arranca_solo.py` y el job `service_images` de CI.
+   `src/backends/kernel/tests/test_kernel_arranca_solo.py` y el job `service_images` de CI.

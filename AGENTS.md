@@ -32,14 +32,25 @@ Usar `docs/ia/CONTEXT_HYGIENE.md` para decidir si hace falta ampliar. Abrir mas 
 - Reutilizar patrones existentes; no inventar modelos, endpoints, permisos o schemas sin evidencia en el repo o pedido explicito.
 - No mezclar feature, refactor amplio y formateo masivo.
 - Mantener compatibilidad hacia atras salvo pedido explicito.
+- Mejoras cercanas: proponerlas si ayudan, pero no implementarlas fuera de alcance sin aprobacion.
+- Commits generados por IA: en espanol con el patron `<type>(<scope>): <subject>` (ver `docs/ia/CONTRIBUTING_AI.md`).
 - La logica de negocio vive preferentemente en `services/`.
 - Coexisten Django views y DRF.
-- Hay logging custom en `config/settings.py` y `kernel/core/utils.py`.
+- Hay logging custom en `src/backends/config/settings.py` y `src/backends/kernel/core/utils.py`.
+- El codigo vive en `src/backends/` (`config`, `kernel` y un directorio por vertical) y `src/frontends/`. Ver el mapa de carpetas en `README.md`.
+
+## Herramientas para agentes
+
+- `scripts/ai/codex_task.ps1 <slug>`: crea branch, worktree y bootstrap desde `origin/development`.
+- `scripts/ai/codex_run.ps1 validate`: validacion de cierre cuando aplique; para Python modificado, sumar `scripts/ai/codex_run.ps1 pylint <archivo.py>`.
+- `scripts/ai/preflight.sh <tipo> [path]`: resumen corto del contexto.
+- `python scripts/ai/context_memory.py preflight --target <path>`: resuelve memoria reutilizable y detecta si quedo vieja.
+- Skills del repo: la fuente esta en `.agents/skills/` y `.claude/skills/` es una copia generada (ver `docs/ia/SKILLS.md`).
 
 ## Documentacion
 
 Registrar en `docs/registro/` cambios funcionales visibles, decisiones de arquitectura o diseno, temas de seguridad o permisos y trade-offs importantes. Si el cambio es trivial y no necesita registro, decirlo en la entrega.
-- Actualizar `AGENT_REPO_MAP.md` en cualquier cambio que altere de forma relevante la estructura del repo, sus hotspots de navegacion, comandos operativos, validaciones, modulos, flujos, puntos de entrada o advertencias utiles para futuros agentes y desarrolladores.
+- Actualizar `docs/ia/AGENT_REPO_MAP.md` en cualquier cambio que altere de forma relevante la estructura del repo, sus hotspots de navegacion, comandos operativos, validaciones, modulos, flujos, puntos de entrada o advertencias utiles para futuros agentes y desarrolladores.
 
 ## Validacion
 
@@ -61,4 +72,6 @@ Si el cambio modifica comportamiento, agregar o actualizar tests cercanos cuando
 - `docs/ia/TESTING.md`
 - `docs/ia/SECURITY_AI.md`
 - `docs/ia/ERRORS_LOGGING.md`
+- `docs/ia/SKILLS.md`
+- `docs/ia/AGENT_REPO_MAP.md`
 - `docs/registro/README.md`

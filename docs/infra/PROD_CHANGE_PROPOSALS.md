@@ -11,7 +11,7 @@ El paquete versionado de ejecucion y rollback se prepara en:
 - `scripts/infra/install_prod_maintenance.sh`;
 - `scripts/infra/retire_prod_local_mysql_stage1.sh`;
 - `scripts/infra/verify_prod_release.sh`;
-- `docs/plans/2026-07-14-produccion-ventana-nocturna-design.md`.
+- `docs/plans/2026-T3/2026-07-14-produccion-ventana-nocturna-design.md`.
 
 Preparar estos archivos no cambia PRD. Los flags `--apply` siguen requiriendo
 el GO de la ventana.

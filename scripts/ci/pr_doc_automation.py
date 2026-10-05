@@ -18,7 +18,6 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DOCS_PR_DIR = REPO_ROOT / "docs/registro/prs"
-DOCS_FEATURE_DIR = REPO_ROOT / "docs/contexto/features"
 DOCS_RELEASE_PENDING_DIR = REPO_ROOT / "docs/registro/releases/pending"
 CHANGELOG_PATH = REPO_ROOT / "CHANGELOG.md"
 
@@ -124,15 +123,6 @@ class PendingReleaseNote:
     source_url: str
 
 
-def slugify(value: str) -> str:
-    """Convierte texto libre en un slug estable para nombres de archivo."""
-
-    normalized = unicodedata.normalize("NFKD", value)
-    ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
-    slug = re.sub(r"[^a-zA-Z0-9]+", "-", ascii_text.lower()).strip("-")
-    return slug or "sin-titulo"
-
-
 def normalize_key(value: str) -> str:
     """Normaliza un label de metadata del body del PR."""
 
@@ -216,6 +206,21 @@ def resolve_release_date(metadata: dict[str, str], today: date) -> str:
     return next_wednesday(today).isoformat()
 
 
+def quarter_dir_name(day: date) -> str:
+    """Carpeta trimestral de los registros: ``AAAA-TN`` (T1 = enero a marzo)."""
+
+    return f"{day.year}-T{(day.month - 1) // 3 + 1}"
+
+
+def resolve_pr_document_path(pr_number: int, today: date) -> Path:
+    """Ruta del registro del PR: se queda en su trimestre si ya existe."""
+
+    existentes = sorted(DOCS_PR_DIR.glob(f"*/PR-{pr_number}.md"))
+    if existentes:
+        return existentes[0]
+    return DOCS_PR_DIR / quarter_dir_name(today) / f"PR-{pr_number}.md"
+
+
 def remove_previous_pr_files(directory: Path, pattern: str) -> None:
     """Elimina archivos generados previos para un PR antes de recrearlos."""
 
@@ -241,6 +246,11 @@ def detect_affected_areas(changed_files: list[str]) -> list[str]:
     detected: set[str] = set()
     for file_path in changed_files:
         parts = Path(file_path).parts
+        if parts[:2] == ("src", "backends") and len(parts) > 3:
+            # src/backends/<x>/<app>/... -> <app>; config y archivos sueltos -> <x>.
+            parts = parts[3:] if parts[2] != "config" and len(parts) > 4 else parts[2:]
+        elif parts[:1] == ("src",):
+            parts = parts[1:]
         if not parts:
             continue
         first = parts[0]
@@ -287,9 +297,7 @@ def build_architecture_notes(changed_files: list[str]) -> list[str]:
         notes.append(
             "Hay cambios en vistas web y puede existir impacto en permisos o renderizado."
         )
-    if any(
-        "/templates/" in path or path.startswith("templates/") for path in changed_files
-    ):
+    if any("/templates/" in path for path in changed_files):
         notes.append(
             "Se modifican templates, con posible impacto visual o de composición UI."
         )
@@ -314,9 +322,8 @@ def build_design_system_notes(changed_files: list[str]) -> list[str]:
     visual_files = [
         path
         for path in changed_files
-        if path.startswith("templates/")
-        or "/templates/" in path
-        or path.startswith("static/")
+        if "/templates/" in path
+        or "/static/" in path
         or path.endswith((".css", ".scss", ".js"))
     ]
     if not visual_files:
@@ -377,6 +384,12 @@ def build_pr_document(
         )
 
     related_docs_block = "\n".join(f"- `{path}`" for path in related_docs)
+    architecture_block = "\n".join(
+        f"- {note}" for note in build_architecture_notes(changed_files)
+    )
+    design_block = "\n".join(
+        f"- {note}" for note in build_design_system_notes(changed_files)
+    )
     areas_block = (
         "\n".join(f"- `{area}`" for area in areas) or "- Sin áreas detectadas."
     )
@@ -406,6 +419,14 @@ def build_pr_document(
 
 {changed_files_block}
 
+## Arquitectura tocada
+
+{architecture_block}
+
+## Design system y UI
+
+{design_block}
+
 ## Validación declarada
 
 - Pruebas automáticas: {automatic_tests}
@@ -423,78 +444,6 @@ def build_pr_document(
 
 - Este documento es generado automáticamente desde el contexto del PR y sirve como índice rápido para revisión y futuras sesiones de agentes.
 - Si la metadata del body del PR está incompleta, varias secciones usarán fallbacks derivados del título o del diff.
-"""
-
-
-def build_feature_context_document(
-    pr: PullRequestData,
-    metadata: dict[str, str],
-    changed_files: list[str],
-) -> str:
-    """Genera el documento de contexto acumulable para agentes."""
-
-    architecture_notes = "\n".join(
-        f"- {note}" for note in build_architecture_notes(changed_files)
-    )
-    design_notes = "\n".join(
-        f"- {note}" for note in build_design_system_notes(changed_files)
-    )
-    related_docs = "\n".join(
-        f"- `{path}`" for path in collect_related_docs(changed_files)
-    )
-    important_files = "\n".join(f"- `{path}`" for path in changed_files[:20])
-    if len(changed_files) > 20:
-        important_files += f"\n- ... y {len(changed_files) - 20} archivo(s) adicional(es) relacionados."
-
-    contexto = metadata.get(
-        "contexto_funcional",
-        "No informado explícitamente; inferir desde el título del PR y el diff.",
-    )
-    decisiones = [
-        f"Tipo de cambio declarado: {metadata.get('tipo_cambio', 'No informado')}",
-        f"Área principal declarada: {metadata.get('area_principal', 'No informada')}",
-        f"Impacto usuario declarado: {metadata.get('impacto_usuario', 'No informado')}",
-    ]
-    decisiones_block = "\n".join(f"- {decision}" for decision in decisiones)
-
-    return f"""# Contexto de feature PR #{pr.number} - {pr.title}
-
-## Resumen
-
-- PR: {pr.html_url}
-- Base: `{pr.base_ref}`
-- Rama origen: `{pr.head_ref}`
-- Autor: `{pr.author}`
-
-## Contexto funcional
-
-- {contexto}
-
-## Arquitectura tocada
-
-{architecture_notes}
-
-## Decisiones y supuestos detectados
-
-{decisiones_block}
-- Riesgos / rollback: {metadata.get('riesgos_rollback', 'No informado')}
-
-## Design system y UI
-
-{design_notes}
-
-## Memoria operativa para agentes
-
-- Empezar por `docs/registro/prs/PR-{pr.number}.md` para contexto resumido del PR.
-- Revisar primero estos archivos del diff:
-{important_files or '- Sin archivos detectados.'}
-- Documentación sugerida para ampliar contexto:
-{related_docs}
-
-## Trazabilidad
-
-- Documento generado automáticamente desde el evento de `pull_request`.
-- Si este PR cambia de título, el archivo se renombrará para mantener el slug alineado.
 """
 
 
@@ -744,7 +693,6 @@ def ensure_parent_dirs() -> None:
     """Crea carpetas necesarias para artefactos generados."""
 
     DOCS_PR_DIR.mkdir(parents=True, exist_ok=True)
-    DOCS_FEATURE_DIR.mkdir(parents=True, exist_ok=True)
     DOCS_RELEASE_PENDING_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -768,18 +716,10 @@ def sync_pr_artifacts(
         changed_files = fetch_changed_files(pr, token)
     metadata = parse_pr_body_metadata(pr.body)
 
-    pr_document_path = DOCS_PR_DIR / f"PR-{pr.number}.md"
+    pr_document_path = resolve_pr_document_path(pr.number, today or date.today())
     write_text_file(
         pr_document_path,
         build_pr_document(pr, metadata, changed_files),
-    )
-
-    remove_previous_pr_files(DOCS_FEATURE_DIR, f"pr-{pr.number}-*.md")
-    feature_slug = slugify(pr.title)
-    feature_context_path = DOCS_FEATURE_DIR / f"pr-{pr.number}-{feature_slug}.md"
-    write_text_file(
-        feature_context_path,
-        build_feature_context_document(pr, metadata, changed_files),
     )
 
     if pr.base_ref != "main":

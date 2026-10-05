@@ -16,9 +16,9 @@
 # Como correr localmente:
 #   python -m venv .venv-arch
 #   .venv-arch\Scripts\pip install -r requirements/arch.txt   (Windows)
-#   $env:PYTHONPATH = "kernel;backends/dispositivos"; .venv-arch\Scripts\lint-imports
+#   $env:PYTHONPATH = "src/backends;src/backends/kernel;src/backends/dispositivos"; .venv-arch\Scripts\lint-imports
 # o via Docker:
-#   docker run --rm -v "${PWD}:/sisoc" -w /sisoc -e PYTHONPATH=/sisoc/kernel:/sisoc/backends/dispositivos python:3.11.15-slim-bookworm \
+#   docker run --rm -v "${PWD}:/sisoc" -w /sisoc -e PYTHONPATH=/sisoc/src/backends:/sisoc/src/backends/kernel:/sisoc/src/backends/dispositivos python:3.11.15-slim-bookworm \
 #     sh -lc "pip install -q -r requirements/arch.txt && lint-imports"
 
 [importlinter]

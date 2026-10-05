@@ -2,13 +2,13 @@
 
 Extrae, sin datos hardcodeados de dominio salvo la clasificacion por zona:
 
-- apps propias declaradas en ``config/settings.py`` (INSTALLED_APPS);
-- prefijos web y API montados en ``config/urls.py``;
+- apps propias declaradas en ``src/backends/config/settings.py`` (INSTALLED_APPS);
+- prefijos web y API montados en ``src/backends/config/urls.py``;
 - señales de autenticacion de cada API (token DRF = plano movil, API key =
   server-to-server, sesion = web); una API puede combinarlas;
 - aristas reales entre apps por AST de imports, distinguiendo fachada publica
   (``<app>.api``) de import de internals;
-- arbol del menu lateral (``templates/includes/sidebar/opciones.html``) con sus
+- arbol del menu lateral (``src/backends/kernel/templates/includes/sidebar/opciones.html``) con sus
   permisos, para saber que modulos alcanza el usuario;
 - PWA declaradas en ``scripts/operacion/pwas.json``;
 - roles de contenedor de ``docker/django/entrypoint.py`` y servicios Compose.
@@ -16,14 +16,14 @@ Extrae, sin datos hardcodeados de dominio salvo la clasificacion por zona:
 Salidas:
 
 - ``var/arquitectura/grafo.json``: el grafo que consume la vista. Fuera de git
-  (se reescribe en cada arranque) y fuera de ``static/`` (Nginx publica
+  (se reescribe en cada arranque) y fuera de los estáticos (Nginx publica
   ``/static/`` por alias, sin pasar por Django, y el grafo describe permisos,
   rutas y estructura interna). Lo entrega una vista autenticada.
 - Con ``--docs``, ademas: ``docs/arquitectura/grafo_sisoc.json`` versionable y
   ``docs/arquitectura/mapa_sisoc.html``, documento de una sola pieza para leer el
   mapa fuera de SISOC. El arranque NO los toca.
 
-``static/arquitectura/mapa.css`` y ``mapa.js`` son fuente versionada del visor,
+``src/backends/kernel/static/arquitectura/mapa.css`` y ``mapa.js`` son fuente versionada del visor,
 no salidas: van como estaticos porque el CSP de produccion no admite ``<style>``
 ni ``<script>`` inline.
 
@@ -45,8 +45,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[2]
+BACKENDS = RAIZ / "src" / "backends"
 # CSS y JS del visor son fuente versionada, no salidas: se editan aca.
-FUENTE_VISOR = RAIZ / "static" / "arquitectura"
+FUENTE_VISOR = BACKENDS / "kernel" / "static" / "arquitectura"
 # El grafo se regenera en cada arranque, asi que vive fuera de git: si escribiera
 # en el checkout, deploy_refresh.sh abortaria el despliegue siguiente por
 # cambios locales tracked.
@@ -322,12 +323,17 @@ EXCLUIR_ARCHIVO_RE = re.compile(
 
 
 def _raices_de_codigo() -> list[Path]:
-    """Raíz, ``kernel/`` y cada ``backends/<vertical>/`` (ver config/__init__.py)."""
-    backends = RAIZ / "backends"
+    """``src/backends/``, su ``kernel/`` y cada vertical (ver src/backends/config/__init__.py)."""
     extra = (
-        sorted(p for p in backends.iterdir() if p.is_dir()) if backends.is_dir() else []
+        sorted(
+            p
+            for p in BACKENDS.iterdir()
+            if p.is_dir() and p.name not in ("config", "kernel")
+        )
+        if BACKENDS.is_dir()
+        else []
     )
-    return [RAIZ, RAIZ / "kernel", *extra]
+    return [BACKENDS, BACKENDS / "kernel", *extra]
 
 
 def dir_de_app(app: str) -> Path:
@@ -340,7 +346,7 @@ def dir_de_app(app: str) -> Path:
 
 def _registro_backends() -> dict:
     try:
-        return json.loads(_texto(RAIZ / "config" / "backends.json") or "{}")
+        return json.loads(_texto(BACKENDS / "config" / "backends.json") or "{}")
     except json.JSONDecodeError:
         return {}
 
@@ -374,7 +380,7 @@ def _git(*args: str) -> str:
 
 def apps_instaladas() -> list[str]:
     """Apps propias de INSTALLED_APPS, en el orden en que estan declaradas."""
-    contenido = _texto(RAIZ / "config" / "settings.py")
+    contenido = _texto(BACKENDS / "config" / "settings.py")
     crudos: list[str] = []
     for nombre in ("KERNEL_APPS", "CORE_APPS"):
         bloque = re.search(rf"^{nombre}\s*=\s*\[(.*?)\n\]", contenido, re.S | re.M)
@@ -404,8 +410,8 @@ def apps_instaladas() -> list[str]:
 
 
 def rutas_montadas() -> dict[str, dict[str, list[str]]]:
-    """Prefijos web y API por app, leidos de config/urls.py."""
-    contenido = _texto(RAIZ / "config" / "urls.py")
+    """Prefijos web y API por app, leidos de src/backends/config/urls.py."""
+    contenido = _texto(BACKENDS / "config" / "urls.py")
     for spec in _registro_backends().values():
         runtime = spec.get("urlconf", "").split(".")[0]
         if runtime:
@@ -528,7 +534,7 @@ def nombres_de_url(apps: list[str]) -> dict[str, str]:
 
 def menu_lateral(mapa_urls: dict[str, str]) -> list[dict]:
     """Arbol del sidebar: grupos, items, permisos y app de destino."""
-    ruta = RAIZ / "templates" / "includes" / "sidebar" / "opciones.html"
+    ruta = BACKENDS / "kernel" / "templates" / "includes" / "sidebar" / "opciones.html"
     lineas = _texto(ruta).split("\n")
 
     re_grupo = re.compile(r"nav-main-item")
@@ -665,7 +671,7 @@ def asincronia() -> dict:
         return re.findall(r"^  ([a-z_]+):", contenido, re.M)
 
     servicios = servicios_de("docker-compose.yml")
-    servicios_celery = servicios_de("docker-compose.celery.yml")
+    servicios_celery = servicios_de("docker/compose/docker-compose.celery.yml")
 
     return {
         "roles_contenedor": roles,

@@ -6,7 +6,7 @@ useDefault = true
 [allowlist]
 description = "Valores dummy/históricos permitidos temporalmente en archivos controlados"
 paths = [
-  '''^static/admin/''',
+  '''^src/backends/kernel/static/admin/''',
   '''^\.env\.example$''',
   '''^\.github/workflows/tests\.yml$''',
 ]

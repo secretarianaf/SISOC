@@ -11,19 +11,23 @@ Uso:
 Salida (una línea, para ``eval`` en bash):
     MODO=<completo|selectivo|ninguno> SERVICIOS="<svc> <svc>" MIGRAR=<0|1>
 
-Reglas (ver docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md):
-- ``backends/<x>/**`` despliega solo el backend ``x`` (config/backends.json) y
-  corre el migrador. Sus tests no despliegan nada.
-- ``backends/sisoc_core/**`` despliega solo los servicios del core: el marcador
+Reglas (ver docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md y
+2026-10-02-estructura-src-backends.md):
+- ``src/backends/<x>/**`` despliega solo el backend ``x``
+  (src/backends/config/backends.json) y corre el migrador.
+- ``src/backends/sisoc_core/**`` despliega solo los servicios del core: el marcador
   ``@core``, que ``deploy_refresh.sh`` traduce a los servicios con imagen
   ``sisoc/core`` del entorno (``--servicios-core``). Ninguna imagen de vertical
   incluye ``sisoc_core``, así que los backends no cambian.
-- ``frontends/apps/<x>/**`` despliega solo ``front_<x>``. ``frontends/`` fuera
-  de ``apps/`` (paquetes compartidos, Dockerfile, lockfile) despliega todos los
-  fronts.
-- Documentación, tests y CI no despliegan nada.
-- Cualquier otra cosa (kernel, core, config, templates, static, requirements,
-  docker, compose, CHANGELOG.md que muestra el footer) es despliegue completo.
+- ``src/backends/<x>/tests/**`` (kernel incluido) no despliega nada.
+- ``src/backends/kernel/**`` y ``src/backends/config/**`` no son verticales:
+  los usan todas las imágenes, así que son despliegue completo.
+- ``src/frontends/apps/<x>/**`` despliega solo ``front_<x>``. ``src/frontends/``
+  fuera de ``apps/`` (paquetes compartidos, Dockerfile, lockfile) despliega
+  todos los fronts.
+- Documentación y CI no despliegan nada.
+- Cualquier otra cosa (kernel, config, requirements, docker, compose,
+  CHANGELOG.md que muestra el footer) es despliegue completo.
 """
 
 from __future__ import annotations
@@ -35,7 +39,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
-SIN_DEPLOY_PREFIJOS = ("docs/", "tests/", ".github/", "postman/", "benchmarks/")
+SIN_DEPLOY_PREFIJOS = (
+    "docs/",
+    ".github/",
+    # Baseline versionado de benchmarks: no corre en runtime.
+    "src/backends/kernel/core/benchmarks/baselines/",
+)
+
+# Carpetas de src/backends/ que no son verticales: un cambio ahí es completo.
+NO_VERTICALES = ("config", "kernel")
 
 # Carpeta del código propio del core y marcador de sus servicios en SERVICIOS.
 CORE_DIR = "sisoc_core"
@@ -50,12 +62,14 @@ def _sin_deploy(ruta: str) -> bool:
 
 
 def _backends() -> dict:
-    with open(ROOT / "config" / "backends.json", encoding="utf-8") as registro:
+    with open(
+        ROOT / "src" / "backends" / "config" / "backends.json", encoding="utf-8"
+    ) as registro:
         return json.load(registro)
 
 
 def _fronts() -> list[str]:
-    apps = ROOT / "frontends" / "apps"
+    apps = ROOT / "src" / "frontends" / "apps"
     if not apps.is_dir():
         return []
     return sorted(f"front_{p.name}" for p in apps.iterdir() if p.is_dir())
@@ -70,24 +84,24 @@ def planificar(archivos: list[str]) -> tuple[str, list[str], bool]:
         if _sin_deploy(ruta):
             continue
         partes = ruta.split("/")
-        if partes[0] == "backends" and len(partes) > 2 and partes[1] in backends:
-            if partes[2] == "tests":
+        if partes[:2] == ["src", "backends"] and len(partes) > 3:
+            carpeta = partes[2]
+            if len(partes) > 4 and partes[3] == "tests":
                 continue
-            servicios.add(backends[partes[1]]["service"])
-            # Procesos que corren el mismo código (p. ej. Celery de PAS).
-            servicios.update(backends[partes[1]].get("extra_services", []))
-            migrar = True
-            continue
-        if partes[0] == "backends" and len(partes) > 2 and partes[1] == CORE_DIR:
-            if partes[2] == "tests":
+            if carpeta in backends and carpeta not in NO_VERTICALES:
+                servicios.add(backends[carpeta]["service"])
+                # Procesos que corren el mismo código (p. ej. Celery de PAS).
+                servicios.update(backends[carpeta].get("extra_services", []))
+                migrar = True
                 continue
-            servicios.add(CORE_MARCADOR)
-            migrar = True
-            continue
-        if partes[0] == "frontends":
-            if len(partes) > 3 and partes[1] == "apps":
-                servicios.add(f"front_{partes[2]}")
-            elif len(partes) > 1 and partes[1] in ("e2e",):
+            if carpeta == CORE_DIR:
+                servicios.add(CORE_MARCADOR)
+                migrar = True
+                continue
+        if partes[:2] == ["src", "frontends"]:
+            if len(partes) > 4 and partes[2] == "apps":
+                servicios.add(f"front_{partes[3]}")
+            elif len(partes) > 2 and partes[2] in ("e2e",):
                 continue
             else:
                 servicios.update(_fronts())

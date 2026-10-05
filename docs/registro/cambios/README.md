@@ -1,6 +1,7 @@
 # Registro de Cambios Importantes
 
-Guardar aquí cambios relevantes realizados en el sistema.
+Guardar aquí cambios relevantes realizados en el sistema, en la carpeta del
+trimestre de la fecha: `AAAA-TN/AAAA-MM-DD-<tema>.md` (ver `docs/registro/README.md`).
 
 Formato recomendado por archivo:
 

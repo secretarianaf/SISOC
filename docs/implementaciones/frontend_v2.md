@@ -207,7 +207,7 @@ Son las mismas que ya usa el repo:
   los nombres tal como vienen en los tipos generados.
 - **Paginación:** `PageNumberPagination` de DRF, con la respuesta
   `{count, next, previous, results}`.
-  - Parámetros `page` y `page_size` (máximo 200), como `VAT/pagination.py`.
+  - Parámetros `page` y `page_size` (máximo 200), como `src/backends/vat/VAT/pagination.py`.
   - Paginar es obligatorio en listados.
 - **Filtros y orden:** query params en `snake_case`.
 - **Errores:** los estándar de DRF.
@@ -264,7 +264,7 @@ Son las mismas que ya usa el repo:
 ## 9. Docker Compose y desarrollo local
 
 - **Servicio:** cada app es un servicio propio, llamado `front_<modulo>` (por
-  ejemplo `front_celiaquia`), con imagen construida desde `src/frontends/Dockerfile`
+ ejemplo `front_celiaquia`), con imagen construida desde `docker/frontends/Dockerfile`
   (`ARG APP`).
 - **Dependencia del back:** declara
   `depends_on: { django: { condition: service_healthy } }`.
@@ -307,7 +307,7 @@ Sentry usa el **mismo proyecto que el back**, configurado con `@sisoc/api` /
 ## 12. Deploy (HML / PRD)
 
 - Los servicios `front_<modulo>` se agregan al compose de deploy y al flujo
-  existente (`scripts/operacion/deploy_refresh.sh`, `.github/workflows/deploy.yml`).
+  existente (`src/scripts/operacion/deploy_refresh.sh`, `.github/workflows/deploy.yml`).
   No se crea otra plataforma de deploy.
 - La imagen se construye por entorno (variables `VITE_*` del entorno) y se
   etiqueta con el SHA.

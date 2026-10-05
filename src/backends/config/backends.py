@@ -1,7 +1,7 @@
 """Registro de backends por vertical (``src/backends/config/backends.json``).
 
 Solo stdlib: lo leen los settings, el proxy del core y los scripts de deploy
-(`scripts/operacion/deploy_targets.py`), que corren en el host sin Django.
+(`src/scripts/operacion/deploy_targets.py`), que corren en el host sin Django.
 
 Cada entrada describe un backend en ``src/backends/<nombre>/``:
 

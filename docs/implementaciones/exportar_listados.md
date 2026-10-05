@@ -15,7 +15,7 @@ Este documento resume cómo reutilizar la infraestructura de exportación CSV ex
 
 ## 1. Backend
 
-1. Crear una vista basada en `View` que herede de `CSVExportMixin`. Las vistas de ejemplo (`acompanamientos/views_export.py`, `users/views_export.py`, `comedores/views/export.py`, etc.) siguen el patrón:
+1. Crear una vista basada en `View` que herede de `CSVExportMixin`. Las vistas de ejemplo (`src/backends/sisoc_core/acompanamientos/views_export.py`, `src/backends/sisoc_core/usuarios/views_export.py`, `src/backends/sisoc_core/comedores/views/export.py`, etc.) siguen el patrón:
    - Definir `export_filename` (ej. `"listado_comedores.csv"`).
    - Sobrescribir `get_export_columns()` para devolver una lista `[("Encabezado","campo.path"), …]`; podés usar `build_export_columns(catalog, active_keys)` para sincronizarla con el catálogo de columnas.
    - En `get()`, obtener el queryset filtrado (reutilizando los mismos filtros que el listado si hace falta) y retornar `self.export_csv(queryset)`.

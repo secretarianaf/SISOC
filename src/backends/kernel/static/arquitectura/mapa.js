@@ -1,5 +1,5 @@
 /* Mapa de arquitectura de SISOC — script generado, no editar la copia de static/.
-   Fuente: scripts/arquitectura/plantilla/mapa.js
+   Fuente: src/scripts/arquitectura/plantilla/mapa.js
 
    Espera un contenedor con id="mapa". El grafo llega por window.__GRAFO_SISOC__
    (documento autocontenido) o por fetch de la URL en data-grafo (vista Django). */

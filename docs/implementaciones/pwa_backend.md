@@ -82,7 +82,7 @@ propia transacción y aplica el mismo contrato de totalidad que el formulario:
 una organización seleccionada incluye sus comedores actuales y futuros, sin
 exclusiones manuales.
 
-Servicios de dominio: `users/services_pwa.py`
+Servicios de dominio: `src/backends/sisoc_core/pwa/services/accesos.py`
 
 - `is_pwa_user(user)`
 - `get_accessible_comedor_ids(user)`

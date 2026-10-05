@@ -2,6 +2,7 @@
 
 ## Mapa de documentos
 ### 1. Contexto y arquitectura
+- `docs/desarrollo/verticales_independientes.md`: guía vigente para ubicar código, respetar boundaries, probar los cuatro checklists y diagnosticar/deplegar por servicio.
 - `docs/contexto/panorama.md`: visión general del sistema, su alcance y casos de uso principales.
 - `docs/contexto/dominio.md`: modelo del dominio central y relaciones clave entre entidades.
 - `docs/contexto/arquitectura.md`: resumen de la arquitectura técnica (apps, servicios, dependencias).
@@ -18,7 +19,7 @@
 - `docs/operacion/backends_por_servicio.md`: backends por vertical (core + proxy + backend), deploy selectivo, migrador único y cómo sumar un backend.
 - `docs/operacion/ver_para_ser_libre_react.md`: arquitectura, arranque, rutas y límites del MVP React/Django de VPSL.
 - `docs/operacion/deploy_automatizado.md`: runbook de deploy por GitHub Actions, runners self-hosted, promoción y rollback por tag estable.
-- `scripts/infra/install_qa_pwa_nginx.sh`: preflight e instalación transaccional de las rutas PWA en el Nginx HTTP de QA.
+- `src/scripts/infra/install_qa_pwa_nginx.sh`: preflight e instalación transaccional de las rutas PWA en el Nginx HTTP de QA.
 - `docs/registro/cambios/2026-T3/2026-09-21-deploy-independiente-satelites.md`: separación de deploys PWA, promoción secuencial y rollback automático.
 - `docs/operacion/deploy_entornos_docker_nginx_mysql.md`: runbook generico parametrizado para replicar entornos SISOC con Docker Compose, MySQL dedicado y NGINX.
 - `docs/operacion/qa_trixie_deploy.md`: runbook para desplegar QA en Debian 13 con SITE-QA, DB-QA, Docker Compose, MySQL 8.0 y NGINX.

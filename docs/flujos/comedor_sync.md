@@ -3,7 +3,7 @@
 ## Objetivo
 Mantener datos de comedores en SISOC y sincronizarlos con el sistema externo GESTIONAR en altas, actualizaciones y bajas.
 
-Las rutas de evidencia (`comedores/...`) son relativas a `src/backends/sisoc_core/`; los numeros de linea pueden haberse corrido.
+Las referencias de evidencia abreviadas de Comedores se resuelven bajo `src/backends/sisoc_core/`; las rutas que comienzan con src/ parten de la raíz. Los números de línea pueden haberse corrido.
 
 ## Entrada / Salida
 - Entrada: creación/edición/eliminación de `comedores.models.Comedor` (formularios Django/DRF). Evidencia: comedores/models.py:203-405.

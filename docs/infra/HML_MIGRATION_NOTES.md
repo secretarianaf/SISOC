@@ -15,7 +15,7 @@ migracion. La fuente canonica es `hml-old`; AWS queda fuera de alcance.
 | NGINX | Config, dominios, aliases, proxies, logs y metadata de certificados |
 | TLS | Emitir/instalar certificado valido; no reutilizar una key sin politica aprobada |
 | Runner | Reinstalar y registrar runner nuevo con label `sisoc-homologacion` |
-| Cron/timers | Exportar estado efectivo root/`sisoc-deploy`, no solo `scripts/crontab` |
+| Cron/timers | Exportar estado efectivo root/`sisoc-deploy`, no solo `src/scripts/crontab` |
 | Logs | Copiar solo si existe requisito legal u operativo |
 
 No copiar como runtime por defecto:

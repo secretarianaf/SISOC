@@ -7,10 +7,10 @@ aprobacion separada, ventana y responsable.
 
 El paquete versionado de ejecucion y rollback se prepara en:
 
-- `scripts/infra/prod_night_preflight.sh`;
-- `scripts/infra/install_prod_maintenance.sh`;
-- `scripts/infra/retire_prod_local_mysql_stage1.sh`;
-- `scripts/infra/verify_prod_release.sh`;
+- `src/scripts/infra/prod_night_preflight.sh`;
+- `src/scripts/infra/install_prod_maintenance.sh`;
+- `src/scripts/infra/retire_prod_local_mysql_stage1.sh`;
+- `src/scripts/infra/verify_prod_release.sh`;
 - `docs/plans/2026-T3/2026-07-14-produccion-ventana-nocturna-design.md`.
 
 Preparar estos archivos no cambia PRD. Los flags `--apply` siguen requiriendo
@@ -425,7 +425,7 @@ git fetch origin
 git switch -c codex/prod-mobile-auto-deploy origin/main
 git cherry-pick f68aca084f911542e53e9f42435b17bb098b533f
 git diff --check origin/main...HEAD
-bash -n scripts/operacion/deploy_refresh.sh
+bash -n src/scripts/operacion/deploy_refresh.sh
 git push -u origin codex/prod-mobile-auto-deploy
 gh pr create --base main --head codex/prod-mobile-auto-deploy \
   --title "ci(deploy): desplegar SISOC-Mobile en produccion"

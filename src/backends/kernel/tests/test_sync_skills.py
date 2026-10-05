@@ -1,4 +1,4 @@
-"""Sincronización de skills de .agents/skills/ a .claude/skills/ (scripts/ai/sync_skills.py)."""
+"""Sincronización de skills de .agents/skills/ a .claude/skills/ (src/scripts/ai/sync_skills.py)."""
 
 from scripts.ai import sync_skills
 
@@ -41,6 +41,6 @@ def test_check_ignora_diferencias_de_fin_de_linea(tmp_path):
 
 
 def test_las_skills_del_repo_estan_sincronizadas():
-    """Si falla: correr `python scripts/ai/sync_skills.py` y commitear .claude/skills/."""
+    """Si falla: correr `python src/scripts/ai/sync_skills.py` y commitear .claude/skills/."""
 
     assert sync_skills.differences() == []

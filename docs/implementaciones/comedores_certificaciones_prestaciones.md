@@ -20,12 +20,12 @@ la conformidad: no queda una certificación parcial.
 ## Operación y rollback
 
 Verificar en cada ambiente las cuatro plantillas versionadas bajo
-`pwa/files/varios/` y una descarga con fuente y otra con fallback. Revertir la
+`src/backends/sisoc_core/pwa/files/varios/` y una descarga con fuente y otra con fallback. Revertir la
 aplicación restaura el comportamiento previo para altas nuevas; no modifica los
 archivos ni registros ya creados.
 
 ## Referencias
 
-- `comedores/services/certificacion_prestaciones_service.py`
-- `comedores/api_views.py`
+- `src/backends/sisoc_core/comedores/services/certificacion_prestaciones_service.py`
+- `src/backends/sisoc_core/comedores/api_views.py`
 - `docs/registro/cambios/2026-T3/2026-08-13-certificaciones-prestaciones-sin-fuente.md`

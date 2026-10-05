@@ -58,6 +58,15 @@ Django 5.2 + MySQL 8.4, desplegado con Docker Compose. Python 3.11+.
 
 ## Reglas cortas
 
+### Verticales independientes
+- Guia y cuatro checklists: `docs/desarrollo/verticales_independientes.md`.
+- Kernel no importa core/verticales; no importar código de otro servicio.
+- Recursos y tests junto al dueño; datos remotos por contratos existentes.
+- Prefijos en `src/backends/config/backends.json`; regenerar el registro de URLs.
+- Archivos por app o `__file__`; conservar tabla/content type al cambiar label.
+- Grafo completo y collectstatic en migrador; validar imágenes y deploy selectivo.
+- Comprobar rutas con `python src/scripts/ci/check_docs_paths.py`.
+
 - No inventar modelos, endpoints, permisos ni settings sin evidencia en el repo o pedido explícito.
 - Cambios pequeños y revisables; no mezclar feature + refactor + formateo masivo.
 - Respetar `docs/ia/CONTEXT_HYGIENE.md` para decidir cuánto contexto cargar.

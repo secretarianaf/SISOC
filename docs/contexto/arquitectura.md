@@ -10,9 +10,9 @@ prefijos que declara `src/backends/config/backends.json`. Ver
 `docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md` y
 `docs/registro/decisiones/2026-10-02-estructura-src-backends.md`.
 
-Las rutas de evidencia sin prefijo (`comedores/...`, `core/...`) son relativas
-a la raíz de código que contiene esa app (`src/backends/kernel/`,
-`src/backends/sisoc_core/` o `src/backends/<vertical>/`).
+Las referencias abreviadas de evidencia se resuelven bajo el dueño de la app
+(`src/backends/kernel/`, `src/backends/sisoc_core/` o `src/backends/<vertical>/`).
+Las rutas que comienzan con src/ parten de la raíz del repositorio.
 
 ## 1) Diagrama textual (ASCII)
 ```
@@ -53,7 +53,7 @@ Evidencia: src/backends/config/settings.py; src/backends/config/urls.py; comedor
 ## 2) Capas existentes
 - Presentación: vistas Django y DRF (urls en `src/backends/config/urls.py`), plantillas en `src/backends/kernel/templates/` y apps propias. Evidencia: src/backends/config/urls.py:12-44; src/backends/config/settings.py:105-120.
 - Middleware: seguridad, sesiones, CORS, CSRF, autenticación, auditlog, mensajes, XFrame, XSS custom, threadlocals; en DEBUG se agregan debug_toolbar y silk. Evidencia: src/backends/config/settings.py:85-99,359-366.
-- Servicios/negocio: servicios en apps (ej. `comedores/services`, `centrodefamilia/services`), sincronización con GESTIONAR en `tasks.py` y consulta técnica compartida de RENAPER en `core/integrations/renaper.py` con fachada `core/services/renaper.py`.
+- Servicios/negocio: servicios en apps (ej. `src/backends/sisoc_core/comedores/services`, `src/backends/cdf/centrodefamilia/services`), sincronización con GESTIONAR en `tasks.py` y consulta técnica compartida de RENAPER en `src/backends/kernel/core/integrations/renaper.py` con fachada `src/backends/kernel/core/services/renaper.py`.
 - Dominio/persistencia: modelos en cada app; DB configurada a MySQL. Evidencia: src/backends/config/settings.py:153-168; apps listadas en src/backends/config/settings.py:42-83.
 - Serialización/API schema: DRF + drf-spectacular. Evidencia: src/backends/config/settings.py:195-234.
 

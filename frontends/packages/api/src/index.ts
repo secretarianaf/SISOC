@@ -47,11 +47,11 @@ export async function get<T>(path: string): Promise<T> {
   } catch (error) { return throwApiError(error); }
 }
 
-export async function postForm<T>(path: string, form: FormData): Promise<T> {
+export async function postForm<T>(path: string, form: FormData, forceMultipart = false): Promise<T> {
   try {
     const entries = [...form.entries()].filter(([, value]) => !(value instanceof File && value.size === 0 && !value.name));
     const hasFiles = entries.some(([, value]) => value instanceof File);
-    const payload = hasFiles ? form : Object.fromEntries([...new Set(entries.map(([key]) => key))].map((key) => {
+    const payload = forceMultipart || hasFiles ? form : Object.fromEntries([...new Set(entries.map(([key]) => key))].map((key) => {
       const values = entries.filter(([name]) => name === key).map(([, value]) => value);
       return [key, values.length > 1 || key === "vehiculos" || key === "casos" ? values : values[0]];
     }));

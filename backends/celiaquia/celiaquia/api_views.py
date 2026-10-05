@@ -14,6 +14,10 @@ Ademas, cada ViewSet exige el permiso de modulo que piden las pantallas
 (`celiaquia.api_permissions`): estar logueado no alcanza.
 """
 
+# Un ViewSet por recurso con sus transiciones como `@action`: el tamano del
+# modulo y de `ExpedienteViewSet` sigue a los 70 endpoints que expone.
+# pylint: disable=too-many-lines,too-many-public-methods
+
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
@@ -24,7 +28,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -104,12 +108,6 @@ from celiaquia.scope import (
     scope_expedientes,
     tecnicos_asignables,
 )
-from celiaquia.services.asignacion_service import AsignacionService
-from celiaquia.services.cruce_service import CruceService
-from celiaquia.services.cupo_service import CupoService
-from celiaquia.services.documentos_service import DocumentosService
-from core.models import Localidad, Municipio, Nacionalidad, Sexo
-from users.territorial_scope import apply_territorial_scope
 from celiaquia.permissions import (
     can_confirm_subsanacion,
     can_edit_legajo_files,
@@ -117,22 +115,29 @@ from celiaquia.permissions import (
     documentos_legajo_bloqueados,
     exigir_acceso_nacion_a_comentarios,
 )
-from celiaquia.services import registros_erroneos_service, validacion_renaper_service
+
+# Varios paquetes de `celiaquia/services/` se reemplazan por su `impl.py` en
+# `sys.modules` (ver su `__init__.py`). pylint analiza el `__init__` y, si no
+# reexporta el nombre, no lo ve aunque en ejecucion exista.
+# pylint: disable=no-name-in-module
+from celiaquia.services.asignacion_service import AsignacionService
 from celiaquia.services.comentarios_tecnicos_service import ComentariosTecnicosService
-from celiaquia.services.reporte_service import build_report_payload
-from celiaquia.services.subsanacion_service import SubsanacionService
+from celiaquia.services.cruce_service import CruceService
+from celiaquia.services.cupo_service import CupoService
+from celiaquia.services.documentos_service import DocumentosService
 from celiaquia.services.expediente_service import ExpedienteService
 from celiaquia.services.familia_service import FamiliaService
 from celiaquia.services.importacion_service import ImportacionService
 from celiaquia.services.legajo_service import LegajoService
-from celiaquia.services.padron_final_service import (  # pylint: disable=no-name-in-module
-    PadronFinalService,
-)
+from celiaquia.services.padron_final_service import PadronFinalService
 from celiaquia.services.pago_service import PagoService
-from celiaquia.services.revision_service import (  # pylint: disable=no-name-in-module
-    RevisionService,
-)
-from core.models import Provincia
+from celiaquia.services.reporte_service import build_report_payload
+from celiaquia.services.revision_service import RevisionService
+from celiaquia.services.subsanacion_service import SubsanacionService
+from celiaquia.services import registros_erroneos_service, validacion_renaper_service
+
+# pylint: enable=no-name-in-module
+from core.models import Localidad, Municipio, Nacionalidad, Provincia, Sexo
 
 
 def _error_renaper(payload: dict, estado_http: int) -> Exception:

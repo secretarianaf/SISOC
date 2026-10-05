@@ -13,7 +13,9 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from celiaquia.forms import validate_file_size
-from celiaquia.services.cupo_service import TOTAL_ASIGNADO_MAXIMO
+from celiaquia.services.cupo_service import (  # pylint: disable=no-name-in-module
+    TOTAL_ASIGNADO_MAXIMO,
+)
 from celiaquia.models import (
     AsignacionTecnico,
     HistorialComentarios,
@@ -588,6 +590,12 @@ class ExclusionImportacionSerializer(serializers.Serializer):
     motivo = serializers.CharField()
     expediente_origen_id = serializers.IntegerField(required=False, allow_null=True)
     estado_expediente_origen = serializers.CharField(required=False, allow_blank=True)
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
 
 
 class ProcesamientoResultadoSerializer(serializers.Serializer):

@@ -132,13 +132,30 @@ def test_create_expediente_and_provincia_guard(mocker):
     assert kwargs["usuario_provincia"] is user
 
 
+def _estado(nombre):
+    return SimpleNamespace(nombre=nombre)
+
+
+def test_procesar_expediente_exige_estado_creado(mocker):
+    """Reprocesar un expediente ya avanzado lo mandaria de vuelta a EN_ESPERA."""
+
+    del mocker
+    with pytest.raises(ValidationError, match="CRUCE_FINALIZADO"):
+        module.ExpedienteService.procesar_expediente(
+            SimpleNamespace(excel_masivo="file", estado=_estado("CRUCE_FINALIZADO")),
+            usuario="u",
+        )
+
+
 def test_procesar_expediente_validations_and_success(mocker):
     with pytest.raises(ValidationError):
         module.ExpedienteService.procesar_expediente(
-            SimpleNamespace(excel_masivo=None), usuario="u"
+            SimpleNamespace(excel_masivo=None, estado=_estado("CREADO")), usuario="u"
         )
 
-    exp = SimpleNamespace(pk=8, excel_masivo="file", save=mocker.Mock())
+    exp = SimpleNamespace(
+        pk=8, excel_masivo="file", estado=_estado("CREADO"), save=mocker.Mock()
+    )
     mocker.patch(
         "celiaquia.services.expediente_service.ImportacionService.importar_legajos_desde_excel",
         return_value={
@@ -263,7 +280,7 @@ def test_confirmar_envio_rechaza_doble_rol_sin_archivo1(mocker):
 
 
 def test_asignar_tecnico_with_id_and_user(mocker):
-    exp = SimpleNamespace(pk=10)
+    exp = SimpleNamespace(pk=10, estado=SimpleNamespace(nombre="RECEPCIONADO"))
     tecnico = SimpleNamespace(username="tec")
     mocker.patch(
         "celiaquia.services.expediente_service.User.objects.get", return_value=tecnico

@@ -121,7 +121,9 @@ def test_generar_nomina_sintys_excel_without_db(mocker):
             return [x.ciudadano_id for x in self]
 
     qs = Qs([Legajo(1, "20123456783", "A", "B"), Legajo(2, "12345678", "C", "D")])
-    expediente = SimpleNamespace(expediente_ciudadanos=qs)
+    expediente = SimpleNamespace(
+        expediente_ciudadanos=qs, estado=SimpleNamespace(nombre="ASIGNADO")
+    )
 
     mocker.patch(
         "celiaquia.services.familia_service.FamiliaService.obtener_ids_responsables",

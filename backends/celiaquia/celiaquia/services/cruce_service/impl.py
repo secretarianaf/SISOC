@@ -77,6 +77,26 @@ DOCUMENTO_COL_CANDIDATAS = {
 }
 
 
+def _exigir_estado_cruce(expediente) -> None:
+    """La regla vive en `expediente_service`: acá solo se aplica."""
+
+    from celiaquia.services.expediente_service import (
+        ESTADOS_PARA_CRUCE,
+        exigir_estado,
+    )
+
+    exigir_estado(expediente, ESTADOS_PARA_CRUCE, "subir el cruce")
+
+
+def _exigir_estado_nomina(expediente) -> None:
+    from celiaquia.services.expediente_service import (
+        ESTADOS_PARA_NOMINA_SINTYS,
+        exigir_estado,
+    )
+
+    exigir_estado(expediente, ESTADOS_PARA_NOMINA_SINTYS, "exportar la nómina")
+
+
 class CruceService:
     @staticmethod
     def normalize_cuit_str(val) -> str:
@@ -147,6 +167,7 @@ class CruceService:
         - Responsables (si el beneficiario tiene responsable)
         - Beneficiarios sin responsable (casos independientes)
         """
+        _exigir_estado_nomina(expediente)
         from celiaquia.services.familia_service import FamiliaService
 
         rows = []
@@ -632,13 +653,7 @@ class CruceService:
     def procesar_cruce_por_cuit(expediente: Expediente, archivo_excel, usuario) -> dict:
         if not expediente:
             raise ValidationError("Expediente inválido.")
-
-        estado_actual = expediente.estado.nombre
-        estados_permitidos = ("ASIGNADO", "PROCESO_DE_CRUCE", "CRUCE_FINALIZADO")
-        if estado_actual not in estados_permitidos:
-            raise ValidationError(
-                "El expediente no está en un estado válido para realizar el cruce."
-            )
+        _exigir_estado_cruce(expediente)
 
         provincia_expediente = expediente.provincia
         if provincia_expediente is None:

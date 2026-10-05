@@ -1,7 +1,9 @@
 # Front v2 (React) — reglas para migrar módulos
 
-Estado: **vigente como regla; implementación pendiente**. Todavía no existe
-`frontends/` en el repo. La primera tarea de la épica crea la base descrita acá.
+Estado: **vigente como regla; base implementada**. `frontends/` existe, con
+`packages/ui`, `packages/api`, `apps/vpsl` y `apps/celiaquia`. El router `/v2/`
+vive en `kernel/core/v2_frontend.py`, con los destinos en
+`settings.FRONTEND_V2_UPSTREAMS`.
 
 Decisión y alternativas descartadas: `docs/registro/decisiones/2026-09-24-frontend-v2-react.md`.
 
@@ -116,8 +118,8 @@ Qué se verificó:
 - La combinación completa se instaló y pasó `tsc`, `vite build`, `vitest run` y
   `eslint`, con el `theme.ts` de la skill sin modificar, sobre Node 24 local
   (2026-09-24).
-- Falta repetir esa corrida sobre Node 22.14.0 dentro del contenedor. Se hace
-  en la primera tarea.
+- Repetido sobre Node 22.14.0 en contenedor: pasa. El `package-lock.json` de
+  `frontends/` es el que fija las versiones reales.
 
 Política de actualización:
 
@@ -313,13 +315,26 @@ Sentry usa el **mismo proyecto que el back**, configurado con `@sisoc/api` /
   anterior.
 - No hay cambios en el Nginx del host.
 
-## Pendientes (se resuelven en la primera tarea de la épica)
+## Pendientes
+
+Resueltos:
+
+- ~~Ubicación del router `/v2/` en el back~~: está en `kernel/core/v2_frontend.py`,
+  sin imports de dominio y con los destinos en `settings.FRONTEND_V2_UPSTREAMS`.
+- ~~Validar la matriz de versiones sobre Node 22.14.0 dentro del contenedor~~:
+  hecho, con el cambio de vitest documentado arriba.
+
+Abiertos:
 
 - Contexto de usuario con sesión: `/api/users/me/` hoy acepta solo
   `TokenAuthentication`. Hay que habilitarlo con sesión o definir un endpoint
-  equivalente. Es un cambio de autenticación: requiere revisión.
-- Ubicación del router `/v2/` en el back (propuesta: `core/`, sin imports de
-  dominio, con los destinos en `settings`).
-- Filtrado del schema versionado a las rutas que consume `/v2/`, si el schema
-  completo genera ruido en CI.
-- Validar la matriz de versiones sobre Node 22.14.0 dentro del contenedor.
+  equivalente. Es un cambio de autenticación: requiere revisión. **Mientras
+  tanto el Drawer de `/v2/` no filtra por permisos del usuario**: muestra el
+  árbol fijo del módulo.
+- ~~Contrato versionado y chequeo en CI~~: cada módulo tiene su schema en
+  `packages/api/` (`openapi.yaml` para VPSL, `openapi.celiaquia.yaml` para
+  Celiaquía, este último generado con `--urlconf config.urls_frontend_v2`) y
+  `.github/workflows/frontend-v2.yml` falla si el schema o los tipos quedaron
+  viejos.
+- ~~`front_celiaquia` en el compose de deploy~~: está en
+  `docker-compose.deploy.yml`, con el mismo esquema que `front_vpsl`.

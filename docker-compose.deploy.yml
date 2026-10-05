@@ -255,6 +255,24 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Front v2 de Celiaquia: mismo esquema que front_vpsl. El tag por SHA sale de
+  # SISOC_RELEASE_SHA, que deploy_refresh.sh exporta en cada deploy.
+  front_celiaquia:
+    image: sisoc/front-celiaquia:${SISOC_RELEASE_SHA:-local}
+    build:
+      context: ./frontends
+      dockerfile: Dockerfile
+      target: prod
+      args:
+        APP: celiaquia
+        VITE_SENTRY_DSN: ${SENTRY_DSN:-}
+        VITE_SENTRY_ENVIRONMENT: ${ENVIRONMENT:-production}
+        VITE_RELEASE_SHA: ${VITE_RELEASE_SHA:-local}
+    depends_on:
+      django:
+        condition: service_healthy
+    restart: unless-stopped
+
   ocr_worker:
     image: sisoc/core:${SISOC_RELEASE_SHA:-local}
     build:

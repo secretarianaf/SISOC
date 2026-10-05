@@ -19,7 +19,7 @@ import InboxIcon from "@mui/icons-material/MoveToInbox";
 import SettingsIcon from "@mui/icons-material/Settings";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { FilterChipGroup, PageHeader, SearchField, SectionCard, Stack, StateChip, formatearFechaHora, toneExpediente } from "@sisoc/ui";
-import { mensajeDeError } from "@sisoc/api";
+import { mensajeDeError, paginasDe } from "@sisoc/api";
 import { api } from "../api";
 import { Aviso, ErrorPanel, TablaCargando } from "../componentes/Estados";
 
@@ -77,7 +77,7 @@ export function ExpedienteListPage() {
   });
 
   const filas = consulta.data?.results ?? [];
-  const totalPaginas = Math.max(1, Math.ceil((consulta.data?.count ?? 0) / 20));
+  const totalPaginas = paginasDe(consulta.data?.count ?? 0);
 
   return (
     <>

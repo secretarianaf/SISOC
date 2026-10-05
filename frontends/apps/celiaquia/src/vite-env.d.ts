@@ -11,6 +11,8 @@ interface ImportMetaEnv {
   readonly VITE_SENTRY_ENVIRONMENT?: string;
   /** SHA del commit desplegado. */
   readonly VITE_SENTRY_RELEASE?: string;
+  /** SHA del commit, el build arg de Dockerfile y compose. */
+  readonly VITE_RELEASE_SHA?: string;
   /** "true" solo si el back del entorno tiene replays activos. */
   readonly VITE_SENTRY_REPLAYS?: string;
 }

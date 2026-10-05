@@ -16,10 +16,10 @@ npm run dev:celiaquia     # Vite en :5173
 ```
 
 Para verla como la ve el usuario hay que entrar por Django, con el servicio
-levantado y la variable configurada:
+levantado (el destino sale de `FRONTEND_V2_UPSTREAMS` en `config/settings.py`):
 
 ```bash
-FRONTEND_V2_SERVICIOS=celiaquia=http://front_celiaquia:8080/ docker compose up -d django front_celiaquia
+docker compose up -d django front_celiaquia
 ```
 
 Y abrir `http://localhost:8000/v2/celiaquia/`. Sin sesión redirige al login.

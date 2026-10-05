@@ -9,10 +9,14 @@ Dos reglas que ordenan todo este modulo:
    maquina de estados, historial y cupos: persistir desde el serializer saltea
    todo eso. Por eso los ViewSets son de lectura y las transiciones son
    `@action` que llaman al service.
+
+Ademas, cada ViewSet exige el permiso de modulo que piden las pantallas
+(`celiaquia.api_permissions`): estar logueado no alcanza.
 """
 
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from django.db.models import Count
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404
@@ -21,8 +25,14 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from celiaquia.api_permissions import (
+    TieneAccesoCupos,
+    TieneAccesoExpedientes,
+    TieneAccesoReporte,
+)
 from celiaquia.api_serializers import (
     AccionResultadoSerializer,
     ArchivoSerializer,
@@ -103,6 +113,8 @@ from users.territorial_scope import apply_territorial_scope
 from celiaquia.permissions import (
     can_confirm_subsanacion,
     can_edit_legajo_files,
+    can_review_legajo,
+    documentos_legajo_bloqueados,
     exigir_acceso_nacion_a_comentarios,
 )
 from celiaquia.services import registros_erroneos_service, validacion_renaper_service
@@ -121,7 +133,6 @@ from celiaquia.services.revision_service import (  # pylint: disable=no-name-in-
     RevisionService,
 )
 from core.models import Provincia
-from users.models import User
 
 
 def _error_renaper(payload: dict, estado_http: int) -> Exception:
@@ -151,9 +162,24 @@ def _respuesta_excel(contenido: bytes, nombre: str) -> HttpResponse:
     return respuesta
 
 
+def _para_listar_legajos(queryset):
+    """Lo que `LegajoSerializer` lee de cada fila, en la misma consulta.
+
+    Sin esto, cada legajo de un listado de cupo (una provincia entera) cuesta
+    dos consultas mas: `estado` y `ciudadano`.
+    """
+
+    return queryset.select_related("estado", "ciudadano")
+
+
+PERMISOS_EXPEDIENTES = [IsAuthenticated, TieneAccesoExpedientes]
+PERMISOS_CUPOS = [IsAuthenticated, TieneAccesoCupos]
+
+
 class CeliaquiaCatalogoViewSet(viewsets.ReadOnlyModelViewSet):
     """Catalogos: los lee cualquier usuario autenticado del modulo."""
 
+    permission_classes = PERMISOS_EXPEDIENTES
     pagination_class = None
 
 
@@ -188,6 +214,7 @@ class TipoDocumentoViewSet(CeliaquiaCatalogoViewSet):
 class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
     """Expedientes visibles para el usuario, con sus transiciones de estado."""
 
+    permission_classes = PERMISOS_EXPEDIENTES
     serializer_class = ExpedienteSerializer
     # Solo para que el schema derive el tipo del pk: get_queryset() manda.
     queryset = Expediente.objects.none()
@@ -268,7 +295,9 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["get"], url_path="fuera-de-cupo")
     def fuera_de_cupo(self, request, pk=None):
         expediente = self.get_object()
-        queryset = CupoService.lista_fuera_de_cupo_por_expediente(expediente.pk)
+        queryset = _para_listar_legajos(
+            CupoService.lista_fuera_de_cupo_por_expediente(expediente.pk)
+        )
         return Response(
             LegajoSerializer(
                 queryset, many=True, context=self.get_serializer_context()
@@ -277,12 +306,24 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
 
     # --- Transiciones (delegan en el service) ------------------------------
 
-    def _exigir_gestion(self):
-        """Procesar/confirmar son operaciones de la provincia duena, o admin."""
+    def _exigir_gestion(self, expediente=None):
+        """Procesar/importar/confirmar son de la provincia duena, o admin.
+
+        Mismo alcance que las vistas Django (`ProcesarExpedienteView`,
+        `ExpedienteImportView`, `ExpedienteConfirmView`): admin opera cualquiera,
+        la provincia lo que su territorio alcanza (ya lo filtra `get_object`) y
+        cualquier otro rol, incluida coordinacion, solo los que creo.
+
+        Sin `expediente` (alta o previsualizacion) alcanza con el rol.
+        """
 
         user = self.request.user
         if not (is_admin(user) or is_provincial(user) or is_coordinador(user)):
             raise PermissionDenied("No tiene permisos para operar el expediente.")
+        if expediente is None or is_admin(user) or is_provincial(user):
+            return
+        if expediente.usuario_provincia_id != user.pk:
+            raise PermissionDenied("Solo la provincia duena opera este expediente.")
 
     @extend_schema(request=None, responses=ImportacionResultadoSerializer)
     @action(detail=True, methods=["post"])
@@ -294,8 +335,8 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
         advertencias sin parsear texto.
         """
 
-        self._exigir_gestion()
         expediente = self.get_object()
+        self._exigir_gestion(expediente)
         try:
             resultado = ImportacionService.importar_legajos_desde_excel(
                 expediente, expediente.excel_masivo, request.user
@@ -309,8 +350,8 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
     def procesar(self, request, pk=None):
         """Procesa el Excel masivo y crea los legajos."""
 
-        self._exigir_gestion()
         expediente = self.get_object()
+        self._exigir_gestion(expediente)
         try:
             resultado = ExpedienteService.procesar_expediente(expediente, request.user)
         except DjangoValidationError as exc:
@@ -333,9 +374,10 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
     def confirmar_envio(self, request, pk=None):
         """Cierra la carga provincial y envia el expediente a revision."""
 
-        self._exigir_gestion()
         expediente = self.get_object()
+        self._exigir_gestion(expediente)
         try:
+            ExpedienteService.exigir_sin_registros_erroneos(expediente)
             ExpedienteService.confirmar_envio(expediente, request.user)
         except DjangoValidationError as exc:
             raise _traducir_error(exc) from exc
@@ -359,7 +401,10 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
         expediente = self.get_object()
         entrada = AsignarTecnicoSerializer(data=request.data)
         entrada.is_valid(raise_exception=True)
-        tecnico = get_object_or_404(User, pk=entrada.validated_data["tecnico_id"])
+        # Los mismos que ofrece `tecnicos/`: no se asigna a cualquier usuario.
+        tecnico = get_object_or_404(
+            tecnicos_asignables(), pk=entrada.validated_data["tecnico_id"]
+        )
         try:
             ExpedienteService.asignar_tecnico(expediente, tecnico, request.user)
         except DjangoValidationError as exc:
@@ -402,8 +447,8 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         """Edicion de metadatos. Solo mientras el expediente esta en CREADO."""
 
-        self._exigir_gestion()
         expediente = self.get_object()
+        self._exigir_gestion(expediente)
         if expediente.estado.nombre != "CREADO":
             raise ValidationError(
                 {"detail": ["Solo se pueden editar expedientes en estado CREADO."]}
@@ -625,13 +670,14 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
     def cruce(self, request, pk=None):
         """Sube el Excel de respuesta de Sintys y ejecuta el cruce por CUIT."""
 
-        if not (
-            is_admin(request.user)
-            or is_coordinador(request.user)
-            or is_tecnico(request.user)
-        ):
-            raise PermissionDenied("Solo tecnica o coordinacion ejecutan el cruce.")
+        # Igual que `SubirCruceExcelView`: admin o el tecnico asignado.
+        if not (is_admin(request.user) or is_tecnico(request.user)):
+            raise PermissionDenied("Solo la tecnica asignada ejecuta el cruce.")
         expediente = self.get_object()
+        if not is_admin(request.user) and not (
+            expediente.asignaciones_tecnicos.filter(tecnico=request.user).exists()
+        ):
+            raise PermissionDenied("No sos un técnico asignado a este expediente.")
         entrada = ArchivoSerializer(data=request.data)
         entrada.is_valid(raise_exception=True)
         try:
@@ -647,8 +693,8 @@ class ExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
     def crear_legajos(self, request, pk=None):
         """Alta manual de legajos a partir de filas ya previsualizadas."""
 
-        self._exigir_gestion()
         expediente = self.get_object()
+        self._exigir_gestion(expediente)
         entrada = CrearLegajosSerializer(data=request.data)
         entrada.is_valid(raise_exception=True)
         try:
@@ -803,6 +849,8 @@ class ReporteViewSet(viewsets.ViewSet):
     El alcance territorial tambien lo aplica el service.
     """
 
+    permission_classes = [IsAuthenticated, TieneAccesoReporte]
+
     @extend_schema(
         parameters=[
             OpenApiParameter("provincia", int),
@@ -824,6 +872,7 @@ class ReporteViewSet(viewsets.ViewSet):
 class LegajoViewSet(viewsets.ReadOnlyModelViewSet):
     """Legajos, acotados a los expedientes que el usuario puede ver."""
 
+    permission_classes = PERMISOS_EXPEDIENTES
     serializer_class = LegajoSerializer
     # Solo para que el schema derive el tipo del pk: get_queryset() manda.
     queryset = ExpedienteCiudadano.objects.none()
@@ -951,16 +1000,18 @@ class LegajoViewSet(viewsets.ReadOnlyModelViewSet):
     @extend_schema(responses=MotivoPreviewSerializer)
     @action(detail=True, methods=["get"], url_path="motivo-preview")
     def motivo_preview(self, request, pk=None):
-        """Motivo que se propondria al subsanar o rechazar, ya concatenado."""
+        """Motivos elegibles al subsanar o rechazar, como la pantalla.
+
+        `ComentariosTecnicosService` ya no concatena el historial entero: desde
+        el issue #2592 cada instancia lleva solo las observaciones elegidas.
+        """
 
         legajo = self.get_object()
         exigir_acceso_nacion_a_comentarios(request.user, legajo)
+        opciones = ComentariosTecnicosService.opciones_seleccionables(legajo)
         return Response(
             MotivoPreviewSerializer(
-                {
-                    "lineas": ComentariosTecnicosService.lineas_concatenadas(legajo),
-                    "motivo": ComentariosTecnicosService.texto_concatenado(legajo),
-                }
+                {"opciones": opciones, "tiene_observaciones": bool(opciones)}
             ).data
         )
 
@@ -1006,10 +1057,7 @@ class LegajoViewSet(viewsets.ReadOnlyModelViewSet):
         """La provincia adjunta evidencia nueva para la subsanacion activa."""
 
         legajo = self.get_object()
-        try:
-            can_edit_legajo_files(request.user, legajo.expediente, legajo)
-        except PermissionDenied as exc:
-            raise PermissionDenied(str(exc) or "Permiso denegado.") from exc
+        self._exigir_edicion_de_archivos(legajo)
 
         entrada = ResponderSubsanacionSerializer(data=request.data)
         entrada.is_valid(raise_exception=True)
@@ -1057,9 +1105,17 @@ class LegajoViewSet(viewsets.ReadOnlyModelViewSet):
     )
     @action(detail=True, methods=["post"], url_path="solicitar-subsanacion")
     def solicitar_subsanacion(self, request, pk=None):
-        """Marca el legajo para subsanar. Es una accion del tecnico revisor."""
+        """Marca el legajo para subsanar. Es una accion del tecnico revisor.
+
+        Mismo permiso que `LegajoSubsanarView`: admin, coordinacion o el
+        tecnico asignado. La provincia duena del expediente no.
+        """
 
         legajo = self.get_object()
+        try:
+            can_review_legajo(request.user, legajo.expediente)
+        except DjangoPermissionDenied as exc:
+            raise PermissionDenied(str(exc) or "Permiso denegado.") from exc
         entrada = SolicitarSubsanacionSerializer(data=request.data)
         entrada.is_valid(raise_exception=True)
         try:
@@ -1095,46 +1151,58 @@ class LegajoViewSet(viewsets.ReadOnlyModelViewSet):
             RevisionService.validar_transicion(legajo, accion)
 
             if accion == "ELIMINAR":
+                # La baja de la provincia la revalida el service con el
+                # expediente bloqueado (`can_delete_legajo`).
                 return Response(RevisionService.eliminar(legajo, request.user))
 
-            motivo = ""
-            comentarios = []
-            if accion in ("RECHAZAR", "SUBSANAR"):
-                comentarios = RevisionService.resolver_seleccion(
-                    legajo, datos.get("observaciones_ids", [])
-                )
-                motivo = RevisionService.componer_motivo(
-                    comentarios, datos.get("texto_libre", "")
-                )
-
-            RevisionService.liberar_cupo_si_corresponde(legajo, request.user, accion)
-
-            if accion == "APROBAR":
-                return Response(RevisionService.aprobar(legajo, request.user))
-            if accion == "RECHAZAR":
-                return Response(
-                    RevisionService.rechazar(
-                        legajo, request.user, motivo, comentarios=comentarios
-                    )
-                )
-            return Response(
-                RevisionService.subsanar(
-                    legajo,
-                    request.user,
-                    motivo,
-                    tipo_subsanacion=datos.get("tipo_subsanacion", ""),
-                    comentarios=comentarios,
-                    documentacion_complementaria=datos.get(
-                        "documentacion_complementaria", []
-                    ),
-                    observaciones_fallback=[
-                        (obs["tipo"], obs["detalle"])
-                        for obs in datos.get("observaciones", [])
-                    ],
-                )
-            )
+            # Atomico: liberar el cupo y despues fallar al validar la
+            # documentacion complementaria no puede dejar el cupo liberado.
+            with transaction.atomic():
+                return Response(self._aplicar_revision(legajo, accion, datos))
+        except DjangoPermissionDenied as exc:
+            raise PermissionDenied(str(exc) or "Permiso denegado.") from exc
         except DjangoValidationError as exc:
             raise _traducir_error(exc) from exc
+
+    def _aplicar_revision(self, legajo, accion, datos) -> dict:
+        usuario = self.request.user
+        motivo = ""
+        comentarios = []
+        if accion in ("RECHAZAR", "SUBSANAR"):
+            comentarios = RevisionService.resolver_seleccion(
+                legajo, datos.get("observaciones_ids", [])
+            )
+            motivo = RevisionService.componer_motivo(
+                comentarios, datos.get("texto_libre", "")
+            )
+
+        RevisionService.liberar_cupo_si_corresponde(legajo, usuario, accion)
+
+        if accion == "APROBAR":
+            return RevisionService.aprobar(legajo, usuario)
+        if accion == "RECHAZAR":
+            return RevisionService.rechazar(
+                legajo, usuario, motivo, comentarios=comentarios
+            )
+        return RevisionService.subsanar(
+            legajo,
+            usuario,
+            motivo,
+            tipo_subsanacion=datos.get("tipo_subsanacion", ""),
+            comentarios=comentarios,
+            documentacion_complementaria=datos.get("documentacion_complementaria", []),
+            observaciones_fallback=[
+                (obs["tipo"], obs["detalle"]) for obs in datos.get("observaciones", [])
+            ],
+        )
+
+    def _exigir_edicion_de_archivos(self, legajo):
+        """Quien puede cargar archivos en el legajo: la regla de la pantalla."""
+
+        try:
+            can_edit_legajo_files(self.request.user, legajo.expediente, legajo)
+        except DjangoPermissionDenied as exc:
+            raise PermissionDenied(str(exc) or "Permiso denegado.") from exc
 
     @extend_schema(request=SubirArchivoLegajoSerializer, responses=None)
     @action(
@@ -1143,9 +1211,27 @@ class LegajoViewSet(viewsets.ReadOnlyModelViewSet):
         parser_classes=[MultiPartParser, FormParser],
     )
     def archivos(self, request, pk=None):
-        """Sube un archivo al legajo, en el slot indicado (1, 2 o 3)."""
+        """Sube un archivo al legajo, en el slot indicado (1, 2 o 3).
+
+        Mismas reglas que `LegajoArchivoUploadView`: permiso por rol y estado
+        (`can_edit_legajo_files`) y, una vez enviado el expediente o con el
+        legajo en subsanacion, 409: las correcciones van como evidencia de
+        subsanacion, no reemplazando los originales.
+        """
 
         legajo = self.get_object()
+        self._exigir_edicion_de_archivos(legajo)
+        if documentos_legajo_bloqueados(legajo):
+            return Response(
+                {
+                    "detail": (
+                        "Los documentos del legajo no pueden reemplazarse en este "
+                        "estado. Cargá las correcciones como archivos de "
+                        "subsanación."
+                    )
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
         entrada = SubirArchivoLegajoSerializer(data=request.data)
         entrada.is_valid(raise_exception=True)
         try:
@@ -1169,6 +1255,7 @@ class LegajoViewSet(viewsets.ReadOnlyModelViewSet):
 class ProvinciaCupoViewSet(viewsets.ReadOnlyModelViewSet):
     """Cupos por provincia. Solo lectura: el alta la hace `CupoService`."""
 
+    permission_classes = PERMISOS_CUPOS
     serializer_class = ProvinciaCupoSerializer
     queryset = ProvinciaCupo.objects.none()
 
@@ -1178,7 +1265,9 @@ class ProvinciaCupoViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
     @extend_schema(responses=FilaCupoProvinciaSerializer(many=True))
-    @action(detail=False, methods=["get"])
+    # Sin paginar: son las 24 provincias. Declararlo hace que el schema no la
+    # documente como pagina.
+    @action(detail=False, methods=["get"], pagination_class=None)
     def dashboard(self, request):
         """Cuadro de cupos: **todas** las provincias, con cupo o sin él.
 
@@ -1215,7 +1304,9 @@ class ProvinciaCupoViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["get"])
     def ocupados(self, request, pk=None):
         cupo = self.get_object()
-        queryset = CupoService.lista_ocupados_por_provincia(cupo.provincia)
+        queryset = _para_listar_legajos(
+            CupoService.lista_ocupados_por_provincia(cupo.provincia)
+        )
         return Response(
             LegajoSerializer(
                 queryset, many=True, context=self.get_serializer_context()
@@ -1226,7 +1317,9 @@ class ProvinciaCupoViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["get"])
     def suspendidos(self, request, pk=None):
         cupo = self.get_object()
-        queryset = CupoService.lista_suspendidos_por_provincia(cupo.provincia)
+        queryset = _para_listar_legajos(
+            CupoService.lista_suspendidos_por_provincia(cupo.provincia)
+        )
         return Response(
             LegajoSerializer(
                 queryset, many=True, context=self.get_serializer_context()
@@ -1343,6 +1436,7 @@ class ProvinciaCupoViewSet(viewsets.ReadOnlyModelViewSet):
 class CupoMovimientoViewSet(viewsets.ReadOnlyModelViewSet):
     """Auditoria de movimientos de cupo."""
 
+    permission_classes = PERMISOS_CUPOS
     serializer_class = CupoMovimientoSerializer
     queryset = CupoMovimiento.objects.none()
 
@@ -1362,6 +1456,7 @@ class CupoMovimientoViewSet(viewsets.ReadOnlyModelViewSet):
 class PagoExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
     """Lotes de pago y su nomina."""
 
+    permission_classes = PERMISOS_CUPOS
     serializer_class = PagoExpedienteSerializer
     queryset = PagoExpediente.objects.none()
 
@@ -1369,6 +1464,11 @@ class PagoExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = PagoExpediente.objects.select_related("provincia").order_by(
             "-creado_en", "pk"
         )
+        # El listado de la pantalla es por provincia: filtrar aca evita que el
+        # front tenga que recorrer todas las paginas de todas las provincias.
+        provincia_id = (self.request.query_params.get("provincia") or "").strip()
+        if provincia_id.isdigit():
+            queryset = queryset.filter(provincia_id=int(provincia_id))
         periodo = (self.request.query_params.get("periodo") or "").strip()
         if periodo:
             queryset = queryset.filter(periodo=periodo)
@@ -1376,6 +1476,16 @@ class PagoExpedienteViewSet(viewsets.ReadOnlyModelViewSet):
         if estado:
             queryset = queryset.filter(estado=estado)
         return queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("provincia", int),
+            OpenApiParameter("periodo", str),
+            OpenApiParameter("estado", str),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def _exigir_gestion_pago(self):
         user = self.request.user

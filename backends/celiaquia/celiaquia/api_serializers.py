@@ -8,9 +8,11 @@ Los serializers son de lectura: las escrituras pasan por
 `celiaquia/services/`, donde vive la maquina de estados.
 """
 
+from django.core.validators import FileExtensionValidator
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from celiaquia.forms import validate_file_size
 from celiaquia.services.cupo_service import TOTAL_ASIGNADO_MAXIMO
 from celiaquia.models import (
     AsignacionTecnico,
@@ -428,12 +430,16 @@ class CupoMovimientoSerializer(serializers.ModelSerializer):
 
 class PagoExpedienteSerializer(serializers.ModelSerializer):
     provincia = serializers.CharField(source="provincia.nombre", read_only=True)
+    # Como en `ProvinciaCupo`: el nombre es para mostrar; para volver al
+    # listado de la provincia hace falta el id.
+    provincia_id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = PagoExpediente
         fields = [
             "id",
             "provincia",
+            "provincia_id",
             "periodo",
             "estado",
             "total_candidatos",
@@ -511,6 +517,11 @@ class _EntradaSerializer(serializers.Serializer):
         raise serializers.ValidationError("Serializer de solo entrada.")
 
 
+#: Los mismos que `ExpedienteForm.excel_masivo`: solo .xlsx y con tope de tamaño.
+#: Sin esto la API guardaba cualquier archivo y pandas lo leia entero.
+VALIDADORES_EXCEL_MASIVO = [FileExtensionValidator(["xlsx"]), validate_file_size]
+
+
 class ExpedienteCreateSerializer(_EntradaSerializer):
     """Alta del expediente con su Excel masivo."""
 
@@ -518,7 +529,9 @@ class ExpedienteCreateSerializer(_EntradaSerializer):
         max_length=100, required=False, allow_blank=True
     )
     observaciones = serializers.CharField(required=False, allow_blank=True)
-    excel_masivo = serializers.FileField(required=False)
+    excel_masivo = serializers.FileField(
+        required=False, validators=VALIDADORES_EXCEL_MASIVO
+    )
 
 
 class ExpedienteUpdateSerializer(_EntradaSerializer):
@@ -533,7 +546,7 @@ class ExpedienteUpdateSerializer(_EntradaSerializer):
 class PreviewExcelSerializer(_EntradaSerializer):
     """Previsualizacion del Excel antes de crear el expediente."""
 
-    excel_masivo = serializers.FileField()
+    excel_masivo = serializers.FileField(validators=VALIDADORES_EXCEL_MASIVO)
     limit = serializers.IntegerField(required=False, min_value=1, max_value=5000)
 
 
@@ -740,11 +753,30 @@ class CrearComentarioTecnicoSerializer(_EntradaSerializer):
     observacion_libre = serializers.CharField(required=False, allow_blank=True)
 
 
-class MotivoPreviewSerializer(serializers.Serializer):
-    """Motivo que se propondria al subsanar o rechazar, ya concatenado."""
+class OpcionMotivoSerializer(serializers.Serializer):
+    """Una observacion tecnica que se puede elegir como motivo."""
 
-    lineas = serializers.ListField(child=serializers.CharField())
-    motivo = serializers.CharField(allow_blank=True)
+    id = serializers.IntegerField()
+    etiqueta = serializers.CharField()
+    # Todavia no se le comunico a la provincia: la UI la tilda de entrada.
+    pendiente = serializers.BooleanField()
+
+    def create(self, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Serializer de solo lectura.")
+
+
+class MotivoPreviewSerializer(serializers.Serializer):
+    """Motivos elegibles al subsanar o rechazar (issue #2592).
+
+    Lo mismo que devuelve `LegajoMotivoPreviewView`. Los ids elegidos se mandan
+    en `revisar` como `observaciones_ids`; el texto sale de la base.
+    """
+
+    opciones = OpcionMotivoSerializer(many=True)
+    tiene_observaciones = serializers.BooleanField()
 
     def create(self, validated_data):
         raise serializers.ValidationError("Serializer de solo lectura.")

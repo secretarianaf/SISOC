@@ -51,7 +51,7 @@ from celiaquia.services.importacion_service import (
     validar_y_normalizar_payloads_importacion,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 # Alias de los helpers de permisos, para que el codigo movido no cambie.
 _is_admin = is_admin

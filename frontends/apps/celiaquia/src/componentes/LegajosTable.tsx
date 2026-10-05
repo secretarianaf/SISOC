@@ -3,10 +3,6 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import Collapse from "@mui/material/Collapse";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
@@ -17,7 +13,6 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -25,6 +20,7 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { SearchField, SectionCard, Stack, StateChip, formatearFecha, toneCupo, toneRevision, toneSintys } from "@sisoc/ui";
 import { ArchivosLegajo } from "./ArchivosLegajo";
+import { MotivoRevision, type MotivoElegido } from "./MotivoRevision";
 import { RespuestaSubsanacion } from "./RespuestaSubsanacion";
 import { ValidacionRenaper } from "./ValidacionRenaper";
 import type { AccionRevision, Legajo } from "@sisoc/api";
@@ -45,8 +41,7 @@ const esFinal = (revision: string) =>
 export type RevisionPedida = {
   legajoId: number;
   accion: AccionRevision;
-  texto_libre?: string;
-};
+} & Partial<MotivoElegido>;
 
 function FilaLegajo({
   leg,
@@ -58,8 +53,15 @@ function FilaLegajo({
   deshabilitado: boolean;
 }) {
   const [abierto, setAbierto] = useState(false);
-  const [motivoDe, setMotivoDe] = useState<AccionRevision | null>(null);
-  const [textoLibre, setTextoLibre] = useState("");
+  const [motivoDe, setMotivoDe] = useState<"SUBSANAR" | "RECHAZAR" | null>(
+    null,
+  );
+  // Una por apertura del dialogo: remontarlo lo deja sin seleccion previa.
+  const [apertura, setApertura] = useState(0);
+  const pedirMotivo = (accion: "SUBSANAR" | "RECHAZAR") => {
+    setApertura((n) => n + 1);
+    setMotivoDe(accion);
+  };
   // El schema declara estos campos opcionales: el serializer los omite
   // cuando el legajo todavia no fue evaluado.
   const revision = leg.revision_tecnico ?? "PENDIENTE";
@@ -67,15 +69,10 @@ function FilaLegajo({
   const tone = toneRevision(revision);
   const bloqueado = deshabilitado || esFinal(revision);
 
-  const confirmarConMotivo = () => {
+  const confirmarConMotivo = (motivo: MotivoElegido) => {
     if (!motivoDe) return;
-    onRevisar({
-      legajoId: leg.id,
-      accion: motivoDe,
-      texto_libre: textoLibre,
-    });
+    onRevisar({ legajoId: leg.id, accion: motivoDe, ...motivo });
     setMotivoDe(null);
-    setTextoLibre("");
   };
 
   return (
@@ -252,13 +249,13 @@ function FilaLegajo({
                           </Button>
                           <Button
                             color="warning"
-                            onClick={() => setMotivoDe("SUBSANAR")}
+                            onClick={() => pedirMotivo("SUBSANAR")}
                           >
                             Subsanar
                           </Button>
                           <Button
                             color="error"
-                            onClick={() => setMotivoDe("RECHAZAR")}
+                            onClick={() => pedirMotivo("RECHAZAR")}
                           >
                             Rechazar
                           </Button>
@@ -273,42 +270,13 @@ function FilaLegajo({
         </TableCell>
       </TableRow>
 
-      <Dialog
-        open={motivoDe !== null}
-        onClose={() => setMotivoDe(null)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {motivoDe === "RECHAZAR" ? "Motivo del rechazo" : "Motivo de la subsanación"}
-        </DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={2}>
-            <Typography variant="body2" color="text.secondary">
-              El motivo final lo arma el sistema: a este texto se le suman las
-              observaciones técnicas ya cargadas en el legajo.
-            </Typography>
-            <TextField
-              label="Texto complementario"
-              multiline
-              minRows={3}
-              fullWidth
-              value={textoLibre}
-              onChange={(e) => setTextoLibre(e.target.value)}
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setMotivoDe(null)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            color={motivoDe === "RECHAZAR" ? "error" : "warning"}
-            onClick={confirmarConMotivo}
-          >
-            Confirmar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <MotivoRevision
+        key={apertura}
+        legajoId={leg.id}
+        accion={motivoDe}
+        onCancelar={() => setMotivoDe(null)}
+        onConfirmar={confirmarConMotivo}
+      />
     </Fragment>
   );
 }

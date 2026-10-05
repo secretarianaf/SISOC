@@ -3,7 +3,7 @@
  *
  * **No se escriben a mano.** Son alias de los componentes de
  * `openapi.d.ts`, que genera `openapi-typescript` desde
- * `packages/api/openapi.yaml`, que a su vez sale de drf-spectacular.
+ * `packages/api/openapi.celiaquia.yaml`, que a su vez sale de drf-spectacular.
  * Ver `frontend_v2.md`, seccion 7 (Contrato).
  *
  * Regenerar despues de tocar un serializer del back:
@@ -23,6 +23,16 @@
 import type { components } from "./openapi";
 
 type Schemas = components["schemas"];
+
+/**
+ * Filas por pagina de los listados paginados: `REST_FRAMEWORK["PAGE_SIZE"]`
+ * en `config/settings.py`. Si cambia alla, cambia aca.
+ */
+export const TAMANO_PAGINA = 10;
+
+/** Cantidad de paginas de un listado, al menos una. */
+export const paginasDe = (total: number) =>
+  Math.max(1, Math.ceil(total / TAMANO_PAGINA));
 
 /** Respuesta de `PageNumberPagination` de DRF. */
 export type Paginado<T> = {

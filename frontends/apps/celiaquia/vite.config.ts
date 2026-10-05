@@ -25,5 +25,9 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
+    // Las fechas se muestran en hora local y los usuarios estan en Argentina.
+    // Sin fijarla, los tests de formato dependen de la zona de la maquina y
+    // fallan en CI, que corre en UTC.
+    env: { TZ: "America/Argentina/Buenos_Aires" },
   },
 });

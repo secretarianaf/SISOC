@@ -1,6 +1,8 @@
 """URLs de la API REST de Celiaquia.
 
-Se montan bajo `api/celiaquia/` desde `config/urls.py`.
+Se montan bajo `api/celiaquia/` desde `celiaquia_runtime/urls.py`. En el
+deploy separado el core las reenvia al backend porque `api/celiaquia/` esta en
+los `url_prefixes` de `config/backends.json`.
 """
 
 from django.urls import include, path

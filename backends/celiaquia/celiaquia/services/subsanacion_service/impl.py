@@ -85,7 +85,6 @@ class SubsanacionService:
         ]
 
     @staticmethod
-    @staticmethod
     def exigir_puede_confirmar(legajo) -> None:
         """Guard previo a pasar un legajo de SUBSANAR a SUBSANADO.
 

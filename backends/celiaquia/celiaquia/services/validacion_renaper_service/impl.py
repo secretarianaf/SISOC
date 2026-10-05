@@ -461,6 +461,17 @@ def guardar_estado(legajo, estado: str, usuario, comentario: str = "") -> str:
     """
 
     if estado not in ESTADOS_VALIDACION:
+        logger.warning(
+            "renaper.validation.invalid_status",
+            extra={
+                "data": {
+                    "legajo_id": legajo.pk,
+                    "expediente_id": legajo.expediente_id,
+                    "estado_recibido": estado,
+                    "user_id": getattr(usuario, "id", None),
+                }
+            },
+        )
         raise ValidationError("Estado de validación inválido")
 
     legajo.estado_validacion_renaper = int(estado)

@@ -324,7 +324,10 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
         })
         .then((r) => r.data),
 
-    /** Motivo que se propondria al subsanar o rechazar, ya concatenado. */
+    /**
+     * Observaciones tecnicas que se pueden elegir como motivo al subsanar o
+     * rechazar. Las `pendiente` todavia no se le comunicaron a la provincia.
+     */
     motivoPreview: (id: number) =>
       http
         .get<MotivoPreview>(`legajos/${id}/motivo-preview/`)
@@ -359,6 +362,13 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
         .then((r) => r.data);
     },
 
+    /**
+     * Revision tecnica. El motivo lo arma el back con las observaciones
+     * elegidas (`observaciones_ids`) y el texto libre.
+     *
+     * Con documentacion complementaria (solo al subsanar) va como multipart,
+     * porque lleva archivos; sin ella, como JSON.
+     */
     revisar: (
       id: number,
       datos: {
@@ -366,8 +376,28 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
         texto_libre?: string;
         tipo_subsanacion?: string;
         observaciones?: { tipo: string; detalle: string }[];
+        observaciones_ids?: number[];
+        documentacion_complementaria?: File[];
       },
-    ) => http.post(`legajos/${id}/revisar/`, datos).then((r) => r.data),
+    ) => {
+      const { documentacion_complementaria: archivos = [], ...json } = datos;
+      if (archivos.length === 0) {
+        return http.post(`legajos/${id}/revisar/`, json).then((r) => r.data);
+      }
+      const form = new FormData();
+      form.append("accion", json.accion);
+      if (json.texto_libre) form.append("texto_libre", json.texto_libre);
+      if (json.tipo_subsanacion) {
+        form.append("tipo_subsanacion", json.tipo_subsanacion);
+      }
+      (json.observaciones_ids ?? []).forEach((obs) =>
+        form.append("observaciones_ids", String(obs)),
+      );
+      archivos.forEach((archivo) =>
+        form.append("documentacion_complementaria", archivo),
+      );
+      return http.post(`legajos/${id}/revisar/`, form).then((r) => r.data);
+    },
 
     /**
      * Sube un archivo al legajo, en el slot indicado (1, 2 o 3).
@@ -389,6 +419,9 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
   cupos: {
     listar: () =>
       http.get<Paginado<ProvinciaCupo>>("cupos/").then((r) => r.data),
+
+    obtener: (id: number) =>
+      http.get<ProvinciaCupo>(`cupos/${id}/`).then((r) => r.data),
 
     metricas: (id: number) =>
       http.get<MetricasCupo>(`cupos/${id}/metricas/`).then((r) => r.data),
@@ -437,7 +470,12 @@ export const celiaquiaApi = (http: AxiosInstance) => ({
   },
 
   pagos: {
-    listar: (params?: { periodo?: string; estado?: string }) =>
+    listar: (params?: {
+      provincia?: number;
+      periodo?: string;
+      estado?: string;
+      page?: number;
+    }) =>
       http.get<Paginado<PagoExpediente>>("pagos/", { params }).then((r) => r.data),
 
     obtener: (id: number) =>

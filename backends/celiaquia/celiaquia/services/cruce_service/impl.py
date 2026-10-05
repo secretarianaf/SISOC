@@ -167,6 +167,7 @@ class CruceService:
         - Responsables (si el beneficiario tiene responsable)
         - Beneficiarios sin responsable (casos independientes)
         """
+        _exigir_estado_nomina(expediente)
         from celiaquia.services.familia_service import FamiliaService
 
         rows = []
@@ -653,13 +654,6 @@ class CruceService:
         if not expediente:
             raise ValidationError("Expediente inválido.")
         _exigir_estado_cruce(expediente)
-
-        estado_actual = expediente.estado.nombre
-        estados_permitidos = ("ASIGNADO", "PROCESO_DE_CRUCE", "CRUCE_FINALIZADO")
-        if estado_actual not in estados_permitidos:
-            raise ValidationError(
-                "El expediente no está en un estado válido para realizar el cruce."
-            )
 
         provincia_expediente = expediente.provincia
         if provincia_expediente is None:

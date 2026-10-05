@@ -174,7 +174,9 @@ export function CupoProvinciaPage() {
 
   const cupo = useQuery({
     queryKey: ["cupo", cupoId],
-    queryFn: () => api.cupos.listar().then((p) => p.results.find((c) => c.id === cupoId)),
+    // Por id: el listado esta paginado y la provincia puede no estar en la
+    // primera pagina.
+    queryFn: () => api.cupos.obtener(cupoId),
     enabled: Number.isFinite(cupoId),
   });
 
@@ -273,7 +275,7 @@ export function CupoProvinciaPage() {
               variant="outlined"
               color="success"
               component={RouterLink}
-              to={`/pagos/${cupo.data.provincia}`}
+              to={`/pagos/${cupo.data.provincia_id}`}
             >
               Expedientes de pago
             </Button>

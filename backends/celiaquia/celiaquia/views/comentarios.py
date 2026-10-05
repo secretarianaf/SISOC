@@ -7,7 +7,10 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
-from celiaquia.permissions import exigir_acceso_nacion_a_comentarios
+from celiaquia.permissions import (
+    exigir_acceso_nacion_a_comentarios,
+    exigir_rol_nacion_a_comentarios,
+)
 from celiaquia.models import ExpedienteCiudadano, HistorialComentarios
 from celiaquia.services.comentarios_tecnicos_service import ComentariosTecnicosService
 from iam.services import user_has_permission_code
@@ -76,10 +79,13 @@ def _resolver_legajo_para_nacion(request, expediente_id, legajo_id):
     que la API REST aplique exactamente la misma.
     """
 
-    legajo = get_object_or_404(
-        ExpedienteCiudadano, pk=legajo_id, expediente__pk=expediente_id
-    )
     try:
+        # El rol se valida antes de buscar el legajo: sin permiso, 403 y no
+        # 404, para no revelar que legajos existen.
+        exigir_rol_nacion_a_comentarios(request.user)
+        legajo = get_object_or_404(
+            ExpedienteCiudadano, pk=legajo_id, expediente__pk=expediente_id
+        )
         exigir_acceso_nacion_a_comentarios(request.user, legajo)
     except PermissionDenied as exc:
         return None, JsonResponse(

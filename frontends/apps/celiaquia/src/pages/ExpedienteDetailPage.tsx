@@ -100,6 +100,8 @@ export function ExpedienteDetailPage() {
       api.legajos.revisar(pedido.legajoId, {
         accion: pedido.accion,
         texto_libre: pedido.texto_libre,
+        observaciones_ids: pedido.observaciones_ids,
+        documentacion_complementaria: pedido.documentacion_complementaria,
       }),
     onSuccess: (_data, pedido) => {
       setAviso(

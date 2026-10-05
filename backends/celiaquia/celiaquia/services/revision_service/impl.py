@@ -67,6 +67,14 @@ class RevisionService:
     # --- Permisos ----------------------------------------------------------
 
     @staticmethod
+    def es_solo_provincia(usuario) -> bool:
+        """Provincia sin rol de Nacion: lo unico que puede hacer es ELIMINAR."""
+
+        return is_provincial(usuario) and not (
+            is_admin(usuario) or is_tecnico(usuario) or is_coordinador(usuario)
+        )
+
+    @staticmethod
     def verificar_permiso(usuario, expediente: Expediente, accion: str) -> None:
         """Valida quien puede ejecutar la accion. Levanta `PermissionDenied`.
 
@@ -78,9 +86,8 @@ class RevisionService:
         es_admin = is_admin(usuario)
         es_tecnico = is_tecnico(usuario)
         es_coord = is_coordinador(usuario)
-        es_prov = is_provincial(usuario)
 
-        if es_prov and not (es_admin or es_tecnico or es_coord):
+        if RevisionService.es_solo_provincia(usuario):
             if accion != "ELIMINAR":
                 raise PermissionDenied("Permiso denegado.")
             return
@@ -95,7 +102,7 @@ class RevisionService:
                 t.tecnico_id for t in expediente.asignaciones_tecnicos.all()
             ]
             if usuario.id not in tecnicos_ids:
-                raise PermissionDenied("No sos un tecnico asignado.")
+                raise PermissionDenied("No sos un técnico asignado.")
 
         if accion == "ELIMINAR" and not (es_admin or es_coord):
             raise PermissionDenied("Solo coordinadores pueden eliminar legajos.")
@@ -106,7 +113,7 @@ class RevisionService:
     def validar_accion(accion: str) -> str:
         accion = (accion or "").upper()
         if accion not in ACCIONES_REVISION:
-            raise ValidationError("Accion invalida.")
+            raise ValidationError("Acción inválida.")
         return accion
 
     @staticmethod
@@ -124,7 +131,7 @@ class RevisionService:
 
         if accion not in TRANSICIONES_PERMITIDAS.get(estado_actual, set()):
             raise ValidationError(
-                "La accion solicitada no es valida para el estado actual "
+                "La acción solicitada no es válida para el estado actual "
                 f"del legajo ({estado_actual})."
             )
 
@@ -178,17 +185,18 @@ class RevisionService:
         Sirve para la entrada de la API, que llega como lista de pares
         `(tipo, detalle)`. Si no queda ninguna valida, devuelve una de OTROS con
         el motivo general, para que la subsanacion nunca quede sin observacion.
+
+        No deduplica por tipo: la pantalla admite varias observaciones del
+        mismo tipo con detalles distintos y cada una es un pedido aparte.
         """
 
         tipos_validos = {value for value, _ in TipoSubsanacion.choices}
         normalizadas = []
-        vistos = set()
         for tipo, detalle in observaciones or []:
             tipo = (tipo or "").strip().upper()
             detalle = (detalle or "").strip()
-            if tipo in tipos_validos and tipo not in vistos:
+            if tipo in tipos_validos:
                 normalizadas.append((tipo, detalle[:500]))
-                vistos.add(tipo)
 
         if not normalizadas:
             normalizadas.append((TipoSubsanacion.OTROS, (motivo_general or "")[:500]))
@@ -214,7 +222,7 @@ class RevisionService:
             CupoService.liberar_slot(
                 legajo=legajo,
                 usuario=usuario,
-                motivo=f"Salida del cupo por {accion.lower()} tecnico en expediente",
+                motivo=f"Salida del cupo por {accion.lower()} técnico en expediente",
             )
             legajo.estado_cupo = "NO_EVAL"
             legajo.es_titular_activo = False
@@ -423,10 +431,18 @@ class RevisionService:
         `revalidar_baja_provincial` re-chequea el permiso con el expediente
         bloqueado: entre que la provincia abre el modal y confirma, el
         expediente puede haber cambiado de estado.
+
+        Para la provincia el chequeo corre **siempre**, lo pida o no el
+        llamador: `verificar_permiso` la deja pasar en ELIMINAR justamente
+        porque el limite (estado EN_ESPERA y alcance territorial) lo pone
+        `can_delete_legajo`. Un llamador que lo olvide no puede saltearlo.
         """
 
+        revalidar = revalidar_baja_provincial or RevisionService.es_solo_provincia(
+            usuario
+        )
         with transaction.atomic():
-            if revalidar_baja_provincial:
+            if revalidar:
                 expediente_bloqueado = (
                     Expediente.objects.select_for_update()
                     .select_related("estado")
@@ -448,7 +464,7 @@ class RevisionService:
                     CupoService.liberar_slot(
                         legajo=legajo,
                         usuario=usuario,
-                        motivo="Eliminacion de legajo del expediente",
+                        motivo="Eliminación de legajo del expediente",
                     )
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.error(

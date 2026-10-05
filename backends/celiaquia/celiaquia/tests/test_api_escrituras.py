@@ -43,6 +43,10 @@ def _grant(user, codename, model, name=None):
 def _coordinador(username="coord_w"):
     user = User.objects.create_user(username=username, password="pass")
     _grant(user, "view_expediente", Expediente)
+    # Como en produccion: la migracion 0006 da dashboard y reporte a quienes
+    # ven expedientes, salvo a los estrictamente provinciales.
+    _grant(user, "view_cupo_dashboard", Expediente)
+    _grant(user, "view_reporte_provincias", Expediente)
     _grant(user, "role_coordinadorceliaquia", User, name="Coordinador Celiaquia")
     return user
 
@@ -664,7 +668,7 @@ def test_motivo_preview_devuelve_lineas_y_texto(client, territorio):
     )
 
     assert response.status_code == 200
-    assert set(response.json()) == {"lineas", "motivo"}
+    assert set(response.json()) == {"opciones", "tiene_observaciones"}
 
 
 def test_responder_subsanacion_exige_subsanacion_activa(client, territorio):
@@ -1014,11 +1018,15 @@ def test_el_cruce_exige_que_el_expediente_este_asignado(client, territorio):
 
     from django.core.files.uploadedfile import SimpleUploadedFile
 
+    from celiaquia.models import AsignacionTecnico
+
     owner = _provincial("prov_cruce", territorio[0])
     expediente, _ = _expediente_con_legajo(
         owner, territorio, "40000053", "CRU1", estado="CREADO"
     )
-    client.force_login(_coordinador("coord_cruce"))
+    tecnico = _tecnico("tec_cruce")
+    AsignacionTecnico.objects.create(expediente=expediente, tecnico=tecnico)
+    client.force_login(tecnico)
 
     response = client.post(
         reverse("celiaquia-expediente-cruce", kwargs={"pk": expediente.pk}),
@@ -1186,3 +1194,286 @@ def test_el_service_tambien_frena_el_tope(client, territorio):
     provincia, _m, _l = territorio
     with pytest.raises(DjangoValidationError):
         CupoService.configurar_total(provincia, TOTAL_ASIGNADO_MAXIMO + 1)
+
+
+# --- Permisos de modulo y paridad con la pantalla ----------------------------
+#
+# La API se armo suponiendo que "logueado" equivalia a "autorizado". Estos
+# casos fijan que exige lo mismo que las pantallas Django: el permiso de modulo
+# de `celiaquia/urls.py` y las reglas por rol y estado de cada vista.
+
+
+def _provincial_de_otro_programa(username, provincia):
+    """Perfil provincial (CDI, VAT) sin ningun permiso de Celiaquia."""
+
+    user = User.objects.create_user(username=username, password="pass")
+    profile, _ = Profile.objects.get_or_create(user=user)
+    profile.es_usuario_provincial = True
+    profile.save()
+    ProfileTerritorialScope.objects.create(profile=profile, provincia=provincia)
+    return user
+
+
+@pytest.mark.parametrize(
+    "ruta",
+    [
+        "celiaquia-expediente-list",
+        "celiaquia-legajo-list",
+        "celiaquia-reporte-list",
+        "celiaquia-cupo-list",
+        "celiaquia-cupo-movimiento-list",
+        "celiaquia-pago-list",
+        "celiaquia-estado-expediente-list",
+    ],
+)
+def test_sin_permiso_de_celiaquia_no_se_lee_la_api(client, territorio, ruta):
+    client.force_login(_provincial_de_otro_programa("prov_cdi", territorio[0]))
+
+    assert client.get(reverse(ruta)).status_code == 403
+
+
+def test_sin_permiso_de_celiaquia_no_se_crean_expedientes(client, territorio):
+    EstadoExpediente.objects.get_or_create(nombre="CREADO")
+    client.force_login(_provincial_de_otro_programa("prov_vat", territorio[0]))
+
+    response = client.post(reverse("celiaquia-expediente-list"), {"observaciones": "x"})
+
+    assert response.status_code == 403
+    assert not Expediente.objects.exists()
+
+
+def test_ver_expedientes_no_alcanza_para_cupos_pagos_ni_reporte(client, territorio):
+    """Cada pantalla tiene su permiso; la provincia estricta no tiene cupos."""
+
+    client.force_login(_provincial("prov_solo_exp", territorio[0]))
+
+    assert client.get(reverse("celiaquia-cupo-list")).status_code == 403
+    assert client.get(reverse("celiaquia-pago-list")).status_code == 403
+    assert client.get(reverse("celiaquia-reporte-list")).status_code == 403
+
+
+def test_la_provincia_no_elimina_legajos_de_un_expediente_enviado(client, territorio):
+    owner = _provincial("prov_eli_env", territorio[0])
+    _, legajo = _expediente_con_legajo(
+        owner, territorio, "40000101", "ELI1", estado="ASIGNADO"
+    )
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("celiaquia-legajo-revisar", kwargs={"pk": legajo.pk}),
+        {"accion": "ELIMINAR"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+    assert ExpedienteCiudadano.objects.filter(pk=legajo.pk).exists()
+
+
+def test_la_provincia_elimina_legajos_antes_de_enviar(client, territorio):
+    owner = _provincial("prov_eli_ok", territorio[0])
+    _, legajo = _expediente_con_legajo(
+        owner, territorio, "40000102", "ELI2", estado="EN_ESPERA"
+    )
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("celiaquia-legajo-revisar", kwargs={"pk": legajo.pk}),
+        {"accion": "ELIMINAR"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert not ExpedienteCiudadano.objects.filter(pk=legajo.pk).exists()
+
+
+def test_la_provincia_no_pide_subsanacion(client, territorio):
+    owner = _provincial("prov_pide_subs", territorio[0])
+    _, legajo = _expediente_con_legajo(owner, territorio, "40000103", "SUB3")
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("celiaquia-legajo-solicitar-subsanacion", kwargs={"pk": legajo.pk}),
+        {"motivo": "Falta el certificado."},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+    legajo.refresh_from_db()
+    assert legajo.revision_tecnico != RevisionTecnico.SUBSANAR
+
+
+def test_la_provincia_no_carga_documentos_de_un_expediente_enviado(client, territorio):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    owner = _provincial("prov_docs_env", territorio[0])
+    _, legajo = _expediente_con_legajo(
+        owner, territorio, "40000104", "DOC1", estado="ASIGNADO"
+    )
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("celiaquia-legajo-archivos", kwargs={"pk": legajo.pk}),
+        {"archivo": SimpleUploadedFile("dni.pdf", b"x"), "slot": 1},
+    )
+
+    assert response.status_code == 403
+    legajo.refresh_from_db()
+    assert not legajo.archivo1
+
+
+def test_los_documentos_originales_se_bloquean_una_vez_enviado(client, territorio):
+    """Como la pantalla: 409, la correccion va como evidencia de subsanacion."""
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    owner = _provincial("prov_docs_409", territorio[0])
+    _, legajo = _expediente_con_legajo(
+        owner, territorio, "40000105", "DOC2", estado="ASIGNADO"
+    )
+    client.force_login(_coordinador("coord_docs_409"))
+
+    response = client.post(
+        reverse("celiaquia-legajo-archivos", kwargs={"pk": legajo.pk}),
+        {"archivo": SimpleUploadedFile("dni.pdf", b"x"), "slot": 1},
+    )
+
+    assert response.status_code == 409
+
+
+def test_asignar_tecnico_solo_acepta_tecnicos(client, territorio):
+    owner = _provincial("prov_asig_user", territorio[0])
+    expediente, _ = _expediente_con_legajo(
+        owner, territorio, "40000106", "ASI1", estado="RECEPCIONADO"
+    )
+    otro = User.objects.create_user(username="no_es_tecnico", password="pass")
+    client.force_login(_coordinador("coord_asig_user"))
+
+    response = client.post(
+        reverse("celiaquia-expediente-asignar-tecnico", kwargs={"pk": expediente.pk}),
+        {"tecnico_id": otro.pk},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 404
+    assert not expediente.asignaciones_tecnicos.exists()
+
+
+def test_asignar_tecnico_exige_expediente_recepcionado(client, territorio):
+    owner = _provincial("prov_asig_estado", territorio[0])
+    expediente, _ = _expediente_con_legajo(
+        owner, territorio, "40000107", "ASI2", estado="CRUCE_FINALIZADO"
+    )
+    tecnico = _tecnico("tec_asig_estado")
+    client.force_login(_coordinador("coord_asig_estado"))
+
+    response = client.post(
+        reverse("celiaquia-expediente-asignar-tecnico", kwargs={"pk": expediente.pk}),
+        {"tecnico_id": tecnico.pk},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    expediente.refresh_from_db()
+    assert expediente.estado.nombre == "CRUCE_FINALIZADO"
+
+
+def test_no_se_confirma_el_envio_con_registros_erroneos_pendientes(client, territorio):
+    from celiaquia.models import RegistroErroneo
+
+    owner = _provincial("prov_conf_err", territorio[0])
+    expediente, _ = _expediente_con_legajo(
+        owner, territorio, "40000108", "CNF1", estado="EN_ESPERA"
+    )
+    RegistroErroneo.objects.create(
+        expediente=expediente, fila_excel=2, datos_raw={}, mensaje_error="CUIL"
+    )
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("celiaquia-expediente-confirmar-envio", kwargs={"pk": expediente.pk})
+    )
+
+    assert response.status_code == 400
+    assert "registros con errores" in str(response.json())
+    expediente.refresh_from_db()
+    assert expediente.estado.nombre == "EN_ESPERA"
+
+
+def test_coordinacion_no_procesa_expedientes_de_la_provincia(client, territorio):
+    """`ProcesarExpedienteView`: fuera de admin y provincia, solo los propios."""
+
+    owner = _provincial("prov_proc_ajeno", territorio[0])
+    expediente, _ = _expediente_con_legajo(
+        owner, territorio, "40000109", "PRO1", estado="CREADO"
+    )
+    client.force_login(_coordinador("coord_proc_ajeno"))
+
+    response = client.post(
+        reverse("celiaquia-expediente-procesar", kwargs={"pk": expediente.pk})
+    )
+
+    assert response.status_code == 403
+
+
+def test_la_nomina_sintys_exige_un_expediente_asignado(client, territorio):
+    owner = _provincial("prov_sintys", territorio[0])
+    expediente, _ = _expediente_con_legajo(
+        owner, territorio, "40000110", "SIN1", estado="CREADO"
+    )
+    client.force_login(_coordinador("coord_sintys"))
+
+    response = client.get(
+        reverse("celiaquia-expediente-nomina-sintys", kwargs={"pk": expediente.pk})
+    )
+
+    assert response.status_code == 400
+
+
+def test_el_cruce_se_puede_reprocesar_con_el_cruce_finalizado():
+    """La pantalla ofrece "Reprocesar cruce" justamente en CRUCE_FINALIZADO."""
+
+    from types import SimpleNamespace
+
+    from celiaquia.services.expediente_service import (  # pylint: disable=no-name-in-module
+        ESTADOS_PARA_CRUCE,
+        exigir_estado,
+    )
+
+    finalizado = SimpleNamespace(estado=SimpleNamespace(nombre="CRUCE_FINALIZADO"))
+    exigir_estado(finalizado, ESTADOS_PARA_CRUCE, "subir el cruce")
+
+    creado = SimpleNamespace(estado=SimpleNamespace(nombre="CREADO"))
+    with pytest.raises(DjangoValidationError):
+        exigir_estado(creado, ESTADOS_PARA_CRUCE, "subir el cruce")
+
+
+def test_los_titulares_del_cupo_no_hacen_una_consulta_por_legajo(client, territorio):
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    from celiaquia.models import EstadoCupo, ResultadoSintys
+
+    owner = _provincial("prov_cupo_qc", territorio[0])
+    cupo = ProvinciaCupo.objects.create(provincia=territorio[0], total_asignado=100)
+    client.force_login(_coordinador("coord_cupo_qc"))
+    url = reverse("celiaquia-cupo-ocupados", kwargs={"pk": cupo.pk})
+
+    def _titular(doc):
+        _, legajo = _expediente_con_legajo(owner, territorio, doc, doc)
+        legajo.revision_tecnico = RevisionTecnico.APROBADO
+        legajo.resultado_sintys = ResultadoSintys.MATCH
+        legajo.estado_cupo = EstadoCupo.DENTRO
+        legajo.es_titular_activo = True
+        legajo.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO
+        legajo.save()
+
+    _titular("40000111")
+    with CaptureQueriesContext(connection) as uno:
+        assert len(client.get(url).json()) == 1
+
+    for doc in ("40000112", "40000113", "40000114"):
+        _titular(doc)
+    with CaptureQueriesContext(connection) as cuatro:
+        assert len(client.get(url).json()) == 4
+
+    assert len(cuatro.captured_queries) == len(uno.captured_queries)

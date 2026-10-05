@@ -90,7 +90,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Bootstrap/AdminLTE/Select2 | Hecho observado | `static/dist/`, `requirements`, templates |
 | PWA backend + endpoints | Hecho observado | `pwa/`, `config/urls.py`, docs PWA |
 | Toolchain Node formal en raiz | No confirmado como toolchain real; mas bien ausente | hay `package-lock.json` en raiz, pero no `package.json` |
-| Front v2 React 19 + Vite + MUI | Hecho observado | `frontends/apps/vpsl/`, `frontends/packages/ui/`, `frontends/packages/api/` |
+| Front v2 React 19 + Vite + MUI | Hecho observado | `frontends/apps/vpsl/`, `frontends/apps/celiaquia/`, `frontends/packages/ui/`, `frontends/packages/api/` |
 
 ### Operacion y CI
 
@@ -129,7 +129,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ### Hechos observados
 
-- `docker-compose.yml` levanta `mysql`, `django`, `ocr_worker`, `encuestas_worker` y `front_vpsl`. Este último solo expone su puerto dentro de la red de Compose; Django entrega `/v2/vpsl/` al navegador.
+- `docker-compose.yml` levanta `mysql`, `django`, `ocr_worker`, `encuestas_worker`, `front_vpsl` y `front_celiaquia`. Los fronts solo exponen su puerto dentro de la red de Compose; Django entrega `/v2/<modulo>/` al navegador (`FRONTEND_V2_UPSTREAMS`).
 - El contenedor `django` monta el repo completo en `/sisoc/`.
 - `docker/django/entrypoint.py` espera MySQL, puede correr `makemigrations`, siempre corre `migrate`, `load_fixtures`, `create_test_users`, `create_groups`, y luego levanta `runserver` o `gunicorn` segun `ENVIRONMENT`.
 
@@ -519,6 +519,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `backends/celiaquia/celiaquia/api.py` para el contrato Python público; consumidores externos no
   deben importar sus modelos, services, views, formularios, permisos o signals.
 - `backends/celiaquia/celiaquia/global_urls.py` para rutas globales de propiedad del dominio.
+- API REST del front v2 (`/api/celiaquia/`): `api_views.py`, `api_serializers.py`, `api_urls.py`;
+  el permiso de módulo vive en `api_permissions.py` y el alcance por rol en `scope.py`. Al tocar un
+  serializer, regenerar `frontends/packages/api/openapi.celiaquia.yaml` (`spectacular --urlconf
+  config.urls_frontend_v2`) y `npm run api:types`; CI (`frontend-v2.yml`) falla si quedan viejos.
 - `backends/celiaquia/celiaquia/views/`
 - `backends/celiaquia/celiaquia/services/`
 - `backends/celiaquia/celiaquia/models.py`

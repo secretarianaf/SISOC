@@ -165,12 +165,13 @@ def test_el_usuario_provincial_solo_ve_su_alcance(client, escenario):
     perfil.es_usuario_provincial = True
     perfil.save()
     ProfileTerritorialScope.objects.create(profile=perfil, provincia=otra)
-    usuario.user_permissions.add(
-        Permission.objects.get(
-            codename="view_expediente",
+    for codename in ("view_expediente", "view_reporte_provincias"):
+        permiso, _ = Permission.objects.get_or_create(
+            codename=codename,
             content_type=ContentType.objects.get_for_model(Expediente),
+            defaults={"name": codename},
         )
-    )
+        usuario.user_permissions.add(permiso)
     client.force_login(usuario)
 
     api = client.get(reverse("celiaquia-reporte-list")).json()

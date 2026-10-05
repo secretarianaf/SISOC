@@ -102,7 +102,7 @@ export function PagoDetailPage() {
               color="inherit"
               startIcon={<ArrowBackIcon />}
               component={RouterLink}
-              to={`/pagos/${p.provincia}`}
+              to={`/pagos/${p.provincia_id}`}
             >
               Volver
             </Button>

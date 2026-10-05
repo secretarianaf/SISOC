@@ -3,7 +3,7 @@ Módulo centralizado para validaciones de permisos en celiaquia.
 """
 
 from django.core.exceptions import PermissionDenied
-from celiaquia.models import RevisionTecnico
+from celiaquia.models import RevisionTecnico, Subsanacion, SubsanacionEstado
 from iam.services import user_has_permission_code
 from users.territorial_scope import is_territorial_user, user_can_access_territory
 
@@ -93,6 +93,29 @@ def can_edit_legajo_files(user, expediente, legajo=None):
             raise PermissionDenied("No sos el técnico asignado a este expediente.")
 
     return True
+
+
+# Estados del expediente en los que aún se pueden cargar/reemplazar los
+# documentos originales del legajo. Una vez enviado a evaluación, quedan
+# bloqueados.
+ESTADOS_DOCS_EDITABLES = {"CREADO", "PROCESADO", "EN_ESPERA"}
+
+
+def documentos_legajo_bloqueados(legajo):
+    """Los documentos originales (archivo1/2/3) no se pueden reemplazar cuando el
+    expediente ya fue enviado a evaluación o el legajo está en subsanación: las
+    correcciones se cargan como archivos de subsanación (evidencia nueva).
+
+    Vivía en `celiaquia/views/legajo.py`; se comparte para que la API aplique el
+    mismo bloqueo que la pantalla."""
+    estado = getattr(getattr(legajo.expediente, "estado", None), "nombre", "")
+    if estado not in ESTADOS_DOCS_EDITABLES:
+        return True
+    if legajo.revision_tecnico == RevisionTecnico.SUBSANAR:
+        return True
+    return Subsanacion.objects.filter(
+        legajo=legajo, estado=SubsanacionEstado.PENDIENTE
+    ).exists()
 
 
 # Estados del expediente en los que la provincia trabaja sus legajos antes de
@@ -190,6 +213,27 @@ def can_confirm_subsanacion(user, expediente):
     return True
 
 
+def exigir_rol_nacion_a_comentarios(user):
+    """Reglas 1 y 2 de `exigir_acceso_nacion_a_comentarios`, sin el legajo.
+
+    La vista las corre antes de buscar el legajo: si el rol no alcanza, la
+    respuesta es 403 exista o no el legajo, y no revela cuales existen.
+    """
+
+    if not getattr(user, "is_authenticated", False):
+        raise PermissionDenied("Autenticación requerida.")
+
+    if is_territorial_user(user):
+        raise PermissionDenied("Permiso denegado.")
+
+    if not (
+        user.is_superuser
+        or _has_permission(user, ROLE_COORDINADOR_PERMISSION)
+        or _has_permission(user, ROLE_TECNICO_PERMISSION)
+    ):
+        raise PermissionDenied("Permiso denegado.")
+
+
 def exigir_acceso_nacion_a_comentarios(user, legajo):
     """Quien puede leer y escribir los comentarios internos de un legajo.
 
@@ -206,18 +250,11 @@ def exigir_acceso_nacion_a_comentarios(user, legajo):
     3. El tecnico, ademas, tiene que estar asignado al expediente.
     """
 
-    if not getattr(user, "is_authenticated", False):
-        raise PermissionDenied("Autenticación requerida.")
-
-    if is_territorial_user(user):
-        raise PermissionDenied("Permiso denegado.")
+    exigir_rol_nacion_a_comentarios(user)
 
     es_admin = user.is_superuser
     es_coord = _has_permission(user, ROLE_COORDINADOR_PERMISSION)
     es_tecnico = _has_permission(user, ROLE_TECNICO_PERMISSION)
-
-    if not (es_admin or es_coord or es_tecnico):
-        raise PermissionDenied("Permiso denegado.")
 
     if es_tecnico and not (es_admin or es_coord):
         if not legajo.expediente.asignaciones_tecnicos.filter(tecnico=user).exists():

@@ -43,6 +43,8 @@ export class SinPermiso extends Error {
  * aplanar lo que venga.
  */
 export const mensajeDeError = (error: unknown): string => {
+  // El interceptor ya convirtio el 403 en `SinPermiso` con el mensaje del back.
+  if (error instanceof SinPermiso) return error.message;
   const axiosError = error as AxiosError<Record<string, unknown>>;
   const data = axiosError?.response?.data;
   if (!data) return "No se pudo completar la operación.";

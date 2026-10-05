@@ -38,6 +38,10 @@ def _grant(user, codename, model, name=None):
 def _coordinador(username="coord_api"):
     user = User.objects.create_user(username=username, password="pass")
     _grant(user, "view_expediente", Expediente)
+    # Como en produccion: la migracion 0006 da dashboard y reporte a quienes
+    # ven expedientes, salvo a los estrictamente provinciales.
+    _grant(user, "view_cupo_dashboard", Expediente)
+    _grant(user, "view_reporte_provincias", Expediente)
     _grant(user, "role_coordinadorceliaquia", User, name="Coordinador Celiaquia")
     return user
 
@@ -319,7 +323,8 @@ def test_solicitar_subsanacion_delega_en_el_service(client, territorio, mocker):
     owner = _provincial("prov_subsanar", territorio[0])
     _, legajo = _expediente_con_legajo(owner, territorio, "31777777", "Q")
     solicitar = mocker.patch("celiaquia.api_views.LegajoService.solicitar_subsanacion")
-    client.force_login(owner)
+    # Es una accion del revisor, como en `LegajoSubsanarView`.
+    client.force_login(_coordinador("coord_subsanar"))
 
     response = client.post(
         reverse("celiaquia-legajo-solicitar-subsanacion", kwargs={"pk": legajo.pk}),
@@ -335,7 +340,7 @@ def test_solicitar_subsanacion_delega_en_el_service(client, territorio, mocker):
 def test_solicitar_subsanacion_valida_la_entrada(client, territorio):
     owner = _provincial("prov_subsanar_mal", territorio[0])
     _, legajo = _expediente_con_legajo(owner, territorio, "31888888", "R")
-    client.force_login(owner)
+    client.force_login(_coordinador("coord_subsanar_mal"))
 
     response = client.post(
         reverse("celiaquia-legajo-solicitar-subsanacion", kwargs={"pk": legajo.pk}),

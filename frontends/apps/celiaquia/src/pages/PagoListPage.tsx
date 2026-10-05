@@ -3,6 +3,7 @@ import { Link as RouterLink, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Pagination from "@mui/material/Pagination";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -15,7 +16,7 @@ import PaymentsIcon from "@mui/icons-material/Payments";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { PageHeader, SectionCard, StateChip, formatearFecha } from "@sisoc/ui";
 import type { StateTone } from "@sisoc/ui";
-import { mensajeDeError } from "@sisoc/api";
+import { mensajeDeError, paginasDe } from "@sisoc/api";
 import { api } from "../api";
 import { Aviso, ErrorPanel, TablaCargando } from "../componentes/Estados";
 
@@ -33,10 +34,14 @@ export function PagoListPage() {
   const queryClient = useQueryClient();
   const [aviso, setAviso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
+  // El back filtra por provincia: filtrar en la pantalla solo veia la primera
+  // pagina de todas las provincias juntas.
   const consulta = useQuery({
-    queryKey: ["pagos", provincia],
-    queryFn: () => api.pagos.listar(),
+    queryKey: ["pagos", provincia, page],
+    queryFn: () => api.pagos.listar({ provincia, page }),
+    enabled: Number.isFinite(provincia),
   });
 
   const crear = useMutation({
@@ -48,12 +53,9 @@ export function PagoListPage() {
     onError: (e) => setError(mensajeDeError(e)),
   });
 
-  // El listado del back no filtra por provincia: se acota en la pantalla.
-  // `provincia` viene como nombre en el contrato, no como id.
-  const filtroProvincia = (provincia ?? "").toString().trim().toLowerCase();
-  const filas = (consulta.data?.results ?? []).filter(
-    (p) => !filtroProvincia || p.provincia.toLowerCase() === filtroProvincia,
-  );
+  const filas = consulta.data?.results ?? [];
+  const total = consulta.data?.count ?? 0;
+  const totalPaginas = paginasDe(total);
 
   return (
     <>
@@ -91,7 +93,7 @@ export function PagoListPage() {
 
       <SectionCard
         title="Períodos"
-        subheader={`${filas.length} expedientes de pago`}
+        subheader={`${total} expedientes de pago`}
         disableGutters
       >
         {consulta.isPending ? <TablaCargando /> : null}
@@ -171,6 +173,18 @@ export function PagoListPage() {
               </TableBody>
             </Table>
           </TableContainer>
+        ) : null}
+
+        {totalPaginas > 1 ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+            <Pagination
+              count={totalPaginas}
+              page={page}
+              onChange={(_e, p) => setPage(p)}
+              size="small"
+              shape="rounded"
+            />
+          </Box>
         ) : null}
       </SectionCard>
 

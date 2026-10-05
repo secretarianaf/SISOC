@@ -1559,7 +1559,11 @@ class ExpedienteNominaSintysExportView(View):
 
     def get(self, request, pk):
         expediente = get_object_or_404(Expediente, pk=pk)
-        content = CruceService.generar_nomina_sintys_excel(expediente)
+        try:
+            content = CruceService.generar_nomina_sintys_excel(expediente)
+        except ValidationError as exc:
+            messages.error(request, "; ".join(exc.messages))
+            return redirect("expediente_detail", pk=pk)
         filename = f"nomina_sintys_{expediente.pk}.xlsx"
         response = HttpResponse(
             content,

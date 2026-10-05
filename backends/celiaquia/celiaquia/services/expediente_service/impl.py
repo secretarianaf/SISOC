@@ -160,7 +160,10 @@ def _build_observaciones_importacion(result: dict) -> str:
 #: verificaban. Por la API se podía procesar dos veces un expediente ya cruzado
 #: y mandarlo de vuelta a EN_ESPERA, perdiendo el avance.
 ESTADOS_PARA_PROCESAR = ("CREADO",)
-ESTADOS_PARA_CRUCE = ("ASIGNADO", "PROCESO_DE_CRUCE")
+#: CRUCE_FINALIZADO incluido: es el estado en que la pantalla ofrece
+#: "Reprocesar cruce".
+ESTADOS_PARA_CRUCE = ("ASIGNADO", "PROCESO_DE_CRUCE", "CRUCE_FINALIZADO")
+ESTADOS_PARA_ASIGNAR_TECNICO = ("RECEPCIONADO", "ASIGNADO")
 ESTADOS_PARA_NOMINA_SINTYS = ("ASIGNADO", "PROCESO_DE_CRUCE", "CRUCE_FINALIZADO")
 
 
@@ -244,6 +247,28 @@ class ExpedienteService:
             "excluidos": result.get("excluidos_count", 0),  # <-- NUEVO
             "excluidos_detalle": result.get("excluidos", []),  # <-- NUEVO
         }
+
+    @staticmethod
+    def exigir_sin_registros_erroneos(expediente: Expediente) -> None:
+        """No se envia con filas del Excel sin corregir.
+
+        Es la misma regla que aplica `ExpedienteConfirmView` antes de llamar a
+        `confirmar_envio`. No vive adentro de `confirmar_envio` porque la vista
+        responde ese caso con su propio mensaje y codigo.
+        """
+
+        from celiaquia.models import (  # pylint: disable=import-outside-toplevel
+            RegistroErroneo,
+        )
+
+        pendientes = RegistroErroneo.objects.filter(
+            expediente=expediente, procesado=False
+        ).count()
+        if pendientes:
+            raise ValidationError(
+                "No se puede confirmar el envío: hay "
+                f"{pendientes} registros con errores pendientes."
+            )
 
     @staticmethod
     @transaction.atomic
@@ -361,6 +386,9 @@ class ExpedienteService:
     @staticmethod
     @transaction.atomic
     def asignar_tecnico(expediente: Expediente, tecnico, usuario):
+        # La misma regla que `AsignarTecnicoView`: sin recepcionar no se asigna,
+        # y un expediente ya cruzado no vuelve a ASIGNADO.
+        exigir_estado(expediente, ESTADOS_PARA_ASIGNAR_TECNICO, "asignar un técnico")
         if isinstance(tecnico, int):
             tecnico = User.objects.get(pk=tecnico)
 

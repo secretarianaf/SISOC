@@ -860,7 +860,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Sube un archivo al legajo, en el slot indicado (1, 2 o 3). */
+        /**
+         * @description Sube un archivo al legajo, en el slot indicado (1, 2 o 3).
+         *
+         *     Mismas reglas que `LegajoArchivoUploadView`: permiso por rol y estado
+         *     (`can_edit_legajo_files`) y, una vez enviado el expediente o con el
+         *     legajo en subsanacion, 409: las correcciones van como evidencia de
+         *     subsanacion, no reemplazando los originales.
+         */
         post: operations["legajos_archivos_create"];
         delete?: never;
         options?: never;
@@ -959,7 +966,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Motivo que se propondria al subsanar o rechazar, ya concatenado. */
+        /**
+         * @description Motivos elegibles al subsanar o rechazar, como la pantalla.
+         *
+         *     `ComentariosTecnicosService` ya no concatena el historial entero: desde
+         *     el issue #2592 cada instancia lleva solo las observaciones elegidas.
+         */
         get: operations["legajos_motivo_preview_retrieve"];
         put?: never;
         post?: never;
@@ -1018,7 +1030,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Marca el legajo para subsanar. Es una accion del tecnico revisor. */
+        /**
+         * @description Marca el legajo para subsanar. Es una accion del tecnico revisor.
+         *
+         *     Mismo permiso que `LegajoSubsanarView`: admin, coordinacion o el
+         *     tecnico asignado. La provincia duena del expediente no.
+         */
         post: operations["legajos_solicitar_subsanacion_create"];
         delete?: never;
         options?: never;
@@ -1386,13 +1403,14 @@ export interface components {
             readonly archivo_url: string;
         };
         /**
-         * @description Base de los serializers de solo entrada: no persisten nada.
+         * @description Cupo total de una provincia.
          *
-         *     Las escrituras de este modulo pasan siempre por `celiaquia/services/`, asi
-         *     que `create`/`update` no deben existir. Se centraliza el rechazo para no
-         *     repetirlo en cada serializer.
+         *     El tope sale del propio modelo: pasarse hacía que MySQL tirara
+         *     `Out of range value`, que llegaba al usuario como un 500 en vez de un error
+         *     de validación.
          */
         ConfigurarCupo: {
+            /** Format: int64 */
             total_asignado: number;
         };
         /**
@@ -1599,10 +1617,15 @@ export interface components {
             /** @default  */
             motivo: string;
         };
-        /** @description Motivo que se propondria al subsanar o rechazar, ya concatenado. */
+        /**
+         * @description Motivos elegibles al subsanar o rechazar (issue #2592).
+         *
+         *     Lo mismo que devuelve `LegajoMotivoPreviewView`. Los ids elegidos se mandan
+         *     en `revisar` como `observaciones_ids`; el texto sale de la base.
+         */
         MotivoPreview: {
-            lineas: string[];
-            motivo: string;
+            opciones: components["schemas"]["OpcionMotivo"][];
+            tiene_observaciones: boolean;
         };
         /** @enum {unknown} */
         NullEnum: null;
@@ -1627,6 +1650,12 @@ export interface components {
         OpcionCatalogo: {
             readonly id: number;
             readonly nombre: string;
+        };
+        /** @description Una observacion tecnica que se puede elegir como motivo. */
+        OpcionMotivo: {
+            id: number;
+            etiqueta: string;
+            pendiente: boolean;
         };
         Organismo: {
             readonly id: number;
@@ -1721,21 +1750,6 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Expediente"][];
-        };
-        PaginatedFilaCupoProvinciaList: {
-            /** @example 123 */
-            count: number;
-            /**
-             * Format: uri
-             * @example http://api.example.org/accounts/?page=4
-             */
-            next?: string | null;
-            /**
-             * Format: uri
-             * @example http://api.example.org/accounts/?page=2
-             */
-            previous?: string | null;
-            results: components["schemas"]["FilaCupoProvincia"][];
         };
         PaginatedLegajoList: {
             /** @example 123 */
@@ -1875,6 +1889,7 @@ export interface components {
         PagoExpediente: {
             readonly id: number;
             readonly provincia: string;
+            readonly provincia_id: number;
             /** @description YYYY-MM */
             periodo: string;
             estado?: components["schemas"]["PagoExpedienteEstadoEnum"];
@@ -2090,14 +2105,16 @@ export interface components {
          * @description Entrada de la revision tecnica de un legajo.
          *
          *     `texto_libre` es solo el complemento: el motivo final lo compone el service
-         *     concatenando las observaciones tecnicas del legajo. Lo que mande el cliente
-         *     no es la fuente de verdad.
+         *     concatenando las observaciones **elegidas** (`observaciones_ids`) con ese
+         *     texto. El texto de cada observacion sale de la base, no del cliente.
          */
         RevisarLegajo: {
             accion: components["schemas"]["AccionEnum"];
             texto_libre?: string;
             tipo_subsanacion?: string;
             observaciones?: components["schemas"]["ObservacionSubsanacion"][];
+            observaciones_ids?: number[];
+            documentacion_complementaria?: string[];
         };
         /**
          * @description * `PENDIENTE` - Pendiente
@@ -2363,10 +2380,7 @@ export interface operations {
     };
     cupos_dashboard_list: {
         parameters: {
-            query?: {
-                /** @description Un número de página dentro del conjunto de resultados paginado. */
-                page?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -2378,7 +2392,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedFilaCupoProvinciaList"];
+                    "application/json": components["schemas"]["FilaCupoProvincia"][];
                 };
             };
         };
@@ -3701,8 +3715,11 @@ export interface operations {
     pagos_list: {
         parameters: {
             query?: {
+                estado?: string;
                 /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                periodo?: string;
+                provincia?: number;
             };
             header?: never;
             path?: never;

@@ -280,7 +280,7 @@ def test_confirmar_envio_rechaza_doble_rol_sin_archivo1(mocker):
 
 
 def test_asignar_tecnico_with_id_and_user(mocker):
-    exp = SimpleNamespace(pk=10)
+    exp = SimpleNamespace(pk=10, estado=SimpleNamespace(nombre="RECEPCIONADO"))
     tecnico = SimpleNamespace(username="tec")
     mocker.patch(
         "celiaquia.services.expediente_service.User.objects.get", return_value=tecnico

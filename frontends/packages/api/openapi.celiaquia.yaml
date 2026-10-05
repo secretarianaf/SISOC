@@ -194,13 +194,6 @@ paths:
         porque son los `ProvinciaCupo` que existen. Para poder asignar cupo a
         una provincia nueva hace falta verla: esto replica lo que muestra la
         pantalla Django.
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: Un número de página dentro del conjunto de resultados paginado.
-        schema:
-          type: integer
       tags:
       - cupos
       security:
@@ -212,7 +205,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedFilaCupoProvinciaList'
+                type: array
+                items:
+                  $ref: '#/components/schemas/FilaCupoProvincia'
           description: ''
   /api/celiaquia/cupos/legajos/{legajo_id}/baja/:
     post:
@@ -1392,7 +1387,13 @@ paths:
   /api/celiaquia/legajos/{id}/archivos/:
     post:
       operationId: legajos_archivos_create
-      description: Sube un archivo al legajo, en el slot indicado (1, 2 o 3).
+      description: |-
+        Sube un archivo al legajo, en el slot indicado (1, 2 o 3).
+
+        Mismas reglas que `LegajoArchivoUploadView`: permiso por rol y estado
+        (`can_edit_legajo_files`) y, una vez enviado el expediente o con el
+        legajo en subsanacion, 409: las correcciones van como evidencia de
+        subsanacion, no reemplazando los originales.
       parameters:
       - in: path
         name: id
@@ -1555,7 +1556,11 @@ paths:
   /api/celiaquia/legajos/{id}/motivo-preview/:
     get:
       operationId: legajos_motivo_preview_retrieve
-      description: Motivo que se propondria al subsanar o rechazar, ya concatenado.
+      description: |-
+        Motivos elegibles al subsanar o rechazar, como la pantalla.
+
+        `ComentariosTecnicosService` ya no concatena el historial entero: desde
+        el issue #2592 cada instancia lleva solo las observaciones elegidas.
       parameters:
       - in: path
         name: id
@@ -1649,7 +1654,11 @@ paths:
   /api/celiaquia/legajos/{id}/solicitar-subsanacion/:
     post:
       operationId: legajos_solicitar_subsanacion_create
-      description: Marca el legajo para subsanar. Es una accion del tecnico revisor.
+      description: |-
+        Marca el legajo para subsanar. Es una accion del tecnico revisor.
+
+        Mismo permiso que `LegajoSubsanarView`: admin, coordinacion o el
+        tecnico asignado. La provincia duena del expediente no.
       parameters:
       - in: path
         name: id
@@ -1819,10 +1828,22 @@ paths:
       operationId: pagos_list
       description: Lotes de pago y su nomina.
       parameters:
+      - in: query
+        name: estado
+        schema:
+          type: string
       - name: page
         required: false
         in: query
         description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - in: query
+        name: periodo
+        schema:
+          type: string
+      - in: query
+        name: provincia
         schema:
           type: integer
       tags:
@@ -2299,15 +2320,17 @@ components:
     ConfigurarCupo:
       type: object
       description: |-
-        Base de los serializers de solo entrada: no persisten nada.
+        Cupo total de una provincia.
 
-        Las escrituras de este modulo pasan siempre por `celiaquia/services/`, asi
-        que `create`/`update` no deben existir. Se centraliza el rechazo para no
-        repetirlo en cada serializer.
+        El tope sale del propio modelo: pasarse hacía que MySQL tirara
+        `Out of range value`, que llegaba al usuario como un 500 en vez de un error
+        de validación.
       properties:
         total_asignado:
           type: integer
+          maximum: 4294967295
           minimum: 0
+          format: int64
       required:
       - total_asignado
     CrearComentarioTecnico:
@@ -2560,6 +2583,7 @@ components:
         excel_masivo:
           type: string
           format: uri
+          pattern: (?:xlsx)$
     ExpedienteEstadoHistorial:
       type: object
       properties:
@@ -2788,17 +2812,21 @@ components:
           maxLength: 2000
     MotivoPreview:
       type: object
-      description: Motivo que se propondria al subsanar o rechazar, ya concatenado.
+      description: |-
+        Motivos elegibles al subsanar o rechazar (issue #2592).
+
+        Lo mismo que devuelve `LegajoMotivoPreviewView`. Los ids elegidos se mandan
+        en `revisar` como `observaciones_ids`; el texto sale de la base.
       properties:
-        lineas:
+        opciones:
           type: array
           items:
-            type: string
-        motivo:
-          type: string
+            $ref: '#/components/schemas/OpcionMotivo'
+        tiene_observaciones:
+          type: boolean
       required:
-      - lineas
-      - motivo
+      - opciones
+      - tiene_observaciones
     NullEnum:
       enum:
       - null
@@ -2838,6 +2866,20 @@ components:
       required:
       - id
       - nombre
+    OpcionMotivo:
+      type: object
+      description: Una observacion tecnica que se puede elegir como motivo.
+      properties:
+        id:
+          type: integer
+        etiqueta:
+          type: string
+        pendiente:
+          type: boolean
+      required:
+      - etiqueta
+      - id
+      - pendiente
     Organismo:
       type: object
       properties:
@@ -2988,29 +3030,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Expediente'
-    PaginatedFilaCupoProvinciaList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/FilaCupoProvincia'
     PaginatedLegajoList:
       type: object
       required:
@@ -3227,6 +3246,9 @@ components:
         provincia:
           type: string
           readOnly: true
+        provincia_id:
+          type: integer
+          readOnly: true
         periodo:
           type: string
           description: YYYY-MM
@@ -3262,6 +3284,7 @@ components:
       - modificado_en
       - periodo
       - provincia
+      - provincia_id
     PagoExpedienteEstadoEnum:
       enum:
       - BORRADOR
@@ -3334,6 +3357,7 @@ components:
         excel_masivo:
           type: string
           format: uri
+          pattern: (?:xlsx)$
         limit:
           type: integer
           maximum: 5000
@@ -3692,8 +3716,8 @@ components:
         Entrada de la revision tecnica de un legajo.
 
         `texto_libre` es solo el complemento: el motivo final lo compone el service
-        concatenando las observaciones tecnicas del legajo. Lo que mande el cliente
-        no es la fuente de verdad.
+        concatenando las observaciones **elegidas** (`observaciones_ids`) con ese
+        texto. El texto de cada observacion sale de la base, no del cliente.
       properties:
         accion:
           $ref: '#/components/schemas/AccionEnum'
@@ -3707,6 +3731,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ObservacionSubsanacion'
+        observaciones_ids:
+          type: array
+          items:
+            type: integer
+        documentacion_complementaria:
+          type: array
+          items:
+            type: string
+            format: uri
       required:
       - accion
     RevisionTecnicoEnum:

@@ -1,6 +1,7 @@
 """Tests unitarios para helpers de admisiones.services.docx_service."""
 
 from datetime import datetime
+from pathlib import Path
 from types import SimpleNamespace
 
 from admisiones.services import docx_service as module
@@ -217,3 +218,27 @@ def test_preparar_contextos_admision_convenio_disposicion(mocker):
 
     ctx_conv = module.TextFormatterService.preparar_contexto_proyecto_convenio(admision)
     assert ctx_conv["formulario"] == "conv"
+
+
+def test_generar_docx_encuentra_el_template_en_la_carpeta_de_la_app(mocker):
+    """La ruta sale de la app instalada, no de BASE_DIR (la app ya no está en la raíz)."""
+
+    docx_template = mocker.patch("admisiones.services.docx_service.impl.DocxTemplate")
+    mocker.patch.object(
+        module.DocumentTemplateService,
+        "_reparar_docx_para_office",
+        side_effect=lambda buffer: buffer,
+    )
+
+    module.DocumentTemplateService.generar_docx(
+        "incorporacion_docx_informe_tecnico_base.docx", {}
+    )
+
+    template_path = Path(docx_template.call_args.args[0])
+    assert template_path.is_file()
+    assert template_path.parts[-4:] == (
+        "templates",
+        "admisiones",
+        "docx",
+        "incorporacion_docx_informe_tecnico_base.docx",
+    )

@@ -2,7 +2,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from docxtpl import DocxTemplate
-from django.conf import settings
+from django.apps import apps
 from django.template.loader import get_template
 from django.utils.html import strip_tags
 from docx import Document
@@ -106,8 +106,14 @@ class DocumentTemplateService:
 
     @staticmethod
     def generar_docx(template_name, context, app_name="admisiones"):
+        # La carpeta sale de la app instalada: el código no vive en BASE_DIR
+        # (src/backends/<cluster>/<app>/), así que no se arma desde la raíz.
         template_path = os.path.join(
-            settings.BASE_DIR, app_name, "templates", app_name, "docx", template_name
+            apps.get_app_config(app_name).path,
+            "templates",
+            app_name,
+            "docx",
+            template_name,
         )
 
         if not os.path.exists(template_path):

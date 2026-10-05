@@ -34,8 +34,10 @@
 
 - Empezar por `docs/registro/prs/PR-2644.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
-- `.github/workflows/frontend_v2.yml`
+- `.github/workflows/frontend-v2.yml`
 - `.gitignore`
+- `AGENT_REPO_MAP.md`
+- `backends/celiaquia/celiaquia/api_permissions.py`
 - `backends/celiaquia/celiaquia/api_serializers.py`
 - `backends/celiaquia/celiaquia/api_urls.py`
 - `backends/celiaquia/celiaquia/api_views.py`
@@ -52,9 +54,7 @@
 - `backends/celiaquia/celiaquia/services/revision_service/impl.py`
 - `backends/celiaquia/celiaquia/services/subsanacion_service/impl.py`
 - `backends/celiaquia/celiaquia/services/validacion_renaper_service/__init__.py`
-- `backends/celiaquia/celiaquia/services/validacion_renaper_service/impl.py`
-- `backends/celiaquia/celiaquia/tests/conftest.py`
-- ... y 110 archivo(s) adicional(es) relacionados.
+- ... y 119 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`

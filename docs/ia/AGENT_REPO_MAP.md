@@ -10,6 +10,11 @@ Reglas vigentes y checklists: `docs/desarrollo/verticales_independientes.md`.
 - Prefijos y reverse en registros; recursos por app; grafo completo en migrador.
 - Controlar imports, runtime/imagen aislada y plan con `deploy_targets.py`.
 - Comprobar referencias documentales con `src/scripts/ci/check_docs_paths.py`.
+- DX del ordenamiento #2639: conservar las entradas autodetectables en la raíz
+  del repo o del workspace npm. Pylint de CI enumera `src/scripts/*.py` además
+  de config/apps; el debugger nativo de `.vscode/launch.json` usa
+  `config.settings_all`. Evidencia y límites:
+  `docs/registro/cambios/2026-T4/2026-10-05-2639-auditoria-orden-dx.md`.
 
 - Estructura del monorepo (#1931/#2251): el codigo comun vive en `src/backends/kernel/`
   (`core`, `users`, `iam`, `ciudadanos`, `audittrail`), cada vertical migra a

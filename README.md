@@ -48,15 +48,16 @@ Cada aplicación del repositorio representa un módulo funcional (ej. `comedores
 
 1. Clonar el repositorio:
    ```bash
-   git clone https://github.com/dsocial118/SISOC.git
+   git clone https://github.com/secretarianaf/SISOC.git
    cd SISOC
    ```
-2. (Opcional) Colocar un dump en `./docker/mysql/local-dump.sql`.  
-3. Levantar servicios:
+2. Copiar `.env.example` a `.env` y completar la configuración local según `docs/operacion/instalacion.md`.
+3. (Opcional) Colocar un dump en `./docker/mysql/local-dump.sql`.
+4. Levantar servicios:
    ```bash
    docker compose up
    ```
-4. Acceder a la app en [http://localhost:8001](http://localhost:8001) (valor por defecto de `DOCKER_DJANGO_PORT_FORWARD` en `.env.example`).
+5. Acceder a la app en [http://localhost:8001](http://localhost:8001) (valor por defecto de `DOCKER_DJANGO_PORT_FORWARD` en `.env.example`).
 
 `docker-compose.yml` queda reservado para desarrollo/local y es el único compose versionado que levanta `mysql`.
 

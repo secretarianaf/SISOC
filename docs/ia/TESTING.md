@@ -13,7 +13,7 @@ Fuente de verdad general: `../../AGENTS.md`.
 - `pytest-cov` (disponible)
 
 Configuración relevante:
-- `pytest.ini` define `DJANGO_SETTINGS_MODULE=config.settings`
+- `pytest.ini` define `DJANGO_SETTINGS_MODULE=config.settings_all` (kernel, core y verticales)
 - `python_files = tests.py test_*.py *_tests.py`
 - `addopts = --reuse-db`
 - marker `smoke`

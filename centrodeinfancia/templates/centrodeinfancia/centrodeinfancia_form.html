@@ -173,6 +173,7 @@
                         <div class="col-md-3">{{ form.dni_referente|as_crispy_field }}</div>
                         <div class="col-md-3">{{ form.cuil_referente|as_crispy_field }}</div>
                     </div>
+                    {% include "centrodeinfancia/partials/renaper_bloque.html" with bloque="referente" dni_field="id_dni_referente" verificado=form.bloques_verificados_renaper.referente token=renaper_tokens.referente %}
                 </div>
             </div>
 
@@ -228,6 +229,8 @@
     </script>
 
     <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
+    <script src="{% static 'custom/js/cdiRenaperBloques.js' %}"
+            nonce="{{ request.csp_nonce }}"></script>
     <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", async function() {
             const provinciaSelect = document.getElementById("id_provincia");

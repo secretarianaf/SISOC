@@ -247,6 +247,9 @@
                         </div>
                     </div>
                     <div class="section-body collapse show" id="section-nino">
+                        {% if is_edit or form.bloques_verificados_renaper.nino %}
+                            {% include "centrodeinfancia/partials/renaper_bloque.html" with bloque="nino" dni_field="id_dni" verificado=form.bloques_verificados_renaper.nino token=renaper_tokens.nino %}
+                        {% endif %}
                         <div class="form-group row">
                             <div class="col-md-3">{{ form.apellido|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.nombre|as_crispy_field }}</div>
@@ -290,6 +293,7 @@
                         </div>
                     </div>
                     <div class="section-body collapse show" id="section-responsable1">
+                        {% include "centrodeinfancia/partials/renaper_bloque.html" with bloque="responsable_legal_1" dni_field="id_responsable_legal_1_dni" verificado=form.bloques_verificados_renaper.responsable_legal_1 token=renaper_tokens.responsable_legal_1 %}
                         <div class="form-group row">
                             <div class="col-md-3">{{ form.responsable_legal_1_relacion|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.responsable_legal_1_apellido|as_crispy_field }}</div>
@@ -336,6 +340,7 @@
                         </div>
                     </div>
                     <div class="section-body collapse show" id="section-responsable2">
+                        {% include "centrodeinfancia/partials/renaper_bloque.html" with bloque="responsable_legal_2" dni_field="id_responsable_legal_2_dni" verificado=form.bloques_verificados_renaper.responsable_legal_2 token=renaper_tokens.responsable_legal_2 %}
                         <div class="form-group row">
                             <div class="col-md-3">{{ form.responsable_legal_2_relacion|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.responsable_legal_2_apellido|as_crispy_field }}</div>
@@ -708,5 +713,7 @@
         window.ajaxLoadDepartamentosIpiUrl = "{% url 'centrodeinfancia_ajax_load_departamentos_ipi' %}";
     </script>
     <script src="{% static 'custom/js/destinatarioForm.js' %}"
+            nonce="{{ request.csp_nonce }}"></script>
+    <script src="{% static 'custom/js/cdiRenaperBloques.js' %}"
             nonce="{{ request.csp_nonce }}"></script>
 {% endblock %}

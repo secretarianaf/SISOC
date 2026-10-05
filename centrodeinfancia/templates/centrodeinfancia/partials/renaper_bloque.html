@@ -1,0 +1,21 @@
+{# Validación RENAPER de una persona del formulario (ver static/custom/js/cdiRenaperBloques.js). #}
+{# Parámetros: bloque, dni_field (id del input de DNI), verificado (bool), token (token vigente o vacío). #}
+<div class="mb-3"
+     data-renaper-bloque="{{ bloque }}"
+     data-renaper-url="{% url 'centrodeinfancia_renaper_bloque' bloque %}"
+     data-dni-input="{{ dni_field }}">
+    <input type="hidden"
+           name="renaper_token_{{ bloque }}"
+           value="{{ token|default:'' }}" />
+    {% if verificado %}
+        <span class="badge bg-success"><i class="fas fa-id-card me-1"></i>Datos verificados por RENAPER</span>
+        <small class="ms-2" style="color:#9ca3af;">Solo se pueden editar los datos de contacto.</small>
+    {% else %}
+        <button type="button"
+                class="btn btn-sm btn-outline-info"
+                data-renaper-consultar>
+            <i class="fas fa-id-card me-1"></i>Validar con RENAPER
+        </button>
+        <small class="ms-2" data-renaper-mensaje></small>
+    {% endif %}
+</div>

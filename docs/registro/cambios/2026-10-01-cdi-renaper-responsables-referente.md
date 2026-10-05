@@ -62,6 +62,36 @@ Alcance por pantalla:
 
 Teléfonos (y email del referente) nunca se bloquean.
 
+## Experiencia de usuario: primero el DNI
+
+Producto eligió que cada persona arranque pidiendo solo el documento. Cada
+bloque tiene cuatro estados (`partials/renaper_bloque.html` +
+`static/custom/js/cdiRenaperBloques.js`):
+
+| Estado | Qué se ve |
+|---|---|
+| Agregar | Solo "Agregar responsable 2" (bloque opcional sin usar) |
+| DNI | Tipo de documento + DNI + "Validar con RENAPER". Enter en el DNI valida. "Cargar manualmente" aparece solo si RENAPER no encuentra a la persona o no responde |
+| Verificado | Tarjeta de solo lectura con la identidad + los campos a completar (teléfono, email, relación, nivel educativo, consentimiento) |
+| Manual | Todos los campos editables, con "Validar con RENAPER" disponible |
+
+- El estado inicial lo calcula el form (`modos_renaper`): verificado si tiene
+  datos de RENAPER; manual si ya hay identidad cargada a mano (registros
+  previos o un POST con errores) o el documento no es un DNI; si no, DNI.
+- Elegir un tipo de documento sin DNI pasa el bloque a carga manual.
+- **"Cambiar persona"** en la tarjeta (responsables y referente; no en el
+  niño/a): libera solo el DNI y, al validar a la persona nueva, reemplaza la
+  verificación anterior. Un dato que la persona nueva no trae de RENAPER deja de
+  estar bloqueado y se completa a mano (no se conserva el de la anterior).
+  Una persona ya guardada como verificada solo se reemplaza validando a otra:
+  la carga manual no aplica.
+- La carga manual no es un atajo: se ofrece recién cuando RENAPER falla, o
+  directamente si el tipo de documento no es un DNI. Si se intenta guardar con
+  una persona todavía en el paso del DNI, el bloque avisa y lleva el foco al DNI
+  en lugar de abrir la carga manual.
+- Sin JS se ven todos los campos, como una carga manual.
+- No se muestra la fecha de verificación (definición de producto: por ahora no).
+
 ## Auditoría
 
 `TrackedModelDefinition` admite `included_fields` (lista de campos permitidos)
@@ -112,8 +142,9 @@ cubierto por la auditoría completa de `CentroDeInfancia`.
 
 ## Validación
 
-- `centrodeinfancia/tests/test_renaper_bloques.py`: consulta, alta, tokens
+- `backends/cdi/centrodeinfancia/tests/test_renaper_bloques.py`: consulta, alta, tokens
   ajenos, edición, validación de registros viejos, DNI del niño/a, edición
-  rápida, referente y auditoría del teléfono.
-- `centrodeinfancia/tests/test_nomina_renaper_validacion.py` ajustado al nuevo
+  rápida, referente, auditoría del teléfono, estado inicial de cada bloque y
+  cambio de persona.
+- `backends/cdi/centrodeinfancia/tests/test_nomina_renaper_validacion.py` ajustado al nuevo
   comportamiento.

@@ -69,6 +69,22 @@ BLOQUES = {
 }
 
 
+# Campo de tipo de documento de cada bloque (el referente no tiene).
+TIPO_DOCUMENTO_POR_BLOQUE = {
+    BLOQUE_NINO: "tipo_documentacion",
+    BLOQUE_RESPONSABLE_1: f"{BLOQUE_RESPONSABLE_1}_tipo_documentacion",
+    BLOQUE_RESPONSABLE_2: f"{BLOQUE_RESPONSABLE_2}_tipo_documentacion",
+}
+# Tipos de documentación con DNI argentino. Con cualquier otro no hay nada que
+# consultar en RENAPER y el bloque pasa directo a carga manual.
+TIPOS_DOCUMENTO_CON_DNI = ("dni_permanente", "dni_temporario", "naturalizacion")
+
+# Cómo arranca cada bloque en la pantalla.
+MODO_DNI = "dni"  # solo tipo de documento + DNI + "Validar con RENAPER"
+MODO_VERIFICADO = "verificado"  # tarjeta de solo lectura + campos de contacto
+MODO_MANUAL = "manual"  # todos los campos editables
+
+
 def _nombre_por_pk(model, campo, valor):
     if not str(valor or "").isdigit():
         return None

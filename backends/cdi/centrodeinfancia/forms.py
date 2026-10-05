@@ -53,7 +53,13 @@ from centrodeinfancia.services import (
 )
 from centrodeinfancia.services_renaper_bloques import (
     BLOQUE_REFERENTE,
+    BLOQUES,
     BLOQUES_NOMINA,
+    MODO_DNI,
+    MODO_MANUAL,
+    MODO_VERIFICADO,
+    TIPO_DOCUMENTO_POR_BLOQUE,
+    TIPOS_DOCUMENTO_CON_DNI,
     bloques_verificados,
 )
 from centrodeinfancia.forms_observacion import ObservacionCentroInfanciaForm
@@ -104,8 +110,16 @@ class CamposRenaperFormMixin:
     BLOQUES_RENAPER = ()
 
     def _bloquear_campos_renaper(self, valores_renaper=None):
+        valores_renaper = valores_renaper or {}
         campos = list(getattr(self.instance, "campos_verificados_renaper", None) or [])
-        for campo, valor in (valores_renaper or {}).items():
+        for bloque in self.BLOQUES_RENAPER:
+            # Validar a otra persona en el bloque ("Cambiar persona") reemplaza la
+            # verificación anterior: un dato que la persona nueva no trae no puede
+            # quedar bloqueado con el valor de la anterior.
+            campos_bloque = set(BLOQUES[bloque].values())
+            if campos_bloque.intersection(valores_renaper):
+                campos = [campo for campo in campos if campo not in campos_bloque]
+        for campo, valor in valores_renaper.items():
             field = self.fields.get(campo)
             if not field:
                 continue
@@ -126,6 +140,47 @@ class CamposRenaperFormMixin:
         self.bloques_verificados_renaper = bloques_verificados(
             campos, self.BLOQUES_RENAPER
         )
+        self.tipos_documento_con_dni = ",".join(TIPOS_DOCUMENTO_CON_DNI)
+        self.campos_bloque_renaper = {
+            bloque: ",".join(BLOQUES[bloque].values())
+            for bloque in self.BLOQUES_RENAPER
+        }
+
+    @property
+    def modos_renaper(self):
+        # Propiedad y no atributo: consulta ``errors``, que no puede evaluarse
+        # en ``__init__`` sin disparar la validación antes de tiempo.
+        return {
+            bloque: self._modo_inicial_bloque(bloque) for bloque in self.BLOQUES_RENAPER
+        }
+
+    def _valor_actual(self, campo):
+        if self.is_bound:
+            return self.data.get(self.add_prefix(campo))
+        return self.initial.get(campo)
+
+    def _modo_inicial_bloque(self, bloque):
+        """Cómo se muestra el bloque al cargar la pantalla.
+
+        Verificado si tiene datos de RENAPER; manual si ya hay identidad cargada
+        a mano (registros previos o un POST con errores) o el documento no es un
+        DNI; si no, arranca pidiendo solo el DNI.
+        """
+        if self.bloques_verificados_renaper.get(bloque):
+            return MODO_VERIFICADO
+        campos = [campo for campo in BLOQUES[bloque].values() if campo in self.fields]
+        if any(
+            self._valor_actual(campo) not in (None, "")
+            for campo in campos
+            if campo != BLOQUES[bloque]["dni"]
+        ):
+            return MODO_MANUAL
+        if self.is_bound and any(campo in self.errors for campo in campos):
+            return MODO_MANUAL
+        tipo = self._valor_actual(TIPO_DOCUMENTO_POR_BLOQUE.get(bloque, ""))
+        if tipo and tipo not in TIPOS_DOCUMENTO_CON_DNI:
+            return MODO_MANUAL
+        return MODO_DNI
 
     def es_campo_renaper(self, campo):
         return campo in self.campos_verificados_renaper

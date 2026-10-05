@@ -14,7 +14,11 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
-from centrodeinfancia.forms import CentroDeInfanciaForm, NominaCentroInfanciaForm
+from centrodeinfancia.forms import (
+    CentroDeInfanciaForm,
+    NominaCentroInfanciaDestinatariosForm,
+    NominaCentroInfanciaForm,
+)
 from centrodeinfancia.models import CentroDeInfancia, NominaCentroInfancia
 from centrodeinfancia.services_renaper_bloques import crear_token
 from centrodeinfancia.tests.test_centrodeinfancia_form import (  # noqa: F401
@@ -368,3 +372,71 @@ def test_referente_validado_queda_bloqueado_salvo_contacto(admin, ubicacion, ser
     assert centro.apellido_referente == "Pérez"
     assert centro.email_referente == "nuevo@cdi.com"
     assert centro.telefono_referente == "4774-9999"
+
+
+# ── Experiencia: modo inicial de cada bloque y cambio de persona ─────────
+
+
+def test_cambiar_persona_no_deja_datos_de_la_anterior_bloqueados(client, admin, centro):
+    nomina = _alta_nomina(
+        client, centro, renaper_token_responsable_legal_1=_token_responsable_1(client)
+    )
+    # La persona nueva viene sin CUIL desde RENAPER: ese dato se completa a mano.
+    token = crear_token(
+        "responsable_legal_1",
+        admin,
+        {
+            "responsable_legal_1_dni": 30123457,
+            "responsable_legal_1_apellido": "Fernández",
+            "responsable_legal_1_nombre": "Juan",
+            "responsable_legal_1_fecha_nacimiento": "1985-01-02",
+            "responsable_legal_1_sexo_registral": "varon",
+        },
+    )
+
+    response = client.post(
+        _url_edicion(centro, nomina),
+        datos_nomina(
+            centro,
+            responsable_legal_1_cuit="20-30123457-1",
+            renaper_token_responsable_legal_1=token,
+        ),
+    )
+
+    assert response.status_code == 302
+    nomina.refresh_from_db()
+    assert nomina.responsable_legal_1_dni == 30123457
+    assert nomina.responsable_legal_1_apellido == "Fernández"
+    assert nomina.responsable_legal_1_cuit == "20301234571"
+    assert "responsable_legal_1_cuit" not in nomina.campos_verificados_renaper
+    assert "responsable_legal_1_dni" in nomina.campos_verificados_renaper
+
+
+def test_modo_inicial_de_cada_bloque(centro):
+    alta = NominaCentroInfanciaDestinatariosForm(centro=centro)
+    assert alta.modos_renaper["responsable_legal_1"] == "dni"
+
+    sin_dni = NominaCentroInfanciaDestinatariosForm(
+        data={"responsable_legal_1_tipo_documentacion": "origen_sin_tramite"},
+        centro=centro,
+    )
+    assert sin_dni.modos_renaper["responsable_legal_1"] == "manual"
+
+    verificado = NominaCentroInfanciaDestinatariosForm(
+        centro=centro, valores_renaper=VALORES_RESPONSABLE_1
+    )
+    assert verificado.modos_renaper["responsable_legal_1"] == "verificado"
+    assert verificado.modos_renaper["responsable_legal_2"] == "dni"
+
+
+def test_edicion_de_registro_manual_arranca_en_modo_manual(client, admin, centro):
+    nomina = _alta_nomina(client, centro)
+
+    response = client.get(_url_edicion(centro, nomina))
+
+    html = response.content.decode()
+    form = response.context["form"]
+    assert form.modos_renaper["responsable_legal_1"] == "manual"
+    assert form.modos_renaper["responsable_legal_2"] == "dni"
+    assert 'data-renaper-bloque="responsable_legal_2"' in html
+    assert 'data-opcional="1"' in html

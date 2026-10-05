@@ -905,6 +905,11 @@
   "regex": "^centrodeinfancia/observacion/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
+  "name": "centrodeinfancia_renaper_bloque",
+  "namespace": "",
+  "regex": "^centrodeinfancia/ajax/renaper/(?P<bloque>[^/]+)/\\Z"
+ },
+ {
   "name": "centrodeinfancia_reportes",
   "namespace": "",
   "regex": "^centrodeinfancia/reportes/\\Z"

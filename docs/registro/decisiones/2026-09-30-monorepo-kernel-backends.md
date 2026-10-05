@@ -6,6 +6,12 @@ Aceptada. Implementación por olas (ver "Plan"). Reemplaza, para las épicas
 #1931, #2251 y #2309, el alcance de extracción definido en
 `2026-08-27-dispositivos-servicio-independiente-monorepo.md` (PR #2365).
 
+**Actualización 2026-10-02:** la parte de estructura del repo (punto 2 de la
+decisión y las rutas `kernel/`, `backends/`, `frontends/`) la reemplaza
+`2026-10-02-estructura-src-backends.md`: todo el código pasó a `src/backends/`
+(con `config/` y `kernel/` adentro) y `src/frontends/`. El resto de esta
+decisión sigue vigente.
+
 ## Contexto
 
 - Se pidió terminar rápido la migración a desplegables independientes. La

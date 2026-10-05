@@ -13,7 +13,7 @@
 | Branch de despliegue PRD | `main`                                                         |
 | Hosting                  | Self-hosted + NGINX interno                                    |
 | Base de datos            | MySQL                                                          |
-| Compose de deploy        | Base `docker-compose.deploy.yml`; en produccion se suma `docker-compose.produccion.yml` |
+| Compose de deploy        | Base `docker/compose/docker-compose.deploy.yml`; en produccion se suma `docker/compose/docker-compose.produccion.yml` |
 | Cola asincrona           | No Celery/Kafka (threads + ThreadPoolExecutor)                 |
 | Secret manager           | No (operacion actual con `.env`)                               |
 
@@ -33,9 +33,9 @@
 
 | Entorno      | URL(s)                                 | Hosting                     | Notas                                                                                                 | Owner     |
 | ------------ | -------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------- | --------- |
-| qa           | http://10.1.131.121/                   | Self-hosted + NGINX interno | Deploy desde branch `development`; usa `docker-compose.deploy.yml` + `.env` del servidor; DB dedicada en `10.1.130.88` | Tech Lead |
-| homologacion | https://homologacion.sisoc.example.gov.ar/ | Self-hosted + NGINX interno | Deploy desde branch `homologacion`; usa `docker-compose.deploy.yml` + `docker-compose.produccion.yml` y despliega SISOC-Mobile | Tech Lead |
-| prd          | https://sisoc.secretarianaf.gob.ar/    | Self-hosted + NGINX interno | Deploy desde branch `main`; usa `docker-compose.deploy.yml` + `docker-compose.produccion.yml`       | Tech Lead |
+| qa           | http://10.1.131.121/                   | Self-hosted + NGINX interno | Deploy desde branch `development`; usa `docker/compose/docker-compose.deploy.yml` + `.env` del servidor; DB dedicada en `10.1.130.88` | Tech Lead |
+| homologacion | https://homologacion.sisoc.example.gov.ar/ | Self-hosted + NGINX interno | Deploy desde branch `homologacion`; usa `docker/compose/docker-compose.deploy.yml` + `docker/compose/docker-compose.produccion.yml` y despliega SISOC-Mobile | Tech Lead |
+| prd          | https://sisoc.secretarianaf.gob.ar/    | Self-hosted + NGINX interno | Deploy desde branch `main`; usa `docker/compose/docker-compose.deploy.yml` + `docker/compose/docker-compose.produccion.yml`       | Tech Lead |
 
 ## 3. Architecture (High-level)
 
@@ -82,7 +82,7 @@
 - Process model:
   - Proceso web Django.
   - `docker-compose.yml` local define `mysql` + `django`.
-  - Los deploys versionados usan `docker-compose.deploy.yml`; homologacion y produccion agregan `docker-compose.produccion.yml` para levantar los workers de background.
+  - Los deploys versionados usan `docker/compose/docker-compose.deploy.yml`; homologacion y produccion agregan `docker/compose/docker-compose.produccion.yml` para levantar los workers de background.
   - QA usa solo el compose base; homologacion tambien refresca SISOC-Mobile.
   - Jobs programados por cron del host (limpieza logs, prune Docker, hetrixtools, purge_auditlog).
 

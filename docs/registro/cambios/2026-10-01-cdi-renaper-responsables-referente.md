@@ -38,7 +38,7 @@ persona (`centrodeinfancia/services_renaper_bloques.py`): `nino`,
 los datos de identidad a los campos del formulario.
 
 - Botón **"Validar con RENAPER"** junto al DNI de cada bloque
-  (`partials/renaper_bloque.html` + `static/custom/js/cdiRenaperBloques.js`).
+  (`partials/renaper_bloque.html` + `src/backends/kernel/static/custom/js/cdiRenaperBloques.js`).
   Llama a `centrodeinfancia/ajax/renaper/<bloque>/`, que devuelve los valores y
   un **token firmado** atado al usuario y al bloque.
 - El form recibe el token en el POST (`renaper_token_<bloque>`). El servidor
@@ -66,7 +66,7 @@ Teléfonos (y email del referente) nunca se bloquean.
 
 Producto eligió que cada persona arranque pidiendo solo el documento. Cada
 bloque tiene cuatro estados (`partials/renaper_bloque.html` +
-`static/custom/js/cdiRenaperBloques.js`):
+`src/backends/kernel/static/custom/js/cdiRenaperBloques.js`):
 
 | Estado | Qué se ve |
 |---|---|
@@ -142,9 +142,9 @@ cubierto por la auditoría completa de `CentroDeInfancia`.
 
 ## Validación
 
-- `backends/cdi/centrodeinfancia/tests/test_renaper_bloques.py`: consulta, alta, tokens
+- `src/backends/cdi/centrodeinfancia/tests/test_renaper_bloques.py`: consulta, alta, tokens
   ajenos, edición, validación de registros viejos, DNI del niño/a, edición
   rápida, referente, auditoría del teléfono, estado inicial de cada bloque y
   cambio de persona.
-- `backends/cdi/centrodeinfancia/tests/test_nomina_renaper_validacion.py` ajustado al nuevo
+- `src/backends/cdi/centrodeinfancia/tests/test_nomina_renaper_validacion.py` ajustado al nuevo
   comportamiento.

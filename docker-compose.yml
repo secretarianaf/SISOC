@@ -25,7 +25,7 @@ services:
       dockerfile: ./docker/django/Dockerfile
     environment:
       TZ: America/Argentina/Buenos_Aires
-      # Desarrollo: core + backends en un solo proceso (config/settings_all.py).
+      # Desarrollo: core + backends en un solo proceso (src/backends/config/settings_all.py).
       DJANGO_SETTINGS_MODULE: config.settings_all
     env_file:
       - .env
@@ -36,6 +36,7 @@ services:
       - .:/sisoc/
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
     restart: "no"
+    # El front v2 espera a que Django este sano antes de levantar.
     healthcheck:
       test: ["CMD", "python", "-c", "from urllib.request import urlopen, Request; r = urlopen(Request('http://127.0.0.1:8000/health/', headers={'X-Forwarded-Proto': 'https'}), timeout=2); exit(0 if r.status == 200 else 1)"]
       interval: 10s
@@ -48,7 +49,7 @@ services:
   front_vpsl:
     image: ${VPSL_IMAGE_TAG:-sisoc/front-vpsl:local}
     build:
-      context: ./frontends
+      context: ./src/frontends
       dockerfile: Dockerfile
       target: prod
       args:
@@ -61,13 +62,32 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Front v2 de Celiaquia. Sin puerto publicado: solo lo alcanza Django por la
+  # red de compose (FRONTEND_V2_UPSTREAMS en src/backends/config/settings.py).
+  front_celiaquia:
+    image: sisoc/front-celiaquia:local
+    build:
+      context: ./src/frontends
+      dockerfile: Dockerfile
+      target: prod
+      args:
+        APP: celiaquia
+        VITE_SENTRY_DSN: ${SENTRY_DSN:-}
+        VITE_SENTRY_ENVIRONMENT: ${ENVIRONMENT:-dev}
+        VITE_RELEASE_SHA: ${VITE_RELEASE_SHA:-local}
+    # Reiniciar el front no reinicia django, y viceversa (frontend_v2.md, 9).
+    depends_on:
+      django:
+        condition: service_healthy
+    restart: unless-stopped
+
   ocr_worker:
     build:
       context: .
       dockerfile: ./docker/django/Dockerfile
     environment:
       TZ: America/Argentina/Buenos_Aires
-      # Desarrollo: core + backends en un solo proceso (config/settings_all.py).
+      # Desarrollo: core + backends en un solo proceso (src/backends/config/settings_all.py).
       DJANGO_SETTINGS_MODULE: config.settings_all
       DJANGO_SERVICE_ROLE: ocr_worker
     env_file:
@@ -86,7 +106,7 @@ services:
       dockerfile: ./docker/django/Dockerfile
     environment:
       TZ: America/Argentina/Buenos_Aires
-      # Desarrollo: core + backends en un solo proceso (config/settings_all.py).
+      # Desarrollo: core + backends en un solo proceso (src/backends/config/settings_all.py).
       DJANGO_SETTINGS_MODULE: config.settings_all
       DJANGO_SERVICE_ROLE: encuestas_worker
     env_file:

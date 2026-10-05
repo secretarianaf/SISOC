@@ -28,4 +28,4 @@ archivos ni registros ya creados.
 
 - `comedores/services/certificacion_prestaciones_service.py`
 - `comedores/api_views.py`
-- `docs/registro/cambios/2026-08-13-certificaciones-prestaciones-sin-fuente.md`
+- `docs/registro/cambios/2026-T3/2026-08-13-certificaciones-prestaciones-sin-fuente.md`

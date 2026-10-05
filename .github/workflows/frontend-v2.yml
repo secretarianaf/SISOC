@@ -16,14 +16,14 @@ jobs:
       - uses: actions/checkout@v6.0.2
       - uses: actions/setup-node@v4
         with:
-          node-version-file: frontends/.nvmrc
+          node-version-file: src/frontends/.nvmrc
           cache: npm
-          cache-dependency-path: frontends/package-lock.json
+          cache-dependency-path: src/frontends/package-lock.json
       - name: Instalar dependencias
-        working-directory: frontends
+        working-directory: src/frontends
         run: npm ci
       - name: Verificar front y tipos OpenAPI
-        working-directory: frontends
+        working-directory: src/frontends
         run: |
           npm audit --audit-level=low
           npm run lint
@@ -34,6 +34,7 @@ jobs:
           npm run test:e2e
           npm run types:generate
           git diff --exit-code -- packages/api/src/generated.ts
+          npm run api:check
       - name: Preparar Django para generar el contrato
         run: |
           cat > .env <<'EOF'
@@ -57,5 +58,12 @@ jobs:
         run: |
           docker compose run --build --no-deps --rm -T \
             -e FRONTEND_V2_SCHEMA_ONLY=1 -e USE_SQLITE_FOR_TESTS=1 django \
-            python manage.py spectacular --file frontends/packages/api/openapi.yaml --format openapi --validate --fail-on-warn
-          git diff --exit-code -- frontends/packages/api/openapi.yaml
+            python manage.py spectacular --file src/frontends/packages/api/openapi.yaml --format openapi --validate --fail-on-warn
+          git diff --exit-code -- src/frontends/packages/api/openapi.yaml
+      - name: Verificar contrato Django de Celiaquia
+        # Su propio urlconf (config/urls_frontend_v2.py) en lugar del filtro
+        # FRONTEND_V2_SCHEMA_ONLY, que acota el schema a /api/vpsl/.
+        run: |
+          docker compose run --no-deps --rm -T -e USE_SQLITE_FOR_TESTS=1 django \
+            python manage.py spectacular --urlconf config.urls_frontend_v2 --file src/frontends/packages/api/openapi.celiaquia.yaml
+          git diff --exit-code -- src/frontends/packages/api/openapi.celiaquia.yaml

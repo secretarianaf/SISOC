@@ -10,4 +10,4 @@ Propósito:
 
 Formato:
 
-- `PR-<numero>.md`
+- `AAAA-TN/PR-<numero>.md`: carpeta del trimestre en que se genero por primera vez (ver `docs/registro/README.md`).

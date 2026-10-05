@@ -93,6 +93,7 @@ CI ejecuta:
 ## Naming y estructura
 
 - Ubicar tests en `app/tests/` cuando exista patrón.
+- Si no hay patrón en la app: los tests de un vertical van en `src/backends/<vertical>/tests/` y los transversales (kernel, CI, scripts, deploy) en `src/backends/kernel/tests/`. No crear `tests/__init__.py`: `tests` es un namespace compartido entre esas carpetas.
 - Nombres: `test_*.py`.
 - Nombres de test descriptivos (`test_create_rechaza_registro_sin_montos`).
 - Reutilizar fixtures de `conftest.py` local/global antes de crear fixtures duplicadas.
@@ -126,7 +127,7 @@ Agregar tests de:
 
 ## Entorno de tests (nota importante)
 
-Según `config/settings.py`, durante tests:
+Según `src/backends/config/settings.py`, durante tests:
 - puede usarse SQLite en memoria (`:memory:`) si no hay `DATABASE_HOST` o `USE_SQLITE_FOR_TESTS=1`
 - `SECRET_KEY` de test se define si falta
 
@@ -148,7 +149,7 @@ docker compose exec django pytest -m smoke
 
 # Un archivo o subset (ejemplo)
 
-docker compose exec django pytest -n auto kernel/core/tests/test_monto_prestacion_views.py
+docker compose exec django pytest -n auto src/backends/kernel/core/tests/test_monto_prestacion_views.py
 ```
 
 ## CI (referencia)

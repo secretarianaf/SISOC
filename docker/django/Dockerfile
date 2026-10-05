@@ -36,7 +36,7 @@ RUN apt-get update && \
 
 # Modelo Tesseract de máxima precisión (tessdata_best, español). Queda
 # disponible pero NO activo: el OCR usa el modelo del sistema por defecto. Para
-# activarlo, definir OCR_TESSDATA_DIR=/usr/share/tessdata-best (ver docs/ocr.md;
+# activarlo, definir OCR_TESSDATA_DIR=/usr/share/tessdata-best (ver docs/implementaciones/ocr.md;
 # en pruebas sobre escaneos sellados el modelo best degradó el recall).
 RUN mkdir -p /usr/share/tessdata-best && \
     wget -q -O /usr/share/tessdata-best/spa.traineddata \
@@ -50,10 +50,13 @@ RUN echo "es_AR.UTF-8 UTF-8" >> /etc/locale.gen && \
     echo "LC_ALL=es_AR.UTF-8" >> /etc/default/locale
 
 # Instalación de dependencias de la aplicación
-COPY ./requirements.txt .
 COPY ./requirements ./requirements
 RUN python -m pip install --upgrade pip setuptools wheel
-RUN python -m pip install --no-cache-dir --retries 5 --timeout 60 -r requirements.txt
+RUN python -m pip install --no-cache-dir --retries 5 --timeout 60 -r requirements/all.txt
+
+# El código vive en src/backends/: así gunicorn, celery y manage.py encuentran
+# `config`, que a su vez agrega el kernel y los verticales al sys.path.
+ENV PYTHONPATH=/sisoc/src/backends
 
 # Agrega el script de entrypoint y hazlo ejecutable
 COPY ./docker/django/entrypoint.py ./docker/django/entrypoint.py
@@ -66,29 +69,36 @@ CMD ["python", "./docker/django/entrypoint.py"]
 # Ver docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md.
 
 FROM base AS source
-COPY . /src
-RUN rm -rf /src/frontends
+COPY . /repo
+RUN rm -rf /repo/src/frontends
 
-# SISOC core: su cluster (backends/sisoc_core) sin los backends por vertical.
+# SISOC core: config, kernel y su cluster (sisoc_core), sin los backends por vertical.
 FROM source AS core_source
-RUN find /src/backends -mindepth 1 -maxdepth 1 ! -name sisoc_core -exec rm -rf {} +
+RUN find /repo/src/backends -mindepth 1 -maxdepth 1 ! -name config ! -name kernel ! -name sisoc_core -exec rm -rf {} +
 
 FROM base AS core
-COPY --from=core_source /src /sisoc
+COPY --from=core_source /repo /sisoc
 CMD ["python", "./docker/django/entrypoint.py"]
 
-# Backend de un vertical: kernel, configuración compartida y su carpeta.
+# Backend de un vertical: kernel (con templates y static compartidos),
+# configuración compartida y su carpeta.
 FROM source AS backend_source
 ARG BACKEND
-RUN test -n "$BACKEND" && test -d "/src/backends/$BACKEND"     && mkdir -p /out/backends     && cp -a /src/config /src/kernel /src/templates /src/static /src/docker         /src/manage.py /src/CHANGELOG.md /out/     && cp -a "/src/backends/$BACKEND" /out/backends/
+RUN test -n "$BACKEND" && test -d "/repo/src/backends/$BACKEND" \
+    && test "$BACKEND" != config && test "$BACKEND" != kernel \
+    && mkdir -p /out/src/backends \
+    && cp -a /repo/docker /repo/manage.py /repo/CHANGELOG.md /out/ \
+    && cp -a /repo/src/backends/config /repo/src/backends/kernel "/repo/src/backends/$BACKEND" /out/src/backends/
 
 FROM base AS backend
 COPY --from=backend_source /out /sisoc
 CMD ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000"]
 
 # Migrador único: composición completa (config.settings_all). No sirve tráfico.
+# También corre collectstatic: es la única imagen con los estáticos de todos
+# los verticales (ver docker/django/entrypoint.py).
 FROM base AS migrator
-COPY --from=source /src /sisoc
+COPY --from=source /repo /sisoc
 ENV DJANGO_SETTINGS_MODULE=config.settings_all
 ENV DJANGO_SERVICE_ROLE=migrator
 CMD ["python", "./docker/django/entrypoint.py"]

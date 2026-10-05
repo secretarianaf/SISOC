@@ -18,7 +18,7 @@ solicitan ni validan los campos `monto_total_conveniado_informe` y
 `monto_total_conveniado`. Se retiró la sección "Monto total conveniado".
 Los valores históricos y las variables documentales se conservan; este cambio
 no modifica las plantillas publicadas ni requiere una migración.
-Ver `docs/registro/cambios/2026-09-11-informes-tecnicos-sin-monto-conveniado.md`.
+Ver `docs/registro/cambios/2026-T3/2026-09-11-informes-tecnicos-sin-monto-conveniado.md`.
 
 ## Templates dinámicos
 
@@ -41,5 +41,5 @@ no borrar templates ni valores ya persistidos.
 - `admisiones/forms/admisiones_forms.py`
 - `admisiones/services/docx_service/impl.py`
 - `admisiones/services/templates_informe_tecnico_service/impl.py`
-- `docs/registro/cambios/2026-08-10-fixes-admisiones-pwa-rendiciones.md`
-- `docs/registro/cambios/2026-08-12-correcciones-issues-reabiertos.md`
+- `docs/registro/cambios/2026-T3/2026-08-10-fixes-admisiones-pwa-rendiciones.md`
+- `docs/registro/cambios/2026-T3/2026-08-12-correcciones-issues-reabiertos.md`

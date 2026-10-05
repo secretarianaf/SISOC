@@ -2,13 +2,13 @@
 
 Extrae, sin datos hardcodeados de dominio salvo la clasificacion por zona:
 
-- apps propias declaradas en ``config/settings.py`` (INSTALLED_APPS);
-- prefijos web y API montados en ``config/urls.py``;
+- apps propias declaradas en ``src/backends/config/settings.py`` (INSTALLED_APPS);
+- prefijos web y API montados en ``src/backends/config/urls.py``;
 - señales de autenticacion de cada API (token DRF = plano movil, API key =
   server-to-server, sesion = web); una API puede combinarlas;
 - aristas reales entre apps por AST de imports, distinguiendo fachada publica
   (``<app>.api``) de import de internals;
-- arbol del menu lateral (``templates/includes/sidebar/opciones.html``) con sus
+- arbol del menu lateral (``src/backends/kernel/templates/includes/sidebar/opciones.html``) con sus
   permisos, para saber que modulos alcanza el usuario;
 - PWA declaradas en ``scripts/operacion/pwas.json``;
 - roles de contenedor de ``docker/django/entrypoint.py`` y servicios Compose.
@@ -16,14 +16,14 @@ Extrae, sin datos hardcodeados de dominio salvo la clasificacion por zona:
 Salidas:
 
 - ``var/arquitectura/grafo.json``: el grafo que consume la vista. Fuera de git
-  (se reescribe en cada arranque) y fuera de ``static/`` (Nginx publica
+  (se reescribe en cada arranque) y fuera de los estáticos (Nginx publica
   ``/static/`` por alias, sin pasar por Django, y el grafo describe permisos,
   rutas y estructura interna). Lo entrega una vista autenticada.
 - Con ``--docs``, ademas: ``docs/arquitectura/grafo_sisoc.json`` versionable y
   ``docs/arquitectura/mapa_sisoc.html``, documento de una sola pieza para leer el
   mapa fuera de SISOC. El arranque NO los toca.
 
-``static/arquitectura/mapa.css`` y ``mapa.js`` son fuente versionada del visor,
+``src/backends/kernel/static/arquitectura/mapa.css`` y ``mapa.js`` son fuente versionada del visor,
 no salidas: van como estaticos porque el CSP de produccion no admite ``<style>``
 ni ``<script>`` inline.
 
@@ -45,8 +45,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[2]
+BACKENDS = RAIZ / "src" / "backends"
 # CSS y JS del visor son fuente versionada, no salidas: se editan aca.
-FUENTE_VISOR = RAIZ / "static" / "arquitectura"
+FUENTE_VISOR = BACKENDS / "kernel" / "static" / "arquitectura"
 # El grafo se regenera en cada arranque, asi que vive fuera de git: si escribiera
 # en el checkout, deploy_refresh.sh abortaria el despliegue siguiente por
 # cambios locales tracked.
@@ -75,6 +76,8 @@ ZONAS = [
             "historial",
             "healthcheck",
             "sentry",
+            "organizaciones",
+            "catalogo_intervenciones",
         ],
     },
     {
@@ -91,7 +94,7 @@ ZONAS = [
             "comedores",
             "admisiones",
             "relevamientos",
-            "organizaciones",
+            "gestion_organizaciones",
             "duplas",
             "intervenciones",
             "acompanamientos",
@@ -120,7 +123,14 @@ ZONAS = [
         "id": "transversal",
         "nombre": "Servicios al usuario",
         "detalle": "Atraviesan dominios sin ser dueños de ninguno.",
-        "apps": ["dashboard", "comunicados", "encuestas", "ocr", "insumos"],
+        "apps": [
+            "dashboard",
+            "comunicados",
+            "encuestas",
+            "ocr",
+            "insumos",
+            "usuarios",
+        ],
     },
     {
         "id": "integracion",
@@ -312,6 +322,35 @@ EXCLUIR_ARCHIVO_RE = re.compile(
 )
 
 
+def _raices_de_codigo() -> list[Path]:
+    """``src/backends/``, su ``kernel/`` y cada vertical (ver src/backends/config/__init__.py)."""
+    extra = (
+        sorted(
+            p
+            for p in BACKENDS.iterdir()
+            if p.is_dir() and p.name not in ("config", "kernel")
+        )
+        if BACKENDS.is_dir()
+        else []
+    )
+    return [BACKENDS, BACKENDS / "kernel", *extra]
+
+
+def dir_de_app(app: str) -> Path:
+    """Carpeta de una app dentro de alguna raíz de código."""
+    for base in _raices_de_codigo():
+        if (base / app).is_dir():
+            return base / app
+    return RAIZ / app
+
+
+def _registro_backends() -> dict:
+    try:
+        return json.loads(_texto(BACKENDS / "config" / "backends.json") or "{}")
+    except json.JSONDecodeError:
+        return {}
+
+
 def _texto(ruta: Path) -> str:
     """Lee como utf-8-sig: hay modulos del repo con BOM y ``ast.parse`` los rechaza."""
     try:
@@ -341,13 +380,17 @@ def _git(*args: str) -> str:
 
 def apps_instaladas() -> list[str]:
     """Apps propias de INSTALLED_APPS, en el orden en que estan declaradas."""
-    contenido = _texto(RAIZ / "config" / "settings.py")
-    bloque = re.search(r"INSTALLED_APPS\s*=\s*\[(.*?)\n\]", contenido, re.S)
-    if not bloque:
-        return []
+    contenido = _texto(BACKENDS / "config" / "settings.py")
+    crudos: list[str] = []
+    for nombre in ("KERNEL_APPS", "CORE_APPS"):
+        bloque = re.search(rf"^{nombre}\s*=\s*\[(.*?)\n\]", contenido, re.S | re.M)
+        if bloque:
+            crudos += re.findall(r'"([^"]+)"', bloque.group(1))
+    for spec in _registro_backends().values():
+        crudos += spec.get("apps", [])
 
     apps: list[str] = []
-    for crudo in re.findall(r'"([^"]+)"', bloque.group(1)):
+    for crudo in crudos:
         paquete = crudo.split(".")[0]
         if (
             paquete in {"django", "rest_framework"}
@@ -359,7 +402,7 @@ def apps_instaladas() -> list[str]:
             }
         ):
             continue
-        if not (RAIZ / paquete).is_dir():
+        if not dir_de_app(paquete).is_dir():
             continue
         if paquete not in apps:
             apps.append(paquete)
@@ -367,13 +410,17 @@ def apps_instaladas() -> list[str]:
 
 
 def rutas_montadas() -> dict[str, dict[str, list[str]]]:
-    """Prefijos web y API por app, leidos de config/urls.py."""
-    contenido = _texto(RAIZ / "config" / "urls.py")
+    """Prefijos web y API por app, leidos de src/backends/config/urls.py."""
+    contenido = _texto(BACKENDS / "config" / "urls.py")
+    for spec in _registro_backends().values():
+        runtime = spec.get("urlconf", "").split(".")[0]
+        if runtime:
+            contenido += "\n" + _texto(dir_de_app(runtime) / "urls.py")
     rutas: dict[str, dict[str, list[str]]] = {}
     patron = re.compile(r'path\(\s*"([^"]*)"\s*,\s*include\(\s*"([^"]+)"\s*\)')
     for prefijo, modulo in patron.findall(contenido):
         app = modulo.split(".")[0]
-        if not (RAIZ / app).is_dir():
+        if not dir_de_app(app).is_dir():
             continue
         destino = "api" if prefijo.startswith("api/") else "web"
         entrada = rutas.setdefault(app, {"web": [], "api": []})
@@ -398,7 +445,7 @@ def auth_de_apis(apps: list[str]) -> dict[str, list[str]]:
     }
     planos: dict[str, set[str]] = {}
     for app in apps:
-        for archivo in (RAIZ / app).rglob("api_views*.py"):
+        for archivo in dir_de_app(app).rglob("api_views*.py"):
             if any(p in EXCLUIR_DIR for p in archivo.parts):
                 continue
             contenido = _texto(archivo)
@@ -409,7 +456,7 @@ def auth_de_apis(apps: list[str]) -> dict[str, list[str]]:
 
 
 def _archivos_py(app: str):
-    base = RAIZ / app
+    base = dir_de_app(app)
     for carpeta, subdirs, archivos in os.walk(base):
         subdirs[:] = [d for d in subdirs if d not in EXCLUIR_DIR]
         for nombre in archivos:
@@ -477,7 +524,7 @@ def nombres_de_url(apps: list[str]) -> dict[str, str]:
     """Mapa name= de urls -> app que lo define."""
     mapa: dict[str, str] = {}
     for app in apps:
-        for archivo in (RAIZ / app).rglob("*urls*.py"):
+        for archivo in dir_de_app(app).rglob("*urls*.py"):
             if any(p in EXCLUIR_DIR for p in archivo.parts):
                 continue
             for nombre in re.findall(r'name\s*=\s*"([^"]+)"', _texto(archivo)):
@@ -487,7 +534,7 @@ def nombres_de_url(apps: list[str]) -> dict[str, str]:
 
 def menu_lateral(mapa_urls: dict[str, str]) -> list[dict]:
     """Arbol del sidebar: grupos, items, permisos y app de destino."""
-    ruta = RAIZ / "templates" / "includes" / "sidebar" / "opciones.html"
+    ruta = BACKENDS / "kernel" / "templates" / "includes" / "sidebar" / "opciones.html"
     lineas = _texto(ruta).split("\n")
 
     re_grupo = re.compile(r"nav-main-item")
@@ -624,7 +671,7 @@ def asincronia() -> dict:
         return re.findall(r"^  ([a-z_]+):", contenido, re.M)
 
     servicios = servicios_de("docker-compose.yml")
-    servicios_celery = servicios_de("docker-compose.celery.yml")
+    servicios_celery = servicios_de("docker/compose/docker-compose.celery.yml")
 
     return {
         "roles_contenedor": roles,
@@ -677,7 +724,7 @@ def zona_de(app: str) -> str:
 def construir() -> dict:
     instaladas = apps_instaladas()
     apps = instaladas + [
-        p for p in PAQUETES_EXTRA if (RAIZ / p).is_dir() and p not in instaladas
+        p for p in PAQUETES_EXTRA if dir_de_app(p).is_dir() and p not in instaladas
     ]
 
     rutas = rutas_montadas()
@@ -721,7 +768,7 @@ def construir() -> dict:
                 "lineas": peso.get(app, {}).get("lineas", 0),
                 "deps_out": salientes.get(app, {"api": 0, "internal": 0}),
                 "deps_in": entrantes.get(app, {"api": 0, "internal": 0}),
-                "tiene_fachada": (RAIZ / app / "api.py").exists(),
+                "tiene_fachada": (dir_de_app(app) / "api.py").exists(),
             }
         )
 

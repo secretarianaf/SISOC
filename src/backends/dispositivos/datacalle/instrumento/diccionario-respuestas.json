@@ -1,0 +1,1355 @@
+[
+  {
+    "campo": "relevamientoId",
+    "pagina": "identificacion",
+    "tipo": "ref",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Operativo",
+    "matriz": null
+  },
+  {
+    "campo": "fechaInicio",
+    "pagina": "identificacion",
+    "tipo": "fechaHora",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Fecha y hora de la encuesta",
+    "matriz": null
+  },
+  {
+    "campo": "encuestadorId",
+    "pagina": "identificacion",
+    "tipo": "ref",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Encuestador/a",
+    "matriz": null
+  },
+  {
+    "campo": "encuestadorDni",
+    "pagina": "identificacion",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": true,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": null,
+    "matriz": null
+  },
+  {
+    "campo": "encuestadorNombre",
+    "pagina": "identificacion",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": true,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": null,
+    "matriz": null
+  },
+  {
+    "campo": "variante",
+    "pagina": "identificacion",
+    "tipo": "enum",
+    "catalogo": "varianteCuestionario",
+    "calculado": true,
+    "soloExportacion": true,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": null,
+    "matriz": null
+  },
+  {
+    "campo": "grupoId",
+    "pagina": "identificacion",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": true,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Grupo observado",
+    "matriz": null
+  },
+  {
+    "campo": "esCabeceraGrupo",
+    "pagina": "identificacion",
+    "tipo": "siNo",
+    "catalogo": "siNo",
+    "calculado": false,
+    "soloExportacion": true,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Primer caso del grupo",
+    "matriz": null
+  },
+  {
+    "campo": "lugarHallazgo",
+    "pagina": "observacional",
+    "tipo": "enum",
+    "catalogo": "faseRelevamiento",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Tipo de operativo",
+    "matriz": null
+  },
+  {
+    "campo": "ubicacionGrupo",
+    "pagina": "observacional",
+    "tipo": "geo",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Ubicación del grupo",
+    "matriz": null
+  },
+  {
+    "campo": "grupoObservado",
+    "pagina": "observacional",
+    "tipo": "matrizGrupo",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Composición etaria y de género del grupo observado",
+    "matriz": {
+      "filas": "rangoEtario2026",
+      "columnas": "generoObservado"
+    }
+  },
+  {
+    "campo": "personasObservadas",
+    "pagina": "observacional",
+    "tipo": "numero",
+    "catalogo": null,
+    "calculado": true,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Total de personas observadas",
+    "matriz": null
+  },
+  {
+    "campo": "asentamientoMuebles",
+    "pagina": "observacional",
+    "tipo": "siNo",
+    "catalogo": "siNo",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Muebles/Enseres",
+    "matriz": null
+  },
+  {
+    "campo": "asentamientoMascotas",
+    "pagina": "observacional",
+    "tipo": "siNo",
+    "catalogo": "siNo",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Mascotas",
+    "matriz": null
+  },
+  {
+    "campo": "asentamientoMaterialTrabajo",
+    "pagina": "observacional",
+    "tipo": "siNo",
+    "catalogo": "siNo",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Material de trabajo (carro, artículos para la venta, etc.)",
+    "matriz": null
+  },
+  {
+    "campo": "asentamientoConstruccionPrecaria",
+    "pagina": "observacional",
+    "tipo": "siNo",
+    "catalogo": "siNo",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Construcción precaria (habitáculo de cartón, carpa, etc.)",
+    "matriz": null
+  },
+  {
+    "campo": "asentamientoConsumoProblematico",
+    "pagina": "observacional",
+    "tipo": "siNo",
+    "catalogo": "siNo",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Indicios de consumo problemático (conductas alteradas, habla incoherente, etc.)",
+    "matriz": null
+  },
+  {
+    "campo": "asentamientoSaludMental",
+    "pagina": "observacional",
+    "tipo": "siNo",
+    "catalogo": "siNo",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Indicios de alteraciones en la salud mental (gritos, desorientación, etc.)",
+    "matriz": null
+  },
+  {
+    "campo": "asentamientoOtros",
+    "pagina": "observacional",
+    "tipo": "siNo",
+    "catalogo": "siNo",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": null,
+    "etiqueta": "Otros",
+    "matriz": null
+  },
+  {
+    "campo": "asentamientoOtrosDetalle",
+    "pagina": "observacional",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": {
+      "campo": "asentamientoOtros",
+      "es": "si"
+    },
+    "etiqueta": "Especificar otros",
+    "matriz": null
+  },
+  {
+    "campo": "personaEntrevistada",
+    "pagina": "consentimiento",
+    "tipo": "celdaGrupo",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "¿A qué persona del grupo le vas a pedir el consentimiento ahora?",
+    "matriz": {
+      "filas": "rangoEtario2026",
+      "columnas": "generoObservado"
+    }
+  },
+  {
+    "campo": "esMenorDeEdad",
+    "pagina": "consentimiento",
+    "tipo": "siNo",
+    "catalogo": "siNo",
+    "calculado": true,
+    "soloExportacion": true,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Persona menor de 18 años",
+    "matriz": null
+  },
+  {
+    "campo": "realizaEntrevista",
+    "pagina": "consentimiento",
+    "tipo": "enum",
+    "catalogo": "realizaEntrevista",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "soloHistorico": false,
+    "visibleSi": {
+      "campo": "personaEntrevistada",
+      "prefijoNoEn": [
+        "r0a5",
+        "r6a13",
+        "r0a13",
+        "r0a14"
+      ]
+    },
+    "etiqueta": "1. ¿La persona acepta responder?",
+    "matriz": null
+  },
+  {
+    "campo": "yaEntrevistadaDatos",
+    "pagina": "consentimiento",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "campo": "realizaEntrevista",
+      "es": "yaEntrevistada"
+    },
+    "etiqueta": "Nombre o apodo y DNI que declara (ya entrevistada en esta ronda)",
+    "matriz": null
+  },
+  {
+    "campo": "otroMotivoNoEntrevista",
+    "pagina": "consentimiento",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": {
+      "campo": "realizaEntrevista",
+      "es": "otro"
+    },
+    "etiqueta": "Especificar otro motivo",
+    "matriz": null
+  },
+  {
+    "campo": "inicialesNombre",
+    "pagina": "codigoIdentificacion",
+    "tipo": "iniciales",
+    "catalogo": null,
+    "calculado": true,
+    "soloExportacion": true,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": null,
+    "matriz": null
+  },
+  {
+    "campo": "inicialesApellido",
+    "pagina": "codigoIdentificacion",
+    "tipo": "iniciales",
+    "catalogo": null,
+    "calculado": true,
+    "soloExportacion": true,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": null,
+    "matriz": null
+  },
+  {
+    "campo": "fechaNacimiento",
+    "pagina": "codigoIdentificacion",
+    "tipo": "fecha",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Fecha de nacimiento",
+    "matriz": null
+  },
+  {
+    "campo": "codigoEntrevistado",
+    "pagina": "codigoIdentificacion",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": true,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Código de identificación personal",
+    "matriz": null
+  },
+  {
+    "campo": "grupoFamiliar",
+    "pagina": "codigoIdentificacion",
+    "tipo": "grupoFamiliar",
+    "catalogo": "parentesco",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Vínculos con las demás personas del grupo",
+    "matriz": null
+  },
+  {
+    "campo": "tieneDocumento",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "siNoNsnc",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "2. ¿Tiene algún documento de Identidad?",
+    "matriz": null
+  },
+  {
+    "campo": "documentoTipo",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "tipoDocumento",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "soloHistorico": false,
+    "visibleSi": {
+      "campo": "tieneDocumento",
+      "es": "si"
+    },
+    "etiqueta": "3. ¿Cuál?",
+    "matriz": null
+  },
+  {
+    "campo": "paisEmisor",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "paisSudamerica",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": {
+      "campo": "documentoTipo",
+      "es": "documentoExtranjero"
+    },
+    "etiqueta": "País emisor del documento",
+    "matriz": null
+  },
+  {
+    "campo": "paisEmisorOtro",
+    "pagina": "datosPersonales",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": {
+      "todas": [
+        {
+          "campo": "documentoTipo",
+          "es": "documentoExtranjero"
+        },
+        {
+          "campo": "paisEmisor",
+          "es": "otroPais"
+        }
+      ]
+    },
+    "etiqueta": "¿Qué país?",
+    "matriz": null
+  },
+  {
+    "campo": "numeroDocumento",
+    "pagina": "datosPersonales",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "campo": "tieneDocumento",
+      "es": "si"
+    },
+    "etiqueta": "4. ¿Desea compartirnos el número?",
+    "matriz": null
+  },
+  {
+    "campo": "motivoNoTieneDocumento",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "motivoNoTieneDni",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "campo": "tieneDocumento",
+      "es": "no"
+    },
+    "etiqueta": "5. ¿Por qué no lo tiene?",
+    "matriz": null
+  },
+  {
+    "campo": "identidadGenero",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "identidadGenero",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "6. ¿Con cuál de estas identidades de género se siente más cómodo/a?",
+    "matriz": null
+  },
+  {
+    "campo": "identidadGeneroOtra",
+    "pagina": "datosPersonales",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "campo": "identidadGenero",
+      "es": "otra"
+    },
+    "etiqueta": "¿Cuál?",
+    "matriz": null
+  },
+  {
+    "campo": "vivioSiempreLocalidad",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "siNoNsnc",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "7. ¿Vivió siempre en {localidad}?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeNacio",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "dondeNacio",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": null,
+    "etiqueta": "¿Dónde nació?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeNacioLocalidad",
+    "pagina": "datosPersonales",
+    "tipo": "localidad",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": {
+      "campo": "dondeNacio",
+      "es": "otraLocalidadProvincia"
+    },
+    "etiqueta": "¿En qué localidad?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeNacioProvincia",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "provincia",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": {
+      "campo": "dondeNacio",
+      "es": "otraProvincia"
+    },
+    "etiqueta": "¿En qué provincia?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeNacioPais",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "pais",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": {
+      "campo": "dondeNacio",
+      "es": "otroPais"
+    },
+    "etiqueta": "¿En qué país?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeNacioPaisOtro",
+    "pagina": "datosPersonales",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": {
+      "todas": [
+        {
+          "campo": "dondeNacio",
+          "es": "otroPais"
+        },
+        {
+          "campo": "dondeNacioPais",
+          "es": "otroPais"
+        }
+      ]
+    },
+    "etiqueta": "¿Cuál?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeViviaAntes",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "lugarProviene",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "campo": "vivioSiempreLocalidad",
+      "es": "no"
+    },
+    "etiqueta": "8. ¿De qué lugar proviene?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeViviaAntesLocalidad",
+    "pagina": "datosPersonales",
+    "tipo": "localidad",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": {
+      "todas": [
+        {
+          "campo": "vivioSiempreLocalidad",
+          "es": "no"
+        },
+        {
+          "campo": "dondeViviaAntes",
+          "es": "otraLocalidadProvincia"
+        }
+      ]
+    },
+    "etiqueta": "¿Cuál?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeViviaAntesLocalidadNombre",
+    "pagina": "datosPersonales",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "todas": [
+        {
+          "campo": "vivioSiempreLocalidad",
+          "es": "no"
+        },
+        {
+          "campo": "dondeViviaAntes",
+          "es": "otraLocalidadProvincia"
+        }
+      ]
+    },
+    "etiqueta": "¿Qué localidad?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeViviaAntesProvincia",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "provincia",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "todas": [
+        {
+          "campo": "vivioSiempreLocalidad",
+          "es": "no"
+        },
+        {
+          "campo": "dondeViviaAntes",
+          "es": "otraProvincia"
+        }
+      ]
+    },
+    "etiqueta": "¿Cuál?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeViviaAntesPais",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "pais",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "todas": [
+        {
+          "campo": "vivioSiempreLocalidad",
+          "es": "no"
+        },
+        {
+          "campo": "dondeViviaAntes",
+          "es": "otroPais"
+        }
+      ]
+    },
+    "etiqueta": "¿Cuál?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeViviaAntesPaisOtro",
+    "pagina": "datosPersonales",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "todas": [
+        {
+          "campo": "vivioSiempreLocalidad",
+          "es": "no"
+        },
+        {
+          "campo": "dondeViviaAntes",
+          "es": "otroPais"
+        },
+        {
+          "campo": "dondeViviaAntesPais",
+          "es": "otroPais"
+        }
+      ]
+    },
+    "etiqueta": "¿Qué país?",
+    "matriz": null
+  },
+  {
+    "campo": "nivelEducativo",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "nivelEducativo",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "9. ¿Qué nivel educativo alcanzó/está cursando?",
+    "matriz": null
+  },
+  {
+    "campo": "tieneDiscapacidad",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "siNoNsnc",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "10. ¿Tiene alguna discapacidad?",
+    "matriz": null
+  },
+  {
+    "campo": "cualDiscapacidad",
+    "pagina": "datosPersonales",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "campo": "tieneDiscapacidad",
+      "en": [
+        "si",
+        "nsnc"
+      ]
+    },
+    "etiqueta": "11. ¿Nos podría contar cual?",
+    "matriz": null
+  },
+  {
+    "campo": "dificultadVer",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "gradoDificultad",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": null,
+    "etiqueta": "a. Ver, incluso usando lentes",
+    "matriz": null
+  },
+  {
+    "campo": "dificultadOir",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "gradoDificultad",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": null,
+    "etiqueta": "b. Oír, incluso usando audífono",
+    "matriz": null
+  },
+  {
+    "campo": "dificultadCaminar",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "gradoDificultad",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": null,
+    "etiqueta": "c. Caminar o subir escalones",
+    "matriz": null
+  },
+  {
+    "campo": "dificultadRecordar",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "gradoDificultad",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": null,
+    "etiqueta": "d. Recordar o concentrarse",
+    "matriz": null
+  },
+  {
+    "campo": "dificultadCuidadoPersonal",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "gradoDificultad",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": null,
+    "etiqueta": "e. Lavarse o vestirse (autosuficiencia para el cuidado personal)",
+    "matriz": null
+  },
+  {
+    "campo": "dificultadComunicarse",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "gradoDificultad",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": null,
+    "etiqueta": "f. Comunicarse — entender a los demás o que lo entiendan a usted, usando un lenguaje habitual",
+    "matriz": null
+  },
+  {
+    "campo": "certificadoDiscapacidad",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "siNoNsnc",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "campo": "tieneDiscapacidad",
+      "en": [
+        "si",
+        "nsnc"
+      ]
+    },
+    "etiqueta": "12. ¿Tiene certificado de discapacidad vigente?",
+    "matriz": null
+  },
+  {
+    "campo": "motivoNoTieneCertificado",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "motivoNoTieneCertificado",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "todas": [
+        {
+          "campo": "tieneDiscapacidad",
+          "en": [
+            "si",
+            "nsnc"
+          ]
+        },
+        {
+          "campo": "certificadoDiscapacidad",
+          "es": "no"
+        }
+      ]
+    },
+    "etiqueta": "13. ¿Por qué no lo tiene?",
+    "matriz": null
+  },
+  {
+    "campo": "tieneHijos",
+    "pagina": "situacionFamiliar",
+    "tipo": "siNo",
+    "catalogo": "siNo",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "14. ¿Tiene hijos?",
+    "matriz": null
+  },
+  {
+    "campo": "cantidadHijos",
+    "pagina": "situacionFamiliar",
+    "tipo": "numero",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "campo": "tieneHijos",
+      "es": "si"
+    },
+    "etiqueta": "15. ¿Cuántos?",
+    "matriz": null
+  },
+  {
+    "campo": "cantidadHijosConviven",
+    "pagina": "situacionFamiliar",
+    "tipo": "numero",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "campo": "tieneHijos",
+      "es": "si"
+    },
+    "etiqueta": "16. ¿Cuantos viven con usted?",
+    "matriz": null
+  },
+  {
+    "campo": "conQuienesVive",
+    "pagina": "situacionFamiliar",
+    "tipo": "enumMulti",
+    "catalogo": "conQuienesVive",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "17. ¿Quiénes conviven con Ud.?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeDuermeEstaNoche",
+    "pagina": "trayectoriaCalle",
+    "tipo": "enum",
+    "catalogo": "dondeDuermeNoche",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "18. ¿Dónde va a dormir esta noche?",
+    "matriz": null
+  },
+  {
+    "campo": "primeraVezCalle",
+    "pagina": "trayectoriaCalle",
+    "tipo": "enum",
+    "catalogo": "primeraVezCalle",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "19. ¿Es la primera vez que está en situación de calle?",
+    "matriz": null
+  },
+  {
+    "campo": "desdeCuandoCalle",
+    "pagina": "trayectoriaCalle",
+    "tipo": "enum",
+    "catalogo": "desdeCuandoCalle",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "20. ¿Desde cuándo está en situación de calle?",
+    "matriz": null
+  },
+  {
+    "campo": "tiempoEnCalle",
+    "pagina": "trayectoriaCalle",
+    "tipo": "enum",
+    "catalogo": "tiempoEnCalle2026",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": null,
+    "etiqueta": "Actualmente, ¿cuánto tiempo hace que vive en situación de calle?",
+    "matriz": null
+  },
+  {
+    "campo": "diasDurmioCalleSemana",
+    "pagina": "trayectoriaCalle",
+    "tipo": "enum",
+    "catalogo": "diasDurmioSemana",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": null,
+    "etiqueta": "La semana pasada, ¿cuántos días durmió en la calle?",
+    "matriz": null
+  },
+  {
+    "campo": "dondePasoNoche",
+    "pagina": "trayectoriaCalle",
+    "tipo": "enum",
+    "catalogo": "dondePasoNoche",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": {
+      "campo": "diasDurmioCalleSemana",
+      "en": [
+        "soloHabiles",
+        "soloFinDeSemana",
+        "algunosDias",
+        "ningunDia",
+        "soloUnDia"
+      ]
+    },
+    "etiqueta": "En esa semana, cuando no durmió en la calle, ¿dónde pasó la noche?",
+    "matriz": null
+  },
+  {
+    "campo": "edadPrimeraVezCalle",
+    "pagina": "trayectoriaCalle",
+    "tipo": "numero",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": null,
+    "etiqueta": "¿Qué edad tenía la primera vez que estuvo en situación de calle? (años)",
+    "matriz": null
+  },
+  {
+    "campo": "motivosCalle",
+    "pagina": "trayectoriaCalle",
+    "tipo": "enumMulti",
+    "catalogo": "motivosVivirCalle",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "21. ¿Cuáles son los motivos por los que se vió forzado/a u obligado/a a vivir en la calle?",
+    "matriz": null
+  },
+  {
+    "campo": "motivoPrincipalCalle",
+    "pagina": "trayectoriaCalle",
+    "tipo": "enum",
+    "catalogo": "motivoPrincipalCalle",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": null,
+    "etiqueta": "¿Cuál es el principal motivo por el que se encuentra durmiendo en la calle?",
+    "matriz": null
+  },
+  {
+    "campo": "otroMotivoCalle",
+    "pagina": "trayectoriaCalle",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": {
+      "campo": "motivoPrincipalCalle",
+      "es": "otro"
+    },
+    "etiqueta": "Especificar otro motivo",
+    "matriz": null
+  },
+  {
+    "campo": "contactoFamiliares",
+    "pagina": "trayectoriaCalle",
+    "tipo": "enum",
+    "catalogo": "frecuenciaContactoFamiliar",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": null,
+    "etiqueta": "En el último año, ¿con qué frecuencia mantuvo contacto (personalmente, por teléfono, etc.) con familiares que no viven con usted?",
+    "matriz": null
+  },
+  {
+    "campo": "asisteComedor",
+    "pagina": "trayectoriaCalle",
+    "tipo": "enum",
+    "catalogo": "asisteComedor",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "22. ¿Asiste actualmente a algún comedor comunitario o popular?",
+    "matriz": null
+  },
+  {
+    "campo": "actividadDineroUltimoMes",
+    "pagina": "actividadEconomica",
+    "tipo": "enum",
+    "catalogo": "siNoNsnc",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "En el último mes, ¿realizó alguna actividad para conseguir dinero?",
+    "matriz": null
+  },
+  {
+    "campo": "queActividad",
+    "pagina": "actividadEconomica",
+    "tipo": "enumMulti",
+    "catalogo": "actividadEconomica",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "soloHistorico": false,
+    "visibleSi": {
+      "campo": "actividadDineroUltimoMes",
+      "es": "si"
+    },
+    "etiqueta": "23. ¿Qué actividad?",
+    "matriz": null
+  },
+  {
+    "campo": "otraActividad",
+    "pagina": "actividadEconomica",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": {
+      "campo": "queActividad",
+      "incluye": "otra"
+    },
+    "etiqueta": "Especificar otra actividad",
+    "matriz": null
+  },
+  {
+    "campo": "ingresoAdicional",
+    "pagina": "actividadEconomica",
+    "tipo": "enum",
+    "catalogo": "ingresoAdicional",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "24. ¿Tiene algún ingreso adicional?",
+    "matriz": null
+  },
+  {
+    "campo": "tipoIngresoAdicional",
+    "pagina": "actividadEconomica",
+    "tipo": "enumMulti",
+    "catalogo": "tipoIngreso",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "soloHistorico": false,
+    "visibleSi": {
+      "campo": "ingresoAdicional",
+      "es": "si"
+    },
+    "etiqueta": "25. ¿Cuál?",
+    "matriz": null
+  },
+  {
+    "campo": "programaSocialCual",
+    "pagina": "actividadEconomica",
+    "tipo": "enumMulti",
+    "catalogo": "programaSocialPropio",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "todas": [
+        {
+          "campo": "ingresoAdicional",
+          "es": "si"
+        },
+        {
+          "campo": "tipoIngresoAdicional",
+          "incluye": "programaSocial"
+        }
+      ]
+    },
+    "etiqueta": "Programa Social · ¿cuál?",
+    "matriz": null
+  },
+  {
+    "campo": "programaSocialHijosCual",
+    "pagina": "actividadEconomica",
+    "tipo": "enumMulti",
+    "catalogo": "programaSocialHijos",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": false,
+    "visibleSi": {
+      "todas": [
+        {
+          "campo": "ingresoAdicional",
+          "es": "si"
+        },
+        {
+          "campo": "tipoIngresoAdicional",
+          "incluye": "programaSocialHijos"
+        }
+      ]
+    },
+    "etiqueta": "Programa Social para sus hijos/as · ¿cuáles?",
+    "matriz": null
+  },
+  {
+    "campo": "ingresosUltimoMes",
+    "pagina": "actividadEconomica",
+    "tipo": "enumMulti",
+    "catalogo": "ingresoUltimoMes",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": null,
+    "etiqueta": "En el último mes, ¿recibió ingresos por…?",
+    "matriz": null
+  },
+  {
+    "campo": "programaProvincialCual",
+    "pagina": "actividadEconomica",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "soloHistorico": true,
+    "visibleSi": {
+      "campo": "ingresosUltimoMes",
+      "incluye": "programasProvinciales"
+    },
+    "etiqueta": "¿Cuál es el programa provincial o local?",
+    "matriz": null
+  },
+  {
+    "campo": "fechaHoraFin",
+    "pagina": "cierre",
+    "tipo": "fechaHora",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Fecha y hora de cierre",
+    "matriz": null
+  },
+  {
+    "campo": "firmaEncuestador",
+    "pagina": "cierre",
+    "tipo": "firma",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "soloHistorico": false,
+    "visibleSi": null,
+    "etiqueta": "Firma del encuestador/a",
+    "matriz": null
+  }
+]

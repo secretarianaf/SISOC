@@ -19,11 +19,16 @@ Inicio:
 
 Ampliar solo si el cambio toca reglas funcionales, permisos, seguridad o comportamiento observable.
 
-## Convencion sugerida
+## Convencion
 
-- `docs/registro/cambios/`
-- `docs/registro/decisiones/`
-- `YYYY-MM-DD-<tema>.md`
+- Cambios: `docs/registro/cambios/AAAA-TN/AAAA-MM-DD-<tema>.md`, donde `AAAA-TN`
+  es el trimestre de la fecha (T1 = enero a marzo, T2 = abril a junio,
+  T3 = julio a septiembre, T4 = octubre a diciembre). Ejemplo:
+  `docs/registro/cambios/2026-T4/2026-10-02-estructura-src-backends.md`.
+- Planes: `docs/plans/AAAA-TN/AAAA-MM-DD-<tema>.md`, con el mismo criterio.
+- Decisiones: `docs/registro/decisiones/AAAA-MM-DD-<tema>.md`, sin carpeta por
+  trimestre (se enlazan desde issues y PRs y no se mueven).
+- Los `README.md` e indices quedan en la raiz de cada carpeta.
 
 ## Análisis y especificación vigente
 
@@ -38,8 +43,9 @@ o actualizar una guía canónica indexada bajo `docs/implementaciones/`,
 
 Cada PR debe conservar en su rama origen:
 
-- `docs/registro/prs/PR-<numero>.md`;
-- `docs/contexto/features/pr-<numero>-<slug>.md`.
+- `docs/registro/prs/AAAA-TN/PR-<numero>.md`, en el trimestre en que se
+  genero por primera vez (el bot lo deja ahi aunque el PR siga en el
+  trimestre siguiente).
 
 Cuando el destino es `main`, también debe incluir una nota en
 `docs/registro/releases/pending/` y el bloque correspondiente en

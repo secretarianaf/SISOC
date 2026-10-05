@@ -52,7 +52,7 @@ ignore=CVS, migrations, venv
 # ignore-list. The regex matches against paths and can be in Posix or Windows
 # format. Because '\\' represents the directory delimiter on Windows systems,
 # it can't be used as an escape character.
-ignore-paths=^tests/.*$
+ignore-paths=^src/backends/[^/]+/tests/.*$
 
 # Files or directories matching the regular expression patterns are skipped.
 # The regex matches against base names, not paths. The default value ignores
@@ -68,7 +68,9 @@ ignored-modules=django.*,rest_framework.*,auditlog.*,drf_spectacular.*,markdown
 
 # Python code to execute, usually for sys.path manipulation such as
 # pygtk.require().
-#init-hook=
+# src/backends/ (config), src/backends/kernel/ y src/backends/<vertical>/ se
+# importan como `config`, `core`, `dispositivos`, etc. (ver src/backends/config/__init__.py).
+init-hook="import glob, sys; sys.path[:0] = ['src/backends', 'src/backends/kernel'] + sorted(set(glob.glob('src/backends/*')) - set(glob.glob('src/backends/config')) - set(glob.glob('src/backends/kernel')))"
 
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use, and will cap the count on Windows to
@@ -442,6 +444,7 @@ disable=raw-checker-failed,
         C0114, # Missing module docstring
         C0115, # Missing class docstring
         C0116, # Missing function or method docstring
+        C0411, # wrong-import-order: el isort interno de pylint toma src/backends/ como third party
         W0511, # TODO comments
         R0903, # Too few public methods (useful for Django models/forms)
         E1131, # Emitted when a binary arithmetic operation between two operands is not supported
@@ -595,7 +598,7 @@ contextmanager-decorators=contextlib.contextmanager
 # system, and so shouldn't trigger E1101 when accessed. Python regular
 # expressions are accepted.
 # cv2 (OpenCV) es un paquete con loader dinamico: sus miembros no son visibles
-# por analisis estatico y generan falsos no-member. Ver ocr/services_preprocess.py.
+# por analisis estatico y generan falsos no-member. Ver src/backends/sisoc_core/ocr/services_preprocess.py.
 generated-members=cv2.*
 
 # Tells whether to warn about missing members when the owner of the attribute

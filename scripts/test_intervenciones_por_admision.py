@@ -11,8 +11,8 @@ from acompanamientos.models.acompanamiento import Acompanamiento
 from acompanamientos.models.hitos import Hitos, HitosIntervenciones
 from admisiones.models.admisiones import Admision
 from comedores.models import Comedor
-from intervenciones.models.intervenciones import (
-    Intervencion,
+from intervenciones.models.intervenciones import Intervencion
+from catalogo_intervenciones.models import (
     SubIntervencion,
     TipoContacto,
     TipoDestinatario,

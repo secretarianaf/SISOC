@@ -30,4 +30,4 @@ una fachada compatible para los dominios consumidores.
 - Datos incompletos: revisar la respuesta funcional del consumidor con datos sintéticos en un entorno de prueba.
 
 ## Tests existentes
-- `tests/test_consulta_renaper_unit.py` cubre el cliente mockeado, autenticación efímera sin cache, timeout, fallas remotas y normalización.
+- `src/backends/kernel/tests/test_consulta_renaper_unit.py` cubre el cliente mockeado, autenticación efímera sin cache, timeout, fallas remotas y normalización.

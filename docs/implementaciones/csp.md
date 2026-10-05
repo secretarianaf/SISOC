@@ -10,7 +10,7 @@ Guía práctica de uso de Content Security Policy (CSP) en SISOC.
 
 ## Configuración actual (default)
 
-Fuente: `config/settings.py` y `.env.example`.
+Fuente: `src/backends/config/settings.py` y `.env.example`.
 
 ```env
 ENABLE_CSP=true
@@ -28,7 +28,7 @@ CSP_ALLOW_UNSAFE_EVAL=false
 
 ## Middleware y nonce
 
-El middleware `config/middlewares/csp.py`:
+El middleware `src/backends/config/middlewares/csp.py`:
 
 - Genera `request.csp_nonce` por request.
 - Construye `script-src` con:
@@ -100,8 +100,8 @@ Preferir listeners en JS externo en vez de atributos HTML inline.
 
 ## Validación automática en repo
 
-- `tests/test_csp_middleware_unit.py`: valida header y modo estricto.
-- `tests/test_templates_inline_scripts_nonce_unit.py`: falla si encuentra `<script>` inline sin nonce.
+- `src/backends/kernel/tests/test_csp_middleware_unit.py`: valida header y modo estricto.
+- `src/backends/kernel/tests/test_templates_inline_scripts_nonce_unit.py`: falla si encuentra `<script>` inline sin nonce.
 
 ## Problemas comunes
 

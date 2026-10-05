@@ -160,7 +160,7 @@ const paletas = {
       disabled: 'rgba(0,0,0,0.26)',
       disabledBackground: 'rgba(0,0,0,0.12)',
     },
-    input: { outlinedBorder: 'rgba(0,0,0,0.23)' },
+    input: { outlinedBorder: '#78716C' },
     backdrop: 'rgba(0,0,0,0.5)',
     chart,
     // La navegación de marca es SIEMPRE oscura, en los dos modos.
@@ -194,7 +194,7 @@ const paletas = {
       disabled: 'rgba(255,255,255,0.3)',
       disabledBackground: 'rgba(255,255,255,0.12)',
     },
-    input: { outlinedBorder: 'rgba(255,255,255,0.23)' },
+    input: { outlinedBorder: '#A8A29E' },
     backdrop: 'rgba(0,0,0,0.5)',
     chart,
     // surface tiene un valor propio en oscuro, cuatro veces más oscuro que

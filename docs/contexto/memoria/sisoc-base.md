@@ -2,7 +2,7 @@
 key = "sisoc-base"
 title = "SISOC base IA"
 summary = "Resumen operativo del repo para arrancar tareas IA con menos lecturas y sin perder boundaries."
-paths = ["AGENTS.md", "docs/indice.md", "docs/ia", "docs/operacion/codex_desktop.md", "scripts/ai", ".codex/environments/environment.toml"]
+paths = ["AGENTS.md", "docs/indice.md", "docs/ia", "docs/operacion/codex_desktop.md", "src/scripts/ai", ".codex/environments/environment.toml"]
 default = true
 confidence = "alta"
 validated_commit = "46f325a2a"
@@ -12,7 +12,7 @@ validated_at = "2026-04-16"
 # SISOC base IA
 
 ## Estado
-- Validada manualmente contra `AGENTS.md`, `docs/indice.md`, guias IA y helpers de `scripts/ai/`.
+- Validada manualmente contra `AGENTS.md`, `docs/indice.md`, guias IA y helpers de `src/scripts/ai/`.
 - Pensada como fast-path para arrancar antes de abrir modulos de dominio.
 
 ## Proposito
@@ -24,8 +24,8 @@ validated_at = "2026-04-16"
 - `AGENTS.md`: reglas duras de aislamiento, THINK, validacion y entrega.
 - `AGENTS.md` (seccion Herramientas para agentes): helpers recomendados para Codex.
 - `docs/ia/CONTEXT_HYGIENE.md`: matriz de carga minima por tipo de tarea.
-- `scripts/ai/preflight.sh`: resumen operativo corto por task kind.
-- `scripts/ai/context_memory.py`: resuelve memoria reusable y detecta si quedo vieja.
+- `src/scripts/ai/preflight.sh`: resumen operativo corto por task kind.
+- `src/scripts/ai/context_memory.py`: resuelve memoria reusable y detecta si quedo vieja.
 
 ## Patrones y contratos utiles
 - La logica de negocio vive preferentemente en `services/`.
@@ -34,10 +34,10 @@ validated_at = "2026-04-16"
 - No asumir Celery ni colas externas.
 
 ## Como validar rapido
-- `bash scripts/ai/preflight.sh general`
-- `python scripts/ai/context_memory.py preflight`
-- `powershell -ExecutionPolicy Bypass -File scripts/ai/codex_context.ps1`
+- `bash src/scripts/ai/preflight.sh general`
+- `python src/scripts/ai/context_memory.py preflight`
+- `powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_context.ps1`
 
 ## Cuando invalidar esta memoria
-- Si cambian `AGENTS.md`, `docs/ia/`, `docs/operacion/codex_desktop.md` o `scripts/ai/`.
+- Si cambian `AGENTS.md`, `docs/ia/`, `docs/operacion/codex_desktop.md` o `src/scripts/ai/`.
 - Si cambia la politica de worktrees, tooling obligatorio o flujo de bootstrap.

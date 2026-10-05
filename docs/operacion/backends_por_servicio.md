@@ -2,13 +2,15 @@
 
 Guía operativa del ADR `docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md`.
 
+Para desarrollar y revisar cambios, usar `docs/desarrollo/verticales_independientes.md`.
+
 | Backend | Apps | Prefijos |
 | --- | --- | --- |
 | `dispositivos` | dispositivos, datacalle | `/dispositivos/`, `/datacalle/`, `/api/datacalle/` |
 | `vpsl` | ver_para_ser_libre | `/ver-para-ser-libre/`, `/api/vpsl/` (el front React sigue en `/v2/vpsl/`) |
 | `pas` | pas (más Celery: `celery_pas_worker`, `celery_beat`) | `/pas/`, `/media/pas/` |
 | `vat` | VAT | `/vat/`, `/api/vat/`, `/api/schema/VAT/`, `/api/docs/VAT/`, `/api/redoc/VAT/` |
-| `celiaquia` | celiaquia | `/celiaquia/`, `/reporter-provincias/` |
+| `celiaquia` | celiaquia | `/celiaquia/`, `/reporter-provincias/`, `/api/celiaquia/` |
 | `cdi` | centrodeinfancia, ticketera | `/centrodeinfancia/`, `/simepi/`, `/api/ticketera/` |
 | `cdf` | centrodefamilia | `/centrodefamilia/`, `/api/centrodefamilia/` |
 
@@ -46,7 +48,7 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
   encuesta obligatoria. El backend autentica con la misma sesión (misma DB y
   `SECRET_KEY`) y valida CSRF por su cuenta.
 - **Datos compartidos.** Una sola DB, `media/` como volumen compartido y
-  `static_root/`, que recolecta el core y el backend lee en modo solo lectura.
+  `static_root/`, que recolecta el migrador y los servicios web leen en modo solo lectura.
 - **Si el backend se cae,** el core responde 503 en sus prefijos y el resto de
   SISOC sigue funcionando.
 
@@ -91,8 +93,8 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
 
 ## Deploy
 
-`scripts/operacion/deploy_refresh.sh` decide el plan con
-`scripts/operacion/deploy_targets.py`, comparando el SHA que corre hoy con el
+`src/scripts/operacion/deploy_refresh.sh` decide el plan con
+`src/scripts/operacion/deploy_targets.py`, comparando el SHA que corre hoy con el
 nuevo:
 
 | Cambio | Plan |
@@ -100,8 +102,11 @@ nuevo:
 | Solo `src/backends/<x>/**` | **Selectivo:** construye ese backend y el migrador, migra, y recrea solo ese servicio (`up --no-deps`). |
 | Solo `src/backends/sisoc_core/**` | **Selectivo:** construye la imagen del core y el migrador, migra, y recrea solo los servicios con imagen `sisoc/core` del entorno (en QA, `django` y `ocr_worker`; en PRD, además los workers de importación, credenciales y mailing). Los backends no se reinician. Si no se pueden resolver esos servicios, hace un deploy completo. |
 | Solo `src/frontends/apps/<x>/**` | **Selectivo:** solo `front_<x>`. |
-| Solo docs, tests o `.github/` | **Ninguno:** no se reinicia nada. |
-| Cualquier otra cosa (kernel, core, config, templates, static, requirements, docker, compose, `CHANGELOG.md`) | **Completo:** construye todo, baja el stack, migra y levanta. |
+| Solo docs/Markdown salvo CHANGELOG, `.github/`, `src/scripts/github/`, `src/backends/<dueño>/tests/` o `src/frontends/e2e/` | **Ninguno:** no se reinicia nada. Los tests dentro de una app siguen la regla del dueño. |
+| Compartidos de `src/frontends/` (paquetes, config, lockfile) | **Selectivo:** todos los fronts; sin migrador. |
+| `docker/frontends/` o `src/scripts/frontends/` | **Selectivo:** todos los fronts; sin migrador. |
+| Otros scripts de `src/scripts/` | **Completo:** el selector no exceptúa esas rutas. |
+| Cualquier otra cosa (kernel, config, recursos compartidos, requirements, docker, compose, `CHANGELOG.md`) | **Completo:** construye todo, baja el stack, migra y levanta. |
 
 - **Migraciones.** El servicio `migrator` (`docker compose --profile migrate
   run --rm migrator`) aplica todo el grafo con `config.settings_all`. Los

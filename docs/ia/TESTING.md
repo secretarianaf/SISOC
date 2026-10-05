@@ -93,7 +93,7 @@ CI ejecuta:
 ## Naming y estructura
 
 - Ubicar tests en `app/tests/` cuando exista patrón.
-- Si no hay patrón en la app: los tests de un vertical van en `src/backends/<vertical>/tests/` y los transversales (kernel, CI, scripts, deploy) en `src/backends/kernel/tests/`. No crear `tests/__init__.py`: `tests` es un namespace compartido entre esas carpetas.
+- Si no hay patrón en la app: los tests de un vertical van en `src/backends/<vertical>/tests/` y los transversales (kernel, CI, scripts, deploy) en `src/backends/kernel/tests/`. No crear un archivo `__init__.py` en la carpeta de tests compartida: `tests` es un namespace compartido entre esas carpetas.
 - Nombres: `test_*.py`.
 - Nombres de test descriptivos (`test_create_rechaza_registro_sin_montos`).
 - Reutilizar fixtures de `conftest.py` local/global antes de crear fixtures duplicadas.

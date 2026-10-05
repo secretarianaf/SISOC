@@ -10,7 +10,7 @@ tema de color institucional o el trabajo de UI). Las usan Codex y Claude Code.
 | `.agents/skills/<nombre>/SKILL.md` | **Fuente**: se edita acá | Codex |
 | `.claude/skills/<nombre>/SKILL.md` | Copia generada: **no se edita a mano** | Claude Code |
 
-La copia la genera `scripts/ai/sync_skills.py`. No se usan symlinks porque se
+La copia la genera `src/scripts/ai/sync_skills.py`. No se usan symlinks porque se
 rompen en Windows con `core.symlinks=false` (ver
 `docs/registro/decisiones/2026-10-02-estructura-src-backends.md`).
 
@@ -39,7 +39,7 @@ rompen en Windows con `core.symlinks=false` (ver
 4. Sincronizar y commitear las dos carpetas:
 
    ```bash
-   python scripts/ai/sync_skills.py
+   python src/scripts/ai/sync_skills.py
    git add .agents/skills .claude/skills
    ```
 
@@ -48,10 +48,10 @@ script: también la saca de `.claude/skills/`.
 
 ## Validación
 
-- `python scripts/ai/sync_skills.py --check` falla si la copia difiere de la
+- `python src/scripts/ai/sync_skills.py --check` falla si la copia difiere de la
   fuente (sin distinguir CRLF/LF).
 - Corre en CI (`skills_sync` en `.github/workflows/lint.yml`), en
-  `scripts/ai/preflight.sh` y en el test
+  `src/scripts/ai/preflight.sh` y en el test
   `src/backends/kernel/tests/test_sync_skills.py`.
 
 ## Skills actuales

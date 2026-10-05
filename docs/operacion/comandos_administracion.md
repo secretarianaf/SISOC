@@ -8,7 +8,7 @@
   normalizadas, conserva filas ya presentes —incluidas las creadas
   orgánicamente— y reporta las filas que no pudo incorporar por integridad.
   El comando no descarga BAHRA; la actualización del fixture se prepara antes
-  con `scripts/actualizar_territorio_desde_bahra.py` y admite `--dry-run`.
+  con `src/scripts/actualizar_territorio_desde_bahra.py` y admite `--dry-run`.
   Evidencia: `src/backends/kernel/core/management/commands/load_fixtures.py`,
   `src/backends/kernel/core/services/territorio_sync.py` y
   `docs/registro/cambios/2026-T3/2026-07-17-bajada-bahra-territorio.md`.

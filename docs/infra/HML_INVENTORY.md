@@ -233,7 +233,7 @@ detalle. No se instalaron ni actualizaron paquetes.
 1. Un push a `homologacion` dispara `.github/workflows/deploy.yml`.
 2. El job usa el runner self-hosted `sisoc-homologacion`.
 3. GitHub Environment `homologacion` aporta `APP_ROOT`.
-4. `scripts/operacion/deploy_refresh.sh --yes` actualiza el checkout y reconstruye
+4. `src/scripts/operacion/deploy_refresh.sh --yes` actualiza el checkout y reconstruye
    el stack backend.
 5. El entrypoint comparte el mismo riesgo QA: arranca con migraciones y otros
    comandos que escriben DB.
@@ -246,8 +246,8 @@ especifico del repo mobile todavia no fue probado en esta auditoria.
 
 - Crontab de `jportilla`: vacio o no legible.
 - Crontab de root y de `sisoc-deploy`: no verificados.
-- Contrato versionado: `/sisoc/SISOC/scripts/crontab`, no asumido como instalado.
-- Script de deploy versionado: `scripts/operacion/deploy_refresh.sh`.
+- Contrato versionado: `/sisoc/SISOC/src/scripts/crontab`, no asumido como instalado.
+- Script de deploy versionado: `src/scripts/operacion/deploy_refresh.sh`.
 - `backup_hml_configs.sh`, `show_hml_status.sh`, `healthcheck_hml.sh` y
   `cleanup_hml_disk.sh` estan instalados bajo `/home/sisoc-deploy/bin`, owner
   `sisoc-deploy:sisoc-deploy`, modo 750.

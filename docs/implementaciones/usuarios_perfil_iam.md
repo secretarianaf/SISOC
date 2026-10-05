@@ -31,13 +31,13 @@ Compatibilidad:
 
 ### Autorización y helpers
 
-- `core/decorators.py`
+- `src/backends/kernel/core/decorators.py`
   - `permissions_any_required([...])`
   - `permissions_all_required([...])`
-- `core/templatetags/custom_filters.py`
+- `src/backends/kernel/core/templatetags/custom_filters.py`
   - `has_perm_code`
   - `has_any_perm`
-- `iam/services.py`
+- `src/backends/kernel/iam/services.py`
   - `user_has_permission_code`
   - `user_has_any_permission_codes`
   - `user_has_all_permission_codes`
@@ -45,25 +45,25 @@ Compatibilidad:
 
 ### Registro IAM
 
-- `core/permissions/registry.py`
+- `src/backends/kernel/core/permissions/registry.py`
   - `resolve_permission_codes` (canónico, sin aliases).
   - Mapeos legacy solo para bootstrap de grupos existentes.
 
 ### Sincronización de permisos por grupo
 
-- `users/bootstrap/groups_seed.py`
-- `users/services_group_permissions.py`
-- `users/management/commands/create_groups.py`
-- `users/management/commands/sync_group_permissions_from_registry.py`
-- `users/signals.py`
+- `src/backends/kernel/users/bootstrap/groups_seed.py`
+- `src/backends/kernel/users/services_group_permissions.py`
+- `src/backends/kernel/users/management/commands/create_groups.py`
+- `src/backends/kernel/users/management/commands/sync_group_permissions_from_registry.py`
+- `src/backends/kernel/users/signals.py`
 
 ### ABM de usuarios y grupos
 
-- `users/forms.py`
+- `src/backends/sisoc_core/usuarios/forms.py`
   - Email obligatorio.
   - Permisos directos de usuario (`user_permissions`).
   - Grupos con permisos (dual listbox).
-- `users/views.py`, `users/views_export.py`, `users/urls.py`
+- `src/backends/sisoc_core/usuarios/views.py`, `src/backends/sisoc_core/usuarios/views_export.py`, `src/backends/sisoc_core/usuarios/urls.py`
   - Accesos de administración por permisos Django (no solo superuser).
 
 ## 3) Seguridad de contraseña y recuperación
@@ -75,7 +75,7 @@ Compatibilidad:
   - `password_changed_at`
   - `initial_password_expires_at`
   - `temporary_password_plaintext`
-- Middleware: `users/middleware.py` redirige a `password_change_required`.
+- Middleware: `src/backends/kernel/users/middleware.py` redirige a `password_change_required`.
 - Vistas/forms:
   - `FirstLoginPasswordChangeView`
   - `BackofficeAuthenticationForm`
@@ -151,10 +151,10 @@ y `docs/operacion/integraciones.md` para la configuración por ambiente.
   - `POST /api/users/password-reset/request/`
   - `POST /api/users/password-reset/confirm/`
 - Servicios:
-  - `users/services_auth.py`
-  - `users/rate_limits.py`
+  - `src/backends/kernel/users/services_auth.py`
+  - `src/backends/kernel/users/rate_limits.py`
 - Templates UI SISOC:
-  - `users/templates/user/password_reset_*.html`
+  - `src/backends/kernel/users/templates/user/password_reset_*.html`
 - El reset web selecciona una única cuenta por `username` exacto y usa el email
   como verificación secundaria sin distinguir mayúsculas/minúsculas. Solo
   envía el enlace si la cuenta está activa y ambos valores coinciden; una
@@ -165,11 +165,9 @@ y `docs/operacion/integraciones.md` para la configuración por ambiente.
 
 ## 4) Migraciones aplicadas
 
-- `users/migrations/0013_profile_password_security_fields.py`
-- `users/migrations/0014_bootstrap_group_permissions.py`
-- `users/migrations/0015_assign_bootstrap_group_permissions.py`
-- `users/migrations/0044_profile_confirmacion_datos.py`
-- `users/migrations/0045_profile_correo_institucional_declaracion.py`
+- Seguridad de contraseña y bootstrap de permisos: hoy incluidos en `src/backends/kernel/users/migrations/0001_squashed_0028.py` (reemplaza las migraciones individuales históricas 0013 a 0015).
+- `src/backends/kernel/users/migrations/0044_profile_confirmacion_datos.py`
+- `src/backends/kernel/users/migrations/0045_profile_correo_institucional_declaracion.py`
 
 ## 5) Operación post-deploy
 

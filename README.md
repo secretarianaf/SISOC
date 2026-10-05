@@ -81,12 +81,12 @@ Decisión: `docs/registro/decisiones/2026-10-02-estructura-src-backends.md`.
 
 | Carpeta | Propósito |
 |-|-|
-| `src/backends/` | Código Django. `config/` es el proyecto (settings, urls, registro de backends); `kernel/` es el código común (core, users, iam, ciudadanos, audittrail, …) con los templates, estáticos y tests compartidos; `sisoc_core/` es el cluster de Comedores; cada vertical (`pas/`, `cdi/`, `cdf/`, `celiaquia/`, `dispositivos/`, `vat/`, `vpsl/`) tiene su carpeta y su contenedor. |
-| `src/frontends/` | Front v2 en React (`apps/<modulo>/`, `packages/`). |
+| `src/backends/` | Código Django. `src/backends/config/` es el proyecto (settings, urls, registro de backends); `src/backends/kernel/` es el código común con templates, estáticos y tests compartidos; `src/backends/sisoc_core/` es el cluster de Comedores y servicios del core. Cada vertical (pas, cdi, cdf, celiaquia, dispositivos, vat, vpsl) tiene su carpeta y contenedor. Guía: `docs/desarrollo/verticales_independientes.md`. |
+| `src/frontends/` | Workspace npm del Front v2: `apps/<modulo>/`, `packages/`, opciones base de TypeScript en `src/frontends/config/` y `e2e/`. Las entradas de npm, TypeScript, ESLint, Vitest y Playwright permanecen en su ubicación convencional para conservar su detección automática. |
 | `docs/` | Documentación: índice en `docs/indice.md`, registros por trimestre en `docs/registro/`. |
 | `docker/` | Dockerfile, entrypoint y `docker/compose/` con los overrides de deploy, Celery, Codex y fronts. |
 | `requirements/` | Dependencias Python (`all.txt` = base + dev + test). |
-| `scripts/` | Scripts operativos (`operacion/`, `infra/`), de CI (`ci/`), de arquitectura y para agentes (`ai/`). |
+| `src/scripts/` | Scripts operativos (`operacion/`, `infra/`), de CI (`ci/`), de arquitectura, frontend (`src/scripts/frontends/`), GitHub (`github/`) y agentes (`ai/`). |
 | `.github/` | Workflows de CI/CD y plantillas. |
 | `.agents/skills/` | Skills del repo (fuente). `.claude/skills/` es una copia generada (`docs/ia/SKILLS.md`). |
 | `.claude/`, `.codex/` | Configuración de Claude Code y Codex. |
@@ -97,7 +97,7 @@ Archivos de la raíz: `manage.py` (entrada Django), `conftest.py` (fixtures glob
 `CHANGELOG.md` y la configuración de herramientas (`pytest.ini`, `pyproject.toml`, `.pylintrc`,
 `.importlinter*`, `.djlintrc`, `.gitleaks*`, `.editorconfig`, …).
 
-Dentro de cada app Django: `templates/`, `static/custom/` (estáticos de un solo vertical, con la
+Dentro de cada app Django: `<app>/templates/`, `<app>/static/custom/` (estáticos de un solo vertical, con la
 misma ruta pública `custom/...`) y `tests/`.
 
 ---

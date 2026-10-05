@@ -27,20 +27,20 @@
 - En los deploys versionados no se levanta `mysql` dentro de Compose; la base se resuelve por variables `DATABASE_*` definidas en el `.env` del host.
 
 ## Actualizacion operativa desde Git
-- Script versionado: `scripts/operacion/deploy_refresh.sh`.
+- Script versionado: `src/scripts/operacion/deploy_refresh.sh`.
 - Uso recomendado desde la raiz del checkout del servidor:
-  - `bash scripts/operacion/deploy_refresh.sh --dry-run`
-  - `bash scripts/operacion/deploy_refresh.sh`
+  - `bash src/scripts/operacion/deploy_refresh.sh --dry-run`
+  - `bash src/scripts/operacion/deploy_refresh.sh`
 - Si el servidor tambien tiene `SISOC-Mobile` como checkout hermano en `../SISOC-Mobile`, usar:
-  - `bash scripts/operacion/deploy_refresh.sh --with-mobile --dry-run`
-  - `bash scripts/operacion/deploy_refresh.sh --with-mobile`
+  - `bash src/scripts/operacion/deploy_refresh.sh --with-mobile --dry-run`
+  - `bash src/scripts/operacion/deploy_refresh.sh --with-mobile`
 - Si `SISOC-Mobile` esta en otra ruta, indicar el path:
-  - `bash scripts/operacion/deploy_refresh.sh --with-mobile --mobile-dir /srv/sisoc/SISOC-Mobile`
+  - `bash src/scripts/operacion/deploy_refresh.sh --with-mobile --mobile-dir /srv/sisoc/SISOC-Mobile`
 - El script lee `ENVIRONMENT` desde `.env` y elige automaticamente:
   - `dev|local|development`: `docker-compose.yml`
   - `qa|homologacion`: `docker/compose/docker-compose.deploy.yml`
   - `prd|prod|production`: `docker/compose/docker-compose.deploy.yml` + `docker/compose/docker-compose.produccion.yml`
-- Con `--with-mobile`, SISOC delega el deploy mobile ejecutando `bash ../SISOC-Mobile/scripts/operacion/deploy_refresh.sh` y le reenvia las opciones compatibles (`--dry-run`, `--yes`, `--volumes`, `--skip-pull`, `--allow-dirty`, `--allow-branch-mismatch`).
+- Con `--with-mobile`, SISOC delega el deploy mobile ejecutando `bash ../SISOC-Mobile/src/scripts/operacion/deploy_refresh.sh` y le reenvia las opciones compatibles (`--dry-run`, `--yes`, `--volumes`, `--skip-pull`, `--allow-dirty`, `--allow-branch-mismatch`).
 - Antes de actualizar mobile, valida que `origin` sea
   `dsocial118/SISOC-Mobile` y normaliza las variantes SSH conocidas a
   `https://github.com/dsocial118/SISOC-Mobile.git`. Un origin distinto bloquea
@@ -53,7 +53,7 @@
   5. actualiza la branch actual con `git pull --ff-only`;
   6. levanta con `docker compose up -d --build`;
   7. muestra `docker compose ps`.
-- Por seguridad, no borra volumenes por defecto. Si se necesita un apagado con `--volumes`, usar `bash scripts/operacion/deploy_refresh.sh --volumes` y confirmar explicitamente. En entornos con MySQL local, `--volumes` puede borrar datos persistentes.
+- Por seguridad, no borra volumenes por defecto. Si se necesita un apagado con `--volumes`, usar `bash src/scripts/operacion/deploy_refresh.sh --volumes` y confirmar explicitamente. En entornos con MySQL local, `--volumes` puede borrar datos persistentes.
 - Si el servidor usa una branch distinta a la esperada para el `ENVIRONMENT`, corregir la branch antes de desplegar o usar `--allow-branch-mismatch` solo con una decision operativa explicita.
 
 ## NGINX de produccion

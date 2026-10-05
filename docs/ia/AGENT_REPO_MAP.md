@@ -4,6 +4,13 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ## Como leer este documento
 
+Reglas vigentes y checklists: `docs/desarrollo/verticales_independientes.md`.
+- Kernel no importa core/verticales; un servicio no importa otro.
+- Datos remotos por contribuciones HTML/JSON/reenvío; permisos en el dueño.
+- Prefijos y reverse en registros; recursos por app; grafo completo en migrador.
+- Controlar imports, runtime/imagen aislada y plan con `deploy_targets.py`.
+- Comprobar referencias documentales con `src/scripts/ci/check_docs_paths.py`.
+
 - Estructura del monorepo (#1931/#2251): el codigo comun vive en `src/backends/kernel/`
   (`core`, `users`, `iam`, `ciudadanos`, `audittrail`), cada vertical migra a
   `src/backends/<vertical>/` y cada front a `src/frontends/apps/<modulo>/`. Los imports
@@ -12,13 +19,13 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
   `docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md`.
 - Backends por vertical (`src/backends/`, registro en `src/backends/config/backends.json`):
   `dispositivos` (con datacalle), `vpsl`, `pas` (con Celery), `vat` y
-  `celiaquia`. El core los atiende por proxy. Para tests y desarrollo todo
+  `celiaquia`, `cdi` y `cdf`. El core los atiende por proxy. Para tests y desarrollo todo
   corre junto con `config.settings_all`. Guia:
   `docs/operacion/backends_por_servicio.md`.
 - `src/backends/kernel/users` es identidad y permisos (modelos, middleware, alcance
   territorial, delegacion, roles). La gestion de usuarios del core (pantallas,
-  formularios, importacion masiva, API de login PWA) vive en `usuarios/`; los
-  accesos PWA (`AccesoComedorPWA` y afines) y su logica, en `pwa/`
+  formularios, importacion masiva, API de login PWA) vive en `src/backends/sisoc_core/usuarios/`; los
+  accesos PWA (`AccesoComedorPWA` y afines) y su logica, en `src/backends/sisoc_core/pwa/`
   (`pwa.services.accesos`), con sus tablas `users_*` de siempre.
 
 - Sincronizacion DataCalle: los cambios de main de #2452/#2453 se incorporan a
@@ -28,10 +35,10 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 - PWA privadas: Espacios Comunitarios, DataCalle y Gestionar despliegan desde sus
   propios repositorios y ramas `main`, `homologacion` y `development`. SISOC ya
-  no las activa como parte de su deploy. `scripts/operacion/pwas.json` y
+  no las activa como parte de su deploy. `src/scripts/operacion/pwas.json` y
   `deploy_pwas.py` quedan como herramientas operativas compatibles, no como el
   disparador automatico. `render_pwa_nginx.py` genera el include compartido;
-  `scripts/infra/install_qa_pwa_nginx.sh` lo instala transaccionalmente en el
+  `src/scripts/infra/install_qa_pwa_nginx.sh` lo instala transaccionalmente en el
   vhost HTTP de QA con backup y rollback. Contrato, aliases y riesgos:
   `docs/operacion/deploy_pwas.md`. No mover `/sisoc/SISOC-Mobile` ni asumir
   acceso publico de Git. Verificar tambien estabilidad de workers tras desplegar:
@@ -52,8 +59,8 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - El repo mezcla backoffice web tradicional, APIs internas/server-to-server, flujos asincronos simples (hilos y workers dedicados; Celery solo para PAS), y una capa PWA/API para ciertos casos de uso.
 - La logica de negocio suele vivir en `services/` cuando la app la tiene, pero coexisten apps mas legacy con mas logica en `views.py`, `models.py` o `tasks.py`.
 - Hay un esfuerzo explicito de control arquitectonico incremental con `import-linter` (`.importlinter`) para evitar que el monolito siga acoplandose.
-- Los modulos nuevos deben nacer como verticales extraibles dentro del monolito; la regla aplicable y sus limites actuales viven en `docs/ia/MODULAR_BOUNDARIES.md`.
-- VPSL convive con sus pantallas Django existentes y el nuevo React en `/v2/vpsl/`. La app está en `src/frontends/apps/vpsl/`, usa `@sisoc/ui` y `@sisoc/api`, y se sirve desde `front_vpsl` por el router autenticado `src/backends/kernel/core/v2_frontend.py`. La API `/api/vpsl/` corre en el Django principal y reutiliza la lógica del dominio, con adaptadores de ModelForms/vistas existentes y alcance compartido en `services/access.py`. Ver `docs/implementaciones/frontend_v2.md` y `docs/operacion/ver_para_ser_libre_react.md`.
+- Los modulos nuevos se ubican en el dueño correspondiente y respetan los servicios ya separados; reglas y límites actuales en `docs/ia/MODULAR_BOUNDARIES.md`.
+- VPSL convive con sus pantallas Django existentes y el nuevo React en `/v2/vpsl/`. La app está en `src/frontends/apps/vpsl/`, usa `@sisoc/ui` y `@sisoc/api`, y se sirve desde `front_vpsl` por el router autenticado `src/backends/kernel/core/v2_frontend.py`. La API `/api/vpsl/` corre en el backend VPSL (o en el proceso único local con settings_all) y reutiliza la lógica del dominio, con adaptadores de ModelForms/vistas existentes y alcance compartido en `services/access.py`. Ver `docs/implementaciones/frontend_v2.md` y `docs/operacion/ver_para_ser_libre_react.md`.
 - Registro nominal React: `src/frontends/apps/vpsl/src/Workflow.tsx` replica las secciones y reglas condicionales de `registro_form.html`; el schema de `api_workflow.py` incluye `renaper_estado` oculto y `graduacion_opcional` desde el ModelForm oficial para registros históricos. Crear usa Guardar y continuar y recarga el schema para el siguiente número de acta. La compatibilidad con PR #2566 se verifica en `src/backends/vpsl/ver_para_ser_libre/tests/test_api_compatibilidad.py` y `src/frontends/apps/vpsl/src/Workflow.test.tsx`; los límites de promoción están en `docs/operacion/ver_para_ser_libre_react.md`.
 - El tema visual de Front v2 usa `getTheme(mode)` de `src/frontends/packages/ui/src/theme.ts`, con correcciones de contraste AA; las reglas de componentes y UX vigentes están en `docs/implementaciones/frontend_v2.md`.
 
@@ -79,7 +86,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | black / pylint / djlint | Hecho observado | `pyproject.toml`, `requirements/dev.txt`, `requirements/lint.txt` |
 | import-linter | Hecho observado | `.importlinter`, `.importlinter_celiaquia_config`, `requirements/arch.txt` |
 | Sentry | Hecho observado | `.env.example`, `requirements/base.txt` |
-| OCR / PDF / DOCX / Excel tooling | Hecho observado | `requirements/base.txt`, app `ocr/`, templates docx/pdf |
+| OCR / PDF / DOCX / Excel tooling | Hecho observado | `requirements/base.txt`, app `src/backends/sisoc_core/ocr/`, templates docx/pdf |
 
 ### Frontend
 
@@ -88,7 +95,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Templates Django server-side | Hecho observado | `src/backends/kernel/templates/`, `*/templates/` |
 | JS/CSS estaticos propios | Hecho observado | compartidos en `src/backends/kernel/static/custom/`; los de un solo vertical en `<app>/static/custom/` |
 | Bootstrap/AdminLTE/Select2 | Hecho observado | `src/backends/kernel/static/dist/`, `requirements`, templates |
-| PWA backend + endpoints | Hecho observado | `pwa/`, `src/backends/config/urls.py`, docs PWA |
+| PWA backend + endpoints | Hecho observado | `src/backends/sisoc_core/pwa/`, `src/backends/config/urls.py`, docs PWA |
 | Toolchain Node | Hecho observado | workspace npm en `src/frontends/` (front v2); la raiz no tiene `package.json` |
 | Front v2 React 19 + Vite + MUI | Hecho observado | `src/frontends/apps/vpsl/`, `src/frontends/apps/celiaquia/`, `src/frontends/packages/ui/`, `src/frontends/packages/api/` |
 
@@ -100,7 +107,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Compose separado para deploy | Hecho observado | `docker/compose/docker-compose.deploy.yml`, `docker/compose/docker-compose.produccion.yml` |
 | GitHub Actions para lint/tests/arquitectura/release sanity | Hecho observado | `.github/workflows/` |
 | Promoción event-driven y sincronización descendente con gates | Hecho observado | `.github/workflows/release-orchestrator.yml`, `.github/workflows/deploy.yml`, `docs/operacion/deploy_automatizado.md` |
-| Helpers de Codex/worktrees | Hecho observado | `scripts/ai/`, `.codex/environments/environment.toml` |
+| Helpers de Codex/worktrees | Hecho observado | `src/scripts/ai/`, `.codex/environments/environment.toml` |
 
 ## Que tipo de proyecto es
 
@@ -135,11 +142,11 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ### Helpers operativos del repo
 
-- `scripts/ai/codex_task.ps1 <slug>`: crea branch `codex/<slug>`, worktree en `../worktrees/<slug>` y bootstrap.
-- `scripts/ai/codex_run.ps1 up`: bootstrap + levantar entorno.
-- `scripts/ai/codex_run.ps1 validate`: corre `black`, `djlint`, smoke tests y `makemigrations --check`.
-- `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado, hace fast-forward antes de validar los Compose y bloquea una revisión obsoleta antes del downtime. Así un checkout anterior puede incorporar un Compose nuevo de forma segura.
-- `scripts/operacion/deploy_verified.sh`: wrapper de CI para QA/HML/PRD; valida migraciones y healthcheck y restaura automáticamente el checkout/stack anterior ante un fallo.
+- `src/scripts/ai/codex_task.ps1 <slug>`: crea branch `codex/<slug>`, worktree en `../worktrees/<slug>` y bootstrap.
+- `src/scripts/ai/codex_run.ps1 up`: bootstrap + levantar entorno.
+- `src/scripts/ai/codex_run.ps1 validate`: corre `black`, `djlint`, smoke tests y `makemigrations --check`.
+- `src/scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado, hace fast-forward antes de validar los Compose y bloquea una revisión obsoleta antes del downtime. Así un checkout anterior puede incorporar un Compose nuevo de forma segura.
+- `src/scripts/operacion/deploy_verified.sh`: wrapper de CI para QA/HML/PRD; valida migraciones y healthcheck y restaura automáticamente el checkout/stack anterior ante un fallo.
 
 ## Estructura general del proyecto
 
@@ -156,10 +163,11 @@ SISOC/
 |   |   |                    # + templates/, static/ y tests/ compartidos
 |   |   |-- sisoc_core/      # cluster de Comedores y apps propias del core
 |   |   `-- <vertical>/      # pas, cdi, cdf, celiaquia, dispositivos, vat, vpsl
-|   `-- frontends/           # front v2 en React (apps/<modulo>/, packages/)
+|   |-- frontends/           # apps/, packages/, e2e/; entradas de herramientas autodetectables
+|   |   `-- config/          # opciones base compartidas de TypeScript
+|   `-- scripts/             # helpers IA, CI, operacion, frontend y GitHub
 |-- docs/                    # fuente de verdad operativa y arquitectonica
-|-- docker/                  # Dockerfile, entrypoint y compose/ (overrides de deploy)
-|-- scripts/                 # helpers IA, CI y operacion
+|-- docker/                  # imagenes Django/frontend y compose/ (overrides de deploy)
 |-- requirements/            # dependencias Python (all.txt = base + dev + test)
 |-- .github/workflows/       # CI, lint, arquitectura, release
 |-- docker-compose.yml       # stack local (los overrides viven en docker/compose/)
@@ -175,8 +183,8 @@ SISOC/
 | --- | --- | --- |
 | `src/backends/config/` | configuracion global de Django, URLs y middleware | cambios cross-cutting, auth, API docs, seguridad, entorno |
 | `docs/` | documentacion operativa y de arquitectura | siempre antes de expandir contexto |
-| `scripts/ai/` | flujo recomendado para worktrees/validacion desde Codex | tareas de agentes, bootstrap, validaciones |
-| `scripts/ci/` | automatizaciones de PR docs y lint | si falla CI o hay autoformato |
+| `src/scripts/ai/` | flujo recomendado para worktrees/validacion desde Codex | tareas de agentes, bootstrap, validaciones |
+| `src/scripts/ci/` | automatizaciones de PR docs y lint | si falla CI o hay autoformato |
 | `docker/` | runtime contenedorizado real y compose de deploy | bugs de arranque/deploy |
 | `src/backends/kernel/templates/components/` | primitives HTML reutilizables | cambios de UI server-side compartidos |
 | `src/backends/kernel/static/custom/js/` | JS compartido entre verticales | bugs front puntuales en templates |
@@ -284,7 +292,7 @@ SISOC/
 | `src/backends/kernel/core/` | utilidades transversales, fixtures, soft delete, API auxiliar, paginacion, benchmark/debug tooling |
 | `src/backends/kernel/users/` | auth, login/reset, perfiles, grupos, import masivo de usuarios, permisos PWA |
 | `src/backends/kernel/audittrail/` | auditoria propia del sistema |
-| `healthcheck/` | endpoint de salud |
+| `src/backends/kernel/healthcheck/` | endpoint de salud |
 
 ### Presentacion/UI compartida
 
@@ -300,9 +308,9 @@ SISOC/
 | Ruta | Responsabilidad |
 | --- | --- |
 | `docker/` | runtime contenedorizado |
-| `scripts/operacion/` | refresh/deploy operativo |
-| `scripts/ci/` | utilidades de CI |
-| `scripts/ai/` | bootstrap/worktrees/doctor/validate/context memory |
+| `src/scripts/operacion/` | refresh/deploy operativo |
+| `src/scripts/ci/` | utilidades de CI |
+| `src/scripts/ai/` | bootstrap/worktrees/doctor/validate/context memory |
 
 ### Tests y calidad
 
@@ -327,9 +335,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `src/backends/sisoc_core/relevamientos/` | relevamientos y sync externo asociado | `models.py`, `tasks.py`, `views.py`, commands | Alto |
 | `src/backends/kernel/ciudadanos/` | gestion de ciudadanos/beneficiarios | `models.py`, `views.py`, `api_views.py`, forms | Medio |
 | `src/backends/cdf/centrodefamilia/` | backend propio (`/centrodefamilia/`); beneficiarios/centros/familia + API | `models.py`, `views.py`, `api_views.py`, `services/` | Alto |
-| `celiaquia/` | modulo especializado con bastante logica en services y vistas; expone un contrato Python acotado | `api.py`, `models.py`, `views/`, `services/`, `permissions.py`, tests | Alto |
+| `src/backends/celiaquia/celiaquia/` | modulo especializado con bastante logica en services y vistas; expone un contrato Python acotado | `api.py`, `models.py`, `views/`, `services/`, `permissions.py`, tests | Alto |
 | `src/backends/sisoc_core/admisiones/` | flujo de admision, legales/tecnicos, generacion DOCX/PDF y correcciones operativas auditadas | `views/web_views.py`, `services/`, `forms/`, `management/commands/`, templates `docx/` y `pdf/` | Alto |
-| `VAT/` | modulo amplio propio con views, API, services y reportes | `models.py`, `views/`, `api_views.py`, `services/`, `serializers.py`; docs `docs/vat/` | Alto |
+| `src/backends/vat/VAT/` | modulo amplio propio con views, API, services y reportes | `models.py`, `views/`, `api_views.py`, `services/`, `serializers.py`; docs `docs/vat/` | Alto |
 | `src/backends/sisoc_core/pwa/` | endpoints backend para experiencia PWA | `api_urls.py`, `api_views.py`, `services/`, `models.py` | Medio |
 | `src/backends/cdi/ticketera/` | corre en el backend de CDI; API server-to-server con kill-switch | `api_urls.py`, `api_views.py`, `api_serializers.py` | Medio |
 | `src/backends/sisoc_core/comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
@@ -340,16 +348,16 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `src/backends/sisoc_core/rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
 | `src/backends/sisoc_core/rendicioncuentasmensual/` | rendición mensual, revisión Territorial/Auditoría, subsanaciones y datos expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, templates, urls | Alto |
 | `src/backends/sisoc_core/duplas/` | equipos tecnicos/duplas | `models.py`, `views.py` | Bajo-Medio |
-| `dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
+| `src/backends/dispositivos/dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
 | `src/backends/sisoc_core/importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `src/backends/sisoc_core/ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
-| `ver_para_ser_libre/` | dominio VPSL compartido por SISOC y el servicio HTTP React; desde PR #2566 el itinerario evalua cartas sin sedes tentativas, cada jornada posee sede/localidad/ubicacion/vehiculos y checklist con habilitacion automatica, y el registro nominal guarda graduaciones; las sedes previas permanecen para historial; la compatibilidad del PR #2566 conserva localidad historica, copia checklists y permite editar registros previos sin inventar graduacion; `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py` y `services/access.py` exponen el flujo React con permisos, contrato JSON/multipart y alcance provincial | `models.py`, `forms.py`, `views.py`, `api_urls.py`, `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py`, `services/access.py`, `services/workflow.py`, `services/map_location.py`, `migrations/0015_vpsl_ubicacion_vehiculos_graduaciones.py`, `migrations/0016_copiar_checklist_sede_a_jornadas.py`, `ver_para_ser_libre/tests/test_api.py`, `ver_para_ser_libre/tests/test_api_contract.py`, `ver_para_ser_libre/tests/test_jornada_location.py` | Alto |
-| `pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV—, Informes PAS versionados, circuito mensual de cruces SINTyS/RENAPER, Panel de Control y Formación pendiente; el padrón lateral de Formación pagina por scroll mediante `/pas/formacion/personas` | `models.py`, `api.py`, `views.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `services/cruces_service.py`, `services/supervivencia_service.py`, `services/persona_service.py`, `services/formacion_service.py`, `src/backends/pas/pas/templates/pas/`, `src/backends/pas/pas/static/custom/js/pas_formacion.js`, `management/commands/`, `urls.py`, `migrations/` | Alto |
+| `src/backends/vpsl/ver_para_ser_libre/` | dominio VPSL compartido por SISOC y el servicio HTTP React; desde PR #2566 el itinerario evalua cartas sin sedes tentativas, cada jornada posee sede/localidad/ubicacion/vehiculos y checklist con habilitacion automatica, y el registro nominal guarda graduaciones; las sedes previas permanecen para historial; la compatibilidad del PR #2566 conserva localidad historica, copia checklists y permite editar registros previos sin inventar graduacion; `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py` y `services/access.py` exponen el flujo React con permisos, contrato JSON/multipart y alcance provincial | `models.py`, `forms.py`, `views.py`, `api_urls.py`, `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py`, `services/access.py`, `services/workflow.py`, `services/map_location.py`, `migrations/0015_vpsl_ubicacion_vehiculos_graduaciones.py`, `migrations/0016_copiar_checklist_sede_a_jornadas.py`, `src/backends/vpsl/ver_para_ser_libre/tests/test_api.py`, `src/backends/vpsl/ver_para_ser_libre/tests/test_api_contract.py`, `src/backends/vpsl/ver_para_ser_libre/tests/test_jornada_location.py` | Alto |
+| `src/backends/pas/pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV—, Informes PAS versionados, circuito mensual de cruces SINTyS/RENAPER, Panel de Control y Formación pendiente; el padrón lateral de Formación pagina por scroll mediante `/pas/formacion/personas` | `models.py`, `api.py`, `views.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `services/cruces_service.py`, `services/supervivencia_service.py`, `services/persona_service.py`, `services/formacion_service.py`, `src/backends/pas/pas/templates/pas/`, `src/backends/pas/pas/static/custom/js/pas_formacion.js`, `management/commands/`, `urls.py`, `migrations/` | Alto |
 | `src/backends/kernel/audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
 | `src/backends/sisoc_core/historial/` | historial de dominio | `models.py`, `services/` | Bajo |
 | `src/backends/sisoc_core/intervenciones/` | intervenciones sobre casos | tests + archivos del modulo | Bajo; exploracion parcial |
 | `src/backends/kernel/catalogo_intervenciones/` | catálogos de intervención compartidos por Comedores y CDI (tablas `intervenciones_*`) | `models.py`, `api.py`, `services_catalogo.py`, `fixtures/` | Medio |
-| `sentry/` | soporte/integracion local de sentry | codigo del modulo si toca observabilidad | Bajo |
+| `src/backends/kernel/sentry/` | soporte/integracion local de sentry | codigo del modulo si toca observabilidad | Bajo |
 | `src/backends/sisoc_core/encuestas/` | encuestas periodicas a usuarios logueados: preguntas con logica condicional, segmentacion, rondas recurrentes, bloqueo global si son obligatorias, resultados y export | `models.py`, `services.py`, `services_resultados.py`, `middleware.py`, `context_processors.py`, `management/commands/process_encuestas_rondas.py`, `tests/` | Alto (modulo propio, doc completa en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`) |
 
 ## Patrones arquitectonicos y de codigo
@@ -424,7 +432,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   Territorial comedor, Equipos técnicos, DataCalle, Administración de accesos)
   se habilitan por permiso `auth.role_usuarios_seccion_*`: catálogo en
   `src/backends/kernel/users/secciones_usuario.py`, campos en `CAMPOS_POR_SECCION` de
-  `users/forms.py`. Una sección nueva de un programa se agrega ahí, con su
+  `src/backends/sisoc_core/usuarios/forms.py`. Una sección nueva de un programa se agrega ahí, con su
   permiso en el seed. Decisión:
   `docs/registro/decisiones/2026-09-29-usuarios-secciones-por-permiso.md`.
 - La autogestión vive en `MiCuentaForm`, `MiCuentaView` y la ruta `/mi-cuenta/`.
@@ -481,7 +489,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - router global: `src/backends/config/urls.py`
 - por app: `api_urls.py`, `api_views.py`, `api_serializers.py`, `serializers.py`
 - si es PWA: `src/backends/sisoc_core/pwa/api_urls.py`, `src/backends/sisoc_core/pwa/api_views.py`
-- si es Ticketera: `ticketera/api_*`
+- si es Ticketera: `src/backends/cdi/ticketera/api_*`
 
 ### Si necesitas cambiar una pantalla HTML tradicional
 
@@ -511,8 +519,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `src/backends/sisoc_core/relevamientos/models.py`
 - `src/backends/sisoc_core/relevamientos/service.py` (asignación territorial local/legacy)
 - `src/backends/sisoc_core/relevamientos/tasks.py`
-- `relevamientos/views.py`
-- `tests/test_relevamientos*` y `src/backends/sisoc_core/tests/test_territorial_api.py`
+- `src/backends/sisoc_core/relevamientos/views/web_views.py`
+- `src/backends/sisoc_core/tests/test_relevamientos*` y `src/backends/sisoc_core/tests/test_territorial_api.py`
 - docs: `docs/flujos/relevamiento_sync.md`
 
 ### Si necesitas cambiar importacion de expedientes de pago
@@ -623,9 +631,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - confirmación de lectura de documentos: campos `visualizacion_*` en `DocumentacionAdjunta` y vista `RendicionDocumentoVerView`; los documentos se sirven por Django, no por la URL de media
 - etiquetas visibles ≠ valores persistidos: la etapa `revision_auditoria` se muestra como «Revisión para Carga». No cambiar valores internos para acomodar un label
 - asociación actual: `RendicionCuentaMensual.proyecto`; conservar fallback por `comedor.codigo_de_proyecto` para datos legados
-- listado y detalle del legajo: `organizaciones/views.py` y templates `organizacion_*`
+- listado y detalle del legajo: `src/backends/sisoc_core/gestion_organizaciones/views.py` y templates `organizacion_*`
 - proyectos editables: `OrganizacionForm.codigos_proyecto` mantiene el contrato CSV mediante un campo oculto
-- tests: `src/backends/sisoc_core/tests/test_rendicioncuentasmensual_services_unit.py`, `src/backends/sisoc_core/tests/test_rendicioncuentasmensual_domain_rules.py`, `src/backends/sisoc_core/tests/test_rendicioncuentasmensual_visualizacion.py`, `src/backends/sisoc_core/tests/test_rendicioncuentasmensual_acta_auditoria.py` y `organizaciones/tests.py`
+- tests: `src/backends/sisoc_core/tests/test_rendicioncuentasmensual_services_unit.py`, `src/backends/sisoc_core/tests/test_rendicioncuentasmensual_domain_rules.py`, `src/backends/sisoc_core/tests/test_rendicioncuentasmensual_visualizacion.py`, `src/backends/sisoc_core/tests/test_rendicioncuentasmensual_acta_auditoria.py` y `src/backends/sisoc_core/gestion_organizaciones/tests.py`
 - escenarios QA de permisos por etapa: `python manage.py seed_rendicion_stage_examples --comedor-id <id>` (solicita la contraseña de forma interactiva)
 - documentación canónica: `docs/flujos/rendiciones_mensuales_proyectos.md`
 - contratos que consume la PWA (estados internos, health-check, edición de datos generales): `docs/implementaciones/pwa_backend.md`
@@ -659,7 +667,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `src/backends/sisoc_core/encuestas/management/commands/process_encuestas_rondas.py` + servicio `encuestas_worker` en `docker-compose.yml`: abre/cierra rondas por fecha, sin Celery.
 - `src/backends/kernel/users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas`, `Administrador de Encuestas` (permiso `aprobar_encuesta`) y `Encuestas Resultados`.
 - Guía funcional canónica: `docs/implementaciones/encuestas.md`. El análisis histórico y sus decisiones de diseño quedan en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
-- Aprobación: `solicitar_publicacion` / `publicar` / `rechazar_publicacion` en `services.py`; borrador → pendiente → publicada o borrador. La ruta histórica `publicar/` ahora solicita, `aprobar/` y `rechazar/` requieren `aprobar_encuesta`. Revisión de solo lectura en `revision/`; pendientes bloquean edición y segmentación. Migración `0004` + `create_groups`. Tests en `test_encuestas_aprobacion.py`; `tests/helpers.py` prepara rondas recorriendo el circuito.
+- Aprobación: `solicitar_publicacion` / `publicar` / `rechazar_publicacion` en `services.py`; borrador → pendiente → publicada o borrador. La ruta histórica `publicar/` ahora solicita, `aprobar/` y `rechazar/` requieren `aprobar_encuesta`. Revisión de solo lectura en `revision/`; pendientes bloquean edición y segmentación. Migración `0004` + `create_groups`. Tests en `test_encuestas_aprobacion.py`; `src/backends/sisoc_core/encuestas/tests/helpers.py` prepara rondas recorriendo el circuito.
 - Portabilidad JSON: `exportar_encuesta` / `importar_encuesta` en `services.py`, endpoints `/encuestas/<pk>/exportar/` y `/encuestas/importar/`. Formato v3, admite v1/v2; importar crea borrador nuevo y vuelve al listado. Segmentacion optativa, contiene documentos personales si se incluye.
 - Modalidades: obligatoria, postergable y opcional (`Encuesta.es_opcional`). `descartar_ronda` registra descarte por usuario/ronda en `RecordatorioUsuario`, sin computar respuesta. Migracion `0003_encuesta_opcional` necesaria antes de servir el cambio y reiniciar workers.
 - UI: `encuestaForm.css` y `encuestaResponder.css` comparten tokens Poncho. Regresiones en `test_encuestas_portabilidad.py` y `test_encuestas_opcionales.py`.
@@ -691,7 +699,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar OCR / procesamiento documental
 
-- `ocr/`
+- `src/backends/sisoc_core/ocr/`
 - `docker/django/entrypoint.py` para rol `ocr_worker`
 - dependencias PDF/OCR en `requirements/base.txt`
 
@@ -717,7 +725,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   no agregar columnas en el medio ni saltear ese scope. La descarga usa el
   permiso propio `auth.role_reportes_cdi`, no el global `role_exportar_a_csv`.
   Contrato: `docs/implementaciones/centrodeinfancia_reportes.md`.
-- Ticketera: `ticketera/`, `docs/integraciones/ticketera_api.md`
+- Ticketera: `src/backends/cdi/ticketera/`, `docs/integraciones/ticketera_api.md`
 
 ### Si necesitas cambiar preinscriptos CDF o vouchers VAT
 
@@ -759,11 +767,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `.github/workflows/architecture.yml`
 - `.github/workflows/release-sanity.yml`
 - `.github/workflows/release-orchestrator.yml`
-- `.github/scripts/sync_main_downstream.js`: crea y actualiza ramas técnicas
+- `src/scripts/github/sync_main_downstream.js`: crea y actualiza ramas técnicas
   `automation/promote-<origen>-to-<destino>` después de un deploy verificado.
   Rechaza una rama origen que ya no coincida con el SHA desplegado y habilita
   auto-merge para respetar los checks del destino.
-- `.github/scripts/sync_main_downstream.test.js` cubre la promoción exacta y
+- `src/scripts/github/sync_main_downstream.test.js` cubre la promoción exacta y
   el rechazo de runs obsoletos; `deploy_guard` ejecuta las pruebas Node de
   ambos orquestadores.
 - `.github/workflows/deploy.yml`
@@ -780,13 +788,13 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   directorio temporal y valida host, servidor y schema de DB esperados, sin
   tocar el checkout vivo.
 - Al cambiar la fecha explícita de un PR a `main`,
-  `scripts/ci/pr_doc_automation.py` regenera o elimina el bloque de changelog
+  `src/scripts/ci/pr_doc_automation.py` regenera o elimina el bloque de changelog
   previo de ese PR para no dejar una release fantasma.
 - La automatización de promociones usa una GitHub App privada: variable
   `RELEASE_AUTOMATION_APP_CLIENT_ID` y secret
   `RELEASE_AUTOMATION_APP_PRIVATE_KEY`; no sustituirla por un PAT.
 - `.importlinter`
-- `scripts/ci/pr_lint_tools.py`, `scripts/ci/pr_doc_automation.py`
+- `src/scripts/ci/pr_lint_tools.py`, `src/scripts/ci/pr_doc_automation.py`
 
 ## Testing, linting, build y deploy
 
@@ -836,9 +844,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `Get-ChildItem`, `git ls-files`, `rg`
 - `docker compose config --services`
 - `python manage.py show_urls` si existiera dependencia instalada y entorno levantado
-- `scripts/ai/codex_doctor.ps1`
-- `scripts/ai/codex_run.ps1 smoke`
-- `scripts/ai/codex_run.ps1 validate`
+- `src/scripts/ai/codex_doctor.ps1`
+- `src/scripts/ai/codex_run.ps1 smoke`
+- `src/scripts/ai/codex_run.ps1 validate`
 
 ### Seguros pero potencialmente costosos
 
@@ -963,17 +971,17 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | GESTIONAR | `src/backends/sisoc_core/comedores/tasks.py`, `src/backends/sisoc_core/relevamientos/tasks.py`, commands relacionados |
 | docx/pdf | `src/backends/sisoc_core/admisiones/services/`, `src/backends/sisoc_core/comedores/services/certificacion_prestaciones_service.py`, `src/backends/sisoc_core/pwa/services/nomina_destinatarios_pdf_service.py`, `src/backends/sisoc_core/pwa/files/varios/` |
 | PWA | `src/backends/sisoc_core/pwa/api_views.py`, `src/backends/sisoc_core/pwa/services/`, tests `test_pwa_*` |
-| OCR | `ocr/`, `docker/django/entrypoint.py` |
+| OCR | `src/backends/sisoc_core/ocr/`, `docker/django/entrypoint.py` |
 | encuestas | `src/backends/sisoc_core/encuestas/services.py`, `src/backends/sisoc_core/encuestas/middleware.py`, `docs/registro/analisis/2026-08-28-modulo-encuestas.md` |
 | auditoria | `src/backends/kernel/audittrail/`, docs `audittrail_*` |
 | release/deploy | `docs/operacion/*.md`, workflows, compose deploy |
-| CI rota por estilo | `.github/workflows/lint.yml`, `scripts/ci/pr_lint_tools.py` |
+| CI rota por estilo | `.github/workflows/lint.yml`, `src/scripts/ci/pr_lint_tools.py` |
 | CI rota por imports | `.importlinter`, `requirements/arch.txt` |
 
 ## Zonas no analizadas a fondo en esta pasada
 
 - logica interna completa de `dashboard`, `dispositivos`, `duplas`, `expedientespagos`, `historial`, `intervenciones`, `organizaciones`, `rendicioncuentasfinal`, `rendicioncuentasmensual`, `ver_para_ser_libre`
-- detalle fino de `ocr/`
+- detalle fino de `src/backends/sisoc_core/ocr/`
 - contratos completos de cada API mas alla del routing y docs encontradas
 - flujos exactos de algunos workers (`mailing`, `ciudadanos_import_worker`) fuera del entrypoint
 
@@ -1029,8 +1037,8 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
   serializan por PR y el push automático reintenta con `fetch` + `rebase` si
   otra automatización hizo avanzar la rama; los conflictos reales bloquean.
 - `.github/workflows/deploy.yml`
-- `scripts/ai/codex_run.ps1`
-- `scripts/ai/codex_task.ps1`
+- `src/scripts/ai/codex_run.ps1`
+- `src/scripts/ai/codex_task.ps1`
 - `.codex/environments/environment.toml`
 - inventario de archivos con `git ls-files`
 - inventario estructural de apps y scripts via shell
@@ -1038,4 +1046,4 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 ## PAS Celery mensual
 - `src/backends/config/celery.py`, `src/backends/pas/pas/tasks.py`, `src/backends/pas/pas/services/supervivencia_jobs.py`: programación, reconciliación y un lote exclusivo por MySQL GET_LOCK; dentro del lote, ventanas transaccionales, dos clientes por hilo y límite agregado inicial de 16 solicitudes/s.
 - `docker/compose/docker-compose.celery.yml` se incorpora desde deploy_refresh; Redis persistente, Beat único y worker PAS.
-- Runbook funcional: `docs/implementaciones/pas_control_mensual_celery.md`; retirada cron: `scripts/infra/remove_pas_cron.sh`.
+- Runbook funcional: `docs/implementaciones/pas_control_mensual_celery.md`; retirada cron: `src/scripts/infra/remove_pas_cron.sh`.

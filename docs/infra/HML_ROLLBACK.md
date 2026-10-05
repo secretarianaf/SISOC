@@ -35,7 +35,7 @@ escribir DB. Las imagenes de los contenedores activos no fueron eliminadas.
 ## Detectar fallo
 
 ```bash
-bash scripts/infra/healthcheck_hml.sh
+bash src/scripts/infra/healthcheck_hml.sh
 docker ps --no-trunc
 df -h /
 journalctl -t sisoc-hml-disk-cleanup --since today --no-pager
@@ -86,7 +86,7 @@ la instancia reactivada:
 ```bash
 docker exec sisoc-django-1 python manage.py shell -c \
   "from django.db import connection; connection.ensure_connection(); print(connection.settings_dict.get('HOST')); print(connection.connection.get_host_info())"
-bash scripts/infra/healthcheck_hml.sh
+bash src/scripts/infra/healthcheck_hml.sh
 ```
 
 El resultado esperado es host configurado `10.80.5.48`, conexion TCP a ese host

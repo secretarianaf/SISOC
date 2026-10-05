@@ -79,7 +79,8 @@
     ],
     "url_prefixes": [
       "celiaquia/",
-      "reporter-provincias/"
+      "reporter-provincias/",
+      "api/celiaquia/"
     ],
     "urlconf": "celiaquia_runtime.urls",
     "origin_env": "BACKEND_CELIAQUIA_ORIGIN",

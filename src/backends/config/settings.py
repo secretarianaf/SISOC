@@ -284,6 +284,7 @@ LOGIN_REDIRECT_URL = "inicio"
 LOGOUT_REDIRECT_URL = "login"
 FRONTEND_V2_UPSTREAMS = {
     "vpsl": os.getenv("FRONT_VPSL_ORIGIN", "http://front_vpsl:8080"),
+    "celiaquia": os.getenv("FRONT_CELIAQUIA_ORIGIN", "http://front_celiaquia:8080"),
 }
 # Backends por vertical que el core atiende como proxy (src/backends/kernel/core/backend_proxy.py).
 # Fuente única: src/backends/config/backends.json. settings_all.py lo vacía porque ahí cada

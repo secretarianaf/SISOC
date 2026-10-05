@@ -710,6 +710,356 @@
   "regex": "^centrodefamilia/centros/(?P<pk>[0-9]+)/generar\\-usuario/\\Z"
  },
  {
+  "name": "celiaquia-cupo-baja-legajo",
+  "namespace": "",
+  "regex": "^api/celiaquia/cupos/legajos/(?P<legajo_id>\\d+)/baja/$"
+ },
+ {
+  "name": "celiaquia-cupo-configurar",
+  "namespace": "",
+  "regex": "^api/celiaquia/cupos/provincia/(?P<provincia_id>\\d+)/$"
+ },
+ {
+  "name": "celiaquia-cupo-dashboard",
+  "namespace": "",
+  "regex": "^api/celiaquia/cupos/dashboard/$"
+ },
+ {
+  "name": "celiaquia-cupo-detail",
+  "namespace": "",
+  "regex": "^api/celiaquia/cupos/(?P<pk>[^/.]+)/$"
+ },
+ {
+  "name": "celiaquia-cupo-list",
+  "namespace": "",
+  "regex": "^api/celiaquia/cupos/$"
+ },
+ {
+  "name": "celiaquia-cupo-metricas",
+  "namespace": "",
+  "regex": "^api/celiaquia/cupos/(?P<pk>[^/.]+)/metricas/$"
+ },
+ {
+  "name": "celiaquia-cupo-movimiento-detail",
+  "namespace": "",
+  "regex": "^api/celiaquia/cupos-movimientos/(?P<pk>[^/.]+)/$"
+ },
+ {
+  "name": "celiaquia-cupo-movimiento-list",
+  "namespace": "",
+  "regex": "^api/celiaquia/cupos-movimientos/$"
+ },
+ {
+  "name": "celiaquia-cupo-ocupados",
+  "namespace": "",
+  "regex": "^api/celiaquia/cupos/(?P<pk>[^/.]+)/ocupados/$"
+ },
+ {
+  "name": "celiaquia-cupo-reactivar-legajo",
+  "namespace": "",
+  "regex": "^api/celiaquia/cupos/legajos/(?P<legajo_id>\\d+)/reactivar/$"
+ },
+ {
+  "name": "celiaquia-cupo-suspender-legajo",
+  "namespace": "",
+  "regex": "^api/celiaquia/cupos/legajos/(?P<legajo_id>\\d+)/suspender/$"
+ },
+ {
+  "name": "celiaquia-cupo-suspendidos",
+  "namespace": "",
+  "regex": "^api/celiaquia/cupos/(?P<pk>[^/.]+)/suspendidos/$"
+ },
+ {
+  "name": "celiaquia-estado-expediente-detail",
+  "namespace": "",
+  "regex": "^api/celiaquia/estados-expediente/(?P<pk>[^/.]+)/$"
+ },
+ {
+  "name": "celiaquia-estado-expediente-list",
+  "namespace": "",
+  "regex": "^api/celiaquia/estados-expediente/$"
+ },
+ {
+  "name": "celiaquia-estado-legajo-detail",
+  "namespace": "",
+  "regex": "^api/celiaquia/estados-legajo/(?P<pk>[^/.]+)/$"
+ },
+ {
+  "name": "celiaquia-estado-legajo-list",
+  "namespace": "",
+  "regex": "^api/celiaquia/estados-legajo/$"
+ },
+ {
+  "name": "celiaquia-expediente-actualizar-registro-erroneo",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/registros-erroneos/(?P<registro_id>[0-9]+)/actualizar/$"
+ },
+ {
+  "name": "celiaquia-expediente-asignaciones",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/asignaciones/$"
+ },
+ {
+  "name": "celiaquia-expediente-asignar-tecnico",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/asignar-tecnico/$"
+ },
+ {
+  "name": "celiaquia-expediente-catalogos",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/catalogos/$"
+ },
+ {
+  "name": "celiaquia-expediente-confirmar-envio",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/confirmar-envio/$"
+ },
+ {
+  "name": "celiaquia-expediente-crear-legajos",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/crear-legajos/$"
+ },
+ {
+  "name": "celiaquia-expediente-cruce",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/cruce/$"
+ },
+ {
+  "name": "celiaquia-expediente-desasignar-tecnico",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/desasignar-tecnico/$"
+ },
+ {
+  "name": "celiaquia-expediente-detail",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/$"
+ },
+ {
+  "name": "celiaquia-expediente-eliminar-registro-erroneo",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/registros-erroneos/(?P<registro_id>[0-9]+)/$"
+ },
+ {
+  "name": "celiaquia-expediente-estructura-familiar",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/estructura-familiar/$"
+ },
+ {
+  "name": "celiaquia-expediente-excel-masivo",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/excel-masivo/$"
+ },
+ {
+  "name": "celiaquia-expediente-fuera-de-cupo",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/fuera-de-cupo/$"
+ },
+ {
+  "name": "celiaquia-expediente-historial-estados",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/historial-estados/$"
+ },
+ {
+  "name": "celiaquia-expediente-importar",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/importar/$"
+ },
+ {
+  "name": "celiaquia-expediente-legajos",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/legajos/$"
+ },
+ {
+  "name": "celiaquia-expediente-list",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/$"
+ },
+ {
+  "name": "celiaquia-expediente-localidades",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/localidades/$"
+ },
+ {
+  "name": "celiaquia-expediente-municipios",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/municipios/$"
+ },
+ {
+  "name": "celiaquia-expediente-nomina-sintys",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/nomina-sintys/$"
+ },
+ {
+  "name": "celiaquia-expediente-padron-final",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/padron-final/$"
+ },
+ {
+  "name": "celiaquia-expediente-plantilla-excel",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/plantilla-excel/$"
+ },
+ {
+  "name": "celiaquia-expediente-preview-excel",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/preview-excel/$"
+ },
+ {
+  "name": "celiaquia-expediente-procesar",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/procesar/$"
+ },
+ {
+  "name": "celiaquia-expediente-recepcionar",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/recepcionar/$"
+ },
+ {
+  "name": "celiaquia-expediente-registros-erroneos",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/registros-erroneos/$"
+ },
+ {
+  "name": "celiaquia-expediente-reprocesar-registros-erroneos",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/(?P<pk>[^/.]+)/registros-erroneos/reprocesar/$"
+ },
+ {
+  "name": "celiaquia-expediente-tecnicos",
+  "namespace": "",
+  "regex": "^api/celiaquia/expedientes/tecnicos/$"
+ },
+ {
+  "name": "celiaquia-legajo-archivos",
+  "namespace": "",
+  "regex": "^api/celiaquia/legajos/(?P<pk>[^/.]+)/archivos/$"
+ },
+ {
+  "name": "celiaquia-legajo-comentarios",
+  "namespace": "",
+  "regex": "^api/celiaquia/legajos/(?P<pk>[^/.]+)/comentarios/$"
+ },
+ {
+  "name": "celiaquia-legajo-confirmar-subsanacion",
+  "namespace": "",
+  "regex": "^api/celiaquia/legajos/(?P<pk>[^/.]+)/confirmar-subsanacion/$"
+ },
+ {
+  "name": "celiaquia-legajo-crear-comentario-tecnico",
+  "namespace": "",
+  "regex": "^api/celiaquia/legajos/(?P<pk>[^/.]+)/comentarios/tecnico/$"
+ },
+ {
+  "name": "celiaquia-legajo-detail",
+  "namespace": "",
+  "regex": "^api/celiaquia/legajos/(?P<pk>[^/.]+)/$"
+ },
+ {
+  "name": "celiaquia-legajo-documentos",
+  "namespace": "",
+  "regex": "^api/celiaquia/legajos/(?P<pk>[^/.]+)/documentos/$"
+ },
+ {
+  "name": "celiaquia-legajo-guardar-validacion-renaper",
+  "namespace": "",
+  "regex": "^api/celiaquia/legajos/(?P<pk>[^/.]+)/validacion-renaper/$"
+ },
+ {
+  "name": "celiaquia-legajo-list",
+  "namespace": "",
+  "regex": "^api/celiaquia/legajos/$"
+ },
+ {
+  "name": "celiaquia-legajo-motivo-preview",
+  "namespace": "",
+  "regex": "^api/celiaquia/legajos/(?P<pk>[^/.]+)/motivo-preview/$"
+ },
+ {
+  "name": "celiaquia-legajo-responder-subsanacion",
+  "namespace": "",
+  "regex": "^api/celiaquia/legajos/(?P<pk>[^/.]+)/responder-subsanacion/$"
+ },
+ {
+  "name": "celiaquia-legajo-revisar",
+  "namespace": "",
+  "regex": "^api/celiaquia/legajos/(?P<pk>[^/.]+)/revisar/$"
+ },
+ {
+  "name": "celiaquia-legajo-solicitar-subsanacion",
+  "namespace": "",
+  "regex": "^api/celiaquia/legajos/(?P<pk>[^/.]+)/solicitar-subsanacion/$"
+ },
+ {
+  "name": "celiaquia-legajo-subsanaciones",
+  "namespace": "",
+  "regex": "^api/celiaquia/legajos/(?P<pk>[^/.]+)/subsanaciones/$"
+ },
+ {
+  "name": "celiaquia-legajo-validar-renaper",
+  "namespace": "",
+  "regex": "^api/celiaquia/legajos/(?P<pk>[^/.]+)/validar-renaper/$"
+ },
+ {
+  "name": "celiaquia-organismo-detail",
+  "namespace": "",
+  "regex": "^api/celiaquia/organismos/(?P<pk>[^/.]+)/$"
+ },
+ {
+  "name": "celiaquia-organismo-list",
+  "namespace": "",
+  "regex": "^api/celiaquia/organismos/$"
+ },
+ {
+  "name": "celiaquia-pago-detail",
+  "namespace": "",
+  "regex": "^api/celiaquia/pagos/(?P<pk>[^/.]+)/$"
+ },
+ {
+  "name": "celiaquia-pago-exportar-nomina",
+  "namespace": "",
+  "regex": "^api/celiaquia/pagos/(?P<pk>[^/.]+)/exportar-nomina/$"
+ },
+ {
+  "name": "celiaquia-pago-list",
+  "namespace": "",
+  "regex": "^api/celiaquia/pagos/$"
+ },
+ {
+  "name": "celiaquia-pago-nomina",
+  "namespace": "",
+  "regex": "^api/celiaquia/pagos/(?P<pk>[^/.]+)/nomina/$"
+ },
+ {
+  "name": "celiaquia-pago-procesar-respuesta",
+  "namespace": "",
+  "regex": "^api/celiaquia/pagos/(?P<pk>[^/.]+)/procesar-respuesta/$"
+ },
+ {
+  "name": "celiaquia-reporte-list",
+  "namespace": "",
+  "regex": "^api/celiaquia/reporte/$"
+ },
+ {
+  "name": "celiaquia-tipo-cruce-detail",
+  "namespace": "",
+  "regex": "^api/celiaquia/tipos-cruce/(?P<pk>[^/.]+)/$"
+ },
+ {
+  "name": "celiaquia-tipo-cruce-list",
+  "namespace": "",
+  "regex": "^api/celiaquia/tipos-cruce/$"
+ },
+ {
+  "name": "celiaquia-tipo-documento-detail",
+  "namespace": "",
+  "regex": "^api/celiaquia/tipos-documento/(?P<pk>[^/.]+)/$"
+ },
+ {
+  "name": "celiaquia-tipo-documento-list",
+  "namespace": "",
+  "regex": "^api/celiaquia/tipos-documento/$"
+ },
+ {
   "name": "centro_create",
   "namespace": "",
   "regex": "^centrodefamilia/centros/nuevo/\\Z"

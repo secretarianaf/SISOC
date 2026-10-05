@@ -38,17 +38,10 @@ class SubsanacionRespuestaUploadView(View):
         except PermissionDenied as exc:
             return error_response(str(exc) or "Permiso denegado.", status=403)
 
-        if legajo.revision_tecnico != RevisionTecnico.SUBSANAR:
-            return error_response(
-                "El legajo no tiene una subsanación técnica activa.",
-                status=400,
-            )
-
-        if legajo.estado_validacion_renaper == 3:
-            return error_response(
-                "El legajo tiene una subsanación Renaper pendiente.",
-                status=400,
-            )
+        try:
+            SubsanacionService.exigir_puede_responder(legajo)
+        except ValidationError as exc:
+            return error_response("; ".join(exc.messages), status=400)
 
         archivos = request.FILES.getlist("archivos")
         if not archivos:

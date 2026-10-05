@@ -26,6 +26,29 @@ class CupoNoConfigurado(Exception):
     pass
 
 
+def _tope_total_asignado() -> int:
+    """Maximo que acepta la columna `ProvinciaCupo.total_asignado`.
+
+    Se lee del `MaxValueValidator` que Django le pone al `PositiveIntegerField`
+    segun el motor (en MySQL, 4.294.967.295). Hardcodearlo significaria que si
+    el campo cambia de tipo, el tope queda viejo y vuelve el error de columna
+    fuera de rango.
+    """
+
+    from django.core.validators import MaxValueValidator
+
+    campo = ProvinciaCupo._meta.get_field("total_asignado")
+    for validador in campo.validators:
+        if isinstance(validador, MaxValueValidator):
+            return int(validador.limit_value)
+    return 2_147_483_647
+
+
+#: Tope de cupo por provincia. Pasarse hacia que MySQL tirara
+#: `DataError: Out of range value`, que llegaba al usuario como un 500.
+TOTAL_ASIGNADO_MAXIMO = _tope_total_asignado()
+
+
 class CupoService:
     # -------------------- MÉTRICAS Y LISTADOS --------------------
 
@@ -60,6 +83,62 @@ class CupoService:
             "disponibles": disponibles,
             "fuera": int(fuera),
         }
+
+    @staticmethod
+    def filas_dashboard() -> list:
+        """Una fila por **cada provincia**, tenga cupo configurado o no.
+
+        Las que no tienen `ProvinciaCupo` van con los contadores en `None`: es
+        lo que permite entrar y configurarlas por primera vez. Si solo se
+        listaran las configuradas, una provincia nueva nunca podria recibir
+        cupo desde la pantalla.
+
+        Vivia en `CupoDashboardView`; se extrae para que la API liste lo mismo.
+        """
+
+        filas = []
+        configuradas = (
+            ProvinciaCupo.objects.select_related("provincia")
+            .all()
+            .order_by("provincia__nombre")
+        )
+        for pc in configuradas:
+            try:
+                metricas = CupoService.metrics_por_provincia(pc.provincia)
+            except CupoNoConfigurado:
+                # Defensivo: el registro existe pero quedo inconsistente.
+                metricas = {
+                    "total_asignado": 0,
+                    "usados": 0,
+                    "disponibles": 0,
+                    "fuera": 0,
+                }
+            filas.append(
+                {
+                    "provincia": pc.provincia,
+                    "cupo_id": pc.pk,
+                    "total_asignado": metricas.get("total_asignado", 0),
+                    "usados": metricas.get("usados", 0),
+                    "disponibles": metricas.get("disponibles", 0),
+                    "fuera": metricas.get("fuera", 0),
+                }
+            )
+
+        sin_cupo = Provincia.objects.exclude(
+            id__in=configuradas.values_list("provincia_id", flat=True)
+        ).order_by("nombre")
+        for provincia in sin_cupo:
+            filas.append(
+                {
+                    "provincia": provincia,
+                    "cupo_id": None,
+                    "total_asignado": None,
+                    "usados": None,
+                    "disponibles": None,
+                    "fuera": None,
+                }
+            )
+        return filas
 
     @staticmethod
     def lista_ocupados_por_provincia(provincia: Provincia):
@@ -115,6 +194,13 @@ class CupoService:
             raise ValidationError("El total asignado debe ser un entero válido.")
         if total < 0:
             raise ValidationError("El total asignado debe ser un entero ≥ 0.")
+        if total > TOTAL_ASIGNADO_MAXIMO:
+            raise ValidationError(
+                f"El total asignado no puede superar {TOTAL_ASIGNADO_MAXIMO:,}".replace(
+                    ",", "."
+                )
+                + "."
+            )
         pc, created = ProvinciaCupo.objects.get_or_create(
             provincia=provincia,
             defaults={"total_asignado": total},

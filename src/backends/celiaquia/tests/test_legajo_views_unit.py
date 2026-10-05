@@ -60,7 +60,7 @@ def test_archivo_upload_dispatch_and_post_paths(mocker):
     view.exp_ciud = leg
     # En EN_ESPERA sin subsanación pendiente la carga inicial no está bloqueada.
     mocker.patch(
-        "celiaquia.views.legajo.Subsanacion.objects.filter",
+        "celiaquia.permissions.Subsanacion.objects.filter",
         return_value=SimpleNamespace(exists=lambda: False),
     )
 

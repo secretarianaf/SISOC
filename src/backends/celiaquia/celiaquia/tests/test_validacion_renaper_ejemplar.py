@@ -272,7 +272,7 @@ def test_vista_expone_datos_ejemplar_y_registra_cobertura(client, monkeypatch, c
     legajo = _legajo(30111222)
     vencimiento = _fecha_pasada()
     monkeypatch.setattr(
-        "celiaquia.views.validacion_renaper.consultar_datos_renaper",
+        "celiaquia.services.validacion_renaper_service.consultar_datos_renaper",
         lambda *args, **kwargs: _respuesta_renaper(
             emision="31/05/2019", vencimiento=vencimiento, ejemplar="b"
         ),
@@ -306,7 +306,7 @@ def test_vista_sin_datos_de_ejemplar_no_rompe_la_validacion(
     ninguno de los tres campos."""
     legajo = _legajo(30111333)
     monkeypatch.setattr(
-        "celiaquia.views.validacion_renaper.consultar_datos_renaper",
+        "celiaquia.services.validacion_renaper_service.consultar_datos_renaper",
         lambda *args, **kwargs: _respuesta_renaper(),
     )
     client.force_login(_coordinador("coord-sin-ejemplar"))

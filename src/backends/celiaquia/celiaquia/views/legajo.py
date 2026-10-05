@@ -9,13 +9,15 @@ from celiaquia.models import (
     EstadoLegajo,
     ExpedienteCiudadano,
     RevisionTecnico,
-    Subsanacion,
-    SubsanacionEstado,
 )
 from celiaquia.services.legajo_service import LegajoService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from celiaquia.services.validacion_edad_service import ValidacionEdadService
-from celiaquia.permissions import can_edit_legajo_files, can_review_legajo
+from celiaquia.permissions import (
+    can_edit_legajo_files,
+    can_review_legajo,
+    documentos_legajo_bloqueados as _documentos_legajo_bloqueados,
+)
 from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import is_soft_deletable_instance
 from iam.services import user_has_permission_code
@@ -29,26 +31,6 @@ ROLE_TECNICO_CELIAQUIA_PERMISSION = "auth.role_tecnicoceliaquia"
 
 def _has_permission(user, permission_code):
     return user_has_permission_code(user, permission_code)
-
-
-# Estados del expediente en los que aún se pueden cargar/reemplazar los
-# documentos originales del legajo. Una vez enviado a evaluación, quedan
-# bloqueados.
-ESTADOS_DOCS_EDITABLES = {"CREADO", "PROCESADO", "EN_ESPERA"}
-
-
-def _documentos_legajo_bloqueados(legajo):
-    """Los documentos originales (archivo1/2/3) no se pueden reemplazar cuando el
-    expediente ya fue enviado a evaluación o el legajo está en subsanación: las
-    correcciones se cargan como archivos de subsanación (evidencia nueva)."""
-    estado = getattr(getattr(legajo.expediente, "estado", None), "nombre", "")
-    if estado not in ESTADOS_DOCS_EDITABLES:
-        return True
-    if legajo.revision_tecnico == RevisionTecnico.SUBSANAR:
-        return True
-    return Subsanacion.objects.filter(
-        legajo=legajo, estado=SubsanacionEstado.PENDIENTE
-    ).exists()
 
 
 class LegajoArchivoUploadView(View):

@@ -9,6 +9,7 @@ from django.http import JsonResponse, QueryDict
 from django.utils.datastructures import MultiValueDict
 
 from celiaquia.views import expediente as module
+from celiaquia.services import registros_erroneos_service as servicio
 
 
 class _EmptyRelatedManager:
@@ -66,28 +67,28 @@ def test_helper_functions_for_user_and_request(mocker):
         groups=SimpleNamespace(filter=mocker.Mock(return_value=groups_filter)),
     )
 
-    assert module._user_has_permission(
+    assert servicio._user_has_permission(
         _user_stub(tec=True), "auth.role_tecnicoceliaquia"
     )
-    assert module._is_admin(user) is True
+    assert servicio._is_admin(user) is True
 
     req = SimpleNamespace(headers={"X-Requested-With": "XMLHttpRequest"})
     assert module._is_ajax(req) is True
-    assert module._can_manage_registros_erroneos(_user_stub(coord=True)) is True
-    assert module._can_manage_registros_erroneos(_user_stub(is_admin=True)) is True
-    assert module._can_manage_registros_erroneos(_user_stub()) is False
+    assert servicio._can_manage_registros_erroneos(_user_stub(coord=True)) is True
+    assert servicio._can_manage_registros_erroneos(_user_stub(is_admin=True)) is True
+    assert servicio._can_manage_registros_erroneos(_user_stub()) is False
 
 
 def test_provincial_helpers_and_parse_limit():
     user_no_auth = SimpleNamespace(is_authenticated=False)
-    assert module._is_provincial(user_no_auth) is False
+    assert servicio._is_provincial(user_no_auth) is False
 
     profile = SimpleNamespace(
         es_usuario_provincial=True, provincia_id=7, provincia="PBA"
     )
     user = SimpleNamespace(is_authenticated=True, profile=profile)
-    assert module._is_provincial(user) is True
-    assert module._user_provincia(user) == "PBA"
+    assert servicio._is_provincial(user) is True
+    assert servicio._user_provincia(user) == "PBA"
 
     assert module._parse_limit(None, default=10) == 10
     assert module._parse_limit("all", default=10) is None
@@ -104,7 +105,7 @@ def test_resolver_provincia_registro_erroneo_fallback_a_usuario_expediente():
     expediente = SimpleNamespace(provincia=None, usuario_provincia=expediente_user)
     user = SimpleNamespace(is_authenticated=True)
 
-    provincia_id = module._resolver_provincia_id_registro_erroneo(user, expediente)
+    provincia_id = servicio._resolver_provincia_id_registro_erroneo(user, expediente)
     assert provincia_id == 33
 
 
@@ -140,7 +141,7 @@ def test_actualizar_alerta_importacion_persistente_recalcula_resumen():
         historial=SimpleNamespace(filter=lambda **kwargs: historial_qs),
     )
 
-    module._actualizar_alerta_importacion_persistente(
+    servicio._actualizar_alerta_importacion_persistente(
         expediente,
         creados_incremento=1,
         errores_actuales=0,
@@ -185,19 +186,19 @@ def test_formatear_observaciones_historial_muestra_texto_visible_de_payload():
 
 def test_registro_erroneo_responsable_requerido_depende_de_edad():
     assert (
-        module._registro_erroneo_responsable_requerido(
+        servicio._registro_erroneo_responsable_requerido(
             {"fecha_nacimiento": "01/01/2010"}
         )
         is True
     )
     assert (
-        module._registro_erroneo_responsable_requerido(
+        servicio._registro_erroneo_responsable_requerido(
             {"fecha_nacimiento": "01/01/1990"}
         )
         is False
     )
     assert (
-        module._registro_erroneo_responsable_requerido(
+        servicio._registro_erroneo_responsable_requerido(
             {"fecha_nacimiento": "fecha-invalida"}
         )
         is False
@@ -208,12 +209,12 @@ def test_aplicar_defaults_registro_erroneo_solo_autocompleta_municipio_por_local
     mocker,
 ):
     mocker.patch.object(
-        module,
+        servicio,
         "_resolver_municipio_id_desde_localidad",
         return_value="77",
     )
 
-    datos = module._aplicar_defaults_registro_erroneo(
+    datos = servicio._aplicar_defaults_registro_erroneo(
         {"nacionalidad": "9", "municipio": "", "localidad": "55"}
     )
 
@@ -222,23 +223,26 @@ def test_aplicar_defaults_registro_erroneo_solo_autocompleta_municipio_por_local
     assert datos["localidad"] == "55"
 
 
-def test_provincial_helpers_object_does_not_exist_branches(mocker):
-    user = SimpleNamespace(is_authenticated=True)
-    mocker.patch.object(
-        module,
-        "ObjectDoesNotExist",
-        type("_E", (Exception,), {}),
-    )
+def test_provincial_helpers_object_does_not_exist_branches():
+    """Un perfil inaccesible no rompe: se resuelve como "sin provincia".
+
+    Antes se parcheaba `ObjectDoesNotExist` en el modulo. Ya no sirve: el chequeo
+    provincial vive en `celiaquia/scope.py`, que importa la excepcion adentro de
+    la funcion. Se levanta la excepcion real, que ademas es el caso de verdad.
+    """
+
+    from django.core.exceptions import ObjectDoesNotExist
 
     class _ProfileExc:
+        is_authenticated = True
+
         @property
         def profile(self):
-            raise module.ObjectDoesNotExist()
+            raise ObjectDoesNotExist()
 
     u = _ProfileExc()
-    u.is_authenticated = True
-    assert module._is_provincial(u) is False
-    assert module._user_provincia(u) is None
+    assert servicio._is_provincial(u) is False
+    assert servicio._user_provincia(u) is None
 
 
 def test_localidades_lookup_view_filters_and_returns_json(mocker):
@@ -264,7 +268,15 @@ def test_localidades_lookup_view_filters_and_returns_json(mocker):
     )
 
     mocker.patch("celiaquia.views.expediente._user_has_permission", return_value=False)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._user_has_permission",
+        return_value=False,
+    )
     mocker.patch("celiaquia.views.expediente._is_provincial", return_value=True)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_provincial",
+        return_value=True,
+    )
     # El lookup ahora restringe por el alcance territorial real del usuario.
     mocker.patch("celiaquia.views.expediente.apply_territorial_scope", return_value=qs)
 
@@ -340,7 +352,14 @@ def test_expediente_create_view_context_by_user_type(mocker):
     )
 
     mocker.patch("celiaquia.views.expediente._is_provincial", return_value=True)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_provincial",
+        return_value=True,
+    )
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=False
+    )
     mocker.patch("celiaquia.views.expediente.is_territorial_user", return_value=True)
     mocker.patch(
         "celiaquia.views.expediente._user_scope_provincias",
@@ -351,6 +370,10 @@ def test_expediente_create_view_context_by_user_type(mocker):
     assert ctx["provincias"] == ["prov"]
 
     mocker.patch("celiaquia.views.expediente._is_provincial", return_value=False)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_provincial",
+        return_value=False,
+    )
     mocker.patch(
         "celiaquia.views.expediente.Provincia.objects.order_by",
         return_value=["p1", "p2"],
@@ -370,6 +393,9 @@ def test_confirm_view_ajax_with_pending_errors_returns_400(mocker):
     )
     expediente = SimpleNamespace()
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=True
+    )
     mocker.patch(
         "celiaquia.views.expediente.get_object_or_404", return_value=expediente
     )
@@ -391,7 +417,14 @@ def test_recepcionar_view_permission_and_success_paths(mocker):
     )
     view.request = req_forbidden
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=False
+    )
     mocker.patch("celiaquia.views.expediente._user_has_permission", return_value=False)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._user_has_permission",
+        return_value=False,
+    )
     resp_forbidden = view.post(req_forbidden, pk=1)
     assert resp_forbidden.status_code == 403
 
@@ -400,14 +433,19 @@ def test_recepcionar_view_permission_and_success_paths(mocker):
     )
     view.request = req_ok
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=True
+    )
     expediente = SimpleNamespace(estado=SimpleNamespace(nombre="CONFIRMACION_DE_ENVIO"))
     mocker.patch(
         "celiaquia.views.expediente.get_object_or_404", return_value=expediente
     )
-    set_estado = mocker.patch("celiaquia.views.expediente._set_estado")
+    # La transicion la hace `ExpedienteService.recepcionar`; la vista solo
+    # resuelve permisos y traduce el resultado a HTTP.
+    recepcionar = mocker.patch.object(module.ExpedienteService, "recepcionar")
     resp_ok = view.post(req_ok, pk=1)
     assert resp_ok.status_code == 200
-    assert set_estado.called
+    assert recepcionar.called
 
 
 def test_asignar_tecnico_post_and_delete_paths(mocker):
@@ -420,6 +458,9 @@ def test_asignar_tecnico_post_and_delete_paths(mocker):
     )
     view.request = req_missing
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=True
+    )
     mocker.patch(
         "celiaquia.views.expediente.get_object_or_404",
         return_value=SimpleNamespace(estado=SimpleNamespace(nombre="RECEPCIONADO")),
@@ -472,6 +513,9 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
     subir.request = req_no_file
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
     mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=True
+    )
+    mocker.patch(
         "celiaquia.views.expediente.get_object_or_404",
         return_value=SimpleNamespace(
             asignaciones_tecnicos=SimpleNamespace(all=lambda: [])
@@ -517,7 +561,14 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
 
     mocker.patch("celiaquia.views.expediente.get_object_or_404", side_effect=_go404)
     mocker.patch("celiaquia.views.expediente._user_has_permission", return_value=True)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._user_has_permission",
+        return_value=True,
+    )
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=False
+    )
     mocker.patch("celiaquia.views.expediente.HistorialValidacionTecnica.objects.create")
     # La acción SUBSANAR crea Subsanacion + observaciones dentro de una
     # transacción: se mockean para mantener este test unitario sin DB.
@@ -592,6 +643,9 @@ def test_expediente_import_view_success_and_errors(mocker):
     expediente = SimpleNamespace(excel_masivo=object())
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
     mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=True
+    )
+    mocker.patch(
         "celiaquia.views.expediente.get_object_or_404", return_value=expediente
     )
     redirect_mock = mocker.patch(
@@ -643,6 +697,9 @@ def test_expediente_confirm_view_non_ajax_success_and_error_paths(mocker):
     expediente = SimpleNamespace()
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
     mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=True
+    )
+    mocker.patch(
         "celiaquia.views.expediente.get_object_or_404", return_value=expediente
     )
     mocker.patch(
@@ -692,6 +749,9 @@ def test_recepcionar_get_and_asignar_delete_extra_branches(mocker):
     view_asignar.request = req
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
     mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=True
+    )
+    mocker.patch(
         "celiaquia.views.expediente.get_object_or_404", return_value=SimpleNamespace()
     )
 
@@ -716,6 +776,9 @@ def test_subir_cruce_view_validation_error_and_get_not_allowed(mocker):
     view.request = req
 
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=True
+    )
     mocker.patch(
         "celiaquia.views.expediente.get_object_or_404",
         return_value=SimpleNamespace(
@@ -762,7 +825,14 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
 
     mocker.patch("celiaquia.views.expediente.get_object_or_404", side_effect=_go404)
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=False
+    )
     mocker.patch("celiaquia.views.expediente._user_has_permission", return_value=True)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._user_has_permission",
+        return_value=True,
+    )
     mocker.patch(
         "celiaquia.views.expediente.transaction.atomic",
         side_effect=lambda *a, **k: nullcontext(),
@@ -802,6 +872,9 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
     assert historial_create.call_args.kwargs["motivo"] == "Documento ilegible"
 
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=True
+    )
     eliminar_req = SimpleNamespace(
         user=_user_stub(user_id=1, is_admin=True), POST={"accion": "ELIMINAR"}
     )
@@ -817,6 +890,9 @@ def test_procesar_expediente_view_ajax_and_error_paths(mocker):
 
     expediente = SimpleNamespace(id=10)
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=True
+    )
     mocker.patch(
         "celiaquia.views.expediente.get_object_or_404", return_value=expediente
     )
@@ -858,6 +934,9 @@ def test_procesar_expediente_view_non_ajax_success_and_errors(mocker):
 
     expediente = SimpleNamespace(id=10)
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=True
+    )
     mocker.patch(
         "celiaquia.views.expediente.get_object_or_404", return_value=expediente
     )
@@ -976,7 +1055,14 @@ def test_actualizar_registro_erroneo_view_paths(mocker):
     )
     req_forbidden = SimpleNamespace(user=SimpleNamespace(), body=b"{}")
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=False
+    )
     mocker.patch("celiaquia.views.expediente._is_provincial", return_value=False)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_provincial",
+        return_value=False,
+    )
     forbidden = view.post(req_forbidden, pk=1, registro_id=2)
     assert forbidden.status_code == 403
 
@@ -998,7 +1084,10 @@ def test_actualizar_registro_erroneo_view_paths(mocker):
     )
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
     mocker.patch(
-        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=True
+    )
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._resolver_provincia_id_registro_erroneo",
         return_value=1,
     )
     mocker.patch(
@@ -1006,10 +1095,12 @@ def test_actualizar_registro_erroneo_view_paths(mocker):
         return_value="1",
     )
     mocker.patch(
-        "celiaquia.views.expediente._resolver_municipio_id_desde_localidad",
+        "celiaquia.services.registros_erroneos_service._resolver_municipio_id_desde_localidad",
         return_value="1",
     )
-    mocker.patch("celiaquia.views.expediente._validar_datos_registro_erroneo")
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._validar_datos_registro_erroneo"
+    )
     ok = view.post(req_ok, pk=1, registro_id=2)
     assert ok.status_code == 200
     assert registro.datos_raw["apellido"] == "Perez"
@@ -1037,11 +1128,11 @@ def test_actualizar_registro_erroneo_view_paths(mocker):
         body=b'{"apellido":"Perez","documento":"123"}',
     )
     mocker.patch(
-        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        "celiaquia.services.registros_erroneos_service._resolver_provincia_id_registro_erroneo",
         return_value=1,
     )
     mocker.patch(
-        "celiaquia.views.expediente._validar_datos_registro_erroneo",
+        "celiaquia.services.registros_erroneos_service._validar_datos_registro_erroneo",
         side_effect=module.ValidationError("sexo invalido"),
     )
     invalid = view.post(req_invalid, pk=1, registro_id=2)
@@ -1083,10 +1174,15 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
     # Sin permisos
     req_forbidden = SimpleNamespace(user=SimpleNamespace())
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
-    mocker.patch("celiaquia.views.expediente._is_provincial", return_value=False)
-    forbidden = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
-        view, req_forbidden, pk=1
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=False
     )
+    mocker.patch("celiaquia.views.expediente._is_provincial", return_value=False)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_provincial",
+        return_value=False,
+    )
+    forbidden = view.post(req_forbidden, pk=1)
     assert forbidden.status_code == 403
 
     # Sin registros erróneos
@@ -1094,11 +1190,22 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
         user=SimpleNamespace(profile=SimpleNamespace(provincia_id=1))
     )
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
-    mocker.patch("celiaquia.views.expediente._is_provincial", return_value=True)
-    expediente.registros_erroneos.filter.return_value = _RegistrosQS(False)
-    no_records = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
-        view, req_ok, pk=1
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=True
     )
+    mocker.patch("celiaquia.views.expediente._is_provincial", return_value=True)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_provincial",
+        return_value=True,
+    )
+    expediente.registros_erroneos.filter.return_value = _RegistrosQS(False)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service.reprocesar",
+        side_effect=module.ValidationError(
+            "No hay registros erróneos para reprocesar."
+        ),
+    )
+    no_records = view.post(req_ok, pk=1)
     assert no_records.status_code == 400
 
     # Usuario multi-provincia (provincia_id=None desde el resolver): debe continuar
@@ -1107,28 +1214,30 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
     )
     expediente.registros_erroneos.filter.return_value = _RegistrosQS(True)
     mocker.patch(
-        "celiaquia.views.expediente.EstadoLegajo.objects.get",
+        "celiaquia.services.registros_erroneos_service.EstadoLegajo.objects.get",
         return_value=SimpleNamespace(),
     )
     mocker.patch(
-        "celiaquia.views.expediente._precargar_conflictos_y_existentes_importacion",
+        "celiaquia.services.registros_erroneos_service._precargar_conflictos_y_existentes_importacion",
         return_value=(set(), {}, {}),
     )
     mocker.patch(
-        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        "celiaquia.services.registros_erroneos_service._resolver_provincia_id_registro_erroneo",
         return_value=None,
     )
     mocker.patch(
-        "celiaquia.views.expediente._obtener_provincias_permitidas_ids",
+        "celiaquia.services.registros_erroneos_service._obtener_provincias_permitidas_ids",
         return_value={1, 2},
     )
     mocker.patch(
-        "celiaquia.views.expediente._actualizar_alerta_importacion_persistente",
+        "celiaquia.services.registros_erroneos_service._actualizar_alerta_importacion_persistente",
         return_value=None,
     )
-    multi_prov = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
-        view, req_multi_prov, pk=1
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service.reprocesar",
+        return_value={"creados": 0, "errores": 0},
     )
+    multi_prov = view.post(req_multi_prov, pk=1)
     assert multi_prov.status_code == 200
 
 
@@ -1170,32 +1279,33 @@ def test_reprocesar_registros_erroneos_convierte_conflicto_en_excluido(mocker):
         return_value=expediente,
     )
     mocker.patch(
-        "celiaquia.views.expediente._can_manage_registros_erroneos", return_value=True
+        "celiaquia.services.registros_erroneos_service._can_manage_registros_erroneos",
+        return_value=True,
     )
     mocker.patch(
-        "celiaquia.views.expediente.EstadoLegajo.objects.get",
+        "celiaquia.services.registros_erroneos_service.EstadoLegajo.objects.get",
         return_value=SimpleNamespace(),
     )
     mocker.patch(
-        "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
+        "celiaquia.services.registros_erroneos_service._resolver_provincia_id_registro_erroneo",
         return_value=1,
     )
     mocker.patch(
-        "celiaquia.views.expediente._precargar_conflictos_y_existentes_importacion",
+        "celiaquia.services.registros_erroneos_service._precargar_conflictos_y_existentes_importacion",
         return_value=(set(), {}, {99: {"expediente_id": 221}}),
     )
     mocker.patch(
-        "celiaquia.views.expediente._validar_datos_registro_erroneo",
+        "celiaquia.services.registros_erroneos_service._validar_datos_registro_erroneo",
         return_value=({"documento": "123"}, None, False),
     )
     ciudadano = SimpleNamespace(pk=99, documento="123", apellido="Perez", nombre="Ana")
     mocker.patch.object(
-        module.CiudadanoService,
+        servicio.CiudadanoService,
         "get_or_create_ciudadano",
         return_value=ciudadano,
     )
     excluido_mock = mocker.patch(
-        "celiaquia.views.expediente._beneficiario_tiene_conflicto_importacion",
+        "celiaquia.services.registros_erroneos_service._beneficiario_tiene_conflicto_importacion",
         side_effect=lambda **kwargs: kwargs["excluidos"].append(
             {
                 "documento": "123",
@@ -1208,24 +1318,24 @@ def test_reprocesar_registros_erroneos_convierte_conflicto_en_excluido(mocker):
         or True,
     )
     actualizar_mock = mocker.patch(
-        "celiaquia.views.expediente._actualizar_alerta_importacion_persistente",
+        "celiaquia.services.registros_erroneos_service._actualizar_alerta_importacion_persistente",
         return_value={
             "resumen": "Importacion procesada. Se crearon 0 legajos y el expediente paso a EN ESPERA."
         },
     )
     mocker.patch(
-        "celiaquia.views.expediente.transaction.atomic",
+        "celiaquia.services.registros_erroneos_service.transaction.atomic",
         side_effect=lambda: nullcontext(),
     )
-    mocker.patch("celiaquia.views.expediente.timezone.now", return_value="ahora")
-
-    request = SimpleNamespace(user=SimpleNamespace())
-    response = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
-        view, request, pk=1
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service.timezone.now",
+        return_value="ahora",
     )
 
-    payload = json.loads(response.content)
-    assert response.status_code == 200
+    # `reprocesar` abre su propia transaccion: se llama al `__wrapped__` para
+    # ejercitar la logica sin tocar la base.
+    payload = servicio.reprocesar.__wrapped__(expediente, SimpleNamespace())
+
     assert payload["creados"] == 0
     assert payload["errores"] == 0
     assert payload["excluidos"] == 1
@@ -1246,7 +1356,14 @@ def test_eliminar_registro_erroneo_view_paths(mocker):
     )
     req_forbidden = SimpleNamespace(user=SimpleNamespace())
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=False
+    )
     mocker.patch("celiaquia.views.expediente._is_provincial", return_value=False)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_provincial",
+        return_value=False,
+    )
     forbidden = view.post(req_forbidden, pk=1, registro_id=2)
     assert forbidden.status_code == 403
 
@@ -1257,6 +1374,9 @@ def test_eliminar_registro_erroneo_view_paths(mocker):
     )
     req_ok = SimpleNamespace(user=SimpleNamespace())
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch(
+        "celiaquia.services.registros_erroneos_service._is_admin", return_value=True
+    )
     ok = view.post(req_ok, pk=1, registro_id=2)
     assert ok.status_code == 200
     assert registro.delete.called

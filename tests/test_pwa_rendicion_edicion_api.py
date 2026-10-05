@@ -15,7 +15,7 @@ from tests.test_pwa_comedores_api import (
     _token_client,
     comedores,
 )
-from users.models import AccesoComedorPWA
+from pwa.models import AccesoComedorPWA
 
 
 @pytest.fixture(autouse=True)

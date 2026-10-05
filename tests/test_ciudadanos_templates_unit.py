@@ -50,11 +50,21 @@ def test_ciudadano_detail_template_incluye_pestana_vat():
     )
 
     content = template_path.read_text(encoding="utf-8")
+    seccion = (
+        repo_root
+        / "backends"
+        / "vat"
+        / "VAT"
+        / "templates"
+        / "vat"
+        / "ciudadano_detalle_seccion.html"
+    ).read_text(encoding="utf-8")
 
     assert 'href="#vat"' in content
     assert 'id="vat"' in content
-    assert "Cursos asignados" in content
-    assert "Créditos actuales" in content
+    assert "contribuciones_html.vat" in content
+    assert "Cursos asignados" in seccion
+    assert "Créditos actuales" in seccion
 
 
 def test_ciudadano_detail_template_usa_el_resumen_publico_de_celiaquia():
@@ -69,9 +79,19 @@ def test_ciudadano_detail_template_usa_el_resumen_publico_de_celiaquia():
     )
 
     content = template_path.read_text(encoding="utf-8")
+    seccion = (
+        repo_root
+        / "backends"
+        / "celiaquia"
+        / "celiaquia"
+        / "templates"
+        / "celiaquia"
+        / "ciudadano_detalle_seccion.html"
+    ).read_text(encoding="utf-8")
 
-    assert "celiaquia_resumen.legajo_actual" in content
-    assert "celiaquia_resumen.historial" in content
+    assert "contribuciones_html.celiaquia" in content
+    assert "celiaquia_resumen.legajo_actual" in seccion
+    assert "celiaquia_resumen.historial" in seccion
     assert "expediente_actual" not in content
     assert "expedientes_celiaquia" not in content
 

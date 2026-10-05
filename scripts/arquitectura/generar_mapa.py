@@ -75,6 +75,8 @@ ZONAS = [
             "historial",
             "healthcheck",
             "sentry",
+            "organizaciones",
+            "catalogo_intervenciones",
         ],
     },
     {
@@ -91,7 +93,7 @@ ZONAS = [
             "comedores",
             "admisiones",
             "relevamientos",
-            "organizaciones",
+            "gestion_organizaciones",
             "duplas",
             "intervenciones",
             "acompanamientos",
@@ -120,7 +122,14 @@ ZONAS = [
         "id": "transversal",
         "nombre": "Servicios al usuario",
         "detalle": "Atraviesan dominios sin ser dueños de ninguno.",
-        "apps": ["dashboard", "comunicados", "encuestas", "ocr", "insumos"],
+        "apps": [
+            "dashboard",
+            "comunicados",
+            "encuestas",
+            "ocr",
+            "insumos",
+            "usuarios",
+        ],
     },
     {
         "id": "integracion",
@@ -312,12 +321,28 @@ EXCLUIR_ARCHIVO_RE = re.compile(
 )
 
 
+def _raices_de_codigo() -> list[Path]:
+    """Raíz, ``kernel/`` y cada ``backends/<vertical>/`` (ver config/__init__.py)."""
+    backends = RAIZ / "backends"
+    extra = (
+        sorted(p for p in backends.iterdir() if p.is_dir()) if backends.is_dir() else []
+    )
+    return [RAIZ, RAIZ / "kernel", *extra]
+
+
 def dir_de_app(app: str) -> Path:
-    """Carpeta de una app: raíz del repo o ``kernel/`` (ver config/__init__.py)."""
-    for base in (RAIZ, RAIZ / "kernel"):
+    """Carpeta de una app dentro de alguna raíz de código."""
+    for base in _raices_de_codigo():
         if (base / app).is_dir():
             return base / app
     return RAIZ / app
+
+
+def _registro_backends() -> dict:
+    try:
+        return json.loads(_texto(RAIZ / "config" / "backends.json") or "{}")
+    except json.JSONDecodeError:
+        return {}
 
 
 def _texto(ruta: Path) -> str:
@@ -350,12 +375,16 @@ def _git(*args: str) -> str:
 def apps_instaladas() -> list[str]:
     """Apps propias de INSTALLED_APPS, en el orden en que estan declaradas."""
     contenido = _texto(RAIZ / "config" / "settings.py")
-    bloque = re.search(r"INSTALLED_APPS\s*=\s*\[(.*?)\n\]", contenido, re.S)
-    if not bloque:
-        return []
+    crudos: list[str] = []
+    for nombre in ("KERNEL_APPS", "CORE_APPS"):
+        bloque = re.search(rf"^{nombre}\s*=\s*\[(.*?)\n\]", contenido, re.S | re.M)
+        if bloque:
+            crudos += re.findall(r'"([^"]+)"', bloque.group(1))
+    for spec in _registro_backends().values():
+        crudos += spec.get("apps", [])
 
     apps: list[str] = []
-    for crudo in re.findall(r'"([^"]+)"', bloque.group(1)):
+    for crudo in crudos:
         paquete = crudo.split(".")[0]
         if (
             paquete in {"django", "rest_framework"}
@@ -377,6 +406,10 @@ def apps_instaladas() -> list[str]:
 def rutas_montadas() -> dict[str, dict[str, list[str]]]:
     """Prefijos web y API por app, leidos de config/urls.py."""
     contenido = _texto(RAIZ / "config" / "urls.py")
+    for spec in _registro_backends().values():
+        runtime = spec.get("urlconf", "").split(".")[0]
+        if runtime:
+            contenido += "\n" + _texto(dir_de_app(runtime) / "urls.py")
     rutas: dict[str, dict[str, list[str]]] = {}
     patron = re.compile(r'path\(\s*"([^"]*)"\s*,\s*include\(\s*"([^"]+)"\s*\)')
     for prefijo, modulo in patron.findall(contenido):

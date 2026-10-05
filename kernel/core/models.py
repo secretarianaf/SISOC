@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -95,22 +96,40 @@ class Nacionalidad(models.Model):
         verbose_name_plural = "Nacionalidades"
 
 
+def organismo_model():
+    """Modelo de organización para ``Programa.organismo_id``.
+
+    ``None`` en los procesos que no instalan ``organizaciones`` (backends por
+    vertical, ver config/backends.json).
+    """
+    if not apps.is_installed("organizaciones"):
+        return None
+    return apps.get_model("organizaciones", "Organizacion")
+
+
 class Programa(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
     estado = models.BooleanField(default=True)
     observaciones = models.CharField(max_length=500, null=True, blank=True)
-    organismo = models.ForeignKey(
-        "organizaciones.Organizacion",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="programas",
-        verbose_name="Organismo",
+    # Id de ``organizaciones.Organizacion`` y no una FK: se cortó cuando
+    # ``organizaciones`` era del core (hoy está en el kernel). La columna y la FK
+    # física en la DB siguen iguales (migración core 0010); el SET_NULL al
+    # borrar la organización lo hace ``organizaciones.signals``.
+    organismo_id = models.IntegerField(
+        null=True, blank=True, db_index=True, verbose_name="Organismo"
     )
     descripcion = models.TextField(null=True, blank=True, verbose_name="Descripción")
 
     def __str__(self):
         return self.nombre
+
+    @property
+    def organismo(self):
+        """La organización del programa, o ``None`` si este servicio no la tiene."""
+        modelo = organismo_model()
+        if not self.organismo_id or modelo is None:
+            return None
+        return modelo.objects.filter(pk=self.organismo_id).first()
 
     def clean(self):
         self.nombre = self.nombre.capitalize()

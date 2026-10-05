@@ -1,9 +1,12 @@
 from pathlib import Path
 
+from django.db.migrations.loader import MigrationLoader
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEPLOY_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "deploy.yml"
 VERIFIED_DEPLOY = REPO_ROOT / "scripts" / "operacion" / "deploy_verified.sh"
+DEPLOY_COMPOSE = REPO_ROOT / "docker-compose.deploy.yml"
 
 
 def _workflow() -> str:
@@ -74,6 +77,20 @@ def test_wrapper_reconstruye_y_verifica_revision_anterior():
     )
     assert "if ! verify_stack; then" in script
     assert "Las migraciones de base de datos no se revierten automaticamente" in script
+
+
+def test_compose_deploy_deja_tiempo_para_el_arranque_de_hml():
+    compose = DEPLOY_COMPOSE.read_text(encoding="utf-8")
+
+    assert "start_period: 10m" in compose
+
+
+def test_grafo_de_migraciones_users_tiene_una_sola_hoja():
+    loader = MigrationLoader(None, ignore_no_migrations=True)
+
+    # Una sola hoja: dos ramas de migraciones de users sin merge rompen el
+    # deploy. No se fija el nombre para no tocar este test en cada migración.
+    assert len(loader.graph.leaf_nodes("users")) == 1, loader.graph.leaf_nodes("users")
 
 
 def test_promociones_usan_github_app_y_sha_desplegado():

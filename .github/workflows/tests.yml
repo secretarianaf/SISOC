@@ -264,6 +264,55 @@ jobs:
                       }
                       core.info("Evidencia de calidad de release verificada.");
 
+    service_images:
+        # Imagenes de deploy por servicio (docs/registro/decisiones/
+        # 2026-09-30-monorepo-kernel-backends.md): el core no contiene codigo
+        # de backends y cada backend no contiene apps del core.
+        runs-on: ubuntu-latest
+        env:
+            CHECK_ENV: >-
+                -e DJANGO_SECRET_KEY=ci-secret-key -e DJANGO_DEBUG=False
+                -e WAIT_FOR_DB=false -e DATABASE_HOST=mysql -e DATABASE_PORT=3306
+                -e DATABASE_USER=root -e DATABASE_PASSWORD=x -e DATABASE_NAME=x
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v6.0.2
+
+            - name: Construir imagenes core, backend y migrador
+              run: |
+                  docker build -q -f docker/django/Dockerfile --target core -t sisoc-ci/core .
+                  docker build -q -f docker/django/Dockerfile --target migrator -t sisoc-ci/migrator .
+                  for backend in $(python3 -c 'import json; print(" ".join(json.load(open("config/backends.json"))))'); do
+                      docker build -q -f docker/django/Dockerfile --target backend \
+                          --build-arg BACKEND="$backend" -t "sisoc-ci/backend-$backend" .
+                  done
+
+            - name: Verificar aislamiento y arranque
+              run: |
+                  set -euo pipefail
+                  # El core trae solo su cluster (backends/sisoc_core), ningún vertical.
+                  docker run --rm $CHECK_ENV sisoc-ci/core sh -c 'test "$(ls /sisoc/backends)" = sisoc_core'
+                  docker run --rm $CHECK_ENV sisoc-ci/core python manage.py check
+                  python3 - <<'PY'
+                  import json, subprocess
+                  backends = json.load(open("config/backends.json"))
+                  env = ["-e", "DJANGO_SECRET_KEY=ci", "-e", "WAIT_FOR_DB=false"]
+                  def ok(image, *cmd, settings=None):
+                      extra = ["-e", f"DJANGO_SETTINGS_MODULE={settings}"] if settings else []
+                      return subprocess.run(["docker", "run", "--rm", *env, *extra, image, *cmd]).returncode == 0
+                  core_apps = ["comedores", "gestion_organizaciones", "duplas", "pwa", "usuarios"]
+                  for name, spec in backends.items():
+                      image = f"sisoc-ci/backend-{name}"
+                      settings = spec["urlconf"].split(".")[0] + ".settings"
+                      assert ok(image, "python", "manage.py", "check", settings=settings), name
+                      for app in spec["apps"]:
+                          assert not ok("sisoc-ci/core", "python", "-c", f"import config, {app}"), f"core trae {app}"
+                      for app in core_apps:
+                          assert not ok(image, "python", "-c", f"import config, {app}", settings=settings), f"{name} trae {app}"
+                  print("Aislamiento verificado")
+                  PY
+                  docker run --rm $CHECK_ENV sisoc-ci/migrator python manage.py makemigrations --check --dry-run
+
     deploy_guard:
         if: ${{ always() && github.event_name == 'pull_request' }}
         runs-on: ubuntu-latest
@@ -273,6 +322,7 @@ jobs:
             - pytest
             - mysql_compat
             - release_quality
+            - service_images
         steps:
             - name: Checkout code
               uses: actions/checkout@v6.0.2
@@ -303,6 +353,7 @@ jobs:
                         "mysql_compat",
                         "release_quality",
                         "frontend",
+                        "service_images",
                       ];
                       if (baseRef === "main") {
                         required.push("release_sanity");

@@ -15,12 +15,12 @@ from django.db import OperationalError
             "process_next_ciudadanos_import_job",
         ),
         (
-            "users.services_user_import_jobs",
+            "usuarios.services_user_import_jobs",
             "run_user_import_jobs_worker",
             "process_next_user_import_job",
         ),
         (
-            "users.services_bulk_credentials_jobs",
+            "usuarios.services_bulk_credentials_jobs",
             "run_bulk_credentials_jobs_worker",
             "process_next_bulk_credentials_job",
         ),

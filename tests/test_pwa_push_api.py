@@ -15,7 +15,7 @@ from rendicioncuentasmensual.services import (
     RendicionCuentaMensualService,
     RendicionProcesoService,
 )
-from users.models import AccesoComedorPWA
+from pwa.models import AccesoComedorPWA
 
 
 def _create_pwa_user(*, comedor, username, role=AccesoComedorPWA.ROL_REPRESENTANTE):

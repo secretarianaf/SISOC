@@ -8,3 +8,18 @@ class CoreConfig(AppConfig):
     def ready(self):
         """Importa las señales de cache cuando la app está lista."""
         import core.cache_utils  # noqa: F401, pylint: disable=import-outside-toplevel,unused-import
+        from core.services.sidebar_access import (  # pylint: disable=import-outside-toplevel
+            registrar_predicado_sidebar,
+        )
+        from iam.roles_vat import (  # pylint: disable=import-outside-toplevel
+            es_usuario_solo_vat,
+        )
+
+        from iam.roles_cdi import (  # pylint: disable=import-outside-toplevel
+            es_usuario_solo_cdi_local,
+        )
+
+        # Reglas de menú de kernel ("solo VAT", "CDI local"): valen en el core
+        # y en cada backend.
+        registrar_predicado_sidebar("vat", es_usuario_solo_vat)
+        registrar_predicado_sidebar("cdi_local", es_usuario_solo_cdi_local)

@@ -1,16 +1,17 @@
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
-from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path, re_path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
     SpectacularRedocView,
 )
-from config.views import VatSpectacularAPIView
+from config.urls_dev import dev_urlpatterns
+from core.backend_proxy import backend_proxy_urlpatterns
+from core.legacy_redirects import redirecciones_legacy
+from core.url_registry import stub_urlpatterns
 from core.v2_frontend import frontend_v2
-from users.views import (
+from usuarios.views import (
     PasswordResetConfirmCustomView,
     SisocPasswordResetCompleteView,
     SisocPasswordResetDoneView,
@@ -19,6 +20,20 @@ from users.views import (
 )
 
 urlpatterns = [
+    # Verticales que corren en su propio backend (config/backends.json).
+    *backend_proxy_urlpatterns(),
+    # SOLO compatibilidad: URLs de Centro de Familia anteriores a su prefijo
+    # propio. El código nuevo usa {% url %}/reverse() (ver core.legacy_redirects).
+    *redirecciones_legacy(
+        "centrodefamilia/",
+        [
+            "centros/",
+            "actividades/",
+            "ajax/actividades/",
+            "informecabal/",
+            "beneficiarios/",
+        ],
+    ),
     re_path(
         r"^v2/(?P<module>[a-z0-9_-]+)(?:/(?P<asset_path>.*))?$",
         frontend_v2,
@@ -43,85 +58,58 @@ urlpatterns = [
     ),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
-    path("", include("users.urls")),
+    path("", include("usuarios.urls")),
     path("", include("django.contrib.auth.urls")),
     path("", include("core.urls")),
     path("", include("dashboard.urls")),
     path("", include("comedores.urls")),
-    path("", include("organizaciones.urls")),
+    path("", include("gestion_organizaciones.urls")),
     path("", include("duplas.urls")),
     path("", include("audittrail.urls")),
     path("", include("ciudadanos.urls")),
     path("", include("admisiones.urls")),
-    path("", include("centrodefamilia.urls")),
-    path("", include("VAT.urls")),
     path("", include("healthcheck.urls")),
-    path("", include("centrodeinfancia.urls")),
-    path("", include("ver_para_ser_libre.urls")),
-    path("", include("pas.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
     path("expedientespagos/", include("expedientespagos.urls")),
     path("", include("rendicioncuentasfinal.urls")),
     path("", include("relevamientos.urls")),
-    path("", include("datacalle.urls")),
-    path("", include("dispositivos.urls")),
     path("", include("insumos.urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
-    path("", include("celiaquia.global_urls")),
-    path("celiaquia/", include("celiaquia.urls")),
     # API URLs
-    path("api/users/", include("users.api_urls")),
-    path("api/vpsl/", include("ver_para_ser_libre.api_urls")),
+    path("api/users/", include("usuarios.api_urls")),
     path("api/comedores/", include("comedores.api_urls")),
     path("api/territorial/", include("comedores.api_urls_territorial")),
-    path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
-    path("api/vat/", include("VAT.api_urls")),
     path("api/comunicados/", include("comunicados.api_urls")),
     path("api/renaper/", include("core.api_urls")),
     path("api/pwa/", include("pwa.api_urls")),
-    path("api/datacalle/", include("datacalle.api_urls")),
-    path("api/ticketera/", include("ticketera.api_urls")),
     path("", include("importarexpediente.urls")),
     path("", include("comunicados.urls")),
     path("ocr/", include("ocr.urls")),
     path("", include("encuestas.urls")),
 ]
 
-if settings.DEBUG and not getattr(settings, "RUNNING_TESTS", False):
-    urlpatterns += [path("__debug__/", include("debug_toolbar.urls"))]
-
-    if getattr(settings, "ENABLE_SILK", False):
-        urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
-
-    urlpatterns += staticfiles_urlpatterns()
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += dev_urlpatterns()
 
 if getattr(settings, "ENABLE_API_DOCS", False):
     urlpatterns += [
         # Swagger/OpenAPI
         path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-        path("api/schema/VAT/", VatSpectacularAPIView.as_view(), name="schema-vat"),
         path(
             "api/docs/",
             SpectacularSwaggerView.as_view(url_name="schema"),
             name="swagger-ui",
         ),
         path(
-            "api/docs/VAT/",
-            SpectacularSwaggerView.as_view(url_name="schema-vat"),
-            name="swagger-ui-vat",
-        ),
-        path(
             "api/redoc/",
             SpectacularRedocView.as_view(url_name="schema"),
             name="redoc",
         ),
-        path(
-            "api/redoc/VAT/",
-            SpectacularRedocView.as_view(url_name="schema-vat"),
-            name="redoc-vat",
-        ),
     ]
+
+# Patrones propios del core. Los nombres de los backends se agregan como stubs
+# solo-reverse (core/url_registry.py); config/urls_all.py usa los propios.
+core_urlpatterns = urlpatterns
+urlpatterns = core_urlpatterns + stub_urlpatterns(core_urlpatterns)
 
 handler404 = "config.views.page_not_found"
 handler500 = "config.views.server_error"

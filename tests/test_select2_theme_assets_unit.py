@@ -26,9 +26,9 @@ def test_select2_theme_cubre_variantes_bootstrap():
 
 def test_templates_migrados_no_cargan_override_legacy_de_select2():
     templates = (
-        "kernel/users/templates/group/group_form.html",
-        "kernel/users/templates/user/user_form.html",
-        "relevamientos/templates/relevamiento_form.html",
+        "backends/sisoc_core/usuarios/templates/group/group_form.html",
+        "backends/sisoc_core/usuarios/templates/user/user_form.html",
+        "backends/sisoc_core/relevamientos/templates/relevamiento_form.html",
     )
 
     for template_path in templates:

@@ -11,6 +11,7 @@ from functools import lru_cache
 from importlib import import_module
 from typing import Callable
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.exceptions import FieldDoesNotExist
 
@@ -36,8 +37,19 @@ class TrackedModelDefinition:
         return self.model_getter()
 
     def get_model_key(self):
+        # Clave estática cuando existe: el visor filtra LogEntry por
+        # (app_label, model_name) sin importar el modelo, que puede vivir en
+        # otro backend (config/backends.json) y no estar en este proceso.
+        static_key = getattr(self.model_getter, "model_key", None)
+        if static_key:
+            return static_key
         model = self.get_model()
         return model._meta.app_label, model._meta.model_name
+
+    def is_installed(self):
+        """Si el modelo pertenece a una app instalada en este proceso."""
+        static_key = getattr(self.model_getter, "model_key", None)
+        return static_key is None or apps.is_installed(static_key[0])
 
     def get_excluded_fields(self):
         model = self.get_model()
@@ -52,7 +64,18 @@ class TrackedModelDefinition:
 
 
 def _model_getter(dotted_path: str):
-    return lambda: _import_model(dotted_path)
+    """Getter perezoso con la clave ``(app_label, model_name)`` precalculada.
+
+    Asume que el app label es el paquete raíz, como en todos los modelos de
+    esta lista.
+    """
+    module_path, class_name = dotted_path.rsplit(".", 1)
+
+    def getter():
+        return _import_model(dotted_path)
+
+    getter.model_key = (module_path.split(".")[0], class_name.lower())
+    return getter
 
 
 @lru_cache(maxsize=1)

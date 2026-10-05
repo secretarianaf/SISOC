@@ -16,6 +16,7 @@
 - `docs/operacion/integraciones.md`: conexiones con servicios externos, caches y manejo de estáticos/media.
 - `docs/operacion/operaciones.md`: tareas recurrentes, cron jobs y endpoints de health de producción.
 - `docs/operacion/infraestructura.md`: inventario de infraestructura operativo (entornos, arquitectura, networking, deploy, observabilidad, seguridad y roadmap infra).
+- `docs/operacion/backends_por_servicio.md`: backends por vertical (core + proxy + backend), deploy selectivo, migrador único y cómo sumar un backend.
 - `docs/operacion/ver_para_ser_libre_react.md`: arquitectura, arranque, rutas y límites del MVP React/Django de VPSL.
 - `docs/operacion/deploy_automatizado.md`: runbook de deploy por GitHub Actions, runners self-hosted, promoción y rollback por tag estable.
 - `scripts/infra/install_qa_pwa_nginx.sh`: preflight e instalación transaccional de las rutas PWA en el Nginx HTTP de QA.
@@ -72,6 +73,8 @@
 - `docs/flujos/derivar_nomina_centros.md`: flujo y reglas para derivar beneficiarios entre centros (comedores y CDI).
 - `docs/flujos/rendiciones_mensuales_proyectos.md`: estados de revisión, subsanaciones y asociación de rendiciones a proyectos.
 - `docs/integraciones/ticketera_api.md`: contrato server-to-server de la API Ticketera (5 endpoints, dirigido al desarrollador de la Ticketera).
+- `backends/dispositivos/datacalle/instrumento/README.md`: instrumento vigente de DataCalle (versión, cómo sincronizarlo con el contrato de la app y qué no se puede mapear entre versiones).
+- `docs/registro/cambios/2026-10-01-datacalle-instrumento-4.0.0.md`: reemplazo total del instrumento (4.0.0), convivencia con los casos ya guardados y decisiones abiertas con el área.
 
 ### 6. IA, planes y registro spec-as-source
 - `docs/agentes/guia.md`: guía rápida para asistentes automáticos y flujo de documentación.
@@ -94,6 +97,6 @@
 ## Contexto mínimo
 - Stack: Django + MySQL con despliegue vía Docker Compose. Evidencia: README.md:1-4 y docker-compose.yml:1-34.
 - Variables de entorno documentadas en `.env.example` (incluye DB, GESTIONAR, RENAPER, puertos y dominio). Evidencia: .env.example:1-51.
-- Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: comedores/tasks.py, relevamientos/tasks.py, core/integrations/renaper.py, core/services/renaper.py.
+- Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: backends/sisoc_core/comedores/tasks.py, backends/sisoc_core/relevamientos/tasks.py, kernel/core/integrations/renaper.py, kernel/core/services/renaper.py.
 
 - `docs/implementaciones/pas_control_mensual_celery.md`: funcionamiento, lotes, programación mensual, operación y retiro cron PAS.

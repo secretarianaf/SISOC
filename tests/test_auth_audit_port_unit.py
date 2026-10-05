@@ -1,6 +1,6 @@
 import pytest
 
-from users import auth_audit
+from usuarios import auth_audit
 
 
 def test_registrar_evento_auth_requiere_un_persistidor(monkeypatch):

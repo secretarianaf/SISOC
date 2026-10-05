@@ -17,6 +17,7 @@ MOBILE_DIR=""
 MOBILE_SCRIPT=""
 MOBILE_HTTPS_REMOTE="https://github.com/secretarianaf/Espacios-Comunitarios.git"
 EXPECTED_REVISION=""
+DIFF_BASE=""
 
 usage() {
   cat <<'USAGE'
@@ -37,6 +38,9 @@ Opciones:
                             con la esperada para ENVIRONMENT.
   --skip-pull               No ejecuta git fetch/pull; solo reinicia Docker.
   --expected-revision SHA   Exige que la revision a desplegar sea exactamente SHA.
+  --diff-base SHA           Revision que corre hoy: con ella se decide que
+                            servicios desplegar (deploy_targets.py). Sin
+                            ella, el despliegue es completo.
                             Si origin o HEAD ya avanzaron, bloquea antes de bajar Docker.
   --with-mobile             Tambien despliega SISOC-Mobile.
   --without-mobile          Solo backend; las PWA se coordinan por separado.
@@ -76,6 +80,24 @@ run() {
   fi
 
   "$@"
+}
+
+fetch_root_with_retry() {
+  local attempts=3
+  local attempt
+
+  for ((attempt = 1; attempt <= attempts; attempt++)); do
+    if run git -C "$ROOT_DIR" fetch origin --prune; then
+      return 0
+    fi
+
+    if ((attempt < attempts)); then
+      log "git fetch fallo ($attempt/$attempts); reintentando en 5 segundos."
+      sleep 5
+    fi
+  done
+
+  fail "No se pudo actualizar origin/$CURRENT_BRANCH luego de $attempts intentos."
 }
 
 read_env_value() {
@@ -135,6 +157,11 @@ parse_args() {
         shift
         [[ $# -gt 0 ]] || fail "--expected-revision requiere un SHA."
         EXPECTED_REVISION="$1"
+        ;;
+      --diff-base)
+        shift
+        [[ $# -gt 0 ]] || fail "--diff-base requiere un SHA."
+        DIFF_BASE="$1"
         ;;
       --with-mobile) WITH_MOBILE=1 ;;
       --without-mobile) WITHOUT_MOBILE=1 ;;
@@ -330,7 +357,7 @@ main() {
   fi
 
   if [[ "$SKIP_PULL" -eq 0 ]]; then
-    run git -C "$ROOT_DIR" fetch origin --prune
+    fetch_root_with_retry
   fi
 
   validate_expected_revision
@@ -354,15 +381,62 @@ main() {
     || fail "No pude resolver la revision a desplegar."
   export VPSL_IMAGE_TAG="sisoc/front-vpsl:$deployed_revision"
   export VITE_RELEASE_SHA="$deployed_revision"
+  # Tag de las imágenes con código (core, backends, migrador): una por SHA.
+  export SISOC_RELEASE_SHA="$deployed_revision"
 
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" config -q
 
-  # Construir el front antes de detener los servicios anteriores.
-  run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" build front_vpsl
+  # Qué desplegar: completo, solo algunos servicios o nada (deploy_targets.py).
+  MODO=completo
+  SERVICIOS=""
+  MIGRAR=1
+  if [[ -n "$DIFF_BASE" ]]; then
+    eval "$(python3 "$ROOT_DIR/scripts/operacion/deploy_targets.py" "$DIFF_BASE" "$deployed_revision")"
+  fi
+  log "plan=$MODO servicios='${SERVICIOS}' migrar=$MIGRAR"
+  local -a compose=("${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR")
+  # @core: los servicios con imagen sisoc/core en este entorno (web y workers).
+  # Si no se pueden resolver, no se arriesga un deploy parcial.
+  if [[ " $SERVICIOS " == *" @core "* ]]; then
+    local core_services=""
+    core_services="$("${compose[@]}" config --format json | python3 "$ROOT_DIR/scripts/operacion/deploy_targets.py" --servicios-core)" || core_services=""
+    if [[ -z "$core_services" ]]; then
+      log "No se pudieron resolver los servicios del core: deploy completo."
+      MODO=completo
+    else
+      SERVICIOS="$(echo " $SERVICIOS " | sed "s/ @core / $core_services /")"
+      log "servicios del core: $core_services"
+    fi
+  fi
+  local -a servicios=()
+  read -r -a servicios <<< "$SERVICIOS"
 
-  run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" "${DOWN_ARGS[@]}"
-
-  run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" up -d --build
+  case "$MODO" in
+    ninguno)
+      log "Sin servicios que desplegar en este rango."
+      ;;
+    selectivo)
+      # Solo se reconstruyen y recrean los servicios afectados: el resto sigue
+      # corriendo con su imagen anterior.
+      run "${compose[@]}" build "${servicios[@]}"
+      if [[ "$MIGRAR" -eq 1 ]]; then
+        run "${compose[@]}" --profile migrate build migrator
+        run "${compose[@]}" --profile migrate run --rm migrator
+      fi
+      run "${compose[@]}" up -d --no-deps "${servicios[@]}"
+      ;;
+    completo)
+      # Construir todo antes de detener los servicios anteriores.
+      run "${compose[@]}" build
+      run "${compose[@]}" --profile migrate build migrator
+      run "${compose[@]}" "${DOWN_ARGS[@]}"
+      run "${compose[@]}" --profile migrate run --rm migrator
+      run "${compose[@]}" up -d
+      ;;
+    *)
+      fail "Plan de deploy desconocido: $MODO"
+      ;;
+  esac
 
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" ps
 

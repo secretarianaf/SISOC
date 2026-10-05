@@ -72,10 +72,13 @@ aceptadas.
      requirements, se despliega todo.
 
    El rollback de un vertical es volver a desplegar su imagen del SHA anterior.
-9. **Migraciones.** Cada backend migra solo su app; el core migra el kernel y
-   su cluster. Las data migrations de `users` que dependen de verticales
-   (grupos de CDI, CDF y VAT) se pasan a migraciones idempotentes dentro de
-   cada vertical.
+9. **Migraciones: un único job de migración** (revisado el 2026-10-01). Las
+   migraciones del kernel dependen de migraciones de dominio (por ejemplo,
+   `users.0031` depende de `centrodefamilia.0014`), así que un backend no
+   puede cargar el grafo sin el cluster. Con la DB compartida, el grafo real
+   es uno solo: un job *migrador*, con todo el repo y `config.settings_all`,
+   corre antes de actualizar cualquier servicio. Los servicios web nunca
+   migran. Reemplaza "cada backend migra solo su app".
 10. **Datacalle entra en el backend de Dispositivos**, por velocidad. Comparten
     deploy.
 11. **Media por vertical.** Los archivos nuevos se suben a
@@ -84,6 +87,43 @@ aceptadas.
     ejecuta con autorización explícita, fuera de horario.
 12. **Producción.** Ningún cambio, deploy ni migración se aplica en PRD sin
     autorización explícita de juanikitro y fuera del horario de uso.
+
+13. **`kernel/users` es identidad y permisos** (2026-10-01). La gestión de
+    usuarios (pantallas, formularios, importación masiva y API de login de
+    las PWAs) es del core y vive en la app `usuarios`. Los accesos PWA
+    (`AccesoComedorPWA`, `AccesoOrganizacionPWA`, `AuditAccesoComedorPWA`,
+    `CoordinadorEquipoTecnicoPWA`) y su lógica pasan a `pwa`. Conservan sus
+    tablas `users_*` y la migración es solo de estado. Sin esto, cualquier
+    backend que instale `users` necesitaba `comedores`, `organizaciones` y
+    `duplas`.
+
+14. **Implementación de la Ola 1** (2026-10-01, *recomendación del agente*).
+    Los nombres de URL entre servicios se resuelven con un registro generado
+    (`config/url_registry.json`), así `reverse()` funciona sin tocar
+    templates. Los ítems del menú que aporta una app del core se registran
+    (`core.services.sidebar_items`). Los estáticos los recolecta el core y
+    los backends los leen en modo solo lectura. Detalle operativo:
+    `docs/operacion/backends_por_servicio.md`.
+
+15. **Datos maestros compartidos al kernel** (2026-10-01, *recomendación del
+    agente*). CDI y CDF necesitan `organizaciones` y los catálogos de
+    intervenciones. En vez de duplicarlos o de que esos backends instalen el
+    cluster de Comedores, `organizaciones` pasa a `kernel/organizaciones` y
+    los catálogos a `kernel/catalogo_intervenciones`. Lo que se relaciona con
+    comedores (pantallas de organizaciones y `Firmante`) queda en el core, en
+    `gestion_organizaciones`. Las migraciones son solo de estado y conservan
+    tablas y content types.
+
+16. **`backends/sisoc_core/` tiene todo el código propio del core** (2026-10-01,
+    *recomendación del agente*). Además del cluster de Comedores, incluye los
+    servicios que solo corre el core: dashboard, comunicados, encuestas, OCR,
+    insumos, historial, PWA y usuarios. Así, la raíz del repo queda con
+    configuración (`config/`), `kernel/`, `backends/`, `frontends/` y recursos
+    compartidos (`templates/`, `static/`, `docs/`, `scripts/`, `tests/`). El
+    core no es un backend detrás del proxy, sino el proceso de entrada. Por
+    eso no está en `config/backends.json`. Un cambio solo en sus apps recrea
+    solo los servicios con imagen `sisoc/core` (2026-10-02): ninguna imagen
+    de vertical incluye `sisoc_core`, así que los backends no se tocan.
 
 ## Deuda aceptada (revisar en el futuro)
 
@@ -120,8 +160,12 @@ aceptadas.
   imagen por servicio, deploy selectivo. Piloto con Dispositivos y Datacalle en
   QA y HML. Cortar las dependencias de `core` hacia `comedores`,
   `organizaciones` y otras, para que el kernel no arrastre el cluster.
-- **Ola 2:** VPSL, PAS, CDI, CDF, VAT y Celiaquía, un PR por vertical.
-- **Ola 3:** mover el cluster de Comedores a `backends/sisoc_core/` y cerrar
+- **Ola 2:** VPSL, PAS, VAT y Celiaquía (#2633). CDI y CDF quedaron para
+  la Ola 3, porque antes había que pasar `organizaciones` y los catálogos de
+  intervenciones al kernel (decisión 15).
+- **Ola 3:** CDI y CDF, con `organizaciones` y los catálogos al kernel.
+- **Ola 4:** mover el código propio del core a `backends/sisoc_core/`
+  (decisión 16) y cerrar
   #2309, #2251 y #1931.
 
 ## Criterios de aceptación

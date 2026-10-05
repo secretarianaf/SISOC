@@ -46,7 +46,7 @@ los datos de identidad a los campos del formulario.
   Django ignora lo que llegue para ellos, así que no se pueden alterar desde el
   navegador. Token ajeno, de otro bloque, alterado o vencido = carga manual.
 - Los campos verificados se guardan en `campos_verificados_renaper`, nuevo
-  `JSONField` en `CentroDeInfancia` y `NominaCentroInfancia` (migración 0049).
+  `JSONField` en `CentroDeInfancia` y `NominaCentroInfancia` (migración 0050).
   En las ediciones siguientes quedan bloqueados.
 - `CamposRenaperFormMixin` (en `forms.py`) aplica el bloqueo. Está en
   `NominaCentroInfanciaBaseForm`, así que también lo respeta la edición rápida

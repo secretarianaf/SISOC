@@ -1,6 +1,6 @@
 import pytest
 
-from users import pwa_import_access
+from usuarios import pwa_import_access
 
 
 def test_resolver_accesos_pwa_importacion_requiere_proveedor(monkeypatch):

@@ -12,6 +12,14 @@ class NoCountPage:
         self.paginator = paginator
         self._has_next_page = has_next_page
 
+    # Igual que django.core.paginator.Page: los templates iteran la página
+    # directamente (p. ej. ``{% for centro in centros %}`` en VAT).
+    def __iter__(self):
+        return iter(self.object_list)
+
+    def __len__(self):
+        return len(self.object_list)
+
     def has_next(self):
         return self._has_next_page
 

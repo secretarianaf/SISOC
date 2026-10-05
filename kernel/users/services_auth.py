@@ -18,7 +18,6 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework.authtoken.models import Token
 
 from users.profile_utils import get_profile_or_none
-from users.services_pwa import is_pwa_user
 
 User = get_user_model()
 logger = logging.getLogger("django")
@@ -107,56 +106,6 @@ def request_password_reset_for_email(*, email: str, request=None) -> None:
             logger.info("Password reset solicitado user_id=%s", user.id)
         except Exception:  # pragma: no cover - depende de backend externo
             logger.exception("Fallo enviando password reset user_id=%s", user.id)
-
-
-def request_password_reset_for_username(*, username: str) -> None:
-    normalized_username = (username or "").strip()
-    if not normalized_username:
-        return
-
-    user = (
-        User.objects.filter(username__iexact=normalized_username, is_active=True)
-        .select_related("profile")
-        .first()
-    )
-    if not user or not is_pwa_user(user):
-        return
-
-    profile = getattr(user, "profile", None)
-    if not profile:
-        return
-
-    profile.password_reset_requested_at = timezone.now()
-    profile.save(update_fields=["password_reset_requested_at"])
-    logger.info("Password reset mobile solicitado user_id=%s", user.id)
-
-
-def request_password_reset_for_identity(
-    *, username: str, email: str, request=None
-) -> None:
-    normalized_username = (username or "").strip()
-    normalized_email = (email or "").strip()
-    if not normalized_username or not normalized_email:
-        return
-
-    user = (
-        User.objects.filter(
-            username__iexact=normalized_username,
-            email__iexact=normalized_email,
-            is_active=True,
-        )
-        .order_by("id")
-        .first()
-    )
-    if not user or not is_pwa_user(user):
-        return
-
-    reset_link = build_password_reset_link(user=user, request=request, front="pwa")
-    try:
-        send_password_reset_link(user=user, reset_link=reset_link)
-        logger.info("Password reset PWA solicitado user_id=%s", user.id)
-    except Exception:  # pragma: no cover - depende de backend externo
-        logger.exception("Fallo enviando password reset PWA user_id=%s", user.id)
 
 
 def confirm_password_reset(

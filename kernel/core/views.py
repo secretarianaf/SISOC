@@ -4,6 +4,7 @@
 import json
 import re
 import logging
+from functools import wraps
 from datetime import datetime
 from pathlib import Path
 
@@ -47,10 +48,24 @@ from core.services.favorite_filters import (
     obtener_configuracion_seccion,
     obtener_items_obsoletos,
 )
-from historial.services.historial_service import HistorialService
+from core.backend_proxy import backend_de_seccion_favorita, reenviar_a_backend
 from users.territorial_scope import get_geography_scope_map
 
 logger = logging.getLogger(__name__)
+
+
+def _registrar_historial(**kwargs):
+    """Registra en ``historial``, que vive en el core y no en el kernel.
+
+    Import diferido: este módulo lo carga ``core.context_processors`` en todos
+    los servicios, incluidos los backends, que no instalan ``historial``.
+    """
+    from historial.services.historial_service import (  # pylint: disable=import-outside-toplevel
+        HistorialService,
+    )
+
+    return HistorialService.registrar_historial(**kwargs)
+
 
 CHANGELOG_HEADER_PATTERN = re.compile(
     (
@@ -255,9 +270,41 @@ def _filtros_favoritos_post(request):
     return JsonResponse(response_data, status=status_code)
 
 
+def _reenviar_seccion_de_backend(vista):
+    """Reenvía al backend dueño los favoritos de secciones que el core no tiene.
+
+    Cada app registra la configuración de sus secciones al arrancar. Una
+    sección de un backend (config/backends.json, ``favorite_sections``) no está
+    registrada en el core, así que el pedido se atiende allá, con el mismo
+    proxy que sus páginas.
+    """
+
+    @wraps(vista)
+    def envoltura(request, *args, **kwargs):
+        if "pk" in kwargs:
+            seccion = (
+                FiltroFavorito.objects.filter(pk=kwargs["pk"], usuario=request.user)
+                .values_list("seccion", flat=True)
+                .first()
+            )
+        elif request.method == "GET":
+            seccion = request.GET.get("seccion")
+        else:
+            seccion = _parsear_datos_request(request).get("seccion")
+        seccion = str(seccion or "").strip()
+        if seccion and obtener_configuracion_seccion(seccion) is None:
+            backend = backend_de_seccion_favorita(seccion)
+            if backend is not None:
+                return reenviar_a_backend(request, backend)
+        return vista(request, *args, **kwargs)
+
+    return envoltura
+
+
 @ensure_csrf_cookie
 @login_required
 @require_http_methods(["GET", "POST"])
+@_reenviar_seccion_de_backend
 def filtros_favoritos(request):
     """Lista o crea filtros favoritos para el usuario actual."""
     if request.method == "GET":
@@ -279,6 +326,7 @@ def columnas_preferencias(request):
 
 @login_required
 @require_http_methods(["GET", "DELETE"])
+@_reenviar_seccion_de_backend
 def detalle_filtro_favorito(request, pk):
     """Devuelve o elimina un filtro favorito."""
     favorito = FiltroFavorito.objects.filter(pk=pk, usuario=request.user).first()
@@ -573,7 +621,7 @@ class MontoPrestacionProgramaCreateView(
                 obj.usuario_creador = self.request.user
             obj.save()
             self.object = obj
-            HistorialService.registrar_historial(
+            _registrar_historial(
                 accion="Creación de Monto de Prestación",
                 instancia=obj,
                 diferencias=form.cleaned_data,
@@ -599,7 +647,7 @@ class MontoPrestacionProgramaUpdateView(
         with transaction.atomic():
             obj = form.save()
             self.object = obj
-            HistorialService.registrar_historial(
+            _registrar_historial(
                 accion="Edición de Monto de Prestación",
                 instancia=obj,
                 diferencias=form.cleaned_data,
@@ -638,7 +686,7 @@ class MontoPrestacionProgramaDeleteView(
         obj = getattr(self, "object", None) or self.get_object()
         self.object = obj
         with transaction.atomic():
-            HistorialService.registrar_historial(
+            _registrar_historial(
                 accion="Eliminación de Prestación",
                 instancia=obj,
                 diferencias={"programa": getattr(obj, "programa", None)},

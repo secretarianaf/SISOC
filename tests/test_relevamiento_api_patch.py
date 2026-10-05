@@ -9,7 +9,8 @@ from rest_framework_api_key.models import APIKey
 from comedores.models import Comedor
 from core.models import Provincia
 from relevamientos.models import PrimerSeguimiento, Relevamiento
-from users.models import AccesoComedorPWA, TerritorialComedorProvincia
+from users.models import TerritorialComedorProvincia
+from pwa.models import AccesoComedorPWA
 
 
 def _token_client(user):

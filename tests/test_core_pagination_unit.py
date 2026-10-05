@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 from core.pagination import (
+    NoCountPage,
     NoCountPaginator,
     build_compact_page_range,
     build_no_count_page_range,
@@ -91,3 +92,11 @@ def test_build_compact_page_range_falls_back_for_no_count_paginator():
     page_obj = paginator.get_page(2)
 
     assert build_compact_page_range(page_obj) == [1, 2, 3, "..."]
+
+
+def test_no_count_page_se_itera_como_page_de_django():
+    """Los templates iteran la página directamente (VAT /vat/centros/ajax/)."""
+    pagina = NoCountPage(["a", "b"], 1, None, False)
+
+    assert list(pagina) == ["a", "b"]
+    assert len(pagina) == 2

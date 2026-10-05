@@ -8,6 +8,10 @@ def register_tracked_models():
     Registra en django-auditlog los modelos de negocio críticos que se deben auditar.
     """
     for definition in get_tracked_model_definitions():
+        # Cada proceso registra solo los modelos de sus apps; los de otros
+        # backends los registra el backend dueño.
+        if not definition.is_installed():
+            continue
         model = definition.get_model()
         registry = getattr(auditlog, "_registry", {})
         try:

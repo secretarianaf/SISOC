@@ -14,9 +14,12 @@ from django.urls import reverse
 from comedores.models import Comedor, Programas
 from core.models import Provincia
 from organizaciones.models import Organizacion
-from users.api import aplicar_cambio_organizacion_comedor
-from users.models import AccesoComedorPWA, AccesoOrganizacionPWA
-from users.services_pwa import (
+from usuarios.api import aplicar_cambio_organizacion_comedor
+from pwa.models import (
+    AccesoComedorPWA,
+    AccesoOrganizacionPWA,
+)
+from pwa.services.accesos import (
     get_accessible_comedor_ids,
     get_organizacion_ids,
     sync_representante_accesses,

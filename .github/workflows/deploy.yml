@@ -93,7 +93,7 @@ jobs:
                       echo "::endgroup::"
                   }
 
-                  if ! wait_for "migraciones de QA" 30 docker compose -f "$APP_ROOT/docker-compose.deploy.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check; then
+                  if ! wait_for "migraciones de QA" 30 env SISOC_RELEASE_SHA="$EXPECTED_SHA" docker compose -f "$APP_ROOT/docker-compose.deploy.yml" --project-directory "$APP_ROOT" --profile migrate run --rm -T migrator python manage.py migrate --check; then
                       show_django_diagnostics
                       exit 1
                   fi
@@ -185,7 +185,7 @@ jobs:
                       echo "::endgroup::"
                   }
 
-                  if ! wait_for "migraciones de HML" 30 docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check; then
+                  if ! wait_for "migraciones de HML" 30 env SISOC_RELEASE_SHA="$EXPECTED_SHA" docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" --profile migrate run --rm -T migrator python manage.py migrate --check; then
                       show_django_diagnostics
                       exit 1
                   fi
@@ -276,7 +276,7 @@ jobs:
                       echo "::endgroup::"
                   }
 
-                  if ! wait_for "migraciones de produccion" 30 docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check; then
+                  if ! wait_for "migraciones de produccion" 30 env SISOC_RELEASE_SHA="$EXPECTED_SHA" docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" --profile migrate run --rm -T migrator python manage.py migrate --check; then
                       show_django_diagnostics
                       exit 1
                   fi

@@ -13,7 +13,7 @@ from comedores.models import (
     Programas,
 )
 from core.models import Provincia, Sexo
-from users.models import AccesoComedorPWA
+from pwa.models import AccesoComedorPWA
 
 
 def _grant_pwa_permission(user, codename):

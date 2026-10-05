@@ -17,7 +17,7 @@ QA despliega la branch `development` y usa solo:
 docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml up -d --build
 ```
 
-No usar `docker-compose.site.yml` ni `docker-compose.yml` para deploy. `docker-compose.yml` queda reservado para local/dev.
+No usar `docker-compose.site.yml` ni `docker-compose.yml` para deploy. `docker-compose.yml` queda reservado para local/dev. <!-- docs-paths: referencia histórica -->
 
 ## Reglas de seguridad
 
@@ -63,7 +63,7 @@ sudo docker ps --filter name=sisoc-mysql
 sudo docker logs --tail 80 sisoc-mysql
 ```
 
-Si hay contenedores levantados por `docker-compose.yml` o `docker-compose.site.yml`, bajarlos sin volumenes:
+Si hay contenedores levantados por `docker-compose.yml` o `docker-compose.site.yml`, bajarlos sin volumenes: <!-- docs-paths: referencia histórica -->
 
 ```bash
 cd /opt/sisoc/SISOC

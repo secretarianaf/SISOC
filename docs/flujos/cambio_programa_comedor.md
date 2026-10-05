@@ -3,7 +3,7 @@
 ## Objetivo
 Registrar y auditar cambios en el programa asignado a un comedor.
 
-Las rutas de evidencia (`comedores/...`) son relativas a `src/backends/sisoc_core/`; los numeros de linea pueden haberse corrido.
+Las referencias de evidencia abreviadas de Comedores se resuelven bajo `src/backends/sisoc_core/`; las rutas que comienzan con src/ parten de la raíz. Los números de línea pueden haberse corrido.
 
 ## Entrada / Salida
 - Entrada: actualización de `Comedor.programa` (formularios/UI). Evidencia: comedores/models.py:229-233.

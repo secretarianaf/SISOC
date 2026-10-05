@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-SCRIPTS = REPO_ROOT / "scripts/operacion"
+SCRIPTS = REPO_ROOT / "src/scripts/operacion"
 
 
 @pytest.fixture

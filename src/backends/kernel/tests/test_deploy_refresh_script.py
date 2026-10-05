@@ -7,7 +7,7 @@ import pytest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-DEPLOY_SCRIPT = REPO_ROOT / "scripts" / "operacion" / "deploy_refresh.sh"
+DEPLOY_SCRIPT = REPO_ROOT / "src" / "scripts" / "operacion" / "deploy_refresh.sh"
 HTTPS_MOBILE_REMOTE = "https://github.com/dsocial118/SISOC-Mobile.git"
 EXPECTED_REVISION = "a" * 40
 
@@ -35,7 +35,7 @@ def _backend_checkout(tmp_path: Path, *, include_celery: bool = True) -> Path:
     checkout.mkdir()
     (checkout / ".branch").write_text("development\n", encoding="utf-8")
 
-    script = checkout / "scripts" / "operacion" / "deploy_refresh.sh"
+    script = checkout / "src" / "scripts" / "operacion" / "deploy_refresh.sh"
     script.parent.mkdir(parents=True)
     script.write_bytes(DEPLOY_SCRIPT.read_bytes().replace(b"\r\n", b"\n"))
     compose = checkout / "docker" / "compose"
@@ -119,7 +119,7 @@ def _run_deploy(
     env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
     args = [
         "bash",
-        str(backend_checkout / "scripts" / "operacion" / "deploy_refresh.sh"),
+        str(backend_checkout / "src" / "scripts" / "operacion" / "deploy_refresh.sh"),
     ]
     if origin_revision:
         env["FAKE_ORIGIN_SHA"] = origin_revision
@@ -298,9 +298,9 @@ CORE_COMPOSE_JSON = json.dumps(
 def _run_selectivo(tmp_path, archivos, compose_json):
     """Deploy en dry-run con --diff-base: el plan sale de deploy_targets.py."""
     checkout = _backend_checkout(tmp_path)
-    operacion = checkout / "scripts" / "operacion"
+    operacion = checkout / "src" / "scripts" / "operacion"
     (operacion / "deploy_targets.py").write_bytes(
-        (REPO_ROOT / "scripts" / "operacion" / "deploy_targets.py").read_bytes()
+        (REPO_ROOT / "src" / "scripts" / "operacion" / "deploy_targets.py").read_bytes()
     )
     (checkout / "src" / "backends" / "config").mkdir(parents=True)
     (checkout / "src" / "backends" / "config" / "backends.json").write_bytes(

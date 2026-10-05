@@ -6,16 +6,16 @@ Esta guia explica como esta integrada la app `sentry` en SISOC y como usarla en 
 
 La integracion se apoya en 5 piezas:
 
-1. `sentry/apps.py`
+1. `src/backends/kernel/sentry/apps.py`
    - En `SentryConfig.ready()` llama `initialize_sentry_sdk()` al iniciar Django.
-2. `sentry/services.py`
+2. `src/backends/kernel/sentry/services.py`
    - Inicializa `sentry_sdk` una sola vez por proceso.
    - Solo activa Sentry si se cumplen condiciones de entorno.
-3. `sentry/handlers.py`
+3. `src/backends/kernel/sentry/handlers.py`
    - Handler de logging que reenvia eventos `ERROR`/`CRITICAL` a Sentry.
-4. `sentry/middleware.py`
+4. `src/backends/kernel/sentry/middleware.py`
    - Adjunta contexto de usuario autenticado (`id`, `username`) en cada request.
-5. `sentry/context_processors.py` + `src/backends/kernel/templates/includes/scripts/sentry_replay.html`
+5. `src/backends/kernel/sentry/context_processors.py` + `src/backends/kernel/templates/includes/scripts/sentry_replay.html`
    - Exponen config de Sentry al frontend e inicializan Session Replay en templates base.
 
 Ademas, `src/backends/config/settings.py` ya incluye:

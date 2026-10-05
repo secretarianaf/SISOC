@@ -16,7 +16,7 @@ import pytest
 pytestmark = pytest.mark.smoke
 
 RAIZ = Path(__file__).resolve().parents[4]
-GENERADOR = RAIZ / "scripts" / "arquitectura" / "generar_mapa.py"
+GENERADOR = RAIZ / "src" / "scripts" / "arquitectura" / "generar_mapa.py"
 
 
 @pytest.fixture(scope="module")

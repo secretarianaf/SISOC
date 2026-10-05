@@ -19,10 +19,10 @@ este flujo.
 
 ## Implementación y pruebas
 
-- Formulario: `comedores/forms/comedor_form.py`.
-- Servicio: `comedores/services/comedor_service/impl.py`.
-- Vista y template: `comedores/views/nomina.py` y
-  `comedores/templates/comedor/nomina_form.html`.
+- Formulario: `src/backends/sisoc_core/comedores/forms/comedor_form.py`.
+- Servicio: `src/backends/sisoc_core/comedores/services/comedor_service/impl.py`.
+- Vista y template: `src/backends/sisoc_core/comedores/views/nomina.py` y
+  `src/backends/sisoc_core/comedores/templates/comedor/nomina_form.html`.
 - Regresiones: `src/backends/sisoc_core/tests/test_comedor_form_unit.py` y
   `src/backends/sisoc_core/tests/test_nomina_views_unit.py`.
 

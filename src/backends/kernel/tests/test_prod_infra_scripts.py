@@ -2,7 +2,7 @@ import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-INFRA_DIR = REPO_ROOT / "scripts" / "infra"
+INFRA_DIR = REPO_ROOT / "src" / "scripts" / "infra"
 PROD_SCRIPTS = [
     "backup_prod_configs.sh",
     "cleanup_prod_disk.sh",
@@ -20,7 +20,7 @@ PROD_SCRIPTS = [
 def test_prod_infra_scripts_tienen_sintaxis_bash_valida():
     for script_name in PROD_SCRIPTS:
         result = subprocess.run(
-            ["bash", "-n", f"scripts/infra/{script_name}"],
+            ["bash", "-n", f"src/scripts/infra/{script_name}"],
             cwd=REPO_ROOT,
             check=False,
             text=True,

@@ -68,12 +68,12 @@ jobs:
             - name: Detect changed Python files
               id: detect-changed-python
               if: steps.eligibility.outputs.enabled == 'true'
-              run: echo "files=$(python scripts/ci/pr_lint_tools.py changed-files --kind python)" >> "$GITHUB_OUTPUT"
+              run: echo "files=$(python src/scripts/ci/pr_lint_tools.py changed-files --kind python)" >> "$GITHUB_OUTPUT"
 
             - name: Detect changed templates
               id: detect-changed-templates
               if: steps.eligibility.outputs.enabled == 'true'
-              run: echo "files=$(python scripts/ci/pr_lint_tools.py changed-files --kind templates)" >> "$GITHUB_OUTPUT"
+              run: echo "files=$(python src/scripts/ci/pr_lint_tools.py changed-files --kind templates)" >> "$GITHUB_OUTPUT"
 
             - name: Run Black autofix
               if: steps.eligibility.outputs.enabled == 'true' && steps.detect-changed-python.outputs.files != '[]'
@@ -125,7 +125,7 @@ jobs:
 
             - name: Normalize mojibake in changed text files
               if: steps.eligibility.outputs.enabled == 'true'
-              run: python scripts/ci/pr_lint_tools.py fix-encoding
+              run: python src/scripts/ci/pr_lint_tools.py fix-encoding
 
             - name: Commit and push autofix
               if: steps.eligibility.outputs.enabled == 'true'
@@ -163,7 +163,7 @@ jobs:
                   python -m pip install --upgrade pip
 
             - name: Validate encoding on changed text files
-              run: python scripts/ci/pr_lint_tools.py check-encoding
+              run: python src/scripts/ci/pr_lint_tools.py check-encoding
 
     skills_sync:
         # .claude/skills/ es una copia generada de .agents/skills/ (docs/ia/SKILLS.md).
@@ -178,7 +178,7 @@ jobs:
                   python-version: '3.11.15'
 
             - name: Verificar que .claude/skills/ coincide con .agents/skills/
-              run: python scripts/ai/sync_skills.py --check
+              run: python src/scripts/ai/sync_skills.py --check
 
     black:
         runs-on: ubuntu-latest
@@ -205,7 +205,7 @@ jobs:
             - name: Detect changed Python files
               id: detect-changed-python
               if: github.event_name == 'pull_request'
-              run: echo "files=$(python scripts/ci/pr_lint_tools.py changed-files --kind python)" >> "$GITHUB_OUTPUT"
+              run: echo "files=$(python src/scripts/ci/pr_lint_tools.py changed-files --kind python)" >> "$GITHUB_OUTPUT"
 
             - name: Run Black on changed Python files
               if: github.event_name == 'pull_request' && steps.detect-changed-python.outputs.files != '[]'
@@ -265,7 +265,7 @@ jobs:
 
             - name: Detect changed templates
               id: detect-changed-templates
-              run: echo "templates=$(python scripts/ci/pr_lint_tools.py changed-files --kind templates)" >> "$GITHUB_OUTPUT"
+              run: echo "templates=$(python src/scripts/ci/pr_lint_tools.py changed-files --kind templates)" >> "$GITHUB_OUTPUT"
 
             - name: Run DJLint
               if: steps.detect-changed-templates.outputs.templates != '[]'
@@ -311,7 +311,7 @@ jobs:
 
             - name: Run pylint
               run: |
-                  # Sin globstar, **/*.py solo cubre un nivel: se listan config (src/backends/config/*.py)
-                  # y las apps del kernel y de cada vertical (src/backends/<x>/<app>/*.py).
+                  # Los scripts de primer nivel viven en src/scripts; se conserva
+                  # la cobertura de config y apps del kernel y de cada vertical.
                   shopt -s extglob
-                  pylint **/*.py src/backends/config/*.py src/backends/!(config)/*/*.py --rcfile=.pylintrc
+                  pylint src/scripts/*.py src/backends/config/*.py src/backends/!(config)/*/*.py --rcfile=.pylintrc

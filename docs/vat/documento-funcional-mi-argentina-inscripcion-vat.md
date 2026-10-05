@@ -195,7 +195,7 @@ Uso:
 
 ## Flujo probado
 
-Se dejó cubierto por tests automáticos en `VAT/tests.py` un recorrido completo:
+Se dejó cubierto por tests automáticos en `src/backends/vat/VAT/tests.py` un recorrido completo:
 
 1. listado de centros,
 2. listado de cursos por centro,

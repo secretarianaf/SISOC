@@ -1,0 +1,1117 @@
+{% extends "includes/main.html" %}
+{% load static custom_filters %}
+{% block title %}Organización: {{ organizacion.nombre }}{% endblock %}
+{% block content %}
+    <style>
+:root {
+    --navy-dark: #232D4F;
+    --navy-medium: #232D4F;
+    --navy-light: #4A5F7F;
+    --gold: #E7BA61;
+    --green: #28A745;
+    --red: #DC3545;
+}
+
+.app-content {
+    background: linear-gradient(135deg, #3e5a7e 0%, #3e5a7e 100%);
+    min-height: 100vh;
+}
+
+.legajo-header {
+    background: #232D4F;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    margin: 0 0 1rem 0;
+    color: white;
+    border-top: none;
+    margin-left: 1rem;
+    margin-right: 1rem;
+}
+
+.legajo-header h1 {
+    font-family: Georgia, serif;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 0;
+    letter-spacing: 0.5px;
+}
+
+.legajo-header .subtitle {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+.datos-card {
+    background: var(--navy-medium);
+    border: 2px solid var(--gold);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.datos-card-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.datos-card label, .datos-card strong {
+    color: rgba(255,255,255,0.7);
+    font-weight: 500;
+    font-size: 0.85rem;
+    display: block;
+    margin-bottom: 0;
+}
+
+.datos-card .value {
+    color: white;
+    font-size: 0.95rem;
+    display: block;
+    margin-bottom: 0;
+}
+
+.datos-card .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.datos-card .info-row:last-child {
+    border-bottom: none;
+}
+
+.info-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.tabla-legajo {
+    background: var(--navy-medium);
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: white;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.tabla-legajo h5 {
+    font-weight: 600;
+}
+
+.tabla-legajo table {
+    color: white;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.tabla-legajo thead {
+    background: var(--navy-dark);
+    border-bottom: 2px solid rgba(255,255,255,0.2);
+}
+
+.tabla-legajo thead th {
+    color: white;
+    font-weight: 600;
+}
+
+.tabla-legajo tbody td, .tabla-legajo tbody th {
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-top: none;
+    color: rgba(255,255,255,0.95);
+}
+
+.tabla-legajo tbody tr:hover td {
+    background: rgba(255,255,255,0.05);
+}
+
+.btn-success {
+    background: var(--green) !important;
+    border: none !important;
+}
+
+.btn-danger {
+    background: var(--red) !important;
+    border: none !important;
+}
+
+.btn-outline-light:hover {
+    background: rgba(255,255,255,0.1) !important;
+}
+
+.datos-card h5 {
+    margin-bottom: 1.25rem;
+    font-weight: 600;
+}
+
+.nav-tabs-legajo {
+    padding: 1rem 1.5rem 0.5rem 1.5rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    white-space: nowrap;
+    border-bottom: none;
+    display: flex;
+    gap: 0.5rem;
+    background: #3e5a7e;
+}
+
+.nav-tabs-legajo .nav-link {
+    background: #232D4F;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    transition: all 0.3s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    height: auto;
+}
+
+.nav-tabs-legajo .nav-link.active {
+    background: var(--gold);
+    color: #232D4F;
+    font-weight: 600;
+    border: none;
+}
+
+.nav-tabs-legajo .nav-link:hover:not(.active) {
+    background: rgba(255,255,255,0.1);
+}
+
+.btn-edit-card {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-edit-card:hover {
+    background: var(--gold);
+    color: var(--navy-dark);
+    border-color: var(--gold);
+}
+
+.icon-placeholder {
+    width: 180px;
+    height: 180px;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 4rem;
+}
+
+.badge-status {
+    padding: 0.35rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.badge-status.vigente {
+    background: rgba(40, 167, 69, 0.2);
+    color: var(--green);
+    border: 1px solid var(--green);
+}
+
+.badge-status.vencido {
+    background: rgba(220, 53, 69, 0.2);
+    color: var(--red);
+    border: 1px solid var(--red);
+}
+
+.badge-status.por-vencer {
+    background: rgba(245, 166, 35, 0.18);
+    color: var(--gold);
+    border: 1px solid var(--gold);
+}
+
+.documentacion-actions {
+    min-width: 220px;
+}
+
+.documentacion-actions input[type="date"] {
+    max-width: 165px;
+}
+
+.documentacion-table td {
+    vertical-align: middle;
+}
+
+.documentacion-table .doc-name {
+    max-width: 360px;
+}
+
+.documentacion-compact-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.documentacion-compact-controls .form-control-sm,
+.documentacion-compact-controls .form-select-sm {
+    min-width: 145px;
+    max-width: 180px;
+}
+
+.org-inline-display {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.org-inline-display:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.org-inline-edit {
+    min-width: 230px;
+}
+
+.org-inline-edit .btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.documentacion-upload-progress {
+    width: 100%;
+    height: 3px;
+    display: none;
+}
+    </style>
+
+    <div class="container-fluid p-0">
+        <div class="legajo-header mt-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1>{{ organizacion.nombre }}</h1>
+                    <p class="subtitle mb-0">
+                        CUIT: {{ organizacion.cuit|default:"Sin información" }} |
+                        {{ organizacion.tipo_entidad|default:"Sin tipo de entidad" }}
+                        {% if organizacion.subtipo_entidad %}- {{ organizacion.subtipo_entidad }}{% endif %}
+                    </p>
+                </div>
+                <div class="btn-group">
+                    {% if perms.auditlog.view_logentry %}
+                        <a href="{% url 'audittrail:log_instance' 'organizaciones' 'organizacion' organizacion.pk %}"
+                           class="btn btn-outline-light">Historial</a>
+                    {% endif %}
+                    {% if puede_gestionar_organizaciones %}
+                        <a href="{% url 'organizacion_editar' organizacion.id %}"
+                           class="btn btn-outline-light">Editar</a>
+                        <a href="{% url 'organizacion_eliminar' organizacion.id %}"
+                           class="btn btn-danger">Eliminar</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <ul class="nav nav-tabs nav-tabs-legajo" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link{% if not rendiciones_tab_activo %} active{% endif %}"
+                   data-bs-toggle="tab"
+                   href="#informacion-general">Información General</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#documentacion">Documentación</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#comedores">Comedores Asociados ({{ comedores_count }})</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link{% if rendiciones_tab_activo %} active{% endif %}"
+                   data-bs-toggle="tab"
+                   href="#rendiciones-presentadas">Rendiciones Presentadas</a>
+            </li>
+        </ul>
+
+        <div class="tab-content px-4">
+            <!-- TAB: Información General -->
+            <div class="tab-pane fade{% if not rendiciones_tab_activo %} show active{% endif %}"
+                 id="informacion-general">
+                <!-- Card de Datos de la Organización -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="datos-card" style="position: relative;">
+                            {% if puede_gestionar_organizaciones %}
+                                <a href="{% url 'organizacion_editar' organizacion.id %}"
+                                   class="btn-edit-card">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                            {% endif %}
+                            <h5>Información de la Organización</h5>
+                            <div class="datos-card-content">
+                                <div style="display: flex; justify-content: center; align-items: center;">
+                                    <div class="icon-placeholder">
+                                        <i class="fas fa-building"></i>
+                                    </div>
+                                </div>
+
+                                <div class="info-column">
+                                    <div class="info-row">
+                                        <strong>Nombre:</strong>
+                                        <span class="value">{{ organizacion.nombre }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>CUIT:</strong>
+                                        <span class="value">{{ organizacion.cuit|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Tipo de Entidad:</strong>
+                                        <span class="value">{{ organizacion.tipo_entidad|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Subtipo de Entidad:</strong>
+                                        <span class="value">{{ organizacion.subtipo_entidad|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Teléfono:</strong>
+                                        <span class="value">{{ organizacion.telefono|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Email:</strong>
+                                        <span class="value">{{ organizacion.email|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Códigos de Proyecto:</strong>
+                                        <div class="value d-flex flex-wrap justify-content-end gap-1">
+                                            {% for proyecto in proyectos_organizacion %}
+                                                <span class="badge rounded-pill bg-primary px-3 py-2">{{ proyecto }}</span>
+                                            {% empty %}
+                                                <span>-</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Territorial Asignado Abordaje Comunitario:</strong>
+                                        <div class="value d-flex flex-wrap justify-content-end gap-1">
+                                            {% for territorial in territoriales_organizacion %}
+                                                <span class="badge rounded-pill bg-primary px-3 py-2">{{ territorial }}</span>
+                                            {% empty %}
+                                                <span>-</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="info-column">
+                                    <div class="info-row">
+                                        <strong>Provincia:</strong>
+                                        <span class="value">{{ organizacion.provincia|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Municipio:</strong>
+                                        <span class="value">{{ organizacion.municipio|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Localidad:</strong>
+                                        <span class="value">{{ organizacion.localidad|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Partido:</strong>
+                                        <span class="value">{{ organizacion.partido|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Domicilio:</strong>
+                                        <span class="value">{{ organizacion.domicilio|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Fecha de Vencimiento:</strong>
+                                        <span class="value">
+                                            {% if organizacion.sin_vencimiento %}
+                                                Sin Vencimiento
+                                            {% else %}
+                                                {{ organizacion.fecha_vencimiento|date:"d/m/Y"|default:'-' }}
+                                            {% endif %}
+                                            {% if organizacion.fecha_vencimiento %}
+                                                {% now "Y-m-d" as today %}
+                                                {% if organizacion.fecha_vencimiento|date:"Y-m-d" >= today %}
+                                                    <span class="badge-status vigente">
+                                                        <i class="fas fa-check-circle"></i> Vigente
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge-status vencido">
+                                                        <i class="fas fa-exclamation-circle"></i> Vencido
+                                                    </span>
+                                                {% endif %}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Fecha de Creación:</strong>
+                                        <span class="value">{{ organizacion.fecha_creacion|date:"d/m/Y H:i"|default:'-' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Firmantes -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Firmantes de la Organización</h5>
+                                {% if puede_gestionar_organizaciones %}
+                                    <a href="{% url 'firmante_crear' organizacion.id %}"
+                                       class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i> Agregar Firmante
+                                    </a>
+                                {% endif %}
+                            </div>
+                            {% if firmantes %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Rol</th>
+                                            <th>CUIT</th>
+                                            <th>Programa</th>
+                                            {% if puede_gestionar_organizaciones %}<th class="text-end">Acciones</th>{% endif %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for firmante in firmantes %}
+                                            <tr>
+                                                <td>{{ firmante.nombre }}</td>
+                                                <td>
+                                                    {% if firmante.rol %}
+                                                        <span class="badge"
+                                                              style="background: rgba(245, 166, 35, 0.2);
+                                                                     color: var(--gold);
+                                                                     border: 1px solid var(--gold)">
+                                                            {{ firmante.rol.nombre }}
+                                                        </span>
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ firmante.cuit|default:'-' }}</td>
+                                                <td>{{ firmante.programa.nombre|default:'-' }}</td>
+                                                {% if puede_gestionar_organizaciones %}
+                                                    <td class="text-end">
+                                                        <a href="{% url 'firmante_editar' firmante.pk %}"
+                                                           class="btn btn-sm"
+                                                           style="background: rgba(40, 167, 69, 0.2);
+                                                                  color: var(--green);
+                                                                  border: 1px solid var(--green)">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <a href="{% url 'firmante_eliminar' firmante.pk %}"
+                                                           class="btn btn-sm"
+                                                           style="background: rgba(220, 53, 69, 0.2);
+                                                                  color: var(--red);
+                                                                  border: 1px solid var(--red)">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
+                                                    </td>
+                                                {% endif %}
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay firmantes registrados.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Avales (solo si existen) -->
+                {% if avales %}
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="tabla-legajo">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0">Avales</h5>
+                                    {% if puede_gestionar_organizaciones %}
+                                        <a href="{% url 'aval_crear' organizacion.id %}"
+                                           class="btn btn-success btn-sm">
+                                            <i class="fas fa-plus"></i> Agregar Aval
+                                        </a>
+                                    {% endif %}
+                                </div>
+                                {% if avales_data %}
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Nombre</th>
+                                                <th>CUIT</th>
+                                                {% if puede_gestionar_organizaciones %}<th class="text-end">Acciones</th>{% endif %}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for aval in avales_data %}
+                                                <tr>
+                                                    <td>{{ aval.nombre|default:'-' }}</td>
+                                                    <td>{{ aval.cuit|default:'-' }}</td>
+                                                    {% if puede_gestionar_organizaciones %}
+                                                        <td class="text-end">
+                                                            <a href="{% url 'aval_editar' aval.pk %}"
+                                                               class="btn btn-sm"
+                                                               style="background: rgba(40, 167, 69, 0.2);
+                                                                      color: var(--green);
+                                                                      border: 1px solid var(--green)">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                            <a href="{% url 'aval_eliminar' aval.pk %}"
+                                                               class="btn btn-sm"
+                                                               style="background: rgba(220, 53, 69, 0.2);
+                                                                      color: var(--red);
+                                                                      border: 1px solid var(--red)">
+                                                                <i class="fas fa-trash"></i>
+                                                            </a>
+                                                        </td>
+                                                    {% endif %}
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                {% else %}
+                                    <p style="color: rgba(255,255,255,0.5);">No hay avales registrados.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- TAB: Documentacion -->
+            <div class="tab-pane fade" id="documentacion">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Documentación de la Organización</h5>
+                                <span class="badge"
+                                      style="background: rgba(245, 166, 35, 0.2);
+                                             color: var(--gold);
+                                             border: 1px solid var(--gold)">
+                                    {{ documentacion_organizacion_categoria|default:"Tipo documental" }}
+                                </span>
+                            </div>
+                            <div id="organizacion-documentos-config"
+                                 data-csrf-token="{{ csrf_token }}"
+                                 hidden></div>
+                            <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+                                <div id="toastOrganizacionDocsExito"
+                                     class="toast align-items-center text-bg-success border-0"
+                                     role="alert"
+                                     aria-live="assertive"
+                                     aria-atomic="true">
+                                    <div class="d-flex">
+                                        <div class="toast-body">
+                                            <h6 id="toastOrganizacionDocsExitoMsg">Cambio guardado con éxito.</h6>
+                                        </div>
+                                        <button type="button"
+                                                class="btn-close btn-close-white me-2 m-auto"
+                                                data-bs-dismiss="toast"
+                                                aria-label="Cerrar"></button>
+                                    </div>
+                                </div>
+                                <div id="toastOrganizacionDocsError"
+                                     class="toast align-items-center text-bg-danger border-0"
+                                     role="alert"
+                                     aria-live="assertive"
+                                     aria-atomic="true">
+                                    <div class="d-flex">
+                                        <div class="toast-body">
+                                            <h6 id="toastOrganizacionDocsErrorMsg">No se pudo guardar el cambio.</h6>
+                                        </div>
+                                        <button type="button"
+                                                class="btn-close btn-close-white me-2 m-auto"
+                                                data-bs-dismiss="toast"
+                                                aria-label="Cerrar"></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <table class="table table-sm documentacion-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Documento</th>
+                                            <th>Estado / validación</th>
+                                            <th>Archivo</th>
+                                            <th>Vencimiento / carga</th>
+                                            <th>Número de GDE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in documentacion_organizacion %}
+                                            {% include "organizaciones/partials/documentacion_organizacion_row.html" %}
+                                            {% comment %}
+                                            {% with doc=row.documentacion archivo=row.archivo %}
+                                                <tr>
+                                                    <td class="doc-name">
+                                                        <strong>{{ doc.nombre }}</strong>
+                                                        {% if doc.obligatorio %}<span class="text-danger fs-5 ms-1">*</span>{% endif %}
+                                                        {% if row.historial %}
+                                                            <div class="small" style="color: #9ca3af;">
+                                                                {{ row.historial|length }} versión/es anterior/es conservada/s
+                                                            </div>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if archivo %}
+                                                            {% if puede_validar_documentacion_organizacion and archivo.estado == "A Validar Abogado" %}
+                                                                <select class="form-control form-control-sm org-doc-state-select border border-2 border-primary" data-url="{% url 'organizacion_documento_estado' archivo.id %}" data-current-value="{{ archivo.estado }}" data-requires-observacion="1">
+                                                                    <option value="A Validar Abogado" selected>A Validar Abogado</option>
+                                                                    <option value="Aceptado">Aceptado</option>
+                                                                    <option value="Rectificar">Rectificar</option>
+                                                                </select>
+                                                            {% elif not puede_validar_documentacion_organizacion and archivo.estado != "Aceptado" %}
+                                                                <select class="form-control form-control-sm org-doc-state-select{% if archivo.estado == 'Rectificar' %} border border-danger border-2{% endif %}" data-url="{% url 'organizacion_documento_estado' archivo.id %}" data-current-value="{{ archivo.estado }}" data-requires-observacion="0">
+                                                                    {% if archivo.estado == "Rectificar" %}<option value="Rectificar" selected disabled>Rectificar</option>{% endif %}
+                                                                    <option value="Documento adjunto" {% if archivo.estado == "Documento adjunto" %}selected{% endif %}>Documento adjunto</option>
+                                                                    <option value="A Validar Abogado" {% if archivo.estado == "A Validar Abogado" %}selected{% endif %}>A Validar Abogado</option>
+                                                                </select>
+                                                            {% else %}
+                                                                {% if archivo.estado == "Aceptado" %}
+                                                                    <span class="badge bg-success">Aceptado</span>
+                                                                {% elif archivo.estado == "Rectificar" %}
+                                                                    <span class="badge bg-danger">Rectificar</span>
+                                                                {% elif archivo.estado == "A Validar Abogado" %}
+                                                                    <span class="badge bg-primary">A Validar Abogado</span>
+                                                                {% else %}
+                                                                    <span class="badge bg-secondary">{{ archivo.estado }}</span>
+                                                                {% endif %}
+                                                            {% endif %}
+                                                            {% if archivo.observaciones %}
+                                                                <div class="small text-warning mt-1">{{ archivo.observaciones }}</div>
+                                                            {% endif %}
+                                                        {% else %}
+                                                            <span class="badge bg-secondary">Pendiente</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if archivo %}
+                                                            <div class="documentacion-compact-controls">
+                                                                <a href="{{ archivo.archivo.url }}" target="_blank" class="btn btn-primary btn-sm">
+                                                                    <i class="fas fa-eye"></i>
+                                                                    Ver Archivo
+                                                                </a>
+                                                            </div>
+                                                        {% else %}
+                                                            <span style="color: #9ca3af;">Sin archivo</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <div class="documentacion-compact-controls">
+                                                            {% if archivo %}
+                                                                <div id="org-venc-display-{{ archivo.id }}" class="org-inline-display" data-org-inline-edit="org-venc-edit-{{ archivo.id }}">
+                                                                    {% if archivo.fecha_vencimiento %}
+                                                                        <span class="{% if archivo.esta_vencido %}text-danger{% elif archivo.esta_por_vencer %}text-warning{% else %}text-success{% endif %} fw-bold">
+                                                                            {{ archivo.fecha_vencimiento|date:"d/m/Y" }}
+                                                                        </span>
+                                                                        {% if archivo.esta_vencido %}
+                                                                            <span class="badge-status vencido ms-1">Vencido</span>
+                                                                        {% elif archivo.esta_por_vencer %}
+                                                                            <span class="badge-status por-vencer ms-1">Por vencer</span>
+                                                                        {% else %}
+                                                                            <span class="badge-status vigente ms-1">Vigente</span>
+                                                                        {% endif %}
+                                                                        <i class="bi bi-pencil-square ms-2 text-muted" title="Editar vencimiento"></i>
+                                                                    {% else %}
+                                                                        <span class="text-muted">Sin vencimiento</span>
+                                                                        <i class="bi bi-plus-circle ms-2 text-primary" title="Agregar vencimiento"></i>
+                                                                    {% endif %}
+                                                                </div>
+                                                                <div id="org-venc-edit-{{ archivo.id }}" class="org-inline-edit d-none">
+                                                                    <div class="d-flex align-items-center">
+                                                                        <input type="date" class="form-control form-control-sm me-2 org-inline-input" value="{{ archivo.fecha_vencimiento|date:'Y-m-d' }}" data-empty-text="Sin vencimiento" data-url="{% url 'organizacion_documento_vencimiento' archivo.id %}" data-field="fecha_vencimiento" data-display-id="org-venc-display-{{ archivo.id }}" data-edit-id="org-venc-edit-{{ archivo.id }}" />
+                                                                        <button type="button" class="btn btn-success btn-sm me-1 org-inline-save" title="Guardar">
+                                                                            <i class="bi bi-check"></i>
+                                                                        </button>
+                                                                        <button type="button" class="btn btn-secondary btn-sm org-inline-cancel" title="Cancelar">
+                                                                            <i class="bi bi-x"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            {% else %}
+                                                                <input type="date" class="form-control form-control-sm" id="org-doc-venc-{{ doc.id }}" aria-label="Fecha de vencimiento" />
+                                                            {% endif %}
+                                                            <input type="file" id="org-doc-file-{{ doc.id }}" class="d-none org-doc-file" accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.doc,.docx" data-upload-url="{% url 'organizacion_documento_subir' organizacion.id doc.id %}" data-vencimiento-id="org-doc-venc-{{ doc.id }}" />
+                                                            <button type="button" class="btn btn-sm btn-outline-light org-doc-open-file" data-file-id="org-doc-file-{{ doc.id }}">Adjuntar</button>
+                                                        </div>
+                                                        <div class="progress mt-2 documentacion-upload-progress" id="org-progress-container-{{ doc.id }}">
+                                                            <div class="progress-bar progress-bar-striped" role="progressbar" id="org-progress-bar-{{ doc.id }}" style="width: 0%">0%</div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% if row.historial %}
+                                                    <tr>
+                                                        <td colspan="4" style="background: rgba(255,255,255,0.04);">
+                                                            <details>
+                                                                <summary>Ver versiones anteriores</summary>
+                                                                <div class="mt-2 d-flex flex-column gap-1">
+                                                                    {% for version in row.historial %}
+                                                                        <div class="small">
+                                                                            <a href="{{ version.archivo.url }}" target="_blank" style="color: #e7ba61;">{{ version.creado|date:"d/m/Y H:i" }}</a>
+                                                                            - {{ version.estado }}
+                                                                            {% if version.fecha_vencimiento %}
+                                                                                - vence {{ version.fecha_vencimiento|date:"d/m/Y" }}
+                                                                            {% endif %}
+                                                                        </div>
+                                                                    {% endfor %}
+                                                                </div>
+                                                            </details>
+                                                        </td>
+                                                    </tr>
+                                                {% endif %}
+                                            {% endwith %}
+                                            {% endcomment %}
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="5" class="text-center">No hay documentación configurada.</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% if puede_enviar_documentacion_organizacion %}
+                                <div class="mt-3 pt-3 border-top" id="org-doc-adicional">
+                                    <h6 class="mb-2">Documentación Adicional</h6>
+                                    <p class="small text-muted mb-2">
+                                        Opcional. Indicá un nombre y adjuntá el archivo. Podés agregar tantos como necesites.
+                                    </p>
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-md-5">
+                                            <label class="form-label small mb-1" for="nuevoDocOrgNombre">Nombre del documento</label>
+                                            <input type="text"
+                                                   id="nuevoDocOrgNombre"
+                                                   class="form-control form-control-sm"
+                                                   maxlength="255"
+                                                   placeholder="Nombre del documento adicional" />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label small mb-1" for="nuevoDocOrgVencimiento">Vencimiento (opcional)</label>
+                                            <input type="date"
+                                                   id="nuevoDocOrgVencimiento"
+                                                   class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="file"
+                                                   id="nuevoDocOrgArchivo"
+                                                   class="d-none"
+                                                   accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.doc,.docx" />
+                                            <button type="button"
+                                                    id="btnAgregarDocOrg"
+                                                    class="btn btn-sm btn-primary"
+                                                    data-url="{% url 'organizacion_documento_personalizado_agregar' organizacion.id %}">
+                                                <i class="fas fa-plus"></i> Agregar documento adicional
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="progress mt-2 documentacion-upload-progress d-none"
+                                         id="org-doc-adicional-progress-container">
+                                        <div class="progress-bar progress-bar-striped"
+                                             role="progressbar"
+                                             id="org-doc-adicional-progress-bar"
+                                             style="width: 0%">0%</div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Comedores -->
+            <div class="tab-pane fade" id="comedores">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                            <h5 class="mb-3">
+                                <span>Comedores Asociados</span>
+                                <span class="badge"
+                                      style="background: rgba(245, 166, 35, 0.2);
+                                             color: var(--gold);
+                                             border: 1px solid var(--gold);
+                                             padding: 0.35rem 0.75rem;
+                                             font-size: 0.75rem;
+                                             margin-left: 0.5rem">{{ comedores_count }} Total</span>
+                            </h5>
+                            {% if comedores %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Tipo</th>
+                                            <th>Programa</th>
+                                            <th>Ubicación</th>
+                                            <th>Dirección</th>
+                                            <th>Referente</th>
+                                            <th>¿Fue Validado?</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for comedor in comedores %}
+                                            <tr>
+                                                <td>
+                                                    <a href="{% url 'comedor_detalle' comedor.id %}"
+                                                       style="color: #E7BA61;
+                                                              text-decoration: underline">{{ comedor.nombre }}</a>
+                                                    {% if comedor.es_caritas %}
+                                                        <span class="badge ms-1"
+                                                              style="background: rgba(13, 110, 253, 0.2);
+                                                                     color: #3498db;
+                                                                     border: 1px solid #3498db">
+                                                            <i class="fas fa-heart"></i> CARITAS
+                                                        </span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ comedor.tipocomedor.nombre|default:'-' }}</td>
+                                                <td>{{ comedor.programa.nombre|default:'-' }}</td>
+                                                <td>
+                                                    <div>
+                                                        <div style="font-size: 0.9rem;">{{ comedor.provincia.nombre|default:'-' }}</div>
+                                                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">
+                                                            {{ comedor.municipio.nombre|default:'-' }} / {{ comedor.localidad.nombre|default:'-' }}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ comedor.calle|default:'-' }} {{ comedor.numero|default:'S/N' }}</td>
+                                                <td>
+                                                    {% if comedor.referente %}
+                                                        {{ comedor.referente.nombre }} {{ comedor.referente.apellido }}
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if comedor.estado_validacion == "Validado" %}
+                                                        <span class="badge"
+                                                              style="background: rgba(40, 167, 69, 0.2);
+                                                                     color: var(--green);
+                                                                     border: 1px solid var(--green)">
+                                                            <i class="fas fa-check-circle"></i> Validado
+                                                        </span>
+                                                    {% elif comedor.estado_validacion == "No Validado" %}
+                                                        <span class="badge"
+                                                              style="background: rgba(220, 53, 69, 0.2);
+                                                                     color: var(--red);
+                                                                     border: 1px solid var(--red)">
+                                                            <i class="fas fa-times-circle"></i> No Validado
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge"
+                                                              style="background: rgba(255,255,255,0.1);
+                                                                     color: rgba(255,255,255,0.7)">
+                                                            <i class="fas fa-clock"></i> Pendiente
+                                                        </span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">
+                                                    <a href="{% url 'comedor_detalle' comedor.id %}"
+                                                       class="btn btn-sm"
+                                                       style="background: rgba(52, 152, 219, 0.2);
+                                                              color: #3498db;
+                                                              border: 1px solid #3498db">
+                                                        <i class="fas fa-eye"></i> Ver
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay comedores asociados a esta organización.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Rendiciones Presentadas -->
+            <div class="tab-pane fade{% if rendiciones_tab_activo %} show active{% endif %}"
+                 id="rendiciones-presentadas">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                            <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-3">
+                                <h5 class="mb-0">Rendiciones Presentadas</h5>
+                                {% if proyectos_rendiciones|length > 1 %}
+                                    <form method="get" class="d-flex align-items-end gap-2">
+                                        <div>
+                                            <label for="proyecto-rendiciones" class="form-label mb-1">Código de Proyecto</label>
+                                            <select id="proyecto-rendiciones"
+                                                    name="proyecto"
+                                                    class="form-select form-select-sm">
+                                                <option value="">Todos los proyectos</option>
+                                                {% for proyecto in proyectos_rendiciones %}
+                                                    <option value="{{ proyecto }}"
+                                                            {% if proyecto == proyecto_rendiciones_seleccionado %}selected{% endif %}>
+                                                        {{ proyecto }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-outline-light">Filtrar</button>
+                                    </form>
+                                {% elif proyectos_rendiciones %}
+                                    <div>
+                                        <small class="d-block text-white-50">Código de Proyecto</small>
+                                        <strong>{{ proyectos_rendiciones.0 }}</strong>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            {% if rendiciones_presentadas %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>Conv.</th>
+                                                <th>N° de Rend.</th>
+                                                <th>Período</th>
+                                                <th>Monto auditado</th>
+                                                <th>Validación Territorial</th>
+                                                <th>Revisión para Carga</th>
+                                                <th>Cargada para Auditoría</th>
+                                                <th>Auditada</th>
+                                                <th>Observaciones</th>
+                                                <th>Detalle</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for rendicion in rendiciones_presentadas %}
+                                                <tr>
+                                                    <td>{{ rendicion.convenio|default:"-" }}</td>
+                                                    <td>{{ rendicion.numero_rendicion|default:"-" }}</td>
+                                                    <td>
+                                                        {% if rendicion.periodo_inicio and rendicion.periodo_fin %}
+                                                            {{ rendicion.periodo_inicio|date:"d/m/Y" }} al {{ rendicion.periodo_fin|date:"d/m/Y" }}
+                                                        {% else %}
+                                                            {{ rendicion.get_mes_display }} {{ rendicion.anio }}
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if rendicion.monto_rendido != None %}
+                                                            ${{ rendicion.monto_rendido|floatformat:2 }}
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if rendicion.validacion_territorial_finalizada %}
+                                                            ✔
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if rendicion.validacion_auditoria_finalizada %}
+                                                            ✔
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if rendicion.cargada_para_auditoria %}
+                                                            ✔
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if rendicion.auditada %}
+                                                            ✔
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if rendicion.observaciones %}
+                                                            ✔
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <a class="btn btn-sm btn-outline-light"
+                                                           href="{% url 'organizacion_rendicion_detalle' organizacion.id rendicion.id %}">Ver</a>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="mb-0 text-white-50">No hay rendiciones presentadas para la selección actual.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade"
+         id="orgModalObservacionRectificar"
+         tabindex="-1"
+         aria-labelledby="orgModalObservacionRectificarLabel"
+         aria-hidden="true"
+         data-bs-backdrop="static"
+         data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orgModalObservacionRectificarLabel">Observaciones obligatorias</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="orgObservacionRectificar" class="form-label">Detalle el motivo de la rectificacion</label>
+                        <textarea class="form-control"
+                                  id="orgObservacionRectificar"
+                                  rows="4"
+                                  maxlength="2000"></textarea>
+                        <div class="text-danger small mt-2" id="orgObservacionRectificarError"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="orgBtnConfirmarRectificar">Guardar observaciones</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/organizacionesDocumentos.js' %}"></script>
+{% endblock %}

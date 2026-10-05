@@ -8,7 +8,7 @@ Definir el flujo de integración para que una aplicación externa, como Mi Argen
 
 Colección Postman de referencia:
 
-- `postman/VAT Web - Mi Argentina Inscripcion.postman_collection.json`
+- `docs/api/postman/SISOC APIs.postman_collection.json`, carpeta `VAT`
 
 ## Principio de integración
 

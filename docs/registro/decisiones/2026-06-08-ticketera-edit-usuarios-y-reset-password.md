@@ -35,7 +35,7 @@ Agregar dos endpoints REST nuevos bajo `/api/ticketera/`, protegidos por
 | PATCH | `/usuarios/<username>/` | Edita parcialmente `email`/`first_name`/`last_name` del usuario. |
 | POST  | `/auth/solicitar-reset-password/` | Dispara el envío del mail de reset (link a `password_reset_confirm`). |
 
-Plan completo (con tradeoffs y decisiones individuales): [docs/plans/2026-06-08-ticketera-edit-usuarios-y-reset-password.md](../../plans/2026-06-08-ticketera-edit-usuarios-y-reset-password.md).
+Plan completo (con tradeoffs y decisiones individuales): [docs/plans/2026-T2/2026-06-08-ticketera-edit-usuarios-y-reset-password.md](../../plans/2026-06-08-ticketera-edit-usuarios-y-reset-password.md).
 
 ### Patrones reutilizados
 
@@ -200,7 +200,7 @@ Respuestas:
   auditoría.
 - [ticketera/tests.py](../../../ticketera/tests.py) — smoke 503 con flag
   deshabilitado para los dos endpoints nuevos.
-- [docs/registro/cambios/2026-06-08-ticketera-edit-usuarios-y-reset-password.md](../cambios/2026-06-08-ticketera-edit-usuarios-y-reset-password.md) — registro de cambio del PR.
+- [docs/registro/cambios/2026-T2/2026-06-08-ticketera-edit-usuarios-y-reset-password.md](../cambios/2026-06-08-ticketera-edit-usuarios-y-reset-password.md) — registro de cambio del PR.
 - [docs/registro/decisiones/2026-05-27-integracion-ticketera.md](2026-05-27-integracion-ticketera.md) — apéndice "Extensiones (2026-06-08)".
 
 No se tocan: `users/services_auth.py`, `users/models.py`, migraciones, settings.

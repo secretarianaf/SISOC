@@ -22,8 +22,8 @@ como parte de una feature.
 
 ## Estado real de SISOC que condiciona esta guía
 
-- Las apps Django se cargan juntas en `config/settings.py` y sus rutas se
-  componen hoy desde `config/urls.py`.
+- Las apps Django se cargan juntas en `src/backends/config/settings.py` y sus rutas se
+  componen hoy desde `src/backends/config/urls.py`.
 - `core`, `users` y `ciudadanos` cumplen hoy el papel práctico de kernel, pero
   todavía contienen deuda legacy y no son una API de dominio genérica.
 - Hay un ratchet de imports en `.importlinter` para `core`, `users` y
@@ -145,7 +145,7 @@ no dando al nuevo servicio propiedad de esas tablas.
 
 - La única conexión global normal al crear la app es agregarla a
   `INSTALLED_APPS` y hacer `include("nuevo_modulo.urls")` desde
-  `config/urls.py`. No agregar imports directos de views de la app en
+  `src/backends/config/urls.py`. No agregar imports directos de views de la app en
   configuración global; el import actual de una view de Celiaquía es legado,
   no precedente.
 - El módulo es dueño de sus URLs, templates, estáticos y permisos. Usar
@@ -236,5 +236,5 @@ Ver también:
 
 - `docs/ia/ARCHITECTURE.md`
 - `.importlinter`
-- `docs/plans/2026-06-22-monolito-modular-fase-0.md`
+- `docs/plans/2026-T2/2026-06-22-monolito-modular-fase-0.md`
 - `docs/registro/decisiones/2026-07-21-modulos-nuevos-extraibles.md`

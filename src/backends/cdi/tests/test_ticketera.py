@@ -1,0 +1,1034 @@
+"""Tests de la API server-to-server con la Ticketera.
+
+Cubre los tres endpoints protegidos por API Key:
+- POST /api/ticketera/usuarios/              (alta / reconciliación)
+- POST /api/ticketera/auth/verificar/        (verificación de credenciales)
+- POST /api/ticketera/auth/cambiar-password/ (cambio de contraseña temporal)
+
+Reutiliza las fixtures `api_key` / `api_client` del ``conftest.py`` raíz (cliente
+DRF con header ``Authorization: Api-Key <key>``).
+"""
+
+import pytest
+from django.contrib.auth.models import User
+from django.core.cache import cache
+from rest_framework import status
+from rest_framework.test import APIClient
+
+from auditlog.models import LogEntry
+from audittrail.models import AuditEntryMeta
+from centrodeinfancia.models import AccesoCDI, CentroDeInfancia, Trabajador
+
+
+USUARIOS_URL = "/api/ticketera/usuarios/"
+VERIFICAR_URL = "/api/ticketera/auth/verificar/"
+CAMBIAR_PASSWORD_URL = "/api/ticketera/auth/cambiar-password/"
+SOLICITAR_RESET_URL = "/api/ticketera/auth/solicitar-reset-password/"
+AUDIT_SOURCE = "ticketera"
+
+
+def _usuario_url(username):
+    return f"{USUARIOS_URL}{username}/"
+
+
+@pytest.fixture(autouse=True)
+def _clear_rate_limit_cache():
+    """LocMemCache persiste entre tests; lo limpiamos para no arrastrar el rate limit."""
+    cache.clear()
+    yield
+    cache.clear()
+
+
+def _crear_usuario(
+    *,
+    username,
+    password="ClaveSegura123!",
+    source="sisoc",
+    must_change_password=False,
+    is_active=True,
+):
+    """Crea un User con su Profile (el Profile lo crea el signal post_save de users)."""
+    user = User.objects.create_user(
+        username=username,
+        email=f"{username}@example.com",
+        password=password,
+        is_active=is_active,
+    )
+    profile = user.profile
+    profile.source = source
+    profile.must_change_password = must_change_password
+    profile.save(update_fields=["source", "must_change_password"])
+    return user
+
+
+# --------------------------------------------------------------------------- #
+# POST /usuarios/  (alta / reconciliación)
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.django_db
+def test_usuarios_alta_nueva_devuelve_201_y_setea_profile(api_client):
+    payload = {
+        "username": "juan.perez",
+        "email": "juan.perez@ejemplo.gob.ar",
+        "first_name": "Juan",
+        "last_name": "Pérez",
+        "password": "ContraseñaTemporal1!",
+    }
+
+    response = api_client.post(USUARIOS_URL, payload, format="json")
+
+    assert response.status_code == status.HTTP_201_CREATED
+    user = User.objects.get(username="juan.perez")
+    assert response.data == {
+        "id": user.id,
+        "username": "juan.perez",
+        "email": "juan.perez@ejemplo.gob.ar",
+    }
+    assert user.first_name == "Juan"
+    assert user.check_password("ContraseñaTemporal1!") is True
+    # default cuando el body no manda source
+    assert user.profile.source == "ticketera"
+    assert user.profile.must_change_password is True
+
+
+@pytest.mark.django_db
+def test_usuarios_alta_respeta_source_del_body(api_client):
+    payload = {
+        "username": "ana.gomez",
+        "email": "ana.gomez@ejemplo.gob.ar",
+        "password": "ContraseñaTemporal1!",
+        "source": "ticketera-qa",
+    }
+
+    response = api_client.post(USUARIOS_URL, payload, format="json")
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert User.objects.get(username="ana.gomez").profile.source == "ticketera-qa"
+
+
+@pytest.mark.django_db
+def test_usuarios_idempotente_devuelve_200_sin_duplicar(api_client):
+    existente = _crear_usuario(username="repetido", source="ticketera")
+    total_antes = User.objects.count()
+
+    payload = {
+        "username": "repetido",
+        "email": "otro-mail@ejemplo.gob.ar",
+        "password": "OtraClave1!",
+    }
+    response = api_client.post(USUARIOS_URL, payload, format="json")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data == {
+        "id": existente.id,
+        "username": "repetido",
+        "email": "repetido@example.com",  # se devuelve el mail existente, no el del payload
+    }
+    assert User.objects.count() == total_antes  # no se creó un duplicado
+
+
+@pytest.mark.django_db
+def test_usuarios_username_tomado_por_otro_source_devuelve_409(api_client):
+    _crear_usuario(username="ocupado", source="sisoc")
+    total_antes = User.objects.count()
+
+    payload = {
+        "username": "ocupado",
+        "email": "nuevo@ejemplo.gob.ar",
+        "password": "Clave1!",
+    }
+    response = api_client.post(USUARIOS_URL, payload, format="json")
+
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.data["error"] == "username_taken"
+    assert User.objects.count() == total_antes
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "payload",
+    [
+        pytest.param(
+            {"username": "sin.email", "password": "Clave1!"},
+            id="email-faltante",
+        ),
+        pytest.param(
+            {
+                "username": "mail.malo",
+                "email": "no-es-un-email",
+                "password": "Clave1!",
+            },
+            id="email-invalido",
+        ),
+        pytest.param(
+            {"username": "sin.pass", "email": "sin.pass@ejemplo.gob.ar"},
+            id="password-faltante",
+        ),
+    ],
+)
+def test_usuarios_payload_invalido_devuelve_400(api_client, payload):
+    response = api_client.post(USUARIOS_URL, payload, format="json")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert not User.objects.filter(username=payload["username"]).exists()
+
+
+# --------------------------------------------------------------------------- #
+# POST /auth/verificar/
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.django_db
+def test_verificar_credenciales_validas_devuelve_200(api_client):
+    user = _crear_usuario(
+        username="valido",
+        password="ClaveOk123!",
+        source="ticketera",
+        must_change_password=True,
+    )
+
+    response = api_client.post(
+        VERIFICAR_URL,
+        {"username": "valido", "password": "ClaveOk123!"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["valid"] is True
+    # must_change_password se refleja desde el Profile
+    assert response.data["must_change_password"] is True
+    assert response.data["user"] == {
+        "id": user.id,
+        "username": "valido",
+        "email": "valido@example.com",
+        "first_name": "",
+        "last_name": "",
+    }
+    assert response.data["centros_cdi"] == []
+
+
+@pytest.mark.django_db
+def test_verificar_informa_centros_cdi_por_cada_vinculo(api_client):
+    user = _crear_usuario(username="vinculado", password="ClaveOk123!")
+    referente = CentroDeInfancia.objects.create(
+        nombre="CDI Referente", codigo_cdi="REF001"
+    )
+    trabajador = CentroDeInfancia.objects.create(
+        nombre="CDI Trabajador", codigo_cdi="TRA001"
+    )
+    ambos = CentroDeInfancia.objects.create(nombre="CDI Ambos", codigo_cdi="AMB001")
+    AccesoCDI.objects.create(user=user, centro=referente)
+    AccesoCDI.objects.create(user=user, centro=ambos)
+    Trabajador.objects.create(
+        centro=trabajador, usuario=user, nombre="Ana", apellido="Pérez"
+    )
+    Trabajador.objects.create(
+        centro=ambos, usuario=user, nombre="Ana", apellido="Pérez"
+    )
+
+    response = api_client.post(
+        VERIFICAR_URL,
+        {"username": "vinculado", "password": "ClaveOk123!"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["centros_cdi"] == [
+        {
+            "id": referente.id,
+            "nombre": "CDI Referente",
+            "codigo_cdi": "REF001",
+            "vinculo": "referente",
+        },
+        {
+            "id": ambos.id,
+            "nombre": "CDI Ambos",
+            "codigo_cdi": "AMB001",
+            "vinculo": "referente",
+        },
+        {
+            "id": trabajador.id,
+            "nombre": "CDI Trabajador",
+            "codigo_cdi": "TRA001",
+            "vinculo": "trabajador",
+        },
+        {
+            "id": ambos.id,
+            "nombre": "CDI Ambos",
+            "codigo_cdi": "AMB001",
+            "vinculo": "trabajador",
+        },
+    ]
+
+
+@pytest.mark.django_db
+def test_verificar_omite_vinculos_cdi_inactivos_y_borrados(api_client):
+    user = _crear_usuario(username="sin.vigentes", password="ClaveOk123!")
+    acceso_baja = CentroDeInfancia.objects.create(
+        nombre="CDI Acceso baja", codigo_cdi="BAJ001"
+    )
+    trabajador_baja = CentroDeInfancia.objects.create(
+        nombre="CDI Trabajador baja", codigo_cdi="BAJ002"
+    )
+    centro_borrado = CentroDeInfancia.objects.create(
+        nombre="CDI Borrado", codigo_cdi="BAJ003"
+    )
+    AccesoCDI.objects.create(user=user, centro=acceso_baja, activo=False)
+    trabajador_eliminado = Trabajador.objects.create(
+        centro=trabajador_baja, usuario=user, nombre="Ana", apellido="Pérez"
+    )
+    AccesoCDI.objects.create(user=user, centro=centro_borrado)
+    trabajador_eliminado.delete()
+    # Conserva el AccesoCDI para verificar que el manager de CentroDeInfancia
+    # impide exponer el centro eliminado, aun cuando el vínculo siga vigente.
+    centro_borrado.delete(cascade=False)
+
+    response = api_client.post(
+        VERIFICAR_URL,
+        {"username": "sin.vigentes", "password": "ClaveOk123!"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["centros_cdi"] == []
+
+
+@pytest.mark.django_db
+def test_verificar_password_incorrecta_devuelve_401(api_client):
+    user = _crear_usuario(username="claveok", password="LaBuena123!")
+
+    response = api_client.post(
+        VERIFICAR_URL,
+        {"username": "claveok", "password": "LaMala123!"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.data == {"valid": False, "error": "invalid_credentials"}
+    # Una verificación fallida no debe registrar un acceso.
+    assert (
+        LogEntry.objects.get_for_object(user)
+        .filter(action=LogEntry.Action.ACCESS)
+        .count()
+        == 0
+    )
+
+
+@pytest.mark.django_db
+def test_verificar_usuario_inactivo_devuelve_401(api_client):
+    _crear_usuario(username="inactivo", password="ClaveOk123!", is_active=False)
+
+    response = api_client.post(
+        VERIFICAR_URL,
+        {"username": "inactivo", "password": "ClaveOk123!"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.data == {"valid": False, "error": "invalid_credentials"}
+
+
+@pytest.mark.django_db
+def test_verificar_supera_rate_limit_devuelve_429_en_el_intento_11(api_client):
+    user = _crear_usuario(username="bruteforce", password="ClaveOk123!")
+
+    # Límite: 10 intentos por username (window 300s). Los primeros 10 pasan el
+    # rate limit y fallan por credenciales; el 11° ya queda bloqueado.
+    for _ in range(10):
+        previo = api_client.post(
+            VERIFICAR_URL,
+            {"username": "bruteforce", "password": "incorrecta"},
+            format="json",
+        )
+        assert previo.status_code == status.HTTP_401_UNAUTHORIZED
+
+    bloqueado = api_client.post(
+        VERIFICAR_URL,
+        {"username": "bruteforce", "password": "incorrecta"},
+        format="json",
+    )
+
+    assert bloqueado.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+    assert bloqueado.data["error"] == "too_many_attempts"
+    # Ni los intentos fallidos ni el bloqueo registran un acceso.
+    assert (
+        LogEntry.objects.get_for_object(user)
+        .filter(action=LogEntry.Action.ACCESS)
+        .count()
+        == 0
+    )
+
+
+# --------------------------------------------------------------------------- #
+# POST /auth/cambiar-password/
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.django_db
+def test_cambiar_password_cierra_ciclo_temporal(api_client):
+    _crear_usuario(
+        username="cambia.pass",
+        password="TemporalInicial1!",
+        source="ticketera",
+        must_change_password=True,
+    )
+
+    response = api_client.post(
+        CAMBIAR_PASSWORD_URL,
+        {
+            "username": "cambia.pass",
+            "current_password": "TemporalInicial1!",
+            "new_password": "DefinitivaSegura9!",
+        },
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data == {"changed": True, "must_change_password": False}
+
+    user = User.objects.get(username="cambia.pass")
+    assert user.check_password("DefinitivaSegura9!") is True
+    assert user.profile.must_change_password is False
+
+    # Criterio de aceptación: un verificar posterior refleja el flag bajado.
+    verificacion = api_client.post(
+        VERIFICAR_URL,
+        {"username": "cambia.pass", "password": "DefinitivaSegura9!"},
+        format="json",
+    )
+    assert verificacion.status_code == status.HTTP_200_OK
+    assert verificacion.data["must_change_password"] is False
+
+
+@pytest.mark.django_db
+def test_cambiar_password_current_incorrecta_devuelve_401_sin_cambios(api_client):
+    _crear_usuario(
+        username="mala.actual",
+        password="TemporalInicial1!",
+        source="ticketera",
+        must_change_password=True,
+    )
+
+    response = api_client.post(
+        CAMBIAR_PASSWORD_URL,
+        {
+            "username": "mala.actual",
+            "current_password": "NoEsLaActual1!",
+            "new_password": "DefinitivaSegura9!",
+        },
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.data == {"error": "invalid_credentials"}
+
+    user = User.objects.get(username="mala.actual")
+    # La temporal sigue vigente y el flag no se baja.
+    assert user.check_password("TemporalInicial1!") is True
+    assert user.profile.must_change_password is True
+
+
+@pytest.mark.django_db
+def test_cambiar_password_usuario_inactivo_devuelve_401(api_client):
+    _crear_usuario(
+        username="inactivo.pass",
+        password="TemporalInicial1!",
+        source="ticketera",
+        must_change_password=True,
+        is_active=False,
+    )
+
+    response = api_client.post(
+        CAMBIAR_PASSWORD_URL,
+        {
+            "username": "inactivo.pass",
+            "current_password": "TemporalInicial1!",
+            "new_password": "DefinitivaSegura9!",
+        },
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.data == {"error": "invalid_credentials"}
+
+
+@pytest.mark.django_db
+def test_cambiar_password_nueva_debil_devuelve_400_sin_cambios(api_client):
+    _crear_usuario(
+        username="debil.nueva",
+        password="TemporalInicial1!",
+        source="ticketera",
+        must_change_password=True,
+    )
+
+    response = api_client.post(
+        CAMBIAR_PASSWORD_URL,
+        {
+            "username": "debil.nueva",
+            "current_password": "TemporalInicial1!",
+            "new_password": "123",
+        },
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "new_password" in response.data
+
+    user = User.objects.get(username="debil.nueva")
+    assert user.check_password("TemporalInicial1!") is True
+    assert user.profile.must_change_password is True
+
+
+@pytest.mark.django_db
+def test_cambiar_password_igual_a_la_actual_devuelve_400_sin_cambios(api_client):
+    _crear_usuario(
+        username="igual.actual",
+        password="TemporalInicial1!",
+        source="ticketera",
+        must_change_password=True,
+    )
+
+    response = api_client.post(
+        CAMBIAR_PASSWORD_URL,
+        {
+            "username": "igual.actual",
+            "current_password": "TemporalInicial1!",
+            "new_password": "TemporalInicial1!",
+        },
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "new_password" in response.data
+
+    user = User.objects.get(username="igual.actual")
+    assert user.profile.must_change_password is True
+
+
+@pytest.mark.django_db
+def test_cambiar_password_supera_rate_limit_devuelve_429_en_el_intento_11(api_client):
+    _crear_usuario(
+        username="bruteforce.pass",
+        password="TemporalInicial1!",
+        source="ticketera",
+        must_change_password=True,
+    )
+
+    # Límite: 10 intentos por ip:username (window 300s). Los primeros 10 pasan
+    # el rate limit y fallan por credenciales; el 11° ya queda bloqueado.
+    for _ in range(10):
+        previo = api_client.post(
+            CAMBIAR_PASSWORD_URL,
+            {
+                "username": "bruteforce.pass",
+                "current_password": "incorrecta",
+                "new_password": "DefinitivaSegura9!",
+            },
+            format="json",
+        )
+        assert previo.status_code == status.HTTP_401_UNAUTHORIZED
+
+    bloqueado = api_client.post(
+        CAMBIAR_PASSWORD_URL,
+        {
+            "username": "bruteforce.pass",
+            "current_password": "incorrecta",
+            "new_password": "DefinitivaSegura9!",
+        },
+        format="json",
+    )
+
+    assert bloqueado.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+    assert bloqueado.data["error"] == "too_many_attempts"
+
+
+@pytest.mark.django_db
+def test_cambiar_password_registra_auditoria_con_source_ticketera(api_client):
+    user = _crear_usuario(
+        username="audita.cambio",
+        password="TemporalInicial1!",
+        source="ticketera",
+        must_change_password=True,
+    )
+    updates_antes = (
+        LogEntry.objects.get_for_object(user)
+        .filter(action=LogEntry.Action.UPDATE)
+        .count()
+    )
+
+    response = api_client.post(
+        CAMBIAR_PASSWORD_URL,
+        {
+            "username": "audita.cambio",
+            "current_password": "TemporalInicial1!",
+            "new_password": "DefinitivaSegura9!",
+        },
+        format="json",
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    updates = LogEntry.objects.get_for_object(user).filter(
+        action=LogEntry.Action.UPDATE
+    )
+    assert updates.count() == updates_antes + 1
+
+    entry = updates.latest("id")
+    assert entry.actor_id == user.id
+    meta = entry.audittrail_meta
+    assert meta.source == AUDIT_SOURCE
+    remote_source = (meta.extra.get("context") or {}).get("remote_source") or (
+        meta.extra.get("custom_signal_context") or {}
+    ).get("remote_source")
+    assert remote_source == "ticketera"
+
+
+# --------------------------------------------------------------------------- #
+# Permisos (API Key)
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "url",
+    [USUARIOS_URL, VERIFICAR_URL, CAMBIAR_PASSWORD_URL, SOLICITAR_RESET_URL],
+)
+def test_sin_api_key_rechaza(url):
+    client = APIClient()  # sin header Authorization: Api-Key
+
+    response = client.post(
+        url,
+        {"username": "x", "password": "y", "email": "x@ejemplo.gob.ar"},
+        format="json",
+    )
+
+    # HasAPIKey deniega; con los autenticadores DRF por defecto (Token/Session)
+    # el status real esperado es 401, pero aceptamos 403 por robustez.
+    assert response.status_code in (
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+    )
+
+
+@pytest.mark.django_db
+def test_patch_usuario_sin_api_key_rechaza():
+    client = APIClient()
+    response = client.patch(
+        _usuario_url("alguno"),
+        {"email": "x@ejemplo.gob.ar"},
+        format="json",
+    )
+    assert response.status_code in (
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Auditoría (django-auditlog + AuditEntryMeta)
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.django_db
+def test_alta_registra_auditoria_con_source_ticketera(api_client):
+    metas_antes = AuditEntryMeta.objects.filter(source=AUDIT_SOURCE).count()
+
+    payload = {
+        "username": "auditado",
+        "email": "auditado@ejemplo.gob.ar",
+        "password": "ContraseñaTemporal1!",
+    }
+    response = api_client.post(USUARIOS_URL, payload, format="json")
+    assert response.status_code == status.HTTP_201_CREATED
+
+    metas = AuditEntryMeta.objects.filter(source=AUDIT_SOURCE)
+    assert metas.count() == metas_antes + 1
+
+    user = User.objects.get(username="auditado")
+    meta = metas.latest("id")
+    assert meta.log_entry.action == LogEntry.Action.CREATE
+    assert meta.log_entry.object_pk == str(user.pk)
+    assert meta.extra.get("context") == {"remote_source": "ticketera"}
+
+
+@pytest.mark.django_db
+def test_verificar_valido_registra_acceso(api_client):
+    # `last_login` está excluido del diff de auditoría (audittrail.constants): el
+    # save no deja rastro, así que la vista emite un LogEntry ACCESS explícito para
+    # que el acceso quede en el historial con su source y remote_source.
+    user = _crear_usuario(username="conlog", password="ClaveOk123!", source="ticketera")
+    accesos_antes = (
+        LogEntry.objects.get_for_object(user)
+        .filter(action=LogEntry.Action.ACCESS)
+        .count()
+    )
+
+    response = api_client.post(
+        VERIFICAR_URL,
+        {"username": "conlog", "password": "ClaveOk123!"},
+        format="json",
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    accesos = LogEntry.objects.get_for_object(user).filter(
+        action=LogEntry.Action.ACCESS
+    )
+    assert accesos.count() == accesos_antes + 1
+
+    entry = accesos.latest("id")
+    assert entry.actor_id == user.id
+    meta = entry.audittrail_meta
+    assert meta.source == AUDIT_SOURCE
+    remote_source = (meta.extra.get("context") or {}).get("remote_source") or (
+        meta.extra.get("custom_signal_context") or {}
+    ).get("remote_source")
+    assert remote_source == "ticketera"
+
+
+# --------------------------------------------------------------------------- #
+# PATCH /usuarios/<username>/
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.django_db
+def test_patch_usuario_actualiza_email_y_nombres_devuelve_200(api_client):
+    user = _crear_usuario(username="edita.me", source="ticketera")
+    updates_antes = (
+        LogEntry.objects.get_for_object(user)
+        .filter(action=LogEntry.Action.UPDATE)
+        .count()
+    )
+
+    response = api_client.patch(
+        _usuario_url("edita.me"),
+        {
+            "email": "nuevo@ejemplo.gob.ar",
+            "first_name": "Editado",
+            "last_name": "Nuevo",
+        },
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data == {
+        "id": user.id,
+        "username": "edita.me",
+        "email": "nuevo@ejemplo.gob.ar",
+        "first_name": "Editado",
+        "last_name": "Nuevo",
+    }
+
+    user.refresh_from_db()
+    assert user.email == "nuevo@ejemplo.gob.ar"
+    assert user.first_name == "Editado"
+    assert user.last_name == "Nuevo"
+
+    updates = LogEntry.objects.get_for_object(user).filter(
+        action=LogEntry.Action.UPDATE
+    )
+    assert updates.count() == updates_antes + 1
+    entry = updates.latest("id")
+    assert entry.audittrail_meta.source == AUDIT_SOURCE
+
+
+@pytest.mark.django_db
+def test_patch_usuario_otro_origen_devuelve_403_sin_cambios(api_client):
+    user = _crear_usuario(username="ajeno", source="sisoc")
+
+    response = api_client.patch(
+        _usuario_url("ajeno"),
+        {"email": "intento@ejemplo.gob.ar"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.data["error"] == "user_not_ticketera"
+    user.refresh_from_db()
+    assert user.email == "ajeno@example.com"
+
+
+@pytest.mark.django_db
+def test_patch_usuario_inexistente_devuelve_404(api_client):
+    response = api_client.patch(
+        _usuario_url("no.existo"),
+        {"email": "x@ejemplo.gob.ar"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.data["error"] == "user_not_found"
+
+
+@pytest.mark.django_db
+def test_patch_usuario_acepta_variantes_de_capitalizacion(api_client):
+    user = _crear_usuario(username="caps.user", source="ticketera-qa")
+
+    response = api_client.patch(
+        _usuario_url("Caps.User"),
+        {"first_name": "Capi"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["username"] == "caps.user"  # snapshot canónico
+    user.refresh_from_db()
+    assert user.first_name == "Capi"
+
+
+@pytest.mark.django_db
+def test_patch_usuario_email_invalido_devuelve_400_sin_cambios(api_client):
+    user = _crear_usuario(username="mail.malo", source="ticketera")
+    email_antes = user.email
+
+    response = api_client.patch(
+        _usuario_url("mail.malo"),
+        {"email": "no-es-un-email"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "email" in response.data
+    user.refresh_from_db()
+    assert user.email == email_antes
+
+
+@pytest.mark.django_db
+def test_patch_usuario_idempotente_no_emite_logentry(api_client):
+    user = _crear_usuario(username="idem.user", source="ticketera")
+    user.first_name = "Juan"
+    user.last_name = "Pérez"
+    user.save(update_fields=["first_name", "last_name"])
+
+    updates_antes = (
+        LogEntry.objects.get_for_object(user)
+        .filter(action=LogEntry.Action.UPDATE)
+        .count()
+    )
+
+    response = api_client.patch(
+        _usuario_url("idem.user"),
+        {
+            "email": user.email,
+            "first_name": "Juan",
+            "last_name": "Pérez",
+        },
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert (
+        LogEntry.objects.get_for_object(user)
+        .filter(action=LogEntry.Action.UPDATE)
+        .count()
+        == updates_antes
+    )
+
+
+@pytest.mark.django_db
+def test_patch_usuario_ignora_username_y_password_no_declarados(api_client):
+    user = _crear_usuario(
+        username="solo.editables",
+        source="ticketera",
+        password="OrigSegura123!",
+    )
+
+    response = api_client.patch(
+        _usuario_url("solo.editables"),
+        {
+            "username": "otro.username",
+            "password": "NuevaPass123!",
+            "is_active": False,
+        },
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    user.refresh_from_db()
+    assert user.username == "solo.editables"
+    assert user.is_active is True
+    assert user.check_password("OrigSegura123!") is True
+
+
+@pytest.mark.django_db
+def test_patch_usuario_source_no_se_persiste_en_profile(api_client):
+    user = _crear_usuario(username="con.source", source="ticketera-qa")
+
+    response = api_client.patch(
+        _usuario_url("con.source"),
+        {"first_name": "Juan", "source": "ticketera-staging"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    user.refresh_from_db()
+    # El source del Profile es invariante para este endpoint.
+    assert user.profile.source == "ticketera-qa"
+
+
+@pytest.mark.django_db
+def test_patch_usuario_payload_vacio_devuelve_200_con_snapshot(api_client):
+    user = _crear_usuario(username="vacio.body", source="ticketera")
+
+    response = api_client.patch(
+        _usuario_url("vacio.body"),
+        {},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["id"] == user.id
+    assert response.data["username"] == "vacio.body"
+
+
+# --------------------------------------------------------------------------- #
+# POST /auth/solicitar-reset-password/
+# --------------------------------------------------------------------------- #
+
+
+def _patch_send_reset(monkeypatch):
+    """Reemplaza send_password_reset_link por un mock para no tocar SMTP."""
+    calls = []
+
+    def _fake_send(*, user, reset_link):
+        calls.append({"user_id": user.id, "reset_link": reset_link})
+
+    monkeypatch.setattr("users.services_auth.send_password_reset_link", _fake_send)
+    return calls
+
+
+@pytest.mark.django_db
+def test_solicitar_reset_con_username_envia_mail_y_registra_audit(
+    api_client, monkeypatch
+):
+    user = _crear_usuario(username="reset.user", source="ticketera")
+    calls = _patch_send_reset(monkeypatch)
+    accesos_antes = (
+        LogEntry.objects.get_for_object(user)
+        .filter(action=LogEntry.Action.ACCESS)
+        .count()
+    )
+
+    response = api_client.post(
+        SOLICITAR_RESET_URL,
+        {"username": "reset.user"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["detail"].startswith("Si el usuario existe")
+    assert len(calls) == 1
+    assert calls[0]["user_id"] == user.id
+
+    accesos = LogEntry.objects.get_for_object(user).filter(
+        action=LogEntry.Action.ACCESS
+    )
+    assert accesos.count() == accesos_antes + 1
+    entry = accesos.latest("id")
+    meta = entry.audittrail_meta
+    assert meta.source == AUDIT_SOURCE
+    remote_source = (meta.extra.get("context") or {}).get("remote_source") or (
+        meta.extra.get("custom_signal_context") or {}
+    ).get("remote_source")
+    assert remote_source == "ticketera"
+
+
+@pytest.mark.django_db
+def test_solicitar_reset_con_email_envia_mail(api_client, monkeypatch):
+    user = _crear_usuario(username="reset.email", source="ticketera")
+    calls = _patch_send_reset(monkeypatch)
+
+    response = api_client.post(
+        SOLICITAR_RESET_URL,
+        {"email": user.email},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert len(calls) == 1
+    assert calls[0]["user_id"] == user.id
+
+
+@pytest.mark.django_db
+def test_solicitar_reset_usuario_inexistente_no_envia_mail(api_client, monkeypatch):
+    calls = _patch_send_reset(monkeypatch)
+
+    response = api_client.post(
+        SOLICITAR_RESET_URL,
+        {"username": "no.existe"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert calls == []
+
+
+@pytest.mark.django_db
+def test_solicitar_reset_otro_origen_no_envia_mail(api_client, monkeypatch):
+    _crear_usuario(username="ajeno.reset", source="sisoc")
+    calls = _patch_send_reset(monkeypatch)
+
+    response = api_client.post(
+        SOLICITAR_RESET_URL,
+        {"username": "ajeno.reset"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert calls == []
+
+
+@pytest.mark.django_db
+def test_solicitar_reset_usuario_inactivo_no_envia_mail(api_client, monkeypatch):
+    _crear_usuario(username="inactivo.reset", source="ticketera", is_active=False)
+    calls = _patch_send_reset(monkeypatch)
+
+    response = api_client.post(
+        SOLICITAR_RESET_URL,
+        {"username": "inactivo.reset"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert calls == []
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "payload",
+    [
+        pytest.param({}, id="ambos-faltantes"),
+        pytest.param(
+            {"username": "x", "email": "x@ejemplo.gob.ar"}, id="ambos-presentes"
+        ),
+    ],
+)
+def test_solicitar_reset_payload_invalido_devuelve_400(api_client, payload):
+    response = api_client.post(SOLICITAR_RESET_URL, payload, format="json")
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_solicitar_reset_supera_rate_limit_devuelve_429_en_el_intento_6(
+    api_client, monkeypatch
+):
+    _crear_usuario(username="brute.reset", source="ticketera")
+    _patch_send_reset(monkeypatch)
+
+    # Límite: 5 intentos por ip:identidad (window 900s). Los primeros 5 pasan;
+    # el 6° queda bloqueado.
+    for _ in range(5):
+        previo = api_client.post(
+            SOLICITAR_RESET_URL,
+            {"username": "brute.reset"},
+            format="json",
+        )
+        assert previo.status_code == status.HTTP_200_OK
+
+    bloqueado = api_client.post(
+        SOLICITAR_RESET_URL,
+        {"username": "brute.reset"},
+        format="json",
+    )
+
+    assert bloqueado.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+    assert bloqueado.data["error"] == "too_many_attempts"

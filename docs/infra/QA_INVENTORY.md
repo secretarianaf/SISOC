@@ -180,8 +180,8 @@ migraciones y otros comandos con escritura de DB no quedan desactivados.
   modificacion observada 2026-04-27. Se consultaron solo claves de routing sin
   imprimir credenciales: `ENVIRONMENT=qa`, DB en `10.80.9.18:3306`, schema
   `sisoc_local`, `WAIT_FOR_DB=false` y logs relativos bajo `logs/`.
-- `.env.example`, `.env.qa`, `.env.homologacion` y `.env.prod` estan trackeados.
-  Sus valores no fueron inspeccionados durante esta auditoria.
+- Solo `.env.example` esta trackeado; los `.env` por entorno se borraron en
+  #2639 y cada servidor usa su `.env` local.
 - Familias de configuracion versionadas: Django/host/origins, MySQL, Gunicorn,
   GESTIONAR, RENAPER, Google Maps, Sentry, email SMTP, web push, Ticketera, OCR,
   logs y workers.
@@ -235,7 +235,7 @@ Artefactos principales:
 
 - `.github/workflows/deploy.yml`.
 - `scripts/operacion/deploy_refresh.sh`.
-- `docker-compose.deploy.yml`.
+- `docker/compose/docker-compose.deploy.yml`.
 - `docker/django/entrypoint.py`.
 - `scripts/crontab` como contrato versionado, no como prueba de instalacion.
 

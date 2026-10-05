@@ -164,8 +164,8 @@ git -C "$APP_ROOT" branch --show-current
 git -C "$APP_ROOT" rev-parse HEAD
 GIT_OPTIONAL_LOCKS=0 git -C "$APP_ROOT" status --short --branch
 
-docker compose -f "$APP_ROOT/docker-compose.deploy.yml" ps
-docker compose -f "$APP_ROOT/docker-compose.deploy.yml" logs --tail 200 django
+docker compose --project-directory "$APP_ROOT" -f "$APP_ROOT/docker/compose/docker-compose.deploy.yml" ps
+docker compose --project-directory "$APP_ROOT" -f "$APP_ROOT/docker/compose/docker-compose.deploy.yml" logs --tail 200 django
 
 nginx -t
 ss -lntup
@@ -177,7 +177,7 @@ El endpoint `/health/` solo devuelve OK y no demuestra conectividad DB. Agregar 
 prueba explicita de conexion, de solo lectura y sin credenciales visibles:
 
 ```bash
-docker compose -f "$APP_ROOT/docker-compose.deploy.yml" exec -T django \
+docker compose --project-directory "$APP_ROOT" -f "$APP_ROOT/docker/compose/docker-compose.deploy.yml" exec -T django \
   python manage.py shell -c \
   "from django.db import connection; connection.ensure_connection(); print(connection.vendor)"
 ```

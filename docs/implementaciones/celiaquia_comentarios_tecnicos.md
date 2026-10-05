@@ -43,4 +43,4 @@ exige comentarios.
 - Catálogo: `celiaquia/comentarios_tecnicos.py`.
 - Vistas y permisos de territorio: `celiaquia/views/comentarios.py` y
   `users/territorial_scope.py`.
-- Registro de implementación: `docs/registro/cambios/2026-09-03-celiaquia-comentarios-tecnicos-subsanacion.md`.
+- Registro de implementación: `docs/registro/cambios/2026-T3/2026-09-03-celiaquia-comentarios-tecnicos-subsanacion.md`.

@@ -1,0 +1,4130 @@
+{
+  "secos": {
+    "corto": "Seguimiento Puntos de Entrega (Línea Secos)",
+    "linea": "ABORDAJE COMUNITARIO - LÍNEA MÓDULOS SECOS",
+    "titulo": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
+    "sections": [
+      {
+        "id": "encabezado",
+        "title": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
+        "fields": [
+          {
+            "name": "codigo_proyecto",
+            "label": "Código Proyecto",
+            "type": "text"
+          },
+          {
+            "name": "codigo_externo",
+            "label": "Código del Punto de Entrega/Espacio Comunitario (ID Externo)",
+            "type": "text"
+          },
+          {
+            "name": "funcionamiento",
+            "label": "FUNCIONAMIENTO",
+            "type": "enum",
+            "options": [
+              {
+                "value": "En funcionamiento con entrega",
+                "label": "En funcionamiento con entrega"
+              },
+              {
+                "value": "En funcionamiento sin entrega",
+                "label": "En funcionamiento sin entrega"
+              },
+              {
+                "value": "Cerrado",
+                "label": "Cerrado"
+              }
+            ]
+          },
+          {
+            "name": "funcionamiento_motivo",
+            "label": "Motivo",
+            "type": "text"
+          },
+          {
+            "name": "fecha_hora",
+            "label": "Fecha y hora de la visita (Día/mes/año) (hh:mm)",
+            "type": "datetime"
+          }
+        ]
+      },
+      {
+        "id": "entrevistado",
+        "title": "1. DATOS DEL ENTREVISTADO DEL PUNTO DE ENTREGA/ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "ent_cargo",
+            "label": "Cargo o función",
+            "type": "text"
+          },
+          {
+            "name": "ent_nombre_apellido",
+            "label": "Nombre y Apellido",
+            "type": "text"
+          },
+          {
+            "name": "ent_celular",
+            "label": "Celular del entrevistado",
+            "type": "text"
+          },
+          {
+            "name": "ent_dni",
+            "label": "DNI del entrevistado",
+            "type": "text"
+          },
+          {
+            "name": "ent_mail",
+            "label": "Correo electrónico",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "domicilio",
+        "title": "2. DATOS DEL PUNTO DE ENTREGA/ESPACIO COMUNITARIO (domicilio)",
+        "fields": [
+          {
+            "name": "calle",
+            "label": "Calle",
+            "type": "text"
+          },
+          {
+            "name": "numero",
+            "label": "Número",
+            "type": "text"
+          },
+          {
+            "name": "entre_calle_1",
+            "label": "Entre calle 1",
+            "type": "text"
+          },
+          {
+            "name": "entre_calle_2",
+            "label": "Entre calle 2",
+            "type": "text"
+          },
+          {
+            "name": "manzana",
+            "label": "Manzana",
+            "type": "text"
+          },
+          {
+            "name": "lote",
+            "label": "Lote",
+            "type": "text"
+          },
+          {
+            "name": "piso",
+            "label": "Piso",
+            "type": "text"
+          },
+          {
+            "name": "departamento",
+            "label": "Departamento",
+            "type": "text"
+          },
+          {
+            "name": "barrio",
+            "label": "Barrio",
+            "type": "text"
+          },
+          {
+            "name": "codigo_postal",
+            "label": "Código Postal",
+            "type": "text"
+          },
+          {
+            "name": "localidad",
+            "label": "Localidad",
+            "type": "text"
+          },
+          {
+            "name": "municipio",
+            "label": "Municipio",
+            "type": "text"
+          },
+          {
+            "name": "partido",
+            "label": "Departamento/Partido",
+            "type": "text"
+          },
+          {
+            "name": "provincia",
+            "label": "Provincia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Buenos Aires",
+                "label": "Buenos Aires"
+              },
+              {
+                "value": "Ciudad Autónoma de Buenos Aires",
+                "label": "Ciudad Autónoma de Buenos Aires"
+              },
+              {
+                "value": "Catamarca",
+                "label": "Catamarca"
+              },
+              {
+                "value": "Chaco",
+                "label": "Chaco"
+              },
+              {
+                "value": "Chubut",
+                "label": "Chubut"
+              },
+              {
+                "value": "Córdoba",
+                "label": "Córdoba"
+              },
+              {
+                "value": "Corrientes",
+                "label": "Corrientes"
+              },
+              {
+                "value": "Entre Ríos",
+                "label": "Entre Ríos"
+              },
+              {
+                "value": "Formosa",
+                "label": "Formosa"
+              },
+              {
+                "value": "Jujuy",
+                "label": "Jujuy"
+              },
+              {
+                "value": "La Pampa",
+                "label": "La Pampa"
+              },
+              {
+                "value": "La Rioja",
+                "label": "La Rioja"
+              },
+              {
+                "value": "Mendoza",
+                "label": "Mendoza"
+              },
+              {
+                "value": "Misiones",
+                "label": "Misiones"
+              },
+              {
+                "value": "Neuquén",
+                "label": "Neuquén"
+              },
+              {
+                "value": "Río Negro",
+                "label": "Río Negro"
+              },
+              {
+                "value": "Salta",
+                "label": "Salta"
+              },
+              {
+                "value": "San Juan",
+                "label": "San Juan"
+              },
+              {
+                "value": "San Luis",
+                "label": "San Luis"
+              },
+              {
+                "value": "Santa Cruz",
+                "label": "Santa Cruz"
+              },
+              {
+                "value": "Santa Fe",
+                "label": "Santa Fe"
+              },
+              {
+                "value": "Santiago del Estero",
+                "label": "Santiago del Estero"
+              },
+              {
+                "value": "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
+                "label": "Tierra del Fuego, Antártida e Islas del Atlántico Sur"
+              },
+              {
+                "value": "Tucumán",
+                "label": "Tucumán"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "recursos",
+        "title": "3. ORIGEN Y TIPO DE RECURSOS DEL PUNTO DE ENTREGA/ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "recibe_donaciones",
+            "label": "Donaciones: Recibe",
+            "type": "bool"
+          },
+          {
+            "name": "frecuencia_donaciones",
+            "label": "Donaciones: Frecuencia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Bimestral",
+                "label": "Bimestral"
+              },
+              {
+                "value": "Trimestral",
+                "label": "Trimestral"
+              },
+              {
+                "value": "Otra frecuencia/Sin frecuencia específica",
+                "label": "Otra frecuencia/Sin frecuencia específica"
+              }
+            ]
+          },
+          {
+            "name": "que_recibe_donaciones",
+            "label": "Donaciones: ¿Qué recibe?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Transferencia Monetaria",
+                "label": "Transferencia Monetaria"
+              },
+              {
+                "value": "Mercadería",
+                "label": "Mercadería"
+              },
+              {
+                "value": "Ambas",
+                "label": "Ambas"
+              }
+            ]
+          },
+          {
+            "name": "recibe_estado_nacional",
+            "label": "Estado Nacional: Recibe",
+            "type": "bool"
+          },
+          {
+            "name": "frecuencia_estado_nacional",
+            "label": "Estado Nacional: Frecuencia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Bimestral",
+                "label": "Bimestral"
+              },
+              {
+                "value": "Trimestral",
+                "label": "Trimestral"
+              },
+              {
+                "value": "Otra frecuencia/Sin frecuencia específica",
+                "label": "Otra frecuencia/Sin frecuencia específica"
+              }
+            ]
+          },
+          {
+            "name": "que_recibe_estado_nacional",
+            "label": "Estado Nacional: ¿Qué recibe?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Transferencia Monetaria",
+                "label": "Transferencia Monetaria"
+              },
+              {
+                "value": "Mercadería",
+                "label": "Mercadería"
+              },
+              {
+                "value": "Ambas",
+                "label": "Ambas"
+              }
+            ]
+          },
+          {
+            "name": "recibe_estado_provincial",
+            "label": "Estado Provincial: Recibe",
+            "type": "bool"
+          },
+          {
+            "name": "frecuencia_estado_provincial",
+            "label": "Estado Provincial: Frecuencia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Bimestral",
+                "label": "Bimestral"
+              },
+              {
+                "value": "Trimestral",
+                "label": "Trimestral"
+              },
+              {
+                "value": "Otra frecuencia/Sin frecuencia específica",
+                "label": "Otra frecuencia/Sin frecuencia específica"
+              }
+            ]
+          },
+          {
+            "name": "que_recibe_estado_provincial",
+            "label": "Estado Provincial: ¿Qué recibe?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Transferencia Monetaria",
+                "label": "Transferencia Monetaria"
+              },
+              {
+                "value": "Mercadería",
+                "label": "Mercadería"
+              },
+              {
+                "value": "Ambas",
+                "label": "Ambas"
+              }
+            ]
+          },
+          {
+            "name": "recibe_estado_municipal",
+            "label": "Estado Municipal: Recibe",
+            "type": "bool"
+          },
+          {
+            "name": "frecuencia_estado_municipal",
+            "label": "Estado Municipal: Frecuencia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Bimestral",
+                "label": "Bimestral"
+              },
+              {
+                "value": "Trimestral",
+                "label": "Trimestral"
+              },
+              {
+                "value": "Otra frecuencia/Sin frecuencia específica",
+                "label": "Otra frecuencia/Sin frecuencia específica"
+              }
+            ]
+          },
+          {
+            "name": "que_recibe_estado_municipal",
+            "label": "Estado Municipal: ¿Qué recibe?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Transferencia Monetaria",
+                "label": "Transferencia Monetaria"
+              },
+              {
+                "value": "Mercadería",
+                "label": "Mercadería"
+              },
+              {
+                "value": "Ambas",
+                "label": "Ambas"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "modalidad_recepcion",
+        "title": "4. MODALIDAD DE RECEPCIÓN DE MERCADERÍA",
+        "fields": [
+          {
+            "name": "retira_punto_distribucion",
+            "label": "Retiran mercadería del Punto de Distribución",
+            "type": "bool"
+          },
+          {
+            "name": "retira_comercio_proveedor",
+            "label": "Retiran mercadería del comercio/proveedor",
+            "type": "bool"
+          },
+          {
+            "name": "recibe_distribucion_proveedor",
+            "label": "Reciben la mercadería del punto de distribución o proveedor",
+            "type": "bool"
+          },
+          {
+            "name": "modalidad_recepcion_otros",
+            "label": "Otros",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "frecuencia_recepcion",
+        "title": "5. FRECUENCIA DE RECEPCIÓN DE MERCADERÍA",
+        "fields": [
+          {
+            "name": "recepcion_semanal",
+            "label": "Semanal",
+            "type": "bool"
+          },
+          {
+            "name": "recepcion_quincenal",
+            "label": "Quincenal",
+            "type": "bool"
+          },
+          {
+            "name": "recepcion_mensual",
+            "label": "Mensual",
+            "type": "bool"
+          },
+          {
+            "name": "recepcion_otra",
+            "label": "Otra frecuencia",
+            "type": "bool"
+          },
+          {
+            "name": "recepcion_otra_detalle",
+            "label": "Especificar",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "prestacion",
+        "title": "6. PRESTACIÓN ALIMENTARIA DEL PUNTO DE ENTREGA/ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "frecuencia_entrega_modulos",
+            "label": "Frecuencia de entrega de módulos/bolsones de alimentos",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Otros",
+                "label": "Otros"
+              }
+            ]
+          },
+          {
+            "name": "frecuencia_entrega_modulos_otros",
+            "label": "Especificar",
+            "type": "text"
+          },
+          {
+            "name": "tipo_alimentos",
+            "label": "Tipo de alimentos que entregan en el módulo o bolsón",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Alimentos secos",
+                "label": "Alimentos secos"
+              },
+              {
+                "value": "Alimentos frescos",
+                "label": "Alimentos frescos"
+              },
+              {
+                "value": "Mixtos",
+                "label": "Mixtos"
+              }
+            ]
+          },
+          {
+            "name": "modulos_en_espacio",
+            "label": "¿Los módulos son entregados en el espacio comunitario?",
+            "type": "bool"
+          },
+          {
+            "name": "modulos_en_espacio_detalle",
+            "label": "Especificar",
+            "type": "text"
+          },
+          {
+            "name": "cantidad_modulos_entregados",
+            "label": "¿Cuántos módulos entregaron?",
+            "type": "number"
+          },
+          {
+            "name": "personas_reciben_modulos",
+            "label": "¿Cuántas personas reciben módulos alimentarios actualmente?",
+            "type": "number"
+          }
+        ]
+      },
+      {
+        "id": "personas",
+        "title": "7. DATOS SOBRE LAS PERSONAS QUE REALIZAN TAREAS EN EL PUNTO DE ENTREGA/ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "cantidad_personas",
+            "label": "¿Qué cantidad de personas colaboran en la entrega de módulos alimentarios?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "1 a 3",
+                "label": "1 a 3"
+              },
+              {
+                "value": "4 a 7",
+                "label": "4 a 7"
+              },
+              {
+                "value": "8 o más",
+                "label": "8 o más"
+              }
+            ]
+          },
+          {
+            "name": "recibieron_capacitacion",
+            "label": "¿Las personas que colaboran recibieron capacitaciones?",
+            "type": "bool"
+          },
+          {
+            "name": "capacitacion_temas",
+            "label": "Temática de la capacitación recibida (si respondió Sí)",
+            "type": "enumlist",
+            "options": [
+              {
+                "value": "Alimentación saludable",
+                "label": "Alimentación saludable"
+              },
+              {
+                "value": "Higiene y conservación de alimentos",
+                "label": "Higiene y conservación de alimentos"
+              },
+              {
+                "value": "Manipulación de alimentos",
+                "label": "Manipulación de alimentos"
+              },
+              {
+                "value": "Seguridad e higiene en el trabajo",
+                "label": "Seguridad e higiene en el trabajo"
+              },
+              {
+                "value": "Organización y logística de la distribución de alimentos",
+                "label": "Organización y logística de la distribución de alimentos"
+              },
+              {
+                "value": "Registro y control de stock de alimentos",
+                "label": "Registro y control de stock de alimentos"
+              },
+              {
+                "value": "Seguridad alimentaria",
+                "label": "Seguridad alimentaria"
+              },
+              {
+                "value": "Primeros auxilios",
+                "label": "Primeros auxilios"
+              },
+              {
+                "value": "Otro",
+                "label": "Otro (especificar)"
+              }
+            ]
+          },
+          {
+            "name": "capacitacion_temas_otro",
+            "label": "Otro (especificar)",
+            "type": "text"
+          },
+          {
+            "name": "temas_interes",
+            "label": "¿Sobre qué temas le gustaría recibir capacitación?",
+            "type": "enumlist",
+            "options": [
+              {
+                "value": "Alimentación saludable",
+                "label": "Alimentación saludable"
+              },
+              {
+                "value": "Higiene y conservación de alimentos",
+                "label": "Higiene y conservación de alimentos"
+              },
+              {
+                "value": "Manipulación de alimentos",
+                "label": "Manipulación de alimentos"
+              },
+              {
+                "value": "Seguridad e higiene en el trabajo",
+                "label": "Seguridad e higiene en el trabajo"
+              },
+              {
+                "value": "Organización y logística de la distribución de alimentos",
+                "label": "Organización y logística de la distribución de alimentos"
+              },
+              {
+                "value": "Registro y control de stock de alimentos",
+                "label": "Registro y control de stock de alimentos"
+              },
+              {
+                "value": "Seguridad alimentaria",
+                "label": "Seguridad alimentaria"
+              },
+              {
+                "value": "Primeros auxilios",
+                "label": "Primeros auxilios"
+              },
+              {
+                "value": "Otro",
+                "label": "Otro (especificar)"
+              }
+            ]
+          },
+          {
+            "name": "temas_interes_otro",
+            "label": "Otro (especificar)",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "comentarios",
+        "title": "8. COMENTARIOS FINALES",
+        "fields": [
+          {
+            "name": "comentarios_finales",
+            "label": "8. COMENTARIOS FINALES",
+            "type": "longtext"
+          }
+        ]
+      },
+      {
+        "id": "modalidad_entrevista",
+        "title": "9. LA ENTREVISTA SE REALIZÓ DE FORMA:",
+        "fields": [
+          {
+            "name": "modalidad_entrevista",
+            "label": "9. LA ENTREVISTA SE REALIZÓ DE FORMA:",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Presencial",
+                "label": "Presencial"
+              },
+              {
+                "value": "Virtual",
+                "label": "Virtual"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "cierre",
+        "title": "Cierre",
+        "fields": [
+          {
+            "name": "firma_entrevistado",
+            "label": "Firma del entrevistado",
+            "type": "signature"
+          }
+        ]
+      }
+    ]
+  },
+  "iia1": {
+    "corto": "FORM II A.1 — Virtual · Presencial y Vianda",
+    "linea": "ABORDAJE COMUNITARIO - LÍNEA TRADICIONAL",
+    "titulo": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
+    "sections": [
+      {
+        "id": "encabezado",
+        "title": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
+        "fields": [
+          {
+            "name": "codigo_proyecto",
+            "label": "Código Proyecto",
+            "type": "text"
+          },
+          {
+            "name": "codigo_externo",
+            "label": "Código del Espacio Comunitario (ID Externo)",
+            "type": "text"
+          },
+          {
+            "name": "fecha_hora",
+            "label": "Fecha y hora de la entrevista (Día/mes/año) (hh:mm)",
+            "type": "datetime"
+          }
+        ]
+      },
+      {
+        "id": "entrevistado",
+        "title": "1. DATOS DEL ENTREVISTADO DEL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "ent_cargo",
+            "label": "Cargo o función",
+            "type": "text"
+          },
+          {
+            "name": "ent_nombre_apellido",
+            "label": "Nombre y Apellido",
+            "type": "text"
+          },
+          {
+            "name": "ent_celular",
+            "label": "Celular del entrevistado",
+            "type": "text"
+          },
+          {
+            "name": "ent_dni",
+            "label": "DNI del entrevistado",
+            "type": "text"
+          },
+          {
+            "name": "ent_mail",
+            "label": "Correo electrónico",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "domicilio",
+        "title": "2. DATOS DEL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "calle",
+            "label": "Calle",
+            "type": "text"
+          },
+          {
+            "name": "numero",
+            "label": "Número",
+            "type": "text"
+          },
+          {
+            "name": "entre_calle_1",
+            "label": "Entre calle 1",
+            "type": "text"
+          },
+          {
+            "name": "entre_calle_2",
+            "label": "Entre calle 2",
+            "type": "text"
+          },
+          {
+            "name": "manzana",
+            "label": "Manzana",
+            "type": "text"
+          },
+          {
+            "name": "lote",
+            "label": "Lote",
+            "type": "text"
+          },
+          {
+            "name": "piso",
+            "label": "Piso",
+            "type": "text"
+          },
+          {
+            "name": "departamento",
+            "label": "Departamento",
+            "type": "text"
+          },
+          {
+            "name": "barrio",
+            "label": "Barrio",
+            "type": "text"
+          },
+          {
+            "name": "codigo_postal",
+            "label": "Código Postal",
+            "type": "text"
+          },
+          {
+            "name": "localidad",
+            "label": "Localidad",
+            "type": "text"
+          },
+          {
+            "name": "municipio",
+            "label": "Municipio",
+            "type": "text"
+          },
+          {
+            "name": "partido",
+            "label": "Departamento/Partido",
+            "type": "text"
+          },
+          {
+            "name": "provincia",
+            "label": "Provincia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Buenos Aires",
+                "label": "Buenos Aires"
+              },
+              {
+                "value": "Ciudad Autónoma de Buenos Aires",
+                "label": "Ciudad Autónoma de Buenos Aires"
+              },
+              {
+                "value": "Catamarca",
+                "label": "Catamarca"
+              },
+              {
+                "value": "Chaco",
+                "label": "Chaco"
+              },
+              {
+                "value": "Chubut",
+                "label": "Chubut"
+              },
+              {
+                "value": "Córdoba",
+                "label": "Córdoba"
+              },
+              {
+                "value": "Corrientes",
+                "label": "Corrientes"
+              },
+              {
+                "value": "Entre Ríos",
+                "label": "Entre Ríos"
+              },
+              {
+                "value": "Formosa",
+                "label": "Formosa"
+              },
+              {
+                "value": "Jujuy",
+                "label": "Jujuy"
+              },
+              {
+                "value": "La Pampa",
+                "label": "La Pampa"
+              },
+              {
+                "value": "La Rioja",
+                "label": "La Rioja"
+              },
+              {
+                "value": "Mendoza",
+                "label": "Mendoza"
+              },
+              {
+                "value": "Misiones",
+                "label": "Misiones"
+              },
+              {
+                "value": "Neuquén",
+                "label": "Neuquén"
+              },
+              {
+                "value": "Río Negro",
+                "label": "Río Negro"
+              },
+              {
+                "value": "Salta",
+                "label": "Salta"
+              },
+              {
+                "value": "San Juan",
+                "label": "San Juan"
+              },
+              {
+                "value": "San Luis",
+                "label": "San Luis"
+              },
+              {
+                "value": "Santa Cruz",
+                "label": "Santa Cruz"
+              },
+              {
+                "value": "Santa Fe",
+                "label": "Santa Fe"
+              },
+              {
+                "value": "Santiago del Estero",
+                "label": "Santiago del Estero"
+              },
+              {
+                "value": "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
+                "label": "Tierra del Fuego, Antártida e Islas del Atlántico Sur"
+              },
+              {
+                "value": "Tucumán",
+                "label": "Tucumán"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "prestacion",
+        "title": "3. DATOS SOBRE LA PRESTACIÓN ALIMENTARIA",
+        "fields": [
+          {
+            "name": "prestaciones",
+            "label": "3.2 DÍAS, MODALIDAD Y TIPO DE PRESTACIÓN (completar con la cantidad de personas)",
+            "type": "child",
+            "itemFields": [
+              {
+                "name": "dia",
+                "label": "Día",
+                "type": "enum",
+                "options": [
+                  {
+                    "value": "Lunes",
+                    "label": "Lunes"
+                  },
+                  {
+                    "value": "Martes",
+                    "label": "Martes"
+                  },
+                  {
+                    "value": "Miércoles",
+                    "label": "Miércoles"
+                  },
+                  {
+                    "value": "Jueves",
+                    "label": "Jueves"
+                  },
+                  {
+                    "value": "Viernes",
+                    "label": "Viernes"
+                  },
+                  {
+                    "value": "Sábado",
+                    "label": "Sábado"
+                  },
+                  {
+                    "value": "Domingo",
+                    "label": "Domingo"
+                  }
+                ]
+              },
+              {
+                "name": "comida",
+                "label": "PREST.",
+                "type": "enum",
+                "options": [
+                  {
+                    "value": "Desayuno",
+                    "label": "DES (Desayuno)"
+                  },
+                  {
+                    "value": "Almuerzo",
+                    "label": "ALM (Almuerzo)"
+                  },
+                  {
+                    "value": "Merienda",
+                    "label": "MER (Merienda)"
+                  },
+                  {
+                    "value": "Merienda reforzada",
+                    "label": "M.REF (Merienda Reforzada)"
+                  },
+                  {
+                    "value": "Cena",
+                    "label": "CEN (Cena)"
+                  }
+                ]
+              },
+              {
+                "name": "ap_total",
+                "label": "AP",
+                "type": "number"
+              },
+              {
+                "name": "de_presencial",
+                "label": "DE — P (Presencial)",
+                "type": "number"
+              },
+              {
+                "name": "de_vianda",
+                "label": "DE — V (Vianda)",
+                "type": "number"
+              }
+            ]
+          },
+          {
+            "name": "motivo_diferencia",
+            "label": "3.3 En caso de que lo aprobado no coincida con lo declarado, indicar el motivo",
+            "type": "longtext"
+          },
+          {
+            "name": "menu_prestacion",
+            "label": "Prestación",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Desayuno",
+                "label": "Desayuno"
+              },
+              {
+                "value": "Almuerzo",
+                "label": "Almuerzo"
+              },
+              {
+                "value": "Merienda",
+                "label": "Merienda"
+              },
+              {
+                "value": "Merienda reforzada",
+                "label": "Merienda reforzada"
+              },
+              {
+                "value": "Cena",
+                "label": "Cena"
+              }
+            ]
+          },
+          {
+            "name": "menu_cantidad_presencial",
+            "label": "Modalidad de prestación: Presencial (cantidad)",
+            "type": "number"
+          },
+          {
+            "name": "menu_cantidad_vianda",
+            "label": "Vianda (cantidad)",
+            "type": "number"
+          },
+          {
+            "name": "menu_descripcion",
+            "label": "Menú",
+            "type": "longtext"
+          },
+          {
+            "name": "menu_personas",
+            "label": "Cantidad de personas para las que se preparó este menú",
+            "type": "number"
+          },
+          {
+            "name": "menu_ingredientes",
+            "label": "Ingredientes / Cantidades totales utilizadas (litros, kg, unidades)",
+            "type": "child",
+            "itemFields": [
+              {
+                "name": "ingrediente",
+                "label": "Ingredientes",
+                "type": "text"
+              },
+              {
+                "name": "cantidad",
+                "label": "Cantidades totales utilizadas (litros, kg, unidades)",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "menu_dia_1",
+            "label": "Día 1",
+            "type": "longtext"
+          },
+          {
+            "name": "menu_dia_2",
+            "label": "Día 2",
+            "type": "longtext"
+          },
+          {
+            "name": "menu_dia_3",
+            "label": "Día 3",
+            "type": "longtext"
+          },
+          {
+            "name": "menu_dia_4",
+            "label": "Día 4",
+            "type": "longtext"
+          },
+          {
+            "name": "menu_planificado",
+            "label": "3.6 ¿Cuentan con menú planificado?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Sí",
+                "label": "Sí"
+              },
+              {
+                "value": "No",
+                "label": "No (¿por qué?)"
+              },
+              {
+                "value": "Ns/Nc",
+                "label": "Ns/Nc (¿por qué?)"
+              }
+            ]
+          },
+          {
+            "name": "menu_planificado_porque",
+            "label": "¿Por qué?",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "registro_asistencia",
+        "title": "4. ¿Llevan un registro de asistencia?",
+        "fields": [
+          {
+            "name": "registro_asistencia",
+            "label": "¿Llevan un registro de asistencia?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Sí",
+                "label": "Sí"
+              },
+              {
+                "value": "No",
+                "label": "No"
+              },
+              {
+                "value": "Ns/Nc",
+                "label": "Ns/Nc"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "asistencia_tecnica",
+        "title": "5. ASISTENCIA TÉCNICA",
+        "fields": [
+          {
+            "name": "at_socio_organizativos",
+            "label": "Socio-Organizativos",
+            "type": "bool"
+          },
+          {
+            "name": "at_alimentario_nutricionales",
+            "label": "Alimentario-Nutricionales",
+            "type": "bool"
+          },
+          {
+            "name": "at_seguridad_higiene",
+            "label": "Seguridad e Higiene",
+            "type": "bool"
+          },
+          {
+            "name": "at_administrativo_contables",
+            "label": "Administrativo-Contables-Rendición de Cuentas",
+            "type": "bool"
+          },
+          {
+            "name": "at_otro",
+            "label": "Otro (especificar)",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "comentarios",
+        "title": "6. COMENTARIOS FINALES",
+        "fields": [
+          {
+            "name": "comentarios_finales",
+            "label": "6. COMENTARIOS FINALES",
+            "type": "longtext"
+          }
+        ]
+      },
+      {
+        "id": "cierre",
+        "title": "Cierre",
+        "fields": []
+      }
+    ]
+  },
+  "iib1": {
+    "corto": "FORM II B.1 — Virtual · Módulo",
+    "linea": "ABORDAJE COMUNITARIO - LÍNEA TRADICIONAL",
+    "titulo": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
+    "sections": [
+      {
+        "id": "encabezado",
+        "title": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
+        "fields": [
+          {
+            "name": "codigo_proyecto",
+            "label": "Código Proyecto",
+            "type": "text"
+          },
+          {
+            "name": "codigo_externo",
+            "label": "Código del Espacio Comunitario (ID Externo)",
+            "type": "text"
+          },
+          {
+            "name": "fecha_hora",
+            "label": "Fecha y hora de la entrevista (Día/mes/año) (hh:mm)",
+            "type": "datetime"
+          }
+        ]
+      },
+      {
+        "id": "entrevistado",
+        "title": "1. DATOS DEL ENTREVISTADO DEL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "ent_cargo",
+            "label": "Cargo o función",
+            "type": "text"
+          },
+          {
+            "name": "ent_nombre_apellido",
+            "label": "Nombre y Apellido",
+            "type": "text"
+          },
+          {
+            "name": "ent_celular",
+            "label": "Celular del entrevistado",
+            "type": "text"
+          },
+          {
+            "name": "ent_dni",
+            "label": "DNI del entrevistado",
+            "type": "text"
+          },
+          {
+            "name": "ent_mail",
+            "label": "Correo electrónico",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "domicilio",
+        "title": "2. DATOS DEL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "calle",
+            "label": "Calle",
+            "type": "text"
+          },
+          {
+            "name": "numero",
+            "label": "Número",
+            "type": "text"
+          },
+          {
+            "name": "entre_calle_1",
+            "label": "Entre calle 1",
+            "type": "text"
+          },
+          {
+            "name": "entre_calle_2",
+            "label": "Entre calle 2",
+            "type": "text"
+          },
+          {
+            "name": "manzana",
+            "label": "Manzana",
+            "type": "text"
+          },
+          {
+            "name": "lote",
+            "label": "Lote",
+            "type": "text"
+          },
+          {
+            "name": "piso",
+            "label": "Piso",
+            "type": "text"
+          },
+          {
+            "name": "departamento",
+            "label": "Departamento",
+            "type": "text"
+          },
+          {
+            "name": "barrio",
+            "label": "Barrio",
+            "type": "text"
+          },
+          {
+            "name": "codigo_postal",
+            "label": "Código Postal",
+            "type": "text"
+          },
+          {
+            "name": "localidad",
+            "label": "Localidad",
+            "type": "text"
+          },
+          {
+            "name": "municipio",
+            "label": "Municipio",
+            "type": "text"
+          },
+          {
+            "name": "partido",
+            "label": "Departamento/Partido",
+            "type": "text"
+          },
+          {
+            "name": "provincia",
+            "label": "Provincia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Buenos Aires",
+                "label": "Buenos Aires"
+              },
+              {
+                "value": "Ciudad Autónoma de Buenos Aires",
+                "label": "Ciudad Autónoma de Buenos Aires"
+              },
+              {
+                "value": "Catamarca",
+                "label": "Catamarca"
+              },
+              {
+                "value": "Chaco",
+                "label": "Chaco"
+              },
+              {
+                "value": "Chubut",
+                "label": "Chubut"
+              },
+              {
+                "value": "Córdoba",
+                "label": "Córdoba"
+              },
+              {
+                "value": "Corrientes",
+                "label": "Corrientes"
+              },
+              {
+                "value": "Entre Ríos",
+                "label": "Entre Ríos"
+              },
+              {
+                "value": "Formosa",
+                "label": "Formosa"
+              },
+              {
+                "value": "Jujuy",
+                "label": "Jujuy"
+              },
+              {
+                "value": "La Pampa",
+                "label": "La Pampa"
+              },
+              {
+                "value": "La Rioja",
+                "label": "La Rioja"
+              },
+              {
+                "value": "Mendoza",
+                "label": "Mendoza"
+              },
+              {
+                "value": "Misiones",
+                "label": "Misiones"
+              },
+              {
+                "value": "Neuquén",
+                "label": "Neuquén"
+              },
+              {
+                "value": "Río Negro",
+                "label": "Río Negro"
+              },
+              {
+                "value": "Salta",
+                "label": "Salta"
+              },
+              {
+                "value": "San Juan",
+                "label": "San Juan"
+              },
+              {
+                "value": "San Luis",
+                "label": "San Luis"
+              },
+              {
+                "value": "Santa Cruz",
+                "label": "Santa Cruz"
+              },
+              {
+                "value": "Santa Fe",
+                "label": "Santa Fe"
+              },
+              {
+                "value": "Santiago del Estero",
+                "label": "Santiago del Estero"
+              },
+              {
+                "value": "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
+                "label": "Tierra del Fuego, Antártida e Islas del Atlántico Sur"
+              },
+              {
+                "value": "Tucumán",
+                "label": "Tucumán"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "prestacion",
+        "title": "3. DATOS SOBRE LA PRESTACIÓN ALIMENTARIA",
+        "fields": [
+          {
+            "name": "aprobados_desayuno",
+            "label": "Desayuno: Destinatarios aprobados",
+            "type": "number"
+          },
+          {
+            "name": "declarados_desayuno",
+            "label": "Desayuno: Destinatarios declarados por el entrevistado",
+            "type": "number"
+          },
+          {
+            "name": "aprobados_almuerzo",
+            "label": "Almuerzo: Destinatarios aprobados",
+            "type": "number"
+          },
+          {
+            "name": "declarados_almuerzo",
+            "label": "Almuerzo: Destinatarios declarados por el entrevistado",
+            "type": "number"
+          },
+          {
+            "name": "aprobados_merienda",
+            "label": "Merienda: Destinatarios aprobados",
+            "type": "number"
+          },
+          {
+            "name": "declarados_merienda",
+            "label": "Merienda: Destinatarios declarados por el entrevistado",
+            "type": "number"
+          },
+          {
+            "name": "aprobados_merienda_reforzada",
+            "label": "Merienda reforzada: Destinatarios aprobados",
+            "type": "number"
+          },
+          {
+            "name": "declarados_merienda_reforzada",
+            "label": "Merienda reforzada: Destinatarios declarados por el entrevistado",
+            "type": "number"
+          },
+          {
+            "name": "aprobados_cena",
+            "label": "Cena: Destinatarios aprobados",
+            "type": "number"
+          },
+          {
+            "name": "declarados_cena",
+            "label": "Cena: Destinatarios declarados por el entrevistado",
+            "type": "number"
+          },
+          {
+            "name": "dias_horarios_entrega",
+            "label": "3.3 Días y horarios de entrega de módulos",
+            "type": "longtext"
+          },
+          {
+            "name": "criterio_entrega",
+            "label": "3.4 ¿Con qué criterio se determina la entrega de los módulos?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Por destinatario",
+                "label": "Por destinatario"
+              },
+              {
+                "value": "Por familia, de acuerdo con la cantidad de destinatarios",
+                "label": "Por familia, de acuerdo con la cantidad de destinatarios"
+              },
+              {
+                "value": "Otros",
+                "label": "Otros (especifique)"
+              }
+            ]
+          },
+          {
+            "name": "criterio_entrega_otro",
+            "label": "Otros (especifique)",
+            "type": "text"
+          },
+          {
+            "name": "composicion_modulo",
+            "label": "3.5 En cuanto a la composición del módulo:",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Único",
+                "label": "Único (un módulo igual para todos los destinatarios aprobados)"
+              },
+              {
+                "value": "Diferenciado",
+                "label": "Diferenciado (módulos diferentes de acuerdo con la cantidad de destinatarios aprobados)"
+              }
+            ]
+          },
+          {
+            "name": "composicion_detalle",
+            "label": "Especifique",
+            "type": "longtext"
+          },
+          {
+            "name": "tipo_alimentos_modulo",
+            "label": "3.6 Tipo de alimentos del módulo (mensual):",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Módulos de alimentos secos",
+                "label": "Módulos de alimentos secos"
+              },
+              {
+                "value": "Módulos de alimentos frescos",
+                "label": "Módulos de alimentos frescos"
+              },
+              {
+                "value": "Módulos de alimentos mixtos",
+                "label": "Módulos de alimentos mixtos"
+              }
+            ]
+          },
+          {
+            "name": "frecuencia_entrega_modulo",
+            "label": "Frecuencia de entrega",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Otra",
+                "label": "Otra"
+              }
+            ]
+          },
+          {
+            "name": "frecuencia_entrega_modulo_otra",
+            "label": "Otra",
+            "type": "text"
+          },
+          {
+            "name": "destinatarios_modulo_a",
+            "label": "Módulo A: Destinatarios",
+            "type": "number"
+          },
+          {
+            "name": "destinatarios_modulo_b",
+            "label": "Módulo B: Destinatarios",
+            "type": "number"
+          },
+          {
+            "name": "destinatarios_modulo_c",
+            "label": "Módulo C: Destinatarios",
+            "type": "number"
+          },
+          {
+            "name": "destinatarios_modulo_d",
+            "label": "Módulo D: Destinatarios",
+            "type": "number"
+          },
+          {
+            "name": "modulo_alimentos",
+            "label": "Alimentos y cantidades (kg, paquetes, botellas) que se incluyen en la entrega",
+            "type": "child",
+            "itemFields": [
+              {
+                "name": "alimento",
+                "label": "Alimento",
+                "type": "text"
+              },
+              {
+                "name": "modulo_a",
+                "label": "Módulo A",
+                "type": "text"
+              },
+              {
+                "name": "modulo_b",
+                "label": "Módulo B",
+                "type": "text"
+              },
+              {
+                "name": "modulo_c",
+                "label": "Módulo C",
+                "type": "text"
+              },
+              {
+                "name": "modulo_d",
+                "label": "Módulo D",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "cantidad_modulos_a",
+            "label": "A: Cantidad total de módulos alimentarios (mensuales)",
+            "type": "number"
+          },
+          {
+            "name": "cantidad_modulos_b",
+            "label": "B: Cantidad total de módulos alimentarios (mensuales)",
+            "type": "number"
+          },
+          {
+            "name": "cantidad_modulos_c",
+            "label": "C: Cantidad total de módulos alimentarios (mensuales)",
+            "type": "number"
+          },
+          {
+            "name": "cantidad_modulos_d",
+            "label": "D: Cantidad total de módulos alimentarios (mensuales)",
+            "type": "number"
+          },
+          {
+            "name": "cantidad_modulos_e",
+            "label": "E: Cantidad total de módulos alimentarios (mensuales)",
+            "type": "number"
+          },
+          {
+            "name": "cantidad_modulos_total",
+            "label": "TOTAL: Cantidad total de módulos alimentarios (mensuales)",
+            "type": "number"
+          }
+        ]
+      },
+      {
+        "id": "registro_asistencia",
+        "title": "4. ¿Llevan un registro de asistencia?",
+        "fields": [
+          {
+            "name": "registro_asistencia",
+            "label": "¿Llevan un registro de asistencia?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Sí",
+                "label": "Sí"
+              },
+              {
+                "value": "No",
+                "label": "No"
+              },
+              {
+                "value": "Ns/Nc",
+                "label": "Ns/Nc"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "asistencia_tecnica",
+        "title": "5. ASISTENCIA TÉCNICA",
+        "fields": [
+          {
+            "name": "at_socio_organizativos",
+            "label": "Socio-Organizativos",
+            "type": "bool"
+          },
+          {
+            "name": "at_alimentario_nutricionales",
+            "label": "Alimentario-Nutricionales",
+            "type": "bool"
+          },
+          {
+            "name": "at_seguridad_higiene",
+            "label": "Seguridad e Higiene",
+            "type": "bool"
+          },
+          {
+            "name": "at_administrativo_contables",
+            "label": "Administrativo-Contables-Rendición de Cuentas",
+            "type": "bool"
+          },
+          {
+            "name": "at_otro",
+            "label": "Otro (especificar)",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "comentarios",
+        "title": "6. COMENTARIOS FINALES",
+        "fields": [
+          {
+            "name": "comentarios_finales",
+            "label": "6. COMENTARIOS FINALES",
+            "type": "longtext"
+          }
+        ]
+      },
+      {
+        "id": "cierre",
+        "title": "Cierre",
+        "fields": []
+      }
+    ]
+  },
+  "iia": {
+    "corto": "FORM II A — Presencial · Vianda",
+    "linea": "ABORDAJE COMUNITARIO - LÍNEA TRADICIONAL",
+    "titulo": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
+    "sections": [
+      {
+        "id": "encabezado",
+        "title": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
+        "fields": [
+          {
+            "name": "codigo_proyecto",
+            "label": "Código Proyecto",
+            "type": "text"
+          },
+          {
+            "name": "codigo_externo",
+            "label": "Código del Espacio Comunitario (ID Externo)",
+            "type": "text"
+          },
+          {
+            "name": "funcionamiento",
+            "label": "FUNCIONAMIENTO",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Abierto, en funcionamiento alimentario",
+                "label": "Abierto, en funcionamiento alimentario"
+              },
+              {
+                "value": "Abierto, sin funcionamiento alimentario",
+                "label": "Abierto, sin funcionamiento alimentario"
+              },
+              {
+                "value": "Cerrado",
+                "label": "Cerrado"
+              }
+            ]
+          },
+          {
+            "name": "funcionamiento_motivo",
+            "label": "Motivo",
+            "type": "text"
+          },
+          {
+            "name": "fecha_hora",
+            "label": "Fecha y hora de la entrevista (Día/mes/año)(hh:mm)",
+            "type": "datetime"
+          }
+        ]
+      },
+      {
+        "id": "entrevistado",
+        "title": "1. DATOS DEL ENTREVISTADO DEL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "ent_cargo",
+            "label": "Cargo o función",
+            "type": "text"
+          },
+          {
+            "name": "ent_nombre_apellido",
+            "label": "Nombre y Apellido",
+            "type": "text"
+          },
+          {
+            "name": "ent_celular",
+            "label": "Celular del entrevistado",
+            "type": "text"
+          },
+          {
+            "name": "ent_dni",
+            "label": "DNI del entrevistado",
+            "type": "text"
+          },
+          {
+            "name": "ent_mail",
+            "label": "Correo electrónico",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "domicilio",
+        "title": "2. DATOS DEL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "calle",
+            "label": "Calle",
+            "type": "text"
+          },
+          {
+            "name": "numero",
+            "label": "Número",
+            "type": "text"
+          },
+          {
+            "name": "entre_calle_1",
+            "label": "Entre calle 1",
+            "type": "text"
+          },
+          {
+            "name": "entre_calle_2",
+            "label": "Entre calle 2",
+            "type": "text"
+          },
+          {
+            "name": "manzana",
+            "label": "Manzana",
+            "type": "text"
+          },
+          {
+            "name": "lote",
+            "label": "Lote",
+            "type": "text"
+          },
+          {
+            "name": "piso",
+            "label": "Piso",
+            "type": "text"
+          },
+          {
+            "name": "departamento",
+            "label": "Departamento",
+            "type": "text"
+          },
+          {
+            "name": "barrio",
+            "label": "Barrio",
+            "type": "text"
+          },
+          {
+            "name": "codigo_postal",
+            "label": "Código Postal",
+            "type": "text"
+          },
+          {
+            "name": "localidad",
+            "label": "Localidad",
+            "type": "text"
+          },
+          {
+            "name": "municipio",
+            "label": "Municipio",
+            "type": "text"
+          },
+          {
+            "name": "partido",
+            "label": "Departamento/Partido",
+            "type": "text"
+          },
+          {
+            "name": "provincia",
+            "label": "Provincia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Buenos Aires",
+                "label": "Buenos Aires"
+              },
+              {
+                "value": "Ciudad Autónoma de Buenos Aires",
+                "label": "Ciudad Autónoma de Buenos Aires"
+              },
+              {
+                "value": "Catamarca",
+                "label": "Catamarca"
+              },
+              {
+                "value": "Chaco",
+                "label": "Chaco"
+              },
+              {
+                "value": "Chubut",
+                "label": "Chubut"
+              },
+              {
+                "value": "Córdoba",
+                "label": "Córdoba"
+              },
+              {
+                "value": "Corrientes",
+                "label": "Corrientes"
+              },
+              {
+                "value": "Entre Ríos",
+                "label": "Entre Ríos"
+              },
+              {
+                "value": "Formosa",
+                "label": "Formosa"
+              },
+              {
+                "value": "Jujuy",
+                "label": "Jujuy"
+              },
+              {
+                "value": "La Pampa",
+                "label": "La Pampa"
+              },
+              {
+                "value": "La Rioja",
+                "label": "La Rioja"
+              },
+              {
+                "value": "Mendoza",
+                "label": "Mendoza"
+              },
+              {
+                "value": "Misiones",
+                "label": "Misiones"
+              },
+              {
+                "value": "Neuquén",
+                "label": "Neuquén"
+              },
+              {
+                "value": "Río Negro",
+                "label": "Río Negro"
+              },
+              {
+                "value": "Salta",
+                "label": "Salta"
+              },
+              {
+                "value": "San Juan",
+                "label": "San Juan"
+              },
+              {
+                "value": "San Luis",
+                "label": "San Luis"
+              },
+              {
+                "value": "Santa Cruz",
+                "label": "Santa Cruz"
+              },
+              {
+                "value": "Santa Fe",
+                "label": "Santa Fe"
+              },
+              {
+                "value": "Santiago del Estero",
+                "label": "Santiago del Estero"
+              },
+              {
+                "value": "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
+                "label": "Tierra del Fuego, Antártida e Islas del Atlántico Sur"
+              },
+              {
+                "value": "Tucumán",
+                "label": "Tucumán"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "recursos",
+        "title": "3. DATOS SOBRE RECURSOS DEL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "recibe_donaciones",
+            "label": "Donaciones: Recibe",
+            "type": "bool"
+          },
+          {
+            "name": "frecuencia_donaciones",
+            "label": "Donaciones: Frecuencia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Bimestral",
+                "label": "Bimestral"
+              },
+              {
+                "value": "Trimestral",
+                "label": "Trimestral"
+              },
+              {
+                "value": "Otra frecuencia/Sin frecuencia específica",
+                "label": "Otra frecuencia/Sin frecuencia específica"
+              }
+            ]
+          },
+          {
+            "name": "que_recibe_donaciones",
+            "label": "Donaciones: ¿Qué recibe?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Transferencia Monetaria",
+                "label": "Transferencia Monetaria"
+              },
+              {
+                "value": "Mercadería",
+                "label": "Mercadería"
+              },
+              {
+                "value": "Ambas",
+                "label": "Ambas"
+              }
+            ]
+          },
+          {
+            "name": "recibe_estado_nacional",
+            "label": "Estado Nacional: Recibe",
+            "type": "bool"
+          },
+          {
+            "name": "frecuencia_estado_nacional",
+            "label": "Estado Nacional: Frecuencia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Bimestral",
+                "label": "Bimestral"
+              },
+              {
+                "value": "Trimestral",
+                "label": "Trimestral"
+              },
+              {
+                "value": "Otra frecuencia/Sin frecuencia específica",
+                "label": "Otra frecuencia/Sin frecuencia específica"
+              }
+            ]
+          },
+          {
+            "name": "que_recibe_estado_nacional",
+            "label": "Estado Nacional: ¿Qué recibe?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Transferencia Monetaria",
+                "label": "Transferencia Monetaria"
+              },
+              {
+                "value": "Mercadería",
+                "label": "Mercadería"
+              },
+              {
+                "value": "Ambas",
+                "label": "Ambas"
+              }
+            ]
+          },
+          {
+            "name": "recibe_estado_provincial",
+            "label": "Estado Provincial: Recibe",
+            "type": "bool"
+          },
+          {
+            "name": "frecuencia_estado_provincial",
+            "label": "Estado Provincial: Frecuencia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Bimestral",
+                "label": "Bimestral"
+              },
+              {
+                "value": "Trimestral",
+                "label": "Trimestral"
+              },
+              {
+                "value": "Otra frecuencia/Sin frecuencia específica",
+                "label": "Otra frecuencia/Sin frecuencia específica"
+              }
+            ]
+          },
+          {
+            "name": "que_recibe_estado_provincial",
+            "label": "Estado Provincial: ¿Qué recibe?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Transferencia Monetaria",
+                "label": "Transferencia Monetaria"
+              },
+              {
+                "value": "Mercadería",
+                "label": "Mercadería"
+              },
+              {
+                "value": "Ambas",
+                "label": "Ambas"
+              }
+            ]
+          },
+          {
+            "name": "recibe_estado_municipal",
+            "label": "Estado Municipal: Recibe",
+            "type": "bool"
+          },
+          {
+            "name": "frecuencia_estado_municipal",
+            "label": "Estado Municipal: Frecuencia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Bimestral",
+                "label": "Bimestral"
+              },
+              {
+                "value": "Trimestral",
+                "label": "Trimestral"
+              },
+              {
+                "value": "Otra frecuencia/Sin frecuencia específica",
+                "label": "Otra frecuencia/Sin frecuencia específica"
+              }
+            ]
+          },
+          {
+            "name": "que_recibe_estado_municipal",
+            "label": "Estado Municipal: ¿Qué recibe?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Transferencia Monetaria",
+                "label": "Transferencia Monetaria"
+              },
+              {
+                "value": "Mercadería",
+                "label": "Mercadería"
+              },
+              {
+                "value": "Ambas",
+                "label": "Ambas"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "compras",
+        "title": "4. DATOS SOBRE LA REALIZACIÓN DE LAS COMPRAS PARA ABASTECER EL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "quien_compra",
+            "label": "4.1 ¿Quién realiza las compras?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Organización Solicitante",
+                "label": "Organización Solicitante"
+              },
+              {
+                "value": "Espacio Comunitario",
+                "label": "Espacio Comunitario"
+              }
+            ]
+          },
+          {
+            "name": "compra_negocio_cercania",
+            "label": "Negocio de cercanía",
+            "type": "bool"
+          },
+          {
+            "name": "compra_verduleria",
+            "label": "Verdulería",
+            "type": "bool"
+          },
+          {
+            "name": "compra_granja",
+            "label": "Granja/pollería",
+            "type": "bool"
+          },
+          {
+            "name": "compra_carniceria",
+            "label": "Carnicería",
+            "type": "bool"
+          },
+          {
+            "name": "compra_pescaderia",
+            "label": "Pescadería",
+            "type": "bool"
+          },
+          {
+            "name": "compra_supermercado",
+            "label": "Supermercado/Hipermercado",
+            "type": "bool"
+          },
+          {
+            "name": "compra_mercado_central",
+            "label": "Mercado central",
+            "type": "bool"
+          },
+          {
+            "name": "compra_ferias",
+            "label": "Ferias comunales/Cooperativas",
+            "type": "bool"
+          },
+          {
+            "name": "compra_mayoristas",
+            "label": "Mayoristas",
+            "type": "bool"
+          },
+          {
+            "name": "compra_otro",
+            "label": "Otro (¿cuál?)",
+            "type": "bool"
+          },
+          {
+            "name": "compra_otro_cual",
+            "label": "¿Cuál?",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "prestacion",
+        "title": "5. DATOS SOBRE LA PRESTACIÓN ALIMENTARIA",
+        "fields": [
+          {
+            "name": "prestaciones",
+            "label": "5.2 DÍAS, MODALIDAD Y TIPO DE PRESTACIÓN (completar con la cantidad de personas)",
+            "type": "child",
+            "itemFields": [
+              {
+                "name": "dia",
+                "label": "Día",
+                "type": "enum",
+                "options": [
+                  {
+                    "value": "Lunes",
+                    "label": "Lunes"
+                  },
+                  {
+                    "value": "Martes",
+                    "label": "Martes"
+                  },
+                  {
+                    "value": "Miércoles",
+                    "label": "Miércoles"
+                  },
+                  {
+                    "value": "Jueves",
+                    "label": "Jueves"
+                  },
+                  {
+                    "value": "Viernes",
+                    "label": "Viernes"
+                  },
+                  {
+                    "value": "Sábado",
+                    "label": "Sábado"
+                  },
+                  {
+                    "value": "Domingo",
+                    "label": "Domingo"
+                  }
+                ]
+              },
+              {
+                "name": "comida",
+                "label": "PREST.",
+                "type": "enum",
+                "options": [
+                  {
+                    "value": "Desayuno",
+                    "label": "DES (Desayuno)"
+                  },
+                  {
+                    "value": "Almuerzo",
+                    "label": "ALM (Almuerzo)"
+                  },
+                  {
+                    "value": "Merienda",
+                    "label": "MER (Merienda)"
+                  },
+                  {
+                    "value": "Merienda reforzada",
+                    "label": "M.REF (Merienda Reforzada)"
+                  },
+                  {
+                    "value": "Cena",
+                    "label": "CEN (Cena)"
+                  }
+                ]
+              },
+              {
+                "name": "ap_total",
+                "label": "AP",
+                "type": "number"
+              },
+              {
+                "name": "de_presencial",
+                "label": "DE — P (Presencial)",
+                "type": "number"
+              },
+              {
+                "name": "de_vianda",
+                "label": "DE — V (Vianda)",
+                "type": "number"
+              }
+            ]
+          },
+          {
+            "name": "motivo_diferencia",
+            "label": "5.3 Motivo si lo aprobado no coincide con lo declarado",
+            "type": "longtext"
+          },
+          {
+            "name": "menu_prestacion",
+            "label": "Prestación",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Desayuno",
+                "label": "Desayuno"
+              },
+              {
+                "value": "Almuerzo",
+                "label": "Almuerzo"
+              },
+              {
+                "value": "Merienda",
+                "label": "Merienda"
+              },
+              {
+                "value": "Merienda reforzada",
+                "label": "Merienda reforzada"
+              },
+              {
+                "value": "Cena",
+                "label": "Cena"
+              }
+            ]
+          },
+          {
+            "name": "menu_cantidad_presencial",
+            "label": "Modalidad de prestación: Presencial (cantidad)",
+            "type": "number"
+          },
+          {
+            "name": "menu_cantidad_vianda",
+            "label": "Vianda (cantidad)",
+            "type": "number"
+          },
+          {
+            "name": "menu_descripcion",
+            "label": "Menú",
+            "type": "longtext"
+          },
+          {
+            "name": "menu_personas",
+            "label": "Cantidad de personas para las que se preparó este menú",
+            "type": "number"
+          },
+          {
+            "name": "menu_ingredientes",
+            "label": "Ingredientes / Cantidades totales utilizadas (litros, kg, unidades)",
+            "type": "child",
+            "itemFields": [
+              {
+                "name": "ingrediente",
+                "label": "Ingredientes",
+                "type": "text"
+              },
+              {
+                "name": "cantidad",
+                "label": "Cantidades totales utilizadas (litros, kg, unidades)",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "menu_dia_1",
+            "label": "Día 1",
+            "type": "longtext"
+          },
+          {
+            "name": "menu_dia_2",
+            "label": "Día 2",
+            "type": "longtext"
+          },
+          {
+            "name": "menu_dia_3",
+            "label": "Día 3",
+            "type": "longtext"
+          },
+          {
+            "name": "menu_dia_4",
+            "label": "Día 4",
+            "type": "longtext"
+          },
+          {
+            "name": "menu_planificado",
+            "label": "5.6 ¿Cuentan con menú planificado?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Sí",
+                "label": "Sí"
+              },
+              {
+                "value": "No",
+                "label": "No (¿por qué?)"
+              },
+              {
+                "value": "Ns/Nc",
+                "label": "Ns/Nc (¿por qué?)"
+              }
+            ]
+          },
+          {
+            "name": "menu_planificado_porque",
+            "label": "¿Por qué?",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "registro_asistencia",
+        "title": "6. ¿Llevan un registro de asistencia?",
+        "fields": [
+          {
+            "name": "registro_asistencia",
+            "label": "¿Llevan un registro de asistencia?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Sí",
+                "label": "Sí"
+              },
+              {
+                "value": "No",
+                "label": "No"
+              },
+              {
+                "value": "Ns/Nc",
+                "label": "Ns/Nc"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "espacio_fisico",
+        "title": "7. DATOS SOBRE EL ESPACIO FÍSICO DONDE FUNCIONA EL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "almacenamiento_alimentos_adecuado",
+            "label": "¿Es adecuado el almacenamiento de alimentos?",
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
+          },
+          {
+            "name": "tiene_heladera",
+            "label": "Heladeras",
+            "type": "bool"
+          },
+          {
+            "name": "tiene_freezer",
+            "label": "Freezer",
+            "type": "bool"
+          },
+          {
+            "name": "almacenamiento_limpieza_adecuado",
+            "label": "¿Es adecuado el almacenamiento de los productos de limpieza?",
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
+          },
+          {
+            "name": "condicion_limpieza",
+            "label": "Limpieza",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Adecuada",
+                "label": "Adecuada"
+              },
+              {
+                "value": "Medianamente adecuada",
+                "label": "Medianamente adecuada"
+              },
+              {
+                "value": "Inadecuada",
+                "label": "Inadecuada"
+              }
+            ]
+          },
+          {
+            "name": "condicion_orden",
+            "label": "Orden",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Adecuada",
+                "label": "Adecuada"
+              },
+              {
+                "value": "Medianamente adecuada",
+                "label": "Medianamente adecuada"
+              },
+              {
+                "value": "Inadecuada",
+                "label": "Inadecuada"
+              }
+            ]
+          },
+          {
+            "name": "condiciones_detalle",
+            "label": "Descripción libre si no adecuada",
+            "type": "longtext"
+          },
+          {
+            "name": "presencia_plagas",
+            "label": "Presencia de animales/plagas donde se preparan, sirven y/o entregan los alimentos",
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
+          },
+          {
+            "name": "basura_con_tapa",
+            "label": "Posee tapa",
+            "type": "bool"
+          },
+          {
+            "name": "separa_residuos",
+            "label": "Realiza separación de residuos para reciclado",
+            "type": "bool"
+          },
+          {
+            "name": "combustible_gas_red",
+            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Gas de red (n° de orden)",
+            "type": "number"
+          },
+          {
+            "name": "combustible_electricidad",
+            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Electricidad (n° de orden)",
+            "type": "number"
+          },
+          {
+            "name": "combustible_garrafa",
+            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Gas envasado en garrafa o tubo (n° de orden)",
+            "type": "number"
+          },
+          {
+            "name": "combustible_lena_carbon",
+            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Leña o carbón (n° de orden)",
+            "type": "number"
+          },
+          {
+            "name": "combustible_otros",
+            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Otros (n° de orden)",
+            "type": "number"
+          },
+          {
+            "name": "combustible_otros_cual",
+            "label": "Otros",
+            "type": "text"
+          },
+          {
+            "name": "agua_potable",
+            "label": "7.2.2 ¿Cuentan con agua potable dentro del espacio?",
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
+          },
+          {
+            "name": "fecha_analisis_bacteriologico",
+            "label": "Última fecha de análisis bacteriológico",
+            "type": "date"
+          },
+          {
+            "name": "fecha_analisis_fisicoquimico",
+            "label": "Última fecha de análisis físico-químico",
+            "type": "date"
+          },
+          {
+            "name": "fecha_limpieza_tanque",
+            "label": "Última fecha de limpieza de tanque",
+            "type": "date"
+          }
+        ]
+      },
+      {
+        "id": "personas",
+        "title": "8. DATOS SOBRE LAS PERSONAS QUE REALIZAN TAREAS EN EL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "cantidad_personas",
+            "label": "8.1.1 Cantidad de personas",
+            "type": "enum",
+            "options": [
+              {
+                "value": "1 a 3",
+                "label": "1 a 3"
+              },
+              {
+                "value": "4 a 7",
+                "label": "4 a 7"
+              },
+              {
+                "value": "8 o más",
+                "label": "8 o más"
+              }
+            ]
+          },
+          {
+            "name": "recibieron_capacitacion",
+            "label": "8.1.2 ¿Reciben o recibieron capacitaciones?",
+            "type": "bool"
+          },
+          {
+            "name": "capacitacion_temas",
+            "label": "8.1.3 Temática de la capacitación recibida",
+            "type": "enumlist",
+            "options": [
+              {
+                "value": "Alimentación saludable",
+                "label": "Alimentación saludable"
+              },
+              {
+                "value": "Armado de Menú",
+                "label": "Armado de Menú"
+              },
+              {
+                "value": "Higiene y conservación de alimentos",
+                "label": "Higiene y conservación de alimentos"
+              },
+              {
+                "value": "Manipulación de alimentos",
+                "label": "Manipulación de alimentos"
+              },
+              {
+                "value": "Seguridad e higiene en el trabajo",
+                "label": "Seguridad e higiene en el trabajo"
+              },
+              {
+                "value": "Organización y logística de la distribución de alimentos",
+                "label": "Organización y logística de la distribución de alimentos"
+              },
+              {
+                "value": "Registro y control de stock de alimentos",
+                "label": "Registro y control de stock de alimentos"
+              },
+              {
+                "value": "Seguridad alimentaria",
+                "label": "Seguridad alimentaria"
+              },
+              {
+                "value": "Primeros auxilios",
+                "label": "Primeros auxilios"
+              },
+              {
+                "value": "Otro",
+                "label": "Otro (especificar)"
+              }
+            ]
+          },
+          {
+            "name": "capacitacion_temas_otro",
+            "label": "Otro (especificar)",
+            "type": "text"
+          },
+          {
+            "name": "temas_interes",
+            "label": "8.1.4 ¿Sobre qué temas le gustaría que el equipo reciba capacitación?",
+            "type": "enumlist",
+            "options": [
+              {
+                "value": "Alimentación saludable",
+                "label": "Alimentación saludable"
+              },
+              {
+                "value": "Armado de Menú y recetas",
+                "label": "Armado de Menú y recetas"
+              },
+              {
+                "value": "Higiene y conservación de alimentos",
+                "label": "Higiene y conservación de alimentos"
+              },
+              {
+                "value": "Manipulación de alimentos",
+                "label": "Manipulación de alimentos"
+              },
+              {
+                "value": "Seguridad e higiene en el trabajo",
+                "label": "Seguridad e higiene en el trabajo"
+              },
+              {
+                "value": "Organización y logística de la distribución de alimentos",
+                "label": "Organización y logística de la distribución de alimentos"
+              },
+              {
+                "value": "Registro y control de stock de alimentos",
+                "label": "Registro y control de stock de alimentos"
+              },
+              {
+                "value": "Seguridad alimentaria",
+                "label": "Seguridad alimentaria"
+              },
+              {
+                "value": "Primeros auxilios",
+                "label": "Primeros auxilios"
+              },
+              {
+                "value": "Otro",
+                "label": "Otro (especificar)"
+              }
+            ]
+          },
+          {
+            "name": "temas_interes_otro",
+            "label": "Otro (especificar)",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "asistencia_tecnica",
+        "title": "9. ASISTENCIA TÉCNICA",
+        "fields": [
+          {
+            "name": "at_socio_organizativos",
+            "label": "Socio-Organizativos",
+            "type": "bool"
+          },
+          {
+            "name": "at_alimentario_nutricionales",
+            "label": "Alimentario-Nutricionales",
+            "type": "bool"
+          },
+          {
+            "name": "at_seguridad_higiene",
+            "label": "Seguridad e Higiene",
+            "type": "bool"
+          },
+          {
+            "name": "at_administrativo_contables",
+            "label": "Administrativo-Contables-Rendición de Cuentas",
+            "type": "bool"
+          },
+          {
+            "name": "at_otro",
+            "label": "Otro (especificar)",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "relevo_servicio",
+        "title": "10. LA ENTREVISTA RELEVÓ EL SERVICIO ALIMENTARIO DE MANERA:",
+        "fields": [
+          {
+            "name": "relevo_servicio",
+            "label": "10. LA ENTREVISTA RELEVÓ EL SERVICIO ALIMENTARIO DE MANERA:",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Completa",
+                "label": "Completa"
+              },
+              {
+                "value": "Parcial",
+                "label": "Parcial"
+              },
+              {
+                "value": "No corresponde",
+                "label": "No corresponde"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "comentarios",
+        "title": "11. COMENTARIOS FINALES",
+        "fields": [
+          {
+            "name": "comentarios_finales",
+            "label": "11. COMENTARIOS FINALES",
+            "type": "longtext"
+          }
+        ]
+      },
+      {
+        "id": "cierre",
+        "title": "Cierre",
+        "fields": [
+          {
+            "name": "firma_entrevistado",
+            "label": "Firma del entrevistado",
+            "type": "signature"
+          }
+        ]
+      }
+    ]
+  },
+  "iib": {
+    "corto": "FORM II B — Presencial · Módulo",
+    "linea": "ABORDAJE COMUNITARIO - LÍNEA TRADICIONAL",
+    "titulo": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
+    "sections": [
+      {
+        "id": "encabezado",
+        "title": "FORMULARIO DE SEGUIMIENTO DE PRESTACIONES ALIMENTARIAS DE LOS ESPACIOS COMUNITARIOS",
+        "fields": [
+          {
+            "name": "codigo_proyecto",
+            "label": "Código Proyecto",
+            "type": "text"
+          },
+          {
+            "name": "codigo_externo",
+            "label": "Código del Espacio Comunitario (ID Externo)",
+            "type": "text"
+          },
+          {
+            "name": "funcionamiento",
+            "label": "FUNCIONAMIENTO",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Abierto, en funcionamiento alimentario",
+                "label": "Abierto, en funcionamiento alimentario"
+              },
+              {
+                "value": "Abierto, sin funcionamiento alimentario",
+                "label": "Abierto, sin funcionamiento alimentario"
+              },
+              {
+                "value": "Cerrado",
+                "label": "Cerrado"
+              }
+            ]
+          },
+          {
+            "name": "funcionamiento_motivo",
+            "label": "Motivo",
+            "type": "text"
+          },
+          {
+            "name": "fecha_hora",
+            "label": "Fecha y hora de la entrevista (Día/mes/año)(hh:mm)",
+            "type": "datetime"
+          }
+        ]
+      },
+      {
+        "id": "entrevistado",
+        "title": "1. DATOS DEL ENTREVISTADO DEL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "ent_cargo",
+            "label": "Cargo o función",
+            "type": "text"
+          },
+          {
+            "name": "ent_nombre_apellido",
+            "label": "Nombre y Apellido",
+            "type": "text"
+          },
+          {
+            "name": "ent_celular",
+            "label": "Celular del entrevistado",
+            "type": "text"
+          },
+          {
+            "name": "ent_dni",
+            "label": "DNI del entrevistado",
+            "type": "text"
+          },
+          {
+            "name": "ent_mail",
+            "label": "Correo electrónico",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "domicilio",
+        "title": "2. DATOS DEL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "calle",
+            "label": "Calle",
+            "type": "text"
+          },
+          {
+            "name": "numero",
+            "label": "Número",
+            "type": "text"
+          },
+          {
+            "name": "entre_calle_1",
+            "label": "Entre calle 1",
+            "type": "text"
+          },
+          {
+            "name": "entre_calle_2",
+            "label": "Entre calle 2",
+            "type": "text"
+          },
+          {
+            "name": "manzana",
+            "label": "Manzana",
+            "type": "text"
+          },
+          {
+            "name": "lote",
+            "label": "Lote",
+            "type": "text"
+          },
+          {
+            "name": "piso",
+            "label": "Piso",
+            "type": "text"
+          },
+          {
+            "name": "departamento",
+            "label": "Departamento",
+            "type": "text"
+          },
+          {
+            "name": "barrio",
+            "label": "Barrio",
+            "type": "text"
+          },
+          {
+            "name": "codigo_postal",
+            "label": "Código Postal",
+            "type": "text"
+          },
+          {
+            "name": "localidad",
+            "label": "Localidad",
+            "type": "text"
+          },
+          {
+            "name": "municipio",
+            "label": "Municipio",
+            "type": "text"
+          },
+          {
+            "name": "partido",
+            "label": "Departamento/Partido",
+            "type": "text"
+          },
+          {
+            "name": "provincia",
+            "label": "Provincia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Buenos Aires",
+                "label": "Buenos Aires"
+              },
+              {
+                "value": "Ciudad Autónoma de Buenos Aires",
+                "label": "Ciudad Autónoma de Buenos Aires"
+              },
+              {
+                "value": "Catamarca",
+                "label": "Catamarca"
+              },
+              {
+                "value": "Chaco",
+                "label": "Chaco"
+              },
+              {
+                "value": "Chubut",
+                "label": "Chubut"
+              },
+              {
+                "value": "Córdoba",
+                "label": "Córdoba"
+              },
+              {
+                "value": "Corrientes",
+                "label": "Corrientes"
+              },
+              {
+                "value": "Entre Ríos",
+                "label": "Entre Ríos"
+              },
+              {
+                "value": "Formosa",
+                "label": "Formosa"
+              },
+              {
+                "value": "Jujuy",
+                "label": "Jujuy"
+              },
+              {
+                "value": "La Pampa",
+                "label": "La Pampa"
+              },
+              {
+                "value": "La Rioja",
+                "label": "La Rioja"
+              },
+              {
+                "value": "Mendoza",
+                "label": "Mendoza"
+              },
+              {
+                "value": "Misiones",
+                "label": "Misiones"
+              },
+              {
+                "value": "Neuquén",
+                "label": "Neuquén"
+              },
+              {
+                "value": "Río Negro",
+                "label": "Río Negro"
+              },
+              {
+                "value": "Salta",
+                "label": "Salta"
+              },
+              {
+                "value": "San Juan",
+                "label": "San Juan"
+              },
+              {
+                "value": "San Luis",
+                "label": "San Luis"
+              },
+              {
+                "value": "Santa Cruz",
+                "label": "Santa Cruz"
+              },
+              {
+                "value": "Santa Fe",
+                "label": "Santa Fe"
+              },
+              {
+                "value": "Santiago del Estero",
+                "label": "Santiago del Estero"
+              },
+              {
+                "value": "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
+                "label": "Tierra del Fuego, Antártida e Islas del Atlántico Sur"
+              },
+              {
+                "value": "Tucumán",
+                "label": "Tucumán"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "recursos",
+        "title": "3. DATOS SOBRE RECURSOS DEL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "recibe_donaciones",
+            "label": "Donaciones: Recibe",
+            "type": "bool"
+          },
+          {
+            "name": "frecuencia_donaciones",
+            "label": "Donaciones: Frecuencia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Bimestral",
+                "label": "Bimestral"
+              },
+              {
+                "value": "Trimestral",
+                "label": "Trimestral"
+              },
+              {
+                "value": "Otra frecuencia/Sin frecuencia específica",
+                "label": "Otra frecuencia/Sin frecuencia específica"
+              }
+            ]
+          },
+          {
+            "name": "que_recibe_donaciones",
+            "label": "Donaciones: ¿Qué recibe?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Transferencia Monetaria",
+                "label": "Transferencia Monetaria"
+              },
+              {
+                "value": "Mercadería",
+                "label": "Mercadería"
+              },
+              {
+                "value": "Ambas",
+                "label": "Ambas"
+              }
+            ]
+          },
+          {
+            "name": "recibe_estado_nacional",
+            "label": "Estado Nacional: Recibe",
+            "type": "bool"
+          },
+          {
+            "name": "frecuencia_estado_nacional",
+            "label": "Estado Nacional: Frecuencia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Bimestral",
+                "label": "Bimestral"
+              },
+              {
+                "value": "Trimestral",
+                "label": "Trimestral"
+              },
+              {
+                "value": "Otra frecuencia/Sin frecuencia específica",
+                "label": "Otra frecuencia/Sin frecuencia específica"
+              }
+            ]
+          },
+          {
+            "name": "que_recibe_estado_nacional",
+            "label": "Estado Nacional: ¿Qué recibe?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Transferencia Monetaria",
+                "label": "Transferencia Monetaria"
+              },
+              {
+                "value": "Mercadería",
+                "label": "Mercadería"
+              },
+              {
+                "value": "Ambas",
+                "label": "Ambas"
+              }
+            ]
+          },
+          {
+            "name": "recibe_estado_provincial",
+            "label": "Estado Provincial: Recibe",
+            "type": "bool"
+          },
+          {
+            "name": "frecuencia_estado_provincial",
+            "label": "Estado Provincial: Frecuencia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Bimestral",
+                "label": "Bimestral"
+              },
+              {
+                "value": "Trimestral",
+                "label": "Trimestral"
+              },
+              {
+                "value": "Otra frecuencia/Sin frecuencia específica",
+                "label": "Otra frecuencia/Sin frecuencia específica"
+              }
+            ]
+          },
+          {
+            "name": "que_recibe_estado_provincial",
+            "label": "Estado Provincial: ¿Qué recibe?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Transferencia Monetaria",
+                "label": "Transferencia Monetaria"
+              },
+              {
+                "value": "Mercadería",
+                "label": "Mercadería"
+              },
+              {
+                "value": "Ambas",
+                "label": "Ambas"
+              }
+            ]
+          },
+          {
+            "name": "recibe_estado_municipal",
+            "label": "Estado Municipal: Recibe",
+            "type": "bool"
+          },
+          {
+            "name": "frecuencia_estado_municipal",
+            "label": "Estado Municipal: Frecuencia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Bimestral",
+                "label": "Bimestral"
+              },
+              {
+                "value": "Trimestral",
+                "label": "Trimestral"
+              },
+              {
+                "value": "Otra frecuencia/Sin frecuencia específica",
+                "label": "Otra frecuencia/Sin frecuencia específica"
+              }
+            ]
+          },
+          {
+            "name": "que_recibe_estado_municipal",
+            "label": "Estado Municipal: ¿Qué recibe?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Transferencia Monetaria",
+                "label": "Transferencia Monetaria"
+              },
+              {
+                "value": "Mercadería",
+                "label": "Mercadería"
+              },
+              {
+                "value": "Ambas",
+                "label": "Ambas"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "compras",
+        "title": "4. DATOS SOBRE LA REALIZACIÓN DE LAS COMPRAS PARA ABASTECER EL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "quien_compra",
+            "label": "4.1 ¿Quién realiza las compras?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Organización Solicitante",
+                "label": "Organización Solicitante"
+              },
+              {
+                "value": "Espacio Comunitario",
+                "label": "Espacio Comunitario"
+              }
+            ]
+          },
+          {
+            "name": "compra_negocio_cercania",
+            "label": "Negocio de cercanía",
+            "type": "bool"
+          },
+          {
+            "name": "compra_verduleria",
+            "label": "Verdulería",
+            "type": "bool"
+          },
+          {
+            "name": "compra_granja",
+            "label": "Granja/pollería",
+            "type": "bool"
+          },
+          {
+            "name": "compra_carniceria",
+            "label": "Carnicería",
+            "type": "bool"
+          },
+          {
+            "name": "compra_pescaderia",
+            "label": "Pescadería",
+            "type": "bool"
+          },
+          {
+            "name": "compra_supermercado",
+            "label": "Supermercado/Hipermercado",
+            "type": "bool"
+          },
+          {
+            "name": "compra_mercado_central",
+            "label": "Mercado central",
+            "type": "bool"
+          },
+          {
+            "name": "compra_ferias",
+            "label": "Ferias comunales/Cooperativas",
+            "type": "bool"
+          },
+          {
+            "name": "compra_mayoristas",
+            "label": "Mayoristas",
+            "type": "bool"
+          },
+          {
+            "name": "compra_otro",
+            "label": "Otro (¿cuál?)",
+            "type": "bool"
+          },
+          {
+            "name": "compra_otro_cual",
+            "label": "¿Cuál?",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "prestacion",
+        "title": "5. DATOS SOBRE LA PRESTACIÓN ALIMENTARIA",
+        "fields": [
+          {
+            "name": "aprobados_desayuno",
+            "label": "Desayuno: Destinatarios aprobados",
+            "type": "number"
+          },
+          {
+            "name": "declarados_desayuno",
+            "label": "Desayuno: Destinatarios declarados por el entrevistado",
+            "type": "number"
+          },
+          {
+            "name": "aprobados_almuerzo",
+            "label": "Almuerzo: Destinatarios aprobados",
+            "type": "number"
+          },
+          {
+            "name": "declarados_almuerzo",
+            "label": "Almuerzo: Destinatarios declarados por el entrevistado",
+            "type": "number"
+          },
+          {
+            "name": "aprobados_merienda",
+            "label": "Merienda: Destinatarios aprobados",
+            "type": "number"
+          },
+          {
+            "name": "declarados_merienda",
+            "label": "Merienda: Destinatarios declarados por el entrevistado",
+            "type": "number"
+          },
+          {
+            "name": "aprobados_merienda_reforzada",
+            "label": "Merienda reforzada: Destinatarios aprobados",
+            "type": "number"
+          },
+          {
+            "name": "declarados_merienda_reforzada",
+            "label": "Merienda reforzada: Destinatarios declarados por el entrevistado",
+            "type": "number"
+          },
+          {
+            "name": "aprobados_cena",
+            "label": "Cena: Destinatarios aprobados",
+            "type": "number"
+          },
+          {
+            "name": "declarados_cena",
+            "label": "Cena: Destinatarios declarados por el entrevistado",
+            "type": "number"
+          },
+          {
+            "name": "dias_horarios_entrega",
+            "label": "5.3 Días y horarios de entrega de módulos",
+            "type": "longtext"
+          },
+          {
+            "name": "criterio_entrega",
+            "label": "5.4 ¿Con qué criterio se determina la entrega de los módulos?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Por destinatario",
+                "label": "Por destinatario"
+              },
+              {
+                "value": "Por familia, de acuerdo con la cantidad de destinatarios",
+                "label": "Por familia, de acuerdo con la cantidad de destinatarios"
+              },
+              {
+                "value": "Otros",
+                "label": "Otros (especifique)"
+              }
+            ]
+          },
+          {
+            "name": "criterio_entrega_otro",
+            "label": "Otros (especifique)",
+            "type": "text"
+          },
+          {
+            "name": "composicion_modulo",
+            "label": "5.5 En cuanto a la composición del módulo:",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Único",
+                "label": "Único (un módulo igual para todos los destinatarios aprobados)"
+              },
+              {
+                "value": "Diferenciado",
+                "label": "Diferenciado (módulos diferentes de acuerdo con la cantidad de destinatarios aprobados)"
+              }
+            ]
+          },
+          {
+            "name": "composicion_detalle",
+            "label": "Especifique",
+            "type": "longtext"
+          },
+          {
+            "name": "tipo_alimentos_modulo",
+            "label": "5.6 Tipo de alimentos del módulo (mensual):",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Módulos de alimentos secos",
+                "label": "Módulos de alimentos secos"
+              },
+              {
+                "value": "Módulos de alimentos frescos",
+                "label": "Módulos de alimentos frescos"
+              },
+              {
+                "value": "Módulos de alimentos mixtos",
+                "label": "Módulos de alimentos mixtos"
+              }
+            ]
+          },
+          {
+            "name": "frecuencia_entrega_modulo",
+            "label": "Frecuencia de entrega",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Mensual",
+                "label": "Mensual"
+              },
+              {
+                "value": "Quincenal",
+                "label": "Quincenal"
+              },
+              {
+                "value": "Semanal",
+                "label": "Semanal"
+              },
+              {
+                "value": "Otra",
+                "label": "Otra"
+              }
+            ]
+          },
+          {
+            "name": "frecuencia_entrega_modulo_otra",
+            "label": "Otra",
+            "type": "text"
+          },
+          {
+            "name": "destinatarios_modulo_a",
+            "label": "Módulo A: Destinatarios",
+            "type": "number"
+          },
+          {
+            "name": "destinatarios_modulo_b",
+            "label": "Módulo B: Destinatarios",
+            "type": "number"
+          },
+          {
+            "name": "destinatarios_modulo_c",
+            "label": "Módulo C: Destinatarios",
+            "type": "number"
+          },
+          {
+            "name": "destinatarios_modulo_d",
+            "label": "Módulo D: Destinatarios",
+            "type": "number"
+          },
+          {
+            "name": "modulo_alimentos",
+            "label": "Alimentos y cantidades (kg, paquetes, botellas) que se incluyen en la entrega",
+            "type": "child",
+            "itemFields": [
+              {
+                "name": "alimento",
+                "label": "Alimento",
+                "type": "text"
+              },
+              {
+                "name": "modulo_a",
+                "label": "Módulo A",
+                "type": "text"
+              },
+              {
+                "name": "modulo_b",
+                "label": "Módulo B",
+                "type": "text"
+              },
+              {
+                "name": "modulo_c",
+                "label": "Módulo C",
+                "type": "text"
+              },
+              {
+                "name": "modulo_d",
+                "label": "Módulo D",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "cantidad_modulos_a",
+            "label": "A: Cantidad total de módulos alimentarios (mensuales)",
+            "type": "number"
+          },
+          {
+            "name": "cantidad_modulos_b",
+            "label": "B: Cantidad total de módulos alimentarios (mensuales)",
+            "type": "number"
+          },
+          {
+            "name": "cantidad_modulos_c",
+            "label": "C: Cantidad total de módulos alimentarios (mensuales)",
+            "type": "number"
+          },
+          {
+            "name": "cantidad_modulos_d",
+            "label": "D: Cantidad total de módulos alimentarios (mensuales)",
+            "type": "number"
+          },
+          {
+            "name": "cantidad_modulos_e",
+            "label": "E: Cantidad total de módulos alimentarios (mensuales)",
+            "type": "number"
+          },
+          {
+            "name": "cantidad_modulos_total",
+            "label": "TOTAL: Cantidad total de módulos alimentarios (mensuales)",
+            "type": "number"
+          }
+        ]
+      },
+      {
+        "id": "registro_asistencia",
+        "title": "6. ¿Llevan un registro de asistencia?",
+        "fields": [
+          {
+            "name": "registro_asistencia",
+            "label": "¿Llevan un registro de asistencia?",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Sí",
+                "label": "Sí"
+              },
+              {
+                "value": "No",
+                "label": "No"
+              },
+              {
+                "value": "Ns/Nc",
+                "label": "Ns/Nc"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "espacio_fisico",
+        "title": "7. DATOS SOBRE EL ESPACIO FÍSICO DONDE FUNCIONA EL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "almacenamiento_alimentos_adecuado",
+            "label": "¿Es adecuado el almacenamiento de alimentos?",
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
+          },
+          {
+            "name": "tiene_heladera",
+            "label": "Heladeras",
+            "type": "bool"
+          },
+          {
+            "name": "tiene_freezer",
+            "label": "Freezer",
+            "type": "bool"
+          },
+          {
+            "name": "almacenamiento_limpieza_adecuado",
+            "label": "¿Es adecuado el almacenamiento de los productos de limpieza?",
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
+          },
+          {
+            "name": "condicion_limpieza",
+            "label": "Limpieza",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Adecuada",
+                "label": "Adecuada"
+              },
+              {
+                "value": "Medianamente adecuada",
+                "label": "Medianamente adecuada"
+              },
+              {
+                "value": "Inadecuada",
+                "label": "Inadecuada"
+              }
+            ]
+          },
+          {
+            "name": "condicion_orden",
+            "label": "Orden",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Adecuada",
+                "label": "Adecuada"
+              },
+              {
+                "value": "Medianamente adecuada",
+                "label": "Medianamente adecuada"
+              },
+              {
+                "value": "Inadecuada",
+                "label": "Inadecuada"
+              }
+            ]
+          },
+          {
+            "name": "condiciones_detalle",
+            "label": "Descripción libre si no adecuada",
+            "type": "longtext"
+          },
+          {
+            "name": "presencia_plagas",
+            "label": "Presencia de animales/plagas donde se entregan los alimentos",
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
+          },
+          {
+            "name": "basura_con_tapa",
+            "label": "Posee tapa",
+            "type": "bool"
+          },
+          {
+            "name": "separa_residuos",
+            "label": "Realiza separación de residuos para reciclado",
+            "type": "bool"
+          },
+          {
+            "name": "agua_potable",
+            "label": "7.2.2 ¿Cuentan con agua potable dentro del espacio?",
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SI",
+              "NO"
+            ]
+          },
+          {
+            "name": "fecha_analisis_bacteriologico",
+            "label": "Última fecha de análisis bacteriológico",
+            "type": "date"
+          },
+          {
+            "name": "fecha_analisis_fisicoquimico",
+            "label": "Última fecha de análisis físico-químico",
+            "type": "date"
+          },
+          {
+            "name": "fecha_limpieza_tanque",
+            "label": "Última fecha de limpieza de tanque",
+            "type": "date"
+          }
+        ]
+      },
+      {
+        "id": "personas",
+        "title": "8. DATOS SOBRE LAS PERSONAS QUE REALIZAN TAREAS EN EL ESPACIO COMUNITARIO",
+        "fields": [
+          {
+            "name": "cantidad_personas",
+            "label": "8.1.1 Cantidad de personas",
+            "type": "enum",
+            "options": [
+              {
+                "value": "1 a 3",
+                "label": "1 a 3"
+              },
+              {
+                "value": "4 a 7",
+                "label": "4 a 7"
+              },
+              {
+                "value": "8 o más",
+                "label": "8 o más"
+              }
+            ]
+          },
+          {
+            "name": "recibieron_capacitacion",
+            "label": "8.1.2 ¿Reciben o recibieron capacitaciones?",
+            "type": "bool"
+          },
+          {
+            "name": "capacitacion_temas",
+            "label": "8.1.3 Temática de la capacitación recibida",
+            "type": "enumlist",
+            "options": [
+              {
+                "value": "Alimentación saludable",
+                "label": "Alimentación saludable"
+              },
+              {
+                "value": "Armado de Menú",
+                "label": "Armado de Menú"
+              },
+              {
+                "value": "Higiene y conservación de alimentos",
+                "label": "Higiene y conservación de alimentos"
+              },
+              {
+                "value": "Manipulación de alimentos",
+                "label": "Manipulación de alimentos"
+              },
+              {
+                "value": "Seguridad e higiene en el trabajo",
+                "label": "Seguridad e higiene en el trabajo"
+              },
+              {
+                "value": "Organización y logística de la distribución de alimentos",
+                "label": "Organización y logística de la distribución de alimentos"
+              },
+              {
+                "value": "Registro y control de stock de alimentos",
+                "label": "Registro y control de stock de alimentos"
+              },
+              {
+                "value": "Seguridad alimentaria",
+                "label": "Seguridad alimentaria"
+              },
+              {
+                "value": "Primeros auxilios",
+                "label": "Primeros auxilios"
+              },
+              {
+                "value": "Otro",
+                "label": "Otro (especificar)"
+              }
+            ]
+          },
+          {
+            "name": "capacitacion_temas_otro",
+            "label": "Otro (especificar)",
+            "type": "text"
+          },
+          {
+            "name": "temas_interes",
+            "label": "8.1.4 ¿Sobre qué temas le gustaría que el equipo reciba capacitación?",
+            "type": "enumlist",
+            "options": [
+              {
+                "value": "Alimentación saludable",
+                "label": "Alimentación saludable"
+              },
+              {
+                "value": "Armado de Menú y recetas",
+                "label": "Armado de Menú y recetas"
+              },
+              {
+                "value": "Higiene y conservación de alimentos",
+                "label": "Higiene y conservación de alimentos"
+              },
+              {
+                "value": "Manipulación de alimentos",
+                "label": "Manipulación de alimentos"
+              },
+              {
+                "value": "Seguridad e higiene en el trabajo",
+                "label": "Seguridad e higiene en el trabajo"
+              },
+              {
+                "value": "Organización y logística de la distribución de alimentos",
+                "label": "Organización y logística de la distribución de alimentos"
+              },
+              {
+                "value": "Registro y control de stock de alimentos",
+                "label": "Registro y control de stock de alimentos"
+              },
+              {
+                "value": "Seguridad alimentaria",
+                "label": "Seguridad alimentaria"
+              },
+              {
+                "value": "Primeros auxilios",
+                "label": "Primeros auxilios"
+              },
+              {
+                "value": "Otro",
+                "label": "Otro (especificar)"
+              }
+            ]
+          },
+          {
+            "name": "temas_interes_otro",
+            "label": "Otro (especificar)",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "asistencia_tecnica",
+        "title": "9. ASISTENCIA TÉCNICA",
+        "fields": [
+          {
+            "name": "at_socio_organizativos",
+            "label": "Socio-Organizativos",
+            "type": "bool"
+          },
+          {
+            "name": "at_alimentario_nutricionales",
+            "label": "Alimentario-Nutricionales",
+            "type": "bool"
+          },
+          {
+            "name": "at_seguridad_higiene",
+            "label": "Seguridad e Higiene",
+            "type": "bool"
+          },
+          {
+            "name": "at_administrativo_contables",
+            "label": "Administrativo-Contables-Rendición de Cuentas",
+            "type": "bool"
+          },
+          {
+            "name": "at_otro",
+            "label": "Otro (especificar)",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "relevo_servicio",
+        "title": "10. LA ENTREVISTA RELEVÓ EL SERVICIO ALIMENTARIO DE MANERA:",
+        "fields": [
+          {
+            "name": "relevo_servicio",
+            "label": "10. LA ENTREVISTA RELEVÓ EL SERVICIO ALIMENTARIO DE MANERA:",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Completa",
+                "label": "Completa"
+              },
+              {
+                "value": "Parcial",
+                "label": "Parcial"
+              },
+              {
+                "value": "No corresponde",
+                "label": "No corresponde"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "comentarios",
+        "title": "11. COMENTARIOS FINALES",
+        "fields": [
+          {
+            "name": "comentarios_finales",
+            "label": "11. COMENTARIOS FINALES",
+            "type": "longtext"
+          }
+        ]
+      },
+      {
+        "id": "cierre",
+        "title": "Cierre",
+        "fields": [
+          {
+            "name": "firma_entrevistado",
+            "label": "Firma del entrevistado",
+            "type": "signature"
+          }
+        ]
+      }
+    ]
+  }
+}

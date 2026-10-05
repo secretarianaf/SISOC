@@ -88,8 +88,8 @@ privacidad y la estructura final del PDF.
 
 ## Referencias
 
-- `docs/registro/cambios/2026-08-18-issue-2304-urgentes-cdi.md`
-- `docs/registro/cambios/2026-08-18-issue-2304-nomina-domicilio-sala.md`
-- `docs/registro/cambios/2026-08-18-simepi-descarga-nomina-ninos.md`
+- `docs/registro/cambios/2026-T3/2026-08-18-issue-2304-urgentes-cdi.md`
+- `docs/registro/cambios/2026-T3/2026-08-18-issue-2304-nomina-domicilio-sala.md`
+- `docs/registro/cambios/2026-T3/2026-08-18-simepi-descarga-nomina-ninos.md`
 - `docs/implementaciones/centrodeinfancia_nomina_renaper.md`
-- `docs/registro/2026-08-28-issue-2369-correcciones-cdi.md`
+- `docs/registro/cambios/2026-T3/2026-08-28-issue-2369-correcciones-cdi.md`

@@ -53,8 +53,8 @@ echo
 print_header "Recordatorios criticos del repo"
 echo "- Logica de negocio preferentemente en services/"
 echo "- Coexisten Django views y DRF"
-echo "- Logging custom en config/settings.py + core/utils.py"
-echo "- No se usa Celery actualmente"
+echo "- Logging custom en src/backends/config/settings.py + core/utils.py"
+echo "- Celery solo para PAS (docker/compose/docker-compose.celery.yml)"
 echo "- Crear worktrees de tarea fuera del repo principal"
 
 print_header "Comandos utiles"
@@ -69,8 +69,8 @@ powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 djlint-check <
 powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 pylint <archivo.py>
 
 # Fallback Docker directo si este script se ejecuta sin PowerShell disponible
-docker compose -f docker-compose.yml -f docker-compose.codex.yml run --rm --no-deps django pytest -m smoke
-docker compose -f docker-compose.yml -f docker-compose.codex.yml run --rm --no-deps django python manage.py makemigrations --check --dry-run
+docker compose -f docker-compose.yml -f docker/compose/docker-compose.codex.yml run --rm --no-deps django pytest -m smoke
+docker compose -f docker-compose.yml -f docker/compose/docker-compose.codex.yml run --rm --no-deps django python manage.py makemigrations --check --dry-run
 python scripts/ai/context_memory.py preflight --target <path>
 python scripts/ai/context_memory.py scaffold --slug <slug> --title <titulo> --summary <resumen> --path <path>
 CMDS
@@ -104,7 +104,7 @@ case "$TASK_KIND" in
     echo "- docs/indice.md"
     echo "- archivo afectado"
     echo "- docs/ia/ERRORS_LOGGING.md"
-    echo "- config/settings.py / core/utils.py si aplica"
+    echo "- src/backends/config/settings.py / core/utils.py si aplica"
     ;;
   migration|modelo)
     echo "- AGENTS.md"
@@ -148,6 +148,14 @@ elif command -v python >/dev/null 2>&1; then
   fi
 else
   echo "No se encontro python/python3 para resolver memoria operativa."
+fi
+
+print_header "Skills del repo"
+# .claude/skills/ es copia generada de .agents/skills/ (docs/ia/SKILLS.md).
+if command -v python3 >/dev/null 2>&1; then
+  python3 scripts/ai/sync_skills.py --check || echo "Correr: python3 scripts/ai/sync_skills.py"
+elif command -v python >/dev/null 2>&1; then
+  python scripts/ai/sync_skills.py --check || echo "Correr: python scripts/ai/sync_skills.py"
 fi
 
 print_header "Fin"

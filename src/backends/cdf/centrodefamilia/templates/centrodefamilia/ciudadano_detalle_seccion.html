@@ -1,0 +1,38 @@
+{# Sección del detalle de ciudadano (Ciudadano 360). La renderiza el dueño del
+   dato (ciudadanos.detail_contributions) y el detalle la inserta ya renderizada,
+   incluso cuando este vertical corre en otro backend. #}
+<div class="tabla-legajo" style="border: 2px solid var(--gold);">
+    <h5 class="mb-3">Centro de Familia</h5>
+    {% if participaciones_cdf %}
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Centro</th>
+                    <th>Actividad</th>
+                    <th>Estado</th>
+                    <th>Fecha Registro</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for participacion in participaciones_cdf %}
+                    <tr>
+                        <td>{{ participacion.actividad_centro.centro.nombre }}</td>
+                        <td>{{ participacion.actividad_centro.actividad.nombre }}</td>
+                        <td>
+                            {% if participacion.estado == 'inscrito' %}
+                                <span class="badge" style="background: var(--green);">Inscrito</span>
+                            {% elif participacion.estado == 'lista_espera' %}
+                                <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">Lista Espera</span>
+                            {% else %}
+                                <span class="badge" style="background: rgba(255,255,255,0.2);">Dado de Baja</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ participacion.fecha_registro|date:"d/m/Y" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="color: rgba(255,255,255,0.5);">No hay participaciones registradas.</p>
+    {% endif %}
+</div>

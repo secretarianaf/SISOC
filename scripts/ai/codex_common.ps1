@@ -26,7 +26,7 @@ function Get-CodexComposeOverridePath {
         [string]$RepoRoot
     )
 
-    return Join-Path $RepoRoot "docker-compose.codex.yml"
+    return Join-Path $RepoRoot "docker/compose/docker-compose.codex.yml"
 }
 
 function Get-CodexComposeFileArgs {
@@ -39,7 +39,7 @@ function Get-CodexComposeFileArgs {
     $overridePath = Get-CodexComposeOverridePath -RepoRoot $RepoRoot
 
     if (-not $ExposePorts -and (Test-Path $overridePath)) {
-        $args += @("-f", "docker-compose.codex.yml")
+        $args += @("-f", "docker/compose/docker-compose.codex.yml")
     }
 
     return $args
@@ -331,7 +331,7 @@ function Ensure-CodexLocalDependencies {
 
     $venv = Ensure-CodexLocalVenv -RepoRoot $RepoRoot
     & $venv.PythonExe -m pip install --upgrade pip
-    & $venv.PythonExe -m pip install -r (Join-Path $RepoRoot "requirements.txt")
+    & $venv.PythonExe -m pip install -r (Join-Path $RepoRoot "requirements/all.txt")
 
     return $venv
 }

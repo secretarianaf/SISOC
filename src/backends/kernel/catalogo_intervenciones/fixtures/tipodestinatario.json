@@ -1,0 +1,30 @@
+[
+{
+    "model": "catalogo_intervenciones.tipodestinatario",
+    "pk": 1,
+    "fields": {
+        "nombre": "Organización"
+    }
+},
+{
+    "model": "catalogo_intervenciones.tipodestinatario",
+    "pk": 2,
+    "fields": {
+        "nombre": "Comedor"
+    }
+},
+{
+    "model": "catalogo_intervenciones.tipodestinatario",
+    "pk": 3,
+    "fields": {
+        "nombre": "Otros"
+    }
+},
+{
+    "model": "catalogo_intervenciones.tipodestinatario",
+    "pk": 4,
+    "fields": {
+        "nombre": "Centro"
+    }
+}
+]

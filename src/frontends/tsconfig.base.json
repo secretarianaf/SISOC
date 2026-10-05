@@ -1,0 +1,28 @@
+{
+  "//": [
+    "Union de las opciones de las dos apps del monorepo.",
+    "",
+    "De VPSL: noEmit y allowImportingTsExtensions.",
+    "De Celiaquia: noFallthroughCasesInSwitch, esModuleInterop,",
+    "verbatimModuleSyntax y useDefineForClassFields."
+  ],
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "useDefineForClassFields": true
+  }
+}

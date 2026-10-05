@@ -36,6 +36,15 @@ No se usarán LLMs en CI ni acciones externas para inferencia de contenido.
 
 ## Referencias
 
-- `docs/plans/2026-03-13-pr-docs-changelog-automation-design.md`
+- `docs/plans/2026-T1/2026-03-13-pr-docs-changelog-automation-design.md`
 - `AGENTS.md`
 - `docs/registro/README.md`
+
+## Actualización 2026-10-02 (#2639)
+
+- El contexto de feature (`docs/contexto/features/`) se dejó de generar y se
+  borró: repetía la metadata y los archivos del registro del PR. Sus notas de
+  arquitectura y de UI pasaron a `docs/registro/prs/`.
+- El registro del PR vive en la carpeta del trimestre:
+  `docs/registro/prs/AAAA-TN/PR-<numero>.md`.
+- Ver `docs/registro/decisiones/2026-10-02-estructura-src-backends.md`.

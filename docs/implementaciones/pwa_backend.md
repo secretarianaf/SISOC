@@ -486,11 +486,11 @@ Modelo: `pwa.AuditoriaOperacionPWA`
 
 ## Tests automatizados relevantes
 
-- `tests/test_users_api_login.py`
-- `tests/test_users_services_pwa.py`
-- `tests/test_users_pwa_forms.py`
-- `tests/test_pwa_accesos_organizacion.py`
-- `tests/test_pwa_comedores_api.py`
+- `src/backends/sisoc_core/tests/test_users_api_login.py`
+- `src/backends/sisoc_core/tests/test_users_services_pwa.py`
+- `src/backends/sisoc_core/tests/test_users_pwa_forms.py`
+- `src/backends/sisoc_core/tests/test_pwa_accesos_organizacion.py`
+- `src/backends/sisoc_core/tests/test_pwa_comedores_api.py`
 
 Cobertura actual incluye auth, contexto, scope por comedor, gestión de operadores, nómina, rendiciones, documentos y prestación.
 
@@ -498,9 +498,5 @@ Cobertura actual incluye auth, contexto, scope por comedor, gestión de operador
 
 - Para ejecución estable de tests API en contenedor local:
   - usar `DJANGO_DEBUG=False` para evitar interferencias de debug toolbar/silk.
-- Smoke manual Postman:
-  - colección `postman/PWA Smoke.postman_collection.json`
-  - environment `postman/PWA Smoke.postman_environment.json`
-  - runner `scripts/run_pwa_smoke_postman.sh`
 - Después de migrar `users.0046` y `users.0047`, ejecutar el dry-run del
   comando de reconciliación y conservar su salida antes de aplicar cambios.

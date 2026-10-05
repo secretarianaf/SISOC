@@ -133,8 +133,8 @@ y de los descartes almacenados.
 - Portabilidad: `exportar_encuesta` / `importar_encuesta` en `services.py`;
   `/encuestas/<pk>/exportar/` y `/encuestas/importar/`.
 - Descarte: `/encuestas/responder/<pk>/descartar/` (identificador de ronda).
-- Presentación: `static/custom/css/encuestaForm.css`,
-  `static/custom/css/encuestaResponder.css` y templates en `encuestas/templates/`.
+- Presentación: `src/backends/sisoc_core/encuestas/static/custom/css/encuestaForm.css`,
+  `src/backends/sisoc_core/encuestas/static/custom/css/encuestaResponder.css` y templates en `encuestas/templates/`.
 - Regresiones de portabilidad/modalidad: `encuestas/tests/test_encuestas_portabilidad.py`
   y `encuestas/tests/test_encuestas_opcionales.py`.
 - Bloqueo transversal: `encuestas/middleware.py`.

@@ -72,8 +72,8 @@ main() {
 
   for relative in \
     .github/workflows/deploy.yml \
-    docker-compose.deploy.yml \
-    docker-compose.produccion.yml \
+    docker/compose/docker-compose.deploy.yml \
+    docker/compose/docker-compose.produccion.yml \
     docker/django/Dockerfile \
     docker/django/entrypoint.py \
     scripts/operacion/deploy_refresh.sh \

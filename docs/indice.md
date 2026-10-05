@@ -7,7 +7,6 @@
 - `docs/contexto/arquitectura.md`: resumen de la arquitectura técnica (apps, servicios, dependencias).
 - `docs/contexto/aplicaciones.md`: inventario y notas por aplicaciones del sistema.
 - `docs/contexto/memoria/`: memoria operativa reusable curada para reducir reconstruccion de contexto entre tareas de IA.
-- `docs/contexto/features/`: contexto incremental generado por PR para continuidad entre agentes y revisión.
 - `docs/contexto/documentacion_base_datos_celiaquia.md`: detalles específicos de la base de datos de Celiaquía.
 
 ### 2. Configuración y operación
@@ -16,10 +15,11 @@
 - `docs/operacion/integraciones.md`: conexiones con servicios externos, caches y manejo de estáticos/media.
 - `docs/operacion/operaciones.md`: tareas recurrentes, cron jobs y endpoints de health de producción.
 - `docs/operacion/infraestructura.md`: inventario de infraestructura operativo (entornos, arquitectura, networking, deploy, observabilidad, seguridad y roadmap infra).
+- `docs/operacion/backends_por_servicio.md`: backends por vertical (core + proxy + backend), deploy selectivo, migrador único y cómo sumar un backend.
 - `docs/operacion/ver_para_ser_libre_react.md`: arquitectura, arranque, rutas y límites del MVP React/Django de VPSL.
 - `docs/operacion/deploy_automatizado.md`: runbook de deploy por GitHub Actions, runners self-hosted, promoción y rollback por tag estable.
 - `scripts/infra/install_qa_pwa_nginx.sh`: preflight e instalación transaccional de las rutas PWA en el Nginx HTTP de QA.
-- `docs/registro/cambios/2026-09-21-deploy-independiente-satelites.md`: separación de deploys PWA, promoción secuencial y rollback automático.
+- `docs/registro/cambios/2026-T3/2026-09-21-deploy-independiente-satelites.md`: separación de deploys PWA, promoción secuencial y rollback automático.
 - `docs/operacion/deploy_entornos_docker_nginx_mysql.md`: runbook generico parametrizado para replicar entornos SISOC con Docker Compose, MySQL dedicado y NGINX.
 - `docs/operacion/qa_trixie_deploy.md`: runbook para desplegar QA en Debian 13 con SITE-QA, DB-QA, Docker Compose, MySQL 8.0 y NGINX.
 - `docs/infra/`: inventario, riesgos, operaciones, deploy, rollback y migracion
@@ -42,6 +42,7 @@
 
 ### 4. Guías funcionales e implementaciones
 - `docs/implementaciones/csp.md`: configuración y uso de CSP (nonce en templates, modo report-only, checklist de validación).
+- `docs/implementaciones/ocr.md`: OCR de documentos: modelo Tesseract, preprocesado, worker y parámetros por entorno.
 - `docs/implementaciones/sentry.md`: implementación de Sentry (activación por entorno, variables, logging y validación).
 - `docs/implementaciones/audittrail_mvp_fase1.md`: release notes y guía operativa de Fase 1 del MVP de auditoría (deploy/rollback, soporte, riesgos y métricas).
 - `docs/implementaciones/audittrail_fase2.md`: metadata persistida (`AuditEntryMeta`), contexto de auditoría para procesos y guía de deploy/rollback de Fase 2.
@@ -72,19 +73,23 @@
 - `docs/flujos/derivar_nomina_centros.md`: flujo y reglas para derivar beneficiarios entre centros (comedores y CDI).
 - `docs/flujos/rendiciones_mensuales_proyectos.md`: estados de revisión, subsanaciones y asociación de rendiciones a proyectos.
 - `docs/integraciones/ticketera_api.md`: contrato server-to-server de la API Ticketera (5 endpoints, dirigido al desarrollador de la Ticketera).
+- `src/backends/dispositivos/datacalle/instrumento/README.md`: instrumento vigente de DataCalle (versión, cómo sincronizarlo con el contrato de la app y qué no se puede mapear entre versiones).
+- `docs/registro/cambios/2026-T4/2026-10-01-datacalle-instrumento-4.0.0.md`: reemplazo total del instrumento (4.0.0), convivencia con los casos ya guardados y decisiones abiertas con el área.
 
 ### 6. IA, planes y registro spec-as-source
-- `docs/agentes/guia.md`: guía rápida para asistentes automáticos y flujo de documentación.
 - `docs/ia/`: guías especializadas para asistentes (arquitectura, testing, seguridad, etc.).
+- `docs/ia/SKILLS.md`: skills del repo (fuente en `.agents/skills/`, copia generada en `.claude/skills/`) y cómo agregarlas.
+- `docs/ia/AGENT_REPO_MAP.md`: mapa detallado del repo para agentes (hotspots, flujos, comandos).
 - `docs/ia/MODULAR_BOUNDARIES.md`: regla para que módulos nuevos queden extraíbles sin crear todavía repositorios, deployables ni bases separadas.
-- `docs/plans/`: diseños y planes previos de trabajo.
+- `docs/plans/AAAA-TN/`: diseños y planes de trabajo, por trimestre.
 - `docs/registro/README.md`: reglas para registrar cambios y decisiones importantes en `docs/`.
-- `docs/registro/cambios/`: historial de cambios importantes.
+- `docs/registro/cambios/AAAA-TN/`: historial de cambios importantes, por trimestre.
 - `docs/registro/decisiones/`: decisiones relevantes (ADR livianas).
+- `docs/registro/decisiones/2026-10-02-estructura-src-backends.md`: estructura del repo (`src/backends/`, `src/frontends/`), compose, registros por trimestre y skills.
 - `docs/registro/decisiones/2026-07-28-pas-circuito-cruces.md`: alcance y límites del circuito mensual SINTyS de PAS.
 - `docs/registro/decisiones/2026-07-29-pas-supervivencia-renaper.md`: control diario RENAPER e incompatibilidades de supervivencia PAS.
 - `docs/registro/decisiones/2026-07-16-pas-formacion-vat.md`: Formación PAS permanece desacoplada hasta definir el contrato de integración.
-- `docs/registro/prs/`: documentación automática por pull request.
+- `docs/registro/prs/AAAA-TN/`: documentación automática por pull request, por trimestre.
 - `docs/registro/releases/pending/`: release notes preliminares usadas para reconstruir `CHANGELOG.md` en PRs a `main`.
 - `docs/registro/analisis/` y `docs/analisis/`: hipótesis, relevamientos y propuestas; no reemplazan la documentación canónica ni un registro de cambio.
 
@@ -94,6 +99,6 @@
 ## Contexto mínimo
 - Stack: Django + MySQL con despliegue vía Docker Compose. Evidencia: README.md:1-4 y docker-compose.yml:1-34.
 - Variables de entorno documentadas en `.env.example` (incluye DB, GESTIONAR, RENAPER, puertos y dominio). Evidencia: .env.example:1-51.
-- Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: comedores/tasks.py, relevamientos/tasks.py, core/integrations/renaper.py, core/services/renaper.py.
+- Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: src/backends/sisoc_core/comedores/tasks.py, src/backends/sisoc_core/relevamientos/tasks.py, src/backends/kernel/core/integrations/renaper.py, src/backends/kernel/core/services/renaper.py.
 
 - `docs/implementaciones/pas_control_mensual_celery.md`: funcionamiento, lotes, programación mensual, operación y retiro cron PAS.

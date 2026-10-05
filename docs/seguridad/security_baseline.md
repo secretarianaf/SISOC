@@ -74,7 +74,7 @@
 - Retencion minima: 90 dias - Balance entre auditoría y costo.
 
 ## Dependencias: actualizacion y escaneo
-- Mantener `requirements.txt` con versiones fijas - Evita actualizaciones sorpresa.
+- Mantener `requirements/all.txt` con versiones fijas - Evita actualizaciones sorpresa.
 - Revisar dependencias mensualmente o ante CVE criticas - Reduce ventana de exposición.
 - Ejecutar auditoria de dependencias (ver comandos) - Detecta CVEs conocidas.
 

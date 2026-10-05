@@ -1,0 +1,578 @@
+[
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 1,
+        "fields": {
+            "nombre": "Primera visita",
+            "tipo_intervencion": 1
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 2,
+        "fields": {
+            "nombre": "Visita de seguimiento",
+            "tipo_intervencion": 1
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 3,
+        "fields": {
+            "nombre": "Otra visita",
+            "tipo_intervencion": 1
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 4,
+        "fields": {
+            "nombre": "Uso de plataforma",
+            "tipo_intervencion": 11
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 5,
+        "fields": {
+            "nombre": "Compras",
+            "tipo_intervencion": 11
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 6,
+        "fields": {
+            "nombre": "Rendici\u00f3n",
+            "tipo_intervencion": 11
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 7,
+        "fields": {
+            "nombre": "N\u00f3mina total de beneficiarios",
+            "tipo_intervencion": 14
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 8,
+        "fields": {
+            "nombre": "N\u00f3mina alta/baja mes 2",
+            "tipo_intervencion": 14
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 9,
+        "fields": {
+            "nombre": "N\u00f3mina alta/baja mes 3",
+            "tipo_intervencion": 14
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 10,
+        "fields": {
+            "nombre": "N\u00f3mina alta/baja mes 4",
+            "tipo_intervencion": 14
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 11,
+        "fields": {
+            "nombre": "N\u00f3mina alta/baja mes 5",
+            "tipo_intervencion": 14
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 12,
+        "fields": {
+            "nombre": "N\u00f3mina alta/baja mes 6",
+            "tipo_intervencion": 14
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 13,
+        "fields": {
+            "nombre": "No se encuentra en sucursal",
+            "tipo_intervencion": 15
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 14,
+        "fields": {
+            "nombre": "P\u00e9rdida o robo",
+            "tipo_intervencion": 15
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 15,
+        "fields": {
+            "nombre": "Cambio de titularidad",
+            "tipo_intervencion": 15
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 16,
+        "fields": {
+            "nombre": "Dificultades para el uso de la tarjeta",
+            "tipo_intervencion": 15
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 17,
+        "fields": {
+            "nombre": "Notificaci\u00f3n",
+            "tipo_intervencion": 5
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 18,
+        "fields": {
+            "nombre": "Confirmaci\u00f3n de retiro",
+            "tipo_intervencion": 5
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 19,
+        "fields": {
+            "nombre": "Notificaci\u00f3n de primera acreditaci\u00f3n",
+            "tipo_intervencion": 10
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 20,
+        "fields": {
+            "nombre": "Notificaci\u00f3n de acreditaci\u00f3n mes 2",
+            "tipo_intervencion": 10
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 21,
+        "fields": {
+            "nombre": "Notificaci\u00f3n de acreditaci\u00f3n mes 3",
+            "tipo_intervencion": 10
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 22,
+        "fields": {
+            "nombre": "Notificaci\u00f3n de acreditaci\u00f3n mes 4",
+            "tipo_intervencion": 10
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 23,
+        "fields": {
+            "nombre": "Notificaci\u00f3n de acreditaci\u00f3n mes 5",
+            "tipo_intervencion": 10
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 24,
+        "fields": {
+            "nombre": "Notificaci\u00f3n de acreditaci\u00f3n mes 6",
+            "tipo_intervencion": 10
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 25,
+        "fields": {
+            "nombre": "Certificacion mes 1",
+            "tipo_intervencion": 13
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 26,
+        "fields": {
+            "nombre": "Certificacion mes 2",
+            "tipo_intervencion": 13
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 27,
+        "fields": {
+            "nombre": "Certificacion mes 3",
+            "tipo_intervencion": 13
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 28,
+        "fields": {
+            "nombre": "Certificacion mes 4",
+            "tipo_intervencion": 13
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 29,
+        "fields": {
+            "nombre": "Certificacion mes 5",
+            "tipo_intervencion": 13
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 30,
+        "fields": {
+            "nombre": "Certificacion mes 6",
+            "tipo_intervencion": 13
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 387,
+        "fields": {
+            "nombre": "Ingreso",
+            "tipo_intervencion": 21
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 388,
+        "fields": {
+            "nombre": "Actualizaci\u00f3n de datos",
+            "tipo_intervencion": 21
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 389,
+        "fields": {
+            "nombre": "Derivaci\u00f3n interna",
+            "tipo_intervencion": 21
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 390,
+        "fields": {
+            "nombre": "Presencial",
+            "tipo_intervencion": 22
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 391,
+        "fields": {
+            "nombre": "Telef\u00f3nico",
+            "tipo_intervencion": 22
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 392,
+        "fields": {
+            "nombre": "Domiciliario",
+            "tipo_intervencion": 22
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 393,
+        "fields": {
+            "nombre": "Escuela",
+            "tipo_intervencion": 23
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 394,
+        "fields": {
+            "nombre": "Salud",
+            "tipo_intervencion": 23
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 395,
+        "fields": {
+            "nombre": "Servicio local",
+            "tipo_intervencion": 23
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 398,
+        "fields": {
+            "nombre": "Creaci\u00f3n de Usuario en Plataforma Alimentar Comunidad",
+            "tipo_intervencion": 24
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 399,
+        "fields": {
+            "nombre": "Uso de Plataforma Alimentar Comunidad: C\u00f3mo consultar saldo y subir comprobantes",
+            "tipo_intervencion": 24
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 400,
+        "fields": {
+            "nombre": "Retiro y Uso de la Tarjeta Alimentar Comunidad",
+            "tipo_intervencion": 24
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 401,
+        "fields": {
+            "nombre": "Criterios Nutricionales - Alimentar Comunidad",
+            "tipo_intervencion": 24
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 402,
+        "fields": {
+            "nombre": "Rendici\u00f3n de Cuentas Resoluci\u00f3n 650/25 - Alimentar Comunidad",
+            "tipo_intervencion": 24
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 403,
+        "fields": {
+            "nombre": "Gastos Accesorios 6% - Resoluci\u00f3n 650/25 - Alimentar Comunidad",
+            "tipo_intervencion": 24
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 404,
+        "fields": {
+            "nombre": "Pautas de Higiene - Alimentar Comunidad",
+            "tipo_intervencion": 24
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.subintervencion",
+        "pk": 405,
+        "fields": {
+            "nombre": "Seguridad en la Cocina - Alimentar Comunidad",
+            "tipo_intervencion": 24
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 1,
+        "fields": {
+            "nombre": "Visitas",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 2,
+        "fields": {
+            "nombre": "Presentaci\u00f3n del programa",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 3,
+        "fields": {
+            "nombre": "Solicitud de documentaci\u00f3n",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 4,
+        "fields": {
+            "nombre": "Coordinaci\u00f3n para firma de convenio",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 5,
+        "fields": {
+            "nombre": "Aviso para retiro de tarjeta",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 6,
+        "fields": {
+            "nombre": "Habilitaci\u00f3n de tarjeta",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 7,
+        "fields": {
+            "nombre": "Alta de usuario en plataforma",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 8,
+        "fields": {
+            "nombre": "Invitaci\u00f3n a capacitaci\u00f3n",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 9,
+        "fields": {
+            "nombre": "Asistencia a Capacitaci\u00f3n Sincr\u00f3nica",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 10,
+        "fields": {
+            "nombre": "Aviso de acreditaci\u00f3n de fondos",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 11,
+        "fields": {
+            "nombre": "Consultas varias",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 12,
+        "fields": {
+            "nombre": "Aviso de utilizaci\u00f3n de saldo pendiente",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 13,
+        "fields": {
+            "nombre": "Certificaci\u00f3n mensual",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 14,
+        "fields": {
+            "nombre": "Listado de beneficiarios",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 15,
+        "fields": {
+            "nombre": "Tarjeta",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 16,
+        "fields": {
+            "nombre": "Rendici\u00f3n presentada al programa",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 17,
+        "fields": {
+            "nombre": "Giro de expediente a PNSA Contable",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 18,
+        "fields": {
+            "nombre": "Informe t\u00e9cnico complementario",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 19,
+        "fields": {
+            "nombre": "Contacto",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 20,
+        "fields": {
+            "nombre": "Otros",
+            "programa": "comedores"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 21,
+        "fields": {
+            "nombre": "Entrevista inicial",
+            "programa": "cdi"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 22,
+        "fields": {
+            "nombre": "Seguimiento familiar",
+            "programa": "cdi"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 23,
+        "fields": {
+            "nombre": "Articulaci\u00f3n institucional",
+            "programa": "cdi"
+        }
+    },
+    {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 24,
+        "fields": {
+            "nombre": "Asistencia a Capacitaci\u00f3n Formando Capital Humano",
+            "programa": "comedores"
+        }
+    },
+        {
+        "model": "catalogo_intervenciones.tipointervencion",
+        "pk": 25,
+        "fields": {
+            "nombre": "Descargo de la Organizaci\u00f3n",
+            "programa": "comedores"
+        }
+    }
+]

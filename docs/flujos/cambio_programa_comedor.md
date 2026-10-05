@@ -3,6 +3,8 @@
 ## Objetivo
 Registrar y auditar cambios en el programa asignado a un comedor.
 
+Las rutas de evidencia (`comedores/...`) son relativas a `src/backends/sisoc_core/`; los numeros de linea pueden haberse corrido.
+
 ## Entrada / Salida
 - Entrada: actualización de `Comedor.programa` (formularios/UI). Evidencia: comedores/models.py:229-233.
 - Salida: registro en `AuditComedorPrograma` con programa anterior/nuevo y usuario. Evidencia: comedores/models.py:407-449.
@@ -26,4 +28,4 @@ Registrar y auditar cambios en el programa asignado a un comedor.
 - Para revisar historial: consultar `comedor.programa_changes.all()` (related_name). Evidencia: comedores/models.py:407-449.
 
 ## Tests existentes
-- No se identificaron tests específicos para este flujo. Evidencia: DESCONOCIDO (no se hallaron en tests/).
+- `src/backends/sisoc_core/tests/test_comedor_service_characterization_db.py` y `src/backends/sisoc_core/tests/test_comedor_views_unit.py` cubren el registro de `AuditComedorPrograma`.

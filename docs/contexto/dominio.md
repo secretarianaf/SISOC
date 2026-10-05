@@ -52,7 +52,7 @@
 
 ## 7) Permisos a nivel dominio
 - Roles/grupos creados por comando incluyen “Comedores Listar/Crear/Ver/Editar/Eliminar”, “Comedores Relevamiento Ver/Crear/Detalle/Editar”, “Comedores Observaciones …”, “Comedores Nomina …”, roles técnicos, legales, contables y dashboards. Evidencia: users/management/commands/create_groups.py:1-61.
-- Acceso API/Views protegido por auth Django y `IsAuthenticated` por defecto en DRF. Evidencia: config/settings.py:130-135,195-203.
+- Acceso API/Views protegido por auth Django y `IsAuthenticated` por defecto en DRF. Evidencia: src/backends/config/settings.py:130-135,195-203.
 - No se documentan restricciones adicionales por objeto (permisos granulares no visibles en modelos). Evidencia: DESCONOCIDO.
 
 ## Notas de negocio (provistas)

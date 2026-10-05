@@ -1,6 +1,6 @@
 # Exportar listados a CSV
 
-Este documento resume cómo reutilizar la infraestructura de exportación CSV existente (`core.mixins.CSVExportMixin`, `core.services.csv_export` y `static/custom/js/export_helper.js`) en nuevas vistas.
+Este documento resume cómo reutilizar la infraestructura de exportación CSV existente (`core.mixins.CSVExportMixin`, `core.services.csv_export` y `src/backends/kernel/static/custom/js/export_helper.js`) en nuevas vistas.
 
 ## Contrato de codificación
 
@@ -24,8 +24,8 @@ Este documento resume cómo reutilizar la infraestructura de exportación CSV ex
 
 ## 2. Frontend
 
-1. El botón contiene la clase `.btn-export-csv` y el atributo `data-url="{{ export_url }}"`. El template `templates/components/search_bar.html` ya lo incluye cuando se pasa `export_url`.
-2. Asegurate de cargar `static/custom/js/export_helper.js` en el template del listado. Este script:
+1. El botón contiene la clase `.btn-export-csv` y el atributo `data-url="{{ export_url }}"`. El template `src/backends/kernel/templates/components/search_bar.html` ya lo incluye cuando se pasa `export_url`.
+2. Asegurate de cargar `src/backends/kernel/static/custom/js/export_helper.js` en el template del listado. Este script:
    - Captura los parámetros actuales de la URL (`filters`, `page`, etc.).
    - Detecta el orden actual de la tabla leyendo `th.sortable.sort-asc`/`sort-desc` (opcional, depende de `listSort.js`).
    - Combina todo en la URL del endpoint de exportación respetando el mismo origen y esquema.

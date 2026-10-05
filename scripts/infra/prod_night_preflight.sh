@@ -71,8 +71,8 @@ main() {
   mobile_head="$(git -c safe.directory="$MOBILE_ROOT" -C "$MOBILE_ROOT" rev-parse HEAD)"
 
   runuser -u "$TARGET_USER" -- docker compose \
-    -f "$APP_ROOT/docker-compose.deploy.yml" \
-    -f "$APP_ROOT/docker-compose.produccion.yml" \
+    -f "$APP_ROOT/docker/compose/docker-compose.deploy.yml" \
+    -f "$APP_ROOT/docker/compose/docker-compose.produccion.yml" \
     --project-directory "$APP_ROOT" config -q
   runuser -u "$TARGET_USER" -- docker compose \
     -f "$MOBILE_ROOT/compose.prod.yaml" \

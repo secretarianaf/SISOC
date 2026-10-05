@@ -3,7 +3,7 @@
 ## Estado
 
 Implementada. Corresponde al "Primer PR esperado" de la Fase 0 documentada en el
-PR #1932 (`docs/plans/2026-06-22-monolito-modular-fase-0.md`).
+PR #1932 (`docs/plans/2026-T2/2026-06-22-monolito-modular-fase-0.md`).
 
 ## Contexto
 
@@ -112,7 +112,7 @@ no requiere instalar las dependencias de Django ni levantar servicios.
 
 ## Referencias
 
-- `docs/plans/2026-06-22-monolito-modular-fase-0.md` (PR #1932)
+- `docs/plans/2026-T2/2026-06-22-monolito-modular-fase-0.md` (PR #1932)
 - `.importlinter`
 - `.github/workflows/architecture.yml`
 - `AGENTS.md`, `docs/ia/ARCHITECTURE.md`, `docs/registro/README.md`

@@ -233,7 +233,7 @@ observable de `verificar` (sus contratos `200/401/429` se preservan).
 
 Cuatro correcciones sobre los endpoints **sin cambiar los contratos existentes**
 (`200`/`201`/`401`/`409`/`429` conservan su shape). Cambio asociado:
-[docs/registro/cambios/2026-05-28-integracion-ticketera-hardening.md](../cambios/2026-05-28-integracion-ticketera-hardening.md).
+[docs/registro/cambios/2026-T2/2026-05-28-integracion-ticketera-hardening.md](../cambios/2026-05-28-integracion-ticketera-hardening.md).
 
 1. **Carrera en el alta resuelta sin `500`.** `create_user` se envuelve en
    `try/except IntegrityError` (patrón de `users/services_pwa.py`). Si dos
@@ -305,7 +305,7 @@ Cuatro correcciones sobre los endpoints **sin cambiar los contratos existentes**
 - `ticketera/api_urls.py` — ruta `auth/cambiar-password/`.
 - `tests/test_ticketera.py`, `ticketera/tests.py` — tests del
   nuevo endpoint (happy path/ciclo, `401`/`400`/`429`, auditoría, `503` por flag).
-- `docs/registro/cambios/2026-05-28-integracion-ticketera-cambiar-password.md`.
+- `docs/registro/cambios/2026-T2/2026-05-28-integracion-ticketera-cambiar-password.md`.
 - Reutiliza sin modificar: `users.services_auth.change_password_for_authenticated_user`.
 
 ---

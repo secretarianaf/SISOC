@@ -1,0 +1,117 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}Importar Expedientes - Detalle{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+{% endblock %}
+
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'importarexpedientes_list' %}">Importar Expedientes</a>
+        </li>
+        <li class="breadcrumb-item active">Detalle</li>
+    </ol>
+{% endblock %}
+
+{% block app-header %}
+    <div class="row g-2 align-items-center">
+        <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2 align-items-center">
+            <form method="post"
+                  action="{% url 'importar_datos' batch_id %}"
+                  class="d-inline">
+                {% csrf_token %}
+                <button type="submit"
+                        class="btn btn-md btn-primary"
+                        title="Importar datos"
+                        data-confirm-click="¿Confirmar importación del lote?">
+                    <i class="fas fa-upload me-1"></i>Completar Importación
+                </button>
+            </form>
+            {% if batch.importacion_completada and request.user|has_any_perm:"importarexpediente.change_archivosimportados,expedientespagos.change_expedientepago" %}
+                <a href="{% url 'importar_fechas_acreditacion' batch_id %}"
+                   class="btn btn-md btn-primary"
+                   title="Actualizar fechas de acreditaci&oacute;n">
+                    <i class="fas fa-calendar-check me-1"></i>Actualizar fechas de acreditaci&oacute;n
+                </a>
+            {% endif %}
+            <form method="post"
+                  action="{% url 'borrar_datos_importados' batch_id %}"
+                  class="d-inline">
+                {% csrf_token %}
+                <button type="submit"
+                        class="btn btn-md btn-danger"
+                        title="Borrar datos"
+                        data-confirm-click="¿Confirmar borrado de datos importados del lote?">
+                    <i class="fas fa-trash me-1"></i>Eliminar Archivo
+                </button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="d-flex flex-wrap gap-3 mb-4">
+        <div class="card mb-0" style="border-left: 4px solid #198754;">
+            <div class="card-body py-2 px-3">
+                <small class="text-muted d-block">Registros Válidos</small>
+                <span class="fw-semibold fs-4 text-success">{{ exito_count }}</span>
+            </div>
+        </div>
+        <div class="card mb-0" style="border-left: 4px solid #dc3545;">
+            <div class="card-body py-2 px-3">
+                <small class="text-muted d-block">Registros con Errores</small>
+                <span class="fw-semibold fs-4 text-danger">{{ error_count }}</span>
+            </div>
+        </div>
+        <div class="card mb-0" style="border-left: 4px solid #6f42c1;">
+            <div class="card-body py-2 px-3">
+                <small class="text-muted d-block">Con Acreditaci&oacute;n</small>
+                <span class="fw-semibold fs-4">{{ expedientes_con_acreditacion_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    {% url 'importarexpediente_detail_ajax' batch_id as ajax_url %}
+    {% include 'components/search_bar.html' with titulo='Buscar Errores' placeholder='Buscar por Fila' help_text='Ingresar una Fila.' reset_url='importarexpedientes_list' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='importarexpedientes-tbody' query=query %}
+
+    <div class="row mt-4 max-width-100">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-column="nombre">
+                                    Archivo
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-column="telefono">
+                                    Fila
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-column="email">
+                                    Error
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="importarexpedientes-tbody">
+                            {% include 'partials/importarexpediente_detail_rows.html' with importarexpedientes=registros_del_archivo %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="pagination-container">
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=query prev_text='Volver' next_text='Continuar' %}
+    </div>
+{% endblock %}
+
+{% block customJS %}
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}

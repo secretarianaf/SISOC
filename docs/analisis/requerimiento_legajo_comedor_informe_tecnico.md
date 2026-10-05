@@ -93,7 +93,7 @@ Se renderizan como texto libre en `admisiones/templates/admisiones/informe_tecni
 
 El sistema ya tiene un catálogo geográfico jerárquico ampliamente usado y poblado: `core.models.Provincia` (`core/models.py:127-140`) → `core.models.Municipio` (línea 184-201) → `core.models.Localidad` (línea 205-222). `Comedor` ya usa estos catálogos como FK real (`comedores/models.py:414` `provincia`, `:417-419` `localidad`) — de hecho, `admisiones_forms.py:442` ya toma `comedor.localidad` / `comedor.provincia` (objetos FK) para prellenar `localidad_espacio` / `provincia_espacio`, aunque esos campos destino siguen siendo texto libre.
 
-Además ya existe un componente reutilizable de selects en cascada Provincia → Municipio → Localidad, con caché y Select2 opcional: `static/custom/js/ubicacionSelects.js`, usado hoy en `comedor_form.html`, `ciudadano_form.html`, `organizacion_form.html`, formularios de VAT, Centro de Infancia y Centro de Familia, entre otros.
+Además ya existe un componente reutilizable de selects en cascada Provincia → Municipio → Localidad, con caché y Select2 opcional: `src/backends/kernel/static/custom/js/ubicacionSelects.js`, usado hoy en `comedor_form.html`, `ciudadano_form.html`, `organizacion_form.html`, formularios de VAT, Centro de Infancia y Centro de Familia, entre otros.
 
 ### 4.2 Requerimiento
 
@@ -274,6 +274,6 @@ Sacar la sección "Resolución de pago" de todo lo que el usuario ve y de todo l
 - `admisiones/services/informes_service/impl.py:377-417` — agrupador de campos para visualización.
 - `admisiones/templates/admisiones/informe_tecnico_form.html`, `admisiones/templates/admisiones/pdf/renovacion_pdf_informe_tecnico_*.html`, `admisiones/templates/admisiones/docx/renovacion_docx_informe_tecnico_*.docx`.
 - `core/models.py:127-222` — `Provincia`, `Municipio`, `Localidad`.
-- `static/custom/js/ubicacionSelects.js` — componente reutilizable de selects en cascada.
+- `src/backends/kernel/static/custom/js/ubicacionSelects.js` — componente reutilizable de selects en cascada.
 - `core/constants.py:19`, `core/permissions/registry.py:62` — rol `Tecnico Comedor`.
 - `docs/implementaciones/admisiones_informes_tecnicos.md` — contrato general de Informes Técnicos, templates dinámicos.

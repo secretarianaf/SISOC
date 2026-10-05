@@ -59,5 +59,5 @@ La guía normativa es `docs/ia/MODULAR_BOUNDARIES.md`.
 ## Referencias
 
 - Issue #1931: Modularización de SISOC.
-- `docs/plans/2026-06-22-monolito-modular-fase-0.md`
+- `docs/plans/2026-T2/2026-06-22-monolito-modular-fase-0.md`
 - `docs/registro/decisiones/2026-06-23-import-linter-ratchet-fase-0.md`

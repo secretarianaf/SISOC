@@ -1,0 +1,810 @@
+{% load static custom_filters sidebar_tags %}
+{% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only cdi_local_sidebar_only=request.user|is_cdi_local_sidebar_only datacalle_sidebar_only=request.user|is_datacalle_sidebar_only %}
+    <!-- INFORMACIÓN DE USUARIO -->
+    <li class="nav-item user-info mb-2 mt-2">
+        <div class="user-panel d-flex align-items-center p-3">
+            <div class="user-avatar me-3">
+                <div class="avatar-circle d-flex align-items-center justify-content-center bg-primary text-white rounded-circle"
+                     style="width: 45px;
+                            height: 45px;
+                            font-size: 16px;
+                            font-weight: 600">
+                    {% comment %}
+                    Cuando agreguen los campos 'nombres' y 'apellido' al modelo User,
+                    reemplazar este bloque por:
+                    {% if request.user.nombres and request.user.apellido %}
+                        {{ request.user.nombres|first|upper }}{{ request.user.apellido|first|upper }}
+                    {% else %}
+                        {{ request.user.username|first|upper }}
+                    {% endif %}
+                    {% endcomment %}
+                    {{ request.user.username|first|upper }}
+                </div>
+            </div>
+            <div class="info flex-grow-1">
+                <p class="mb-1 text-white fw-bold">{{ request.user.get_full_name|default:request.user.username }}</p>
+                <p class="mb-0 text-white-50 small">{{ request.user.profile.rol|default:"-" }}</p>
+            </div>
+        </div>
+    </li>
+    <!-- INICIO -->
+    <li class="nav-item nav-main-item" style="order: 1;">
+        <a href="{% url 'inicio' %}"
+           class="nav-link {% if 'inicio' in pagina_actual %}active{% endif %}">
+            <img src="{% static 'custom/img/iconos_sidebar/inicio.svg' %}" alt="" />
+            <p>Inicio</p>
+        </a>
+    </li>
+    {% if not vat_sidebar_only and not cdi_local_sidebar_only and not datacalle_sidebar_only %}
+        <!-- COMUNICADOS -->
+        <li class="nav-item nav-main-item {% if 'comunicados' in pagina_actual %}menu-open{% endif %}"
+            style="order: 7;
+                   border-bottom: 1px solid var(--sidebar-border-color)">
+            <a href="#"
+               class="nav-link {% if 'comunicados' in pagina_actual %}active{% endif %}">
+                <i class="nav-icon bi bi-newspaper"></i>
+                <p>Comunicados</p>
+                <i class="nav-arrow bi bi-chevron-right"></i>
+            </a>
+            <ul class="nav nav-treeview">
+                <li class="nav-item">
+                    <a href="{% url 'comunicados' %}"
+                       class="nav-link nav-dot ms-2 {% if 'comunicados/' == pagina_actual %}active{% endif %}">
+                        <p>Ver Comunicados</p>
+                    </a>
+                </li>
+                {% if request.user|has_any_perm:"comunicados.add_comunicado,comunicados.change_comunicado,auth.role_admin,auth.role_administrador,auth.role_superadmin" %}
+                    <li class="nav-item">
+                        <a href="{% url 'comunicados_gestion' %}"
+                           class="nav-link nav-dot ms-2 {% if 'comunicados/gestion' in pagina_actual %}active{% endif %}">
+                            <p>Crear comunicado</p>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </li>
+    {% endif %}
+
+    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group,encuestas.view_encuesta,encuestas.ver_resultados" or perms.auditlog.view_logentry or request.user.is_superuser %}
+        <li class="nav-item nav-main-item" style="order: 4;">
+            <a href="#" class="nav-link">
+                <img src="{% static 'custom/img/iconos_sidebar/administracion.svg' %}"
+                     alt="" />
+                <p>Administración del sistema</p>
+                <i class="nav-arrow bi bi-chevron-right"></i>
+            </a>
+            <ul class="nav nav-treeview">
+                <li class="nav-item">
+                    <a href="{% url 'usuarios' %}"
+                       class="nav-link nav-dot ms-2 {% if 'usuarios' in pagina_actual or 'password' in pagina_actual %}active{% endif %}">
+                        <p>Usuarios</p>
+                    </a>
+                </li>
+                {% if request.user|has_perm_code:"auth.view_group" %}
+                    <li class="nav-item">
+                        <a href="{% url 'grupos' %}"
+                           class="nav-link nav-dot ms-2 {% if 'grupos' in pagina_actual %}active{% endif %}">
+                            <p>Grupos</p>
+                        </a>
+                    </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a href="{% url 'programa_listar' %}"
+                       class="nav-link nav-dot ms-2 {% if 'programas/' in pagina_actual %}active{% endif %}">
+                        <p>Programas</p>
+                    </a>
+                </li>
+                {% if perms.auditlog.view_logentry %}
+                    <li class="nav-item">
+                        <a href="{% url 'audittrail:log_list' %}"
+                           class="nav-link nav-dot ms-2 {% if 'auditoria/' in pagina_actual %}active{% endif %}">
+                            <p>Auditoría</p>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user|has_any_perm:"encuestas.view_encuesta,encuestas.ver_resultados" %}
+                    <li class="nav-item">
+                        <a href="{% url 'encuestas_listar' %}"
+                           class="nav-link nav-dot ms-2 {% if 'encuestas' in pagina_actual %}active{% endif %}">
+                            <p>Encuestas</p>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user.is_superuser %}
+                    <li class="nav-item">
+                        <a href="{% url 'papelera_list' %}"
+                           class="nav-link nav-dot ms-2 {% if 'papelera/' in pagina_actual %}active{% endif %}">
+                            <p>Papelera</p>
+                        </a>
+                    </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a href="{% url 'vat_voucher_parametria_list' %}"
+                       class="nav-link nav-dot ms-2 {% if 'vat/vouchers/' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-ticket-perforated"></i>
+                        <p>Parametrías de Voucher</p>
+                    </a>
+                </li>
+            </ul>
+        </li>
+    {% endif %}
+    {% if not vat_sidebar_only and not datacalle_sidebar_only and request.user|has_any_perm:"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo,admisiones.gestionar_templates_informe_tecnico" %}
+        <li class="nav-item nav-main-item {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual or 'cursos-app-mobile' in pagina_actual or 'actividades-pnud' in pagina_actual or 'insumos' in pagina_actual or 'configuracion/templates' in pagina_actual %}menu-open{% endif %}"
+            style="order: 5">
+            <a href="#" class="nav-link">
+                <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
+                <p>Configuración de Comedores</p>
+                <i class="nav-arrow bi bi-chevron-right"></i>
+            </a>
+            <ul class="nav nav-treeview">
+                {% if request.user|has_perm_code:"auth.role_admin" %}
+                    <li class="nav-item">
+                        <a href="{% url 'dupla_list' %}"
+                           class="nav-link nav-dot ms-2 {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual %}active{% endif %}">
+                            <p>Equipos Técnicos</p>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user|has_perm_code:"core.view_montoprestacionprograma" %}
+                    <li class="nav-item">
+                        <a href="{% url 'montoprestacion_listar' %}"
+                           class="nav-link nav-dot ms-2 {% if 'montoprestacion' in pagina_actual %}active{% endif %}">
+                            <p>Monto de Prestaciones</p>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user|has_perm_code:"auth.role_admin" %}
+                    <li class="nav-item">
+                        <a href="{% url 'cursos_app_mobile_list' %}"
+                           class="nav-link nav-dot ms-2 {% if 'cursos-app-mobile' in pagina_actual %}active{% endif %}">
+                            <p>Cursos App Mobile</p>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user|has_any_perm:"auth.role_admin,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa" %}
+                    <li class="nav-item">
+                        <a href="{% url 'actividades_pnud_list' %}"
+                           class="nav-link nav-dot ms-2 {% if 'actividades-pnud' in pagina_actual %}active{% endif %}">
+                            <p>Actividades PNUD</p>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user|has_perm_code:"insumos.view_insumo" %}
+                    <li class="nav-item">
+                        <a href="{% url 'insumos_listar' %}"
+                           class="nav-link nav-dot ms-2 {% if 'insumos' in pagina_actual %}active{% endif %}">
+                            <p>Insumos</p>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user|has_perm_code:"admisiones.gestionar_templates_informe_tecnico" %}
+                    <li class="nav-item {% if 'configuracion/templates' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot ms-2 {% if 'configuracion/templates' in pagina_actual %}active{% endif %}">
+                            <p>Gestor de templates</p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{% url 'gestor_templates_listar' %}"
+                                   class="nav-link ms-4 {% if 'configuracion/templates' in pagina_actual and 'incidencias' not in pagina_actual and 'variables' not in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Templates</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'gestor_templates_variables_listar' %}"
+                                   class="nav-link ms-4 {% if 'configuracion/templates/variables' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Variables documentales</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'gestor_templates_incidencias_listar' %}"
+                                   class="nav-link ms-4 {% if 'configuracion/templates/incidencias' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Incidencias de templates</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                {% endif %}
+            </ul>
+        </li>
+    {% endif %}
+    {% if not vat_sidebar_only and not datacalle_sidebar_only %}
+        {% if perms.ocr.use_ocr or request.user.is_superuser %}
+            <li class="nav-item nav-main-item" style="order: 6">
+                <a href="{% url 'ocr_upload' %}"
+                   class="nav-link {% if 'ocr/' in pagina_actual %}active{% endif %}">
+                    <i class="nav-icon bi bi-file-text"></i>
+                    <p>OCR</p>
+                </a>
+            </li>
+        {% endif %}
+    {% endif %}
+    {% if not vat_sidebar_only %}
+        {% tableros_para_sidebar as tableros %}
+        {% with has_dashboard_cf=request.user|has_perm_code:"dashboard.view_dashboard" %}
+            {% if has_dashboard_cf or tableros %}
+                <!-- Tableros -->
+                <li class="nav-item nav-main-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}"
+                    style="order: 3">
+                    <a href="#" class="nav-link">
+                        <img src="{% static 'custom/img/iconos_sidebar/tableros.svg' %}" alt="" />
+                        <p>Tableros</p>
+                        <i class="nav-arrow bi bi-chevron-right"></i>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        {% for item in tableros %}
+                            {% if item.tipo == 'grupo' %}
+                                <li class="nav-item {% if item.activo %}menu-open{% endif %}">
+                                    <a href="#"
+                                       class="nav-link nav-dot ms-2 {% if item.activo %}active{% endif %}">
+                                        <p>{{ item.nombre }}</p>
+                                        <i class="nav-arrow bi bi-chevron-right"></i>
+                                    </a>
+                                    <ul class="nav nav-treeview">
+                                        {% for hijo in item.hijos %}
+                                            <li class="nav-item">
+                                                <a href="{{ hijo.url }}"
+                                                   class="nav-link ms-4 {% if hijo.activo %}active{% endif %}">
+                                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                                    <p>{{ hijo.nombre }}</p>
+                                                </a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a href="{{ item.url }}"
+                                       class="nav-link nav-dot ms-2 {% if item.activo %}active{% endif %}">
+                                        <p>{{ item.nombre }}</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endif %}
+        {% endwith %}
+    {% endif %}
+    <!-- MENÚ LEGAJOS -->
+    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ver-para-ser-libre' in pagina_actual or 'pas/' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual or 'dispositivos' in pagina_actual or 'datacalle' in pagina_actual %}menu-open{% endif %}"
+        style="order: 2">
+        <a href="#" class="nav-link">
+            <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
+            <p>Legajos</p>
+            <i class="nav-arrow bi bi-chevron-right"></i>
+        </a>
+        <ul class="nav nav-treeview">
+            {% if not vat_sidebar_only %}
+                <!-- CIUDADANOS -->
+                {% if request.user|has_any_perm:"ciudadanos.view_ciudadano,ciudadanos.add_ciudadano" %}
+                    <li class="nav-item {% if 'ciudadanos' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot ms-2 {% if 'ciudadanos' in pagina_actual %}active{% endif %}">
+                            <p>Historia Social Digital</p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            {% if request.user|has_perm_code:"ciudadanos.view_ciudadano" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'ciudadanos' %}"
+                                       class="nav-link ms-4 {% if 'ciudadanos/listar' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Búsqueda</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if request.user|has_perm_code:"ciudadanos.revision_identidad" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'ciudadanos_cola_revision' %}"
+                                       class="nav-link ms-4 {% if 'ciudadanos/revision' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Revisi&oacute;n de Identidad</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if request.user|has_perm_code:"ciudadanos.add_ciudadano" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'ciudadanos_importacion_masiva' %}"
+                                       class="nav-link ms-4 {% if 'ciudadanos/importacion-masiva' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Importaci&oacute;n masiva</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                {% endif %}
+                <!-- COMEDORES -->
+                {% if request.user|has_perm_code:"comedores.view_comedor" or request.user|has_perm_code:"importarexpediente.view_archivosimportados" %}
+                    <li class="nav-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'importarexpediente' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot ms-2 {% if 'comedores' in pagina_actual or 'importarexpediente' in pagina_actual %}active{% endif %}">
+                            <p>Comedores</p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            {% if request.user|has_perm_code:"comedores.view_comedor" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'comedores' %}"
+                                       class="nav-link ms-4 {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Ver Comedores</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            <!-- ADMISION -->
+                            {% if request.user|has_perm_code:"admisiones.view_admision" %}
+                                <li class="nav-item ms-4 {% if 'admisiones' in pagina_actual %}menu-open{% endif %}">
+                                    <a href="#" class="nav-link">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Admisión - Comedores</p>
+                                        <i class="nav-arrow bi bi-chevron-right"></i>
+                                    </a>
+                                    <ul class="nav nav-treeview">
+                                        {% if request.user|has_perm_code:"admisiones.view_admision" %}
+                                            <li class="nav-item">
+                                                <a href="{% url 'admisiones_tecnicos_listar' %}"
+                                                   class="nav-link nav-dot ms-4 {% if 'admisiones/tecnicos' in pagina_actual or 'admisiones_tecnicos' in pagina_actual %}active{% endif %}">
+                                                    <p>Técnicos</p>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                        {% if request.user|has_perm_code:"admisiones.view_admision" %}
+                                            <li class="nav-item">
+                                                <a href="{% url 'admisiones_legales_listar' %}"
+                                                   class="nav-link nav-dot ms-4 {% if 'admisiones/legales' in pagina_actual or 'admisiones_legales' in pagina_actual %}active{% endif %}">
+                                                    <p>Legales</p>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </li>
+                            {% endif %}
+                            <!-- ACOMPAÑAMIENTO -->
+                            {% if request.user|has_perm_code:"acompanamientos.view_informacionrelevante" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'lista_comedores_acompanamiento' %}"
+                                       class="nav-link ms-4 {% if 'acompanamiento' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Acompañamiento</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if request.user|has_perm_code:"importarexpediente.view_archivosimportados" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'importarexpedientes_list' %}"
+                                       class="nav-link ms-4 {% if 'importarexpediente/listar' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Expedientes de Pago</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% comment %}
+                        <!-- RENDICIÓN DE CUENTAS FINAL -->
+                        {% if not vat_sidebar_only and request.user|has_perm_code:"rendicioncuentasfinal.view_rendicioncuentasfinal" %}
+                            <li class="nav-item">
+                                <a href="{% url 'rendicion_cuentas_final_listar' %}" class="nav-link ms-4 {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Rendición de Cuentas Final</p>
+                                </a>
+                            </li>
+                        {% endif %}
+                            {% endcomment %}
+                        </ul>
+                    </li>
+                {% endif %}
+                <!-- ORGANIZACIONES -->
+                {% if request.user|has_perm_code:"organizaciones.view_organizacion" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_perm_code:"auth.role_abogado_dupla" or request.user|has_any_perm:"rendicioncuentasmensual.view_rendicioncuentamensual,rendicioncuentasmensual.manage_territorial_stage,rendicioncuentasmensual.manage_auditoria_review_stage,rendicioncuentasmensual.manage_auditoria_stage,rendicioncuentasmensual.manage_regularizacion_stage" %}
+                    <li class="nav-item {% if 'organizaciones' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot ms-2 {% if 'organizaciones' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
+                            <p>Organizaciones</p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            {% if request.user|has_perm_code:"organizaciones.view_organizacion" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_perm_code:"auth.role_abogado_dupla" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'organizaciones' %}"
+                                       class="nav-link ms-4 {% if 'organizaciones/listar' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Ver Organizaciones</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if request.user|has_any_perm:"rendicioncuentasmensual.view_rendicioncuentamensual,rendicioncuentasmensual.manage_territorial_stage,rendicioncuentasmensual.manage_auditoria_review_stage,rendicioncuentasmensual.manage_auditoria_stage,rendicioncuentasmensual.manage_regularizacion_stage" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'rendicioncuentasmensual_global_list' %}"
+                                       class="nav-link ms-4 {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Rendiciones</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                {% endif %}
+
+                <!-- Centro de Infancia -->
+                {% if request.user|has_perm_code:"centrodeinfancia.view_centrodeinfancia" %}
+                    <li class="nav-item {% if 'centrodeinfancia' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot ms-2 {% if 'centrodeinfancia' in pagina_actual %}active{% endif %}">
+                            <p>Centro de Infancia</p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{% url 'centrodeinfancia' %}"
+                                   class="nav-link ms-4 {% if 'centrodeinfancia/listar' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Ver Centros de Infancia</p>
+                                </a>
+                            </li>
+                            {% if request.user|has_perm_code:"auth.role_reportes_cdi" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'centrodeinfancia_reportes' %}"
+                                       class="nav-link ms-4 {% if 'centrodeinfancia/reportes' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Reportes</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                {% endif %}
+                <!-- Ver Para Ser Libres -->
+                {% if request.user|has_perm_code:"ver_para_ser_libre.view_itinerariovpsl" %}
+                    <li class="nav-item {% if 'ver-para-ser-libre' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot ms-2 {% if 'ver-para-ser-libre' in pagina_actual %}active{% endif %}">
+                            <p>Ver Para Ser Libres</p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{% url 'vpsl_itinerario_list' %}"
+                                   class="nav-link ms-4 {% if 'ver-para-ser-libre/' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Itinerarios</p>
+                                </a>
+                            </li>
+                            {% if request.user|has_perm_code:"ver_para_ser_libre.view_sedevpsl" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'vpsl_sede_list' %}"
+                                       class="nav-link ms-4 {% if 'ver-para-ser-libre/sedes' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Sedes</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                {% endif %}
+                <!-- PAS -->
+                {% if request.user|has_perm_code:"pas.view_paspersona" %}
+                    <li class="nav-item {% if 'pas/' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot ms-2 {% if 'pas/' in pagina_actual %}active{% endif %}">
+                            <p>
+                                PAS
+                                <i class="nav-arrow bi bi-chevron-right"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{% url 'pas_persona_listar' %}"
+                                   class="nav-link ms-4 {% if 'pas/listar' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Buscador PAS</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'pas_panel_control' %}"
+                                   class="nav-link ms-4 {% if 'pas/panel-control' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Panel de Control</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'pas_informe_listar' %}"
+                                   class="nav-link ms-4 {% if 'pas/informes' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Informes</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                {% endif %}
+                <!-- SITUACION DE CALLE -->
+                {% if request.user|has_perm_code:"dispositivos.view_dispositivo" or request.user|has_perm_code:"datacalle.view_relevamiento" %}
+                    <li class="nav-item {% if 'dispositivos' in pagina_actual or 'datacalle' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot ms-2 {% if 'dispositivos' in pagina_actual or 'datacalle' in pagina_actual %}active{% endif %}">
+                            <p>Situación de Calle</p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            {% if request.user|has_perm_code:"dispositivos.view_dispositivo" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'dispositivos_listar' %}"
+                                       class="nav-link ms-4 {% if 'dispositivos/' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Ver Dispositivos</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if request.user|has_perm_code:"datacalle.view_relevamiento" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'datacalle_relevamientos_listar' %}"
+                                       class="nav-link ms-4 {% if 'datacalle/' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Relevamientos DataCalle</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                {% endif %}
+                <!-- CENTRO DE FAMILIA -->
+                {% if request.user|has_perm_code:"centrodefamilia.view_centro" %}
+                    <li class="nav-item {% if 'centros' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot {% if 'centros' in pagina_actual %}active{% endif %} ms-2">
+                            <p>Centro de Familia</p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{% url 'centro_list' %}"
+                                   class="nav-link {% if 'centros/' in pagina_actual %}active{% endif %} ms-4">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Centros</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'beneficiarios_crear' %}"
+                                   class="nav-link {% if 'beneficiarios/nuevo' in pagina_actual %}active{% endif %} ms-4">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Nuevo Preinscripto</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'beneficiarios_list' %}"
+                                   class="nav-link {% if 'beneficiarios/beneficiarios' in pagina_actual %}active{% endif %} ms-4">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Lista de Preinscriptos</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'responsables_list' %}"
+                                   class="nav-link {% if 'beneficiarios/responsables' in pagina_actual %}active{% endif %} ms-4">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Lista Responsables</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                {% endif %}
+            {% endif %}
+            <!-- VAT / INET -->
+            {% if request.user|has_perm_code:"VAT.view_centro" %}
+                <li class="nav-item {% if 'vat/' in pagina_actual %}menu-open{% endif %}">
+                    <a href="#"
+                       class="nav-link nav-dot {% if 'vat/' in pagina_actual %}active{% endif %} ms-2">
+                        <p>INET</p>
+                        <i class="nav-arrow bi bi-chevron-right"></i>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <!-- Centros -->
+                        <li class="nav-item">
+                            <a href="{% url 'vat_centro_list' %}"
+                               class="nav-link {% if 'vat/centros/' in pagina_actual %}active{% endif %} ms-4">
+                                <i class="nav-icon bi bi-arrow-return-right"></i>
+                                <p>Centros de Formación Profesional</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'vat_reporte_inscripciones_asistencias' %}"
+                               class="nav-link {% if 'vat/reportes/inscripciones-asistencias/' in pagina_actual %}active{% endif %} ms-4">
+                                <i class="nav-icon bi bi-arrow-return-right"></i>
+                                <p>Reporte Inscriptos y Asistencias</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'vat_buscador_ciudadano' %}"
+                               class="nav-link {% if 'vat/buscador-ciudadano/' in pagina_actual %}active{% endif %} ms-4">
+                                <i class="nav-icon bi bi-arrow-return-right"></i>
+                                <p>Buscador por Ciudadano</p>
+                            </a>
+                        </li>
+                        <!-- Inscripciones (oculto temporalmente) -->
+                        {% if False and request.user|has_perm_code:"VAT.view_inscripcion" %}
+                            <li class="nav-item">
+                                <a href="{% url 'vat_inscripcion_list' %}"
+                                   class="nav-link {% if 'vat/inscripciones/' in pagina_actual %}active{% endif %} ms-4">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Inscripciones</p>
+                                </a>
+                            </li>
+                        {% endif %}
+                        <!-- Evaluaciones (oculto temporalmente) -->
+                        {% if False and request.user|has_perm_code:"VAT.view_evaluacion" %}
+                            <li class="nav-item">
+                                <a href="{% url 'vat_evaluacion_list' %}"
+                                   class="nav-link {% if 'vat/evaluaciones/' in pagina_actual %}active{% endif %} ms-4">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Evaluaciones</p>
+                                </a>
+                            </li>
+                        {% endif %}
+                        <!-- Resultados de Evaluación (oculto temporalmente) -->
+                        {% if False and request.user|has_perm_code:"VAT.view_resultadoevaluacion" %}
+                            <li class="nav-item">
+                                <a href="{% url 'vat_resultado_evaluacion_list' %}"
+                                   class="nav-link {% if 'vat/resultados-evaluacion/' in pagina_actual %}active{% endif %} ms-4">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Resultados de Evaluación</p>
+                                </a>
+                            </li>
+                        {% endif %}
+                        <!-- Oferta Educativa (subgrupo) - oculto temporalmente -->
+                        {% if False %}
+                            <li class="nav-item ms-4 {% if 'vat/ofertas' in pagina_actual or 'vat/comisiones' in pagina_actual or 'vat/inscripciones-oferta' in pagina_actual %}menu-open{% endif %}">
+                                <a href="#" class="nav-link">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Oferta Educativa</p>
+                                    <i class="nav-arrow bi bi-chevron-right"></i>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    {% if request.user|has_perm_code:"VAT.view_ofertainstitucional" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_oferta_institucional_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/ofertas-institucionales/' in pagina_actual %}active{% endif %}">
+                                                <p>Ofertas Institucionales</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_comision" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_comision_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/comisiones/' in pagina_actual %}active{% endif %}">
+                                                <p>Comisiones</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_inscripcionoferta" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_inscripcion_oferta_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/inscripciones-oferta/' in pagina_actual %}active{% endif %}">
+                                                <p>Inscripciones a Oferta</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </li>
+                        {% endif %}
+                        <!-- Datos Institución (subgrupo) - oculto temporalmente -->
+                        {% if False %}
+                            <li class="nav-item ms-4 {% if 'vat/institucion/' in pagina_actual %}menu-open{% endif %}">
+                                <a href="#" class="nav-link">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Datos Institución</p>
+                                    <i class="nav-arrow bi bi-chevron-right"></i>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    {% if request.user|has_perm_code:"VAT.view_institucioncontacto" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_institucion_contacto_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/institucion/contactos/' in pagina_actual %}active{% endif %}">
+                                                <p>Contactos</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_institucionidentificadorhist" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_institucion_identificador_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/institucion/identificadores/' in pagina_actual %}active{% endif %}">
+                                                <p>Identificadores</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_institucionubicacion" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_institucion_ubicacion_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/institucion/ubicaciones/' in pagina_actual %}active{% endif %}">
+                                                <p>Ubicaciones</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </li>
+                        {% endif %}
+                        <!-- Catálogos (subgrupo) -->
+                        {% if request.user|has_perm_code:"VAT.view_modalidadcursada" or request.user|has_perm_code:"VAT.view_planversioncurricular" %}
+                            <li class="nav-item ms-4 {% if 'vat/modalidades-institucionales/' in pagina_actual or 'vat/catalogos/' in pagina_actual %}menu-open{% endif %}">
+                                <a href="#" class="nav-link" data-vat-tour="catalogos-menu">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Catálogos</p>
+                                    <i class="nav-arrow bi bi-chevron-right"></i>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    {% if request.user|has_perm_code:"VAT.view_modalidadcursada" and not request.user|has_any_group:'CFPINET' %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_modalidadcursada_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/catalogos/modalidades-cursado/' in pagina_actual %}active{% endif %}">
+                                                <p>Modalidades de Cursado</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_perm_code:"VAT.view_planversioncurricular" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'vat_planversioncurricular_list' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'vat/catalogos/planes-curriculares/' in pagina_actual %}active{% endif %}">
+                                                <p>Planes Curriculares</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </li>
+            {% endif %}
+            {% if not vat_sidebar_only %}
+                <!-- CELIAQUÍA -->
+                {% comment %}
+                El menú se muestra con cualquiera de los tres permisos: un grupo
+                puede tener sólo el de Reporte (o sólo el de Dashboard) sin ver
+                expedientes, y aun así necesita llegar a su módulo.
+                {% endcomment %}
+                {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user|has_perm_code:"celiaquia.view_cupo_dashboard" or request.user|has_perm_code:"celiaquia.view_reporte_provincias" or request.user.is_superuser %}
+                    <li class="nav-item">
+                        <a href="#" class="nav-link nav-dot ms-2">
+                            <p>Celiaquía</p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            {% if request.user|has_perm_code:"celiaquia.view_expediente" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'expediente_list' %}" class="nav-link ms-2">
+                                        <i class="nav-icon fas fa-folder-open"></i>
+                                        <p>Expedientes</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if request.user|has_perm_code:"celiaquia.view_cupo_dashboard" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'cupo_dashboard' %}" class="nav-link ms-2">
+                                        <i class="nav-icon fas fa-chart-bar"></i>
+                                        <p>Dashboard Cupos</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if request.user|has_perm_code:"celiaquia.view_reporte_provincias" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'reporter_provincias' %}" class="nav-link ms-2">
+                                        <i class="nav-icon fas fa-chart-pie"></i>
+                                        <p>Reporte</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                {% endif %}
+            {% endif %}
+        </ul>
+    </li>
+    <!-- MI CUENTA (siempre al pie del sidebar) -->
+    <li class="nav-item mt-auto border-top pt-2">
+        <a href="{% url 'mi_cuenta' %}"
+           class="nav-link {% if pagina_actual == 'mi-cuenta/' %}active{% endif %}">
+            <i class="nav-icon fas fa-user-circle"></i>
+            <p>Mi cuenta</p>
+        </a>
+    </li>
+{% endwith %}

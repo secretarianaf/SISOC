@@ -28,7 +28,7 @@ Los bundles activos usan el backend correspondiente a cada entorno. Las notas
 de aprovisionamiento del 2026-09-08 siguientes son historicas, no pendientes
 actuales. La nueva ruta de Espacios quedo instalada en ambos hosts el 2026-09-09,
 con `/mobile/` operativa y permisos sudo temporales retirados. Evidencia y
-rollback: `docs/registro/cambios/2026-09-09-espacios-rutas-coexistentes.md`.
+rollback: `docs/registro/cambios/2026-T3/2026-09-09-espacios-rutas-coexistentes.md`.
 La aceptacion funcional, de instalacion y offline queda al equipo de testers.
 
 | ID | Repositorio privado | Checkout hermano de SISOC | Proyecto / puerto | Estado |
@@ -93,7 +93,7 @@ prepare del proximo workflow):
 - PRD: `~/.local/state/sisoc-pwa-ready-prd-20260908T202540Z/release/state.json`.
 
 Falta incorporar la API de DataCalle de los PRs SISOC #2452/#2453 a development
-y luego a homologacion: config/urls.py solo expone api/datacalle en main y el
+y luego a homologacion: src/backends/config/urls.py solo expone api/datacalle en main y el
 endpoint publico de HML sigue en 404. El PR #2474 ademas registra tres fallos de
 tests de Admisiones en la ejecucion 34272694992, sin cambios en esos formularios
 en este diff. Resolver esos gates antes de promover; los 29 tests operativos
@@ -344,7 +344,7 @@ Para activar la convivencia de Espacios:
 El generador sigue bloqueando reemplazar la base `/mobile/` o redirigirla por
 accidente. No se redirige su service worker ni se borran datos de navegadores.
 Las pruebas de clientes instalados y sincronizacion las realiza el equipo de
-testers. Diseno: `docs/plans/2026-09-09-espacios-rutas-coexistentes-design.md`.
+testers. Diseno: `docs/plans/2026-T3/2026-09-09-espacios-rutas-coexistentes-design.md`.
 
 El empaquetado nuevo conserva la imagen anterior para rollback, pero no sirve
 assets exclusivos de builds anteriores desde la imagen nueva. Antes de releases
@@ -357,8 +357,8 @@ no confundir retencion de imagenes con disponibilidad HTTP de assets antiguos.
 # Pruebas puras de operacion: sin Django, Docker real, red ni bases.
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q -c pyproject.toml \
   --confcutdir=tests --noconftest -p no:cacheprovider --import-mode=importlib \
-  tests/test_deploy_pwas.py tests/test_deploy_refresh_script.py \
-  tests/test_deploy_workflow.py tests/test_pwa_nginx.py
+  src/backends/kernel/tests/test_deploy_pwas.py src/backends/kernel/tests/test_deploy_refresh_script.py \
+  src/backends/kernel/tests/test_deploy_workflow.py src/backends/kernel/tests/test_pwa_nginx.py
 bash -n scripts/operacion/deploy_refresh.sh
 ```
 

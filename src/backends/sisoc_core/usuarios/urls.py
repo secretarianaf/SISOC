@@ -1,0 +1,166 @@
+from django.urls import path
+from django.contrib.auth.views import LogoutView
+from core.decorators import permissions_all_required, permissions_any_required
+from users.services import BULK_CREDENTIALS_PERMISSION_CODE
+from usuarios.views import (
+    BulkCredentialsJobDetailView,
+    BulkCredentialsJobResumeView,
+    BulkCredentialsTemplateView,
+    BulkCredentialsUploadView,
+    FirstLoginPasswordChangeView,
+    GroupCreateView,
+    UserCreateView,
+    UserDeleteView,
+    GroupListView,
+    GroupUpdateView,
+    ConfirmacionDatosView,
+    MiCuentaView,
+    PasswordResetConfirmCustomView,
+    UserListView,
+    UserUpdateView,
+    UsuariosLoginView,
+    UserActiveView,
+)
+from usuarios.views_export import UserExportView, GroupExportView
+from usuarios.views_user_import import (
+    UserImportJobCreateView,
+    UserImportJobDetailView,
+    UserImportJobDownloadCSVView,
+    UserImportJobResumeView,
+    UserImportTemplateView,
+)
+
+
+urlpatterns = [
+    path("", UsuariosLoginView.as_view(), name="login"),
+    path("logout", (LogoutView.as_view()), name="logout"),
+    path(
+        "password/first-change/",
+        FirstLoginPasswordChangeView.as_view(),
+        name="password_change_required",
+    ),
+    path(
+        "mi-cuenta/",
+        MiCuentaView.as_view(),
+        name="mi_cuenta",
+    ),
+    path(
+        "mi-cuenta/confirmar/",
+        ConfirmacionDatosView.as_view(),
+        name="confirmar_datos_personales",
+    ),
+    path(
+        "password/reset/confirm/<uidb64>/<token>/",
+        PasswordResetConfirmCustomView.as_view(),
+        name="password_reset_confirm_custom",
+    ),
+    path(
+        "usuarios/",
+        permissions_any_required(["auth.view_user"])(UserListView.as_view()),
+        name="usuarios",
+    ),
+    path(
+        "usuarios/exportar/",
+        permissions_all_required(["auth.view_user", "auth.role_exportar_a_csv"])(
+            UserExportView.as_view()
+        ),
+        name="usuarios_exportar",
+    ),
+    path(
+        "usuarios/crear/",
+        permissions_any_required(["auth.add_user"])(UserCreateView.as_view()),
+        name="usuario_crear",
+    ),
+    path(
+        "usuarios/editar/<int:pk>/",
+        permissions_any_required(["auth.change_user"])(UserUpdateView.as_view()),
+        name="usuario_editar",
+    ),
+    path(
+        "usuarios/credenciales-masivas/",
+        permissions_all_required(
+            ["auth.change_user", BULK_CREDENTIALS_PERMISSION_CODE]
+        )(BulkCredentialsUploadView.as_view()),
+        name="usuarios_credenciales_masivas",
+    ),
+    path(
+        "usuarios/credenciales-masivas/plantilla/",
+        permissions_all_required(
+            ["auth.change_user", BULK_CREDENTIALS_PERMISSION_CODE]
+        )(BulkCredentialsTemplateView.as_view()),
+        name="usuarios_credenciales_plantilla",
+    ),
+    path(
+        "usuarios/credenciales-masivas/lotes/<int:pk>/",
+        permissions_all_required(
+            ["auth.change_user", BULK_CREDENTIALS_PERMISSION_CODE]
+        )(BulkCredentialsJobDetailView.as_view()),
+        name="usuarios_credenciales_masivas_detalle",
+    ),
+    path(
+        "usuarios/credenciales-masivas/lotes/<int:pk>/reanudar/",
+        permissions_all_required(
+            ["auth.change_user", BULK_CREDENTIALS_PERMISSION_CODE]
+        )(BulkCredentialsJobResumeView.as_view()),
+        name="usuarios_credenciales_masivas_reanudar",
+    ),
+    path(
+        "usuarios/borrar/<int:pk>/",
+        permissions_any_required(["auth.delete_user"])(UserDeleteView.as_view()),
+        name="usuario_borrar",
+    ),
+    path(
+        "usuarios/activar/<int:pk>/",
+        permissions_any_required(["auth.delete_user"])(UserActiveView.as_view()),
+        name="usuario_activar",
+    ),
+    path(
+        "usuarios/importar/",
+        permissions_any_required(["auth.add_user"])(UserImportJobCreateView.as_view()),
+        name="usuarios_importar",
+    ),
+    path(
+        "usuarios/importar/plantilla/",
+        permissions_any_required(["auth.add_user"])(UserImportTemplateView.as_view()),
+        name="usuarios_importar_plantilla",
+    ),
+    path(
+        "usuarios/importar/lotes/<int:pk>/",
+        permissions_any_required(["auth.add_user"])(UserImportJobDetailView.as_view()),
+        name="usuarios_importar_detalle",
+    ),
+    path(
+        "usuarios/importar/lotes/<int:pk>/reanudar/",
+        permissions_any_required(["auth.add_user"])(UserImportJobResumeView.as_view()),
+        name="usuarios_importar_reanudar",
+    ),
+    path(
+        "usuarios/importar/lotes/<int:pk>/descargar-csv/",
+        permissions_any_required(["auth.add_user"])(
+            UserImportJobDownloadCSVView.as_view()
+        ),
+        name="usuarios_importar_descargar_csv",
+    ),
+    path(
+        "grupos/",
+        permissions_any_required(["auth.view_group"])(GroupListView.as_view()),
+        name="grupos",
+    ),
+    path(
+        "grupos/exportar/",
+        permissions_all_required(["auth.view_group", "auth.role_exportar_a_csv"])(
+            GroupExportView.as_view()
+        ),
+        name="grupos_exportar",
+    ),
+    path(
+        "grupos/crear/",
+        permissions_any_required(["auth.add_group"])(GroupCreateView.as_view()),
+        name="grupo_crear",
+    ),
+    path(
+        "grupos/editar/<int:pk>/",
+        permissions_any_required(["auth.change_group"])(GroupUpdateView.as_view()),
+        name="grupo_editar",
+    ),
+]

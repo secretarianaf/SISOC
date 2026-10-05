@@ -16,7 +16,7 @@ Este documento no explica la colección de Postman como artefacto técnico. El f
 
 Colección de referencia:
 
-- `postman/VAT - Planes Centros Cursos Comisiones.postman_collection.json`
+- `docs/api/postman/SISOC APIs.postman_collection.json`, carpeta `VAT`
 
 ## Base URL y autenticación
 

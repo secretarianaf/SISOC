@@ -111,8 +111,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--env-file",
         dest="env_file",
-        default=".env.prod",
-        help="Ruta al archivo dotenv que apunta a la DB de producción (default: .env.prod)",
+        default=".env",
+        help="Ruta al archivo dotenv que apunta a la DB de producción (default: .env)",
     )
     return parser.parse_args()
 

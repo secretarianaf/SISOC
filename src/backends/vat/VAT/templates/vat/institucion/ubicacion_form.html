@@ -1,0 +1,261 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.id %}
+        Editar
+    {% else %}
+        Nueva
+    {% endif %}
+    Ubicación
+{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/vat_design.css' %}" />
+    <div class="vat-ui container-fluid py-4">
+        <div class="vp-hero">
+            <h1>
+                {% if form.instance.id %}
+                    Editar Ubicación
+                {% else %}
+                    Nueva Ubicación
+                {% endif %}
+            </h1>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-text me-2"></i>Información General
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.centro.id_for_label }}" class="form-label fw-600">
+                                        {{ form.centro.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-building" style="color: #1f3a93;"></i></span>
+                                        {{ form.centro }}
+                                    </div>
+                                    {% if form.centro.errors %}<div class="text-danger small mt-1">{{ form.centro.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.departamento.id_for_label }}" class="form-label fw-600">{{ form.departamento.label }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-map" style="color: #1f3a93;"></i></span>
+                                        {{ form.departamento }}
+                                    </div>
+                                    {% if form.departamento.errors %}<div class="text-danger small mt-1">{{ form.departamento.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.localidad.id_for_label }}" class="form-label fw-600">
+                                        {{ form.localidad.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-geo" style="color: #1f3a93;"></i></span>
+                                        {{ form.localidad }}
+                                    </div>
+                                    {% if form.localidad.errors %}<div class="text-danger small mt-1">{{ form.localidad.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.rol_ubicacion.id_for_label }}" class="form-label fw-600">
+                                        {{ form.rol_ubicacion.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-diagram-3" style="color: #1f3a93;"></i></span>
+                                        {{ form.rol_ubicacion }}
+                                    </div>
+                                    {% if form.rol_ubicacion.errors %}
+                                        <div class="text-danger small mt-1">{{ form.rol_ubicacion.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.domicilio.id_for_label }}" class="form-label fw-600">{{ form.domicilio.label }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi-signpost" style="color: #1f3a93;"></i></span>
+                                        {{ form.domicilio }}
+                                    </div>
+                                    {% if form.domicilio.errors %}<div class="text-danger small mt-1">{{ form.domicilio.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        {{ form.es_principal }}
+                                        <label class="form-check-label fw-600"
+                                               for="{{ form.es_principal.id_for_label }}">
+                                            {{ form.es_principal.label }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <label for="{{ form.observaciones.id_for_label }}" class="form-label fw-600">{{ form.observaciones.label }}</label>
+                                    {{ form.observaciones }}
+                                    {% if form.observaciones.errors %}
+                                        <div class="text-danger small mt-1">{{ form.observaciones.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <hr class="my-4" />
+                            <div class="d-flex gap-2 justify-content-end">
+                                <a href="{% if return_url %}{{ return_url }}{% else %}{% url 'vat_institucion_ubicacion_list' %}{% endif %}"
+                                   class="btn btn-outline-secondary"><i class="bi bi-x-lg me-2"></i>Cancelar</a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i>
+                                    {% if form.instance.id %}
+                                        Actualizar
+                                    {% else %}
+                                        Crear
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title fw-600">
+                            <i class="bi bi-info-circle me-2"></i>Información
+                        </h6>
+                        <div class="small text-muted">
+                            <p>Sede Principal, Anexo, Dependencia o Punto de Atención.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script nonce="{{ request.csp_nonce }}">
+(function () {
+    // REQ 2026-09-23 (docs/registro/analisis/2026-09-23-inet-sedes-fuera-del-departamento.md):
+    // misma cascada Departamento -> Localidad que el modal de centro_detail.html,
+    // en vez de traer todas las localidades de la provincia por centro.
+    const centroSelect = document.getElementById('id_centro_ubicacion');
+    const departamentoSelect = document.getElementById('id_departamento_ubicacion');
+    const localidadSelect = document.getElementById('id_localidad_ubicacion');
+    const municipiosUrl = '{% url "vat_ajax_municipios_por_centro" %}';
+    const localidadesUrl = '{% url "ajax_load_localidades" %}';
+    const localidadActual = "{{ form.instance.localidad_id|default:'' }}";
+    const departamentoActual = "{{ form.initial.departamento|default:'' }}";
+
+    if (!centroSelect || !departamentoSelect || !localidadSelect) return;
+
+    function refreshSelect2(target) {
+        if (window.refreshSelect2Element) {
+            window.refreshSelect2Element(target);
+        }
+    }
+
+    function cargarLocalidades(municipioId, seleccionarId) {
+        if (!municipioId) {
+            localidadSelect.innerHTML = '<option value=""></option>';
+            localidadSelect.disabled = true;
+            refreshSelect2(localidadSelect);
+            return;
+        }
+        localidadSelect.disabled = true;
+        localidadSelect.innerHTML = '<option value="">Cargando...</option>';
+        refreshSelect2(localidadSelect);
+        fetch(localidadesUrl + '?municipio_id=' + encodeURIComponent(municipioId), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (localidades) {
+                localidadSelect.innerHTML = '<option value=""></option>';
+                localidades.forEach(function (loc) {
+                    const opt = document.createElement('option');
+                    opt.value = loc.id;
+                    opt.textContent = loc.nombre;
+                    if (String(loc.id) === String(seleccionarId)) opt.selected = true;
+                    localidadSelect.appendChild(opt);
+                });
+                localidadSelect.disabled = false;
+                refreshSelect2(localidadSelect);
+            })
+            .catch(function () {
+                localidadSelect.innerHTML = '<option value=""></option>';
+                localidadSelect.disabled = true;
+                refreshSelect2(localidadSelect);
+            });
+    }
+
+    function cargarDepartamentos(centroId, seleccionarId, seleccionarLocalidadId) {
+        if (!centroId) {
+            departamentoSelect.innerHTML = '<option value=""></option>';
+            refreshSelect2(departamentoSelect);
+            cargarLocalidades(null, null);
+            return;
+        }
+        fetch(municipiosUrl + '?centro_id=' + encodeURIComponent(centroId), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                departamentoSelect.innerHTML = '<option value=""></option>';
+                data.municipios.forEach(function (municipio) {
+                    const opt = document.createElement('option');
+                    opt.value = municipio.id;
+                    opt.textContent = municipio.nombre;
+                    if (String(municipio.id) === String(seleccionarId)) opt.selected = true;
+                    departamentoSelect.appendChild(opt);
+                });
+                if (!seleccionarId && data.municipios.length === 1) {
+                    seleccionarId = data.municipios[0].id;
+                    departamentoSelect.value = seleccionarId;
+                }
+                refreshSelect2(departamentoSelect);
+                cargarLocalidades(seleccionarId || null, seleccionarLocalidadId);
+            });
+    }
+
+    centroSelect.addEventListener('change', function () {
+        cargarDepartamentos(this.value, null, null);
+    });
+
+    if (window.jQuery) {
+        window.jQuery(departamentoSelect).on('change select2:select select2:clear', function () {
+            cargarLocalidades(this.value, null);
+        });
+    } else {
+        departamentoSelect.addEventListener('change', function () {
+            cargarLocalidades(this.value, null);
+        });
+    }
+
+    // Al cargar la página, si ya hay un centro seleccionado (alta con centro
+    // preseleccionado o edición) los departamentos ya vienen server-side; solo
+    // falta la localidad, que carga por AJAX según el departamento inicial.
+    if (centroSelect.value) {
+        let departamentoInicial = departamentoActual;
+        if (!departamentoInicial) {
+            const opcionesDepartamento = Array.from(departamentoSelect.options).filter(function (option) {
+                return option.value;
+            });
+            if (opcionesDepartamento.length === 1) {
+                departamentoInicial = opcionesDepartamento[0].value;
+                departamentoSelect.value = departamentoInicial;
+                if (window.jQuery) {
+                    window.jQuery(departamentoSelect).trigger('change.select2');
+                }
+            }
+        }
+        cargarLocalidades(departamentoInicial, localidadActual);
+    }
+})();
+    </script>
+{% endblock %}

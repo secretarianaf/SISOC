@@ -1,0 +1,1142 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}
+    {% if object %}
+        Editar
+    {% else %}
+        Nuevo
+    {% endif %}
+    ciudadano
+{% endblock %}
+{% block titulo-pagina %}
+    {% if object %}
+        Editar
+    {% else %}
+        Nuevo
+    {% endif %}
+    ciudadano
+{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ciudadanoUbicacion.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/fotos.css' %}" />
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h3 class="mb-0">
+                {% if object %}
+                    Actualizar ciudadano
+                {% else %}
+                    Registrar ciudadano
+                {% endif %}
+            </h3>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="#" data-history-back="true" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </div>
+    {% if not object %}
+        <div class="card mb-3">
+            <div class="card-header font-weight-bold">Buscar Ciudadano</div>
+            <div class="card-body">
+                <form method="get" class="form-inline">
+                    <div class="form-group mr-2">
+                        <label for="busqueda-dni" class="sr-only">DNI</label>
+                        <input type="text"
+                               class="form-control"
+                               name="dni"
+                               id="busqueda-dni"
+                               placeholder="Ingrese DNI (7-8 digitos)"
+                               value="{{ request.GET.dni }}" />
+                    </div>
+                    <div class="form-group mr-2">
+                        <label for="busqueda-sexo" class="sr-only">Sexo</label>
+                        <select name="sexo" id="busqueda-sexo" class="form-control">
+                            {% for value,label in sexo_busqueda_choices %}
+                                <option value="{{ value }}"
+                                        {% if sexo_busqueda == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary mt-3" type="submit">Buscar</button>
+                </form>
+                <small class="form-text text-muted mt-2">
+                    Si existe, se abrira el legajo para edicion. Si no existe, se precargara el formulario con datos de RENAPER.
+                </small>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if object and object.requiere_revision_manual %}
+        <div class="alert alert-warning d-flex align-items-start gap-3 mb-3">
+            <i class="fas fa-exclamation-triangle fa-lg mt-1"></i>
+            <div>
+                <strong>Este ciudadano requiere revisión de identidad.</strong>
+                {% if object.tipo_registro_identidad == "SIN_DNI" %}
+                    <br />
+                    Tipo: <strong>Sin DNI</strong>
+                    {% if object.motivo_sin_dni %}— Motivo: {{ object.get_motivo_sin_dni_display }}{% endif %}
+                    {% if object.motivo_sin_dni_descripcion %}
+                        <br />
+                        <em>{{ object.motivo_sin_dni_descripcion }}</em>
+                    {% endif %}
+                {% elif object.tipo_registro_identidad == "DNI_NO_VALIDADO_RENAPER" %}
+                    <br />
+                    Tipo: <strong>DNI no validado por RENAPER</strong>
+                    {% if object.motivo_no_validacion_renaper %}— Motivo: {{ object.get_motivo_no_validacion_renaper_display }}{% endif %}
+                    {% if object.motivo_no_validacion_descripcion %}
+                        <br />
+                        <em>{{ object.motivo_no_validacion_descripcion }}</em>
+                    {% endif %}
+                {% endif %}
+                <br />
+                <small class="text-muted">Corregí los datos y luego marcá como revisado desde el detalle del ciudadano.</small>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="row comedor-form">
+        <div class="col-12">
+            <form method="post"
+                  id="ciudadanoForm"
+                  class="w-100"
+                  enctype="multipart/form-data"
+                  novalidate
+                  data-ajax-municipios-url="{% url 'ajax_load_municipios' %}"
+                  data-ajax-localidades-url="{% url 'ajax_load_localidades' %}">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+
+                <div class="progress-indicator">
+                    <div class="progress-header">
+                        <h4 class="progress-title">
+                            <i class="fas fa-clipboard-check mr-2"></i>
+                            Progreso del Formulario
+                        </h4>
+                        <span class="progress-stats">
+                            <span id="completedSections">0</span>/<span id="totalSections">5</span> secciones completadas
+                        </span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="section-card" data-section="identidad">
+                    <div class="section-header" data-toggle-section-ciudadano="identidad">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Datos personales</h3>
+                                <p class="section-subtitle">Identidad y documentación principal</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-identidad">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-identidad">
+                        <!-- Tipo de registro de identidad -->
+                        <div class="form-group row mb-3">
+                            <div class="col-md-6">
+                                {% with field=form.tipo_registro_identidad %}
+                                    <div class="form-group">
+                                        <label class="form-label fw-bold" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                        </label>
+                                        {{ field }}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                        </div>
+
+                        <!-- Campos dinámicos: Sin DNI -->
+                        <div id="bloque-sin-dni"
+                             class="alert alert-warning mb-3"
+                             style="display:none">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    {% with field=form.motivo_sin_dni %}
+                                        <div class="form-group">
+                                            <label class="form-label" for="{{ field.id_for_label }}">
+                                                {{ field.label }} <span class="text-danger fw-bold">*</span>
+                                            </label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                        </div>
+                                    {% endwith %}
+                                </div>
+                                <div class="col-md-8">
+                                    {% with field=form.motivo_sin_dni_descripcion %}
+                                        <div class="form-group">
+                                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                        </div>
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos dinámicos: DNI no validado RENAPER -->
+                        <div id="bloque-no-validado"
+                             class="alert alert-danger mb-3"
+                             style="display:none">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    {% with field=form.motivo_no_validacion_renaper %}
+                                        <div class="form-group">
+                                            <label class="form-label" for="{{ field.id_for_label }}">
+                                                {{ field.label }} <span class="text-danger fw-bold">*</span>
+                                            </label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                        </div>
+                                    {% endwith %}
+                                </div>
+                                <div class="col-md-8">
+                                    {% with field=form.motivo_no_validacion_descripcion %}
+                                        <div class="form-group">
+                                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                        </div>
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {% with field=form.apellido %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                            <div class="col-md-4">
+                                {% with field=form.nombre %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                            <div class="col-md-4">
+                                {% with field=form.fecha_nacimiento %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {% with field=form.tipo_documento %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                            <div class="col-md-4">
+                                {% with field=form.documento %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                            <div class="col-md-4">
+                                {% with field=form.sexo %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {% with field=form.nacionalidad %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card" data-section="domicilio">
+                    <div class="section-header" data-toggle-section-ciudadano="domicilio">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Domicilio y ubicación</h3>
+                                <p class="section-subtitle">Provincia, municipio y dirección declarada</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-domicilio">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-domicilio">
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {% with field=form.provincia %}
+                                    <div class="form-group ubicacion-select-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        <div id="provincia-field" class="ubicacion-select-wrapper">{{ field }}</div>
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                            <div class="col-md-4">
+                                {% with field=form.municipio %}
+                                    <div class="form-group ubicacion-select-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        <div id="municipio-loader" class="skeleton-loader d-none"></div>
+                                        <div id="municipio-field" class="ubicacion-select-wrapper">{{ field }}</div>
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                            <div class="col-md-4">
+                                {% with field=form.localidad %}
+                                    <div class="form-group ubicacion-select-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        <div id="localidad-loader" class="skeleton-loader d-none"></div>
+                                        <div id="localidad-field" class="ubicacion-select-wrapper">{{ field }}</div>
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                {% with field=form.barrio %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                            <div class="col-md-3">
+                                {% with field=form.calle %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                            <div class="col-md-3">
+                                {% with field=form.altura %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                            <div class="col-md-3">
+                                {% with field=form.piso_departamento %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {% with field=form.codigo_postal %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card" data-section="contacto">
+                    <div class="section-header" data-toggle-section-ciudadano="contacto">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-phone-alt"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Contacto</h3>
+                                <p class="section-subtitle">Datos de comunicación</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-contacto">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-contacto">
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {% with field=form.telefono %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                            <div class="col-md-4">
+                                {% with field=form.telefono_alternativo %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                            <div class="col-md-4">
+                                {% with field=form.email %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card" data-section="estado">
+                    <div class="section-header" data-toggle-section-ciudadano="estado">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-toggle-on"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Estado y notas</h3>
+                                <p class="section-subtitle">Activación y observaciones internas</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-estado">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-estado">
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {% with field=form.activo %}
+                                    <div class="form-check form-switch mt-2">
+                                        {{ field }}
+                                        <label class="form-check-label ms-2" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {% if field.help_text %}<small class="form-text text-muted d-block">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-12">
+                                {% with field=form.observaciones %}
+                                    <div class="form-group">
+                                        <label class="form-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                            {% if field.field.required %}
+                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                                <span class="visually-hidden">Campo obligatorio</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                    </div>
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card" data-section="documentacion">
+                    <div class="section-header" data-toggle-section-ciudadano="documentacion">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-camera"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Documentación</h3>
+                                <p class="section-subtitle">Foto de legajo del ciudadano</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-documentacion">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-documentacion">
+                        <div class="form-group">
+                            <label for="{{ form.foto.id_for_label }}"
+                                   class="form-label font-weight-bold text-light">
+                                <i class="fas fa-camera mr-2"></i>
+                                Foto de Legajo
+                                {% if form.foto.field.required %}
+                                    <span class="text-danger fw-bold" aria-hidden="true">*</span>
+                                    <span class="visually-hidden">Campo obligatorio</span>
+                                {% endif %}
+                            </label>
+                            {% if form.instance.foto %}
+                                <div class="foto-legajo-existente mb-3">
+                                    <h6 class="text-light mb-2">
+                                        <i class="fas fa-image mr-1"></i>
+                                        Foto actual:
+                                    </h6>
+                                    <div class="foto-existente-container">
+                                        <div class="foto-thumbnail-container"
+                                             data-image-url="{{ form.instance.foto.url }}">
+                                            <div class="preview-placeholder">
+                                                <i class="fas fa-image"></i>
+                                                <div class="loader">
+                                                    <div class="spinner-border spinner-border-sm" role="status">
+                                                        <span class="sr-only">Cargando...</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="foto-info">
+                                            <div class="foto-nombre">
+                                                {% if "comedor/" in form.instance.foto.name %}
+                                                    {{ form.instance.foto.name|slice:"8:" }}
+                                                {% else %}
+                                                    {{ form.instance.foto.name }}
+                                                {% endif %}
+                                            </div>
+                                            <div class="foto-status">
+                                                <i class="fas fa-check-circle text-success"></i>
+                                                <span class="text-success">Guardada</span>
+                                            </div>
+                                        </div>
+                                        <button type="button"
+                                                class="btn btn-outline-primary btn-sm"
+                                                data-call-click="abrirFotoCiudadanoModal"
+                                                data-call-args='["{{ form.instance.foto.url|escapejs }}", "{{ form.instance.foto.name|escapejs }}"]'>
+                                            <i class="fas fa-expand-alt mr-1"></i>
+                                            Ver completa
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <div class="nueva-foto-section">
+                                <h6 class="text-light mb-2">
+                                    <i class="fas fa-upload mr-1"></i>
+                                    {% if form.instance.foto %}
+                                        Cambiar foto:
+                                    {% else %}
+                                        Seleccionar foto:
+                                    {% endif %}
+                                </h6>
+                                {{ form.foto }}
+                                <button type="button" id="foto-picker-btn" class="btn-seleccionar mt-2">
+                                    <i class="fas fa-upload"></i>
+                                    Seleccionar imagen
+                                </button>
+                                <div class="contador-imagenes mt-2 d-none" id="foto-selected-info">
+                                    <span id="foto-selected-name"></span>
+                                </div>
+                            </div>
+                            <div id="fotoCiudadanoPreviewContainer"
+                                 class="nueva-foto-preview mt-3 d-none">
+                                <h6 class="text-light mb-2">
+                                    <i class="fas fa-eye mr-1"></i>
+                                    Vista previa:
+                                </h6>
+                                <div class="nueva-foto-container">
+                                    <div class="foto-preview-wrapper">
+                                        <img id="fotoCiudadanoPreview"
+                                             src=""
+                                             alt="Vista previa de foto legajo"
+                                             class="foto-preview-img" />
+                                        <button type="button"
+                                                class="btn-remover-preview"
+                                                data-call-click="removerPreviewFotoCiudadano">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="foto-preview-info">
+                                        <div class="preview-nombre" id="fotoCiudadanoNombre">imagen.jpg</div>
+                                        <div class="preview-size" id="fotoCiudadanoSize">0 KB</div>
+                                        <div class="preview-status">
+                                            <i class="fas fa-clock text-warning"></i>
+                                            <span class="text-warning">Pendiente de guardar</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sticky-actions">
+                    <div>
+                        <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'ciudadanos' %}{% endif %}"
+                           class="btn btn-secondary">
+                            <i class="fas fa-arrow-left mr-1"></i>
+                            Volver
+                        </a>
+                    </div>
+                    <div>
+                        <button type="button" data-history-back="true" class="btn btn-secondary mr-2">
+                            <i class="fas fa-times mr-1"></i>
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save mr-1"></i>
+                            {% if object %}
+                                Guardar cambios
+                            {% else %}
+                                Crear ciudadano
+                            {% endif %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade"
+         id="fotoCiudadanoModal"
+         tabindex="-1"
+         aria-labelledby="fotoCiudadanoModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content modal-foto-legajo">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="fotoCiudadanoModalLabel">
+                        <i class="fas fa-camera mr-2"></i>
+                        Foto del ciudadano
+                    </h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="foto-legajo-modal-container">
+                        <div class="foto-legajo-principal">
+                            <img id="fotoCiudadanoPrincipal"
+                                 src=""
+                                 alt="Foto ampliada"
+                                 class="img-fluid" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-between">
+                    <div class="info-foto">
+                        <span class="nombre-archivo" id="nombreArchivoCiudadano">foto.jpg</span>
+                    </div>
+                    <div class="acciones-foto">
+                        <button type="button"
+                                class="btn btn-outline-success btn-sm"
+                                data-call-click="descargarFotoCiudadano">
+                            <i class="fas fa-download mr-1"></i>Descargar
+                        </button>
+                        <button type="button"
+                                class="btn btn-secondary btn-sm"
+                                data-bs-dismiss="modal">
+                            <i class="fas fa-times mr-1"></i>Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        // Variables globales para emular la inicialización de comedores
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+    </script>
+    <script nonce="{{ request.csp_nonce }}">
+        (function () {
+            const tipoSelect = document.getElementById("id_tipo_registro_identidad");
+            const bloqueSinDni = document.getElementById("bloque-sin-dni");
+            const bloqueNoValidado = document.getElementById("bloque-no-validado");
+            const campoDni = document.getElementById("id_documento");
+            const wrapperDni = campoDni ? campoDni.closest(".form-group") : null;
+
+            function actualizarBloques() {
+                const tipo = tipoSelect ? tipoSelect.value : "ESTANDAR";
+
+                if (bloqueSinDni) bloqueSinDni.style.display = (tipo === "SIN_DNI") ? "" : "none";
+                if (bloqueNoValidado) bloqueNoValidado.style.display = (tipo === "DNI_NO_VALIDADO_RENAPER") ? "" : "none";
+
+                // Ocultar campo DNI cuando es SIN_DNI
+                if (wrapperDni) wrapperDni.style.display = (tipo === "SIN_DNI") ? "none" : "";
+            }
+
+            if (tipoSelect) {
+                tipoSelect.addEventListener("change", actualizarBloques);
+                actualizarBloques(); // estado inicial al cargar
+            }
+        })();
+    </script>
+    <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
+    <script src="{% static 'custom/js/ciudadanosform.js' %}"></script>
+    <script nonce="{{ request.csp_nonce }}">
+        function toggleSectionCiudadano(sectionId) {
+            const sectionBody = document.getElementById("section-" + sectionId);
+            const sectionHeader = document.querySelector(`[data-section="${sectionId}"] .section-header`);
+            if (!sectionBody) {
+                return;
+            }
+            if (typeof bootstrap !== "undefined" && bootstrap.Collapse) {
+                const collapse = bootstrap.Collapse.getOrCreateInstance(sectionBody, { toggle: false });
+                collapse.toggle();
+            } else {
+                sectionBody.classList.toggle("show");
+                sectionBody.classList.toggle("collapsing");
+                setTimeout(() => {
+                    sectionBody.classList.remove("collapsing");
+                }, 300);
+            }
+            if (sectionHeader) {
+                sectionHeader.classList.toggle("collapsed");
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const sections = ["identidad", "domicilio", "contacto", "estado", "documentacion"];
+            const completedLabel = document.getElementById("completedSections");
+            const totalLabel = document.getElementById("totalSections");
+            const progressBar = document.getElementById("progressBarFill");
+
+            if (totalLabel) {
+                totalLabel.textContent = sections.length;
+            }
+
+            function fieldFilled(field) {
+                if (field.type === "checkbox" || field.type === "radio") {
+                    return field.checked;
+                }
+                return field.value && field.value.trim() !== "";
+            }
+
+            function updateSectionStatus(sectionId) {
+                const statusBadge = document.getElementById("status-" + sectionId);
+                const sectionBody = document.getElementById("section-" + sectionId);
+                if (!sectionBody) return false;
+
+                const requiredFields = Array.from(
+                    sectionBody.querySelectorAll("input[required], select[required], textarea[required]")
+                ).filter(field => field.type !== "hidden");
+
+                const allFields = Array.from(
+                    sectionBody.querySelectorAll("input, select, textarea")
+                ).filter(field => field.type !== "hidden");
+
+                let state = "empty";
+                let isComplete = false;
+
+                if (requiredFields.length === 0) {
+                    // Sección opcional: solo se marca como completa si tiene al menos un campo lleno
+                    // Excluir checkboxes con valor por defecto que no han sido modificados por el usuario
+                    const hasAnyFieldFilled = allFields.some(field => {
+                        // Para checkboxes, solo contar si NO es el valor por defecto inicial
+                        if (field.type === "checkbox") {
+                            // Si el campo tiene el atributo data-user-modified, significa que el usuario lo cambió
+                            return field.hasAttribute('data-user-modified');
+                        }
+                        return fieldFilled(field);
+                    });
+
+                    if (hasAnyFieldFilled) {
+                        state = "complete";
+                        isComplete = true;
+                    } else {
+                        state = "empty";
+                        isComplete = false;
+                    }
+                } else {
+                    // Sección con campos obligatorios
+                    const filled = requiredFields.filter(fieldFilled).length;
+                    if (filled === 0) {
+                        state = "empty";
+                        isComplete = false;
+                    } else if (filled < requiredFields.length) {
+                        state = "incomplete";
+                        isComplete = false;
+                    } else {
+                        state = "complete";
+                        isComplete = true;
+                    }
+                }
+
+                if (statusBadge) {
+                    statusBadge.classList.remove("complete", "incomplete", "empty");
+                    statusBadge.classList.add(state);
+                    if (requiredFields.length === 0 && state === "complete") {
+                        statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> Completo (Opcional)';
+                    } else if (requiredFields.length === 0 && state === "empty") {
+                        statusBadge.innerHTML = '<i class="fas fa-circle"></i> Opcional';
+                    } else if (state === "complete") {
+                        statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> Completo';
+                    } else if (state === "incomplete") {
+                        statusBadge.innerHTML = '<i class="fas fa-adjust"></i> En progreso';
+                    } else {
+                        statusBadge.innerHTML = '<i class="fas fa-circle"></i> Sin completar';
+                    }
+                }
+
+                return isComplete;
+            }
+
+            function updateProgress() {
+                let completed = 0;
+                sections.forEach((sectionId) => {
+                    if (updateSectionStatus(sectionId)) {
+                        completed += 1;
+                    }
+                });
+
+                if (completedLabel) {
+                    completedLabel.textContent = completed;
+                }
+                if (progressBar) {
+                    const percent = sections.length ? (completed / sections.length) * 100 : 0;
+                    progressBar.style.width = `${percent}%`;
+                }
+            }
+
+            sections.forEach((sectionId) => {
+                const sectionBody = document.getElementById("section-" + sectionId);
+                if (!sectionBody) return;
+                const fields = sectionBody.querySelectorAll("input, select, textarea");
+                fields.forEach((field) => {
+                    // Marcar checkboxes cuando el usuario interactúa con ellos
+                    if (field.type === "checkbox") {
+                        field.addEventListener("change", function() {
+                            this.setAttribute('data-user-modified', 'true');
+                            updateProgress();
+                        });
+                    } else {
+                        field.addEventListener("input", updateProgress);
+                        field.addEventListener("change", updateProgress);
+                    }
+                });
+            });
+
+            updateProgress();
+        });
+    </script>
+    <script nonce="{{ request.csp_nonce }}">
+        document.addEventListener("DOMContentLoaded", function () {
+            const fotoInput = document.getElementById("foto-input") || document.getElementById("id_foto");
+            const triggerBtn = document.getElementById("foto-picker-btn");
+            const infoLabel = document.getElementById("foto-selected-info");
+            const infoName = document.getElementById("foto-selected-name");
+            const previewContainer = document.getElementById("fotoCiudadanoPreviewContainer");
+            const previewImg = document.getElementById("fotoCiudadanoPreview");
+            const previewName = document.getElementById("fotoCiudadanoNombre");
+            const previewSize = document.getElementById("fotoCiudadanoSize");
+            const modalElement = document.getElementById("fotoCiudadanoModal");
+            const modalImg = document.getElementById("fotoCiudadanoPrincipal");
+            const modalName = document.getElementById("nombreArchivoCiudadano");
+            let modalInstance = null;
+            let modalImageUrl = null;
+            let modalImageName = null;
+
+            if (triggerBtn && fotoInput) {
+                triggerBtn.addEventListener("click", function () {
+                    fotoInput.click();
+                });
+            }
+
+            if (modalElement && typeof bootstrap !== "undefined") {
+                modalInstance = new bootstrap.Modal(modalElement);
+            }
+
+            function resetPreview() {
+                if (infoLabel) {
+                    infoLabel.classList.add("d-none");
+                }
+                if (infoName) {
+                    infoName.textContent = "";
+                }
+                if (previewContainer) {
+                    previewContainer.classList.add("d-none");
+                }
+                if (previewImg) {
+                    previewImg.removeAttribute("src");
+                }
+                if (previewName) {
+                    previewName.textContent = "";
+                }
+                if (previewSize) {
+                    previewSize.textContent = "";
+                }
+            }
+
+            function setModalData(url, name) {
+                modalImageUrl = url;
+                modalImageName = name || "foto.jpg";
+                if (modalImg) {
+                    modalImg.src = modalImageUrl;
+                }
+                if (modalName) {
+                    modalName.textContent = modalImageName;
+                }
+            }
+
+            if (fotoInput) {
+                fotoInput.addEventListener("change", function (event) {
+                    const file = event.target.files[0];
+                    if (!file) {
+                        resetPreview();
+                        return;
+                    }
+                    if (infoLabel) {
+                        infoLabel.classList.remove("d-none");
+                    }
+                    if (infoName) {
+                        infoName.textContent = `Imagen seleccionada: ${file.name}`;
+                    }
+                    if (previewContainer) {
+                        previewContainer.classList.remove("d-none");
+                    }
+                    if (previewName) {
+                        previewName.textContent = file.name;
+                    }
+                    if (previewSize) {
+                        previewSize.textContent = `${(file.size / 1024).toFixed(1)} KB`;
+                    }
+                    if (previewImg) {
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            previewImg.src = e.target.result;
+                            setModalData(e.target.result, file.name);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            window.removerPreviewFotoCiudadano = function () {
+                if (fotoInput) {
+                    fotoInput.value = "";
+                }
+                resetPreview();
+            };
+
+            window.abrirFotoCiudadanoModal = function (url, name) {
+                if (!modalInstance) return;
+                setModalData(url, name);
+                modalInstance.show();
+            };
+
+            window.descargarFotoCiudadano = function () {
+                if (!modalImageUrl) return;
+                const link = document.createElement("a");
+                link.href = modalImageUrl;
+                link.download = modalImageName || "foto.jpg";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+        });
+    </script>
+    <script nonce="{{ request.csp_nonce }}">
+        document.addEventListener("DOMContentLoaded", function () {
+            const fechaNacimientoInput = document.getElementById("id_fecha_nacimiento");
+            const fechaNacimientoInicial = "{{ form.instance.fecha_nacimiento|date:'Y-m-d' }}";
+            if (fechaNacimientoInput && !fechaNacimientoInput.value && fechaNacimientoInicial) {
+                fechaNacimientoInput.value = fechaNacimientoInicial;
+            }
+        });
+    </script>
+{% endblock %}

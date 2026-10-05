@@ -1,0 +1,125 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Detalle Plan de Estudio{% endblock %}
+{% block titulo-pagina %}Detalle Plan de Estudio{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/vat_design.css' %}" />
+{% endblock %}
+
+{% block content %}
+    <div class="vat-ui vp-shell">
+        <div class="vp-hero">
+            <div>
+                <h1>
+                    <i class="fas fa-clipboard-list me-2"></i>{{ plan }}
+                </h1>
+                <p>Detalle del plan curricular con su clasificación académica, carga horaria y condiciones de certificación.</p>
+            </div>
+            <div class="vp-hero-actions">
+                {% if perms.VAT.change_planversioncurricular %}
+                    <a href="{% url 'vat_planversioncurricular_update' plan.id %}"
+                       class="btn btn-warning">
+                        <i class="fas fa-edit me-1"></i>Editar
+                    </a>
+                {% endif %}
+                {% if perms.VAT.delete_planversioncurricular %}
+                    <form method="post"
+                          action="{% url 'vat_planversioncurricular_delete' plan.id %}"
+                          onsubmit="return confirm('¿Está seguro?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-1"></i>Eliminar
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card vp-panel">
+            <div class="vp-panel-header">
+                <div>
+                    <h3 class="card-title">
+                        <i class="fas fa-sitemap me-2"></i>Clasificación Académica
+                    </h3>
+                    <div class="small">Sector, subsector y modalidad del plan.</div>
+                </div>
+            </div>
+            <div class="vp-section">
+                <div class="vp-metric-grid">
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Nombre</div>
+                        <div class="vp-metric-value">{{ plan.nombre|default:"-" }}</div>
+                    </div>
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Sector</div>
+                        <div class="vp-metric-value">{{ plan.sector.nombre }}</div>
+                    </div>
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Subsector</div>
+                        <div class="vp-metric-value">{{ plan.subsector.nombre|default:"-" }}</div>
+                    </div>
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Modalidad de Cursado</div>
+                        <div class="vp-metric-value">{{ plan.modalidad_cursada.nombre }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card vp-panel">
+            <div class="vp-panel-header">
+                <div>
+                    <h3 class="card-title">
+                        <i class="fas fa-book me-2"></i>Datos del Plan
+                    </h3>
+                    <div class="small">Normativa, carga horaria y niveles del trayecto.</div>
+                </div>
+            </div>
+            <div class="vp-section">
+                <div class="vp-metric-grid">
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Estado</div>
+                        <div class="vp-metric-value">
+                            {% if plan.activo %}
+                                <span class="vp-badge vp-badge--ok"><i class="fas fa-check-circle"></i>Activo</span>
+                            {% else %}
+                                <span class="vp-badge vp-badge--off"><i class="fas fa-times-circle"></i>Inactivo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Normativa</div>
+                        <div class="vp-metric-value">{{ normativa_texto|default:"-" }}</div>
+                    </div>
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Normativa - Tipo</div>
+                        <div class="vp-metric-value">{{ normativa_tipo|default:"-" }}</div>
+                    </div>
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Normativa - Número</div>
+                        <div class="vp-metric-value">{{ normativa_numero|default:"-" }}</div>
+                    </div>
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Normativa - Año</div>
+                        <div class="vp-metric-value">{{ normativa_anio|default:"-" }}</div>
+                    </div>
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Horas Reloj</div>
+                        <div class="vp-metric-value">{{ plan.horas_reloj|default:"-" }}</div>
+                    </div>
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Nivel Requerido</div>
+                        <div class="vp-metric-value">{{ plan.nivel_requerido|default:"-" }}</div>
+                    </div>
+                    <div class="vp-metric">
+                        <div class="vp-metric-label">Nivel que Certifica</div>
+                        <div class="vp-metric-value">{{ plan.nivel_certifica|default:"-" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}

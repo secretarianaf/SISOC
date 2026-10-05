@@ -1,0 +1,578 @@
+{% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
+{% block title %}Organizaciones{% endblock %}
+{% block titulo-pagina %}Organizaciones{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% block content %}
+    <!-- CSS Moderno para formularios -->
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+
+    <div class="d-flex justify-content-between mb-3">
+        <div>
+            <a href="#" data-history-back="true" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </div>
+
+    <div class="row comedor-form">
+        <div class="col-12">
+            <form method="post"
+                  id="organizacionForm"
+                  class="w-100"
+                  enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.cuil_duplicado_confirmado }}
+                {{ form.cuil_duplicado_confirmado_valor }}
+
+                <!-- Indicador de progreso global -->
+                <div class="progress-indicator">
+                    <div class="progress-header">
+                        <h4 class="progress-title">
+                            <i class="fas fa-clipboard-check mr-2"></i>
+                            Progreso del Formulario
+                        </h4>
+                        <span class="progress-stats">
+                            <span id="completedSections">0</span>/4 secciones completadas
+                        </span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Sección 1: Información Básica -->
+                <div class="section-card" data-section="basic">
+                    <div class="section-header" data-toggle-section="basic">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Información Básica</h3>
+                                <p class="section-subtitle">Datos generales de la organización</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-basic">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-basic">
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.nombre|as_crispy_field }}</div>
+                            <div class="col-md-6">
+                                {{ form.cuit|as_crispy_field }}
+                                <span class="field-tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">CUIT de 11 dígitos</span>
+                                </span>
+
+                            </div>
+                            <div class="col-md-12">
+                                <!-- Advertencia de CUIL duplicado -->
+                                <div id="cuil-warning"
+                                     class="alert alert-warning d-none mt-2"
+                                     role="alert">
+                                    <strong><i class="fas fa-exclamation-triangle mr-1"></i>Atención:</strong>
+                                    Este CUIT ya está registrado en las siguientes organizaciones:
+                                    <div class="table-responsive mt-2">
+                                        <table class="table table-sm table-bordered mb-2" id="cuil-duplicados-tabla">
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th>Nombre</th>
+                                                    <th>Tipo de entidad</th>
+                                                    <th>Subtipo</th>
+                                                    <th>Teléfono</th>
+                                                    <th>Email</th>
+                                                    <th>Domicilio</th>
+                                                    <th>Provincia</th>
+                                                    <th>Municipio</th>
+                                                    <th>Localidad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cuil-duplicados-tbody">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="form-check mt-1">
+                                        <input class="form-check-input" type="checkbox" id="cuil-confirmar-check" />
+                                        <label class="form-check-label font-weight-bold" for="cuil-confirmar-check">
+                                            Revisé la información y confirmo la creación del nuevo registro
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-6">
+                                {{ form.tipo_entidad|as_crispy_field }}
+                                <div id="tipo-entidad-warning"
+                                     class="alert alert-warning d-none mt-2"
+                                     role="alert">
+                                    <strong><i class="fas fa-exclamation-triangle mr-1"></i>Atención:</strong>
+                                    Al cambiar el Tipo de Entidad se reiniciará la documentación del legajo (se eliminarán los archivos ya cargados). Las admisiones vinculadas mostrarán una advertencia para resincronizarse o continuar.
+                                </div>
+                            </div>
+                            <div class="col-md-6">{{ form.subtipo_entidad|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 2: Contacto -->
+                <div class="section-card" data-section="contacto">
+                    <div class="section-header" data-toggle-section="contacto">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-phone-alt"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Contacto</h3>
+                                <p class="section-subtitle">Datos de comunicación</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-contacto">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-contacto">
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.telefono|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.email|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 3: Ubicación -->
+                <div class="section-card" data-section="ubicacion">
+                    <div class="section-header" data-toggle-section="ubicacion">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Ubicación y Domicilio</h3>
+                                <p class="section-subtitle">Datos de geolocalización y dirección</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-ubicacion">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-ubicacion">
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
+                            <div class="col-md-4">
+                                <div id="municipio-loader" class="skeleton-loader d-none"></div>
+                                <div id="municipio-field">{{ form.municipio|as_crispy_field }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div id="localidad-loader" class="skeleton-loader d-none"></div>
+                                <div id="localidad-field">{{ form.localidad|as_crispy_field }}</div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.partido|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.domicilio|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 4: Vigencia -->
+                <div class="section-card" data-section="vigencia">
+                    <div class="section-header" data-toggle-section="vigencia">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Vigencia</h3>
+                                <p class="section-subtitle">Fecha de vencimiento de la organización</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-vigencia">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-vigencia">
+                        <div class="form-group row">
+                            <div class="col-md-6">
+                                {{ form.fecha_vencimiento|as_crispy_field }}
+                                {{ form.sin_vencimiento|as_crispy_field }}
+                                <span class="field-tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">Fecha de vencimiento del convenio o acuerdo</span>
+                                </span>
+                            </div>
+                            <div class="col-md-6 d-flex">
+                                {{ form.codigos_proyecto }}
+                                <div class="border rounded p-3 w-100">
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+                                        <label class="form-label fw-bold mb-0">Códigos de Proyecto</label>
+                                        <button type="button"
+                                                class="btn btn-primary btn-sm"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalAgregarProyecto">
+                                            <i class="fas fa-plus me-1"></i> Agregar proyecto
+                                        </button>
+                                    </div>
+                                    <div id="proyectos-listado" class="list-group"></div>
+                                    <p id="proyectos-vacio" class="text-muted mb-0 py-2">No hay proyectos agregados.</p>
+                                    {% for error in form.codigos_proyecto.errors %}<div class="text-danger small mt-2">{{ error }}</div>{% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-12">{{ form.territoriales_abordaje_comunitario|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones sticky -->
+                <div class="sticky-actions">
+                    <div>
+                        <button type="button" data-history-back="true" class="btn btn-secondary mr-2">
+                            <i class="fas fa-times mr-1"></i> Cancelar
+                        </button>
+                        <button class="btn btn-success" type="submit" id="organizacionSubmitBtn">
+                            <i class="fas fa-save mr-1"></i> Guardar organización
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="modal fade"
+                 id="modalAgregarProyecto"
+                 tabindex="-1"
+                 aria-labelledby="modalAgregarProyectoLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalAgregarProyectoLabel">Agregar proyecto</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <label for="nuevo-codigo-proyecto" class="form-label">Código del proyecto</label>
+                            <input type="text"
+                                   id="nuevo-codigo-proyecto"
+                                   class="form-control"
+                                   maxlength="255"
+                                   autocomplete="off" />
+                            <div id="nuevo-codigo-proyecto-error"
+                                 class="text-danger small mt-2 d-none"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" id="agregarProyectoBtn">Agregar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal: confirmacion de cambio de Tipo de Entidad -->
+            <div class="modal fade"
+                 id="modalConfirmarTipoEntidad"
+                 tabindex="-1"
+                 aria-labelledby="modalConfirmarTipoEntidadLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalConfirmarTipoEntidadLabel">
+                                <i class="fas fa-exclamation-triangle text-warning mr-2"></i>
+                                Confirmar cambio de Tipo de Entidad
+                            </h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>
+                                Al cambiar el <strong>Tipo de Entidad</strong> se reiniciara
+                                el listado de documentos del legajo de la organizacion (se
+                                eliminaran los archivos ya cargados).
+                            </p>
+                            <p class="mb-0">
+                                Ademas, las admisiones vinculadas mostraran una advertencia
+                                para resincronizarse o continuar con la informacion actual.
+                            </p>
+                            <p class="mt-2 mb-0">
+                                <strong>¿Esta seguro de continuar?</strong>
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button"
+                                    class="btn btn-warning"
+                                    id="confirmarCambioTipoEntidadBtn">Confirmar cambio</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <!-- URLs de Django para AJAX -->
+    <script nonce="{{ request.csp_nonce }}">
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+        var cuilCheckAjaxUrl = "{{ cuil_check_ajax_url }}";
+        var organizacionPk = "{{ organizacion_pk|default:'' }}";
+        var tipoEntidadOriginal = "{{ form.instance.tipo_entidad_id|default:'' }}";
+    </script>
+
+    <!-- Scripts externos -->
+    <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
+    <script src="{% static 'custom/js/organizacionesform.js' %}"></script>
+    <script nonce="{{ request.csp_nonce }}">
+        $(function () {
+            $("#id_territoriales_abordaje_comunitario").select2({
+                width: "100%",
+                placeholder: "Buscar por apellido, nombre o usuario",
+            });
+        });
+    </script>
+
+    <script nonce="{{ request.csp_nonce }}">
+    (function () {
+        var tipoEntidadInput = document.getElementById("id_tipo_entidad");
+        var tipoEntidadWarning = document.getElementById("tipo-entidad-warning");
+        var cuitInput = document.getElementById("id_cuit");
+        var warningBox = document.getElementById("cuil-warning");
+        var tbody = document.getElementById("cuil-duplicados-tbody");
+        var confirmarCheck = document.getElementById("cuil-confirmar-check");
+        var hiddenConfirmado = document.getElementById("id_cuil_duplicado_confirmado");
+        var hiddenConfirmadoValor = document.getElementById("id_cuil_duplicado_confirmado_valor");
+        var submitBtn = document.querySelector('#organizacionForm button[type="submit"]');
+        var proyectosInput = document.getElementById("id_codigos_proyecto");
+        var proyectosListado = document.getElementById("proyectos-listado");
+        var proyectosVacio = document.getElementById("proyectos-vacio");
+        var proyectoNuevoInput = document.getElementById("nuevo-codigo-proyecto");
+        var proyectoNuevoError = document.getElementById("nuevo-codigo-proyecto-error");
+        var agregarProyectoBtn = document.getElementById("agregarProyectoBtn");
+        var modalAgregarProyectoEl = document.getElementById("modalAgregarProyecto");
+        var debounceTimer = null;
+        var requestSeq = 0;
+
+        function proyectosActuales() {
+            return (proyectosInput.value || "").split(",").map(function (codigo) {
+                return codigo.trim();
+            }).filter(Boolean);
+        }
+
+        function renderProyectos(codigos) {
+            proyectosInput.value = codigos.join(", ");
+            proyectosListado.innerHTML = "";
+            proyectosVacio.classList.toggle("d-none", codigos.length > 0);
+            codigos.forEach(function (codigo, index) {
+                var item = document.createElement("span");
+                item.className = "list-group-item d-flex align-items-center justify-content-between gap-3";
+                var texto = document.createElement("span");
+                texto.className = "text-break fw-semibold";
+                texto.appendChild(document.createTextNode(codigo));
+                item.appendChild(texto);
+                var eliminar = document.createElement("button");
+                eliminar.type = "button";
+                eliminar.className = "btn btn-outline-danger btn-sm flex-shrink-0";
+                eliminar.setAttribute("aria-label", "Eliminar proyecto " + codigo);
+                eliminar.innerHTML = '<i class="fas fa-times"></i>';
+                eliminar.addEventListener("click", function () {
+                    var actualizados = proyectosActuales();
+                    actualizados.splice(index, 1);
+                    renderProyectos(actualizados);
+                });
+                item.appendChild(eliminar);
+                proyectosListado.appendChild(item);
+            });
+        }
+
+        if (proyectosInput && agregarProyectoBtn && modalAgregarProyectoEl) {
+            renderProyectos(proyectosActuales());
+            var modalAgregarProyecto = bootstrap.Modal.getOrCreateInstance(modalAgregarProyectoEl);
+            agregarProyectoBtn.addEventListener("click", function () {
+                var codigo = proyectoNuevoInput.value.trim();
+                var codigos = proyectosActuales();
+                proyectoNuevoError.classList.add("d-none");
+                if (!codigo) {
+                    proyectoNuevoError.textContent = "Ingresá un código de proyecto.";
+                    proyectoNuevoError.classList.remove("d-none");
+                    return;
+                }
+                if (codigos.some(function (actual) { return actual.toLowerCase() === codigo.toLowerCase(); })) {
+                    proyectoNuevoError.textContent = "El proyecto ya fue agregado.";
+                    proyectoNuevoError.classList.remove("d-none");
+                    return;
+                }
+                codigos.push(codigo);
+                renderProyectos(codigos);
+                proyectoNuevoInput.value = "";
+                modalAgregarProyecto.hide();
+            });
+            modalAgregarProyectoEl.addEventListener("shown.bs.modal", function () {
+                proyectoNuevoError.classList.add("d-none");
+                proyectoNuevoInput.focus();
+            });
+            proyectoNuevoInput.addEventListener("keydown", function (event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    agregarProyectoBtn.click();
+                }
+            });
+        }
+
+        if (tipoEntidadInput && tipoEntidadWarning) {
+            tipoEntidadInput.addEventListener("change", function () {
+                var changed = organizacionPk && tipoEntidadInput.value !== tipoEntidadOriginal;
+                tipoEntidadWarning.classList.toggle("d-none", !changed);
+            });
+        }
+
+        var organizacionForm = document.getElementById("organizacionForm");
+        var modalEl = document.getElementById("modalConfirmarTipoEntidad");
+        var confirmarTipoEntidadBtn = document.getElementById("confirmarCambioTipoEntidadBtn");
+        var tipoEntidadConfirmado = false;
+        if (organizacionForm && modalEl && tipoEntidadInput && confirmarTipoEntidadBtn) {
+            var modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+            organizacionForm.addEventListener("submit", function (event) {
+                if (!organizacionPk) {
+                    return;
+                }
+                var changed = tipoEntidadInput.value !== tipoEntidadOriginal;
+                if (changed && !tipoEntidadConfirmado) {
+                    event.preventDefault();
+                    modalInstance.show();
+                }
+            });
+            confirmarTipoEntidadBtn.addEventListener("click", function () {
+                tipoEntidadConfirmado = true;
+                modalInstance.hide();
+                organizacionForm.requestSubmit
+                    ? organizacionForm.requestSubmit()
+                    : organizacionForm.submit();
+            });
+        }
+
+        function escapeHtml(str) {
+            var div = document.createElement("div");
+            div.appendChild(document.createTextNode(str || ""));
+            return div.innerHTML;
+        }
+
+        function clearConfirmation(disableSubmit) {
+            confirmarCheck.checked = false;
+            hiddenConfirmado.value = "";
+            hiddenConfirmadoValor.value = "";
+            if (submitBtn) submitBtn.disabled = Boolean(disableSubmit);
+        }
+
+        function resetWarning() {
+            warningBox.classList.add("d-none");
+            tbody.innerHTML = "";
+            clearConfirmation(false);
+        }
+
+        function showWarning(orgs) {
+            tbody.innerHTML = orgs.map(function (o) {
+                return "<tr>" +
+                    "<td>" + escapeHtml(o.nombre) + "</td>" +
+                    "<td>" + escapeHtml(o.tipo_entidad) + "</td>" +
+                    "<td>" + escapeHtml(o.subtipo_entidad) + "</td>" +
+                    "<td>" + escapeHtml(o.telefono) + "</td>" +
+                    "<td>" + escapeHtml(o.email) + "</td>" +
+                    "<td>" + escapeHtml(o.domicilio) + "</td>" +
+                    "<td>" + escapeHtml(o.provincia) + "</td>" +
+                    "<td>" + escapeHtml(o.municipio) + "</td>" +
+                    "<td>" + escapeHtml(o.localidad) + "</td>" +
+                    "</tr>";
+            }).join("");
+            warningBox.classList.remove("d-none");
+            clearConfirmation(true);
+        }
+
+        confirmarCheck.addEventListener("change", function () {
+            if (confirmarCheck.checked) {
+                hiddenConfirmado.value = "true";
+                hiddenConfirmadoValor.value = cuitInput ? cuitInput.value.trim() : "";
+                if (submitBtn) submitBtn.disabled = false;
+            } else {
+                clearConfirmation(true);
+            }
+        });
+
+        function fetchCuilCheck(val, seq) {
+            var url = cuilCheckAjaxUrl + "?cuil=" + encodeURIComponent(val);
+            if (organizacionPk) {
+                url += "&exclude=" + encodeURIComponent(organizacionPk);
+            }
+            fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (seq !== undefined && (seq !== requestSeq || cuitInput.value.trim() !== val)) {
+                        return;
+                    }
+                    if (data.organizaciones && data.organizaciones.length > 0) {
+                        showWarning(data.organizaciones);
+                    } else {
+                        resetWarning();
+                    }
+                })
+                .catch(function () {
+                    if (seq === undefined || (seq === requestSeq && cuitInput.value.trim() === val)) {
+                        resetWarning();
+                    }
+                });
+        }
+
+        if (cuitInput) {
+            cuitInput.addEventListener("input", function () {
+                clearTimeout(debounceTimer);
+                requestSeq += 1;
+                cuitInput.value = cuitInput.value.replace(/[^0-9]/g, "").slice(0, 11);
+                var val = cuitInput.value;
+                clearConfirmation(!warningBox.classList.contains("d-none"));
+                if (val.length !== 11) {
+                    resetWarning();
+                    return;
+                }
+                var currentSeq = requestSeq;
+                debounceTimer = setTimeout(function () {
+                    fetchCuilCheck(val, currentSeq);
+                }, 400);
+            });
+
+            // En edición, el CUIL ya viene pre-cargado: verificar duplicados al cargar la página
+            var initialVal = cuitInput.value;
+            if (/^[0-9]{11}$/.test(initialVal)) {
+                var initialSeq = requestSeq;
+                fetchCuilCheck(initialVal, initialSeq);
+            }
+        }
+    })();
+    </script>
+{% endblock %}

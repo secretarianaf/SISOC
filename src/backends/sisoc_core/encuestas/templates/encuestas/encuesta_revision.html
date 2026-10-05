@@ -1,0 +1,274 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Revisar encuesta{% endblock %}
+{% block titulo-pagina %}Encuestas{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'encuestas_listar' %}">Encuestas</a>
+    </li>
+    <li class="breadcrumb-item active">Revisar solicitud</li>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/user_form.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/encuestaGestion.css' %}" />
+    <div class="encuesta-revision">
+        <div class="encuesta-revision__cabecera">
+            {% include 'encuestas/partials/estado.html' %}
+            <h1 class="mt-3 mb-2">{{ encuesta.titulo }}</h1>
+            <p class="encuesta-meta mb-0">Versión {{ encuesta.version }} · Creada por {{ encuesta.usuario_creador }}</p>
+        </div>
+        <div class="encuesta-revision__layout">
+            <div>
+                {% include 'encuestas/partials/motivo_rechazo.html' %}
+                <section class="card card-custom mb-3 shadow-sm"
+                         aria-labelledby="datos-encuesta">
+                    <div class="card-header card-header-custom">
+                        <h2 id="datos-encuesta">
+                            <i class="fas fa-file-alt" aria-hidden="true"></i>Datos de la encuesta
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        {% if encuesta.descripcion %}<p class="mb-4">{{ encuesta.descripcion|linebreaksbr }}</p>{% endif %}
+                        <dl class="encuesta-revision__datos">
+                            <div>
+                                <dt>Modalidad de respuesta</dt>
+                                <dd>
+                                    {{ encuesta.modalidad|capfirst }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>Identidad de las respuestas</dt>
+                                <dd>
+                                    {{ encuesta.es_anonima|yesno:"Anónimas,Identificadas" }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>Duración de cada ronda</dt>
+                                <dd>
+                                    {{ encuesta.duracion_ronda_dias }} días
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>Frecuencia</dt>
+                                <dd>
+                                    {% if encuesta.es_recurrente %}
+                                        Cada {{ encuesta.intervalo_recurrencia_dias }} días
+                                    {% else %}
+                                        Una única ronda
+                                    {% endif %}
+                                </dd>
+                            </div>
+                            {% if encuesta.intervalo_recordatorio_dias %}
+                                <div>
+                                    <dt>Recordatorio</dt>
+                                    <dd>
+                                        Cada {{ encuesta.intervalo_recordatorio_dias }} días
+                                    </dd>
+                                </div>
+                            {% endif %}
+                        </dl>
+                    </div>
+                </section>
+                <section class="card card-custom mb-3 shadow-sm"
+                         aria-labelledby="destinatarios-encuesta">
+                    <div class="card-header card-header-custom">
+                        <h2 id="destinatarios-encuesta">
+                            <i class="fas fa-users" aria-hidden="true"></i>¿Quiénes van a responder?
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">{{ segmentacion.get_tipo_display|default:"Sin segmentación configurada" }}</p>
+                        {% if segmentacion.tipo == 'listado_documentos' %}
+                            <details>
+                                <summary>
+                                    Ver {{ segmentacion.destinatarios.count }} destinatario{{ segmentacion.destinatarios.count|pluralize:"s" }}
+                                </summary>
+                                <div class="encuesta-revision__destinatarios">
+                                    <ul class="mb-0">
+                                        {% for destinatario in segmentacion.destinatarios.all %}
+                                            <li>{{ destinatario.get_tipo_documento_display }}: {{ destinatario.numero_documento }}</li>
+                                        {% empty %}
+                                            <li>No hay destinatarios cargados.</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </details>
+                        {% elif segmentacion.tipo == 'listado_usuarios' %}
+                            <details>
+                                <summary>Ver {{ segmentacion.usuarios.count }} usuarios</summary>
+                                <div class="encuesta-revision__destinatarios">
+                                    <ul class="mb-0">
+                                        {% for usuario in segmentacion.usuarios.all %}
+                                            <li>
+                                                ID {{ usuario.pk }}: {{ usuario.get_username }}
+                                                {% if usuario.get_full_name %}· {{ usuario.get_full_name }}{% endif %}
+                                            </li>
+                                        {% empty %}
+                                            <li>No hay usuarios cargados.</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </details>
+                        {% elif segmentacion.tipo == 'grupos' %}
+                            <p class="encuesta-meta">
+                                Usuarios que pertenezcan a cualquiera de estos grupos. La pertenencia se verifica al acceder y al responder.
+                            </p>
+                            <ul>
+                                {% for grupo in segmentacion.grupos.all %}
+                                    <li>{{ grupo.name }}</li>
+                                {% empty %}
+                                    <li>No hay grupos seleccionados.</li>
+                                {% endfor %}
+                            </ul>
+                        {% elif segmentacion %}
+                            <p class="encuesta-meta mb-0">La encuesta estará disponible para todos los usuarios que inicien sesión.</p>
+                        {% endif %}
+                    </div>
+                </section>
+                <section class="card card-custom mb-3 shadow-sm"
+                         aria-labelledby="preguntas-encuesta">
+                    <div class="card-header card-header-custom">
+                        <h2 id="preguntas-encuesta">
+                            <i class="fas fa-list-ol" aria-hidden="true"></i>Preguntas ({{ preguntas|length }})
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        {% for pregunta in preguntas %}
+                            <div class="encuesta-revision__pregunta">
+                                <p class="encuesta-meta mb-1">
+                                    Pregunta {{ forloop.counter }} · {{ pregunta.get_tipo_display }} · {{ pregunta.obligatoria|yesno:"Obligatoria,Opcional" }}
+                                </p>
+                                <h3>{{ pregunta.texto }}</h3>
+                                {% if pregunta.pregunta_condicion %}
+                                    <p class="encuesta-revision__nota">
+                                        Se muestra si «{{ pregunta.pregunta_condicion.texto }}» {{ pregunta.get_operador_condicion_display|lower }} «{{ pregunta.valor_condicion }}».
+                                    </p>
+                                {% endif %}
+                                {% if pregunta.tipo == 'si_no' %}
+                                    <ul class="encuesta-revision__opciones">
+                                        <li>
+                                            Sí
+                                            {% if pregunta.pondera %}<span class="encuesta-meta">· {{ pregunta.puntaje_si }} puntos</span>{% endif %}
+                                        </li>
+                                        <li>
+                                            No
+                                            {% if pregunta.pondera %}<span class="encuesta-meta">· {{ pregunta.puntaje_no }} puntos</span>{% endif %}
+                                        </li>
+                                    </ul>
+                                {% elif pregunta.opciones.all %}
+                                    <ul class="encuesta-revision__opciones">
+                                        {% for opcion in pregunta.opciones.all %}
+                                            <li>
+                                                {{ opcion.texto }}
+                                                {% if pregunta.pondera %}<span class="encuesta-meta">· {{ opcion.puntaje }} puntos</span>{% endif %}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="encuesta-meta mb-0">El usuario completará su respuesta al recibir la encuesta.</p>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <p class="mb-0">La encuesta todavía no tiene preguntas.</p>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+            <aside class="encuesta-revision__decision">
+                <section class="card card-custom mb-3 shadow-sm"
+                         aria-labelledby="decision-encuesta">
+                    <div class="card-header card-header-custom">
+                        <h2 id="decision-encuesta">
+                            <i class="fas fa-clipboard-check" aria-hidden="true"></i>Revisión de publicación
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        {% if encuesta.estado == 'pendiente_aprobacion' %}
+                            <p>Revisá las preguntas y los destinatarios antes de resolver la solicitud.</p>
+                            <dl class="mb-3">
+                                <dt class="encuesta-meta">Solicitada por</dt>
+                                <dd>
+                                    {{ encuesta.usuario_ultima_modificacion }}
+                                </dd>
+                                <dt class="encuesta-meta">Fecha de solicitud</dt>
+                                <dd>
+                                    {{ encuesta.fecha_ultima_modificacion|date:"d/m/Y H:i" }}
+                                </dd>
+                            </dl>
+                            <p class="encuesta-meta">El contenido queda bloqueado durante la revisión.</p>
+                            {% if perms.encuestas.aprobar_encuesta %}
+                                <form method="post" action="{% url 'encuestas_aprobar' encuesta.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-check me-1" aria-hidden="true"></i>Aprobar y publicar
+                                    </button>
+                                    <p class="encuesta-meta mt-2 mb-3">Publica la encuesta y habilita la primera ronda de respuestas.</p>
+                                </form>
+                                <button type="button"
+                                        class="btn btn-secondary w-100"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#rechazar-encuesta-modal">
+                                    <i class="fas fa-undo me-1" aria-hidden="true"></i>Rechazar solicitud
+                                </button>
+                                <p class="encuesta-meta mt-2 mb-0">Indicá el motivo para que el gestor sepa qué corregir.</p>
+                            {% else %}
+                                <p class="mb-0">Un administrador de encuestas debe aprobar o rechazar la solicitud.</p>
+                            {% endif %}
+                        {% else %}
+                            <p class="mb-0">Esta encuesta no tiene una solicitud pendiente de aprobación.</p>
+                        {% endif %}
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+    {% if encuesta.estado == 'pendiente_aprobacion' and perms.encuestas.aprobar_encuesta %}
+        <div class="modal fade"
+             id="rechazar-encuesta-modal"
+             tabindex="-1"
+             aria-labelledby="rechazar-encuesta-titulo"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="post" action="{% url 'encuestas_rechazar' encuesta.pk %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h2 class="modal-title fs-5" id="rechazar-encuesta-titulo">Rechazar solicitud de publicación</h2>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>
+                                La encuesta <strong>{{ encuesta.titulo }}</strong> volverá a borrador. El gestor verá este motivo para realizar las correcciones.
+                            </p>
+                            <label for="{{ rechazo_form.motivo.id_for_label }}" class="form-label">
+                                Motivo del rechazo <span class="text-danger" aria-hidden="true">*</span>
+                            </label>
+                            {{ rechazo_form.motivo }}
+                            <div id="motivo-rechazo-ayuda" class="form-text">Obligatorio. Máximo 2000 caracteres.</div>
+                            <div id="motivo-rechazo-error" class="text-danger" role="alert">{{ rechazo_form.motivo.errors }}</div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Confirmar rechazo</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        document.addEventListener("DOMContentLoaded", function () {
+            const modal = document.getElementById("rechazar-encuesta-modal");
+            if (!modal) return;
+            modal.addEventListener("shown.bs.modal", function () {
+                document.getElementById("id_motivo").focus();
+            });
+            {% if abrir_modal_rechazo %}bootstrap.Modal.getOrCreateInstance(modal).show();{% endif %}
+        });
+    </script>
+{% endblock %}

@@ -41,4 +41,4 @@ operador y ejecuta el mismo servicio con reproceso forzado para la fecha actual.
 Al finalizar vuelve a la bandeja y muestra el resumen de personas vivas,
 fallecidas, sin coincidencia y errores.
 
-> Sustituida por `docs/registro/cambios/2026-09-07-pas-celery-mensual.md`. El cron diario ya no aplica.
+> Sustituida por `docs/registro/cambios/2026-T3/2026-09-07-pas-celery-mensual.md`. El cron diario ya no aplica.

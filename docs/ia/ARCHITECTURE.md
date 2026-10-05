@@ -15,8 +15,8 @@ Fuentes complementarias:
 - Lógica de negocio distribuida en `services/` y utilidades por app.
 - Persistencia con ORM Django sobre MySQL.
 - Cache local (`LocMemCache`) configurada en settings.
-- Logging custom configurado en `config/settings.py` con utilidades en `core/utils.py`.
-- PAS usa Celery/Redis para control mensual: `docker-compose.celery.yml`. Los demás workers conservan su mecanismo propio.
+- Logging custom configurado en `src/backends/config/settings.py` con utilidades en `src/backends/kernel/core/utils.py`.
+- PAS usa Celery/Redis para control mensual: `docker/compose/docker-compose.celery.yml`. Los demás workers conservan su mecanismo propio.
 - Integraciones externas (p. ej. RENAPER/GESTIONAR) en servicios/tasks, no en templates.
 
 ## Capas y boundaries (regla de ubicación)

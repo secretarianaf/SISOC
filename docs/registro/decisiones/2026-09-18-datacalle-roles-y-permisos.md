@@ -177,8 +177,8 @@ que ya existe (`creado_por`, `created_at`, `cerrado_por`, `fecha_cierre`).
 ## Referencias
 - Documento funcional del área: "Definición funcional de roles y permisos
   DataCalle / SISOC" (2026-09-18), recibido por el canal de coordinación.
-- `docs/registro/cambios/2026-09-16-datacalle-qa-alcance-provincial.md`
-- `docs/registro/cambios/2026-09-17-datacalle-qa-segundo-bloque.md`
+- `docs/registro/cambios/2026-T3/2026-09-16-datacalle-qa-alcance-provincial.md`
+- `docs/registro/cambios/2026-T3/2026-09-17-datacalle-qa-segundo-bloque.md`
 - Canal: `Desktop/COORDINACION-DATACALLE-SISOC.md`, §D2.1 (roles y alcance).
 - Código de partida: `users/models.py` (`DataCalleRol`, `RelevadorCalleProvincia`),
   `users/services_datacalle.py`, `users/forms.py` (`RelevadorCalleFormMixin`,

@@ -76,8 +76,8 @@ main() {
     docker/compose/docker-compose.produccion.yml \
     docker/django/Dockerfile \
     docker/django/entrypoint.py \
-    scripts/operacion/deploy_refresh.sh \
-    scripts/crontab; do
+    src/scripts/operacion/deploy_refresh.sh \
+    src/scripts/crontab; do
     copy_if_present "$APP_ROOT/$relative" "$BACKUP_DIR/config/repo/$relative"
   done
   copy_if_present "$MOBILE_ROOT/compose.prod.yaml" \

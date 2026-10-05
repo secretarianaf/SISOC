@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 DOCS_PR_DIR = REPO_ROOT / "docs/registro/prs"
 DOCS_RELEASE_PENDING_DIR = REPO_ROOT / "docs/registro/releases/pending"
 CHANGELOG_PATH = REPO_ROOT / "CHANGELOG.md"

@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "codex_common.ps1")
 
 $repoRoot = Get-CodexRepoRoot
-$scriptPath = Join-Path $repoRoot "scripts/ai/context_memory.py"
+$scriptPath = Join-Path $repoRoot "src/scripts/ai/context_memory.py"
 
 if (Get-Command py -ErrorAction SilentlyContinue) {
     $command = @("-3", $scriptPath, "preflight")
@@ -28,4 +28,4 @@ if (Get-Command python -ErrorAction SilentlyContinue) {
     exit $LASTEXITCODE
 }
 
-throw "No se encontro un interprete de Python para ejecutar scripts/ai/context_memory.py."
+throw "No se encontro un interprete de Python para ejecutar src/scripts/ai/context_memory.py."

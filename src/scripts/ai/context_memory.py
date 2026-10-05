@@ -13,7 +13,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 VERSIONED_MEMORY_DIR = REPO_ROOT / "docs" / "contexto" / "memoria"
 LOCAL_MEMORY_DIR = REPO_ROOT / ".codex" / "cache" / "context-memory"
 FRONTMATTER_DELIMITER = "+++"
@@ -414,7 +414,7 @@ def command_preflight(target: str | None) -> int:
         print("- No hay memorias registradas para este target.")
         print(
             "- Crear una con: "
-            "python scripts/ai/context_memory.py scaffold --slug <slug> "
+            "python src/scripts/ai/context_memory.py scaffold --slug <slug> "
             "--title <titulo> --summary <resumen> --path <path>"
         )
         return 0

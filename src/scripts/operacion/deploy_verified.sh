@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ROOT_DIR="${SISOC_ROOT_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)}"
+ROOT_DIR="${SISOC_ROOT_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd -P)}"
 EXPECTED_REVISION=""
 DEPLOY_ENVIRONMENT=""
 ROLLBACK_REVISION=""
@@ -46,17 +46,17 @@ case "$DEPLOY_ENVIRONMENT" in
   qa)
     EXPECTED_BRANCH=development
     COMPOSE_FILES=(-f "$ROOT_DIR/docker/compose/docker-compose.deploy.yml")
-    HEALTH_SCRIPT="$ROOT_DIR/scripts/infra/healthcheck_qa.sh"
+    HEALTH_SCRIPT="$ROOT_DIR/src/scripts/infra/healthcheck_qa.sh"
     ;;
   homologacion)
     EXPECTED_BRANCH=homologacion
     COMPOSE_FILES=(-f "$ROOT_DIR/docker/compose/docker-compose.deploy.yml" -f "$ROOT_DIR/docker/compose/docker-compose.produccion.yml")
-    HEALTH_SCRIPT="$ROOT_DIR/scripts/infra/healthcheck_hml.sh"
+    HEALTH_SCRIPT="$ROOT_DIR/src/scripts/infra/healthcheck_hml.sh"
     ;;
   production)
     EXPECTED_BRANCH=main
     COMPOSE_FILES=(-f "$ROOT_DIR/docker/compose/docker-compose.deploy.yml" -f "$ROOT_DIR/docker/compose/docker-compose.produccion.yml")
-    HEALTH_SCRIPT="$ROOT_DIR/scripts/infra/healthcheck_prod.sh"
+    HEALTH_SCRIPT="$ROOT_DIR/src/scripts/infra/healthcheck_prod.sh"
     ;;
   *)
     fail "--environment debe ser qa, homologacion o production."
@@ -109,7 +109,7 @@ show_diagnostics() {
 
 backend_services() {
   python3 -c 'import json,sys; print(" ".join(s["service"] for s in json.load(open(sys.argv[1])).values()))' \
-    "$ROOT_DIR/config/backends.json"
+    "$ROOT_DIR/src/backends/config/backends.json"
 }
 
 verify_stack() {
@@ -142,8 +142,12 @@ rollback_on_exit() {
     echo "::error::No se pudo restaurar el checkout anterior."
     exit "$failed_status"
   fi
+  # Una revisión previa a #2639 conserva scripts/ en la raíz.
+  local rollback_scripts="$ROOT_DIR/src/scripts"
+  [[ -f "$rollback_scripts/operacion/deploy_refresh.sh" ]] || rollback_scripts="$ROOT_DIR/scripts"
+  HEALTH_SCRIPT="$rollback_scripts/infra/$(basename "$HEALTH_SCRIPT")"
   # Diff desde la revision fallida: se recrean los mismos servicios que toco.
-  if ! SISOC_ROOT_DIR="$ROOT_DIR" bash "$ROOT_DIR/scripts/operacion/deploy_refresh.sh" \
+  if ! SISOC_ROOT_DIR="$ROOT_DIR" bash "$rollback_scripts/operacion/deploy_refresh.sh" \
     --yes --skip-pull --expected-revision "$previous_revision" --without-mobile \
     --diff-base "$EXPECTED_REVISION"; then
     echo "::error::No se pudo reconstruir el stack de la revision anterior."
@@ -163,12 +167,16 @@ trap rollback_on_exit EXIT
 
 echo "Commit previo al deploy para rollback: $previous_revision"
 deployment_started=1
+# Actualizar antes de resolver las rutas nuevas: HML/PRD pueden seguir en una
+# revisión con scripts/ en la raíz. La revisión previa ya quedó guardada.
+if [[ "$SKIP_PULL" -eq 0 ]]; then
+  git -C "$ROOT_DIR" merge --ff-only "$EXPECTED_REVISION"
+fi
 # Tag de las imágenes con código que construye deploy_refresh.sh: verify_stack
 # usa las mismas (el migrador, entre ellas).
 export SISOC_RELEASE_SHA="$EXPECTED_REVISION"
-deploy_args=(--yes --expected-revision "$EXPECTED_REVISION" --without-mobile --diff-base "$previous_revision")
-[[ "$SKIP_PULL" -eq 0 ]] || deploy_args+=(--skip-pull)
-SISOC_ROOT_DIR="$ROOT_DIR" bash "$ROOT_DIR/scripts/operacion/deploy_refresh.sh" "${deploy_args[@]}"
+deploy_args=(--yes --skip-pull --expected-revision "$EXPECTED_REVISION" --without-mobile --diff-base "$previous_revision")
+SISOC_ROOT_DIR="$ROOT_DIR" bash "$ROOT_DIR/src/scripts/operacion/deploy_refresh.sh" "${deploy_args[@]}"
 verify_stack
 deployed_revision="$(git -C "$ROOT_DIR" rev-parse HEAD)"
 [[ "$deployed_revision" == "$EXPECTED_REVISION" ]] \

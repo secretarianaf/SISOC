@@ -11,7 +11,7 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 SPEC = importlib.util.spec_from_file_location(
-    "deploy_pwas", REPO_ROOT / "scripts/operacion/deploy_pwas.py"
+    "deploy_pwas", REPO_ROOT / "src/scripts/operacion/deploy_pwas.py"
 )
 deploy = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(deploy)
@@ -26,7 +26,7 @@ def test_existing_service_identity_still_disables_interactive_ssh():
 
 
 def registry(tmp_path, count=1):
-    apps = deploy.configuration(REPO_ROOT / "scripts/operacion/pwas.json")
+    apps = deploy.configuration(REPO_ROOT / "src/scripts/operacion/pwas.json")
     for index, app in enumerate(apps):
         app["enabled"] = index < count
         app["ssh_identity"] = None

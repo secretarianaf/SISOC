@@ -5,7 +5,7 @@ from django.db.migrations.loader import MigrationLoader
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 DEPLOY_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "deploy.yml"
-VERIFIED_DEPLOY = REPO_ROOT / "scripts" / "operacion" / "deploy_verified.sh"
+VERIFIED_DEPLOY = REPO_ROOT / "src" / "scripts" / "operacion" / "deploy_verified.sh"
 DEPLOY_COMPOSE = REPO_ROOT / "docker" / "compose" / "docker-compose.deploy.yml"
 
 
@@ -24,7 +24,7 @@ def test_qa_conserva_revision_previa_y_delega_rollback_verificado():
     qa = _job("deploy-qa", "deploy-homologacion")
     previous = 'previous_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"'
     fast_forward = 'git -C "$APP_ROOT" merge --ff-only origin/development'
-    verified = 'bash "$APP_ROOT/scripts/operacion/deploy_verified.sh"'
+    verified = 'bash "$APP_ROOT/src/scripts/operacion/deploy_verified.sh"'
 
     assert qa.index(previous) < qa.index(fast_forward) < qa.index(verified)
     assert "--environment qa" in qa
@@ -40,7 +40,7 @@ def test_hml_y_produccion_extraen_wrapper_del_sha_del_evento():
         source = _job(job, next_job)
         validation = 'if [[ "$remote_sha" != "$EXPECTED_SHA" ]]'
         extraction = (
-            'show "$EXPECTED_SHA:scripts/operacion/deploy_verified.sh" '
+            'show "$EXPECTED_SHA:src/scripts/operacion/deploy_verified.sh" '
             '> "$deploy_script"'
         )
         execution = 'SISOC_ROOT_DIR="$APP_ROOT" bash "$deploy_script"'

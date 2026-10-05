@@ -94,7 +94,7 @@ if ($ExposePorts) {
     $bootstrapArgs += "-ExposePorts"
 }
 
-& powershell -ExecutionPolicy Bypass -File (Join-Path $worktreePath "scripts\ai\codex_bootstrap.ps1") @bootstrapArgs
+& powershell -ExecutionPolicy Bypass -File (Join-Path $worktreePath "src\scripts\ai\codex_bootstrap.ps1") @bootstrapArgs
 
 Write-Host ("Worktree: {0}" -f $worktreePath)
 Write-Host ("Branch: {0}" -f $Branch)

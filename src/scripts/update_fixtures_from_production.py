@@ -22,7 +22,7 @@ REQUIRED_ENV_VARS = (
     "DJANGO_SECRET_KEY",
 )
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_PATTERN = "**/fixtures/*.json"
 
 

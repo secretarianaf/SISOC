@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 SCRIPT_NAME="$(basename "$0")"
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="${SISOC_ROOT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
 ROOT_DIR="${SISOC_ROOT_DIR:-$ROOT_DIR}"
 ENV_FILE="${ENV_FILE:-$ROOT_DIR/.env}"
 DRY_RUN=0
@@ -22,7 +22,7 @@ DIFF_BASE=""
 usage() {
   cat <<'USAGE'
 Uso:
-  bash scripts/operacion/deploy_refresh.sh [opciones]
+  bash src/scripts/operacion/deploy_refresh.sh [opciones]
 
 Objetivo:
   Baja Docker Compose, actualiza la branch actual con git pull --ff-only
@@ -391,7 +391,7 @@ main() {
   SERVICIOS=""
   MIGRAR=1
   if [[ -n "$DIFF_BASE" ]]; then
-    eval "$(python3 "$ROOT_DIR/scripts/operacion/deploy_targets.py" "$DIFF_BASE" "$deployed_revision")"
+    eval "$(python3 "$ROOT_DIR/src/scripts/operacion/deploy_targets.py" "$DIFF_BASE" "$deployed_revision")"
   fi
   log "plan=$MODO servicios='${SERVICIOS}' migrar=$MIGRAR"
   local -a compose=("${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR")
@@ -399,7 +399,7 @@ main() {
   # Si no se pueden resolver, no se arriesga un deploy parcial.
   if [[ " $SERVICIOS " == *" @core "* ]]; then
     local core_services=""
-    core_services="$("${compose[@]}" config --format json | python3 "$ROOT_DIR/scripts/operacion/deploy_targets.py" --servicios-core)" || core_services=""
+    core_services="$("${compose[@]}" config --format json | python3 "$ROOT_DIR/src/scripts/operacion/deploy_targets.py" --servicios-core)" || core_services=""
     if [[ -z "$core_services" ]]; then
       log "No se pudieron resolver los servicios del core: deploy completo."
       MODO=completo

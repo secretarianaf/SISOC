@@ -10,7 +10,7 @@ Extrae, sin datos hardcodeados de dominio salvo la clasificacion por zona:
   (``<app>.api``) de import de internals;
 - arbol del menu lateral (``src/backends/kernel/templates/includes/sidebar/opciones.html``) con sus
   permisos, para saber que modulos alcanza el usuario;
-- PWA declaradas en ``scripts/operacion/pwas.json``;
+- PWA declaradas en ``src/scripts/operacion/pwas.json``;
 - roles de contenedor de ``docker/django/entrypoint.py`` y servicios Compose.
 
 Salidas:
@@ -29,8 +29,8 @@ ni ``<script>`` inline.
 
 Uso:
 
-    python scripts/arquitectura/generar_mapa.py           # solo el grafo de runtime
-    python scripts/arquitectura/generar_mapa.py --docs    # ademas los artefactos de docs/
+    python src/scripts/arquitectura/generar_mapa.py           # solo el grafo de runtime
+    python src/scripts/arquitectura/generar_mapa.py --docs    # ademas los artefactos de docs/
 """
 
 from __future__ import annotations
@@ -44,7 +44,7 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parents[2]
+RAIZ = Path(__file__).resolve().parents[3]
 BACKENDS = RAIZ / "src" / "backends"
 # CSS y JS del visor son fuente versionada, no salidas: se editan aca.
 FUENTE_VISOR = BACKENDS / "kernel" / "static" / "arquitectura"
@@ -650,7 +650,7 @@ def menu_lateral(mapa_urls: dict[str, str]) -> list[dict]:
 
 
 def pwas() -> list[dict]:
-    ruta = RAIZ / "scripts" / "operacion" / "pwas.json"
+    ruta = RAIZ / "src" / "scripts" / "operacion" / "pwas.json"
     try:
         datos = json.loads(_texto(ruta))
     except json.JSONDecodeError:

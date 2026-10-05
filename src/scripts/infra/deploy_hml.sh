@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 EXPECTED_HOSTNAME="${HML_EXPECTED_HOSTNAME:-ldmzssies-homolo}"
 MOBILE_ROOT="${HML_MOBILE_ROOT:-/sisoc/SISOC-Mobile}"
 APPLY=0
@@ -41,7 +41,7 @@ fi
   exit 1
 }
 
-bash "$ROOT_DIR/scripts/infra/backup_hml_configs.sh"
-bash "$ROOT_DIR/scripts/operacion/deploy_refresh.sh" --yes \
+bash "$ROOT_DIR/src/scripts/infra/backup_hml_configs.sh"
+bash "$ROOT_DIR/src/scripts/operacion/deploy_refresh.sh" --yes \
   --with-mobile --mobile-dir "$MOBILE_ROOT"
-bash "$ROOT_DIR/scripts/infra/healthcheck_hml.sh"
+bash "$ROOT_DIR/src/scripts/infra/healthcheck_hml.sh"

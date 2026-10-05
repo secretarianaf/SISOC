@@ -23,8 +23,8 @@ Reglas (ver docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md y
 - ``src/backends/kernel/**`` y ``src/backends/config/**`` no son verticales:
   los usan todas las imágenes, así que son despliegue completo.
 - ``src/frontends/apps/<x>/**`` despliega solo ``front_<x>``. ``src/frontends/``
-  fuera de ``apps/`` (paquetes compartidos, Dockerfile, lockfile) despliega
-  todos los fronts.
+  fuera de ``apps/`` (paquetes compartidos, configuración, lockfile),
+  ``docker/frontends/`` y ``src/scripts/frontends/`` despliegan todos los fronts.
 - Documentación y CI no despliegan nada.
 - Cualquier otra cosa (kernel, config, requirements, docker, compose,
   CHANGELOG.md que muestra el footer) es despliegue completo.
@@ -37,11 +37,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 
 SIN_DEPLOY_PREFIJOS = (
     "docs/",
     ".github/",
+    "src/scripts/github/",
     # Baseline versionado de benchmarks: no corre en runtime.
     "src/backends/kernel/core/benchmarks/baselines/",
 )
@@ -98,6 +99,9 @@ def planificar(archivos: list[str]) -> tuple[str, list[str], bool]:
                 servicios.add(CORE_MARCADOR)
                 migrar = True
                 continue
+        if ruta.startswith(("docker/frontends/", "src/scripts/frontends/")):
+            servicios.update(_fronts())
+            continue
         if partes[:2] == ["src", "frontends"]:
             if len(partes) > 4 and partes[2] == "apps":
                 servicios.add(f"front_{partes[3]}")

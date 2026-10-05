@@ -5,8 +5,8 @@ La fuente vive en `.agents/skills/` (la lee Codex). Claude Code lee
 symlinks porque se rompen en Windows con `core.symlinks=false`.
 
 Uso:
-    python scripts/ai/sync_skills.py          # copia, actualiza y borra sobrantes
-    python scripts/ai/sync_skills.py --check  # falla (exit 1) si la copia difiere
+    python src/scripts/ai/sync_skills.py          # copia, actualiza y borra sobrantes
+    python src/scripts/ai/sync_skills.py --check  # falla (exit 1) si la copia difiere
 
 Solo stdlib. Ver docs/ia/SKILLS.md.
 """
@@ -18,7 +18,7 @@ import shutil
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 SOURCE_DIR = REPO_ROOT / ".agents" / "skills"
 TARGET_DIR = REPO_ROOT / ".claude" / "skills"
 IGNORED_NAMES = {"__pycache__", ".DS_Store"}
@@ -101,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
             print(".claude/skills/ no coincide con .agents/skills/:")
             for problem in problems:
                 print(f"  - {problem}")
-            print("Correr: python scripts/ai/sync_skills.py")
+            print("Correr: python src/scripts/ai/sync_skills.py")
             return 1
         print("Skills sincronizadas.")
         return 0

@@ -1,4 +1,4 @@
-"""Plan de deploy por archivos cambiados (scripts/operacion/deploy_targets.py)."""
+"""Plan de deploy por archivos cambiados (src/scripts/operacion/deploy_targets.py)."""
 
 import importlib.util
 from pathlib import Path
@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 _RUTA = (
-    Path(__file__).resolve().parents[4] / "scripts" / "operacion" / "deploy_targets.py"
+    Path(__file__).resolve().parents[4] / "src" / "scripts" / "operacion" / "deploy_targets.py"
 )
 _spec = importlib.util.spec_from_file_location("deploy_targets", _RUTA)
 deploy_targets = importlib.util.module_from_spec(_spec)
@@ -83,6 +83,15 @@ _spec.loader.exec_module(deploy_targets)
             ("selectivo", ["backend_vat"], True),
         ),
         ([".github/workflows/tests.yml"], ("ninguno", [], False)),
+        (["src/scripts/github/release_orchestrator.js"], ("ninguno", [], False)),
+        (
+            ["docker/frontends/Dockerfile", "docker/frontends/nginx.conf.template"],
+            ("selectivo", ["front_celiaquia", "front_vpsl"], False),
+        ),
+        (
+            ["src/scripts/frontends/verificar-contrato.mjs"],
+            ("selectivo", ["front_celiaquia", "front_vpsl"], False),
+        ),
     ],
 )
 def test_planificar(archivos, esperado):

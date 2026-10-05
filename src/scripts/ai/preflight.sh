@@ -5,7 +5,7 @@ TASK_KIND="${1:-general}"
 TARGET_PATH="${2:-}"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(git rev-parse --show-toplevel 2>/dev/null || (cd "$script_dir/../.." && pwd))"
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || (cd "$script_dir/../../.." && pwd))"
 cd "$repo_root"
 git_available=true
 if ! git rev-parse --show-toplevel >/dev/null 2>&1; then
@@ -60,19 +60,19 @@ echo "- Crear worktrees de tarea fuera del repo principal"
 print_header "Comandos utiles"
 cat <<'CMDS'
 # Wrappers PowerShell (camino recomendado en Codex Desktop/Windows)
-powershell -ExecutionPolicy Bypass -File scripts/ai/codex_task.ps1 <slug>
-powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 validate
-powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 test <path>
-powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 smoke
-powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 black-check <path>
-powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 djlint-check <path>
-powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 pylint <archivo.py>
+powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_task.ps1 <slug>
+powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_run.ps1 validate
+powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_run.ps1 test <path>
+powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_run.ps1 smoke
+powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_run.ps1 black-check <path>
+powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_run.ps1 djlint-check <path>
+powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_run.ps1 pylint <archivo.py>
 
 # Fallback Docker directo si este script se ejecuta sin PowerShell disponible
 docker compose -f docker-compose.yml -f docker/compose/docker-compose.codex.yml run --rm --no-deps django pytest -m smoke
 docker compose -f docker-compose.yml -f docker/compose/docker-compose.codex.yml run --rm --no-deps django python manage.py makemigrations --check --dry-run
-python scripts/ai/context_memory.py preflight --target <path>
-python scripts/ai/context_memory.py scaffold --slug <slug> --title <titulo> --summary <resumen> --path <path>
+python src/scripts/ai/context_memory.py preflight --target <path>
+python src/scripts/ai/context_memory.py scaffold --slug <slug> --title <titulo> --summary <resumen> --path <path>
 CMDS
 
 print_header "Contexto minimo sugerido (por tipo)"
@@ -136,15 +136,15 @@ fi
 print_header "Memoria operativa reutilizable"
 if command -v python3 >/dev/null 2>&1; then
   if [[ -n "$TARGET_PATH" ]]; then
-    python3 scripts/ai/context_memory.py preflight --target "$TARGET_PATH"
+    python3 src/scripts/ai/context_memory.py preflight --target "$TARGET_PATH"
   else
-    python3 scripts/ai/context_memory.py preflight
+    python3 src/scripts/ai/context_memory.py preflight
   fi
 elif command -v python >/dev/null 2>&1; then
   if [[ -n "$TARGET_PATH" ]]; then
-    python scripts/ai/context_memory.py preflight --target "$TARGET_PATH"
+    python src/scripts/ai/context_memory.py preflight --target "$TARGET_PATH"
   else
-    python scripts/ai/context_memory.py preflight
+    python src/scripts/ai/context_memory.py preflight
   fi
 else
   echo "No se encontro python/python3 para resolver memoria operativa."
@@ -153,9 +153,9 @@ fi
 print_header "Skills del repo"
 # .claude/skills/ es copia generada de .agents/skills/ (docs/ia/SKILLS.md).
 if command -v python3 >/dev/null 2>&1; then
-  python3 scripts/ai/sync_skills.py --check || echo "Correr: python3 scripts/ai/sync_skills.py"
+  python3 src/scripts/ai/sync_skills.py --check || echo "Correr: python3 src/scripts/ai/sync_skills.py"
 elif command -v python >/dev/null 2>&1; then
-  python scripts/ai/sync_skills.py --check || echo "Correr: python scripts/ai/sync_skills.py"
+  python src/scripts/ai/sync_skills.py --check || echo "Correr: python src/scripts/ai/sync_skills.py"
 fi
 
 print_header "Fin"

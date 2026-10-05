@@ -60,8 +60,8 @@ main() {
     docker/compose/docker-compose.deploy.yml \
     docker/django/Dockerfile \
     docker/django/entrypoint.py \
-    scripts/operacion/deploy_refresh.sh \
-    scripts/crontab; do
+    src/scripts/operacion/deploy_refresh.sh \
+    src/scripts/crontab; do
     copy_readable "$APP_ROOT/$relative" "$BACKUP_DIR/repo/$relative"
   done
   copy_readable "$MOBILE_ROOT/compose.prod.yaml" \

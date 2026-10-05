@@ -8,7 +8,7 @@ from pathlib import Path
 
 SCRIPT_PATH = (
     Path(__file__).resolve().parents[4]
-    / "scripts"
+    / "src" / "scripts"
     / ("actualizar_territorio_desde_bahra.py")
 )
 SPEC = importlib.util.spec_from_file_location(

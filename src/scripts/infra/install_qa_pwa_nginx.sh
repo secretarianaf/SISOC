@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 SCRIPT_NAME="$(basename "$0")"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 EXPECTED_HOSTNAME="${QA_EXPECTED_HOSTNAME:-mdsldmz-ssies-test}"
 SOURCE_SNIPPET="${QA_PWA_SOURCE_SNIPPET:-$REPO_ROOT/docs/operacion/nginx/sisoc-pwas.conf}"
 TARGET_SNIPPET="${QA_PWA_TARGET_SNIPPET:-/etc/nginx/snippets/sisoc-pwas.conf}"
@@ -19,7 +19,7 @@ SNIPPET_EXISTED=0
 usage() {
   cat <<'USAGE'
 Uso:
-  sudo bash scripts/infra/install_qa_pwa_nginx.sh [--apply] [--yes]
+  sudo bash src/scripts/infra/install_qa_pwa_nginx.sh [--apply] [--yes]
 
 Sin --apply ejecuta un preflight de solo lectura. Con --apply:
   - respalda el vhost y el snippet anterior fuera del repositorio;

@@ -2,7 +2,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 function Get-CodexRepoRoot {
-    return (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+    return (Resolve-Path (Join-Path $PSScriptRoot "..\..\..")).Path
 }
 
 function Get-CodexEnvPath {

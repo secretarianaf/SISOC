@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 APPLY=0
 ACK_DB_WRITES=0
 
@@ -36,6 +36,6 @@ fi
   exit 1
 }
 
-bash "$ROOT_DIR/scripts/infra/backup_qa_configs.sh"
-bash "$ROOT_DIR/scripts/operacion/deploy_refresh.sh" --yes --skip-pull
-bash "$ROOT_DIR/scripts/infra/healthcheck_qa.sh"
+bash "$ROOT_DIR/src/scripts/infra/backup_qa_configs.sh"
+bash "$ROOT_DIR/src/scripts/operacion/deploy_refresh.sh" --yes --skip-pull
+bash "$ROOT_DIR/src/scripts/infra/healthcheck_qa.sh"

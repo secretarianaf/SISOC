@@ -176,8 +176,10 @@ def congelar_datos_organizacion_por_cambio_en_comedor(sender, instance, **kwargs
     en curso los datos de la organizacion anterior (#2571)."""
     if not instance.pk or kwargs.get("raw"):
         return
+    using = kwargs.get("using")
     organizacion_anterior_id = (
-        Comedor.objects.filter(pk=instance.pk)
+        Comedor.all_objects.using(using)
+        .filter(pk=instance.pk)
         .values_list("organizacion_id", flat=True)
         .first()
     )
@@ -185,11 +187,13 @@ def congelar_datos_organizacion_por_cambio_en_comedor(sender, instance, **kwargs
         organizacion_anterior_id == instance.organizacion_id
     ):
         return
-    organizacion_anterior = Organizacion.objects.filter(
-        pk=organizacion_anterior_id
-    ).first()
+    organizacion_anterior = (
+        Organizacion.all_objects.using(using)
+        .filter(pk=organizacion_anterior_id)
+        .first()
+    )
     datos_organizacion_snapshot.congelar_por_cambio_de_organizacion_en_comedor(
-        instance.pk, organizacion_anterior
+        instance.pk, organizacion_anterior, using=using
     )
 
 
@@ -199,7 +203,10 @@ def congelar_datos_organizacion_por_edicion(sender, instance, **kwargs):
     en las admisiones en curso de sus comedores (#2571)."""
     if not instance.pk or kwargs.get("raw"):
         return
-    organizacion_anterior = Organizacion.objects.filter(pk=instance.pk).first()
+    using = kwargs.get("using")
+    organizacion_anterior = (
+        Organizacion.all_objects.using(using).filter(pk=instance.pk).first()
+    )
     if not organizacion_anterior:
         return
     if datos_organizacion_snapshot.datos_organizacion_para_informe(
@@ -207,5 +214,5 @@ def congelar_datos_organizacion_por_edicion(sender, instance, **kwargs):
     ) == datos_organizacion_snapshot.datos_organizacion_para_informe(instance):
         return
     datos_organizacion_snapshot.congelar_por_edicion_de_organizacion(
-        organizacion_anterior
+        organizacion_anterior, using=using
     )

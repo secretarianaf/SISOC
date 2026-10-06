@@ -17,7 +17,15 @@
         return config.dataset.urlResyncConvenio || "";
     }
 
-    function mensajeParaAccion(accion) {
+    function mensajeParaAccion(accion, soloDatosOrganizacion) {
+        if (accion === "actualizar" && soloDatosOrganizacion) {
+            // Solo cambiaron los datos: no se toca la documentacion de la Admision.
+            return (
+                "Los datos de la Organización dentro del Informe Técnico se " +
+                "reemplazarán por los del Legajo de la Organización. " +
+                "¿Está seguro de continuar?"
+            );
+        }
         if (accion === "actualizar") {
             return (
                 "La información de la Admisión, incluidos los datos de la Organización " +
@@ -46,7 +54,10 @@
     }
 
     function mostrarPasoConfirmacion(elementos, accion) {
-        elementos.mensaje.textContent = mensajeParaAccion(accion);
+        elementos.mensaje.textContent = mensajeParaAccion(
+            accion,
+            elementos.modalEl.dataset.soloDatosOrganizacion === "true"
+        );
         elementos.stepSeleccion.classList.add("d-none");
         elementos.stepConfirmacion.classList.remove("d-none");
         elementos.btnAplicar.classList.add("d-none");

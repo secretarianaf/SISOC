@@ -29,21 +29,28 @@ la Admisión actual" en el modal de resincronización:
     organización del comedor o editar sus datos, se congela con los datos
     previos en las admisiones en curso que todavía no lo tienen (signals
     `pre_save` de `Comedor` y `Organizacion`).
-  - Si los datos del legajo difieren de `legajo`, se muestra el modal de
-    resincronización (título nuevo para este caso).
+  - Si los datos del legajo difieren de `legajo` y todavía pueden afectar al
+    informe (no hay informe o alguno es editable), se muestra el modal de
+    resincronización con título propio y la lista de datos modificados.
   - **Actualizar:** `informe` y `legajo` pasan a los datos actuales y se
-    actualizan los informes técnicos de la admisión que no estén `Validado`.
+    actualizan los informes técnicos editables de la admisión (mismo criterio
+    que `puede_editar_informe_tecnico`: `A subsanar`, o `Iniciado`/`Para
+    revision` en borrador).
   - **Continuar:** solo se mueve `legajo`; el informe conserva los datos
     anteriores.
 - Los formularios de informe precargan los datos de la organización desde el
   snapshot y solo en informes nuevos; un informe guardado conserva sus valores.
 - La opción A del modal y su confirmación aclaran que incluye los datos de la
-  organización dentro del informe técnico.
+  organización dentro del informe técnico. Si solo cambiaron los datos, la
+  confirmación no advierte pérdida de progreso.
+- La vista `resync_convenio_admision` aplica la acción elegida dentro de una
+  transacción: si algo falla, no queda la admisión a medio sincronizar.
 
 ## Trade-offs
 
-- Los informes `Validado` no se modifican al actualizar, para no desalinear
-  datos y documento ya validado.
+- Los informes finalizados (DOCX generado, enviado a validar o `Validado`) no
+  se modifican al actualizar, para no desalinear datos y documento ya emitido.
+  Si vuelven a `A subsanar`, el modal vuelve a avisar el cambio pendiente.
 - Las admisiones que nunca se abrieron y cuya organización cambió antes de este
   despliegue no tienen datos previos: adoptan los actuales.
 

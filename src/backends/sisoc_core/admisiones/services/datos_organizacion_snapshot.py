@@ -9,9 +9,12 @@ Admision actual". La admision guarda en ``datos_organizacion_snapshot``:
 - ``legajo``: ultimo estado del legajo que el tecnico acepto (linea de base
   para detectar cambios y mostrar el modal de resincronizacion).
 
-"Actualizar" pisa ambos con el legajo actual (y los informes no validados);
+"Actualizar" pisa ambos con el legajo actual (y los informes editables);
 "Continuar" solo mueve la linea de base y conserva los datos del informe.
 """
+
+from django.db.models import Q
+from django.utils import timezone
 
 from admisiones.models.admisiones import Admision, InformeTecnico
 
@@ -27,13 +30,39 @@ CAMPOS_ORGANIZACION_INFORME = {
     "partido_organizacion": "partido",
 }
 
+# Etiquetas para listar en el modal los datos que cambiaron.
+ETIQUETAS_DATOS_ORGANIZACION = {
+    "nombre_organizacion": "Nombre",
+    "cuit_organizacion": "CUIT",
+    "mail_organizacion": "Mail",
+    "telefono_organizacion": "Teléfono",
+    "domicilio_organizacion": "Domicilio",
+    "localidad_organizacion": "Localidad",
+    "provincia_organizacion": "Provincia",
+    "partido_organizacion": "Partido",
+}
+
+# Mismo criterio que ``AdmisionService.puede_editar_informe_tecnico``: un
+# informe finalizado (DOCX generado, enviado a validar o validado) no se toca,
+# para que sus datos no queden distintos del documento ya emitido.
+INFORMES_EDITABLES = Q(estado="A subsanar") | Q(
+    estado__in=["Iniciado", "Para revision"], estado_formulario="borrador"
+)
+
 
 def _organizacion_de(admision):
     return getattr(getattr(admision, "comedor", None), "organizacion", None)
 
 
-def _admisiones_en_curso():
-    return Admision.objects.filter(enviada_a_archivo=False)
+def _admisiones_en_curso(using=None):
+    return Admision.objects.using(using).filter(enviada_a_archivo=False)
+
+
+def _datos_aplican_al_informe(admision):
+    """Los datos de la organizacion solo importan si van a precargar un informe
+    nuevo o pueden cambiar en uno editable."""
+    informes = InformeTecnico.objects.filter(admision=admision)
+    return not informes.exists() or informes.filter(INFORMES_EDITABLES).exists()
 
 
 def datos_organizacion_para_informe(organizacion):
@@ -90,22 +119,36 @@ def datos_organizacion_informe(admision):
     return datos_organizacion_para_informe(_organizacion_de(admision))
 
 
-def datos_organizacion_desactualizados(admision):
-    """Indica si los datos de la organizacion en el legajo cambiaron respecto
-    de la linea de base aceptada en la admision."""
+def datos_organizacion_modificados(admision):
+    """Etiquetas de los datos del legajo que cambiaron respecto de la linea de
+    base aceptada en la admision. Vacio si no hay cambios o si ya no afectan al
+    informe tecnico (todos sus informes estan finalizados)."""
     organizacion = _organizacion_de(admision)
     if not organizacion:
-        return False
+        return []
     snapshot = asegurar_snapshot(admision)
     if snapshot is None:
-        return False
-    return snapshot["legajo"] != datos_organizacion_para_informe(organizacion)
+        return []
+    actuales = datos_organizacion_para_informe(organizacion)
+    modificados = [
+        ETIQUETAS_DATOS_ORGANIZACION[campo]
+        for campo, valor in actuales.items()
+        if snapshot["legajo"].get(campo) != valor
+    ]
+    if not modificados or not _datos_aplican_al_informe(admision):
+        return []
+    return modificados
+
+
+def datos_organizacion_desactualizados(admision):
+    """Indica si hay datos del legajo que cambiaron y afectan al informe."""
+    return bool(datos_organizacion_modificados(admision))
 
 
 def sincronizar_datos_organizacion(admision, actualizar_informe):
     """Alinea la linea de base con el legajo actual. Con
     ``actualizar_informe`` tambien reemplaza los datos del informe tecnico
-    (snapshot e informes no validados de la admision)."""
+    (snapshot e informes editables de la admision)."""
     organizacion = _organizacion_de(admision)
     if not admision or not admision.pk or not organizacion:
         return
@@ -117,9 +160,10 @@ def sincronizar_datos_organizacion(admision, actualizar_informe):
         datos_informe = snapshot["informe"]
     _guardar_snapshot(admision, {"informe": datos_informe, "legajo": actuales})
     if actualizar_informe:
-        InformeTecnico.objects.filter(admision=admision).exclude(
-            estado="Validado"
-        ).update(**actuales)
+        # ``update`` no aplica ``auto_now``: se setea ``modificado`` a mano.
+        InformeTecnico.objects.filter(admision=admision).filter(
+            INFORMES_EDITABLES
+        ).update(**actuales, modificado=timezone.localdate())
 
 
 def congelar_datos_previos(admisiones, organizacion):
@@ -135,14 +179,17 @@ def congelar_datos_previos(admisiones, organizacion):
     )
 
 
-def congelar_por_cambio_de_organizacion_en_comedor(comedor_id, organizacion_anterior):
+def congelar_por_cambio_de_organizacion_en_comedor(
+    comedor_id, organizacion_anterior, using=None
+):
     congelar_datos_previos(
-        _admisiones_en_curso().filter(comedor_id=comedor_id), organizacion_anterior
+        _admisiones_en_curso(using).filter(comedor_id=comedor_id),
+        organizacion_anterior,
     )
 
 
-def congelar_por_edicion_de_organizacion(organizacion_anterior):
+def congelar_por_edicion_de_organizacion(organizacion_anterior, using=None):
     congelar_datos_previos(
-        _admisiones_en_curso().filter(comedor__organizacion=organizacion_anterior),
+        _admisiones_en_curso(using).filter(comedor__organizacion=organizacion_anterior),
         organizacion_anterior,
     )

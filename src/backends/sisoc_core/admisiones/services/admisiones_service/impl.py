@@ -996,9 +996,10 @@ class AdmisionService:
         documentacion_desactualizada, documentos_org_modificados = (
             AdmisionService.admision_documentacion_desactualizada(admision)
         )
-        datos_organizacion_desactualizados = (
-            datos_organizacion_snapshot.datos_organizacion_desactualizados(admision)
+        datos_organizacion_modificados = (
+            datos_organizacion_snapshot.datos_organizacion_modificados(admision)
         )
+        datos_organizacion_desactualizados = bool(datos_organizacion_modificados)
         mostrar_modal_resync_org = (
             admision_desincronizada
             or documentacion_desactualizada
@@ -1046,6 +1047,7 @@ class AdmisionService:
             "documentacion_desactualizada": documentacion_desactualizada,
             "documentos_org_modificados": documentos_org_modificados,
             "datos_organizacion_desactualizados": datos_organizacion_desactualizados,
+            "datos_organizacion_modificados": datos_organizacion_modificados,
             "mostrar_modal_resync_org": mostrar_modal_resync_org,
         }
 

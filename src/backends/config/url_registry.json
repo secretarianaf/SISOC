@@ -3070,6 +3070,11 @@
   "regex": "^comedores/(?P<comedor_pk>[^/]+)/relevamiento/(?P<pk>[0-9]+)/eliminar\\Z"
  },
  {
+  "name": "relevamiento_pdf",
+  "namespace": "",
+  "regex": "^comedores/(?P<comedor_pk>[^/]+)/relevamiento/(?P<pk>[0-9]+)/pdf\\Z"
+ },
+ {
   "name": "relevamiento_revision_coordinador",
   "namespace": "",
   "regex": "^comedores/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<pk>[0-9]+)/revision\\Z"

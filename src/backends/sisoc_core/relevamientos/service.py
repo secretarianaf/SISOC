@@ -650,6 +650,25 @@ def _log_error_create_or_update_responsable_y_referente(
 class RelevamientoService:  # pylint: disable=too-many-public-methods
     """Service layer for managing Relevamiento persistence and business rules."""
 
+    ESTADOS_FINALIZADOS = ("Finalizado", "Finalizado/Excepciones")
+    ESTADO_PENDIENTE_VALIDACION = "Pendiente de validación"
+
+    @staticmethod
+    def estado_para_mostrar(estado, estado_validacion):
+        """Estado que ve el usuario de SISOC (#2630).
+
+        La app guarda ``Finalizado`` al cerrar la visita, pero hasta que el
+        coordinador la valida se muestra como pendiente de validación. El valor
+        guardado no cambia: de ``Finalizado`` dependen GESTIONAR, el PDF y los
+        servicios de comedores.
+        """
+        if (
+            estado in RelevamientoService.ESTADOS_FINALIZADOS
+            and estado_validacion == Relevamiento.ESTADO_VALIDACION_PENDIENTE
+        ):
+            return RelevamientoService.ESTADO_PENDIENTE_VALIDACION
+        return estado
+
     @staticmethod
     def update_comedor(comedor_data, comedor_instance):
         """

@@ -4,7 +4,9 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models as dj_models
 from django.db import transaction
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     CreateView,
@@ -27,6 +29,7 @@ from relevamientos.models import (
     Relevamiento,
     SeguimientoPnud,
 )
+from relevamientos.pdf_service import RelevamientoPdfService
 from relevamientos.service import RelevamientoService
 from relevamientos.views.seguimiento_helpers import (
     aplicar_revision_coordinador,
@@ -141,7 +144,9 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                 {
                     "id": rel.id,
                     "fecha": rel.fecha_visita,
-                    "estado": rel.estado,
+                    "estado": RelevamientoService.estado_para_mostrar(
+                        rel.estado, rel.estado_validacion
+                    ),
                     "numero_if": rel.numero_if,
                     "is_child": False,
                     "parent_id": None,
@@ -192,14 +197,20 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
 
         timeline_qs = (
             Relevamiento.objects.filter(comedor=relevamiento.comedor)
-            .only("id", "fecha_visita", "estado")
+            .only("id", "fecha_visita", "estado", "estado_validacion")
             .order_by("fecha_visita", "id")
         )
         timeline_items = []
         for idx, item in enumerate(timeline_qs):
-            estado = item.estado or ""
-            is_finalizado = estado in {"Finalizado", "Finalizado/Excepciones"}
-            is_pendiente = estado in {"Pendiente", "Visita pendiente"}
+            estado = RelevamientoService.estado_para_mostrar(
+                item.estado, item.estado_validacion
+            )
+            is_finalizado = estado in RelevamientoService.ESTADOS_FINALIZADOS
+            is_pendiente = estado in {
+                "Pendiente",
+                "Visita pendiente",
+                RelevamientoService.ESTADO_PENDIENTE_VALIDACION,
+            }
             card_class = (
                 "active"
                 if item.id == relevamiento.id
@@ -217,7 +228,7 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
                     "id": item.id,
                     "step": idx + 1,
                     "fecha": item.fecha_visita,
-                    "estado": item.estado or "Sin información",
+                    "estado": estado or "Sin información",
                     "card_class": card_class,
                     "status_class": status_class,
                 }
@@ -304,6 +315,9 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
         # Agregar los datos adicionales al contexto
         context["relevamiento_data"] = relevamiento_data
         context["relevamientos_timeline"] = timeline_items
+        context["estado_visible"] = RelevamientoService.estado_para_mostrar(
+            relevamiento.estado, relevamiento.estado_validacion
+        )
         # Todas las instancias del ciclo (primer, posteriores, virtuales, actas).
         context["seguimientos"] = sorted(
             relevamiento.seguimientos.all(),
@@ -362,6 +376,23 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
             )
             .get(pk=self.kwargs["pk"])
         )
+
+
+class RelevamientoPdfView(RelevamientoDetailView):
+    """PDF del relevamiento con las mismas secciones que el detalle (#2630)."""
+
+    template_name = "relevamiento_pdf.html"
+
+    def render_to_response(self, context, **response_kwargs):
+        html = render_to_string(self.template_name, context, request=self.request)
+        pdf = RelevamientoPdfService.generar_pdf(
+            html, base_url=self.request.build_absolute_uri("/")
+        )
+        response = HttpResponse(pdf, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="relevamiento-{self.object.id}.pdf"'
+        )
+        return response
 
 
 class RelevamientoUpdateView(LoginRequiredMixin, UpdateView):

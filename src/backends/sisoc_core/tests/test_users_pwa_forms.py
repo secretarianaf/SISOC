@@ -38,6 +38,33 @@ def test_user_creation_form_provincia_usa_select2():
 
 
 @pytest.mark.django_db
+def test_combined_mobile_edit_preserves_and_assigns_other_app_permissions(comedor):
+    user = get_user_model().objects.create_user(username="combined_permissions", is_staff=True)
+    other_group = Group.objects.create(name="Administradores SIIS prueba")
+    add_user = Permission.objects.get(content_type__app_label="auth", codename="add_user")
+    other_group.permissions.add(add_user)
+    preserved = Permission.objects.get(content_type__app_label="auth", codename="view_user")
+    user.user_permissions.add(preserved)
+    form = CustomUserChangeForm(instance=user, data={
+        "username": user.username, "tipo_usuario": "interno", "password": "",
+        "groups": [other_group.pk], "user_permissions": [preserved.pk],
+        "es_representante_pwa": True, "comedores_pwa": [comedor.pk],
+        "es_relevador_calle": True, "datacalle_rol": "entrevistador",
+        "provincias_datacalle": [comedor.provincia_id],
+        "acceso_web": True, "acceso_siis": True,
+    })
+    assert form.is_valid(), form.errors
+    user = form.save()
+    user.refresh_from_db()
+    assert user.groups.filter(pk=other_group.pk).exists()
+    assert user.user_permissions.filter(pk=preserved.pk).exists()
+    assert user.has_perm("auth.add_user")
+    assert user.profile.acceso_web and user.profile.acceso_siis
+    assert user.profile.es_relevador_calle and is_pwa_user(user)
+    assert user.is_staff
+
+
+@pytest.mark.django_db
 def test_restricted_actor_cannot_store_hidden_mobile_role():
     actor = get_user_model().objects.create_user(username="cdi_actor")
     group, _ = Group.objects.get_or_create(name=UserGroups.SIMEPI_ADMINISTRADOR)
@@ -242,7 +269,7 @@ def test_mobile_selections_survive_saved_suspension(comedor, coordinator):
         data={"username": user.username, "password": password}
     )
     assert not login.is_valid()
-    assert "solo puede ingresar desde la PWA" in str(login.errors)
+    assert "no tiene acceso SISOC web habilitado" in str(login.errors)
 
     permission_codes = [MOBILE_RENDICION_PERMISSION_CODE] + [
         code for code, _ in PWA_OPERATION_PERMISSION_FIELDS.values()
@@ -839,7 +866,7 @@ def test_backoffice_authentication_form_rejects_mobile_user(comedor):
     )
 
     assert login_form.is_valid() is False
-    assert "solo puede ingresar desde la PWA" in str(login_form.errors)
+    assert "no tiene acceso SISOC web habilitado" in str(login_form.errors)
 
 
 @pytest.mark.django_db
@@ -908,7 +935,7 @@ def test_user_creation_form_relevador_calle_requiere_rol():
 
 
 @pytest.mark.django_db
-def test_user_creation_form_relevador_calle_excluye_territorial():
+def test_user_creation_form_relevador_calle_permite_territorial():
     provincia = Provincia.objects.create(nombre="DataCalle Y Comedor Prov")
     form = UserCreationForm(
         data={
@@ -924,12 +951,13 @@ def test_user_creation_form_relevador_calle_excluye_territorial():
         }
     )
 
-    assert form.is_valid() is False
-    assert "es_relevador_calle" in form.errors
+    assert form.is_valid(), form.errors
+    user = form.save()
+    assert user.profile.es_relevador_calle
 
 
 @pytest.mark.django_db
-def test_user_creation_form_relevador_calle_excluye_representante(comedor):
+def test_user_creation_form_relevador_calle_permite_representante(comedor):
     form = UserCreationForm(
         data={
             "username": "relevador_y_rep",
@@ -942,8 +970,9 @@ def test_user_creation_form_relevador_calle_excluye_representante(comedor):
         }
     )
 
-    assert form.is_valid() is False
-    assert "es_relevador_calle" in form.errors
+    assert form.is_valid(), form.errors
+    user = form.save()
+    assert user.profile.es_relevador_calle
 
 
 @pytest.mark.django_db
@@ -970,7 +999,7 @@ def test_user_creation_form_relevador_calle_no_entra_al_backoffice():
     )
 
     assert login_form.is_valid() is False
-    assert "solo puede ingresar desde SISOC - Mobile DataCalle" in str(
+    assert "no tiene acceso SISOC web habilitado" in str(
         login_form.errors
     )
 

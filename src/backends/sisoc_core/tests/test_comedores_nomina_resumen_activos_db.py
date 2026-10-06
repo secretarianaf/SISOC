@@ -16,6 +16,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
+from admisiones.models.admisiones import Admision
 from ciudadanos.models import Ciudadano, Sexo
 from comedores.models import Comedor, Nomina, Programas
 from comedores.services.comedor_service import ComedorService
@@ -46,12 +47,12 @@ def _comedor():
     return Comedor.objects.create(nombre=f"Comedor {Comedor.objects.count() + 1}")
 
 
-def _armar_nomina(comedor, sexos, filas):
+def _armar_nomina(comedor, sexos, filas, admision=None):
     """`filas` es una lista de (sexo, estado)."""
     for indice, (sexo, estado) in enumerate(filas, start=1):
         Nomina.objects.create(
             comedor=comedor,
-            admision=None,
+            admision=admision,
             ciudadano=_ciudadano(sexos[sexo], f"{comedor.id}{indice:05d}"),
             estado=estado,
         )
@@ -263,3 +264,53 @@ def test_el_legajo_renderiza_asistentes_activos_y_bajas(
     assert response.context["nomina_asistentes"] == 2
     assert response.context["nomina_bajas"] == 2
     assert "Dados de baja" in response.content.decode()
+
+
+@pytest.mark.parametrize(
+    "con_admision", [False, True], ids=["nomina_directa", "con_admision"]
+)
+def test_el_detalle_de_nomina_muestra_genero_activo_y_bajas(
+    sexos, client, django_user_model, con_admision
+):
+    """El detalle de nómina cuenta género sobre activos y muestra los dados de
+    baja debajo de la lista de espera. Las dos vistas comparten el template."""
+    user = django_user_model.objects.create_superuser(
+        username="nomina_detalle_admin",
+        password="testpass",
+        email="nomina-detalle@example.com",
+    )
+    client.force_login(user)
+    programa = Programas.objects.create(
+        nombre="Programa nomina detalle", usa_admision_para_nomina=con_admision
+    )
+    comedor = Comedor.objects.create(nombre="Comedor detalle", programa=programa)
+    admision = Admision.objects.create(comedor=comedor) if con_admision else None
+    _armar_nomina(
+        comedor,
+        sexos,
+        [
+            ("Masculino", Nomina.ESTADO_ACTIVO),
+            ("Femenino", Nomina.ESTADO_ACTIVO),
+            ("X", Nomina.ESTADO_ESPERA),
+            ("Masculino", Nomina.ESTADO_BAJA),
+            ("Femenino", Nomina.ESTADO_BAJA),
+        ],
+        admision=admision,
+    )
+    if admision:
+        url = reverse(
+            "nomina_ver", kwargs={"pk": comedor.id, "admision_pk": admision.id}
+        )
+    else:
+        url = reverse("nomina_directa_ver", kwargs={"pk": comedor.id})
+
+    response = client.get(url)
+
+    assert response.status_code == 200
+    assert response.context["cantidad_nomina"] == 2
+    assert response.context["nominaM"] == 1
+    assert response.context["nominaF"] == 1
+    assert response.context["espera"] == 1
+    contenido = " ".join(response.content.decode().split())
+    assert "Dados de baja 2" in contenido
+    assert contenido.index("Lista de espera 1") < contenido.index("Dados de baja 2")

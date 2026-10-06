@@ -10,8 +10,8 @@
 - `comedores/templates/comedor/nomina_detail.html`: fila "Dados de baja" en la tarjeta "Nómina",
   con el valor `nomina_rangos.baja` que ya calcula `ComedorService`. Aplica al detalle con
   admisión y al de nómina directa (comparten template).
-- Test de render del detalle: género cuenta solo activos y "Dados de baja" aparece debajo de
-  "Lista de espera".
+- Test de render de ambos detalles (con admisión y nómina directa): género cuenta solo activos y
+  "Dados de baja" aparece debajo de "Lista de espera".
 
 ## Riesgos y rollback
 - Solo template; sin cambios de datos ni de servicio. Rollback: revertir el commit.

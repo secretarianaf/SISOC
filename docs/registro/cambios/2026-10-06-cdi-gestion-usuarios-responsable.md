@@ -75,6 +75,19 @@ cuenta de la persona. Cada cambio queda en la auditoría ("Acceso CDI").
 - Sin DNI anterior (fichas viejas) no se puede saber si cambió la persona: se
   trata como la misma.
 
+## "Generar usuario" con validación RENAPER
+
+El formulario de alta de usuarios del CDI sigue la misma lógica que responsables
+y referente (bloque `usuario_cdi` en `services_renaper_bloques`): arranca con
+el DNI, al validar muestra la identidad en una tarjeta de solo lectura
+(nombre, apellido, DNI y CUIL bloqueados) y deja el email editable. La carga
+manual aparece solo si RENAPER no encuentra a la persona.
+
+El primer usuario de un CDI se precarga con el referente de la ficha: si esos
+datos ya están verificados en la ficha (`campos_verificados_renaper`), el
+formulario los muestra como verificados sin pedir otra consulta. Los valores
+salen de la base, no del POST.
+
 ## Definiciones de producto
 
 Confirmadas por producto:

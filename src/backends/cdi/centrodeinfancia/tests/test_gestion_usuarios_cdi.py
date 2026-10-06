@@ -17,6 +17,7 @@ from centrodeinfancia.access import (
     usuarios_cdi_activos,
 )
 from centrodeinfancia.models import AccesoCDI, CentroDeInfancia
+from centrodeinfancia.services_renaper_bloques import crear_token
 from centrodeinfancia.services_user_provisioning import actualizar_referente_cdi
 from core.constants import UserGroups
 from core.models import Provincia
@@ -339,3 +340,70 @@ def test_cambio_a_un_referente_existente_lo_reactiva_como_responsable(centro):
         True,
     )
     assert AccesoCDI.objects.filter(centro=centro, es_responsable=True).count() == 1
+
+
+# ── "Generar usuario" con validación RENAPER ─────────────────────────────
+
+VALORES_USUARIO = {
+    "dni": 28456789,
+    "last_name": "Pérez",
+    "first_name": "Luis",
+    "cuil": "20284567898",
+}
+
+
+def test_generar_usuario_toma_la_identidad_del_token_renaper(client, centro, settings):
+    settings.DOMINIO = "http://testserver"
+    responsable, _ = _referente(centro, "resp", responsable=True)
+    client.force_login(responsable)
+
+    client.post(
+        reverse("centrodeinfancia_generar_usuario", kwargs={"pk": centro.pk}),
+        {
+            "first_name": "Alterado",
+            "last_name": "Alterado",
+            "email": "luis@example.com",
+            "dni": "99999999",
+            "cuil": "20284567898",
+            "renaper_token_usuario_cdi": crear_token(
+                "usuario_cdi", responsable, VALORES_USUARIO
+            ),
+        },
+    )
+
+    nuevo = User.objects.get(email="luis@example.com")
+    assert (nuevo.first_name, nuevo.last_name) == ("Luis", "Pérez")
+    assert nuevo.profile.dni == "28456789"
+
+
+def test_primer_usuario_usa_la_identidad_verificada_de_la_ficha(client, centro):
+    centro.cuil_referente = "27301234568"
+    centro.campos_verificados_renaper = [
+        "nombre_referente",
+        "apellido_referente",
+        "dni_referente",
+        "cuil_referente",
+    ]
+    centro.save()
+    admin = User.objects.create_superuser("admin-generar", "", "test1234")
+    client.force_login(admin)
+
+    form = client.get(
+        reverse("centrodeinfancia_generar_usuario", kwargs={"pk": centro.pk})
+    ).context["form"]
+
+    assert form.modos_renaper["usuario_cdi"] == "verificado"
+    assert form.fields["dni"].disabled is True
+    assert form.fields["email"].disabled is False
+
+
+def test_usuarios_siguientes_arrancan_pidiendo_el_dni(client, centro):
+    responsable, _ = _referente(centro, "resp", responsable=True)
+    client.force_login(responsable)
+
+    response = client.get(
+        reverse("centrodeinfancia_generar_usuario", kwargs={"pk": centro.pk})
+    )
+
+    assert response.context["form"].modos_renaper["usuario_cdi"] == "dni"
+    assert 'data-renaper-bloque="usuario_cdi"' in response.content.decode()

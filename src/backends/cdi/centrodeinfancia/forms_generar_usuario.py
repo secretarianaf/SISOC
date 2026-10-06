@@ -1,14 +1,20 @@
 from django import forms
 
+from centrodeinfancia.forms import CamposRenaperFormMixin
+from centrodeinfancia.services_renaper_bloques import BLOQUE_USUARIO
 from core.validators import solo_digitos, validate_cuit
 
 
-class GenerarUsuarioCDIForm(forms.Form):
+class GenerarUsuarioCDIForm(CamposRenaperFormMixin, forms.Form):
     """Datos del usuario "CDI - Referente centro" a generar.
 
     El grupo es fijo y no se expone como campo (lo asigna el servicio). Los
-    campos se precargan con los datos del referente ya cargado en el CDI.
+    campos se precargan con los datos del referente ya cargado en el CDI. La
+    identidad se valida con RENAPER como en el resto del módulo: lo que viene
+    de RENAPER queda bloqueado y el email sigue editable.
     """
+
+    BLOQUES_RENAPER = (BLOQUE_USUARIO,)
 
     first_name = forms.CharField(
         max_length=150,
@@ -35,6 +41,10 @@ class GenerarUsuarioCDIForm(forms.Form):
         label="CUIL",
         widget=forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
     )
+
+    def __init__(self, *args, valores_renaper=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._bloquear_campos_renaper(valores_renaper)
 
     def clean_first_name(self):
         return (self.cleaned_data.get("first_name") or "").strip()

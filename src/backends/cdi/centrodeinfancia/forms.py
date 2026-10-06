@@ -112,7 +112,9 @@ class CamposRenaperFormMixin:
 
     def _bloquear_campos_renaper(self, valores_renaper=None):
         valores_renaper = valores_renaper or {}
-        campos = list(getattr(self.instance, "campos_verificados_renaper", None) or [])
+        # Los forms sin modelo (p. ej. "Generar usuario") no tienen instancia.
+        instancia = getattr(self, "instance", None)
+        campos = list(getattr(instancia, "campos_verificados_renaper", None) or [])
         for bloque in self.BLOQUES_RENAPER:
             # Validar a otra persona en el bloque ("Cambiar persona") reemplaza la
             # verificación anterior: un dato que la persona nueva no trae no puede

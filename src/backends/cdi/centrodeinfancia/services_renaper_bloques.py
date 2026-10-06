@@ -24,6 +24,7 @@ BLOQUE_NINO = "nino"
 BLOQUE_RESPONSABLE_1 = "responsable_legal_1"
 BLOQUE_RESPONSABLE_2 = "responsable_legal_2"
 BLOQUE_REFERENTE = "referente"
+BLOQUE_USUARIO = "usuario_cdi"  # formulario "Generar usuario" del CDI
 
 BLOQUES_NOMINA = (BLOQUE_NINO, BLOQUE_RESPONSABLE_1, BLOQUE_RESPONSABLE_2)
 
@@ -65,6 +66,12 @@ BLOQUES = {
         "apellido": "apellido_referente",
         "nombre": "nombre_referente",
         "cuit": "cuil_referente",
+    },
+    BLOQUE_USUARIO: {
+        "dni": "dni",
+        "apellido": "last_name",
+        "nombre": "first_name",
+        "cuit": "cuil",
     },
 }
 

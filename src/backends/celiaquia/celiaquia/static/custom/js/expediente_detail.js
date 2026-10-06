@@ -2069,12 +2069,24 @@ document.addEventListener('DOMContentLoaded', () => {
       refreshSelect2(selectLocalidad);
     };
 
+    // Select2 dispara "change" via jQuery, que no ejecuta los listeners
+    // nativos: sin esto, cambiar el municipio no filtraba las localidades y
+    // la localidad vieja (que define el municipio en backend) pisaba el
+    // cambio al guardar (#2017). jQuery.on escucha ambos tipos de evento.
+    const onSelectChange = (select, handler) => {
+      if (window.jQuery) {
+        window.jQuery(select).on('change', handler);
+      } else {
+        select.addEventListener('change', handler);
+      }
+    };
+
     if (selectMunicipio && selectLocalidad) {
-      selectMunicipio.addEventListener('change', function() {
+      onSelectChange(selectMunicipio, function() {
         renderLocalidadesDisponibles(this.value, selectLocalidad.value);
       });
 
-      selectLocalidad.addEventListener('change', function() {
+      onSelectChange(selectLocalidad, function() {
         const optionSeleccionada = selectLocalidad.selectedOptions[0];
         const municipioId = optionSeleccionada?.dataset?.municipio || '';
         if (!municipioId) return;

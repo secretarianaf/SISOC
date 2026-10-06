@@ -39,20 +39,35 @@ def test_user_creation_form_provincia_usa_select2():
 
 @pytest.mark.django_db
 def test_combined_mobile_edit_preserves_and_assigns_other_app_permissions(comedor):
-    user = get_user_model().objects.create_user(username="combined_permissions", is_staff=True)
+    user = get_user_model().objects.create_user(
+        username="combined_permissions", is_staff=True
+    )
     other_group = Group.objects.create(name="Administradores SIIS prueba")
-    add_user = Permission.objects.get(content_type__app_label="auth", codename="add_user")
+    add_user = Permission.objects.get(
+        content_type__app_label="auth", codename="add_user"
+    )
     other_group.permissions.add(add_user)
-    preserved = Permission.objects.get(content_type__app_label="auth", codename="view_user")
+    preserved = Permission.objects.get(
+        content_type__app_label="auth", codename="view_user"
+    )
     user.user_permissions.add(preserved)
-    form = CustomUserChangeForm(instance=user, data={
-        "username": user.username, "tipo_usuario": "interno", "password": "",
-        "groups": [other_group.pk], "user_permissions": [preserved.pk],
-        "es_representante_pwa": True, "comedores_pwa": [comedor.pk],
-        "es_relevador_calle": True, "datacalle_rol": "entrevistador",
-        "provincias_datacalle": [comedor.provincia_id],
-        "acceso_web": True, "acceso_siis": True,
-    })
+    form = CustomUserChangeForm(
+        instance=user,
+        data={
+            "username": user.username,
+            "tipo_usuario": "interno",
+            "password": "",
+            "groups": [other_group.pk],
+            "user_permissions": [preserved.pk],
+            "es_representante_pwa": True,
+            "comedores_pwa": [comedor.pk],
+            "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
+            "provincias_datacalle": [comedor.provincia_id],
+            "acceso_web": True,
+            "acceso_siis": True,
+        },
+    )
     assert form.is_valid(), form.errors
     user = form.save()
     user.refresh_from_db()
@@ -999,9 +1014,7 @@ def test_user_creation_form_relevador_calle_no_entra_al_backoffice():
     )
 
     assert login_form.is_valid() is False
-    assert "no tiene acceso SISOC web habilitado" in str(
-        login_form.errors
-    )
+    assert "no tiene acceso SISOC web habilitado" in str(login_form.errors)
 
 
 @pytest.mark.django_db

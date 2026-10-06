@@ -1446,7 +1446,9 @@ class UserCreationForm(
     forms.ModelForm,
 ):
     password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
-    acceso_web = forms.BooleanField(required=False, initial=True, label="Acceso SISOC web")
+    acceso_web = forms.BooleanField(
+        required=False, initial=True, label="Acceso SISOC web"
+    )
     acceso_siis = forms.BooleanField(required=False, label="Acceso SIIS")
     dni = forms.CharField(max_length=16, required=False, label="DNI")
     cuil = forms.CharField(max_length=16, required=False, label="CUIL")
@@ -1692,7 +1694,9 @@ class CustomUserChangeForm(
         label="Contraseña (dejar en blanco para no cambiarla)",
         required=False,
     )
-    acceso_web = forms.BooleanField(required=False, initial=True, label="Acceso SISOC web")
+    acceso_web = forms.BooleanField(
+        required=False, initial=True, label="Acceso SISOC web"
+    )
     acceso_siis = forms.BooleanField(required=False, label="Acceso SIIS")
     dni = forms.CharField(max_length=16, required=False, label="DNI")
     cuil = forms.CharField(max_length=16, required=False, label="CUIL")
@@ -1861,7 +1865,9 @@ class CustomUserChangeForm(
 
         if commit:
             user.save()
-            pwa_permission_ids = self._preserve_current_pwa_operation_permission_ids(user)
+            pwa_permission_ids = self._preserve_current_pwa_operation_permission_ids(
+                user
+            )
             self._aplicar_grupos_y_permisos(user)
             if pwa_permission_ids:
                 user.user_permissions.add(*pwa_permission_ids)

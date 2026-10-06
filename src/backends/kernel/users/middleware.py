@@ -48,7 +48,9 @@ class FirstLoginPasswordChangeMiddleware:
                 and not request.path.startswith(("/api/", "/static/", "/media/"))
                 and request.path not in {"/logout", "/logout/", "/admin/logout/"}
             ):
-                return HttpResponseForbidden("Este usuario no tiene acceso SISOC web habilitado.")
+                return HttpResponseForbidden(
+                    "Este usuario no tiene acceso SISOC web habilitado."
+                )
             must_change = bool(getattr(profile, "must_change_password", False))
             if must_change and not self._is_exempt_path(request.path):
                 return redirect("password_change_required")

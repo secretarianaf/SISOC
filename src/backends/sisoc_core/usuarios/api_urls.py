@@ -32,7 +32,9 @@ router.register(
 )
 
 urlpatterns = [
-    path("siis/admin-token/", SIISAdminTokenView.as_view(), name="api-siis-admin-token"),
+    path(
+        "siis/admin-token/", SIISAdminTokenView.as_view(), name="api-siis-admin-token"
+    ),
     path("siis/", SIISUserCreateView.as_view(), name="api-siis-user-create"),
     path("", include(router.urls)),
 ]

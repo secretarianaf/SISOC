@@ -1,6 +1,10 @@
 import logging
+from collections.abc import Mapping
 
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import (
+    OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
+    extend_schema, inline_serializer,
+)
 from django.contrib.auth import authenticate
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -27,6 +31,7 @@ from usuarios.auth_audit import (
     registrar_evento_auth,
 )
 from usuarios.services_password_reset_pwa import request_password_reset_for_identity
+from usuarios.services_siis import SIISUserResponseSerializer
 from users.rate_limits import hit_rate_limit
 from users.profile_utils import get_profile_or_none
 from users.services_auth import (
@@ -44,6 +49,10 @@ logger = logging.getLogger("django")
 
 
 class LoginSerializer(serializers.Serializer):
+    app = serializers.ChoiceField(
+        choices=["siis"], required=False,
+        help_text="SIIS envía app=siis y API key. Omitir app conserva el login legacy.",
+    )
     username = serializers.CharField()
     password = serializers.CharField(write_only=True, trim_whitespace=False)
 
@@ -71,8 +80,39 @@ class UserLoginViewSet(viewsets.ViewSet):
     authentication_classes = []
     permission_classes = [AllowAny]
 
-    @extend_schema(request=LoginSerializer)
+    @extend_schema(
+        request=LoginSerializer,
+        parameters=[OpenApiParameter(
+            name="Authorization", location=OpenApiParameter.HEADER, type=str,
+            description="Api-Key <clave válida>, obligatoria solo para app=siis.",
+        )],
+        responses={
+            200: PolymorphicProxySerializer(
+                component_name="UserLoginResponse", resource_type_field_name=None,
+                serializers=[SIISUserResponseSerializer, inline_serializer(
+                    name="LegacyUserLoginResponse", fields={
+                        "token": serializers.CharField(),
+                        "token_type": serializers.CharField(),
+                        "user_id": serializers.IntegerField(),
+                        "username": serializers.CharField(),
+                    },
+                )],
+            ),
+            400: OpenApiResponse(description="Payload o aplicación inválidos."),
+            401: OpenApiResponse(description="Credenciales inválidas o rechazo legacy."),
+            403: OpenApiResponse(description="SIIS: API key o habilitación inválidas."),
+            429: OpenApiResponse(description="SIIS: demasiados intentos por identidad."),
+        },
+    )
     def create(self, request):
+        if not isinstance(request.data, Mapping):
+            return Response({"detail": "El cuerpo debe ser un objeto JSON."}, status=400)
+        if request.data.get("app") == "siis":
+            from usuarios.siis_api_views import siis_login
+
+            return siis_login(request, self)
+        if "app" in request.data:
+            return Response({"detail": "Aplicación no admitida."}, status=400)
         serializer = LoginSerializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)

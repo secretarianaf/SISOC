@@ -765,10 +765,11 @@ def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
         )
 
     profile = user.profile
+    profile.acceso_web = not params.job.is_pwa_import
     profile.rol = params.rol
     if params.provincias_objs:
         profile.es_usuario_provincial = True
-    profile.save(update_fields=["rol", "es_usuario_provincial"])
+    profile.save(update_fields=["rol", "es_usuario_provincial", "acceso_web"])
 
     for prov in params.provincias_objs:
         scope_key = ProfileTerritorialScope.build_scope_key(prov.pk)

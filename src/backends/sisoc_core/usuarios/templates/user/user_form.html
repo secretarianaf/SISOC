@@ -452,6 +452,8 @@
                         </div>
                         <div class="card-body">
                             {{ form.user_permissions|as_crispy_field }}
+                            {{ form.acceso_web|as_crispy_field }}
+                            {{ form.acceso_siis|as_crispy_field }}
                             {{ form.grupos_asignables|as_crispy_field }}
                             {{ form.roles_asignables|as_crispy_field }}
                         </div>

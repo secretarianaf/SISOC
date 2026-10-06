@@ -1103,7 +1103,7 @@ class TrabajadorCentroInfanciaCreateView(
         renaper_prefill, _ = self._obtener_prefill_renaper()
         email_cambio = "email" in form.changed_data
         form.instance.centro = self.centro
-        form.instance.campos_verificados_renaper = list(renaper_prefill)
+        form.instance.campos_verificados_renaper = form.campos_bloqueados_renaper
         response = super().form_valid(form)
         crear_usuario_trabajador_automaticamente(self.request, self.object)
         if email_cambio:
@@ -1169,7 +1169,9 @@ class TrabajadorCentroInfanciaCreateView(
             "fecha_nacimiento": fecha_nacimiento,
             "cuit": data.get("cuit") or datos_api.get("cuil") or "",
             "sexo_registral": sexo,
-            "nacionalidad_trabajador": nacionalidad or datos_api.get("pais") or "",
+            # Solo una nacionalidad del catálogo: el país crudo de RENAPER
+            # ("PARAGUAY") no es una opción válida y bloqueado no se puede corregir.
+            "nacionalidad_trabajador": nacionalidad or "",
         }
 
     def get_success_url(self):
@@ -1200,6 +1202,10 @@ class TrabajadorCentroInfanciaUpdateView(
 
     def form_valid(self, form):
         email_cambio = "email" in form.changed_data
+        # Si un dato "verificado" tenía un valor inválido (ver
+        # TrabajadorCDIForm._valor_renaper_valido) se corrigió a mano: deja de
+        # figurar como verificado.
+        form.instance.campos_verificados_renaper = form.campos_bloqueados_renaper
         response = super().form_valid(form)
         crear_usuario_trabajador_automaticamente(self.request, self.object)
         if email_cambio:

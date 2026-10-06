@@ -2250,13 +2250,32 @@ class TrabajadorCDIForm(forms.ModelForm):
             campos_renaper = (
                 self.instance.campos_verificados_renaper if self.instance.pk else []
             )
+        # Campos que efectivamente quedan bloqueados: la vista guarda esta lista.
+        self.campos_bloqueados_renaper = []
         for field_name in campos_renaper:
             field = self.fields.get(field_name)
-            if not field:
+            if not field or not self._valor_renaper_valido(field, field_name):
                 continue
             field.help_text = "Dato verificado por RENAPER."
             field.disabled = True
             field.widget.attrs["data-renaper"] = "1"
+            self.campos_bloqueados_renaper.append(field_name)
+
+    def _valor_renaper_valido(self, field, field_name):
+        """Un campo bloqueado con un valor inválido no se puede corregir ni guardar.
+
+        Pasa con la nacionalidad: el catálogo usa gentilicios ("Paraguaya") y
+        RENAPER informa el país ("PARAGUAY"). En ese caso el campo queda libre
+        para que se elija la opción correcta.
+        """
+        valor = self.get_initial_for_field(field, field_name)
+        if valor in (None, "", []):
+            return False
+        try:
+            field.clean(valor)
+        except ValidationError:
+            return False
+        return True
 
     def _configurar_pais_nacionalidad(self):
         # Mismas listas que ya usa el legajo de Nómina, en vez de texto libre.

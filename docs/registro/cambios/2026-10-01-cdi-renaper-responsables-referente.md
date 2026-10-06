@@ -130,6 +130,28 @@ cubierto por la auditoría completa de `CentroDeInfancia`.
   `test_token_no_valida_identidad_modificada` por
   `test_alta_ignora_identidad_alterada_en_post`.
 
+## Corrección: nacionalidad de Trabajadores bloqueada sin opciones
+
+Reportado por EGP y Referentes de CDI: en el alta de Trabajadores, el campo
+"Nacionalidad" no desplegaba opciones y no dejaba guardar. El comportamiento es
+previo a esta rama.
+
+- **Causa:** el catálogo de nacionalidades usa gentilicios ("Paraguaya") y
+  RENAPER informa el país ("PARAGUAY"). Si no había coincidencia, la precarga
+  usaba el país crudo y lo bloqueaba: el select quedaba deshabilitado con un
+  valor que no está entre las opciones. Con Argentina no fallaba porque esa
+  entrada del catálogo coincide con el nombre del país.
+- **Arreglo:** la precarga solo usa una nacionalidad del catálogo. Además,
+  `TrabajadorCDIForm` nunca bloquea un campo con un valor inválido
+  (`_valor_renaper_valido`) y la vista guarda solo los campos que efectivamente
+  quedaron bloqueados. Los trabajadores ya guardados con el valor trabado se
+  pueden corregir al editarlos y la nacionalidad deja de figurar como
+  verificada.
+- La validación nueva de responsables y referente no tenía el problema: solo
+  bloquea nacionalidades resueltas contra el catálogo.
+- Posible mejora futura: mapear el país de RENAPER a su gentilicio para
+  precargar también nacionalidades extranjeras.
+
 ## Fuera de alcance
 
 - **Persona adulta responsable** de la nómina: la ficha actual

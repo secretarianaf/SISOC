@@ -12,6 +12,7 @@ Extrae, sin datos hardcodeados de dominio salvo la clasificacion por zona:
   permisos, para saber que modulos alcanza el usuario;
 - PWA declaradas en ``src/scripts/operacion/pwas.json``;
 - roles de contenedor de ``docker/django/entrypoint.py`` y servicios Compose.
+- dueños y proxies del registro de backends; frontends locales y su registro web.
 
 Salidas:
 
@@ -53,6 +54,7 @@ FUENTE_VISOR = BACKENDS / "kernel" / "static" / "arquitectura"
 # cambios locales tracked.
 SALIDA_RUNTIME = RAIZ / "var" / "arquitectura"
 SALIDA_DOCS = RAIZ / "docs" / "arquitectura"
+NOMBRE_GRAFO_IMAGEN = "grafo-imagen.json"
 FUENTES_CSS = (
     "https://fonts.googleapis.com/css2"
     "?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
@@ -67,7 +69,7 @@ ZONAS = [
     {
         "id": "nucleo",
         "nombre": "Nucleo compartido",
-        "detalle": "Base transversal. No puede importar dominios (contrato core-no-domains).",
+        "detalle": "Apps transversales y del core. El dueño de cada app indica su imagen.",
         "apps": [
             "core",
             "users",
@@ -107,7 +109,7 @@ ZONAS = [
     {
         "id": "satelites",
         "nombre": "Satelites de dominio",
-        "detalle": "Verticales con frontera declarada en .importlinter; extraibles a futuro.",
+        "detalle": "Verticales ejecutados en backends independientes con kernel compartido.",
         "apps": [
             "centrodeinfancia",
             "centrodefamilia",
@@ -345,10 +347,96 @@ def dir_de_app(app: str) -> Path:
 
 
 def _registro_backends() -> dict:
-    try:
-        return json.loads(_texto(BACKENDS / "config" / "backends.json") or "{}")
-    except json.JSONDecodeError:
-        return {}
+    # Un registro roto no debe producir un mapa aparentemente completo.
+    return json.loads((BACKENDS / "config" / "backends.json").read_text("utf-8-sig"))
+
+
+def _claves_dict_settings(nombre: str) -> set[str]:
+    """Solo claves literales: no ejecuta settings ni lee variables de entorno."""
+    arbol = ast.parse(_texto(BACKENDS / "config" / "settings.py"))
+    for nodo in arbol.body:
+        if isinstance(nodo, ast.Assign) and any(
+            isinstance(destino, ast.Name) and destino.id == nombre
+            for destino in nodo.targets
+        ):
+            if isinstance(nodo.value, ast.Dict):
+                return {
+                    clave.value
+                    for clave in nodo.value.keys
+                    if isinstance(clave, ast.Constant) and isinstance(clave.value, str)
+                }
+    return set()
+
+
+def servicios(apps: list[str]) -> list[dict]:
+    """Dueños del código y rutas del proxy, sin direcciones ni secretos."""
+    registro = _registro_backends()
+    lista = [
+        {
+            "id": "kernel",
+            "nombre": "Kernel compartido",
+            "tipo": "kernel",
+            "service": "",
+            "apps": [],
+            "rutas": [],
+        },
+        {
+            "id": "sisoc_core",
+            "nombre": "Core de entrada y proxy",
+            "tipo": "core",
+            "service": "django",
+            "apps": [],
+            "rutas": [],
+        },
+    ]
+    for identificador, spec in registro.items():
+        lista.append(
+            {
+                "id": identificador,
+                "nombre": "Backend " + identificador,
+                "tipo": "backend",
+                "service": spec["service"],
+                "apps": [app.split(".")[0] for app in spec["apps"]],
+                "rutas": ["/" + ruta for ruta in spec["url_prefixes"]],
+                "urlconf": spec["urlconf"],
+                "migrador": spec.get("migrate_service", ""),
+                "extra_services": spec.get("extra_services", []),
+            }
+        )
+    for servicio in lista[:2]:
+        servicio["apps"] = [
+            app for app in apps if dir_de_app(app).parent == BACKENDS / servicio["id"]
+        ]
+    return lista
+
+
+def frontends() -> list[dict]:
+    """Workspaces reales y registro del proxy web; asociación, no consumo probado."""
+    registrados = _claves_dict_settings("FRONTEND_V2_UPSTREAMS")
+    registro_backends = _registro_backends()
+    carpeta = RAIZ / "src" / "frontends" / "apps"
+    paquetes = {p.parent.name: p for p in carpeta.glob("*/package.json")}
+    lista = []
+    for identificador in sorted(set(paquetes) | registrados):
+        paquete = paquetes.get(identificador)
+        datos = json.loads(paquete.read_text("utf-8-sig")) if paquete else {}
+        lista.append(
+            {
+                "id": identificador,
+                "nombre": datos.get("name", identificador),
+                "ruta_codigo": f"src/frontends/apps/{identificador}",
+                "ruta_web": (
+                    f"/v2/{identificador}/" if identificador in registrados else ""
+                ),
+                "registrado": identificador in registrados,
+                "codigo_presente": paquete is not None,
+                "backend_asociado": (
+                    identificador if identificador in registro_backends else ""
+                ),
+                "certeza_backend": "inferido",
+            }
+        )
+    return lista
 
 
 def _texto(ruta: Path) -> str:
@@ -670,12 +758,12 @@ def asincronia() -> dict:
             contenido = contenido[: corte.start()]
         return re.findall(r"^  ([a-z_]+):", contenido, re.M)
 
-    servicios = servicios_de("docker-compose.yml")
+    servicios_compose = servicios_de("docker/compose/docker-compose.deploy.yml")
     servicios_celery = servicios_de("docker/compose/docker-compose.celery.yml")
 
     return {
         "roles_contenedor": roles,
-        "servicios_compose": servicios,
+        "servicios_compose": servicios_compose,
         "servicios_celery": servicios_celery,
     }
 
@@ -726,6 +814,11 @@ def construir() -> dict:
     apps = instaladas + [
         p for p in PAQUETES_EXTRA if dir_de_app(p).is_dir() and p not in instaladas
     ]
+    lista_servicios = servicios(apps)
+    lista_frontends = frontends()
+    duenos = {
+        app: servicio["id"] for servicio in lista_servicios for app in servicio["apps"]
+    }
 
     rutas = rutas_montadas()
     planos = auth_de_apis(apps)
@@ -760,6 +853,8 @@ def construir() -> dict:
                 "nombre": NOMBRES.get(app, app.replace("_", " ").capitalize()),
                 "zona": zona_de(app),
                 "instalada": app in instaladas,
+                "dueno": duenos.get(app, ""),
+                "ruta_codigo": dir_de_app(app).relative_to(RAIZ).as_posix(),
                 "rutas_web": rutas.get(app, {}).get("web", []),
                 "rutas_api": rutas.get(app, {}).get("api", []),
                 "planos_api": planos.get(app, []),
@@ -804,6 +899,9 @@ def construir() -> dict:
         .isoformat(timespec="seconds"),
         "commit": _git("rev-parse", "--short", "HEAD"),
         "rama": _git("rev-parse", "--abbrev-ref", "HEAD"),
+        "fuente": "repositorio",
+        "servicios": lista_servicios,
+        "frontends": lista_frontends,
         "zonas": [{k: v for k, v in z.items() if k != "apps"} for z in ZONAS],
         "modulos": modulos,
         "aristas": aristas,
@@ -813,6 +911,8 @@ def construir() -> dict:
         "asincronia": asincronia(),
         "contratos": contratos_importlinter(),
         "totales": {
+            "backends": sum(s["tipo"] == "backend" for s in lista_servicios),
+            "frontends": len(lista_frontends),
             "apps": len(modulos),
             "aristas": len(aristas),
             "aristas_api": sum(1 for a in aristas if a["kind"] == "api"),
@@ -865,16 +965,34 @@ def documento_autocontenido(css: str, js: str, grafo_json: str) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--imagen",
+        action="store_true",
+        help="Guarda el grafo completo antes de recortar el código de la imagen.",
+    )
+    parser.add_argument(
         "--docs",
         action="store_true",
         help="Ademas del grafo de runtime, actualiza los artefactos versionados de docs/.",
     )
     args = parser.parse_args()
 
-    grafo = construir()
+    grafo_imagen = SALIDA_RUNTIME / NOMBRE_GRAFO_IMAGEN
+    checkout_completo = (RAIZ / "src" / "frontends" / "apps").is_dir() and all(
+        (BACKENDS / nombre).is_dir() for nombre in _registro_backends()
+    )
+    if grafo_imagen.is_file() and not args.imagen and not checkout_completo:
+        # La imagen del core no tiene código de verticales ni frontends. No
+        # reemplazar su mapa completo por uno parcial al arrancar el servidor.
+        grafo = json.loads(grafo_imagen.read_text("utf-8"))
+    else:
+        grafo = construir()
+    if args.imagen:
+        grafo["fuente"] = "imagen"
     json_compacto = json.dumps(grafo, ensure_ascii=False, separators=(",", ":"))
 
     escritos = [escribir(SALIDA_RUNTIME / "grafo.json", json_compacto)]
+    if args.imagen:
+        escritos.append(escribir(grafo_imagen, json_compacto))
 
     if args.docs:
         css = _texto(FUENTE_VISOR / "mapa.css")

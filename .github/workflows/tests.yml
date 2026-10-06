@@ -328,7 +328,7 @@ jobs:
               uses: actions/checkout@v6.0.2
 
             - name: Ejecutar pruebas de automatizacion de release
-              run: node --test .github/scripts/release_orchestrator.test.js .github/scripts/sync_main_downstream.test.js
+              run: node --test src/scripts/github/release_orchestrator.test.js src/scripts/github/sync_main_downstream.test.js
 
             # Los tests de JS viven junto al vertical dueño del estático que prueban.
             - name: Ejecutar pruebas de JavaScript

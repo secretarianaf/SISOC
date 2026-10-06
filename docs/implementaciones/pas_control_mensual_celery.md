@@ -94,7 +94,7 @@ Responsable operativo: equipo de despliegue o referente técnico. Aplicar migrac
 de activar la programación. Verificar MySQL, broker, worker, Beat y permisos
 de RENAPER en el ambiente objetivo.
 
-1. Ejecutar `sudo bash scripts/infra/remove_pas_cron.sh` (inspección).
+1. Ejecutar `sudo bash src/scripts/infra/remove_pas_cron.sh` (inspección).
 2. Revisar envoltorios y temporizadores adicionales, y comprobar que no haya
    un proceso PAS antiguo activo.
 3. Ejecutar el mismo script con `--apply`: respalda y elimina solo las entradas
@@ -104,7 +104,7 @@ de RENAPER en el ambiente objetivo.
 5. Levantar el Compose del ambiente con `-f docker/compose/docker-compose.celery.yml` y habilitar
    la programación solo después de la validación.
 
-La línea PAS se retira de `scripts/crontab`; los cron ajenos permanecen.
+La línea PAS se retira de `src/scripts/crontab`; los cron ajenos permanecen.
 Los respaldos efectivos viven en `/var/backups/sisoc/pas-cron/`.
 
 Comandos de operador:

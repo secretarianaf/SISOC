@@ -37,7 +37,7 @@ La aceptacion funcional, de instalacion y offline queda al equipo de testers.
 | datacalle | secretarianaf/DataCalle | DataCalle | sisoc-pwa-datacalle / 8081 | habilitada, base /pwa/datacalle/ |
 | gestionar | secretarianaf/Gestionar | Gestionar | sisoc-pwa-gestionar / 8082 | habilitada, base /pwa/gestionar/ |
 
-Fuente de configuracion: `scripts/operacion/pwas.json`. No renombrar las carpetas
+Fuente de configuracion: `src/scripts/operacion/pwas.json`. No renombrar las carpetas
 historicas ni los proyectos Compose al cambiar un nombre en GitHub.
 
 Estado del aprovisionamiento del 2026-09-08: acceso privado a los tres repos
@@ -256,8 +256,8 @@ conservar TLS, cabeceras, limites y rutas Django/static/media.
 Generar un candidato nuevo; el comando rechaza sobrescribir archivos:
 
 ```bash
-python3 scripts/operacion/render_pwa_nginx.py \
-  --config scripts/operacion/pwas.json --output /tmp/sisoc-pwas-candidato.conf
+python3 src/scripts/operacion/render_pwa_nginx.py \
+  --config src/scripts/operacion/pwas.json --output /tmp/sisoc-pwas-candidato.conf
 ```
 
 Dentro del server HTTPS canonico, sustituir los bloques PWA anteriores por un
@@ -306,8 +306,8 @@ Espacios mantiene `/mobile/` como build historico; su Dockerfile genera tambien
 el build canonico de `/pwa/espacioscomunitarios/` dentro de la misma imagen.
 
 ```bash
-sudo bash scripts/infra/install_qa_pwa_nginx.sh
-sudo bash scripts/infra/install_qa_pwa_nginx.sh --apply --yes
+sudo bash src/scripts/infra/install_qa_pwa_nginx.sh
+sudo bash src/scripts/infra/install_qa_pwa_nginx.sh --apply --yes
 ```
 
 El primer comando es un preflight de solo lectura. El segundo modifica Nginx y
@@ -359,7 +359,7 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q -c pyproject.toml \
   --confcutdir=tests --noconftest -p no:cacheprovider --import-mode=importlib \
   src/backends/kernel/tests/test_deploy_pwas.py src/backends/kernel/tests/test_deploy_refresh_script.py \
   src/backends/kernel/tests/test_deploy_workflow.py src/backends/kernel/tests/test_pwa_nginx.py
-bash -n scripts/operacion/deploy_refresh.sh
+bash -n src/scripts/operacion/deploy_refresh.sh
 ```
 
 Validar ademas sintaxis del YAML y de cada `run` del workflow, `nginx -t` de los

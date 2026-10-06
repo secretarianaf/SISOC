@@ -16,7 +16,7 @@
     "types:generate": "openapi-typescript packages/api/openapi.yaml -o packages/api/src/generated.ts",
     "types:check": "npm run types:generate && git diff --exit-code -- packages/api/src/generated.ts",
     "api:types": "openapi-typescript packages/api/openapi.celiaquia.yaml -o packages/api/src/openapi.d.ts",
-    "api:check": "node scripts/verificar-contrato.mjs",
+    "api:check": "node ../scripts/frontends/verificar-contrato.mjs",
     "api:schema": "echo \"Correr desde la raiz del repo: docker compose exec django python manage.py spectacular --urlconf config.urls_frontend_v2 --file src/frontends/packages/api/openapi.celiaquia.yaml\"",
     "test:e2e": "playwright test"
   },

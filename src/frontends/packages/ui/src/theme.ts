@@ -12,7 +12,7 @@
 //   <ThemeProvider theme={theme}><CssBaseline />...</ThemeProvider>
 // ============================================================================
 
-import { createTheme, type ThemeOptions } from '@mui/material/styles';
+import { alpha, createTheme, type ThemeOptions } from '@mui/material/styles';
 import type { PaletteMode } from '@mui/material';
 import type { CSSProperties } from 'react';
 
@@ -62,10 +62,14 @@ declare module '@mui/material/styles' {
       divider: string;
     };
     input: { outlinedBorder: string };
+    backdrop: string;
+    chart: { series1: string; series2: string; series3: string; series4: string; series5: string };
   }
   interface PaletteOptions {
     nav?: Palette['nav'];
     input?: Palette['input'];
+    backdrop?: Palette['backdrop'];
+    chart?: Palette['chart'];
   }
 
   // Escala de radios y bordes.
@@ -111,6 +115,14 @@ const grey = {
   900: '#1C1917',
 };
 
+const chart = {
+  series1: '#045F5B',
+  series2: '#FFC000',
+  series3: '#04756F',
+  series4: '#FFDD75',
+  series5: '#379F9B',
+};
+
 // Colores originales de la marca. No se usan en la interfaz: quedan como registro.
 export const brand = {
   verdeLogo: '#058782',
@@ -149,6 +161,8 @@ const paletas = {
       disabledBackground: 'rgba(0,0,0,0.12)',
     },
     input: { outlinedBorder: '#78716C' },
+    backdrop: 'rgba(0,0,0,0.5)',
+    chart,
     // La navegación de marca es SIEMPRE oscura, en los dos modos.
     nav: {
       surface: '#045F5B',
@@ -181,6 +195,8 @@ const paletas = {
       disabledBackground: 'rgba(255,255,255,0.12)',
     },
     input: { outlinedBorder: '#A8A29E' },
+    backdrop: 'rgba(0,0,0,0.5)',
+    chart,
     // surface tiene un valor propio en oscuro, cuatro veces más oscuro que
     // primary/dark (0.0346 contra 0.1390 de luminancia).
     //
@@ -237,7 +253,7 @@ const typography = {
   h4Bold:          { fontWeight: 700, fontSize: '2.125rem',  lineHeight: '42px', letterSpacing: '0.09px' },
   subtitle1Medium: { fontWeight: 500, fontSize: '1rem',      lineHeight: '28px', letterSpacing: '0.14px' },
   buttonSmall:     { fontWeight: 500, fontSize: '0.8125rem', letterSpacing: '0.41px', textTransform: 'uppercase' as const },
-  buttonLarge:     { fontWeight: 500, fontSize: '0.9375rem', letterSpacing: '0.41px', textTransform: 'uppercase' as const },
+  buttonLarge:     { fontWeight: 500, fontSize: '0.9375rem', lineHeight: '18px', letterSpacing: '0.41px', textTransform: 'uppercase' as const },
   chip:            { fontWeight: 400, fontSize: '0.8125rem', letterSpacing: '0.16px' },
   captionBold:     { fontWeight: 700, fontSize: '0.75rem',   lineHeight: '20px', letterSpacing: '0.4px' },
 };
@@ -298,7 +314,7 @@ export const getTheme = (mode: PaletteMode = 'light') => {
   const p = paletas[mode];
 
   return createTheme({
-    palette: { mode, grey, ...p },
+    palette: { mode, grey, common: { black: '#000000', white: '#FFFFFF' }, ...p },
     typography,
     shadows,
     // La escala de espaciado del sistema ES la de MUI con base 8:
@@ -312,23 +328,93 @@ export const getTheme = (mode: PaletteMode = 'light') => {
     iconSize,
 
     components: {
+      MuiTypography: {
+        defaultProps: {
+          variantMapping: { h4Bold: 'h4', subtitle1Medium: 'h6', captionBold: 'span', buttonSmall: 'span', buttonLarge: 'span', chip: 'span' },
+        },
+      },
       // Botón: radius/medium y sin elevación. Los tamaños small y large usan
       // las variantes tipográficas propias.
       MuiButton: {
-        defaultProps: { disableElevation: true },
+        defaultProps: { disableElevation: true, size: 'large' },
         styleOverrides: {
-          root: { borderRadius: radius.medium },
-          sizeSmall: { ...typography.buttonSmall },
-          sizeLarge: { ...typography.buttonLarge },
+          root: ({ theme }) => ({
+            borderRadius: radius.medium,
+            gap: theme.spacing(1),
+            fontWeight: 500,
+            textTransform: 'uppercase',
+            '& .MuiButton-startIcon': { marginLeft: 0, marginRight: 0 },
+            '&.MuiButton-outlinedPrimary': { borderColor: theme.palette.primary.light },
+            '&.MuiButton-outlinedSecondary': { borderColor: theme.palette.secondary.light },
+            '&.MuiButton-outlinedError': { borderColor: theme.palette.error.light },
+            '&.MuiButton-containedPrimary:hover': { backgroundColor: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.dark },
+            '&.MuiButton-containedError:hover': { backgroundColor: theme.palette.mode === 'dark' ? theme.palette.error.light : theme.palette.error.dark },
+            '&.MuiButton-outlinedPrimary:hover': { borderColor: theme.palette.primary.main },
+            '&.MuiButton-outlinedSecondary:hover': { borderColor: theme.palette.secondary.main },
+            '&.MuiButton-outlinedError:hover': { borderColor: theme.palette.error.main },
+            '&.MuiButton-outlinedPrimary:hover, &.MuiButton-textPrimary:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
+            '&.MuiButton-outlinedSecondary, &.MuiButton-textSecondary': { color: theme.palette.secondary.text },
+            '&.MuiButton-outlinedSecondary:hover, &.MuiButton-textSecondary:hover': { backgroundColor: alpha(theme.palette.secondary.main, 0.08) },
+            '&.MuiButton-outlinedError:hover, &.MuiButton-textError:hover': { backgroundColor: alpha(theme.palette.error.main, 0.08) },
+            '&.Mui-focusVisible': { outline: `${border.focus}px solid ${theme.palette.primary.light}`, outlineOffset: 2 },
+            '&.MuiButton-colorError.Mui-focusVisible': { outlineColor: theme.palette.error.light },
+          }),
+          sizeSmall: { ...typography.buttonSmall, padding: '4px 12px', minHeight: 23, '& .MuiButton-startIcon .MuiSvgIcon-root': { fontSize: iconSize.buttonSmall } },
+          sizeLarge: { ...typography.buttonLarge, padding: '8px 24px', minHeight: 34, '& .MuiButton-startIcon .MuiSvgIcon-root': { fontSize: iconSize.buttonLarge } },
+        },
+      },
+      MuiIconButton: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            '&.MuiIconButton-colorPrimary:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
+            '&.MuiIconButton-colorError:hover': { backgroundColor: alpha(theme.palette.error.main, 0.08) },
+            '&.MuiIconButton-colorSecondary': { color: theme.palette.secondary.dark },
+            '&.MuiIconButton-colorSecondary:hover': { backgroundColor: alpha(theme.palette.secondary.dark, 0.08) },
+            '&.Mui-focusVisible': { outline: `${border.focus}px solid ${theme.palette.primary.light}`, outlineOffset: 2 },
+          }),
+          sizeSmall: { width: 28, height: 28, padding: 4, '& .MuiSvgIcon-root': { fontSize: iconSize.small } },
+          sizeLarge: { width: 48, height: 48, padding: 12, '& .MuiSvgIcon-root': { fontSize: iconSize.medium } },
+        },
+      },
+      MuiLink: {
+        defaultProps: { underline: 'hover' },
+        styleOverrides: {
+          root: ({ theme }) => ({
+            ...theme.typography.captionBold,
+            color: theme.palette.primary.main,
+            '&:hover': { color: theme.palette.primary.dark },
+          }),
         },
       },
       // Chip: el label usa la variante propia `chip`.
       MuiChip: {
-        styleOverrides: { label: { ...typography.chip } },
+        styleOverrides: {
+          root: { ...typography.chip, borderRadius: radius.full },
+          filled: ({ theme, ownerState }) => ownerState.color === 'default'
+            ? { backgroundColor: theme.palette.action.selected, color: theme.palette.text.primary }
+            : {},
+        },
       },
       // Tabs: el indicador va en secondary, no en primary.
       MuiTabs: {
-        defaultProps: { indicatorColor: 'secondary' },
+        defaultProps: { indicatorColor: 'secondary', textColor: 'secondary' },
+        styleOverrides: {
+          root: ({ theme }) => ({ borderBottom: `${border.thin}px solid ${theme.palette.divider}` }),
+          indicator: { height: border.focus },
+        },
+      },
+      MuiTab: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            minHeight: 48,
+            padding: theme.spacing(0, 2),
+            borderRadius: `${radius.medium}px ${radius.medium}px 0 0`,
+            color: theme.palette.text.secondary,
+            '&:hover': { color: theme.palette.text.primary, backgroundColor: theme.palette.action.hover },
+            '&.Mui-selected': { color: theme.palette.secondary.text, backgroundColor: alpha(theme.palette.secondary.main, 0.08) },
+            '&.Mui-disabled': { color: theme.palette.action.disabled },
+          }),
+        },
       },
       // Paper: los paneles del sistema usan borde en vez de sombra.
       MuiPaper: {
@@ -343,13 +429,50 @@ export const getTheme = (mode: PaletteMode = 'light') => {
         defaultProps: { variant: 'outlined' },
         styleOverrides: { root: { borderRadius: radius.large } },
       },
+      MuiCardContent: {
+        styleOverrides: { root: ({ theme }) => ({ padding: theme.spacing(3), '&:last-child': { paddingBottom: theme.spacing(3) } }) },
+      },
+      MuiTableCell: {
+        styleOverrides: {
+          head: ({ theme }) => ({ ...theme.typography.overline, lineHeight: 1.5, color: theme.palette.text.secondary, backgroundColor: 'transparent' }),
+          body: ({ theme }) => ({ ...theme.typography.body2 }),
+        },
+      },
       MuiOutlinedInput: {
         styleOverrides: {
           root: ({ theme }) => ({
             borderRadius: radius.medium,
+            backgroundColor: theme.palette.background.paper,
             '& .MuiOutlinedInput-notchedOutline': { borderColor: theme.palette.input.outlinedBorder },
           }),
         },
+      },
+      MuiCheckbox: {
+        styleOverrides: {
+          root: ({ theme }) => ({ color: theme.palette.action.active }),
+          sizeSmall: { padding: 3, '& .MuiSvgIcon-root': { fontSize: 18 } },
+        },
+      },
+      MuiRadio: {
+        styleOverrides: { root: ({ theme }) => ({ color: theme.palette.action.active }) },
+      },
+      MuiFormHelperText: {
+        styleOverrides: {
+          root: ({ theme }) => ({ '&.Mui-error': { color: theme.palette.error.text } }),
+          contained: ({ theme }) => ({ marginLeft: theme.spacing(1.5), marginRight: theme.spacing(1.5) }),
+        },
+      },
+      MuiFormLabel: {
+        styleOverrides: { root: ({ theme }) => ({ '&.Mui-error': { color: theme.palette.error.text } }) },
+      },
+      MuiMenuItem: {
+        styleOverrides: { root: ({ theme }) => ({ '&.Mui-disabled': { color: theme.palette.text.disabled, opacity: 1 } }) },
+      },
+      MuiSelect: {
+        styleOverrides: { icon: { fontSize: iconSize.small } },
+      },
+      MuiBackdrop: {
+        styleOverrides: { root: ({ theme }) => ({ '&:not(.MuiBackdrop-invisible)': { backgroundColor: theme.palette.backdrop } }) },
       },
       // AppBar: superficie de marca, no primary.
       MuiAppBar: {
@@ -391,13 +514,12 @@ export const getTheme = (mode: PaletteMode = 'light') => {
             '&:hover': { backgroundColor: theme.palette.nav.hover },
             '&.Mui-selected': {
               backgroundColor: theme.palette.nav.selected,
-              color: theme.palette.nav.accent,
+              '& .MuiListItemText-primary': { ...theme.typography.captionBold, color: theme.palette.nav.accent },
               '&:hover': { backgroundColor: theme.palette.nav.selected },
             },
             // Aplicar esta clase a los ítems de sección (primer nivel).
-            '&.SisocNav-section.Mui-selected': {
+            '&.sisoc-section.Mui-selected': {
               backgroundColor: theme.palette.nav.surfaceSelected,
-              color: theme.palette.nav.accent,
               '&:hover': { backgroundColor: theme.palette.nav.surfaceSelected },
             },
           }),
@@ -405,7 +527,7 @@ export const getTheme = (mode: PaletteMode = 'light') => {
       },
       MuiListItemIcon: {
         styleOverrides: {
-          root: ({ theme }) => ({ color: 'inherit', minWidth: theme.spacing(4) }),
+          root: ({ theme }) => ({ color: theme.palette.nav.text, minWidth: theme.spacing(4) }),
         },
       },
       // Alert standard: el fondo tenue de la severidad y el texto con `.text`.
@@ -414,10 +536,15 @@ export const getTheme = (mode: PaletteMode = 'light') => {
         styleOverrides: {
           root: ({ theme }) => ({
             borderRadius: radius.medium,
-            '&.MuiAlert-standardError': { color: theme.palette.error.text },
-            '&.MuiAlert-standardWarning': { color: theme.palette.warning.text },
-            '&.MuiAlert-standardInfo': { color: theme.palette.info.text },
-            '&.MuiAlert-standardSuccess': { color: theme.palette.success.text },
+            padding: theme.spacing(0.75, 2),
+            '&.MuiAlert-standardError, &.MuiAlert-outlinedError': { color: theme.palette.error.text, '& .MuiAlert-icon': { color: theme.palette.error.text } },
+            '&.MuiAlert-standardWarning, &.MuiAlert-outlinedWarning': { color: theme.palette.warning.text, '& .MuiAlert-icon': { color: theme.palette.warning.text } },
+            '&.MuiAlert-standardInfo, &.MuiAlert-outlinedInfo': { color: theme.palette.info.text, '& .MuiAlert-icon': { color: theme.palette.info.text } },
+            '&.MuiAlert-standardSuccess, &.MuiAlert-outlinedSuccess': { color: theme.palette.success.text, '& .MuiAlert-icon': { color: theme.palette.success.text } },
+            '&.MuiAlert-filledError': { backgroundColor: theme.palette.error.main, color: theme.palette.error.contrastText, fontWeight: 400 },
+            '&.MuiAlert-filledWarning': { backgroundColor: theme.palette.warning.main, color: theme.palette.warning.contrastText, fontWeight: 400 },
+            '&.MuiAlert-filledInfo': { backgroundColor: theme.palette.info.main, color: theme.palette.info.contrastText, fontWeight: 400 },
+            '&.MuiAlert-filledSuccess': { backgroundColor: theme.palette.success.main, color: theme.palette.success.contrastText, fontWeight: 400 },
           }),
         },
       },

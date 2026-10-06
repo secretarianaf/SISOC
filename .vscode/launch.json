@@ -26,6 +26,9 @@
                 "--noreload"
             ],
             "django": true,
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "config.settings_all"
+            },
             "autoStartBrowser": false,
             "program": "${workspaceFolder}\\manage.py"
         }

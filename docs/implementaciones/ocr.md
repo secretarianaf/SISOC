@@ -39,7 +39,7 @@ Para dar acceso a un grupo:
 ## Preprocesamiento de imagen
 
 Antes de pasar cada imagen a Tesseract, el sistema aplica un pipeline de
-limpieza con OpenCV (`ocr/services_preprocess.py`, función
+limpieza con OpenCV (`src/backends/sisoc_core/ocr/services_preprocess.py`, función
 `preprocess_for_ocr`) para mejorar la precisión en documentos "sucios":
 sellos superpuestos, fondos grises, texto inclinado y ruido de digitalización.
 
@@ -263,7 +263,7 @@ aporta robustez ante escaneos rotados.
 
 ## Corrección ortográfica (OCR_SPELLCHECK)
 
-`ocr/services_postprocess.py::correct_text` aplica una corrección ortográfica
+`src/backends/sisoc_core/ocr/services_postprocess.py::correct_text` aplica una corrección ortográfica
 **local y offline** (con `pyspellchecker`, diccionario español embebido) al
 texto extraído, al final de `extract_text_from_file`. Es muy conservadora:
 
@@ -338,7 +338,7 @@ Los tests usan mocks para aislar Tesseract, pdf2image y OpenCV (cv2), por lo que
 Para medir el impacto de cambios en el preprocesado o en la configuración de
 Tesseract hay un comando que procesa un archivo con el pipeline real y lo
 compara contra un texto de referencia (*ground-truth*), reportando recall /
-precision / F1 de palabras (ver `ocr/eval_metrics.py`):
+precision / F1 de palabras (ver `src/backends/sisoc_core/ocr/eval_metrics.py`):
 
 ```bash
 # Recall del pipeline actual contra un ground-truth

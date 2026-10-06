@@ -36,7 +36,7 @@ Convenciones recomendadas:
 No usar para deploy:
 
 - `docker-compose.yml`: reservado para local/dev.
-- `docker-compose.site.yml`: no forma parte del camino operativo base.
+- `docker-compose.site.yml`: no forma parte del camino operativo base. <!-- docs-paths: referencia histórica -->
 
 Para que los comandos sean copiables, definir variables en cada sesion SSH:
 
@@ -769,7 +769,7 @@ Homologacion usa el mismo compose de workers que produccion y
 `deploy_refresh.sh` refresca SISOC-Mobile automaticamente:
 
 ```bash
-bash scripts/operacion/deploy_refresh.sh
+bash src/scripts/operacion/deploy_refresh.sh
 ```
 
 Revisar logs hasta Gunicorn:

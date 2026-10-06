@@ -1,5 +1,10 @@
-import { Fragment, useCallback, useEffect, useState, type FormEvent } from "react";
-import { Alert, Autocomplete, Button, Checkbox, FormControlLabel, TextField, Typography } from "@mui/material";
+import { Fragment, useCallback, useEffect, useState, type FormEvent, type ReactElement } from "react";
+import { Alert, Autocomplete, Button, Card, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, IconButton, Link, MenuItem, Snackbar, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { ApiError, get, postForm, type FormField, type FormSchema, type Itinerario, type Jornada } from "./api";
 
 const titles: Record<string, string> = {
@@ -24,8 +29,9 @@ function destination(kind: string, id: number) {
   return "";
 }
 
-function renderField(field: FormField, update: (name: string, value: string | string[]) => void, value: string | string[], searchable = false, readOnly = false) {
+function renderField(field: FormField, update: (name: string, value: string | string[]) => void, value: string | string[], searchable = false, readOnly = false, errorText = "", externalLabel = false) {
   const common = { name: field.name, id: field.name, disabled: field.disabled, required: field.required };
+  const helper = { error: Boolean(errorText), helperText: errorText || field.help || undefined };
   if (searchable && field.type === "select") {
     const selected = field.choices.find((choice) => choice.value !== "" && choice.value === String(value)) ?? null;
     return <>
@@ -42,12 +48,12 @@ function renderField(field: FormField, update: (name: string, value: string | st
         clearText="Limpiar selección"
         openText="Mostrar localidades"
         closeText="Cerrar localidades"
-        renderInput={(params) => <TextField {...params} size="small" required={field.required} placeholder="Buscar localidad…" />}
+        renderInput={(params) => <TextField {...params} {...helper} label={externalLabel ? undefined : field.label} required={field.required} placeholder="Buscar localidad…" />}
       />
     </>;
   }
-  if (field.type === "file") return <input {...common} type="file" />;
-  if (field.type === "textarea") return <TextField {...common} value={String(value)} multiline rows={3} size="small" fullWidth onChange={(event) => update(field.name, event.target.value)} />;
+  if (field.type === "file") return <TextField {...common} {...helper} type="file" fullWidth />;
+  if (field.type === "textarea") return <TextField {...common} {...helper} value={String(value)} multiline minRows={3} fullWidth onChange={(event) => update(field.name, event.target.value)} />;
   if (field.type === "multiselect") {
     const selected = (Array.isArray(value) ? value : []).flatMap((entry) => field.choices.filter((choice) => choice.value === entry));
     return <Autocomplete
@@ -58,16 +64,16 @@ function renderField(field: FormField, update: (name: string, value: string | st
       isOptionEqualToValue={(option, current) => option.value === current.value}
       value={selected}
       onChange={(_event, newValue) => update(field.name, newValue.map((option) => option.value))}
-      renderInput={(params) => <TextField {...params} size="small" placeholder="Buscar vehículo…" />}
+      renderInput={(params) => <TextField {...params} {...helper} placeholder="Buscar vehículo…" />}
     />;
   }
   if (field.type === "select") {
-    return <select {...common} value={value} onChange={(event) => update(field.name, event.target.value)}>
-      {field.choices.map((choice) => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
-    </select>;
+    return <TextField {...common} {...helper} select label={externalLabel ? undefined : field.label.replace(/\s*\*+\s*$/, "")} slotProps={externalLabel ? { select: { 'aria-labelledby': `${field.name}-label` } } : undefined} fullWidth value={String(value)} onChange={(event) => update(field.name, event.target.value)}>
+      {field.choices.map((choice) => <MenuItem key={choice.value} value={choice.value}>{choice.label}</MenuItem>)}
+    </TextField>;
   }
-  if (field.type === "checkbox") return <input {...common} type="checkbox" checked={value === "True" || value === "true"} onChange={(event) => update(field.name, event.target.checked ? "true" : "false")} />;
-  return <TextField {...common} type={field.type || "text"} value={String(value)} size="small" fullWidth slotProps={{ input: { readOnly }, htmlInput: { min: field.min || undefined, max: field.max || undefined, step: field.step || undefined } }} onChange={(event) => update(field.name, event.target.value)} />;
+  if (field.type === "checkbox") return <Checkbox {...common} size="small" checked={value === "True" || value === "true"} onChange={(event) => update(field.name, event.target.checked ? "true" : "false")} />;
+  return <TextField {...common} {...helper} type={field.type || "text"} value={String(value)} fullWidth slotProps={{ input: { readOnly }, htmlInput: { min: field.min || undefined, max: field.max || undefined, step: field.step || undefined } }} onChange={(event) => update(field.name, event.target.value)} />;
 }
 
 function ageFromBirthDate(value: string) {
@@ -194,7 +200,7 @@ export function WorkflowForm({ kind, id, navigate }: { kind: string; id: number;
       data.set("referente_apellido_renaper", String(values.apellido || ""));
     }
     try {
-      const result = await postForm<{ redirect?: string }>(`/forms/${kind}/${id}/`, data);
+      const result = await postForm<{ redirect?: string }>(`/forms/${kind}/${id}/`, data, isRegistro);
       if (kind === "registro-create") {
         setSchema(null);
         setSaveMessage("Se creó el registro correctamente. Podés cargar el siguiente.");
@@ -210,7 +216,7 @@ export function WorkflowForm({ kind, id, navigate }: { kind: string; id: number;
     if (field.type === "checkbox") return <FormControlLabel
       key={name}
       className="wide registro-checkbox"
-      label={field.label}
+      label={<span>{field.label}{field.help && <small>{field.help}</small>}</span>}
       control={<Checkbox size="small" name={name} disabled={field.disabled} checked={values[name] === "true" || values[name] === "True"} onChange={(event) => update(name, event.target.checked ? "true" : "false")} />}
     />;
     const required = name.startsWith("graduacion_")
@@ -218,24 +224,30 @@ export function WorkflowForm({ kind, id, navigate }: { kind: string; id: number;
       : field.required;
     const readOnly = ["nombre", "apellido", "edad", "genero"].includes(name);
     const fieldErrors = error instanceof ApiError ? error.fields?.[name] : undefined;
+    if (field.type === "select") return <div key={name} className={wide ? "wide" : ""}>
+      {name === "sexo" && <Typography component="label" id="sexo-label" className="external-field-label">{field.label}{required ? " *" : ""}</Typography>}
+      {renderField({ ...field, required, disabled: field.disabled || (verifying && ["dni", "sexo"].includes(name)) }, update, values[name] ?? field.value, false, readOnly, fieldErrors?.map((message) => message.message).join(", "), name === "sexo")}
+    </div>;
     return <label key={name} className={`${wide ? "wide " : ""}${readOnly ? "registro-readonly" : ""}`} htmlFor={name}>
       {field.label}{required ? " *" : ""}
-      {renderField({ ...field, required, disabled: field.disabled || (verifying && ["dni", "sexo"].includes(name)) }, update, values[name] ?? field.value, false, readOnly)}
+      {renderField({ ...field, required, disabled: field.disabled || (verifying && ["dni", "sexo"].includes(name)) }, update, values[name] ?? field.value, false, readOnly, fieldErrors?.map((message) => message.message).join(", "))}
       {readOnly && <small>Se completa al verificar RENAPER.</small>}
-      {field.file_url && <a href={field.file_url} target="_blank" rel="noreferrer">Ver archivo actual</a>}
-      {field.help && <small>{field.help}</small>}
-      {fieldErrors && <small className="action-error" role="alert">{fieldErrors.map((message) => message.message).join(", ")}</small>}
+      {field.file_url && <Link href={field.file_url} target="_blank" rel="noreferrer">Ver archivo actual</Link>}
+      {field.type === "checkbox" && field.help && <small>{field.help}</small>}
     </label>;
   }
   const attentionFields = ["graduacion_izquierda", "graduacion_derecha", "resultado", "cantidad_lentes", "adjunto", "primera_vez_anteojos", "observaciones"];
   return <>
-    <button className="back" onClick={() => navigate(schema?.back || destination(kind, id))}>← Volver</button>
+    <Button className="back" variant="text" startIcon={<ArrowBackIcon />} onClick={() => navigate(schema?.back || destination(kind, id))}>Volver</Button>
     <div className="heading"><div><p className="eyebrow">Ver para ser libre</p><Typography variant="h4Bold" component="h1">{titles[kind] || "Formulario"}</Typography></div></div>
     {error && <Alert severity="error" role="alert" sx={{ mb: 2 }}>{error instanceof Error ? error.message : "Error al cargar el formulario."}{error instanceof ApiError && error.fields && <ul>{Object.entries(error.fields).map(([field, messages]) => <li key={field}>{field}: {messages.map((message) => message.message).join(", ")}</li>)}</ul>}</Alert>}
-    {saveMessage && <Alert severity="success" role="status" sx={{ mb: 2 }}>{saveMessage}</Alert>}
+    <Snackbar open={Boolean(saveMessage)} autoHideDuration={6000} anchorOrigin={{ vertical: "bottom", horizontal: "left" }} onClose={() => setSaveMessage("")} sx={{ left: { xs: 3, md: 33 }, maxWidth: 520 }}>
+      <Alert severity="success" variant="filled" elevation={6} role="status" onClose={() => setSaveMessage("")}>{saveMessage}</Alert>
+    </Snackbar>
     {!schema && !error && <p>Cargando formulario…</p>}
     {schema?.instrucciones && <Alert severity="info" sx={{ mb: 2 }}><strong>Correcciones solicitadas:</strong> {schema.instrucciones}</Alert>}
-    {schema && <section className="card"><form className={`form-grid${isJornada ? " jornada-form" : ""}${isRegistro ? " registro-form" : ""}`} onSubmit={submit}>
+    {schema && <Card component="section" className="card"><form className={`form-grid${isJornada ? " jornada-form" : ""}${isRegistro ? " registro-form" : ""}`} onSubmit={submit}>
+      {isRegistro && <input type="hidden" name="renaper_estado" value={verified ? "validado" : ""} />}
       {isRegistro ? <>
         <section className="wide registro-section" aria-labelledby="registro-identificacion">
           <Typography id="registro-identificacion" component="h2" variant="h6" className="registro-section-title">Identificación RENAPER</Typography>
@@ -268,21 +280,33 @@ export function WorkflowForm({ kind, id, navigate }: { kind: string; id: number;
         const prefix = item.name.slice(0, -"_cumple".length);
         const itemFields = [item, ...schema.fields.filter((field) => field.name === `${prefix}_observacion` || field.name === `${prefix}_evidencia`)];
         return <fieldset className="wide checklist-item" key={prefix} aria-label={item.label.replace(/\s*\*+\s*$/, "")}>
-          {itemFields.map((field) => <label key={field.name} htmlFor={field.name}>
+          {itemFields.map((field) => field.type === "checkbox" ? <FormControlLabel
+            key={field.name}
+            className="checkbox-row"
+            label={<span>{field.label.replace(/\s*\*+\s*$/, "")}{field.help && <small>{field.help}</small>}</span>}
+            control={renderField(field, update, values[field.name] ?? field.value) as ReactElement}
+          /> : field.type === "select" ? <div key={field.name}>
+            {renderField(field, update, values[field.name] ?? field.value)}
+          </div> : <label key={field.name} htmlFor={field.name}>
             {field.label.replace(/\s*\*+\s*$/, "")}{field.required ? " *" : ""}
             {renderField(field, update, values[field.name] ?? field.value)}
-            {field.file_url && <a href={field.file_url} target="_blank" rel="noreferrer">Ver archivo actual</a>}
-      {field.help && <small>{field.help}</small>}
+            {field.file_url && <Link href={field.file_url} target="_blank" rel="noreferrer">Ver archivo actual</Link>}
           </label>)}
         </fieldset>;
       }) : schema.fields.filter((field) => field.name !== "localidad_filtro").map((field) => {
         const isPhoneField = field.name === "referente_telefono" || field.name === "telefono";
         const pairWithRenaper = isPhoneField && (kind.startsWith("registro") || kind.startsWith("jornada"));
-        const fieldLabel = <label className={field.type === "textarea" || field.type === "multiselect" ? "wide" : ""} htmlFor={field.name}>
+        const fieldLabel = field.type === "checkbox" ? <FormControlLabel
+          className="checkbox-row"
+          label={<span>{field.label}{field.help && <small>{field.help}</small>}</span>}
+          control={renderField(field, update, values[field.name] ?? field.value) as ReactElement}
+        /> : field.type === "select" ? <div>
+          {isJornada && field.name === "localidad" && <Typography component="label" htmlFor={field.name} className="external-field-label">{field.label}{field.required ? " *" : ""}</Typography>}
+          {renderField(field, update, values[field.name] ?? field.value, isJornada && field.name === "localidad", false, "", isJornada && field.name === "localidad")}
+        </div> : <label className={field.type === "textarea" || field.type === "multiselect" ? "wide" : ""} htmlFor={field.name}>
           {field.label}{field.required ? " *" : ""}
           {renderField(field, update, values[field.name] ?? field.value, isJornada && field.name === "localidad")}
-          {field.file_url && <a href={field.file_url} target="_blank" rel="noreferrer">Ver archivo actual</a>}
-      {field.help && <small>{field.help}</small>}
+          {field.file_url && <Link href={field.file_url} target="_blank" rel="noreferrer">Ver archivo actual</Link>}
         </label>;
         return <Fragment key={field.name}>
           {pairWithRenaper ? (
@@ -306,31 +330,57 @@ export function WorkflowForm({ kind, id, navigate }: { kind: string; id: number;
           </>}
         </Fragment>;
       })}
-      <div className="form-actions"><Button variant="outlined" size={isRegistro ? "small" : "medium"} type="button" onClick={() => navigate(schema?.back || destination(kind, id))}>{isRegistro ? "Volver" : "Cancelar"}</Button><Button variant="contained" size={isRegistro ? "small" : "medium"} disabled={saving || verifying} type="submit">{saving ? "Guardando…" : kind === "registro-create" ? "Guardar y continuar" : "Guardar"}</Button></div>
-    </form></section>}
+      <div className="form-actions"><Button variant="outlined" size={isRegistro ? "small" : "large"} type="button" onClick={() => navigate(schema?.back || destination(kind, id))}>{isRegistro ? "Volver" : "Cancelar"}</Button><Button variant="contained" size={isRegistro ? "small" : "large"} disabled={saving || verifying} type="submit">{saving ? "Guardando…" : kind === "registro-create" ? "Guardar y continuar" : "Guardar"}</Button></div>
+    </form></Card>}
   </>;
 }
 
-export function ActionButton({ kind, id, label, after, data }: { kind: string; id: number; label: string; after?: () => void; data?: FormData }) {
+export function ActionButton({ kind, id, label, after, data, iconOnly = false }: { kind: string; id: number; label: string; after?: () => void; data?: FormData; iconOnly?: boolean }) {
+  const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  async function run() {
+  const [preview, setPreview] = useState<{ total_afectados: number; total_borrado_fisico: number; desglose_por_modelo: { modelo: string; cantidad: number; modo: string }[] } | null>(null);
+  async function execute() {
     setBusy(true);
     setError("");
     try {
-      if (kind.startsWith("eliminar-")) {
-        const { preview } = await get<{ preview: { total_afectados: number; total_borrado_fisico: number; desglose_por_modelo: { modelo: string; cantidad: number; modo: string }[] } }>(`/actions/${kind}/${id}/`);
-        const affected = preview.desglose_por_modelo.map((item) => `${item.modelo}: ${item.cantidad} (${item.modo === "borrado_fisico" ? "borrado físico" : "baja lógica"})`).join("\n");
-        if (!window.confirm(`${label}\n\nElementos afectados: ${preview.total_afectados}\n${affected}\n\n¿Confirmás la operación?`)) { setBusy(false); return; }
-      }
       await postForm(`/actions/${kind}/${id}/`, data || new FormData());
+      setPreview(null);
       if (after) after();
       else window.location.reload();
-    }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "No se pudo completar la acción."); }
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "No se pudo completar la acción."); }
     finally { setBusy(false); }
   }
-  return <span className="action-control"><button type="button" disabled={busy} onClick={run}>{busy ? "Procesando…" : label}</button>{error && <small className="action-error" role="alert">{error}</small>}</span>;
+  async function run() {
+    if (!kind.startsWith("eliminar-")) { await execute(); return; }
+    setBusy(true);
+    setError("");
+    try {
+      const response = await get<{ preview: NonNullable<typeof preview> }>(`/actions/${kind}/${id}/`);
+      setPreview(response.preview);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "No se pudo cargar el detalle de la operación."); }
+    finally { setBusy(false); }
+  }
+  const destructive = kind.startsWith("eliminar-");
+  const actionIcon = destructive ? <DeleteIcon /> : kind === "presentar" ? <ArrowForwardIcon /> : kind === "cierre-definitivo" ? <CheckIcon /> : undefined;
+  return <span className="action-control">
+    {iconOnly
+      ? <Tooltip title={label}><span><IconButton size="small" color="error" aria-label={label} disabled={busy} onClick={run}><DeleteIcon /></IconButton></span></Tooltip>
+      : <Button variant="outlined" size="small" color={destructive ? "error" : "primary"} startIcon={actionIcon} disabled={busy} onClick={run}>{busy ? "Procesando…" : label}</Button>}
+    {error && !preview && <small className="action-error" role="alert">{error}</small>}
+    <Dialog open={!!preview} onClose={() => { if (!busy) setPreview(null); }} aria-labelledby={`delete-title-${kind}-${id}`} className="vpsl-delete-dialog" transitionDuration={reducedMotion ? 0 : undefined}>
+      <DialogTitle id={`delete-title-${kind}-${id}`}>Confirmar: {label.toLowerCase()}</DialogTitle>
+      <DialogContent>
+        <p>Esta operación afecta {preview?.total_afectados} elementos. Revisá el detalle antes de continuar.</p>
+        <ul>{preview?.desglose_por_modelo.map((item) => <li key={item.modelo}>{item.modelo}: {item.cantidad} ({item.modo === "borrado_fisico" ? "borrado físico" : "baja lógica"})</li>)}</ul>
+        {error && <Alert severity="error" role="alert">{error}</Alert>}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setPreview(null)} disabled={busy}>Cancelar</Button>
+        <Button color="error" variant="contained" startIcon={<DeleteIcon />} onClick={execute} disabled={busy}>{busy ? "Eliminando…" : label}</Button>
+      </DialogActions>
+    </Dialog>
+  </span>;
 }
 
 export function EvaluateItinerary({ itinerary }: { itinerary: Itinerario }) {
@@ -376,20 +426,20 @@ export function EvaluateItinerary({ itinerary }: { itinerary: Itinerario }) {
     finally { setBusy(false); }
   }
   const options = itinerary.estados_evaluacion || [];
-  return <section className="card"><h2>Evaluación del itinerario</h2><p>Revisá la carta y decidí el estado del itinerario.</p>
+  return <Card component="section" className="card"><h2>Evaluación del itinerario</h2><p>Revisá la carta y decidí el estado del itinerario.</p>
     {error && <Alert severity="error" role="alert" sx={{ mb: 2 }}>{error}</Alert>}
     <form className="form-grid" onSubmit={submit}>
-      {itinerary.carta_archivo_url && <label>Carta archivo <a href={itinerary.carta_archivo_url} target="_blank" rel="noreferrer">Ver archivo</a><select name="carta_archivo_estado" value={cartaArchivoEstado} onChange={(event) => setCartaArchivoEstado(event.target.value)}>{options.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label>}
-      {itinerary.carta_referencia && <label>Carta referencia<select name="carta_referencia_estado" value={cartaReferenciaEstado} onChange={(event) => setCartaReferenciaEstado(event.target.value)}>{options.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label>}
-      <label className="wide">Observaciones para Provincia<textarea name="subsanacion_observaciones" value={observaciones} onChange={(event) => setObservaciones(event.target.value)} /></label>
+      {itinerary.carta_archivo_url && <label>Carta archivo <Link href={itinerary.carta_archivo_url} target="_blank" rel="noreferrer">Ver archivo</Link><TextField select name="carta_archivo_estado" fullWidth value={cartaArchivoEstado} onChange={(event) => setCartaArchivoEstado(event.target.value)}>{options.map((option) => <MenuItem value={option.value} key={option.value}>{option.label}</MenuItem>)}</TextField></label>}
+      {itinerary.carta_referencia && <label>Carta referencia<TextField select name="carta_referencia_estado" fullWidth value={cartaReferenciaEstado} onChange={(event) => setCartaReferenciaEstado(event.target.value)}>{options.map((option) => <MenuItem value={option.value} key={option.value}>{option.label}</MenuItem>)}</TextField></label>}
+      <label className="wide">Observaciones para Provincia<TextField name="subsanacion_observaciones" multiline minRows={3} fullWidth value={observaciones} onChange={(event) => setObservaciones(event.target.value)} /></label>
       <Alert severity={feedback.severity} sx={{ mt: 1 }} className="wide">{feedback.text}</Alert>
       <div className="form-actions">
-        <button disabled={busy || aprobarDisabled} type="submit" name="accion_evaluacion" value="aprobar">Aprobar</button>
-        <button disabled={busy || subsanarDisabled} type="submit" name="accion_evaluacion" value="subsanar">Pedir subsanación</button>
-        <button disabled={busy || rechazarDisabled} type="submit" name="accion_evaluacion" value="rechazar">Rechazar</button>
+        <Button variant="contained" startIcon={<CheckIcon />} disabled={busy || aprobarDisabled} type="submit" name="accion_evaluacion" value="aprobar">Aprobar</Button>
+        <Button variant="outlined" startIcon={<ArrowForwardIcon />} disabled={busy || subsanarDisabled} type="submit" name="accion_evaluacion" value="subsanar">Pedir subsanación</Button>
+        <Button variant="outlined" color="error" startIcon={<CloseIcon />} disabled={busy || rechazarDisabled} type="submit" name="accion_evaluacion" value="rechazar">Rechazar</Button>
       </div>
     </form>
-  </section>;
+  </Card>;
 }
 
 export function BulkLaboratory({ jornada }: { jornada: Jornada }) {
@@ -405,11 +455,11 @@ export function BulkLaboratory({ jornada }: { jornada: Jornada }) {
     catch (reason) { setError(reason instanceof Error ? reason.message : "No se pudieron actualizar los casos."); }
     finally { setBusy(false); }
   }
-  return <section className="card"><h2>Actualizar laboratorio en lote</h2><p>Seleccioná casos de esta página que estén en el mismo estado.</p>{error && <Alert severity="error" role="alert" sx={{ mb: 2 }}>{error}</Alert>}
+  return <Card component="section" className="card"><h2>Actualizar laboratorio en lote</h2><p>Seleccioná casos de esta página que estén en el mismo estado.</p>{error && <Alert severity="error" role="alert" sx={{ mb: 2 }}>{error}</Alert>}
     <form className="form-grid" onSubmit={submit}>
-      <div className="wide">{available.map((caso) => <label key={caso.id} className="checkbox-row"><input type="checkbox" name="casos" value={caso.id} />{caso.persona} · {caso.estado}</label>)}</div>
-      <label>Fecha<input name="fecha" type="date" required /></label><label>Responsable<input name="responsable" required /></label>
-      <div className="form-actions"><button type="submit" disabled={busy}>{busy ? "Actualizando…" : "Actualizar seleccionados"}</button></div>
+      <div className="wide">{available.map((caso) => <FormControlLabel key={caso.id} className="checkbox-row" label={`${caso.persona} · ${caso.estado}`} control={<Checkbox size="small" name="casos" value={caso.id} />} />)}</div>
+      <label>Fecha<TextField name="fecha" type="date" fullWidth required /></label><label>Responsable<TextField name="responsable" fullWidth required /></label>
+      <div className="form-actions"><Button variant="contained" startIcon={<CheckIcon />} type="submit" disabled={busy}>{busy ? "Actualizando…" : "Actualizar seleccionados"}</Button></div>
     </form>
-  </section>;
+  </Card>;
 }

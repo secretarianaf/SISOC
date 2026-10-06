@@ -2,7 +2,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-INFRA_DIR = REPO_ROOT / "scripts" / "infra"
+INFRA_DIR = REPO_ROOT / "src" / "scripts" / "infra"
 
 
 def test_infra_scripts_use_organization_runner_units_by_default():

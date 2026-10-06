@@ -29,6 +29,18 @@ Usar `docs/ia/CONTEXT_HYGIENE.md` para decidir si hace falta ampliar. Abrir mas 
 
 ## Implementacion
 
+### Verticales independientes
+- Guia vigente y checklists: `docs/desarrollo/verticales_independientes.md`.
+- Kernel no importa core/verticales; un servicio no importa otro.
+- Elegir dueño en `src/backends/`; recursos/tests van junto a ese dueño.
+- Usar contribuciones HTML, JSON o reenvío existentes para datos remotos.
+- Registrar prefijos de backend y regenerar `src/backends/config/url_registry.json`.
+- Resolver archivos por app o `__file__`, no por BASE_DIR + nombre de app.
+- Cambio de app label: conservar tabla/content type con migraciones de estado.
+- Comandos del grafo completo y collectstatic: migrador, no web de deploy.
+- Revisar imports, runtime/imagen aislada, permisos, fallback y plan de deploy.
+- Rutas documentadas: `python src/scripts/ci/check_docs_paths.py`.
+
 - Reutilizar patrones existentes; no inventar modelos, endpoints, permisos o schemas sin evidencia en el repo o pedido explicito.
 - No mezclar feature, refactor amplio y formateo masivo.
 - Mantener compatibilidad hacia atras salvo pedido explicito.
@@ -41,10 +53,10 @@ Usar `docs/ia/CONTEXT_HYGIENE.md` para decidir si hace falta ampliar. Abrir mas 
 
 ## Herramientas para agentes
 
-- `scripts/ai/codex_task.ps1 <slug>`: crea branch, worktree y bootstrap desde `origin/development`.
-- `scripts/ai/codex_run.ps1 validate`: validacion de cierre cuando aplique; para Python modificado, sumar `scripts/ai/codex_run.ps1 pylint <archivo.py>`.
-- `scripts/ai/preflight.sh <tipo> [path]`: resumen corto del contexto.
-- `python scripts/ai/context_memory.py preflight --target <path>`: resuelve memoria reutilizable y detecta si quedo vieja.
+- `src/scripts/ai/codex_task.ps1 <slug>`: crea branch, worktree y bootstrap desde `origin/development`.
+- `src/scripts/ai/codex_run.ps1 validate`: validacion de cierre cuando aplique; para Python modificado, sumar `src/scripts/ai/codex_run.ps1 pylint <archivo.py>`.
+- `src/scripts/ai/preflight.sh <tipo> [path]`: resumen corto del contexto.
+- `python src/scripts/ai/context_memory.py preflight --target <path>`: resuelve memoria reutilizable y detecta si quedo vieja.
 - Skills del repo: la fuente esta en `.agents/skills/` y `.claude/skills/` es una copia generada (ver `docs/ia/SKILLS.md`).
 
 ## Documentacion

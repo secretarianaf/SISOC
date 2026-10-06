@@ -56,6 +56,7 @@ from centrodeinfancia.access import (
     es_egp_simepi,
     get_provincias_completas_egp_ids,
     get_object_scoped_cdi_or_404,
+    puede_administrar_usuarios_cdi,
     puede_generar_usuario_cdi,
     puede_gestionar_referentes_cdi,
     puede_ver_credenciales_cdi,
@@ -110,9 +111,8 @@ from centrodeinfancia.services_renaper_bloques import (
     valores_bloque,
 )
 from centrodeinfancia.services_user_provisioning import (
-    crear_referente_cdi_automaticamente,
+    actualizar_referente_cdi,
     crear_usuario_trabajador_automaticamente,
-    sincronizar_email_referente_cdi,
     sincronizar_email_trabajador,
 )
 from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
@@ -356,23 +356,21 @@ class _RenaperBloquesFormMixin:
 
 class _AutomaticReferenteProvisioningMixin:
     def form_valid(self, form):
-        email_referente_cambio = "email_referente" in form.changed_data
         object_pk = getattr(self.object, "pk", None)
-        email_anterior = None
+        anterior = {}
         if object_pk:
-            email_anterior = (
+            anterior = (
                 CentroDeInfancia.objects.filter(pk=object_pk)
-                .values_list("email_referente", flat=True)
+                .values("email_referente", "dni_referente")
                 .first()
-            )
+            ) or {}
         response = super().form_valid(form)
-        crear_referente_cdi_automaticamente(self.request, self.object)
-        if email_referente_cambio:
-            sincronizar_email_referente_cdi(
-                self.request,
-                self.object,
-                email_anterior,
-            )
+        actualizar_referente_cdi(
+            self.request,
+            self.object,
+            dni_anterior=anterior.get("dni_referente"),
+            email_anterior=anterior.get("email_referente"),
+        )
         return response
 
 
@@ -855,18 +853,24 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["puede_ver_usuarios_cdi"] = puede_ver_usuarios_cdi(
             self.request.user, self.object
         )
+        context["puede_administrar_usuarios_cdi"] = puede_administrar_usuarios_cdi(
+            self.request.user, self.object
+        )
         if context["puede_ver_usuarios_cdi"]:
             usuarios_cdi = AccesoCDI.objects.filter(centro=self.object)
-            if not context["puede_gestionar_referentes_cdi"]:
+            if not context["puede_administrar_usuarios_cdi"]:
                 usuarios_cdi = usuarios_cdi.filter(
                     user=self.request.user,
                     activo=True,
                 )
+            # Responsable primero; después activos, suspendidos y bajas.
             context["usuarios_cdi"] = usuarios_cdi.select_related(
                 "user", "user__profile"
-            ).order_by("-activo", "user__username")
+            ).order_by("-es_responsable", "-activo", "-estado", "user__username")
             context["usuarios_cdi_columnas"] = (
-                5 if context["puede_ver_credenciales_cdi"] else 4
+                4
+                + int(context["puede_ver_credenciales_cdi"])
+                + int(context["puede_administrar_usuarios_cdi"])
             )
         return context
 
@@ -1100,7 +1104,6 @@ class TrabajadorCentroInfanciaCreateView(
         return kwargs
 
     def form_valid(self, form):
-        renaper_prefill, _ = self._obtener_prefill_renaper()
         email_cambio = "email" in form.changed_data
         form.instance.centro = self.centro
         form.instance.campos_verificados_renaper = form.campos_bloqueados_renaper

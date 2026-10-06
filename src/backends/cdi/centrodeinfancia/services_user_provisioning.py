@@ -8,6 +8,7 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
 from centrodeinfancia.models import AccesoCDI
+from centrodeinfancia.services_accesos_cdi import asignar_responsable
 from core.constants import UserGroups
 from users.models import Profile
 from users.services_generate_user import DatosUsuarioDelegado, generar_usuario_delegado
@@ -18,8 +19,15 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-def crear_referente_cdi_automaticamente(request, centro):
-    """Crea el referente inicial sin comprometer el guardado del CDI."""
+def crear_referente_cdi_automaticamente(
+    request, centro, *, reemplaza_responsable=False
+):
+    """Vincula al referente de la ficha como responsable, sin comprometer el guardado.
+
+    Sin ``reemplaza_responsable`` solo actúa si el CDI todavía no tiene usuarios
+    (referente inicial). Con él, el referente cambió de persona: se crea o vincula
+    su usuario como nuevo responsable y el anterior conserva su acceso.
+    """
     datos_referente = {
         "first_name": (centro.nombre_referente or "").strip(),
         "last_name": (centro.apellido_referente or "").strip(),
@@ -37,7 +45,7 @@ def crear_referente_cdi_automaticamente(request, centro):
             "El CDI se guardó sin crear referente: complete nombre, apellido y email.",
         )
         return
-    if AccesoCDI.objects.filter(centro=centro).exists():
+    if not reemplaza_responsable and AccesoCDI.objects.filter(centro=centro).exists():
         return
     usuarios_existentes = list(
         User.objects.filter(email__iexact=datos_referente["email"]).order_by("pk")[:2]
@@ -46,18 +54,16 @@ def crear_referente_cdi_automaticamente(request, centro):
         usuario = usuarios_existentes[0]
         grupo, _ = Group.objects.get_or_create(name=UserGroups.CDI_REFERENTE_CENTRO)
         usuario.groups.add(grupo)
-        acceso, creado = AccesoCDI.objects.get_or_create(
+        acceso, _ = AccesoCDI.objects.get_or_create(
             user=usuario,
             centro=centro,
-            defaults={"creado_por": request.user, "activo": True},
+            defaults={"creado_por": request.user},
         )
-        if not creado and not acceso.activo:
-            acceso.activo = True
-            acceso.fecha_baja = None
-            acceso.save(update_fields=["activo", "fecha_baja"])
+        # Si tenía un acceso suspendido o dado de baja, vuelve a estar activo.
+        asignar_responsable(acceso)
         messages.success(
             request,
-            f"Usuario existente «{usuario.username}» asociado como referente.",
+            f"Usuario existente «{usuario.username}» asociado como referente responsable.",
         )
         return
     if usuarios_existentes:
@@ -77,12 +83,17 @@ def crear_referente_cdi_automaticamente(request, centro):
             actor=request.user,
             datos=DatosUsuarioDelegado(**datos_referente),
             grupo_nombre=UserGroups.CDI_REFERENTE_CENTRO,
-            vinculo_callback=lambda nuevo_usuario: AccesoCDI.objects.create(
-                user=nuevo_usuario,
-                centro=centro,
-                creado_por=request.user,
+            vinculo_callback=lambda nuevo_usuario: asignar_responsable(
+                AccesoCDI.objects.create(
+                    user=nuevo_usuario,
+                    centro=centro,
+                    creado_por=request.user,
+                )
             ),
             request=request,
+            # Quien puede editar la ficha del CDI define a su referente; el
+            # usuario se crea solo para este CDI.
+            delegacion_autorizada=True,
         )
     except ValidationError as exc:
         logger.warning(
@@ -197,17 +208,49 @@ def _sincronizar_email_si_cuenta_temporal(request, user, email, tipo_usuario):
     messages.success(request, f"Email del {tipo_usuario} actualizado.")
 
 
+def _cambio_persona_referente(dni_anterior, dni_actual):
+    """El referente es otra persona si cambió el DNI.
+
+    Sin DNI anterior (fichas previas) no se puede saber: se toma como la misma
+    persona y, si cambió el email, se sincroniza como antes.
+    """
+    anterior = "".join(ch for ch in str(dni_anterior or "") if ch.isdigit())
+    actual = "".join(ch for ch in str(dni_actual or "") if ch.isdigit())
+    return bool(anterior and actual and anterior != actual)
+
+
+def actualizar_referente_cdi(request, centro, *, dni_anterior, email_anterior):
+    """Refleja en los usuarios del CDI el referente guardado en la ficha.
+
+    - CDI sin usuarios: crea el referente inicial como responsable.
+    - Cambió la persona (otro DNI): el nuevo pasa a ser el responsable y el
+      anterior conserva su acceso; solo el responsable nuevo puede suspenderlo o
+      darlo de baja. No se toca el email de la cuenta anterior.
+    - Misma persona con otro email: se sincroniza el email de su cuenta.
+    """
+    if not AccesoCDI.objects.filter(centro=centro).exists():
+        crear_referente_cdi_automaticamente(request, centro)
+        return
+    if _cambio_persona_referente(dni_anterior, centro.dni_referente):
+        crear_referente_cdi_automaticamente(request, centro, reemplaza_responsable=True)
+        return
+    email_actual = (centro.email_referente or "").strip()
+    if email_actual.lower() != (email_anterior or "").strip().lower():
+        sincronizar_email_referente_cdi(request, centro, email_anterior)
+
+
 def sincronizar_email_referente_cdi(request, centro, email_anterior):
     """Actualiza solo el acceso que corresponde al email anterior del referente."""
     accesos = AccesoCDI.objects.select_related("user", "user__profile").filter(
         centro=centro,
         activo=True,
     )
-    candidatos = list(
-        accesos.filter(user__email__iexact=(email_anterior or "").strip())[:2]
-        if email_anterior
-        else []
-    )
+    # El responsable es el referente de la ficha: es la cuenta a sincronizar.
+    candidatos = list(accesos.filter(es_responsable=True)[:2])
+    if not candidatos and email_anterior:
+        candidatos = list(
+            accesos.filter(user__email__iexact=(email_anterior or "").strip())[:2]
+        )
     if not candidatos:
         candidatos = list(accesos.order_by("pk")[:2])
     acceso = candidatos[0] if len(candidatos) == 1 else None

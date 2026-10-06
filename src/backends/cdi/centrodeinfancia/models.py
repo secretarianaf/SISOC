@@ -2715,9 +2715,21 @@ class AccesoCDI(models.Model):
     usuario provincial genera usuarios "CDI - Referente centro" asociados a un
     centro puntual (relación 1..N, máximo definido en la capa de servicio).
     El rol/permisos los aporta el grupo, no este modelo.
+
+    ``estado`` es la fuente de verdad (activo, suspendido o baja) y ``activo``
+    queda sincronizado para las consultas existentes: solo un acceso activo
+    habilita el CDI. ``es_responsable`` marca al referente vigente de la ficha,
+    el único referente que administra los usuarios del centro.
     """
 
     LIMITE_USUARIOS_POR_CENTRO = 10
+
+    class Estado(models.TextChoices):
+        ACTIVO = "activo", "Activo"
+        # Temporal: se puede reactivar y sigue ocupando cupo.
+        SUSPENDIDO = "suspendido", "Suspendido"
+        # Definitiva para este CDI: libera cupo.
+        BAJA = "baja", "Baja"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -2737,6 +2749,18 @@ class AccesoCDI(models.Model):
         related_name="accesos_cdi_creados",
     )
     activo = models.BooleanField(default=True)
+    estado = models.CharField(
+        max_length=16, choices=Estado.choices, default=Estado.ACTIVO
+    )
+    es_responsable = models.BooleanField(
+        default=False,
+        help_text="Referente vigente de la ficha: administra los usuarios del CDI.",
+    )
+    motivo_estado = models.TextField(
+        blank=True,
+        default="",
+        help_text="Motivo de la última suspensión o baja.",
+    )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_baja = models.DateTimeField(null=True, blank=True)
 
@@ -2756,5 +2780,16 @@ class AccesoCDI(models.Model):
         ]
 
     def __str__(self):
-        estado = "activo" if self.activo else "baja"
-        return f"{self.user_id} - {self.centro_id} ({estado})"
+        return f"{self.user_id} - {self.centro_id} ({self.estado})"
+
+    def save(self, *args, **kwargs):
+        # Un acceso *creado* con ``activo=False`` sin estado explícito es una baja
+        # (semántica previa al campo ``estado``). En una actualización manda el
+        # estado: al reactivar, la instancia todavía trae ``activo=False``.
+        if self._state.adding and not self.activo and self.estado == self.Estado.ACTIVO:
+            self.estado = self.Estado.BAJA
+        self.activo = self.estado == self.Estado.ACTIVO
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            kwargs["update_fields"] = set(update_fields) | {"activo", "estado"}
+        super().save(*args, **kwargs)

@@ -50,7 +50,10 @@ from centrodeinfancia.views_reportes import (
     ReporteCDIDescargaView,
     ReportesCDIView,
 )
-from centrodeinfancia.views_usuario_cdi import GenerarUsuarioCDIView
+from centrodeinfancia.views_usuario_cdi import (
+    GenerarUsuarioCDIView,
+    cambiar_estado_usuario_cdi,
+)
 from centrodeinfancia.views_usuario_egp import GenerarUsuarioEGPView
 
 
@@ -111,6 +114,13 @@ urlpatterns = [
             GenerarUsuarioCDIView.as_view()
         ),
         name="centrodeinfancia_generar_usuario",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/usuarios/<int:acceso_id>/estado/",
+        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
+            cambiar_estado_usuario_cdi
+        ),
+        name="centrodeinfancia_usuario_estado",
     ),
     path(
         "centrodeinfancia/editar/<int:pk>",

@@ -1,20 +1,30 @@
 import logging
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.core.exceptions import ValidationError
-from django.shortcuts import get_object_or_404
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 from django.views.generic import FormView
 
 from centrodeinfancia.access import (
     GRUPO_CDI_REFERENTE_CENTRO,
+    es_auditor_simepi,
+    es_responsable_cdi,
     puede_generar_usuario_cdi,
     usuarios_cdi_restantes,
 )
 from centrodeinfancia.forms_generar_usuario import GenerarUsuarioCDIForm
 from centrodeinfancia.models import AccesoCDI, CentroDeInfancia
+from centrodeinfancia.services_accesos_cdi import (
+    ACCION_BAJA,
+    ACCION_REACTIVAR,
+    ACCION_SUSPENDER,
+    cambiar_estado_acceso,
+)
 from users.services_generate_user import (
     DatosUsuarioDelegado,
     generar_usuario_delegado,
@@ -80,6 +90,11 @@ class GenerarUsuarioCDIView(LoginRequiredMixin, UserPassesTestMixin, FormView):
                 ),
                 limite_check=lambda: usuarios_cdi_restantes(self.centro) > 0,
                 request=self.request,
+                # El responsable genera referentes solo para su CDI (ya validado
+                # en test_func) sin tener la delegación del grupo en general.
+                delegacion_autorizada=es_responsable_cdi(
+                    self.request.user, self.centro
+                ),
             )
         except ValidationError as exc:
             for mensaje in exc.messages:
@@ -102,3 +117,44 @@ class GenerarUsuarioCDIView(LoginRequiredMixin, UserPassesTestMixin, FormView):
                 "puede_generar_otro": usuarios_cdi_restantes(self.centro) > 0,
             },
         )
+
+
+_MENSAJES_ACCION = {
+    ACCION_SUSPENDER: "suspendido",
+    ACCION_REACTIVAR: "reactivado",
+    ACCION_BAJA: "dado de baja",
+}
+
+
+@login_required
+@require_POST
+def cambiar_estado_usuario_cdi(request, pk, acceso_id):
+    """Botonera de "Usuarios del centro": suspender, reactivar o dar de baja.
+
+    Los permisos y las reglas (propio usuario, responsable, estados válidos) los
+    aplica ``cambiar_estado_acceso``.
+    """
+    if es_auditor_simepi(request.user):
+        raise PermissionDenied("El rol Auditoría tiene acceso de solo lectura.")
+    centro = get_object_or_404(CentroDeInfancia, pk=pk)
+    acceso = get_object_or_404(
+        AccesoCDI.objects.select_related("user", "centro"), pk=acceso_id, centro=centro
+    )
+    accion = request.POST.get("accion", "")
+    try:
+        cambiar_estado_acceso(
+            actor=request.user,
+            acceso=acceso,
+            accion=accion,
+            motivo=request.POST.get("motivo", ""),
+        )
+    except ValidationError as exc:
+        messages.error(request, " ".join(exc.messages))
+    else:
+        messages.success(
+            request,
+            f"Usuario «{acceso.user.username}» {_MENSAJES_ACCION[accion]}.",
+        )
+    return redirect(
+        reverse("centrodeinfancia_detalle", kwargs={"pk": centro.pk}) + "#usuarios"
+    )

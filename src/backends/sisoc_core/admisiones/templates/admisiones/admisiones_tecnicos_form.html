@@ -62,8 +62,10 @@
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             {% if admision_desincronizada %}
                                 El tipo de convenio fue actualizado desde el Legajo de la Organización
-                            {% else %}
+                            {% elif documentacion_desactualizada %}
                                 La Documentación relacionada a la Organización fue actualizada desde el Legajo de la Organización
+                            {% else %}
+                                Los datos de la Organización fueron actualizados desde el Legajo de la Organización
                             {% endif %}
                         </h5>
                     </div>
@@ -76,7 +78,9 @@
                             </p>
                             <select id="accionResyncConvenio" class="form-select" required>
                                 <option value="" selected disabled>Seleccione una opción...</option>
-                                <option value="actualizar">Actualizar Información desde Legajo Organización</option>
+                                <option value="actualizar">
+                                    Actualizar Información desde Legajo Organización (incluye datos de la Organización dentro del Informe Técnico)
+                                </option>
                                 <option value="continuar">Continuar operando con la Admisión actual</option>
                             </select>
                             {% if admision_desincronizada %}

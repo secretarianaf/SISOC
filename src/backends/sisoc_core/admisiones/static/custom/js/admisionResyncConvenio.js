@@ -20,7 +20,8 @@
     function mensajeParaAccion(accion) {
         if (accion === "actualizar") {
             return (
-                "La información de la Admisión se actualizará desde el Legajo de la " +
+                "La información de la Admisión, incluidos los datos de la Organización " +
+                "dentro del Informe Técnico, se actualizará desde el Legajo de la " +
                 "Organización y se perderá el progreso realizado. " +
                 "¿Está seguro de continuar?"
             );

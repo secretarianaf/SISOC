@@ -47,6 +47,7 @@ from comedores.services.capacitaciones_certificados_service import (
 )
 from comedores.utils import comedor_usa_admision_para_nomina
 from organizaciones.models import ArchivoOrganizacion, DocumentacionOrganizacion
+from admisiones.services import datos_organizacion_snapshot
 
 from django.db.models import Prefetch, Q
 import logging
@@ -995,8 +996,13 @@ class AdmisionService:
         documentacion_desactualizada, documentos_org_modificados = (
             AdmisionService.admision_documentacion_desactualizada(admision)
         )
+        datos_organizacion_desactualizados = (
+            datos_organizacion_snapshot.datos_organizacion_desactualizados(admision)
+        )
         mostrar_modal_resync_org = (
-            admision_desincronizada or documentacion_desactualizada
+            admision_desincronizada
+            or documentacion_desactualizada
+            or datos_organizacion_desactualizados
         ) and not getattr(admision, "enviada_a_archivo", False)
         return {
             "documentos": documentos_context["documentos"],
@@ -1039,6 +1045,7 @@ class AdmisionService:
             ),
             "documentacion_desactualizada": documentacion_desactualizada,
             "documentos_org_modificados": documentos_org_modificados,
+            "datos_organizacion_desactualizados": datos_organizacion_desactualizados,
             "mostrar_modal_resync_org": mostrar_modal_resync_org,
         }
 
@@ -1335,6 +1342,9 @@ class AdmisionService:
         admision.save(update_fields=["tipo_entidad_origen"])
         AdmisionService.congelar_documentacion_organizacional(admision)
         AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
+        datos_organizacion_snapshot.sincronizar_datos_organizacion(
+            admision, actualizar_informe=True
+        )
         logger.info(
             "Admision resincronizada desde la organizacion",
             extra={
@@ -1360,6 +1370,11 @@ class AdmisionService:
         # advertencia. NO se materializan nuevos ArchivoAdmision: "Continuar
         # operando con la Admision actual" NO debe clonar docs del legajo.
         AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
+        # Tampoco se toman los datos de la organizacion nueva para el informe
+        # tecnico: solo se mueve la linea de base (#2571).
+        datos_organizacion_snapshot.sincronizar_datos_organizacion(
+            admision, actualizar_informe=False
+        )
         logger.info(
             "Desincronizacion aceptada en admision",
             extra={
@@ -1399,8 +1414,19 @@ class AdmisionService:
             if slot not in actuales:
                 slots_a_refrescar.add(slot)  # quitado del legajo
 
+        datos_cambiaron = (
+            datos_organizacion_snapshot.datos_organizacion_desactualizados(admision)
+        )
+        datos_organizacion_snapshot.sincronizar_datos_organizacion(
+            admision, actualizar_informe=True
+        )
         if not slots_a_refrescar:
             AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
+            if datos_cambiaron:
+                return (
+                    True,
+                    "Datos de la organizacion actualizados desde el Legajo.",
+                )
             return True, "La documentacion ya estaba actualizada con el Legajo."
 
         # Mapa slot -> nombre del archivo vigente en el legajo. Permite distinguir

@@ -897,21 +897,30 @@ def resync_convenio_admision(request, admision_pk):
         Admision.objects.select_related("comedor__organizacion"), pk=admision_pk
     )
 
-    if accion == "actualizar":
-        # Si cambio el Tipo de Entidad, el convenio (y su set documental) cambia:
-        # se reconstruye todo (#1605). Si solo cambio la documentacion del legajo,
-        # la actualizacion es DIRIGIDA: refresca lo que cambio y preserva el resto,
-        # sin borrar los documentos cargados admision-side (#1799 feedback punto 1).
-        if AdmisionService.admision_desincronizada(admision):
-            ok, mensaje = AdmisionService.resync_admision_desde_organizacion(admision)
-        else:
-            ok, mensaje = AdmisionService.actualizar_documentacion_desde_organizacion(
-                admision, request.user
-            )
-    elif accion == "continuar":
-        ok, mensaje = AdmisionService.aceptar_desincronizacion_admision(admision)
-    else:
+    if accion not in ("actualizar", "continuar"):
         return JsonResponse({"success": False, "error": "Accion invalida."}, status=400)
+
+    # Documentacion, snapshots y datos del informe se actualizan juntos: si algo
+    # falla a mitad de camino no queda la admision a medio sincronizar (#2571).
+    with transaction.atomic():
+        if accion == "actualizar":
+            # Si cambio el Tipo de Entidad, el convenio (y su set documental)
+            # cambia: se reconstruye todo (#1605). Si solo cambio la documentacion
+            # del legajo, la actualizacion es DIRIGIDA: refresca lo que cambio y
+            # preserva el resto, sin borrar los documentos cargados admision-side
+            # (#1799 feedback punto 1).
+            if AdmisionService.admision_desincronizada(admision):
+                ok, mensaje = AdmisionService.resync_admision_desde_organizacion(
+                    admision
+                )
+            else:
+                ok, mensaje = (
+                    AdmisionService.actualizar_documentacion_desde_organizacion(
+                        admision, request.user
+                    )
+                )
+        else:
+            ok, mensaje = AdmisionService.aceptar_desincronizacion_admision(admision)
 
     if not ok:
         return JsonResponse({"success": False, "error": mensaje}, status=400)

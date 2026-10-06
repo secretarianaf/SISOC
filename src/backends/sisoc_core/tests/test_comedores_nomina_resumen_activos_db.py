@@ -263,3 +263,42 @@ def test_el_legajo_renderiza_asistentes_activos_y_bajas(
     assert response.context["nomina_asistentes"] == 2
     assert response.context["nomina_bajas"] == 2
     assert "Dados de baja" in response.content.decode()
+
+
+def test_el_detalle_de_nomina_muestra_genero_activo_y_bajas(
+    sexos, client, django_user_model
+):
+    """El detalle de nómina cuenta género sobre activos y muestra los dados de
+    baja debajo de la lista de espera."""
+    user = django_user_model.objects.create_superuser(
+        username="nomina_detalle_admin",
+        password="testpass",
+        email="nomina-detalle@example.com",
+    )
+    client.force_login(user)
+    programa = Programas.objects.create(
+        nombre="Programa nomina directa detalle", usa_admision_para_nomina=False
+    )
+    comedor = Comedor.objects.create(nombre="Comedor detalle", programa=programa)
+    _armar_nomina(
+        comedor,
+        sexos,
+        [
+            ("Masculino", Nomina.ESTADO_ACTIVO),
+            ("Femenino", Nomina.ESTADO_ACTIVO),
+            ("X", Nomina.ESTADO_ESPERA),
+            ("Masculino", Nomina.ESTADO_BAJA),
+            ("Femenino", Nomina.ESTADO_BAJA),
+        ],
+    )
+
+    response = client.get(reverse("nomina_directa_ver", kwargs={"pk": comedor.id}))
+
+    assert response.status_code == 200
+    assert response.context["cantidad_nomina"] == 2
+    assert response.context["nominaM"] == 1
+    assert response.context["nominaF"] == 1
+    assert response.context["espera"] == 1
+    contenido = " ".join(response.content.decode().split())
+    assert "Dados de baja 2" in contenido
+    assert contenido.index("Lista de espera 1") < contenido.index("Dados de baja 2")

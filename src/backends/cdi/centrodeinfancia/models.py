@@ -743,6 +743,29 @@ NOMINA_EDAD_UNIDAD_CHOICES = [
     ("anios", "Años"),
 ]
 
+
+def calcular_edad_y_unidad(fecha_nacimiento, hoy=None):
+    """Edad en meses antes del primer año y en años cumplidos desde entonces.
+
+    Devuelve ``(edad, unidad)`` con ``unidad`` en ``NOMINA_EDAD_UNIDAD_CHOICES``.
+    """
+    hoy = hoy or date.today()
+    meses = (
+        (hoy.year - fecha_nacimiento.year) * 12
+        + hoy.month
+        - fecha_nacimiento.month
+        - (hoy.day < fecha_nacimiento.day)
+    )
+    if meses < 12:
+        return max(meses, 0), "meses"
+    anios = (
+        hoy.year
+        - fecha_nacimiento.year
+        - ((hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
+    )
+    return max(anios, 0), "anios"
+
+
 NOMINA_COBERTURA_SALUD_CHOICES = [
     ("publica_exclusiva", "Pública exclusiva"),
     ("obra_social", "Obra social"),
@@ -1747,6 +1770,20 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
                 < (self.fecha_nacimiento.month, self.fecha_nacimiento.day)
             )
         )
+
+    @property
+    def edad_display(self):
+        """Edad al día de hoy con su unidad ("8 meses", "1 año", "2 años").
+
+        Se calcula en el momento: la unidad guardada en ``edad_unidad`` queda
+        desactualizada cuando el niño/a cumple el año.
+        """
+        if not self.fecha_nacimiento:
+            return None
+        edad, unidad = calcular_edad_y_unidad(self.fecha_nacimiento)
+        if unidad == "meses":
+            return f"{edad} {'mes' if edad == 1 else 'meses'}"
+        return f"{edad} {'año' if edad == 1 else 'años'}"
 
     @property
     def apoyo_desarrollo_unificado_display(self):

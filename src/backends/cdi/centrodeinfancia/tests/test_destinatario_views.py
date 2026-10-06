@@ -12,6 +12,7 @@ from centrodeinfancia.models import (
     NOMINA_VACUNAS,
     CentroDeInfancia,
     NominaCentroInfancia,
+    calcular_edad_y_unidad,
 )
 from centrodeinfancia.tests.test_destinatario_form import datos_validos
 from core.models import Provincia
@@ -509,3 +510,42 @@ class TestNominaCentroInfanciaDestinatarioDetailView:
             kwargs={"pk": centro.pk, "nomina_id": nomina_otro.pk},
         )
         assert client.get(url).status_code in (404, 403)
+
+
+# ─────────────────────────────────────────────────────────
+# Edad en el detalle del destinatario
+# ─────────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "fecha_nacimiento,esperado",
+    [
+        (date(2026, 2, 6), (8, "meses")),
+        (date(2025, 10, 7), (11, "meses")),  # un día antes del primer año
+        (date(2025, 10, 6), (1, "anios")),
+        (date(2024, 3, 15), (2, "anios")),
+    ],
+)
+def test_calcular_edad_y_unidad(fecha_nacimiento, esperado):
+    assert calcular_edad_y_unidad(fecha_nacimiento, hoy=date(2026, 10, 6)) == esperado
+
+
+@pytest.mark.django_db
+def test_detalle_muestra_la_edad_calculada(usuario_view, centro, nomina):
+    # Dos años y un mes: robusto a años bisiestos y al día en que corra el test.
+    nomina.fecha_nacimiento = date.today() - timedelta(days=365 * 2 + 31)
+    nomina.edad_unidad = "meses"  # unidad vieja guardada en el alta
+    nomina.save()
+    client = Client()
+    client.force_login(usuario_view)
+
+    response = client.get(
+        reverse(
+            "centrodeinfancia_nomina_destinatario_ver",
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
+        )
+    )
+
+    assert response.status_code == 200
+    assert nomina.edad_display == "2 años"
+    assert "2 años" in response.content.decode()

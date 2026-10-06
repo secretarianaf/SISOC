@@ -45,6 +45,7 @@ from centrodeinfancia.models import (
     NOMINA_VACUNAS,
     NominaPais,
     NominaNacionalidad,
+    calcular_edad_y_unidad,
 )
 from centrodeinfancia.services import (
     ESTADOS_NOMINA_CDI_VIGENTE,
@@ -1255,21 +1256,7 @@ class NominaCentroInfanciaBaseForm(CamposRenaperFormMixin, forms.ModelForm):
     @staticmethod
     def _calculate_age_and_unit(fecha_nacimiento: date) -> tuple[int, str]:
         """Devuelve meses antes del primer año y años cumplidos desde entonces."""
-        hoy = date.today()
-        meses = (
-            (hoy.year - fecha_nacimiento.year) * 12
-            + hoy.month
-            - fecha_nacimiento.month
-            - (hoy.day < fecha_nacimiento.day)
-        )
-        if meses < 12:
-            return max(meses, 0), "meses"
-        anios = (
-            hoy.year
-            - fecha_nacimiento.year
-            - ((hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
-        )
-        return max(anios, 0), "anios"
+        return calcular_edad_y_unidad(fecha_nacimiento)
 
     def _apply_required_flags(self):
         for field_name in ["estado", "dni", "apellido", "nombre", "fecha_nacimiento"]:

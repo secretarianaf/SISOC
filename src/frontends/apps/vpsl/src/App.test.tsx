@@ -37,7 +37,7 @@ it("pagina registros y presenta evidencias y actas del cierre", async () => {
   vi.mocked(get).mockImplementation(async (path) => {
     if (path === "/session/") return session;
     if (path.includes("/registros/")) return {
-      count: 2, next: path.includes("page=1") ? "page=2" : null, previous: path.includes("page=2") ? "page=1" : null,
+      count: 26, next: path.includes("page=1") ? "page=2" : null, previous: path.includes("page=2") ? "page=1" : null,
       results: [{ id: path.includes("page=2") ? 2 : 1, dni: path.includes("page=2") ? "22222222" : "11111111", nombre: "Ana", apellido: "Perez", numero_acta: "1", resultado: "No requiere", graduacion_izquierda: "", graduacion_derecha: "" }],
     };
     if (path.includes("/laboratorio/")) return { count: 0, results: [], next: null, previous: null };
@@ -51,7 +51,7 @@ it("pagina registros y presenta evidencias y actas del cierre", async () => {
   await screen.findByText("11111111");
   expect(screen.getByRole("link", { name: "Ver evidencia" })).toBeTruthy();
   expect(screen.getByRole("link", { name: "Descargar acta de cierre" })).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+  fireEvent.click(screen.getByRole("button", { name: "Página siguiente" }));
   expect(await screen.findByText("22222222")).toBeTruthy();
   expect(screen.queryByText("11111111")).toBeNull();
 });

@@ -50,7 +50,8 @@ describe("graduación de registros históricos", () => {
     renderRegistro(false, "no_requiere");
     const left = await screen.findByLabelText(/graduacion_izquierda/);
     expect((left as HTMLInputElement).required).toBe(false);
-    fireEvent.change(screen.getByLabelText(/resultado/), { target: { value: "derivado" } });
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: /resultado/ }));
+    fireEvent.click(await screen.findByRole("option", { name: "Derivado" }));
     await waitFor(() => expect((left as HTMLInputElement).required).toBe(true));
   });
 });

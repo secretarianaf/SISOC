@@ -2,7 +2,17 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { V2Layout } from "@sisoc/ui";
-import { Alert, Autocomplete, Button, Card as MuiCard, Tab, TableContainer, Tabs, TextField, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Autocomplete, Button, Card as MuiCard, IconButton, InputAdornment, Link, MenuItem, Skeleton, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import DownloadIcon from "@mui/icons-material/Download";
+import EditIcon from "@mui/icons-material/Edit";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import SearchIcon from "@mui/icons-material/Search";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import {
@@ -62,11 +72,11 @@ function useRoute() {
 function ErrorMessage({ error }: { error: unknown }) {
   if (!error) return null;
   if (error instanceof ApiError && error.status === 403) return (
-    <section className="card" role="alert">
+    <MuiCard component="section" className="card" role="alert">
       <Typography variant="h4Bold" component="h1">Sin permiso</Typography>
       <p>No tenés permiso para acceder a esta sección.</p>
-      <a href="/">Volver a SISOC</a>
-    </section>
+      <Link href="/">Volver a SISOC</Link>
+    </MuiCard>
   );
   const message = error instanceof Error ? error.message : "Ocurrió un error.";
   return (
@@ -75,7 +85,7 @@ function ErrorMessage({ error }: { error: unknown }) {
       {error instanceof ApiError && error.status === 401 && (
         <>
           {" "}
-          <a href={`/login/?next=${encodeURIComponent(window.location.pathname)}`}>Iniciar sesión</a>
+          <Link href={`/login/?next=${encodeURIComponent(window.location.pathname)}`}>Iniciar sesión</Link>
         </>
       )}
     </Alert>
@@ -97,31 +107,55 @@ function Card({
   return <MuiCard component="section" className={`card ${className}`}>{children}</MuiCard>;
 }
 
+function TableActionIcon({ label, onClick, icon }: { label: string; onClick: () => void; icon: React.ReactNode }) {
+  return <Tooltip title={label}><IconButton size="small" color="primary" aria-label={label} onClick={onClick}>{icon}</IconButton></Tooltip>;
+}
+
+function OverviewTiles({ items }: { items: { label: string; value: string | number; detail: string }[] }) {
+  return <section className="overview-tiles" aria-label="Resumen de la vista">
+    {items.map((item) => <div className="overview-tile" key={item.label}>
+      <span className="overview-label">{item.label}</span>
+      <strong>{item.value}</strong>
+      <small>{item.detail}</small>
+    </div>)}
+  </section>;
+}
+
+function LoadingOverview({ label }: { label: string }) {
+  const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const skeletonAnimation = reducedMotion ? false : "pulse";
+  return <section className="overview-tiles" role="status" aria-label={`Cargando ${label}`}>
+    {[0, 1, 2].map((item) => <div className="overview-tile" key={item}>
+      <Skeleton animation={skeletonAnimation} width="55%" height={18} />
+      <Skeleton animation={skeletonAnimation} width="35%" height={42} />
+      <Skeleton animation={skeletonAnimation} width="70%" height={16} />
+    </div>)}
+  </section>;
+}
+
 function Pagination({
   page,
-  hasNext,
-  hasPrevious,
+  count,
+  pageSize,
   onPage,
 }: {
   page: number;
-  hasNext: boolean;
-  hasPrevious: boolean;
+  count: number;
+  pageSize: number;
   onPage: (page: number) => void;
 }) {
-  if (!hasNext && !hasPrevious) return null;
-  return (
-    <div className="pagination">
-      <Button variant="outlined" disabled={!hasPrevious} onClick={() => onPage(page - 1)}>
-        Anterior
-      </Button>
-      <span>
-        Página {page}
-      </span>
-      <Button variant="outlined" disabled={!hasNext} onClick={() => onPage(page + 1)}>
-        Siguiente
-      </Button>
-    </div>
-  );
+  if (count <= pageSize) return null;
+  return <TablePagination
+    component="div"
+    className="pagination"
+    count={count}
+    page={page - 1}
+    rowsPerPage={pageSize}
+    rowsPerPageOptions={[]}
+    onPageChange={(_event, nextPage) => onPage(nextPage + 1)}
+    labelDisplayedRows={({ from, to, count: total }) => `${from}–${to} de ${total}`}
+    slotProps={{ actions: { previousButton: { 'aria-label': 'Página anterior' }, nextButton: { 'aria-label': 'Página siguiente' } } }}
+  />;
 }
 
 function Itinerarios({
@@ -149,43 +183,36 @@ function Itinerarios({
           <p>Planificación y seguimiento de Ver para ser libre.</p>
         </div>
         {canAdd && (
-          <button
-            className="primary"
-            onClick={() => navigate("itinerarios/nuevo/")}
-          >
-            Nuevo itinerario
-          </button>
+          <Button variant="contained" color="primary" size="large" startIcon={<AddIcon />} onClick={() => navigate("itinerarios/nuevo/")}>Nuevo itinerario</Button>
         )}
       </div>
-      <Card>
+      <Card className="filter-card">
         <form
-          className="search"
+          className="search search-with-state"
           onSubmit={(event) => {
             event.preventDefault();
             setPage(1);
             setSearch(query);
           }}
         >
-          <label htmlFor="itinerarios-q">
-            Buscar por código, provincia o referente
-          </label>
-          <div>
-            <input
-              id="itinerarios-q"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar itinerarios"
-            />
-            <button type="submit">Buscar</button>
-          </div>
-          <label htmlFor="itinerarios-estado">Estado</label>
-          <select id="itinerarios-estado" value={state} onChange={(event) => { setPage(1); setState(event.target.value); }}><option value="">Todos</option>{data?.estados?.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
+          <TextField
+            id="itinerarios-q"
+            label="Código, provincia o referente"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Buscar itinerarios"
+            slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
+          />
+          <TextField id="itinerarios-estado" select label="Estado" value={state} onChange={(event) => { setPage(1); setState(event.target.value); }}>
+            <MenuItem value="">Todos</MenuItem>
+            {data?.estados?.map((item) => <MenuItem key={item.value} value={item.value}>{item.label}</MenuItem>)}
+          </TextField>
+          <Button variant="outlined" size="large" startIcon={<SearchIcon />} type="submit">Buscar</Button>
         </form>
       </Card>
       <ErrorMessage error={error} />
-      {!data && !error && <p>Cargando itinerarios…</p>}
       {data && (
-        <Card>
+        <Card className="results-card">
           <div className="card-header">
             <h2>Resultados</h2>
             <span>{data.count} itinerarios</span>
@@ -194,60 +221,59 @@ function Itinerarios({
             <p>No se encontraron itinerarios.</p>
           ) : (
             <TableContainer className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Código</th>
-                    <th>Provincia</th>
-                    <th>Período</th>
-                    <th>Referente</th>
-                    <th>Estado</th>
-                    <th>Jornadas</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Código</TableCell>
+                    <TableCell>Provincia</TableCell>
+                    <TableCell>Período</TableCell>
+                    <TableCell>Referente</TableCell>
+                    <TableCell>Estado</TableCell>
+                    <TableCell>Jornadas</TableCell>
+                    <TableCell className="actions-column">Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {data.results.map((item) => (
-                    <tr key={item.id}>
-                      <td>
-                        <button
-                          className="link"
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        <Link component="button" className="link"
                           onClick={() => navigate(`itinerarios/${item.id}/`)}
                         >
                           {item.codigo}
-                        </button>
-                      </td>
-                      <td>{item.provincia}</td>
-                      <td>
+                        </Link>
+                      </TableCell>
+                      <TableCell>{item.provincia}</TableCell>
+                      <TableCell>
                         {formatDate(item.fecha_inicio)} → {formatDate(item.fecha_fin)}
-                      </td>
-                      <td>{item.referente}</td>
-                      <td>
+                      </TableCell>
+                      <TableCell>{item.referente}</TableCell>
+                      <TableCell>
                         <StateChip state={item.estado} label={item.estado_label} />
-                      </td>
-                      <td>{item.jornadas_total ?? "—"}</td>
-                      <td className="workflow-actions">
+                      </TableCell>
+                      <TableCell>{item.jornadas_total ?? "—"}</TableCell>
+                      <TableCell className="actions-column"><div className="workflow-actions">
+                        <TableActionIcon label="Ver itinerario" icon={<VisibilityIcon />} onClick={() => navigate(`itinerarios/${item.id}/`)} />
                         {permissions.change_itinerariovpsl && (
-                          <button onClick={() => navigate(`forms/itinerario-${item.estado === "en_subsanacion" ? "subsanar" : "edit"}/${item.id}/`)}>
-                            Editar
-                          </button>
+                          <TableActionIcon label="Editar itinerario" icon={<EditIcon />} onClick={() => navigate(`forms/itinerario-${item.estado === "en_subsanacion" ? "subsanar" : "edit"}/${item.id}/`)} />
                         )}
                         {permissions.delete_itinerariovpsl && (
                           <ActionButton
                             kind="eliminar-itinerario"
                             id={item.id}
                             label="Eliminar"
+                            iconOnly
                             after={() => window.location.reload()}
                           />
                         )}
-                      </td>
-                    </tr>
+                      </div></TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </TableContainer>
           )}
-          <Pagination page={page} hasNext={!!data.next} hasPrevious={!!data.previous} onPage={setPage} />
+          <Pagination page={page} count={data.count} pageSize={10} onPage={setPage} />
         </Card>
       )}
     </>
@@ -269,9 +295,15 @@ function Sedes({ navigate, canAdd, permissions }: { navigate: (path: string) => 
           <Typography variant="h4Bold" component="h1">Sedes</Typography>
           <p>Escuelas y establecimientos vinculados al programa.</p>
         </div>
-        {canAdd && <button className="primary" onClick={() => navigate("forms/sede-create/0/")}>Nueva sede</button>}
+        {canAdd && <Button variant="contained" color="primary" size="large" startIcon={<AddIcon />} onClick={() => navigate("forms/sede-create/0/")}>Nueva sede</Button>}
       </div>
-      <Card>
+      {!data && !error && <LoadingOverview label="sedes" />}
+      {data && <OverviewTiles items={[
+        { label: "Sedes", value: data.count, detail: "Total con la búsqueda actual" },
+        { label: "En esta página", value: data.results.length, detail: `Página ${page}` },
+        { label: "Localidades visibles", value: new Set(data.results.map((item) => item.localidad).filter(Boolean)).size, detail: "Distintas en esta página" },
+      ]} />}
+      <Card className="filter-card">
         <form
           className="search"
           onSubmit={(event) => {
@@ -280,22 +312,20 @@ function Sedes({ navigate, canAdd, permissions }: { navigate: (path: string) => 
             setSearch(query);
           }}
         >
-          <label htmlFor="sedes-q">Buscar sede</label>
-          <div>
-            <input
-              id="sedes-q"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Nombre, CUE, localidad…"
-            />
-            <button type="submit">Buscar</button>
-          </div>
+          <TextField
+            id="sedes-q"
+            label="Buscar sede"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Nombre, CUE, localidad…"
+            slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
+          />
+          <Button variant="outlined" size="large" startIcon={<SearchIcon />} type="submit">Buscar</Button>
         </form>
       </Card>
       <ErrorMessage error={error} />
-      {!data && !error && <p>Cargando sedes…</p>}
       {data && (
-        <Card>
+        <Card className="results-card">
           <div className="card-header">
             <h2>Resultados</h2>
             <span>{data.count} sedes</span>
@@ -304,43 +334,45 @@ function Sedes({ navigate, canAdd, permissions }: { navigate: (path: string) => 
             <p>No se encontraron sedes.</p>
           ) : (
             <TableContainer className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Sede</th>
-                    <th>CUE</th>
-                    <th>Localidad</th>
-                    <th>Jurisdicción</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Sede</TableCell>
+                    <TableCell>CUE</TableCell>
+                    <TableCell>Localidad</TableCell>
+                    <TableCell>Jurisdicción</TableCell>
+                    <TableCell className="actions-column">Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {data.results.map((item) => (
-                    <tr key={item.id}>
-                      <td><button className="link" onClick={() => navigate(`sedes/${item.id}/`)}>{item.nombre}</button></td>
-                      <td>{item.cueanexo || "—"}</td>
-                      <td>{item.localidad}</td>
-                      <td>{item.jurisdiccion}</td>
-                      <td className="workflow-actions">
+                    <TableRow key={item.id}>
+                      <TableCell><Link component="button" className="link" onClick={() => navigate(`sedes/${item.id}/`)}>{item.nombre}</Link></TableCell>
+                      <TableCell>{item.cueanexo || "—"}</TableCell>
+                      <TableCell>{item.localidad}</TableCell>
+                      <TableCell>{item.jurisdiccion}</TableCell>
+                      <TableCell className="actions-column"><div className="workflow-actions">
+                        <TableActionIcon label="Ver sede" icon={<VisibilityIcon />} onClick={() => navigate(`sedes/${item.id}/`)} />
                         {permissions.change_sedevpsl && (
-                          <button onClick={() => navigate(`forms/sede-edit/${item.id}/`)}>Editar</button>
+                          <TableActionIcon label="Editar sede" icon={<EditIcon />} onClick={() => navigate(`forms/sede-edit/${item.id}/`)} />
                         )}
                         {permissions.delete_sedevpsl && (
                           <ActionButton
                             kind="eliminar-sede"
                             id={item.id}
                             label="Eliminar"
+                            iconOnly
                             after={() => window.location.reload()}
                           />
                         )}
-                      </td>
-                    </tr>
+                      </div></TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </TableContainer>
           )}
-          <Pagination page={page} hasNext={!!data.next} hasPrevious={!!data.previous} onPage={setPage} />
+          <Pagination page={page} count={data.count} pageSize={15} onPage={setPage} />
         </Card>
       )}
     </>
@@ -363,9 +395,14 @@ function ItinerarioDetail({
   if (!data) return <p>Cargando itinerario…</p>;
   return (
     <>
-      <button className="back" onClick={() => navigate("")}>
-        ← Itinerarios
-      </button>
+      <div className="detail-toolbar">
+        <Button className="back" variant="text" startIcon={<ArrowBackIcon />} onClick={() => navigate("")}>Itinerarios</Button>
+        <div className="detail-toolbar-actions">
+          {permissions.change_itinerariovpsl && data.estado !== "rechazado" && <Button variant="outlined" size="small" startIcon={<EditIcon />} onClick={() => navigate(`forms/itinerario-${data.estado === "en_subsanacion" ? "subsanar" : "edit"}/${id}/`)}>{data.estado === "en_subsanacion" ? "Subsanar" : "Editar"}</Button>}
+          {permissions.change_itinerariovpsl && ["borrador", "observado"].includes(data.estado) && <ActionButton kind="presentar" id={id} label="Presentar" />}
+          {canExport && <Button component="a" variant="text" size="small" startIcon={<DownloadIcon />} href={`/api/vpsl/exports/itinerario/${id}/`}>Exportar CSV</Button>}
+        </div>
+      </div>
       <div className="heading">
         <div>
           <p className="eyebrow">Itinerario · {data.provincia}</p>
@@ -375,22 +412,11 @@ function ItinerarioDetail({
           </p>
         </div>
       </div>
-      <Card>
-        <div className="workflow-actions">
-          {permissions.change_itinerariovpsl && data.estado !== "rechazado" && <button onClick={() => navigate(`forms/itinerario-${data.estado === "en_subsanacion" ? "subsanar" : "edit"}/${id}/`)}>{data.estado === "en_subsanacion" ? "Subsanar" : "Editar"}</button>}
-          {permissions.change_itinerariovpsl && ["borrador", "observado"].includes(data.estado) && <ActionButton kind="presentar" id={id} label="Presentar" />}
-          {canExport && <a href={`/api/vpsl/exports/itinerario/${id}/`}>Exportar CSV</a>}
-        </div>
-      </Card>
       {permissions.change_itinerariovpsl && ["presentado", "en_revision", "subsanado"].includes(data.estado) && <EvaluateItinerary itinerary={data} />}
       {data.subsanacion_observaciones && <Alert severity="info" sx={{ mb: 2 }}><strong>Observaciones de evaluación:</strong> {data.subsanacion_observaciones}</Alert>}
-      <Card><h2>Cartas</h2>
-        {data.carta_archivo_url && <p><a href={data.carta_archivo_url} target="_blank" rel="noreferrer">Ver carta adjunta</a> · {data.carta_archivo_estado}</p>}
-        {data.carta_referencia && <p>Referencia: {data.carta_referencia} · {data.carta_referencia_estado}</p>}
-      </Card>
-      <div className="grid two">
-        <Card>
-          <h2>Planificación</h2>
+      <Card>
+        <h2>Resumen del itinerario</h2>
+        <div className="itinerary-summary">
           <dl>
             <dt>Período</dt>
             <dd>
@@ -400,67 +426,69 @@ function ItinerarioDetail({
             <dd>{data.referente}</dd>
             <dt>Teléfono</dt><dd>{data.referente_telefono || "Sin especificar"}</dd>
             <dt>Correo</dt><dd>{data.referente_email || "Sin especificar"}</dd>
-            <dt>Localidades</dt>
-            <dd>{data.localidades || "Sin especificar"}</dd>
-            <dt>Observaciones</dt>
-            <dd>{data.observaciones || "Sin observaciones"}</dd>
           </dl>
-        </Card>
-        <Card><h2>Jornadas</h2><p>La sede y la ubicación se definen al crear cada jornada.</p></Card>
-      </div>
+          <div className="itinerary-summary-letter">
+            <Typography variant="h6" component="h3">Carta</Typography>
+            {data.carta_archivo_url && <p><Link href={data.carta_archivo_url} target="_blank" rel="noreferrer">Ver carta adjunta</Link> · {data.carta_archivo_estado}</p>}
+            {data.carta_referencia && <p>Referencia: {data.carta_referencia} · {data.carta_referencia_estado}</p>}
+            {!data.carta_archivo_url && !data.carta_referencia && <Typography color="text.secondary">Sin carta adjunta</Typography>}
+          </div>
+        </div>
+      </Card>
       <Card>
         <div className="card-header">
           <h2>Jornadas</h2>
           <span>{data.jornadas?.length ?? 0}</span>
           {permissions.add_jornadavpsl && data.estado === "aprobado" && (
-            <button onClick={() => navigate(`forms/jornada-create/${id}/`)}>Nueva jornada</button>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate(`forms/jornada-create/${id}/`)}>Nueva jornada</Button>
           )}
         </div>
         {data.jornadas?.length ? (
           <TableContainer className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Sede</th>
-                  <th>Estado</th>
-                  <th>Registros</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Fecha</TableCell>
+                  <TableCell>Sede</TableCell>
+                  <TableCell>Estado</TableCell>
+                  <TableCell>Registros</TableCell>
+                  <TableCell className="actions-column">Acciones</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {data.jornadas.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <button
-                        className="link"
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <Link component="button" className="link"
                         onClick={() => navigate(`jornadas/${item.id}/`)}
                       >
                         {formatDate(item.fecha)}
-                      </button>
-                    </td>
-                    <td>{item.sede}</td>
-                    <td>
+                      </Link>
+                    </TableCell>
+                    <TableCell>{item.sede}</TableCell>
+                    <TableCell>
                       <StateChip state={item.estado} label={item.estado_label} />
-                    </td>
-                    <td>{item.registros_total ?? "—"}</td>
-                    <td className="workflow-actions">
+                    </TableCell>
+                    <TableCell>{item.registros_total ?? "—"}</TableCell>
+                    <TableCell className="actions-column"><div className="workflow-actions">
+                      <TableActionIcon label="Ver jornada" icon={<VisibilityIcon />} onClick={() => navigate(`jornadas/${item.id}/`)} />
                       {permissions.change_jornadavpsl && (
-                        <button onClick={() => navigate(`forms/jornada-edit/${item.id}/`)}>Editar</button>
+                        <TableActionIcon label="Editar jornada" icon={<EditIcon />} onClick={() => navigate(`forms/jornada-edit/${item.id}/`)} />
                       )}
                       {permissions.delete_jornadavpsl && (
                         <ActionButton
                           kind="eliminar-jornada"
                           id={item.id}
                           label="Eliminar"
+                          iconOnly
                           after={() => window.location.reload()}
                         />
                       )}
-                    </td>
-                  </tr>
+                    </div></TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </TableContainer>
         ) : (
           <p>Aún no hay jornadas.</p>
@@ -491,12 +519,15 @@ function JornadaDetail({
   if (!data) return <p>Cargando jornada…</p>;
   return (
     <>
-      <button
-        className="back"
-        onClick={() => navigate(`itinerarios/${data.itinerario_id}/`)}
-      >
-        ← Itinerario
-      </button>
+      <div className="detail-toolbar">
+        <Button className="back" variant="text" startIcon={<ArrowBackIcon />} onClick={() => navigate(`itinerarios/${data.itinerario_id}/`)}>Itinerario</Button>
+        <div className="detail-toolbar-actions">
+          {permissions.change_jornadavpsl && <Button variant="outlined" size="small" startIcon={<EditIcon />} onClick={() => navigate(`forms/jornada-edit/${id}/`)}>Editar jornada</Button>}
+          {permissions.add_checklistjornadavpsl && <Button variant="outlined" size="small" startIcon={<TaskAltIcon />} onClick={() => navigate(`forms/checklist/${id}/`)}>Checklist</Button>}
+          {permissions.add_cierrediariovpsl && ["habilitada", "en_progreso", "pendiente_cierre", "pendiente_cierre_observada"].includes(data.estado) && <Button variant="outlined" size="small" startIcon={<TaskAltIcon />} onClick={() => navigate(`forms/cierre/${id}/`)}>Cierre diario</Button>}
+          {canExport && <Button component="a" variant="text" size="small" startIcon={<DownloadIcon />} href={`/api/vpsl/exports/jornada/${id}/`}>Exportar CSV</Button>}
+        </div>
+      </div>
       <div className="heading">
         <div>
           <Typography component="p" sx={{ fontSize: 20, fontWeight: 700, color: "primary.text" }}>Jornada · {formatDate(data.fecha)}</Typography>
@@ -506,12 +537,7 @@ function JornadaDetail({
           </p>
         </div>
       </div>
-      <Card><div className="workflow-actions">
-        {permissions.change_jornadavpsl && <button onClick={() => navigate(`forms/jornada-edit/${id}/`)}>Editar jornada</button>}
-        {permissions.add_checklistjornadavpsl && <button onClick={() => navigate(`forms/checklist/${id}/`)}>Checklist</button>}
-        {permissions.add_cierrediariovpsl && ["habilitada", "en_progreso", "pendiente_cierre", "pendiente_cierre_observada"].includes(data.estado) && <button onClick={() => navigate(`forms/cierre/${id}/`)}>Cierre diario</button>}
-        {canExport && <a href={`/api/vpsl/exports/jornada/${id}/`}>Exportar CSV</a>}
-      </div></Card>
+      <div className={data.mapa_query ? "grid two" : undefined}>
       <Card>
         <h2>Datos de la jornada</h2>
         <dl>
@@ -530,26 +556,43 @@ function JornadaDetail({
           <dd>{data.observaciones || "Sin observaciones"}</dd>
         </dl>
       </Card>
-      {data.mapa_query && <Card><h2>Ubicación</h2><iframe className="location-map" title="Mapa de la jornada" loading="lazy" src={`https://www.google.com/maps?q=${encodeURIComponent(data.mapa_query)}&output=embed`} />{data.ubicacion_url && <p><a href={data.ubicacion_url} target="_blank" rel="noreferrer">Abrir en Google Maps</a></p>}</Card>}
+      {data.mapa_query && <Card><h2>Ubicación</h2><iframe className="location-map" title="Mapa de la jornada" loading="lazy" src={`https://www.google.com/maps?q=${encodeURIComponent(data.mapa_query)}&output=embed`} />{data.ubicacion_url && <p><Link href={data.ubicacion_url} target="_blank" rel="noreferrer">Abrir en Google Maps</Link></p>}</Card>}
+      </div>
       <div className="grid two"><Card><h2>Checklist de jornada</h2><ul className="item-list">{data.checklist?.map((entry) => <li key={entry.item}>{entry.descripcion}: {entry.cumple === null ? "Pendiente" : entry.cumple ? "Sí" : "No"}{entry.observacion && <small>{entry.observacion}</small>}
-        {entry.evidencia_url && <a href={entry.evidencia_url} target="_blank" rel="noreferrer">Ver evidencia</a>}
-        {entry.historial.length > 0 && <details><summary>Historial</summary><ul>{entry.historial.map((record) => <li key={record.fecha}>{formatDateTime(record.fecha)} · {record.responsable}: {record.antes === null ? "Pendiente" : record.antes ? "Sí" : "No"} → {record.despues === null ? "Pendiente" : record.despues ? "Sí" : "No"}{record.observacion && <p>{record.observacion}</p>}</li>)}</ul></details>}
+        {entry.evidencia_url && <Link href={entry.evidencia_url} target="_blank" rel="noreferrer">Ver evidencia</Link>}
       </li>)}</ul>{!data.checklist?.length && <p>Sin checklist cargado.</p>}</Card>
       <Card><h2>Cierre diario</h2>{data.cierre ? <>
         {!data.cierre.consistente && <Alert severity="warning" sx={{ mb: 2 }}>No hay coincidencia entre los registros nominales y el cierre.</Alert>}
         <dl><dt>Responsable</dt><dd>{data.cierre.responsable}</dd><dt>Atenciones</dt><dd>{data.cierre.atenciones}</dd><dt>Lentes</dt><dd>{data.cierre.lentes}</dd><dt>Casos de laboratorio</dt><dd>{data.cierre.casos}</dd><dt>Consistencia</dt><dd>{data.cierre.consistente ? "Consistente" : "Requiere revisión"}</dd></dl>
         {data.cierre.observaciones && <p>{data.cierre.observaciones}</p>}
-        {data.cierre.acta_adjunta_url && <p><a href={data.cierre.acta_adjunta_url} target="_blank" rel="noreferrer">Descargar acta de cierre</a></p>}
+        {data.cierre.acta_adjunta_url && <p><Link href={data.cierre.acta_adjunta_url} target="_blank" rel="noreferrer">Descargar acta de cierre</Link></p>}
         {permissions.change_jornadavpsl && (
           data.cierre.consistente
             ? <ActionButton kind="cierre-definitivo" id={id} label="Cierre definitivo" />
-            : <span title="Las cantidades del acta de cierre no coincide con los registros nominales. Subsanar para continuar."><button type="button" disabled>Cierre definitivo</button></span>
+            : <span title="Las cantidades del acta de cierre no coincide con los registros nominales. Subsanar para continuar."><Button variant="outlined" size="small" disabled>Cierre definitivo</Button></span>
         )}
-        {data.cierre.historial.length > 0 && <details><summary>Historial de cambios</summary><ul>{data.cierre.historial.map((record) => <li key={formatDateTime(record.fecha)}>{formatDateTime(record.fecha)} · {record.responsable} · {record.atenciones} atenciones · {record.lentes} lentes · {record.casos} casos{record.acta_adjunta_url && <a href={record.acta_adjunta_url} target="_blank" rel="noreferrer">Descargar acta anterior</a>}</li>)}</ul></details>}
+        {data.cierre.historial.length > 0 && <Accordion disableGutters><AccordionSummary expandIcon={<ExpandMoreIcon />}>Historial de cambios</AccordionSummary><AccordionDetails><ul>{data.cierre.historial.map((record) => <li key={formatDateTime(record.fecha)}>{formatDateTime(record.fecha)} · {record.responsable} · {record.atenciones} atenciones · {record.lentes} lentes · {record.casos} casos{record.acta_adjunta_url && <Link href={record.acta_adjunta_url} target="_blank" rel="noreferrer">Descargar acta anterior</Link>}</li>)}</ul></AccordionDetails></Accordion>}
       </> : <p>Aún no se registró el cierre.</p>}</Card></div>
       <ErrorMessage error={registrosError || laboratorioError} />
-      <Card><div className="card-header"><h2>Registros nominales</h2>{permissions.add_registronominalvpsl && ["habilitada", "en_progreso", "pendiente_cierre", "pendiente_cierre_observada"].includes(data.estado) && <button onClick={() => navigate(`forms/registro-create/${id}/`)}>Nuevo registro</button>}</div><TableContainer className="table-wrap"><table><thead><tr><th>Acta</th><th>DNI</th><th>Persona</th><th>Resultado</th><th>Graduación I / D</th><th>Acciones</th></tr></thead><tbody>{registros?.results.map((entry) => <tr key={entry.id}><td>{entry.numero_acta}</td><td>{entry.dni}</td><td>{entry.apellido}, {entry.nombre}</td><td>{entry.resultado}</td><td>{entry.graduacion_izquierda || "—"} / {entry.graduacion_derecha || "—"}</td><td><div className="workflow-actions">{permissions.change_registronominalvpsl && <button onClick={() => navigate(`forms/registro-edit/${entry.id}/`)}>Editar</button>}{permissions.delete_registronominalvpsl && <ActionButton kind="eliminar-registro" id={entry.id} label="Eliminar" />}</div></td></tr>)}</tbody></table></TableContainer>{registros && !registros.results.length && <p>Sin registros nominales.</p>}<Pagination page={registrosPage} hasNext={!!registros?.next} hasPrevious={!!registros?.previous} onPage={setRegistrosPage} /></Card>
-      <Card><h2>Laboratorio</h2>{laboratorio?.results.map((caso) => <div className="lab-row" key={caso.id}><span>{caso.persona} · {caso.estado}{caso.historial.length > 0 && <details><summary>Historial</summary><ul>{caso.historial.map((record) => <li key={formatDateTime(record.fecha)}>{formatDateTime(record.fecha)}: {record.antes} → {record.despues} · {record.responsable}</li>)}</ul></details>}</span>{permissions.change_casolaboratoriovpsl && caso.siguiente && <button onClick={() => navigate(`forms/laboratorio/${caso.id}/`)}>Actualizar estado</button>}</div>)}{laboratorio && !laboratorio.results.length && <p>Sin casos de laboratorio.</p>}<Pagination page={laboratorioPage} hasNext={!!laboratorio?.next} hasPrevious={!!laboratorio?.previous} onPage={setLaboratorioPage} /></Card>
+      <Card>
+        <div className="card-header"><h2>Registros nominales</h2>{permissions.add_registronominalvpsl && ["habilitada", "en_progreso", "pendiente_cierre", "pendiente_cierre_observada"].includes(data.estado) && <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate(`forms/registro-create/${id}/`)}>Nuevo registro</Button>}</div>
+        <TableContainer className="table-wrap">
+          <Table>
+            <TableHead><TableRow><TableCell>Acta</TableCell><TableCell>DNI</TableCell><TableCell>Persona</TableCell><TableCell>Resultado</TableCell><TableCell>Graduación I / D</TableCell><TableCell className="actions-column">Acciones</TableCell></TableRow></TableHead>
+            <TableBody>{registros?.results.map((entry) => <TableRow key={entry.id}>
+              <TableCell>{entry.numero_acta}</TableCell><TableCell>{entry.dni}</TableCell><TableCell>{entry.apellido}, {entry.nombre}</TableCell><TableCell>{entry.resultado}</TableCell>
+              <TableCell>{entry.graduacion_izquierda || "—"} / {entry.graduacion_derecha || "—"}</TableCell>
+              <TableCell className="actions-column"><div className="workflow-actions">
+                {permissions.change_registronominalvpsl && <TableActionIcon label="Editar registro" icon={<EditIcon />} onClick={() => navigate(`forms/registro-edit/${entry.id}/`)} />}
+                {permissions.delete_registronominalvpsl && <ActionButton kind="eliminar-registro" id={entry.id} label="Eliminar" iconOnly />}
+              </div></TableCell>
+            </TableRow>)}</TableBody>
+          </Table>
+        </TableContainer>
+        {registros && !registros.results.length && <p>Sin registros nominales.</p>}
+        <Pagination page={registrosPage} count={registros?.count ?? 0} pageSize={25} onPage={setRegistrosPage} />
+      </Card>
+      <Card><h2>Laboratorio</h2>{laboratorio?.results.map((caso) => <div className="lab-row" key={caso.id}><div>{caso.persona} · {caso.estado}{caso.historial.length > 0 && <Accordion disableGutters><AccordionSummary expandIcon={<ExpandMoreIcon />}>Historial</AccordionSummary><AccordionDetails><ul>{caso.historial.map((record) => <li key={formatDateTime(record.fecha)}>{formatDateTime(record.fecha)}: {record.antes} → {record.despues} · {record.responsable}</li>)}</ul></AccordionDetails></Accordion>}</div>{permissions.change_casolaboratoriovpsl && caso.siguiente && <Button variant="outlined" size="small" startIcon={<EditIcon />} onClick={() => navigate(`forms/laboratorio/${caso.id}/`)}>Actualizar estado</Button>}</div>)}{laboratorio && !laboratorio.results.length && <p>Sin casos de laboratorio.</p>}<Pagination page={laboratorioPage} count={laboratorio?.count ?? 0} pageSize={25} onPage={setLaboratorioPage} /></Card>
       {permissions.change_casolaboratoriovpsl && <BulkLaboratory jornada={{ ...data, laboratorio: laboratorio?.results }} />}
     </>
   );
@@ -569,9 +612,7 @@ function SedeDetail({
   if (!data) return <p>Cargando sede…</p>;
   return (
     <>
-      <button className="back" onClick={() => navigate("sedes/")}>
-        ← Sedes
-      </button>
+      <Button className="back" variant="text" startIcon={<ArrowBackIcon />} onClick={() => navigate("sedes/")}>Sedes</Button>
       <div className="heading">
         <div>
           <p className="eyebrow">Sede · {data.jurisdiccion}</p>
@@ -579,7 +620,7 @@ function SedeDetail({
           <p>{data.localidad}</p>
         </div>
       </div>
-      <Card><div className="workflow-actions">{permissions.change_sedevpsl && <button onClick={() => navigate(`forms/sede-edit/${id}/`)}>Editar sede y checklist</button>}{permissions.delete_sedevpsl && <ActionButton kind="eliminar-sede" id={id} label="Eliminar sede" after={() => { navigate("sedes/"); window.location.reload(); }} />}</div></Card>
+      <Card><div className="workflow-actions">{permissions.change_sedevpsl && <Button variant="outlined" size="small" startIcon={<EditIcon />} onClick={() => navigate(`forms/sede-edit/${id}/`)}>Editar sede y checklist</Button>}{permissions.delete_sedevpsl && <ActionButton kind="eliminar-sede" id={id} label="Eliminar sede" after={() => { navigate("sedes/"); window.location.reload(); }} />}</div></Card>
       <Card>
         <h2>Información de la sede</h2>
         <dl>
@@ -623,6 +664,10 @@ function NuevoItinerario({ navigate }: { navigate: (path: string) => void }) {
   });
   const fechaInicio = watch("fecha_inicio");
   const fechaFin = watch("fecha_fin");
+  function muiField(name: Parameters<typeof register>[0]) {
+    const { ref, ...props } = register(name);
+    return { ...props, inputRef: ref };
+  }
   useEffect(() => {
     if (data?.provincias.length === 1)
       setValue("provincia", String(data.provincias[0].id));
@@ -659,9 +704,7 @@ function NuevoItinerario({ navigate }: { navigate: (path: string) => void }) {
   }
   return (
     <>
-      <button className="back" onClick={() => navigate("")}>
-        ← Itinerarios
-      </button>
+      <Button className="back" variant="text" startIcon={<ArrowBackIcon />} onClick={() => navigate("")}>Itinerarios</Button>
       <div className="heading">
         <div>
           <p className="eyebrow">Planificación</p>
@@ -697,52 +740,44 @@ function NuevoItinerario({ navigate }: { navigate: (path: string) => void }) {
               clearText="Limpiar selección"
               openText="Mostrar provincias"
               closeText="Cerrar provincias"
-              renderInput={(params) => <TextField {...params} inputRef={field.ref} size="small" required error={Boolean(errors.provincia)} placeholder="Buscar provincia…" />}
+              renderInput={(params) => <TextField {...params} inputRef={field.ref} required error={Boolean(errors.provincia)} helperText={errors.provincia?.message} placeholder="Buscar provincia…" />}
             />} />
-            {errors.provincia && <small role="alert">{errors.provincia.message}</small>}
           </label>
           <label>
             Fecha de inicio
-            <input {...register("fecha_inicio")} type="date" required />
+            <TextField {...muiField("fecha_inicio")} type="date" fullWidth required />
           </label>
           <label>
             Fecha de fin
-            <input {...register("fecha_fin")} type="date" min={fechaInicio || undefined} required />
-            {fechaInicio && fechaFin && fechaFin < fechaInicio && <small className="action-error" role="alert">La fecha de fin no puede ser anterior al inicio.</small>}
-            {errors.fecha_fin && <small role="alert">{errors.fecha_fin.message}</small>}
+            <TextField {...muiField("fecha_fin")} type="date" fullWidth required error={Boolean(errors.fecha_fin) || Boolean(fechaInicio && fechaFin && fechaFin < fechaInicio)} helperText={errors.fecha_fin?.message || (fechaInicio && fechaFin && fechaFin < fechaInicio ? "La fecha de fin no puede ser anterior al inicio." : undefined)} slotProps={{ htmlInput: { min: fechaInicio || undefined } }} />
           </label>
           <label>
             Nombre del referente
-            <input {...register("referente_nombre")} required />
+            <TextField {...muiField("referente_nombre")} fullWidth required />
           </label>
           <label>
             Apellido del referente
-            <input {...register("referente_apellido")} />
+            <TextField {...muiField("referente_apellido")} fullWidth />
           </label>
           <label>
             Teléfono
-            <input {...register("referente_telefono")} required />
+            <TextField {...muiField("referente_telefono")} fullWidth required />
           </label>
           <label>
             Correo electrónico
-            <input {...register("referente_email")} type="email" required />
-            {errors.referente_email && <small role="alert">{errors.referente_email.message}</small>}
+            <TextField {...muiField("referente_email")} type="email" fullWidth required error={Boolean(errors.referente_email)} helperText={errors.referente_email?.message} />
           </label>
           <label className="wide">
             Carta archivo
-            <input {...register("carta_archivo")} type="file" required />
+            <TextField {...muiField("carta_archivo")} type="file" fullWidth required />
           </label>
           <label className="wide">
             Observaciones
-            <textarea {...register("observaciones")} rows={3} />
+            <TextField {...muiField("observaciones")} multiline minRows={3} fullWidth />
           </label>
           <div className="form-actions">
-            <button type="button" onClick={() => navigate("")}>
-              Cancelar
-            </button>
-            <button className="primary" type="submit" disabled={saving}>
-              {saving ? "Guardando…" : "Crear itinerario"}
-            </button>
+            <Button variant="outlined" type="button" onClick={() => navigate("")}>Cancelar</Button>
+            <Button variant="contained" startIcon={<AddIcon />} type="submit" disabled={saving}>{saving ? "Guardando…" : "Crear itinerario"}</Button>
           </div>
         </form>
       </Card>
@@ -752,23 +787,16 @@ function NuevoItinerario({ navigate }: { navigate: (path: string) => void }) {
 
 export default function App() {
   const { current, navigate } = useRoute();
+  const pageKey = `${current.kind}-${current.id ?? ""}-${current.formKind ?? ""}`;
   const { data: session, error } = useData<Session>("/session/");
   const requestedSection = current.kind === "sede" || current.kind === "sedes" || (current.kind === "form" && current.formKind?.startsWith("sede")) ? "sedes" : "itinerarios";
-  const selectedSection = requestedSection === "sedes" && session?.can_view_sedes
-    ? "sedes"
-    : session?.can_view_itinerarios ? "itinerarios" : "sedes";
   return (
-    <V2Layout username={session?.username} modules={session?.can_view_itinerarios || session?.can_view_sedes ? [{ label: "Ver para ser libre", href: ROOT, active: true }] : []}>
-      <main className="content">
-        {session && (session.can_view_itinerarios || session.can_view_sedes) && <Tabs
-          value={selectedSection}
-          onChange={(_event, value: string) => navigate(value === "sedes" ? "sedes/" : "")}
-          aria-label="Secciones de Ver para ser libre"
-          sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}
-        >
-          {session.can_view_itinerarios && <Tab value="itinerarios" label="Itinerarios" />}
-          {session.can_view_sedes && <Tab value="sedes" label="Sedes" />}
-        </Tabs>}
+    <V2Layout username={session?.username} sectionLabel="Ver para ser libre" modules={[
+      ...(session?.can_view_itinerarios ? [{ label: "Itinerarios", href: ROOT, active: requestedSection === "itinerarios", icon: <CalendarTodayIcon />, onNavigate: () => navigate("") }] : []),
+      ...(session?.can_view_sedes ? [{ label: "Sedes", href: `${ROOT}sedes/`, active: requestedSection === "sedes", icon: <LocationOnIcon />, onNavigate: () => navigate("sedes/") }] : []),
+    ]}>
+      <main className="content vpsl-experiment">
+        <div className="vpsl-page" key={pageKey}>
           {error ? (
             <ErrorMessage error={error} />
           ) : !session ? (
@@ -794,6 +822,7 @@ export default function App() {
           ) : (
             <Alert severity="warning">No tenés acceso a esta sección.</Alert>
           )}
+        </div>
       </main>
     </V2Layout>
   );

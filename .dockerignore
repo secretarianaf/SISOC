@@ -20,6 +20,7 @@ backups
 logs
 media
 static_root
+var
 node_modules
 
 *.log

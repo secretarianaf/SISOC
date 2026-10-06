@@ -937,6 +937,24 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ## Notas utiles sobre calidad y arquitectura
 
+### Mapa web de arquitectura
+
+- `/arquitectura/` y `/arquitectura/grafo.json` exigen sesión. El grafo vive en
+  `var/arquitectura/grafo.json`, fuera de estáticos y de Git.
+- `src/scripts/arquitectura/generar_mapa.py` lee el registro
+  `src/backends/config/backends.json`, los dueños de las apps, los workspaces
+  `src/frontends/apps/` y las claves de `FRONTEND_V2_UPSTREAMS`, sin ejecutar
+  settings ni consultar la DB. La asociación frontend/backend por nombre es
+  inferida; no demuestra consumo HTTP ni servicios activos.
+- La etapa `source` de `docker/django/Dockerfile` ejecuta el generador con
+  `--imagen` antes de quitar frontends y verticales. El arranque conserva esa
+  captura completa (`var/arquitectura/grafo-imagen.json`); no reconstruye un
+  mapa parcial desde el core aislado. `.dockerignore` excluye `var` para evitar
+  capturas locales dentro de una nueva imagen.
+- `python src/scripts/arquitectura/generar_mapa.py --docs` actualiza el grafo
+  documental y `docs/arquitectura/mapa_sisoc.html`. El arranque no escribe docs.
+- Pruebas focalizadas: `src/backends/kernel/tests/test_mapa_arquitectura_generador.py`.
+
 ### Import-linter
 
 - Hay una iniciativa explicita de "monolito modular fase 0".

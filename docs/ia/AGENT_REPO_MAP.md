@@ -447,6 +447,16 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `src/backends/kernel/users/profile_utils.py`, las migraciones `0044`/`0045` y
   `src/backends/sisoc_core/tests/test_users_mi_cuenta.py`.
 
+### Si necesitas implementar la integracion de autenticacion SIIS
+
+- Alineacion y criterios: `docs/plans/2026-T4/2026-10-06-autenticacion-siis.md`.
+- Contrato HTTP acordado para el equipo externo: `docs/integraciones/siis_api.md`; implementación local pendiente de validación e incorporación; no implica disponibilidad desplegada.
+- Colección para integrar y probar SIIS: `docs/api/postman/SIIS.postman_collection.json`, con las tres operaciones y ejemplos guardados; variables de credenciales vacías, completar en un entorno privado.
+- Decisiones: `docs/registro/decisiones/2026-10-06-auth-siis-accesos-independientes.md`.
+- Login/API y formularios: `src/backends/sisoc_core/usuarios/`; perfil y middleware compartido: `src/backends/kernel/users/`.
+- Riesgos revisados: limpieza de grupos/permisos PWA al combinar accesos, alcance territorial compartido de DataCalle, login y sesiones del Django admin, inicializacion historica del flag web y compatibilidad del login legacy. No importar PWA/core desde el kernel para inicializar flags.
+- La entrega contempla guia y API key por canal privado; no se emitio ninguna clave ni se autorizo desplegar durante la alineacion.
+
 ### Si necesitas cambiar la importacion masiva de usuarios
 
 - `src/backends/sisoc_core/usuarios/services_user_import.py`: parsing, alta/actualizacion, mail de
@@ -1070,3 +1080,10 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `src/backends/config/celery.py`, `src/backends/pas/pas/tasks.py`, `src/backends/pas/pas/services/supervivencia_jobs.py`: programación, reconciliación y un lote exclusivo por MySQL GET_LOCK; dentro del lote, ventanas transaccionales, dos clientes por hilo y límite agregado inicial de 16 solicitudes/s.
 - `docker/compose/docker-compose.celery.yml` se incorpora desde deploy_refresh; Redis persistente, Beat único y worker PAS.
 - Runbook funcional: `docs/implementaciones/pas_control_mensual_celery.md`; retirada cron: `src/scripts/infra/remove_pas_cron.sh`.
+
+## SIIS y control explícito de acceso web
+- `src/backends/sisoc_core/usuarios/siis_api_views.py` y `services_siis.py`: login SIIS por `app`, token firmado administrativo y alta server-to-server. No reutilizar Token DRF legacy; cualquier API key válida es aceptada por decisión explícita.
+- `src/backends/kernel/users/models.py`, `admin.py`, `middleware.py`: flags `acceso_web`/`acceso_siis`, gate admin y sesión web. El flag no concede staff/permisos; API y logout están exentos del gate web.
+- `src/backends/kernel/users/migrations/0060_profile_accesos_siis_web.py` y `src/backends/sisoc_core/pwa/migrations/0026_inicializar_acceso_web.py`: schema kernel y backfill histórico core. Aplicar con migrador completo; no recalcular flags en runtime ni repetir backfill sobre habilitaciones administradas.
+- `src/backends/sisoc_core/tests/test_users_siis.py`: contrato, denegaciones, credenciales administrativas, duplicados, gate web y backfill. Pruebas Django pendientes por dependencias locales incompletas.
+- `docs/registro/cambios/2026-T4/2026-10-06-auth-siis.md`: evidencia local, comandos pendientes y riesgo de rollback a código que ignora el flag. Entrega operativa y API key pendientes.

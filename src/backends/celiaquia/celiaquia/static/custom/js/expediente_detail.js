@@ -2089,11 +2089,11 @@ document.addEventListener('DOMContentLoaded', () => {
       onSelectChange(selectLocalidad, function() {
         const optionSeleccionada = selectLocalidad.selectedOptions[0];
         const municipioId = optionSeleccionada?.dataset?.municipio || '';
-        if (!municipioId) return;
-        if (selectMunicipio.value !== municipioId) {
-          selectMunicipio.value = municipioId;
-          refreshSelect2(selectMunicipio);
-        }
+        // Con el mismo municipio la lista ya esta filtrada: no re-renderizar
+        // ni reinicializar Select2 dentro de su propio evento change.
+        if (!municipioId || selectMunicipio.value === municipioId) return;
+        selectMunicipio.value = municipioId;
+        refreshSelect2(selectMunicipio);
         renderLocalidadesDisponibles(municipioId, selectLocalidad.value);
       });
     }

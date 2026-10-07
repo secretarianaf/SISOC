@@ -161,6 +161,15 @@ class Admision(models.Model):
             " aceptacion de divergencia)."
         ),
     )
+    datos_organizacion_snapshot = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name="Snapshot de datos de la organizacion",
+        help_text=(
+            "Datos de la organizacion que precargan el informe tecnico"
+            " ('informe') y ultimo estado del legajo aceptado ('legajo')."
+        ),
+    )
     es_ex_pnud = models.CharField(
         max_length=2,
         choices=RESPUESTA_SI_NO,

@@ -69,7 +69,7 @@
                 <a href="#section-seguimientos"
                    class="btn btn-info mr-1 d-none d-sm-inline">Ver seguimientos</a>
             {% endif %}
-            {% if perms.relevamientos.review_relevamiento and not relevamiento.esta_validado %}
+            {% if perms.relevamientos.review_relevamiento and not relevamiento.esta_validado and not relevamiento.sin_cargar %}
                 <button type="button"
                         class="btn btn-warning mr-1"
                         data-bs-toggle="modal"
@@ -94,7 +94,7 @@
             <div class="mt-1">{{ relevamiento.observaciones_coordinador|linebreaksbr }}</div>
         </div>
     {% endif %}
-    {% if perms.relevamientos.review_relevamiento and not relevamiento.esta_validado %}
+    {% if perms.relevamientos.review_relevamiento and not relevamiento.esta_validado and not relevamiento.sin_cargar %}
         <div class="modal fade"
              id="modalRevisionCoordinador"
              tabindex="-1"

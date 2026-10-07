@@ -464,6 +464,15 @@ def _display_value(instance, field):
     return raw
 
 
+def _es_dato_interno(field):
+    """Campos del bloque que no son respuestas del formulario (#2643).
+
+    ``id_*`` es el identificador que genera la app (``app-i47-menu``) y los
+    OneToOne son el vínculo interno con los bloques del relevamiento.
+    """
+    return field.name.startswith("id_") or isinstance(field, dj_models.OneToOneField)
+
+
 def _bloque_campos(instance):
     if instance is None:
         return []
@@ -471,7 +480,7 @@ def _bloque_campos(instance):
     for field in instance._meta.get_fields():
         if not isinstance(field, dj_models.Field):
             continue
-        if field.primary_key or field.auto_created:
+        if field.primary_key or field.auto_created or _es_dato_interno(field):
             continue
         value = _display_value(instance, field)
         if value is None or value == "":
@@ -481,7 +490,14 @@ def _bloque_campos(instance):
             if field.verbose_name
             else field.name.replace("_", " ").capitalize()
         )
-        rows.append({"label": label, "value": value})
+        rows.append(
+            {
+                "label": label,
+                "value": value,
+                # Las firmas llegan como URL de la imagen que sube la app.
+                "es_imagen": field.name.startswith("firma"),
+            }
+        )
     return rows
 
 

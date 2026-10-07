@@ -476,6 +476,7 @@ def create_operador_for_comedor(
     operador.groups.clear()
     operador.user_permissions.set(_resolve_permission_codes(requested_permission_codes))
     profile, _ = Profile.objects.get_or_create(user=operador)
+    profile.acceso_web = False
     profile.must_change_password = True
     profile.password_changed_at = None
     profile.initial_password_expires_at = timezone.now() + timedelta(
@@ -483,6 +484,7 @@ def create_operador_for_comedor(
     )
     profile.save(
         update_fields=[
+            "acceso_web",
             "must_change_password",
             "password_changed_at",
             "initial_password_expires_at",

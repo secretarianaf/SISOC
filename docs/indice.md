@@ -74,6 +74,8 @@
 - `docs/flujos/derivar_nomina_centros.md`: flujo y reglas para derivar beneficiarios entre centros (comedores y CDI).
 - `docs/flujos/rendiciones_mensuales_proyectos.md`: estados de revisión, subsanaciones y asociación de rendiciones a proyectos.
 - `docs/integraciones/ticketera_api.md`: contrato server-to-server de la API Ticketera (5 endpoints, dirigido al desarrollador de la Ticketera).
+- `docs/integraciones/siis_api.md`: contrato acordado SIIS de login y alta, credenciales, errores y checklist de entrega; implementación local pendiente de validación.
+- `docs/api/postman/SIIS.postman_collection.json`: colección SIIS con requests preparados, variables sin credenciales y ejemplos de responses de éxito y rechazo.
 - `src/backends/dispositivos/datacalle/instrumento/README.md`: instrumento vigente de DataCalle (versión, cómo sincronizarlo con el contrato de la app y qué no se puede mapear entre versiones).
 - `docs/registro/cambios/2026-T4/2026-10-01-datacalle-instrumento-4.0.0.md`: reemplazo total del instrumento (4.0.0), convivencia con los casos ya guardados y decisiones abiertas con el área.
 

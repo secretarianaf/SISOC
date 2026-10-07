@@ -110,6 +110,8 @@ class Profile(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     dni = models.CharField(max_length=16, blank=True)
+    acceso_web = models.BooleanField(default=True, verbose_name="Acceso SISOC web")
+    acceso_siis = models.BooleanField(default=False, verbose_name="Acceso SIIS")
     cuil = models.CharField(max_length=16, blank=True)
     tipo_usuario = models.CharField(
         max_length=10,

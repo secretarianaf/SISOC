@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from django.contrib.auth import password_validation
+from rest_framework.exceptions import AuthenticationFailed
+from django.contrib.auth import authenticate, password_validation
 from django.core.exceptions import ValidationError as DjangoValidationError
 
 from iam.services import get_effective_permission_codes, get_effective_role_names
@@ -13,6 +14,34 @@ from users.services_datacalle import (
 )
 from users.services_auth import get_user_by_uid
 from users.territorial_scope import serialize_profile_scopes
+
+
+class LoginSerializer(serializers.Serializer):
+    app = serializers.ChoiceField(
+        choices=["siis"],
+        required=False,
+        help_text="SIIS envía app=siis y API key. Omitir app conserva el login legacy.",
+    )
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def _raise_read_only(self):
+        raise NotImplementedError("Serializer de solo lectura.")
+
+    def create(self, validated_data):
+        return self._raise_read_only()
+
+    def update(self, instance, validated_data):
+        return self._raise_read_only()
+
+    def validate(self, attrs):
+        user = authenticate(
+            username=attrs.get("username"), password=attrs.get("password")
+        )
+        if not user or not user.is_active:
+            raise AuthenticationFailed("Credenciales inválidas.")
+        attrs["user"] = user
+        return attrs
 
 
 class UserContextSerializer(serializers.Serializer):

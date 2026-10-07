@@ -221,7 +221,11 @@ def test_users_logout_invalidates_token_for_pwa_user(comedor):
 
 @pytest.mark.django_db
 def test_web_login_blocks_pwa_user(client, comedor):
-    _create_representante(comedor=comedor, username="rep_web", password="testpass123")
+    user = _create_representante(
+        comedor=comedor, username="rep_web", password="testpass123"
+    )
+    user.profile.acceso_web = False
+    user.profile.save()
 
     response = client.post(
         "/login/",

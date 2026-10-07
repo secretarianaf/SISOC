@@ -25,7 +25,6 @@ from users.models import (
 from users.profile_utils import get_profile_or_none
 from users.services_datacalle import (
     es_administrador_datacalle,
-    es_solo_app,
     validar_alcance_coordinador,
 )
 from users.secciones_usuario import (
@@ -54,7 +53,6 @@ from pwa.services.accesos import (
     deactivate_coordinador_equipo_tecnico_pwa_access,
     deactivate_representante_accesses,
     get_organizacion_ids,
-    is_pwa_user,
     sync_coordinador_equipo_tecnico_pwa_access,
     sync_representante_accesses,
 )
@@ -132,6 +130,8 @@ CAMPOS_POR_SECCION = {
     SECCION_DATACALLE: ("es_relevador_calle", "datacalle_rol", "provincias_datacalle"),
     SECCION_ADMINISTRACION: (
         "user_permissions",
+        "acceso_web",
+        "acceso_siis",
         "grupos_asignables",
         "roles_asignables",
     ),
@@ -240,7 +240,7 @@ class TerritorialScopeFormMixin:
 
 
 class BackofficeAuthenticationForm(AuthenticationForm):
-    """Bloquea login web para usuarios de uso exclusivo PWA."""
+    """Exige la habilitación explícita de SISOC web."""
 
     error_messages = {
         **AuthenticationForm.error_messages,
@@ -284,18 +284,10 @@ class BackofficeAuthenticationForm(AuthenticationForm):
     def confirm_login_allowed(self, user):
         super().confirm_login_allowed(user)
         profile = get_profile_or_none(user)
-        saved_mobile = getattr(profile, "configuracion_mobile", {})
-        if is_pwa_user(user) or saved_mobile.get("es_coordinador_equipo_tecnico_pwa"):
+        if not getattr(profile, "acceso_web", False):
             raise forms.ValidationError(
-                "Este usuario solo puede ingresar desde la PWA.",
-                code="pwa_only",
-            )
-        # RN05: solo el relevador queda afuera. El coordinador y el
-        # administrador usan la app y tambien el backoffice.
-        if es_solo_app(user):
-            raise forms.ValidationError(
-                "Este usuario solo puede ingresar desde SISOC - Mobile DataCalle.",
-                code="datacalle_only",
+                "Este usuario no tiene acceso SISOC web habilitado.",
+                code="web_access_disabled",
             )
         expires_at = getattr(profile, "initial_password_expires_at", None)
         if (
@@ -871,6 +863,12 @@ class DelegationScopeMixin:
                 "Solo puede delegar roles que usted mismo puede asignar.",
             )
 
+    @staticmethod
+    def _clear_permission_caches(user):
+        for attr in ("_perm_cache", "_user_perm_cache", "_group_perm_cache"):
+            if hasattr(user, attr):
+                delattr(user, attr)
+
     def _aplicar_grupos_y_permisos(self, user):
         """Asigna grupos y permisos directos preservando los que están fuera del
         alcance del actor: un actor con alcance administra solo lo habilitado y
@@ -1155,20 +1153,6 @@ class RelevadorCalleFormMixin:
             cleaned["datacalle_rol"] = ""
             cleaned["provincias_datacalle"] = Provincia.objects.none()
             return cleaned
-
-        # Solo-app: no puede sumar los roles mobile de comedores.
-        if cleaned.get("es_representante_pwa", False):
-            self.add_error(
-                "es_relevador_calle",
-                "Un relevador de DataCalle no puede tener acceso como "
-                "representante de SISOC - Mobile a la vez.",
-            )
-        if cleaned.get("es_territorial_comedor", False):
-            self.add_error(
-                "es_relevador_calle",
-                "Un relevador de DataCalle no puede ser territorial de comedores "
-                "a la vez.",
-            )
 
         rol = cleaned.get("datacalle_rol")
         if not rol:
@@ -1468,6 +1452,10 @@ class UserCreationForm(
     forms.ModelForm,
 ):
     password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
+    acceso_web = forms.BooleanField(
+        required=False, initial=True, label="Acceso SISOC web"
+    )
+    acceso_siis = forms.BooleanField(required=False, label="Acceso SIIS")
     dni = forms.CharField(max_length=16, required=False, label="DNI")
     cuil = forms.CharField(max_length=16, required=False, label="CUIL")
     tipo_usuario = forms.ChoiceField(
@@ -1540,6 +1528,8 @@ class UserCreationForm(
             "email",
             "password",
             "dni",
+            "acceso_web",
+            "acceso_siis",
             "cuil",
             "tipo_usuario",
             "groups",
@@ -1619,21 +1609,12 @@ class UserCreationForm(
             user.is_staff = True
 
     def _save_user_security_and_permissions(self, user):
-        if self.cleaned_data.get("es_coordinador_equipo_tecnico_pwa", False):
-            user.groups.clear()
-            user.user_permissions.clear()
-            return
-        elif self.cleaned_data.get("es_representante_pwa", False):
-            user.groups.clear()
-            pwa_permission_ids = self._preserve_current_pwa_operation_permission_ids(
-                user
-            )
-            user.user_permissions.clear()
-            if pwa_permission_ids:
-                user.user_permissions.add(*pwa_permission_ids)
-        else:
-            self._aplicar_grupos_y_permisos(user)
-            self._sync_grupo_datacalle(user)
+        # Generic assignments retain their actor-scoped delegation checks.
+        pwa_permission_ids = self._preserve_current_pwa_operation_permission_ids(user)
+        self._aplicar_grupos_y_permisos(user)
+        if pwa_permission_ids:
+            user.user_permissions.add(*pwa_permission_ids)
+        self._sync_grupo_datacalle(user)
         self._sync_mobile_rendicion_permission(user)
         if self.cleaned_data.get("es_representante_pwa", False):
             self._sync_pwa_operation_permissions(user)
@@ -1643,6 +1624,8 @@ class UserCreationForm(
         profile.es_usuario_provincial = self.cleaned_data.get(
             "es_usuario_provincial", False
         )
+        profile.acceso_web = self.cleaned_data.get("acceso_web", False)
+        profile.acceso_siis = self.cleaned_data.get("acceso_siis", False)
         profile.dni = self.cleaned_data.get("dni", "")
         profile.cuil = self.cleaned_data.get("cuil", "")
         profile.tipo_usuario = self.cleaned_data["tipo_usuario"]
@@ -1681,12 +1664,6 @@ class UserCreationForm(
             return
         profile.duplas_asignadas.clear()
 
-    @staticmethod
-    def _clear_permission_caches(user):
-        for attr in ("_perm_cache", "_user_perm_cache"):
-            if hasattr(user, attr):
-                delattr(user, attr)
-
     def _save_atomic(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data.get("email", "")
@@ -1717,6 +1694,10 @@ class CustomUserChangeForm(
         label="Contraseña (dejar en blanco para no cambiarla)",
         required=False,
     )
+    acceso_web = forms.BooleanField(
+        required=False, initial=True, label="Acceso SISOC web"
+    )
+    acceso_siis = forms.BooleanField(required=False, label="Acceso SIIS")
     dni = forms.CharField(max_length=16, required=False, label="DNI")
     cuil = forms.CharField(max_length=16, required=False, label="CUIL")
     tipo_usuario = forms.ChoiceField(
@@ -1789,6 +1770,8 @@ class CustomUserChangeForm(
             "email",
             "password",
             "dni",
+            "acceso_web",
+            "acceso_siis",
             "cuil",
             "tipo_usuario",
             "groups",
@@ -1828,6 +1811,8 @@ class CustomUserChangeForm(
         self._init_territorial_comedor_fields(prof)
         self._init_relevador_calle_fields(prof)
         if prof:
+            self.fields["acceso_web"].initial = prof.acceso_web
+            self.fields["acceso_siis"].initial = prof.acceso_siis
             self.fields["dni"].initial = prof.dni
             self.fields["cuil"].initial = prof.cuil
             self.fields["tipo_usuario"].initial = prof.tipo_usuario
@@ -1875,48 +1860,28 @@ class CustomUserChangeForm(
         is_pwa_read_only_coordinator = self.cleaned_data.get(
             "es_coordinador_equipo_tecnico_pwa", False
         )
-        if (
-            self.cleaned_data.get("es_representante_pwa", False)
-            or is_pwa_read_only_coordinator
-        ):
-            user.is_staff = False
-        elif self.cleaned_data.get("datacalle_rol") == "entrevistador":
-            user.is_staff = False
-        elif self.cleaned_data.get("es_coordinador", False):
+        if self.cleaned_data.get("es_coordinador", False):
             user.is_staff = True
 
         if commit:
             user.save()
-            if is_pwa_read_only_coordinator:
-                user.groups.clear()
-                user.user_permissions.clear()
-            elif self.cleaned_data.get("es_representante_pwa", False):
-                user.groups.clear()
-                pwa_permission_ids = (
-                    self._preserve_current_pwa_operation_permission_ids(user)
-                )
-                user.user_permissions.clear()
-                if pwa_permission_ids:
-                    user.user_permissions.add(*pwa_permission_ids)
-            else:
-                pwa_permission_ids = (
-                    self._preserve_current_pwa_operation_permission_ids(user)
-                    if is_pwa_operator
-                    else []
-                )
-                self._aplicar_grupos_y_permisos(user)
-                self._sync_grupo_datacalle(user)
-                if pwa_permission_ids:
-                    user.user_permissions.add(*pwa_permission_ids)
+            pwa_permission_ids = self._preserve_current_pwa_operation_permission_ids(
+                user
+            )
+            self._aplicar_grupos_y_permisos(user)
+            if pwa_permission_ids:
+                user.user_permissions.add(*pwa_permission_ids)
+            self._sync_grupo_datacalle(user)
             if not is_pwa_operator:
                 self._sync_mobile_rendicion_permission(user)
-            if self.cleaned_data.get("es_representante_pwa", False):
                 self._sync_pwa_operation_permissions(user)
 
             profile, _ = Profile.objects.get_or_create(user=user)
             profile.es_usuario_provincial = self.cleaned_data.get(
                 "es_usuario_provincial", False
             )
+            profile.acceso_web = self.cleaned_data.get("acceso_web", False)
+            profile.acceso_siis = self.cleaned_data.get("acceso_siis", False)
             profile.dni = self.cleaned_data.get("dni", "")
             profile.cuil = self.cleaned_data.get("cuil", "")
             profile.tipo_usuario = self.cleaned_data["tipo_usuario"]
@@ -1970,6 +1935,7 @@ class CustomUserChangeForm(
                 profile.duplas_asignadas.clear()
 
             self._sync_pwa_access(user)
+            self._clear_permission_caches(user)
 
         return user
 

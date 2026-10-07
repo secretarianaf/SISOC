@@ -2,7 +2,6 @@
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.test import Client
 
 from core.models import Provincia
 from users.models import Profile, RelevadorCalleProvincia
@@ -215,35 +214,24 @@ def test_el_form_rechaza_dos_provincias_para_un_relevador(provincia):
 
 
 @pytest.mark.django_db
-def test_solo_el_relevador_queda_afuera_del_backoffice(client, provincia):
-    """RN05: el relevador no entra a SISOC; coordinador y admin si.
+@pytest.mark.parametrize("rol", ["administrador", "coordinador", "entrevistador"])
+@pytest.mark.parametrize("acceso_web", [False, True])
+def test_backoffice_datacalle_depende_del_flag(client, provincia, rol, acceso_web):
+    """La habilitación web es independiente del rol y del acceso DataCalle."""
+    user = _usuario("login_por_flag", rol, provincia, staff=rol != "entrevistador")
+    user.profile.acceso_web = acceso_web
+    user.profile.save(update_fields=["acceso_web"])
 
-    Este cambio (``confirm_login_allowed`` usa ``es_solo_app``) ya estaba
-    aplicado antes de esta tarea, para no dejar a los coordinadores afuera
-    del backoffice durante el resto del plan. El test se agrega igual, para
-    documentar la invariante y protegerla de una regresion.
-    """
-    _usuario("coord_login", "coordinador", provincia, staff=True)
-    _usuario("relev_login", "entrevistador", provincia)
-
-    # Dos clientes distintos: con el mismo `client` para ambos posts, la
-    # sesion ya autenticada del coordinador sobrevive al intento rechazado
-    # del relevador (la validacion falla antes de tocar la sesion) y el
-    # segundo response queda con el usuario equivocado.
-    entra = client.post(
+    response = client.post(
         "/login/",
-        {"username": "coord_login", "password": "Sisoc12345!"},
-        follow=True,
-    )
-    rebota = Client().post(
-        "/login/",
-        {"username": "relev_login", "password": "Sisoc12345!"},
+        {"username": user.username, "password": "Sisoc12345!"},
         follow=True,
     )
 
-    assert entra.context["user"].is_authenticated is True
-    assert rebota.context["user"].is_authenticated is False
-    assert "SISOC - Mobile DataCalle" in rebota.content.decode()
+    assert response.context["user"].is_authenticated is acceso_web
+    if not acceso_web:
+        assert "no tiene acceso SISOC web habilitado" in response.content.decode()
+    assert tiene_acceso_datacalle(user)
 
 
 @pytest.mark.django_db

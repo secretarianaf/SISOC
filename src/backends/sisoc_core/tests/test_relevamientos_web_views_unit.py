@@ -183,6 +183,7 @@ def _make_relevamiento_stub(
         id=rel_id,
         fecha_visita=fecha,
         estado=estado,
+        estado_validacion=None,
         numero_if=numero_if,
         sincronizado_gestionar=sincronizado_gestionar,
         seguimientos=SimpleNamespace(all=lambda: list(seguimientos or [])),
@@ -371,13 +372,19 @@ def test_detail_view_get_context_data_sin_relaciones_retorna_none(mocker):
         seguimientos=SimpleNamespace(all=list),
         id=4,
         comedor=SimpleNamespace(id=50),
+        estado=None,
+        estado_validacion=None,
         prestacion=None,
         espacio=None,
         recursos=None,
         punto_entregas=None,
     )
     view.object = relevamiento
-    timeline = [SimpleNamespace(id=4, fecha_visita="2024-01-01", estado=None)]
+    timeline = [
+        SimpleNamespace(
+            id=4, fecha_visita="2024-01-01", estado=None, estado_validacion=None
+        )
+    ]
     mocker.patch(
         "django.views.generic.detail.SingleObjectMixin.get_context_data",
         return_value={},
@@ -402,6 +409,8 @@ def test_detail_view_get_context_data_limita_timeline_y_agrega_datos(mocker):
         seguimientos=SimpleNamespace(all=list),
         id=2,
         comedor=SimpleNamespace(id=99),
+        estado="Finalizado",
+        estado_validacion=None,
         prestacion="PREST",
         espacio=SimpleNamespace(
             cocina=SimpleNamespace(
@@ -421,10 +430,21 @@ def test_detail_view_get_context_data_limita_timeline_y_agrega_datos(mocker):
     )
     view.object = relevamiento
     timeline = [
-        SimpleNamespace(id=1, fecha_visita="2024-01-01", estado="Pendiente"),
-        SimpleNamespace(id=2, fecha_visita="2024-01-02", estado="Finalizado"),
-        SimpleNamespace(id=3, fecha_visita="2024-01-03", estado="Visita pendiente"),
-        SimpleNamespace(id=4, fecha_visita="2024-01-04", estado="Otro"),
+        SimpleNamespace(
+            id=1, fecha_visita="2024-01-01", estado="Pendiente", estado_validacion=None
+        ),
+        SimpleNamespace(
+            id=2, fecha_visita="2024-01-02", estado="Finalizado", estado_validacion=None
+        ),
+        SimpleNamespace(
+            id=3,
+            fecha_visita="2024-01-03",
+            estado="Visita pendiente",
+            estado_validacion=None,
+        ),
+        SimpleNamespace(
+            id=4, fecha_visita="2024-01-04", estado="Otro", estado_validacion=None
+        ),
     ]
     mocker.patch(
         "django.views.generic.detail.SingleObjectMixin.get_context_data",

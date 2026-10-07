@@ -5,14 +5,18 @@ Con la app nueva ese archivo nunca se genera en AppSheet (la app arma su PDF
 en el navegador y no lo sube), así que el link quedaba vacío o daba 404.
 """
 
+from io import BytesIO
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.urls import reverse
+from PIL import Image
+from pypdf import PdfReader
 
 from comedores.models import Comedor
 from core.models import Provincia
-from relevamientos.models import Relevamiento
+from relevamientos.models import Excepcion, Relevamiento
 from relevamientos.pdf_service import RecursosLocalesURLFetcher, RelevamientoPdfService
 
 pytestmark = pytest.mark.django_db
@@ -70,7 +74,10 @@ def test_boton_del_detalle_apunta_al_pdf_de_sisoc(client):
 
 def test_descarga_devuelve_un_pdf_adjunto(client):
     _login(client)
-    relevamiento = _relevamiento()
+    relevamiento = _relevamiento(
+        estado_validacion=Relevamiento.ESTADO_VALIDACION_PENDIENTE,
+        observacion="Observación del territorial para comprobar el documento",
+    )
 
     response = client.get(_url_pdf(relevamiento))
 
@@ -80,6 +87,58 @@ def test_descarga_devuelve_un_pdf_adjunto(client):
         f'attachment; filename="relevamiento-{relevamiento.id}.pdf"'
     )
     assert response.content.startswith(b"%PDF")
+    lector = PdfReader(BytesIO(response.content))
+    texto = " ".join(" ".join(pagina.extract_text() for pagina in lector.pages).split())
+    for esperado in (
+        "Comedor PDF 2630",
+        "Pendiente de validación",
+        "Domicilio del Comedor/Merendero",
+        "Observación del territorial para comprobar el documento",
+    ):
+        assert esperado in texto
+
+
+def test_pdf_con_observacion_larga_conserva_todo_el_texto(client):
+    _login(client)
+    marcas = [f"REGISTRO{i:03d}" for i in range(100)]
+    observacion = " ".join(
+        f"{marca} El territorial informa sobre el funcionamiento del comedor."
+        for marca in marcas
+    )
+    relevamiento = _relevamiento(observacion=observacion)
+
+    response = client.get(_url_pdf(relevamiento))
+
+    assert response.status_code == 200
+    lector = PdfReader(BytesIO(response.content))
+    texto = " ".join(pagina.extract_text() for pagina in lector.pages)
+    assert len(lector.pages) > 1
+    for marca in marcas:
+        assert texto.count(marca) == 1
+
+
+@pytest.mark.parametrize("cantidad_fotos", [2, 12])
+def test_pdf_incluye_firma_y_fotos_locales(client, settings, cantidad_fotos):
+    _login(client)
+    settings.MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+    Image.new("RGB", (40, 20), "black").save(settings.MEDIA_ROOT / "firma.png")
+    urls = [f"{settings.MEDIA_URL}firma.png"]
+    for indice in range(cantidad_fotos):
+        nombre = f"foto-{indice}.png"
+        color = (indice * 19, 100, 180)
+        Image.new("RGB", (800, 600), color).save(settings.MEDIA_ROOT / nombre)
+        urls.append(f"{settings.MEDIA_URL}{nombre}")
+    excepcion = Excepcion.objects.create(firma=urls[0])
+    relevamiento = _relevamiento(excepcion=excepcion, imagenes=urls[1:])
+
+    response = client.get(_url_pdf(relevamiento))
+
+    assert response.status_code == 200
+    lector = PdfReader(BytesIO(response.content))
+    # WeasyPrint puede compartir el diccionario de recursos entre páginas.
+    # Contar imágenes únicas evita contar varias veces el mismo recurso.
+    imagenes = {imagen.data for pagina in lector.pages for imagen in pagina.images}
+    assert len(imagenes) == cantidad_fotos + 1
 
 
 def test_el_pdf_lleva_las_secciones_del_detalle(client, mocker):

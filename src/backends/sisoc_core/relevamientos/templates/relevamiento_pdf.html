@@ -35,9 +35,10 @@
             .carousel-control-next, .visually-hidden, iframe, script { display: none; }
             .card-body { padding: 2pt 6pt; }
             .row { display: flex; flex-wrap: wrap; margin: 3pt 0; }
-            .row > [class^="col"], .row > [class*=" col"] { box-sizing: border-box; padding: 2pt 4pt 2pt 0; }
+            .row > [class^="col"], .row > [class*=" col"] { box-sizing: border-box; min-width: 0; padding: 2pt 4pt 2pt 0; }
             .col { flex: 1 1 0; }
-            .col-1 { width: 10%; }
+            /* Domicilio: columnas más anchas para que los valores sean legibles. */
+            .col-1 { width: 20%; }
             .col-2 { width: 16.66%; }
             .col-3 { width: 25%; }
             .col-4 { width: 33.33%; }
@@ -45,7 +46,7 @@
             .col-6 { width: 50%; }
             .col-8 { width: 66.66%; }
             .col-12 { width: 100%; }
-            .comment-text { display: block; }
+            .comment-text { display: block; overflow-wrap: break-word; }
             .username { display: block; font-weight: bold; font-size: 8.5pt; }
             .username.me-2 { display: inline; margin-right: 3pt; }
             .username img { width: 9pt; height: 9pt; vertical-align: middle; }

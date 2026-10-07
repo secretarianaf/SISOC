@@ -18,6 +18,7 @@ from rest_framework.views import APIView
 from core.api_auth import HasAPIKey
 from audittrail.context import audit_context
 from users.rate_limits import hit_rate_limit
+from usuarios.api_serializers import LoginSerializer
 from usuarios.auth_audit import (
     EVENTO_LOGIN_ERROR,
     EVENTO_LOGIN_OK,
@@ -72,9 +73,6 @@ def _limited_response():
 
 
 def authenticate_siis(request, *, administrative=False):
-    # Import here because the shared login dispatches to this module.
-    from usuarios.api_views import LoginSerializer
-
     if not isinstance(request.data, Mapping):
         return None, Response(
             {"detail": "El cuerpo debe ser un objeto JSON."}, status=400

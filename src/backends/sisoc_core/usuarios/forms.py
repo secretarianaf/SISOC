@@ -863,6 +863,12 @@ class DelegationScopeMixin:
                 "Solo puede delegar roles que usted mismo puede asignar.",
             )
 
+    @staticmethod
+    def _clear_permission_caches(user):
+        for attr in ("_perm_cache", "_user_perm_cache", "_group_perm_cache"):
+            if hasattr(user, attr):
+                delattr(user, attr)
+
     def _aplicar_grupos_y_permisos(self, user):
         """Asigna grupos y permisos directos preservando los que están fuera del
         alcance del actor: un actor con alcance administra solo lo habilitado y
@@ -1658,12 +1664,6 @@ class UserCreationForm(
             return
         profile.duplas_asignadas.clear()
 
-    @staticmethod
-    def _clear_permission_caches(user):
-        for attr in ("_perm_cache", "_user_perm_cache"):
-            if hasattr(user, attr):
-                delattr(user, attr)
-
     def _save_atomic(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data.get("email", "")
@@ -1874,7 +1874,6 @@ class CustomUserChangeForm(
             self._sync_grupo_datacalle(user)
             if not is_pwa_operator:
                 self._sync_mobile_rendicion_permission(user)
-            if self.cleaned_data.get("es_representante_pwa", False):
                 self._sync_pwa_operation_permissions(user)
 
             profile, _ = Profile.objects.get_or_create(user=user)
@@ -1936,6 +1935,7 @@ class CustomUserChangeForm(
                 profile.duplas_asignadas.clear()
 
             self._sync_pwa_access(user)
+            self._clear_permission_caches(user)
 
         return user
 

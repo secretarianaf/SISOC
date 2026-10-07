@@ -69,6 +69,7 @@ def test_combined_mobile_edit_preserves_and_assigns_other_app_permissions(comedo
         },
     )
     assert form.is_valid(), form.errors
+    assert not user.has_perm("auth.add_user")
     user = form.save()
     user.refresh_from_db()
     assert user.groups.filter(pk=other_group.pk).exists()
@@ -294,6 +295,11 @@ def test_mobile_selections_survive_saved_suspension(comedor, coordinator):
         assert not user.groups.exists()
         assert not user.user_permissions.exists()
 
+    unrelated_permission = Permission.objects.get(
+        content_type__app_label="auth", codename="view_user"
+    )
+    user.user_permissions.add(unrelated_permission)
+    data["user_permissions"] = [unrelated_permission.pk]
     data["es_representante_pwa"] = False
     suspend = CustomUserChangeForm(instance=user, data=data)
     assert suspend.is_valid(), suspend.errors
@@ -301,6 +307,7 @@ def test_mobile_selections_survive_saved_suspension(comedor, coordinator):
     user = get_user_model().objects.get(pk=user.pk)
     assert not is_pwa_user(user)
     assert all(not user.has_perm(code) for code in permission_codes)
+    assert user.has_perm("auth.view_user")
     assert (
         client.post("/api/users/login/", credentials, format="json").status_code == 401
     )
@@ -347,7 +354,9 @@ def test_mobile_selections_survive_saved_suspension(comedor, coordinator):
     if coordinator:
         assert CoordinadorEquipoTecnicoPWA.objects.get(user=user).activo
         assert not get_access_rows(user).exists()
-        assert not user.user_permissions.exists()
+        assert set(user.user_permissions.values_list("pk", flat=True)) == {
+            unrelated_permission.pk
+        }
         assert (
             client.post(f"/api/comedores/{comedor.pk}/usuarios/", {}).status_code == 403
         )
@@ -976,6 +985,7 @@ def test_user_creation_form_relevador_calle_permite_representante(comedor):
     form = UserCreationForm(
         data={
             "username": "relevador_y_rep",
+            "tipo_usuario": "interno",
             "email": "relevador_y_rep@example.com",
             "es_representante_pwa": True,
             "comedores_pwa": [comedor.id],

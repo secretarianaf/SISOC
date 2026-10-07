@@ -8,7 +8,6 @@ from drf_spectacular.utils import (
     extend_schema,
     inline_serializer,
 )
-from django.contrib.auth import authenticate
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from rest_framework import serializers, status, viewsets
@@ -19,6 +18,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from usuarios.api_serializers import (
+    LoginSerializer,
     PasswordChangeRequiredSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
@@ -49,34 +49,6 @@ from pwa.services.accesos import (
 )
 
 logger = logging.getLogger("django")
-
-
-class LoginSerializer(serializers.Serializer):
-    app = serializers.ChoiceField(
-        choices=["siis"],
-        required=False,
-        help_text="SIIS envía app=siis y API key. Omitir app conserva el login legacy.",
-    )
-    username = serializers.CharField()
-    password = serializers.CharField(write_only=True, trim_whitespace=False)
-
-    def _raise_read_only(self):
-        raise NotImplementedError("Serializer de solo lectura.")
-
-    def create(self, validated_data):
-        return self._raise_read_only()
-
-    def update(self, instance, validated_data):
-        return self._raise_read_only()
-
-    def validate(self, attrs):
-        user = authenticate(
-            username=attrs.get("username"), password=attrs.get("password")
-        )
-        if not user or not user.is_active:
-            raise AuthenticationFailed("Credenciales inválidas.")
-        attrs["user"] = user
-        return attrs
 
 
 @extend_schema(tags=["Auth"])

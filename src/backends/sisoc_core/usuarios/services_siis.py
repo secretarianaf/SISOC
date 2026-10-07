@@ -77,6 +77,12 @@ class SIISCreateSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=254)
     dni = serializers.CharField(max_length=32, trim_whitespace=False)
 
+    def create(self, validated_data):
+        raise NotImplementedError("El servicio SIIS se encarga de persistir el alta.")
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError("La API SIIS no modifica cuentas existentes.")
+
     def to_internal_value(self, data):
         if isinstance(data, dict) and set(data) - set(self.fields):
             raise serializers.ValidationError(
@@ -125,6 +131,13 @@ class SIISUserResponseSerializer(serializers.Serializer):
     email = serializers.EmailField()
     dni = serializers.CharField()
     acceso_siis = serializers.BooleanField()
+
+
+    def create(self, validated_data):
+        raise NotImplementedError("Serializer de solo lectura.")
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError("Serializer de solo lectura.")
 
 
 def account_exists(data):

@@ -77,10 +77,17 @@ def puede_generar_usuario_egp(user):
 
 
 def usuarios_cdi_activos(centro):
-    """Cantidad de usuarios referentes activos asociados a un CDI."""
+    """Cantidad de usuarios que ocupan cupo en un CDI: activos y suspendidos.
+
+    La baja libera el cupo; la suspensión no, porque se puede reactivar.
+    """
     from centrodeinfancia.models import AccesoCDI  # noqa: PLC0415
 
-    return AccesoCDI.objects.filter(centro=centro, activo=True).count()
+    return (
+        AccesoCDI.objects.filter(centro=centro)
+        .exclude(estado=AccesoCDI.Estado.BAJA)
+        .count()
+    )
 
 
 def usuarios_cdi_restantes(centro):
@@ -112,10 +119,32 @@ def puede_gestionar_referentes_cdi(user, centro):
     )
 
 
+def es_responsable_cdi(user, centro):
+    """Indica si el usuario es el referente responsable vigente del CDI."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    from centrodeinfancia.models import AccesoCDI  # noqa: PLC0415
+
+    return AccesoCDI.objects.filter(
+        centro=centro, user=user, activo=True, es_responsable=True
+    ).exists()
+
+
+def puede_administrar_usuarios_cdi(user, centro):
+    """Quién maneja la botonera de usuarios del CDI (generar, suspender, baja).
+
+    Quien gestiona referentes en el territorio (EGP, superusuario) y el
+    referente responsable del propio CDI. Los demás referentes no.
+    """
+    return puede_gestionar_referentes_cdi(user, centro) or es_responsable_cdi(
+        user, centro
+    )
+
+
 def puede_generar_usuario_cdi(user, centro):
-    """Habilita el alta de referentes si el actor gestiona el CDI y hay cupo."""
+    """Habilita el alta de referentes si el actor administra el CDI y hay cupo."""
     return (
-        puede_gestionar_referentes_cdi(user, centro)
+        puede_administrar_usuarios_cdi(user, centro)
         and usuarios_cdi_restantes(centro) > 0
     )
 

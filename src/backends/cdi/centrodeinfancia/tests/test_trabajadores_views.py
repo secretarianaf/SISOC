@@ -241,6 +241,81 @@ def test_trabajador_renaper_normaliza_id_de_nacionalidad_al_catalogo_central(
 
 
 @pytest.mark.django_db
+def test_trabajador_renaper_con_pais_fuera_del_catalogo_deja_nacionalidad_editable(
+    client, monkeypatch
+):
+    # El catálogo usa gentilicios ("Paraguaya") y RENAPER informa el país
+    # ("PARAGUAY"): bloquear ese valor dejaba el select inválido y sin opciones.
+    user = _crear_usuario("super-trabajador-renaper-pais", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI RENAPER país")
+    Nacionalidad.objects.create(nacionalidad="Paraguaya")
+    url = reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk})
+    monkeypatch.setattr(
+        "centrodeinfancia.views.obtener_datos_ciudadano_desde_renaper",
+        lambda _dni: {
+            "success": True,
+            "data": {"nombre": "Juana", "apellido": "Pérez", "dni": "30123456"},
+            "datos_api": {"pais": "PARAGUAY"},
+        },
+    )
+
+    response = client.get(f"{url}?query=30123456")
+
+    form = response.context["form"]
+    assert form.fields["nombre"].disabled is True
+    assert form.fields["nacionalidad_trabajador"].disabled is False
+    assert form.initial.get("nacionalidad_trabajador") in (None, "")
+
+    data = datos_validos_trabajador(nacionalidad_trabajador="Paraguaya")
+    data["renaper_prefill_token"] = response.context["renaper_prefill_token"]
+    response = client.post(url, data=data)
+
+    assert response.status_code == 302
+    trabajador = Trabajador.objects.get(centro=centro)
+    assert trabajador.nacionalidad_trabajador == "Paraguaya"
+    assert "nacionalidad_trabajador" not in trabajador.campos_verificados_renaper
+
+
+@pytest.mark.django_db
+def test_trabajador_con_nacionalidad_bloqueada_invalida_se_puede_corregir(client):
+    # Registros guardados antes del arreglo: "PARAGUAY" quedó como verificado.
+    user = _crear_usuario("super-trabajador-nacionalidad-trabada", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI nacionalidad trabada")
+    Nacionalidad.objects.create(nacionalidad="Paraguaya")
+    trabajador = Trabajador.objects.create(
+        centro=centro,
+        nombre="Juana",
+        apellido="Pérez",
+        nacionalidad_trabajador="PARAGUAY",
+        campos_verificados_renaper=["nombre", "nacionalidad_trabajador"],
+    )
+    url = reverse(
+        "centrodeinfancia_trabajador_editar",
+        kwargs={"pk": centro.pk, "trabajador_id": trabajador.pk},
+    )
+
+    form = client.get(url).context["form"]
+    assert form.fields["nombre"].disabled is True
+    assert form.fields["nacionalidad_trabajador"].disabled is False
+
+    response = client.post(
+        url,
+        data=datos_validos_trabajador(
+            nombre="Juana",
+            apellido="Pérez",
+            nacionalidad_trabajador="Paraguaya",
+        ),
+    )
+
+    assert response.status_code == 302
+    trabajador.refresh_from_db()
+    assert trabajador.nacionalidad_trabajador == "Paraguaya"
+    assert trabajador.campos_verificados_renaper == ["nombre"]
+
+
+@pytest.mark.django_db
 def test_trabajador_create_precarga_provincia_del_cdi_sin_geografia_dependiente(
     client,
 ):

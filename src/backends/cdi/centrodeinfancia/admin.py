@@ -165,11 +165,12 @@ class NominaCentroInfanciaDerivacionAdmin(admin.ModelAdmin):
 
 @admin.register(AccesoCDI)
 class AccesoCDIAdmin(admin.ModelAdmin):
-    list_display = ("user", "centro", "activo", "fecha_creacion")
-    list_filter = ("activo",)
+    list_display = ("user", "centro", "estado", "es_responsable", "fecha_creacion")
+    list_filter = ("estado", "es_responsable")
     search_fields = ("user__username", "user__email", "centro__nombre")
     raw_id_fields = ("user", "creado_por")
-    readonly_fields = ("fecha_creacion", "fecha_baja")
+    # ``activo`` se deriva de ``estado`` al guardar.
+    readonly_fields = ("activo", "fecha_creacion", "fecha_baja")
 
 
 @admin.register(OfertaServicio)

@@ -30,6 +30,8 @@ class TrackedModelDefinition:
     model_getter: Callable
     excluded_fields: tuple[str, ...] = ()
     optional_excluded_fields: tuple[str, ...] = ()
+    # Si se informa, solo se auditan estos campos (allowlist en vez de denylist).
+    included_fields: tuple[str, ...] = ()
 
     def get_model(self):
         return self.model_getter()
@@ -96,6 +98,26 @@ def get_tracked_model_definitions():
             label="Formulario CDI",
             model_getter=_model_getter("centrodeinfancia.models.FormularioCDI"),
             excluded_fields=("created_at", "updated_at"),
+        ),
+        TrackedModelDefinition(
+            label="Nómina CDI",
+            model_getter=_model_getter("centrodeinfancia.models.NominaCentroInfancia"),
+            # La ficha tiene datos de salud de niños/as y el log es exportable y
+            # sobrevive al borrado: solo se registra quién cambia los teléfonos,
+            # que son los datos de contacto editables junto a la identidad
+            # verificada por RENAPER.
+            included_fields=(
+                "responsable_legal_1_telefono",
+                "responsable_legal_2_telefono",
+                "adulto_responsable_telefono",
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Trabajador CDI",
+            model_getter=_model_getter("centrodeinfancia.models.Trabajador"),
+            # Mismo criterio que "Nómina CDI": la ficha tiene datos sensibles,
+            # se audita solo el contacto editable.
+            included_fields=("telefono", "email"),
         ),
         TrackedModelDefinition(
             label="Acceso CDI",

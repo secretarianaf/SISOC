@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -25,6 +26,7 @@ from centrodeinfancia.services_accesos_cdi import (
     ACCION_BAJA,
     ACCION_REACTIVAR,
     ACCION_SUSPENDER,
+    asignar_responsable,
     cambiar_estado_acceso,
 )
 from users.services_generate_user import (
@@ -105,6 +107,20 @@ class GenerarUsuarioCDIView(
     def get_success_url(self):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.centro.pk})
 
+    def _vincular_usuario(self, nuevo_usuario):
+        with transaction.atomic():
+            # Las altas simultáneas deben decidir sobre el mismo estado del CDI.
+            CentroDeInfancia.objects.select_for_update().get(pk=self.centro.pk)
+            acceso = AccesoCDI.objects.create(
+                user=nuevo_usuario,
+                centro=self.centro,
+                creado_por=self.request.user,
+            )
+            if not AccesoCDI.objects.filter(
+                centro=self.centro, es_responsable=True, activo=True
+            ).exists():
+                asignar_responsable(acceso)
+
     def form_valid(self, form):
         datos = DatosUsuarioDelegado(
             first_name=form.cleaned_data["first_name"],
@@ -118,11 +134,7 @@ class GenerarUsuarioCDIView(
                 actor=self.request.user,
                 datos=datos,
                 grupo_nombre=GRUPO_CDI_REFERENTE_CENTRO,
-                vinculo_callback=lambda nuevo_usuario: AccesoCDI.objects.create(
-                    user=nuevo_usuario,
-                    centro=self.centro,
-                    creado_por=self.request.user,
-                ),
+                vinculo_callback=self._vincular_usuario,
                 limite_check=lambda: usuarios_cdi_restantes(self.centro) > 0,
                 request=self.request,
                 # El responsable genera referentes solo para su CDI (ya validado

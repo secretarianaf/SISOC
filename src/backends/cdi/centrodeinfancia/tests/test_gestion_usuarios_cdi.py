@@ -397,6 +397,44 @@ def test_primer_usuario_usa_la_identidad_verificada_de_la_ficha(client, centro):
     assert form.fields["email"].disabled is False
 
 
+def test_generar_primer_referente_lo_asigna_como_responsable(client, centro, settings):
+    settings.DOMINIO = "http://testserver"
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    admin = User.objects.create_superuser("admin-primer-referente", "", "test1234")
+    client.force_login(admin)
+    response = client.post(
+        reverse("centrodeinfancia_generar_usuario", kwargs={"pk": centro.pk}),
+        {
+            "first_name": centro.nombre_referente,
+            "last_name": centro.apellido_referente,
+            "email": centro.email_referente,
+            "dni": centro.dni_referente,
+            "cuil": "27301234568",
+        },
+    )
+    assert response.status_code == 200
+    acceso = AccesoCDI.objects.get(centro=centro)
+    assert acceso.es_responsable is True
+    assert puede_administrar_usuarios_cdi(acceso.user, centro) is True
+
+
+@pytest.mark.parametrize("estado", [Estado.ACTIVO, Estado.BAJA])
+def test_guardar_ficha_recupera_referente_sin_responsable(centro, estado):
+    referente, acceso = _referente(centro, "ana", estado=estado)
+    admin = User.objects.create_superuser("admin-recuperar", "", "test1234")
+    actualizar_referente_cdi(
+        _request(admin),
+        centro,
+        dni_anterior=centro.dni_referente,
+        email_anterior=centro.email_referente,
+    )
+    acceso.refresh_from_db()
+    assert acceso.es_responsable is True
+    assert acceso.estado == Estado.ACTIVO
+    assert AccesoCDI.objects.filter(centro=centro).count() == 1
+    assert puede_administrar_usuarios_cdi(referente, centro) is True
+
+
 def test_usuarios_siguientes_arrancan_pidiendo_el_dni(client, centro):
     responsable, _ = _referente(centro, "resp", responsable=True)
     client.force_login(responsable)

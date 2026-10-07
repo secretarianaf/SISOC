@@ -228,8 +228,11 @@ def actualizar_referente_cdi(request, centro, *, dni_anterior, email_anterior):
       darlo de baja. No se toca el email de la cuenta anterior.
     - Misma persona con otro email: se sincroniza el email de su cuenta.
     """
-    if not AccesoCDI.objects.filter(centro=centro).exists():
-        crear_referente_cdi_automaticamente(request, centro)
+    if not AccesoCDI.objects.filter(
+        centro=centro, activo=True, es_responsable=True
+    ).exists():
+        # Incluye fichas históricas con accesos pero sin responsable vigente.
+        crear_referente_cdi_automaticamente(request, centro, reemplaza_responsable=True)
         return
     if _cambio_persona_referente(dni_anterior, centro.dni_referente):
         crear_referente_cdi_automaticamente(request, centro, reemplaza_responsable=True)

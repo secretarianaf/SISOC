@@ -6,8 +6,9 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
+from django.db import transaction
 
-from centrodeinfancia.models import AccesoCDI
+from centrodeinfancia.models import AccesoCDI, CentroDeInfancia
 from centrodeinfancia.services_accesos_cdi import asignar_responsable
 from core.constants import UserGroups
 from users.models import Profile
@@ -17,6 +18,17 @@ from users.territorial_scope import sync_profile_territorial_scopes
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+
+def _vincular_referente_responsable(user, centro, actor):
+    with transaction.atomic():
+        # El CDI se bloquea antes de insertar el acceso: su FK toma un bloqueo
+        # compartido y dos inserciones no deben intentar promoverlo a exclusivo.
+        CentroDeInfancia.objects.select_for_update().get(pk=centro.pk)
+        acceso, _ = AccesoCDI.objects.get_or_create(
+            user=user, centro=centro, defaults={"creado_por": actor}
+        )
+        return asignar_responsable(acceso)
 
 
 def crear_referente_cdi_automaticamente(
@@ -54,13 +66,8 @@ def crear_referente_cdi_automaticamente(
         usuario = usuarios_existentes[0]
         grupo, _ = Group.objects.get_or_create(name=UserGroups.CDI_REFERENTE_CENTRO)
         usuario.groups.add(grupo)
-        acceso, _ = AccesoCDI.objects.get_or_create(
-            user=usuario,
-            centro=centro,
-            defaults={"creado_por": request.user},
-        )
         # Si tenía un acceso suspendido o dado de baja, vuelve a estar activo.
-        asignar_responsable(acceso)
+        _vincular_referente_responsable(usuario, centro, request.user)
         messages.success(
             request,
             f"Usuario existente «{usuario.username}» asociado como referente responsable.",
@@ -83,12 +90,8 @@ def crear_referente_cdi_automaticamente(
             actor=request.user,
             datos=DatosUsuarioDelegado(**datos_referente),
             grupo_nombre=UserGroups.CDI_REFERENTE_CENTRO,
-            vinculo_callback=lambda nuevo_usuario: asignar_responsable(
-                AccesoCDI.objects.create(
-                    user=nuevo_usuario,
-                    centro=centro,
-                    creado_por=request.user,
-                )
+            vinculo_callback=lambda nuevo_usuario: _vincular_referente_responsable(
+                nuevo_usuario, centro, request.user
             ),
             request=request,
             # Quien puede editar la ficha del CDI define a su referente; el
@@ -228,15 +231,31 @@ def actualizar_referente_cdi(request, centro, *, dni_anterior, email_anterior):
       darlo de baja. No se toca el email de la cuenta anterior.
     - Misma persona con otro email: se sincroniza el email de su cuenta.
     """
-    if not AccesoCDI.objects.filter(
-        centro=centro, activo=True, es_responsable=True
-    ).exists():
-        # Incluye fichas históricas con accesos pero sin responsable vigente.
-        crear_referente_cdi_automaticamente(request, centro, reemplaza_responsable=True)
+    if not AccesoCDI.objects.filter(centro=centro).exists():
+        crear_referente_cdi_automaticamente(request, centro)
         return
     if _cambio_persona_referente(dni_anterior, centro.dni_referente):
         crear_referente_cdi_automaticamente(request, centro, reemplaza_responsable=True)
         return
+    if not AccesoCDI.objects.filter(
+        centro=centro, activo=True, es_responsable=True
+    ).exists():
+        # Recuperar la cuenta de la misma persona antes de sincronizar el email;
+        # buscar solo por el email nuevo podría crear otra cuenta innecesariamente.
+        candidatos = list(
+            AccesoCDI.objects.filter(
+                centro=centro,
+                user__email__iexact=(
+                    email_anterior or centro.email_referente or ""
+                ).strip(),
+            )[:2]
+        )
+        if len(candidatos) == 1:
+            asignar_responsable(candidatos[0])
+        else:
+            crear_referente_cdi_automaticamente(
+                request, centro, reemplaza_responsable=True
+            )
     email_actual = (centro.email_referente or "").strip()
     if email_actual.lower() != (email_anterior or "").strip().lower():
         sincronizar_email_referente_cdi(request, centro, email_anterior)

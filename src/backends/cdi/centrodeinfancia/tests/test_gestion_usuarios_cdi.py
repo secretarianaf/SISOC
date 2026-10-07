@@ -435,6 +435,32 @@ def test_guardar_ficha_recupera_referente_sin_responsable(centro, estado):
     assert puede_administrar_usuarios_cdi(referente, centro) is True
 
 
+@pytest.mark.parametrize("cuenta_temporal", [True, False])
+def test_recuperar_responsable_con_otro_email_conserva_su_cuenta(
+    centro, cuenta_temporal
+):
+    referente, acceso = _referente(centro, "ana")
+    referente.profile.must_change_password = cuenta_temporal
+    referente.profile.save(update_fields=["must_change_password"])
+    admin = User.objects.create_superuser("admin-recuperar-email", "", "test1234")
+    centro.email_referente = "ana.nueva@example.com"
+    centro.save()
+    actualizar_referente_cdi(
+        _request(admin),
+        centro,
+        dni_anterior=centro.dni_referente,
+        email_anterior="ana@example.com",
+    )
+    referente.refresh_from_db()
+    acceso.refresh_from_db()
+    assert acceso.es_responsable is True
+    assert User.objects.count() == 2
+    assert AccesoCDI.objects.filter(centro=centro).count() == 1
+    assert referente.email == (
+        "ana.nueva@example.com" if cuenta_temporal else "ana@example.com"
+    )
+
+
 def test_usuarios_siguientes_arrancan_pidiendo_el_dni(client, centro):
     responsable, _ = _referente(centro, "resp", responsable=True)
     client.force_login(responsable)

@@ -1,5 +1,4 @@
-/* Mapa de arquitectura de SISOC — script generado, no editar la copia de static/.
-   Fuente: src/scripts/arquitectura/plantilla/mapa.js
+/* Mapa de arquitectura de SISOC — fuente versionada del visor.
 
    Espera un contenedor con id="mapa". El grafo llega por window.__GRAFO_SISOC__
    (documento autocontenido) o por fetch de la URL en data-grafo (vista Django). */
@@ -11,6 +10,7 @@
   if (!raiz) return;
 
   const CAPAS = {
+    runtime: { etiqueta: "Servicios y frontends", hue: "var(--api)", punteado: false },
     api: { etiqueta: "Contrato público", hue: "var(--api)", punteado: false },
     internal: { etiqueta: "Import de internals", hue: "var(--deuda)", punteado: false },
     movil: { etiqueta: "Plano móvil", hue: "var(--movil)", punteado: false },
@@ -40,10 +40,17 @@
         <svg class="cables" id="mp-cables" aria-hidden="true"></svg>
         <section class="marco">
           <header>
-            <h2>SISOC · monolito Django</h2>
+            <h2>SISOC · kernel, core y backends independientes</h2>
             <p id="mp-marco-sub"></p>
           </header>
           <div class="zonas" id="mp-zonas"></div>
+        </section>
+        <section class="marco">
+          <header><h2>Servicios y frontends</h2><p>El core reenvía las rutas. Kernel y MySQL son compartidos.</p></header>
+          <div class="zonas">
+            <div class="zona"><div><p class="zona-nombre">Backends y kernel</p><p class="zona-detalle">El kernel es código compartido, no un contenedor separado.</p></div><div class="rejilla" id="mp-servicios"></div></div>
+            <div class="zona"><div><p class="zona-nombre">Frontends React</p><p class="zona-detalle">Workspaces del monorepo y registro web del core.</p></div><div class="rejilla" id="mp-frontends"></div></div>
+          </div>
         </section>
         <div class="rails">
           <section class="rail">
@@ -104,7 +111,9 @@
     raiz.innerHTML = ARMAZON;
 
     const modulos = new Map(G.modulos.map(m => [m.id, m]));
-    const activas = new Set(["api", "movil", "s2s", "externo"]);
+    const servicios = new Map((G.servicios || []).map(s => [s.id, s]));
+    const frontends = new Map((G.frontends || []).map(f => [f.id, f]));
+    const activas = new Set(["runtime", "api", "movil", "s2s", "externo"]);
     let seleccion = null;
     let resaltado = null;
     let cache = null;
@@ -113,6 +122,28 @@
     /* ---------- aristas ---------- */
 
     const aristas = [];
+    const vinculoRuntime = (desde, hasta, evidencia, inferido = false) => {
+      aristas.push({ desde, hasta, capa: "runtime", n: 1, ejemplos: [evidencia], certeza: inferido ? "inferido" : "declarado", punteado: inferido });
+    };
+    for (const s of servicios.values()) {
+      for (const app of s.apps) {
+        if (modulos.has(app)) vinculoRuntime("srv:" + s.id, "mod:" + app, "App propia de " + s.id);
+      }
+      if (s.tipo !== "kernel" && servicios.has("kernel")) {
+        vinculoRuntime("srv:" + s.id, "srv:kernel", "Comparte el código del kernel");
+      }
+      if (s.tipo === "backend" && servicios.has("sisoc_core")) {
+        vinculoRuntime("srv:sisoc_core", "srv:" + s.id, "Proxy por prefijos registrados en src/backends/config/backends.json");
+      }
+    }
+    for (const f of frontends.values()) {
+      if (f.registrado && servicios.has("sisoc_core")) {
+        vinculoRuntime("srv:sisoc_core", "front:" + f.id, "Proxy web: " + f.ruta_web);
+      }
+      if (servicios.has(f.backend_asociado)) {
+        vinculoRuntime("front:" + f.id, "srv:" + f.backend_asociado, "Backend asociado por identificador; no verifica el consumo HTTP del frontend.", true);
+      }
+    }
 
     for (const a of G.aristas) {
       aristas.push({ desde: "mod:" + a.src, hasta: "mod:" + a.dst, capa: a.kind, n: a.n, ejemplos: a.ejemplos || [] });
@@ -165,7 +196,7 @@
     }
 
     const t = G.totales;
-    $("mp-marco-sub").textContent = `${t.apps} apps · ${miles(t.lineas)} líneas · una base MySQL`;
+    $("mp-marco-sub").textContent = `${t.apps} apps · ${t.backends ?? 0} backends · ${t.frontends ?? 0} frontends React · una base MySQL`;
 
     /* ---------- ficha del (?) ---------- */
 
@@ -176,6 +207,7 @@
       ["generado", (G.generado || "").slice(0, 16).replace("T", " ")],
       ["commit", G.commit || "—"],
       ["rama", G.rama || "—"],
+      ["fuente", G.fuente === "imagen" ? "Código completo al construir la imagen" : "Checkout del repositorio"],
       ["apps", miles(t.apps)],
       ["líneas de Python", miles(t.lineas)],
       ["dependencias", `${t.aristas} (${t.aristas_api} por fachada, ${t.aristas_internals} por internals)`],
@@ -185,10 +217,10 @@
     ficha.append(dl);
     ficha.append(el("h2", null, "De dónde sale"));
     const origen = el("p");
-    origen.append(document.createTextNode("Se extrae del repositorio en cada arranque: apps instaladas, rutas montadas, autenticación de cada API, imports reales entre apps y el árbol del menú lateral con sus permisos. Líneas y dependencias excluyen migraciones, tests y templates."));
+    origen.append(document.createTextNode("Se extrae del código: apps, rutas, autenticación, imports, menú, registro de backends y workspaces React. En desarrollo se regenera al arrancar; en deploy se captura antes de recortar la imagen y se conserva al arrancar. La fecha corresponde a esa captura. Líneas y dependencias excluyen migraciones, tests y templates."));
     ficha.append(origen);
     const aviso = el("p");
-    aviso.append(document.createTextNode("Las flechas son imports directos. El acoplamiento por signals y registries no aparece como flecha."));
+    aviso.append(document.createTextNode("Las capas distinguen imports de relaciones de servicios. Una asociación frontend/backend por nombre es inferida y se dibuja punteada. El mapa describe código, no confirma servicios activos ni versiones desplegadas en cada entorno. Signals y accesos SQL no aparecen."));
     ficha.append(aviso);
 
     const btnAyuda = $("mp-ayuda");
@@ -213,6 +245,7 @@
       if (def.punteado) boton.dataset.punteado = "1";
       boton.setAttribute("aria-pressed", String(activas.has(id)));
       boton.title = {
+        runtime: "Apps por dueño, kernel compartido, proxy del core y asociación de frontends",
         api: "Un dominio consume otro por su fachada pública <app>/api.py",
         internal: "Un dominio importa models, services o views de otro. Es la deuda que corta el ratchet de .importlinter",
         movil: "Las PWA entran por APIs con token DRF",
@@ -265,6 +298,7 @@
         const b = cablear(el("button", "nodo"), "mod:" + m.id);
         b.append(el("span", "titulo", m.nombre), el("span", "paquete", m.id));
         const ins = el("span", "insignias");
+        if (m.dueno) ins.append(insignia(m.dueno, "var(--api)", "Dueño del código: " + m.dueno));
         if (m.tiene_fachada) ins.append(insignia("api", "var(--api)", "Expone fachada pública en " + m.id + "/api.py"));
         if (m.planos_api.includes("token")) ins.append(insignia("token", "var(--movil)", "API con token DRF (plano móvil)"));
         if (m.planos_api.includes("api_key")) ins.append(insignia("key", "var(--s2s)", "API con API key (server-to-server)"));
@@ -284,6 +318,25 @@
       $("mp-zonas").append(fila);
     }
 
+    for (const s of servicios.values()) {
+      const b = cablear(el("button", "nodo"), "srv:" + s.id);
+      b.append(el("span", "titulo", s.nombre), el("span", "paquete", s.service || "Compartido en cada imagen"));
+      const ins = el("span", "insignias");
+      ins.append(insignia(s.apps.length + " apps", "var(--api)"));
+      b.append(ins);
+      $("mp-servicios").append(b);
+    }
+    for (const f of frontends.values()) {
+      const b = cablear(el("button", "nodo"), "front:" + f.id);
+      b.append(el("span", "titulo", f.nombre), el("span", "paquete", f.ruta_web || f.ruta_codigo));
+      const ins = el("span", "insignias");
+      ins.append(insignia(f.registrado ? "proxy registrado" : "sin proxy", f.registrado ? "var(--api)" : "var(--alerta)"));
+      if (!f.codigo_presente) ins.append(insignia("sin workspace", "var(--alerta)"));
+      if (!f.backend_asociado) ins.append(insignia("sin backend asociado", "var(--alerta)"));
+      b.append(ins);
+      $("mp-frontends").append(b);
+    }
+
     const nombrePwa = p => p.repository.split("/").pop().replace(/-/g, " ");
 
     for (const p of G.pwas) {
@@ -299,7 +352,7 @@
     const sinContrato = G.pwas.filter(p => !p.consume.length);
     $("mp-pwa-nota").textContent = sinContrato.length
       ? `Sin contrato declarado: ${sinContrato.map(p => p.id).join(", ")}.`
-      : "Las tres tienen su consumo de API declarado.";
+      : "Todas tienen su consumo de API declarado.";
 
     for (const x of G.externos) {
       const b = cablear(el("button", "nodo"), "ext:" + x.id);
@@ -476,6 +529,8 @@
     function nombreDe(id) {
       const [tipo, clave] = id.split(":");
       if (tipo === "mod") return modulos.get(clave)?.nombre || clave;
+      if (tipo === "srv") return servicios.get(clave)?.nombre || clave;
+      if (tipo === "front") return frontends.get(clave)?.nombre || clave;
       if (tipo === "pwa") {
         const p = G.pwas.find(x => x.id === clave);
         return p ? nombrePwa(p) : clave;
@@ -522,6 +577,7 @@
 
       const caja = el("div");
       const puntos = [
+        ["var(--api)", "<strong>Servicios y frontends</strong> muestra el dueño de cada app, el kernel compartido y los proxies del core. Las asociaciones de frontends por nombre son inferidas."],
         ["var(--api)", `<strong>${t.aristas_api} dependencias por fachada</strong> contra <strong>${t.aristas_internals} por imports de internals</strong>. Las fronteras están declaradas en <code>.importlinter</code>, pero la mayor parte del acoplamiento sigue siendo directo: ese es el baseline que el ratchet va cortando.`],
         ["var(--movil)", "El <strong>plano móvil</strong> (token DRF) y el <strong>server-to-server</strong> (API key) son dos superficies distintas y entran por módulos distintos."],
         ["var(--deuda)", "Prendé <em>Import de internals</em> arriba para ver el acoplamiento real. Está apagado por defecto porque tapa todo lo demás."]
@@ -552,10 +608,11 @@
       if (tipo === "mod") {
         const m = modulos.get(clave);
         hojaDetalle.append(el("h3", null, m.nombre));
-        hojaDetalle.append(el("p", "sub", m.id + "/"));
+        hojaDetalle.append(el("p", "sub", m.ruta_codigo || m.id + "/"));
 
         const datos = el("dl", "datos");
         const filas2 = [
+          ["dueño", servicios.get(m.dueno)?.nombre || m.dueno || "—"],
           ["líneas", miles(m.lineas) + ` en ${m.archivos} archivos`],
           ["zona", G.zonas.find(z => z.id === m.zona)?.nombre || m.zona],
           ["rutas web", m.rutas_web.join(" ") || "—"],
@@ -581,6 +638,34 @@
         }
       }
 
+      if (tipo === "srv") {
+        const s = servicios.get(clave);
+        hojaDetalle.append(el("h3", null, s.nombre));
+        const datos = el("dl", "datos");
+        for (const [k, v] of [
+          ["servicio", s.service || "Código compartido, sin contenedor propio"],
+          ["apps propias", s.apps.join(", ") || "—"],
+          ["prefijos del proxy", s.rutas.join(" ") || "—"],
+          ["URLconf", s.urlconf || "—"],
+          ["migrador", s.migrador || "—"],
+          ["servicios adicionales", (s.extra_services || []).join(", ") || "—"]
+        ]) datos.append(el("dt", null, k), el("dd", null, v));
+        hojaDetalle.append(bloque("Composición", datos));
+      }
+
+      if (tipo === "front") {
+        const f = frontends.get(clave);
+        hojaDetalle.append(el("h3", null, f.nombre));
+        const datos = el("dl", "datos");
+        for (const [k, v] of [
+          ["código", f.ruta_codigo],
+          ["ruta web", f.ruta_web || "Sin proxy registrado"],
+          ["workspace presente", f.codigo_presente ? "sí" : "no"],
+          ["backend asociado", f.backend_asociado ? nombreDe("srv:" + f.backend_asociado) + " (inferido por nombre)" : "Sin asociación"]
+        ]) datos.append(el("dt", null, k), el("dd", null, v));
+        hojaDetalle.append(bloque("Frontend", datos));
+      }
+
       if (tipo === "pwa") {
         const x = G.pwas.find(p => p.id === clave);
         hojaDetalle.append(el("h3", null, nombrePwa(x)));
@@ -589,8 +674,6 @@
         const filas2 = [
           ["ruta canónica", x.canonical_path],
           ["ruta previa", x.legacy_path || "—"],
-          ["proyecto", x.project + " : " + x.port],
-          ["checkout", x.checkout],
           ["habilitada", x.enabled ? "sí" : "no"]
         ];
         for (const [k, v] of filas2) datos.append(el("dt", null, k), el("dd", null, v));

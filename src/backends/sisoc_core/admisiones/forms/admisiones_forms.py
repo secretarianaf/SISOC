@@ -168,6 +168,9 @@ from admisiones.models.admisiones import (
     DocumentosExpediente,
     Providencia,
 )
+from admisiones.services.datos_organizacion_snapshot import (
+    datos_organizacion_informe,
+)
 from admisiones.utils import (
     informe_admite_replica_gde,
     numeros_gde_por_campo_de_informe,
@@ -320,6 +323,18 @@ def _guardar_antecedentes_informe_2233(form, informe):
         )
     informe.antecedentes_renovaciones = antecedentes
     return informe
+
+
+def _prellenar_datos_organizacion(form, admision):
+    """Precarga los datos de la organizacion en un informe nuevo desde el
+    snapshot de la admision, para respetar "Continuar operando con la
+    Admision actual" si la organizacion cambio (#2571). Un informe guardado
+    conserva sus valores."""
+    if form.instance.pk:
+        return
+    for campo, valor in datos_organizacion_informe(admision).items():
+        if campo in form.fields:
+            form.fields[campo].initial = valor
 
 
 def _prellenar_informe_nuevo(form, admision):
@@ -676,14 +691,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
             #    self.fields["representante_cargo"].initial = referente.funcion or ""
 
             if organizacion:
-                self.fields["nombre_organizacion"].initial = organizacion.nombre
-                self.fields["cuit_organizacion"].initial = organizacion.cuit
-                self.fields["mail_organizacion"].initial = organizacion.email
-                self.fields["telefono_organizacion"].initial = organizacion.telefono
-                self.fields["domicilio_organizacion"].initial = organizacion.domicilio
-                self.fields["localidad_organizacion"].initial = organizacion.localidad
-                self.fields["provincia_organizacion"].initial = organizacion.provincia
-                self.fields["partido_organizacion"].initial = organizacion.partido
+                _prellenar_datos_organizacion(self, admision)
 
                 if (
                     not self.instance.fecha_vencimiento_mandatos
@@ -860,14 +868,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
             #    self.fields["representante_cargo"].initial = referente.funcion or ""
 
             if organizacion:
-                self.fields["nombre_organizacion"].initial = organizacion.nombre
-                self.fields["cuit_organizacion"].initial = organizacion.cuit
-                self.fields["mail_organizacion"].initial = organizacion.email
-                self.fields["telefono_organizacion"].initial = organizacion.telefono
-                self.fields["domicilio_organizacion"].initial = organizacion.domicilio
-                self.fields["localidad_organizacion"].initial = organizacion.localidad
-                self.fields["provincia_organizacion"].initial = organizacion.provincia
-                self.fields["partido_organizacion"].initial = organizacion.partido
+                _prellenar_datos_organizacion(self, admision)
 
                 if (
                     not self.instance.fecha_vencimiento_mandatos

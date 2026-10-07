@@ -70,6 +70,9 @@ CMD ["python", "./docker/django/entrypoint.py"]
 
 FROM base AS source
 COPY . /repo
+# Capturar la composición completa sin cargar Django ni acceder a la DB.
+# El core conserva este grafo cuando se quita el código de otros servicios.
+RUN python /repo/src/scripts/arquitectura/generar_mapa.py --imagen
 RUN rm -rf /repo/src/frontends
 
 # SISOC core: config, kernel y su cluster (sisoc_core), sin los backends por vertical.

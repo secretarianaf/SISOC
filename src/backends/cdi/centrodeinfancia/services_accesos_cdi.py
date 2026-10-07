@@ -11,7 +11,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from centrodeinfancia.access import puede_administrar_usuarios_cdi
-from centrodeinfancia.models import AccesoCDI
+from centrodeinfancia.models import AccesoCDI, CentroDeInfancia
 
 Estado = AccesoCDI.Estado
 
@@ -78,6 +78,9 @@ def asignar_responsable(acceso):
     El responsable anterior queda como referente común, con su acceso tal cual.
     """
     with transaction.atomic():
+        # Serializa todas las asignaciones del CDI, incluso cuando todavía no
+        # tiene responsable. Bloquear solo los accesos actuales no alcanza.
+        CentroDeInfancia.objects.select_for_update().get(pk=acceso.centro_id)
         # Uno por uno y no con ``update()``: así el cambio queda en la auditoría.
         anteriores = AccesoCDI.objects.filter(
             centro_id=acceso.centro_id, es_responsable=True

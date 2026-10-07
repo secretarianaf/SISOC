@@ -520,6 +520,16 @@
   "regex": "^api/datacalle/\\Z"
  },
  {
+  "name": "api-siis-admin-token",
+  "namespace": "",
+  "regex": "^api/users/siis/admin\\-token/\\Z"
+ },
+ {
+  "name": "api-siis-user-create",
+  "namespace": "",
+  "regex": "^api/users/siis/\\Z"
+ },
+ {
   "name": "api-territorial-comedor-corregir-acta-complementaria",
   "namespace": "",
   "regex": "^api/territorial/comedores/(?P<pk>\\d+)/actas-complementarias/(?P<acta_id>[0-9]+)/$"

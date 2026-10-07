@@ -64,6 +64,26 @@ Ahora SISOC genera su propio PDF:
 `docPDF` se sigue guardando y exponiendo por API como antes; solo dejó de
 usarse en el botón.
 
+## Revisión y validación del PDF (2026-10-07)
+
+- Se confirmó con el solicitante que también los relevamientos históricos
+  deben descargar el PDF nuevo de SISOC, aunque tengan `docPDF`.
+- La revisión visual encontró valores superpuestos en las columnas estrechas
+  del domicilio. El CSS exclusivo del PDF ahora usa columnas más anchas
+  y permite cortar palabras largas dentro de cada columna. El detalle web
+  conserva su presentación.
+- Los tests leen el PDF real con `pypdf`: verifican contenido, una observación
+  larga con 100 marcas sin pérdidas ni duplicación y la inclusión de firma y
+  fotos locales (dos y doce fotos de 800 × 600). No se agregan dependencias al
+  proyecto.
+- La validación local usa SQLite en memoria y WeasyPrint 68.0 en un entorno
+  temporal: pasan los 43 tests focalizados del PDF, estado visible y vistas de
+  relevamientos, Black, Pylint y el check de formato de djlint. Se revisaron
+  capturas del documento generado. Los tiempos con imágenes sintéticas no
+  constituyen una prueba de carga ni garantizan el comportamiento con
+  fotografías grandes o solicitudes
+  concurrentes. La CI del HEAD sigue siendo una validación separada.
+
 ## Pendiente
 
 - Confirmar con el equipo funcional cómo mostrar "A subsanar" en el listado.

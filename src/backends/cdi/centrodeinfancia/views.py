@@ -99,8 +99,6 @@ from centrodeinfancia.services import (
 from centrodeinfancia.services_renaper_bloques import (
     BLOQUE_NINO,
     BLOQUE_REFERENTE,
-    BLOQUE_RESPONSABLE_1,
-    BLOQUE_RESPONSABLE_2,
     BLOQUES,
     BLOQUES_NOMINA,
     consultar_bloque,
@@ -1601,8 +1599,6 @@ class NominaCentroInfanciaCreateView(
     _RENAPER_PREFILL_SALT = "centrodeinfancia.nomina.renaper_prefill"
     _RENAPER_PREFILL_MAX_AGE_SECONDS = 15 * 60
 
-    _BLOQUES_RESPONSABLES = (BLOQUE_RESPONSABLE_1, BLOQUE_RESPONSABLE_2)
-
     def _crear_token_renaper(self, valores_nino):
         payload = {
             "centro_id": self._get_centro().pk,
@@ -1620,6 +1616,9 @@ class NominaCentroInfanciaCreateView(
         Sale del ciudadano local si ya está validado por RENAPER, o del token
         firmado de la precarga. Nunca del POST.
         """
+        valores, _ = self._tokens_nomina()
+        if BLOQUE_NINO in valores:
+            return valores[BLOQUE_NINO]
         if selected_ciudadano:
             return valores_bloque(
                 BLOQUE_NINO, identidad_desde_ciudadano_validado(selected_ciudadano)
@@ -1632,15 +1631,26 @@ class NominaCentroInfanciaCreateView(
             if campo in permitidos and valor not in (None, "")
         }
 
-    def _tokens_responsables(self):
+    def _tokens_nomina(self):
         if self.request.method != "POST":
             return {}, {}
-        return tokens_desde_post(
-            self.request.POST, self.request.user, self._BLOQUES_RESPONSABLES
+        valores, tokens = tokens_desde_post(
+            self.request.POST, self.request.user, BLOQUES_NOMINA
         )
+        # Elegir un ciudadano local no permite sustituirlo por otra persona.
+        seleccionado = self._get_selected_ciudadano_from_request(self.request)
+        nino = valores.get(BLOQUE_NINO)
+        if (
+            seleccionado
+            and nino
+            and str(nino.get("dni")) != str(seleccionado.documento)
+        ):
+            valores.pop(BLOQUE_NINO)
+            tokens.pop(BLOQUE_NINO)
+        return valores, tokens
 
     def _valores_renaper_alta(self, selected_ciudadano):
-        valores, _ = self._tokens_responsables()
+        valores, _ = self._tokens_nomina()
         return {
             **self._valores_renaper_nino(selected_ciudadano),
             **_unir_valores_renaper(valores),
@@ -1668,8 +1678,7 @@ class NominaCentroInfanciaCreateView(
         return payload, token
 
     def _payload_validacion_renaper(self, cleaned_data):
-        payload, _ = self._obtener_prefill_renaper()
-        values = payload.get("values") or {}
+        values = self._valores_renaper_nino(None)
         if (
             not cleaned_data.get("dni")
             or str(cleaned_data["dni"]) != str(values.get("dni"))
@@ -1866,7 +1875,7 @@ class NominaCentroInfanciaCreateView(
         context["form"] = form
         context["renaper_precarga"] = bool(renaper_data) or bool(renaper_prefill)
         context["renaper_prefill_token"] = token
-        context["renaper_tokens"] = self._tokens_responsables()[1]
+        context["renaper_tokens"] = self._tokens_nomina()[1]
         context["mostrar_formulario"] = bool(
             selected_ciudadano or context["no_resultados"] or form.is_bound
         )

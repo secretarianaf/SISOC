@@ -132,7 +132,6 @@ class SIISUserResponseSerializer(serializers.Serializer):
     dni = serializers.CharField()
     acceso_siis = serializers.BooleanField()
 
-
     def create(self, validated_data):
         raise NotImplementedError("Serializer de solo lectura.")
 

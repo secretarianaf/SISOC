@@ -13,7 +13,7 @@ Estado: validado en `hml-old` el 2026-07-13.
 
 ## Estado rapido
 
-Las fuentes versionables estan en `scripts/infra/` y las copias operativas en
+Las fuentes versionables estan en `src/scripts/infra/` y las copias operativas en
 `/home/sisoc-deploy/bin/`:
 
 ```bash
@@ -108,4 +108,4 @@ Backup root-only:
 
 El datadir y los paquetes siguen intactos. Ver rollback y criterio de observacion
 en `HML_ROLLBACK.md`. El script versionado es
-`scripts/infra/retire_hml_local_mysql_stage1.sh`.
+`src/scripts/infra/retire_hml_local_mysql_stage1.sh`.

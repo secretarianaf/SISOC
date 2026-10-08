@@ -1,0 +1,20 @@
+# Contexto en la raiz: incluir solo el workspace y su configuracion de imagen.
+**
+!src/
+!src/frontends/
+!src/frontends/**
+!src/scripts/
+!src/scripts/frontends/
+!src/scripts/frontends/**
+!docker/
+!docker/frontends/
+!docker/frontends/nginx.conf.template
+**/node_modules
+**/dist
+**/.vite
+**/.npm-cache
+**/.env
+**/.env.*
+**/test-results
+**/playwright-report
+**/coverage

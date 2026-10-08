@@ -76,22 +76,22 @@ modifican pero pueden bloquear derivaciones posteriores.
 
 ## Referencias de implementación y validación
 
-- `centrodeinfancia/services.py`: `AsistenciaNominaCentroInfanciaService`.
-- `centrodeinfancia/services.py`: validación y serialización de nómina vigente
+- `src/backends/cdi/centrodeinfancia/services.py`: `AsistenciaNominaCentroInfanciaService`.
+- `src/backends/cdi/centrodeinfancia/services.py`: validación y serialización de nómina vigente
   por persona (`tiene_nomina_cdi_vigente_en_otro_centro`).
-- `centrodeinfancia/views.py`: `AsistenciaNominaCentroView`, calendario y
+- `src/backends/cdi/centrodeinfancia/views.py`: `AsistenciaNominaCentroView`, calendario y
   `TrabajadorCentroInfanciaCreateView`.
-- `centrodeinfancia/urls.py`: protección de rutas y redirección histórica.
-- `centrodeinfancia/tests/test_asistencia_nomina.py` y
-  `centrodeinfancia/tests/test_trabajadores_views.py`: regresión de asistencia
+- `src/backends/cdi/centrodeinfancia/urls.py`: protección de rutas y redirección histórica.
+- `src/backends/cdi/centrodeinfancia/tests/test_asistencia_nomina.py` y
+  `src/backends/cdi/centrodeinfancia/tests/test_trabajadores_views.py`: regresión de asistencia
   y flujo de trabajador.
-- `docs/registro/cambios/2026-07-16-cdi-validaciones-trabajador.md`:
+- `docs/registro/cambios/2026-T3/2026-07-16-cdi-validaciones-trabajador.md`:
   validaciones, migraciones y contrato RENAPER.
-- `docs/registro/cambios/2026-07-17-cdi-asistencia-nomina.md`: reglas de
+- `docs/registro/cambios/2026-T3/2026-07-17-cdi-asistencia-nomina.md`: reglas de
   negocio y compatibilidad de asistencia.
-- `docs/registro/cambios/2026-07-15-cdi-enforcement-alcances.md`: alcance por
+- `docs/registro/cambios/2026-T3/2026-07-15-cdi-enforcement-alcances.md`: alcance por
   rol y restricción de Auditoría.
-- `docs/registro/cambios/2026-08-07-cdi-nomina-vigente-en-un-solo-centro.md`:
+- `docs/registro/cambios/2026-T3/2026-08-07-cdi-nomina-vigente-en-un-solo-centro.md`:
   alcance, concurrencia, límites y rollback de la exclusividad de vigencia.
 - `docs/qa/2038-roles-simepi-cdi-guia-testeo.md`: guía funcional de roles.
 

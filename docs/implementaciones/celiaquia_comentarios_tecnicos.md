@@ -14,7 +14,7 @@ auditoría del historial existente.
 
 Cada comentario indica tipo de documento, si tiene observaciones y, en caso
 afirmativo, una observación de catálogo o `OTROS` con texto libre. El catálogo
-vive en `celiaquia/comentarios_tecnicos.py`; el servicio valida que el código
+vive en `src/backends/celiaquia/celiaquia/comentarios_tecnicos.py`; el servicio valida que el código
 corresponda al tipo de documento y guarda el texto resuelto como snapshot
 histórico. No se sobrescriben comentarios anteriores.
 
@@ -39,8 +39,8 @@ exige comentarios.
 
 ## Puntos de entrada
 
-- Servicio: `celiaquia/services/comentarios_tecnicos_service/`.
-- Catálogo: `celiaquia/comentarios_tecnicos.py`.
-- Vistas y permisos de territorio: `celiaquia/views/comentarios.py` y
-  `users/territorial_scope.py`.
-- Registro de implementación: `docs/registro/cambios/2026-09-03-celiaquia-comentarios-tecnicos-subsanacion.md`.
+- Servicio: `src/backends/celiaquia/celiaquia/services/comentarios_tecnicos_service/`.
+- Catálogo: `src/backends/celiaquia/celiaquia/comentarios_tecnicos.py`.
+- Vistas y permisos de territorio: `src/backends/celiaquia/celiaquia/views/comentarios.py` y
+  `src/backends/kernel/users/territorial_scope.py`.
+- Registro de implementación: `docs/registro/cambios/2026-T3/2026-09-03-celiaquia-comentarios-tecnicos-subsanacion.md`.

@@ -42,13 +42,13 @@ flujo operativo CDF.
 
 ## Puntos de implementación y validación
 
-- `centrodefamilia/views/beneficiarios_export.py` concentra columnas, orden y
+- `src/backends/cdf/centrodefamilia/views/beneficiarios_export.py` concentra columnas, orden y
   chequeo de permisos.
-- `centrodefamilia/services/beneficiarios_service/impl.py` prepara las columnas
+- `src/backends/cdf/centrodefamilia/services/beneficiarios_service/impl.py` prepara las columnas
   del listado y formatea la fecha.
-- `centrodefamilia/tests/test_beneficiarios_export.py` cubre CSV, orden,
+- `src/backends/cdf/centrodefamilia/tests/test_beneficiarios_export.py` cubre CSV, orden,
   permisos y render.
 
 Los cambios que introdujeron este contrato se registran en
-`docs/registro/cambios/2026-07-27-cdf-exportacion-beneficiarios.md` y
-`docs/registro/cambios/2026-07-31-cdf-beneficiarios-columnas-y-export-sse.md`.
+`docs/registro/cambios/2026-T3/2026-07-27-cdf-exportacion-beneficiarios.md` y
+`docs/registro/cambios/2026-T3/2026-07-31-cdf-beneficiarios-columnas-y-export-sse.md`.

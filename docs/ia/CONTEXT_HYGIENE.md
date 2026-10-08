@@ -27,6 +27,13 @@ Para cualquier tarea:
 
 ## Elegir una sola guia inicial
 
+Para cambios entre servicios, comenzar por `docs/desarrollo/verticales_independientes.md`:
+- identificar dueño y kernel autorizado antes de ampliar contexto;
+- no importar código de otro servicio; reutilizar contratos HTML/JSON/favoritos;
+- abrir registro, runtime, contrato de imports y tests solo del flujo afectado;
+- revisar URLs, recursos por app, migrador y plan de deploy;
+- distinguir composición completa de imagen aislada y evidencia documental de funcional.
+
 - bugfix o feature web/API: `docs/ia/TESTING.md`
 - nuevo modulo de dominio, dependencia interdominio o preparacion de extraccion:
   `docs/ia/MODULAR_BOUNDARIES.md`
@@ -125,18 +132,18 @@ Expandir si hace falta:
 
 ## Helper recomendado
 
-`scripts/ai/preflight.sh` resume el arranque minimo segun el tipo de tarea:
+`src/scripts/ai/preflight.sh` resume el arranque minimo segun el tipo de tarea:
 
 ```bash
-bash scripts/ai/preflight.sh general
-bash scripts/ai/preflight.sh bugfix-view core/views.py
-bash scripts/ai/preflight.sh feature-api comunicados/api_views.py
+bash src/scripts/ai/preflight.sh general
+bash src/scripts/ai/preflight.sh bugfix-view src/backends/kernel/core/views.py
+bash src/scripts/ai/preflight.sh feature-api src/backends/sisoc_core/comunicados/api_views.py
 ```
 
 Para consultar o refrescar memoria operativa manualmente:
 
 ```bash
-python scripts/ai/context_memory.py preflight --target core/views.py
-python scripts/ai/context_memory.py scaffold --slug core --title "Core" --summary "Resumen operativo de core" --path core/ --path tests/test_core_*.py
-python scripts/ai/context_memory.py refresh --file docs/contexto/memoria/core.md
+python src/scripts/ai/context_memory.py preflight --target src/backends/kernel/core/views.py
+python src/scripts/ai/context_memory.py scaffold --slug core --title "Core" --summary "Resumen operativo de core" --path src/backends/kernel/core/ --path src/backends/kernel/tests/test_core_*.py
+python src/scripts/ai/context_memory.py refresh --file docs/contexto/memoria/core.md
 ```

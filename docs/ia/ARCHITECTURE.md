@@ -9,14 +9,19 @@ Fuentes complementarias:
 
 ## Resumen real del sistema (alto nivel)
 
-- Monolito Django modular por apps de dominio.
+- Monorepo Django con core de entrada, backends independientes y DB compartida.
+- Guia vigente: `docs/desarrollo/verticales_independientes.md` (ubicación, reglas y checklists).
+- Kernel no importa core/verticales; un servicio no importa otro.
+- Datos entre procesos por contratos HTML/JSON/favoritos; no por imports Python.
+- URLs por registro, recursos por dueño, migraciones/collectstatic por migrador.
+- Validar imports, runtimes/imágenes aisladas y plan de deploy según archivos.
 - Web server-side con templates Django + Bootstrap/JS.
 - APIs con DRF (`api_views.py`, serializers).
 - Lógica de negocio distribuida en `services/` y utilidades por app.
 - Persistencia con ORM Django sobre MySQL.
 - Cache local (`LocMemCache`) configurada en settings.
-- Logging custom configurado en `config/settings.py` con utilidades en `core/utils.py`.
-- PAS usa Celery/Redis para control mensual: `docker-compose.celery.yml`. Los demás workers conservan su mecanismo propio.
+- Logging custom configurado en `src/backends/config/settings.py` con utilidades en `src/backends/kernel/core/utils.py`.
+- PAS usa Celery/Redis para control mensual: `docker/compose/docker-compose.celery.yml`. Los demás workers conservan su mecanismo propio.
 - Integraciones externas (p. ej. RENAPER/GESTIONAR) en servicios/tasks, no en templates.
 
 ## Capas y boundaries (regla de ubicación)

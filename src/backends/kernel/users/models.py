@@ -1,0 +1,625 @@
+from django.conf import settings
+from django.contrib.auth.models import Group, Permission, User
+from django.core.exceptions import ValidationError
+from django.db import models
+from django.db.models import Q
+
+from core.models import Localidad, Municipio, Provincia
+
+
+def bulk_credentials_job_upload_to(instance, filename):
+    return f"users/bulk_credentials_jobs/{instance.requested_by_id}/{filename}"
+
+
+class Profile(models.Model):
+    """Perfil extendido de usuario del sistema SISOC.
+
+    Este modelo extiende el modelo User de Django con información adicional
+    específica del sistema de gestión de comedores comunitarios.
+
+    Roles principales:
+    ----------------
+
+    1. Usuario Provincial:
+       - Tiene acceso limitado por ProfileTerritorialScope
+       - Profile.provincia se conserva solo como compatibilidad legacy
+
+    2. Coordinador de Gestión:
+       - Rol de supervisión con acceso de solo lectura a comedores/admisiones/acompañamientos
+       - Supervisa el trabajo de equipos técnicos (duplas) asignados
+
+       Requisitos para ser Coordinador:
+       - es_coordinador=True
+       - Pertenecer al grupo "Coordinador Equipo Tecnico" (en User.groups)
+       - is_staff=True (requerido para acceso al backoffice)
+       - Tener al menos una dupla asignada en duplas_asignadas
+
+       Permisos y alcance:
+       - Acceso de SOLO LECTURA a:
+         * Comedores de las duplas asignadas
+         * Admisiones de esos comedores
+         * Acompañamientos de esos comedores
+       - NO puede editar, crear ni eliminar registros
+       - NO puede ver comedores de duplas no asignadas
+
+       Restricciones:
+       - Un coordinador NO debe coordinar duplas donde participa como técnico/abogado
+       - Solo puede asignarse duplas activas que tengan comedores
+       - La asignación es many-to-many (un coordinador puede tener múltiples duplas)
+
+       Ejemplo de uso:
+       >>> coord = User.objects.create(username='coord1', is_staff=True)
+       >>> coord.groups.add(Group.objects.get(name='Coordinador Gestion'))
+       >>> profile = coord.profile
+       >>> profile.es_coordinador = True
+       >>> dupla1 = Dupla.objects.get(id=1)
+       >>> profile.duplas_asignadas.add(dupla1)
+       >>> # Ahora coord1 puede ver comedores de dupla1 en modo solo lectura
+
+    Campos:
+    -------
+    user : OneToOneField
+        Usuario de Django asociado (relación 1:1)
+    dni, cuil : CharField
+        Datos identificatorios informativos del usuario
+    tipo_usuario : CharField
+        Clasificación informativa independiente de permisos y alcances
+    dark_mode : BooleanField
+        Preferencia de tema oscuro en la UI
+    es_usuario_provincial : BooleanField
+        Indica si el usuario tiene restricción por provincia
+    provincia : ForeignKey
+        Provincia legacy; la autorización territorial usa ProfileTerritorialScope
+    rol : CharField
+        Descripción textual del rol (complementa groups)
+    correo_institucional : EmailField
+        Correo institucional informado por el usuario (opcional)
+    needs_profile_confirmation : BooleanField
+        Obliga a confirmar datos personales en el próximo ingreso web
+    es_coordinador : BooleanField
+        Marca si este usuario es coordinador de gestión
+    duplas_asignadas : ManyToManyField
+        Duplas (equipos técnicos) que este coordinador supervisa
+    fecha_creacion : DateTimeField
+        Fecha de creación del perfil
+
+    Ver también:
+    ------------
+    - users.services.UserPermissionService: Lógica centralizada de permisos
+    - core.constants.UserGroups: Nombres de grupos del sistema
+    - duplas.models.Dupla: Modelo de equipos técnicos
+    """
+
+    class TipoUsuario(models.TextChoices):
+        INTERNO = "interno", "Interno"
+        PROVINCIAL = "provincial", "Provincial"
+        EXTERNO = "externo", "Externo"
+
+    class DataCalleRol(models.TextChoices):
+        """Roles del relevamiento de situacion de calle (SISOC - Mobile DataCalle).
+
+        Jerarquia decreciente: administrador > coordinador > entrevistador.
+        Cada rol superior puede lo del inferior. Definidos en el documento
+        funcional del area del 2026-09-18; ver
+        docs/registro/decisiones/2026-09-18-datacalle-roles-y-permisos.md
+        """
+
+        ADMINISTRADOR = "administrador", "Administrador Nacional"
+        COORDINADOR = "coordinador", "Coordinador Provincial"
+        ENTREVISTADOR = "entrevistador", "Relevador"
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    dni = models.CharField(max_length=16, blank=True)
+    acceso_web = models.BooleanField(default=True, verbose_name="Acceso SISOC web")
+    acceso_siis = models.BooleanField(default=False, verbose_name="Acceso SIIS")
+    cuil = models.CharField(max_length=16, blank=True)
+    tipo_usuario = models.CharField(
+        max_length=10,
+        choices=TipoUsuario.choices,
+        null=True,
+        blank=True,
+    )
+    dark_mode = models.BooleanField(default=True)
+    configuracion_mobile = models.JSONField(
+        default=dict,
+        blank=True,
+        editable=False,
+        help_text="Selecciones del formulario mobile; no otorga permisos ni acceso.",
+    )
+    es_usuario_provincial = models.BooleanField(default=False)
+    provincia = models.ForeignKey(
+        Provincia, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    rol = models.CharField(max_length=100, null=True, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    must_change_password = models.BooleanField(
+        default=False,
+        verbose_name="Debe cambiar contraseña",
+        help_text="Obliga al usuario a actualizar la contraseña en su próximo login web.",
+    )
+    password_changed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Contraseña actualizada en",
+    )
+    initial_password_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Expira contraseña inicial en",
+    )
+    password_reset_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Reset de contraseña solicitado en",
+        help_text=(
+            "Se completa cuando un usuario mobile solicita desde la app "
+            "que un administrador genere una nueva contraseña temporal."
+        ),
+    )
+    temporary_password_plaintext = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True,
+        verbose_name="Contraseña temporal visible",
+    )
+    correo_institucional = models.EmailField(
+        blank=True,
+        verbose_name="Correo institucional",
+    )
+    declaracion_aceptada = models.BooleanField(
+        default=False,
+        verbose_name="Declaración aceptada",
+        help_text="El usuario aceptó la declaración al confirmar sus datos personales.",
+    )
+    needs_profile_confirmation = models.BooleanField(
+        default=False,
+        verbose_name="Debe confirmar datos personales",
+        help_text=(
+            "Obliga al usuario a confirmar o corregir sus datos personales "
+            "en su próximo ingreso web."
+        ),
+    )
+    datos_confirmados_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Datos personales confirmados en",
+    )
+    source = models.CharField(
+        max_length=50,
+        blank=True,
+        default="sisoc",
+        verbose_name="Origen del usuario",
+        help_text=(
+            "Sistema que originó el usuario (sisoc, ticketera, ...). "
+            "Permite reconciliar altas provenientes de integraciones externas."
+        ),
+    )
+    es_coordinador = models.BooleanField(
+        default=False,
+        verbose_name="Es Coordinador de Gestión",
+        help_text="Marca si este usuario es coordinador de gestión",
+    )
+    es_territorial_comedor = models.BooleanField(
+        default=False,
+        verbose_name="Acceso SISOC - Mobile Territorial comedor",
+        help_text=(
+            "Marca al usuario como territorial (relevador) de comedores en "
+            "SISOC - Mobile. El alcance se define por provincia en "
+            "TerritorialComedorProvincia."
+        ),
+    )
+    es_relevador_calle = models.BooleanField(
+        default=False,
+        verbose_name="Acceso SISOC - Mobile DataCalle",
+        help_text=(
+            "Marca al usuario como relevador de personas en situacion de calle "
+            "en SISOC - Mobile (DataCalle). El alcance se define por provincia "
+            "en RelevadorCalleProvincia."
+        ),
+    )
+    datacalle_rol = models.CharField(
+        max_length=20,
+        choices=DataCalleRol.choices,
+        blank=True,
+        default="",
+        verbose_name="Rol en DataCalle",
+        help_text=(
+            "Rol con el que el usuario opera en SISOC - Mobile DataCalle. "
+            "Obligatorio cuando es_relevador_calle esta activo."
+        ),
+    )
+    # ``duplas_asignadas`` (duplas que coordina este perfil) lo declara
+    # ``duplas.Dupla.coordinadores``: el kernel no conoce el dominio de duplas.
+    grupos_asignables = models.ManyToManyField(
+        Group,
+        blank=True,
+        related_name="perfiles_delegadores",
+        verbose_name="Grupos que puede asignar",
+        help_text="Define qué grupos puede asignar este usuario al crear/editar otros usuarios.",
+    )
+    roles_asignables = models.ManyToManyField(
+        Permission,
+        blank=True,
+        related_name="perfiles_roles_delegables",
+        verbose_name="Roles que puede asignar",
+        help_text="Permisos auth.role_* que este usuario puede asignar a terceros.",
+    )
+
+    def __str__(self):
+        return f"Perfil de {self.user.username}"
+
+
+class ProfileTerritorialScope(models.Model):
+    """Alcance territorial explícito para usuarios provinciales."""
+
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="territorial_scopes",
+    )
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+    municipio = models.ForeignKey(
+        Municipio,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    localidad = models.ForeignKey(
+        Localidad,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    scope_key = models.CharField(max_length=64, editable=False, db_index=True)
+
+    class Meta:
+        verbose_name = "Alcance territorial de perfil"
+        verbose_name_plural = "Alcances territoriales de perfil"
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(localidad__isnull=True) | Q(municipio__isnull=False),
+                name="profile_scope_localidad_requires_municipio",
+            ),
+            models.UniqueConstraint(
+                fields=["profile", "scope_key"],
+                name="uniq_profile_scope_key",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["profile", "provincia"],
+                name="users_profi_profile_4be6f7_idx",
+            ),
+            models.Index(
+                fields=["profile", "provincia", "municipio"],
+                name="users_profi_profile_26d7f4_idx",
+            ),
+        ]
+
+    @staticmethod
+    def build_scope_key(provincia_id, municipio_id=None, localidad_id=None):
+        return f"p{provincia_id}:m{municipio_id or 0}:l{localidad_id or 0}"
+
+    def clean(self):
+        super().clean()
+        if not self.provincia_id:
+            raise ValidationError({"provincia": "Seleccione una provincia."})
+        if self.localidad_id and not self.municipio_id:
+            raise ValidationError(
+                {"localidad": "Para asignar localidad debe seleccionar municipio."}
+            )
+        if self.municipio_id and self.municipio.provincia_id != self.provincia_id:
+            raise ValidationError(
+                {"municipio": "El municipio no pertenece a la provincia seleccionada."}
+            )
+        if self.localidad_id and self.localidad.municipio_id != self.municipio_id:
+            raise ValidationError(
+                {"localidad": "La localidad no pertenece al municipio seleccionado."}
+            )
+
+    def save(self, *args, **kwargs):
+        self.scope_key = self.build_scope_key(
+            self.provincia_id,
+            self.municipio_id,
+            self.localidad_id,
+        )
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        parts = [str(self.provincia)]
+        if self.municipio_id:
+            parts.append(str(self.municipio))
+        if self.localidad_id:
+            parts.append(str(self.localidad))
+        return " / ".join(parts)
+
+
+class TerritorialComedorProvincia(models.Model):
+    """Provincia de alcance de un usuario territorial de comedores (SISOC - Mobile).
+
+    Estructura dedicada al rol territorial: mantiene el alcance desacoplado de
+    ``ProfileTerritorialScope`` (usuarios provinciales) y de ``pwa.AccesoComedorPWA``
+    (representantes PWA). Solo modela provincia, que es el eje con el que el pull
+    de territoriales desde GESTIONAR/AppSheet cachea los relevadores.
+    """
+
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="territorial_comedor_provincias",
+    )
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = "Provincia de territorial de comedor"
+        verbose_name_plural = "Provincias de territorial de comedor"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["profile", "provincia"],
+                name="uniq_territorial_comedor_provincia",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["provincia"]),
+        ]
+
+    def __str__(self):
+        return f"{self.profile.user.username} / {self.provincia}"
+
+
+class RelevadorCalleProvincia(models.Model):
+    """Provincia de alcance de un relevador de DataCalle (SISOC - Mobile).
+
+    Espejo de ``TerritorialComedorProvincia`` para el modulo de situacion de
+    calle: mantiene el alcance del relevador desacoplado de
+    ``ProfileTerritorialScope`` (usuarios provinciales del backoffice) y de
+    ``pwa.AccesoComedorPWA`` (representantes PWA de comedores). Solo modela
+    provincia, que es el eje con el que se arman los operativos de relevamiento.
+    """
+
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="relevador_calle_provincias",
+    )
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = "Provincia de relevador DataCalle"
+        verbose_name_plural = "Provincias de relevador DataCalle"
+        constraints = [
+            # RN01: provincia unica por usuario. La constraint anterior
+            # (profile, provincia) solo evitaba duplicados de la misma fila y
+            # permitia N provincias distintas.
+            models.UniqueConstraint(
+                fields=["profile"],
+                name="uniq_relevador_calle_una_provincia",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["provincia"]),
+        ]
+
+    def __str__(self):
+        return f"{self.profile.user.username} / {self.provincia}"
+
+
+class BulkCredentialsJob(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pendiente"
+        PROCESSING = "processing", "Procesando"
+        COMPLETED = "completed", "Completado"
+        FAILED = "failed", "Fallido"
+
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        related_name="bulk_credentials_jobs",
+    )
+    archivo = models.FileField(upload_to=bulk_credentials_job_upload_to)
+    original_filename = models.CharField(max_length=255)
+    send_type = models.CharField(max_length=32, db_index=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    total_rows = models.PositiveIntegerField(default=0)
+    processed_rows = models.PositiveIntegerField(default=0)
+    sent_rows = models.PositiveIntegerField(default=0)
+    updated_password_rows = models.PositiveIntegerField(default=0)
+    unchanged_password_rows = models.PositiveIntegerField(default=0)
+    rejected_rows = models.PositiveIntegerField(default=0)
+    next_row_index = models.PositiveIntegerField(default=0)
+    last_successful_row = models.PositiveIntegerField(null=True, blank=True)
+    last_successful_username = models.CharField(max_length=150, blank=True)
+    last_attempted_row = models.PositiveIntegerField(null=True, blank=True)
+    last_attempted_username = models.CharField(max_length=150, blank=True)
+    last_error_message = models.TextField(blank=True)
+    last_error_at = models.DateTimeField(null=True, blank=True)
+    resume_count = models.PositiveIntegerField(default=0)
+    requested_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    last_activity_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["-requested_at", "-id"]
+        indexes = [
+            models.Index(fields=["status", "requested_at"]),
+            models.Index(fields=["requested_by", "requested_at"]),
+        ]
+        verbose_name = "Lote de credenciales masivas"
+        verbose_name_plural = "Lotes de credenciales masivas"
+
+    def __str__(self):
+        return f"Lote {self.id} ({self.get_status_display()})"
+
+
+class BulkCredentialsJobRow(models.Model):
+    class Status(models.TextChoices):
+        SENT = "sent", "Enviada"
+        FAILED = "failed", "Fallida"
+
+    job = models.ForeignKey(
+        BulkCredentialsJob,
+        on_delete=models.CASCADE,
+        related_name="rows",
+    )
+    fila = models.PositiveIntegerField()
+    usuario = models.CharField(max_length=150, blank=True)
+    mail_destino = models.EmailField(max_length=254, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, db_index=True)
+    mensaje = models.TextField(blank=True)
+    password_actualizada = models.BooleanField(default=False)
+    attempts = models.PositiveIntegerField(default=0)
+    processed_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["fila", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["job", "fila"],
+                name="users_bulk_credentials_job_row_unique",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["job", "status"]),
+            models.Index(fields=["job", "processed_at"]),
+        ]
+        verbose_name = "Resultado de fila de credenciales masivas"
+        verbose_name_plural = "Resultados de filas de credenciales masivas"
+
+    def __str__(self):
+        return f"Lote {self.job_id} fila {self.fila} ({self.get_status_display()})"
+
+
+def user_import_job_upload_to(instance, filename):
+    return f"users/import_jobs/{instance.requested_by_id}/{filename}"
+
+
+class UserImportJob(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pendiente"
+        PROCESSING = "processing", "Procesando"
+        COMPLETED = "completed", "Completado"
+        COMPLETED_WITH_ERRORS = "completed_with_errors", "Completado con errores"
+        FAILED = "failed", "Fallido"
+
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        related_name="user_import_jobs",
+    )
+    archivo = models.FileField(upload_to=user_import_job_upload_to)
+    original_filename = models.CharField(max_length=255)
+    send_credentials = models.BooleanField(default=True)
+    is_pwa_import = models.BooleanField(default=False)
+    status = models.CharField(
+        max_length=25,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    total_rows = models.PositiveIntegerField(default=0)
+    processed_rows = models.PositiveIntegerField(default=0)
+    created_rows = models.PositiveIntegerField(default=0)
+    skipped_rows = models.PositiveIntegerField(default=0)
+    failed_rows = models.PositiveIntegerField(default=0)
+    next_row_index = models.PositiveIntegerField(default=0)
+    lease_token = models.UUIDField(null=True, blank=True, editable=False)
+    last_successful_row = models.PositiveIntegerField(null=True, blank=True)
+    last_successful_email = models.EmailField(max_length=254, blank=True)
+    last_attempted_row = models.PositiveIntegerField(null=True, blank=True)
+    last_attempted_email = models.EmailField(max_length=254, blank=True)
+    last_error_message = models.TextField(blank=True)
+    last_error_at = models.DateTimeField(null=True, blank=True)
+    resume_count = models.PositiveIntegerField(default=0)
+    requested_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    last_activity_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["-requested_at", "-id"]
+        indexes = [
+            models.Index(fields=["status", "requested_at"]),
+            models.Index(fields=["requested_by", "requested_at"]),
+        ]
+        verbose_name = "Lote de importacion masiva de usuarios"
+        verbose_name_plural = "Lotes de importacion masiva de usuarios"
+
+    def __str__(self):
+        return f"Importacion {self.id} ({self.get_status_display()})"
+
+
+class UserImportJobRow(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pendiente"
+        CREATED = "created", "Creado"
+        SKIPPED = "skipped", "Omitido"
+        FAILED = "failed", "Fallido"
+
+    job = models.ForeignKey(
+        UserImportJob,
+        on_delete=models.CASCADE,
+        related_name="rows",
+    )
+    created_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    fila = models.PositiveIntegerField()
+    nombre = models.CharField(max_length=150, blank=True)
+    apellido = models.CharField(max_length=150, blank=True)
+    email = models.EmailField(max_length=254, blank=True)
+    rol = models.CharField(max_length=100, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    mensaje = models.TextField(blank=True)
+    attempts = models.PositiveIntegerField(default=0)
+    processed_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    credentials_sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["fila", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["job", "fila"],
+                name="users_user_import_job_row_unique",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["job", "status"]),
+            models.Index(fields=["job", "processed_at"]),
+        ]
+        verbose_name = "Fila de importacion masiva de usuarios"
+        verbose_name_plural = "Filas de importacion masiva de usuarios"
+
+    def __str__(self):
+        return (
+            f"Importacion {self.job_id} fila {self.fila} ({self.get_status_display()})"
+        )

@@ -39,6 +39,10 @@ jobs:
                   pip install -r requirements/arch.txt
 
             - name: Run import-linter
+              # src/backends/ (config), el kernel y cada vertical se importan como
+              # `config`, `core`, `dispositivos`, etc. (ver src/backends/config/__init__.py).
               run: |
+                  verticales="$(find src/backends -mindepth 1 -maxdepth 1 -type d ! -name config ! -name kernel | sort | tr '\n' ':')"
+                  export PYTHONPATH="src/backends:src/backends/kernel:${verticales%:}"
                   lint-imports
                   lint-imports --config .importlinter_celiaquia_config

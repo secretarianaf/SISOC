@@ -4,7 +4,7 @@ Este documento describe cómo reutilizar el motor de filtros avanzados, la confi
 
 ## 1. Definir la configuración del listado
 
-1. Crear un módulo `*/services/<mi_app>_filter_config.py` que exporte los mismos elementos que los ejemplos existentes (`comedores/services/filter_config.py`, `centrodefamilia/services/beneficiarios_filter_config.py`, etc.):
+1. Crear un módulo `*/services/<mi_app>_filter_config.py` que exporte los mismos elementos que los ejemplos existentes (`src/backends/sisoc_core/comedores/services/filter_config/`, `src/backends/cdf/centrodefamilia/services/beneficiarios_filter_config/`, etc.):
    - `FIELD_MAP`: mapeo del nombre expuesto al lookup real del ORM (FKs, campos anotados, funciones).
    - `FIELD_TYPES`: tipo lógico (`text`, `number`, `choice`, `date`, `boolean`) por campo; sirve para validar operadores.
    - Operadores por tipo (`TEXT_OPS`, `NUM_OPS`, `CHOICE_OPS`, `DATE_OPS`, `BOOL_OPS`).
@@ -12,17 +12,17 @@ Este documento describe cómo reutilizar el motor de filtros avanzados, la confi
    - `get_filters_ui_config()`: función que combina los campos y operadores en el DTO JSON que inyecta el formulario (`json_script`) y que luego lee `advanced_filters.js`.
 
 2. En servicios o vistas de listado:
-   - Instanciar `AdvancedFilterEngine` (`core/services/advanced_filters.py`) con `field_map`, `field_types`, `allowed_ops` y `field_casts` si necesitás castear entradas especiales (ej. latitud).
+   - Instanciar `AdvancedFilterEngine` (`src/backends/kernel/core/services/advanced_filters/`) con `field_map`, `field_types`, `allowed_ops` y `field_casts` si necesitás castear entradas especiales (ej. latitud).
    - Antes de paginar o serializar, llamar a `engine.filter_queryset(base_qs, request_or_get)`; el motor busca el parámetro GET `filters` por defecto (puede cambiarse con `param_name`).
    - Opcionalmente aprovechar el resultado para validar columnas o exportaciones (ver doc de columnas).
 
 ## 2. Favoritos compartidos
 
-1. Agregar una entrada en `core/services/favorite_filters.py::SeccionesFiltrosFavoritos` y proveer su configuración (`ConfiguracionFiltrosSeccion`) con los mapeos de tipos y operadores definidos en el paso anterior. Esto permite validar filtros salvados y cargar los controles.
+1. Usar el identificador de `SeccionesFiltrosFavoritos` (en `src/backends/kernel/core/services/favorite_filters/config.py`) y registrar la configuración con `registrar_configuracion_seccion` desde el `favorite_filters.py` de la app, llamado por `AppConfig.ready()`. Ejemplo: `src/backends/sisoc_core/comedores/favorite_filters.py`. La configuración (`ConfiguracionFiltrosSeccion`) contiene tipos y operadores; el kernel no importa la app. Si corre en un backend, declarar la sección en `favorite_sections` de `src/backends/config/backends.json` para el reenvío desde el core.
 2. El endpoint genérico `core.views.filtros_favoritos` (GET/POST) y `detalle_filtro_favorito` (GET/DELETE) ya se encargan de persistir `core.models.FiltroFavorito` y limpiar la caché (`TTL_CACHE_FILTROS_FAVORITOS`).
 3. El frontend carga una sola sección por formulario:
-   - Usar el componente `templates/components/search_bar.html` con `filters_mode=True` y pasar `seccion_filtros_favoritos`, `filters_config`, `filters_action`, `filters_js`, `reset_url`, `filters_action`, etc.
-   - El modal de favoritos se renderiza automáticamente y el script `static/custom/js/favorite_filters.js` se encarga de cargar/guardar/aplicar/eliminar favoritos.
+   - Usar el componente `src/backends/kernel/templates/components/search_bar.html` con `filters_mode=True` y pasar `seccion_filtros_favoritos`, `filters_config`, `filters_action`, `filters_js`, `reset_url`, `filters_action`, etc.
+   - El modal de favoritos se renderiza automáticamente y el script `src/backends/kernel/static/custom/js/favorite_filters.js` se encarga de cargar/guardar/aplicar/eliminar favoritos.
    - Al guardar, `favorite_filters.js` manda POST a `core:filrtros_favoritos` con `seccion`, `nombre` y la carga serializada; al aplicar, consume `core:detalle_filtro_favorito` y recarga el listado con `filters`.
    - Además mantiene el favorito activo en `localStorage` y lo reaplica automáticamente (si no hay `filters` en la URL).
 

@@ -1,9 +1,7 @@
 import logging
 import os
-import shutil
 import subprocess
 import time
-from pathlib import Path
 
 import pymysql
 
@@ -19,6 +17,8 @@ SERVICE_ROLE_MAILING_WORKER = "mailing_worker"
 SERVICE_ROLE_USER_IMPORT_WORKER = "user_import_worker"
 SERVICE_ROLE_OCR_WORKER = "ocr_worker"
 SERVICE_ROLE_ENCUESTAS_WORKER = "encuestas_worker"
+# Prepara la DB de la composición completa (config.settings_all) y termina.
+SERVICE_ROLE_MIGRATOR = "migrator"
 
 
 def run_command(cmd, *, stage, **kwargs):
@@ -140,10 +140,12 @@ def fix_migration_history():
             pass
 
 
-def run_django_commands():
-    """
-    Ejecuta los comandos de Django necesarios para la preparacion
-    y el funcionamiento de la aplicacion.
+def preparar_db():
+    """Migraciones, fixtures y grupos: todo lo que deja lista la DB.
+
+    En deploy lo hace solo el migrador (docker/compose/docker-compose.deploy.yml), con el
+    grafo completo: el core sin los backends no puede cargar el grafo de
+    migraciones (docs/operacion/backends_por_servicio.md).
     """
     environment = os.getenv("ENVIRONMENT", "dev").lower()
     run_makemigrations_on_start = (
@@ -175,6 +177,17 @@ def run_django_commands():
         stage="create_test_users",
     )
     run_command(["python", "manage.py", "create_groups"], stage="create_groups")
+
+
+def run_django_commands():
+    """
+    Prepara la DB (salvo SISOC_PREPARAR_DB=false, como en deploy, donde lo hace
+    el migrador) e inicia el servidor.
+    """
+    if os.getenv("SISOC_PREPARAR_DB", "true").lower() == "true":
+        preparar_db()
+    else:
+        logger.info("[skip] La DB la prepara el migrador (SISOC_PREPARAR_DB=false).")
     run_server()
 
 
@@ -253,6 +266,11 @@ def main():
     if service_role == SERVICE_ROLE_ENCUESTAS_WORKER:
         run_encuestas_worker()
         return
+    if service_role == SERVICE_ROLE_MIGRATOR:
+        preparar_db()
+        if os.getenv("ENVIRONMENT", "dev").lower() in DEPLOY_GUNICORN_ENVIRONMENTS:
+            cache_busting()
+        return
     run_django_commands()
 
 
@@ -276,7 +294,6 @@ def run_server():
         )
 
     if deploy_gunicorn:
-        cache_busting()
         logger.info("[server] Iniciando Django en modo produccion con Gunicorn...")
         workers = os.getenv("GUNICORN_WORKERS", "4")
         threads = os.getenv("GUNICORN_THREADS", "1")
@@ -302,12 +319,14 @@ def run_server():
 
 
 def cache_busting():
-    static_root = (
-        Path(__file__).resolve().parent.parent / "static_root"
-    )  # Raiz del proyecto
-    if static_root.exists() and static_root.is_dir():
-        logger.info("[clean] Eliminando carpeta de estaticos: %s", static_root)
-        shutil.rmtree(static_root)
+    """collectstatic sobre static_root, que Nginx publica en /static/.
+
+    Lo corre el migrador en deploy: es la única imagen con los estáticos de
+    todos los verticales (cada uno vive en ``<app>/static/``), y el manifest que
+    deja lo leen todos los servicios. No se vacía static_root: collectstatic
+    sobrescribe, y en un deploy selectivo los servicios que siguen corriendo
+    pueden seguir pidiendo los nombres con hash anteriores.
+    """
     logger.info("[static] Ejecutando collectstatic para cache busting...")
     run_command(
         ["python", "manage.py", "collectstatic", "--noinput"],

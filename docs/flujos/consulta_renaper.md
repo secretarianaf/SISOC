@@ -5,8 +5,8 @@ Obtener datos de ciudadanos desde RENAPER mediante una integración compartida y
 una fachada compatible para los dominios consumidores.
 
 ## Entrada / Salida
-- Entrada: DNI y sexo solicitados al servicio RENAPER. Evidencia: `core/integrations/renaper.py`.
-- Salida: diccionario compatible con datos de RENAPER mapeados (`nombre`, `apellido`, `cuil`, ubicación API, etc.) o un error clasificado. Evidencia: `core/services/renaper.py`.
+- Entrada: DNI y sexo solicitados al servicio RENAPER. Evidencia: `src/backends/kernel/core/integrations/renaper.py`.
+- Salida: diccionario compatible con datos de RENAPER mapeados (`nombre`, `apellido`, `cuil`, ubicación API, etc.) o un error clasificado. Evidencia: `src/backends/kernel/core/services/renaper.py`.
 
 ## Pasos
 1. `APIClient.get_token()` hace login a `/auth/login` con `RENAPER_API_USERNAME/PASSWORD`. Las consultas comunes usan un token efímero por llamada; la importación masiva de ciudadanos reutiliza un cliente y su token sólo en memoria durante el lote. Ante 401 renueva el token una vez.
@@ -30,4 +30,4 @@ una fachada compatible para los dominios consumidores.
 - Datos incompletos: revisar la respuesta funcional del consumidor con datos sintéticos en un entorno de prueba.
 
 ## Tests existentes
-- `tests/test_consulta_renaper_unit.py` cubre el cliente mockeado, autenticación efímera sin cache, timeout, fallas remotas y normalización.
+- `src/backends/kernel/tests/test_consulta_renaper_unit.py` cubre el cliente mockeado, autenticación efímera sin cache, timeout, fallas remotas y normalización.

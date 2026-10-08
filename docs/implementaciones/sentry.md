@@ -6,19 +6,19 @@ Esta guia explica como esta integrada la app `sentry` en SISOC y como usarla en 
 
 La integracion se apoya en 5 piezas:
 
-1. `sentry/apps.py`
+1. `src/backends/kernel/sentry/apps.py`
    - En `SentryConfig.ready()` llama `initialize_sentry_sdk()` al iniciar Django.
-2. `sentry/services.py`
+2. `src/backends/kernel/sentry/services.py`
    - Inicializa `sentry_sdk` una sola vez por proceso.
    - Solo activa Sentry si se cumplen condiciones de entorno.
-3. `sentry/handlers.py`
+3. `src/backends/kernel/sentry/handlers.py`
    - Handler de logging que reenvia eventos `ERROR`/`CRITICAL` a Sentry.
-4. `sentry/middleware.py`
+4. `src/backends/kernel/sentry/middleware.py`
    - Adjunta contexto de usuario autenticado (`id`, `username`) en cada request.
-5. `sentry/context_processors.py` + `templates/includes/scripts/sentry_replay.html`
+5. `src/backends/kernel/sentry/context_processors.py` + `src/backends/kernel/templates/includes/scripts/sentry_replay.html`
    - Exponen config de Sentry al frontend e inicializan Session Replay en templates base.
 
-Ademas, `config/settings.py` ya incluye:
+Ademas, `src/backends/config/settings.py` ya incluye:
 
 - `sentry.apps.SentryConfig` en `INSTALLED_APPS`.
 - `sentry.middleware.SentryUserContextMiddleware` en `MIDDLEWARE`.
@@ -44,7 +44,7 @@ SENTRY_ENABLED=true
 SENTRY_DSN=
 SENTRY_RELEASE=
 SENTRY_SEND_DEFAULT_PII=false
-# Rates/replay definidos en config/settings.py segun ENVIRONMENT
+# Rates/replay definidos en src/backends/config/settings.py segun ENVIRONMENT
 ```
 
 ### Recomendacion para QA/Homologacion/PRD
@@ -52,13 +52,13 @@ SENTRY_SEND_DEFAULT_PII=false
 Notas:
 
 - `SENTRY_DSN` se inyecta por entorno (`.env`/secret manager), nunca hardcodeado.
-- `SENTRY_LOG_EVENT_LEVEL` se define en `config/settings.py` con default `WARNING`.
+- `SENTRY_LOG_EVENT_LEVEL` se define en `src/backends/config/settings.py` con default `WARNING`.
 - El environment enviado a Sentry se deriva siempre de `ENVIRONMENT` (sin variable extra):
   - `qa -> sisoc-qa`
   - `homologacion -> sisoc-homologacion`
   - `prd -> sisoc-prd`
 - Mantener `SENTRY_SEND_DEFAULT_PII=false` salvo necesidad explicita.
-- Los rates se definen condicionalmente en `config/settings.py`:
+- Los rates se definen condicionalmente en `src/backends/config/settings.py`:
   - `ENVIRONMENT=qa`: `SENTRY_ERROR_SAMPLE_RATE=0.75`, `SENTRY_TRACES_SAMPLE_RATE=0.75`, sin replay.
   - `ENVIRONMENT=homologacion`: `SENTRY_ERROR_SAMPLE_RATE=1.0`, `SENTRY_TRACES_SAMPLE_RATE=1.0`, replay habilitado.
   - `ENVIRONMENT=prd`: `SENTRY_ERROR_SAMPLE_RATE=1.0`, `SENTRY_TRACES_SAMPLE_RATE=1.0`, replay al 100%.

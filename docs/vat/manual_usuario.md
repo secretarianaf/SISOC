@@ -13,6 +13,20 @@ El módulo **VAT** gestiona dos grandes áreas complementarias:
 
 ## Flujo general de trabajo
 
+### Habilitar la creación de sedes adicionales por grupo
+
+En la administración de **Grupos**, editar el grupo deseado y agregar el permiso
+`VAT.add_institucionubicacion` (alta de Ubicación de Institución). Sus integrantes
+podrán usar **Agregar sede** en los centros que puedan gestionar. Se puede asignar
+el permiso a distintos grupos, sin depender de sus nombres.
+
+Para deshabilitar el alta, quitar ese permiso de todos los grupos y permisos
+directos que lo otorguen al usuario. Los superusuarios conservan acceso.
+Los permisos para editar y borrar sedes son independientes:
+`VAT.change_institucionubicacion` y `VAT.delete_institucionubicacion`.
+
+### Secuencia de trabajo
+
 ```
 Catálogos → Centros → Datos Institución → Oferta Educativa → Vouchers → Inscripciones → Evaluaciones
 ```

@@ -75,7 +75,9 @@ def test_wrapper_reconstruye_y_verifica_revision_anterior():
         '--skip-pull --expected-revision "$previous_revision" --without-mobile'
         in script
     )
-    assert "if ! verify_stack; then" in script
+    # Una revisión previa a la modularización se verifica como lo hacía ella.
+    assert 'if ! "$verify"; then' in script
+    assert "verify=verify_legacy_stack" in script
     assert "Las migraciones de base de datos no se revierten automaticamente" in script
 
 

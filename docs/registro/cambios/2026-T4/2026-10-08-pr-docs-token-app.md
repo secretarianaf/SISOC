@@ -19,7 +19,7 @@ head, el PR queda `BLOCKED` aunque todo haya pasado en el commit anterior
 - El job `autofix` de `lint.yml` (`chore(ci): autoformatear PR`) tenía el
   mismo problema y usa el mismo token. No hace falta cortar el disparo: la
   corrida siguiente no encuentra cambios y no commitea.
-- El job no corre cuando el push lo hizo esa App, igual que con
+- `generate_pr_artifacts` no corre cuando el push lo hizo esa App, igual que con
   `github-actions[bot]`: si no, cada commit de artefactos dispararía otro.
 
 Evidencia: el commit de esa App en #2624 (`dc9dffeb0`) disparó sus workflows

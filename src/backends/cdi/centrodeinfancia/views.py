@@ -49,6 +49,7 @@ from core.security import safe_redirect
 from core.services.column_preferences import build_columns_context_from_fields
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from iam.services import user_has_permission_code
+from users.rate_limits import hit_rate_limit
 
 from centrodeinfancia.access import (
     aplicar_scope_centros_cdi as _aplicar_scope_centros_cdi,
@@ -1341,6 +1342,15 @@ def load_departamentos_ipi(request):
     )
 
 
+RENAPER_BLOQUE_LIMITE_CONSULTAS = 30
+RENAPER_BLOQUE_VENTANA_SEGUNDOS = 600
+
+
+def _dni_enmascarado(dni):
+    """Últimos tres dígitos, para auditar sin dejar el DNI completo en el log."""
+    return f"***{dni[-3:]}" if len(dni) > 3 else "***"
+
+
 @login_required
 @require_GET
 def consultar_renaper_bloque(request, bloque):
@@ -1348,13 +1358,41 @@ def consultar_renaper_bloque(request, bloque):
 
     Devuelve los valores a precargar y un token firmado que el form envía en el
     POST: el servidor bloquea y guarda los datos del token, no los del POST.
+    Cada consulta queda en el log y se limita por usuario: devuelve datos
+    personales de cualquier DNI.
     """
     if bloque not in BLOQUES:
         raise Http404
     if es_auditor_simepi(request.user):
         raise PermissionDenied("El rol Auditoría tiene acceso de solo lectura.")
+    dni = str(request.GET.get("dni") or "").strip()
+    if hit_rate_limit(
+        scope="cdi_renaper_bloque",
+        identity=str(request.user.pk),
+        limit=RENAPER_BLOQUE_LIMITE_CONSULTAS,
+        window_seconds=RENAPER_BLOQUE_VENTANA_SEGUNDOS,
+    ):
+        logger.warning(
+            "Consulta RENAPER CDI rechazada por límite: usuario=%s bloque=%s",
+            request.user.pk,
+            bloque,
+        )
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "Demasiadas consultas a RENAPER. "
+                "Intente nuevamente en unos minutos.",
+            },
+            status=429,
+        )
+    logger.info(
+        "Consulta RENAPER CDI: usuario=%s bloque=%s dni=%s",
+        request.user.pk,
+        bloque,
+        _dni_enmascarado(dni),
+    )
     try:
-        resultado = consultar_bloque(bloque, request.GET.get("dni"))
+        resultado = consultar_bloque(bloque, dni)
     except Exception:  # pylint: disable=broad-exception-caught
         logger.exception("Error al consultar RENAPER para el bloque %s", bloque)
         resultado = {"success": False, "message": "No se pudo consultar RENAPER."}

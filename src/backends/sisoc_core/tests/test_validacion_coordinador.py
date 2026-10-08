@@ -259,7 +259,10 @@ def _coordinador(client, username="coordinador"):
 
 @pytest.mark.django_db
 def test_coordinador_valida_el_relevamiento(client):
-    _, comedor, relevamiento = _comedor_con_relevamiento("revision_ok")
+    # Enviado por el territorial: uno sin enviar no se revisa (#2643).
+    _, comedor, relevamiento = _comedor_con_relevamiento(
+        "revision_ok", estado_validacion=PENDIENTE
+    )
     coordinador = _coordinador(client, "coord_valida")
     url = reverse(
         "relevamiento_revision_coordinador",
@@ -277,7 +280,10 @@ def test_coordinador_valida_el_relevamiento(client):
 
 @pytest.mark.django_db
 def test_coordinador_devuelve_a_subsanar_con_observaciones(client):
-    _, comedor, relevamiento = _comedor_con_relevamiento("revision_devuelve")
+    # Enviado por el territorial: uno sin enviar no se revisa (#2643).
+    _, comedor, relevamiento = _comedor_con_relevamiento(
+        "revision_devuelve", estado_validacion=PENDIENTE
+    )
     _coordinador(client, "coord_devuelve")
     url = reverse(
         "relevamiento_revision_coordinador",

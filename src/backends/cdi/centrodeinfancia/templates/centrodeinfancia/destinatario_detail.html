@@ -80,8 +80,7 @@
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Apellido" value=nomina.apellido %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Nombre" value=nomina.nombre %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Fecha de nacimiento" value=nomina.fecha_nacimiento %}
-                {% include "centrodeinfancia/_nomina_campo.html" with label="Edad" value=nomina.edad_calculada %}
-                {% include "centrodeinfancia/_nomina_campo.html" with label="Unidad de edad" value=nomina.get_edad_unidad_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Edad" value=nomina.edad_display %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Sexo registral" value=nomina.get_sexo_display %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Tipo de documentación" value=nomina.get_tipo_documentacion_display %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="DNI" value=nomina.dni %}

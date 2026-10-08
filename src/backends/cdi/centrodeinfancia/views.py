@@ -16,7 +16,7 @@ from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
 from django.db.models import Exists, OuterRef, Q
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
@@ -56,6 +56,7 @@ from centrodeinfancia.access import (
     es_egp_simepi,
     get_provincias_completas_egp_ids,
     get_object_scoped_cdi_or_404,
+    puede_administrar_usuarios_cdi,
     puede_generar_usuario_cdi,
     puede_gestionar_referentes_cdi,
     puede_ver_credenciales_cdi,
@@ -95,10 +96,21 @@ from centrodeinfancia.services import (
     puede_reactivar_nomina_cdi_bajo_bloqueo,
     tiene_nomina_cdi_vigente_en_otro_centro,
 )
+from centrodeinfancia.services_renaper_bloques import (
+    BLOQUE_NINO,
+    BLOQUE_REFERENTE,
+    BLOQUES,
+    BLOQUES_NOMINA,
+    consultar_bloque,
+    crear_token,
+    identidad_desde_ciudadano_validado,
+    identidad_desde_resultado,
+    tokens_desde_post,
+    valores_bloque,
+)
 from centrodeinfancia.services_user_provisioning import (
-    crear_referente_cdi_automaticamente,
+    actualizar_referente_cdi,
     crear_usuario_trabajador_automaticamente,
-    sincronizar_email_referente_cdi,
     sincronizar_email_trabajador,
 )
 from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
@@ -295,25 +307,68 @@ class _AuditoriaSoloLecturaMixin:
         return super().dispatch(request, *args, **kwargs)
 
 
+def _unir_valores_renaper(valores_por_bloque):
+    return {
+        campo: valor
+        for valores in valores_por_bloque.values()
+        for campo, valor in valores.items()
+    }
+
+
+class _RenaperBloquesFormMixin:
+    """Pasa al form los datos RENAPER validados en el navegador.
+
+    El botón "Validar con RENAPER" de cada bloque deja un token firmado en el
+    POST; solo esos valores (no los del POST) se cargan y quedan bloqueados.
+    """
+
+    renaper_bloques = ()
+
+    def _tokens_renaper(self):
+        if not hasattr(self, "_tokens_renaper_cache"):
+            if self.request.method == "POST":
+                valores, tokens = tokens_desde_post(
+                    self.request.POST, self.request.user, self.renaper_bloques
+                )
+                valores = self._filtrar_valores_renaper(valores)
+                tokens = {bloque: tokens[bloque] for bloque in valores}
+                self._tokens_renaper_cache = (valores, tokens)
+            else:
+                self._tokens_renaper_cache = ({}, {})
+        return self._tokens_renaper_cache
+
+    def _filtrar_valores_renaper(self, valores):
+        return valores
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        valores, _ = self._tokens_renaper()
+        kwargs["valores_renaper"] = _unir_valores_renaper(valores)
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["renaper_tokens"] = self._tokens_renaper()[1]
+        return context
+
+
 class _AutomaticReferenteProvisioningMixin:
     def form_valid(self, form):
-        email_referente_cambio = "email_referente" in form.changed_data
         object_pk = getattr(self.object, "pk", None)
-        email_anterior = None
+        anterior = {}
         if object_pk:
-            email_anterior = (
+            anterior = (
                 CentroDeInfancia.objects.filter(pk=object_pk)
-                .values_list("email_referente", flat=True)
+                .values("email_referente", "dni_referente")
                 .first()
-            )
+            ) or {}
         response = super().form_valid(form)
-        crear_referente_cdi_automaticamente(self.request, self.object)
-        if email_referente_cambio:
-            sincronizar_email_referente_cdi(
-                self.request,
-                self.object,
-                email_anterior,
-            )
+        actualizar_referente_cdi(
+            self.request,
+            self.object,
+            dni_anterior=anterior.get("dni_referente"),
+            email_anterior=anterior.get("email_referente"),
+        )
         return response
 
 
@@ -406,12 +461,14 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
 class CentroDeInfanciaCreateView(
     _AuditoriaSoloLecturaMixin,
     _AutomaticReferenteProvisioningMixin,
+    _RenaperBloquesFormMixin,
     LoginRequiredMixin,
     CreateView,
 ):
     model = CentroDeInfancia
     form_class = CentroDeInfanciaForm
     template_name = "centrodeinfancia/centrodeinfancia_form.html"
+    renaper_bloques = (BLOQUE_REFERENTE,)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -794,18 +851,24 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["puede_ver_usuarios_cdi"] = puede_ver_usuarios_cdi(
             self.request.user, self.object
         )
+        context["puede_administrar_usuarios_cdi"] = puede_administrar_usuarios_cdi(
+            self.request.user, self.object
+        )
         if context["puede_ver_usuarios_cdi"]:
             usuarios_cdi = AccesoCDI.objects.filter(centro=self.object)
-            if not context["puede_gestionar_referentes_cdi"]:
+            if not context["puede_administrar_usuarios_cdi"]:
                 usuarios_cdi = usuarios_cdi.filter(
                     user=self.request.user,
                     activo=True,
                 )
+            # Responsable primero; después activos, suspendidos y bajas.
             context["usuarios_cdi"] = usuarios_cdi.select_related(
                 "user", "user__profile"
-            ).order_by("-activo", "user__username")
+            ).order_by("-es_responsable", "-activo", "-estado", "user__username")
             context["usuarios_cdi_columnas"] = (
-                5 if context["puede_ver_credenciales_cdi"] else 4
+                4
+                + int(context["puede_ver_credenciales_cdi"])
+                + int(context["puede_administrar_usuarios_cdi"])
             )
         return context
 
@@ -813,12 +876,14 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
 class CentroDeInfanciaUpdateView(
     _AuditoriaSoloLecturaMixin,
     _AutomaticReferenteProvisioningMixin,
+    _RenaperBloquesFormMixin,
     LoginRequiredMixin,
     UpdateView,
 ):
     model = CentroDeInfancia
     form_class = CentroDeInfanciaForm
     template_name = "centrodeinfancia/centrodeinfancia_form.html"
+    renaper_bloques = (BLOQUE_REFERENTE,)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -1037,10 +1102,9 @@ class TrabajadorCentroInfanciaCreateView(
         return kwargs
 
     def form_valid(self, form):
-        renaper_prefill, _ = self._obtener_prefill_renaper()
         email_cambio = "email" in form.changed_data
         form.instance.centro = self.centro
-        form.instance.campos_verificados_renaper = list(renaper_prefill)
+        form.instance.campos_verificados_renaper = form.campos_bloqueados_renaper
         response = super().form_valid(form)
         crear_usuario_trabajador_automaticamente(self.request, self.object)
         if email_cambio:
@@ -1106,7 +1170,9 @@ class TrabajadorCentroInfanciaCreateView(
             "fecha_nacimiento": fecha_nacimiento,
             "cuit": data.get("cuit") or datos_api.get("cuil") or "",
             "sexo_registral": sexo,
-            "nacionalidad_trabajador": nacionalidad or datos_api.get("pais") or "",
+            # Solo una nacionalidad del catálogo: el país crudo de RENAPER
+            # ("PARAGUAY") no es una opción válida y bloqueado no se puede corregir.
+            "nacionalidad_trabajador": nacionalidad or "",
         }
 
     def get_success_url(self):
@@ -1137,6 +1203,10 @@ class TrabajadorCentroInfanciaUpdateView(
 
     def form_valid(self, form):
         email_cambio = "email" in form.changed_data
+        # Si un dato "verificado" tenía un valor inválido (ver
+        # TrabajadorCDIForm._valor_renaper_valido) se corrigió a mano: deja de
+        # figurar como verificado.
+        form.instance.campos_verificados_renaper = form.campos_bloqueados_renaper
         response = super().form_valid(form)
         crear_usuario_trabajador_automaticamente(self.request, self.object)
         if email_cambio:
@@ -1268,6 +1338,37 @@ def load_departamentos_ipi(request):
     return JsonResponse(
         list(departamentos.order_by("nombre").values("id", "nombre", "decil_ipi")),
         safe=False,
+    )
+
+
+@login_required
+@require_GET
+def consultar_renaper_bloque(request, bloque):
+    """Consulta RENAPER para un bloque (niño/a, responsable o referente).
+
+    Devuelve los valores a precargar y un token firmado que el form envía en el
+    POST: el servidor bloquea y guarda los datos del token, no los del POST.
+    """
+    if bloque not in BLOQUES:
+        raise Http404
+    if es_auditor_simepi(request.user):
+        raise PermissionDenied("El rol Auditoría tiene acceso de solo lectura.")
+    try:
+        resultado = consultar_bloque(bloque, request.GET.get("dni"))
+    except Exception:  # pylint: disable=broad-exception-caught
+        logger.exception("Error al consultar RENAPER para el bloque %s", bloque)
+        resultado = {"success": False, "message": "No se pudo consultar RENAPER."}
+    if not resultado["success"]:
+        return JsonResponse(
+            {"success": False, "message": resultado["message"]}, status=400
+        )
+    return JsonResponse(
+        {
+            "success": True,
+            "message": resultado["message"],
+            "valores": resultado["valores"],
+            "token": crear_token(bloque, request.user, resultado["valores"]),
+        }
     )
 
 
@@ -1430,6 +1531,7 @@ class NominaCentroInfanciaFormularioDetailView(LoginRequiredMixin, DetailView):
 
 class NominaCentroInfanciaEditView(
     _AuditoriaSoloLecturaMixin,
+    _RenaperBloquesFormMixin,
     LoginRequiredMixin,
     UpdateView,
 ):
@@ -1437,6 +1539,15 @@ class NominaCentroInfanciaEditView(
     form_class = NominaCentroInfanciaDestinatariosForm
     template_name = "centrodeinfancia/destinatario_form.html"
     pk_url_kwarg = "nomina_id"
+    renaper_bloques = BLOQUES_NOMINA
+
+    def _filtrar_valores_renaper(self, valores):
+        # La ficha ya está vinculada a un ciudadano: validar al niño/a no puede
+        # cambiar su identidad, solo confirmar la que tiene.
+        nino = valores.get(BLOQUE_NINO)
+        if nino and str(nino.get("dni")) != str(self.object.dni):
+            valores = {k: v for k, v in valores.items() if k != BLOQUE_NINO}
+        return valores
 
     def _get_centro(self):
         if not hasattr(self, "_centro_cache"):
@@ -1488,19 +1599,62 @@ class NominaCentroInfanciaCreateView(
     _RENAPER_PREFILL_SALT = "centrodeinfancia.nomina.renaper_prefill"
     _RENAPER_PREFILL_MAX_AGE_SECONDS = 15 * 60
 
-    def _crear_token_renaper(self, renaper_data):
+    def _crear_token_renaper(self, valores_nino):
         payload = {
             "centro_id": self._get_centro().pk,
             "user_id": self.request.user.pk,
-            "values": {
-                field: renaper_data.get(field)
-                for field in ("dni", "apellido", "nombre", "fecha_nacimiento")
-            },
+            "values": valores_nino,
         }
         return signing.dumps(
             json.loads(json.dumps(payload, cls=DjangoJSONEncoder)),
             salt=self._RENAPER_PREFILL_SALT,
         )
+
+    def _valores_renaper_nino(self, selected_ciudadano):
+        """Identidad del niño/a que queda bloqueada en la ficha.
+
+        Sale del ciudadano local si ya está validado por RENAPER, o del token
+        firmado de la precarga. Nunca del POST.
+        """
+        valores, _ = self._tokens_nomina()
+        if BLOQUE_NINO in valores:
+            return valores[BLOQUE_NINO]
+        if selected_ciudadano:
+            return valores_bloque(
+                BLOQUE_NINO, identidad_desde_ciudadano_validado(selected_ciudadano)
+            )
+        payload, _ = self._obtener_prefill_renaper()
+        permitidos = set(BLOQUES[BLOQUE_NINO].values())
+        return {
+            campo: valor
+            for campo, valor in (payload.get("values") or {}).items()
+            if campo in permitidos and valor not in (None, "")
+        }
+
+    def _tokens_nomina(self):
+        if self.request.method != "POST":
+            return {}, {}
+        valores, tokens = tokens_desde_post(
+            self.request.POST, self.request.user, BLOQUES_NOMINA
+        )
+        # Elegir un ciudadano local no permite sustituirlo por otra persona.
+        seleccionado = self._get_selected_ciudadano_from_request(self.request)
+        nino = valores.get(BLOQUE_NINO)
+        if (
+            seleccionado
+            and nino
+            and str(nino.get("dni")) != str(seleccionado.documento)
+        ):
+            valores.pop(BLOQUE_NINO)
+            tokens.pop(BLOQUE_NINO)
+        return valores, tokens
+
+    def _valores_renaper_alta(self, selected_ciudadano):
+        valores, _ = self._tokens_nomina()
+        return {
+            **self._valores_renaper_nino(selected_ciudadano),
+            **_unir_valores_renaper(valores),
+        }
 
     def _obtener_prefill_renaper(self):
         token = self.request.POST.get("renaper_prefill_token")
@@ -1524,8 +1678,7 @@ class NominaCentroInfanciaCreateView(
         return payload, token
 
     def _payload_validacion_renaper(self, cleaned_data):
-        payload, _ = self._obtener_prefill_renaper()
-        values = payload.get("values") or {}
+        values = self._valores_renaper_nino(None)
         if (
             not cleaned_data.get("dni")
             or str(cleaned_data["dni"]) != str(values.get("dni"))
@@ -1670,6 +1823,7 @@ class NominaCentroInfanciaCreateView(
         renaper_prefill, token = self._obtener_prefill_renaper()
         selected_ciudadano = self._get_selected_ciudadano_from_request(self.request)
 
+        valores_nino = {}
         if query and len(query) >= 4:
             ciudadanos = Ciudadano.buscar_por_documento(query, max_results=50)
             if not ciudadanos and query.isdigit() and len(query) >= 7 and not form:
@@ -1679,7 +1833,10 @@ class NominaCentroInfanciaCreateView(
                         renaper_result
                     )
                     if renaper_data:
-                        token = self._crear_token_renaper(renaper_data)
+                        valores_nino = valores_bloque(
+                            BLOQUE_NINO, identidad_desde_resultado(renaper_result)
+                        )
+                        token = self._crear_token_renaper(valores_nino)
                     mensaje = renaper_result.get("message")
                     if mensaje:
                         messages.info(self.request, mensaje)
@@ -1693,10 +1850,13 @@ class NominaCentroInfanciaCreateView(
                         self._build_nomina_initial_from_ciudadano(selected_ciudadano)
                     ),
                     centro=centro,
+                    valores_renaper=self._valores_renaper_nino(selected_ciudadano),
                 )
             elif renaper_data:
                 form = self.form_class(
-                    initial=self._get_form_initial(renaper_data), centro=centro
+                    initial=self._get_form_initial(renaper_data),
+                    centro=centro,
+                    valores_renaper=valores_nino,
                 )
             elif query and not ciudadanos:
                 form = self.form_class(
@@ -1715,6 +1875,7 @@ class NominaCentroInfanciaCreateView(
         context["form"] = form
         context["renaper_precarga"] = bool(renaper_data) or bool(renaper_prefill)
         context["renaper_prefill_token"] = token
+        context["renaper_tokens"] = self._tokens_nomina()[1]
         context["mostrar_formulario"] = bool(
             selected_ciudadano or context["no_resultados"] or form.is_bound
         )
@@ -1775,7 +1936,14 @@ class NominaCentroInfanciaCreateView(
     ):
         self.object = None
         centro = self._get_centro()
-        form = self.form_class(request.POST, centro=centro, actor=request.user)
+        form = self.form_class(
+            request.POST,
+            centro=centro,
+            actor=request.user,
+            valores_renaper=self._valores_renaper_alta(
+                self._get_selected_ciudadano_from_request(request)
+            ),
+        )
         ciudadano_id = request.POST.get("ciudadano_id")
 
         if not form.is_valid():

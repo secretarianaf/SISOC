@@ -1265,6 +1265,11 @@
   "regex": "^centrodeinfancia/observacion/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
+  "name": "centrodeinfancia_renaper_bloque",
+  "namespace": "",
+  "regex": "^centrodeinfancia/ajax/renaper/(?P<bloque>[^/]+)/\\Z"
+ },
+ {
   "name": "centrodeinfancia_reportes",
   "namespace": "",
   "regex": "^centrodeinfancia/reportes/\\Z"
@@ -1303,6 +1308,11 @@
   "name": "centrodeinfancia_trabajadores_asistencia",
   "namespace": "",
   "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/trabajadores/asistencia/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_usuario_estado",
+  "namespace": "",
+  "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/usuarios/(?P<acceso_id>[0-9]+)/estado/\\Z"
  },
  {
   "name": "centros_ajax",

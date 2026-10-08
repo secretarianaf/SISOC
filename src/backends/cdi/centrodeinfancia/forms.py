@@ -45,11 +45,23 @@ from centrodeinfancia.models import (
     NOMINA_VACUNAS,
     NominaPais,
     NominaNacionalidad,
+    calcular_edad_y_unidad,
 )
 from centrodeinfancia.services import (
     ESTADOS_NOMINA_CDI_VIGENTE,
     MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO,
     tiene_nomina_cdi_vigente_en_otro_centro,
+)
+from centrodeinfancia.services_renaper_bloques import (
+    BLOQUE_REFERENTE,
+    BLOQUES,
+    BLOQUES_NOMINA,
+    MODO_DNI,
+    MODO_MANUAL,
+    MODO_VERIFICADO,
+    TIPO_DOCUMENTO_POR_BLOQUE,
+    TIPOS_DOCUMENTO_CON_DNI,
+    bloques_verificados,
 )
 from centrodeinfancia.forms_observacion import ObservacionCentroInfanciaForm
 from centrodeinfancia.forms_formulario_cdi import (
@@ -86,7 +98,99 @@ __all__ = [
 ]
 
 
-class CentroDeInfanciaForm(forms.ModelForm):
+class CamposRenaperFormMixin:
+    """Bloquea los campos de identidad verificados por RENAPER.
+
+    Se bloquean los campos que la instancia ya tenía verificados más los que
+    llegan en ``valores_renaper`` (precarga o validación nueva, siempre desde un
+    origen confiable: token firmado o ciudadano validado). Django ignora el POST
+    de los campos ``disabled`` y toma el initial, así que no se pueden alterar
+    desde el navegador.
+    """
+
+    BLOQUES_RENAPER = ()
+
+    def _bloquear_campos_renaper(self, valores_renaper=None):
+        valores_renaper = valores_renaper or {}
+        # Los forms sin modelo (p. ej. "Generar usuario") no tienen instancia.
+        instancia = getattr(self, "instance", None)
+        campos = list(getattr(instancia, "campos_verificados_renaper", None) or [])
+        for bloque in self.BLOQUES_RENAPER:
+            # Validar a otra persona en el bloque ("Cambiar persona") reemplaza la
+            # verificación anterior: un dato que la persona nueva no trae no puede
+            # quedar bloqueado con el valor de la anterior.
+            campos_bloque = set(BLOQUES[bloque].values())
+            if campos_bloque.intersection(valores_renaper):
+                campos = [campo for campo in campos if campo not in campos_bloque]
+        for campo, valor in valores_renaper.items():
+            field = self.fields.get(campo)
+            if not field:
+                continue
+            try:
+                self.initial[campo] = field.to_python(valor)
+            except ValidationError:
+                continue
+            if campo not in campos:
+                campos.append(campo)
+        for campo in campos:
+            field = self.fields.get(campo)
+            if not field:
+                continue
+            field.disabled = True
+            field.help_text = "Dato verificado por RENAPER."
+            field.widget.attrs["data-renaper"] = "1"
+        self.campos_verificados_renaper = campos
+        self.bloques_verificados_renaper = bloques_verificados(
+            campos, self.BLOQUES_RENAPER
+        )
+        self.tipos_documento_con_dni = ",".join(TIPOS_DOCUMENTO_CON_DNI)
+        self.campos_bloque_renaper = {
+            bloque: ",".join(BLOQUES[bloque].values())
+            for bloque in self.BLOQUES_RENAPER
+        }
+
+    @property
+    def modos_renaper(self):
+        # Propiedad y no atributo: consulta ``errors``, que no puede evaluarse
+        # en ``__init__`` sin disparar la validación antes de tiempo.
+        return {
+            bloque: self._modo_inicial_bloque(bloque) for bloque in self.BLOQUES_RENAPER
+        }
+
+    def _valor_actual(self, campo):
+        if self.is_bound:
+            return self.data.get(self.add_prefix(campo))
+        return self.initial.get(campo)
+
+    def _modo_inicial_bloque(self, bloque):
+        """Cómo se muestra el bloque al cargar la pantalla.
+
+        Verificado si tiene datos de RENAPER; manual si ya hay identidad cargada
+        a mano (registros previos o un POST con errores) o el documento no es un
+        DNI; si no, arranca pidiendo solo el DNI.
+        """
+        if self.bloques_verificados_renaper.get(bloque):
+            return MODO_VERIFICADO
+        campos = [campo for campo in BLOQUES[bloque].values() if campo in self.fields]
+        if any(
+            self._valor_actual(campo) not in (None, "")
+            for campo in campos
+            if campo != BLOQUES[bloque]["dni"]
+        ):
+            return MODO_MANUAL
+        if self.is_bound and any(campo in self.errors for campo in campos):
+            return MODO_MANUAL
+        tipo = self._valor_actual(TIPO_DOCUMENTO_POR_BLOQUE.get(bloque, ""))
+        if tipo and tipo not in TIPOS_DOCUMENTO_CON_DNI:
+            return MODO_MANUAL
+        return MODO_DNI
+
+    def es_campo_renaper(self, campo):
+        return campo in self.campos_verificados_renaper
+
+
+class CentroDeInfanciaForm(CamposRenaperFormMixin, forms.ModelForm):
+    BLOQUES_RENAPER = (BLOQUE_REFERENTE,)
     SOLO_DIGITOS_ERROR = "Ingrese solo números (sin espacios ni signos)."
     DIAS_SEMANA = list(OPCIONES_DIAS_SEMANA)
     ANIO_INICIO_MINIMO = 1900
@@ -161,7 +265,9 @@ class CentroDeInfanciaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.current_user = kwargs.pop("user", None)
         self.lock_provincia_from_user = kwargs.pop("lock_provincia_from_user", False)
+        valores_renaper = kwargs.pop("valores_renaper", None)
         super().__init__(*args, **kwargs)
+        self._bloquear_campos_renaper(valores_renaper)
         self._configurar_campos_dinamicos_horarios()
         self._popular_campos_ubicacion()
         self._aplicar_provincia_usuario()
@@ -403,7 +509,8 @@ class CentroDeInfanciaForm(forms.ModelForm):
 
     def _clean_solo_letras(self, field_name):
         value = (self.cleaned_data.get(field_name) or "").strip()
-        if not value:
+        # Un dato bloqueado de RENAPER no se rechaza: no se puede corregir.
+        if not value or self.es_campo_renaper(field_name):
             return value
         try:
             return validate_solo_letras(value)
@@ -592,6 +699,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
         return cleaned_data
 
     def save(self, commit=True):
+        self.instance.campos_verificados_renaper = list(self.campos_verificados_renaper)
         instance = super().save(commit=commit)
         if not commit:
             return instance
@@ -770,7 +878,9 @@ class NominaCentroInfanciaFormEdit(forms.ModelForm):
         }
 
 
-class NominaCentroInfanciaBaseForm(forms.ModelForm):
+class NominaCentroInfanciaBaseForm(CamposRenaperFormMixin, forms.ModelForm):
+    BLOQUES_RENAPER = BLOQUES_NOMINA
+
     edad_calculada = forms.IntegerField(
         label="Edad",
         required=False,
@@ -845,9 +955,10 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             "observaciones": forms.Textarea(attrs={"rows": 3}),
         }
 
-    def __init__(self, *args, actor=None, **kwargs):
+    def __init__(self, *args, actor=None, valores_renaper=None, **kwargs):
         self.actor = actor
         super().__init__(*args, **kwargs)
+        self._bloquear_campos_renaper(valores_renaper)
         self._configure_sala_choices()
         self._configure_boolean_fields()
         self._configure_apoyo_desarrollo_unificado()
@@ -1147,21 +1258,7 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
     @staticmethod
     def _calculate_age_and_unit(fecha_nacimiento: date) -> tuple[int, str]:
         """Devuelve meses antes del primer año y años cumplidos desde entonces."""
-        hoy = date.today()
-        meses = (
-            (hoy.year - fecha_nacimiento.year) * 12
-            + hoy.month
-            - fecha_nacimiento.month
-            - (hoy.day < fecha_nacimiento.day)
-        )
-        if meses < 12:
-            return max(meses, 0), "meses"
-        anios = (
-            hoy.year
-            - fecha_nacimiento.year
-            - ((hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
-        )
-        return max(anios, 0), "anios"
+        return calcular_edad_y_unidad(fecha_nacimiento)
 
     def _apply_required_flags(self):
         for field_name in ["estado", "dni", "apellido", "nombre", "fecha_nacimiento"]:
@@ -1782,7 +1879,9 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
     def _validar_campos_de_texto(self, cleaned_data):
         for field_name in self.CAMPOS_SOLO_LETRAS:
             valor = (cleaned_data.get(field_name) or "").strip()
-            if not valor:
+            # Los nombres de RENAPER pueden traer apóstrofos u otros signos: no
+            # se rechaza un dato bloqueado que la persona usuaria no puede corregir.
+            if not valor or self.es_campo_renaper(field_name):
                 continue
             try:
                 cleaned_data[field_name] = validate_solo_letras(valor)
@@ -1893,6 +1992,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
+        instance.campos_verificados_renaper = list(self.campos_verificados_renaper)
         instance.vacunacion_nomivac = self.cleaned_data.get("vacunacion_nomivac", {})
         if commit:
             instance.save()
@@ -2139,13 +2239,32 @@ class TrabajadorCDIForm(forms.ModelForm):
             campos_renaper = (
                 self.instance.campos_verificados_renaper if self.instance.pk else []
             )
+        # Campos que efectivamente quedan bloqueados: la vista guarda esta lista.
+        self.campos_bloqueados_renaper = []
         for field_name in campos_renaper:
             field = self.fields.get(field_name)
-            if not field:
+            if not field or not self._valor_renaper_valido(field, field_name):
                 continue
             field.help_text = "Dato verificado por RENAPER."
             field.disabled = True
             field.widget.attrs["data-renaper"] = "1"
+            self.campos_bloqueados_renaper.append(field_name)
+
+    def _valor_renaper_valido(self, field, field_name):
+        """Un campo bloqueado con un valor inválido no se puede corregir ni guardar.
+
+        Pasa con la nacionalidad: el catálogo usa gentilicios ("Paraguaya") y
+        RENAPER informa el país ("PARAGUAY"). En ese caso el campo queda libre
+        para que se elija la opción correcta.
+        """
+        valor = self.get_initial_for_field(field, field_name)
+        if valor in (None, "", []):
+            return False
+        try:
+            field.clean(valor)
+        except ValidationError:
+            return False
+        return True
 
     def _configurar_pais_nacionalidad(self):
         # Mismas listas que ya usa el legajo de Nómina, en vez de texto libre.

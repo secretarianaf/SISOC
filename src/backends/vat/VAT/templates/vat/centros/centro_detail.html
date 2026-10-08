@@ -2641,7 +2641,6 @@
                 });
             }
         }
-        setupUbicacionDepartamentoCascade('formUbicacion', 'modalUbicacion');
 
         function setupUbicacionModalSelect2() {
             var modal = document.getElementById('modalUbicacion');
@@ -4217,6 +4216,9 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script nonce="{{ request.csp_nonce }}">
         // Select2 se carga aquí (después de jQuery via mainscripts)
+        // La cascada escucha los eventos de jQuery que emite Select2. En el
+        // bloque content jQuery aún no está cargado y solo se enlaza el fallback nativo.
+        setupUbicacionDepartamentoCascade('formUbicacion', 'modalUbicacion');
         // Re-bind setupOfertaVoucherSelector ahora que Select2 está disponible
         (function() {
             var form = document.getElementById('formOferta');

@@ -1,0 +1,2475 @@
+# pylint: disable=too-many-lines
+import logging
+import os
+from datetime import date, datetime
+
+import json
+
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.contenttypes.models import ContentType
+from django.core import signing
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.paginator import Paginator
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db import transaction
+from django.db.models import Exists, OuterRef, Q
+from django.http import Http404, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
+from django.urls import reverse, reverse_lazy
+from django.utils.html import escape, format_html, format_html_join
+from django.utils.safestring import mark_safe
+from django.utils.text import Truncator
+from django.utils import timezone
+from django.views.decorators.http import require_GET, require_POST
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    TemplateView,
+    UpdateView,
+)
+from auditlog.models import LogEntry
+from ciudadanos.api import (
+    obtener_datos_ciudadano_desde_renaper,
+    resolver_nacionalidad_desde_renaper,
+)
+from ciudadanos.models import Ciudadano
+from ciudadanos.services_renaper_validacion import (
+    build_validacion_renaper_payload,
+    identidad_coincide,
+)
+from core.decorators import permissions_any_required
+from core.models import Nacionalidad, Provincia, Sexo
+from core.security import safe_redirect
+from core.services.column_preferences import build_columns_context_from_fields
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from iam.services import user_has_permission_code
+
+from centrodeinfancia.access import (
+    aplicar_scope_centros_cdi as _aplicar_scope_centros_cdi,
+    es_auditor_simepi,
+    es_egp_simepi,
+    get_provincias_completas_egp_ids,
+    get_object_scoped_cdi_or_404,
+    puede_administrar_usuarios_cdi,
+    puede_generar_usuario_cdi,
+    puede_gestionar_referentes_cdi,
+    puede_ver_credenciales_cdi,
+    puede_ver_usuarios_cdi,
+    tiene_alcance_simepi_nacional,
+)
+from centrodeinfancia.forms import (
+    CentroDeInfanciaForm,
+    IntervencionCentroInfanciaForm,
+    NominaCentroInfanciaDestinatariosForm,
+    NominaCentroInfanciaForm,
+    ObservacionCentroInfanciaForm,
+    TrabajadorCDIForm,
+)
+from centrodeinfancia.formulario_cdi_schema import CAMPOS_OPCIONES_MULTIPLES
+from centrodeinfancia.filter_config import (
+    CENTRODEINFANCIA_ADVANCED_FILTER,
+    get_filters_ui_config,
+)
+from centrodeinfancia.models import (
+    AccesoCDI,
+    AsistenciaNominaCentroInfancia,
+    CentroDeInfancia,
+    DepartamentoIpi,
+    IntervencionCentroInfancia,
+    NominaCentroInfancia,
+    ObservacionCentroInfancia,
+    Trabajador,
+)
+from centrodeinfancia.services import (
+    MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO,
+    MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO,
+    MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO,
+    AsistenciaNominaCentroInfanciaService,
+    CentroDeInfanciaService,
+    bloquear_ciudadano_para_nomina_cdi,
+    puede_reactivar_nomina_cdi_bajo_bloqueo,
+    tiene_nomina_cdi_vigente_en_otro_centro,
+)
+from centrodeinfancia.services_renaper_bloques import (
+    BLOQUE_NINO,
+    BLOQUE_REFERENTE,
+    BLOQUES,
+    BLOQUES_NOMINA,
+    consultar_bloque,
+    crear_token,
+    identidad_desde_ciudadano_validado,
+    identidad_desde_resultado,
+    tokens_desde_post,
+    valores_bloque,
+)
+from centrodeinfancia.services_user_provisioning import (
+    actualizar_referente_cdi,
+    crear_usuario_trabajador_automaticamente,
+    sincronizar_email_trabajador,
+)
+from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
+from catalogo_intervenciones.api import programa_aliases_cdi
+
+
+CDI_LIST_HEADERS = [
+    {"title": "Nombre"},
+    {"title": "Organización"},
+    {"title": "Tiene nómina"},
+    {"title": "Provincia"},
+    {"title": "Departamento"},
+    {"title": "Municipio"},
+    {"title": "Localidad"},
+    {"title": "Calle"},
+    {"title": "Teléfono"},
+    {"title": "Referente"},
+]
+
+CDI_LIST_FIELDS = [
+    {"name": "nombre"},
+    {"name": "organizacion"},
+    {"name": "tiene_nomina"},
+    {"name": "provincia"},
+    {"name": "departamento"},
+    {"name": "municipio"},
+    {"name": "localidad"},
+    {"name": "calle"},
+    {"name": "telefono"},
+    {"name": "referente"},
+]
+
+logger = logging.getLogger(__name__)
+
+DOCUMENTACION_INTERVENCION_MAX_SIZE_BYTES = 5 * 1024 * 1024
+DOCUMENTACION_INTERVENCION_EXTS_PERMITIDAS = {".pdf", ".jpg", ".jpeg", ".png"}
+
+MESES_FUNCIONAMIENTO_MAP = dict(CAMPOS_OPCIONES_MULTIPLES["meses_funcionamiento"])
+DIAS_FUNCIONAMIENTO_MAP = dict(CAMPOS_OPCIONES_MULTIPLES["dias_funcionamiento"])
+
+
+def _centros_cdi_queryset_detalle():
+    return CentroDeInfancia.objects.select_related(
+        "provincia",
+        "departamento",
+        "municipio",
+        "localidad",
+    ).prefetch_related("horarios_funcionamiento")
+
+
+def _formatear_lista_opciones(valores, labels_map):
+    if not valores:
+        return "-"
+    return ", ".join(labels_map.get(valor, valor) for valor in valores)
+
+
+def _formatear_cuit(value):
+    if not value:
+        return "-"
+    digits = "".join(ch for ch in str(value) if ch.isdigit())[:11]
+    if len(digits) != 11:
+        return value
+    return f"{digits[:2]}-{digits[2:10]}-{digits[10:]}"
+
+
+def _construir_horarios_detalle(centro):
+    horarios = []
+    for horario in centro.horarios_funcionamiento.all():
+        horarios.append(
+            {
+                "dia": horario.get_dia_display(),
+                "apertura": (
+                    horario.hora_apertura.strftime("%H:%M")
+                    if horario.hora_apertura
+                    else "-"
+                ),
+                "cierre": (
+                    horario.hora_cierre.strftime("%H:%M")
+                    if horario.hora_cierre
+                    else "-"
+                ),
+            }
+        )
+    return horarios
+
+
+def _centros_cdi_queryset_scoped(user):
+    return _aplicar_scope_centros_cdi(_centros_cdi_queryset_detalle(), user)
+
+
+def _get_centro_cdi_scoped_or_404(user, **kwargs):
+    return get_object_scoped_cdi_or_404(
+        _centros_cdi_queryset_detalle(),
+        user,
+        id_lookup="id",
+        provincia_lookup="provincia",
+        **kwargs,
+    )
+
+
+def _aplicar_scope_provincia_centro_relacion(queryset, user):
+    return _aplicar_scope_centros_cdi(
+        queryset,
+        user,
+        id_lookup="centro_id",
+        provincia_lookup="centro__provincia",
+    )
+
+
+def _intervenciones_cdi_queryset_scoped(user):
+    queryset = IntervencionCentroInfancia.objects.select_related("centro")
+    return _aplicar_scope_provincia_centro_relacion(queryset, user)
+
+
+def _nomina_cdi_queryset_scoped(user):
+    queryset = NominaCentroInfancia.objects.select_related("centro")
+    return _aplicar_scope_provincia_centro_relacion(queryset, user)
+
+
+def _trabajadores_cdi_queryset_scoped(user):
+    queryset = Trabajador.objects.select_related("centro")
+    return _aplicar_scope_provincia_centro_relacion(queryset, user)
+
+
+def _build_initial_with_centro_provincia(
+    initial, centro, provincia_field, dependent_fields
+):
+    initial = dict(initial or {})
+    if not centro.provincia_id:
+        return initial
+
+    initial[provincia_field] = centro.provincia_id
+    for field_name in dependent_fields:
+        initial.pop(field_name, None)
+    return initial
+
+
+def _observaciones_cdi_queryset_scoped(user):
+    queryset = ObservacionCentroInfancia.objects.select_related("centro")
+    return _aplicar_scope_provincia_centro_relacion(queryset, user)
+
+
+def _parse_fecha_renaper(fecha_raw):
+    if not fecha_raw:
+        return None
+    if isinstance(fecha_raw, date):
+        return fecha_raw
+    if isinstance(fecha_raw, datetime):
+        return fecha_raw.date()
+    value = str(fecha_raw).strip()
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y%m%d"):
+        try:
+            return datetime.strptime(value, fmt).date()
+        except ValueError:
+            continue
+    try:
+        return datetime.fromisoformat(value.replace("Z", "")).date()
+    except ValueError:
+        return None
+
+
+def _build_trabajadores_context(request, centro):
+    return {
+        "trabajadores": centro.trabajadores.order_by("apellido", "nombre"),
+        "puede_editar_trabajadores": request.user.has_perm(
+            "centrodeinfancia.change_trabajador"
+        ),
+        "puede_eliminar_trabajadores": request.user.has_perm(
+            "centrodeinfancia.delete_trabajador"
+        ),
+    }
+
+
+def _validar_archivo_documentacion_intervencion(file_obj):
+    if not file_obj:
+        return "No se proporcionó un archivo."
+
+    extension = os.path.splitext(getattr(file_obj, "name", "") or "")[1].lower()
+    if extension not in DOCUMENTACION_INTERVENCION_EXTS_PERMITIDAS:
+        return "Formato de archivo no permitido. Use PDF, JPG o PNG."
+
+    if (getattr(file_obj, "size", 0) or 0) > DOCUMENTACION_INTERVENCION_MAX_SIZE_BYTES:
+        return "El archivo supera el tamaño máximo permitido (5 MB)."
+
+    return None
+
+
+class _AuditoriaSoloLecturaMixin:
+    def dispatch(self, request, *args, **kwargs):
+        if request.method not in {"GET", "HEAD", "OPTIONS"} and es_auditor_simepi(
+            request.user
+        ):
+            raise PermissionDenied("El rol Auditoría tiene acceso de solo lectura.")
+        return super().dispatch(request, *args, **kwargs)
+
+
+def _unir_valores_renaper(valores_por_bloque):
+    return {
+        campo: valor
+        for valores in valores_por_bloque.values()
+        for campo, valor in valores.items()
+    }
+
+
+class _RenaperBloquesFormMixin:
+    """Pasa al form los datos RENAPER validados en el navegador.
+
+    El botón "Validar con RENAPER" de cada bloque deja un token firmado en el
+    POST; solo esos valores (no los del POST) se cargan y quedan bloqueados.
+    """
+
+    renaper_bloques = ()
+
+    def _tokens_renaper(self):
+        if not hasattr(self, "_tokens_renaper_cache"):
+            if self.request.method == "POST":
+                valores, tokens = tokens_desde_post(
+                    self.request.POST, self.request.user, self.renaper_bloques
+                )
+                valores = self._filtrar_valores_renaper(valores)
+                tokens = {bloque: tokens[bloque] for bloque in valores}
+                self._tokens_renaper_cache = (valores, tokens)
+            else:
+                self._tokens_renaper_cache = ({}, {})
+        return self._tokens_renaper_cache
+
+    def _filtrar_valores_renaper(self, valores):
+        return valores
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        valores, _ = self._tokens_renaper()
+        kwargs["valores_renaper"] = _unir_valores_renaper(valores)
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["renaper_tokens"] = self._tokens_renaper()[1]
+        return context
+
+
+class _AutomaticReferenteProvisioningMixin:
+    def form_valid(self, form):
+        object_pk = getattr(self.object, "pk", None)
+        anterior = {}
+        if object_pk:
+            anterior = (
+                CentroDeInfancia.objects.filter(pk=object_pk)
+                .values("email_referente", "dni_referente")
+                .first()
+            ) or {}
+        response = super().form_valid(form)
+        actualizar_referente_cdi(
+            self.request,
+            self.object,
+            dni_anterior=anterior.get("dni_referente"),
+            email_anterior=anterior.get("email_referente"),
+        )
+        return response
+
+
+class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
+    model = CentroDeInfancia
+    template_name = "centrodeinfancia/centrodeinfancia_list.html"
+    context_object_name = "centros"
+    paginate_by = 10
+
+    def get_queryset(self):
+        nomina_subquery = NominaCentroInfancia.objects.filter(centro_id=OuterRef("pk"))
+        queryset = CentroDeInfancia.objects.select_related(
+            "provincia",
+            "departamento",
+            "municipio",
+            "localidad",
+        ).annotate(tiene_nomina=Exists(nomina_subquery))
+        queryset = _aplicar_scope_centros_cdi(queryset, self.request.user)
+        # Sin `distinct()`: todos los campos de `filter_config` son locales o FK
+        # hacia adelante, asi que ninguna fila se duplica. En MySQL forzaria un
+        # SELECT DISTINCT sobre todas las columnas y un COUNT por subconsulta.
+        queryset = CENTRODEINFANCIA_ADVANCED_FILTER.filter_queryset(
+            queryset, self.request
+        )
+        query = self.request.GET.get("busqueda", "").strip()
+        if query:
+            queryset = queryset.filter(
+                Q(nombre__icontains=query) | Q(organizacion__icontains=query)
+            )
+        return queryset.order_by("nombre")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        columns_context = build_columns_context_from_fields(
+            self.request,
+            "centrodeinfancia_list",
+            CDI_LIST_HEADERS,
+            CDI_LIST_FIELDS,
+            default_keys=[
+                "nombre",
+                "organizacion",
+                "tiene_nomina",
+                "provincia",
+                "departamento",
+                "municipio",
+            ],
+            required_keys=["nombre"],
+        )
+        context["filters_mode"] = True
+        context["filters_config"] = get_filters_ui_config()
+        context["filters_action"] = reverse("centrodeinfancia")
+        context["breadcrumb_items"] = [
+            {
+                "text": "Centro de Desarrollo Infantil",
+                "url": reverse("centrodeinfancia"),
+            },
+            {"text": "Listar", "active": True},
+        ]
+        context["query"] = self.request.GET.get("busqueda", "")
+        if self.request.user.is_superuser:
+            context["additional_buttons"] = [
+                {
+                    "label": "Descargar nómina de niños",
+                    "class": "poncho-btn poncho-btn--descarga",
+                    "modal_target": "#nomina-ninos-provincia-modal",
+                }
+            ]
+            context["nomina_ninos_provincias"] = Provincia.objects.order_by("nombre")
+            context["mostrar_modal_nomina_ninos"] = True
+        elif es_egp_simepi(self.request.user):
+            context["additional_buttons"] = [
+                {
+                    "label": "Descargar nómina de niños",
+                    "class": "poncho-btn poncho-btn--descarga",
+                    "modal_target": "#nomina-ninos-provincia-modal",
+                }
+            ]
+            provincia_ids = get_provincias_completas_egp_ids(self.request.user)
+            context["nomina_ninos_provincias"] = Provincia.objects.filter(
+                pk__in=provincia_ids
+            ).order_by("nombre")
+            context["mostrar_modal_nomina_ninos"] = True
+        context["active_columns"] = columns_context.get("column_active_keys") or [
+            field["name"] for field in CDI_LIST_FIELDS
+        ]
+        context.update(columns_context)
+        return context
+
+
+class CentroDeInfanciaCreateView(
+    _AuditoriaSoloLecturaMixin,
+    _AutomaticReferenteProvisioningMixin,
+    _RenaperBloquesFormMixin,
+    LoginRequiredMixin,
+    CreateView,
+):
+    model = CentroDeInfancia
+    form_class = CentroDeInfanciaForm
+    template_name = "centrodeinfancia/centrodeinfancia_form.html"
+    renaper_bloques = (BLOQUE_REFERENTE,)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        kwargs["lock_provincia_from_user"] = not tiene_alcance_simepi_nacional(
+            self.request.user
+        )
+        return kwargs
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_detalle", kwargs={"pk": self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = context.get("form")
+        context["horario_fields"] = [
+            {
+                "dia": dia,
+                "etiqueta": etiqueta,
+                "apertura": form[f"horario_{dia}_apertura"],
+                "cierre": form[f"horario_{dia}_cierre"],
+            }
+            for dia, etiqueta in form.DIAS_SEMANA
+        ]
+        return context
+
+
+class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
+    model = CentroDeInfancia
+    template_name = "centrodeinfancia/centrodeinfancia_detail.html"
+    context_object_name = "centro"
+
+    def get_queryset(self):
+        return _centros_cdi_queryset_scoped(self.request.user)
+
+    def get_context_data(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+        self, **kwargs
+    ):
+        context = super().get_context_data(**kwargs)
+        context["cdi_asistencia_nomina_visible"] = (
+            settings.CDI_ASISTENCIA_NOMINA_VISIBLE
+        )
+        context["cdi_formularios_visible"] = settings.CDI_FORMULARIOS_VISIBLE
+        context["cdi_intervenciones_visible"] = settings.CDI_INTERVENCIONES_VISIBLE
+        nomina_qs = self.object.nominas.select_related(
+            "ciudadano",
+            "ciudadano__sexo",
+        ).order_by("-fecha")
+        intervenciones_qs = IntervencionCentroInfancia.objects.none()
+        if context["cdi_intervenciones_visible"]:
+            intervenciones_qs = self.object.intervenciones.select_related(
+                "tipo_intervencion",
+                "subintervencion",
+                "destinatario",
+                "creado_por",
+            ).order_by("-fecha")
+
+        today = timezone.now().date()
+        hombres = 0
+        mujeres = 0
+        genero_x = 0
+        menores = 0
+        nomina_espera = 0
+
+        def _safe_cell(value):
+            if value is None or value == "":
+                return "-"
+            return escape(value)
+
+        for registro in nomina_qs:
+            ciudadano = registro.ciudadano
+            sexo = str(
+                registro.sexo
+                or getattr(getattr(ciudadano, "sexo", None), "sexo", "")
+                or ""
+            ).lower()
+
+            if registro.estado == NominaCentroInfancia.ESTADO_PENDIENTE:
+                nomina_espera += 1
+
+            if "mascul" in sexo or sexo == "m":
+                hombres += 1
+            elif "femen" in sexo or sexo == "f":
+                mujeres += 1
+            elif sexo == "x" or "no bin" in sexo:
+                genero_x += 1
+
+            fecha_nacimiento = registro.fecha_nacimiento or getattr(
+                ciudadano, "fecha_nacimiento", None
+            )
+            if fecha_nacimiento:
+                edad = (
+                    today.year
+                    - fecha_nacimiento.year
+                    - (
+                        (today.month, today.day)
+                        < (fecha_nacimiento.month, fecha_nacimiento.day)
+                    )
+                )
+                if edad < 18:
+                    menores += 1
+
+        nomina_page = self.request.GET.get("nomina_page", 1)
+        intervenciones_page = self.request.GET.get("intervenciones_page", 1)
+        observaciones_page = self.request.GET.get("observaciones_page", 1)
+
+        nomina_paginator = Paginator(nomina_qs, 10)
+        intervenciones_paginator = Paginator(intervenciones_qs, 10)
+        observaciones_qs = self.object.observaciones.order_by("-fecha_visita")
+        observaciones_paginator = Paginator(observaciones_qs, 5)
+
+        nomina_page_obj = nomina_paginator.get_page(nomina_page)
+        intervenciones_page_obj = intervenciones_paginator.get_page(intervenciones_page)
+        observaciones_page_obj = observaciones_paginator.get_page(observaciones_page)
+
+        intervencion_ids = [intervencion.pk for intervencion in intervenciones_page_obj]
+        creator_map = {}
+        if intervencion_ids:
+            content_type = ContentType.objects.get_for_model(IntervencionCentroInfancia)
+            logs_qs = (
+                LogEntry.objects.filter(
+                    content_type=content_type,
+                    object_pk__in=[str(pk) for pk in intervencion_ids],
+                    action=LogEntry.Action.CREATE,
+                )
+                .select_related("actor")
+                .order_by("timestamp")
+            )
+            for log in logs_qs:
+                try:
+                    object_pk = int(log.object_pk)
+                except (TypeError, ValueError):
+                    continue
+                creator_map.setdefault(object_pk, log.actor)
+
+        intervenciones_headers = [
+            {"title": "Fecha"},
+            {"title": "Intervención"},
+            {"title": "Sub intervención"},
+            {"title": "Doc. adjunta"},
+            {"title": "Destinatario"},
+            {"title": "Usuario creador"},
+            {"title": "Acciones"},
+        ]
+        intervenciones_items = []
+        for intervencion in intervenciones_page_obj:
+            doc_badge = (
+                mark_safe('<span class="badge bg-success">Sí</span>')
+                if getattr(intervencion, "tiene_documentacion", False)
+                else mark_safe('<span class="badge bg-secondary">No</span>')
+            )
+
+            fecha_display = (
+                intervencion.fecha.strftime("%d/%m/%Y") if intervencion.fecha else None
+            )
+
+            actor = intervencion.creado_por or creator_map.get(intervencion.pk)
+            usuario_creador = "-"
+            if actor:
+                full_name = actor.get_full_name()
+                usuario_creador = full_name or getattr(actor, "username", None) or "-"
+
+            actions = [
+                format_html(
+                    '<a href="{}" class="btn btn-sm btn-primary">Ver</a>',
+                    reverse(
+                        "centrodeinfancia_intervencion_detalle",
+                        args=[intervencion.id],
+                    ),
+                ),
+                format_html(
+                    '<a href="{}" class="btn btn-sm btn-warning">Editar</a>',
+                    reverse(
+                        "centrodeinfancia_intervencion_editar",
+                        args=[self.object.id, intervencion.id],
+                    ),
+                ),
+            ]
+            if self.request.user.is_superuser:
+                actions.append(
+                    format_html(
+                        '<a href="{}" class="btn btn-sm btn-danger">Eliminar</a>',
+                        reverse(
+                            "centrodeinfancia_intervencion_borrar",
+                            args=[self.object.id, intervencion.id],
+                        ),
+                    )
+                )
+
+            actions_html = format_html_join(
+                " ", "{}", ((action,) for action in actions)
+            )
+
+            intervenciones_items.append(
+                {
+                    "cells": [
+                        {"content": _safe_cell(fecha_display)},
+                        {
+                            "content": _safe_cell(
+                                str(intervencion.tipo_intervencion)
+                                if intervencion.tipo_intervencion
+                                else None
+                            )
+                        },
+                        {
+                            "content": _safe_cell(
+                                str(intervencion.subintervencion)
+                                if intervencion.subintervencion
+                                else None
+                            )
+                        },
+                        {"content": doc_badge},
+                        {
+                            "content": _safe_cell(
+                                str(intervencion.destinatario)
+                                if intervencion.destinatario
+                                else None
+                            )
+                        },
+                        {"content": _safe_cell(usuario_creador)},
+                        {"content": actions_html},
+                    ]
+                }
+            )
+
+        intervenciones_page_range = intervenciones_paginator.get_elided_page_range(
+            number=intervenciones_page_obj.number
+        )
+        observaciones_page_range = observaciones_paginator.get_elided_page_range(
+            number=observaciones_page_obj.number
+        )
+
+        observaciones_headers = [
+            {"title": "Fecha"},
+            {"title": "Observador"},
+            {"title": "Observación"},
+            {"title": "Acciones"},
+        ]
+        observaciones_items = []
+        for obs in observaciones_page_obj:
+            fecha_obs = "-"
+            if obs.fecha_visita:
+                fecha_visita = obs.fecha_visita
+                if timezone.is_naive(fecha_visita):
+                    fecha_visita = timezone.make_aware(fecha_visita)
+                fecha_visita = timezone.localtime(fecha_visita)
+                fecha_obs = fecha_visita.strftime("%d/%m/%Y %H:%M")
+
+            observaciones_items.append(
+                {
+                    "cells": [
+                        {"content": fecha_obs},
+                        {"content": _safe_cell(obs.observador or "Sin observador")},
+                        {
+                            "content": _safe_cell(
+                                Truncator(obs.observacion or "").chars(80)
+                            )
+                        },
+                        {
+                            "content": format_html(
+                                '<a href="{}" class="btn btn-sm btn-primary">Ver</a>',
+                                reverse(
+                                    "centrodeinfancia_observacion_detalle",
+                                    kwargs={"pk": obs.id},
+                                ),
+                            )
+                        },
+                    ]
+                }
+            )
+
+        context["nomina_page_obj"] = nomina_page_obj
+        context["intervenciones_page_obj"] = intervenciones_page_obj
+        context["nomina_total"] = nomina_qs.count()
+        context["nomina_hombres"] = hombres
+        context["nomina_mujeres"] = mujeres
+        context["nomina_x"] = genero_x
+        context["nomina_menores"] = menores
+        context["nomina_espera"] = nomina_espera
+        context["nomina_resumen"] = {
+            "hombres": hombres,
+            "mujeres": mujeres,
+            "x": genero_x,
+            "menores": menores,
+        }
+        context["intervenciones_total"] = intervenciones_qs.count()
+        context["intervenciones_headers"] = intervenciones_headers
+        context["intervenciones_items"] = intervenciones_items
+        context["intervenciones_is_paginated"] = (
+            intervenciones_page_obj.has_other_pages()
+        )
+        context["intervenciones_page_range"] = intervenciones_page_range
+        context["observaciones_headers"] = observaciones_headers
+        context["observaciones_items"] = observaciones_items
+        context["observaciones_page_obj"] = observaciones_page_obj
+        context["observaciones_is_paginated"] = observaciones_page_obj.has_other_pages()
+        context["observaciones_page_range"] = observaciones_page_range
+        context["centro_info_basica"] = {
+            "organizacion": self.object.organizacion or "-",
+            "cuit_organizacion_gestiona": _formatear_cuit(
+                self.object.cuit_organizacion_gestiona
+            ),
+            "ambito": self.object.get_ambito_display() or "-",
+            "mail": self.object.mail or "-",
+            "fecha_inicio": (
+                str(self.object.fecha_inicio.year) if self.object.fecha_inicio else "-"
+            ),
+        }
+        context["centro_funcionamiento"] = {
+            "meses_funcionamiento": _formatear_lista_opciones(
+                self.object.meses_funcionamiento,
+                MESES_FUNCIONAMIENTO_MAP,
+            ),
+            "dias_funcionamiento": _formatear_lista_opciones(
+                self.object.dias_funcionamiento,
+                DIAS_FUNCIONAMIENTO_MAP,
+            ),
+            "horarios": _construir_horarios_detalle(self.object),
+            "tipo_jornada": (
+                self.object.get_tipo_jornada_display()
+                if self.object.tipo_jornada
+                else "-"
+            ),
+            "tipo_jornada_otra": self.object.tipo_jornada_otra or "",
+            "oferta_servicios": self.object.get_oferta_servicios_display() or "-",
+            "modalidad_gestion": (
+                self.object.get_modalidad_gestion_display()
+                if self.object.modalidad_gestion
+                else "-"
+            ),
+            "modalidad_gestion_otra": self.object.modalidad_gestion_otra or "",
+        }
+
+        context["observacion_form"] = ObservacionCentroInfanciaForm()
+        if context["cdi_formularios_visible"] and user_has_permission_code(
+            self.request.user, "centrodeinfancia.view_formulariocdi"
+        ):
+            formularios_qs = self.object.formularios.select_related(
+                "created_by"
+            ).order_by("-fecha_relevamiento", "-created_at", "-id")
+            context["formularios_total"] = formularios_qs.count()
+            context["formularios_recent"] = construir_resumenes_formularios(
+                list(formularios_qs[:3])
+            )
+        else:
+            context["formularios_total"] = 0
+            context["formularios_recent"] = []
+
+        if context["cdi_intervenciones_visible"]:
+            intervencion_form = IntervencionCentroInfanciaForm(
+                destinatario_fijo_nombre="Centro",
+                hide_destinatario=True,
+            )
+            context["intervencion_form"] = intervencion_form
+            tipo_intervencion_queryset = list(
+                intervencion_form.fields["tipo_intervencion"].queryset
+            )
+            tipo_programas_map = {
+                str(tipo.pk): (tipo.programa or "").strip()
+                for tipo in tipo_intervencion_queryset
+            }
+            alias_list = list(programa_aliases_cdi())
+            context["tipo_intervencion_programas"] = tipo_programas_map
+            context["tipo_intervencion_programa_aliases"] = alias_list
+            context["tipo_intervencion_programas_json"] = json.dumps(tipo_programas_map)
+            context["tipo_intervencion_programa_aliases_json"] = json.dumps(alias_list)
+        context.update(_build_trabajadores_context(self.request, self.object))
+        context["puede_tomar_asistencia_nomina"] = context[
+            "cdi_asistencia_nomina_visible"
+        ] and self.request.user.has_perm("centrodeinfancia.change_centrodeinfancia")
+        context["puede_generar_usuario_cdi"] = puede_generar_usuario_cdi(
+            self.request.user, self.object
+        )
+        context["puede_gestionar_referentes_cdi"] = puede_gestionar_referentes_cdi(
+            self.request.user, self.object
+        )
+        context["puede_ver_credenciales_cdi"] = puede_ver_credenciales_cdi(
+            self.request.user, self.object
+        )
+        context["puede_ver_usuarios_cdi"] = puede_ver_usuarios_cdi(
+            self.request.user, self.object
+        )
+        context["puede_administrar_usuarios_cdi"] = puede_administrar_usuarios_cdi(
+            self.request.user, self.object
+        )
+        if context["puede_ver_usuarios_cdi"]:
+            usuarios_cdi = AccesoCDI.objects.filter(centro=self.object)
+            if not context["puede_administrar_usuarios_cdi"]:
+                usuarios_cdi = usuarios_cdi.filter(
+                    user=self.request.user,
+                    activo=True,
+                )
+            # Responsable primero; después activos, suspendidos y bajas.
+            context["usuarios_cdi"] = usuarios_cdi.select_related(
+                "user", "user__profile"
+            ).order_by("-es_responsable", "-activo", "-estado", "user__username")
+            context["usuarios_cdi_columnas"] = (
+                4
+                + int(context["puede_ver_credenciales_cdi"])
+                + int(context["puede_administrar_usuarios_cdi"])
+            )
+        return context
+
+
+class CentroDeInfanciaUpdateView(
+    _AuditoriaSoloLecturaMixin,
+    _AutomaticReferenteProvisioningMixin,
+    _RenaperBloquesFormMixin,
+    LoginRequiredMixin,
+    UpdateView,
+):
+    model = CentroDeInfancia
+    form_class = CentroDeInfanciaForm
+    template_name = "centrodeinfancia/centrodeinfancia_form.html"
+    renaper_bloques = (BLOQUE_REFERENTE,)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        kwargs["lock_provincia_from_user"] = not tiene_alcance_simepi_nacional(
+            self.request.user
+        )
+        return kwargs
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_detalle", kwargs={"pk": self.object.pk})
+
+    def get_queryset(self):
+        return _centros_cdi_queryset_scoped(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = context.get("form")
+        context["horario_fields"] = [
+            {
+                "dia": dia,
+                "etiqueta": etiqueta,
+                "apertura": form[f"horario_{dia}_apertura"],
+                "cierre": form[f"horario_{dia}_cierre"],
+            }
+            for dia, etiqueta in form.DIAS_SEMANA
+        ]
+        return context
+
+
+class CentroDeInfanciaDeleteView(
+    _AuditoriaSoloLecturaMixin,
+    SoftDeleteDeleteViewMixin,
+    LoginRequiredMixin,
+    DeleteView,
+):
+    model = CentroDeInfancia
+    template_name = "centrodeinfancia/centrodeinfancia_confirm_delete.html"
+    context_object_name = "centro"
+    success_url = reverse_lazy("centrodeinfancia")
+    success_message = "Centro de Desarrollo Infantil dado de baja correctamente."
+
+    def get_queryset(self):
+        return _centros_cdi_queryset_scoped(self.request.user)
+
+
+class TrabajadorCentroInfanciaCreateView(
+    _AuditoriaSoloLecturaMixin,
+    LoginRequiredMixin,
+    CreateView,
+):
+    model = Trabajador
+    form_class = TrabajadorCDIForm
+    template_name = "centrodeinfancia/trabajador_form.html"
+
+    _SEXO_RENAPER_MAP = {
+        "Masculino": "varon",
+        "Femenino": "mujer",
+        "M": "varon",
+        "F": "mujer",
+        "X": "indeterminado",
+    }
+    _RENAPER_PREFILL_SALT = "centrodeinfancia.trabajador.renaper_prefill"
+    _RENAPER_PREFILL_MAX_AGE_SECONDS = 15 * 60
+
+    def dispatch(self, request, *args, **kwargs):
+        self.centro = _get_centro_cdi_scoped_or_404(request.user, pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def _get_form_initial(self, initial=None):
+        return _build_initial_with_centro_provincia(
+            initial,
+            self.centro,
+            "provincia_contacto",
+            (
+                "departamento_contacto",
+                "municipio_contacto",
+                "localidad_contacto",
+            ),
+        )
+
+    def get_initial(self):
+        return self._get_form_initial(super().get_initial())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["centro"] = self.centro
+        context["is_edit"] = False
+
+        query = (self.request.GET.get("query") or "").strip()
+        selected_ciudadano = self._get_selected_ciudadano()
+        ciudadanos, renaper_data = self._buscar_por_query(query, kwargs.get("form"))
+
+        self._set_form_initial(
+            context, selected_ciudadano, renaper_data, ciudadanos, query
+        )
+
+        no_resultados = bool(query) and not ciudadanos
+        context["query"] = query
+        context["ciudadanos"] = ciudadanos
+        context["selected_ciudadano"] = selected_ciudadano
+        context["no_resultados"] = no_resultados
+        renaper_prefill, token = self._obtener_prefill_renaper()
+        context["renaper_precarga"] = bool(renaper_data) or bool(renaper_prefill)
+        if token:
+            context["renaper_prefill_token"] = token
+        context["mostrar_formulario"] = bool(
+            selected_ciudadano
+            or no_resultados
+            or (context.get("form") and context["form"].is_bound)
+        )
+        return context
+
+    def _buscar_por_query(self, query, form_bound):
+        if not query or len(query) < 4:
+            return [], None
+        ciudadanos = Ciudadano.buscar_por_documento(query, max_results=50)
+        if ciudadanos or not query.isdigit() or len(query) < 7 or form_bound:
+            return ciudadanos, None
+        renaper_result = obtener_datos_ciudadano_desde_renaper(query)
+        if renaper_result.get("success"):
+            if renaper_result.get("message"):
+                messages.info(self.request, renaper_result["message"])
+            return [], self._build_initial_from_renaper(renaper_result)
+        if renaper_result.get("message"):
+            messages.warning(self.request, renaper_result["message"])
+        return [], None
+
+    def _set_form_initial(  # pylint: disable=too-many-arguments
+        self, context, selected_ciudadano, renaper_data, ciudadanos, query
+    ):
+        form = context.get("form")
+        if form and form.is_bound:
+            return
+        if selected_ciudadano:
+            context["form"] = self.form_class(
+                initial=self._get_form_initial(
+                    self._build_initial_from_ciudadano(selected_ciudadano)
+                )
+            )
+        elif renaper_data:
+            campos = self._campos_renaper_con_valor(renaper_data)
+            context["form"] = self.form_class(
+                initial=self._get_form_initial(renaper_data), campos_renaper=campos
+            )
+            context["renaper_prefill_token"] = self._crear_token_renaper(renaper_data)
+        elif query and not ciudadanos:
+            context["form"] = self.form_class(
+                initial=self._get_form_initial(
+                    {"dni": query if query.isdigit() else None}
+                )
+            )
+
+    def _campos_renaper_con_valor(self, renaper_data):
+        return [
+            field
+            for field in TrabajadorCDIForm.RENAPER_FIELDS
+            if renaper_data.get(field)
+        ]
+
+    @staticmethod
+    def _serializar_valor_renaper(value):
+        if isinstance(value, (date, datetime)):
+            return value.isoformat()
+        return value
+
+    def _crear_token_renaper(self, renaper_data):
+        values = {
+            field: self._serializar_valor_renaper(renaper_data[field])
+            for field in self._campos_renaper_con_valor(renaper_data)
+        }
+        if not values:
+            return None
+        return signing.dumps(
+            {
+                "centro_id": self.centro.pk,
+                "user_id": self.request.user.pk,
+                "values": values,
+            },
+            salt=self._RENAPER_PREFILL_SALT,
+        )
+
+    def _obtener_prefill_renaper(self):
+        token = self.request.POST.get("renaper_prefill_token")
+        if not token:
+            return {}, None
+        try:
+            payload = signing.loads(
+                token,
+                salt=self._RENAPER_PREFILL_SALT,
+                max_age=self._RENAPER_PREFILL_MAX_AGE_SECONDS,
+            )
+        except signing.BadSignature:
+            return {}, None
+        if (
+            payload.get("centro_id") != self.centro.pk
+            or payload.get("user_id") != self.request.user.pk
+        ):
+            return {}, None
+        values = payload.get("values")
+        if not isinstance(values, dict):
+            return {}, None
+        return {
+            field: values[field]
+            for field in TrabajadorCDIForm.RENAPER_FIELDS
+            if values.get(field)
+        }, token
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.method == "POST":
+            renaper_prefill, _ = self._obtener_prefill_renaper()
+            if renaper_prefill:
+                kwargs["initial"] = renaper_prefill
+                kwargs["campos_renaper"] = list(renaper_prefill)
+        return kwargs
+
+    def form_valid(self, form):
+        email_cambio = "email" in form.changed_data
+        form.instance.centro = self.centro
+        form.instance.campos_verificados_renaper = form.campos_bloqueados_renaper
+        response = super().form_valid(form)
+        crear_usuario_trabajador_automaticamente(self.request, self.object)
+        if email_cambio:
+            sincronizar_email_trabajador(self.request, self.object)
+        messages.success(self.request, "Trabajador agregado correctamente.")
+        return response
+
+    def _get_selected_ciudadano(self):
+        ciudadano_id = self.request.GET.get("ciudadano_id") or self.request.POST.get(
+            "ciudadano_id"
+        )
+        if not str(ciudadano_id or "").isdigit():
+            return None
+        return Ciudadano.objects.filter(pk=ciudadano_id).first()
+
+    def _build_initial_from_ciudadano(self, ciudadano):
+        sexo_str = getattr(ciudadano.sexo, "sexo", None) if ciudadano.sexo_id else None
+        nac_str = (
+            getattr(ciudadano.nacionalidad, "nacionalidad", None)
+            if ciudadano.nacionalidad_id
+            else None
+        )
+        return {
+            "nombre": ciudadano.nombre or "",
+            "apellido": ciudadano.apellido or "",
+            "dni": ciudadano.documento,
+            "fecha_nacimiento": ciudadano.fecha_nacimiento,
+            "cuit": ciudadano.cuil_cuit or "",
+            "sexo_registral": self._SEXO_RENAPER_MAP.get(sexo_str or "", ""),
+            "nacionalidad_trabajador": nac_str or "",
+        }
+
+    def _build_initial_from_renaper(self, renaper_result):
+        data = dict(renaper_result.get("data") or {})
+        datos_api = renaper_result.get("datos_api") or {}
+        if not data:
+            return {}
+
+        fecha_raw = (
+            data.get("fecha_nacimiento")
+            or data.get("fechaNacimiento")
+            or datos_api.get("fechaNacimiento")
+        )
+        fecha_nacimiento = _parse_fecha_renaper(fecha_raw)
+
+        sexo_raw = data.get("sexo") or datos_api.get("sexo") or ""
+        sexo = self._SEXO_RENAPER_MAP.get(sexo_raw, "")
+
+        nacionalidad = data.get("nacionalidad")
+        if str(nacionalidad or "").isdigit():
+            nacionalidad = (
+                Nacionalidad.objects.filter(pk=nacionalidad)
+                .values_list("nacionalidad", flat=True)
+                .first()
+            )
+
+        return {
+            "nombre": data.get("nombre") or data.get("nombres") or "",
+            "apellido": data.get("apellido") or data.get("apellidos") or "",
+            "dni": data.get("dni")
+            or data.get("documento")
+            or datos_api.get("nroDocumento"),
+            "fecha_nacimiento": fecha_nacimiento,
+            "cuit": data.get("cuit") or datos_api.get("cuil") or "",
+            "sexo_registral": sexo,
+            # Solo una nacionalidad del catálogo: el país crudo de RENAPER
+            # ("PARAGUAY") no es una opción válida y bloqueado no se puede corregir.
+            "nacionalidad_trabajador": nacionalidad or "",
+        }
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_detalle", kwargs={"pk": self.centro.pk})
+
+
+class TrabajadorCentroInfanciaUpdateView(
+    _AuditoriaSoloLecturaMixin,
+    LoginRequiredMixin,
+    UpdateView,
+):
+    model = Trabajador
+    form_class = TrabajadorCDIForm
+    template_name = "centrodeinfancia/trabajador_form.html"
+    pk_url_kwarg = "trabajador_id"
+
+    def get_queryset(self):
+        return _trabajadores_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["centro"] = self.object.centro
+        context["is_edit"] = True
+        context["mostrar_formulario"] = True
+        return context
+
+    def form_valid(self, form):
+        email_cambio = "email" in form.changed_data
+        # Si un dato "verificado" tenía un valor inválido (ver
+        # TrabajadorCDIForm._valor_renaper_valido) se corrigió a mano: deja de
+        # figurar como verificado.
+        form.instance.campos_verificados_renaper = form.campos_bloqueados_renaper
+        response = super().form_valid(form)
+        crear_usuario_trabajador_automaticamente(self.request, self.object)
+        if email_cambio:
+            sincronizar_email_trabajador(self.request, self.object)
+        messages.success(self.request, "Trabajador actualizado correctamente.")
+        return response
+
+    def get_success_url(self):
+        return reverse(
+            "centrodeinfancia_detalle",
+            kwargs={"pk": self.object.centro_id},
+        )
+
+
+class TrabajadorCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
+    model = Trabajador
+    template_name = "centrodeinfancia/trabajador_detail.html"
+    pk_url_kwarg = "trabajador_id"
+    context_object_name = "trabajador"
+
+    def get_queryset(self):
+        return _trabajadores_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["centro"] = self.object.centro
+        context["puede_editar_trabajadores"] = self.request.user.has_perm(
+            "centrodeinfancia.change_trabajador"
+        )
+        context["puede_eliminar_trabajadores"] = self.request.user.has_perm(
+            "centrodeinfancia.delete_trabajador"
+        )
+        return context
+
+
+class TrabajadorCentroInfanciaDeleteView(
+    _AuditoriaSoloLecturaMixin,
+    SoftDeleteDeleteViewMixin,
+    LoginRequiredMixin,
+    DeleteView,
+):
+    model = Trabajador
+    pk_url_kwarg = "trabajador_id"
+    template_name = "centrodeinfancia/trabajador_confirm_delete.html"
+    context_object_name = "trabajador"
+    success_message = "Trabajador eliminado correctamente."
+
+    def get_queryset(self):
+        return _trabajadores_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_detalle", kwargs={"pk": self.kwargs["pk"]})
+
+
+@login_required
+def centrodeinfancia_ajax(request):
+    @permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])
+    def _centrodeinfancia_ajax(req):
+        query = req.GET.get("busqueda", "")
+        page = req.GET.get("page", 1)
+        columns_context = build_columns_context_from_fields(
+            req,
+            "centrodeinfancia_list",
+            CDI_LIST_HEADERS,
+            CDI_LIST_FIELDS,
+            default_keys=[
+                "nombre",
+                "organizacion",
+                "provincia",
+                "departamento",
+                "municipio",
+            ],
+            required_keys=["nombre"],
+        )
+        active_columns = columns_context.get("column_active_keys") or [
+            field["name"] for field in CDI_LIST_FIELDS
+        ]
+
+        queryset = CentroDeInfancia.objects.select_related(
+            "provincia",
+            "departamento",
+            "municipio",
+            "localidad",
+        )
+        queryset = _aplicar_scope_centros_cdi(queryset, req.user)
+        if query:
+            queryset = queryset.filter(
+                Q(nombre__icontains=query) | Q(organizacion__icontains=query)
+            )
+        queryset = queryset.order_by("nombre")
+
+        paginator = Paginator(queryset, 10)
+        page_obj = paginator.get_page(page)
+        html = render_to_string(
+            "centrodeinfancia/partials/rows.html",
+            {
+                "centros": page_obj,
+                "active_columns": active_columns,
+            },
+            request=req,
+        )
+        return JsonResponse(
+            {
+                "html": html,
+                "count": paginator.count,
+                "num_pages": paginator.num_pages,
+                "current_page": page_obj.number,
+            }
+        )
+
+    return _centrodeinfancia_ajax(request)
+
+
+@login_required
+@require_GET
+def load_departamentos_ipi(request):
+    departamentos = DepartamentoIpi.objects.none()
+
+    try:
+        provincia_id = int(request.GET.get("provincia_id", ""))
+        departamentos = DepartamentoIpi.objects.filter(provincia_id=provincia_id)
+    except (ValueError, TypeError):
+        pass
+
+    return JsonResponse(
+        list(departamentos.order_by("nombre").values("id", "nombre", "decil_ipi")),
+        safe=False,
+    )
+
+
+@login_required
+@require_GET
+def consultar_renaper_bloque(request, bloque):
+    """Consulta RENAPER para un bloque (niño/a, responsable o referente).
+
+    Devuelve los valores a precargar y un token firmado que el form envía en el
+    POST: el servidor bloquea y guarda los datos del token, no los del POST.
+    """
+    if bloque not in BLOQUES:
+        raise Http404
+    if es_auditor_simepi(request.user):
+        raise PermissionDenied("El rol Auditoría tiene acceso de solo lectura.")
+    try:
+        resultado = consultar_bloque(bloque, request.GET.get("dni"))
+    except Exception:  # pylint: disable=broad-exception-caught
+        logger.exception("Error al consultar RENAPER para el bloque %s", bloque)
+        resultado = {"success": False, "message": "No se pudo consultar RENAPER."}
+    if not resultado["success"]:
+        return JsonResponse(
+            {"success": False, "message": resultado["message"]}, status=400
+        )
+    return JsonResponse(
+        {
+            "success": True,
+            "message": resultado["message"],
+            "valores": resultado["valores"],
+            "token": crear_token(bloque, request.user, resultado["valores"]),
+        }
+    )
+
+
+class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
+    model = NominaCentroInfancia
+    template_name = "centrodeinfancia/nomina_detail.html"
+    context_object_name = "nomina"
+    paginate_by = 100
+
+    def _get_centro(self):
+        if not hasattr(self, "_centro_cache"):
+            self._centro_cache = _get_centro_cdi_scoped_or_404(
+                self.request.user,
+                pk=self.kwargs["pk"],
+            )
+        return self._centro_cache
+
+    def get_queryset(self):
+        centro = self._get_centro()
+        return (
+            NominaCentroInfancia.objects.select_related(
+                "ciudadano",
+                "ciudadano__sexo",
+            )
+            .filter(centro=centro)
+            .order_by("-fecha")
+        )
+
+    @staticmethod
+    def _build_nomina_stats(registros):
+        today = timezone.now().date()
+        resumen = {
+            "nomina_m": 0,
+            "nomina_f": 0,
+            "nomina_x": 0,
+            "espera": 0,
+            "total": 0,
+            "rangos": {
+                "ninos": 0,
+                "adolescentes": 0,
+                "adultos": 0,
+                "adultos_mayores": 0,
+                "adulto_mayor_avanzado": 0,
+                "total_activos": 0,
+            },
+        }
+
+        for registro in registros:
+            resumen["total"] += 1
+            if registro.estado == NominaCentroInfancia.ESTADO_PENDIENTE:
+                resumen["espera"] += 1
+
+            sexo = (
+                str(
+                    registro.sexo
+                    or getattr(getattr(registro.ciudadano, "sexo", None), "sexo", "")
+                    or ""
+                )
+                .strip()
+                .lower()
+            )
+            if "mascul" in sexo or sexo == "m":
+                resumen["nomina_m"] += 1
+            elif "femen" in sexo or sexo == "f":
+                resumen["nomina_f"] += 1
+            elif sexo == "x" or "no bin" in sexo:
+                resumen["nomina_x"] += 1
+
+            fecha_nacimiento = registro.fecha_nacimiento or getattr(
+                registro.ciudadano, "fecha_nacimiento", None
+            )
+            if (
+                registro.estado != NominaCentroInfancia.ESTADO_ACTIVO
+                or not fecha_nacimiento
+            ):
+                continue
+
+            edad = (
+                today.year
+                - fecha_nacimiento.year
+                - (
+                    (today.month, today.day)
+                    < (fecha_nacimiento.month, fecha_nacimiento.day)
+                )
+            )
+            resumen["rangos"]["total_activos"] += 1
+
+            if edad <= 13:
+                resumen["rangos"]["ninos"] += 1
+            elif edad <= 17:
+                resumen["rangos"]["adolescentes"] += 1
+            elif edad <= 49:
+                resumen["rangos"]["adultos"] += 1
+            elif edad <= 65:
+                resumen["rangos"]["adultos_mayores"] += 1
+            else:
+                resumen["rangos"]["adulto_mayor_avanzado"] += 1
+
+        total_activos = resumen["rangos"]["total_activos"] or 0
+
+        def _pct(value):
+            if not total_activos:
+                return 0
+            return int(round((value or 0) * 100 / total_activos))
+
+        resumen["rangos"].update(
+            {
+                "pct_ninos": _pct(resumen["rangos"]["ninos"]),
+                "pct_adolescentes": _pct(resumen["rangos"]["adolescentes"]),
+                "pct_adultos": _pct(resumen["rangos"]["adultos"]),
+                "pct_adultos_mayores": _pct(resumen["rangos"]["adultos_mayores"]),
+                "pct_adulto_mayor_avanzado": _pct(
+                    resumen["rangos"]["adulto_mayor_avanzado"]
+                ),
+            }
+        )
+        return resumen
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        centro = self._get_centro()
+        stats = self._build_nomina_stats(self.object_list)
+        page_obj = context.get("page_obj")
+
+        centros_para_derivar = list(
+            _aplicar_scope_centros_cdi(
+                CentroDeInfancia.objects.all(), self.request.user
+            )
+            .exclude(pk=centro.pk)
+            .values("id", "nombre")
+            .order_by("nombre")
+        )
+
+        context["object"] = centro
+        context["nomina"] = page_obj
+        context["nominaM"] = stats["nomina_m"]
+        context["nominaF"] = stats["nomina_f"]
+        context["nominaX"] = stats["nomina_x"]
+        context["espera"] = stats["espera"]
+        context["cantidad_nomina"] = stats["total"]
+        context["menores"] = stats["rangos"]["ninos"] + stats["rangos"]["adolescentes"]
+        context["nomina_rangos"] = stats["rangos"]
+        context["ejecucion_inicio"] = centro.fecha_inicio
+        context["ejecucion_fin"] = None
+        context["plazo_ejecucion"] = "-"
+        context["centros_para_derivar"] = centros_para_derivar
+        return context
+
+
+class NominaCentroInfanciaFormularioDetailView(LoginRequiredMixin, DetailView):
+    model = NominaCentroInfancia
+    template_name = "centrodeinfancia/nomina_formulario_detail.html"
+    context_object_name = "nomina"
+
+    def get_queryset(self):
+        return _nomina_cdi_queryset_scoped(self.request.user).filter(
+            id=self.kwargs["pk"]
+        )
+
+
+class NominaCentroInfanciaEditView(
+    _AuditoriaSoloLecturaMixin,
+    _RenaperBloquesFormMixin,
+    LoginRequiredMixin,
+    UpdateView,
+):
+    model = NominaCentroInfancia
+    form_class = NominaCentroInfanciaDestinatariosForm
+    template_name = "centrodeinfancia/destinatario_form.html"
+    pk_url_kwarg = "nomina_id"
+    renaper_bloques = BLOQUES_NOMINA
+
+    def _filtrar_valores_renaper(self, valores):
+        # La ficha ya está vinculada a un ciudadano: validar al niño/a no puede
+        # cambiar su identidad, solo confirmar la que tiene.
+        nino = valores.get(BLOQUE_NINO)
+        if nino and str(nino.get("dni")) != str(self.object.dni):
+            valores = {k: v for k, v in valores.items() if k != BLOQUE_NINO}
+        return valores
+
+    def _get_centro(self):
+        if not hasattr(self, "_centro_cache"):
+            self._centro_cache = _get_centro_cdi_scoped_or_404(
+                self.request.user,
+                pk=self.kwargs["pk"],
+            )
+        return self._centro_cache
+
+    def get_queryset(self):
+        return _nomina_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["centro"] = self._get_centro()
+        kwargs["actor"] = self.request.user
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        centro = self._get_centro()
+        context["centro"] = centro
+        context["is_edit"] = True
+        context["selected_ciudadano"] = self.object.ciudadano if self.object else None
+        return context
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            if not puede_reactivar_nomina_cdi_bajo_bloqueo(form.instance):
+                form.add_error(None, MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+                return self.form_invalid(form)
+            self.object = form.save()
+        return redirect(self.get_success_url())
+
+
+class NominaCentroInfanciaCreateView(
+    _AuditoriaSoloLecturaMixin,
+    LoginRequiredMixin,
+    CreateView,
+):
+    model = NominaCentroInfancia
+    form_class = NominaCentroInfanciaDestinatariosForm
+    template_name = "centrodeinfancia/destinatario_form.html"
+    _RENAPER_PREFILL_SALT = "centrodeinfancia.nomina.renaper_prefill"
+    _RENAPER_PREFILL_MAX_AGE_SECONDS = 15 * 60
+
+    def _crear_token_renaper(self, valores_nino):
+        payload = {
+            "centro_id": self._get_centro().pk,
+            "user_id": self.request.user.pk,
+            "values": valores_nino,
+        }
+        return signing.dumps(
+            json.loads(json.dumps(payload, cls=DjangoJSONEncoder)),
+            salt=self._RENAPER_PREFILL_SALT,
+        )
+
+    def _valores_renaper_nino(self, selected_ciudadano):
+        """Identidad del niño/a que queda bloqueada en la ficha.
+
+        Sale del ciudadano local si ya está validado por RENAPER, o del token
+        firmado de la precarga. Nunca del POST.
+        """
+        valores, _ = self._tokens_nomina()
+        if BLOQUE_NINO in valores:
+            return valores[BLOQUE_NINO]
+        if selected_ciudadano:
+            return valores_bloque(
+                BLOQUE_NINO, identidad_desde_ciudadano_validado(selected_ciudadano)
+            )
+        payload, _ = self._obtener_prefill_renaper()
+        permitidos = set(BLOQUES[BLOQUE_NINO].values())
+        return {
+            campo: valor
+            for campo, valor in (payload.get("values") or {}).items()
+            if campo in permitidos and valor not in (None, "")
+        }
+
+    def _tokens_nomina(self):
+        if self.request.method != "POST":
+            return {}, {}
+        valores, tokens = tokens_desde_post(
+            self.request.POST, self.request.user, BLOQUES_NOMINA
+        )
+        # Elegir un ciudadano local no permite sustituirlo por otra persona.
+        seleccionado = self._get_selected_ciudadano_from_request(self.request)
+        nino = valores.get(BLOQUE_NINO)
+        if (
+            seleccionado
+            and nino
+            and str(nino.get("dni")) != str(seleccionado.documento)
+        ):
+            valores.pop(BLOQUE_NINO)
+            tokens.pop(BLOQUE_NINO)
+        return valores, tokens
+
+    def _valores_renaper_alta(self, selected_ciudadano):
+        valores, _ = self._tokens_nomina()
+        return {
+            **self._valores_renaper_nino(selected_ciudadano),
+            **_unir_valores_renaper(valores),
+        }
+
+    def _obtener_prefill_renaper(self):
+        token = self.request.POST.get("renaper_prefill_token")
+        if not token:
+            return {}, None
+        try:
+            payload = signing.loads(
+                token,
+                salt=self._RENAPER_PREFILL_SALT,
+                max_age=self._RENAPER_PREFILL_MAX_AGE_SECONDS,
+            )
+        except signing.BadSignature:
+            return {}, None
+        if (
+            not isinstance(payload, dict)
+            or payload.get("centro_id") != self._get_centro().pk
+            or payload.get("user_id") != self.request.user.pk
+            or not isinstance(payload.get("values"), dict)
+        ):
+            return {}, None
+        return payload, token
+
+    def _payload_validacion_renaper(self, cleaned_data):
+        values = self._valores_renaper_nino(None)
+        if (
+            not cleaned_data.get("dni")
+            or str(cleaned_data["dni"]) != str(values.get("dni"))
+            or not identidad_coincide(cleaned_data, values)
+        ):
+            return {"origen_dato": "manual"}
+        try:
+            result = obtener_datos_ciudadano_desde_renaper(str(values["dni"]))
+            data = result.get("data") or {}
+            if (
+                result.get("success")
+                and str(data.get("documento") or data.get("dni")) == str(values["dni"])
+                and identidad_coincide(values, data)
+            ):
+                return build_validacion_renaper_payload(result)
+        except Exception:  # pylint: disable=broad-exception-caught
+            logger.warning("No se pudo revalidar la precarga RENAPER de nómina CDI.")
+        return {"origen_dato": "manual"}
+
+    def _get_centro(self):
+        if not hasattr(self, "_centro_cache"):
+            self._centro_cache = _get_centro_cdi_scoped_or_404(
+                self.request.user,
+                pk=self.kwargs["pk"],
+            )
+        return self._centro_cache
+
+    def _get_form_initial(self, initial=None):
+        return _build_initial_with_centro_provincia(
+            initial,
+            self._get_centro(),
+            "provincia_domicilio",
+            (
+                "departamento_domicilio",
+                "municipio_domicilio",
+                "localidad_domicilio",
+            ),
+        )
+
+    def get_initial(self):
+        return self._get_form_initial(super().get_initial())
+
+    @staticmethod
+    def _crear_nomina_con_bloqueo(centro, ciudadano, form):
+        """Crea la nómina si la persona no tiene otra vigente.
+
+        Devuelve ``(creado, motivo)``: cuando ``creado`` es False, ``motivo`` es
+        una de las constantes ``MOTIVO_NOMINA_*`` para que la vista elija el
+        mensaje sin exponer datos del otro centro.
+        """
+        bloquear_ciudadano_para_nomina_cdi(ciudadano.pk)
+        CentroDeInfancia.objects.select_for_update().filter(pk=centro.pk).exists()
+        existente = (
+            NominaCentroInfancia.objects.select_for_update()
+            .filter(
+                centro=centro,
+                ciudadano=ciudadano,
+                deleted_at__isnull=True,
+            )
+            .exists()
+        )
+        if existente:
+            return False, MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO
+
+        if tiene_nomina_cdi_vigente_en_otro_centro(
+            ciudadano.pk, centro.pk, bloquear=True
+        ):
+            return False, MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO
+
+        nomina = form.save(commit=False)
+        nomina.centro = centro
+        nomina.ciudadano = ciudadano
+        nomina.clean()
+        nomina.save()
+        return True, None
+
+    def get_queryset(self):
+        return _nomina_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
+
+    @staticmethod
+    def _build_nomina_initial_from_ciudadano(ciudadano):
+        return {
+            "dni": ciudadano.documento,
+            "apellido": ciudadano.apellido,
+            "nombre": ciudadano.nombre,
+            "fecha_nacimiento": ciudadano.fecha_nacimiento,
+            "sexo": getattr(getattr(ciudadano, "sexo", None), "sexo", None),
+            "nacionalidad": getattr(
+                getattr(ciudadano, "nacionalidad", None), "nacionalidad", None
+            ),
+            "calle_domicilio": ciudadano.calle,
+            "altura_domicilio": (
+                int(ciudadano.altura) if str(ciudadano.altura or "").isdigit() else None
+            ),
+            "provincia_domicilio": ciudadano.provincia_id,
+            "municipio_domicilio": ciudadano.municipio_id,
+            "localidad_domicilio": ciudadano.localidad_id,
+        }
+
+    @staticmethod
+    def _resolve_sexo_nombre(sexo_value):
+        if not sexo_value:
+            return None
+        if sexo_value in dict(NominaCentroInfancia.SexoChoices.choices):
+            return sexo_value
+        sexo_obj = Sexo.objects.filter(pk=sexo_value).first()
+        return getattr(sexo_obj, "sexo", None)
+
+    @staticmethod
+    def _resolve_nacionalidad_nombre(nacionalidad_value, datos_api=None):
+        if nacionalidad_value:
+            nacionalidad_obj = Nacionalidad.objects.filter(
+                pk=nacionalidad_value
+            ).first()
+            if nacionalidad_obj:
+                return nacionalidad_obj.nacionalidad
+        return (datos_api or {}).get("pais") or None
+
+    @staticmethod
+    def _get_selected_ciudadano_from_request(request):
+        ciudadano_id = request.GET.get("ciudadano_id") or request.POST.get(
+            "ciudadano_id"
+        )
+        if not str(ciudadano_id or "").isdigit():
+            return None
+        return Ciudadano.objects.filter(pk=ciudadano_id).first()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        centro = self._get_centro()
+        context["object"] = centro
+        context["centro"] = centro
+        query = (self.request.GET.get("query") or "").strip()
+        form = kwargs.get("form")
+        ciudadanos = []
+        renaper_data = None
+        renaper_prefill, token = self._obtener_prefill_renaper()
+        selected_ciudadano = self._get_selected_ciudadano_from_request(self.request)
+
+        valores_nino = {}
+        if query and len(query) >= 4:
+            ciudadanos = Ciudadano.buscar_por_documento(query, max_results=50)
+            if not ciudadanos and query.isdigit() and len(query) >= 7 and not form:
+                renaper_result = obtener_datos_ciudadano_desde_renaper(query)
+                if renaper_result.get("success"):
+                    renaper_data = self._build_nomina_initial_from_renaper(
+                        renaper_result
+                    )
+                    if renaper_data:
+                        valores_nino = valores_bloque(
+                            BLOQUE_NINO, identidad_desde_resultado(renaper_result)
+                        )
+                        token = self._crear_token_renaper(valores_nino)
+                    mensaje = renaper_result.get("message")
+                    if mensaje:
+                        messages.info(self.request, mensaje)
+                elif renaper_result.get("message"):
+                    messages.warning(self.request, renaper_result["message"])
+
+        if not form:
+            if selected_ciudadano:
+                form = self.form_class(
+                    initial=self._get_form_initial(
+                        self._build_nomina_initial_from_ciudadano(selected_ciudadano)
+                    ),
+                    centro=centro,
+                    valores_renaper=self._valores_renaper_nino(selected_ciudadano),
+                )
+            elif renaper_data:
+                form = self.form_class(
+                    initial=self._get_form_initial(renaper_data),
+                    centro=centro,
+                    valores_renaper=valores_nino,
+                )
+            elif query and not ciudadanos:
+                form = self.form_class(
+                    initial=self._get_form_initial(
+                        {"dni": query if query.isdigit() else None}
+                    ),
+                    centro=centro,
+                )
+            else:
+                form = self.form_class(initial=self._get_form_initial(), centro=centro)
+
+        context["query"] = query
+        context["ciudadanos"] = ciudadanos
+        context["selected_ciudadano"] = selected_ciudadano
+        context["no_resultados"] = bool(query) and not ciudadanos
+        context["form"] = form
+        context["renaper_precarga"] = bool(renaper_data) or bool(renaper_prefill)
+        context["renaper_prefill_token"] = token
+        context["renaper_tokens"] = self._tokens_nomina()[1]
+        context["mostrar_formulario"] = bool(
+            selected_ciudadano or context["no_resultados"] or form.is_bound
+        )
+        return context
+
+    @staticmethod
+    def _build_nomina_initial_from_renaper(renaper_result):
+        renaper_data = dict(renaper_result.get("data") or {})
+        renaper_result_data = dict(renaper_result.get("result") or {})
+        datos_api = renaper_result.get("datos_api") or {}
+        if not renaper_data:
+            return renaper_data
+
+        fecha_raw = (
+            renaper_data.get("fecha_nacimiento")
+            or renaper_data.get("fechaNacimiento")
+            or renaper_result_data.get("fechaNacimiento")
+            or renaper_result_data.get("fecha_nacimiento")
+            or datos_api.get("fechaNacimiento")
+            or datos_api.get("fecha_nacimiento")
+        )
+        fecha_nacimiento = _parse_fecha_renaper(fecha_raw)
+
+        return {
+            "dni": renaper_data.get("documento") or renaper_data.get("dni"),
+            "apellido": renaper_data.get("apellido"),
+            "nombre": renaper_data.get("nombre"),
+            "fecha_nacimiento": fecha_nacimiento,
+            "sexo": NominaCentroInfanciaCreateView._resolve_sexo_nombre(
+                renaper_data.get("sexo")
+            ),
+            "nacionalidad": (
+                NominaCentroInfanciaCreateView._resolve_nacionalidad_nombre(
+                    renaper_data.get("nacionalidad"),
+                    datos_api=datos_api,
+                )
+            ),
+            "calle_domicilio": renaper_data.get("calle"),
+            "altura_domicilio": renaper_data.get("altura"),
+            "piso_domicilio": renaper_data.get("piso_vivienda"),
+            "departamento_domicilio": renaper_data.get("departamento_vivienda"),
+            "provincia_domicilio": renaper_data.get("provincia"),
+            "municipio_domicilio": renaper_data.get("municipio"),
+            "localidad_domicilio": renaper_data.get("localidad"),
+        }
+
+    @staticmethod
+    def _build_piso_departamento_value(cleaned_data):
+        pieces = []
+        if cleaned_data.get("piso_domicilio"):
+            pieces.append(f'Piso {cleaned_data["piso_domicilio"]}')
+        if cleaned_data.get("departamento_domicilio"):
+            pieces.append(f'Departamento {cleaned_data["departamento_domicilio"]}')
+        return " / ".join(pieces) or None
+
+    def post(  # pylint: disable=too-many-return-statements
+        self, request, *args, **kwargs
+    ):
+        self.object = None
+        centro = self._get_centro()
+        form = self.form_class(
+            request.POST,
+            centro=centro,
+            actor=request.user,
+            valores_renaper=self._valores_renaper_alta(
+                self._get_selected_ciudadano_from_request(request)
+            ),
+        )
+        ciudadano_id = request.POST.get("ciudadano_id")
+
+        if not form.is_valid():
+            messages.warning(request, "Hay errores en la ficha de la nómina.")
+            context = self.get_context_data(form=form)
+            return self.render_to_response(context)
+
+        ciudadano = None
+        if str(ciudadano_id or "").isdigit():
+            ciudadano = Ciudadano.objects.filter(pk=ciudadano_id).first()
+            if not ciudadano:
+                messages.error(request, "No se encontró el ciudadano seleccionado.")
+                context = self.get_context_data(form=form)
+                return self.render_to_response(context)
+
+            # Validar que el DNI informado coincida con el del ciudadano seleccionado
+            form_dni = form.cleaned_data.get("dni")
+            if form_dni and str(form_dni) != str(ciudadano.documento):
+                form.add_error(
+                    "dni",
+                    "El DNI no coincide con el del ciudadano seleccionado.",
+                )
+                messages.error(
+                    request,
+                    "El DNI informado no coincide con el del ciudadano seleccionado.",
+                )
+                context = self.get_context_data(form=form)
+                return self.render_to_response(context)
+        validacion_payload = {"origen_dato": "manual"}
+        if (
+            ciudadano is None
+            and not Ciudadano.objects.filter(
+                tipo_documento=Ciudadano.DOCUMENTO_DNI,
+                documento=form.cleaned_data.get("dni"),
+            ).exists()
+        ):
+            # La reconsulta externa sucede antes de abrir la transacción de alta.
+            validacion_payload = self._payload_validacion_renaper(form.cleaned_data)
+        try:
+            with transaction.atomic():
+                if ciudadano is None:
+                    sexo_obj = Sexo.objects.filter(
+                        sexo=form.cleaned_data.get("sexo")
+                    ).first()
+                    nacionalidad_obj = resolver_nacionalidad_desde_renaper(
+                        form.cleaned_data.get("nacionalidad")
+                    )
+                    ciudadano = Ciudadano.objects.filter(
+                        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+                        documento=form.cleaned_data.get("dni"),
+                    ).first()
+                    if ciudadano is None:
+                        ciudadano = Ciudadano.objects.create(
+                            apellido=form.cleaned_data.get("apellido"),
+                            nombre=form.cleaned_data.get("nombre"),
+                            fecha_nacimiento=form.cleaned_data.get("fecha_nacimiento"),
+                            tipo_documento=Ciudadano.DOCUMENTO_DNI,
+                            documento=form.cleaned_data.get("dni"),
+                            sexo=sexo_obj,
+                            nacionalidad=nacionalidad_obj,
+                            calle=form.cleaned_data.get("calle_domicilio"),
+                            altura=(
+                                str(form.cleaned_data.get("altura_domicilio"))
+                                if form.cleaned_data.get("altura_domicilio") is not None
+                                else None
+                            ),
+                            piso_departamento=self._build_piso_departamento_value(
+                                form.cleaned_data
+                            ),
+                            provincia=form.cleaned_data.get("provincia_domicilio"),
+                            municipio=form.cleaned_data.get("municipio_domicilio"),
+                            localidad=form.cleaned_data.get("localidad_domicilio"),
+                            **validacion_payload,
+                            creado_por=request.user,
+                            modificado_por=request.user,
+                        )
+
+                creado, motivo_rechazo = self._crear_nomina_con_bloqueo(
+                    centro=centro,
+                    ciudadano=ciudadano,
+                    form=form,
+                )
+        except Exception:  # noqa: BLE001
+            logger.exception(
+                "Error al guardar ficha en nómina de CDI",
+                extra={
+                    "centro_id": centro.id,
+                    "ciudadano_id": getattr(ciudadano, "id", None),
+                    "user_id": getattr(request.user, "id", None),
+                },
+            )
+            messages.error(request, "No se pudo guardar la ficha en la nómina.")
+            context = self.get_context_data(form=form)
+            return self.render_to_response(context)
+
+        if motivo_rechazo == MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO:
+            form.add_error(None, MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+            messages.error(request, MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+            context = self.get_context_data(form=form)
+            return self.render_to_response(context)
+
+        if not creado:
+            messages.warning(
+                request,
+                "El ciudadano ya se encuentra en la nómina de este centro.",
+            )
+            return redirect(self.get_success_url())
+
+        messages.success(request, "Ficha creada y agregada a la nómina.")
+        return redirect(self.get_success_url())
+
+
+class NominaCentroInfanciaDeleteView(
+    _AuditoriaSoloLecturaMixin,
+    SoftDeleteDeleteViewMixin,
+    LoginRequiredMixin,
+    DeleteView,
+):
+    model = NominaCentroInfancia
+    template_name = "centrodeinfancia/nomina_confirm_delete.html"
+    pk_url_kwarg = "pk2"
+    success_message = "Registro de nómina dado de baja correctamente."
+
+    def get_queryset(self):
+        queryset = _nomina_cdi_queryset_scoped(self.request.user)
+        return queryset.filter(centro_id=self.kwargs["pk"])
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
+
+
+class NominaCentroInfanciaDestinatariosDetailView(LoginRequiredMixin, DetailView):
+    model = NominaCentroInfancia
+    template_name = "centrodeinfancia/destinatario_detail.html"
+    pk_url_kwarg = "nomina_id"
+    context_object_name = "nomina"
+
+    def get_queryset(self):
+        return _nomina_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["centro"] = _get_centro_cdi_scoped_or_404(
+            self.request.user, pk=self.kwargs["pk"]
+        )
+        context["puede_editar"] = self.request.user.has_perm(
+            "centrodeinfancia.change_nominacentroinfancia"
+        )
+        return context
+
+
+@login_required
+def nomina_centrodeinfancia_editar_ajax(request, pk):
+    nomina = get_object_or_404(_nomina_cdi_queryset_scoped(request.user), pk=pk)
+    if request.method == "POST":
+        if es_auditor_simepi(request.user):
+            raise PermissionDenied("El rol Auditoría tiene acceso de solo lectura.")
+        form = NominaCentroInfanciaForm(request.POST, instance=nomina)
+        if form.is_valid():
+            with transaction.atomic():
+                if not puede_reactivar_nomina_cdi_bajo_bloqueo(form.instance):
+                    form.add_error(None, MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+                    return JsonResponse({"success": False, "errors": form.errors})
+                form.save()
+            return JsonResponse(
+                {"success": True, "message": "Datos modificados con éxito."}
+            )
+        return JsonResponse({"success": False, "errors": form.errors})
+
+    form = NominaCentroInfanciaForm(instance=nomina)
+    return render(
+        request,
+        "centrodeinfancia/nomina_editar_ajax.html",
+        {"form": form},
+    )
+
+
+@login_required
+def nomina_centrodeinfancia_derivar(request, pk):
+    """Transfiere una persona de nómina activa a otro CDI vía AJAX (POST)."""
+    if request.method != "POST":
+        return JsonResponse(
+            {"success": False, "message": "Método no permitido."}, status=405
+        )
+
+    get_object_or_404(_nomina_cdi_queryset_scoped(request.user), pk=pk)
+
+    try:
+        centro_destino_pk = int(request.POST.get("centro_destino_id", ""))
+    except (ValueError, TypeError):
+        return JsonResponse(
+            {"success": False, "message": "Centro destino inválido."}, status=400
+        )
+
+    motivo = (request.POST.get("motivo") or "").strip()
+
+    ok, msg = CentroDeInfanciaService.transferir_ciudadano_entre_centros(
+        nomina_pk=pk,
+        centro_destino_pk=centro_destino_pk,
+        usuario=request.user,
+        motivo=motivo,
+    )
+    status_code = 200 if ok else 400
+    return JsonResponse({"success": ok, "message": msg}, status=status_code)
+
+
+class IntervencionCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
+    model = IntervencionCentroInfancia
+    form_class = IntervencionCentroInfanciaForm
+    template_name = "centrodeinfancia/intervencion_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["destinatario_fijo_nombre"] = "Centro"
+        kwargs["hide_destinatario"] = True
+        return kwargs
+
+    def form_valid(self, form):
+        centro = _get_centro_cdi_scoped_or_404(self.request.user, pk=self.kwargs["pk"])
+        form.instance.centro = centro
+        if self.request.user.is_authenticated:
+            form.instance.creado_por = self.request.user
+        if form.destinatario_fijo_instance:
+            form.instance.destinatario = form.destinatario_fijo_instance
+
+        messages.success(self.request, "Intervención creada correctamente.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_detalle", kwargs={"pk": self.kwargs["pk"]})
+
+
+class IntervencionCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
+    model = IntervencionCentroInfancia
+    form_class = IntervencionCentroInfanciaForm
+    pk_url_kwarg = "pk2"
+    template_name = "centrodeinfancia/intervencion_form.html"
+
+    def get_queryset(self):
+        return _intervenciones_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_detalle", kwargs={"pk": self.kwargs["pk"]})
+
+
+class IntervencionCentroInfanciaDeleteView(
+    SoftDeleteDeleteViewMixin,
+    LoginRequiredMixin,
+    DeleteView,
+):
+    model = IntervencionCentroInfancia
+    template_name = "centrodeinfancia/intervencion_confirm_delete.html"
+    pk_url_kwarg = "intervencion_id"
+    success_message = "Intervención dada de baja correctamente."
+
+    def get_queryset(self):
+        return _intervenciones_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def get_success_url(self):
+        return reverse("centrodeinfancia_detalle", kwargs={"pk": self.kwargs["pk"]})
+
+
+class IntervencionCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
+    # TODO: Unificar modelo de intervenciones (Intervencion para comedores e IntervencionCentroInfancia para CDI)
+    # para evitar duplicación de vistas y templates de detalle.
+    model = IntervencionCentroInfancia
+    template_name = "centrodeinfancia/intervencion_detail_view.html"
+    context_object_name = "intervencion"
+
+    def get_queryset(self):
+        return _intervenciones_cdi_queryset_scoped(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        centro = getattr(self.object, "centro", None)
+        if centro:
+            context["centro"] = {"id": centro.id, "nombre": centro.nombre}
+        return context
+
+
+class ObservacionCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
+    model = ObservacionCentroInfancia
+    form_class = ObservacionCentroInfanciaForm
+    template_name = "centrodeinfancia/observacion_form.html"
+    context_object_name = "observacion"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        centro = _get_centro_cdi_scoped_or_404(self.request.user, pk=self.kwargs["pk"])
+        context["centro"] = {"id": centro.id, "nombre": centro.nombre}
+        return context
+
+    def form_valid(self, form):
+        centro = _get_centro_cdi_scoped_or_404(self.request.user, pk=self.kwargs["pk"])
+        form.instance.centro = centro
+        usuario = self.request.user
+        form.instance.observador = f"{usuario.first_name} {usuario.last_name}".strip()
+        if not form.instance.observador:
+            form.instance.observador = getattr(usuario, "username", "")
+        form.instance.fecha_visita = timezone.now()
+        self.object = form.save()
+        return safe_redirect(
+            self.request,
+            default=reverse(
+                "centrodeinfancia_observacion_detalle",
+                kwargs={"pk": self.object.id},
+            ),
+        )
+
+
+class ObservacionCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
+    model = ObservacionCentroInfancia
+    template_name = "centrodeinfancia/observacion_detail.html"
+    context_object_name = "observacion"
+
+    def get_queryset(self):
+        return _observaciones_cdi_queryset_scoped(self.request.user)
+
+
+class ObservacionCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
+    model = ObservacionCentroInfancia
+    form_class = ObservacionCentroInfanciaForm
+    template_name = "centrodeinfancia/observacion_form.html"
+    context_object_name = "observacion"
+
+    def get_queryset(self):
+        return _observaciones_cdi_queryset_scoped(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        centro = getattr(self.object, "centro", None)
+        if centro:
+            context["centro"] = {"id": centro.id, "nombre": centro.nombre}
+        return context
+
+    def form_valid(self, form):
+        form.instance.centro = self.object.centro
+        self.object = form.save()
+        return redirect(
+            "centrodeinfancia_observacion_detalle",
+            pk=self.object.id,
+        )
+
+
+class ObservacionCentroInfanciaDeleteView(
+    SoftDeleteDeleteViewMixin,
+    LoginRequiredMixin,
+    DeleteView,
+):
+    model = ObservacionCentroInfancia
+    template_name = "centrodeinfancia/observacion_confirm_delete.html"
+    context_object_name = "observacion"
+    success_message = "Observación dada de baja correctamente."
+
+    def get_queryset(self):
+        return _observaciones_cdi_queryset_scoped(self.request.user)
+
+    def get_success_url(self):
+        return reverse_lazy(
+            "centrodeinfancia_detalle",
+            kwargs={"pk": self.object.centro_id},
+        )
+
+
+@login_required
+@require_POST
+def subir_archivo_intervencion_centrodeinfancia(request, intervencion_id):
+    intervencion = get_object_or_404(
+        _intervenciones_cdi_queryset_scoped(request.user),
+        id=intervencion_id,
+    )
+    archivo = request.FILES.get("documentacion")
+    error = _validar_archivo_documentacion_intervencion(archivo)
+    if error:
+        return JsonResponse({"success": False, "message": error}, status=400)
+
+    intervencion.documentacion = archivo
+    intervencion.tiene_documentacion = True
+    intervencion.save(update_fields=["documentacion", "tiene_documentacion"])
+    return JsonResponse({"success": True, "message": "Archivo subido correctamente."})
+
+
+@login_required
+@require_POST
+def eliminar_archivo_intervencion_centrodeinfancia(request, intervencion_id):
+    intervencion = get_object_or_404(
+        _intervenciones_cdi_queryset_scoped(request.user),
+        id=intervencion_id,
+    )
+    if intervencion.documentacion:
+        intervencion.documentacion.delete(save=False)
+        intervencion.documentacion = None
+        intervencion.tiene_documentacion = False
+        intervencion.save(update_fields=["documentacion", "tiene_documentacion"])
+        messages.success(request, "El archivo fue eliminado correctamente.")
+    else:
+        messages.error(request, "No hay archivo para eliminar.")
+    return redirect("centrodeinfancia_detalle", pk=intervencion.centro_id)
+
+
+class AsistenciaNominaCentroView(LoginRequiredMixin, TemplateView):
+    """Toma asistencia diaria sobre la nómina activa del CDI."""
+
+    template_name = "centrodeinfancia/nomina_asistencia.html"
+
+    def _get_centro(self):
+        if not hasattr(self, "_centro_cache"):
+            self._centro_cache = _get_centro_cdi_scoped_or_404(
+                self.request.user,
+                pk=self.kwargs["pk"],
+            )
+        return self._centro_cache
+
+    def _parse_fecha(self, fecha_raw):
+        try:
+            return AsistenciaNominaCentroInfanciaService.parsear_fecha(fecha_raw)
+        except ValidationError as exc:
+            messages.error(self.request, exc.messages[0])
+            return timezone.localdate()
+
+    @staticmethod
+    def _construir_filas_asistencia(nominas, fecha):
+        asistencias = {
+            asistencia.nomina_id: asistencia
+            for asistencia in AsistenciaNominaCentroInfancia.objects.filter(
+                fecha=fecha,
+                nomina__in=nominas,
+            )
+        }
+        filas = []
+        presentes = ausentes = sin_marcar = 0
+        for nomina in nominas:
+            asistencia = asistencias.get(nomina.pk)
+            presente = asistencia.presente if asistencia else None
+            ciudadano = nomina.ciudadano
+            apellido = nomina.apellido or ciudadano.apellido or ""
+            nombre = nomina.nombre or ciudadano.nombre or ""
+            if presente is True:
+                presentes += 1
+            elif presente is False:
+                ausentes += 1
+            else:
+                sin_marcar += 1
+            filas.append(
+                {
+                    "nomina": nomina,
+                    "nombre_completo": f"{apellido}, {nombre}".strip(", "),
+                    "dni": nomina.dni or ciudadano.documento,
+                    "presente": presente,
+                    "observaciones": asistencia.observaciones if asistencia else "",
+                }
+            )
+        return filas, presentes, ausentes, sin_marcar
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        centro = self._get_centro()
+        fecha = self._parse_fecha(self.request.GET.get("fecha"))
+        nominas = AsistenciaNominaCentroInfanciaService.nominas_editables(
+            centro,
+            fecha,
+        )
+        filas, presentes, ausentes, sin_marcar = self._construir_filas_asistencia(
+            nominas,
+            fecha,
+        )
+        context.update(
+            {
+                "centro": centro,
+                "object": centro,
+                "fecha": fecha,
+                "filas": filas,
+                "total_presentes": presentes,
+                "total_ausentes": ausentes,
+                "total_sin_marcar": sin_marcar,
+                "volver_url": reverse(
+                    "centrodeinfancia_detalle",
+                    kwargs={"pk": centro.pk},
+                ),
+            }
+        )
+        return context
+
+    def get(self, request, *args, **kwargs):
+        return self.render_to_response(self.get_context_data())
+
+    def post(self, request, *args, **kwargs):
+        centro = self._get_centro()
+        try:
+            fecha = AsistenciaNominaCentroInfanciaService.guardar(
+                centro=centro,
+                fecha_raw=request.POST.get("fecha"),
+                datos=request.POST,
+                usuario=request.user,
+            )
+        except ValidationError as exc:
+            messages.error(request, exc.messages[0])
+            return redirect("centrodeinfancia_nomina_asistencia", pk=centro.pk)
+        messages.success(request, "Asistencia registrada correctamente.")
+        url = reverse("centrodeinfancia_nomina_asistencia", kwargs={"pk": centro.pk})
+        return redirect(f"{url}?fecha={fecha.isoformat()}")
+
+
+@login_required
+@require_GET
+def asistencia_nomina_calendario(request, pk):
+    centro = _get_centro_cdi_scoped_or_404(request.user, pk=pk)
+    try:
+        mes = AsistenciaNominaCentroInfanciaService.parsear_mes(request.GET.get("mes"))
+    except ValidationError as exc:
+        return JsonResponse({"detail": exc.messages[0]}, status=400)
+    dias = AsistenciaNominaCentroInfanciaService.dias_con_asistencia(
+        centro=centro,
+        mes=mes,
+    )
+    return JsonResponse({"dias": [dia.isoformat() for dia in dias]})
+
+
+@login_required
+def redirigir_asistencia_trabajadores_a_nomina(request, pk):
+    url = reverse("centrodeinfancia_nomina_asistencia", kwargs={"pk": pk})
+    query_string = request.GET.urlencode()
+    return redirect(f"{url}?{query_string}" if query_string else url)

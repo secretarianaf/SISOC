@@ -68,7 +68,7 @@ revisar el servicio antes de reanudar. Los resultados ya confirmados se conserva
 
 ## Infraestructura y activación
 
-`docker-compose.celery.yml` agrega Redis persistente, un worker Celery exclusivo
+`docker/compose/docker-compose.celery.yml` agrega Redis persistente, un worker Celery exclusivo
 de PAS y una única instancia de Beat. El deploy versionado incorpora este
 archivo para todos los ambientes. MySQL conserva corridas, lotes y resultados;
 Redis transporta identificadores. No se guardan DNI ni tokens en mensajes.
@@ -94,17 +94,17 @@ Responsable operativo: equipo de despliegue o referente técnico. Aplicar migrac
 de activar la programación. Verificar MySQL, broker, worker, Beat y permisos
 de RENAPER en el ambiente objetivo.
 
-1. Ejecutar `sudo bash scripts/infra/remove_pas_cron.sh` (inspección).
+1. Ejecutar `sudo bash src/scripts/infra/remove_pas_cron.sh` (inspección).
 2. Revisar envoltorios y temporizadores adicionales, y comprobar que no haya
    un proceso PAS antiguo activo.
 3. Ejecutar el mismo script con `--apply`: respalda y elimina solo las entradas
    directas de `manage.py sincronizar_supervivencia_pas` de usuarios y cron del sistema.
 4. Repetir inspección y revisar crontabs efectivos. El script no detecta comandos
    ocultos en envoltorios; éstos requieren revisión del servidor.
-5. Levantar el Compose del ambiente con `-f docker-compose.celery.yml` y habilitar
+5. Levantar el Compose del ambiente con `-f docker/compose/docker-compose.celery.yml` y habilitar
    la programación solo después de la validación.
 
-La línea PAS se retira de `scripts/crontab`; los cron ajenos permanecen.
+La línea PAS se retira de `src/scripts/crontab`; los cron ajenos permanecen.
 Los respaldos efectivos viven en `/var/backups/sisoc/pas-cron/`.
 
 Comandos de operador:

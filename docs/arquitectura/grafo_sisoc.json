@@ -1,12 +1,206 @@
 {
-  "generado": "2026-09-15T11:37:49-03:00",
-  "commit": "01b950f01",
-  "rama": "juanikitro/docs-sisoc-module-map",
+  "generado": "2026-10-06T13:59:23-03:00",
+  "commit": "4b61a2c4e",
+  "rama": "fix/mapa-arquitectura-servicios-frontends",
+  "fuente": "repositorio",
+  "servicios": [
+    {
+      "id": "kernel",
+      "nombre": "Kernel compartido",
+      "tipo": "kernel",
+      "service": "",
+      "apps": [
+        "users",
+        "core",
+        "organizaciones",
+        "catalogo_intervenciones",
+        "sentry",
+        "ciudadanos",
+        "audittrail",
+        "iam",
+        "healthcheck"
+      ],
+      "rutas": []
+    },
+    {
+      "id": "sisoc_core",
+      "nombre": "Core de entrada y proxy",
+      "tipo": "core",
+      "service": "django",
+      "apps": [
+        "usuarios",
+        "dashboard",
+        "comedores",
+        "gestion_organizaciones",
+        "duplas",
+        "admisiones",
+        "intervenciones",
+        "historial",
+        "acompanamientos",
+        "expedientespagos",
+        "relevamientos",
+        "rendicioncuentasfinal",
+        "rendicioncuentasmensual",
+        "importarexpediente",
+        "comunicados",
+        "insumos",
+        "pwa",
+        "ocr",
+        "encuestas"
+      ],
+      "rutas": []
+    },
+    {
+      "id": "dispositivos",
+      "nombre": "Backend dispositivos",
+      "tipo": "backend",
+      "service": "backend_dispositivos",
+      "apps": [
+        "dispositivos",
+        "datacalle"
+      ],
+      "rutas": [
+        "/dispositivos/",
+        "/datacalle/",
+        "/api/datacalle/"
+      ],
+      "urlconf": "dispositivos_runtime.urls",
+      "migrador": "migrator",
+      "extra_services": []
+    },
+    {
+      "id": "vpsl",
+      "nombre": "Backend vpsl",
+      "tipo": "backend",
+      "service": "backend_vpsl",
+      "apps": [
+        "ver_para_ser_libre"
+      ],
+      "rutas": [
+        "/ver-para-ser-libre/",
+        "/api/vpsl/"
+      ],
+      "urlconf": "vpsl_runtime.urls",
+      "migrador": "migrator",
+      "extra_services": []
+    },
+    {
+      "id": "pas",
+      "nombre": "Backend pas",
+      "tipo": "backend",
+      "service": "backend_pas",
+      "apps": [
+        "pas"
+      ],
+      "rutas": [
+        "/pas/",
+        "/media/pas/"
+      ],
+      "urlconf": "pas_runtime.urls",
+      "migrador": "migrator",
+      "extra_services": [
+        "celery_pas_worker",
+        "celery_beat"
+      ]
+    },
+    {
+      "id": "vat",
+      "nombre": "Backend vat",
+      "tipo": "backend",
+      "service": "backend_vat",
+      "apps": [
+        "VAT"
+      ],
+      "rutas": [
+        "/vat/",
+        "/api/vat/",
+        "/api/schema/VAT/",
+        "/api/docs/VAT/",
+        "/api/redoc/VAT/"
+      ],
+      "urlconf": "vat_runtime.urls",
+      "migrador": "migrator",
+      "extra_services": []
+    },
+    {
+      "id": "celiaquia",
+      "nombre": "Backend celiaquia",
+      "tipo": "backend",
+      "service": "backend_celiaquia",
+      "apps": [
+        "celiaquia"
+      ],
+      "rutas": [
+        "/celiaquia/",
+        "/reporter-provincias/",
+        "/api/celiaquia/"
+      ],
+      "urlconf": "celiaquia_runtime.urls",
+      "migrador": "migrator",
+      "extra_services": []
+    },
+    {
+      "id": "cdi",
+      "nombre": "Backend cdi",
+      "tipo": "backend",
+      "service": "backend_cdi",
+      "apps": [
+        "centrodeinfancia",
+        "ticketera"
+      ],
+      "rutas": [
+        "/centrodeinfancia/",
+        "/simepi/",
+        "/api/ticketera/"
+      ],
+      "urlconf": "cdi_runtime.urls",
+      "migrador": "migrator",
+      "extra_services": []
+    },
+    {
+      "id": "cdf",
+      "nombre": "Backend cdf",
+      "tipo": "backend",
+      "service": "backend_cdf",
+      "apps": [
+        "centrodefamilia"
+      ],
+      "rutas": [
+        "/centrodefamilia/",
+        "/api/centrodefamilia/"
+      ],
+      "urlconf": "cdf_runtime.urls",
+      "migrador": "migrator",
+      "extra_services": []
+    }
+  ],
+  "frontends": [
+    {
+      "id": "celiaquia",
+      "nombre": "@sisoc/celiaquia",
+      "ruta_codigo": "src/frontends/apps/celiaquia",
+      "ruta_web": "/v2/celiaquia/",
+      "registrado": true,
+      "codigo_presente": true,
+      "backend_asociado": "celiaquia",
+      "certeza_backend": "inferido"
+    },
+    {
+      "id": "vpsl",
+      "nombre": "@sisoc/vpsl",
+      "ruta_codigo": "src/frontends/apps/vpsl",
+      "ruta_web": "/v2/vpsl/",
+      "registrado": true,
+      "codigo_presente": true,
+      "backend_asociado": "vpsl",
+      "certeza_backend": "inferido"
+    }
+  ],
   "zonas": [
     {
       "id": "nucleo",
       "nombre": "Nucleo compartido",
-      "detalle": "Base transversal. No puede importar dominios (contrato core-no-domains)."
+      "detalle": "Apps transversales y del core. El dueño de cada app indica su imagen."
     },
     {
       "id": "personas",
@@ -21,7 +215,7 @@
     {
       "id": "satelites",
       "nombre": "Satelites de dominio",
-      "detalle": "Verticales con frontera declarada en .importlinter; extraibles a futuro."
+      "detalle": "Verticales ejecutados en backends independientes con kernel compartido."
     },
     {
       "id": "transversal",
@@ -45,77 +239,31 @@
       "nombre": "Users",
       "zona": "nucleo",
       "instalada": true,
-      "rutas_web": [
-        "/ (raiz)"
-      ],
-      "rutas_api": [
-        "/api/users/"
-      ],
-      "planos_api": [
-        "sesion",
-        "token"
-      ],
-      "menu": [
-        {
-          "label": "Usuarios",
-          "grupo": "Administración del sistema",
-          "ruta": [],
-          "permisos": [
-            "auditlog.view_logentry",
-            "auth.add_group",
-            "auth.add_user",
-            "auth.change_group",
-            "auth.change_user",
-            "auth.delete_user",
-            "auth.view_group",
-            "auth.view_user",
-            "encuestas.ver_resultados",
-            "encuestas.view_encuesta",
-            "is_superuser"
-          ]
-        },
-        {
-          "label": "Grupos",
-          "grupo": "Administración del sistema",
-          "ruta": [],
-          "permisos": [
-            "auditlog.view_logentry",
-            "auth.add_group",
-            "auth.add_user",
-            "auth.change_group",
-            "auth.change_user",
-            "auth.delete_user",
-            "auth.view_group",
-            "auth.view_user",
-            "encuestas.ver_resultados",
-            "encuestas.view_encuesta",
-            "is_superuser"
-          ]
-        },
-        {
-          "label": "Mi cuenta",
-          "grupo": "Mi cuenta",
-          "ruta": [],
-          "permisos": []
-        }
-      ],
-      "archivos": 48,
-      "lineas": 13469,
+      "dueno": "kernel",
+      "ruta_codigo": "src/backends/kernel/users",
+      "rutas_web": [],
+      "rutas_api": [],
+      "planos_api": [],
+      "menu": [],
+      "archivos": 28,
+      "lineas": 6194,
       "deps_out": {
         "api": 0,
         "internal": 2
       },
       "deps_in": {
-        "api": 1,
+        "api": 0,
         "internal": 19
       },
-      "tiene_fachada": true
+      "tiene_fachada": false
     },
     {
       "id": "core",
       "nombre": "Core",
       "zona": "nucleo",
       "instalada": true,
+      "dueno": "kernel",
+      "ruta_codigo": "src/backends/kernel/core",
       "rutas_web": [
         "/ (raiz)"
       ],
@@ -182,23 +330,71 @@
           ]
         }
       ],
-      "archivos": 72,
-      "lineas": 8658,
+      "archivos": 80,
+      "lineas": 9385,
       "deps_out": {
         "api": 0,
         "internal": 3
       },
       "deps_in": {
         "api": 0,
-        "internal": 29
+        "internal": 32
       },
       "tiene_fachada": false
+    },
+    {
+      "id": "organizaciones",
+      "nombre": "Organizaciones",
+      "zona": "nucleo",
+      "instalada": true,
+      "dueno": "kernel",
+      "ruta_codigo": "src/backends/kernel/organizaciones",
+      "rutas_web": [],
+      "rutas_api": [],
+      "planos_api": [],
+      "menu": [],
+      "archivos": 6,
+      "lineas": 445,
+      "deps_out": {
+        "api": 1,
+        "internal": 2
+      },
+      "deps_in": {
+        "api": 0,
+        "internal": 5
+      },
+      "tiene_fachada": false
+    },
+    {
+      "id": "catalogo_intervenciones",
+      "nombre": "Catalogo intervenciones",
+      "zona": "nucleo",
+      "instalada": true,
+      "dueno": "kernel",
+      "ruta_codigo": "src/backends/kernel/catalogo_intervenciones",
+      "rutas_web": [],
+      "rutas_api": [],
+      "planos_api": [],
+      "menu": [],
+      "archivos": 9,
+      "lineas": 474,
+      "deps_out": {
+        "api": 0,
+        "internal": 1
+      },
+      "deps_in": {
+        "api": 1,
+        "internal": 2
+      },
+      "tiene_fachada": true
     },
     {
       "id": "sentry",
       "nombre": "Sentry",
       "zona": "nucleo",
       "instalada": true,
+      "dueno": "kernel",
+      "ruta_codigo": "src/backends/kernel/sentry",
       "rutas_web": [],
       "rutas_api": [],
       "planos_api": [],
@@ -216,10 +412,189 @@
       "tiene_fachada": false
     },
     {
+      "id": "ciudadanos",
+      "nombre": "Ciudadanos",
+      "zona": "personas",
+      "instalada": true,
+      "dueno": "kernel",
+      "ruta_codigo": "src/backends/kernel/ciudadanos",
+      "rutas_web": [
+        "/ (raiz)"
+      ],
+      "rutas_api": [],
+      "planos_api": [],
+      "menu": [
+        {
+          "label": "Búsqueda",
+          "grupo": "Legajos",
+          "ruta": [
+            "Historia Social Digital"
+          ],
+          "permisos": [
+            "ciudadanos.add_ciudadano",
+            "ciudadanos.view_ciudadano"
+          ]
+        },
+        {
+          "label": "Revision de Identidad",
+          "grupo": "Legajos",
+          "ruta": [
+            "Historia Social Digital"
+          ],
+          "permisos": [
+            "ciudadanos.add_ciudadano",
+            "ciudadanos.revision_identidad",
+            "ciudadanos.view_ciudadano"
+          ]
+        },
+        {
+          "label": "Importacion masiva",
+          "grupo": "Legajos",
+          "ruta": [
+            "Historia Social Digital"
+          ],
+          "permisos": [
+            "ciudadanos.add_ciudadano",
+            "ciudadanos.view_ciudadano"
+          ]
+        }
+      ],
+      "archivos": 17,
+      "lineas": 4873,
+      "deps_out": {
+        "api": 0,
+        "internal": 1
+      },
+      "deps_in": {
+        "api": 2,
+        "internal": 6
+      },
+      "tiene_fachada": true
+    },
+    {
+      "id": "audittrail",
+      "nombre": "Audit trail",
+      "zona": "nucleo",
+      "instalada": true,
+      "dueno": "kernel",
+      "ruta_codigo": "src/backends/kernel/audittrail",
+      "rutas_web": [
+        "/ (raiz)"
+      ],
+      "rutas_api": [],
+      "planos_api": [],
+      "menu": [
+        {
+          "label": "Auditoría",
+          "grupo": "Administración del sistema",
+          "ruta": [],
+          "permisos": [
+            "auditlog.view_logentry",
+            "auth.add_group",
+            "auth.add_user",
+            "auth.change_group",
+            "auth.change_user",
+            "auth.delete_user",
+            "auth.view_group",
+            "auth.view_user",
+            "encuestas.ver_resultados",
+            "encuestas.view_encuesta",
+            "is_superuser"
+          ]
+        }
+      ],
+      "archivos": 17,
+      "lineas": 2272,
+      "deps_out": {
+        "api": 0,
+        "internal": 1
+      },
+      "deps_in": {
+        "api": 7,
+        "internal": 1
+      },
+      "tiene_fachada": true
+    },
+    {
+      "id": "usuarios",
+      "nombre": "Usuarios",
+      "zona": "transversal",
+      "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/usuarios",
+      "rutas_web": [
+        "/ (raiz)"
+      ],
+      "rutas_api": [
+        "/api/users/"
+      ],
+      "planos_api": [
+        "sesion",
+        "token"
+      ],
+      "menu": [
+        {
+          "label": "Usuarios",
+          "grupo": "Administración del sistema",
+          "ruta": [],
+          "permisos": [
+            "auditlog.view_logentry",
+            "auth.add_group",
+            "auth.add_user",
+            "auth.change_group",
+            "auth.change_user",
+            "auth.delete_user",
+            "auth.view_group",
+            "auth.view_user",
+            "encuestas.ver_resultados",
+            "encuestas.view_encuesta",
+            "is_superuser"
+          ]
+        },
+        {
+          "label": "Grupos",
+          "grupo": "Administración del sistema",
+          "ruta": [],
+          "permisos": [
+            "auditlog.view_logentry",
+            "auth.add_group",
+            "auth.add_user",
+            "auth.change_group",
+            "auth.change_user",
+            "auth.delete_user",
+            "auth.view_group",
+            "auth.view_user",
+            "encuestas.ver_resultados",
+            "encuestas.view_encuesta",
+            "is_superuser"
+          ]
+        },
+        {
+          "label": "Mi cuenta",
+          "grupo": "Mi cuenta",
+          "ruta": [],
+          "permisos": []
+        }
+      ],
+      "archivos": 22,
+      "lineas": 6739,
+      "deps_out": {
+        "api": 0,
+        "internal": 4
+      },
+      "deps_in": {
+        "api": 1,
+        "internal": 5
+      },
+      "tiene_fachada": true
+    },
+    {
       "id": "dashboard",
       "nombre": "Dashboard",
       "zona": "transversal",
       "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/dashboard",
       "rutas_web": [
         "/ (raiz)"
       ],
@@ -227,7 +602,7 @@
       "planos_api": [],
       "menu": [],
       "archivos": 9,
-      "lineas": 574,
+      "lineas": 608,
       "deps_out": {
         "api": 3,
         "internal": 1
@@ -243,6 +618,8 @@
       "nombre": "Comedores",
       "zona": "comedores_core",
       "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/comedores",
       "rutas_web": [
         "/ (raiz)"
       ],
@@ -293,11 +670,11 @@
           ]
         }
       ],
-      "archivos": 72,
-      "lineas": 21730,
+      "archivos": 77,
+      "lineas": 23249,
       "deps_out": {
         "api": 2,
-        "internal": 14
+        "internal": 16
       },
       "deps_in": {
         "api": 2,
@@ -306,10 +683,12 @@
       "tiene_fachada": true
     },
     {
-      "id": "organizaciones",
-      "nombre": "Organizaciones",
+      "id": "gestion_organizaciones",
+      "nombre": "Gestion organizaciones",
       "zona": "comedores_core",
       "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/gestion_organizaciones",
       "rutas_web": [
         "/ (raiz)"
       ],
@@ -335,80 +714,24 @@
         }
       ],
       "archivos": 9,
-      "lineas": 2399,
+      "lineas": 2294,
       "deps_out": {
         "api": 1,
-        "internal": 5
+        "internal": 6
       },
       "deps_in": {
         "api": 0,
-        "internal": 4
-      },
-      "tiene_fachada": false
-    },
-    {
-      "id": "ciudadanos",
-      "nombre": "Ciudadanos",
-      "zona": "personas",
-      "instalada": true,
-      "rutas_web": [
-        "/ (raiz)"
-      ],
-      "rutas_api": [],
-      "planos_api": [],
-      "menu": [
-        {
-          "label": "Búsqueda",
-          "grupo": "Legajos",
-          "ruta": [
-            "Historia Social Digital"
-          ],
-          "permisos": [
-            "ciudadanos.add_ciudadano",
-            "ciudadanos.view_ciudadano"
-          ]
-        },
-        {
-          "label": "Revision de Identidad",
-          "grupo": "Legajos",
-          "ruta": [
-            "Historia Social Digital"
-          ],
-          "permisos": [
-            "ciudadanos.add_ciudadano",
-            "ciudadanos.revision_identidad",
-            "ciudadanos.view_ciudadano"
-          ]
-        },
-        {
-          "label": "Importacion masiva",
-          "grupo": "Legajos",
-          "ruta": [
-            "Historia Social Digital"
-          ],
-          "permisos": [
-            "ciudadanos.add_ciudadano",
-            "ciudadanos.view_ciudadano"
-          ]
-        }
-      ],
-      "archivos": 16,
-      "lineas": 4349,
-      "deps_out": {
-        "api": 1,
         "internal": 1
       },
-      "deps_in": {
-        "api": 2,
-        "internal": 6
-      },
-      "tiene_fachada": true
+      "tiene_fachada": false
     },
     {
       "id": "duplas",
       "nombre": "Duplas",
       "zona": "comedores_core",
       "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/duplas",
       "rutas_web": [
         "/ (raiz)"
       ],
@@ -430,7 +753,7 @@
         }
       ],
       "archivos": 13,
-      "lineas": 887,
+      "lineas": 898,
       "deps_out": {
         "api": 0,
         "internal": 2
@@ -446,6 +769,8 @@
       "nombre": "Admisiones",
       "zona": "comedores_core",
       "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/admisiones",
       "rutas_web": [
         "/ (raiz)"
       ],
@@ -525,7 +850,7 @@
         }
       ],
       "archivos": 36,
-      "lineas": 16865,
+      "lineas": 16871,
       "deps_out": {
         "api": 1,
         "internal": 11
@@ -541,27 +866,31 @@
       "nombre": "Intervenciones",
       "zona": "comedores_core",
       "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/intervenciones",
       "rutas_web": [],
       "rutas_api": [],
       "planos_api": [],
       "menu": [],
-      "archivos": 12,
-      "lineas": 1012,
+      "archivos": 7,
+      "lineas": 604,
       "deps_out": {
         "api": 1,
-        "internal": 4
+        "internal": 5
       },
       "deps_in": {
-        "api": 1,
+        "api": 0,
         "internal": 2
       },
-      "tiene_fachada": true
+      "tiene_fachada": false
     },
     {
       "id": "historial",
       "nombre": "Historial",
       "zona": "nucleo",
       "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/historial",
       "rutas_web": [],
       "rutas_api": [],
       "planos_api": [],
@@ -583,6 +912,8 @@
       "nombre": "Acompanamientos",
       "zona": "comedores_core",
       "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/acompanamientos",
       "rutas_web": [
         "/acompanamientos/"
       ],
@@ -603,10 +934,10 @@
         }
       ],
       "archivos": 12,
-      "lineas": 1626,
+      "lineas": 1627,
       "deps_out": {
         "api": 0,
-        "internal": 7
+        "internal": 8
       },
       "deps_in": {
         "api": 0,
@@ -619,6 +950,8 @@
       "nombre": "Expedientes de pago",
       "zona": "comedores_core",
       "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/expedientespagos",
       "rutas_web": [
         "/expedientespagos/"
       ],
@@ -642,6 +975,8 @@
       "nombre": "Relevamientos",
       "zona": "comedores_core",
       "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/relevamientos",
       "rutas_web": [
         "/ (raiz)"
       ],
@@ -651,8 +986,8 @@
         "token"
       ],
       "menu": [],
-      "archivos": 24,
-      "lineas": 7884,
+      "archivos": 28,
+      "lineas": 9805,
       "deps_out": {
         "api": 1,
         "internal": 3
@@ -668,6 +1003,8 @@
       "nombre": "Rendicion final",
       "zona": "comedores_core",
       "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/rendicioncuentasfinal",
       "rutas_web": [
         "/ (raiz)"
       ],
@@ -704,6 +1041,8 @@
       "nombre": "Rendicion mensual",
       "zona": "comedores_core",
       "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/rendicioncuentasmensual",
       "rutas_web": [
         "/rendicioncuentasmensual/"
       ],
@@ -729,10 +1068,10 @@
         }
       ],
       "archivos": 13,
-      "lineas": 4167,
+      "lineas": 4308,
       "deps_out": {
         "api": 0,
-        "internal": 6
+        "internal": 7
       },
       "deps_in": {
         "api": 0,
@@ -741,78 +1080,428 @@
       "tiene_fachada": false
     },
     {
-      "id": "centrodefamilia",
-      "nombre": "Centro de Familia",
-      "zona": "satelites",
+      "id": "importarexpediente",
+      "nombre": "Importar expediente",
+      "zona": "comedores_core",
       "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/importarexpediente",
+      "rutas_web": [
+        "/ (raiz)"
+      ],
+      "rutas_api": [],
+      "planos_api": [],
+      "menu": [
+        {
+          "label": "Expedientes de Pago",
+          "grupo": "Legajos",
+          "ruta": [
+            "Comedores"
+          ],
+          "permisos": [
+            "comedores.view_comedor",
+            "importarexpediente.view_archivosimportados"
+          ]
+        }
+      ],
+      "archivos": 7,
+      "lineas": 1846,
+      "deps_out": {
+        "api": 0,
+        "internal": 3
+      },
+      "deps_in": {
+        "api": 0,
+        "internal": 0
+      },
+      "tiene_fachada": false
+    },
+    {
+      "id": "comunicados",
+      "nombre": "Comunicados",
+      "zona": "transversal",
+      "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/comunicados",
       "rutas_web": [
         "/ (raiz)"
       ],
       "rutas_api": [
-        "/api/centrodefamilia/"
+        "/api/comunicados/"
       ],
       "planos_api": [
-        "api_key"
+        "api_key",
+        "sesion"
       ],
       "menu": [
         {
-          "label": "Centros",
-          "grupo": "Legajos",
-          "ruta": [
-            "Centro de Familia"
-          ],
-          "permisos": [
-            "centrodefamilia.view_centro"
-          ]
+          "label": "Ver Comunicados",
+          "grupo": "Comunicados",
+          "ruta": [],
+          "permisos": []
         },
         {
-          "label": "Nuevo Preinscripto",
-          "grupo": "Legajos",
-          "ruta": [
-            "Centro de Familia"
-          ],
+          "label": "Crear comunicado",
+          "grupo": "Comunicados",
+          "ruta": [],
           "permisos": [
-            "centrodefamilia.view_centro"
-          ]
-        },
-        {
-          "label": "Lista de Preinscriptos",
-          "grupo": "Legajos",
-          "ruta": [
-            "Centro de Familia"
-          ],
-          "permisos": [
-            "centrodefamilia.view_centro"
-          ]
-        },
-        {
-          "label": "Lista Responsables",
-          "grupo": "Legajos",
-          "ruta": [
-            "Centro de Familia"
-          ],
-          "permisos": [
-            "centrodefamilia.view_centro"
+            "auth.role_admin",
+            "auth.role_administrador",
+            "auth.role_superadmin",
+            "comunicados.add_comunicado",
+            "comunicados.change_comunicado"
           ]
         }
       ],
-      "archivos": 45,
-      "lineas": 6545,
+      "archivos": 14,
+      "lineas": 2675,
       "deps_out": {
-        "api": 0,
-        "internal": 5
+        "api": 1,
+        "internal": 3
       },
       "deps_in": {
-        "api": 1,
+        "api": 0,
+        "internal": 2
+      },
+      "tiene_fachada": false
+    },
+    {
+      "id": "insumos",
+      "nombre": "Insumos",
+      "zona": "transversal",
+      "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/insumos",
+      "rutas_web": [
+        "/ (raiz)"
+      ],
+      "rutas_api": [],
+      "planos_api": [],
+      "menu": [
+        {
+          "label": "Insumos",
+          "grupo": "Configuración de Comedores",
+          "ruta": [],
+          "permisos": [
+            "admisiones.gestionar_templates_informe_tecnico",
+            "auth.role_admin",
+            "core.view_montoprestacionprograma",
+            "insumos.view_insumo",
+            "pwa.manage_catalogoactividadpwa",
+            "pwa.view_catalogoactividadpwa"
+          ]
+        }
+      ],
+      "archivos": 8,
+      "lineas": 637,
+      "deps_out": {
+        "api": 0,
+        "internal": 1
+      },
+      "deps_in": {
+        "api": 0,
         "internal": 0
       },
-      "tiene_fachada": true
+      "tiene_fachada": false
+    },
+    {
+      "id": "pwa",
+      "nombre": "PWA (backend)",
+      "zona": "integracion",
+      "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/pwa",
+      "rutas_web": [],
+      "rutas_api": [
+        "/api/pwa/"
+      ],
+      "planos_api": [
+        "sesion",
+        "token"
+      ],
+      "menu": [],
+      "archivos": 26,
+      "lineas": 7748,
+      "deps_out": {
+        "api": 0,
+        "internal": 9
+      },
+      "deps_in": {
+        "api": 0,
+        "internal": 4
+      },
+      "tiene_fachada": false
+    },
+    {
+      "id": "ocr",
+      "nombre": "OCR",
+      "zona": "transversal",
+      "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/ocr",
+      "rutas_web": [
+        "/ocr/"
+      ],
+      "rutas_api": [],
+      "planos_api": [],
+      "menu": [
+        {
+          "label": "OCR",
+          "grupo": "OCR",
+          "ruta": [],
+          "permisos": [
+            "is_superuser",
+            "ocr.use_ocr"
+          ]
+        }
+      ],
+      "archivos": 13,
+      "lineas": 1441,
+      "deps_out": {
+        "api": 0,
+        "internal": 1
+      },
+      "deps_in": {
+        "api": 0,
+        "internal": 0
+      },
+      "tiene_fachada": false
+    },
+    {
+      "id": "encuestas",
+      "nombre": "Encuestas",
+      "zona": "transversal",
+      "instalada": true,
+      "dueno": "sisoc_core",
+      "ruta_codigo": "src/backends/sisoc_core/encuestas",
+      "rutas_web": [
+        "/ (raiz)"
+      ],
+      "rutas_api": [],
+      "planos_api": [],
+      "menu": [
+        {
+          "label": "Encuestas",
+          "grupo": "Administración del sistema",
+          "ruta": [],
+          "permisos": [
+            "auditlog.view_logentry",
+            "auth.add_group",
+            "auth.add_user",
+            "auth.change_group",
+            "auth.change_user",
+            "auth.delete_user",
+            "auth.view_group",
+            "auth.view_user",
+            "encuestas.ver_resultados",
+            "encuestas.view_encuesta",
+            "is_superuser"
+          ]
+        }
+      ],
+      "archivos": 13,
+      "lineas": 3635,
+      "deps_out": {
+        "api": 0,
+        "internal": 2
+      },
+      "deps_in": {
+        "api": 0,
+        "internal": 0
+      },
+      "tiene_fachada": false
+    },
+    {
+      "id": "dispositivos",
+      "nombre": "Dispositivos",
+      "zona": "satelites",
+      "instalada": true,
+      "dueno": "dispositivos",
+      "ruta_codigo": "src/backends/dispositivos",
+      "rutas_web": [
+        "/ (raiz)"
+      ],
+      "rutas_api": [],
+      "planos_api": [
+        "token"
+      ],
+      "menu": [
+        {
+          "label": "Ver Dispositivos",
+          "grupo": "Legajos",
+          "ruta": [
+            "Situación de Calle"
+          ],
+          "permisos": [
+            "datacalle.view_relevamiento",
+            "dispositivos.view_dispositivo"
+          ]
+        },
+        {
+          "label": "Relevamientos DataCalle",
+          "grupo": "Legajos",
+          "ruta": [
+            "Situación de Calle"
+          ],
+          "permisos": [
+            "datacalle.view_relevamiento",
+            "dispositivos.view_dispositivo"
+          ]
+        }
+      ],
+      "archivos": 27,
+      "lineas": 3913,
+      "deps_out": {
+        "api": 0,
+        "internal": 3
+      },
+      "deps_in": {
+        "api": 0,
+        "internal": 1
+      },
+      "tiene_fachada": false
+    },
+    {
+      "id": "datacalle",
+      "nombre": "DataCalle",
+      "zona": "satelites",
+      "instalada": true,
+      "dueno": "dispositivos",
+      "ruta_codigo": "src/backends/dispositivos/datacalle",
+      "rutas_web": [
+        "/ (raiz)"
+      ],
+      "rutas_api": [
+        "/api/datacalle/"
+      ],
+      "planos_api": [
+        "token"
+      ],
+      "menu": [],
+      "archivos": 14,
+      "lineas": 2011,
+      "deps_out": {
+        "api": 0,
+        "internal": 3
+      },
+      "deps_in": {
+        "api": 0,
+        "internal": 1
+      },
+      "tiene_fachada": false
+    },
+    {
+      "id": "ver_para_ser_libre",
+      "nombre": "Ver para Ser Libre",
+      "zona": "satelites",
+      "instalada": true,
+      "dueno": "vpsl",
+      "ruta_codigo": "src/backends/vpsl/ver_para_ser_libre",
+      "rutas_web": [
+        "/ (raiz)"
+      ],
+      "rutas_api": [
+        "/api/vpsl/"
+      ],
+      "planos_api": [],
+      "menu": [
+        {
+          "label": "Itinerarios",
+          "grupo": "Legajos",
+          "ruta": [
+            "Ver Para Ser Libres"
+          ],
+          "permisos": [
+            "ver_para_ser_libre.view_itinerariovpsl"
+          ]
+        },
+        {
+          "label": "Sedes",
+          "grupo": "Legajos",
+          "ruta": [
+            "Ver Para Ser Libres"
+          ],
+          "permisos": [
+            "ver_para_ser_libre.view_itinerariovpsl",
+            "ver_para_ser_libre.view_sedevpsl"
+          ]
+        }
+      ],
+      "archivos": 18,
+      "lineas": 6365,
+      "deps_out": {
+        "api": 1,
+        "internal": 3
+      },
+      "deps_in": {
+        "api": 0,
+        "internal": 0
+      },
+      "tiene_fachada": false
+    },
+    {
+      "id": "pas",
+      "nombre": "PAS",
+      "zona": "satelites",
+      "instalada": true,
+      "dueno": "pas",
+      "ruta_codigo": "src/backends/pas",
+      "rutas_web": [
+        "/ (raiz)"
+      ],
+      "rutas_api": [],
+      "planos_api": [],
+      "menu": [
+        {
+          "label": "Buscador PAS",
+          "grupo": "Legajos",
+          "ruta": [
+            "PAS"
+          ],
+          "permisos": [
+            "pas.view_paspersona"
+          ]
+        },
+        {
+          "label": "Panel de Control",
+          "grupo": "Legajos",
+          "ruta": [
+            "PAS"
+          ],
+          "permisos": [
+            "pas.view_paspersona"
+          ]
+        },
+        {
+          "label": "Informes",
+          "grupo": "Legajos",
+          "ruta": [
+            "PAS"
+          ],
+          "permisos": [
+            "pas.view_paspersona"
+          ]
+        }
+      ],
+      "archivos": 26,
+      "lineas": 4566,
+      "deps_out": {
+        "api": 0,
+        "internal": 1
+      },
+      "deps_in": {
+        "api": 0,
+        "internal": 0
+      },
+      "tiene_fachada": false
     },
     {
       "id": "VAT",
       "nombre": "INET / VAT",
       "zona": "satelites",
       "instalada": true,
+      "dueno": "vat",
+      "ruta_codigo": "src/backends/VAT",
       "rutas_web": [
         "/ (raiz)"
       ],
@@ -1003,8 +1692,8 @@
           ]
         }
       ],
-      "archivos": 58,
-      "lineas": 22115,
+      "archivos": 63,
+      "lineas": 22689,
       "deps_out": {
         "api": 0,
         "internal": 4
@@ -1020,12 +1709,18 @@
       "nombre": "Celiaquia",
       "zona": "satelites",
       "instalada": true,
+      "dueno": "celiaquia",
+      "ruta_codigo": "src/backends/celiaquia",
       "rutas_web": [
         "/ (raiz)",
         "/celiaquia/"
       ],
-      "rutas_api": [],
-      "planos_api": [],
+      "rutas_api": [
+        "/api/celiaquia/"
+      ],
+      "planos_api": [
+        "sesion"
+      ],
       "menu": [
         {
           "label": "Expedientes",
@@ -1067,139 +1762,15 @@
           ]
         }
       ],
-      "archivos": 66,
-      "lineas": 17389,
+      "archivos": 84,
+      "lineas": 21767,
       "deps_out": {
         "api": 0,
         "internal": 4
       },
       "deps_in": {
-        "api": 1,
-        "internal": 0
-      },
-      "tiene_fachada": true
-    },
-    {
-      "id": "audittrail",
-      "nombre": "Audit trail",
-      "zona": "nucleo",
-      "instalada": true,
-      "rutas_web": [
-        "/ (raiz)"
-      ],
-      "rutas_api": [],
-      "planos_api": [],
-      "menu": [
-        {
-          "label": "Auditoría",
-          "grupo": "Administración del sistema",
-          "ruta": [],
-          "permisos": [
-            "auditlog.view_logentry",
-            "auth.add_group",
-            "auth.add_user",
-            "auth.change_group",
-            "auth.change_user",
-            "auth.delete_user",
-            "auth.view_group",
-            "auth.view_user",
-            "encuestas.ver_resultados",
-            "encuestas.view_encuesta",
-            "is_superuser"
-          ]
-        }
-      ],
-      "archivos": 17,
-      "lineas": 2198,
-      "deps_out": {
-        "api": 0,
-        "internal": 1
-      },
-      "deps_in": {
-        "api": 6,
-        "internal": 1
-      },
-      "tiene_fachada": true
-    },
-    {
-      "id": "importarexpediente",
-      "nombre": "Importar expediente",
-      "zona": "comedores_core",
-      "instalada": true,
-      "rutas_web": [
-        "/ (raiz)"
-      ],
-      "rutas_api": [],
-      "planos_api": [],
-      "menu": [
-        {
-          "label": "Expedientes de Pago",
-          "grupo": "Legajos",
-          "ruta": [
-            "Comedores"
-          ],
-          "permisos": [
-            "comedores.view_comedor",
-            "importarexpediente.view_archivosimportados"
-          ]
-        }
-      ],
-      "archivos": 6,
-      "lineas": 1740,
-      "deps_out": {
-        "api": 0,
-        "internal": 3
-      },
-      "deps_in": {
         "api": 0,
         "internal": 0
-      },
-      "tiene_fachada": false
-    },
-    {
-      "id": "comunicados",
-      "nombre": "Comunicados",
-      "zona": "transversal",
-      "instalada": true,
-      "rutas_web": [
-        "/ (raiz)"
-      ],
-      "rutas_api": [
-        "/api/comunicados/"
-      ],
-      "planos_api": [
-        "api_key",
-        "sesion"
-      ],
-      "menu": [
-        {
-          "label": "Ver Comunicados",
-          "grupo": "Comunicados",
-          "ruta": [],
-          "permisos": []
-        },
-        {
-          "label": "Crear comunicado",
-          "grupo": "Comunicados",
-          "ruta": [],
-          "permisos": [
-            "auth.role_admin",
-            "auth.role_administrador",
-            "auth.role_superadmin",
-            "comunicados.add_comunicado",
-            "comunicados.change_comunicado"
-          ]
-        }
-      ],
-      "archivos": 13,
-      "lineas": 2317,
-      "deps_out": {
-        "api": 1,
-        "internal": 3
-      },
-      "deps_in": {
-        "api": 0,
-        "internal": 2
       },
       "tiene_fachada": false
     },
@@ -1208,6 +1779,8 @@
       "nombre": "Centro de Infancia",
       "zona": "satelites",
       "instalada": true,
+      "dueno": "cdi",
+      "ruta_codigo": "src/backends/cdi/centrodeinfancia",
       "rutas_web": [
         "/ (raiz)"
       ],
@@ -1223,253 +1796,28 @@
           "permisos": [
             "centrodeinfancia.view_centrodeinfancia"
           ]
+        },
+        {
+          "label": "Reportes",
+          "grupo": "Legajos",
+          "ruta": [
+            "Centro de Infancia"
+          ],
+          "permisos": [
+            "auth.role_reportes_cdi",
+            "centrodeinfancia.view_centrodeinfancia"
+          ]
         }
       ],
-      "archivos": 25,
-      "lineas": 12525,
+      "archivos": 31,
+      "lineas": 13765,
       "deps_out": {
         "api": 3,
         "internal": 4
       },
       "deps_in": {
         "api": 0,
-        "internal": 0
-      },
-      "tiene_fachada": false
-    },
-    {
-      "id": "ver_para_ser_libre",
-      "nombre": "Ver para Ser Libre",
-      "zona": "satelites",
-      "instalada": true,
-      "rutas_web": [
-        "/ (raiz)"
-      ],
-      "rutas_api": [],
-      "planos_api": [],
-      "menu": [
-        {
-          "label": "Itinerarios",
-          "grupo": "Legajos",
-          "ruta": [
-            "Ver Para Ser Libres"
-          ],
-          "permisos": [
-            "ver_para_ser_libre.view_itinerariovpsl"
-          ]
-        },
-        {
-          "label": "Sedes",
-          "grupo": "Legajos",
-          "ruta": [
-            "Ver Para Ser Libres"
-          ],
-          "permisos": [
-            "ver_para_ser_libre.view_itinerariovpsl",
-            "ver_para_ser_libre.view_sedevpsl"
-          ]
-        }
-      ],
-      "archivos": 8,
-      "lineas": 3853,
-      "deps_out": {
-        "api": 1,
-        "internal": 2
-      },
-      "deps_in": {
-        "api": 0,
-        "internal": 0
-      },
-      "tiene_fachada": false
-    },
-    {
-      "id": "pas",
-      "nombre": "PAS",
-      "zona": "satelites",
-      "instalada": true,
-      "rutas_web": [
-        "/ (raiz)"
-      ],
-      "rutas_api": [],
-      "planos_api": [],
-      "menu": [
-        {
-          "label": "Buscador PAS",
-          "grupo": "Legajos",
-          "ruta": [
-            "PAS"
-          ],
-          "permisos": [
-            "pas.view_paspersona"
-          ]
-        },
-        {
-          "label": "Panel de Control",
-          "grupo": "Legajos",
-          "ruta": [
-            "PAS"
-          ],
-          "permisos": [
-            "pas.view_paspersona"
-          ]
-        },
-        {
-          "label": "Informes",
-          "grupo": "Legajos",
-          "ruta": [
-            "PAS"
-          ],
-          "permisos": [
-            "pas.view_paspersona"
-          ]
-        }
-      ],
-      "archivos": 23,
-      "lineas": 4339,
-      "deps_out": {
-        "api": 0,
         "internal": 1
-      },
-      "deps_in": {
-        "api": 0,
-        "internal": 0
-      },
-      "tiene_fachada": true
-    },
-    {
-      "id": "dispositivos",
-      "nombre": "Dispositivos",
-      "zona": "satelites",
-      "instalada": true,
-      "rutas_web": [
-        "/ (raiz)"
-      ],
-      "rutas_api": [],
-      "planos_api": [],
-      "menu": [
-        {
-          "label": "Ver Dispositivos",
-          "grupo": "Legajos",
-          "ruta": [
-            "Situación de Calle"
-          ],
-          "permisos": [
-            "datacalle.view_relevamiento",
-            "dispositivos.view_dispositivo"
-          ]
-        }
-      ],
-      "archivos": 10,
-      "lineas": 1876,
-      "deps_out": {
-        "api": 0,
-        "internal": 2
-      },
-      "deps_in": {
-        "api": 0,
-        "internal": 1
-      },
-      "tiene_fachada": false
-    },
-    {
-      "id": "datacalle",
-      "nombre": "DataCalle",
-      "zona": "satelites",
-      "instalada": true,
-      "rutas_web": [
-        "/ (raiz)"
-      ],
-      "rutas_api": [
-        "/api/datacalle/"
-      ],
-      "planos_api": [
-        "token"
-      ],
-      "menu": [
-        {
-          "label": "Relevamientos DataCalle",
-          "grupo": "Legajos",
-          "ruta": [
-            "Situación de Calle"
-          ],
-          "permisos": [
-            "datacalle.view_relevamiento",
-            "dispositivos.view_dispositivo"
-          ]
-        }
-      ],
-      "archivos": 13,
-      "lineas": 1473,
-      "deps_out": {
-        "api": 0,
-        "internal": 3
-      },
-      "deps_in": {
-        "api": 0,
-        "internal": 0
-      },
-      "tiene_fachada": false
-    },
-    {
-      "id": "insumos",
-      "nombre": "Insumos",
-      "zona": "transversal",
-      "instalada": true,
-      "rutas_web": [
-        "/ (raiz)"
-      ],
-      "rutas_api": [],
-      "planos_api": [],
-      "menu": [
-        {
-          "label": "Insumos",
-          "grupo": "Configuración de Comedores",
-          "ruta": [],
-          "permisos": [
-            "admisiones.gestionar_templates_informe_tecnico",
-            "auth.role_admin",
-            "core.view_montoprestacionprograma",
-            "insumos.view_insumo",
-            "pwa.manage_catalogoactividadpwa",
-            "pwa.view_catalogoactividadpwa"
-          ]
-        }
-      ],
-      "archivos": 8,
-      "lineas": 637,
-      "deps_out": {
-        "api": 0,
-        "internal": 1
-      },
-      "deps_in": {
-        "api": 0,
-        "internal": 0
-      },
-      "tiene_fachada": false
-    },
-    {
-      "id": "pwa",
-      "nombre": "PWA (backend)",
-      "zona": "integracion",
-      "instalada": true,
-      "rutas_web": [],
-      "rutas_api": [
-        "/api/pwa/"
-      ],
-      "planos_api": [
-        "sesion",
-        "token"
-      ],
-      "menu": [],
-      "archivos": 24,
-      "lineas": 6260,
-      "deps_out": {
-        "api": 0,
-        "internal": 8
-      },
-      "deps_in": {
-        "api": 0,
-        "internal": 2
       },
       "tiene_fachada": false
     },
@@ -1478,6 +1826,8 @@
       "nombre": "Ticketera",
       "zona": "integracion",
       "instalada": true,
+      "dueno": "cdi",
+      "ruta_codigo": "src/backends/cdi/ticketera",
       "rutas_web": [],
       "rutas_api": [
         "/api/ticketera/"
@@ -1487,10 +1837,10 @@
       ],
       "menu": [],
       "archivos": 4,
-      "lineas": 874,
+      "lineas": 888,
       "deps_out": {
         "api": 0,
-        "internal": 3
+        "internal": 4
       },
       "deps_in": {
         "api": 0,
@@ -1499,98 +1849,95 @@
       "tiene_fachada": false
     },
     {
-      "id": "ocr",
-      "nombre": "OCR",
-      "zona": "transversal",
+      "id": "centrodefamilia",
+      "nombre": "Centro de Familia",
+      "zona": "satelites",
       "instalada": true,
+      "dueno": "cdf",
+      "ruta_codigo": "src/backends/cdf/centrodefamilia",
       "rutas_web": [
-        "/ocr/"
+        "/centrodefamilia/"
       ],
-      "rutas_api": [],
-      "planos_api": [],
+      "rutas_api": [
+        "/api/centrodefamilia/"
+      ],
+      "planos_api": [
+        "api_key"
+      ],
       "menu": [
         {
-          "label": "OCR",
-          "grupo": "OCR",
-          "ruta": [],
+          "label": "Centros",
+          "grupo": "Legajos",
+          "ruta": [
+            "Centro de Familia"
+          ],
           "permisos": [
-            "is_superuser",
-            "ocr.use_ocr"
+            "centrodefamilia.view_centro"
+          ]
+        },
+        {
+          "label": "Nuevo Preinscripto",
+          "grupo": "Legajos",
+          "ruta": [
+            "Centro de Familia"
+          ],
+          "permisos": [
+            "centrodefamilia.view_centro"
+          ]
+        },
+        {
+          "label": "Lista de Preinscriptos",
+          "grupo": "Legajos",
+          "ruta": [
+            "Centro de Familia"
+          ],
+          "permisos": [
+            "centrodefamilia.view_centro"
+          ]
+        },
+        {
+          "label": "Lista Responsables",
+          "grupo": "Legajos",
+          "ruta": [
+            "Centro de Familia"
+          ],
+          "permisos": [
+            "centrodefamilia.view_centro"
           ]
         }
       ],
-      "archivos": 13,
-      "lineas": 1438,
+      "archivos": 46,
+      "lineas": 6587,
       "deps_out": {
         "api": 0,
-        "internal": 1
+        "internal": 5
       },
       "deps_in": {
-        "api": 0,
+        "api": 1,
         "internal": 0
       },
-      "tiene_fachada": false
-    },
-    {
-      "id": "encuestas",
-      "nombre": "Encuestas",
-      "zona": "transversal",
-      "instalada": true,
-      "rutas_web": [
-        "/ (raiz)"
-      ],
-      "rutas_api": [],
-      "planos_api": [],
-      "menu": [
-        {
-          "label": "Encuestas",
-          "grupo": "Administración del sistema",
-          "ruta": [],
-          "permisos": [
-            "auditlog.view_logentry",
-            "auth.add_group",
-            "auth.add_user",
-            "auth.change_group",
-            "auth.change_user",
-            "auth.delete_user",
-            "auth.view_group",
-            "auth.view_user",
-            "encuestas.ver_resultados",
-            "encuestas.view_encuesta",
-            "is_superuser"
-          ]
-        }
-      ],
-      "archivos": 12,
-      "lineas": 2781,
-      "deps_out": {
-        "api": 0,
-        "internal": 2
-      },
-      "deps_in": {
-        "api": 0,
-        "internal": 0
-      },
-      "tiene_fachada": false
+      "tiene_fachada": true
     },
     {
       "id": "iam",
       "nombre": "IAM",
       "zona": "nucleo",
       "instalada": false,
+      "dueno": "kernel",
+      "ruta_codigo": "src/backends/kernel/iam",
       "rutas_web": [],
       "rutas_api": [],
       "planos_api": [],
       "menu": [],
-      "archivos": 1,
-      "lineas": 172,
+      "archivos": 3,
+      "lineas": 273,
       "deps_out": {
         "api": 0,
         "internal": 1
       },
       "deps_in": {
         "api": 0,
-        "internal": 16
+        "internal": 17
       },
       "tiene_fachada": false
     },
@@ -1599,6 +1946,8 @@
       "nombre": "Healthcheck",
       "zona": "nucleo",
       "instalada": false,
+      "dueno": "kernel",
+      "ruta_codigo": "src/backends/kernel/healthcheck",
       "rutas_web": [
         "/ (raiz)"
       ],
@@ -1623,36 +1972,48 @@
       "src": "comedores",
       "dst": "core",
       "kind": "internal",
-      "n": 34,
+      "n": 39,
       "ejemplos": [
-        "comedores/admin.py -> core.admin_import_export",
-        "comedores/api.py -> core.soft_delete.signals",
-        "comedores/api_serializers.py -> core.models",
-        "comedores/api_views_territorial.py -> core.utils"
-      ]
-    },
-    {
-      "src": "VAT",
-      "dst": "core",
-      "kind": "internal",
-      "n": 30,
-      "ejemplos": [
-        "VAT/api_views.py -> core.api_auth",
-        "VAT/api_views.py -> core.models",
-        "VAT/api_views.py -> core.soft_delete.view_helpers",
-        "VAT/api_web_views.py -> core.api_auth"
+        "src/backends/sisoc_core/comedores/admin.py -> core.admin_import_export",
+        "src/backends/sisoc_core/comedores/api.py -> core.soft_delete.signals",
+        "src/backends/sisoc_core/comedores/api_serializers.py -> core.models",
+        "src/backends/sisoc_core/comedores/api_views_territorial.py -> core.utils"
       ]
     },
     {
       "src": "celiaquia",
       "dst": "core",
       "kind": "internal",
-      "n": 28,
+      "n": 34,
       "ejemplos": [
-        "celiaquia/global_urls.py -> core.decorators",
-        "celiaquia/models.py -> core.models",
-        "celiaquia/models.py -> core.soft_delete",
-        "celiaquia/signals.py -> core.soft_delete.signals"
+        "src/backends/celiaquia/celiaquia/api_views.py -> core.models",
+        "src/backends/celiaquia/celiaquia/global_urls.py -> core.decorators",
+        "src/backends/celiaquia/celiaquia/models.py -> core.models",
+        "src/backends/celiaquia/celiaquia/models.py -> core.soft_delete"
+      ]
+    },
+    {
+      "src": "usuarios",
+      "dst": "users",
+      "kind": "internal",
+      "n": 33,
+      "ejemplos": [
+        "src/backends/sisoc_core/usuarios/api_serializers.py -> users.profile_utils",
+        "src/backends/sisoc_core/usuarios/api_serializers.py -> users.services",
+        "src/backends/sisoc_core/usuarios/api_serializers.py -> users.services_datacalle",
+        "src/backends/sisoc_core/usuarios/api_serializers.py -> users.services_auth"
+      ]
+    },
+    {
+      "src": "VAT",
+      "dst": "core",
+      "kind": "internal",
+      "n": 31,
+      "ejemplos": [
+        "src/backends/VAT/VAT/api_views.py -> core.api_auth",
+        "src/backends/VAT/VAT/api_views.py -> core.models",
+        "src/backends/VAT/VAT/api_views.py -> core.soft_delete.view_helpers",
+        "src/backends/VAT/VAT/api_web_views.py -> core.api_auth"
       ]
     },
     {
@@ -1661,34 +2022,34 @@
       "kind": "internal",
       "n": 28,
       "ejemplos": [
-        "centrodefamilia/access.py -> core.constants",
-        "centrodefamilia/access.py -> core.models",
-        "centrodefamilia/api_views.py -> core.api_auth",
-        "centrodefamilia/api_views.py -> core.models"
-      ]
-    },
-    {
-      "src": "users",
-      "dst": "core",
-      "kind": "internal",
-      "n": 25,
-      "ejemplos": [
-        "users/favorite_filters.py -> core.services.favorite_filters",
-        "users/forms.py -> core.constants",
-        "users/forms.py -> core.models",
-        "users/forms.py -> core.validators"
+        "src/backends/cdf/centrodefamilia/access.py -> core.constants",
+        "src/backends/cdf/centrodefamilia/access.py -> core.models",
+        "src/backends/cdf/centrodefamilia/api_views.py -> core.api_auth",
+        "src/backends/cdf/centrodefamilia/api_views.py -> core.models"
       ]
     },
     {
       "src": "centrodeinfancia",
       "dst": "core",
       "kind": "internal",
-      "n": 24,
+      "n": 27,
       "ejemplos": [
-        "centrodeinfancia/access.py -> core.constants",
-        "centrodeinfancia/access.py -> core.models",
-        "centrodeinfancia/forms.py -> core.models",
-        "centrodeinfancia/forms.py -> core.constants"
+        "src/backends/cdi/centrodeinfancia/access.py -> core.constants",
+        "src/backends/cdi/centrodeinfancia/access.py -> core.models",
+        "src/backends/cdi/centrodeinfancia/filter_config.py -> core.services.advanced_filters",
+        "src/backends/cdi/centrodeinfancia/forms.py -> core.models"
+      ]
+    },
+    {
+      "src": "dispositivos",
+      "dst": "datacalle",
+      "kind": "internal",
+      "n": 22,
+      "ejemplos": [
+        "src/backends/dispositivos/datacalle/api_serializers.py -> datacalle.models",
+        "src/backends/dispositivos/datacalle/api_serializers.py -> datacalle.services.encuestas",
+        "src/backends/dispositivos/datacalle/api_urls.py -> datacalle.api_views",
+        "src/backends/dispositivos/datacalle/api_views.py -> datacalle.api_permissions"
       ]
     },
     {
@@ -1697,22 +2058,34 @@
       "kind": "internal",
       "n": 19,
       "ejemplos": [
-        "admisiones/admin.py -> core.admin_import_export",
-        "admisiones/favorite_filters.py -> core.services.favorite_filters",
-        "admisiones/forms/admisiones_forms.py -> core.models",
-        "admisiones/models/admisiones.py -> core.soft_delete"
+        "src/backends/sisoc_core/admisiones/admin.py -> core.admin_import_export",
+        "src/backends/sisoc_core/admisiones/favorite_filters.py -> core.services.favorite_filters",
+        "src/backends/sisoc_core/admisiones/forms/admisiones_forms.py -> core.models",
+        "src/backends/sisoc_core/admisiones/models/admisiones.py -> core.soft_delete"
+      ]
+    },
+    {
+      "src": "ciudadanos",
+      "dst": "core",
+      "kind": "internal",
+      "n": 18,
+      "ejemplos": [
+        "src/backends/kernel/ciudadanos/api.py -> core.models",
+        "src/backends/kernel/ciudadanos/api.py -> core.services.renaper",
+        "src/backends/kernel/ciudadanos/detail_contributions.py -> core.backend_proxy",
+        "src/backends/kernel/ciudadanos/forms.py -> core.models"
       ]
     },
     {
       "src": "comedores",
-      "dst": "users",
+      "dst": "pwa",
       "kind": "internal",
-      "n": 19,
+      "n": 18,
       "ejemplos": [
-        "comedores/api_serializers.py -> users.models",
-        "comedores/api_serializers.py -> users.services_pwa",
-        "comedores/api_views.py -> users.api_permissions",
-        "comedores/api_views.py -> users.api_serializers"
+        "src/backends/sisoc_core/comedores/api_serializers.py -> pwa.models",
+        "src/backends/sisoc_core/comedores/api_serializers.py -> pwa.services.accesos",
+        "src/backends/sisoc_core/comedores/api_views.py -> pwa.models",
+        "src/backends/sisoc_core/comedores/api_views.py -> pwa.services.accesos"
       ]
     },
     {
@@ -1721,58 +2094,82 @@
       "kind": "internal",
       "n": 17,
       "ejemplos": [
-        "pwa/api_serializers.py -> comedores.models",
-        "pwa/api_views.py -> comedores.models",
-        "pwa/api_views.py -> comedores.services.colaborador_espacio_service",
-        "pwa/api_views.py -> comedores.services.comedor_service.impl"
+        "src/backends/sisoc_core/pwa/api_serializers.py -> comedores.models",
+        "src/backends/sisoc_core/pwa/api_views.py -> comedores.models",
+        "src/backends/sisoc_core/pwa/api_views.py -> comedores.services.colaborador_espacio_service",
+        "src/backends/sisoc_core/pwa/api_views.py -> comedores.services.comedor_service.impl"
       ]
     },
     {
-      "src": "ciudadanos",
-      "dst": "core",
+      "src": "comedores",
+      "dst": "relevamientos",
       "kind": "internal",
-      "n": 14,
+      "n": 16,
       "ejemplos": [
-        "ciudadanos/api.py -> core.models",
-        "ciudadanos/api.py -> core.services.renaper",
-        "ciudadanos/forms.py -> core.models",
-        "ciudadanos/models.py -> core.models"
+        "src/backends/sisoc_core/comedores/api_serializers.py -> relevamientos.models",
+        "src/backends/sisoc_core/comedores/api_serializers.py -> relevamientos.service",
+        "src/backends/sisoc_core/comedores/api_views.py -> relevamientos.models",
+        "src/backends/sisoc_core/comedores/api_views_territorial.py -> relevamientos.models"
       ]
     },
     {
       "src": "celiaquia",
       "dst": "ciudadanos",
       "kind": "internal",
-      "n": 13,
+      "n": 14,
       "ejemplos": [
-        "celiaquia/models.py -> ciudadanos.models",
-        "celiaquia/signals.py -> ciudadanos.models",
-        "celiaquia/services/ciudadano_service/impl.py -> ciudadanos.models",
-        "celiaquia/services/familia_service/impl.py -> ciudadanos.models"
+        "src/backends/celiaquia/celiaquia/ciudadano_detail.py -> ciudadanos.detail_contributions",
+        "src/backends/celiaquia/celiaquia/models.py -> ciudadanos.models",
+        "src/backends/celiaquia/celiaquia/signals.py -> ciudadanos.models",
+        "src/backends/celiaquia/celiaquia/services/ciudadano_service/impl.py -> ciudadanos.models"
       ]
     },
     {
-      "src": "comedores",
+      "src": "users",
+      "dst": "core",
+      "kind": "internal",
+      "n": 13,
+      "ejemplos": [
+        "src/backends/kernel/users/favorite_filters.py -> core.services.favorite_filters",
+        "src/backends/kernel/users/models.py -> core.models",
+        "src/backends/kernel/users/services.py -> core.constants",
+        "src/backends/kernel/users/services.py -> core.services.advanced_filters"
+      ]
+    },
+    {
+      "src": "dispositivos",
+      "dst": "core",
+      "kind": "internal",
+      "n": 12,
+      "ejemplos": [
+        "src/backends/dispositivos/datacalle/forms.py -> core.models",
+        "src/backends/dispositivos/datacalle/models.py -> core.models",
+        "src/backends/dispositivos/datacalle/models.py -> core.soft_delete.base",
+        "src/backends/dispositivos/datacalle/sidebar_access.py -> core.services.sidebar_access"
+      ]
+    },
+    {
+      "src": "usuarios",
       "dst": "pwa",
       "kind": "internal",
       "n": 12,
       "ejemplos": [
-        "comedores/api_views.py -> pwa.models",
-        "comedores/forms/actividades_pnud_form.py -> pwa.models",
-        "comedores/forms/actividad_espacio_pwa_form.py -> pwa.models",
-        "comedores/forms/comedor_form.py -> pwa.models"
+        "src/backends/sisoc_core/usuarios/api.py -> pwa.models",
+        "src/backends/sisoc_core/usuarios/api.py -> pwa.services.accesos",
+        "src/backends/sisoc_core/usuarios/api_permissions.py -> pwa.services.accesos",
+        "src/backends/sisoc_core/usuarios/api_serializers.py -> pwa.models"
       ]
     },
     {
-      "src": "pwa",
-      "dst": "users",
+      "src": "VAT",
+      "dst": "ciudadanos",
       "kind": "internal",
-      "n": 12,
+      "n": 11,
       "ejemplos": [
-        "pwa/api_views.py -> users.api_permissions",
-        "pwa/auth_audit.py -> users.auth_audit",
-        "pwa/services/auditoria_service.py -> users.services_pwa",
-        "pwa/services/mensajes_service.py -> users.models"
+        "src/backends/VAT/VAT/ciudadano_detail.py -> ciudadanos.detail_contributions",
+        "src/backends/VAT/VAT/forms.py -> ciudadanos.models",
+        "src/backends/VAT/VAT/models.py -> ciudadanos.models",
+        "src/backends/VAT/VAT/serializers.py -> ciudadanos.models"
       ]
     },
     {
@@ -1781,22 +2178,22 @@
       "kind": "internal",
       "n": 11,
       "ejemplos": [
-        "acompanamientos/acompanamiento_service.py -> core.services.advanced_filters",
-        "acompanamientos/acompanamiento_service.py -> core.services.list_ordering",
-        "acompanamientos/favorite_filters.py -> core.services.favorite_filters",
-        "acompanamientos/urls.py -> core.decorators"
+        "src/backends/sisoc_core/acompanamientos/acompanamiento_service.py -> core.services.advanced_filters",
+        "src/backends/sisoc_core/acompanamientos/acompanamiento_service.py -> core.services.list_ordering",
+        "src/backends/sisoc_core/acompanamientos/favorite_filters.py -> core.services.favorite_filters",
+        "src/backends/sisoc_core/acompanamientos/urls.py -> core.decorators"
       ]
     },
     {
-      "src": "comedores",
-      "dst": "relevamientos",
+      "src": "celiaquia",
+      "dst": "users",
       "kind": "internal",
       "n": 11,
       "ejemplos": [
-        "comedores/api_serializers.py -> relevamientos.models",
-        "comedores/api_serializers.py -> relevamientos.service",
-        "comedores/api_views.py -> relevamientos.models",
-        "comedores/api_views_territorial.py -> relevamientos.models"
+        "src/backends/celiaquia/celiaquia/permissions.py -> users.territorial_scope",
+        "src/backends/celiaquia/celiaquia/scope.py -> users.territorial_scope",
+        "src/backends/celiaquia/celiaquia/services/importacion_service/impl.py -> users.territorial_scope",
+        "src/backends/celiaquia/celiaquia/services/importacion_service/impl.py -> users.models"
       ]
     },
     {
@@ -1805,10 +2202,22 @@
       "kind": "internal",
       "n": 11,
       "ejemplos": [
-        "pas/favorite_filters.py -> core.services.favorite_filters",
-        "pas/forms.py -> core.models",
-        "pas/models.py -> core.models",
-        "pas/urls.py -> core.decorators"
+        "src/backends/pas/pas/favorite_filters.py -> core.services.favorite_filters",
+        "src/backends/pas/pas/forms.py -> core.models",
+        "src/backends/pas/pas/models.py -> core.models",
+        "src/backends/pas/pas/urls.py -> core.decorators"
+      ]
+    },
+    {
+      "src": "relevamientos",
+      "dst": "comedores",
+      "kind": "internal",
+      "n": 11,
+      "ejemplos": [
+        "src/backends/sisoc_core/relevamientos/alta_backoffice.py -> comedores.api_views_territorial_pnud",
+        "src/backends/sisoc_core/relevamientos/alta_backoffice.py -> comedores.models",
+        "src/backends/sisoc_core/relevamientos/form.py -> comedores.models",
+        "src/backends/sisoc_core/relevamientos/helpers.py -> comedores.forms.comedor_form"
       ]
     },
     {
@@ -1817,22 +2226,46 @@
       "kind": "internal",
       "n": 11,
       "ejemplos": [
-        "relevamientos/api.py -> core.soft_delete.signals",
-        "relevamientos/models.py -> core.soft_delete",
-        "relevamientos/serializer.py -> core.validators",
-        "relevamientos/serializer.py -> core.utils"
+        "src/backends/sisoc_core/relevamientos/api.py -> core.soft_delete.signals",
+        "src/backends/sisoc_core/relevamientos/models.py -> core.soft_delete",
+        "src/backends/sisoc_core/relevamientos/serializer.py -> core.validators",
+        "src/backends/sisoc_core/relevamientos/serializer.py -> core.utils"
       ]
     },
     {
-      "src": "VAT",
-      "dst": "ciudadanos",
+      "src": "usuarios",
+      "dst": "core",
+      "kind": "internal",
+      "n": 11,
+      "ejemplos": [
+        "src/backends/sisoc_core/usuarios/forms.py -> core.constants",
+        "src/backends/sisoc_core/usuarios/forms.py -> core.models",
+        "src/backends/sisoc_core/usuarios/forms.py -> core.validators",
+        "src/backends/sisoc_core/usuarios/grupos_column_config.py -> core.services.column_preferences"
+      ]
+    },
+    {
+      "src": "ver_para_ser_libre",
+      "dst": "core",
+      "kind": "internal",
+      "n": 11,
+      "ejemplos": [
+        "src/backends/vpsl/ver_para_ser_libre/api_views.py -> core.models",
+        "src/backends/vpsl/ver_para_ser_libre/api_workflow.py -> core.models",
+        "src/backends/vpsl/ver_para_ser_libre/api_workflow.py -> core.soft_delete.preview",
+        "src/backends/vpsl/ver_para_ser_libre/filter_config.py -> core.services.advanced_filters"
+      ]
+    },
+    {
+      "src": "celiaquia",
+      "dst": "iam",
       "kind": "internal",
       "n": 10,
       "ejemplos": [
-        "VAT/ciudadano_detail.py -> ciudadanos.detail_contributions",
-        "VAT/forms.py -> ciudadanos.models",
-        "VAT/models.py -> ciudadanos.models",
-        "VAT/serializers.py -> ciudadanos.models"
+        "src/backends/celiaquia/celiaquia/api_permissions.py -> iam.services",
+        "src/backends/celiaquia/celiaquia/permissions.py -> iam.services",
+        "src/backends/celiaquia/celiaquia/scope.py -> iam.services",
+        "src/backends/celiaquia/celiaquia/templatetags/celiaquia_filters.py -> iam.services"
       ]
     },
     {
@@ -1841,34 +2274,22 @@
       "kind": "internal",
       "n": 10,
       "ejemplos": [
-        "duplas/dupla_column_config.py -> core.services.column_preferences",
-        "duplas/favorite_filters.py -> core.services.favorite_filters",
-        "duplas/models.py -> core.soft_delete",
-        "duplas/urls.py -> core.decorators"
+        "src/backends/sisoc_core/duplas/dupla_column_config.py -> core.services.column_preferences",
+        "src/backends/sisoc_core/duplas/favorite_filters.py -> core.services.favorite_filters",
+        "src/backends/sisoc_core/duplas/models.py -> core.soft_delete",
+        "src/backends/sisoc_core/duplas/urls.py -> core.decorators"
       ]
     },
     {
-      "src": "celiaquia",
-      "dst": "iam",
+      "src": "centrodeinfancia",
+      "dst": "ciudadanos",
       "kind": "internal",
       "n": 9,
       "ejemplos": [
-        "celiaquia/permissions.py -> iam.services",
-        "celiaquia/templatetags/celiaquia_filters.py -> iam.services",
-        "celiaquia/views/comentarios.py -> iam.services",
-        "celiaquia/views/expediente.py -> iam.services"
-      ]
-    },
-    {
-      "src": "celiaquia",
-      "dst": "users",
-      "kind": "internal",
-      "n": 9,
-      "ejemplos": [
-        "celiaquia/permissions.py -> users.territorial_scope",
-        "celiaquia/services/importacion_service/impl.py -> users.territorial_scope",
-        "celiaquia/services/importacion_service/impl.py -> users.models",
-        "celiaquia/views/comentarios.py -> users.territorial_scope"
+        "src/backends/cdi/centrodeinfancia/models.py -> ciudadanos.models",
+        "src/backends/cdi/centrodeinfancia/services.py -> ciudadanos.models",
+        "src/backends/cdi/centrodeinfancia/services_renaper_estado.py -> ciudadanos.models",
+        "src/backends/cdi/centrodeinfancia/services_reportes.py -> ciudadanos.models"
       ]
     },
     {
@@ -1877,34 +2298,10 @@
       "kind": "internal",
       "n": 9,
       "ejemplos": [
-        "centrodeinfancia/access.py -> users.models",
-        "centrodeinfancia/access.py -> users.services_delegation",
-        "centrodeinfancia/access.py -> users.territorial_scope",
-        "centrodeinfancia/forms.py -> users.models"
-      ]
-    },
-    {
-      "src": "organizaciones",
-      "dst": "core",
-      "kind": "internal",
-      "n": 9,
-      "ejemplos": [
-        "organizaciones/admin.py -> core.admin_import_export",
-        "organizaciones/audit_signals.py -> core.soft_delete.signals",
-        "organizaciones/forms.py -> core.models",
-        "organizaciones/models.py -> core.models"
-      ]
-    },
-    {
-      "src": "relevamientos",
-      "dst": "comedores",
-      "kind": "internal",
-      "n": 9,
-      "ejemplos": [
-        "relevamientos/form.py -> comedores.models",
-        "relevamientos/helpers.py -> comedores.forms.comedor_form",
-        "relevamientos/helpers.py -> comedores.models",
-        "relevamientos/models.py -> comedores.models"
+        "src/backends/cdi/centrodeinfancia/access.py -> users.models",
+        "src/backends/cdi/centrodeinfancia/access.py -> users.services_delegation",
+        "src/backends/cdi/centrodeinfancia/access.py -> users.territorial_scope",
+        "src/backends/cdi/centrodeinfancia/forms.py -> users.models"
       ]
     },
     {
@@ -1913,10 +2310,10 @@
       "kind": "internal",
       "n": 9,
       "ejemplos": [
-        "rendicioncuentasmensual/favorite_filters.py -> core.services.favorite_filters",
-        "rendicioncuentasmensual/models.py -> core.soft_delete",
-        "rendicioncuentasmensual/urls.py -> core.decorators",
-        "rendicioncuentasmensual/views.py -> core.services.advanced_filters"
+        "src/backends/sisoc_core/rendicioncuentasmensual/favorite_filters.py -> core.services.favorite_filters",
+        "src/backends/sisoc_core/rendicioncuentasmensual/models.py -> core.soft_delete",
+        "src/backends/sisoc_core/rendicioncuentasmensual/urls.py -> core.decorators",
+        "src/backends/sisoc_core/rendicioncuentasmensual/views.py -> core.services.advanced_filters"
       ]
     },
     {
@@ -1925,10 +2322,10 @@
       "kind": "internal",
       "n": 8,
       "ejemplos": [
-        "admisiones/forms/admisiones_forms.py -> comedores.services.comedor_service",
-        "admisiones/forms/admisiones_forms.py -> comedores.services.capacitaciones_certificados_service",
-        "admisiones/models/admisiones.py -> comedores.models",
-        "admisiones/services/informe_tecnico_variables_service.py -> comedores.services.comedor_service"
+        "src/backends/sisoc_core/admisiones/forms/admisiones_forms.py -> comedores.services.comedor_service",
+        "src/backends/sisoc_core/admisiones/forms/admisiones_forms.py -> comedores.services.capacitaciones_certificados_service",
+        "src/backends/sisoc_core/admisiones/models/admisiones.py -> comedores.models",
+        "src/backends/sisoc_core/admisiones/services/informe_tecnico_variables_service.py -> comedores.services.comedor_service"
       ]
     },
     {
@@ -1937,10 +2334,34 @@
       "kind": "internal",
       "n": 8,
       "ejemplos": [
-        "comedores/ciudadano_detail.py -> ciudadanos.detail_contributions",
-        "comedores/models.py -> ciudadanos.models",
-        "comedores/forms/comedor_form.py -> ciudadanos.models",
-        "comedores/forms/comedor_form.py -> ciudadanos.forms"
+        "src/backends/sisoc_core/comedores/ciudadano_detail.py -> ciudadanos.detail_contributions",
+        "src/backends/sisoc_core/comedores/models.py -> ciudadanos.models",
+        "src/backends/sisoc_core/comedores/forms/comedor_form.py -> ciudadanos.models",
+        "src/backends/sisoc_core/comedores/forms/comedor_form.py -> ciudadanos.forms"
+      ]
+    },
+    {
+      "src": "comedores",
+      "dst": "users",
+      "kind": "internal",
+      "n": 8,
+      "ejemplos": [
+        "src/backends/sisoc_core/comedores/user_form_catalog.py -> users.form_catalogs",
+        "src/backends/sisoc_core/comedores/forms/comedor_form.py -> users.services",
+        "src/backends/sisoc_core/comedores/forms/comedor_form.py -> users.territorial_scope",
+        "src/backends/sisoc_core/comedores/services/comedor_service/impl.py -> users.services"
+      ]
+    },
+    {
+      "src": "gestion_organizaciones",
+      "dst": "core",
+      "kind": "internal",
+      "n": 8,
+      "ejemplos": [
+        "src/backends/sisoc_core/gestion_organizaciones/audit_signals.py -> core.soft_delete.signals",
+        "src/backends/sisoc_core/gestion_organizaciones/filter_config.py -> core.services.advanced_filters",
+        "src/backends/sisoc_core/gestion_organizaciones/forms.py -> core.models",
+        "src/backends/sisoc_core/gestion_organizaciones/models.py -> core.soft_delete"
       ]
     },
     {
@@ -1949,10 +2370,10 @@
       "kind": "internal",
       "n": 7,
       "ejemplos": [
-        "comedores/api_serializers.py -> admisiones.models.admisiones",
-        "comedores/api_views.py -> admisiones.models.admisiones",
-        "comedores/signals.py -> admisiones.models.admisiones",
-        "comedores/management/commands/update_comedores_dupla.py -> admisiones.models.admisiones"
+        "src/backends/sisoc_core/comedores/api_serializers.py -> admisiones.models.admisiones",
+        "src/backends/sisoc_core/comedores/api_views.py -> admisiones.models.admisiones",
+        "src/backends/sisoc_core/comedores/signals.py -> admisiones.models.admisiones",
+        "src/backends/sisoc_core/comedores/management/commands/update_comedores_dupla.py -> admisiones.models.admisiones"
       ]
     },
     {
@@ -1961,10 +2382,10 @@
       "kind": "internal",
       "n": 7,
       "ejemplos": [
-        "comedores/api.py -> organizaciones.models",
-        "comedores/api_serializers.py -> organizaciones.models",
-        "comedores/api_views.py -> organizaciones.models",
-        "comedores/models.py -> organizaciones.models"
+        "src/backends/sisoc_core/comedores/api.py -> organizaciones.models",
+        "src/backends/sisoc_core/comedores/api_serializers.py -> organizaciones.models",
+        "src/backends/sisoc_core/comedores/api_views.py -> organizaciones.models",
+        "src/backends/sisoc_core/comedores/models.py -> organizaciones.models"
       ]
     },
     {
@@ -1973,22 +2394,20 @@
       "kind": "internal",
       "n": 7,
       "ejemplos": [
-        "comedores/api_serializers.py -> rendicioncuentasmensual.models",
-        "comedores/api_serializers.py -> rendicioncuentasmensual.services",
-        "comedores/api_views.py -> rendicioncuentasmensual.models",
-        "comedores/api_views.py -> rendicioncuentasmensual.services"
+        "src/backends/sisoc_core/comedores/api_serializers.py -> rendicioncuentasmensual.models",
+        "src/backends/sisoc_core/comedores/api_serializers.py -> rendicioncuentasmensual.services",
+        "src/backends/sisoc_core/comedores/api_views.py -> rendicioncuentasmensual.models",
+        "src/backends/sisoc_core/comedores/api_views.py -> rendicioncuentasmensual.services"
       ]
     },
     {
-      "src": "ver_para_ser_libre",
-      "dst": "core",
+      "src": "pwa",
+      "dst": "usuarios",
       "kind": "internal",
       "n": 7,
       "ejemplos": [
-        "ver_para_ser_libre/forms.py -> core.models",
-        "ver_para_ser_libre/models.py -> core.models",
-        "ver_para_ser_libre/models.py -> core.soft_delete",
-        "ver_para_ser_libre/urls.py -> core.decorators"
+        "src/backends/sisoc_core/pwa/api_views.py -> usuarios.api_permissions",
+        "src/backends/sisoc_core/pwa/auth_audit.py -> usuarios.auth_audit"
       ]
     },
     {
@@ -1997,34 +2416,46 @@
       "kind": "internal",
       "n": 6,
       "ejemplos": [
-        "comedores/api_views.py -> intervenciones.models.intervenciones",
-        "comedores/urls.py -> intervenciones.views",
-        "comedores/services/capacitaciones_certificados_service.py -> intervenciones.models.intervenciones",
-        "comedores/services/comedor_service/impl.py -> intervenciones.models.intervenciones"
+        "src/backends/sisoc_core/comedores/api_views.py -> intervenciones.models.intervenciones",
+        "src/backends/sisoc_core/comedores/urls.py -> intervenciones.views",
+        "src/backends/sisoc_core/comedores/services/capacitaciones_certificados_service.py -> intervenciones.models.intervenciones",
+        "src/backends/sisoc_core/comedores/services/comedor_service/impl.py -> intervenciones.models.intervenciones"
       ]
     },
     {
-      "src": "dispositivos",
+      "src": "datacalle",
       "dst": "core",
       "kind": "internal",
       "n": 6,
       "ejemplos": [
-        "dispositivos/favorite_filters.py -> core.services.favorite_filters",
-        "dispositivos/forms.py -> core.models",
-        "dispositivos/models.py -> core.models",
-        "dispositivos/urls.py -> core.decorators"
+        "src/backends/dispositivos/datacalle/forms.py -> core.models",
+        "src/backends/dispositivos/datacalle/models.py -> core.models",
+        "src/backends/dispositivos/datacalle/models.py -> core.soft_delete.base",
+        "src/backends/dispositivos/datacalle/sidebar_access.py -> core.services.sidebar_access"
       ]
     },
     {
-      "src": "users",
-      "dst": "iam",
+      "src": "dispositivos",
+      "dst": "users",
       "kind": "internal",
       "n": 6,
       "ejemplos": [
-        "users/api_permissions.py -> iam.services",
-        "users/api_serializers.py -> iam.services",
-        "users/services.py -> iam.services",
-        "users/services_group_permissions.py -> iam.services"
+        "src/backends/dispositivos/datacalle/api_permissions.py -> users.services_datacalle",
+        "src/backends/dispositivos/datacalle/api_views.py -> users.services_datacalle",
+        "src/backends/dispositivos/datacalle/forms.py -> users.services_datacalle",
+        "src/backends/dispositivos/datacalle/sidebar_access.py -> users.services_datacalle"
+      ]
+    },
+    {
+      "src": "VAT",
+      "dst": "iam",
+      "kind": "internal",
+      "n": 5,
+      "ejemplos": [
+        "src/backends/VAT/VAT/forms.py -> iam.services",
+        "src/backends/VAT/VAT/sidebar_access.py -> iam.roles_vat",
+        "src/backends/VAT/VAT/services/access_scope.py -> iam.roles_vat",
+        "src/backends/VAT/VAT/services/access_scope.py -> iam.services"
       ]
     },
     {
@@ -2033,10 +2464,10 @@
       "kind": "internal",
       "n": 5,
       "ejemplos": [
-        "VAT/management/commands/bootstrap_vat_referentes_centros.py -> users.management.commands",
-        "VAT/services/access_scope.py -> users.services_delegation",
-        "VAT/services/access_scope.py -> users.territorial_scope",
-        "VAT/views/catalogo.py -> users.territorial_scope"
+        "src/backends/VAT/VAT/management/commands/bootstrap_vat_referentes_centros.py -> users.management.commands",
+        "src/backends/VAT/VAT/services/access_scope.py -> users.services_delegation",
+        "src/backends/VAT/VAT/services/access_scope.py -> users.territorial_scope",
+        "src/backends/VAT/VAT/views/catalogo.py -> users.territorial_scope"
       ]
     },
     {
@@ -2045,10 +2476,22 @@
       "kind": "internal",
       "n": 5,
       "ejemplos": [
-        "centrodefamilia/ciudadano_detail.py -> ciudadanos.detail_contributions",
-        "centrodefamilia/forms.py -> ciudadanos.models",
-        "centrodefamilia/models.py -> ciudadanos.models",
-        "centrodefamilia/management/commands/cargar_legajos.py -> ciudadanos.models"
+        "src/backends/cdf/centrodefamilia/ciudadano_detail.py -> ciudadanos.detail_contributions",
+        "src/backends/cdf/centrodefamilia/forms.py -> ciudadanos.models",
+        "src/backends/cdf/centrodefamilia/models.py -> ciudadanos.models",
+        "src/backends/cdf/centrodefamilia/management/commands/cargar_legajos.py -> ciudadanos.models"
+      ]
+    },
+    {
+      "src": "centrodeinfancia",
+      "dst": "iam",
+      "kind": "internal",
+      "n": 5,
+      "ejemplos": [
+        "src/backends/cdi/centrodeinfancia/access.py -> iam.roles_cdi",
+        "src/backends/cdi/centrodeinfancia/apps.py -> iam.services",
+        "src/backends/cdi/centrodeinfancia/sidebar_access.py -> iam.roles_cdi",
+        "src/backends/cdi/centrodeinfancia/views.py -> iam.services"
       ]
     },
     {
@@ -2057,22 +2500,34 @@
       "kind": "internal",
       "n": 5,
       "ejemplos": [
-        "comedores/api_serializers.py -> duplas.models",
-        "comedores/models.py -> duplas.models",
-        "comedores/management/commands/update_comedores_dupla.py -> duplas.models",
-        "comedores/services/comedor_service/impl.py -> duplas.models"
+        "src/backends/sisoc_core/comedores/api_serializers.py -> duplas.models",
+        "src/backends/sisoc_core/comedores/models.py -> duplas.models",
+        "src/backends/sisoc_core/comedores/management/commands/update_comedores_dupla.py -> duplas.models",
+        "src/backends/sisoc_core/comedores/services/comedor_service/impl.py -> duplas.models"
+      ]
+    },
+    {
+      "src": "core",
+      "dst": "iam",
+      "kind": "internal",
+      "n": 5,
+      "ejemplos": [
+        "src/backends/kernel/core/apps.py -> iam.roles_vat",
+        "src/backends/kernel/core/apps.py -> iam.roles_cdi",
+        "src/backends/kernel/core/decorators.py -> iam.services",
+        "src/backends/kernel/core/mixins.py -> iam.services"
       ]
     },
     {
       "src": "datacalle",
-      "dst": "core",
+      "dst": "users",
       "kind": "internal",
       "n": 5,
       "ejemplos": [
-        "datacalle/forms.py -> core.models",
-        "datacalle/models.py -> core.models",
-        "datacalle/models.py -> core.soft_delete.base",
-        "datacalle/urls.py -> core.decorators"
+        "src/backends/dispositivos/datacalle/api_permissions.py -> users.services_datacalle",
+        "src/backends/dispositivos/datacalle/api_views.py -> users.services_datacalle",
+        "src/backends/dispositivos/datacalle/forms.py -> users.services_datacalle",
+        "src/backends/dispositivos/datacalle/sidebar_access.py -> users.services_datacalle"
       ]
     },
     {
@@ -2081,22 +2536,46 @@
       "kind": "internal",
       "n": 5,
       "ejemplos": [
-        "expedientespagos/models.py -> core.soft_delete",
-        "expedientespagos/urls.py -> core.decorators",
-        "expedientespagos/views.py -> core.soft_delete.view_helpers",
-        "expedientespagos/views.py -> core.services.column_preferences"
+        "src/backends/sisoc_core/expedientespagos/models.py -> core.soft_delete",
+        "src/backends/sisoc_core/expedientespagos/urls.py -> core.decorators",
+        "src/backends/sisoc_core/expedientespagos/views.py -> core.soft_delete.view_helpers",
+        "src/backends/sisoc_core/expedientespagos/views.py -> core.services.column_preferences"
       ]
     },
     {
-      "src": "intervenciones",
+      "src": "gestion_organizaciones",
+      "dst": "organizaciones",
+      "kind": "internal",
+      "n": 5,
+      "ejemplos": [
+        "src/backends/sisoc_core/gestion_organizaciones/audit_signals.py -> organizaciones.audit_signals",
+        "src/backends/sisoc_core/gestion_organizaciones/filter_config.py -> organizaciones.models",
+        "src/backends/sisoc_core/gestion_organizaciones/forms.py -> organizaciones.models",
+        "src/backends/sisoc_core/gestion_organizaciones/views.py -> organizaciones.models"
+      ]
+    },
+    {
+      "src": "organizaciones",
       "dst": "core",
       "kind": "internal",
       "n": 5,
       "ejemplos": [
-        "intervenciones/admin.py -> core.admin_import_export",
-        "intervenciones/fixture_post_load.py -> core.services.fixture_post_load",
-        "intervenciones/views.py -> core.security",
-        "intervenciones/views.py -> core.soft_delete.view_helpers"
+        "src/backends/kernel/organizaciones/admin.py -> core.admin_import_export",
+        "src/backends/kernel/organizaciones/audit_signals.py -> core.soft_delete.signals",
+        "src/backends/kernel/organizaciones/models.py -> core.models",
+        "src/backends/kernel/organizaciones/models.py -> core.soft_delete"
+      ]
+    },
+    {
+      "src": "pwa",
+      "dst": "core",
+      "kind": "internal",
+      "n": 5,
+      "ejemplos": [
+        "src/backends/sisoc_core/pwa/api_serializers.py -> core.models",
+        "src/backends/sisoc_core/pwa/api_views.py -> core.models",
+        "src/backends/sisoc_core/pwa/models.py -> core.models",
+        "src/backends/sisoc_core/pwa/services/accesos.py -> core.models"
       ]
     },
     {
@@ -2105,10 +2584,10 @@
       "kind": "internal",
       "n": 4,
       "ejemplos": [
-        "acompanamientos/acompanamiento_service.py -> comedores.models",
-        "acompanamientos/acompanamiento_service.py -> comedores.services.comedor_service",
-        "acompanamientos/views.py -> comedores.models",
-        "acompanamientos/views.py -> comedores.services.comedor_service"
+        "src/backends/sisoc_core/acompanamientos/acompanamiento_service.py -> comedores.models",
+        "src/backends/sisoc_core/acompanamientos/acompanamiento_service.py -> comedores.services.comedor_service",
+        "src/backends/sisoc_core/acompanamientos/views.py -> comedores.models",
+        "src/backends/sisoc_core/acompanamientos/views.py -> comedores.services.comedor_service"
       ]
     },
     {
@@ -2117,34 +2596,34 @@
       "kind": "internal",
       "n": 4,
       "ejemplos": [
-        "centrodefamilia/access.py -> users.models",
-        "centrodefamilia/access.py -> users.services_delegation",
-        "centrodefamilia/access.py -> users.territorial_scope",
-        "centrodefamilia/views/generar_usuario.py -> users.services_generate_user"
+        "src/backends/cdf/centrodefamilia/access.py -> users.models",
+        "src/backends/cdf/centrodefamilia/access.py -> users.services_delegation",
+        "src/backends/cdf/centrodefamilia/access.py -> users.territorial_scope",
+        "src/backends/cdf/centrodefamilia/views/generar_usuario.py -> users.services_generate_user"
       ]
     },
     {
-      "src": "centrodeinfancia",
-      "dst": "ciudadanos",
+      "src": "comedores",
+      "dst": "usuarios",
       "kind": "internal",
       "n": 4,
       "ejemplos": [
-        "centrodeinfancia/models.py -> ciudadanos.models",
-        "centrodeinfancia/services.py -> ciudadanos.models",
-        "centrodeinfancia/services_nomina_ninos_pdf.py -> ciudadanos.models",
-        "centrodeinfancia/views.py -> ciudadanos.models"
+        "src/backends/sisoc_core/comedores/api_views.py -> usuarios.api_permissions",
+        "src/backends/sisoc_core/comedores/api_views.py -> usuarios.api_serializers",
+        "src/backends/sisoc_core/comedores/api_views_territorial.py -> usuarios.api_permissions",
+        "src/backends/sisoc_core/comedores/pwa_user_import.py -> usuarios.pwa_import_access"
       ]
     },
     {
-      "src": "pwa",
-      "dst": "core",
+      "src": "intervenciones",
+      "dst": "catalogo_intervenciones",
       "kind": "internal",
       "n": 4,
       "ejemplos": [
-        "pwa/api_serializers.py -> core.models",
-        "pwa/api_views.py -> core.models",
-        "pwa/models.py -> core.models",
-        "pwa/services/nomina_service.py -> core.models"
+        "src/backends/sisoc_core/intervenciones/forms.py -> catalogo_intervenciones.constants",
+        "src/backends/sisoc_core/intervenciones/forms.py -> catalogo_intervenciones.models",
+        "src/backends/sisoc_core/intervenciones/views.py -> catalogo_intervenciones.constants",
+        "src/backends/sisoc_core/intervenciones/views.py -> catalogo_intervenciones.models"
       ]
     },
     {
@@ -2153,21 +2632,22 @@
       "kind": "internal",
       "n": 4,
       "ejemplos": [
-        "rendicioncuentasmensual/models.py -> comedores.models",
-        "rendicioncuentasmensual/services.py -> comedores.models",
-        "rendicioncuentasmensual/views.py -> comedores.models",
-        "rendicioncuentasmensual/management/commands/seed_rendicion_stage_examples.py -> comedores.models"
+        "src/backends/sisoc_core/rendicioncuentasmensual/models.py -> comedores.models",
+        "src/backends/sisoc_core/rendicioncuentasmensual/services.py -> comedores.models",
+        "src/backends/sisoc_core/rendicioncuentasmensual/views.py -> comedores.models",
+        "src/backends/sisoc_core/rendicioncuentasmensual/management/commands/seed_rendicion_stage_examples.py -> comedores.models"
       ]
     },
     {
-      "src": "VAT",
+      "src": "ver_para_ser_libre",
       "dst": "iam",
       "kind": "internal",
-      "n": 3,
+      "n": 4,
       "ejemplos": [
-        "VAT/forms.py -> iam.services",
-        "VAT/services/access_scope.py -> iam.services",
-        "VAT/views/catalogo.py -> iam.services"
+        "src/backends/vpsl/ver_para_ser_libre/api_views.py -> iam.services",
+        "src/backends/vpsl/ver_para_ser_libre/api_workflow.py -> iam.services",
+        "src/backends/vpsl/ver_para_ser_libre/views.py -> iam.services",
+        "src/backends/vpsl/ver_para_ser_libre/services/access.py -> iam.services"
       ]
     },
     {
@@ -2176,9 +2656,9 @@
       "kind": "internal",
       "n": 3,
       "ejemplos": [
-        "acompanamientos/acompanamiento_service.py -> admisiones.models.admisiones",
-        "acompanamientos/views.py -> admisiones.models.admisiones",
-        "acompanamientos/services/filter_config.py -> admisiones.models.admisiones"
+        "src/backends/sisoc_core/acompanamientos/acompanamiento_service.py -> admisiones.models.admisiones",
+        "src/backends/sisoc_core/acompanamientos/views.py -> admisiones.models.admisiones",
+        "src/backends/sisoc_core/acompanamientos/services/filter_config.py -> admisiones.models.admisiones"
       ]
     },
     {
@@ -2187,9 +2667,9 @@
       "kind": "internal",
       "n": 3,
       "ejemplos": [
-        "admisiones/services/admisiones_service/impl.py -> iam.services",
-        "admisiones/views/templates_informe_tecnico.py -> iam.services",
-        "admisiones/views/web_views.py -> iam.services"
+        "src/backends/sisoc_core/admisiones/services/admisiones_service/impl.py -> iam.services",
+        "src/backends/sisoc_core/admisiones/views/templates_informe_tecnico.py -> iam.services",
+        "src/backends/sisoc_core/admisiones/views/web_views.py -> iam.services"
       ]
     },
     {
@@ -2198,9 +2678,20 @@
       "kind": "internal",
       "n": 3,
       "ejemplos": [
-        "admisiones/models/admisiones.py -> users.models",
-        "admisiones/services/admisiones_service/impl.py -> users.services",
-        "admisiones/services/legales_service/impl.py -> users.services"
+        "src/backends/sisoc_core/admisiones/models/admisiones.py -> users.models",
+        "src/backends/sisoc_core/admisiones/services/admisiones_service/impl.py -> users.services",
+        "src/backends/sisoc_core/admisiones/services/legales_service/impl.py -> users.services"
+      ]
+    },
+    {
+      "src": "catalogo_intervenciones",
+      "dst": "core",
+      "kind": "internal",
+      "n": 3,
+      "ejemplos": [
+        "src/backends/kernel/catalogo_intervenciones/admin.py -> core.admin_import_export",
+        "src/backends/kernel/catalogo_intervenciones/cache_signals.py -> core.cache_utils",
+        "src/backends/kernel/catalogo_intervenciones/fixture_post_load.py -> core.services.fixture_post_load"
       ]
     },
     {
@@ -2209,9 +2700,19 @@
       "kind": "internal",
       "n": 3,
       "ejemplos": [
-        "centrodefamilia/access.py -> iam.services",
-        "centrodefamilia/views/beneficiarios_export.py -> iam.services",
-        "centrodefamilia/views/centro.py -> iam.services"
+        "src/backends/cdf/centrodefamilia/access.py -> iam.services",
+        "src/backends/cdf/centrodefamilia/views/beneficiarios_export.py -> iam.services",
+        "src/backends/cdf/centrodefamilia/views/centro.py -> iam.services"
+      ]
+    },
+    {
+      "src": "comedores",
+      "dst": "gestion_organizaciones",
+      "kind": "internal",
+      "n": 3,
+      "ejemplos": [
+        "src/backends/sisoc_core/comedores/api.py -> gestion_organizaciones.filter_config",
+        "src/backends/sisoc_core/comedores/services/comedor_service/impl.py -> gestion_organizaciones.models"
       ]
     },
     {
@@ -2220,31 +2721,41 @@
       "kind": "internal",
       "n": 3,
       "ejemplos": [
-        "comedores/services/validacion_service/impl.py -> iam.services",
-        "comedores/views/comedor.py -> iam.services",
-        "comedores/views/export.py -> iam.services"
+        "src/backends/sisoc_core/comedores/services/validacion_service/impl.py -> iam.services",
+        "src/backends/sisoc_core/comedores/views/comedor.py -> iam.services",
+        "src/backends/sisoc_core/comedores/views/export.py -> iam.services"
       ]
     },
     {
-      "src": "core",
-      "dst": "iam",
+      "src": "dashboard",
+      "dst": "core",
       "kind": "internal",
       "n": 3,
       "ejemplos": [
-        "core/decorators.py -> iam.services",
-        "core/mixins.py -> iam.services",
-        "core/templatetags/custom_filters.py -> iam.services"
+        "src/backends/sisoc_core/dashboard/apps.py -> core.services.sidebar_items",
+        "src/backends/sisoc_core/dashboard/models.py -> core.permissions.registry",
+        "src/backends/sisoc_core/dashboard/views.py -> core.backend_proxy"
       ]
     },
     {
-      "src": "datacalle",
-      "dst": "users",
+      "src": "encuestas",
+      "dst": "core",
       "kind": "internal",
       "n": 3,
       "ejemplos": [
-        "datacalle/api_permissions.py -> users.services_datacalle",
-        "datacalle/forms.py -> users.services_datacalle",
-        "datacalle/services/relevamientos.py -> users.territorial_scope"
+        "src/backends/sisoc_core/encuestas/filters.py -> core.services.advanced_filters",
+        "src/backends/sisoc_core/encuestas/urls.py -> core.decorators",
+        "src/backends/sisoc_core/encuestas/views.py -> core.services.csv_export"
+      ]
+    },
+    {
+      "src": "gestion_organizaciones",
+      "dst": "admisiones",
+      "kind": "internal",
+      "n": 3,
+      "ejemplos": [
+        "src/backends/sisoc_core/gestion_organizaciones/views.py -> admisiones.services.admisiones_service.impl",
+        "src/backends/sisoc_core/gestion_organizaciones/views.py -> admisiones.models.admisiones"
       ]
     },
     {
@@ -2253,9 +2764,9 @@
       "kind": "internal",
       "n": 3,
       "ejemplos": [
-        "importarexpediente/models.py -> expedientespagos.models",
-        "importarexpediente/services.py -> expedientespagos.models",
-        "importarexpediente/views.py -> expedientespagos.models"
+        "src/backends/sisoc_core/importarexpediente/models.py -> expedientespagos.models",
+        "src/backends/sisoc_core/importarexpediente/services.py -> expedientespagos.models",
+        "src/backends/sisoc_core/importarexpediente/views.py -> expedientespagos.models"
       ]
     },
     {
@@ -2264,19 +2775,20 @@
       "kind": "internal",
       "n": 3,
       "ejemplos": [
-        "insumos/forms.py -> core.models",
-        "insumos/models.py -> core.models",
-        "insumos/urls.py -> core.decorators"
+        "src/backends/sisoc_core/insumos/forms.py -> core.models",
+        "src/backends/sisoc_core/insumos/models.py -> core.models",
+        "src/backends/sisoc_core/insumos/urls.py -> core.decorators"
       ]
     },
     {
-      "src": "organizaciones",
-      "dst": "admisiones",
+      "src": "intervenciones",
+      "dst": "core",
       "kind": "internal",
       "n": 3,
       "ejemplos": [
-        "organizaciones/views.py -> admisiones.services.admisiones_service.impl",
-        "organizaciones/views.py -> admisiones.models.admisiones"
+        "src/backends/sisoc_core/intervenciones/views.py -> core.security",
+        "src/backends/sisoc_core/intervenciones/views.py -> core.soft_delete.view_helpers",
+        "src/backends/sisoc_core/intervenciones/models/intervenciones.py -> core.soft_delete"
       ]
     },
     {
@@ -2285,9 +2797,31 @@
       "kind": "internal",
       "n": 3,
       "ejemplos": [
-        "pwa/api_views.py -> ciudadanos.models",
-        "pwa/ciudadano_detail.py -> ciudadanos.detail_contributions",
-        "pwa/services/nomina_service.py -> ciudadanos.models"
+        "src/backends/sisoc_core/pwa/api_views.py -> ciudadanos.models",
+        "src/backends/sisoc_core/pwa/ciudadano_detail.py -> ciudadanos.detail_contributions",
+        "src/backends/sisoc_core/pwa/services/nomina_service.py -> ciudadanos.models"
+      ]
+    },
+    {
+      "src": "pwa",
+      "dst": "iam",
+      "kind": "internal",
+      "n": 3,
+      "ejemplos": [
+        "src/backends/sisoc_core/pwa/services/accesos.py -> iam.services",
+        "src/backends/sisoc_core/pwa/services/mensajes_service.py -> iam.services",
+        "src/backends/sisoc_core/pwa/services/push_service.py -> iam.services"
+      ]
+    },
+    {
+      "src": "pwa",
+      "dst": "users",
+      "kind": "internal",
+      "n": 3,
+      "ejemplos": [
+        "src/backends/sisoc_core/pwa/services/accesos.py -> users.form_catalogs",
+        "src/backends/sisoc_core/pwa/services/accesos.py -> users.models",
+        "src/backends/sisoc_core/pwa/services/accesos.py -> users.profile_utils"
       ]
     },
     {
@@ -2296,9 +2830,9 @@
       "kind": "internal",
       "n": 3,
       "ejemplos": [
-        "rendicioncuentasfinal/urls.py -> core.decorators",
-        "rendicioncuentasfinal/views.py -> core.decorators",
-        "rendicioncuentasfinal/views.py -> core.security"
+        "src/backends/sisoc_core/rendicioncuentasfinal/urls.py -> core.decorators",
+        "src/backends/sisoc_core/rendicioncuentasfinal/views.py -> core.decorators",
+        "src/backends/sisoc_core/rendicioncuentasfinal/views.py -> core.security"
       ]
     },
     {
@@ -2307,9 +2841,20 @@
       "kind": "internal",
       "n": 3,
       "ejemplos": [
-        "ticketera/api_views.py -> users.models",
-        "ticketera/api_views.py -> users.rate_limits",
-        "ticketera/api_views.py -> users.services_auth"
+        "src/backends/cdi/ticketera/api_views.py -> users.models",
+        "src/backends/cdi/ticketera/api_views.py -> users.rate_limits",
+        "src/backends/cdi/ticketera/api_views.py -> users.services_auth"
+      ]
+    },
+    {
+      "src": "usuarios",
+      "dst": "iam",
+      "kind": "internal",
+      "n": 3,
+      "ejemplos": [
+        "src/backends/sisoc_core/usuarios/api_permissions.py -> iam.services",
+        "src/backends/sisoc_core/usuarios/api_serializers.py -> iam.services",
+        "src/backends/sisoc_core/usuarios/views.py -> iam.services"
       ]
     },
     {
@@ -2318,8 +2863,8 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "acompanamientos/acompanamiento_service.py -> duplas.models",
-        "acompanamientos/services/filter_config.py -> duplas.models"
+        "src/backends/sisoc_core/acompanamientos/acompanamiento_service.py -> duplas.models",
+        "src/backends/sisoc_core/acompanamientos/services/filter_config.py -> duplas.models"
       ]
     },
     {
@@ -2328,8 +2873,8 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "acompanamientos/acompanamiento_service.py -> iam.services",
-        "acompanamientos/views.py -> iam.services"
+        "src/backends/sisoc_core/acompanamientos/acompanamiento_service.py -> iam.services",
+        "src/backends/sisoc_core/acompanamientos/views.py -> iam.services"
       ]
     },
     {
@@ -2338,8 +2883,8 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "admisiones/services/admisiones_service/impl.py -> acompanamientos.acompanamiento_service",
-        "admisiones/views/web_views.py -> acompanamientos.acompanamiento_service"
+        "src/backends/sisoc_core/admisiones/services/admisiones_service/impl.py -> acompanamientos.acompanamiento_service",
+        "src/backends/sisoc_core/admisiones/views/web_views.py -> acompanamientos.acompanamiento_service"
       ]
     },
     {
@@ -2348,8 +2893,8 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "admisiones/services/admisiones_filter_config/impl.py -> duplas.models",
-        "admisiones/services/legales_filter_config/impl.py -> duplas.models"
+        "src/backends/sisoc_core/admisiones/services/admisiones_filter_config/impl.py -> duplas.models",
+        "src/backends/sisoc_core/admisiones/services/legales_filter_config/impl.py -> duplas.models"
       ]
     },
     {
@@ -2358,8 +2903,8 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "admisiones/services/tipo_convenio_resolver.py -> organizaciones.models",
-        "admisiones/services/admisiones_service/impl.py -> organizaciones.models"
+        "src/backends/sisoc_core/admisiones/services/tipo_convenio_resolver.py -> organizaciones.models",
+        "src/backends/sisoc_core/admisiones/services/admisiones_service/impl.py -> organizaciones.models"
       ]
     },
     {
@@ -2368,28 +2913,18 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "admisiones/views/web_views.py -> rendicioncuentasfinal.models",
-        "admisiones/views/web_views.py -> rendicioncuentasfinal.rendicion_cuentas_final_service"
+        "src/backends/sisoc_core/admisiones/views/web_views.py -> rendicioncuentasfinal.models",
+        "src/backends/sisoc_core/admisiones/views/web_views.py -> rendicioncuentasfinal.rendicion_cuentas_final_service"
       ]
     },
     {
       "src": "centrodeinfancia",
-      "dst": "iam",
-      "kind": "internal",
-      "n": 2,
-      "ejemplos": [
-        "centrodeinfancia/apps.py -> iam.services",
-        "centrodeinfancia/views.py -> iam.services"
-      ]
-    },
-    {
-      "src": "centrodeinfancia",
-      "dst": "intervenciones",
+      "dst": "catalogo_intervenciones",
       "kind": "api",
       "n": 2,
       "ejemplos": [
-        "centrodeinfancia/forms.py -> intervenciones.api",
-        "centrodeinfancia/views.py -> intervenciones.api"
+        "src/backends/cdi/centrodeinfancia/forms.py -> catalogo_intervenciones.api",
+        "src/backends/cdi/centrodeinfancia/views.py -> catalogo_intervenciones.api"
       ]
     },
     {
@@ -2398,8 +2933,8 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "comedores/views/comedor.py -> expedientespagos.models",
-        "comedores/views/comedor.py -> expedientespagos.services"
+        "src/backends/sisoc_core/comedores/views/comedor.py -> expedientespagos.models",
+        "src/backends/sisoc_core/comedores/views/comedor.py -> expedientespagos.services"
       ]
     },
     {
@@ -2408,18 +2943,28 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "comedores/api_views.py -> rendicioncuentasfinal.models",
-        "comedores/signals.py -> rendicioncuentasfinal.models"
+        "src/backends/sisoc_core/comedores/api_views.py -> rendicioncuentasfinal.models",
+        "src/backends/sisoc_core/comedores/signals.py -> rendicioncuentasfinal.models"
       ]
     },
     {
       "src": "comedores",
-      "dst": "users",
+      "dst": "usuarios",
       "kind": "api",
       "n": 2,
       "ejemplos": [
-        "comedores/signals.py -> users.api",
-        "comedores/management/commands/sincronizar_accesos_pwa_organizaciones.py -> users.api"
+        "src/backends/sisoc_core/comedores/signals.py -> usuarios.api",
+        "src/backends/sisoc_core/comedores/management/commands/sincronizar_accesos_pwa_organizaciones.py -> usuarios.api"
+      ]
+    },
+    {
+      "src": "comunicados",
+      "dst": "comedores",
+      "kind": "api",
+      "n": 2,
+      "ejemplos": [
+        "src/backends/sisoc_core/comunicados/permissions.py -> comedores.api",
+        "src/backends/sisoc_core/comunicados/services_destinatarios.py -> comedores.api"
       ]
     },
     {
@@ -2428,8 +2973,8 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "core/views.py -> users.territorial_scope",
-        "core/permissions/registry.py -> users.bootstrap.groups_seed"
+        "src/backends/kernel/core/views.py -> users.territorial_scope",
+        "src/backends/kernel/core/permissions/registry.py -> users.bootstrap.groups_seed"
       ]
     },
     {
@@ -2438,8 +2983,8 @@
       "kind": "api",
       "n": 2,
       "ejemplos": [
-        "dashboard/signals.py -> comedores.api",
-        "dashboard/utils.py -> comedores.api"
+        "src/backends/sisoc_core/dashboard/signals.py -> comedores.api",
+        "src/backends/sisoc_core/dashboard/utils.py -> comedores.api"
       ]
     },
     {
@@ -2448,28 +2993,8 @@
       "kind": "api",
       "n": 2,
       "ejemplos": [
-        "dashboard/signals.py -> relevamientos.api",
-        "dashboard/utils.py -> relevamientos.api"
-      ]
-    },
-    {
-      "src": "duplas",
-      "dst": "users",
-      "kind": "internal",
-      "n": 2,
-      "ejemplos": [
-        "duplas/signals.py -> users.models",
-        "duplas/user_form_catalog.py -> users.form_catalogs"
-      ]
-    },
-    {
-      "src": "encuestas",
-      "dst": "core",
-      "kind": "internal",
-      "n": 2,
-      "ejemplos": [
-        "encuestas/urls.py -> core.decorators",
-        "encuestas/views.py -> core.services.csv_export"
+        "src/backends/sisoc_core/dashboard/signals.py -> relevamientos.api",
+        "src/backends/sisoc_core/dashboard/utils.py -> relevamientos.api"
       ]
     },
     {
@@ -2478,8 +3003,8 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "encuestas/context_processors.py -> users.profile_utils",
-        "encuestas/middleware.py -> users.middleware"
+        "src/backends/sisoc_core/encuestas/context_processors.py -> users.profile_utils",
+        "src/backends/sisoc_core/encuestas/middleware.py -> users.middleware"
       ]
     },
     {
@@ -2488,8 +3013,38 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "expedientespagos/models.py -> comedores.models",
-        "expedientespagos/views.py -> comedores.models"
+        "src/backends/sisoc_core/expedientespagos/models.py -> comedores.models",
+        "src/backends/sisoc_core/expedientespagos/views.py -> comedores.models"
+      ]
+    },
+    {
+      "src": "gestion_organizaciones",
+      "dst": "rendicioncuentasmensual",
+      "kind": "internal",
+      "n": 2,
+      "ejemplos": [
+        "src/backends/sisoc_core/gestion_organizaciones/views.py -> rendicioncuentasmensual.models",
+        "src/backends/sisoc_core/gestion_organizaciones/views.py -> rendicioncuentasmensual.services"
+      ]
+    },
+    {
+      "src": "gestion_organizaciones",
+      "dst": "usuarios",
+      "kind": "internal",
+      "n": 2,
+      "ejemplos": [
+        "src/backends/sisoc_core/gestion_organizaciones/forms.py -> usuarios.services_territoriales",
+        "src/backends/sisoc_core/gestion_organizaciones/views.py -> usuarios.services_territoriales"
+      ]
+    },
+    {
+      "src": "iam",
+      "dst": "core",
+      "kind": "internal",
+      "n": 2,
+      "ejemplos": [
+        "src/backends/kernel/iam/roles_cdi.py -> core.constants",
+        "src/backends/kernel/iam/services.py -> core.permissions.registry"
       ]
     },
     {
@@ -2498,8 +3053,18 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "importarexpediente/services.py -> comedores.models",
-        "importarexpediente/services.py -> comedores.services.estado_manager"
+        "src/backends/sisoc_core/importarexpediente/services.py -> comedores.models",
+        "src/backends/sisoc_core/importarexpediente/services.py -> comedores.services.estado_manager"
+      ]
+    },
+    {
+      "src": "importarexpediente",
+      "dst": "core",
+      "kind": "internal",
+      "n": 2,
+      "ejemplos": [
+        "src/backends/sisoc_core/importarexpediente/filter_config.py -> core.services.advanced_filters",
+        "src/backends/sisoc_core/importarexpediente/urls.py -> core.decorators"
       ]
     },
     {
@@ -2508,18 +3073,8 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "intervenciones/signals.py -> acompanamientos.acompanamiento_service",
-        "intervenciones/views.py -> acompanamientos.acompanamiento_service"
-      ]
-    },
-    {
-      "src": "organizaciones",
-      "dst": "rendicioncuentasmensual",
-      "kind": "internal",
-      "n": 2,
-      "ejemplos": [
-        "organizaciones/views.py -> rendicioncuentasmensual.models",
-        "organizaciones/views.py -> rendicioncuentasmensual.services"
+        "src/backends/sisoc_core/intervenciones/signals.py -> acompanamientos.acompanamiento_service",
+        "src/backends/sisoc_core/intervenciones/views.py -> acompanamientos.acompanamiento_service"
       ]
     },
     {
@@ -2528,18 +3083,18 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "pwa/api_serializers.py -> comunicados.models",
-        "pwa/services/mensajes_service.py -> comunicados.models"
+        "src/backends/sisoc_core/pwa/api_serializers.py -> comunicados.models",
+        "src/backends/sisoc_core/pwa/services/mensajes_service.py -> comunicados.models"
       ]
     },
     {
-      "src": "pwa",
-      "dst": "iam",
+      "src": "relevamientos",
+      "dst": "pwa",
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "pwa/services/mensajes_service.py -> iam.services",
-        "pwa/services/push_service.py -> iam.services"
+        "src/backends/sisoc_core/relevamientos/alta_backoffice.py -> pwa.services.accesos",
+        "src/backends/sisoc_core/relevamientos/views/api_views.py -> pwa.services.accesos"
       ]
     },
     {
@@ -2548,8 +3103,8 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "rendicioncuentasfinal/models.py -> comedores.models",
-        "rendicioncuentasfinal/views.py -> comedores.models"
+        "src/backends/sisoc_core/rendicioncuentasfinal/models.py -> comedores.models",
+        "src/backends/sisoc_core/rendicioncuentasfinal/views.py -> comedores.models"
       ]
     },
     {
@@ -2558,8 +3113,8 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "rendicioncuentasfinal/rendicion_cuentas_final_service.py -> historial.services.historial_service",
-        "rendicioncuentasfinal/views.py -> historial.services.historial_service"
+        "src/backends/sisoc_core/rendicioncuentasfinal/rendicion_cuentas_final_service.py -> historial.services.historial_service",
+        "src/backends/sisoc_core/rendicioncuentasfinal/views.py -> historial.services.historial_service"
       ]
     },
     {
@@ -2568,8 +3123,18 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "rendicioncuentasmensual/services.py -> iam.services",
-        "rendicioncuentasmensual/views.py -> iam.services"
+        "src/backends/sisoc_core/rendicioncuentasmensual/services.py -> iam.services",
+        "src/backends/sisoc_core/rendicioncuentasmensual/views.py -> iam.services"
+      ]
+    },
+    {
+      "src": "rendicioncuentasmensual",
+      "dst": "organizaciones",
+      "kind": "internal",
+      "n": 2,
+      "ejemplos": [
+        "src/backends/sisoc_core/rendicioncuentasmensual/filter_config.py -> organizaciones.models",
+        "src/backends/sisoc_core/rendicioncuentasmensual/services.py -> organizaciones.models"
       ]
     },
     {
@@ -2578,8 +3143,37 @@
       "kind": "internal",
       "n": 2,
       "ejemplos": [
-        "rendicioncuentasmensual/services.py -> pwa.services.mensajes_service",
-        "rendicioncuentasmensual/services.py -> pwa.services.push_service"
+        "src/backends/sisoc_core/rendicioncuentasmensual/services.py -> pwa.services.mensajes_service",
+        "src/backends/sisoc_core/rendicioncuentasmensual/services.py -> pwa.services.push_service"
+      ]
+    },
+    {
+      "src": "rendicioncuentasmensual",
+      "dst": "usuarios",
+      "kind": "internal",
+      "n": 2,
+      "ejemplos": [
+        "src/backends/sisoc_core/rendicioncuentasmensual/filter_config.py -> usuarios.services_territoriales",
+        "src/backends/sisoc_core/rendicioncuentasmensual/services.py -> usuarios.services_territoriales"
+      ]
+    },
+    {
+      "src": "users",
+      "dst": "iam",
+      "kind": "internal",
+      "n": 2,
+      "ejemplos": [
+        "src/backends/kernel/users/services.py -> iam.services",
+        "src/backends/kernel/users/services_group_permissions.py -> iam.services"
+      ]
+    },
+    {
+      "src": "acompanamientos",
+      "dst": "catalogo_intervenciones",
+      "kind": "internal",
+      "n": 1,
+      "ejemplos": [
+        "src/backends/sisoc_core/acompanamientos/acompanamiento_service.py -> catalogo_intervenciones.models"
       ]
     },
     {
@@ -2588,7 +3182,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "acompanamientos/acompanamiento_service.py -> intervenciones.models.intervenciones"
+        "src/backends/sisoc_core/acompanamientos/acompanamiento_service.py -> intervenciones.models.intervenciones"
       ]
     },
     {
@@ -2597,7 +3191,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "acompanamientos/acompanamiento_service.py -> users.services"
+        "src/backends/sisoc_core/acompanamientos/acompanamiento_service.py -> users.services"
       ]
     },
     {
@@ -2606,7 +3200,7 @@
       "kind": "api",
       "n": 1,
       "ejemplos": [
-        "admisiones/audit_signals.py -> audittrail.api"
+        "src/backends/sisoc_core/admisiones/audit_signals.py -> audittrail.api"
       ]
     },
     {
@@ -2615,7 +3209,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "admisiones/views/web_views.py -> expedientespagos.services"
+        "src/backends/sisoc_core/admisiones/views/web_views.py -> expedientespagos.services"
       ]
     },
     {
@@ -2624,7 +3218,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "admisiones/views/web_views.py -> historial.services.historial_service"
+        "src/backends/sisoc_core/admisiones/views/web_views.py -> historial.services.historial_service"
       ]
     },
     {
@@ -2633,7 +3227,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "admisiones/views/web_views.py -> rendicioncuentasmensual.services"
+        "src/backends/sisoc_core/admisiones/views/web_views.py -> rendicioncuentasmensual.services"
       ]
     },
     {
@@ -2642,7 +3236,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "audittrail/views.py -> core.services.csv_export"
+        "src/backends/kernel/audittrail/views.py -> core.services.csv_export"
       ]
     },
     {
@@ -2651,7 +3245,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "centrodefamilia/models.py -> organizaciones.models"
+        "src/backends/cdf/centrodefamilia/models.py -> organizaciones.models"
       ]
     },
     {
@@ -2660,7 +3254,7 @@
       "kind": "api",
       "n": 1,
       "ejemplos": [
-        "centrodeinfancia/signals.py -> audittrail.api"
+        "src/backends/cdi/centrodeinfancia/signals.py -> audittrail.api"
       ]
     },
     {
@@ -2669,16 +3263,7 @@
       "kind": "api",
       "n": 1,
       "ejemplos": [
-        "centrodeinfancia/views.py -> ciudadanos.api"
-      ]
-    },
-    {
-      "src": "ciudadanos",
-      "dst": "celiaquia",
-      "kind": "api",
-      "n": 1,
-      "ejemplos": [
-        "ciudadanos/views.py -> celiaquia.api"
+        "src/backends/cdi/centrodeinfancia/views.py -> ciudadanos.api"
       ]
     },
     {
@@ -2687,7 +3272,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "comedores/views/comedor.py -> acompanamientos.acompanamiento_service"
+        "src/backends/sisoc_core/comedores/views/comedor.py -> acompanamientos.acompanamiento_service"
       ]
     },
     {
@@ -2696,16 +3281,7 @@
       "kind": "api",
       "n": 1,
       "ejemplos": [
-        "comedores/audit_signals.py -> audittrail.api"
-      ]
-    },
-    {
-      "src": "comunicados",
-      "dst": "comedores",
-      "kind": "api",
-      "n": 1,
-      "ejemplos": [
-        "comunicados/permissions.py -> comedores.api"
+        "src/backends/sisoc_core/comedores/audit_signals.py -> audittrail.api"
       ]
     },
     {
@@ -2714,7 +3290,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "comunicados/api_views.py -> core.api_auth"
+        "src/backends/sisoc_core/comunicados/api_views.py -> core.api_auth"
       ]
     },
     {
@@ -2723,7 +3299,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "comunicados/permissions.py -> iam.services"
+        "src/backends/sisoc_core/comunicados/permissions.py -> iam.services"
       ]
     },
     {
@@ -2732,7 +3308,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "comunicados/permissions.py -> users.services"
+        "src/backends/sisoc_core/comunicados/permissions.py -> users.services"
       ]
     },
     {
@@ -2741,7 +3317,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "core/views.py -> historial.services.historial_service"
+        "src/backends/kernel/core/views.py -> historial.services.historial_service"
       ]
     },
     {
@@ -2750,16 +3326,7 @@
       "kind": "api",
       "n": 1,
       "ejemplos": [
-        "dashboard/views.py -> centrodefamilia.api"
-      ]
-    },
-    {
-      "src": "dashboard",
-      "dst": "core",
-      "kind": "internal",
-      "n": 1,
-      "ejemplos": [
-        "dashboard/models.py -> core.permissions.registry"
+        "src/backends/sisoc_core/dashboard/views.py -> centrodefamilia.api"
       ]
     },
     {
@@ -2768,16 +3335,16 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "datacalle/services/relevamientos.py -> dispositivos.models"
+        "src/backends/dispositivos/datacalle/services/relevamientos.py -> dispositivos.models"
       ]
     },
     {
-      "src": "dispositivos",
+      "src": "duplas",
       "dst": "users",
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "dispositivos/services.py -> users.territorial_scope"
+        "src/backends/sisoc_core/duplas/user_form_catalog.py -> users.form_catalogs"
       ]
     },
     {
@@ -2786,7 +3353,25 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "expedientespagos/views.py -> iam.services"
+        "src/backends/sisoc_core/expedientespagos/views.py -> iam.services"
+      ]
+    },
+    {
+      "src": "gestion_organizaciones",
+      "dst": "audittrail",
+      "kind": "api",
+      "n": 1,
+      "ejemplos": [
+        "src/backends/sisoc_core/gestion_organizaciones/audit_signals.py -> audittrail.api"
+      ]
+    },
+    {
+      "src": "gestion_organizaciones",
+      "dst": "iam",
+      "kind": "internal",
+      "n": 1,
+      "ejemplos": [
+        "src/backends/sisoc_core/gestion_organizaciones/views.py -> iam.services"
       ]
     },
     {
@@ -2795,25 +3380,7 @@
       "kind": "api",
       "n": 1,
       "ejemplos": [
-        "historial/services/historial_service/impl.py -> rendicioncuentasfinal.api"
-      ]
-    },
-    {
-      "src": "iam",
-      "dst": "core",
-      "kind": "internal",
-      "n": 1,
-      "ejemplos": [
-        "iam/services.py -> core.permissions.registry"
-      ]
-    },
-    {
-      "src": "importarexpediente",
-      "dst": "core",
-      "kind": "internal",
-      "n": 1,
-      "ejemplos": [
-        "importarexpediente/urls.py -> core.decorators"
+        "src/backends/sisoc_core/historial/services/historial_service/impl.py -> rendicioncuentasfinal.api"
       ]
     },
     {
@@ -2822,7 +3389,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "intervenciones/views.py -> admisiones.models.admisiones"
+        "src/backends/sisoc_core/intervenciones/views.py -> admisiones.models.admisiones"
       ]
     },
     {
@@ -2831,7 +3398,7 @@
       "kind": "api",
       "n": 1,
       "ejemplos": [
-        "intervenciones/audit_signals.py -> audittrail.api"
+        "src/backends/sisoc_core/intervenciones/audit_signals.py -> audittrail.api"
       ]
     },
     {
@@ -2840,16 +3407,16 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "intervenciones/views.py -> comedores.services.comedor_service"
+        "src/backends/sisoc_core/intervenciones/views.py -> comedores.services.comedor_service"
       ]
     },
     {
       "src": "ocr",
-      "dst": "users",
+      "dst": "usuarios",
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "ocr/views.py -> users.views"
+        "src/backends/sisoc_core/ocr/views.py -> usuarios.views"
       ]
     },
     {
@@ -2858,16 +3425,7 @@
       "kind": "api",
       "n": 1,
       "ejemplos": [
-        "organizaciones/audit_signals.py -> audittrail.api"
-      ]
-    },
-    {
-      "src": "organizaciones",
-      "dst": "iam",
-      "kind": "internal",
-      "n": 1,
-      "ejemplos": [
-        "organizaciones/views.py -> iam.services"
+        "src/backends/kernel/organizaciones/audit_signals.py -> audittrail.api"
       ]
     },
     {
@@ -2876,7 +3434,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "organizaciones/user_form_catalog.py -> users.form_catalogs"
+        "src/backends/kernel/organizaciones/user_form_catalog.py -> users.form_catalogs"
       ]
     },
     {
@@ -2885,7 +3443,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "pwa/services/nomina_service.py -> admisiones.models.admisiones"
+        "src/backends/sisoc_core/pwa/services/nomina_service.py -> admisiones.models.admisiones"
       ]
     },
     {
@@ -2894,7 +3452,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "pwa/services/mensajes_service.py -> rendicioncuentasmensual.models"
+        "src/backends/sisoc_core/pwa/services/mensajes_service.py -> rendicioncuentasmensual.models"
       ]
     },
     {
@@ -2903,16 +3461,7 @@
       "kind": "api",
       "n": 1,
       "ejemplos": [
-        "relevamientos/audit_signals.py -> audittrail.api"
-      ]
-    },
-    {
-      "src": "relevamientos",
-      "dst": "users",
-      "kind": "internal",
-      "n": 1,
-      "ejemplos": [
-        "relevamientos/views/api_views.py -> users.services_pwa"
+        "src/backends/sisoc_core/relevamientos/audit_signals.py -> audittrail.api"
       ]
     },
     {
@@ -2921,7 +3470,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "rendicioncuentasfinal/rendicion_cuentas_final_service.py -> iam.services"
+        "src/backends/sisoc_core/rendicioncuentasfinal/rendicion_cuentas_final_service.py -> iam.services"
       ]
     },
     {
@@ -2930,7 +3479,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "rendicioncuentasfinal/rendicion_cuentas_final_service.py -> users.services"
+        "src/backends/sisoc_core/rendicioncuentasfinal/rendicion_cuentas_final_service.py -> users.services"
       ]
     },
     {
@@ -2939,16 +3488,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "rendicioncuentasmensual/services.py -> comunicados.models"
-      ]
-    },
-    {
-      "src": "rendicioncuentasmensual",
-      "dst": "organizaciones",
-      "kind": "internal",
-      "n": 1,
-      "ejemplos": [
-        "rendicioncuentasmensual/services.py -> organizaciones.models"
+        "src/backends/sisoc_core/rendicioncuentasmensual/services.py -> comunicados.models"
       ]
     },
     {
@@ -2957,7 +3497,16 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "ticketera/api_views.py -> audittrail.context"
+        "src/backends/cdi/ticketera/api_views.py -> audittrail.context"
+      ]
+    },
+    {
+      "src": "ticketera",
+      "dst": "centrodeinfancia",
+      "kind": "internal",
+      "n": 1,
+      "ejemplos": [
+        "src/backends/cdi/ticketera/api_views.py -> centrodeinfancia.public_api"
       ]
     },
     {
@@ -2966,7 +3515,7 @@
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "ticketera/api_views.py -> core.api_auth"
+        "src/backends/cdi/ticketera/api_views.py -> core.api_auth"
       ]
     },
     {
@@ -2975,16 +3524,16 @@
       "kind": "api",
       "n": 1,
       "ejemplos": [
-        "ver_para_ser_libre/views.py -> ciudadanos.api"
+        "src/backends/vpsl/ver_para_ser_libre/views.py -> ciudadanos.api"
       ]
     },
     {
       "src": "ver_para_ser_libre",
-      "dst": "iam",
+      "dst": "users",
       "kind": "internal",
       "n": 1,
       "ejemplos": [
-        "ver_para_ser_libre/views.py -> iam.services"
+        "src/backends/vpsl/ver_para_ser_libre/views.py -> users.rate_limits"
       ]
     }
   ],
@@ -3145,7 +3694,7 @@
         {
           "label": "Ver Organizaciones",
           "url_name": "organizaciones",
-          "app": "organizaciones",
+          "app": "gestion_organizaciones",
           "nivel": 2,
           "ruta": [
             "Organizaciones"
@@ -3196,6 +3745,20 @@
           "linea": 442
         },
         {
+          "label": "Reportes",
+          "url_name": "centrodeinfancia_reportes",
+          "app": "centrodeinfancia",
+          "nivel": 2,
+          "ruta": [
+            "Centro de Infancia"
+          ],
+          "permisos": [
+            "auth.role_reportes_cdi",
+            "centrodeinfancia.view_centrodeinfancia"
+          ],
+          "linea": 450
+        },
+        {
           "label": "Itinerarios",
           "url_name": "vpsl_itinerario_list",
           "app": "ver_para_ser_libre",
@@ -3206,7 +3769,7 @@
           "permisos": [
             "ver_para_ser_libre.view_itinerariovpsl"
           ],
-          "linea": 461
+          "linea": 470
         },
         {
           "label": "Sedes",
@@ -3220,7 +3783,7 @@
             "ver_para_ser_libre.view_itinerariovpsl",
             "ver_para_ser_libre.view_sedevpsl"
           ],
-          "linea": 469
+          "linea": 478
         },
         {
           "label": "Buscador PAS",
@@ -3233,7 +3796,7 @@
           "permisos": [
             "pas.view_paspersona"
           ],
-          "linea": 491
+          "linea": 500
         },
         {
           "label": "Panel de Control",
@@ -3246,7 +3809,7 @@
           "permisos": [
             "pas.view_paspersona"
           ],
-          "linea": 498
+          "linea": 507
         },
         {
           "label": "Informes",
@@ -3259,7 +3822,7 @@
           "permisos": [
             "pas.view_paspersona"
           ],
-          "linea": 505
+          "linea": 514
         },
         {
           "label": "Ver Dispositivos",
@@ -3273,12 +3836,12 @@
             "datacalle.view_relevamiento",
             "dispositivos.view_dispositivo"
           ],
-          "linea": 525
+          "linea": 534
         },
         {
           "label": "Relevamientos DataCalle",
           "url_name": "datacalle_relevamientos_listar",
-          "app": "datacalle",
+          "app": "dispositivos",
           "nivel": 2,
           "ruta": [
             "Situación de Calle"
@@ -3287,7 +3850,7 @@
             "datacalle.view_relevamiento",
             "dispositivos.view_dispositivo"
           ],
-          "linea": 534
+          "linea": 543
         },
         {
           "label": "Centros",
@@ -3300,7 +3863,7 @@
           "permisos": [
             "centrodefamilia.view_centro"
           ],
-          "linea": 554
+          "linea": 563
         },
         {
           "label": "Nuevo Preinscripto",
@@ -3313,7 +3876,7 @@
           "permisos": [
             "centrodefamilia.view_centro"
           ],
-          "linea": 561
+          "linea": 570
         },
         {
           "label": "Lista de Preinscriptos",
@@ -3326,7 +3889,7 @@
           "permisos": [
             "centrodefamilia.view_centro"
           ],
-          "linea": 568
+          "linea": 577
         },
         {
           "label": "Lista Responsables",
@@ -3339,7 +3902,7 @@
           "permisos": [
             "centrodefamilia.view_centro"
           ],
-          "linea": 575
+          "linea": 584
         },
         {
           "label": "Centros de Formación Profesional",
@@ -3352,7 +3915,7 @@
           "permisos": [
             "VAT.view_centro"
           ],
-          "linea": 596
+          "linea": 605
         },
         {
           "label": "Reporte Inscriptos y Asistencias",
@@ -3365,7 +3928,7 @@
           "permisos": [
             "VAT.view_centro"
           ],
-          "linea": 603
+          "linea": 612
         },
         {
           "label": "Buscador por Ciudadano",
@@ -3378,7 +3941,7 @@
           "permisos": [
             "VAT.view_centro"
           ],
-          "linea": 610
+          "linea": 619
         },
         {
           "label": "Inscripciones",
@@ -3392,7 +3955,7 @@
             "VAT.view_centro",
             "VAT.view_inscripcion"
           ],
-          "linea": 619
+          "linea": 628
         },
         {
           "label": "Evaluaciones",
@@ -3406,7 +3969,7 @@
             "VAT.view_centro",
             "VAT.view_evaluacion"
           ],
-          "linea": 629
+          "linea": 638
         },
         {
           "label": "Resultados de Evaluación",
@@ -3420,7 +3983,7 @@
             "VAT.view_centro",
             "VAT.view_resultadoevaluacion"
           ],
-          "linea": 639
+          "linea": 648
         },
         {
           "label": "Ofertas Institucionales",
@@ -3435,7 +3998,7 @@
             "VAT.view_centro",
             "VAT.view_ofertainstitucional"
           ],
-          "linea": 657
+          "linea": 666
         },
         {
           "label": "Comisiones",
@@ -3450,7 +4013,7 @@
             "VAT.view_centro",
             "VAT.view_comision"
           ],
-          "linea": 665
+          "linea": 674
         },
         {
           "label": "Inscripciones a Oferta",
@@ -3465,7 +4028,7 @@
             "VAT.view_centro",
             "VAT.view_inscripcionoferta"
           ],
-          "linea": 673
+          "linea": 682
         },
         {
           "label": "Contactos",
@@ -3480,7 +4043,7 @@
             "VAT.view_centro",
             "VAT.view_institucioncontacto"
           ],
-          "linea": 693
+          "linea": 702
         },
         {
           "label": "Identificadores",
@@ -3495,7 +4058,7 @@
             "VAT.view_centro",
             "VAT.view_institucionidentificadorhist"
           ],
-          "linea": 701
+          "linea": 710
         },
         {
           "label": "Ubicaciones",
@@ -3510,7 +4073,7 @@
             "VAT.view_centro",
             "VAT.view_institucionubicacion"
           ],
-          "linea": 709
+          "linea": 718
         },
         {
           "label": "Modalidades de Cursado",
@@ -3526,7 +4089,7 @@
             "VAT.view_modalidadcursada",
             "VAT.view_planversioncurricular"
           ],
-          "linea": 729
+          "linea": 738
         },
         {
           "label": "Planes Curriculares",
@@ -3542,7 +4105,7 @@
             "VAT.view_modalidadcursada",
             "VAT.view_planversioncurricular"
           ],
-          "linea": 737
+          "linea": 746
         },
         {
           "label": "Expedientes",
@@ -3558,7 +4121,7 @@
             "celiaquia.view_reporte_provincias",
             "is_superuser"
           ],
-          "linea": 765
+          "linea": 774
         },
         {
           "label": "Dashboard Cupos",
@@ -3574,7 +4137,7 @@
             "celiaquia.view_reporte_provincias",
             "is_superuser"
           ],
-          "linea": 773
+          "linea": 782
         },
         {
           "label": "Reporte",
@@ -3590,7 +4153,7 @@
             "celiaquia.view_reporte_provincias",
             "is_superuser"
           ],
-          "linea": 781
+          "linea": 790
         }
       ],
       "linea": 274
@@ -3608,7 +4171,7 @@
         {
           "label": "Usuarios",
           "url_name": "usuarios",
-          "app": "users",
+          "app": "usuarios",
           "nivel": 1,
           "ruta": [],
           "permisos": [
@@ -3629,7 +4192,7 @@
         {
           "label": "Grupos",
           "url_name": "grupos",
-          "app": "users",
+          "app": "usuarios",
           "nivel": 1,
           "ruta": [],
           "permisos": [
@@ -3953,20 +4516,20 @@
         {
           "label": "Mi cuenta",
           "url_name": "mi_cuenta",
-          "app": "users",
+          "app": "usuarios",
           "nivel": 0,
           "ruta": [],
           "permisos": [],
-          "linea": 795
+          "linea": 804
         }
       ],
-      "linea": 795
+      "linea": 804
     }
   ],
   "pwas": [
     {
       "id": "espacios",
-      "repository": "dsocial118/Espacios-Comunitarios",
+      "repository": "secretarianaf/Espacios-Comunitarios",
       "canonical_path": "/pwa/espacioscomunitarios/",
       "legacy_path": "/mobile/",
       "enabled": true,
@@ -3993,7 +4556,7 @@
     },
     {
       "id": "datacalle",
-      "repository": "dsocial118/DataCalle",
+      "repository": "secretarianaf/DataCalle",
       "canonical_path": "/pwa/datacalle/",
       "legacy_path": "/mobile2/",
       "enabled": true,
@@ -4014,7 +4577,7 @@
     },
     {
       "id": "gestionar",
-      "repository": "dsocial118/Gestionar",
+      "repository": "secretarianaf/Gestionar",
       "canonical_path": "/pwa/gestionar/",
       "legacy_path": "/mobile3/",
       "enabled": true,
@@ -4148,15 +4711,24 @@
       "ciudadanos_import_worker",
       "encuestas_worker",
       "mailing_worker",
+      "migrator",
       "ocr_worker",
       "user_import_worker",
       "web"
     ],
     "servicios_compose": [
-      "mysql",
       "django",
-      "ocr_worker",
-      "encuestas_worker"
+      "backend_dispositivos",
+      "backend_vpsl",
+      "backend_pas",
+      "backend_vat",
+      "backend_celiaquia",
+      "backend_cdi",
+      "backend_cdf",
+      "migrator",
+      "front_vpsl",
+      "front_celiaquia",
+      "ocr_worker"
     ],
     "servicios_celery": [
       "redis",
@@ -4220,7 +4792,7 @@
     },
     {
       "id": "centrodeinfancia-consumes-intervenciones-api",
-      "nombre": "Centro de Infancia consume el catálogo público de Intervenciones",
+      "nombre": "Centro de Infancia usa el catálogo del kernel, no la app intervenciones (core)",
       "excepciones": []
     },
     {
@@ -4255,14 +4827,24 @@
       "id": "pas-no-domain-internals",
       "nombre": "PAS no importa internals de otros dominios",
       "excepciones": []
+    },
+    {
+      "id": "kernel-no-core-ni-backends",
+      "nombre": "el kernel no importa apps del core ni de los backends (#1931)",
+      "excepciones": [
+        "core.debug_queries -> **",
+        "core.benchmarks.** -> **"
+      ]
     }
   ],
   "totales": {
-    "apps": 34,
-    "aristas": 131,
+    "backends": 7,
+    "frontends": 2,
+    "apps": 37,
+    "aristas": 148,
     "aristas_api": 16,
-    "aristas_internals": 115,
-    "lineas": 174087,
-    "items_menu": 60
+    "aristas_internals": 132,
+    "lineas": 193387,
+    "items_menu": 61
   }
 }

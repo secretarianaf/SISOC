@@ -31,7 +31,7 @@ No hace falta detener Docker ni reiniciar cron.
 
 La primera opcion es deshabilitar solo su entrada de cron. No borrar el script
 sin aprobacion. Las copias instaladas estan en `/home/sisoc-deploy/bin/` y sus
-fuentes versionables en `scripts/infra/`.
+fuentes versionables en `src/scripts/infra/`.
 
 ## Imágenes y build cache podados
 

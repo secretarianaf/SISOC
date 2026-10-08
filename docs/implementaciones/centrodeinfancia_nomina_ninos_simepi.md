@@ -70,17 +70,17 @@ locales a sus CDI vinculados. El enlace de Grupos solo se muestra con
 
 ## Implementación y validación
 
-- Endpoint y autorización: `centrodeinfancia/views_export.py` y
-  `centrodeinfancia/access.py`.
-- Alta EGP y referente: `centrodeinfancia/forms_usuario_egp.py`,
-  `centrodeinfancia/views_usuario_egp.py` y
-  `centrodeinfancia/services_user_provisioning.py`.
-- Servicio PDF: `centrodeinfancia/services_nomina_ninos_pdf.py`.
-- Formulario y datos CDI: `centrodeinfancia/forms.py` y `centrodeinfancia/models.py`.
-- Regresiones: `centrodeinfancia/tests/test_nomina_ninos_pdf.py`,
-  `centrodeinfancia/tests/test_access_scope_centrodeinfancia.py`,
-  `centrodeinfancia/tests/test_destinatario_form.py` y
-  `centrodeinfancia/tests/test_trabajador_form.py`.
+- Endpoint y autorización: `src/backends/cdi/centrodeinfancia/views_export.py` y
+  `src/backends/cdi/centrodeinfancia/access.py`.
+- Alta EGP y referente: `src/backends/cdi/centrodeinfancia/forms_generar_usuario.py`,
+  `src/backends/cdi/centrodeinfancia/views_usuario_egp.py` y
+  `src/backends/cdi/centrodeinfancia/services_user_provisioning.py`.
+- Servicio PDF: `src/backends/cdi/centrodeinfancia/services_nomina_ninos_pdf.py`.
+- Formulario y datos CDI: `src/backends/cdi/centrodeinfancia/forms.py` y `src/backends/cdi/centrodeinfancia/models.py`.
+- Regresiones: `src/backends/cdi/centrodeinfancia/tests/test_nomina_ninos_pdf.py`,
+  `src/backends/cdi/centrodeinfancia/tests/test_access_scope_centrodeinfancia.py`,
+  `src/backends/cdi/centrodeinfancia/tests/test_destinatario_form.py` y
+  `src/backends/cdi/centrodeinfancia/tests/test_trabajador_form.py`.
 
 Antes de promover, validar autorización por rol y alcance, selección obligatoria
 del superadministrador, aislamiento provincial, deduplicación, headers de
@@ -88,8 +88,8 @@ privacidad y la estructura final del PDF.
 
 ## Referencias
 
-- `docs/registro/cambios/2026-08-18-issue-2304-urgentes-cdi.md`
-- `docs/registro/cambios/2026-08-18-issue-2304-nomina-domicilio-sala.md`
-- `docs/registro/cambios/2026-08-18-simepi-descarga-nomina-ninos.md`
+- `docs/registro/cambios/2026-T3/2026-08-18-issue-2304-urgentes-cdi.md`
+- `docs/registro/cambios/2026-T3/2026-08-18-issue-2304-nomina-domicilio-sala.md`
+- `docs/registro/cambios/2026-T3/2026-08-18-simepi-descarga-nomina-ninos.md`
 - `docs/implementaciones/centrodeinfancia_nomina_renaper.md`
-- `docs/registro/2026-08-28-issue-2369-correcciones-cdi.md`
+- `docs/registro/cambios/2026-T3/2026-08-28-issue-2369-correcciones-cdi.md`

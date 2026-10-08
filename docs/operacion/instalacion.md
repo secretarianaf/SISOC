@@ -5,7 +5,7 @@
 
 ## Variables de entorno
 - Copiar `.env.example` a `.env` y completar Django, base de datos, puertos y claves de GESTIONAR/RENAPER. Evidencia: .env.example:1-114.
-- Los archivos `.env.qa`, `.env.homologacion` y `.env.prod` quedan trackeados en git como bases saneadas de referencia; no deben llevar credenciales ni datos reales.
+- No hay archivos `.env` por entorno versionados (los `.env.qa`, `.env.homologacion` y `.env.prod` se borraron en #2639). La unica plantilla es `.env.example`.
 - En deploys versionados tambien se usa el `.env` normal del servidor/checkout; el valor de `ENVIRONMENT` dentro de ese archivo define si el runtime queda en `qa`, `homologacion` o `prd`.
 
 ## Despliegue local con Docker Compose
@@ -14,32 +14,33 @@
 - Servicios definidos: contenedor `mysql` y `django`, con volumenes y puertos parametrizados. Evidencia: docker-compose.yml:1-34.
 
 ## Despliegue por entorno
-- Compose base versionado: `docker-compose.deploy.yml` con el servicio `django` y `env_file: .env`.
+- Compose base versionado: `docker/compose/docker-compose.deploy.yml` con el servicio `django` y `env_file: .env`.
 - Override versionado adicional hoy presente en el repo:
-  - `docker-compose.produccion.yml`
-- Los archivos `.env.qa`, `.env.homologacion` y `.env.prod` quedan trackeados en git como bases saneadas de referencia; no deben llevar credenciales ni datos reales.
+  - `docker/compose/docker-compose.produccion.yml`
+- Diferencias por entorno: cada servidor tiene su propio `.env` (no versionado) creado a partir de `.env.example`. Lo que cambia entre QA, HML y PRD es `ENVIRONMENT` (`qa`, `homologacion` o `prd`), `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`/`DJANGO_CSRF_TRUSTED_ORIGINS`, las credenciales `DATABASE_*` y las claves de integraciones (GESTIONAR, RENAPER, Sentry, SMTP, web push). Ninguno de esos valores se versiona.
 - En deploys versionados se usa el `.env` normal del servidor/checkout; `ENVIRONMENT` define si el runtime queda en `qa`, `homologacion` o `prd`.
-- Comandos de referencia:
-  - Base comun: `docker compose -f docker-compose.deploy.yml up -d --build`
-  - Produccion con worker extra: `docker compose -f docker-compose.deploy.yml -f docker-compose.produccion.yml up -d --build`
-- En produccion, `docker-compose.produccion.yml` agrega `bulk_credentials_worker` con `DJANGO_SERVICE_ROLE=bulk_credentials_worker` para que el worker quede levantado junto con la aplicacion web.
+- `docker-compose.yml` (desarrollo) queda en la raiz; los overrides viven en `docker/compose/`. Cuando el primer `-f` es un override, siempre pasar `--project-directory` con la raiz del checkout: de ahi salen las rutas relativas (`.env`, `./media`, `./static_root`, el build context) y el nombre del proyecto Compose, que define los nombres de contenedores y volumenes. `deploy_refresh.sh`, `deploy_verified.sh` y `deploy.yml` ya lo hacen.
+- Comandos de referencia (desde la raiz del checkout):
+  - Base comun: `docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml up -d --build`
+  - Produccion con worker extra: `docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml -f docker/compose/docker-compose.produccion.yml up -d --build`
+- En produccion, `docker/compose/docker-compose.produccion.yml` agrega `bulk_credentials_worker` con `DJANGO_SERVICE_ROLE=bulk_credentials_worker` para que el worker quede levantado junto con la aplicacion web.
 - En los deploys versionados no se levanta `mysql` dentro de Compose; la base se resuelve por variables `DATABASE_*` definidas en el `.env` del host.
 
 ## Actualizacion operativa desde Git
-- Script versionado: `scripts/operacion/deploy_refresh.sh`.
+- Script versionado: `src/scripts/operacion/deploy_refresh.sh`.
 - Uso recomendado desde la raiz del checkout del servidor:
-  - `bash scripts/operacion/deploy_refresh.sh --dry-run`
-  - `bash scripts/operacion/deploy_refresh.sh`
+  - `bash src/scripts/operacion/deploy_refresh.sh --dry-run`
+  - `bash src/scripts/operacion/deploy_refresh.sh`
 - Si el servidor tambien tiene `SISOC-Mobile` como checkout hermano en `../SISOC-Mobile`, usar:
-  - `bash scripts/operacion/deploy_refresh.sh --with-mobile --dry-run`
-  - `bash scripts/operacion/deploy_refresh.sh --with-mobile`
+  - `bash src/scripts/operacion/deploy_refresh.sh --with-mobile --dry-run`
+  - `bash src/scripts/operacion/deploy_refresh.sh --with-mobile`
 - Si `SISOC-Mobile` esta en otra ruta, indicar el path:
-  - `bash scripts/operacion/deploy_refresh.sh --with-mobile --mobile-dir /srv/sisoc/SISOC-Mobile`
+  - `bash src/scripts/operacion/deploy_refresh.sh --with-mobile --mobile-dir /srv/sisoc/SISOC-Mobile`
 - El script lee `ENVIRONMENT` desde `.env` y elige automaticamente:
   - `dev|local|development`: `docker-compose.yml`
-  - `qa|homologacion`: `docker-compose.deploy.yml`
-  - `prd|prod|production`: `docker-compose.deploy.yml` + `docker-compose.produccion.yml`
-- Con `--with-mobile`, SISOC delega el deploy mobile ejecutando `bash ../SISOC-Mobile/scripts/operacion/deploy_refresh.sh` y le reenvia las opciones compatibles (`--dry-run`, `--yes`, `--volumes`, `--skip-pull`, `--allow-dirty`, `--allow-branch-mismatch`).
+  - `qa|homologacion`: `docker/compose/docker-compose.deploy.yml`
+  - `prd|prod|production`: `docker/compose/docker-compose.deploy.yml` + `docker/compose/docker-compose.produccion.yml`
+- Con `--with-mobile`, SISOC delega el deploy mobile ejecutando `bash ../SISOC-Mobile/scripts/operacion/deploy_refresh.sh` y le reenvia las opciones compatibles (`--dry-run`, `--yes`, `--volumes`, `--skip-pull`, `--allow-dirty`, `--allow-branch-mismatch`). Esta ruta pertenece al repositorio externo SISOC-Mobile, no a `src/scripts/` de SISOC.
 - Antes de actualizar mobile, valida que `origin` sea
   `dsocial118/SISOC-Mobile` y normaliza las variantes SSH conocidas a
   `https://github.com/dsocial118/SISOC-Mobile.git`. Un origin distinto bloquea
@@ -52,7 +53,7 @@
   5. actualiza la branch actual con `git pull --ff-only`;
   6. levanta con `docker compose up -d --build`;
   7. muestra `docker compose ps`.
-- Por seguridad, no borra volumenes por defecto. Si se necesita un apagado con `--volumes`, usar `bash scripts/operacion/deploy_refresh.sh --volumes` y confirmar explicitamente. En entornos con MySQL local, `--volumes` puede borrar datos persistentes.
+- Por seguridad, no borra volumenes por defecto. Si se necesita un apagado con `--volumes`, usar `bash src/scripts/operacion/deploy_refresh.sh --volumes` y confirmar explicitamente. En entornos con MySQL local, `--volumes` puede borrar datos persistentes.
 - Si el servidor usa una branch distinta a la esperada para el `ENVIRONMENT`, corregir la branch antes de desplegar o usar `--allow-branch-mismatch` solo con una decision operativa explicita.
 
 ## NGINX de produccion

@@ -76,5 +76,5 @@ jobs:
                         );
                         return;
                       }
-                      const { run } = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/release_orchestrator.js`);
+                      const { run } = require(`${process.env.GITHUB_WORKSPACE}/src/scripts/github/release_orchestrator.js`);
                       await run({ github, context, core });

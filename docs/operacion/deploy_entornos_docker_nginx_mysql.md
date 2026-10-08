@@ -29,14 +29,14 @@ Convenciones recomendadas:
 
 | Entorno      | Branch         | `ENVIRONMENT`  | Compose app                                                   |
 | ------------ | -------------- | -------------- | ------------------------------------------------------------- |
-| QA           | `development`  | `qa`           | `docker-compose.deploy.yml`                                   |
-| Homologacion | `homologacion` | `homologacion` | `docker-compose.deploy.yml` + `docker-compose.produccion.yml` |
-| Produccion   | `main`         | `prd`          | `docker-compose.deploy.yml` + `docker-compose.produccion.yml` |
+| QA           | `development`  | `qa`           | `docker/compose/docker-compose.deploy.yml`                                   |
+| Homologacion | `homologacion` | `homologacion` | `docker/compose/docker-compose.deploy.yml` + `docker/compose/docker-compose.produccion.yml` |
+| Produccion   | `main`         | `prd`          | `docker/compose/docker-compose.deploy.yml` + `docker/compose/docker-compose.produccion.yml` |
 
 No usar para deploy:
 
 - `docker-compose.yml`: reservado para local/dev.
-- `docker-compose.site.yml`: no forma parte del camino operativo base.
+- `docker-compose.site.yml`: no forma parte del camino operativo base. <!-- docs-paths: referencia histórica -->
 
 Para que los comandos sean copiables, definir variables en cada sesion SSH:
 
@@ -334,16 +334,16 @@ set -Eeuo pipefail
 cd "$APP_ROOT"
 
 if [ "${USE_PROD_OVERRIDE:-false}" = "true" ]; then
-  sudo -H -u "$APP_USER" docker compose \
-    -f docker-compose.deploy.yml \
-    -f docker-compose.produccion.yml \
+  sudo -H -u "$APP_USER" docker compose --project-directory . \
+    -f docker/compose/docker-compose.deploy.yml \
+    -f docker/compose/docker-compose.produccion.yml \
     up -d --build
 else
-  sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml up -d --build
+  sudo -H -u "$APP_USER" docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml up -d --build
 fi
 
-sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml ps
-sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml logs --tail 200 django
+sudo -H -u "$APP_USER" docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml ps
+sudo -H -u "$APP_USER" docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml logs --tail 200 django
 ```
 
 ### J. SITE: configurar NGINX
@@ -431,9 +431,9 @@ curl -i --max-time 20 http://127.0.0.1:8001/health/
 curl -i --max-time 20 http://127.0.0.1/health/
 curl -i --max-time 20 "$PUBLIC_ORIGIN/health/"
 
-sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml ps
+sudo -H -u "$APP_USER" docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml ps
 
-if sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml logs --tail 500 django | grep -iE 'traceback|exception|\[error\]|error 1045|error 2061'; then
+if sudo -H -u "$APP_USER" docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml logs --tail 500 django | grep -iE 'traceback|exception|\[error\]|error 1045|error 2061'; then
   echo "django_log_scan=found"
   exit 1
 else
@@ -752,16 +752,16 @@ QA:
 
 ```bash
 cd "$APP_ROOT"
-sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml up -d --build
+sudo -H -u "$APP_USER" docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml up -d --build
 ```
 
 Produccion, si corresponde el worker adicional:
 
 ```bash
 cd "$APP_ROOT"
-sudo -H -u "$APP_USER" docker compose \
-  -f docker-compose.deploy.yml \
-  -f docker-compose.produccion.yml \
+sudo -H -u "$APP_USER" docker compose --project-directory . \
+  -f docker/compose/docker-compose.deploy.yml \
+  -f docker/compose/docker-compose.produccion.yml \
   up -d --build
 ```
 
@@ -769,13 +769,13 @@ Homologacion usa el mismo compose de workers que produccion y
 `deploy_refresh.sh` refresca SISOC-Mobile automaticamente:
 
 ```bash
-bash scripts/operacion/deploy_refresh.sh
+bash src/scripts/operacion/deploy_refresh.sh
 ```
 
 Revisar logs hasta Gunicorn:
 
 ```bash
-sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml logs -f --tail 200 django
+sudo -H -u "$APP_USER" docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml logs -f --tail 200 django
 ```
 
 Salida esperada:
@@ -885,8 +885,8 @@ En SITE:
 curl -i "http://127.0.0.1:8001/health/"
 curl -i "http://127.0.0.1/health/"
 curl -i "$PUBLIC_ORIGIN/health/"
-sudo -H -u "$APP_USER" docker compose -f "$APP_ROOT/docker-compose.deploy.yml" ps
-sudo -H -u "$APP_USER" docker compose -f "$APP_ROOT/docker-compose.deploy.yml" logs --tail 500 django | grep -iE 'traceback|exception|\[error\]' || true
+sudo -H -u "$APP_USER" docker compose --project-directory "$APP_ROOT" -f "$APP_ROOT/docker/compose/docker-compose.deploy.yml" ps
+sudo -H -u "$APP_USER" docker compose --project-directory "$APP_ROOT" -f "$APP_ROOT/docker/compose/docker-compose.deploy.yml" logs --tail 500 django | grep -iE 'traceback|exception|\[error\]' || true
 sudo nginx -t
 sudo tail -n 100 "/var/log/nginx/sisoc-$ENV_NAME.error.log"
 ```
@@ -919,7 +919,7 @@ Reiniciar app:
 
 ```bash
 cd "$APP_ROOT"
-sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml restart django
+sudo -H -u "$APP_USER" docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml restart django
 ```
 
 Deploy de nuevo commit:
@@ -927,14 +927,14 @@ Deploy de nuevo commit:
 ```bash
 cd "$APP_ROOT"
 sudo -H -u "$APP_USER" git pull --ff-only origin "$GIT_BRANCH"
-sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml up -d --build
+sudo -H -u "$APP_USER" docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml up -d --build
 ```
 
 Logs:
 
 ```bash
 cd "$APP_ROOT"
-sudo -H -u "$APP_USER" docker compose -f docker-compose.deploy.yml logs -f --tail 200 django
+sudo -H -u "$APP_USER" docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml logs -f --tail 200 django
 sudo tail -f "/var/log/nginx/sisoc-$ENV_NAME.error.log"
 ```
 

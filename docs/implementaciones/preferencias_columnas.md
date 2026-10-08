@@ -22,9 +22,9 @@ Este archivo describe cómo reutilizar el sistema de preferencias de columnas (c
 
 ## 3. Template y modal
 
-1. Reutilizar `templates/components/data_table.html` (o `comedor_table.html`). Ya incluyen:
+1. Reutilizar `src/backends/kernel/templates/components/data_table.html` (o `comedor_table.html`). Ya incluyen:
    - El modal con `data-column-config`, la lista ordenable de columnas y los botones “Configurar columnas”.
-   - La inclusión de `{% json_script column_config.script_id %}` y el script `static/custom/js/column_config.js`.
+   - La inclusión de `{% json_script column_config.script_id %}` y el script `src/backends/kernel/static/custom/js/column_config.js`.
 2. Si creás un markup propio:
    - Asegurate de que el wrapper tenga `data-column-config`.
    - Introducir un `<script type="application/json" id="{{ column_config.script_id }}">{{ column_config|json_script }}</script>` o usar `json_script`.

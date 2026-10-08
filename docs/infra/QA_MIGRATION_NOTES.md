@@ -25,7 +25,7 @@ Estas notas no autorizan una migracion. La fuente canonica confirmada es
 | `.env` | Transferencia por canal seguro fuera de Git; validar owner/modo 600 en destino. No copiar a backups versionados. |
 | Base MySQL autoritativa | Dump consistente o mecanismo acordado con Infra, solo tras confirmar host/schema y aprobar la operacion. |
 | NGINX | Respaldar `nginx.conf`, `sites-available/staging.conf`, symlinks habilitados y metadata. |
-| Cron efectivo | Exportar root/`sisoc-deploy` con redaccion de secretos; no alcanza con `scripts/crontab`. |
+| Cron efectivo | Exportar root/`sisoc-deploy` con redaccion de secretos; no alcanza con `src/scripts/crontab`. |
 | Configuracion systemd | Runner y cualquier unidad SISOC/custom; preferir reinstalar runner. |
 | Logs | Solo si hay requisito operativo, legal o de auditoria; no son necesarios para arrancar. |
 | Evidencia de versiones | SO, Docker, Compose, NGINX, MySQL, imagen Python y commit desplegado. |
@@ -164,8 +164,8 @@ git -C "$APP_ROOT" branch --show-current
 git -C "$APP_ROOT" rev-parse HEAD
 GIT_OPTIONAL_LOCKS=0 git -C "$APP_ROOT" status --short --branch
 
-docker compose -f "$APP_ROOT/docker-compose.deploy.yml" ps
-docker compose -f "$APP_ROOT/docker-compose.deploy.yml" logs --tail 200 django
+docker compose --project-directory "$APP_ROOT" -f "$APP_ROOT/docker/compose/docker-compose.deploy.yml" ps
+docker compose --project-directory "$APP_ROOT" -f "$APP_ROOT/docker/compose/docker-compose.deploy.yml" logs --tail 200 django
 
 nginx -t
 ss -lntup
@@ -177,7 +177,7 @@ El endpoint `/health/` solo devuelve OK y no demuestra conectividad DB. Agregar 
 prueba explicita de conexion, de solo lectura y sin credenciales visibles:
 
 ```bash
-docker compose -f "$APP_ROOT/docker-compose.deploy.yml" exec -T django \
+docker compose --project-directory "$APP_ROOT" -f "$APP_ROOT/docker/compose/docker-compose.deploy.yml" exec -T django \
   python manage.py shell -c \
   "from django.db import connection; connection.ensure_connection(); print(connection.vendor)"
 ```

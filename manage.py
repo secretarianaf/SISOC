@@ -4,6 +4,17 @@ import logging
 import os
 import sys
 
+# El código vive en src/backends/ (config, kernel y verticales). config agrega
+# el kernel y cada vertical al sys.path antes de cargar el settings, que puede
+# vivir en un backend (p. ej. dispositivos_runtime.settings).
+BACKENDS_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "src", "backends"
+)
+if BACKENDS_DIR not in sys.path:
+    sys.path.insert(0, BACKENDS_DIR)
+
+import config  # noqa: E402,F401  pylint: disable=unused-import,wrong-import-position
+
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("django")

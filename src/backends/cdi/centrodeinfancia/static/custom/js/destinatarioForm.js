@@ -182,10 +182,14 @@ function toggleVisible(el, show) {
     if (el) el.classList.toggle("d-none", !show);
 }
 
-function getCheckedValues(containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return [];
-    return [...container.querySelectorAll("input[type=checkbox]:checked")].map(cb => cb.value);
+// Se busca por name y no por el id del contenedor: crispy envuelve los
+// multiselect en "div_id_<campo>" y no genera ningún elemento "id_<campo>".
+function getCheckboxes(fieldName) {
+    return document.querySelectorAll(`input[type=checkbox][name="${fieldName}"]`);
+}
+
+function getCheckedValues(fieldName) {
+    return [...getCheckboxes(fieldName)].filter(cb => cb.checked).map(cb => cb.value);
 }
 
 function initializeConditionalFields() {
@@ -196,7 +200,7 @@ function initializeConditionalFields() {
     const rowPuebloOrig     = document.getElementById("row-pueblo-originario");
 
     function applyPuebloOriginario() {
-        const vals = getCheckedValues("id_grupo_pertenencia");
+        const vals = getCheckedValues("grupo_pertenencia");
         toggleVisible(rowPuebloOrig, vals.includes("indigena"));
     }
 
@@ -219,7 +223,7 @@ function initializeConditionalFields() {
     if (tieneDiscapSelect) tieneDiscapSelect.addEventListener("change", applyDiscapacidad);
     if (posee_cudSelect)   posee_cudSelect.addEventListener("change",   applyNumeroCud);
 
-    document.querySelectorAll("#id_grupo_pertenencia input[type=checkbox]").forEach(function (cb) {
+    getCheckboxes("grupo_pertenencia").forEach(function (cb) {
         cb.addEventListener("change", applyPuebloOriginario);
     });
 }

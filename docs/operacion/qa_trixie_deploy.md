@@ -14,10 +14,10 @@ Para otros entornos, usar primero la plantilla generica `docs/operacion/deploy_e
 QA despliega la branch `development` y usa solo:
 
 ```bash
-docker compose -f docker-compose.deploy.yml up -d --build
+docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml up -d --build
 ```
 
-No usar `docker-compose.site.yml` ni `docker-compose.yml` para deploy. `docker-compose.yml` queda reservado para local/dev.
+No usar `docker-compose.site.yml` ni `docker-compose.yml` para deploy. `docker-compose.yml` queda reservado para local/dev. <!-- docs-paths: referencia histórica -->
 
 ## Reglas de seguridad
 
@@ -63,7 +63,7 @@ sudo docker ps --filter name=sisoc-mysql
 sudo docker logs --tail 80 sisoc-mysql
 ```
 
-Si hay contenedores levantados por `docker-compose.yml` o `docker-compose.site.yml`, bajarlos sin volumenes:
+Si hay contenedores levantados por `docker-compose.yml` o `docker-compose.site.yml`, bajarlos sin volumenes: <!-- docs-paths: referencia histórica -->
 
 ```bash
 cd /opt/sisoc/SISOC
@@ -279,8 +279,8 @@ Levantar SISOC:
 
 ```bash
 cd /opt/sisoc/SISOC
-sudo -H -u sisoc-deploy docker compose -f docker-compose.deploy.yml up -d --build
-sudo -H -u sisoc-deploy docker compose -f docker-compose.deploy.yml logs -f django
+sudo -H -u sisoc-deploy docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml up -d --build
+sudo -H -u sisoc-deploy docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml logs -f django
 ```
 
 El log esperado termina con Gunicorn:
@@ -404,7 +404,7 @@ Reiniciar app:
 
 ```bash
 cd /opt/sisoc/SISOC
-sudo -H -u sisoc-deploy docker compose -f docker-compose.deploy.yml restart django
+sudo -H -u sisoc-deploy docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml restart django
 ```
 
 Rebuild por nuevo deploy:
@@ -412,14 +412,14 @@ Rebuild por nuevo deploy:
 ```bash
 cd /opt/sisoc/SISOC
 sudo -H -u sisoc-deploy git pull --ff-only origin development
-sudo -H -u sisoc-deploy docker compose -f docker-compose.deploy.yml up -d --build
+sudo -H -u sisoc-deploy docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml up -d --build
 ```
 
 Ver logs:
 
 ```bash
 cd /opt/sisoc/SISOC
-sudo -H -u sisoc-deploy docker compose -f docker-compose.deploy.yml logs -f --tail 200 django
+sudo -H -u sisoc-deploy docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml logs -f --tail 200 django
 sudo tail -f /var/log/nginx/sisoc-qa.error.log
 ```
 

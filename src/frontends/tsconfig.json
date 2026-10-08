@@ -1,0 +1,21 @@
+{
+  "//": [
+    "Config raiz del workspace: es la que usa `npm run typecheck`, el chequeo",
+    "que pide frontend_v2.md (seccion 10) en CI.",
+    "",
+    "Incluye apps y packages juntos a proposito. Los packages internos se",
+    "consumen como codigo fuente del workspace (su `main` apunta a src/*.ts),",
+    "asi que sin esto un error de tipos en @sisoc/ui o @sisoc/api solo",
+    "aparecia si alguna app importaba justo ese archivo."
+  ],
+  "extends": "./config/tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["vite/client", "vitest/globals", "node"]
+  },
+  "include": [
+    "apps/*/src",
+    "apps/*/vite.config.ts",
+    "packages/*/src"
+  ]
+}

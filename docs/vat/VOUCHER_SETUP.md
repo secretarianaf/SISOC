@@ -12,7 +12,7 @@ Las pantallas de asistencia, el detalle de comisión y sus exportaciones muestra
 La clasificación representa la elegibilidad vigente, no el medio de pago
 histórico. Por eso una inscripción que originalmente usó voucher se muestra
 como `Sin Plan` si el voucher se agotó, venció o fue cancelado. El cálculo se
-centraliza en `VAT/services/tipo_alumno_service.py` para evitar que la UI y los
+centraliza en `src/backends/vat/VAT/services/tipo_alumno_service.py` para evitar que la UI y los
 exports apliquen criterios distintos.
 
 ### Rechazo y reaceptación de inscripciones
@@ -27,8 +27,8 @@ cuando existe un débito histórico vigente para ella. Este ciclo es idempotente
 el saldo debe representar el estado final de la inscripción sin duplicar cargos
 ni compensaciones. No cambia el tratamiento de vouchers vencidos o cancelados.
 
-Las regresiones de ambos contratos están en `VAT/test_tipo_alumno.py`,
-`VAT/tests.py` y los tests de servicios de inscripción.
+Las regresiones de ambos contratos están en `src/backends/vat/VAT/test_tipo_alumno.py`,
+`src/backends/vat/VAT/tests.py` y los tests de servicios de inscripción.
 
 ## Descripción General
 

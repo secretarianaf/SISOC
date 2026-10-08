@@ -59,8 +59,8 @@ debe respaldarse antes de aplicar la migración.
 
 ## Puntos de entrada
 
-- Modelos y servicios: `pas/models.py`, `pas/services/informe_service.py`.
-- Formularios, vistas y rutas: `pas/forms.py`, `pas/views.py`, `pas/urls.py`.
-- Contrato de datos entre dominios: `pas/api.py`.
-- Contexto histórico: `docs/registro/cambios/2026-09-01-nucleo-pas.md` y
-  `docs/registro/cambios/2026-09-01-informes-pas.md`.
+- Modelos y servicios: `src/backends/pas/pas/models.py`, `src/backends/pas/pas/services/informe_service.py`.
+- Formularios, vistas y rutas: `src/backends/pas/pas/forms.py`, `src/backends/pas/pas/views.py`, `src/backends/pas/pas/urls.py`.
+- Contrato de datos entre dominios: `src/backends/pas/pas/api.py`.
+- Contexto histórico: `docs/registro/cambios/2026-T3/2026-09-01-nucleo-pas.md` y
+  `docs/registro/cambios/2026-T3/2026-09-01-informes-pas.md`.

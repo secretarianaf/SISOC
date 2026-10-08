@@ -8,7 +8,7 @@ Definir el flujo de integración para que una aplicación externa, como Mi Argen
 
 Colección Postman de referencia:
 
-- `postman/VAT Web - Mi Argentina Inscripcion.postman_collection.json`
+- `docs/api/postman/SISOC APIs.postman_collection.json`, carpeta `VAT`
 
 ## Principio de integración
 
@@ -195,7 +195,7 @@ Uso:
 
 ## Flujo probado
 
-Se dejó cubierto por tests automáticos en `VAT/tests.py` un recorrido completo:
+Se dejó cubierto por tests automáticos en `src/backends/vat/VAT/tests.py` un recorrido completo:
 
 1. listado de centros,
 2. listado de cursos por centro,

@@ -15,7 +15,7 @@ migracion. La fuente canonica es `hml-old`; AWS queda fuera de alcance.
 | NGINX | Config, dominios, aliases, proxies, logs y metadata de certificados |
 | TLS | Emitir/instalar certificado valido; no reutilizar una key sin politica aprobada |
 | Runner | Reinstalar y registrar runner nuevo con label `sisoc-homologacion` |
-| Cron/timers | Exportar estado efectivo root/`sisoc-deploy`, no solo `scripts/crontab` |
+| Cron/timers | Exportar estado efectivo root/`sisoc-deploy`, no solo `src/scripts/crontab` |
 | Logs | Copiar solo si existe requisito legal u operativo |
 
 No copiar como runtime por defecto:
@@ -74,7 +74,7 @@ systemctl is-active docker containerd nginx cron
 git -C "$APP_ROOT" branch --show-current
 git -C "$APP_ROOT" rev-parse HEAD
 GIT_OPTIONAL_LOCKS=0 git -C "$APP_ROOT" status --short --branch
-docker compose -f "$APP_ROOT/docker-compose.deploy.yml" ps
+docker compose --project-directory "$APP_ROOT" -f "$APP_ROOT/docker/compose/docker-compose.deploy.yml" ps
 docker compose -f "$MOBILE_ROOT/compose.prod.yaml" ps
 nginx -t
 ss -lntup

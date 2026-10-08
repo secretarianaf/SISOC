@@ -293,7 +293,7 @@ Trabajo en rama `feature/modulo-encuestas` (creada desde `development`). Fases p
 ### Fase 9 — Testing y cierre
 - Cobertura de reglas críticas: anonimato + obligatoriedad (regla 1), bloqueo de edición con ronda abierta (regla 17), cola de pendientes (regla 12/criterio 12), aplicación en caliente de segmentación (regla 12).
 - Revisar `docs/ia/TESTING.md` y `SECURITY_AI.md` antes de cerrar.
-- Actualizar `AGENT_REPO_MAP.md` si la nueva app cambia hotspots de navegación relevantes (por `AGENTS.md`).
+- Actualizar `docs/ia/AGENT_REPO_MAP.md` si la nueva app cambia hotspots de navegación relevantes (por `AGENTS.md`).
 - Preparar PR desde `feature/modulo-encuestas` hacia `development`.
 
 ### Orden de dependencias entre fases

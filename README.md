@@ -1,7 +1,7 @@
 # SISOC
 
 Sistema de gestión basado en **Django** y **MySQL**, desplegable mediante **Docker** y **Docker Compose**.  
-Cada aplicación del repositorio representa un módulo funcional (ej. `comedores`, `relevamientos`, `users`).
+Cada aplicación del repositorio representa un módulo funcional (ej. `comedores`, `relevamientos`, `users`). El código vive en `src/` (ver [Estructura de Carpetas](#estructura-de-carpetas)).
 
 > Documentación organizada: ver `docs/indice.md` para el índice y referencias detalladas.
 > Setup y operación: `docs/operacion/instalacion.md`, `docs/operacion/infraestructura.md` y `docs/operacion/comandos_administracion.md`.
@@ -31,7 +31,7 @@ Cada aplicación del repositorio representa un módulo funcional (ej. `comedores
 - **Backend**: Django  
 - **Base de datos**: MySQL  
 - **Contenedores**: Docker + Docker Compose  
-- **Front-end**: HTML, CSS, JS, Bootstrap  
+- **Front-end**: templates Django (HTML, CSS, JS, Bootstrap) y front v2 en React (`src/frontends/`)  
 - **Tests**: pytest  
 
 ---
@@ -48,15 +48,16 @@ Cada aplicación del repositorio representa un módulo funcional (ej. `comedores
 
 1. Clonar el repositorio:
    ```bash
-   git clone https://github.com/dsocial118/SISOC.git
+   git clone https://github.com/secretarianaf/SISOC.git
    cd SISOC
    ```
-2. (Opcional) Colocar un dump en `./docker/mysql/local-dump.sql`.  
-3. Levantar servicios:
+2. Copiar `.env.example` a `.env` y completar la configuración local según `docs/operacion/instalacion.md`.
+3. (Opcional) Colocar un dump en `./docker/mysql/local-dump.sql`.
+4. Levantar servicios:
    ```bash
    docker compose up
    ```
-4. Acceder a la app en [http://localhost:8001](http://localhost:8001) (valor por defecto de `DOCKER_DJANGO_PORT_FORWARD` en `.env.example`).
+5. Acceder a la app en [http://localhost:8001](http://localhost:8001) (valor por defecto de `DOCKER_DJANGO_PORT_FORWARD` en `.env.example`).
 
 `docker-compose.yml` queda reservado para desarrollo/local y es el único compose versionado que levanta `mysql`.
 
@@ -76,13 +77,29 @@ docker compose up
 
 ## Estructura de Carpetas
 
-- **`config/`** → configuración global de Django  
-- **`docker/`** → archivos de contenedores  
-- **`apps/`** (`comedores/`, `relevamientos/`, `users/`, …) → aplicaciones Django  
-- **`templates/`** y **`**/templates/`** → plantillas HTML  
-- **`templates/components`** → Componentes HTML  
-- **`static/`** → archivos estáticos (CSS, JS, imágenes)  
-- **`**/tests/`** → pruebas automáticas  
+La raíz tiene solo configuración de herramientas, puntos de entrada y carpetas con un propósito.
+Decisión: `docs/registro/decisiones/2026-10-02-estructura-src-backends.md`.
+
+| Carpeta | Propósito |
+|-|-|
+| `src/backends/` | Código Django. `src/backends/config/` es el proyecto (settings, urls, registro de backends); `src/backends/kernel/` es el código común con templates, estáticos y tests compartidos; `src/backends/sisoc_core/` es el cluster de Comedores y servicios del core. Cada vertical (pas, cdi, cdf, celiaquia, dispositivos, vat, vpsl) tiene su carpeta y contenedor. Guía: `docs/desarrollo/verticales_independientes.md`. |
+| `src/frontends/` | Workspace npm del Front v2: `apps/<modulo>/`, `packages/`, opciones base de TypeScript en `src/frontends/config/` y `e2e/`. Las entradas de npm, TypeScript, ESLint, Vitest y Playwright permanecen en su ubicación convencional para conservar su detección automática. |
+| `docs/` | Documentación: índice en `docs/indice.md`, registros por trimestre en `docs/registro/`. |
+| `docker/` | Dockerfile, entrypoint y `docker/compose/` con los overrides de deploy, Celery, Codex y fronts. |
+| `requirements/` | Dependencias Python (`all.txt` = base + dev + test). |
+| `src/scripts/` | Scripts operativos (`operacion/`, `infra/`), de CI (`ci/`), de arquitectura, frontend (`src/scripts/frontends/`), GitHub (`github/`) y agentes (`ai/`). |
+| `.github/` | Workflows de CI/CD y plantillas. |
+| `.agents/skills/` | Skills del repo (fuente). `.claude/skills/` es una copia generada (`docs/ia/SKILLS.md`). |
+| `.claude/`, `.codex/` | Configuración de Claude Code y Codex. |
+| `.vscode/` | Configuración compartida de VS Code y del debugger. |
+
+Archivos de la raíz: `manage.py` (entrada Django), `conftest.py` (fixtures globales de pytest),
+`docker-compose.yml` (stack local), `README.md`, `AGENTS.md` y `CLAUDE.md` (guías para agentes),
+`CHANGELOG.md` y la configuración de herramientas (`pytest.ini`, `pyproject.toml`, `.pylintrc`,
+`.importlinter*`, `.djlintrc`, `.gitleaks*`, `.editorconfig`, …).
+
+Dentro de cada app Django: `<app>/templates/`, `<app>/static/custom/` (estáticos de un solo vertical, con la
+misma ruta pública `custom/...`) y `tests/`.
 
 ---
 
@@ -91,8 +108,8 @@ docker compose up
 Antes de un **Pull Request**, ejecutar:
 
 ```bash
-# Linter (Se debe resolver a mano)
-pylint **/*.py --rcfile=.pylintrc
+# Linter (Se debe resolver a mano; el comando exacto del CI está en .github/workflows/lint.yml)
+pylint src/backends/config/*.py src/backends/*/*/*.py --rcfile=.pylintrc
 
 # Formateo Python (Automagico)
 black .
@@ -119,7 +136,7 @@ docker compose exec django pytest -n auto
 
 Referencia CI actual:
 - `tests.yml` corre `smoke`, `migrations_check` y, en PRs, `pytest` con cobertura + `mysql_compat`.
-- `lint.yml` corre `encoding_check`, `black`, `djlint` y `pylint`.
+- `lint.yml` corre `encoding_check`, `skills_sync`, `black`, `djlint` y `pylint`.
 
 ---
 

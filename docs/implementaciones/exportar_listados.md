@@ -1,6 +1,6 @@
 # Exportar listados a CSV
 
-Este documento resume cómo reutilizar la infraestructura de exportación CSV existente (`core.mixins.CSVExportMixin`, `core.services.csv_export` y `static/custom/js/export_helper.js`) en nuevas vistas.
+Este documento resume cómo reutilizar la infraestructura de exportación CSV existente (`core.mixins.CSVExportMixin`, `core.services.csv_export` y `src/backends/kernel/static/custom/js/export_helper.js`) en nuevas vistas.
 
 ## Contrato de codificación
 
@@ -15,7 +15,7 @@ Este documento resume cómo reutilizar la infraestructura de exportación CSV ex
 
 ## 1. Backend
 
-1. Crear una vista basada en `View` que herede de `CSVExportMixin`. Las vistas de ejemplo (`acompanamientos/views_export.py`, `users/views_export.py`, `comedores/views/export.py`, etc.) siguen el patrón:
+1. Crear una vista basada en `View` que herede de `CSVExportMixin`. Las vistas de ejemplo (`src/backends/sisoc_core/acompanamientos/views_export.py`, `src/backends/sisoc_core/usuarios/views_export.py`, `src/backends/sisoc_core/comedores/views/export.py`, etc.) siguen el patrón:
    - Definir `export_filename` (ej. `"listado_comedores.csv"`).
    - Sobrescribir `get_export_columns()` para devolver una lista `[("Encabezado","campo.path"), …]`; podés usar `build_export_columns(catalog, active_keys)` para sincronizarla con el catálogo de columnas.
    - En `get()`, obtener el queryset filtrado (reutilizando los mismos filtros que el listado si hace falta) y retornar `self.export_csv(queryset)`.
@@ -24,8 +24,8 @@ Este documento resume cómo reutilizar la infraestructura de exportación CSV ex
 
 ## 2. Frontend
 
-1. El botón contiene la clase `.btn-export-csv` y el atributo `data-url="{{ export_url }}"`. El template `templates/components/search_bar.html` ya lo incluye cuando se pasa `export_url`.
-2. Asegurate de cargar `static/custom/js/export_helper.js` en el template del listado. Este script:
+1. El botón contiene la clase `.btn-export-csv` y el atributo `data-url="{{ export_url }}"`. El template `src/backends/kernel/templates/components/search_bar.html` ya lo incluye cuando se pasa `export_url`.
+2. Asegurate de cargar `src/backends/kernel/static/custom/js/export_helper.js` en el template del listado. Este script:
    - Captura los parámetros actuales de la URL (`filters`, `page`, etc.).
    - Detecta el orden actual de la tabla leyendo `th.sortable.sort-asc`/`sort-desc` (opcional, depende de `listSort.js`).
    - Combina todo en la URL del endpoint de exportación respetando el mismo origen y esquema.

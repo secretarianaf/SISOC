@@ -18,7 +18,10 @@ from centrodeinfancia.models import (
 from centrodeinfancia.services_reportes import (
     COLUMNAS_CDI,
     COLUMNAS_NOMINA,
+    COLUMNAS_NOMINA_REDUCIDO,
     COLUMNAS_TRABAJADORES,
+    COLUMNAS_TRABAJADORES_REDUCIDO,
+    REPORTE_REDUCIDO,
     generar_reporte_cdi_xlsx,
 )
 from ciudadanos.models import Ciudadano
@@ -479,3 +482,104 @@ def test_la_previsualizacion_acompana_el_filtro_de_provincia(client, datos):
 
     assert _total(sin_filtro, "Centros de Desarrollo Infantil") == 3
     assert _total(con_filtro, "Centros de Desarrollo Infantil") == 1
+
+
+# ─────────────────────────────────────────────────────────
+# Variantes completa / reducida
+# ─────────────────────────────────────────────────────────
+
+
+def _usuario_reportes_con_grupo(username, grupo):
+    user = _dar_permiso_reportes(_usuario(username))
+    user.groups.add(Group.objects.get_or_create(name=grupo)[0])
+    return User.objects.get(pk=user.pk)
+
+
+def _descargar(client, user, **params):
+    client.force_login(user)
+    respuesta = client.get(reverse("centrodeinfancia_reportes_descargar"), params)
+    assert respuesta.status_code == 200
+    return respuesta
+
+
+@pytest.mark.django_db
+def test_variante_reducida_acota_trabajadores_y_nomina(datos):
+    hojas = _hojas(
+        generar_reporte_cdi_xlsx(
+            _usuario("reportes-reducido", superuser=True),
+            variante=REPORTE_REDUCIDO,
+        )
+    )
+
+    assert hojas["CDI"][0] == list(COLUMNAS_CDI)
+    assert hojas["Trabajadores"][0] == list(COLUMNAS_TRABAJADORES_REDUCIDO)
+    assert hojas["Nomina"][0] == list(COLUMNAS_NOMINA_REDUCIDO)
+    assert len(COLUMNAS_TRABAJADORES_REDUCIDO) == 24
+    assert len(COLUMNAS_NOMINA_REDUCIDO) == 22
+    # El diccionario no describe columnas que el archivo no trae.
+    columnas_publicadas = {
+        "CDI": set(COLUMNAS_CDI),
+        "Trabajadores": set(COLUMNAS_TRABAJADORES_REDUCIDO),
+        "Nomina": set(COLUMNAS_NOMINA_REDUCIDO),
+    }
+    assert all(
+        fila[1] in columnas_publicadas[fila[0]] for fila in hojas["Diccionario"][1:]
+    )
+    assert dict(hojas["Metadatos"][1:])["Variante"].startswith("Reducido")
+
+
+def test_las_columnas_reducidas_existen_en_el_reporte_completo():
+    assert set(COLUMNAS_TRABAJADORES_REDUCIDO) <= set(COLUMNAS_TRABAJADORES)
+    assert set(COLUMNAS_NOMINA_REDUCIDO) <= set(COLUMNAS_NOMINA)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "grupo",
+    [UserGroups.SIMEPI_ADMINISTRADOR, UserGroups.SIMEPI_EQUIPO_NACIONAL],
+)
+def test_roles_nacionales_eligen_entre_completo_y_reducido(client, datos, grupo):
+    user = _usuario_reportes_con_grupo(f"reportes-nacional-{grupo}", grupo)
+
+    por_defecto = _hojas(_descargar(client, user).content)
+    reducido = _descargar(client, user, variante="reducido")
+    pantalla = client.get(reverse("centrodeinfancia_reportes"))
+
+    assert por_defecto["Nomina"][0] == list(COLUMNAS_NOMINA)
+    assert _hojas(reducido.content)["Nomina"][0] == list(COLUMNAS_NOMINA_REDUCIDO)
+    assert "reporte-cdi-reducido-" in reducido["Content-Disposition"]
+    assert [codigo for codigo, _ in pantalla.context["variantes"]] == [
+        "completo",
+        "reducido",
+    ]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "grupo",
+    [
+        UserGroups.SIMEPI_ANALISTA_DATOS,
+        UserGroups.SIMEPI_AUDITORIA,
+        UserGroups.SIMEPI_EGP,
+    ],
+)
+def test_resto_de_roles_solo_descarga_el_reducido(client, datos, grupo):
+    user = _usuario_reportes_con_grupo(f"reportes-reducido-{grupo}", grupo)
+
+    # Pedir el completo por URL no lo habilita.
+    hojas = _hojas(_descargar(client, user, variante="completo").content)
+    pantalla = client.get(reverse("centrodeinfancia_reportes"))
+
+    assert hojas["Trabajadores"][0] == list(COLUMNAS_TRABAJADORES_REDUCIDO)
+    assert hojas["Nomina"][0] == list(COLUMNAS_NOMINA_REDUCIDO)
+    assert [codigo for codigo, _ in pantalla.context["variantes"]] == ["reducido"]
+    assert 'id="variante"' not in pantalla.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_superusuario_descarga_el_completo_por_defecto(client, datos):
+    hojas = _hojas(
+        _descargar(client, _usuario("reportes-super-default", superuser=True)).content
+    )
+
+    assert hojas["Trabajadores"][0] == list(COLUMNAS_TRABAJADORES)

@@ -40,6 +40,19 @@
                             </button>
                         </div>
                     {% endif %}
+                    {% if variantes|length > 1 %}
+                        <div class="col-12 col-md-4">
+                            <label for="variante" class="form-label">Tipo de reporte</label>
+                            <select class="form-select" id="variante" name="variante">
+                                {% for codigo, etiqueta in variantes %}<option value="{{ codigo }}">{{ etiqueta }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    {% else %}
+                        {% for codigo, etiqueta in variantes %}
+                            <input type="hidden" name="variante" value="{{ codigo }}" />
+                            <p class="col-12 text-muted mb-0">Reporte disponible: {{ etiqueta }}.</p>
+                        {% endfor %}
+                    {% endif %}
                     <div class="col-12 col-md-auto">
                         <button type="submit"
                                 class="btn btn-primary"

@@ -22,18 +22,30 @@ concurrency:
 
 jobs:
     generate_pr_artifacts:
-        if: github.event.sender.login != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref != 'development' && github.event.pull_request.head.ref != 'homologacion' && github.event.pull_request.head.ref != 'main'
+        # El commit de artefactos vuelve a disparar este workflow: no regenerar
+        # cuando el push lo hizo la automatizacion.
+        if: github.event.sender.login != 'github-actions[bot]' && github.event.sender.login != 'secretarianaf-sisoc-release[bot]' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref != 'development' && github.event.pull_request.head.ref != 'homologacion' && github.event.pull_request.head.ref != 'main'
         permissions:
             contents: write
             pull-requests: read
         runs-on: ubuntu-latest
 
         steps:
+            # Un push con GITHUB_TOKEN deja los workflows del commit nuevo en
+            # action_required y el PR bloqueado; el de la GitHub App los corre.
+            - name: Generar token temporal de GitHub App
+              id: app-token
+              uses: actions/create-github-app-token@v3
+              with:
+                  client-id: ${{ vars.RELEASE_AUTOMATION_APP_CLIENT_ID }}
+                  private-key: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY }}
+
             - name: Checkout branch del PR
               uses: actions/checkout@v6.0.2
               with:
                   ref: ${{ github.event.pull_request.head.ref }}
                   fetch-depth: 0
+                  token: ${{ steps.app-token.outputs.token }}
 
             - name: Set up Python
               uses: actions/setup-python@v6.2.0
@@ -56,8 +68,8 @@ jobs:
                     exit 0
                   fi
 
-                  git config user.name "github-actions[bot]"
-                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git config user.name "secretarianaf-sisoc-release[bot]"
+                  git config user.email "332544933+secretarianaf-sisoc-release[bot]@users.noreply.github.com"
 
                   git add docs/registro/prs docs/registro/releases/pending CHANGELOG.md
                   git commit -m "docs(ci): actualizar artefactos automaticos del PR #${{ github.event.pull_request.number }}"

@@ -272,6 +272,21 @@ Este rollback cubre checkout y contenedores, no revierte migraciones de base de
 datos. Para una migracion incompatible se mantiene el procedimiento de
 `docs/operacion/infraestructura.md`, seccion 9, incluyendo el backup acordado.
 
+## Limpieza de imagenes
+
+Cada deploy construye imagenes `sisoc/*` con el SHA en el tag. Despues de un
+deploy verificado, `deploy_verified.sh` borra las `sisoc/*` que ya no sirven y
+la cache de build de mas de 3 dias. Conserva:
+
+- las imagenes que usa algun contenedor, aunque este detenido (el deploy
+  selectivo deja servicios con imagenes de un SHA anterior);
+- las de la revision desplegada y la anterior.
+
+No toca volumenes, contenedores ni imagenes que no sean `sisoc/*`. Si el deploy
+falla, no limpia. Si la limpieza falla, el deploy queda verificado igual, con un
+warning en el log y en el Summary. Un rollback que necesite una imagen borrada
+la reconstruye.
+
 ## Fallas frecuentes
 
 | Sintoma | Causa probable | Accion |

@@ -151,6 +151,27 @@ use_rollback_compose() {
   COMPOSE=(docker compose "${COMPOSE_FILES[@]}" --project-directory "$ROOT_DIR")
 }
 
+# Cada deploy deja imágenes sisoc/* con el SHA en el tag y llenan el disco.
+# Después de un deploy verificado se borran las que ya no sirven: se conservan
+# las que usa algún contenedor (también detenido) y las de la revisión
+# desplegada y la anterior. Si el rollback necesita otra, la reconstruye.
+cleanup_old_images() {
+  local in_use image image_id
+  in_use="$(docker ps -aq | xargs -r docker inspect --format '{{.Image}}' | sort -u)" \
+    || return 1
+  while read -r image image_id; do
+    [[ -n "$image" ]] || continue
+    case "$image" in
+      *:"$EXPECTED_REVISION" | *:"$previous_revision") continue ;;
+    esac
+    grep -qxF "$image_id" <<<"$in_use" && continue
+    docker image rm "$image" >/dev/null \
+      || echo "::warning::No se pudo borrar la imagen $image."
+  done < <(docker image ls --no-trunc --filter 'reference=sisoc/*' \
+    --format '{{.Repository}}:{{.Tag}} {{.ID}}')
+  docker builder prune -f --filter until=72h >/dev/null
+}
+
 rollback_on_exit() {
   local failed_status=$?
   trap - EXIT
@@ -213,6 +234,13 @@ deployed_revision="$(git -C "$ROOT_DIR" rev-parse HEAD)"
   || fail "El checkout final no coincide con la revision esperada."
 deployment_started=0
 
+# El deploy ya quedó verificado: un error de limpieza solo avisa.
+image_cleanup="OK"
+if ! cleanup_old_images; then
+  image_cleanup="con errores"
+  echo "::warning::La limpieza de imagenes viejas no termino; el deploy quedo verificado."
+fi
+
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   {
     echo "### Deploy $DEPLOY_ENVIRONMENT verificado"
@@ -220,6 +248,7 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     echo "- Migraciones: \`migrate --check\` OK"
     echo "- Health: \`$(basename "$HEALTH_SCRIPT")\` OK"
     echo "- Rollback automatico: revision previa \`$previous_revision\`"
+    echo "- Limpieza de imagenes viejas: $image_cleanup"
   } >> "$GITHUB_STEP_SUMMARY"
 fi
 

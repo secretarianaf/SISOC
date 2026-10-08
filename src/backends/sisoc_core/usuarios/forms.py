@@ -1453,7 +1453,14 @@ class UserCreationForm(
 ):
     password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
     acceso_web = forms.BooleanField(
-        required=False, initial=True, label="Acceso SISOC web"
+        required=False,
+        initial=True,
+        label="Acceso SISOC web",
+        help_text=(
+            "Los representantes y coordinadores PWA y los relevadores DataCalle "
+            "se crean sin acceso web; se puede habilitar después editando el "
+            "usuario."
+        ),
     )
     acceso_siis = forms.BooleanField(required=False, label="Acceso SIIS")
     dni = forms.CharField(max_length=16, required=False, label="DNI")
@@ -1578,10 +1585,26 @@ class UserCreationForm(
         cleaned = self._clean_territorial_comedor_fields(cleaned)
         cleaned = self._clean_relevador_calle_fields(cleaned)
         cleaned = self._validar_provincia_unica_coordinador(cleaned)
+        cleaned = self._clean_acceso_web_solo_app(cleaned)
         # SIMEPI - EGP se valida al final, después de DataCalle: el alcance
         # efectivo de un usuario de DataCalle lo decide el rol, así que correr
         # antes miraba el panel y no lo que realmente se va a guardar.
         return self._validate_simepi_egp_scope(cleaned)
+
+    @staticmethod
+    def _clean_acceso_web_solo_app(cleaned):
+        """El alta de un usuario de app no habilita la web aunque quede tildada.
+
+        La casilla arranca marcada y antes de ``acceso_web`` estos usuarios no
+        entraban a la web. Habilitarla después, al editar, sigue siendo posible.
+        """
+        if (
+            cleaned.get("es_representante_pwa")
+            or cleaned.get("es_coordinador_equipo_tecnico_pwa")
+            or cleaned.get("datacalle_rol") == Profile.DataCalleRol.ENTREVISTADOR
+        ):
+            cleaned["acceso_web"] = False
+        return cleaned
 
     def save(self, commit=True):
         with transaction.atomic():

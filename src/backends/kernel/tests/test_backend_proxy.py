@@ -12,6 +12,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
+from django.http import Http404
 from django.test import RequestFactory, override_settings
 
 from core.backend_proxy import _forward, backend_proxy_urlpatterns
@@ -85,6 +86,26 @@ def test_reenvia_metodo_path_query_y_body(backend):
     assert datos["method"] == "POST"
     assert datos["path"] == "/dispositivos/crear?x=1"
     assert datos["body_len"] > 0
+
+
+@pytest.mark.parametrize(
+    "path", ["dispositivos/../admin/", "dispositivos/./x", "dispositivos/.."]
+)
+def test_rechaza_segmentos_punto_para_no_salir_del_prefijo(backend, path):
+    """``%2e%2e`` llega decodificado como ``..`` en ``path``."""
+    request = RequestFactory().get("/dispositivos/%2e%2e/admin/")
+
+    with pytest.raises(Http404):
+        _forward(request, backend, path)
+
+
+def test_reenvia_el_path_codificado(backend):
+    request = RequestFactory().get("/dispositivos/a%3Fb%23c%25d%20e/")
+
+    response = _forward(request, backend, "dispositivos/a?b#c%d e/ñ")
+    datos = json.loads(_contenido(response))
+
+    assert datos["path"] == "/dispositivos/a%3Fb%23c%25d%20e/%C3%B1"
 
 
 def test_body_mayor_al_limite_de_memoria_se_reenvia_completo(backend):

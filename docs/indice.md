@@ -19,6 +19,7 @@
 - `docs/operacion/backends_por_servicio.md`: backends por vertical (core + proxy + backend), deploy selectivo, migrador único y cómo sumar un backend.
 - `docs/operacion/ver_para_ser_libre_react.md`: arquitectura, arranque, rutas y límites del MVP React/Django de VPSL.
 - `docs/operacion/deploy_automatizado.md`: runbook de deploy por GitHub Actions, runners self-hosted, promoción y rollback por tag estable.
+- `docs/operacion/rollback_release_modularizacion.md`: volver a `main` desde el release de la modularización (#2665): revertir migraciones antes que el código.
 - `src/scripts/infra/install_qa_pwa_nginx.sh`: preflight e instalación transaccional de las rutas PWA en el Nginx HTTP de QA.
 - `docs/registro/cambios/2026-T3/2026-09-21-deploy-independiente-satelites.md`: separación de deploys PWA, promoción secuencial y rollback automático.
 - `docs/operacion/deploy_entornos_docker_nginx_mysql.md`: runbook generico parametrizado para replicar entornos SISOC con Docker Compose, MySQL dedicado y NGINX.

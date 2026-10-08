@@ -16,11 +16,16 @@ head, el PR queda `BLOCKED` aunque todo haya pasado en el commit anterior
   la misma que usan `deploy.yml` y `release-orchestrator.yml`) y hace checkout
   y push con él. El commit queda a nombre de
   `secretarianaf-sisoc-release[bot]`.
+- El job `autofix` de `lint.yml` (`chore(ci): autoformatear PR`) tenía el
+  mismo problema y usa el mismo token. No hace falta cortar el disparo: la
+  corrida siguiente no encuentra cambios y no commitea.
 - El job no corre cuando el push lo hizo esa App, igual que con
   `github-actions[bot]`: si no, cada commit de artefactos dispararía otro.
 
 Evidencia: el commit de esa App en #2624 (`dc9dffeb0`) disparó sus workflows
-sin aprobación manual.
+sin aprobación manual, y en #2668 el commit de artefactos ya hecho con la App
+(`67957666e`) corrió sus workflows solo; el de `autofix`, todavía con
+`GITHUB_TOKEN`, quedó en `action_required`.
 
 ## Trade-off
 

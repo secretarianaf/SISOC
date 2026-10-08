@@ -39,12 +39,23 @@ jobs:
                       echo "enabled=false" >> "$GITHUB_OUTPUT"
                   fi
 
+            # Un push con GITHUB_TOKEN deja los workflows del commit nuevo en
+            # action_required y el PR bloqueado; el de la GitHub App los corre.
+            - name: Generar token temporal de GitHub App
+              id: app-token
+              if: steps.eligibility.outputs.enabled == 'true'
+              uses: actions/create-github-app-token@v3
+              with:
+                  client-id: ${{ vars.RELEASE_AUTOMATION_APP_CLIENT_ID }}
+                  private-key: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY }}
+
             - name: Checkout PR head branch
               if: steps.eligibility.outputs.enabled == 'true'
               uses: actions/checkout@v6.0.2
               with:
                   fetch-depth: 0
                   ref: ${{ github.event.pull_request.head.ref }}
+                  token: ${{ steps.app-token.outputs.token }}
 
             - name: Omitir autofix para ramas protegidas o externas
               if: steps.eligibility.outputs.enabled != 'true'
@@ -135,8 +146,8 @@ jobs:
                       exit 0
                   fi
 
-                  git config user.name "github-actions[bot]"
-                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git config user.name "secretarianaf-sisoc-release[bot]"
+                  git config user.email "332544933+secretarianaf-sisoc-release[bot]@users.noreply.github.com"
                   git add -A
                   git commit -m "chore(ci): autoformatear PR"
                   git push origin HEAD:${{ github.event.pull_request.head.ref }}

@@ -56,6 +56,14 @@ class ValidacionCoordinadorMixin(models.Model):
     ]
     # Estados desde los que un envío del territorial vuelve a pedir validación.
     ESTADOS_VALIDACION_REENVIABLES = (None, "", ESTADO_VALIDACION_A_SUBSANAR)
+    # Campos que solo escribe la revisión del coordinador, nunca el PATCH de la
+    # app: si no, el territorial podía mandar "Validado" y autovalidarse (#2643).
+    CAMPOS_REVISION_COORDINADOR = (
+        "estado_validacion",
+        "observaciones_coordinador",
+        "coordinador",
+        "fecha_revision_coordinador",
+    )
 
     estado_validacion = models.CharField(
         max_length=64,
@@ -1214,6 +1222,19 @@ class Relevamiento(
                 )
 
     @property
+    def sin_cargar(self):
+        """Asignado y todavía no finalizado en la app: el coordinador no tiene
+        nada que revisar, y un ``Validado`` es definitivo (#2643).
+
+        Los finalizados sin estado de validación (históricos de GESTIONAR,
+        anteriores al circuito) siguen siendo revisables.
+        """
+        return self.estado_validacion in (None, "") and self.estado not in (
+            "Finalizado",
+            "Finalizado/Excepciones",
+        )
+
+    @property
     def primer_seguimiento(self):
         """La instancia nº1 del ciclo de seguimientos, o ``None``.
 
@@ -1922,6 +1943,14 @@ class PrimerSeguimiento(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.
     @property
     def cod_pnud(self):
         return getattr(self.id_relevamiento.comedor, "codigo_de_proyecto", None)
+
+    @property
+    def sin_cargar(self):
+        """Asignado y todavía no completado en la app: el coordinador no tiene
+        nada que revisar, y un ``Validado`` es definitivo (#2643)."""
+        return (
+            self.estado_validacion in (None, "") and self.estado != self.ESTADO_COMPLETO
+        )
 
     def delete(self, *args, **kwargs):
         # Los bloques cuelgan de un OneToOneField PROTECT del lado del

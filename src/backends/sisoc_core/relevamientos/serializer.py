@@ -343,6 +343,8 @@ class RelevamientoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Relevamiento
         exclude = ("numero_if",)
+        # La revisión es del coordinador (web): la app no puede escribirla (#2643).
+        read_only_fields = Relevamiento.CAMPOS_REVISION_COORDINADOR
 
 
 class PrimerSeguimientoSerializer(serializers.ModelSerializer):
@@ -1143,3 +1145,5 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
     class Meta:
         model = PrimerSeguimiento
         fields = "__all__"
+        # La revisión es del coordinador (web): la app no puede escribirla (#2643).
+        read_only_fields = PrimerSeguimiento.CAMPOS_REVISION_COORDINADOR

@@ -725,7 +725,9 @@ def test_detalle_primer_seguimiento_renderiza_bloques(auth_client, comedor):
     assert "Servicios básicos" in content
     assert "Cierre" in content
     assert "Sin novedades" in content
-    assert "prest-1" in content
+    assert "Almuerzo" in content
+    # El id que genera la app es interno y no se muestra (#2643).
+    assert "prest-1" not in content
 
 
 def test_detalle_primer_seguimiento_skippea_bloques_vacios(auth_client, comedor):

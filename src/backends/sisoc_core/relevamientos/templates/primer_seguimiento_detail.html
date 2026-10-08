@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static %}
+{% load static image_tags %}
 {% block title %}
     {{ seguimiento.get_tipo_display }} - Comedor: {{ comedor.nombre }}
 {% endblock title %}
@@ -64,7 +64,7 @@
                 <a href="{% url 'seguimiento_editar' comedor.id relevamiento.id seguimiento.id %}"
                    class="btn btn-primary mr-1">Editar</a>
             {% endif %}
-            {% if perms.relevamientos.review_relevamiento and not seguimiento.esta_validado %}
+            {% if perms.relevamientos.review_relevamiento and not seguimiento.esta_validado and not seguimiento.sin_cargar %}
                 <button type="button"
                         class="btn btn-warning mr-1"
                         data-bs-toggle="modal"
@@ -83,7 +83,7 @@
             <div class="mt-1">{{ seguimiento.observaciones_coordinador|linebreaksbr }}</div>
         </div>
     {% endif %}
-    {% if perms.relevamientos.review_relevamiento and not seguimiento.esta_validado %}
+    {% if perms.relevamientos.review_relevamiento and not seguimiento.esta_validado and not seguimiento.sin_cargar %}
         <div class="modal fade"
              id="modalRevisionSeguimiento"
              tabindex="-1"
@@ -183,7 +183,11 @@
                             <div class="nav-item col-md-4 col-sm-6 d-flex mb-2">
                                 <div class="comment-text d-flex flex-column text-sm">
                                     {{ campo.label }}
-                                    <span class="username fw-bold fs-5">{{ campo.value }}</span>
+                                    {% if campo.es_imagen %}
+                                        {% optimized_image campo.value campo.label css_class="img-fluid my-1 rounded object-fit-contain" %}
+                                    {% else %}
+                                        <span class="username fw-bold fs-5">{{ campo.value }}</span>
+                                    {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
@@ -204,7 +208,6 @@
                     <table class="table table-striped mb-0">
                         <thead>
                             <tr>
-                                <th>ID prestación</th>
                                 <th>Días</th>
                                 <th>Tipo</th>
                                 <th>AP presencial</th>
@@ -216,7 +219,6 @@
                         <tbody>
                             {% for prestacion in prestaciones %}
                                 <tr>
-                                    <td>{{ prestacion.id_prestacion_seg | default_if_none:"-" }}</td>
                                     <td>{{ prestacion.dias_prestacion | default_if_none:"-" }}</td>
                                     <td>{{ prestacion.tipo_prestacion | default_if_none:"-" }}</td>
                                     <td>{{ prestacion.ap_presencial | default_if_none:"-" }}</td>
@@ -241,7 +243,6 @@
                     <table class="table table-striped mb-0">
                         <thead>
                             <tr>
-                                <th>ID item</th>
                                 <th>Ingrediente</th>
                                 <th>Unidad de medida</th>
                                 <th>Cantidad</th>
@@ -250,7 +251,6 @@
                         <tbody>
                             {% for item in receta_items %}
                                 <tr>
-                                    <td>{{ item.id_item_receta | default_if_none:"-" }}</td>
                                     <td>{{ item.ingrediente | default_if_none:"-" }}</td>
                                     <td>{{ item.unidad_medida | default_if_none:"-" }}</td>
                                     <td>{{ item.cantidad_medida | default_if_none:"-" }}</td>

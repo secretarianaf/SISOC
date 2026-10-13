@@ -29,6 +29,7 @@ from relevamientos.models import (
     Relevamiento,
     SeguimientoPnud,
 )
+from relevamientos import pdf_oficial
 from relevamientos.pdf_service import RelevamientoPdfService
 from relevamientos.service import RelevamientoService
 from relevamientos.views.seguimiento_helpers import (
@@ -194,6 +195,8 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
 
         # Optimización: Usar self.object en lugar de nueva query
         relevamiento = self.object
+        # #2630: si Gestionar subió su PDF oficial, la descarga es ese.
+        context["pdf_oficial"] = pdf_oficial.documento_de(relevamiento=relevamiento)
 
         timeline_qs = (
             Relevamiento.objects.filter(comedor=relevamiento.comedor)
@@ -378,10 +381,33 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
         )
 
 
+def _respuesta_pdf(pdf, nombre):
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="{nombre}"'
+    return response
+
+
 class RelevamientoPdfView(RelevamientoDetailView):
-    """PDF del relevamiento con las mismas secciones que el detalle (#2630)."""
+    """PDF del relevamiento (#2630).
+
+    Si Gestionar subió el PDF oficial del formulario, se descarga ese (es el
+    mismo que el territorial ve en la app). Si no (relevamientos anteriores o
+    cargados en SISOC), SISOC arma el suyo con las secciones del detalle.
+    """
 
     template_name = "relevamiento_pdf.html"
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        oficial = pdf_oficial.PdfOficialGestionar.objects.filter(
+            relevamiento=self.object
+        ).first()
+        if oficial is None:
+            return super().get(request, *args, **kwargs)
+        return _respuesta_pdf(
+            pdf_oficial.pdf_de(oficial, request.build_absolute_uri("/")),
+            f"relevamiento-{self.object.id}.pdf",
+        )
 
     def render_to_response(self, context, **response_kwargs):
         html = render_to_string(self.template_name, context, request=self.request)
@@ -545,6 +571,8 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
         seguimiento = self.object
         context["relevamiento"] = seguimiento.id_relevamiento
         context["comedor"] = seguimiento.id_relevamiento.comedor
+        # #2630: PDF oficial que subió Gestionar al enviar la instancia.
+        context["pdf_oficial"] = pdf_oficial.documento_de(seguimiento=seguimiento)
         # Navegación entre las instancias del mismo ciclo.
         context["instancias"] = list(
             PrimerSeguimiento.objects.filter(
@@ -571,6 +599,25 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
             list(menu.receta_items.all()) if menu is not None else []
         )
         return context
+
+
+class SeguimientoPdfView(LoginRequiredMixin, View):
+    """PDF oficial de una instancia de seguimiento, el que subió Gestionar (#2630).
+
+    SISOC no tiene una versión propia del PDF del seguimiento: sin documento
+    de la app (instancias enviadas antes de 1.1.62 o cargadas en SISOC) es 404
+    y el detalle no muestra el botón.
+    """
+
+    def get(self, request, **kwargs):
+        seguimiento = resolver_seguimiento(self.kwargs)
+        oficial = get_object_or_404(
+            pdf_oficial.PdfOficialGestionar, seguimiento=seguimiento
+        )
+        return _respuesta_pdf(
+            pdf_oficial.pdf_de(oficial, request.build_absolute_uri("/")),
+            f"seguimiento-{seguimiento.id}.pdf",
+        )
 
 
 class RelevamientoRevisionCoordinadorView(LoginRequiredMixin, View):

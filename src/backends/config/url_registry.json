@@ -650,9 +650,19 @@
   "regex": "^api/relevamiento\\Z"
  },
  {
+  "name": "api_relevamiento_pdf_oficial",
+  "namespace": "",
+  "regex": "^api/relevamiento/pdf\\-oficial\\Z"
+ },
+ {
   "name": "api_seguimiento",
   "namespace": "",
   "regex": "^api/relevamiento/seguimiento\\Z"
+ },
+ {
+  "name": "api_seguimiento_pdf_oficial",
+  "namespace": "",
+  "regex": "^api/relevamiento/seguimiento/pdf\\-oficial\\Z"
  },
  {
   "name": "api_sincronizar_territoriales",
@@ -3223,6 +3233,11 @@
   "name": "seguimiento_eliminar",
   "namespace": "",
   "regex": "^comedores/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimiento/(?P<pk>[0-9]+)/eliminar\\Z"
+ },
+ {
+  "name": "seguimiento_pdf",
+  "namespace": "",
+  "regex": "^comedores/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimiento/(?P<pk>[0-9]+)/pdf\\Z"
  },
  {
   "name": "seguimiento_pnud_detalle",

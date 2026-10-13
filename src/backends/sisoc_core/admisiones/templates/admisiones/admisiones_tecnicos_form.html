@@ -728,7 +728,7 @@
                                 {% include "admisiones/includes/documento_row.html" %}
                             {% endfor %}
                             {% if not admision.enviada_a_archivo and admision.estado_admision != "descartado" %}
-                                {% if request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                                {% if request.user|puede_gestionar_documentacion_admision %}
                                     <tr id="fila-agregar-documento"
                                         data-documentacion-id=""
                                         data-archivo-id="">

@@ -662,6 +662,14 @@ def _build_admision_detail_context_payload(
 @login_required
 @require_POST
 def subir_archivo_admision(request, admision_id, documentacion_id):
+    if AdmisionService.es_abogado_dupla_sin_rol_tecnico(request.user):
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "El abogado de la dupla no puede adjuntar archivos.",
+            },
+            status=403,
+        )
     archivo = request.FILES.get("archivo")
     if not archivo:
         return JsonResponse(
@@ -703,6 +711,15 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
     if request.method != "DELETE":
         return JsonResponse(
             {"success": False, "error": "Metodo no permitido"}, status=405
+        )
+
+    if AdmisionService.es_abogado_dupla_sin_rol_tecnico(request.user):
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "El abogado de la dupla no puede eliminar archivos.",
+            },
+            status=403,
         )
 
     admision = get_object_or_404(Admision, pk=admision_id)
@@ -997,6 +1014,14 @@ def actualizar_num_expediente(request):
 @login_required
 @require_POST
 def crear_documento_personalizado(request, admision_id):
+    if AdmisionService.es_abogado_dupla_sin_rol_tecnico(request.user):
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "El abogado de la dupla no puede adjuntar archivos.",
+            },
+            status=403,
+        )
     archivo = request.FILES.get("archivo")
     nombre = request.POST.get("nombre", "")
 

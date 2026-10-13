@@ -3220,6 +3220,11 @@
   "regex": "^comedores/(?P<comedor_pk>[0-9]+)/seguimiento\\-pnud/(?P<pk>[0-9]+)\\Z"
  },
  {
+  "name": "seguimiento_pnud_docx",
+  "namespace": "",
+  "regex": "^comedores/(?P<comedor_pk>[0-9]+)/seguimiento\\-pnud/(?P<pk>[0-9]+)/docx\\Z"
+ },
+ {
   "name": "seguimiento_pnud_revision_coordinador",
   "namespace": "",
   "regex": "^comedores/(?P<comedor_pk>[0-9]+)/seguimiento\\-pnud/(?P<pk>[0-9]+)/revision\\Z"

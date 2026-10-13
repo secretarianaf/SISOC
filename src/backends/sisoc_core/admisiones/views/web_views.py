@@ -334,7 +334,7 @@ def previsualizar_informe_tecnico_template(request, tipo, pk):
 
 @login_required
 def descargar_informe_tecnico_para_gde(request, tipo, pk):
-    """Descarga el último DOCX del informe con tablas aptas para GDE."""
+    """Descarga una copia DOC del último Word validado, preparada para GDE."""
 
     informe = get_object_or_404(
         InformeTecnico.objects.select_related("admision", "admision__comedor"),
@@ -361,21 +361,19 @@ def descargar_informe_tecnico_para_gde(request, tipo, pk):
         messages.error(request, "No hay un DOCX disponible para preparar para GDE.")
         return redirect("admisiones_tecnicos_editar", pk=informe.admision_id)
 
-    docx_content = GdeDocxService.generar(
+    doc_content = GdeDocxService.generar_doc(
         archivo_docx,
         informe_pk=informe.pk,
     )
-    if docx_content is None:
-        messages.error(request, "No se pudo preparar el DOCX para GDE.")
+    if doc_content is None:
+        messages.error(request, "No se pudo preparar el archivo DOC para GDE.")
         return redirect("admisiones_tecnicos_editar", pk=informe.admision_id)
 
     return FileResponse(
-        docx_content,
+        doc_content,
         as_attachment=True,
-        filename=f"informe-{informe.pk}-para-gde.docx",
-        content_type=(
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        ),
+        filename=f"informe-{informe.pk}-para-gde.doc",
+        content_type="application/msword",
     )
 
 

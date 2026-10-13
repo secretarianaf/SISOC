@@ -18,6 +18,12 @@ mandan; el resto del PATCH se procesa igual. El bloque `comedor` de
 `PATCH /api/relevamiento` (inicial) no cambia. PNUD y actas ya no tocaban el
 legajo.
 
+El bloque `referente` tampoco modifica un referente vinculado al legajo de
+ningún comedor. Si el DNI resuelve uno de esos registros y llegan datos de la
+visita, se guarda una copia para el seguimiento, conservando los campos no
+enviados. La relación del comedor y el referente original quedan intactos;
+los reenvíos por DNI reutilizan la copia si sigue sin estar vinculada a un legajo.
+
 Del lado de la app (`secretarianaf/Gestionar`, 1.1.60) el seguimiento deja de
 mandar el bloque: el domicilio se muestra y sale en el PDF, pero no viaja.
 
@@ -40,3 +46,11 @@ del modelo `Comedor`; todos `allow_null`.
   cambia el comedor; el detalle y la zona exponen la dirección completa.
 - `tests/test_huecos_seguimiento_n19.py`: el test del punto 8 de N19 ahora
   asegura lo contrario de lo que aseguraba (el bloque se acepta y no se aplica).
+- Regresión del referente compartido en ambos PATCH de seguimiento: conserva
+  el legajo propio o de otro comedor, los campos omitidos y una sola copia
+  durante el reenvío.
+
+Validación de la corrección del referente (13/10): los cuatro casos HTTP fallan
+con el método anterior; las tres suites focales pasan con la corrección
+(54 tests, SQLite en memoria). Black, Pylint con el plugin Django y el check de
+rutas de documentación pasan. No se verificó la app ni MySQL localmente.

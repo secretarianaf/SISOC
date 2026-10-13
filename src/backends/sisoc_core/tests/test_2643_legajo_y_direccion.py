@@ -12,7 +12,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
-from comedores.models import Comedor
+from comedores.models import Comedor, Referente
 from core.models import Provincia
 from relevamientos.models import PrimerSeguimiento, Relevamiento
 from users.models import TerritorialComedorProvincia
@@ -102,3 +102,62 @@ def test_la_api_territorial_expone_la_direccion_completa():
     en_zona = next(c for c in items if c["id"] == comedor.id)
     for campo, valor in DIRECCION.items():
         assert en_zona[campo] == valor, campo
+
+
+@pytest.mark.parametrize("url", [SEGUIMIENTO_URL, "/api/relevamiento/seguimiento"])
+@pytest.mark.parametrize("referente_de_otro_comedor", [False, True])
+def test_el_seguimiento_no_modifica_un_referente_del_legajo(
+    url, referente_de_otro_comedor
+):
+    provincia = Provincia.objects.create(nombre="Prov referente 2643")
+    referente = Referente.objects.create(
+        documento=30555777,
+        nombre="Ana",
+        apellido="Lopez",
+        mail="original@example.com",
+        celular=1144556677,
+        funcion="Coordinadora",
+    )
+    comedor = Comedor.objects.create(
+        nombre="Comedor referente 2643", provincia=provincia
+    )
+    legajo = comedor
+    if referente_de_otro_comedor:
+        legajo = Comedor.objects.create(
+            nombre="Otro comedor referente 2643", provincia=provincia
+        )
+    legajo.referente = referente
+    legajo.save(update_fields=["referente"])
+    user, client = _territorial("referente_2643", provincia)
+    relevamiento = Relevamiento.objects.create(
+        comedor=comedor, estado="Finalizado", territorial_user=user
+    )
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        referente=referente,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+
+    for mail in ("visita@example.com", "corregido@example.com"):
+        response = client.patch(
+            url,
+            {
+                "sisoc_id": seguimiento.id,
+                "referente": {"documento": "30.555.777", "mail": mail},
+            },
+            format="json",
+        )
+        assert response.status_code == 200, response.data
+        referente.refresh_from_db()
+        legajo.refresh_from_db()
+        assert legajo.referente_id == referente.id
+        assert referente.mail == "original@example.com"
+        seguimiento.refresh_from_db()
+        assert seguimiento.referente_id != referente.id
+        assert seguimiento.referente.mail == mail
+        assert seguimiento.referente.documento == referente.documento
+        assert seguimiento.referente.nombre == referente.nombre
+        assert seguimiento.referente.apellido == referente.apellido
+        assert seguimiento.referente.celular == referente.celular
+        assert seguimiento.referente.funcion == referente.funcion
+        assert Referente.objects.filter(documento=referente.documento).count() == 2

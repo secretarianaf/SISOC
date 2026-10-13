@@ -1112,6 +1112,10 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
             if referente is None:
                 return Referente.objects.create(documento=documento, **defaults)
             if defaults:
+                # El referente puede ser parte del legajo de cualquier comedor.
+                # Copiarlo conserva los datos omitidos sin modificar esa ficha.
+                if referente.comedor_set.exists():
+                    referente.pk = None
                 for field_name, value in defaults.items():
                     setattr(referente, field_name, value)
                 referente.save()

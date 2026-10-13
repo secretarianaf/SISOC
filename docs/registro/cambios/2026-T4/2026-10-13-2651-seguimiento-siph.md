@@ -44,6 +44,11 @@ docxtpl (`DocumentTemplateService` de admisiones). Solo el SIPH tiene
 plantilla: para los demás formularios PNUD la URL responde 404. El detalle
 muestra "Descargar docx" solo en el SIPH.
 
+La plantilla se regenera con
+`relevamientos/scripts/armar_plantilla_siph.py <docx del área> <destino>` (en el
+contenedor de Django) cuando el área cambie el formulario; también quita las
+fuentes embebidas del original (9 MB).
+
 ## `pnud_formularios.json`
 
 Se agrega únicamente la entrada `siph` generada por la app

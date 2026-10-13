@@ -1539,7 +1539,7 @@
                 <form class="modal-content" id="form-corregir-evaluacion" method="post">
                     {% csrf_token %}
                     <div class="modal-header">
-                        <h5 class="modal-title" id="modalCorregirEvaluacionLabel">Corregir evaluación final</h5>
+                        <h5 class="modal-title" id="modalCorregirEvaluacionLabel">Corregir evaluación técnica</h5>
                         <button type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
@@ -1551,15 +1551,15 @@
                             Estado actual: <strong id="corregir-estado-actual">—</strong>
                         </p>
                         <div class="mb-3">
-                            <label for="corregir-nuevo-estado" class="form-label">Nuevo estado *</label>
+                            <label for="corregir-nuevo-estado" class="form-label">Seleccione acción *</label>
                             <select id="corregir-nuevo-estado"
                                     name="nuevo_estado"
                                     class="form-select"
                                     required>
                                 <option value="">Seleccionar...</option>
-                                <option value="APROBADO">Aceptado</option>
-                                <option value="RECHAZADO">Rechazado</option>
-                                <option value="SUBSANADO">Subsanado</option>
+                                <option value="APROBADO">Validar</option>
+                                <option value="RECHAZADO">Rechazar</option>
+                                <option value="SUBSANADO">A Subsanar</option>
                             </select>
                         </div>
                         <div class="mb-2">

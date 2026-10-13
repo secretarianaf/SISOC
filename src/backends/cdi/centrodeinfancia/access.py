@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
+from django.contrib.auth.models import User
+from django.db.models import Exists, OuterRef, Q
 
 from core.constants import UserGroups
 from core.models import Provincia
@@ -384,8 +385,14 @@ def aplicar_scope_usuarios_cdi(queryset, user):
     """
     if not user or not getattr(user, "is_authenticated", False):
         return queryset.none()
-    if tiene_alcance_simepi_nacional(user):
+    if getattr(user, "is_superuser", False):
         return queryset
+    if tiene_alcance_simepi_nacional(user):
+        # La delegación ya limita los grupos del usuario a los de CDI, pero un
+        # usuario sin grupos la cumple igual (conjunto vacío). Esos no son de
+        # CDI: un rol SIMEPI nacional no los ve ni los administra.
+        tiene_grupos = User.groups.through.objects.filter(user_id=OuterRef("pk"))
+        return queryset.filter(Q(pk=user.pk) | Exists(tiene_grupos))
     if not _nombres_grupos_cdi(user):
         return queryset
 

@@ -51,10 +51,10 @@ def _reverse_optional(url_name):
 
 
 class UsuariosService:
-    USUARIOS_NACIONALES_CON_VISIBILIDAD_GLOBAL = (
-        UserGroups.SIMEPI_ADMINISTRADOR,
-        UserGroups.SIMEPI_EQUIPO_NACIONAL,
-    )
+    # SIMEPI - Administrador no está: ve y edita solo a los usuarios de CDI que
+    # puede administrar (su alcance delegable), así el listado y la edición
+    # coinciden.
+    USUARIOS_NACIONALES_CON_VISIBILIDAD_GLOBAL = (UserGroups.SIMEPI_EQUIPO_NACIONAL,)
 
     @staticmethod
     def get_pending_mobile_password_reset_count() -> int:

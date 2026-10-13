@@ -39,6 +39,7 @@ from centrodeinfancia.services_renaper_estado import (
     motivo_renaper_nino,
 )
 from ciudadanos.models import Ciudadano
+from core.constants import UserGroups
 from core.models import Provincia
 
 
@@ -257,6 +258,85 @@ COLUMNAS_NOMINA = (
     "renaper_nino_motivo",
 )
 
+# Variante reducida: la que descargan los roles CDI/SIMEPI sin acceso al
+# reporte completo. La hoja CDI no cambia; Trabajadores y Nómina se acotan a
+# estas columnas, en el orden del pedido de producto.
+COLUMNAS_TRABAJADORES_REDUCIDO = (
+    "id",
+    "cdi_id",
+    "cdi_nombre",
+    "nombre",
+    "apellido",
+    "telefono",
+    "rol",
+    "fecha_carga",
+    "subcomponente",
+    "funcion_pfpi",
+    "funcion_egp",
+    "funcion_cdi",
+    "sala_cdi",
+    "funcion_uaf",
+    "registro_tipo",
+    "fecha_actualizacion",
+    "fecha_nacimiento",
+    "dni",
+    "tipo_documentacion",
+    "sexo_registral",
+    "cuit",
+    "pais_nacimiento",
+    "nacionalidad_trabajador",
+    "email",
+)
+
+COLUMNAS_NOMINA_REDUCIDO = (
+    "id",
+    "cdi_id",
+    "cdi_nombre",
+    "fecha",
+    "estado",
+    "dni",
+    "apellido",
+    "nombre",
+    "fecha_nacimiento",
+    "sexo",
+    "nacionalidad",
+    "sala",
+    "provincia_domicilio",
+    "responsable_legal_1_apellido",
+    "responsable_legal_1_nombre",
+    "responsable_legal_1_dni",
+    "responsable_legal_1_fecha_nacimiento",
+    "responsable_legal_1_tipo_documentacion",
+    "responsable_legal_1_cuit",
+    "responsable_legal_1_pais_nacimiento",
+    "responsable_legal_1_nacionalidad",
+    "responsable_legal_1_sexo_registral",
+)
+
+REPORTE_COMPLETO = "completo"
+REPORTE_REDUCIDO = "reducido"
+VARIANTES_REPORTE = {
+    REPORTE_COMPLETO: "Completo (todos los campos)",
+    REPORTE_REDUCIDO: "Reducido (campos seleccionados)",
+}
+COLUMNAS_POR_VARIANTE = {
+    REPORTE_COMPLETO: {
+        "CDI": COLUMNAS_CDI,
+        "Trabajadores": COLUMNAS_TRABAJADORES,
+        "Nomina": COLUMNAS_NOMINA,
+    },
+    REPORTE_REDUCIDO: {
+        "CDI": COLUMNAS_CDI,
+        "Trabajadores": COLUMNAS_TRABAJADORES_REDUCIDO,
+        "Nomina": COLUMNAS_NOMINA_REDUCIDO,
+    },
+}
+# Únicos roles que pueden descargar el reporte completo (además del superusuario).
+GRUPOS_REPORTE_COMPLETO = (
+    UserGroups.SIMEPI_ADMINISTRADOR,
+    UserGroups.SIMEPI_EQUIPO_NACIONAL,
+)
+
 COLUMNAS_RESUMEN = ("seccion", "detalle", "cantidad")
 COLUMNAS_DICCIONARIO = ("hoja", "columna", "codigo", "etiqueta")
 COLUMNAS_METADATOS = ("dato", "valor")
@@ -462,10 +542,26 @@ def filas_resumen(user, provincia_id=None):
 
 
 _MODELOS_POR_HOJA = (
-    ("CDI", CentroDeInfancia, COLUMNAS_CDI, RUTAS_CDI),
-    ("Trabajadores", Trabajador, COLUMNAS_TRABAJADORES, RUTAS_TRABAJADORES),
-    ("Nomina", NominaCentroInfancia, COLUMNAS_NOMINA, RUTAS_NOMINA),
+    ("CDI", CentroDeInfancia, RUTAS_CDI),
+    ("Trabajadores", Trabajador, RUTAS_TRABAJADORES),
+    ("Nomina", NominaCentroInfancia, RUTAS_NOMINA),
 )
+
+
+def variantes_disponibles(user):
+    """Variantes del reporte que ``user`` puede descargar, la primera por defecto."""
+    if getattr(user, "is_superuser", False) or (
+        getattr(user, "is_authenticated", False)
+        and user.groups.filter(name__in=GRUPOS_REPORTE_COMPLETO).exists()
+    ):
+        return (REPORTE_COMPLETO, REPORTE_REDUCIDO)
+    return (REPORTE_REDUCIDO,)
+
+
+def resolver_variante(user, pedida=None):
+    """Variante a generar: la pedida si el usuario la tiene, si no la por defecto."""
+    disponibles = variantes_disponibles(user)
+    return pedida if pedida in disponibles else disponibles[0]
 
 
 def _opciones_de_columna(modelo, columna, rutas):
@@ -483,16 +579,16 @@ def _opciones_de_columna(modelo, columna, rutas):
     )
 
 
-def _filas_diccionario():
+def _filas_diccionario(variante=REPORTE_COMPLETO):
     filas = []
-    for hoja, modelo, columnas, rutas in _MODELOS_POR_HOJA:
-        for columna in columnas:
+    for hoja, modelo, rutas in _MODELOS_POR_HOJA:
+        for columna in COLUMNAS_POR_VARIANTE[variante][hoja]:
             for codigo, etiqueta in _opciones_de_columna(modelo, columna, rutas):
                 filas.append((hoja, columna, codigo, etiqueta))
     return filas
 
 
-def _filas_metadatos(user, totales, provincia_id=None):
+def _filas_metadatos(user, totales, provincia_id=None, variante=REPORTE_COMPLETO):
     provincia = (
         Provincia.objects.filter(pk=provincia_id).first()
         if str(provincia_id or "").isdecimal()
@@ -507,6 +603,7 @@ def _filas_metadatos(user, totales, provincia_id=None):
         ("Generado el", timezone.localtime().replace(tzinfo=None)),
         ("Generado por", getattr(user, "username", "") or "-"),
         ("Alcance", alcance),
+        ("Variante", VARIANTES_REPORTE[variante]),
         ("Filtro de provincia", provincia.nombre if provincia else "Sin filtro"),
         ("Filas hoja CDI", totales["cdi"]),
         ("Filas hoja Trabajadores", totales["trabajadores"]),
@@ -546,48 +643,61 @@ def _escribir_cdi(workbook, user, provincia_id=None):
     return _cerrar_hoja(hoja, COLUMNAS_CDI, filas)
 
 
-def _escribir_trabajadores(workbook, user, provincia_id=None):
-    hoja = _abrir_hoja(workbook, "Trabajadores", COLUMNAS_TRABAJADORES)
+def _escribir_trabajadores(
+    workbook, user, provincia_id=None, columnas=COLUMNAS_TRABAJADORES
+):
+    hoja = _abrir_hoja(workbook, "Trabajadores", columnas)
     filas = 0
     for trabajador in queryset_trabajadores(user, provincia_id).iterator(
         chunk_size=CHUNK_SIZE
     ):
-        hoja.append(_fila(trabajador, COLUMNAS_TRABAJADORES, RUTAS_TRABAJADORES))
+        hoja.append(_fila(trabajador, columnas, RUTAS_TRABAJADORES))
         filas += 1
-    return _cerrar_hoja(hoja, COLUMNAS_TRABAJADORES, filas)
+    return _cerrar_hoja(hoja, columnas, filas)
 
 
-def _escribir_nomina(workbook, user, provincia_id=None):
-    hoja = _abrir_hoja(workbook, "Nomina", COLUMNAS_NOMINA)
+def _escribir_nomina(workbook, user, provincia_id=None, columnas=COLUMNAS_NOMINA):
+    hoja = _abrir_hoja(workbook, "Nomina", columnas)
     queryset = queryset_nomina(user, provincia_id)
     adultos = _mapa_adultos(queryset)
     filas = 0
     for registro in queryset.iterator(chunk_size=CHUNK_SIZE):
         extra = estado_renaper_nomina(registro, adult_validation=adultos)
         extra["renaper_nino_motivo"] = motivo_renaper_nino(registro)
-        hoja.append(_fila(registro, COLUMNAS_NOMINA, RUTAS_NOMINA, extra))
+        hoja.append(_fila(registro, columnas, RUTAS_NOMINA, extra))
         filas += 1
-    return _cerrar_hoja(hoja, COLUMNAS_NOMINA, filas)
+    return _cerrar_hoja(hoja, columnas, filas)
 
 
-def generar_reporte_cdi_xlsx(user, provincia_id=None) -> bytes:
-    """Devuelve el XLSX completo, solo con lo que el usuario puede ver."""
+def generar_reporte_cdi_xlsx(
+    user, provincia_id=None, variante=REPORTE_COMPLETO
+) -> bytes:
+    """Devuelve el XLSX de la variante pedida, solo con lo que el usuario puede ver.
+
+    No decide qué variante corresponde al usuario: eso lo resuelve la vista con
+    ``resolver_variante``.
+    """
+    columnas = COLUMNAS_POR_VARIANTE[variante]
     workbook = Workbook(write_only=True)
     # El resumen va primero para que sea lo que se ve al abrir el archivo. Se
     # calcula con agregados, no recorriendo las filas de las otras hojas.
     _escribir_resumen(workbook, user, provincia_id)
     totales = {
         "cdi": _escribir_cdi(workbook, user, provincia_id),
-        "trabajadores": _escribir_trabajadores(workbook, user, provincia_id),
-        "nomina": _escribir_nomina(workbook, user, provincia_id),
+        "trabajadores": _escribir_trabajadores(
+            workbook, user, provincia_id, columnas["Trabajadores"]
+        ),
+        "nomina": _escribir_nomina(workbook, user, provincia_id, columnas["Nomina"]),
     }
-    _escribir_filas(workbook, "Diccionario", COLUMNAS_DICCIONARIO, _filas_diccionario())
+    _escribir_filas(
+        workbook, "Diccionario", COLUMNAS_DICCIONARIO, _filas_diccionario(variante)
+    )
     # Va último porque usa las filas realmente escritas, sin volver a contar.
     _escribir_filas(
         workbook,
         "Metadatos",
         COLUMNAS_METADATOS,
-        _filas_metadatos(user, totales, provincia_id),
+        _filas_metadatos(user, totales, provincia_id, variante),
     )
     buffer = BytesIO()
     workbook.save(buffer)
@@ -597,6 +707,7 @@ def generar_reporte_cdi_xlsx(user, provincia_id=None) -> bytes:
             "data": {
                 "usuario_id": getattr(user, "pk", None),
                 "provincia_id": provincia_id or None,
+                "variante": variante,
                 **totales,
             }
         },

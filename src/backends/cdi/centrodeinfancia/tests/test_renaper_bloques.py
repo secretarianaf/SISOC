@@ -144,6 +144,38 @@ def test_consulta_bloque_inexistente_da_404(client, admin):
     consultar.assert_not_called()
 
 
+def test_consulta_queda_en_el_log_con_dni_enmascarado(client, admin, caplog):
+    with caplog.at_level("INFO", logger="centrodeinfancia.views"):
+        _consultar(
+            client,
+            "responsable_legal_1",
+            "30123456",
+            _respuesta_renaper(**RESPONSABLE),
+        )
+
+    registro = next(r for r in caplog.records if "Consulta RENAPER CDI" in r.message)
+    assert f"usuario={admin.pk}" in registro.message
+    assert "dni=***456" in registro.message
+    assert "30123456" not in registro.message
+
+
+def test_consulta_limitada_por_usuario(client, admin):
+    with patch("centrodeinfancia.views.RENAPER_BLOQUE_LIMITE_CONSULTAS", 2):
+        for _ in range(2):
+            response, _ = _consultar(
+                client,
+                "responsable_legal_1",
+                "30123456",
+                _respuesta_renaper(**RESPONSABLE),
+            )
+            assert response.status_code == 200
+        response, consultar = _consultar(client, "responsable_legal_1", "30123456", {})
+
+    assert response.status_code == 429
+    assert response.json()["success"] is False
+    consultar.assert_not_called()
+
+
 def test_consulta_requiere_permiso_de_alta_o_edicion(client):
     user = User.objects.create_user("sin-permisos", password="test1234")
     client.force_login(user)

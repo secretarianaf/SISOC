@@ -30,18 +30,33 @@ def _script(path, content):
 
 @pytest.mark.parametrize("rollback_legacy", [False, True])
 @pytest.mark.parametrize("fail_health", [False, True])
-def test_wrapper_transicion_y_rollback(tmp_path, rollback_legacy, fail_health):
+@pytest.mark.parametrize("cleanup_falla", [False, True])
+def test_wrapper_transicion_y_rollback(
+    tmp_path, rollback_legacy, fail_health, cleanup_falla
+):
     checkout = tmp_path / "checkout"
     (checkout / ".git").mkdir(parents=True)
     registry = checkout / "src/backends/config/backends.json"
     registry.parent.mkdir(parents=True)
     registry.write_text("{}", encoding="utf-8")
+    compose = checkout / "docker/compose/docker-compose.deploy.yml"
+    compose.parent.mkdir(parents=True)
+    compose.write_text("", encoding="utf-8")
     (checkout / ".head").write_text(PREVIOUS, encoding="utf-8")
     new_scripts = checkout / "src/scripts"
     old_scripts = checkout / "scripts" if rollback_legacy else new_scripts
     refresh = 'printf "refresh:%s\\n" "$*" >> "$MOCK_LOG"\n'
-    _script(checkout / "pending_refresh.sh", refresh)
-    _script(old_scripts / "operacion/deploy_refresh.sh", refresh)
+    # El deploy_refresh.sh nuevo admite --diff-base; el de main lo rechaza.
+    _script(checkout / "pending_refresh.sh", "# --diff-base\n" + refresh)
+    _script(
+        old_scripts / "operacion/deploy_refresh.sh",
+        (
+            '[[ " $* " != *" $MOCK_FLAG_NUEVO "* ]] || exit 3\n'
+            if rollback_legacy
+            else "# --diff-base\n"
+        )
+        + refresh,
+    )
     _script(old_scripts / "infra/healthcheck_hml.sh", "exit 0\n")
     new_scripts.joinpath("operacion").mkdir(parents=True, exist_ok=True)
     _script(new_scripts / "infra/healthcheck_hml.sh", "exit 0\n")
@@ -68,6 +83,7 @@ case "$1" in
     if [[ "$MOCK_LEGACY" == 1 ]]; then
       mv "$repo/src/scripts/operacion/deploy_refresh.sh" "$repo/removed_refresh.sh"
       mv "$repo/src/scripts/infra/healthcheck_hml.sh" "$repo/removed_health.sh"
+      rm -r "$repo/docker" "$repo/src/backends"
     fi
     echo "$MOCK_PREVIOUS" > "$repo/.head" ;;
   *) exit 2 ;;
@@ -76,9 +92,19 @@ esac
     )
     _script(
         fake_bin / "docker",
-        """if [[ "$MOCK_FAIL" == 1 && "$SISOC_RELEASE_SHA" == "$MOCK_EXPECTED" && "$*" == *"migrate --check"* ]]; then
+        """printf 'docker:%s\\n' "$*" >> "$MOCK_LOG"
+if [[ "$MOCK_FAIL" == 1 && "$SISOC_RELEASE_SHA" == "$MOCK_EXPECTED" && "$*" == *"migrate --check"* ]]; then
   exit 1
 fi
+case "$1 $2" in
+  "ps -aq") [[ "$MOCK_CLEANUP_FALLA" == 0 ]] || exit 1; echo contenedor ;;
+  "inspect --format") echo sha256:en-uso ;;
+  "image ls")
+    echo "sisoc/core:$MOCK_EXPECTED sha256:actual"
+    echo "sisoc/core:$MOCK_PREVIOUS sha256:anterior"
+    echo "sisoc/core:viejo sha256:viejo"
+    echo "sisoc/backend-cdi:viejo sha256:en-uso" ;;
+esac
 exit 0
 """,
     )
@@ -92,7 +118,9 @@ exit 0
         MOCK_EXPECTED=EXPECTED,
         MOCK_PREVIOUS=PREVIOUS,
         MOCK_FAIL=str(int(fail_health)),
+        MOCK_CLEANUP_FALLA=str(int(cleanup_falla)),
         MOCK_LEGACY=str(int(rollback_legacy)),
+        MOCK_FLAG_NUEVO="--diff-base",
         MOCK_BIN=fake_bin.as_posix(),
         PATH=str(fake_bin) + os.pathsep + env["PATH"],
     )
@@ -128,9 +156,33 @@ exit 0
         assert f"reset:{PREVIOUS}" in calls
         assert f"--expected-revision {PREVIOUS}" in calls
         assert "Rollback verificado" in result.stdout, result.stderr
+        rollback = calls.split(f"reset:{PREVIOUS}\n", 1)[1]
+        if rollback_legacy:
+            # main: refresh completo, compose de la raíz y migrate en django.
+            assert "--diff-base" not in rollback
+            assert f"-f {checkout.as_posix()}/docker-compose.deploy.yml" in rollback
+            assert "exec -T django python manage.py migrate --check" in rollback
+            assert "migrator" not in rollback
+        else:
+            assert f"--diff-base {EXPECTED}" in rollback
+            assert "docker/compose/docker-compose.deploy.yml" in rollback
+        # Si el deploy falla no se limpia: el rollback puede usar las imágenes.
+        assert "docker:image rm" not in calls
     else:
         assert result.returncode == 0, result.stderr
         assert "reset:" not in calls
+        # Solo se borra la imagen que no usa ningún contenedor ni es de la
+        # revisión desplegada o la anterior.
+        borradas = [
+            linea for linea in calls.splitlines() if linea.startswith("docker:image rm")
+        ]
+        if cleanup_falla:
+            # El deploy ya estaba verificado: la limpieza fallida solo avisa.
+            assert borradas == []
+            assert "limpieza de imagenes viejas no termino" in result.stdout
+        else:
+            assert borradas == ["docker:image rm sisoc/core:viejo"]
+            assert "docker:builder prune -f --filter until=72h" in calls
     assert (checkout / ".head").read_text(encoding="utf-8").strip() == (
         PREVIOUS if fail_health else EXPECTED
     )

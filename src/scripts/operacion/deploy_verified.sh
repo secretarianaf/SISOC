@@ -129,6 +129,49 @@ verify_stack() {
   wait_for "healthcheck de $DEPLOY_ENVIRONMENT" 30 bash "$HEALTH_SCRIPT"
 }
 
+# Una revisión previa a la modularización (#2628) no tiene migrador ni
+# backends: se verifica como lo hacía su propio deploy_verified.sh.
+verify_legacy_stack() {
+  if ! wait_for "migraciones de $DEPLOY_ENVIRONMENT" 30 \
+    "${COMPOSE[@]}" exec -T django python manage.py migrate --check; then
+    return 1
+  fi
+  wait_for "healthcheck de $DEPLOY_ENVIRONMENT" 30 bash "$HEALTH_SCRIPT"
+}
+
+# Compose de la revisión restaurada: antes de #2639 vivían en la raíz.
+use_rollback_compose() {
+  [[ -f "$ROOT_DIR/docker/compose/docker-compose.deploy.yml" ]] && return 0
+  local index
+  local legacy_files=()
+  for ((index = 1; index < ${#COMPOSE_FILES[@]}; index += 2)); do
+    legacy_files+=(-f "$ROOT_DIR/$(basename "${COMPOSE_FILES[$index]}")")
+  done
+  COMPOSE_FILES=("${legacy_files[@]}")
+  COMPOSE=(docker compose "${COMPOSE_FILES[@]}" --project-directory "$ROOT_DIR")
+}
+
+# Cada deploy deja imágenes sisoc/* con el SHA en el tag y llenan el disco.
+# Después de un deploy verificado se borran las que ya no sirven: se conservan
+# las que usa algún contenedor (también detenido) y las de la revisión
+# desplegada y la anterior. Si el rollback necesita otra, la reconstruye.
+cleanup_old_images() {
+  local in_use image image_id
+  in_use="$(docker ps -aq | xargs -r docker inspect --format '{{.Image}}' | sort -u)" \
+    || return 1
+  while read -r image image_id; do
+    [[ -n "$image" ]] || continue
+    case "$image" in
+      *:"$EXPECTED_REVISION" | *:"$previous_revision") continue ;;
+    esac
+    grep -qxF "$image_id" <<<"$in_use" && continue
+    docker image rm "$image" >/dev/null \
+      || echo "::warning::No se pudo borrar la imagen $image."
+  done < <(docker image ls --no-trunc --filter 'reference=sisoc/*' \
+    --format '{{.Repository}}:{{.Tag}} {{.ID}}')
+  docker builder prune -f --filter until=72h >/dev/null
+}
+
 rollback_on_exit() {
   local failed_status=$?
   trap - EXIT
@@ -146,21 +189,29 @@ rollback_on_exit() {
   local rollback_scripts="$ROOT_DIR/src/scripts"
   [[ -f "$rollback_scripts/operacion/deploy_refresh.sh" ]] || rollback_scripts="$ROOT_DIR/scripts"
   HEALTH_SCRIPT="$rollback_scripts/infra/$(basename "$HEALTH_SCRIPT")"
+  use_rollback_compose
+  local refresh="$rollback_scripts/operacion/deploy_refresh.sh"
+  local refresh_args=(--yes --skip-pull --expected-revision "$previous_revision" --without-mobile)
   # Diff desde la revision fallida: se recrean los mismos servicios que toco.
-  if ! SISOC_ROOT_DIR="$ROOT_DIR" bash "$rollback_scripts/operacion/deploy_refresh.sh" \
-    --yes --skip-pull --expected-revision "$previous_revision" --without-mobile \
-    --diff-base "$EXPECTED_REVISION"; then
+  # Un deploy_refresh.sh previo al deploy selectivo no conoce --diff-base y
+  # siempre recrea el stack completo.
+  if grep -q -- "--diff-base" "$refresh"; then
+    refresh_args+=(--diff-base "$EXPECTED_REVISION")
+  fi
+  if ! SISOC_ROOT_DIR="$ROOT_DIR" bash "$refresh" "${refresh_args[@]}"; then
     echo "::error::No se pudo reconstruir el stack de la revision anterior."
     exit "$failed_status"
   fi
   # El rollback verifica con las imágenes de la revisión anterior.
   export SISOC_RELEASE_SHA="$previous_revision"
-  if ! verify_stack; then
+  local verify=verify_stack
+  [[ -f "$ROOT_DIR/src/backends/config/backends.json" ]] || verify=verify_legacy_stack
+  if ! "$verify"; then
     show_diagnostics
     echo "::error::La revision anterior fue recreada, pero no supero la verificacion."
     exit "$failed_status"
   fi
-  echo "::warning::Rollback verificado en $previous_revision. Las migraciones de base de datos no se revierten automaticamente."
+  echo "::warning::Rollback verificado en $previous_revision. Las migraciones de base de datos no se revierten automaticamente: ver docs/operacion/rollback_release_modularizacion.md."
   exit "$failed_status"
 }
 trap rollback_on_exit EXIT
@@ -183,6 +234,13 @@ deployed_revision="$(git -C "$ROOT_DIR" rev-parse HEAD)"
   || fail "El checkout final no coincide con la revision esperada."
 deployment_started=0
 
+# El deploy ya quedó verificado: un error de limpieza solo avisa.
+image_cleanup="OK"
+if ! cleanup_old_images; then
+  image_cleanup="con errores"
+  echo "::warning::La limpieza de imagenes viejas no termino; el deploy quedo verificado."
+fi
+
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   {
     echo "### Deploy $DEPLOY_ENVIRONMENT verificado"
@@ -190,6 +248,7 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     echo "- Migraciones: \`migrate --check\` OK"
     echo "- Health: \`$(basename "$HEALTH_SCRIPT")\` OK"
     echo "- Rollback automatico: revision previa \`$previous_revision\`"
+    echo "- Limpieza de imagenes viejas: $image_cleanup"
   } >> "$GITHUB_STEP_SUMMARY"
 fi
 

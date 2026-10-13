@@ -11,16 +11,21 @@ Contrato con el backend:
   valida CSRF por su cuenta con la cookie y los headers originales. Por eso
   esta vista es ``csrf_exempt``: el core no valida dos veces.
 - ``Host`` es el que el core ya validó contra ``ALLOWED_HOSTS``.
-  ``X-Forwarded-Proto`` y ``X-Forwarded-For`` los calcula el core y **pisan**
-  los que mande el cliente. ``X-Forwarded-Host`` no se reenvía.
+  ``X-Forwarded-Proto`` lo calcula el core y **pisa** el del cliente.
+  ``X-Forwarded-For`` conserva la cadena recibida y le agrega ``REMOTE_ADDR``
+  (convención de proxies): solo el último salto es confiable.
+  ``X-Forwarded-Host`` no se reenvía.
+- El path viaja codificado otra vez y sin segmentos ``.``/``..``: un
+  ``%2e%2e`` no puede salir del prefijo declarado.
 - El backend no se publica fuera de la red de Compose: solo el core lo alcanza.
 """
 
 from http.cookies import SimpleCookie
+from urllib.parse import quote
 
 import requests
 from django.conf import settings
-from django.http import HttpResponse, StreamingHttpResponse
+from django.http import Http404, HttpResponse, StreamingHttpResponse
 from django.urls import re_path
 from django.views.decorators.csrf import csrf_exempt
 
@@ -48,6 +53,8 @@ REQUEST_HEADERS_SET_BY_CORE = {
     "x-forwarded-proto",
 }
 RESPONSE_HEADERS_SET_BY_CORE = {"set-cookie"}
+# Caracteres que pueden ir sin codificar en un path (RFC 3986 pchar y "/").
+PATH_SAFE_CHARS = "/:@!$&'()*+,;="
 
 
 def outbound_headers(request):
@@ -126,7 +133,11 @@ def _forward(request, origin, path):
     if session is not None and session.modified:
         session.save()
 
-    url = origin.rstrip("/") + "/" + path
+    # ``path`` llega decodificado: se rechazan los segmentos punto y se vuelve
+    # a codificar para que ``%3F``, ``%23`` o ``%25`` lleguen tal cual.
+    if any(segmento in {".", ".."} for segmento in path.split("/")):
+        raise Http404
+    url = origin.rstrip("/") + "/" + quote(path, safe=PATH_SAFE_CHARS)
     if request.META.get("QUERY_STRING"):
         url += "?" + request.META["QUERY_STRING"]
 

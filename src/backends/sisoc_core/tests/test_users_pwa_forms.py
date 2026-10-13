@@ -104,6 +104,40 @@ def test_restricted_actor_cannot_store_hidden_mobile_role():
     assert not is_pwa_user(user)
 
 
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("rol_app", "acceso_web_esperado"),
+    [("representante", False), ("relevador", False), (None, True)],
+)
+def test_alta_de_usuario_de_app_no_habilita_la_web(
+    comedor, rol_app, acceso_web_esperado
+):
+    actor = get_user_model().objects.create_superuser(
+        username="alta_actor", email="alta_actor@example.com", password="Sisoc1234!"
+    )
+    datos = {
+        "username": f"alta_{rol_app}",
+        "tipo_usuario": "interno",
+        "password": "Test-only-123!",
+        "acceso_web": True,
+    }
+    if rol_app == "representante":
+        datos.update(es_representante_pwa=True, comedores_pwa=[comedor.pk])
+    elif rol_app == "relevador":
+        datos.update(
+            es_relevador_calle=True,
+            datacalle_rol="entrevistador",
+            provincias_datacalle=[comedor.provincia_id],
+        )
+
+    form = UserCreationForm(actor=actor, data=datos)
+    assert form.is_valid(), form.errors
+    user = form.save()
+
+    user.profile.refresh_from_db()
+    assert user.profile.acceso_web is acceso_web_esperado
+
+
 @pytest.fixture
 def comedor(db):
     provincia = Provincia.objects.create(nombre="Mendoza")

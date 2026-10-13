@@ -5,7 +5,9 @@
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     <link rel="stylesheet" href="{% static 'custom/css/poncho_listados.css' %}" />
     <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+          href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H"
+          crossorigin="anonymous" />
     <link rel="stylesheet" href="{% static 'custom/css/dispositivosMap.css' %}" />
     <div class="list-container">
         <h2 class="text-center mb-4 poncho-titulo">Mapa de dispositivos</h2>
@@ -113,6 +115,8 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH"
+            crossorigin="anonymous"></script>
     <script src="{% static 'custom/js/dispositivosMap.js' %}"></script>
 {% endblock %}

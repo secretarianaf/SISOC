@@ -180,12 +180,38 @@ def test_cambio_direccion_invalida_ubicacion_guardada(
     assert lookup.call_count == 2
 
 
-def test_no_persiste_resultados_ambiguos(persisted_device, monkeypatch):
+@pytest.mark.parametrize(
+    ("payload", "status"),
+    [
+        ({"total": 2, "direcciones": [{}, {}]}, "ambiguous"),
+        ({"total": 0, "direcciones": []}, "not_found"),
+    ],
+)
+def test_persiste_resultados_sin_punto_hasta_cambiar_direccion(
+    persisted_device, monkeypatch, payload, status
+):
+    lookup = Mock(return_value=response(payload))
+    monkeypatch.setattr("dispositivos.services.requests.get", lookup)
+    assert geolocate_dispositivo(persisted_device) == {"status": status}
+    calls = lookup.call_count
+    cache.clear()
+    persisted_device.refresh_from_db()
+    assert get_saved_dispositivo_location(persisted_device) == {"status": status}
+    assert geolocate_dispositivo(persisted_device) == {"status": status}
+    assert lookup.call_count == calls
+    persisted_device.altura = "900"
+    persisted_device.save()
+    assert get_saved_dispositivo_location(persisted_device) is None
+    geolocate_dispositivo(persisted_device)
+    assert lookup.call_count > calls
+
+
+def test_no_persiste_servicio_no_disponible(persisted_device, monkeypatch):
     monkeypatch.setattr(
         "dispositivos.services.requests.get",
-        Mock(return_value=response({"total": 2, "direcciones": [{}, {}]})),
+        Mock(side_effect=requests.Timeout),
     )
-    geolocate_dispositivo(persisted_device)
+    assert geolocate_dispositivo(persisted_device) == {"status": "unavailable"}
     persisted_device.refresh_from_db()
     assert persisted_device.ubicacion_georef == {}
 

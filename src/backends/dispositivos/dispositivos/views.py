@@ -620,12 +620,13 @@ class DispositivoMapView(DispositivoListView):
             }
             for device in context["dispositivos"]
         ]
-        context["map_provinces"] = sorted(
-            {
-                device["province_id"]: device["province"]
-                for device in context["map_devices"]
-            }.items(),
-            key=lambda item: item[1],
+        # Las opciones salen del alcance del usuario y no del resultado filtrado,
+        # para poder cambiar de provincia sin limpiar los filtros.
+        context["map_provinces"] = list(
+            apply_dispositivos_scope(Dispositivo.objects.all(), self.request.user)
+            .order_by("provincia__nombre")
+            .values_list("provincia_id", "provincia__nombre")
+            .distinct()
         )
         for field in context["filters_config"]["fields"]:
             if field["name"] == "provincia":

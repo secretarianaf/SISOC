@@ -90,16 +90,23 @@ def _location_signature(device):
     return hashlib.sha256(json.dumps(address, ensure_ascii=False).encode()).hexdigest()
 
 
+# Resultados definitivos para una dirección: solo cambian si se edita la dirección.
+# ``unavailable`` es transitorio y nunca se persiste.
+_PERSISTED_STATUSES = ("located", "ambiguous", "not_found")
+
+
 def get_saved_dispositivo_location(device):
-    """Reutiliza solo coordenadas válidas para la dirección actual."""
+    """Reutiliza el resultado guardado solo si corresponde a la dirección actual."""
     saved = device.ubicacion_georef
     if not isinstance(saved, dict) or saved.get("signature") != _location_signature(
         device
     ):
         return None
     result = saved.get("result")
-    if not isinstance(result, dict) or result.get("status") != "located":
+    if not isinstance(result, dict) or result.get("status") not in _PERSISTED_STATUSES:
         return None
+    if result["status"] != "located":
+        return {"status": result["status"]}
     try:
         lat, lon = float(result["lat"]), float(result["lon"])
     except (KeyError, ValueError, TypeError):
@@ -115,7 +122,7 @@ def get_saved_dispositivo_location(device):
 
 
 def _save_dispositivo_location(device, signature, result):
-    if result["status"] != "located" or device.pk is None:
+    if result["status"] not in _PERSISTED_STATUSES or device.pk is None:
         return
     saved = {"signature": signature, "result": result}
     updated = Dispositivo.objects.filter(
@@ -130,7 +137,7 @@ def _save_dispositivo_location(device, signature, result):
 
 
 def geolocate_dispositivo(device):
-    """Reutiliza ubicaciones persistidas; consulta Georef si cambió la dirección."""
+    """Reutiliza resultados persistidos; consulta Georef si cambió la dirección."""
     result = get_saved_dispositivo_location(device)
     if result is not None:
         return result

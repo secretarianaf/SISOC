@@ -196,7 +196,7 @@
             if (result.status !== "located") {
                 document.querySelector(`[data-map-focus="${device.id}"]`).title = label;
             }
-            status.textContent = `${located} ubicados · ${reused} guardados · ${processed - located} pendientes · ${processed}/${devices.length} revisados`;
+            status.textContent = `${located} ubicados · ${reused} guardados · ${processed - located} sin ubicar · ${processed}/${devices.length} revisados`;
             if (processed % 20 === 0) autoFit();
         }
         autoFit();

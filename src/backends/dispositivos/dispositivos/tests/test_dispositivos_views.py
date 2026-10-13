@@ -912,6 +912,7 @@ def test_mapa_contacto_provincias_y_seleccion(
     )
     response = client.get(reverse("dispositivos_listar"))
     content = response.content.decode()
+    assert "Mapa de dispositivos" in content
     assert f"dispositivo={device.pk}" in content
     assert "Ver en mapa" in content
     assert "Ver detalle" in content
@@ -980,3 +981,24 @@ def test_mapa_incluye_ubicacion_guardada_vigente(
     device.save()
     response = client.get(reverse("dispositivos_mapa"))
     assert response.context["map_devices"][0]["location"] is None
+
+
+@pytest.mark.django_db
+def test_mapa_opciones_de_provincia_no_dependen_del_filtro(
+    client, user_con_permisos, dos_provincias
+):
+    import json
+
+    provincia_a, municipio_a, provincia_b, municipio_b = dos_provincias
+    _crear_dispositivo(provincia_a, municipio_a, indice=1)
+    _crear_dispositivo(provincia_b, municipio_b, indice=2)
+    client.force_login(user_con_permisos)
+    filters = json.dumps(
+        {"items": [{"field": "provincia", "op": "eq", "value": provincia_a.nombre}]}
+    )
+    response = client.get(reverse("dispositivos_mapa"), {"filters": filters})
+    assert len(response.context["map_devices"]) == 1
+    assert set(response.context["map_provinces"]) == {
+        (provincia_a.pk, provincia_a.nombre),
+        (provincia_b.pk, provincia_b.nombre),
+    }

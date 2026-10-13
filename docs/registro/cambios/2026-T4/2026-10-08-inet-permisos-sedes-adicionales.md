@@ -25,3 +25,10 @@ Validación: 10 tests pasan con Django 5.2.16 y SQLite en una configuración tem
 que carga los modelos de kernel y VAT sin los hooks del runtime completo. Black,
 Pylint 3.2.6 con pylint-django 2.7.0 y `git diff --check` pasan. Docker no está
 disponible en el entorno; no se ejecutaron la composición completa ni migraciones.
+
+Seguimiento 2026-10-13: CI detectó cuatro fallos al renderizar el error 403:
+el URLconf reducido del test no incluye `inicio`, requerido por el template de
+SISOC. Se define un `handler403` simple exclusivamente en ese URLconf, conservando
+las comprobaciones de autorización y ausencia de altas. Los cuatro fallos se
+reprodujeron localmente con un template 403 que usa `inicio`; tras la corrección,
+los diez casos pasan con esa misma configuración. No cambia el handler productivo.

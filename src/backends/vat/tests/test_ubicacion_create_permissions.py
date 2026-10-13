@@ -17,6 +17,13 @@ from VAT.models import Centro, InstitucionUbicacion
 from VAT.services.access_scope import can_user_edit_centro
 from VAT.views.institucion import InstitucionUbicacionCreateView
 
+
+def handler403(_request, **_kwargs):
+    # Este URLconf prueba autorización, sin las rutas de navegación que necesita
+    # el template 403.html de SISOC (por ejemplo, inicio).
+    return HttpResponse(status=403)
+
+
 urlpatterns = [
     path(
         "ubicaciones/nuevo/",

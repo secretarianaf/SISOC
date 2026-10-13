@@ -24,12 +24,26 @@
 - `kernel/core/constants.py`: `GROUP_DELEGATION` de SIMEPI Administrador.
 - `kernel/users/services.py`: `USUARIOS_NACIONALES_CON_VISIBILIDAD_GLOBAL` solo con Equipo
   Nacional.
-- `cdi/centrodeinfancia/access.py`: `aplicar_scope_usuarios_cdi` excluye usuarios sin grupos para
-  los roles SIMEPI nacionales.
+- `kernel/users/services.py`: el alcance administrable excluye usuarios sin grupos para
+  los roles SIMEPI nacionales, conservando la excepción del propio actor y del superusuario.
+  Este límite se aplica en el core aunque el backend CDI no esté instalado; el scope de
+  `cdi/centrodeinfancia/access.py` sigue siendo responsable del alcance territorial de CDI.
 - Tests: `cdi/tests/test_usuarios_simepi_admin.py` (nuevo) y ajuste en
   `kernel/tests/test_users_regressions.py`.
+- Regresión de servicios y vistas: `kernel/tests/test_usuarios_simepi_scope.py`, ejecutable
+  con `config.settings` (core aislado) y `config.settings_all`. Cubre listado, rechazo de
+  GET/POST de edición y baja de cuentas sin grupos, acceso permitido a CDI y excepciones
+  de superusuario y de gestores de otros programas.
 
 ## Riesgos y rollback
 - Sin migraciones. La delegación ampliada también habilita a SIMEPI Administrador a asignar esos
   grupos al crear o editar usuarios.
 - Rollback: revertir el commit.
+
+## Validación de la corrección de aislamiento (2026-10-13)
+- Docker sin red, checkout montado en solo lectura y SQLite efímero: 9 tests de
+  `test_usuarios_simepi_scope.py` pasaron con `--ds=config.settings`.
+- Con `config.settings_all`: 77 tests pasaron entre ese archivo,
+  `cdi/tests/test_usuarios_simepi_admin.py` y `kernel/tests/test_users_regressions.py`.
+- Black en los tres Python afectados y pylint en los dos archivos de producción
+  pasaron (pylint 10/10). No se usaron bases reales ni se validó una sesión web en QA.

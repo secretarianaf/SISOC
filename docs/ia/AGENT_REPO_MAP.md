@@ -388,6 +388,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Los consumidores interdominio usan contratos Python acotados: `centrodefamilia.api` expone métricas para Dashboard, `ciudadanos.api` resuelve ciudadanos desde RENAPER y `catalogo_intervenciones.api` provee el catálogo autorizado para CDI.
 - Los receivers de auditoría de Centro de Infancia viven en `centrodeinfancia.signals` y llaman `audittrail.api`; Audittrail no debe importar modelos CDI.
 - Los alcances de usuarios propios de un dominio se registran mediante `iam.services.register_user_queryset_scope`; Centro de Infancia registra el suyo desde `centrodeinfancia.apps` para que `users` no importe dominios.
+- Esos registros son locales al proceso: el core que sirve `/usuarios/` no instala CDI. La exclusión de cuentas sin grupos para el alcance administrable SIMEPI vive en `users.services`; su regresión en `kernel/tests/test_usuarios_simepi_scope.py` debe correr también con `--ds=config.settings`.
 - Dispositivos, VAT y Ver para Ser Libre no exponen internals a otros dominios. La composición de rutas de preview de VAT se realiza desde `VAT.global_urls`.
 - Los efectos de backfill de soft delete se registran desde cada dominio en `core.soft_delete.registry`; `core.soft_delete.state_sync` no debe importar handlers de dominio.
 - Las restricciones de navegacion aportadas por dominios se registran en `core.services.sidebar_access`; el template tag global no debe importar reglas VAT.

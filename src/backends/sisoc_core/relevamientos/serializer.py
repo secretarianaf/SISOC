@@ -1043,20 +1043,15 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
         return model.objects.get_or_create(nombre=str(value).strip())[0]
 
     def _process_comedor(self):
-        """Permite corregir "Datos generales" (domicilio) desde el seguimiento.
+        """Descarta el bloque ``comedor`` del seguimiento sin aplicarlo.
 
-        Reusa el mismo servicio que el bloque ``comedor`` de
-        ``PATCH /api/relevamiento``, así los campos y los parsers son idénticos.
-        ``comedor`` no es campo de ``PrimerSeguimiento``, por eso se descarta del
-        payload una vez aplicado.
+        Solo el relevamiento inicial actualiza el legajo del comedor (#2643):
+        el domicilio que trae un seguimiento es el que se visitó, no una
+        corrección de la ficha. Las versiones anteriores de la app lo mandan,
+        así que se acepta y se ignora; ``comedor`` no es campo de
+        ``PrimerSeguimiento``.
         """
-        data = self.initial_data.pop("comedor", None)
-        if not isinstance(data, dict) or not self.instance:
-            return
-        comedor = getattr(self.instance.id_relevamiento, "comedor", None)
-        if comedor is None:
-            return
-        RelevamientoService.update_comedor(data, comedor)
+        self.initial_data.pop("comedor", None)
 
     def _process_referente(self):
         data = self.initial_data.get("referente")
@@ -1117,6 +1112,10 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
             if referente is None:
                 return Referente.objects.create(documento=documento, **defaults)
             if defaults:
+                # El referente puede ser parte del legajo de cualquier comedor.
+                # Copiarlo conserva los datos omitidos sin modificar esa ficha.
+                if referente.comedor_set.exists():
+                    referente.pk = None
                 for field_name, value in defaults.items():
                     setattr(referente, field_name, value)
                 referente.save()

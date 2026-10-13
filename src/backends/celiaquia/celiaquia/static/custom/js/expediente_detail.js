@@ -848,7 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  /* ===== MODAL CORREGIR EVALUACIÓN FINAL (Nación autorizada) ===== */
+  /* ===== MODAL CORREGIR EVALUACIÓN TÉCNICA (Nación autorizada) ===== */
   const modalCorregir = document.getElementById('modalCorregirEvaluacion');
   if (modalCorregir) {
     const ESTADO_LABELS = { APROBADO: 'Aceptado', RECHAZADO: 'Rechazado', SUBSANADO: 'Subsanado' };
@@ -878,7 +878,8 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
 
       const legajoId = modalCorregir.querySelector('#corregir-legajo-id').value;
-      const nuevoEstado = modalCorregir.querySelector('#corregir-nuevo-estado').value;
+      const selNuevoEstado = modalCorregir.querySelector('#corregir-nuevo-estado');
+      const nuevoEstado = selNuevoEstado.value;
       const motivo = (modalCorregir.querySelector('#corregir-motivo').value || '').trim();
       const btn = document.getElementById('btn-confirm-corregir');
       const original = btn.innerHTML;
@@ -888,11 +889,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       if (!nuevoEstado) {
-        showAlert('warning', 'Seleccioná el nuevo estado.');
+        showAlert('warning', 'Seleccioná una acción.');
         return;
       }
-      const etiqueta = ESTADO_LABELS[nuevoEstado] || nuevoEstado;
-      if (!confirm(`¿Confirmás cambiar la evaluación final a "${etiqueta}"? La acción queda registrada en el historial.`)) {
+      const accion = selNuevoEstado.selectedOptions[0]?.textContent.trim() || nuevoEstado;
+      if (!confirm(`¿Confirmás la acción "${accion}" sobre la evaluación técnica? La acción queda registrada en el historial.`)) {
         return;
       }
 

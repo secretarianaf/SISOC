@@ -196,6 +196,11 @@ Layout (prototipo Figma "SISOC_ Versión UX", nodo 13501:32237):
     {% endif %}
     <div class="row mt-3">
         <div class="col-12 d-flex flex-wrap justify-content-end gap-2 search-actions">
+            {% if map_url %}
+                <a href="{{ map_url }}" class="poncho-btn poncho-btn--cta me-auto">
+                    <i class="fas fa-map-marked-alt" aria-hidden="true"></i>Mapa de dispositivos
+                </a>
+            {% endif %}
             {% for button in leading_buttons %}
                 <button type="button"
                         class="{{ button.class|default:'poncho-btn poncho-btn--cta' }}"

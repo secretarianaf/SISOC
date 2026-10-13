@@ -1,4 +1,9 @@
+import json
 import os
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views import View
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -29,6 +34,8 @@ from .services import (
     apply_dispositivos_scope,
     delete_dispositivo,
     get_dispositivos_queryset,
+    get_saved_dispositivo_location,
+    geolocate_dispositivo,
     save_dispositivo_from_form,
 )
 
@@ -99,6 +106,11 @@ class DispositivoListView(LoginRequiredMixin, ListView):
         context["filters_config"] = get_filters_ui_config()
         context["filters_action"] = reverse("dispositivos_listar")
         context["seccion_filtros_favoritos"] = SeccionesFiltrosFavoritos.DISPOSITIVOS
+        query = self.request.GET.copy()
+        query.pop("page", None)
+        context["map_url"] = reverse("dispositivos_mapa")
+        if query:
+            context["map_url"] += "?" + query.urlencode()
         context["titulo"] = "Buscar Dispositivos"
         return context
 
@@ -575,3 +587,112 @@ class DispositivoDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_success_url(self):
         return reverse("dispositivos_listar")
+
+
+class DispositivoMapView(DispositivoListView):
+    """Mapa con los mismos filtros y alcance territorial que el listado."""
+
+    template_name = "dispositivos_map.html"
+    paginate_by = None
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["map_url"] = None
+        context["reset_url"] = reverse("dispositivos_mapa")
+        context["filters_action"] = reverse("dispositivos_mapa")
+        context["map_devices"] = [
+            {
+                "id": device.pk,
+                "name": device.nombre_institucion,
+                "type": device.get_tipo_dispositivo_display(),
+                "province_id": device.provincia_id,
+                "province": str(device.provincia),
+                "representative": device.responsable_nombre_completo,
+                "phone": " ".join(
+                    part
+                    for part in (device.telefono_prefijo, device.telefono_numero)
+                    if part
+                ),
+                "address": f"{device.calle} {device.altura}, {device.municipio}, {device.provincia}",
+                "detail_url": reverse("dispositivos_detalle", args=[device.pk]),
+                "location_url": reverse("dispositivos_ubicacion", args=[device.pk]),
+                "location": get_saved_dispositivo_location(device),
+            }
+            for device in context["dispositivos"]
+        ]
+        context["map_provinces"] = sorted(
+            {
+                device["province_id"]: device["province"]
+                for device in context["map_devices"]
+            }.items(),
+            key=lambda item: item[1],
+        )
+        for field in context["filters_config"]["fields"]:
+            if field["name"] == "provincia":
+                field["type"] = "choice"
+                field["choices"] = [
+                    {"value": name, "label": name}
+                    for _, name in context["map_provinces"]
+                ]
+        context["filters_config"]["fields"].append(
+            {
+                "name": "estado_ubicacion",
+                "label": "Estado de ubicación",
+                "type": "choice",
+                "choices": [
+                    {"value": value, "label": label}
+                    for value, label in (
+                        ("located", "Ubicado"),
+                        ("pending", "Pendiente"),
+                        ("ambiguous", "Dirección ambigua"),
+                        ("not_found", "Sin coincidencia"),
+                        ("unavailable", "Servicio no disponible"),
+                    )
+                ],
+            }
+        )
+        try:
+            payload = json.loads(self.request.GET.get("filters") or "{}")
+        except (ValueError, TypeError):
+            payload = {}
+        items = payload.get("items", []) if isinstance(payload, dict) else []
+        context["map_location_filters"] = (
+            [
+                item
+                for item in items
+                if isinstance(item, dict)
+                and item.get("field") == "estado_ubicacion"
+                and item.get("op") in ("eq", "ne")
+            ]
+            if isinstance(items, list)
+            else []
+        )
+        selected_id = self.request.GET.get("dispositivo", "")
+        context["map_initial_device"] = next(
+            (
+                device["id"]
+                for device in context["map_devices"]
+                if str(device["id"]) == selected_id
+            ),
+            "",
+        )
+        context["breadcrumb_items"] = [
+            {"text": "Dispositivos", "url": reverse("dispositivos_listar")},
+            {"text": "Mapa"},
+        ]
+        return context
+
+
+class DispositivoLocationView(LoginRequiredMixin, View):
+    """Resuelve únicamente direcciones de dispositivos visibles para el usuario."""
+
+    def get(self, request, pk):
+        device = get_object_or_404(
+            apply_dispositivos_scope(get_dispositivos_queryset(), request.user), pk=pk
+        )
+        result = geolocate_dispositivo(device)
+        response = JsonResponse(
+            result, status=503 if result["status"] == "unavailable" else 200
+        )
+        response["Cache-Control"] = "private, no-store"
+        return response

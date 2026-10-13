@@ -2,6 +2,8 @@
 
 Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrolladores.
 
+- Mapa de dispositivos: `/dispositivos/mapa/`, `dispositivos.views.DispositivoMapView`, `geolocate_dispositivo` en services y `dispositivosMap.js`. Mantiene filtros/permisos/alcance del listado, integra provincia/estado en un único buscador combinable, paginación de tabla en el navegador de a 15 y selección de marcador por `?dispositivo=<pk>`; muestra marcadores individuales con Leaflet y usa Georef con coordenadas persistidas en `Dispositivo.ubicacion_georef` y firma de dirección para reutilización/invalidation; migración 0006 antes del deploy. Registro: `docs/registro/cambios/2026-T4/2026-10-13-dispositivos-mapa.md`.
+
 ## Como leer este documento
 
 Reglas vigentes y checklists: `docs/desarrollo/verticales_independientes.md`.

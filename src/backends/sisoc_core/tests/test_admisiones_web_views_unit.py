@@ -1001,7 +1001,7 @@ def test_descargar_informe_tecnico_para_gde_usa_el_docx_editado(mocker):
         module.AdmisionService, "_verificar_permiso_tecnico_dupla", return_value=True
     )
     generar = mocker.patch(
-        "admisiones.views.web_views.GdeDocxService.generar",
+        "admisiones.views.web_views.GdeDocxService.generar_doc",
         return_value=BytesIO(b"contenido"),
     )
 
@@ -1012,7 +1012,8 @@ def test_descargar_informe_tecnico_para_gde_usa_el_docx_editado(mocker):
     )
 
     assert response.status_code == 200
-    assert "informe-44-para-gde.docx" in response["Content-Disposition"]
+    assert 'informe-44-para-gde.doc"' in response["Content-Disposition"]
+    assert response["Content-Type"] == "application/msword"
     generar.assert_called_once_with(archivo_editado, informe_pk=44)
 
 
@@ -1038,6 +1039,37 @@ def test_descargar_informe_tecnico_para_gde_requiere_tecnico_y_validacion(mocker
     response = module.descargar_informe_tecnico_para_gde(request, tipo="base", pk=44)
 
     assert response.status_code == 403
+
+
+def test_descargar_informe_tecnico_para_gde_informa_error_de_conversion(mocker):
+    request = _Req(user=_user(superuser=True), method="GET")
+    informe = SimpleNamespace(
+        pk=44,
+        id=44,
+        tipo="base",
+        estado="Validado",
+        admision_id=12,
+        admision=SimpleNamespace(comedor=SimpleNamespace()),
+    )
+    archivo = SimpleNamespace(name="editado.docx")
+    mocker.patch("admisiones.views.web_views.get_object_or_404", return_value=informe)
+    mocker.patch(
+        "admisiones.views.web_views.InformeTecnicoPDF.objects.filter",
+        return_value=SimpleNamespace(
+            first=lambda: SimpleNamespace(archivo_docx=archivo)
+        ),
+    )
+    mocker.patch.object(module.GdeDocxService, "generar_doc", return_value=None)
+    error = mocker.patch.object(module.messages, "error")
+    redirigir = mocker.patch.object(module, "redirect", return_value="redireccion")
+
+    response = module.descargar_informe_tecnico_para_gde(request, tipo="base", pk=44)
+
+    assert response == "redireccion"
+    error.assert_called_once_with(
+        request, "No se pudo preparar el archivo DOC para GDE."
+    )
+    redirigir.assert_called_once_with("admisiones_tecnicos_editar", pk=12)
 
 
 def test_informe_tecnico_detail_post_subir_docx_branches(mocker):

@@ -30,6 +30,32 @@ crea ni publica automáticamente durante el alta de una admisión.
 
 ## Despliegue y compatibilidad
 
+### Descarga para GDE
+
+El Word editable y el archivo subido para validación se conservan como DOCX.
+"Descargar para GDE" entrega una copia transitoria en DOC binario Word 97-2003
+(`application/msword`) del último DOCX editado o, si no existe, del borrador.
+La descarga exige informe validado y los permisos existentes del técnico.
+No reemplaza archivos guardados, estados ni versiones publicadas.
+
+Antes de convertir se normalizan los anchos de las tablas. LibreOffice Writer,
+incluido en la imagen Django, realiza la conversión con directorio y perfil
+temporales propios por solicitud y un timeout de 120 segundos. Si no está
+disponible, falla, no genera salida o devuelve un formato incorrecto, se informa
+el error y no se entrega un DOCX renombrado como DOC.
+
+La generación desde HTML conserva `colspan` y `rowspan`. El cuadro de prestaciones
+de nueve columnas, identificado por sus encabezados, reserva mayor ancho para
+el tipo de prestación y el total que para cada día. Si falla una plantilla
+publicada, no se aplica el fallback de texto plano que perdía sus cuadros; la
+finalización existente informa el error y mantiene el informe editable.
+
+El adjunto funcional del issue #2580 es una referencia visual de otra variante;
+no reemplaza el contenido de las plantillas publicadas. Los documentos históricos
+ya degradados a párrafos no recuperan sus tablas al convertirlos: requieren
+revisión de su plantilla y del circuito de edición. La aceptación visual final
+debe verificarse importando en GDE un documento de la variante correspondiente.
+
 Aplicar las migraciones `admisiones.0076`, `0077` y `0078` antes de operar los
 nuevos campos. Luego verificar una renovación sin modificación de prestaciones
 y otra que requiera informe complementario, incluyendo la resolución de la

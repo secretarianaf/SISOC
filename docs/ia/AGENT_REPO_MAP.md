@@ -595,8 +595,14 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   presentada funcionalmente como Asociación de hecho.
 - La descarga del Informe Técnico ofrece una copia transitoria "Descargar para
   GDE": prioriza el DOCX editado y, si no existe, el borrador. Se normaliza la
-  geometría OOXML de sus tablas antes de responder, sin reemplazar archivos ni
-  modificar estados.
+  geometría OOXML de sus tablas y LibreOffice Writer convierte una copia a DOC
+  binario, con temporales/perfil aislados y timeout, sin reemplazar archivos ni
+  modificar estados. El generador HTML del informe conserva `colspan`/`rowspan`
+  y no degrada plantillas publicadas a texto plano ante fallos. Entry points:
+  `src/backends/sisoc_core/admisiones/services/informes_service/impl.py`
+  (`GdeDocxService.generar_doc`) y
+  `src/backends/sisoc_core/admisiones/views/web_views.py`
+  (`descargar_informe_tecnico_para_gde`).
 - El Informe Tecnico Complementario se abre tanto desde Admision como desde el
   convenio seleccionado en `src/backends/sisoc_core/acompanamientos/views.py` y
   `src/backends/sisoc_core/acompanamientos/templates/acompañamiento_detail.html`.

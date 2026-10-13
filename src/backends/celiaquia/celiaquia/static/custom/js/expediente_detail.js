@@ -848,7 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  /* ===== MODAL CORREGIR EVALUACIÓN FINAL (Nación autorizada) ===== */
+  /* ===== MODAL CORREGIR EVALUACIÓN TÉCNICA (Nación autorizada) ===== */
   const modalCorregir = document.getElementById('modalCorregirEvaluacion');
   if (modalCorregir) {
     const ESTADO_LABELS = { APROBADO: 'Aceptado', RECHAZADO: 'Rechazado', SUBSANADO: 'Subsanado' };

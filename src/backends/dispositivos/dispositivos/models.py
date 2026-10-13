@@ -77,6 +77,7 @@ class Dispositivo(models.Model):
     municipio = models.ForeignKey(Municipio, on_delete=models.PROTECT)
     calle = models.CharField(max_length=255, blank=True)
     altura = models.CharField(max_length=50, blank=True)
+    ubicacion_georef = models.JSONField(default=dict, blank=True, editable=False)
     telefono_prefijo = models.CharField(max_length=10, blank=True)
     telefono_numero = models.CharField(max_length=20, blank=True)
     correo_electronico = models.EmailField(blank=True, null=True)

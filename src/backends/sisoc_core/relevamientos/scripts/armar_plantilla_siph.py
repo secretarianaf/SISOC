@@ -218,9 +218,10 @@ def _reemplazar_tablas(doc):
 
 def _sin_fuentes(origen, destino):
     """Copia el docx sin ``word/fonts/*`` ni las referencias a esas fuentes."""
-    with zipfile.ZipFile(origen) as zin, zipfile.ZipFile(
-        destino, "w", zipfile.ZIP_DEFLATED
-    ) as zout:
+    with (
+        zipfile.ZipFile(origen) as zin,
+        zipfile.ZipFile(destino, "w", zipfile.ZIP_DEFLATED) as zout,
+    ):
         for item in zin.infolist():
             if item.filename.startswith("word/fonts/"):
                 continue

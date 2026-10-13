@@ -751,6 +751,18 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `src/backends/vat/VAT/services/tipo_alumno_service.py`, tests VAT y
   `docs/vat/VOUCHER_SETUP.md`.
 
+### Si necesitas cambiar el alta de sedes adicionales INET
+
+- Permiso existente asignable a grupos: `VAT.add_institucionubicacion`; guard de
+  URL en `src/backends/vat/VAT/urls.py` y botón en
+  `src/backends/vat/VAT/templates/vat/centros/centro_detail.html`.
+- Alcance de alta: `InstitucionUbicacionCreateView` en
+  `src/backends/vat/VAT/views/institucion.py`, con `can_user_edit_centro` y
+  `filter_centros_queryset_for_management` de `services/access_scope.py`.
+- Regresión de permisos/grupos: `src/backends/vat/tests/test_ubicacion_create_permissions.py`.
+- Operación por grupos: `docs/vat/manual_usuario.md`; no agregar permisos
+  duplicados ni asignaciones por nombre de grupo para la misma acción.
+
 ### Si necesitas cambiar la búsqueda de Centros VAT por CUE
 
 - API pública: `src/backends/vat/VAT/api_views.py:CentroViewSet` y

@@ -9,6 +9,7 @@ from django.views.generic import (
     DeleteView,
 )
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import JsonResponse
 
@@ -25,6 +26,10 @@ from VAT.forms import (
     InstitucionUbicacionForm,
     build_localidad_queryset_for_centro,
     build_municipio_queryset_for_centro,
+)
+from VAT.services.access_scope import (
+    can_user_edit_centro,
+    filter_centros_queryset_for_management,
 )
 
 logger = logging.getLogger("django")
@@ -291,6 +296,24 @@ class InstitucionUbicacionCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy("vat_institucion_ubicacion_list")
     extra_context = {"volver_url": reverse_lazy("vat_institucion_ubicacion_list")}
 
+    def dispatch(self, request, *args, **kwargs):
+        centro_id = request.GET.get("centro") or request.POST.get("centro")
+        if centro_id:
+            try:
+                centro = Centro.objects.get(pk=centro_id)
+            except (Centro.DoesNotExist, TypeError, ValueError) as exc:
+                raise PermissionDenied from exc
+            if not can_user_edit_centro(request.user, centro):
+                raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["centro"].queryset = filter_centros_queryset_for_management(
+            form.fields["centro"].queryset, self.request.user
+        )
+        return form
+
     def get_initial(self):
         initial = super().get_initial()
         centro_id = self.request.GET.get("centro")
@@ -306,6 +329,8 @@ class InstitucionUbicacionCreateView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
+        if not can_user_edit_centro(self.request.user, form.cleaned_data["centro"]):
+            raise PermissionDenied
         success_message = "Ubicación creada exitosamente."
         messages.success(self.request, success_message)
         if _is_ajax_request(self.request):

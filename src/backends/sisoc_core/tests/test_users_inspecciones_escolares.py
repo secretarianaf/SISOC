@@ -6,7 +6,8 @@ Mismo patrón que DataCalle: flag ``Profile.es_inspector_escolar`` + rol en
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Group, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 from rest_framework.authtoken.models import Token
@@ -284,14 +285,19 @@ def _job_de(actor):
 def _actor_importador(username, *, con_seccion):
     """Actor con ``auth.add_user`` (lo que exige el importador)."""
     actor = User.objects.create_user(username=username, password="x")
-    codenames = ["add_user"]
-    if con_seccion:
-        codenames.append("role_usuarios_seccion_inspecciones_escolares")
     actor.user_permissions.add(
-        *Permission.objects.filter(
-            content_type__app_label="auth", codename__in=codenames
-        )
+        Permission.objects.get(content_type__app_label="auth", codename="add_user")
     )
+    if con_seccion:
+        # El permiso de la sección lo crea una data migration: no se asume en
+        # la base de tests (mismo criterio que test_users_secciones_por_permiso).
+        codename = permiso_de_seccion(SECCION_INSPECCIONES_ESCOLARES).split(".")[1]
+        permiso, _ = Permission.objects.get_or_create(
+            content_type=ContentType.objects.get_for_model(Group),
+            codename=codename,
+            defaults={"name": codename},
+        )
+        actor.user_permissions.add(permiso)
     return User.objects.get(pk=actor.pk)
 
 

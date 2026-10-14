@@ -1,5 +1,7 @@
 from django import template
 
+from iam.services import user_has_any_permission_codes, user_has_permission_code
+
 register = template.Library()
 
 
@@ -217,3 +219,30 @@ def render_boton_tecnicos(boton, admision=None, informe_tecnico=None):
         "admision": admision,
         "informe_tecnico": informe_tecnico,
     }
+
+
+@register.filter
+def puede_gestionar_documentacion_admision(user):
+    """Adjuntar, eliminar y enviar a validar documentacion de la admision.
+
+    Mismo criterio que usaban los templates (rol tecnico o permisos de ver
+    comedores/admisiones/acompanamientos), excluyendo al abogado de la dupla:
+    el solo acepta o rectifica lo que envia el tecnico (#2654).
+    """
+    from admisiones.services.admisiones_service import AdmisionService
+
+    if AdmisionService.es_abogado_dupla_sin_rol_tecnico(user):
+        return False
+    groups = getattr(user, "groups", None)
+    return (
+        user_has_permission_code(user, "auth.role_tecnico_comedor")
+        or bool(groups and groups.filter(name="Tecnico Comedor").exists())
+        or user_has_any_permission_codes(
+            user,
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ],
+        )
+    )

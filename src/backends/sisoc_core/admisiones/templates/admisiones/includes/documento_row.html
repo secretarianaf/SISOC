@@ -1,4 +1,4 @@
-{% load custom_filters %}
+{% load custom_filters admisiones_tags %}
 <tr id="fila-{{ doc.row_id }}"
     data-personalizado="{{ doc.es_personalizado|yesno:'1,0' }}"
     data-documentacion-id="{{ doc.documentacion_id|default:'' }}"
@@ -45,7 +45,7 @@
             {% endif %}
         {% else %}
             {% if doc.archivo_id %}
-                {% if request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                {% if request.user|puede_gestionar_documentacion_admision %}
                     <select class="form-control form-control-sm mb-2{% if doc.estado == 'Rectificar' %} border border-danger border-2{% endif %}"
                             data-call-change="actualizarEstado"
                             data-call-pass-this="true"
@@ -82,7 +82,7 @@
                target="_blank"
                class="btn btn-primary btn-sm">Ver Archivo</a>
             {% if doc.origen != "organizacion" and not admision.enviada_a_archivo and admision.estado_admision != "descartado" and admision.estado_admision != "informe_tecnico_finalizado" and admision.estado_admision != "informe_tecnico_docx_editado" and admision.estado_admision != "informe_tecnico_en_revision" and admision.estado_admision != "informe_tecnico_en_subsanacion" and admision.estado_admision != "informe_tecnico_aprobado" and admision.estado_admision != "if_informe_tecnico_cargado" and admision.estado_admision != "enviado_a_legales" and admision.estado_admision != "enviado_a_acompaniamiento" %}
-                {% if request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                {% if request.user|puede_gestionar_documentacion_admision %}
                     <button class="btn btn-sm btn-danger px-3 ms-2"
                             data-call-click="confirmarEliminar"
                             data-call-args='[{{ admision.id }}, {{ doc.documentacion_id|default:"null" }}, {{ doc.archivo_id|default:"null" }}, "{{ doc.nombre|escapejs }}"]'>
@@ -92,7 +92,7 @@
             {% endif %}
         {% else %}
             {% if doc.origen != "organizacion" and not doc.es_personalizado and not admision.enviada_a_archivo and admision.estado_admision != "descartado" %}
-                {% if request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                {% if request.user|puede_gestionar_documentacion_admision %}
                     <input type="file"
                            id="file-{{ doc.documentacion_id }}"
                            class="d-none"

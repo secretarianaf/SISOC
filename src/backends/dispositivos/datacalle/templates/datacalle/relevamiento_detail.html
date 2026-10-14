@@ -257,6 +257,10 @@
                                         <span class="dc-chip dc-chip--{% if caso.estado == 'completa' %}finalizado{% else %}planificado{% endif %}">
                                             {{ caso.get_estado_display }}
                                         </span>
+                                        {% if caso.es_formulario_menores %}
+                                            {# 4.1.0 (#2664): formulario acotado para 14 a 17 años; trae menos respuestas a propósito. #}
+                                            <span class="dc-chip dc-chip--zona">Menores (14 a 17)</span>
+                                        {% endif %}
                                     {% endif %}
                                 </td>
                                 <td>{{ caso.fecha_inicio|date:"d/m/y H:i"|default:"—" }}</td>

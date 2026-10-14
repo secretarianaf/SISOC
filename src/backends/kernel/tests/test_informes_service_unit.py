@@ -375,6 +375,136 @@ def test_generate_docx_content_estiliza_tablas_de_templates_dinamicos():
     assert estilo_normal.font.size == Pt(12)
 
 
+def test_template_publicado_no_se_degrada_a_texto_plano_si_falla_conversion(mocker):
+    mocker.patch(
+        "admisiones.services.informes_service.HtmlToDocx.add_html_to_document",
+        side_effect=ValueError("Tabla inválida"),
+    )
+
+    resultado = module.InformeService._generate_docx_content(
+        "<table><tr><td>Desayuno</td><td>100</td></tr></table>",
+        estilizar_tablas_templates=True,
+    )
+
+    assert resultado is None
+
+
+@pytest.mark.parametrize("variante", ["Incorporación", "Renovación"])
+def test_template_conserva_variante_y_cuadros_con_celdas_combinadas(variante):
+    contenido = (
+        f"<p>{variante}: contenido propio del informe.</p>"
+        '<table><tr><th rowspan="2">Prestación</th>'
+        '<th colspan="2">Días</th></tr><tr><th>L</th><th>M</th></tr>'
+        "<tr><td>Desayuno</td><td>100</td><td>20</td></tr></table>"
+        "<ol><li>Criterio propio A</li><li>Criterio propio B</li>"
+        "<li>Criterio propio C</li></ol>"
+    )
+    resultado = module.InformeService._generate_docx_content(
+        contenido, estilizar_tablas_templates=True
+    )
+
+    assert resultado is not None
+    documento = Document(BytesIO(resultado.read()))
+    assert len(documento.tables) == 1
+    assert documento.tables[0].cell(2, 1).text == "100"
+    assert documento.tables[0].cell(2, 2).text == "20"
+    assert 'w:gridSpan w:val="2"' in documento.tables[0]._tbl.xml
+    assert 'w:vMerge w:val="restart"' in documento.tables[0]._tbl.xml
+    assert documento.paragraphs[0].text == f"{variante}: contenido propio del informe."
+    assert [p.text for p in documento.paragraphs if "Criterio" in p.text] == [
+        "Criterio propio A",
+        "Criterio propio B",
+        "Criterio propio C",
+    ]
+
+
+def test_template_rechaza_rowspan_fuera_de_la_tabla():
+    resultado = module.InformeService._generate_docx_content(
+        '<table><tr><td rowspan="2">Dato</td></tr></table>',
+        estilizar_tablas_templates=True,
+    )
+
+    assert resultado is None
+
+
+def test_template_da_espacio_a_los_nombres_del_cuadro_de_prestaciones():
+    contenido = (
+        '<table><tr><th rowspan="2">Tipo de Prestación</th>'
+        '<th colspan="7">Prestaciones aprobadas</th>'
+        '<th rowspan="2">Total semanal</th></tr>'
+        "<tr><th>L</th><th>M</th><th>M</th><th>J</th><th>V</th><th>S</th><th>D</th></tr>"
+        "<tr><td>Desayuno</td><td>100</td><td>20</td><td>0</td><td>0</td>"
+        "<td>0</td><td>0</td><td>0</td><td>120</td></tr></table>"
+    )
+    resultado = module.InformeService._generate_docx_content(
+        contenido, estilizar_tablas_templates=True
+    )
+    tabla = Document(BytesIO(resultado.read())).tables[0]
+    anchos = [columna.width.twips for columna in tabla.columns]
+
+    assert anchos[0] > anchos[8] > max(anchos[1:8])
+    assert max(anchos[1:8]) - min(anchos[1:8]) <= 1
+    assert tabla.cell(2, 0).text == "Desayuno"
+    assert tabla.cell(2, 8).text == "120"
+
+
+def test_gde_convierte_a_doc_real_sin_modificar_el_docx_original(mocker):
+    documento = Document()
+    documento.add_paragraph("Contenido aprobado de renovación")
+    documento.add_table(rows=1, cols=1).cell(0, 0).text = "100"
+    buffer = BytesIO()
+    documento.save(buffer)
+    original = buffer.getvalue()
+    archivo = BytesIO(original)
+    mocker.patch.object(module.shutil, "which", return_value="/usr/bin/libreoffice")
+    contenido_doc = bytes.fromhex("d0cf11e0a1b11ae1") + b"documento convertido"
+
+    def convertir(comando, **kwargs):
+        entrada = module.Path(comando[-1])
+        normalizado = Document(entrada)
+        assert normalizado.paragraphs[0].text == "Contenido aprobado de renovación"
+        assert normalizado.tables[0].cell(0, 0).text == "100"
+        assert kwargs["timeout"] == 120
+        assert "doc:MS Word 97" in comando
+        entrada.with_suffix(".doc").write_bytes(contenido_doc)
+        return SimpleNamespace(returncode=0)
+
+    proceso = mocker.patch.object(module.subprocess, "run", side_effect=convertir)
+    resultado = module.GdeDocxService.generar_doc(archivo, informe_pk=44)
+
+    assert resultado.name.endswith(".doc")
+    assert resultado.read() == contenido_doc
+    assert buffer.getvalue() == original
+    assert proceso.call_count == 1
+    assert not module.Path(proceso.call_args.args[0][-1]).parent.exists()
+
+
+@pytest.mark.parametrize("fallo", ["ausente", "timeout", "error", "sin_salida", "docx"])
+def test_gde_no_entrega_doc_si_la_conversion_falla(mocker, fallo):
+    documento = Document()
+    buffer = BytesIO()
+    documento.save(buffer)
+    mocker.patch.object(
+        module.shutil,
+        "which",
+        return_value=None if fallo == "ausente" else "libreoffice",
+    )
+
+    def convertir(comando, **_kwargs):
+        if fallo == "timeout":
+            raise module.subprocess.TimeoutExpired(comando, 120)
+        if fallo == "docx":
+            module.Path(comando[-1]).with_suffix(".doc").write_bytes(buffer.getvalue())
+        return SimpleNamespace(returncode=1 if fallo == "error" else 0)
+
+    proceso = mocker.patch.object(module.subprocess, "run", side_effect=convertir)
+    resultado = module.GdeDocxService.generar_doc(BytesIO(buffer.getvalue()))
+
+    assert resultado is None
+    if fallo == "ausente":
+        proceso.assert_not_called()
+
+
 def test_generar_docx_para_gde_normaliza_tablas_y_prioriza_docx_editado():
     documento = Document()
     documento.add_paragraph("Texto del cuerpo sin alineación explícita")

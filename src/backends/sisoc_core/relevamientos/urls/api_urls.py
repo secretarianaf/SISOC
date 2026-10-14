@@ -3,7 +3,9 @@ from django.urls import path
 from relevamientos.views.api_views import (
     PrimerSeguimientoApiView,
     RelevamientoApiView,
+    RelevamientoPdfOficialApiView,
     SeguimientoApiView,
+    SeguimientoPdfOficialApiView,
 )
 
 urlpatterns = [
@@ -22,5 +24,16 @@ urlpatterns = [
         "api/relevamiento/seguimiento",
         SeguimientoApiView.as_view(),
         name="api_seguimiento",
+    ),
+    # PDF oficial que arma Gestionar (#2630): HTML autocontenido, SISOC lo convierte.
+    path(
+        "api/relevamiento/pdf-oficial",
+        RelevamientoPdfOficialApiView.as_view(),
+        name="api_relevamiento_pdf_oficial",
+    ),
+    path(
+        "api/relevamiento/seguimiento/pdf-oficial",
+        SeguimientoPdfOficialApiView.as_view(),
+        name="api_seguimiento_pdf_oficial",
     ),
 ]

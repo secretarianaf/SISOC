@@ -93,6 +93,9 @@ def _mock_detail_view(mocker, timeline):
         return_value={},
     )
     mocker.patch(
+        "relevamientos.views.web_views.pdf_oficial.documento_de", return_value=None
+    )
+    mocker.patch(
         "relevamientos.views.web_views.Relevamiento.objects.filter",
         return_value=SimpleNamespace(
             only=lambda *a, **k: SimpleNamespace(order_by=lambda *x, **y: timeline)

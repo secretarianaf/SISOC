@@ -1,7 +1,7 @@
 {
   "id": "datacalle-encuesta",
-  "version": "4.0.0",
-  "origen": "Formulario_PSC_versión_FINAL_PAPEL_1.docx (área sustantiva, 2026-10-01) — docs/FORMULARIO-FINAL-PAPEL.md",
+  "version": "4.1.0",
+  "origen": "Formulario_PSC_versión_FINAL_PAPEL_1.docx (área sustantiva, 2026-10-01) — docs/FORMULARIO-FINAL-PAPEL.md; menores de 14 a 17: FORMULARIO_MENORES_DE_13_A_17_AÑOS.pdf (SISOC#2664, 2026-10-08) — docs/FORMULARIO-MENORES-14-17.md",
   "entidad": "encuesta",
   "paginas": [
     {
@@ -67,7 +67,7 @@
           "calculo": {
             "tipo": "variante"
           },
-          "nota": "4.0.0: el papel es un solo cuestionario, así que siempre vale 'completo'. Se conserva porque viaja en el envoltorio del PUT y SISOC lo espera; los casos guardados con 'adolescente' se siguen leyendo."
+          "nota": "4.1.0: 'adolescente' para una persona de 14 a 17 que acepta responder (formulario de menores, SISOC#2664); 'completo' para el resto. Lo decide la regla de `variantes.reglas`, no el valor guardado: un caso de 14–17 cargado bajo 4.0.0 con 'completo' pasa a 'adolescente' al reabrirse, sin perder lo respondido. Viaja en el envoltorio del PUT y SISOC lo espera."
         },
         {
           "id": "grupoId",
@@ -276,7 +276,30 @@
               "r0a14"
             ]
           },
-          "nota": "Papel, III.1. DECISIÓN CLIENTE 8.1: el papel lista solo cuatro motivos; se conservan \"no quiere responder\" y \"ya fue entrevistada\" para no forzar al encuestador a marcar un motivo falso. Si el área confirma que van solo los cuatro del papel, se retiran. Sigue siendo la única pregunta obligatoria del instrumento: es la que abre o cierra el caso entero."
+          "nota": "Papel, III.1. DECISIÓN CLIENTE 8.1: el papel lista solo cuatro motivos; se conserva \"no quiere responder\" para no forzar al encuestador a marcar un motivo falso, y el área no pidió sacarla. ENMIENDA 2026-10-01 (Maca Nicolas; docs/FORMULARIO-FINAL-PAPEL.md, \"Enmiendas del área posteriores a la entrega\"): se retira \"dice que ya fue entrevistada en esta ronda\" —el código queda `retirada`, se lee y se reenvía— y se repone \"Otro\", SIN campo abierto. Sigue siendo la única pregunta obligatoria del instrumento: es la que abre o cierra el caso entero."
+        },
+        {
+          "id": "avisoFormularioMenores",
+          "etiqueta": "Formulario de menores",
+          "tipo": "aviso",
+          "tono": "info",
+          "icono": "school-outline",
+          "texto": "Tiene entre 14 y 17 años: se le hace el formulario de menores (código de identificación, documento, nivel educativo, dónde duerme esta noche y desde cuándo está en situación de calle). Las demás preguntas no se le hacen.",
+          "visibleSi": {
+            "todas": [
+              {
+                "campo": "personaEntrevistada",
+                "prefijoEn": [
+                  "r14a17"
+                ]
+              },
+              {
+                "campo": "realizaEntrevista",
+                "es": "si"
+              }
+            ]
+          },
+          "nota": "SISOC#2664 (2026-10-08): FORMULARIO_MENORES_DE_13_A_17_AÑOS.pdf. Aplica a la franja 14–17 del papel: la de 6–13 no se entrevista (4.0.0) y el PDF lleva '13' solo en el nombre del archivo; su grilla y el pedido dicen 14 a 17."
         },
         {
           "id": "avisoProtocoloEmergencia",
@@ -299,7 +322,8 @@
             "campo": "realizaEntrevista",
             "es": "yaEntrevistada"
           },
-          "nota": "DECISIÓN CLIENTE 8.1: acompaña a la opción 'ya fue entrevistada', que el juez conservó aunque no esté en el papel. Si el área retira esa opción, este campo pasa a soloHistorico."
+          "soloHistorico": true,
+          "nota": "Acompañaba a la opción 'ya fue entrevistada' que el juez había conservado (DECISIÓN CLIENTE 8.1). ENMIENDA 2026-10-01: el área retira esa opción, así que este campo pasa a soloHistorico, como estaba previsto: no se muestra en un caso nuevo, y se lee y se reenvía si un caso viejo lo trae."
         },
         {
           "id": "otroMotivoNoEntrevista",
@@ -310,7 +334,7 @@
             "es": "otro"
           },
           "soloHistorico": true,
-          "nota": "La opción 'Otro' no está en el papel y quedó retirada: este detalle solo se muestra si ya está guardado."
+          "nota": "ENMIENDA 2026-10-01: la opción 'Otro' vuelve a ofrecerse, pero el área la pidió expresamente SIN campo abierto. Este campo es ese campo abierto, así que SIGUE soloHistorico: es lo que hace que 'Otro' no pida especificar. Solo se muestra si ya está guardado."
         }
       ]
     },
@@ -516,8 +540,9 @@
           "etiqueta": "6. ¿Con cuál de estas identidades de género se siente más cómodo/a?",
           "tipo": "enum",
           "catalogo": "identidadGenero",
+          "dosColumnas": true,
           "ayuda": "Marcar una sola opción.",
-          "nota": "Papel, IV.6. DECISIÓN CLIENTE 8.3: el papel no tiene 'Travesti' (la había agregado QA-0026) ni 'No sabe / no contesta': quedan retiradas, se leen del histórico pero no se ofrecen. Vuelve 'Otra:' con texto libre."
+          "nota": "Papel, IV.6. DECISIÓN CLIENTE 8.3: el papel no tiene 'Travesti' (la había agregado QA-0026) ni 'No sabe / no contesta': quedan retiradas, se leen del histórico pero no se ofrecen. Vuelve 'Otra:' con texto libre. `dosColumnas`: mismo caso que la 17, 7 opciones vigentes y la más larga de 21 caracteres; el automático pide 8 o más, así que hay que forzarlo. La lista baja de 426 a 240 px."
         },
         {
           "id": "identidadGeneroOtra",
@@ -622,9 +647,12 @@
           "catalogo": "lugarProviene",
           "visibleSi": {
             "campo": "vivioSiempreLocalidad",
-            "es": "no"
+            "en": [
+              "no",
+              "nsnc"
+            ]
           },
-          "nota": "Papel, IV.8. Misma clave y mismos códigos que el 3.1.0 (procedencia); cambian la etiqueta (vuelven las de 'De…') y la condición: ahora cuelga de la 7. DECISIÓN CLIENTE 8.8: en CABA se sigue ocultando 'De otra localidad de esta provincia' (regla territorial de QA-0038, no del papel)."
+          "nota": "Papel, IV.8. Misma clave y mismos códigos que el 3.1.0 (procedencia); cambian la etiqueta (vuelven las de 'De…') y la condición: ahora cuelga de la 7. DECISIÓN CLIENTE 8.8: en CABA se sigue ocultando 'De otra localidad de esta provincia' (regla territorial de QA-0038, no del papel). DECISIÓN CLIENTE 8.13: el papel no pone flecha en la 7, así que no dice qué pasa con 'Ns/Nc'; un encuestador en papel igual preguntaría de dónde viene. Se resuelve por coherencia con la 10 (DECISIÓN CLIENTE 8.2): 'Ns/Nc' también abre la dependiente. Las repreguntas de la 8 acompañan la condición, si no la 8 se abriría sin poder detallarse."
         },
         {
           "id": "dondeViviaAntesLocalidad",
@@ -634,7 +662,10 @@
             "todas": [
               {
                 "campo": "vivioSiempreLocalidad",
-                "es": "no"
+                "en": [
+                  "no",
+                  "nsnc"
+                ]
               },
               {
                 "campo": "dondeViviaAntes",
@@ -653,7 +684,10 @@
             "todas": [
               {
                 "campo": "vivioSiempreLocalidad",
-                "es": "no"
+                "en": [
+                  "no",
+                  "nsnc"
+                ]
               },
               {
                 "campo": "dondeViviaAntes",
@@ -674,7 +708,10 @@
             "todas": [
               {
                 "campo": "vivioSiempreLocalidad",
-                "es": "no"
+                "en": [
+                  "no",
+                  "nsnc"
+                ]
               },
               {
                 "campo": "dondeViviaAntes",
@@ -694,7 +731,10 @@
             "todas": [
               {
                 "campo": "vivioSiempreLocalidad",
-                "es": "no"
+                "en": [
+                  "no",
+                  "nsnc"
+                ]
               },
               {
                 "campo": "dondeViviaAntes",
@@ -712,7 +752,10 @@
             "todas": [
               {
                 "campo": "vivioSiempreLocalidad",
-                "es": "no"
+                "en": [
+                  "no",
+                  "nsnc"
+                ]
               },
               {
                 "campo": "dondeViviaAntes",
@@ -731,7 +774,7 @@
           "tipo": "enum",
           "catalogo": "nivelEducativo",
           "ayuda": "Marcar una sola opción.",
-          "nota": "Papel, IV.9: las 10 opciones del papel ya existían con el mismo código. 'Otro' y 'No sabe / no contesta' quedan retiradas — DECISIÓN CLIENTE 8.9: sin 'NS/NC' la pregunta tiene que poder quedar vacía, así que no es obligatoria."
+          "nota": "Papel, IV.9: las 10 opciones del papel ya existían con el mismo código. ENMIENDA 2026-10-01 (Maca Nicolas; docs/FORMULARIO-FINAL-PAPEL.md, \"Enmiendas del área posteriores a la entrega\"): el área pidió agregar 'Otro', que estaba retirada y vuelve a ofrecerse, SIN campo abierto —no lo pidió, y es coherente con cómo pidió el 'Otro' de la 1—. 'No sabe / no contesta' sigue retirada — DECISIÓN CLIENTE 8.9: sin 'NS/NC' la pregunta tiene que poder quedar vacía, así que no es obligatoria."
         },
         {
           "id": "tieneDiscapacidad",
@@ -929,29 +972,34 @@
           "id": "cantidadHijos",
           "etiqueta": "15. ¿Cuántos?",
           "tipo": "numero",
+          "min": 0,
+          "max": 30,
           "visibleSi": {
             "campo": "tieneHijos",
             "es": "si"
           },
-          "nota": "Papel, V.15. DECISIÓN CLIENTE 8.10: el papel no pone tope ni relación con la 16; se valida 0–30."
+          "nota": "Papel, V.15. DECISIÓN CLIENTE 8.10: el papel no pone tope ni relación con la 16; se valida 0–30. `max` es ese mismo 30, no uno nuevo: con el tope declarado la cantidad se carga con − / + y no con el teclado numérico entero."
         },
         {
           "id": "cantidadHijosConviven",
           "etiqueta": "16. ¿Cuantos viven con usted?",
           "tipo": "numero",
+          "min": 0,
+          "max": 30,
           "visibleSi": {
             "campo": "tieneHijos",
             "es": "si"
           },
-          "nota": "Papel, V.16 (sin tilde en 'Cuantos', literal — DECISIÓN CLIENTE 8.12). DECISIÓN CLIENTE 8.10: se valida que no supere a la 15 y que no pase de 30."
+          "nota": "Papel, V.16 (sin tilde en 'Cuantos', literal — DECISIÓN CLIENTE 8.12). DECISIÓN CLIENTE 8.10: se valida que no supere a la 15 y que no pase de 30; `max` declara ese mismo tope. El tope real de esta pregunta (no más que la 15) lo sigue aplicando la validación, no el control."
         },
         {
           "id": "conQuienesVive",
           "etiqueta": "17. ¿Quiénes conviven con Ud.?",
           "tipo": "enumMulti",
           "catalogo": "conQuienesVive",
+          "dosColumnas": true,
           "ayuda": "Leer opciones y marcar las que correspondan.",
-          "nota": "Papel, V.17 (respuesta múltiple). Clave NUEVA; el catálogo ya existía con los 7 códigos del papel, del instrumento AppSheet, y ningún campo lo usaba."
+          "nota": "Papel, V.17 (respuesta múltiple). Clave NUEVA; el catálogo ya existía con los 7 códigos del papel, del instrumento AppSheet, y ningún campo lo usaba. `dosColumnas`: 7 opciones, la más larga de 21 caracteres ('Amigas/os o conocidos'); en una columna la pregunta mide 482 px, en dos entra entera."
         }
       ]
     },
@@ -1055,8 +1103,9 @@
           "etiqueta": "21. ¿Cuáles son los motivos por los que se vió forzado/a u obligado/a a vivir en la calle?",
           "tipo": "enumMulti",
           "catalogo": "motivosVivirCalle",
+          "enunciadoFijo": true,
           "ayuda": "Respuesta múltiple.",
-          "nota": "Papel, VI.21 (literal, con 'vió' — DECISIÓN CLIENTE 8.12). Clave NUEVA: `motivoPrincipalCalle` era UNA sola opción y con categorías agrupadas de CABA; distinta cardinalidad y distinta escala, no se reusa. DECISIÓN CLIENTE 8.11: el papel no dice que 'NS/NC' sea excluyente, así que no se fuerza exclusividad."
+          "nota": "Papel, VI.21 (literal, con 'vió' — DECISIÓN CLIENTE 8.12). Clave NUEVA: `motivoPrincipalCalle` era UNA sola opción y con categorías agrupadas de CABA; distinta cardinalidad y distinta escala, no se reusa. DECISIÓN CLIENTE 8.11: el papel no dice que 'NS/NC' sea excluyente, así que no se fuerza exclusividad. `enunciadoFijo`: la pregunta mide 914 px contra 630 útiles (1,45 pantallas), así que el enunciado se pierde al primer scroll. SIN dos columnas: la opción más larga tiene 53 caracteres y partida al medio se lee peor."
         },
         {
           "id": "motivoPrincipalCalle",
@@ -1146,12 +1195,20 @@
           "tipo": "enumMulti",
           "catalogo": "actividadEconomica",
           "requerido": true,
+          "enunciadoFijo": true,
           "ayuda": "Respuesta múltiple.",
           "visibleSi": {
             "campo": "actividadDineroUltimoMes",
             "es": "si"
           },
-          "nota": "Papel, VII.23 (14 opciones). Misma clave: el papel vuelve a la lista desagregada, así que los 8 códigos retirados en 2026-09 vuelven a estar vigentes y se recupera la serie AppSheet. DECISIÓN CLIENTE 8.9: obligatoria, porque vacía contradice el 'Sí' de la pregunta anterior. DECISIÓN CLIENTE 8.11: 'Ninguna' y 'NS/NC' no se fuerzan como excluyentes (se van a ver marcas como 'Ninguna + Changas')."
+          "visibleSiAnterior": {
+            "campo": "actividadDineroUltimoMes",
+            "en": [
+              "si",
+              "nsnc"
+            ]
+          },
+          "nota": "Papel, VII.23 (14 opciones). Misma clave: el papel vuelve a la lista desagregada, así que los 8 códigos retirados en 2026-09 vuelven a estar vigentes y se recupera la serie AppSheet. DECISIÓN CLIENTE 8.9: obligatoria, porque vacía contradice el 'Sí' de la pregunta anterior. DECISIÓN CLIENTE 8.11: 'Ninguna' y 'NS/NC' no se fuerzan como excluyentes (se van a ver marcas como 'Ninguna + Changas'). `enunciadoFijo`: 941 px contra 630 útiles (1,49 pantallas). SIN dos columnas: hay cuatro opciones de más de 40 caracteres ('Actividades vinculadas con el cuidado de personas', 49). `visibleSiAnterior`: es la ÚNICA pregunta cuyo filtro conservó la clave y estrechó la condición, así que un caso guardado con 'nsnc' y la 23 cargada es coherente con el instrumento que lo produjo; sin declararlo, reabrirlo y reguardarlo le borraba el detalle."
         },
         {
           "id": "otraActividad",
@@ -1187,7 +1244,7 @@
             "campo": "ingresoAdicional",
             "es": "si"
           },
-          "nota": "Papel, VII.25, nivel 1. DECISIÓN CLIENTE 8.9: obligatoria, porque vacía contradice el 'Si' de la 24. Las subopciones del papel se modelan como dos campos con sangría (DECISIÓN CLIENTE 8.11b): dan un dato inequívoco de a qué programa pertenece cada marca, sin renderer nuevo."
+          "nota": "Papel, VII.25, nivel 1. Sin banderas de presentación a propósito: mide 433 px contra 630 útiles (entra en una pantalla, no necesita enunciado fijo) y la opción más larga tiene 55 caracteres ('Pensión no contributiva (por discapacidad, vejez, etc.)'), que en media columna se parte en cuatro líneas. DECISIÓN CLIENTE 8.9: obligatoria, porque vacía contradice el 'Si' de la 24. Las subopciones del papel se modelan como dos campos con sangría (DECISIÓN CLIENTE 8.11b): dan un dato inequívoco de a qué programa pertenece cada marca, sin renderer nuevo."
         },
         {
           "id": "programaSocialCual",
@@ -1283,9 +1340,91 @@
     }
   ],
   "variantes": {
-    "$comentario": "Formulario FINAL PAPEL: un solo cuestionario. La variante `adolescente` (2026-09) queda eliminada — el papel no tiene versión abreviada. El catálogo `varianteCuestionario` conserva el código para leer los casos ya guardados: `varianteEfectiva` devuelve 'completo' para ellos, que es lo correcto.",
+    "$comentario": "4.1.0 (SISOC#2664): vuelve `adolescente` como FORMULARIO DE MENORES, para la franja 14–17 que acepta responder (docs/FORMULARIO-MENORES-14-17.md). Es un subconjunto del papel general: las mismas claves, menos preguntas. `reglas` decide por franja + consentimiento, así que un caso guardado con 'completo' bajo 4.0.0 pasa a 'adolescente' al reabrirse; lo que ya tenía respondido fuera del subconjunto se conserva y se sigue mostrando (motor `enVariante`), igual que una pregunta retirada. Las páginas identificación, observacional y cierre, el consentimiento y los campos calculados entran siempre.",
+    "reglas": [
+      {
+        "cuando": {
+          "todas": [
+            {
+              "campo": "personaEntrevistada",
+              "prefijoEn": [
+                "r14a17"
+              ]
+            },
+            {
+              "campo": "realizaEntrevista",
+              "es": "si"
+            }
+          ]
+        },
+        "variante": "adolescente"
+      }
+    ],
     "completo": {
       "todos": true
+    },
+    "adolescente": {
+      "descripcion": "Formulario de menores (14 a 17 años), SISOC#2664.",
+      "campos": [
+        "avisoFormularioMenores",
+        "nombre",
+        "apellido",
+        "fechaNacimiento",
+        "grupoFamiliar",
+        "tieneDocumento",
+        "documentoTipo",
+        "numeroDocumento",
+        "nivelEducativo",
+        "dondeDuermeEstaNoche",
+        "desdeCuandoCalle"
+      ],
+      "ajustes": {
+        "$comentario": "Numeración del PDF de menores (2 a 8; el 2 es el código de identificación, que no es una pregunta). 'No → 5' del PDF es una errata heredada del papel general (en menores la 5 es el número de documento): se implementa 'No → 6', igual que 'NS/NC → 6', y no se pregunta el motivo (IV.5 del general no está en el PDF). Nivel educativo: las 6 opciones del PDF, sin terciario ni universitario.",
+        "tieneDocumento": {
+          "etiqueta": "3. ¿Tiene algún documento de Identidad?"
+        },
+        "documentoTipo": {
+          "etiqueta": "4. ¿Cuál?"
+        },
+        "numeroDocumento": {
+          "etiqueta": "5. ¿Desea compartirnos el número?"
+        },
+        "nivelEducativo": {
+          "etiqueta": "6. ¿Qué nivel educativo alcanzó/está cursando?",
+          "opciones": [
+            {
+              "codigo": "primarioIncompleto",
+              "etiqueta": "Primario incompleto"
+            },
+            {
+              "codigo": "primarioCompleto",
+              "etiqueta": "Primario completo"
+            },
+            {
+              "codigo": "secundarioIncompleto",
+              "etiqueta": "Secundario incompleto"
+            },
+            {
+              "codigo": "secundarioCompleto",
+              "etiqueta": "Secundario completo"
+            },
+            {
+              "codigo": "educacionEspecial",
+              "etiqueta": "Educación especial"
+            },
+            {
+              "codigo": "nuncaAsistio",
+              "etiqueta": "Nunca asistió"
+            }
+          ]
+        },
+        "dondeDuermeEstaNoche": {
+          "etiqueta": "7. ¿Dónde va a dormir esta noche?"
+        },
+        "desdeCuandoCalle": {
+          "etiqueta": "8. ¿Desde cuándo está en situación de calle?"
+        }
+      }
     }
   },
   "estados": {

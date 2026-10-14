@@ -334,7 +334,7 @@ def previsualizar_informe_tecnico_template(request, tipo, pk):
 
 @login_required
 def descargar_informe_tecnico_para_gde(request, tipo, pk):
-    """Descarga el último DOCX del informe con tablas aptas para GDE."""
+    """Descarga una copia DOC del último Word validado, preparada para GDE."""
 
     informe = get_object_or_404(
         InformeTecnico.objects.select_related("admision", "admision__comedor"),
@@ -361,21 +361,19 @@ def descargar_informe_tecnico_para_gde(request, tipo, pk):
         messages.error(request, "No hay un DOCX disponible para preparar para GDE.")
         return redirect("admisiones_tecnicos_editar", pk=informe.admision_id)
 
-    docx_content = GdeDocxService.generar(
+    doc_content = GdeDocxService.generar_doc(
         archivo_docx,
         informe_pk=informe.pk,
     )
-    if docx_content is None:
-        messages.error(request, "No se pudo preparar el DOCX para GDE.")
+    if doc_content is None:
+        messages.error(request, "No se pudo preparar el archivo DOC para GDE.")
         return redirect("admisiones_tecnicos_editar", pk=informe.admision_id)
 
     return FileResponse(
-        docx_content,
+        doc_content,
         as_attachment=True,
-        filename=f"informe-{informe.pk}-para-gde.docx",
-        content_type=(
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        ),
+        filename=f"informe-{informe.pk}-para-gde.doc",
+        content_type="application/msword",
     )
 
 
@@ -662,6 +660,14 @@ def _build_admision_detail_context_payload(
 @login_required
 @require_POST
 def subir_archivo_admision(request, admision_id, documentacion_id):
+    if AdmisionService.es_abogado_dupla_sin_rol_tecnico(request.user):
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "El abogado de la dupla no puede adjuntar archivos.",
+            },
+            status=403,
+        )
     archivo = request.FILES.get("archivo")
     if not archivo:
         return JsonResponse(
@@ -703,6 +709,15 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
     if request.method != "DELETE":
         return JsonResponse(
             {"success": False, "error": "Metodo no permitido"}, status=405
+        )
+
+    if AdmisionService.es_abogado_dupla_sin_rol_tecnico(request.user):
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "El abogado de la dupla no puede eliminar archivos.",
+            },
+            status=403,
         )
 
     admision = get_object_or_404(Admision, pk=admision_id)
@@ -997,6 +1012,14 @@ def actualizar_num_expediente(request):
 @login_required
 @require_POST
 def crear_documento_personalizado(request, admision_id):
+    if AdmisionService.es_abogado_dupla_sin_rol_tecnico(request.user):
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "El abogado de la dupla no puede adjuntar archivos.",
+            },
+            status=403,
+        )
     archivo = request.FILES.get("archivo")
     nombre = request.POST.get("nombre", "")
 
@@ -1470,6 +1493,15 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
     def _handle_documento_personalizado_post(self, request):
         if not (request.FILES.get("archivo") or request.POST.get("nombre")):
             return None
+
+        if AdmisionService.es_abogado_dupla_sin_rol_tecnico(request.user):
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "El abogado de la dupla no puede adjuntar archivos.",
+                },
+                status=403,
+            )
 
         if not (request.FILES.get("archivo") and request.POST.get("nombre")):
             return JsonResponse(

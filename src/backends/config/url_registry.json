@@ -1745,6 +1745,16 @@
   "regex": "^dispositivos/\\Z"
  },
  {
+  "name": "dispositivos_mapa",
+  "namespace": "",
+  "regex": "^dispositivos/mapa/\\Z"
+ },
+ {
+  "name": "dispositivos_ubicacion",
+  "namespace": "",
+  "regex": "^dispositivos/(?P<pk>[0-9]+)/ubicacion/\\Z"
+ },
+ {
   "name": "django-admindocs-bookmarklets",
   "namespace": "",
   "regex": "^admin/doc/bookmarklets/\\Z"

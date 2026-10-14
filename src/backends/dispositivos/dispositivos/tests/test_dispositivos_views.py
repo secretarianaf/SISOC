@@ -785,3 +785,220 @@ def test_form_municipio_vacio_para_provincia_fuera_de_alcance(dos_provincias):
     form = DispositivoForm(data={"provincia": provincia_b.id}, user=user)
 
     assert not form.fields["municipio"].queryset.exists()
+
+
+@pytest.mark.django_db
+def test_mapa_requiere_permiso(client):
+    url = reverse("dispositivos_mapa")
+    assert client.get(url).status_code == 403
+    user = User.objects.create_user(username="mapa-sin-permiso")
+    client.force_login(user)
+    assert client.get(url).status_code == 403
+
+
+@pytest.mark.django_db
+def test_mapa_incluye_todos_y_respeta_filtros(
+    client, user_con_permisos, provincia_municipio
+):
+    provincia, municipio = provincia_municipio
+    for indice in range(16):
+        _crear_dispositivo(provincia, municipio, indice=indice)
+    client.force_login(user_con_permisos)
+    response = client.get(reverse("dispositivos_mapa"))
+    assert response.status_code == 200
+    assert len(response.context["map_devices"]) == 16
+    response = client.get(reverse("dispositivos_mapa"), {"busqueda": "Dispositivo 15"})
+    assert len(response.context["map_devices"]) == 1
+    assert response.context["map_devices"][0]["name"] == "Dispositivo 15"
+    assert "responsable_dni" not in response.context["map_devices"][0]
+    response = client.get(
+        reverse("dispositivos_listar"), {"busqueda": "Rosario", "page": "1"}
+    )
+    assert (
+        response.context["map_url"]
+        == reverse("dispositivos_mapa") + "?busqueda=Rosario"
+    )
+
+
+@pytest.mark.django_db
+def test_mapa_y_ubicacion_respetan_scope(client, dos_provincias, monkeypatch):
+    provincia_a, municipio_a, provincia_b, municipio_b = dos_provincias
+    visible = _crear_dispositivo(provincia_a, municipio_a, indice=1)
+    hidden = _crear_dispositivo(provincia_b, municipio_b, indice=2)
+    user = _crear_usuario_provincial("mapa-provincial", provincia=provincia_a)
+    client.force_login(user)
+    response = client.get(reverse("dispositivos_mapa"))
+    assert [d["id"] for d in response.context["map_devices"]] == [visible.pk]
+
+    def forbidden_lookup(_device):
+        pytest.fail("No debe geocodificar dispositivos fuera del alcance")
+
+    monkeypatch.setattr("dispositivos.views.geolocate_dispositivo", forbidden_lookup)
+    assert (
+        client.get(reverse("dispositivos_ubicacion", args=[hidden.pk])).status_code
+        == 404
+    )
+
+
+@pytest.mark.django_db
+def test_ubicacion_respuesta_y_fallback(
+    client, user_con_permisos, provincia_municipio, monkeypatch
+):
+    provincia, municipio = provincia_municipio
+    device = _crear_dispositivo(provincia, municipio)
+    client.force_login(user_con_permisos)
+    url = reverse("dispositivos_ubicacion", args=[device.pk])
+    monkeypatch.setattr(
+        "dispositivos.views.geolocate_dispositivo",
+        lambda _: {"status": "located", "lat": -34.9, "lon": -57.9},
+    )
+    response = client.get(url)
+    assert response.json() == {"status": "located", "lat": -34.9, "lon": -57.9}
+    assert response["Cache-Control"] == "private, no-store"
+    monkeypatch.setattr(
+        "dispositivos.views.geolocate_dispositivo", lambda _: {"status": "unavailable"}
+    )
+    assert client.get(url).status_code == 503
+
+
+@pytest.mark.django_db
+def test_mapa_listado_con_filtros_combinables(
+    client, user_con_permisos, provincia_municipio
+):
+    import json
+
+    provincia, municipio = provincia_municipio
+    visible = _crear_dispositivo(
+        provincia, municipio, indice=1, tipo_dispositivo="refugio"
+    )
+    _crear_dispositivo(
+        provincia, municipio, indice=2, tipo_dispositivo="hogar_transito"
+    )
+    client.force_login(user_con_permisos)
+    url = reverse("dispositivos_mapa")
+    filters = json.dumps(
+        {"items": [{"field": "tipo_dispositivo", "op": "eq", "value": "refugio"}]}
+    )
+    response = client.get(url, {"filters": filters})
+    assert response.status_code == 200
+    assert [device["id"] for device in response.context["map_devices"]] == [visible.pk]
+    assert response.context["filters_action"] == url
+    assert response.context["reset_url"] == url
+    content = response.content.decode()
+    assert 'id="filters-form"' in content
+    assert f'data-map-focus="{visible.pk}"' in content
+    assert "Ver en mapa" in content
+    assert "Ver detalle" in content
+
+
+@pytest.mark.django_db
+def test_mapa_contacto_provincias_y_seleccion(
+    client, user_con_permisos, provincia_municipio
+):
+    provincia, municipio = provincia_municipio
+    device = _crear_dispositivo(provincia, municipio)
+    client.force_login(user_con_permisos)
+    url = reverse("dispositivos_mapa")
+    response = client.get(url, {"dispositivo": device.pk})
+    data = response.context["map_devices"][0]
+    assert data["representative"] == "Ana Lopez"
+    assert data["phone"] == "221 9876543"
+    assert data["province_id"] == provincia.pk
+    assert "responsable_dni" not in data
+    assert response.context["map_provinces"] == [(provincia.pk, provincia.nombre)]
+    assert response.context["map_initial_device"] == device.pk
+    assert (
+        client.get(url, {"dispositivo": "invalido"}).context["map_initial_device"] == ""
+    )
+    response = client.get(reverse("dispositivos_listar"))
+    content = response.content.decode()
+    assert "Mapa de dispositivos" in content
+    assert f"dispositivo={device.pk}" in content
+    assert "Ver en mapa" in content
+    assert "Ver detalle" in content
+
+
+@pytest.mark.django_db
+def test_mapa_tiene_un_solo_buscador_sin_boton_ver_mapa(
+    client, user_con_permisos, provincia_municipio
+):
+    import json
+
+    provincia, municipio = provincia_municipio
+    _crear_dispositivo(provincia, municipio)
+    client.force_login(user_con_permisos)
+    filters = json.dumps(
+        {"items": [{"field": "estado_ubicacion", "op": "eq", "value": "located"}]}
+    )
+    response = client.get(reverse("dispositivos_mapa"), {"filters": filters})
+    assert response.status_code == 200
+    assert response.context["map_url"] is None
+    assert response.context["map_location_filters"][0]["value"] == "located"
+    fields = {
+        field["name"]: field for field in response.context["filters_config"]["fields"]
+    }
+    assert fields["provincia"]["type"] == "choice"
+    assert fields["estado_ubicacion"]["type"] == "choice"
+    content = response.content.decode()
+    assert content.count('id="filters-form"') == 1
+    assert 'id="map-province-filter"' not in content
+    assert 'id="map-location-filter"' not in content
+    assert ">Ver mapa" not in content
+
+
+@pytest.mark.django_db
+def test_mapa_incluye_ubicacion_guardada_vigente(
+    client, user_con_permisos, provincia_municipio, monkeypatch
+):
+    from dispositivos.services import geolocate_dispositivo
+    from unittest.mock import Mock
+
+    provincia, municipio = provincia_municipio
+    device = _crear_dispositivo(provincia, municipio)
+    monkeypatch.setattr(
+        "dispositivos.services.requests.get",
+        Mock(
+            return_value=Mock(
+                raise_for_status=Mock(),
+                json=Mock(
+                    return_value={
+                        "total": 1,
+                        "direcciones": [{"ubicacion": {"lat": -34.9, "lon": -57.9}}],
+                    }
+                ),
+            )
+        ),
+    )
+    geolocate_dispositivo(device)
+    client.force_login(user_con_permisos)
+    response = client.get(reverse("dispositivos_mapa"))
+    assert response.context["map_devices"][0]["location"] == {
+        "status": "located",
+        "lat": -34.9,
+        "lon": -57.9,
+    }
+    device.altura = "900"
+    device.save()
+    response = client.get(reverse("dispositivos_mapa"))
+    assert response.context["map_devices"][0]["location"] is None
+
+
+@pytest.mark.django_db
+def test_mapa_opciones_de_provincia_no_dependen_del_filtro(
+    client, user_con_permisos, dos_provincias
+):
+    import json
+
+    provincia_a, municipio_a, provincia_b, municipio_b = dos_provincias
+    _crear_dispositivo(provincia_a, municipio_a, indice=1)
+    _crear_dispositivo(provincia_b, municipio_b, indice=2)
+    client.force_login(user_con_permisos)
+    filters = json.dumps(
+        {"items": [{"field": "provincia", "op": "eq", "value": provincia_a.nombre}]}
+    )
+    response = client.get(reverse("dispositivos_mapa"), {"filters": filters})
+    assert len(response.context["map_devices"]) == 1
+    assert set(response.context["map_provinces"]) == {
+        (provincia_a.pk, provincia_a.nombre),
+        (provincia_b.pk, provincia_b.nombre),
+    }

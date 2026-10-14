@@ -580,6 +580,11 @@
   "regex": "^api/territorial/comedores/$"
  },
  {
+  "name": "api-territorial-comedor-pdf-seguimiento-pnud",
+  "namespace": "",
+  "regex": "^api/territorial/comedores/(?P<pk>\\d+)/seguimientos-pnud/(?P<pnud_id>[0-9]+)/pdf/$"
+ },
+ {
   "name": "api-territorial-comedor-seguimientos-pnud",
   "namespace": "",
   "regex": "^api/territorial/comedores/(?P<pk>\\d+)/seguimientos-pnud/$"
@@ -3245,9 +3250,9 @@
   "regex": "^comedores/(?P<comedor_pk>[0-9]+)/seguimiento\\-pnud/(?P<pk>[0-9]+)\\Z"
  },
  {
-  "name": "seguimiento_pnud_docx",
+  "name": "seguimiento_pnud_pdf",
   "namespace": "",
-  "regex": "^comedores/(?P<comedor_pk>[0-9]+)/seguimiento\\-pnud/(?P<pk>[0-9]+)/docx\\Z"
+  "regex": "^comedores/(?P<comedor_pk>[0-9]+)/seguimiento\\-pnud/(?P<pk>[0-9]+)/pdf\\Z"
  },
  {
   "name": "seguimiento_pnud_revision_coordinador",

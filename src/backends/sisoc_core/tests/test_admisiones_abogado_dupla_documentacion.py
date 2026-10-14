@@ -104,6 +104,23 @@ def test_crear_documento_personalizado_rechaza_abogado(mocker):
     crear.assert_not_called()
 
 
+def test_detalle_documento_personalizado_post_rechaza_abogado(mocker):
+    crear = mocker.patch(
+        "admisiones.views.web_views.AdmisionService.crear_documento_personalizado"
+    )
+    req = SimpleNamespace(
+        FILES={"archivo": object()},
+        POST={"nombre": "Doc"},
+        user=_abogado(),
+        method="POST",
+    )
+
+    resp = module.AdmisionDetailView()._handle_documento_personalizado_post(req)
+
+    assert resp.status_code == 403
+    crear.assert_not_called()
+
+
 def test_eliminar_archivo_admision_rechaza_abogado(mocker):
     delete = mocker.patch(
         "admisiones.views.web_views.AdmisionService.delete_admision_file"

@@ -15,7 +15,9 @@ Cambios:
   sin rol ni grupo técnico. Los superusuarios tienen todos los roles y no
   quedan alcanzados; un usuario con ambos roles conserva los permisos de técnico.
 - `subir_archivo_admision`, `crear_documento_personalizado` y
-  `eliminar_archivo_admision` responden 403 para ese usuario.
+  `eliminar_archivo_admision` responden 403 para ese usuario. También el POST
+  de documento personalizado en `AdmisionDetailView`, que crea el documento
+  por otro camino.
 - Filtro `puede_gestionar_documentacion_admision` (`admisiones_tags`): mismo
   criterio que antes usaban los templates, excluyendo al abogado. Reemplaza la
   condición repetida en `includes/documento_row.html` (Adjuntar, Eliminar y

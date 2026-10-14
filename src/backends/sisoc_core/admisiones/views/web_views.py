@@ -1496,6 +1496,15 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         if not (request.FILES.get("archivo") or request.POST.get("nombre")):
             return None
 
+        if AdmisionService.es_abogado_dupla_sin_rol_tecnico(request.user):
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "El abogado de la dupla no puede adjuntar archivos.",
+                },
+                status=403,
+            )
+
         if not (request.FILES.get("archivo") and request.POST.get("nombre")):
             return JsonResponse(
                 {

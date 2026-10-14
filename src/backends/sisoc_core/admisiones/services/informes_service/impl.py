@@ -1,8 +1,12 @@
 import logging
 import os
+import shutil
+import subprocess
+import tempfile
 import traceback
 from datetime import date, datetime
 from io import BytesIO
+from pathlib import Path
 from typing import Any
 
 from django.conf import settings
@@ -21,6 +25,7 @@ from docx.enum import text as docx_text
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 from docx.shared import Mm, Pt, RGBColor
+from htmldocx import HtmlToDocx
 
 from ...utils import (
     campo_informe_para_numero_gde,
@@ -31,8 +36,8 @@ from ..docx_service import AdmisionesContextService, DocumentTemplateService
 from .formato_docx import (
     ALINEACIONES_HTML,
     CENTRADO_VERTICAL,
+    PARRAFO_VACIO_EDITOR,
     SUCESORES_BORDES_TABLA,
-    HtmlToDocxConCeldasCombinadas,
     MembreteInformeTecnico,
 )
 from admisiones.forms.admisiones_forms import (
@@ -70,6 +75,81 @@ DIAS_SEMANA = (
     "sabado",
     "domingo",
 )
+
+
+class _InformeHtmlToDocx(HtmlToDocx):
+    """Conserva la grilla de las tablas HTML con colspan y rowspan."""
+
+    def run_process(self, html):
+        # El editor deja los renglones vacíos como <p><br></p>: en el navegador
+        # ocupan una línea, pero htmldocx los convierte en un párrafo con salto.
+        super().run_process(PARRAFO_VACIO_EDITOR.sub(r"<p\1></p>", html))
+
+    def handle_table(self):
+        # htmldocx 0.0.6 cuenta las celdas de la primera fila, no las columnas
+        # ocupadas. Un encabezado combinado deja una grilla demasiado pequeña.
+        table_soup = self.tables[self.table_no]
+        filas = self.get_table_rows(table_soup)
+        ocupadas = set()
+        celdas = []
+        columnas = 0
+        for numero_fila, fila in enumerate(filas):
+            numero_columna = 0
+            for celda in self.get_table_columns(fila):
+                while (numero_fila, numero_columna) in ocupadas:
+                    numero_columna += 1
+                colspan = int(celda.get("colspan", 1))
+                rowspan = int(celda.get("rowspan", 1))
+                if colspan < 1 or rowspan < 1 or numero_fila + rowspan > len(filas):
+                    raise ValueError("La tabla contiene celdas combinadas inválidas.")
+                posiciones = {
+                    (f, c)
+                    for f in range(numero_fila, numero_fila + rowspan)
+                    for c in range(numero_columna, numero_columna + colspan)
+                }
+                if posiciones & ocupadas:
+                    raise ValueError(
+                        "La tabla contiene celdas combinadas superpuestas."
+                    )
+                ocupadas.update(posiciones)
+                celdas.append((numero_fila, numero_columna, rowspan, colspan, celda))
+                numero_columna += colspan
+                columnas = max(columnas, numero_columna)
+
+        if not filas or not columnas:
+            raise ValueError("La tabla no contiene celdas.")
+        tabla = self.doc.add_table(len(filas), columnas)
+        if self.table_style:
+            tabla.style = self.table_style
+        for fila, columna, rowspan, colspan, celda in celdas:
+            destino = tabla.cell(fila, columna)
+            if rowspan > 1 or colspan > 1:
+                destino = destino.merge(
+                    tabla.cell(fila + rowspan - 1, columna + colspan - 1)
+                )
+            contenido = self.get_cell_html(celda)
+            if celda.name == "th":
+                contenido = f"<b>{contenido}</b>"
+            parser = type(self)()
+            parser.copy_settings_from(self)
+            parser.add_html_to_cell(contenido, destino)
+            self._alinear_celda(celda, destino)
+
+        self.instances_to_skip = len(table_soup.find_all("table"))
+        self.skip_tag = "table"
+        self.skip = True
+        self.table = None
+
+    def _alinear_celda(self, celda_soup, celda):
+        """Traslada el ``text-align`` de la celda HTML a sus párrafos."""
+
+        estilos = self.parse_dict_string(celda_soup.get("style") or "")
+        alineacion = ALINEACIONES_HTML.get(estilos.get("text-align", "").strip())
+        if alineacion is None:
+            return
+        for parrafo in celda.paragraphs:
+            if parrafo.alignment is None:
+                parrafo.alignment = alineacion
 
 
 class GdeDocxService:
@@ -118,6 +198,56 @@ class GdeDocxService:
         finally:
             if hasattr(archivo_docx, "close"):
                 archivo_docx.close()
+
+    @classmethod
+    def generar_doc(cls, archivo_docx, informe_pk=None):
+        """Convierte una copia normalizada a Word 97-2003 para GDE."""
+
+        normalizado = cls.generar(archivo_docx, informe_pk=informe_pk)
+        if normalizado is None:
+            return None
+        try:
+            ejecutable = shutil.which("libreoffice") or shutil.which("soffice")
+            if not ejecutable:
+                raise RuntimeError("LibreOffice no está disponible.")
+            with tempfile.TemporaryDirectory(prefix="informe-gde-") as temp_dir:
+                temp_path = Path(temp_dir)
+                entrada = temp_path / "informe.docx"
+                salida = temp_path / "informe.doc"
+                entrada.write_bytes(normalizado.read())
+                profile_uri = (temp_path / "libreoffice-profile").resolve().as_uri()
+                resultado = subprocess.run(
+                    [
+                        ejecutable,
+                        "--headless",
+                        "--nologo",
+                        "--nodefault",
+                        "--nofirststartwizard",
+                        f"-env:UserInstallation={profile_uri}",
+                        "--convert-to",
+                        "doc:MS Word 97",
+                        "--outdir",
+                        str(temp_path),
+                        str(entrada),
+                    ],
+                    capture_output=True,
+                    check=False,
+                    timeout=120,
+                )
+                if resultado.returncode != 0 or not salida.is_file():
+                    raise RuntimeError("LibreOffice no generó el documento para GDE.")
+                contenido = salida.read_bytes()
+                if not contenido.startswith(bytes.fromhex("d0cf11e0a1b11ae1")):
+                    raise RuntimeError("La salida no es un documento Word 97-2003.")
+                return ContentFile(contenido, name="informe-para-gde.doc")
+        except (OSError, RuntimeError, subprocess.TimeoutExpired):
+            logger.exception(
+                "No se pudo convertir el informe a DOC para GDE",
+                extra={"informe_pk": informe_pk},
+            )
+            return None
+        finally:
+            normalizado.close()
 
     @staticmethod
     def _justificar_estilo_normal(documento):
@@ -256,7 +386,7 @@ class InformeService:
             doc = Document()
             if estilizar_tablas_templates:
                 InformeService._configurar_documento_template(doc)
-            HtmlToDocxConCeldasCombinadas().add_html_to_document(html_content, doc)
+            _InformeHtmlToDocx().add_html_to_document(html_content, doc)
             if estilizar_tablas_templates:
                 InformeService._aplicar_estilo_tablas_templates(doc)
             buffer = BytesIO()
@@ -270,6 +400,10 @@ class InformeService:
             logger.warning(
                 f"Error generando DOCX: {str(e)}", extra={"informe_pk": informe_pk}
             )
+            if estilizar_tablas_templates:
+                # Una plantilla publicada debe conservar su estructura: no se
+                # entrega un documento aparentemente válido con tablas perdidas.
+                return None
             try:
                 fallback_doc = Document()
                 if estilizar_tablas_templates:
@@ -706,6 +840,25 @@ class InformeService:
 
         for tabla in documento.tables:
             tabla.alignment = WD_TABLE_ALIGNMENT.CENTER  # pylint: disable=no-member
+            # La grilla HTML por defecto asigna el mismo ancho a todas las
+            # columnas. Los nombres de prestación necesitan más espacio que
+            # cada día; se ajusta únicamente el cuadro documental de 9 columnas.
+            if (
+                len(tabla.columns) == 9
+                and tabla.cell(0, 0).text.strip().lower() == "tipo de prestación"
+                and tabla.cell(0, 8).text.strip().lower() == "total semanal"
+            ):
+                # 20% para el tipo, 65% repartido entre días y 15% para el total.
+                for columna, peso in zip(
+                    tabla.columns, (28, 13, 13, 13, 13, 13, 13, 13, 21)
+                ):
+                    columna.width = Mm(peso)
+            GdeDocxService._normalizar_tabla(  # pylint: disable=protected-access
+                tabla,
+                GdeDocxService._ancho_disponible_documento_dxa(  # pylint: disable=protected-access
+                    documento
+                ),
+            )
             cls._aplicar_bordes_tabla_template(tabla)
             for fila in tabla.rows:
                 for celda in fila.cells:

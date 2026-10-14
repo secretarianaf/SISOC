@@ -3,6 +3,7 @@ from core.decorators import permissions_any_required
 from relevamientos.views.backoffice_views import (
     ActaComplementariaDetailView,
     SeguimientoPnudDetailView,
+    SeguimientoPnudDocxView,
     SeguimientoPnudRevisionCoordinadorView,
     ActaComplementariaEliminarView,
     ActaComplementariaFormView,
@@ -20,6 +21,7 @@ from relevamientos.views.web_views import (
     RelevamientoPdfView,
     RelevamientoRevisionCoordinadorView,
     RelevamientoUpdateView,
+    SeguimientoPdfView,
 )
 
 urlpatterns = [
@@ -102,6 +104,13 @@ urlpatterns = [
         name="seguimiento_editar",
     ),
     path(
+        "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimiento/<int:pk>/pdf",
+        permissions_any_required(["relevamientos.view_relevamiento"])(
+            SeguimientoPdfView.as_view()
+        ),
+        name="seguimiento_pdf",
+    ),
+    path(
         "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimiento/<int:pk>/eliminar",
         permissions_any_required(["relevamientos.delete_primerseguimiento"])(
             PrimerSeguimientoEliminarView.as_view()
@@ -129,6 +138,13 @@ urlpatterns = [
             SeguimientoPnudRevisionCoordinadorView.as_view()
         ),
         name="seguimiento_pnud_revision_coordinador",
+    ),
+    path(
+        "comedores/<int:comedor_pk>/seguimiento-pnud/<int:pk>/docx",
+        permissions_any_required(["relevamientos.view_relevamiento"])(
+            SeguimientoPnudDocxView.as_view()
+        ),
+        name="seguimiento_pnud_docx",
     ),
     # --- Actas complementarias extraordinarias ---
     path(

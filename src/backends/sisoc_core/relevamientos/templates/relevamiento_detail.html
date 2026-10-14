@@ -62,7 +62,9 @@
             {% endif %}
             {% if relevamiento.estado == "Finalizado" or relevamiento.estado == "Finalizado/Excepciones" %}
                 <a href="{% url 'relevamiento_pdf' relevamiento.comedor.id relevamiento.id %}"
-                   class="btn btn-secondary mr-1 d-none d-sm-inline">Descargar PDF</a>
+                   class="btn btn-secondary mr-1 d-none d-sm-inline"
+                   {% if pdf_oficial %}title="Formato oficial de Gestionar, enviado el {{ pdf_oficial.fecha_actualizacion|date:'d/m/Y H:i' }}"{% endif %}>Descargar PDF</a>
+                {% if pdf_oficial %}<small class="text-muted mr-2 d-none d-sm-inline">Formato oficial de Gestionar</small>{% endif %}
             {% endif %}
             {% if seguimientos %}
                 <a href="#section-seguimientos"

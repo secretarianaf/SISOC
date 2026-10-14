@@ -23,9 +23,27 @@
                 {% if encuesta.fecha_inicio %}
                     <span>&middot;</span><span>{{ encuesta.fecha_inicio|date:"d/m/Y H:i" }}</span>
                 {% endif %}
+                {% if encuesta.variante_etiqueta %}
+                    <span>&middot;</span>
+                    <span><i class="fas fa-file-alt"></i>{{ encuesta.variante_etiqueta }}</span>
+                {% endif %}
             </div>
         </div>
     </div>
+
+    {% if encuesta.es_formulario_menores %}
+        <div class="dc-seccion mb-3">
+            <div class="dc-seccion__body">
+                <p class="dc-dato__valor mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    {# 4.1.0 (#2664): a las personas de 14 a 17 que aceptan se les hace solo el formulario de menores. #}
+                    Formulario de menores (14 a 17 años): se relevan el código de identificación y los vínculos,
+                    el documento, el nivel educativo, dónde duerme esta noche y desde cuándo está en situación
+                    de calle. Las demás preguntas del papel general no se le preguntan: no son datos faltantes.
+                </p>
+            </div>
+        </div>
+    {% endif %}
 
     {% if encuesta.sin_entrevista_por_franja %}
         <div class="dc-seccion mb-3">

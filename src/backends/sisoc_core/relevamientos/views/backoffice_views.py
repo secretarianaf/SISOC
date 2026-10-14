@@ -8,6 +8,7 @@ consume la app no cambia.
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic import DetailView
@@ -24,6 +25,7 @@ from relevamientos.models import (
     SeguimientoPnud,
 )
 from relevamientos.pnud_formularios import respuestas_por_seccion, titulos
+from relevamientos.siph_docx import docx_siph
 from relevamientos.views.seguimiento_helpers import (
     aplicar_revision_coordinador,
     resolver_seguimiento,
@@ -123,6 +125,30 @@ class SeguimientoPnudDetailView(LoginRequiredMixin, DetailView):
         )
         context["encabezado_formulario"] = titulos(self.object.formulario)
         return context
+
+
+class SeguimientoPnudDocxView(LoginRequiredMixin, View):
+    """Descarga del Seguimiento SIPH en el docx del área (#2651).
+
+    Solo el SIPH tiene plantilla: para los demás formularios PNUD no existe
+    (404), igual que antes.
+    """
+
+    def get(self, request, comedor_pk, pk):
+        seguimiento = get_object_or_404(
+            SeguimientoPnud.objects.select_related("comedor", "tecnico"),
+            comedor_id=comedor_pk,
+            pk=pk,
+            formulario=SeguimientoPnud.FORMULARIO_SIPH,
+        )
+        return FileResponse(
+            docx_siph(seguimiento),
+            as_attachment=True,
+            filename=f"seguimiento-siph-{seguimiento.pk}.docx",
+            content_type=(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ),
+        )
 
 
 class SeguimientoPnudRevisionCoordinadorView(LoginRequiredMixin, View):

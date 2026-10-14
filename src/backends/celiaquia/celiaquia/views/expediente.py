@@ -1894,7 +1894,7 @@ class CorregirEvaluacionView(View):
             return JsonResponse(
                 {
                     "success": False,
-                    "error": "No tenés permiso para corregir evaluaciones finales.",
+                    "error": "No tenés permiso para corregir evaluaciones técnicas.",
                 },
                 status=403,
             )

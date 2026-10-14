@@ -1,7 +1,7 @@
 """Formato Word del Informe Técnico generado desde el Gestor de templates.
 
-Replica el membrete y las tablas con celdas combinadas del modelo institucional
-del Programa Alimentar Comunidad, que htmldocx no resuelve por sí solo.
+Replica el membrete del modelo institucional del Programa Alimentar Comunidad
+y reúne las constantes de formato que usa el generador del informe.
 """
 
 import logging
@@ -14,7 +14,6 @@ from docx.enum import text as docx_text
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Mm, Pt, RGBColor
-from htmldocx import HtmlToDocx
 
 logger = logging.getLogger("admisiones.services.informes")
 
@@ -56,94 +55,6 @@ ALINEACIONES_HTML = {
 CENTRADO_VERTICAL = WD_CELL_VERTICAL_ALIGNMENT.CENTER
 TABULACION_CENTRADA = docx_text.WD_TAB_ALIGNMENT.CENTER
 # pylint: enable=no-member
-
-
-class HtmlToDocxConCeldasCombinadas(HtmlToDocx):
-    """HtmlToDocx que respeta ``colspan`` y ``rowspan`` en las tablas.
-
-    htmldocx 0.0.6 dimensiona la tabla con las celdas de la primera fila e
-    ignora las combinadas: una tabla con título combinado rompe el parseo y el
-    informe termina en el fallback de texto plano.
-    """
-
-    def run_process(self, html):
-        # El editor deja los renglones vacíos como <p><br></p>: en el navegador
-        # ocupan una línea, pero htmldocx los convierte en un párrafo con salto.
-        super().run_process(PARRAFO_VACIO_EDITOR.sub(r"<p\1></p>", html))
-
-    def handle_table(self):
-        tabla_soup = self.tables[self.table_no]
-        filas = self.get_table_rows(tabla_soup)
-        ubicaciones, total_filas, total_columnas = self._ubicar_celdas(filas)
-        self.table = self.doc.add_table(total_filas, total_columnas)
-
-        if self.table_style:
-            try:
-                self.table.style = self.table_style
-            except KeyError as error:
-                raise ValueError(
-                    f"Unable to apply style {self.table_style}."
-                ) from error
-
-        for celda_soup, fila, columna, alto, ancho in ubicaciones:
-            celda = self.table.cell(fila, columna)
-            if alto > 1 or ancho > 1:
-                celda = celda.merge(
-                    self.table.cell(fila + alto - 1, columna + ancho - 1)
-                )
-            contenido = self.get_cell_html(celda_soup)
-            if celda_soup.name == "th":
-                contenido = f"<b>{contenido}</b>"
-            parser_celda = type(self)()
-            parser_celda.copy_settings_from(self)
-            parser_celda.add_html_to_cell(contenido, celda)
-            self._alinear_celda(celda_soup, celda)
-
-        # Igual que htmldocx: ignorar las etiquetas hasta cerrar esta tabla.
-        self.instances_to_skip = len(tabla_soup.find_all("table"))
-        self.skip_tag = "table"
-        self.skip = True
-        self.table = None
-
-    def _ubicar_celdas(self, filas):
-        """Devuelve la posición en grilla de cada celda y el tamaño total."""
-
-        ocupadas = set()
-        ubicaciones = []
-        for indice_fila, fila in enumerate(filas):
-            columna = 0
-            for celda_soup in self.get_table_columns(fila):
-                while (indice_fila, columna) in ocupadas:
-                    columna += 1
-                alto = min(
-                    self._leer_span(celda_soup, "rowspan"),
-                    len(filas) - indice_fila,
-                )
-                ancho = self._leer_span(celda_soup, "colspan")
-                for fila_ocupada in range(indice_fila, indice_fila + alto):
-                    for columna_ocupada in range(columna, columna + ancho):
-                        ocupadas.add((fila_ocupada, columna_ocupada))
-                ubicaciones.append((celda_soup, indice_fila, columna, alto, ancho))
-                columna += ancho
-
-        total_columnas = max((columna for _, columna in ocupadas), default=-1) + 1
-        return ubicaciones, len(filas), total_columnas
-
-    def _alinear_celda(self, celda_soup, celda):
-        """Traslada el ``text-align`` de la celda HTML a sus párrafos."""
-
-        estilos = self.parse_dict_string(celda_soup.get("style") or "")
-        alineacion = ALINEACIONES_HTML.get(estilos.get("text-align", "").strip())
-        if alineacion is None:
-            return
-        for parrafo in celda.paragraphs:
-            if parrafo.alignment is None:
-                parrafo.alignment = alineacion
-
-    @staticmethod
-    def _leer_span(celda_soup, atributo):
-        valor = str(celda_soup.get(atributo) or "1").strip()
-        return int(valor) if valor.isdigit() and int(valor) > 0 else 1
 
 
 class MembreteInformeTecnico:

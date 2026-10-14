@@ -2,8 +2,9 @@
 
 El Word que se descarga para validar el Informe Técnico (borrador generado desde
 el Gestor de templates) toma el formato del modelo institucional
-`2.-IT-Incorporación-Personería-6_-Ex-PNUD-No-vigente-1.doc`. La copia para GDE
-no cambia su lógica: `GdeDocxService` sigue partiendo del último DOCX disponible.
+`2.-IT-Incorporación-Personería-6_-Ex-PNUD-No-vigente-1.doc`. No cambia la
+lógica de la copia para GDE (#2580): parte del último DOCX disponible, así que
+lleva este formato y este membrete.
 
 ## Causa
 
@@ -16,12 +17,12 @@ no cambia su lógica: `GdeDocxService` sigue partiendo del último DOCX disponib
 
 ## Cambios
 
+- El soporte de `colspan`/`rowspan` lo resuelve `_InformeHtmlToDocx`
+  (#2580, en `impl.py`). Esta rama le agrega dos ajustes: traslada a los
+  párrafos el `text-align` puesto sobre `<td>`/`<th>` y convierte el renglón
+  vacío del editor (`<p><br></p>`) en un párrafo vacío, para que ocupe una
+  línea como en el navegador y no dos.
 - `admisiones/services/informes_service/formato_docx.py`:
-  - `HtmlToDocxConCeldasCombinadas` ubica cada celda en la grilla real,
-    combina celdas con `colspan`/`rowspan` y traslada a los párrafos el
-    `text-align` puesto sobre `<td>`/`<th>`. Convierte el renglón vacío del
-    editor (`<p><br></p>`) en un párrafo vacío, para que ocupe una línea como
-    en el navegador y no dos. Se usa en todo `_generate_docx_content`.
   - `MembreteInformeTecnico` agrega el encabezado (Programa Alimentar
     Comunidad, escudo, Secretaría de Niñez Adolescencia y Familia, Ministerio
     de Capital Humano y línea azul) y el número de página al pie. El modelo arma

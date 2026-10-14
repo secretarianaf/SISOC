@@ -36,6 +36,7 @@ La aceptacion funcional, de instalacion y offline queda al equipo de testers.
 | espacios | secretarianaf/Espacios-Comunitarios | SISOC-Mobile | sisoc-mobile / 8080 | habilitada en /mobile/ y /pwa/espacioscomunitarios/ |
 | datacalle | secretarianaf/DataCalle | DataCalle | sisoc-pwa-datacalle / 8081 | habilitada, base /pwa/datacalle/ |
 | gestionar | secretarianaf/Gestionar | Gestionar | sisoc-pwa-gestionar / 8082 | habilitada, base /pwa/gestionar/ |
+| inspecciones | secretarianaf/Inspecciones | Inspecciones | sisoc-pwa-inspecciones / 8083 | habilitada, base /pwa/inspecciones/, sin ruta historica |
 
 Fuente de configuracion: `src/scripts/operacion/pwas.json`. No renombrar las carpetas
 historicas ni los proyectos Compose al cambiar un nombre en GitHub.
@@ -48,6 +49,34 @@ sisoc-deploy. El permiso sudo temporal fue retirado y su revocacion verificada.
 Los servidores todavia conservan el include inicial de Espacios; este cambio
 versionado no equivale a un despliegue. Ver evidencia inicial en
 [registro operativo](../registro/cambios/2026-09-08-coordinacion-pwa-privadas.md).
+
+## Primera activacion de Inspecciones (2026-10-14)
+
+Inspecciones entra habilitada en `pwas.json`. Como las demas, `prepare` falla si
+falta su checkout: hay que aprovisionar **PRD y HML antes** de fusionar este cambio
+en main. El deploy a produccion promueve despues a homologacion, y el `prepare` de
+HML tambien la exige. Si `prepare` falla, falla antes del corte y no toca los
+servicios en uso, pero frena el deploy del backend.
+
+En cada host, como sisoc-deploy:
+
+1. Generar la deploy key `~/.ssh/sisoc-pwa-inspecciones` (ed25519, sin passphrase,
+   modo 600) y registrar su `.pub` como deploy key de solo lectura en
+   `secretarianaf/Inspecciones`. Verificar con
+   `GIT_SSH_COMMAND="ssh -o IdentitiesOnly=yes -i ~/.ssh/sisoc-pwa-inspecciones" git ls-remote git@github.com:secretarianaf/Inspecciones.git main`.
+2. Clonar en `/sisoc/Inspecciones` con esa clave, rama `main`, propietario
+   sisoc-deploy.
+3. Crear `/sisoc/Inspecciones/.env` modo 600 con un comentario y sin secretos: las
+   variables publicas (API, base path, puerto) las fija SISOC al construir.
+4. Instalar en Nginx, dentro del server HTTPS canonico, el bloqueo de evidencias
+   `location ^~ /media/inspecciones/ { return 404; }`
+   (ver `nginx/sisoc-produccion.conf`).
+5. Despues del deploy, cuando `127.0.0.1:8083` responda, respaldar el snippet vigente
+   e instalar el candidato de `render_pwa_nginx.py`, que agrega
+   `/pwa/inspecciones/`. Ejecutar `nginx -t` y reload. Hasta ese paso la ruta no es
+   accesible.
+6. Probar en HTTPS real: login con un usuario de la seccion Inspecciones escolares,
+   cierre de un acta de prueba, PDF y notificacion.
 
 ## Orden de primera activacion de DataCalle y Gestionar
 

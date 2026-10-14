@@ -86,6 +86,13 @@ Fecha: 2026-10-14. Rama: `feat/inspecciones-escolares`. Decisión:
   queda en el límite. PRD tiene 500M.
 - Cargar el catálogo y las asignaciones desde `/inspecciones/` y dar de alta a
   los inspectores con el ABM o el importador de usuarios.
+- La PWA (`secretarianaf/Inspecciones`) queda registrada y habilitada en
+  `src/scripts/operacion/pwas.json` (proyecto `sisoc-pwa-inspecciones`, puerto
+  8083, `/pwa/inspecciones/`, sin ruta histórica) y en la lista de repositorios
+  permitidos de `deploy_pwas.py`. Antes de fusionar hay que aprovisionar el
+  checkout `/sisoc/Inspecciones`, su `.env` y la deploy key en PRD y HML; si no,
+  `prepare` frena el deploy. Ver `docs/operacion/deploy_pwas.md`, sección
+  "Primera activacion de Inspecciones".
 
 ## Validación
 

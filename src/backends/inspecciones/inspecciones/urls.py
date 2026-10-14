@@ -32,6 +32,11 @@ from inspecciones.views_importacion import (
     RevisionView,
     SubirArchivoView,
 )
+from inspecciones.views_tablero import (
+    TableroDatosView,
+    TableroExportarView,
+    TableroView,
+)
 
 
 def _rutas_de_importacion(tipo):
@@ -131,5 +136,16 @@ urlpatterns = [
         "ajax/asignaciones/verificar/",
         VerificarAsignacionAjaxView.as_view(),
         name="inspecciones_ajax_verificar_asignacion",
+    ),
+    path("tablero/", TableroView.as_view(), name="inspecciones_tablero"),
+    path(
+        "tablero/datos/",
+        TableroDatosView.as_view(),
+        name="inspecciones_tablero_datos",
+    ),
+    path(
+        "tablero/exportar.csv",
+        TableroExportarView.as_view(),
+        name="inspecciones_tablero_exportar",
     ),
 ]

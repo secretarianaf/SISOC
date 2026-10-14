@@ -2490,6 +2490,21 @@
   "regex": "^inspecciones/\\Z"
  },
  {
+  "name": "inspecciones_tablero",
+  "namespace": "",
+  "regex": "^inspecciones/tablero/\\Z"
+ },
+ {
+  "name": "inspecciones_tablero_datos",
+  "namespace": "",
+  "regex": "^inspecciones/tablero/datos/\\Z"
+ },
+ {
+  "name": "inspecciones_tablero_exportar",
+  "namespace": "",
+  "regex": "^inspecciones/tablero/exportar\\.csv\\Z"
+ },
+ {
   "name": "insumos_categorias_crear",
   "namespace": "",
   "regex": "^insumos/categorias/crear\\Z"

@@ -44,6 +44,22 @@ SUCESORES_BORDES_PARRAFO = (
     "w:pPrChange",
 )
 
+# Elementos que el esquema de w:pPr ubica después de w:contextualSpacing.
+SUCESORES_ESPACIADO_CONTEXTUAL = (
+    "w:mirrorIndents",
+    "w:suppressOverlap",
+    "w:jc",
+    "w:textDirection",
+    "w:textAlignment",
+    "w:textboxTightWrap",
+    "w:outlineLvl",
+    "w:divId",
+    "w:cnfStyle",
+    "w:rPr",
+    "w:sectPr",
+    "w:pPrChange",
+)
+
 # python-docx arma sus enums en tiempo de ejecución y pylint no los ve.
 # pylint: disable=no-member
 ALINEACIONES_HTML = {

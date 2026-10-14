@@ -574,6 +574,24 @@ def test_gde_no_entrega_doc_si_la_conversion_falla(mocker, fallo):
         proceso.assert_not_called()
 
 
+def test_generar_docx_para_gde_quita_membrete_y_numero_de_pagina():
+    borrador = module.InformeService._generate_docx_content(
+        "<p>Cuerpo del informe</p>",
+        estilizar_tablas_templates=True,
+    )
+
+    resultado = module.GdeDocxService.generar(borrador)
+
+    assert resultado is not None
+    normalizado = Document(BytesIO(resultado.read()))
+    seccion = normalizado.sections[0]
+    assert normalizado.paragraphs[0].text == "Cuerpo del informe"
+    assert seccion.header.is_linked_to_previous
+    assert seccion.footer.is_linked_to_previous
+    assert "w:headerReference" not in seccion._sectPr.xml
+    assert "w:footerReference" not in seccion._sectPr.xml
+
+
 def test_generar_docx_para_gde_normaliza_tablas_y_prioriza_docx_editado():
     documento = Document()
     documento.add_paragraph("Texto del cuerpo sin alineación explícita")

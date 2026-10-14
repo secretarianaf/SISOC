@@ -2,9 +2,9 @@
 
 El Word que se descarga para validar el Informe Técnico (borrador generado desde
 el Gestor de templates) toma el formato del modelo institucional
-`2.-IT-Incorporación-Personería-6_-Ex-PNUD-No-vigente-1.doc`. No cambia la
-lógica de la copia para GDE (#2580): parte del último DOCX disponible, así que
-lleva este formato y este membrete.
+`2.-IT-Incorporación-Personería-6_-Ex-PNUD-No-vigente-1.doc`. La copia para GDE
+(#2580) sigue partiendo del último DOCX disponible y conserva el formato del
+cuerpo, pero sin encabezado ni pie: GDE pone su propio membrete y numeración.
 
 ## Causa
 
@@ -39,13 +39,16 @@ lleva este formato y este membrete.
 - `gestor_templates.css`: la hoja del editor usa la misma fuente, márgenes y
   tablas que el Word.
 
-El membrete también llega a la vista previa con marca de agua y, como parte del
-DOCX de origen, a la copia para GDE.
+- `GdeDocxService.generar` quita encabezados y pies de la copia para GDE, para
+  que el membrete y el número de página no se dupliquen con los de GDE ni
+  sumen una imagen o un campo que GDE podría rechazar.
+
+El membrete sí llega a la vista previa con marca de agua.
 
 ## Validación
 
 - `src/backends/kernel/tests/test_informes_service_unit.py`: formato de hoja y
   tablas, membrete y número de página, estilos de título y tabla con celdas
-  combinadas y alineación de celda.
+  combinadas y alineación de celda; copia para GDE sin encabezado ni pie.
 - Borrador, copia GDE y vista previa generados con el servicio real en el
   contenedor y revisados convertidos a PDF con Word.

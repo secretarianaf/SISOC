@@ -38,6 +38,7 @@ from .formato_docx import (
     CENTRADO_VERTICAL,
     PARRAFO_VACIO_EDITOR,
     SUCESORES_BORDES_TABLA,
+    SUCESORES_ESPACIADO_CONTEXTUAL,
     MembreteInformeTecnico,
 )
 from admisiones.forms.admisiones_forms import (
@@ -182,6 +183,7 @@ class GdeDocxService:
             contenido = archivo_docx.read()
             documento = Document(BytesIO(contenido))
             cls._justificar_estilo_normal(documento)
+            cls._quitar_encabezados_y_pies(documento)
             ancho_disponible = cls._ancho_disponible_documento_dxa(documento)
             for tabla in documento.tables:
                 cls._normalizar_tabla(tabla, ancho_disponible)
@@ -256,6 +258,25 @@ class GdeDocxService:
         documento.styles["Normal"].paragraph_format.alignment = (
             docx_text.WD_ALIGN_PARAGRAPH.JUSTIFY
         )
+
+    @staticmethod
+    def _quitar_encabezados_y_pies(documento):
+        """Entrega a GDE solo el cuerpo: GDE pone su propio membrete y numeración.
+
+        El borrador de validación lleva el membrete institucional (imagen y
+        campo de página), que GDE duplicaría o podría rechazar.
+        """
+
+        for seccion in documento.sections:
+            for nombre in (
+                "header",
+                "footer",
+                "first_page_header",
+                "first_page_footer",
+                "even_page_header",
+                "even_page_footer",
+            ):
+                getattr(seccion, nombre).is_linked_to_previous = True
 
     @staticmethod
     def _ancho_disponible_documento_dxa(documento):
@@ -813,7 +834,10 @@ class InformeService:
         for nombre_estilo in ("List Bullet", "List Number"):
             propiedades = documento.styles[nombre_estilo].element.get_or_add_pPr()
             if propiedades.find(qn("w:contextualSpacing")) is None:
-                propiedades.append(OxmlElement("w:contextualSpacing"))
+                propiedades.insert_element_before(
+                    OxmlElement("w:contextualSpacing"),
+                    *SUCESORES_ESPACIADO_CONTEXTUAL,
+                )
 
         MembreteInformeTecnico.aplicar(documento)
 

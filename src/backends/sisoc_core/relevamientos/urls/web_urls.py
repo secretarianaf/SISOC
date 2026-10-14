@@ -21,6 +21,7 @@ from relevamientos.views.web_views import (
     RelevamientoPdfView,
     RelevamientoRevisionCoordinadorView,
     RelevamientoUpdateView,
+    SeguimientoPdfView,
 )
 
 urlpatterns = [
@@ -101,6 +102,13 @@ urlpatterns = [
             SeguimientoUpdateView.as_view()
         ),
         name="seguimiento_editar",
+    ),
+    path(
+        "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimiento/<int:pk>/pdf",
+        permissions_any_required(["relevamientos.view_relevamiento"])(
+            SeguimientoPdfView.as_view()
+        ),
+        name="seguimiento_pdf",
     ),
     path(
         "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimiento/<int:pk>/eliminar",

@@ -1,12 +1,9 @@
-"""Quién administra el programa desde el backoffice (catálogo y asignaciones)."""
+"""Quién administra el programa desde el backoffice (catálogo y asignaciones).
 
-from users.services_inspecciones import es_coordinacion_inspecciones
+La regla vive en el kernel (``users.services_inspecciones``) porque también
+decide el link del menú lateral, que se arma fuera de este backend.
+"""
 
-PERMISO_GESTION = "inspecciones.gestionar_inspecciones"
+from users.services_inspecciones import puede_gestionar_inspecciones as puede_gestionar
 
-
-def puede_gestionar(user):
-    """Permiso explícito o rol de coordinación (la administración es su función)."""
-    if not user or not user.is_authenticated:
-        return False
-    return user.has_perm(PERMISO_GESTION) or es_coordinacion_inspecciones(user)
+__all__ = ["puede_gestionar"]

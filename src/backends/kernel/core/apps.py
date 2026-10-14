@@ -18,8 +18,16 @@ class CoreConfig(AppConfig):
         from iam.roles_cdi import (  # pylint: disable=import-outside-toplevel
             es_usuario_solo_cdi_local,
         )
+        from users.services_inspecciones import (  # pylint: disable=import-outside-toplevel
+            puede_gestionar_inspecciones,
+        )
 
         # Reglas de menú de kernel ("solo VAT", "CDI local"): valen en el core
         # y en cada backend.
         registrar_predicado_sidebar("vat", es_usuario_solo_vat)
         registrar_predicado_sidebar("cdi_local", es_usuario_solo_cdi_local)
+        # Inspecciones escolares tiene backend propio: el link del menú se
+        # decide acá para que se vea desde el core y desde cualquier backend.
+        registrar_predicado_sidebar(
+            "inspecciones_gestion", puede_gestionar_inspecciones
+        )

@@ -12,6 +12,7 @@ from users.profile_utils import get_profile_or_none
 ROL_INSPECTOR = "inspector"
 ROL_COORDINACION = "coordinacion"
 ROLES_INSPECCIONES = frozenset({ROL_INSPECTOR, ROL_COORDINACION})
+PERMISO_GESTION_INSPECCIONES = "inspecciones.gestionar_inspecciones"
 
 
 def get_inspecciones_rol(user) -> str:
@@ -35,6 +36,20 @@ def tiene_acceso_inspecciones(user) -> bool:
 def es_coordinacion_inspecciones(user) -> bool:
     """Coordinación: consulta todas las actas, borradores y evidencias."""
     return get_inspecciones_rol(user) == ROL_COORDINACION
+
+
+def puede_gestionar_inspecciones(user) -> bool:
+    """Administra el programa en el backoffice (catálogo y asignaciones).
+
+    Permiso explícito o rol de coordinación (la administración es su función).
+    Vive en el kernel porque también decide el menú lateral, que se arma en
+    backends donde la app ``inspecciones`` no está instalada.
+    """
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if user.has_perm(PERMISO_GESTION_INSPECCIONES):
+        return True
+    return es_coordinacion_inspecciones(user)
 
 
 def es_inspector_solo_app(user) -> bool:

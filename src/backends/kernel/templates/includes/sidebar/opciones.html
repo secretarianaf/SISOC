@@ -521,7 +521,7 @@
                     </li>
                 {% endif %}
                 <!-- INSPECCIONES ESCOLARES -->
-                {% if request.user|has_perm_code:"inspecciones.gestionar_inspecciones" %}
+                {% if request.user|puede_gestionar_inspecciones %}
                     <li class="nav-item">
                         <a href="{% url 'inspecciones_panel' %}"
                            class="nav-link nav-dot ms-2 {% if 'inspecciones/' in pagina_actual %}active{% endif %}">

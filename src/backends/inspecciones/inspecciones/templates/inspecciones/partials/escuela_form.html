@@ -1,0 +1,169 @@
+<form method="post"
+      action="{{ form_action }}"
+      novalidate
+      data-insp-form-modal
+      aria-labelledby="insp-modal-form-titulo">
+    {% csrf_token %}
+    <div class="modal-header">
+        <h2 class="modal-title h5" id="insp-modal-form-titulo">
+            {% if escuela %}
+                Editar escuela
+            {% else %}
+                Nueva escuela
+            {% endif %}
+        </h2>
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Cerrar"></button>
+    </div>
+    <div class="modal-body">
+        <div data-insp-mensaje></div>
+        {% if escuela.a_revisar %}
+            <div class="alert alert-warning small" role="status">
+                <strong>Datos a revisar:</strong> {{ escuela.motivos_revision_display|join:"; " }}.
+                {% if escuela.localidad_original %}Localidad del archivo: <em>{{ escuela.localidad_original }}</em>.{% endif %}
+                Al guardar con una localidad de la lista y un mail válido se quita la marca.
+            </div>
+        {% endif %}
+        {% for error in form.non_field_errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label" for="id_provincia">
+                    Provincia <span class="text-danger">*</span>
+                </label>
+                <select id="id_provincia"
+                        name="provincia"
+                        class="form-select{% if form.provincia.errors %} is-invalid{% endif %}"
+                        data-insp-limpia="#id_localidad"
+                        required>
+                    <option value="">Elegí la provincia</option>
+                    {% for provincia in form.fields.provincia.queryset %}
+                        <option value="{{ provincia.pk }}"
+                                {% if form.provincia.value|stringformat:'s' == provincia.pk|stringformat:'s' %}selected{% endif %}>
+                            {{ provincia.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+                {% for error in form.provincia.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="id_localidad">
+                    Localidad <span class="text-danger">*</span>
+                </label>
+                <select id="id_localidad"
+                        name="localidad"
+                        class="form-select{% if form.localidad.errors %} is-invalid{% endif %}"
+                        data-insp-select2="{% url 'inspecciones_ajax_localidades' %}"
+                        data-insp-provincia="#id_provincia"
+                        data-insp-min="0"
+                        data-placeholder="Buscá la localidad"
+                        aria-describedby="ayuda-localidad"
+                        required>
+                    <option value=""></option>
+                    {% if localidad_inicial %}
+                        <option value="{{ localidad_inicial.id }}" selected>{{ localidad_inicial.text }}</option>
+                    {% endif %}
+                </select>
+                <div id="ayuda-localidad" class="form-text">
+                    Busca dentro de la provincia elegida y muestra el municipio para distinguir nombres repetidos.
+                </div>
+                {% for error in form.localidad.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="id_cueanexo">
+                    Cueanexo <span class="text-danger">*</span>
+                </label>
+                <input id="id_cueanexo"
+                       name="cueanexo"
+                       type="text"
+                       inputmode="numeric"
+                       maxlength="9"
+                       pattern="\d{9}"
+                       class="form-control insp-mono{% if form.cueanexo.errors %} is-invalid{% endif %}"
+                       value="{{ form.cueanexo.value|default:'' }}"
+                       aria-describedby="ayuda-cueanexo"
+                       {% if form.cueanexo.errors %}aria-invalid="true"{% endif %}
+                       required />
+                <div id="ayuda-cueanexo" class="form-text">9 dígitos, con los ceros iniciales.</div>
+                {% for error in form.cueanexo.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ error }}
+                        {% if form.escuela_duplicada and not form.escuela_duplicada.deleted_at %}
+                            <a href="{% url 'inspecciones_panel' %}?editar={{ form.escuela_duplicada.pk }}">Abrir para editar</a>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="id_cp">C. P.</label>
+                <input id="id_cp"
+                       name="cp"
+                       type="text"
+                       maxlength="20"
+                       class="form-control{% if form.cp.errors %} is-invalid{% endif %}"
+                       value="{{ form.cp.value|default:'' }}"
+                       aria-describedby="ayuda-cp" />
+                <div id="ayuda-cp" class="form-text">Admite el formato CPA, por ejemplo B1754ABC.</div>
+                {% for error in form.cp.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="id_nombre">
+                    Nombre <span class="text-danger">*</span>
+                </label>
+                <input id="id_nombre"
+                       name="nombre"
+                       type="text"
+                       maxlength="255"
+                       class="form-control{% if form.nombre.errors %} is-invalid{% endif %}"
+                       value="{{ form.nombre.value|default:'' }}"
+                       required />
+                {% for error in form.nombre.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="id_domicilio">
+                    Domicilio <span class="text-danger">*</span>
+                </label>
+                <input id="id_domicilio"
+                       name="domicilio"
+                       type="text"
+                       maxlength="255"
+                       class="form-control{% if form.domicilio.errors %} is-invalid{% endif %}"
+                       value="{{ form.domicilio.value|default:'' }}"
+                       required />
+                {% for error in form.domicilio.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="id_telefono">Teléfono</label>
+                <input id="id_telefono"
+                       name="telefono"
+                       type="tel"
+                       maxlength="255"
+                       class="form-control{% if form.telefono.errors %} is-invalid{% endif %}"
+                       value="{{ form.telefono.value|default:'' }}"
+                       aria-describedby="ayuda-telefono" />
+                <div id="ayuda-telefono" class="form-text">Admite característica, internos y varios números.</div>
+                {% for error in form.telefono.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="id_mail">Mail</label>
+                <input id="id_mail"
+                       name="mail"
+                       type="email"
+                       maxlength="255"
+                       class="form-control{% if form.mail.errors %} is-invalid{% endif %}"
+                       value="{{ form.mail.value|default:'' }}" />
+                {% for error in form.mail.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button"
+                class="btn btn-link text-secondary"
+                data-bs-dismiss="modal">Cancelar</button>
+        {% if not escuela %}
+            <button type="submit" name="otra" value="1" class="btn btn-outline-primary">Guardar y cargar otra</button>
+        {% endif %}
+        <button type="submit" class="btn btn-primary">Guardar escuela</button>
+    </div>
+</form>

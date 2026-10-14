@@ -5,12 +5,14 @@ from django.db import IntegrityError, transaction
 from django.db.models import Q
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.api_auth import HasAPIKeyOrToken
 from core.utils import format_error_detail
-from relevamientos.models import PrimerSeguimiento, Relevamiento
+from relevamientos import pdf_oficial
+from relevamientos.models import PdfOficialGestionar, PrimerSeguimiento, Relevamiento
 from relevamientos.serializer import PrimerSeguimientoSerializer, RelevamientoSerializer
 from pwa.services.accesos import get_territorial_comedor_provincia_ids
 
@@ -374,3 +376,100 @@ class SeguimientoApiView(PrimerSeguimientoApiView):
     """
 
     RESOLVE_SOLO_PRIMERA_INSTANCIA = False
+
+
+def _guardar_pdf_oficial(request, campo, registro):
+    """Guarda el documento que sube Gestionar para ``registro`` (#2630).
+
+    Un registro validado recibe su primer documento (los enviados antes de que
+    la app lo subiera se completan al abrir el PDF en la app, que solo lo arma
+    validado), pero no se reemplaza: lo que validó el coordinador no cambia.
+    Como en los PATCH, el bloqueo solo aplica a usuarios, no a las API keys.
+    """
+    user = request.user if request.user and request.user.is_authenticated else None
+    if (
+        user is not None
+        and registro.esta_validado
+        and PdfOficialGestionar.objects.filter(**{campo: registro}).exists()
+    ):
+        return Response(
+            {
+                "detail": (
+                    "El registro está validado por el coordinador y ya tiene su "
+                    "PDF: no se reemplaza."
+                ),
+                "estado_validacion": registro.estado_validacion,
+            },
+            status=status.HTTP_409_CONFLICT,
+        )
+    try:
+        html = pdf_oficial.leer_html(request.FILES.get("html"))
+    except pdf_oficial.DocumentoInvalido as error:
+        return Response(str(error), status=status.HTTP_400_BAD_REQUEST)
+    oficial = pdf_oficial.guardar(
+        html=html,
+        version_app=request.data.get("version_app"),
+        usuario=user,
+        **{campo: registro},
+    )
+    logger.info("PDF oficial de Gestionar guardado para %s %s", campo, registro.pk)
+    return Response(
+        {"id": oficial.pk, campo: registro.pk, "bytes": len(html.encode("utf-8"))},
+        status=status.HTTP_200_OK,
+    )
+
+
+class RelevamientoPdfOficialApiView(APIView):
+    """``POST /api/relevamiento/pdf-oficial`` — PDF oficial de un relevamiento.
+
+    Multipart: ``sisoc_id`` (id del relevamiento), ``html`` (documento
+    autocontenido) y ``version_app``. Mismo alcance que el PATCH.
+    """
+
+    permission_classes = [HasAPIKeyOrToken]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        sisoc_id = str(request.data.get("sisoc_id") or "").strip()
+        if not sisoc_id.isdigit():
+            return Response(
+                "Falta 'sisoc_id' (id del relevamiento) en la solicitud.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        relevamiento = (
+            _scope_relevamientos_for_authenticated_user(
+                request, Relevamiento.objects.all()
+            )
+            .filter(id=int(sisoc_id))
+            .first()
+        )
+        if relevamiento is None:
+            return Response(
+                f"Relevamiento {sisoc_id} no encontrado",
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return _guardar_pdf_oficial(request, "relevamiento", relevamiento)
+
+
+class SeguimientoPdfOficialApiView(PrimerSeguimientoApiView):
+    """``POST /api/relevamiento/seguimiento/pdf-oficial`` — PDF de una instancia.
+
+    Identifica la instancia igual que su PATCH: ``sisoc_id`` (id de la
+    instancia) o ``id_relevamiento`` (la nº1 del ciclo). Multipart con
+    ``html`` y ``version_app``.
+    """
+
+    http_method_names = ["post", "options"]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        queryset = _scope_relevamientos_for_authenticated_user(
+            request,
+            PrimerSeguimiento.objects.select_related("id_relevamiento__comedor"),
+            comedor_lookup="id_relevamiento__comedor",
+            territorial_user_lookup="id_relevamiento__territorial_user",
+        )
+        seguimiento, error_response = self._resolve_seguimiento(request.data, queryset)
+        if error_response is not None:
+            return error_response
+        return _guardar_pdf_oficial(request, "seguimiento", seguimiento)

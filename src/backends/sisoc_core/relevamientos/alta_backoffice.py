@@ -56,6 +56,7 @@ _ETIQUETAS_PNUD = {
     SeguimientoPnud.FORMULARIO_II_A1: "FORM II A.1 — Virtual · Presencial y Vianda",
     SeguimientoPnud.FORMULARIO_II_B: "FORM II B — Presencial · Módulo",
     SeguimientoPnud.FORMULARIO_II_B1: "FORM II B.1 — Virtual · Módulo",
+    SeguimientoPnud.FORMULARIO_SIPH: "Seguimiento SIPH (Línea Tradicional y Módulos Secos)",
 }
 
 

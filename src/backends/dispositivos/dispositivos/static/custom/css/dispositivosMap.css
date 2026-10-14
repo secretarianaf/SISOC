@@ -1,0 +1,25 @@
+#dispositivos-map {
+    height: min(65vh, 680px);
+    min-height: 360px;
+    border-radius: 8px;
+    z-index: 0;
+}
+@media (max-width: 576px) {
+    #dispositivos-map { min-height: 300px; height: 55vh; }
+}
+
+.dispositivo-map-marker {
+    background: var(--poncho-verde, #04756f);
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, .3);
+}
+.dispositivo-map-marker:focus-visible {
+    outline: 3px solid var(--poncho-verde-azulado, #04756f);
+    outline-offset: 3px;
+}
+
+#map-devices-table [data-map-focus]:disabled {
+    cursor: default;
+    opacity: .5;
+}

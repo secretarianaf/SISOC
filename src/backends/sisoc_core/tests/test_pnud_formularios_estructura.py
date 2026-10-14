@@ -62,7 +62,7 @@ def test_json_trae_etiquetas_si_no_en_las_preguntas_en_mayuscula():
 
 
 def test_json_sin_campos_solo_para_mostrar_ni_nombres_repetidos():
-    for formulario in ("secos", "iia1", "iib1", "iia", "iib"):
+    for formulario in ("secos", "iia1", "iib1", "iia", "iib", "siph"):
         nombres = [c["name"] for c in _campos(formulario)]
         assert not SOLO_MOSTRAR & set(nombres), formulario
         assert len(nombres) == len(set(nombres)), formulario

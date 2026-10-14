@@ -269,6 +269,22 @@ class Encuesta(SoftDeleteModelMixin, models.Model):
         return persona_entrevistada_legible(self.persona_entrevistada)
 
     @property
+    def variante_etiqueta(self) -> str:
+        """Qué formulario se usó, con la etiqueta del catálogo (#2664).
+
+        Desde el instrumento 4.1.0 un caso de 14 a 17 años viaja con la
+        variante ``adolescente`` y solo las claves del formulario de menores:
+        sin decirlo, la ficha lo hace parecer un caso incompleto.
+        """
+        from datacalle.services.instrumento import etiqueta_de_codigo
+
+        return etiqueta_de_codigo("varianteCuestionario", self.variante)
+
+    @property
+    def es_formulario_menores(self) -> bool:
+        return self.variante == "adolescente"
+
+    @property
     def sin_entrevista_por_franja(self) -> bool:
         """Separa a quien no se entrevista por su edad de quien se negó (D2.9).
 

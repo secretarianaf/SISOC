@@ -51,13 +51,15 @@ LINEA_SECOS = "secos"
 LINEA_TRADICIONAL = "tradicional"
 # Ids de fixture (comedores/fixtures/programas.json) como respaldo del nombre.
 _PROGRAMA_ID_POR_LINEA = {3: LINEA_SECOS, 4: LINEA_TRADICIONAL}
+# El Seguimiento SIPH (#2651) es común a las dos líneas de Abordaje Comunitario.
 FORMULARIOS_POR_LINEA = {
-    LINEA_SECOS: (SeguimientoPnud.FORMULARIO_SECOS,),
+    LINEA_SECOS: (SeguimientoPnud.FORMULARIO_SECOS, SeguimientoPnud.FORMULARIO_SIPH),
     LINEA_TRADICIONAL: (
         SeguimientoPnud.FORMULARIO_II_A,
         SeguimientoPnud.FORMULARIO_II_A1,
         SeguimientoPnud.FORMULARIO_II_B,
         SeguimientoPnud.FORMULARIO_II_B1,
+        SeguimientoPnud.FORMULARIO_SIPH,
     ),
 }
 
@@ -89,6 +91,69 @@ def datos_comedor_pnud(comedor):
         "codigo_proyecto": comedor.codigo_de_proyecto,
         "id_externo": comedor.id_externo,
     }
+
+
+def _horario_actividad(actividad):
+    if actividad.hora_inicio and actividad.hora_fin:
+        return f"{actividad.hora_inicio:%H:%M} a {actividad.hora_fin:%H:%M}"
+    return actividad.horario_actividad
+
+
+def actividades_siph(comedor):
+    """Actividades vigentes del comedor para precargar el Seguimiento SIPH (#2651).
+
+    ``ActividadEspacioPWA`` guarda una fila por día; la misma actividad con el
+    mismo horario se presenta como una sola, con sus días juntos, que es como
+    la pide el cuadro "4. Actividades de Servicios Integrales de Promoción
+    Humana" del papel. La etiqueta es la del desplegable "actividad visitada".
+    """
+    from pwa.models import (
+        ActividadEspacioPWA,
+    )  # pylint: disable=import-outside-toplevel
+
+    filas = (
+        ActividadEspacioPWA.objects.filter(comedor=comedor, activo=True)
+        .select_related("catalogo_actividad", "dia_actividad")
+        .order_by(
+            "catalogo_actividad__categoria",
+            "catalogo_actividad__actividad",
+            "hora_inicio",
+            "horario_actividad",
+            "dia_actividad__id",
+            "id",
+        )
+    )
+    agrupadas = {}
+    for fila in filas:
+        catalogo = fila.catalogo_actividad
+        horario = _horario_actividad(fila)
+        clave = (catalogo.categoria, catalogo.actividad, horario)
+        entrada = agrupadas.setdefault(
+            clave,
+            {
+                "tipo": catalogo.categoria,
+                "subtipo": catalogo.actividad,
+                "dias": [],
+                "horario": horario,
+            },
+        )
+        dia = fila.dia_actividad.nombre
+        if dia not in entrada["dias"]:
+            entrada["dias"].append(dia)
+    resultado = []
+    for entrada in agrupadas.values():
+        dias = ", ".join(entrada["dias"])
+        detalle = ", ".join(parte for parte in (dias, entrada["horario"]) if parte)
+        resultado.append(
+            {
+                "tipo": entrada["tipo"],
+                "subtipo": entrada["subtipo"],
+                "dias": dias,
+                "horario": entrada["horario"],
+                "etiqueta": f"{entrada['tipo']} — {entrada['subtipo']} ({detalle})",
+            }
+        )
+    return resultado
 
 
 def _fecha_iso(valor):
@@ -335,6 +400,7 @@ class SeguimientosPnudTerritorialMixin:
             data = seguimientos_pnud_payload(comedor, request.user)
             data.update(datos_comedor_pnud(comedor))
             data["prestaciones_aprobadas"] = prestaciones_aprobadas_por_dia(comedor)
+            data["actividades"] = actividades_siph(comedor)
             return Response(data)
 
         client_uuid = self._leer_client_uuid(request)

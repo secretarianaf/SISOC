@@ -2,6 +2,8 @@
 
 Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrolladores.
 
+- Mapa de dispositivos: `/dispositivos/mapa/`, `dispositivos.views.DispositivoMapView`, `geolocate_dispositivo` en services y `dispositivosMap.js`. Mantiene filtros/permisos/alcance del listado, integra provincia/estado en un único buscador combinable, paginación de tabla en el navegador de a 15 y selección de marcador por `?dispositivo=<pk>`; muestra marcadores individuales con Leaflet y usa Georef con coordenadas persistidas en `Dispositivo.ubicacion_georef` y firma de dirección para reutilización/invalidation; migración 0006 antes del deploy. Registro: `docs/registro/cambios/2026-T4/2026-10-13-dispositivos-mapa.md`.
+
 ## Como leer este documento
 
 Reglas vigentes y checklists: `docs/desarrollo/verticales_independientes.md`.
@@ -593,8 +595,14 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   presentada funcionalmente como Asociación de hecho.
 - La descarga del Informe Técnico ofrece una copia transitoria "Descargar para
   GDE": prioriza el DOCX editado y, si no existe, el borrador. Se normaliza la
-  geometría OOXML de sus tablas antes de responder, sin reemplazar archivos ni
-  modificar estados.
+  geometría OOXML de sus tablas y LibreOffice Writer convierte una copia a DOC
+  binario, con temporales/perfil aislados y timeout, sin reemplazar archivos ni
+  modificar estados. El generador HTML del informe conserva `colspan`/`rowspan`
+  y no degrada plantillas publicadas a texto plano ante fallos. Entry points:
+  `src/backends/sisoc_core/admisiones/services/informes_service/impl.py`
+  (`GdeDocxService.generar_doc`) y
+  `src/backends/sisoc_core/admisiones/views/web_views.py`
+  (`descargar_informe_tecnico_para_gde`).
 - El Informe Tecnico Complementario se abre tanto desde Admision como desde el
   convenio seleccionado en `src/backends/sisoc_core/acompanamientos/views.py` y
   `src/backends/sisoc_core/acompanamientos/templates/acompañamiento_detail.html`.

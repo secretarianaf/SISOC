@@ -3,7 +3,7 @@ from core.decorators import permissions_any_required
 from relevamientos.views.backoffice_views import (
     ActaComplementariaDetailView,
     SeguimientoPnudDetailView,
-    SeguimientoPnudDocxView,
+    SeguimientoPnudPdfView,
     SeguimientoPnudRevisionCoordinadorView,
     ActaComplementariaEliminarView,
     ActaComplementariaFormView,
@@ -140,11 +140,11 @@ urlpatterns = [
         name="seguimiento_pnud_revision_coordinador",
     ),
     path(
-        "comedores/<int:comedor_pk>/seguimiento-pnud/<int:pk>/docx",
+        "comedores/<int:comedor_pk>/seguimiento-pnud/<int:pk>/pdf",
         permissions_any_required(["relevamientos.view_relevamiento"])(
-            SeguimientoPnudDocxView.as_view()
+            SeguimientoPnudPdfView.as_view()
         ),
-        name="seguimiento_pnud_docx",
+        name="seguimiento_pnud_pdf",
     ),
     # --- Actas complementarias extraordinarias ---
     path(

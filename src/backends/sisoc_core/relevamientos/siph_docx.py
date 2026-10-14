@@ -7,7 +7,16 @@ por tags de docxtpl. Las respuestas salen de ``SeguimientoPnud.datos`` con las
 claves del formulario de la app (``pnud_formularios.json``, ``siph``).
 """
 
+import io
+import subprocess
+import tempfile
+from pathlib import Path
+from urllib.parse import unquote, urlparse
+
+from django.core.files.storage import default_storage
 from django.utils import timezone
+from docx import Document
+from docx.shared import Cm
 
 # El paquete docx_service se reemplaza a si mismo por `impl` al importarse: pylint
 # no ve sus nombres, asi que se importa el modulo real (es el mismo objeto).
@@ -16,7 +25,9 @@ from relevamientos.pnud_formularios import definiciones
 
 PLANTILLA = "seguimiento_siph.docx"
 FILAS_ACTIVIDADES = 6
-MARCADA, VACIA = "☒", "☐"
+# "☐" (U+2610) no está en las fuentes del servidor y LibreOffice lo dibuja roto;
+# "□" y "☒" salen de la misma fuente (OpenSymbol).
+MARCADA, VACIA = "☒", "□"
 
 
 def _texto(valor):
@@ -141,7 +152,8 @@ def contexto_docx_siph(seguimiento):  # pylint: disable=too-many-locals
         "comentarios_finales": _texto(datos.get("comentarios_finales")),
         "cb_presencial": _marca(datos.get("modalidad_entrevista") == "Presencial"),
         "cb_virtual": _marca(datos.get("modalidad_entrevista") == "Virtual"),
-        "firma": "(firma registrada)" if datos.get("firma_entrevistado") else "",
+        # La firma va como imagen en su celda (ver _con_firma), no como texto.
+        "firma": "",
         "tecnico_nombre": _nombre(seguimiento.tecnico),
     }
     for clave in (
@@ -182,8 +194,89 @@ def contexto_docx_siph(seguimiento):  # pylint: disable=too-many-locals
     return contexto
 
 
+def _firma(seguimiento):
+    """Imagen de la firma del entrevistado, o ``None``.
+
+    La app la sube con /firma/ y en ``datos`` queda su URL, que la API ya validó
+    dentro de ``firmas/<comedor>/`` del storage. Se lee del storage, nunca por red.
+    """
+    url = (seguimiento.datos or {}).get("firma_entrevistado")
+    if not isinstance(url, str) or not url:
+        return None
+    ruta = unquote(urlparse(url).path)
+    prefijo = urlparse(default_storage.url("")).path
+    if not ruta.startswith(prefijo):
+        return None
+    nombre = ruta[len(prefijo) :]
+    if not nombre.startswith(f"firmas/{seguimiento.comedor_id}/") or ".." in nombre:
+        return None
+    if not default_storage.exists(nombre):
+        return None
+    with default_storage.open(nombre, "rb") as archivo:
+        return archivo.read()
+
+
+def _con_firma(buffer, firma):
+    """Pone la firma en la celda a la derecha de "Firma del entrevistado"."""
+    documento = Document(buffer)
+    for tabla in documento.tables:
+        for fila in tabla.rows:
+            celdas = fila.cells
+            if len(celdas) == 2 and celdas[0].text.strip() == "Firma del entrevistado":
+                parrafo = celdas[1].paragraphs[0]
+                parrafo.add_run().add_picture(io.BytesIO(firma), height=Cm(1.6))
+    salida = io.BytesIO()
+    documento.save(salida)
+    salida.seek(0)
+    return salida
+
+
 def docx_siph(seguimiento):
     """Docx del SIPH como ``BytesIO`` listo para descargar."""
-    return DocumentTemplateService.generar_docx(
+    buffer = DocumentTemplateService.generar_docx(
         PLANTILLA, contexto_docx_siph(seguimiento), app_name="relevamientos"
     )
+    firma = _firma(seguimiento)
+    if firma:
+        try:
+            return _con_firma(buffer, firma)
+        except Exception:  # pylint: disable=broad-exception-caught
+            # Una imagen ilegible no impide descargar el formulario.
+            buffer.seek(0)
+    return buffer
+
+
+def pdf_siph(seguimiento):
+    """PDF del SIPH (QA del 14/10): la plantilla completada, convertida con LibreOffice.
+
+    Es el que descargan SISOC y Gestionar: los dos piden este mismo archivo.
+    Misma conversión que la certificación de prestaciones y los informes de
+    admisiones (perfil de LibreOffice propio en un directorio temporal).
+    """
+    with tempfile.TemporaryDirectory(prefix="seguimiento-siph-") as temp_dir:
+        temp_path = Path(temp_dir)
+        docx_path = temp_path / "seguimiento-siph.docx"
+        pdf_path = temp_path / "seguimiento-siph.pdf"
+        docx_path.write_bytes(docx_siph(seguimiento).getvalue())
+        result = subprocess.run(
+            [
+                "libreoffice",
+                "--headless",
+                "--nologo",
+                "--nodefault",
+                "--nofirststartwizard",
+                f"-env:UserInstallation={(temp_path / 'perfil').resolve().as_uri()}",
+                "--convert-to",
+                "pdf",
+                "--outdir",
+                str(temp_path),
+                str(docx_path),
+            ],
+            capture_output=True,
+            check=False,
+            timeout=120,
+        )
+        if result.returncode != 0 or not pdf_path.exists():
+            detalle = result.stderr.decode("utf-8", errors="replace").strip()
+            raise RuntimeError(detalle or "No se pudo generar el PDF del SIPH.")
+        return pdf_path.read_bytes()

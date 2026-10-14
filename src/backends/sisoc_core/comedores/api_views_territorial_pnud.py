@@ -15,6 +15,7 @@ from urllib.parse import unquote, urlparse
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
+from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.decorators import action
@@ -528,6 +529,39 @@ class SeguimientosPnudTerritorialMixin:
             seguimiento.estado_validacion = SeguimientoPnud.ESTADO_VALIDACION_PENDIENTE
             seguimiento.save()
         return Response(serialize_seguimiento_pnud(seguimiento, propio=True))
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path=r"seguimientos-pnud/(?P<pnud_id>[0-9]+)/pdf",
+    )
+    def pdf_seguimiento_pnud(self, request, pk=None, pnud_id=None):
+        """PDF del Seguimiento SIPH para Gestionar (#2651, QA del 14/10).
+
+        Es el mismo archivo que descarga SISOC: la app no arma uno propio, así
+        las dos muestran la misma versión. Solo el SIPH tiene PDF oficial.
+        """
+        from relevamientos.siph_docx import (  # pylint: disable=import-outside-toplevel
+            pdf_siph,
+        )
+
+        comedor = self._comedor_de_mi_zona()
+        if comedor is None:
+            return self._fuera_de_zona()
+        seguimiento = (
+            SeguimientoPnud.objects.select_related("comedor", "tecnico")
+            .filter(
+                pk=pnud_id, comedor=comedor, formulario=SeguimientoPnud.FORMULARIO_SIPH
+            )
+            .first()
+        )
+        if seguimiento is None:
+            return _error("Seguimiento SIPH no encontrado.", status.HTTP_404_NOT_FOUND)
+        response = HttpResponse(pdf_siph(seguimiento), content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'inline; filename="seguimiento-siph-{seguimiento.pk}.pdf"'
+        )
+        return response
 
 
 class TerritorialComedorPnudFieldsMixin(NoSaveSerializer):

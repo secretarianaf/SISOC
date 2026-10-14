@@ -89,10 +89,10 @@ Fecha: 2026-10-14. Rama: `feat/inspecciones-escolares`. Decisión:
 - La PWA (`secretarianaf/Inspecciones`) queda registrada y habilitada en
   `src/scripts/operacion/pwas.json` (proyecto `sisoc-pwa-inspecciones`, puerto
   8083, `/pwa/inspecciones/`, sin ruta histórica) y en la lista de repositorios
-  permitidos de `deploy_pwas.py`. Antes de fusionar hay que aprovisionar el
-  checkout `/sisoc/Inspecciones`, su `.env` y la deploy key en PRD y HML; si no,
-  `prepare` frena el deploy. Ver `docs/operacion/deploy_pwas.md`, sección
-  "Primera activacion de Inspecciones".
+  permitidos de `deploy_pwas.py`, para que `render_pwa_nginx.py` genere su ruta.
+  La PWA se despliega con el workflow propio de su repo, como DataCalle: el deploy
+  de SISOC corre con `--without-mobile` y no depende de ella. Ver
+  `docs/operacion/deploy_pwas.md`, sección "Primera activacion de Inspecciones".
 
 ## Validación
 

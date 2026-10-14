@@ -52,30 +52,36 @@ versionado no equivale a un despliegue. Ver evidencia inicial en
 
 ## Primera activacion de Inspecciones (2026-10-14)
 
-Inspecciones entra habilitada en `pwas.json`. Como las demas, `prepare` falla si
-falta su checkout: hay que aprovisionar **PRD y HML antes** de fusionar este cambio
-en main. El deploy a produccion promueve despues a homologacion, y el `prepare` de
-HML tambien la exige. Si `prepare` falla, falla antes del corte y no toca los
-servicios en uso, pero frena el deploy del backend.
+Inspecciones se despliega igual que DataCalle hoy: por el workflow propio de su
+repositorio (`secretarianaf/Inspecciones`, `.github/workflows/deploy.yml` y
+`scripts/operacion/deploy_frontend.sh`), no por el deploy de SISOC. Ese deploy
+corre con `--without-mobile` en PRD y HML y no ejecuta `deploy_pwas.py`, asi que
+fusionar este cambio no depende del aprovisionamiento de la PWA. Su entrada en
+`pwas.json` sirve para que `render_pwa_nginx.py` genere el snippet con
+`/pwa/inspecciones/`.
 
-En cada host, como sisoc-deploy:
+| rama | entorno | host (runner) | rama del checkout |
+| --- | --- | --- | --- |
+| main | production | PRD (`sisoc-produccion`) | main |
+| development | homologacion | HML (`sisoc-homologacion`) | development |
+| development | qa | QA (`sisoc-qa`) | development |
 
-1. Generar la deploy key `~/.ssh/sisoc-pwa-inspecciones` (ed25519, sin passphrase,
-   modo 600) y registrar su `.pub` como deploy key de solo lectura en
-   `secretarianaf/Inspecciones`. Verificar con
-   `GIT_SSH_COMMAND="ssh -o IdentitiesOnly=yes -i ~/.ssh/sisoc-pwa-inspecciones" git ls-remote git@github.com:secretarianaf/Inspecciones.git main`.
-2. Clonar en `/sisoc/Inspecciones` con esa clave, rama `main`, propietario
-   sisoc-deploy.
-3. Crear `/sisoc/Inspecciones/.env` modo 600 con un comentario y sin secretos: las
-   variables publicas (API, base path, puerto) las fija SISOC al construir.
-4. Instalar en Nginx, dentro del server HTTPS canonico, el bloqueo de evidencias
-   `location ^~ /media/inspecciones/ { return 404; }`
-   (ver `nginx/sisoc-produccion.conf`).
-5. Despues del deploy, cuando `127.0.0.1:8083` responda, respaldar el snippet vigente
-   e instalar el candidato de `render_pwa_nginx.py`, que agrega
-   `/pwa/inspecciones/`. Ejecutar `nginx -t` y reload. Hasta ese paso la ruta no es
-   accesible.
-6. Probar en HTTPS real: login con un usuario de la seccion Inspecciones escolares,
+En cada host, como sisoc-deploy, antes del primer deploy de la PWA:
+
+1. Deploy key `~/.ssh/sisoc-pwa-inspecciones` (ed25519, sin passphrase, modo 600),
+   registrada como deploy key de solo lectura en `secretarianaf/Inspecciones`, y
+   alias `Host github-inspecciones` en `~/.ssh/config`, igual que
+   `github-datacalle`.
+2. Checkout `/sisoc/Inspecciones` (sisoc-deploy, 750) en la rama del entorno, con
+   `origin` `git@github-inspecciones:secretarianaf/Inspecciones.git`.
+3. `/sisoc/Inspecciones/.env` modo 600: un comentario y `PWA_API_BASE_URL` del
+   entorno, sin secretos, igual que el de DataCalle.
+4. Nginx: respaldar el snippet vigente, agregar `/pwa/inspecciones/` →
+   `127.0.0.1:8083/` (el candidato de `render_pwa_nginx.py`) y el bloqueo
+   `location ^~ /media/inspecciones/ { return 404; }`; `nginx -t` y reload. Va
+   **antes** del primer deploy: el smoke de `deploy_frontend.sh` entra por el
+   Nginx local y, sin la ruta, el deploy falla.
+5. Probar en HTTPS real: login con un usuario de la seccion Inspecciones escolares,
    cierre de un acta de prueba, PDF y notificacion.
 
 ## Orden de primera activacion de DataCalle y Gestionar

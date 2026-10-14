@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("relevamientos", "0021_actas_app_pendiente_validacion"),
+        ("relevamientos", "0022_seguimiento_pnud_siph"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

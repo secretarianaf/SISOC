@@ -277,7 +277,7 @@ def test_el_get_trae_las_actividades_del_comedor_para_precargar():
     ]
 
 
-# -------------------------------------------------------- detalle y docx
+# --------------------------------------------------------- detalle y PDF
 
 
 def test_el_detalle_del_coordinador_muestra_las_etiquetas_del_siph(client):
@@ -300,37 +300,60 @@ def test_el_detalle_del_coordinador_muestra_las_etiquetas_del_siph(client):
     assert "Taller de murga" in html
     assert "Retribución talleristas" in html
     assert "Ent nombre apellido" not in html
-    assert "Descargar docx" in html
+    assert "Descargar PDF" in html
+    assert "Descargar docx" not in html
 
 
-def test_se_descarga_el_docx_del_siph_con_las_respuestas(client):
+# Textos de trabajo del área (comentarios Gescom) que no son parte del formulario.
+TEXTOS_DE_TRABAJO = ("Gescom", "GESCOM", "Comentario", "precargado en la app")
+
+
+def _texto_pdf(contenido):
+    from pypdf import PdfReader  # pylint: disable=import-outside-toplevel
+
+    texto = " ".join(p.extract_text() for p in PdfReader(io.BytesIO(contenido)).pages)
+    return " ".join(texto.split())
+
+
+def test_la_plantilla_no_tiene_los_comentarios_del_area():
+    # QA (14/10): el formulario descargado traía los comentarios de Gescom.
+    from django.apps import apps  # pylint: disable=import-outside-toplevel
+
+    plantilla = zipfile.ZipFile(
+        f"{apps.get_app_config('relevamientos').path}/templates/relevamientos/docx/"
+        "seguimiento_siph.docx"
+    )
+    assert not [n for n in plantilla.namelist() if "comment" in n.lower()]
+    xml = plantilla.read("word/document.xml").decode("utf-8")
+    assert "comment" not in xml.lower()
+    for texto in TEXTOS_DE_TRABAJO:
+        assert texto not in xml, texto
+
+
+def test_se_descarga_el_pdf_del_siph_con_las_respuestas(client):
     comedor = _comedor(TRADICIONAL)
-    tecnico, _ = _territorial("docx", comedor.provincia)
+    tecnico, _ = _territorial("pdf", comedor.provincia)
     seguimiento = _siph(comedor, tecnico)
     _coordinador(client)
 
     response = client.get(
         reverse(
-            "seguimiento_pnud_docx",
+            "seguimiento_pnud_pdf",
             kwargs={"comedor_pk": comedor.id, "pk": seguimiento.id},
         )
     )
 
     assert response.status_code == 200
-    assert response["Content-Type"] == (
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
+    assert response["Content-Type"] == "application/pdf"
     assert response["Content-Disposition"] == (
-        f'attachment; filename="seguimiento-siph-{seguimiento.id}.docx"'
+        f'attachment; filename="seguimiento-siph-{seguimiento.id}.pdf"'
     )
-    contenido = (
-        b"".join(response.streaming_content) if response.streaming else response.content
-    )
-    xml = (
-        zipfile.ZipFile(io.BytesIO(contenido)).read("word/document.xml").decode("utf-8")
-    )
-    assert "{{" not in xml and "{%" not in xml
-    for texto in (
+    texto = _texto_pdf(response.content)
+    assert "{{" not in texto
+    for esperado in (
+        "SERVICIOS INTEGRALES DE PROMOCIÓN HUMANA",
+        "Espacio SIPH",
+        "SIPH-77",
         "Rosa Díaz",
         "30111222",
         "Taller de murga",
@@ -339,19 +362,16 @@ def test_se_descarga_el_docx_del_siph_con_las_respuestas(client):
         "Vestuario de la murga",
         "Apoyo escolar",
         "Sin novedades.",
-        "X Abierto, con actividad",
-        "☒ Retribución talleristas",
-        "☒ Presencial",
-        "☐ Virtual",
+        "Abierto, con actividad",
     ):
-        assert texto in xml, texto
-    assert "Espacio SIPH" in xml
-    assert "SIPH-77" in xml
+        assert esperado in texto, esperado
+    for texto_de_trabajo in TEXTOS_DE_TRABAJO:
+        assert texto_de_trabajo not in texto, texto_de_trabajo
 
 
-def test_el_docx_solo_existe_para_el_siph(client):
+def test_el_pdf_solo_existe_para_el_siph(client):
     comedor = _comedor(TRADICIONAL)
-    tecnico, _ = _territorial("docx_iia", comedor.provincia)
+    tecnico, _ = _territorial("pdf_iia", comedor.provincia)
     seguimiento = _siph(
         comedor, tecnico, formulario="iia", datos={"funcionamiento": "Cerrado"}
     )
@@ -359,9 +379,84 @@ def test_el_docx_solo_existe_para_el_siph(client):
 
     response = client.get(
         reverse(
-            "seguimiento_pnud_docx",
+            "seguimiento_pnud_pdf",
             kwargs={"comedor_pk": comedor.id, "pk": seguimiento.id},
         )
     )
 
     assert response.status_code == 404
+
+
+def test_gestionar_baja_el_mismo_pdf_que_sisoc(client):
+    # QA (14/10): la app mostraba su PDF genérico; tiene que ser el de SISOC.
+    comedor = _comedor(SECOS)
+    tecnico, api = _territorial("pdf_app", comedor.provincia)
+    seguimiento = _siph(comedor, tecnico)
+    otro = _siph(
+        comedor, tecnico, formulario="secos", datos={"funcionamiento": "Cerrado"}
+    )
+
+    response = api.get(f"{_url(comedor, seguimiento.id)}pdf/")
+    no_siph = api.get(f"{_url(comedor, otro.id)}pdf/")
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/pdf"
+    assert "Rosa Díaz" in _texto_pdf(response.content)
+    assert no_siph.status_code == 404
+
+
+def test_un_territorial_de_otra_zona_no_baja_el_pdf():
+    comedor = _comedor(SECOS)
+    tecnico, _ = _territorial("pdf_duenio", comedor.provincia)
+    seguimiento = _siph(comedor, tecnico)
+    _, ajeno = _territorial("pdf_ajeno", Provincia.objects.create(nombre="Otra SIPH"))
+
+    response = ajeno.get(f"{_url(comedor, seguimiento.id)}pdf/")
+
+    assert response.status_code in (403, 404)
+
+
+def test_la_firma_va_como_imagen_y_no_como_texto(settings, tmp_path):
+    # Antes salía el texto "(firma registrada)", que no es parte del formulario.
+    import base64  # pylint: disable=import-outside-toplevel
+
+    from django.core.files.base import (
+        ContentFile,
+    )  # pylint: disable=import-outside-toplevel
+    from django.core.files.storage import (
+        default_storage,
+    )  # pylint: disable=import-outside-toplevel
+
+    from relevamientos.siph_docx import (
+        docx_siph,
+    )  # pylint: disable=import-outside-toplevel
+
+    settings.MEDIA_ROOT = str(tmp_path)
+    comedor = _comedor(SECOS)
+    tecnico, _ = _territorial("firma", comedor.provincia)
+    png = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+    )
+    nombre = default_storage.save(
+        f"firmas/{comedor.id}/entrevistado.png", ContentFile(png)
+    )
+    seguimiento = _siph(
+        comedor,
+        tecnico,
+        datos={**DATOS_SIPH, "firma_entrevistado": default_storage.url(nombre)},
+    )
+    ajena = _siph(
+        comedor,
+        tecnico,
+        datos={**DATOS_SIPH, "firma_entrevistado": "https://evil.test/firmas/x.png"},
+    )
+
+    docx = zipfile.ZipFile(docx_siph(seguimiento))
+    sin_firma = zipfile.ZipFile(docx_siph(ajena))
+
+    def medios(z):
+        return [n for n in z.namelist() if n.startswith("word/media/")]
+
+    # La plantilla trae sus logos: la firma suma una imagen; una URL ajena, ninguna.
+    assert len(medios(docx)) == len(medios(sin_firma)) + 1
+    assert "firma registrada" not in docx.read("word/document.xml").decode("utf-8")

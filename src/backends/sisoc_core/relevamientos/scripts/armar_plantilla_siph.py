@@ -241,11 +241,36 @@ def _sin_fuentes(origen, destino):
             zout.writestr(item, datos)
 
 
+def _sin_comentarios(doc):
+    """Quita los comentarios del área (Gescom): son indicaciones para el desarrollo,
+    no parte del formulario (#2651, QA del 14/10). Se borran las marcas del texto
+    y la relación con comments.xml, así esa parte no se guarda."""
+    cuerpo = doc.element
+    for marca in ("w:commentRangeStart", "w:commentRangeEnd"):
+        for nodo in list(cuerpo.iter(qn(marca))):
+            nodo.getparent().remove(nodo)
+    for referencia in list(cuerpo.iter(qn("w:commentReference"))):
+        corrida = referencia.getparent()
+        corrida.getparent().remove(corrida)
+    for rid, rel in list(doc.part.rels.items()):
+        if "comments" in rel.reltype.lower():
+            doc.part.drop_rel(rid)
+
+
 def _resumen(destino):
     with zipfile.ZipFile(destino) as plantilla:
         xml = plantilla.read("word/document.xml").decode("utf8")
+        plantilla_nombres = plantilla.namelist()
     tags = re.findall(r"\{\{ ([a-z_0-9\[\]\.]+) \}\}", xml)
     resto = re.sub(r"<[^>]+>", "", xml)
+    comentarios = [n for n in plantilla_nombres if "comment" in n.lower()]
+    if comentarios or "comment" in xml.lower():
+        raise SystemExit(f"La plantilla conserva comentarios: {comentarios}")
+    for texto_de_trabajo in ("Gescom", "GESCOM", "precargado en la app", "Comentario"):
+        if texto_de_trabajo in resto:
+            raise SystemExit(
+                f"La plantilla conserva texto de trabajo: {texto_de_trabajo!r}"
+            )
     print(f"tags: {len(tags)} ({len(set(tags))} distintos)")
     print(
         "puntos sin reemplazar:",
@@ -259,6 +284,7 @@ def main(origen, destino):
     doc = Document(origen)
     _reemplazar_parrafos(doc)
     _reemplazar_tablas(doc)
+    _sin_comentarios(doc)
     with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as con_fuentes:
         doc.save(con_fuentes.name)
         _sin_fuentes(con_fuentes.name, destino)

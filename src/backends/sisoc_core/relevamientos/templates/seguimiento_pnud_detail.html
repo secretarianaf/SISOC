@@ -36,8 +36,8 @@
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto">
             {% if seguimiento.formulario == "siph" %}
-                <a href="{% url 'seguimiento_pnud_docx' comedor_pk=comedor.pk pk=seguimiento.pk %}"
-                   class="btn btn-outline-secondary">Descargar docx</a>
+                <a href="{% url 'seguimiento_pnud_pdf' comedor_pk=comedor.pk pk=seguimiento.pk %}"
+                   class="btn btn-outline-secondary">Descargar PDF</a>
             {% endif %}
         </div>
         <div class="col-auto">

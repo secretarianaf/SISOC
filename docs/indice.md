@@ -67,6 +67,7 @@
 - `docs/vat/`: guías funcionales, API, operación de vouchers y desarrollo del módulo VAT.
 - `docs/vat/manual_usuario.md`: operación de INET/VAT, incluido el Buscador por Ciudadano y su alcance de acceso.
 - `docs/registro/cambios/2026-T4/2026-10-14-inspecciones-escolares-backend.md`: backend de la PWA Sisoc Inspecciones (API `/api/inspecciones/`, rol por programa en usuarios, importación de escuelas y asignaciones, diferencias con el contrato y requisitos de deploy).
+- `docs/registro/cambios/2026-T4/2026-10-15-inspecciones-panel-backoffice.md`: panel del backoffice de Inspecciones escolares (catálogo con datos del padrón y marca "a revisar", importación en tres pasos con medición del padrón real, asignaciones por jornada, listado y detalle de actas, rutas y deploy).
 - `docs/registro/decisiones/2026-10-14-inspecciones-escolares-backend.md`: vertical propio, permisos, cierre numerado transaccional e idempotencia de Inspecciones escolares.
 
 ### 5. Flujos y sincronizaciones

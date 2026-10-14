@@ -2365,6 +2365,11 @@
   "regex": "^inicio/\\Z"
  },
  {
+  "name": "inspecciones_anular_acta",
+  "namespace": "",
+  "regex": "^inspecciones/actas/(?P<numero>[^/]+)/anular/\\Z"
+ },
+ {
   "name": "inspecciones_importar_asignaciones",
   "namespace": "",
   "regex": "^inspecciones/asignaciones/importar/\\Z"
@@ -2373,6 +2378,11 @@
   "name": "inspecciones_importar_escuelas",
   "namespace": "",
   "regex": "^inspecciones/escuelas/importar/\\Z"
+ },
+ {
+  "name": "inspecciones_marcar_prueba_acta",
+  "namespace": "",
+  "regex": "^inspecciones/actas/(?P<numero>[^/]+)/prueba/\\Z"
  },
  {
   "name": "inspecciones_panel",

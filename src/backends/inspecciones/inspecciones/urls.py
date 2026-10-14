@@ -5,6 +5,7 @@ from inspecciones.views import (
     ImportarEscuelasView,
     PanelInspeccionesView,
 )
+from inspecciones.views_anulacion import AnularActaView, MarcarPruebaActaView
 
 urlpatterns = [
     path("", PanelInspeccionesView.as_view(), name="inspecciones_panel"),
@@ -17,5 +18,15 @@ urlpatterns = [
         "asignaciones/importar/",
         ImportarAsignacionesView.as_view(),
         name="inspecciones_importar_asignaciones",
+    ),
+    path(
+        "actas/<str:numero>/anular/",
+        AnularActaView.as_view(),
+        name="inspecciones_anular_acta",
+    ),
+    path(
+        "actas/<str:numero>/prueba/",
+        MarcarPruebaActaView.as_view(),
+        name="inspecciones_marcar_prueba_acta",
     ),
 ]

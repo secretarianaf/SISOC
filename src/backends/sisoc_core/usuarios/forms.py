@@ -31,6 +31,7 @@ from users.secciones_usuario import (
     SECCION_ADMINISTRACION,
     SECCION_DATACALLE,
     SECCION_EQUIPOS_TECNICOS,
+    SECCION_INSPECCIONES_ESCOLARES,
     SECCION_MOBILE_COMEDORES,
     SECCION_TERRITORIAL_COMEDOR,
     secciones_habilitadas,
@@ -128,6 +129,7 @@ CAMPOS_POR_SECCION = {
     SECCION_TERRITORIAL_COMEDOR: ("es_territorial_comedor", "provincias_territorial"),
     SECCION_EQUIPOS_TECNICOS: ("es_coordinador", "duplas_asignadas"),
     SECCION_DATACALLE: ("es_relevador_calle", "datacalle_rol", "provincias_datacalle"),
+    SECCION_INSPECCIONES_ESCOLARES: ("es_inspector_escolar", "inspecciones_rol"),
     SECCION_ADMINISTRACION: (
         "user_permissions",
         "acceso_web",
@@ -737,6 +739,9 @@ class DelegationScopeMixin:
         self.can_manage_territorial_comedor = SECCION_TERRITORIAL_COMEDOR in habilitadas
         self.can_manage_technical_teams = SECCION_EQUIPOS_TECNICOS in habilitadas
         self.can_manage_datacalle = SECCION_DATACALLE in habilitadas
+        self.can_manage_inspecciones_escolares = (
+            SECCION_INSPECCIONES_ESCOLARES in habilitadas
+        )
         self.can_manage_direct_permissions = SECCION_ADMINISTRACION in habilitadas
         self.can_manage_delegation = SECCION_ADMINISTRACION in habilitadas
 
@@ -1443,11 +1448,75 @@ class RelevadorCalleFormMixin:
             )
 
 
+class InspeccionesEscolaresFormMixin:
+    """Campos de la sección "Inspecciones escolares" (PWA Sisoc Inspecciones).
+
+    Flag ``Profile.es_inspector_escolar`` + rol en ``Profile.inspecciones_rol``,
+    con el mismo patrón que DataCalle: el flag habilita la app y el rol decide
+    qué puede hacer. El inspector es usuario sólo de la app (se crea sin acceso
+    SISOC web ni backoffice); coordinación puede además entrar a SISOC para
+    administrar el catálogo de escuelas y las asignaciones.
+    """
+
+    def _setup_inspecciones_escolares_fields(self):
+        self.fields["es_inspector_escolar"] = forms.BooleanField(
+            required=False,
+            label="Pertenece a Inspecciones escolares",
+            help_text="Habilita el acceso a la PWA Sisoc Inspecciones.",
+        )
+        self.fields["inspecciones_rol"] = forms.ChoiceField(
+            choices=[("", "---------")] + list(Profile.InspeccionesRol.choices),
+            required=False,
+            widget=forms.Select(attrs={"class": "select2"}),
+            label="Rol en Inspecciones escolares",
+            help_text=(
+                "Inspector: registra visitas y ve sólo sus actas (sólo la app). "
+                "Coordinación: ve todas las actas y borradores y administra el "
+                "catálogo de escuelas y las asignaciones."
+            ),
+        )
+
+    def _init_inspecciones_escolares_fields(self, profile):
+        if not profile:
+            return
+        self.fields["es_inspector_escolar"].initial = profile.es_inspector_escolar
+        self.fields["inspecciones_rol"].initial = profile.inspecciones_rol
+
+    def _clean_inspecciones_escolares_fields(self, cleaned):
+        if not cleaned.get("es_inspector_escolar", False):
+            cleaned["inspecciones_rol"] = ""
+            return cleaned
+        if not cleaned.get("inspecciones_rol"):
+            self.add_error(
+                "inspecciones_rol",
+                "Elegí el rol del usuario en Inspecciones escolares.",
+            )
+        return cleaned
+
+    def _es_inspector_solo_app(self) -> bool:
+        return bool(
+            self.cleaned_data.get("es_inspector_escolar")
+            and self.cleaned_data.get("inspecciones_rol")
+            == Profile.InspeccionesRol.INSPECTOR
+        )
+
+    def _apply_inspecciones_escolares_to_profile(self, profile):
+        profile.es_inspector_escolar = self.cleaned_data.get(
+            "es_inspector_escolar", False
+        )
+        profile.inspecciones_rol = (
+            self.cleaned_data.get("inspecciones_rol", "")
+            if profile.es_inspector_escolar
+            else ""
+        )
+
+
 class UserCreationForm(
     TerritorialScopeFormMixin,
     PWAAccessMixin,
     TerritorialComedorFormMixin,
     RelevadorCalleFormMixin,
+    InspeccionesEscolaresFormMixin,
     DelegationScopeMixin,
     forms.ModelForm,
 ):
@@ -1560,6 +1629,7 @@ class UserCreationForm(
         self._setup_pwa_fields()
         self._setup_territorial_comedor_fields()
         self._setup_relevador_calle_fields()
+        self._setup_inspecciones_escolares_fields()
         self._setup_delegation_fields()
         self._scope_assignable_fields_for_actor()
         self.fields["email"].required = False
@@ -1584,6 +1654,7 @@ class UserCreationForm(
         cleaned = self._clean_pwa_fields(cleaned)
         cleaned = self._clean_territorial_comedor_fields(cleaned)
         cleaned = self._clean_relevador_calle_fields(cleaned)
+        cleaned = self._clean_inspecciones_escolares_fields(cleaned)
         cleaned = self._validar_provincia_unica_coordinador(cleaned)
         cleaned = self._clean_acceso_web_solo_app(cleaned)
         # SIMEPI - EGP se valida al final, después de DataCalle: el alcance
@@ -1602,6 +1673,10 @@ class UserCreationForm(
             cleaned.get("es_representante_pwa")
             or cleaned.get("es_coordinador_equipo_tecnico_pwa")
             or cleaned.get("datacalle_rol") == Profile.DataCalleRol.ENTREVISTADOR
+            or (
+                cleaned.get("es_inspector_escolar")
+                and cleaned.get("inspecciones_rol") == Profile.InspeccionesRol.INSPECTOR
+            )
         ):
             cleaned["acceso_web"] = False
         return cleaned
@@ -1626,6 +1701,10 @@ class UserCreationForm(
         # el administrador tambien llevan `es_relevador_calle` —les habilita la
         # app— pero entran a SISOC.
         if self.cleaned_data.get("datacalle_rol") == "entrevistador":
+            user.is_staff = False
+            return
+        # El inspector escolar también es usuario sólo de la app.
+        if self._es_inspector_solo_app():
             user.is_staff = False
             return
         if self.cleaned_data.get("es_coordinador", False):
@@ -1659,6 +1738,7 @@ class UserCreationForm(
         )
         profile.es_relevador_calle = self.cleaned_data.get("es_relevador_calle", False)
         profile.datacalle_rol = self.cleaned_data.get("datacalle_rol", "")
+        self._apply_inspecciones_escolares_to_profile(profile)
         profile.rol = self.cleaned_data.get("rol")
         profile.must_change_password = True
         profile.password_changed_at = None
@@ -1709,6 +1789,7 @@ class CustomUserChangeForm(
     PWAAccessMixin,
     TerritorialComedorFormMixin,
     RelevadorCalleFormMixin,
+    InspeccionesEscolaresFormMixin,
     DelegationScopeMixin,
     forms.ModelForm,
 ):
@@ -1818,6 +1899,7 @@ class CustomUserChangeForm(
         self._setup_pwa_fields()
         self._setup_territorial_comedor_fields()
         self._setup_relevador_calle_fields()
+        self._setup_inspecciones_escolares_fields()
         self._setup_delegation_fields()
         self._scope_assignable_fields_for_actor()
         self.fields["email"].required = False
@@ -1833,6 +1915,7 @@ class CustomUserChangeForm(
         self._setup_territorial_scope_fields(prof)
         self._init_territorial_comedor_fields(prof)
         self._init_relevador_calle_fields(prof)
+        self._init_inspecciones_escolares_fields(prof)
         if prof:
             self.fields["acceso_web"].initial = prof.acceso_web
             self.fields["acceso_siis"].initial = prof.acceso_siis
@@ -1857,6 +1940,7 @@ class CustomUserChangeForm(
         cleaned = self._clean_pwa_fields(cleaned)
         cleaned = self._clean_territorial_comedor_fields(cleaned)
         cleaned = self._clean_relevador_calle_fields(cleaned)
+        cleaned = self._clean_inspecciones_escolares_fields(cleaned)
         cleaned = self._validar_provincia_unica_coordinador(cleaned)
         # SIMEPI - EGP se valida al final, después de DataCalle: el alcance
         # efectivo de un usuario de DataCalle lo decide el rol, así que correr
@@ -1917,6 +2001,7 @@ class CustomUserChangeForm(
                 "es_relevador_calle", False
             )
             profile.datacalle_rol = self.cleaned_data.get("datacalle_rol", "")
+            self._apply_inspecciones_escolares_to_profile(profile)
             profile.rol = self.cleaned_data.get("rol")
             if new_pwd:
                 self._set_initial_password_flags(

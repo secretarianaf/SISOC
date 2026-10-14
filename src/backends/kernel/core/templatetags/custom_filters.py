@@ -102,6 +102,12 @@ def is_datacalle_sidebar_only(user):
 
 
 @register.filter
+def puede_gestionar_inspecciones(user):
+    """Link al panel de Inspecciones escolares: permiso o rol de coordinación."""
+    return resolver_predicado_sidebar("inspecciones_gestion", user)
+
+
+@register.filter
 def endswith(value, suffix):
     try:
         return str(value).lower().endswith(str(suffix).lower())

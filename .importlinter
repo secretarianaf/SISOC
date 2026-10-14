@@ -60,6 +60,7 @@ root_packages =
     datacalle
     sentry
     encuestas
+    inspecciones
 
 [importlinter:contract:core-no-domains]
 name = core no debe importar apps de dominio
@@ -727,6 +728,7 @@ forbidden_modules =
     gestion_organizaciones
     historial
     importarexpediente
+    inspecciones
     insumos
     intervenciones
     ocr
@@ -742,3 +744,51 @@ ignore_imports =
     # Herramientas locales de diagnóstico/benchmark (no corren en runtime).
     core.debug_queries -> **
     core.benchmarks.** -> **
+
+[importlinter:contract:inspecciones-public-boundary]
+name = ningun dominio importa Inspecciones escolares (backend propio)
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    usuarios
+    comedores
+    pwa
+    dashboard
+    encuestas
+    datacalle
+    dispositivos
+    pas
+    VAT
+    celiaquia
+    centrodefamilia
+    centrodeinfancia
+    ver_para_ser_libre
+forbidden_modules =
+    inspecciones
+ignore_imports =
+
+[importlinter:contract:inspecciones-solo-kernel]
+name = Inspecciones escolares solo depende del kernel
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    inspecciones
+forbidden_modules =
+    usuarios
+    comedores
+    pwa
+    dashboard
+    encuestas
+    datacalle
+    dispositivos
+    pas
+    VAT
+    celiaquia
+    centrodefamilia
+    centrodeinfancia
+    ver_para_ser_libre
+    relevamientos
+    admisiones
+    duplas
+    gestion_organizaciones
+ignore_imports =

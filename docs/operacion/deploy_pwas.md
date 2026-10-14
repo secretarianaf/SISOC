@@ -36,6 +36,7 @@ La aceptacion funcional, de instalacion y offline queda al equipo de testers.
 | espacios | secretarianaf/Espacios-Comunitarios | SISOC-Mobile | sisoc-mobile / 8080 | habilitada en /mobile/ y /pwa/espacioscomunitarios/ |
 | datacalle | secretarianaf/DataCalle | DataCalle | sisoc-pwa-datacalle / 8081 | habilitada, base /pwa/datacalle/ |
 | gestionar | secretarianaf/Gestionar | Gestionar | sisoc-pwa-gestionar / 8082 | habilitada, base /pwa/gestionar/ |
+| inspecciones | secretarianaf/Inspecciones | Inspecciones | sisoc-pwa-inspecciones / 8083 | habilitada, base /pwa/inspecciones/, sin ruta historica |
 
 Fuente de configuracion: `src/scripts/operacion/pwas.json`. No renombrar las carpetas
 historicas ni los proyectos Compose al cambiar un nombre en GitHub.
@@ -48,6 +49,40 @@ sisoc-deploy. El permiso sudo temporal fue retirado y su revocacion verificada.
 Los servidores todavia conservan el include inicial de Espacios; este cambio
 versionado no equivale a un despliegue. Ver evidencia inicial en
 [registro operativo](../registro/cambios/2026-09-08-coordinacion-pwa-privadas.md).
+
+## Primera activacion de Inspecciones (2026-10-14)
+
+Inspecciones se despliega igual que DataCalle hoy: por el workflow propio de su
+repositorio (`secretarianaf/Inspecciones`, `.github/workflows/deploy.yml` y
+`scripts/operacion/deploy_frontend.sh`), no por el deploy de SISOC. Ese deploy
+corre con `--without-mobile` en PRD y HML y no ejecuta `deploy_pwas.py`, asi que
+fusionar este cambio no depende del aprovisionamiento de la PWA. Su entrada en
+`pwas.json` sirve para que `render_pwa_nginx.py` genere el snippet con
+`/pwa/inspecciones/`.
+
+| rama | entorno | host (runner) | rama del checkout |
+| --- | --- | --- | --- |
+| main | production | PRD (`sisoc-produccion`) | main |
+| development | homologacion | HML (`sisoc-homologacion`) | development |
+| development | qa | QA (`sisoc-qa`) | development |
+
+En cada host, como sisoc-deploy, antes del primer deploy de la PWA:
+
+1. Deploy key `~/.ssh/sisoc-pwa-inspecciones` (ed25519, sin passphrase, modo 600),
+   registrada como deploy key de solo lectura en `secretarianaf/Inspecciones`, y
+   alias `Host github-inspecciones` en `~/.ssh/config`, igual que
+   `github-datacalle`.
+2. Checkout `/sisoc/Inspecciones` (sisoc-deploy, 750) en la rama del entorno, con
+   `origin` `git@github-inspecciones:secretarianaf/Inspecciones.git`.
+3. `/sisoc/Inspecciones/.env` modo 600: un comentario y `PWA_API_BASE_URL` del
+   entorno, sin secretos, igual que el de DataCalle.
+4. Nginx: respaldar el snippet vigente, agregar `/pwa/inspecciones/` →
+   `127.0.0.1:8083/` (el candidato de `render_pwa_nginx.py`) y el bloqueo
+   `location ^~ /media/inspecciones/ { return 404; }`; `nginx -t` y reload. Va
+   **antes** del primer deploy: el smoke de `deploy_frontend.sh` entra por el
+   Nginx local y, sin la ruta, el deploy falla.
+5. Probar en HTTPS real: login con un usuario de la seccion Inspecciones escolares,
+   cierre de un acta de prueba, PDF y notificacion.
 
 ## Orden de primera activacion de DataCalle y Gestionar
 

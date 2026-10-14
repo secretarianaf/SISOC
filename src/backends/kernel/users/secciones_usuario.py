@@ -27,6 +27,7 @@ SECCION_MOBILE_COMEDORES = "mobile_comedores"
 SECCION_TERRITORIAL_COMEDOR = "territorial_comedor"
 SECCION_EQUIPOS_TECNICOS = "equipos_tecnicos"
 SECCION_DATACALLE = "datacalle"
+SECCION_INSPECCIONES_ESCOLARES = "inspecciones_escolares"
 SECCION_ADMINISTRACION = "administracion"
 
 SECCIONES_USUARIO = (
@@ -49,6 +50,11 @@ SECCIONES_USUARIO = (
         SECCION_DATACALLE,
         "auth.role_usuarios_seccion_datacalle",
         "Usuarios - Sección Acceso SISOC Mobile DataCalle",
+    ),
+    SeccionUsuario(
+        SECCION_INSPECCIONES_ESCOLARES,
+        "auth.role_usuarios_seccion_inspecciones_escolares",
+        "Usuarios - Sección Inspecciones escolares",
     ),
     SeccionUsuario(
         SECCION_ADMINISTRACION,

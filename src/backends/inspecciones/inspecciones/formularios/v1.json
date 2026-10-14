@@ -1,0 +1,69 @@
+{
+  "version": "v1",
+  "fuente": "PWA Sisoc Inspecciones, src/features/formulario/v1.ts (especificación funcional §14). Mantener sincronizado con la app: una versión nueva es un archivo aparte.",
+  "turnos": [
+    { "valor": "manana", "etiqueta": "Mañana" },
+    { "valor": "tarde", "etiqueta": "Tarde" },
+    { "valor": "vespertino", "etiqueta": "Vespertino" },
+    { "valor": "noche", "etiqueta": "Noche" }
+  ],
+  "preguntas": {
+    "f00": "Nombre de la escuela",
+    "f01": "CUE",
+    "f02": "Domicilio",
+    "f03": "Localidad",
+    "f04": "Foto del ingreso de la escuela",
+    "f05": "Abierta",
+    "f06": "Quién atiende: nombre y función/rol",
+    "f07": "Hay personal educativo",
+    "f08": "Hay estudiantes",
+    "f09": "Cantidad de personal total de la escuela (docente y no docente) que debiera estar prestando servicio en ese momento",
+    "f10": "Cantidad de personal total de la escuela (docente y no docente) que efectivamente está prestando servicio en ese momento - presentes",
+    "f11": "Cuántas aulas en total deberían estar funcionando en ese momento",
+    "f12": "Cuántas aulas en total están efectivamente funcionando",
+    "f13": "No se pudo constatar porque la escuela estaba cerrada",
+    "f14": "No se pudo constatar porque la escuela no dejó ingresar",
+    "f15": "Imágenes adicionales",
+    "f16": "Observaciones"
+  },
+  "opciones": {
+    "si_no": [
+      { "valor": "si", "etiqueta": "Sí" },
+      { "valor": "no", "etiqueta": "No" }
+    ],
+    "constatacion": [
+      { "valor": "si", "etiqueta": "Sí" },
+      { "valor": "no", "etiqueta": "No" },
+      { "valor": "no_constatado", "etiqueta": "No constatado" }
+    ],
+    "resultado": [
+      { "valor": "constatado", "etiqueta": "Se pudo constatar" },
+      { "valor": "parcial", "etiqueta": "Constatación parcial (con motivo)" },
+      { "valor": "cerrada", "etiqueta": "No se pudo constatar porque la escuela estaba cerrada", "codigo": "F13" },
+      { "valor": "no_ingreso", "etiqueta": "No se pudo constatar porque la escuela no dejó ingresar", "codigo": "F14" }
+    ],
+    "condicion_f09_f11": [
+      { "valor": "dato", "etiqueta": "Dato" },
+      { "valor": "no_informado", "etiqueta": "No informado" }
+    ],
+    "condicion_f10_f12": [
+      { "valor": "dato", "etiqueta": "Dato" },
+      { "valor": "no_constatado", "etiqueta": "No constatado" }
+    ],
+    "excepcion_firma": [
+      { "valor": "negativa", "etiqueta": "Se negó a firmar" },
+      { "valor": "ausente", "etiqueta": "No había nadie para firmar" },
+      { "valor": "otra", "etiqueta": "Otra imposibilidad" }
+    ],
+    "fuente_ubicacion": [
+      { "valor": "gps", "etiqueta": "GPS" },
+      { "valor": "manual", "etiqueta": "Manual" }
+    ]
+  },
+  "limites": {
+    "max_observaciones": 5000,
+    "max_imagenes_adicionales": 10,
+    "max_fotos_notificacion": 5,
+    "max_bytes_imagen": 10485760
+  }
+}

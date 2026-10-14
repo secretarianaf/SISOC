@@ -13,6 +13,7 @@ Para desarrollar y revisar cambios, usar `docs/desarrollo/verticales_independien
 | `celiaquia` | celiaquia | `/celiaquia/`, `/reporter-provincias/`, `/api/celiaquia/` |
 | `cdi` | centrodeinfancia, ticketera | `/centrodeinfancia/`, `/simepi/`, `/api/ticketera/` |
 | `cdf` | centrodefamilia | `/centrodefamilia/`, `/api/centrodefamilia/` |
+| `inspecciones` | inspecciones (inspecciones escolares, PWA Sisoc Inspecciones) | `/inspecciones/`, `/api/inspecciones/` |
 
 **El core** corre las apps de `src/backends/sisoc_core/`: el cluster de Comedores
 (comedores, admisiones, relevamientos, intervenciones, rendiciones, etc.) y

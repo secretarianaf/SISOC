@@ -234,6 +234,10 @@ def test_migracion_conserva_lo_que_cada_perfil_ya_veia():
     directo.user_permissions.add(add_user)
 
     migracion.asignar(django_apps, None)
+    # 0061 suma la sección Inspecciones escolares a quien ya administraba accesos.
+    importlib.import_module(
+        "users.migrations.0061_profile_inspecciones_escolares"
+    ).asignar(django_apps, None)
 
     def secciones(grupo_o_usuario, relacion):
         codigos = set(

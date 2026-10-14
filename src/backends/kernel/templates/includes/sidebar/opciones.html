@@ -520,6 +520,15 @@
                         </ul>
                     </li>
                 {% endif %}
+                <!-- INSPECCIONES ESCOLARES -->
+                {% if request.user|has_perm_code:"inspecciones.gestionar_inspecciones" %}
+                    <li class="nav-item">
+                        <a href="{% url 'inspecciones_panel' %}"
+                           class="nav-link nav-dot ms-2 {% if 'inspecciones/' in pagina_actual %}active{% endif %}">
+                            <p>Inspecciones escolares</p>
+                        </a>
+                    </li>
+                {% endif %}
                 <!-- SITUACION DE CALLE -->
                 {% if request.user|has_perm_code:"dispositivos.view_dispositivo" or request.user|has_perm_code:"datacalle.view_relevamiento" %}
                     <li class="nav-item {% if 'dispositivos' in pagina_actual or 'datacalle' in pagina_actual %}menu-open{% endif %}">

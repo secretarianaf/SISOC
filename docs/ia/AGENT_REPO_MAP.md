@@ -24,7 +24,7 @@ Reglas vigentes y checklists: `docs/desarrollo/verticales_independientes.md`.
   `docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md`.
 - Backends por vertical (`src/backends/`, registro en `src/backends/config/backends.json`):
   `dispositivos` (con datacalle), `vpsl`, `pas` (con Celery), `vat` y
-  `celiaquia`, `cdi` y `cdf`. El core los atiende por proxy. Para tests y desarrollo todo
+  `celiaquia`, `cdi`, `cdf` e `inspecciones`. El core los atiende por proxy. Para tests y desarrollo todo
   corre junto con `config.settings_all`. Guia:
   `docs/operacion/backends_por_servicio.md`.
 - `src/backends/kernel/users` es identidad y permisos (modelos, middleware, alcance
@@ -167,7 +167,7 @@ SISOC/
 |   |   |-- kernel/          # codigo comun (core, users, iam, ciudadanos, audittrail, ...)
 |   |   |                    # + templates/, static/ y tests/ compartidos
 |   |   |-- sisoc_core/      # cluster de Comedores y apps propias del core
-|   |   `-- <vertical>/      # pas, cdi, cdf, celiaquia, dispositivos, vat, vpsl
+|   |   `-- <vertical>/      # pas, cdi, cdf, celiaquia, dispositivos, vat, vpsl, inspecciones
 |   |-- frontends/           # apps/, packages/, e2e/; entradas de herramientas autodetectables
 |   |   `-- config/          # opciones base compartidas de TypeScript
 |   `-- scripts/             # helpers IA, CI, operacion, frontend y GitHub
@@ -340,6 +340,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `src/backends/sisoc_core/relevamientos/` | relevamientos y sync externo asociado | `models.py`, `tasks.py`, `views.py`, commands | Alto |
 | `src/backends/kernel/ciudadanos/` | gestion de ciudadanos/beneficiarios | `models.py`, `views.py`, `api_views.py`, forms | Medio |
 | `src/backends/cdf/centrodefamilia/` | backend propio (`/centrodefamilia/`); beneficiarios/centros/familia + API | `models.py`, `views.py`, `api_views.py`, `services/` | Alto |
+| `src/backends/inspecciones/inspecciones/` | backend propio: inspecciones escolares (PWA Sisoc Inspecciones), API `/api/inspecciones/`, cierre numerado transaccional, archivos privados, panel de importacion `/inspecciones/` | `models.py`, `api_views.py`, `services/cierre.py`, `services/validacion.py`, `services/importacion.py` | Alto |
 | `src/backends/celiaquia/celiaquia/` | modulo especializado con bastante logica en services y vistas; expone un contrato Python acotado | `api.py`, `models.py`, `views/`, `services/`, `permissions.py`, tests | Alto |
 | `src/backends/sisoc_core/admisiones/` | flujo de admision, legales/tecnicos, generacion DOCX/PDF y correcciones operativas auditadas | `views/web_views.py`, `services/`, `forms/`, `management/commands/`, templates `docx/` y `pdf/` | Alto |
 | `src/backends/vat/VAT/` | modulo amplio propio con views, API, services y reportes | `models.py`, `views/`, `api_views.py`, `services/`, `serializers.py`; docs `docs/vat/` | Alto |

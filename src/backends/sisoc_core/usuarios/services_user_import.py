@@ -19,6 +19,7 @@ from openpyxl import Workbook, load_workbook
 from core.constants import UserGroups
 from core.models import Provincia
 from users.models import (
+    Profile,
     ProfileTerritorialScope,
     UserImportJob,
     UserImportJobRow,
@@ -54,6 +55,10 @@ USER_IMPORT_OPTIONAL_COLUMNS = (
     "accion_grupos",
     "organizaciones",
     "comedores",
+    # Inspecciones escolares: rol en el programa (inspector / coordinacion).
+    # Si se informa, DNI y correo son obligatorios y únicos.
+    "dni",
+    "inspecciones",
 )
 USER_IMPORT_KNOWN_COLUMNS = USER_IMPORT_REQUIRED_COLUMNS + USER_IMPORT_OPTIONAL_COLUMNS
 USER_IMPORT_TEMPLATE_HEADERS = (
@@ -67,6 +72,8 @@ USER_IMPORT_TEMPLATE_HEADERS = (
     "Rol",
     "Organizaciones",
     "Comedores",
+    "DNI",
+    "Inspecciones",
 )
 USER_IMPORT_CSV_HEADERS = (
     "Usuario",
@@ -616,12 +623,81 @@ class _ActualizarUsuarioParams:
     allowed_permiso_ids: set | None
     access_specs: list
     actor: object
+    dni: str = ""
+    inspecciones_rol: str = ""
+
+
+INSPECCIONES_ROLES_IMPORTACION = {
+    "inspector": Profile.InspeccionesRol.INSPECTOR,
+    "inspectora": Profile.InspeccionesRol.INSPECTOR,
+    "coordinacion": Profile.InspeccionesRol.COORDINACION,
+    "coordinador": Profile.InspeccionesRol.COORDINACION,
+    "coordinadora": Profile.InspeccionesRol.COORDINACION,
+}
+
+
+def _resolver_inspecciones_rol(valor: str) -> str:
+    """Rol de Inspecciones escolares de la columna ``Inspecciones``."""
+    clave = _normalize_header(valor)
+    if not clave:
+        return ""
+    rol = INSPECCIONES_ROLES_IMPORTACION.get(clave)
+    if rol is None:
+        raise ValidationError(
+            f"Rol de Inspecciones invalido: '{valor}'. "
+            "Los valores validos son: inspector, coordinacion."
+        )
+    return rol
+
+
+def _validar_datos_inspecciones(*, dni_raw: str, email: str, rol: str) -> str:
+    """DNI y correo obligatorios y únicos para el alta de Inspecciones (spec §3).
+
+    El DNI se guarda como texto y sólo con dígitos. Un duplicado se rechaza con
+    su causa: el importador nunca pisa un usuario existente en silencio.
+    """
+    if not rol:
+        return dni_raw
+    dni = "".join(ch for ch in dni_raw if ch not in ". -")
+    if not dni or not dni.isdigit():
+        raise ValidationError("Inspecciones: el DNI es obligatorio y solo con digitos.")
+    if not email:
+        raise ValidationError("Inspecciones: el correo es obligatorio.")
+    return dni
+
+
+def _aplicar_inspecciones(profile, *, rol: str, dni: str) -> list[str]:
+    if not rol:
+        return []
+    campos = []
+    if not profile.es_inspector_escolar or profile.inspecciones_rol != rol:
+        profile.es_inspector_escolar = True
+        profile.inspecciones_rol = rol
+        campos += ["es_inspector_escolar", "inspecciones_rol"]
+    if dni and not profile.dni:
+        profile.dni = dni
+        campos.append("dni")
+    if campos:
+        profile.save(update_fields=campos)
+    return campos
 
 
 def _procesar_usuario_existente(params: _ActualizarUsuarioParams) -> dict:
     changed = False
 
     with transaction.atomic():
+        if params.inspecciones_rol:
+            profile = params.user.profile
+            if params.dni and profile.dni and profile.dni != params.dni:
+                raise ValidationError(
+                    f"El usuario {params.user.username} ya tiene otro DNI cargado; "
+                    "no se modifica desde la importacion."
+                )
+            if _aplicar_inspecciones(
+                profile, rol=params.inspecciones_rol, dni=params.dni
+            ):
+                changed = True
+
         if (
             params.username_raw
             and params.user.username.lower() != params.username_raw.lower()
@@ -720,6 +796,8 @@ class _CrearUsuarioParams:
     job: object
     permisos_pwa: list
     access_specs: list
+    dni: str = ""
+    inspecciones_rol: str = ""
 
 
 @dataclass
@@ -738,15 +816,22 @@ class _DatosFilaValidados:
     allowed_permiso_ids: set | None
     tiene_asignaciones_pwa: bool
     access_specs: list
+    dni: str = ""
+    inspecciones_rol: str = ""
 
 
 def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
+    # El inspector escolar es usuario sólo de la app, como en el alta manual.
+    solo_app = (
+        params.job.is_pwa_import
+        or params.inspecciones_rol == Profile.InspeccionesRol.INSPECTOR
+    )
     user = User(
         username=params.username_raw,
         email=params.email,
         first_name=params.nombre,
         last_name=params.apellido,
-        is_staff=not params.job.is_pwa_import,
+        is_staff=not solo_app,
         is_active=True,
     )
     user.set_unusable_password()
@@ -765,11 +850,12 @@ def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
         )
 
     profile = user.profile
-    profile.acceso_web = not params.job.is_pwa_import
+    profile.acceso_web = not solo_app
     profile.rol = params.rol
     if params.provincias_objs:
         profile.es_usuario_provincial = True
     profile.save(update_fields=["rol", "es_usuario_provincial", "acceso_web"])
+    _aplicar_inspecciones(profile, rol=params.inspecciones_rol, dni=params.dni)
 
     for prov in params.provincias_objs:
         scope_key = ProfileTerritorialScope.build_scope_key(prov.pk)
@@ -818,6 +904,15 @@ def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaVa
             ) from exc
         email = email_raw.lower()
 
+    inspecciones_rol = _resolver_inspecciones_rol(
+        row_data.get("inspecciones", "").strip()
+    )
+    dni = _validar_datos_inspecciones(
+        dni_raw=row_data.get("dni", "").strip(),
+        email=email,
+        rol=inspecciones_rol,
+    )
+
     permisos_fila = _resolver_permisos_fila(row_data, job)
     provincias_objs = _resolver_provincias(row_data.get("provincias", "").strip())
 
@@ -842,7 +937,23 @@ def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaVa
         allowed_permiso_ids=permisos_fila.allowed_permiso_ids,
         tiene_asignaciones_pwa=permisos_fila.tiene_asignaciones_pwa,
         access_specs=permisos_fila.access_specs,
+        dni=dni,
+        inspecciones_rol=inspecciones_rol,
     )
+
+
+def _validar_unicidad_inspecciones(datos: _DatosFilaValidados) -> None:
+    """Alta nueva de Inspecciones: DNI y correo no pueden estar en otro usuario."""
+    if not datos.inspecciones_rol:
+        return
+    if Profile.objects.filter(dni=datos.dni).exists():
+        raise ValidationError(
+            f"Duplicado: el DNI {datos.dni} ya pertenece a otro usuario."
+        )
+    if User.objects.filter(email__iexact=datos.email).exists():
+        raise ValidationError(
+            f"Duplicado: el correo {datos.email} ya pertenece a otro usuario."
+        )
 
 
 def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dict:
@@ -865,13 +976,19 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             allowed_permiso_ids=datos.allowed_permiso_ids,
             access_specs=datos.access_specs,
             actor=job.requested_by,
+            dni=datos.dni,
+            inspecciones_rol=datos.inspecciones_rol,
         )
         return _procesar_usuario_existente(params)
 
     if not datos.nombre or not datos.apellido:
         raise ValidationError("Los campos Nombre y Apellido son obligatorios.")
 
-    if job.is_pwa_import and not datos.tiene_asignaciones_pwa:
+    if (
+        job.is_pwa_import
+        and not datos.tiene_asignaciones_pwa
+        and not (datos.inspecciones_rol)
+    ):
         raise ValidationError(
             "Los usuarios PWA deben tener al menos una organizacion o comedor "
             "asignado en las columnas Organizaciones/Comedores del archivo."
@@ -892,6 +1009,8 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             f"Ya existe un usuario con el username '{username_to_create}'."
         )
 
+    _validar_unicidad_inspecciones(datos)
+
     with transaction.atomic():
         params = _CrearUsuarioParams(
             nombre=datos.nombre,
@@ -904,6 +1023,8 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             job=job,
             permisos_pwa=datos.permisos_pwa,
             access_specs=datos.access_specs,
+            dni=datos.dni,
+            inspecciones_rol=datos.inspecciones_rol,
         )
         user, _password = _crear_usuario_nuevo(params)
 

@@ -4,21 +4,14 @@ Las respuestas las arman los services con el formato del contrato
 (``inspecciones.services``); acá sólo se valida la forma de lo que llega.
 """
 
+# Serializers de solo validación: no implementan create()/update() porque no
+# se usan para .save(). W0223 (abstract-method) es falso positivo de DRF.
+# pylint: disable=abstract-method
+
 from rest_framework import serializers
 
 
-class _SoloEntrada(serializers.Serializer):
-    def _solo_entrada(self):
-        raise NotImplementedError("Serializer de solo entrada.")
-
-    def create(self, validated_data):
-        return self._solo_entrada()
-
-    def update(self, instance, validated_data):
-        return self._solo_entrada()
-
-
-class ImagenUploadSerializer(_SoloEntrada):
+class ImagenUploadSerializer(serializers.Serializer):
     archivo = serializers.FileField()
     tipo = serializers.CharField(max_length=20)
     descripcion = serializers.CharField(
@@ -29,11 +22,11 @@ class ImagenUploadSerializer(_SoloEntrada):
     )
 
 
-class PdfUploadSerializer(_SoloEntrada):
+class PdfUploadSerializer(serializers.Serializer):
     archivo = serializers.FileField()
 
 
-class NotificacionUploadSerializer(_SoloEntrada):
+class NotificacionUploadSerializer(serializers.Serializer):
     uuid = serializers.CharField(max_length=64)
     notificada_at = serializers.CharField(required=False, allow_blank=True, default="")
     receptor_nombre = serializers.CharField(

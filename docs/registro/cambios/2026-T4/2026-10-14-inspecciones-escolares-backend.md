@@ -26,7 +26,9 @@ Fecha: 2026-10-14. Rama: `feat/inspecciones-escolares`. Decisión:
   `Inspecciones` (`inspector` / `coordinacion`). Con `Inspecciones`, DNI (sólo
   dígitos) y correo son obligatorios; un DNI o correo ya registrado se rechaza
   con su causa (nunca se pisa un usuario). Genera contraseña temporal con cambio
-  obligatorio, como el resto de las altas.
+  obligatorio, como el resto de las altas. Como en el ABM, sólo asigna el rol
+  quien tiene la sección "Inspecciones escolares": el importador sólo exige
+  `auth.add_user`, así que sin la sección la fila se rechaza con su causa.
 
 ### Backend `inspecciones` (vertical nuevo)
 
@@ -42,7 +44,10 @@ Fecha: 2026-10-14. Rama: `feat/inspecciones-escolares`. Decisión:
 - Backoffice `/inspecciones/`: totales del día e importación CSV de escuelas y
   de asignaciones por jornada (filas nuevas, actualizadas, sin cambios y
   rechazadas con causa). Acceso: rol coordinación o permiso
-  `inspecciones.gestionar_inspecciones`. Entrada en el menú lateral.
+  `inspecciones.gestionar_inspecciones`. Entrada en el menú lateral con la
+  misma regla (`users.services_inspecciones.puede_gestionar_inspecciones`,
+  registrada como predicado de sidebar del kernel porque el menú se arma en
+  backends que no instalan la app).
   El admin de Django registra los modelos (catálogo editable, actas de sólo
   lectura), disponible en la composición completa.
 - CORS: `PWA_CORS_ALLOWED_ORIGINS` (lista separada por comas) suma orígenes de

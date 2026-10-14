@@ -18,6 +18,7 @@ from users.secciones_usuario import (
     TODAS_LAS_SECCIONES,
     permiso_de_seccion,
 )
+from core.services.sidebar_access import resolver_predicado_sidebar
 from users.services_inspecciones import (
     es_coordinacion_inspecciones,
     tiene_acceso_inspecciones,
@@ -272,3 +273,93 @@ def test_importador_exige_dni_y_rol_valido():
         process_single_user_import_row(row_data=_fila(dni=""), job=job)
     with pytest.raises(ValidationError, match="Inspecciones"):
         process_single_user_import_row(row_data=_fila(inspecciones="director"), job=job)
+
+
+def _job_de(actor):
+    return UserImportJob.objects.create(
+        requested_by=actor, original_filename="usuarios.xlsx", total_rows=1
+    )
+
+
+def _actor_importador(username, *, con_seccion):
+    """Actor con ``auth.add_user`` (lo que exige el importador)."""
+    actor = User.objects.create_user(username=username, password="x")
+    codenames = ["add_user"]
+    if con_seccion:
+        codenames.append("role_usuarios_seccion_inspecciones_escolares")
+    actor.user_permissions.add(
+        *Permission.objects.filter(
+            content_type__app_label="auth", codename__in=codenames
+        )
+    )
+    return User.objects.get(pk=actor.pk)
+
+
+def test_importador_sin_la_seccion_no_da_de_alta_roles_de_inspecciones():
+    job = _job_de(_actor_importador("importa_sin_secc", con_seccion=False))
+
+    with pytest.raises(ValidationError, match="Inspecciones escolares"):
+        process_single_user_import_row(
+            row_data=_fila(inspecciones="coordinacion"), job=job
+        )
+    assert not User.objects.filter(email="ana.gomez@example.com").exists()
+
+
+def test_importador_sin_la_seccion_no_se_autoasigna_coordinacion():
+    actor = _actor_importador("importa_propio", con_seccion=False)
+    fila = _fila(
+        username=actor.username,
+        correo="",
+        nombre="",
+        apellido="",
+        inspecciones="coordinacion",
+    )
+
+    with pytest.raises(ValidationError, match="Inspecciones escolares"):
+        process_single_user_import_row(row_data=fila, job=_job_de(actor))
+    actor.profile.refresh_from_db()
+    assert actor.profile.es_inspector_escolar is False
+    assert es_coordinacion_inspecciones(actor) is False
+
+
+def test_importador_con_la_seccion_asigna_el_rol_a_un_usuario_existente():
+    existente = User.objects.create_user(
+        username="ya_existe", email="ya.existe@example.com", password="x"
+    )
+    job = _job_de(_actor_importador("importa_con_secc", con_seccion=True))
+    fila = _fila(
+        username="ya_existe",
+        correo="ya.existe@example.com",
+        inspecciones="coordinacion",
+    )
+
+    process_single_user_import_row(row_data=fila, job=job)
+
+    existente.profile.refresh_from_db()
+    assert existente.profile.inspecciones_rol == "coordinacion"
+    assert existente.profile.dni == "30111222"
+    assert es_coordinacion_inspecciones(User.objects.get(pk=existente.pk)) is True
+
+
+# ------------------------------------------------------------- menú lateral
+
+
+@pytest.mark.parametrize(
+    ("rol", "esperado"), [("coordinacion", True), ("inspector", False)]
+)
+def test_link_del_panel_en_el_menu_sigue_a_quien_puede_gestionar(rol, esperado):
+    usuario = _usuario(f"menu_{rol}", rol=rol)
+
+    assert resolver_predicado_sidebar("inspecciones_gestion", usuario) is esperado
+
+
+def test_link_del_panel_en_el_menu_con_el_permiso_explicito():
+    usuario = User.objects.create_user(username="menu_permiso", password="x")
+    usuario.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="inspecciones", codename="gestionar_inspecciones"
+        )
+    )
+    usuario = User.objects.get(pk=usuario.pk)
+
+    assert resolver_predicado_sidebar("inspecciones_gestion", usuario) is True

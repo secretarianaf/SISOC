@@ -53,6 +53,9 @@ def resumen_acta(acta):
         },
         "inspector": {"id": acta.inspector_id, "nombre": nombre_actor(acta.inspector)},
         "es_prueba": acta.es_prueba,
+        # Anulada: sigue visible para su autor y coordinación, con el motivo.
+        "anulada_at": iso(acta.anulada_at),
+        "motivo_anulacion": acta.motivo_anulacion or None,
     }
 
 

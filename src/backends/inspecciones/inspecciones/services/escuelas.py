@@ -25,8 +25,9 @@ def serializar_escuela(escuela):
 def escuelas_asignadas(user):
     """Escuelas de la jornada de hoy con el estado propio de cada una.
 
-    ``finalizada``: hay un acta propia de hoy; ``borrador``: hay un borrador
-    propio sin cerrar; ``pendiente``: ninguna de las dos.
+    ``finalizada``: hay un acta propia y válida de hoy; ``borrador``: hay un
+    borrador propio sin cerrar; ``pendiente``: ninguna de las dos. Un acta
+    anulada no cuenta: la escuela vuelve a ``pendiente`` y admite otra visita.
     """
     jornada = hoy()
     asignaciones = (

@@ -50,6 +50,10 @@ Ticket 2678. Rama `CeliaquiaTk_2678`.
   pantalla.
 - El texto libre complementario también se parte por renglón: cada renglón es
   un ítem del listado.
+- Se quitan las ramas del template que pintaban `subsanacion_motivo` con
+  `.motivo-multilinea` cuando no había `observacion_tecnica_texto`: la vista
+  copia `subsanacion_motivo` a ese campo cuando existe, así que nunca se
+  mostraban con contenido. Quedan con el «-» que ya usaban.
 
 ## Tests
 

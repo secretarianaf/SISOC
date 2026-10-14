@@ -22,6 +22,9 @@ El boton "Volver" ya no vive aca: se unifico en includes/main.html
 (components/back_button.html), arriba a la izquierda de todas las pantallas.
 Ver docs/registro/cambios/2026-09-23-volver-unificado.md (issue #2460).
 
+map_url / map_text (opcionales): muestran un acceso a un mapa a la izquierda
+de las acciones; map_text por defecto es "Ver mapa".
+
 search_name (opcional, default 'busqueda'): nombre del parametro GET del input
 en modo simple. Sirve para migrar listados cuya vista ya lee otro nombre
 (por ejemplo 'q' o 'titulo') sin tener que tocar el backend.
@@ -196,6 +199,13 @@ Layout (prototipo Figma "SISOC_ Versión UX", nodo 13501:32237):
     {% endif %}
     <div class="row mt-3">
         <div class="col-12 d-flex flex-wrap justify-content-end gap-2 search-actions">
+            {% optional_context_value "map_url" as map_url_value %}
+            {% if map_url_value %}
+                {% optional_context_value "map_text" "Ver mapa" as map_text_value %}
+                <a href="{{ map_url_value }}" class="poncho-btn poncho-btn--cta me-auto">
+                    <i class="fas fa-map-marked-alt" aria-hidden="true"></i>{{ map_text_value }}
+                </a>
+            {% endif %}
             {% for button in leading_buttons %}
                 <button type="button"
                         class="{{ button.class|default:'poncho-btn poncho-btn--cta' }}"

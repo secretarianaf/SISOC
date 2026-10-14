@@ -4126,5 +4126,553 @@
         ]
       }
     ]
+  },
+  "siph": {
+    "corto": "Seguimiento SIPH",
+    "linea": "ABORDAJE COMUNITARIO - LÍNEA TRADICIONAL y MÓDULOS SECOS",
+    "titulo": "FORMULARIO DE SEGUIMIENTO DE ESPACIOS COMUNITARIOS - SERVICIOS INTEGRALES DE PROMOCIÓN HUMANA",
+    "sections": [
+      {
+        "id": "encabezado",
+        "title": "FORMULARIO DE SEGUIMIENTO DE ESPACIOS COMUNITARIOS - SERVICIOS INTEGRALES DE PROMOCIÓN HUMANA",
+        "fields": [
+          {
+            "name": "codigo_proyecto",
+            "label": "Código Proyecto",
+            "type": "text"
+          },
+          {
+            "name": "codigo_externo",
+            "label": "Código del Punto de Entrega/Espacio Comunitario (ID Externo)",
+            "type": "text"
+          },
+          {
+            "name": "funcionamiento",
+            "label": "Funcionamiento",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Abierto, con actividad",
+                "label": "Abierto, con actividad"
+              },
+              {
+                "value": "Abierto, sin actividad",
+                "label": "Abierto, sin actividad"
+              },
+              {
+                "value": "Cerrado",
+                "label": "Cerrado"
+              }
+            ]
+          },
+          {
+            "name": "funcionamiento_motivo",
+            "label": "Motivo",
+            "type": "text"
+          },
+          {
+            "name": "fecha_hora",
+            "label": "Fecha y horario de la visita (Día/ mes/ año) (hh:mm)",
+            "type": "datetime"
+          }
+        ]
+      },
+      {
+        "id": "entrevistado",
+        "title": "1. DATOS DEL ENTREVISTADO",
+        "fields": [
+          {
+            "name": "ent_nombre_apellido",
+            "label": "Nombre y Apellido",
+            "type": "text"
+          },
+          {
+            "name": "ent_dni",
+            "label": "DNI del entrevistado",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "actividad_lugar",
+        "title": "2. ¿La actividad visitada se realiza en el espacio comunitario?",
+        "fields": [
+          {
+            "name": "actividad_en_espacio",
+            "label": "2. ¿La actividad visitada se realiza en el espacio comunitario?",
+            "type": "bool",
+            "etiquetasSiNo": [
+              "SÍ",
+              "NO"
+            ]
+          },
+          {
+            "name": "actividad_en_espacio_motivo",
+            "label": "En caso de responder NO, especificar el motivo",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "domicilio",
+        "title": "3. DATOS DEL DOMICILIO DEL ESPACIO DONDE SE BRINDA LA ACTIVIDAD",
+        "fields": [
+          {
+            "name": "calle",
+            "label": "Calle",
+            "type": "text"
+          },
+          {
+            "name": "numero",
+            "label": "Número",
+            "type": "text"
+          },
+          {
+            "name": "manzana",
+            "label": "Manzana",
+            "type": "text"
+          },
+          {
+            "name": "lote",
+            "label": "Lote",
+            "type": "text"
+          },
+          {
+            "name": "barrio",
+            "label": "Barrio",
+            "type": "text"
+          },
+          {
+            "name": "localidad",
+            "label": "Localidad",
+            "type": "text"
+          },
+          {
+            "name": "municipio",
+            "label": "Municipio",
+            "type": "text"
+          },
+          {
+            "name": "provincia",
+            "label": "Provincia",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Buenos Aires",
+                "label": "Buenos Aires"
+              },
+              {
+                "value": "Ciudad Autónoma de Buenos Aires",
+                "label": "Ciudad Autónoma de Buenos Aires"
+              },
+              {
+                "value": "Catamarca",
+                "label": "Catamarca"
+              },
+              {
+                "value": "Chaco",
+                "label": "Chaco"
+              },
+              {
+                "value": "Chubut",
+                "label": "Chubut"
+              },
+              {
+                "value": "Córdoba",
+                "label": "Córdoba"
+              },
+              {
+                "value": "Corrientes",
+                "label": "Corrientes"
+              },
+              {
+                "value": "Entre Ríos",
+                "label": "Entre Ríos"
+              },
+              {
+                "value": "Formosa",
+                "label": "Formosa"
+              },
+              {
+                "value": "Jujuy",
+                "label": "Jujuy"
+              },
+              {
+                "value": "La Pampa",
+                "label": "La Pampa"
+              },
+              {
+                "value": "La Rioja",
+                "label": "La Rioja"
+              },
+              {
+                "value": "Mendoza",
+                "label": "Mendoza"
+              },
+              {
+                "value": "Misiones",
+                "label": "Misiones"
+              },
+              {
+                "value": "Neuquén",
+                "label": "Neuquén"
+              },
+              {
+                "value": "Río Negro",
+                "label": "Río Negro"
+              },
+              {
+                "value": "Salta",
+                "label": "Salta"
+              },
+              {
+                "value": "San Juan",
+                "label": "San Juan"
+              },
+              {
+                "value": "San Luis",
+                "label": "San Luis"
+              },
+              {
+                "value": "Santa Cruz",
+                "label": "Santa Cruz"
+              },
+              {
+                "value": "Santa Fe",
+                "label": "Santa Fe"
+              },
+              {
+                "value": "Santiago del Estero",
+                "label": "Santiago del Estero"
+              },
+              {
+                "value": "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
+                "label": "Tierra del Fuego, Antártida e Islas del Atlántico Sur"
+              },
+              {
+                "value": "Tucumán",
+                "label": "Tucumán"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "actividades",
+        "title": "4. Actividades de Servicios Integrales de Promoción Humana",
+        "fields": [
+          {
+            "name": "actividad_visitada",
+            "label": "Nombre de la actividad",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Otra",
+                "label": "Otra (especificar)"
+              }
+            ]
+          },
+          {
+            "name": "actividad_visitada_otra",
+            "label": "Nombre de la actividad",
+            "type": "text"
+          },
+          {
+            "name": "actividades",
+            "label": "Actividades de Servicios Integrales de Promoción Humana",
+            "type": "child",
+            "itemFields": [
+              {
+                "name": "tipo_actividad",
+                "label": "Tipo de actividad",
+                "type": "text"
+              },
+              {
+                "name": "subtipo_actividad",
+                "label": "Subtipo de actividad",
+                "type": "text"
+              },
+              {
+                "name": "dias_funcionamiento",
+                "label": "Días de funcionamiento de la actividad",
+                "type": "text"
+              },
+              {
+                "name": "horario_funcionamiento",
+                "label": "Horario de funcionamiento de la actividad",
+                "type": "text"
+              },
+              {
+                "name": "personas_observadas",
+                "label": "Cantidad de personas observadas",
+                "type": "number"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "financiamiento",
+        "title": "5. ¿El financiamiento recibido fue utilizado según lo planificado en los últimos tres meses?",
+        "fields": [
+          {
+            "name": "financiamiento_planificado",
+            "label": "5. ¿El financiamiento recibido fue utilizado según lo planificado en los últimos tres meses?",
+            "type": "bool"
+          },
+          {
+            "name": "financiamiento_componentes",
+            "label": "5.1 En caso de responder SÍ ¿En qué componente se utilizó dicho financiamiento en los últimos tres meses?",
+            "type": "enumlist",
+            "options": [
+              {
+                "value": "Retribución talleristas",
+                "label": "Retribución talleristas"
+              },
+              {
+                "value": "Materiales/insumos/equipamiento",
+                "label": "Materiales/insumos/equipamiento"
+              },
+              {
+                "value": "Adecuación mínima de servicios básicos",
+                "label": "Adecuación mínima de servicios básicos"
+              }
+            ]
+          },
+          {
+            "name": "financiamiento_talleristas_cantidad",
+            "label": "Detallar cuántos:",
+            "type": "text"
+          },
+          {
+            "name": "financiamiento_materiales_detalle",
+            "label": "Detallar cuáles:",
+            "type": "text"
+          },
+          {
+            "name": "financiamiento_adecuacion_detalle",
+            "label": "Detallar cuáles:",
+            "type": "text"
+          },
+          {
+            "name": "financiamiento_justificacion",
+            "label": "5.2 En caso de responder NO, justificar",
+            "type": "longtext"
+          },
+          {
+            "name": "otros_recursos",
+            "label": "5.3 Además de lo financiado por Abordaje Comunitario, ¿reciben otros recursos para esta actividad?",
+            "type": "bool"
+          },
+          {
+            "name": "otros_recursos_origen",
+            "label": "5.3.1 ¿Cuál es el origen? (opción múltiple)",
+            "type": "enumlist",
+            "options": [
+              {
+                "value": "Estado Nacional",
+                "label": "Estado Nacional"
+              },
+              {
+                "value": "Estado Provincial",
+                "label": "Estado Provincial"
+              },
+              {
+                "value": "Estado Municipal",
+                "label": "Estado Municipal"
+              },
+              {
+                "value": "Donaciones",
+                "label": "Donaciones"
+              },
+              {
+                "value": "Otros",
+                "label": "Otros"
+              }
+            ]
+          },
+          {
+            "name": "otros_recursos_destino",
+            "label": "5.3.2 ¿En qué consisten o a qué se destinan estos recursos?",
+            "type": "longtext"
+          }
+        ]
+      },
+      {
+        "id": "mejoras",
+        "title": "6. ¿Qué mejoras percibieron a partir de la implementación de los fondos SIPH? (Respuesta múltiple)",
+        "fields": [
+          {
+            "name": "mejoras",
+            "label": "6. ¿Qué mejoras percibieron a partir de la implementación de los fondos SIPH? (Respuesta múltiple)",
+            "type": "enumlist",
+            "options": [
+              {
+                "value": "Reconocimiento económico a talleristas",
+                "label": "Reconocimiento económico a talleristas"
+              },
+              {
+                "value": "Incorporación de nuevos talleristas",
+                "label": "Incorporación de nuevos talleristas"
+              },
+              {
+                "value": "Ampliación de días y horarios de las actividades o de su carga horaria",
+                "label": "Ampliación de días y horarios de las actividades o de su carga horaria"
+              },
+              {
+                "value": "Incorporación de nuevas actividades",
+                "label": "Incorporación de nuevas actividades"
+              },
+              {
+                "value": "Mayor participación de los asistentes a las actividades",
+                "label": "Mayor participación de los asistentes a las actividades"
+              },
+              {
+                "value": "Calidad de los insumos/materiales/equipamiento para el desarrollo de las actividades",
+                "label": "Calidad de los insumos/materiales/equipamiento para el desarrollo de las actividades"
+              },
+              {
+                "value": "Otras",
+                "label": "Otras. Especificar:"
+              },
+              {
+                "value": "Ninguna",
+                "label": "Ninguna"
+              }
+            ]
+          },
+          {
+            "name": "mejoras_otras",
+            "label": "Otras. Especificar:",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "dificultades",
+        "title": "7. ¿Qué dificultades surgieron desde la recepción de los fondos? (Respuesta múltiple)",
+        "fields": [
+          {
+            "name": "dificultades",
+            "label": "7. ¿Qué dificultades surgieron desde la recepción de los fondos? (Respuesta múltiple)",
+            "type": "enumlist",
+            "options": [
+              {
+                "value": "Problemas con la retribución/facturación de los talleristas",
+                "label": "Problemas con la retribución/facturación de los talleristas"
+              },
+              {
+                "value": "Problemas con la facturación de los insumos/materiales/equipamiento",
+                "label": "Problemas con la facturación de los insumos/materiales/equipamiento"
+              },
+              {
+                "value": "Problemas con las rendiciones de cuentas",
+                "label": "Problemas con las rendiciones de cuentas"
+              },
+              {
+                "value": "Otras",
+                "label": "Otras. Especificar:"
+              },
+              {
+                "value": "Ninguna",
+                "label": "Ninguna"
+              }
+            ]
+          },
+          {
+            "name": "dificultades_otras",
+            "label": "Otras. Especificar:",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "demandas",
+        "title": "8. ¿Reciben demandas para realizar otras actividades?",
+        "fields": [
+          {
+            "name": "demandas_otras_actividades",
+            "label": "8. ¿Reciben demandas para realizar otras actividades?",
+            "type": "bool"
+          },
+          {
+            "name": "demandas_cuales",
+            "label": "Cuál/es?",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "comentarios",
+        "title": "9. COMENTARIOS FINALES",
+        "fields": [
+          {
+            "name": "comentarios_finales",
+            "label": "9. COMENTARIOS FINALES",
+            "type": "longtext"
+          }
+        ]
+      },
+      {
+        "id": "excepcion",
+        "title": "Formulario de excepción (espacio cerrado)",
+        "fields": [
+          {
+            "name": "excepcion_motivo",
+            "label": "Motivo",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Espacio cerrado",
+                "label": "Espacio cerrado"
+              },
+              {
+                "value": "Dirección no encontrada",
+                "label": "Dirección no encontrada"
+              },
+              {
+                "value": "Abierto sin entrevista",
+                "label": "Abierto sin entrevista"
+              },
+              {
+                "value": "Otro",
+                "label": "Otro"
+              }
+            ]
+          },
+          {
+            "name": "excepcion_detalle",
+            "label": "Detalle",
+            "type": "longtext"
+          }
+        ]
+      },
+      {
+        "id": "cierre",
+        "title": "10. LA ENTREVISTA SE REALIZÓ DE FORMA:",
+        "fields": [
+          {
+            "name": "modalidad_entrevista",
+            "label": "10. LA ENTREVISTA SE REALIZÓ DE FORMA:",
+            "type": "enum",
+            "options": [
+              {
+                "value": "Presencial",
+                "label": "Presencial"
+              },
+              {
+                "value": "Virtual",
+                "label": "Virtual"
+              }
+            ]
+          },
+          {
+            "name": "firma_entrevistado",
+            "label": "Firma del entrevistado",
+            "type": "signature"
+          }
+        ]
+      }
+    ]
   }
 }

@@ -2130,6 +2130,10 @@ class SeguimientoPnud(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Mo
     con decenas de campos cada uno, sin columnas equivalentes en los modelos
     PAC. **No actualizan el legajo del comedor.** Pasan por el mismo ciclo de
     validación del coordinador (N16) que relevamientos y seguimientos.
+
+    El Seguimiento SIPH (#2651, Servicios Integrales de Promoción Humana) es un
+    formulario más, común a las dos líneas: n veces por comedor, con o sin
+    relevamiento inicial, desde SISOC (asignado) o desde la app.
     """
 
     FORMULARIO_SECOS = "secos"
@@ -2137,6 +2141,7 @@ class SeguimientoPnud(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Mo
     FORMULARIO_II_B1 = "iib1"
     FORMULARIO_II_A = "iia"
     FORMULARIO_II_B = "iib"
+    FORMULARIO_SIPH = "siph"
     FORMULARIO_CHOICES = [
         (
             FORMULARIO_SECOS,
@@ -2149,6 +2154,10 @@ class SeguimientoPnud(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Mo
         (FORMULARIO_II_B1, "FORM II B.1 — Virtual · Módulo (Línea Tradicional)"),
         (FORMULARIO_II_A, "FORM II A — Presencial · Vianda (Línea Tradicional)"),
         (FORMULARIO_II_B, "FORM II B — Presencial · Módulo (Línea Tradicional)"),
+        (
+            FORMULARIO_SIPH,
+            "FORM-SIPH — Seguimiento SIPH (Línea Tradicional y Módulos Secos)",
+        ),
     ]
 
     comedor = models.ForeignKey(

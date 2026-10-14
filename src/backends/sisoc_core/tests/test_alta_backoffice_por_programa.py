@@ -104,7 +104,8 @@ def test_alimentar_comunidad_ofrece_el_ciclo_pac():
 def test_linea_secos_ofrece_solo_el_seguimiento_de_puntos_de_entrega():
     comedor = _comedor(SECOS)
 
-    assert _valores(comedor) == ["relevamiento_inicial", "pnud_secos"]
+    # #2651: el Seguimiento SIPH se ofrece en las dos líneas de Abordaje Comunitario.
+    assert _valores(comedor) == ["relevamiento_inicial", "pnud_secos", "pnud_siph"]
     assert dict(opciones_alta(comedor))["pnud_secos"] == (
         "Seguimiento Puntos de Entrega (SECOS)"
     )
@@ -120,6 +121,7 @@ def test_linea_tradicional_ofrece_los_form_ii():
         "pnud_iia1",
         "pnud_iib",
         "pnud_iib1",
+        "pnud_siph",
     ]
 
 

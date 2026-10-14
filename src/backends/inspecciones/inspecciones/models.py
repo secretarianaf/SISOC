@@ -27,20 +27,71 @@ from inspecciones.storage import (
 
 
 class Escuela(SoftDeleteModelMixin, models.Model):
-    """Catálogo de escuelas. ``codigo`` es la clave que viaja como ``id``."""
+    """Catálogo de escuelas. ``codigo`` es la clave que viaja como ``id``.
+
+    El Cueanexo (9 dígitos, con ceros a la izquierda) es la clave de las
+    escuelas nuevas: se guarda en ``codigo`` (único, el ``id`` de la API) y en
+    ``cue`` (lo que la API expone como ``cue``). ``codigo`` no cambia después
+    del alta porque la app lo guarda en sus borradores.
+
+    ``localidad`` y ``distrito`` son el texto que lee la app: salen de la
+    localidad vinculada de SISOC (``localidad_vinculada`` y su municipio) y,
+    si no hay vínculo, del texto original. Los mantiene
+    ``inspecciones.services.geografia.textos_de_ubicacion``.
+    """
+
+    class MotivoRevision(models.TextChoices):
+        LOCALIDAD_REPETIDA = (
+            "localidad_repetida",
+            "La localidad existe en 2 o más municipios",
+        )
+        LOCALIDAD_INEXISTENTE = (
+            "localidad_inexistente",
+            "La localidad no está en la base de SISOC",
+        )
+        MAIL_INVALIDO = "mail_invalido", "Mail inválido"
 
     codigo = models.CharField(
         max_length=40,
         unique=True,
-        help_text="Clave del catálogo (por defecto, el CUE). Es el id de la API.",
+        help_text="Clave del catálogo (el Cueanexo). Es el id de la API.",
     )
     nombre = models.CharField(max_length=255)
-    # Texto, no número: el CUE conserva los ceros a la izquierda.
-    cue = models.CharField(max_length=20, blank=True, db_index=True)
+    # Texto, no número: el Cueanexo conserva los ceros a la izquierda.
+    cue = models.CharField(
+        max_length=20, blank=True, db_index=True, help_text="Cueanexo (9 dígitos)."
+    )
+    provincia = models.ForeignKey(
+        "core.Provincia",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    localidad_vinculada = models.ForeignKey(
+        "core.Localidad",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text="Localidad de SISOC. Vacía si no se pudo resolver.",
+    )
     distrito = models.CharField(max_length=120, blank=True, db_index=True)
-    localidad = models.CharField(max_length=120, blank=True)
+    localidad = models.CharField(max_length=255, blank=True)
     domicilio = models.CharField(max_length=255, blank=True)
+    cp = models.CharField("C. P.", max_length=20, blank=True)
+    telefono = models.CharField("teléfono", max_length=255, blank=True)
+    # Texto libre: la importación guarda el mail tal cual aunque sea inválido.
+    mail = models.CharField(max_length=255, blank=True)
     nivel = models.CharField(max_length=60, blank=True)
+    jurisdiccion_original = models.CharField(
+        max_length=120, blank=True, help_text="Jurisdicción tal como vino del archivo."
+    )
+    localidad_original = models.CharField(
+        max_length=255, blank=True, help_text="Localidad tal como vino del archivo."
+    )
+    a_revisar = models.BooleanField(default=False, db_index=True)
+    motivos_revision = models.JSONField(default=list, blank=True)
     creada_at = models.DateTimeField(auto_now_add=True)
     actualizada_at = models.DateTimeField(auto_now=True)
 
@@ -48,6 +99,7 @@ class Escuela(SoftDeleteModelMixin, models.Model):
         ordering = ("nombre",)
         verbose_name = "Escuela"
         verbose_name_plural = "Escuelas"
+        indexes = [models.Index(fields=["nombre"], name="insp_escuela_nombre_idx")]
         permissions = [
             (
                 "gestionar_inspecciones",
@@ -56,7 +108,16 @@ class Escuela(SoftDeleteModelMixin, models.Model):
         ]
 
     def __str__(self):
-        return f"{self.nombre} ({self.cue or self.codigo})"
+        return f"{self.nombre} ({self.cueanexo})"
+
+    @property
+    def cueanexo(self):
+        return self.cue or self.codigo
+
+    @property
+    def motivos_revision_display(self):
+        etiquetas = dict(self.MotivoRevision.choices)
+        return [etiquetas.get(m, m) for m in self.motivos_revision or []]
 
 
 class AsignacionEscuela(SoftDeleteModelMixin, models.Model):

@@ -554,7 +554,7 @@
                                                                     <div class="p-2 rounded"
                                                                          style="background:rgba(255,255,255,.04);
                                                                                 border:1px solid rgba(255,255,255,.08)">
-                                                                        <span class="d-block text-break motivo-multilinea">{{ leg.observacion_tecnica_texto }}</span>
+                                                                        {% include "celiaquia/partials/motivo_lista.html" with items=leg.observacion_tecnica_items %}
                                                                     </div>
                                                                 </div>
                                                             {% else %}
@@ -588,7 +588,7 @@
                                                                     <div class="p-2 rounded"
                                                                          style="background:rgba(255,255,255,.04);
                                                                                 border:1px solid rgba(255,255,255,.08)">
-                                                                        <span class="d-block text-break motivo-multilinea">{{ leg.observacion_tecnica_texto }}</span>
+                                                                        {% include "celiaquia/partials/motivo_lista.html" with items=leg.observacion_tecnica_items %}
                                                                     </div>
                                                                 </div>
                                                             {% else %}
@@ -669,6 +669,10 @@
                                                                 <div class="small muted mb-1">
                                                                     {% if leg.subsanacion_tipo == "RENAPER" %}
                                                                         Subsanación RENAPER solicitada
+                                                                    {% elif leg.subsanacion_tipo == "ANSES" %}
+                                                                        Subsanación ANSES solicitada
+                                                                    {% elif leg.subsanacion_tipo == "CONDICION_DIAGNOSTICA" %}
+                                                                        Subsanación por condición diagnóstica solicitada
                                                                     {% elif leg.subsanacion_tipo == "DOCUMENTACION" %}
                                                                         Subsanación por documentación solicitada
                                                                     {% elif leg.subsanacion_tipo == "DATOS_PERSONALES" %}
@@ -795,7 +799,7 @@
                                                     <div class="p-2 rounded"
                                                          style="background:rgba(255,255,255,.04);
                                                                 border:1px solid rgba(255,255,255,.08)">
-                                                        <span class="d-block text-break motivo-multilinea">{{ leg.observacion_tecnica_texto }}</span>
+                                                        {% include "celiaquia/partials/motivo_lista.html" with items=leg.observacion_tecnica_items %}
                                                     </div>
                                                 </div>
                                             {% else %}
@@ -829,7 +833,7 @@
                                                     <div class="p-2 rounded"
                                                          style="background:rgba(255,255,255,.04);
                                                                 border:1px solid rgba(255,255,255,.08)">
-                                                        <span class="d-block text-break motivo-multilinea">{{ leg.observacion_tecnica_texto }}</span>
+                                                        {% include "celiaquia/partials/motivo_lista.html" with items=leg.observacion_tecnica_items %}
                                                     </div>
                                                 </div>
                                             {% endif %}
@@ -892,6 +896,10 @@
                                                 <div class="small muted mb-1">
                                                     {% if leg.subsanacion_tipo == "RENAPER" %}
                                                         Subsanación RENAPER solicitada
+                                                    {% elif leg.subsanacion_tipo == "ANSES" %}
+                                                        Subsanación ANSES solicitada
+                                                    {% elif leg.subsanacion_tipo == "CONDICION_DIAGNOSTICA" %}
+                                                        Subsanación por condición diagnóstica solicitada
                                                     {% elif leg.subsanacion_tipo == "DOCUMENTACION" %}
                                                         Subsanación por documentación solicitada
                                                     {% elif leg.subsanacion_tipo == "DATOS_PERSONALES" %}

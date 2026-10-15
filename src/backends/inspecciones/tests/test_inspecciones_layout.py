@@ -30,6 +30,9 @@ def test_sisoc_sigue_en_oscuro_fuera_de_inspecciones(panel):
     assert "sidebar-brand" not in html
     assert "insp-cabecera" not in html
     assert re.search(r'<aside class="app-sidebar shadow"\s*>', html)
+    # La barra lateral ya no muestra el panel de usuario (va como en Inspecciones).
+    assert 'class="nav-item user-info' not in html
+    assert "user-panel" not in html
 
 
 def test_iniciales_para_el_avatar():

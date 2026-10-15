@@ -1,9 +1,14 @@
 {% load static %}
-<aside class="app-sidebar shadow"{% if tema_lateral %} data-bs-theme="{{ tema_lateral }}"{% endif %}>
+<aside class="app-sidebar shadow"
+       {% if tema_lateral %} data-bs-theme="{{ tema_lateral }}"{% endif %}>
     {% if con_logo %}
         <div class="sidebar-brand">
-            <a href="{% url 'inicio' %}" class="brand-link" aria-label="Inicio de SISOC">
-                <img src="{% static 'custom/img/logoBlanco.png' %}" alt="SISOC" class="brand-image" />
+            <a href="{% url 'inicio' %}"
+               class="brand-link"
+               aria-label="Inicio de SISOC">
+                <img src="{% static 'custom/img/logoBlanco.png' %}"
+                     alt="SISOC"
+                     class="brand-image" />
             </a>
         </div>
     {% endif %}

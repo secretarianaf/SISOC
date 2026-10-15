@@ -79,9 +79,7 @@
                 <option value="">Todos los turnos</option>
                 {% for turno in opciones.turnos %}
                     <option value="{{ turno.valor }}"
-                            {% if turno.valor == filtros.turno %}selected{% endif %}>
-                        {{ turno.etiqueta }}
-                    </option>
+                            {% if turno.valor == filtros.turno %}selected{% endif %}>{{ turno.etiqueta }}</option>
                 {% endfor %}
             </select>
             <label class="visually-hidden" for="tablero-notificacion">Notificación</label>
@@ -154,14 +152,15 @@
                     <div class="insp-tablero-mapa"
                          data-tablero-mapa
                          role="region"
-                         aria-label="Mapa de Argentina con las visitas con ubicación GPS, agrupadas por zona">
-                    </div>
+                         aria-label="Mapa de Argentina con las visitas con ubicación GPS, agrupadas por zona"></div>
                     <div class="insp-tablero-leyenda">
                         <div>
-                            <i class="insp-tablero-leyenda-punto insp-tablero-constatada" aria-hidden="true"></i>Constatada (total o parcial)
+                            <i class="insp-tablero-leyenda-punto insp-tablero-constatada"
+                               aria-hidden="true"></i>Constatada (total o parcial)
                         </div>
                         <div>
-                            <i class="insp-tablero-leyenda-punto insp-tablero-sin-constatacion" aria-hidden="true"></i>Sin constatación (cerrada o no dejó ingresar)
+                            <i class="insp-tablero-leyenda-punto insp-tablero-sin-constatacion"
+                               aria-hidden="true"></i>Sin constatación (cerrada o no dejó ingresar)
                         </div>
                         <div class="text-body-secondary" data-tablero-sin-gps>–</div>
                     </div>
@@ -225,13 +224,17 @@
                         Hay personal educativo <span class="text-body-secondary" data-tablero-presencia-total="personal"></span>
                     </div>
                     <div data-tablero-presencia="personal"></div>
-                    <div class="insp-tablero-texto-secundario mb-2" data-tablero-presencia-leyenda="personal"></div>
+                    <div class="insp-tablero-texto-secundario mb-2"
+                         data-tablero-presencia-leyenda="personal"></div>
                     <div class="insp-tablero-texto">
-                        Hay estudiantes <span class="text-body-secondary" data-tablero-presencia-total="estudiantes"></span>
+                        Hay estudiantes <span class="text-body-secondary"
+       data-tablero-presencia-total="estudiantes"></span>
                     </div>
                     <div data-tablero-presencia="estudiantes"></div>
-                    <div class="insp-tablero-texto-secundario" data-tablero-presencia-leyenda="estudiantes"></div>
-                    <div class="insp-tablero-texto-secundario mt-2" data-tablero-presencia-denominador>–</div>
+                    <div class="insp-tablero-texto-secundario"
+                         data-tablero-presencia-leyenda="estudiantes"></div>
+                    <div class="insp-tablero-texto-secundario mt-2"
+                         data-tablero-presencia-denominador>–</div>
                     <div class="insp-tablero-texto-secundario mt-1">
                         El personal incluye docentes y no docentes; no equivale a adhesión al paro.
                     </div>

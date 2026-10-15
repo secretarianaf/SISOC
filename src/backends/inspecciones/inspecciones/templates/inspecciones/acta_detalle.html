@@ -65,7 +65,8 @@
                    rel="noopener noreferrer">Ver en el mapa</a>
             {% endif %}
             {% if acta.pdf %}
-                <a class="btn btn-primary" href="{% url 'inspecciones_acta_pdf' acta.numero %}">
+                <a class="btn btn-primary"
+                   href="{% url 'inspecciones_acta_pdf' acta.numero %}">
                     <i class="fas fa-download" aria-hidden="true"></i>Descargar PDF
                 </a>
             {% else %}

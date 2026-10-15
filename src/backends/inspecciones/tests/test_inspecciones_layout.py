@@ -4,6 +4,7 @@ El resto de SISOC no cambia: sigue en oscuro, con su cabecera azul y su script
 que fuerza el tema.
 """
 
+import re
 from pathlib import Path
 
 import pytest
@@ -28,6 +29,7 @@ def test_sisoc_sigue_en_oscuro_fuera_de_inspecciones(panel):
     assert 'class="main-header"' in html
     assert "sidebar-brand" not in html
     assert "insp-cabecera" not in html
+    assert re.search(r'<aside class="app-sidebar shadow"\s*>', html)
 
 
 def test_iniciales_para_el_avatar():
@@ -46,7 +48,9 @@ def test_panel_sale_en_claro_con_la_cabecera_del_mockup(panel):
     assert 'localStorage.setItem("theme", "dark")' not in html
     assert "sisoc-volver" not in html
     assert 'class="main-header"' not in html
-    assert '<aside class="app-sidebar shadow" data-bs-theme="dark">' in html
+    assert re.search(
+        r'<aside class="app-sidebar shadow"\s+data-bs-theme="dark"\s*>', html
+    )
     assert "sidebar-brand" in html
     assert 'class="app-header navbar insp-cabecera"' in html
     assert '<a href="/inicio/">Inicio</a>' in html
@@ -75,9 +79,13 @@ def test_totales_generales_solo_en_la_pestana_escuelas(panel):
 
 
 def test_panel_css_no_conserva_el_parche_de_seccion_clara():
-    css = Path(__file__).resolve().parents[1].joinpath(
-        "inspecciones", "static", "inspecciones", "css", "panel.css"
-    ).read_text(encoding="utf-8")
+    css = (
+        Path(__file__)
+        .resolve()
+        .parents[1]
+        .joinpath("inspecciones", "static", "inspecciones", "css", "panel.css")
+        .read_text(encoding="utf-8")
+    )
 
     assert 'body.dark-mode [data-bs-theme="light"]' not in css
     assert ".insp-cuerpo" in css
@@ -177,7 +185,9 @@ def test_detalle_del_acta_con_el_encabezado_del_mockup(
 ):
     numero, _imagen_uuid = _acta_cerrada(api_a, escuela, cerrar, imagen, nuevo_uuid)
 
-    html = panel.get(reverse("inspecciones_acta_detalle", args=[numero])).content.decode()
+    html = panel.get(
+        reverse("inspecciones_acta_detalle", args=[numero])
+    ).content.decode()
 
     assert 'class="insp-acta-rotulo"' in html
     assert f'<h1 class="insp-acta-numero">{numero}</h1>' in html
@@ -196,9 +206,13 @@ def test_tablero_con_filtros_en_una_fila_y_contenedores_de_barras(panel):
 
 
 def test_tablero_no_usa_apexcharts():
-    js = Path(__file__).resolve().parents[1].joinpath(
-        "inspecciones", "static", "inspecciones", "tablero", "tablero.js"
-    ).read_text(encoding="utf-8")
+    js = (
+        Path(__file__)
+        .resolve()
+        .parents[1]
+        .joinpath("inspecciones", "static", "inspecciones", "tablero", "tablero.js")
+        .read_text(encoding="utf-8")
+    )
 
     assert "ApexCharts" not in js
     assert "data-tablero-turnos" in js
@@ -206,9 +220,14 @@ def test_tablero_no_usa_apexcharts():
 
 def test_base_js_respeta_el_tema_claro_que_renderiza_el_servidor():
     """base.js fuerza el oscuro en todo SISOC; una página renderizada en claro
-    (Inspecciones) tiene que conservarlo, si no inputs, tablas y modales salen oscuros."""
-    js = Path(__file__).resolve().parents[2].joinpath(
-        "kernel", "static", "custom", "js", "base.js"
-    ).read_text(encoding="utf-8")
+    (Inspecciones) tiene que conservarlo, si no inputs, tablas y modales salen oscuros.
+    """
+    js = (
+        Path(__file__)
+        .resolve()
+        .parents[2]
+        .joinpath("kernel", "static", "custom", "js", "base.js")
+        .read_text(encoding="utf-8")
+    )
 
     assert 'getAttribute("data-bs-theme") !== "light"' in js

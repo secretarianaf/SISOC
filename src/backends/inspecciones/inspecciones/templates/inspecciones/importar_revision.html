@@ -5,7 +5,9 @@
             <h2 id="insp-importar-titulo">{{ config.titulo }}</h2>
             <form method="post" action="{% url url_cancelar token %}">
                 {% csrf_token %}
-                <button type="submit" class="insp-dialogo-cerrar" aria-label="Cerrar y descartar el archivo">×</button>
+                <button type="submit"
+                        class="insp-dialogo-cerrar"
+                        aria-label="Cerrar y descartar el archivo">×</button>
             </form>
         </div>
         <div class="insp-dialogo-cuerpo">

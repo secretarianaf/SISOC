@@ -3,7 +3,9 @@
     <section class="insp-dialogo" aria-labelledby="insp-importar-titulo">
         <div class="insp-dialogo-cabecera">
             <h2 id="insp-importar-titulo">{{ config.titulo }}</h2>
-            <a class="insp-dialogo-cerrar" href="{% url config.volver %}" aria-label="Cerrar">×</a>
+            <a class="insp-dialogo-cerrar"
+               href="{% url config.volver %}"
+               aria-label="Cerrar">×</a>
         </div>
         <div class="insp-dialogo-cuerpo">
             {% include "inspecciones/partials/pasos_importacion.html" with paso=3 %}

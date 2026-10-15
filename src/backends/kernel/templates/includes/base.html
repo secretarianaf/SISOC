@@ -61,7 +61,9 @@
               href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
               integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q="
               crossorigin="anonymous" />
-        {% block script_tema %}{% include "includes/scripts/theme_force_dark_head.html" %}{% endblock %}
+        {% block script_tema %}
+            {% include "includes/scripts/theme_force_dark_head.html" %}
+        {% endblock %}
         <!--end::Fonts-->
         <!--begin::Third Party Plugin(OverlayScrollbars)-->
         <link rel="stylesheet" href="{% static 'dist/css/adminlte.css' %}" />
@@ -109,9 +111,13 @@
         </title>
     </head>
     <body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary {% block clase_body %}dark-mode{% endblock %}">
-        {% block cabecera %}{% include 'includes/header.html' %}{% endblock %}
+        {% block cabecera %}
+            {% include 'includes/header.html' %}
+        {% endblock %}
         <div class="app-wrapper">
-            {% block barra_lateral %}{% include 'includes/sidebar/base.html' %}{% endblock %}
+            {% block barra_lateral %}
+                {% include 'includes/sidebar/base.html' %}
+            {% endblock %}
             {% block main-content %}
                 {% comment %}
                 Contenido principal {% endcomment %}

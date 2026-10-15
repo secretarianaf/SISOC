@@ -183,3 +183,13 @@ def test_detalle_del_acta_con_el_encabezado_del_mockup(
     assert f'<h1 class="insp-acta-numero">{numero}</h1>' in html
     assert 'class="insp-columnas-2-1"' in html
     assert "card-custom" not in html
+
+
+def test_tablero_con_filtros_en_una_fila_y_contenedores_de_barras(panel):
+    html = panel.get(reverse("inspecciones_tablero")).content.decode()
+
+    assert 'class="insp-seccion-barra insp-filtros"' in html
+    assert '<label class="visually-hidden" for="tablero-fecha">Jornada</label>' in html
+    assert "data-tablero-turnos" in html
+    assert 'data-tablero-presencia="personal"' in html
+    assert "card-custom" not in html

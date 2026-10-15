@@ -19,8 +19,8 @@
          data-url-datos="{% url 'inspecciones_tablero_datos' %}"
          data-url-exportar="{% url 'inspecciones_tablero_exportar' %}"
          data-intervalo-ms="{{ intervalo_ms }}">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-            <h1 class="insp-tablero-titulo mb-0">Inspecciones escolares</h1>
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <h1 class="insp-titulo">Inspecciones escolares</h1>
             <div class="insp-tablero-vivo" data-tablero-vivo data-estado="cargando">
                 <span class="insp-tablero-vivo-punto" aria-hidden="true"></span>
                 <span role="status" aria-live="polite" data-tablero-estado>Conectando…</span>
@@ -29,7 +29,7 @@
             </div>
         </div>
         {% include "inspecciones/_pestanas.html" with activa="tablero" %}
-        <div class="alert alert-warning d-none"
+        <div class="insp-aviso insp-aviso-rojo d-none"
              role="alert"
              data-tablero-desconexion>
             <strong>Sin conexión con el servidor.</strong>
@@ -37,262 +37,216 @@
         </div>
         <form method="get"
               action="{% url 'inspecciones_tablero' %}"
-              class="insp-tablero-filtros card card-custom mb-3"
+              class="insp-seccion-barra insp-filtros"
               data-tablero-filtros>
-            <div class="card-body d-flex flex-wrap align-items-end gap-2">
-                <div>
-                    <label class="form-label small mb-1" for="tablero-fecha">Jornada</label>
-                    <input type="date"
-                           class="form-control form-control-sm"
-                           id="tablero-fecha"
-                           name="fecha"
-                           value="{{ filtros.fecha|date:'Y-m-d' }}"
-                           required />
-                </div>
-                <div>
-                    <label class="form-label small mb-1" for="tablero-provincia">Provincia</label>
-                    <select class="form-select form-select-sm"
-                            id="tablero-provincia"
-                            name="provincia">
-                        <option value="">Todas las provincias</option>
-                        {% for provincia in opciones.provincias %}
-                            <option value="{{ provincia.id }}"
-                                    {% if provincia.id == filtros.provincia %}selected{% endif %}>
-                                {{ provincia.nombre }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label class="form-label small mb-1" for="tablero-localidad">Localidad</label>
-                    <select class="form-select form-select-sm"
-                            id="tablero-localidad"
-                            name="localidad"
-                            data-valor-inicial="{{ filtros.localidad|default_if_none:'' }}"
-                            {% if not filtros.provincia %}disabled{% endif %}>
-                        <option value="">Todas las localidades</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="form-label small mb-1" for="tablero-inspector">Inspector</label>
-                    <select class="form-select form-select-sm"
-                            id="tablero-inspector"
-                            name="inspector">
-                        <option value="">Todos los inspectores</option>
-                        {% for inspector in opciones.inspectores %}
-                            <option value="{{ inspector.id }}"
-                                    {% if inspector.id == filtros.inspector %}selected{% endif %}>
-                                {{ inspector.nombre }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label class="form-label small mb-1" for="tablero-turno">Turno</label>
-                    <select class="form-select form-select-sm" id="tablero-turno" name="turno">
-                        <option value="">Todos los turnos</option>
-                        {% for turno in opciones.turnos %}
-                            <option value="{{ turno.valor }}"
-                                    {% if turno.valor == filtros.turno %}selected{% endif %}>
-                                {{ turno.etiqueta }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label class="form-label small mb-1" for="tablero-notificacion">Notificación</label>
-                    <select class="form-select form-select-sm"
-                            id="tablero-notificacion"
-                            name="notificacion">
-                        <option value="">Todas</option>
-                        {% for notificacion in opciones.notificaciones %}
-                            <option value="{{ notificacion.valor }}"
-                                    {% if notificacion.valor == filtros.notificacion %}selected{% endif %}>
-                                {{ notificacion.etiqueta }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <noscript>
-                    <button type="submit" class="btn btn-sm btn-primary">Filtrar</button>
-                </noscript>
-                <span class="flex-grow-1"></span>
-                <span class="small text-body-secondary">Los filtros aplican al mapa, los indicadores y la tabla</span>
-            </div>
+            <label class="visually-hidden" for="tablero-fecha">Jornada</label>
+            <input type="date"
+                   class="form-control"
+                   id="tablero-fecha"
+                   name="fecha"
+                   value="{{ filtros.fecha|date:'Y-m-d' }}"
+                   required />
+            <label class="visually-hidden" for="tablero-provincia">Provincia</label>
+            <select class="form-select" id="tablero-provincia" name="provincia">
+                <option value="">Todas las provincias</option>
+                {% for provincia in opciones.provincias %}
+                    <option value="{{ provincia.id }}"
+                            {% if provincia.id == filtros.provincia %}selected{% endif %}>
+                        {{ provincia.nombre }}
+                    </option>
+                {% endfor %}
+            </select>
+            <label class="visually-hidden" for="tablero-localidad">Localidad</label>
+            <select class="form-select"
+                    id="tablero-localidad"
+                    name="localidad"
+                    data-valor-inicial="{{ filtros.localidad|default_if_none:'' }}"
+                    {% if not filtros.provincia %}disabled{% endif %}>
+                <option value="">Localidad</option>
+            </select>
+            <label class="visually-hidden" for="tablero-inspector">Inspector</label>
+            <select class="form-select" id="tablero-inspector" name="inspector">
+                <option value="">Todos los inspectores</option>
+                {% for inspector in opciones.inspectores %}
+                    <option value="{{ inspector.id }}"
+                            {% if inspector.id == filtros.inspector %}selected{% endif %}>
+                        {{ inspector.nombre }}
+                    </option>
+                {% endfor %}
+            </select>
+            <label class="visually-hidden" for="tablero-turno">Turno</label>
+            <select class="form-select" id="tablero-turno" name="turno">
+                <option value="">Todos los turnos</option>
+                {% for turno in opciones.turnos %}
+                    <option value="{{ turno.valor }}"
+                            {% if turno.valor == filtros.turno %}selected{% endif %}>
+                        {{ turno.etiqueta }}
+                    </option>
+                {% endfor %}
+            </select>
+            <label class="visually-hidden" for="tablero-notificacion">Notificación</label>
+            <select class="form-select" id="tablero-notificacion" name="notificacion">
+                <option value="">Notificación: todas</option>
+                {% for notificacion in opciones.notificaciones %}
+                    <option value="{{ notificacion.valor }}"
+                            {% if notificacion.valor == filtros.notificacion %}selected{% endif %}>
+                        {{ notificacion.etiqueta }}
+                    </option>
+                {% endfor %}
+            </select>
+            <noscript>
+                <button type="submit" class="btn btn-outline-secondary">Filtrar</button>
+            </noscript>
+            <span class="insp-espacio"></span>
+            <span class="insp-tablero-ayuda">Los filtros aplican al mapa, los indicadores y la tabla</span>
         </form>
-        <div class="row g-2 mb-3">
-            <div class="col-6 col-md-4 col-xl-2">
-                <div class="card card-custom insp-tablero-kpi insp-tablero-kpi-teal h-100">
-                    <div class="card-body">
-                        <div class="insp-tablero-kpi-titulo">Escuelas únicas inspeccionadas</div>
-                        <div class="insp-tablero-kpi-valor" data-kpi="escuelas_unicas">–</div>
-                        <div class="insp-tablero-kpi-detalle">sin contar anuladas ni de prueba</div>
-                    </div>
+        <div class="insp-totales insp-totales-6">
+            <div class="insp-kpi insp-kpi-teal">
+                <div class="insp-kpi-titulo">Escuelas únicas inspeccionadas</div>
+                <div class="insp-kpi-valor" data-kpi="escuelas_unicas">–</div>
+                <div class="insp-kpi-detalle">sin contar anuladas ni de prueba</div>
+            </div>
+            <div class="insp-kpi insp-kpi-teal">
+                <div class="insp-kpi-titulo">Actas finalizadas válidas</div>
+                <div class="insp-kpi-valor" data-kpi="actas_validas">–</div>
+                <div class="insp-kpi-detalle">
+                    <span data-kpi="escuelas_con_mas_de_una_visita">–</span> escuelas con más de una visita
                 </div>
             </div>
-            <div class="col-6 col-md-4 col-xl-2">
-                <div class="card card-custom insp-tablero-kpi insp-tablero-kpi-teal h-100">
-                    <div class="card-body">
-                        <div class="insp-tablero-kpi-titulo">Actas finalizadas válidas</div>
-                        <div class="insp-tablero-kpi-valor" data-kpi="actas_validas">–</div>
-                        <div class="insp-tablero-kpi-detalle">
-                            <span data-kpi="escuelas_con_mas_de_una_visita">–</span> escuelas con más de una visita
-                        </div>
-                    </div>
+            <div class="insp-kpi">
+                <div class="insp-kpi-titulo">Inspectores con actividad</div>
+                <div class="insp-kpi-valor">
+                    <span data-kpi="inspectores_con_actividad">–</span>
+                    <span class="insp-kpi-total">/ <span data-kpi="inspectores_habilitados">–</span></span>
+                </div>
+                <div class="insp-kpi-detalle">
+                    <span data-kpi="inspectores_sin_actividad">–</span> sin actas ni borradores
                 </div>
             </div>
-            <div class="col-6 col-md-4 col-xl-2">
-                <div class="card card-custom insp-tablero-kpi h-100">
-                    <div class="card-body">
-                        <div class="insp-tablero-kpi-titulo">Inspectores con actividad</div>
-                        <div class="insp-tablero-kpi-valor">
-                            <span data-kpi="inspectores_con_actividad">–</span>
-                            <span class="insp-tablero-kpi-total">/ <span data-kpi="inspectores_habilitados">–</span></span>
-                        </div>
-                        <div class="insp-tablero-kpi-detalle">
-                            <span data-kpi="inspectores_sin_actividad">–</span> sin actas ni borradores
-                        </div>
-                    </div>
+            <div class="insp-kpi">
+                <div class="insp-kpi-titulo">Con firma / sin firma</div>
+                <div class="insp-kpi-valor">
+                    <span data-kpi="con_firma">–</span>
+                    <span class="insp-kpi-total">/ <span data-kpi="sin_firma">–</span></span>
                 </div>
+                <div class="insp-kpi-detalle" data-kpi="sin_firma_por_motivo">–</div>
             </div>
-            <div class="col-6 col-md-4 col-xl-2">
-                <div class="card card-custom insp-tablero-kpi h-100">
-                    <div class="card-body">
-                        <div class="insp-tablero-kpi-titulo">Con firma / sin firma</div>
-                        <div class="insp-tablero-kpi-valor">
-                            <span data-kpi="con_firma">–</span>
-                            <span class="insp-tablero-kpi-total">/ <span data-kpi="sin_firma">–</span></span>
-                        </div>
-                        <div class="insp-tablero-kpi-detalle" data-kpi="sin_firma_por_motivo">–</div>
-                    </div>
-                </div>
+            <div class="insp-kpi insp-kpi-celeste">
+                <div class="insp-kpi-titulo">Borradores en curso</div>
+                <div class="insp-kpi-valor" data-kpi="borradores_en_curso">–</div>
+                <div class="insp-kpi-detalle">avance provisional, no suma</div>
             </div>
-            <div class="col-6 col-md-4 col-xl-2">
-                <div class="card card-custom insp-tablero-kpi insp-tablero-kpi-azul h-100">
-                    <div class="card-body">
-                        <div class="insp-tablero-kpi-titulo">Borradores en curso</div>
-                        <div class="insp-tablero-kpi-valor" data-kpi="borradores_en_curso">–</div>
-                        <div class="insp-tablero-kpi-detalle">avance provisional, no suma</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-4 col-xl-2">
-                <div class="card card-custom insp-tablero-kpi insp-tablero-kpi-naranja h-100">
-                    <div class="card-body">
-                        <div class="insp-tablero-kpi-titulo">Notificación pendiente</div>
-                        <div class="insp-tablero-kpi-valor" data-kpi="notificacion_pendiente">–</div>
-                        <div class="insp-tablero-kpi-detalle">
-                            <span data-kpi="notificacion_cargada">–</span> cargadas
-                        </div>
-                    </div>
+            <div class="insp-kpi insp-kpi-ambar">
+                <div class="insp-kpi-titulo">Notificación pendiente</div>
+                <div class="insp-kpi-valor" data-kpi="notificacion_pendiente">–</div>
+                <div class="insp-kpi-detalle">
+                    <span data-kpi="notificacion_cargada">–</span> cargadas
                 </div>
             </div>
         </div>
-        <div class="row g-3 mb-3">
-            <div class="col-lg-7">
-                <section class="card card-custom h-100" aria-labelledby="tablero-h-mapa">
-                    <div class="card-header card-header-custom d-flex flex-wrap justify-content-between gap-2">
-                        <h2 class="h6 mb-0" id="tablero-h-mapa">Cobertura territorial</h2>
-                        <span class="small text-body-secondary">clic en un punto: escuela, turno, inspector y número de acta</span>
+        <div class="insp-tablero-grilla-mapa">
+            <section class="insp-seccion" aria-labelledby="tablero-h-mapa">
+                <div class="insp-seccion-cabecera">
+                    <h2 id="tablero-h-mapa">Cobertura territorial</h2>
+                    <span class="insp-seccion-nota">clic en un punto: escuela, turno, inspector y número de acta</span>
+                </div>
+                <div class="insp-tablero-mapa-contenedor">
+                    <div class="insp-tablero-mapa"
+                         data-tablero-mapa
+                         role="region"
+                         aria-label="Mapa de Argentina con las visitas con ubicación GPS, agrupadas por zona">
                     </div>
-                    <div class="card-body p-0 insp-tablero-mapa-contenedor">
-                        <div class="insp-tablero-mapa"
-                             data-tablero-mapa
-                             role="region"
-                             aria-label="Mapa de Argentina con las visitas con ubicación GPS, agrupadas por zona">
+                    <div class="insp-tablero-leyenda">
+                        <div>
+                            <i class="insp-tablero-leyenda-punto insp-tablero-constatada" aria-hidden="true"></i>Constatada (total o parcial)
                         </div>
-                        <div class="insp-tablero-leyenda">
-                            <div>
-                                <i class="insp-tablero-leyenda-punto insp-tablero-constatada"
-                                   aria-hidden="true"></i>Constatada (total o parcial)
-                            </div>
-                            <div>
-                                <i class="insp-tablero-leyenda-punto insp-tablero-sin-constatacion"
-                                   aria-hidden="true"></i>Sin constatación (cerrada o no dejó ingresar)
-                            </div>
-                            <div class="text-body-secondary" data-tablero-sin-gps>–</div>
+                        <div>
+                            <i class="insp-tablero-leyenda-punto insp-tablero-sin-constatacion" aria-hidden="true"></i>Sin constatación (cerrada o no dejó ingresar)
                         </div>
+                        <div class="text-body-secondary" data-tablero-sin-gps>–</div>
                     </div>
+                </div>
+            </section>
+            <div class="d-flex flex-column gap-3">
+                <section class="insp-seccion" aria-labelledby="tablero-h-turno">
+                    <div class="insp-seccion-cabecera">
+                        <h2 id="tablero-h-turno">Visitas por turno</h2>
+                    </div>
+                    <div class="insp-seccion-cuerpo" data-tablero-turnos></div>
                 </section>
-            </div>
-            <div class="col-lg-5 d-flex flex-column gap-3">
-                <section class="card card-custom" aria-labelledby="tablero-h-turno">
-                    <div class="card-header card-header-custom">
-                        <h2 class="h6 mb-0" id="tablero-h-turno">Visitas por turno</h2>
+                <section class="insp-seccion" aria-labelledby="tablero-h-resultado">
+                    <div class="insp-seccion-cabecera">
+                        <h2 id="tablero-h-resultado">Resultado de la constatación</h2>
+                        <span class="insp-seccion-nota"><span data-kpi="actas_validas">–</span> actas</span>
                     </div>
-                    <div class="card-body">
-                        <div data-tablero-grafico="turnos"></div>
-                    </div>
-                </section>
-                <section class="card card-custom" aria-labelledby="tablero-h-resultado">
-                    <div class="card-header card-header-custom d-flex justify-content-between">
-                        <h2 class="h6 mb-0" id="tablero-h-resultado">Resultado de la constatación</h2>
-                        <span class="small text-body-secondary"><span data-kpi="actas_validas">–</span> actas</span>
-                    </div>
-                    <div class="card-body">
-                        <div data-tablero-grafico="resultados"></div>
+                    <div class="insp-seccion-cuerpo">
+                        <div data-tablero-resultados></div>
+                        <div class="insp-leyenda" data-tablero-resultados-leyenda></div>
                     </div>
                 </section>
             </div>
         </div>
-        <div class="row g-3 mb-3">
-            <div class="col-md-4">
-                <section class="card card-custom h-100" aria-labelledby="tablero-h-ausentismo">
-                    <div class="card-header card-header-custom">
-                        <h2 class="h6 mb-0" id="tablero-h-ausentismo">Ausentismo observado</h2>
+        <div class="insp-tablero-grilla-3">
+            <section class="insp-seccion" aria-labelledby="tablero-h-ausentismo">
+                <div class="insp-seccion-cabecera">
+                    <h2 id="tablero-h-ausentismo">Ausentismo observado por colegio</h2>
+                </div>
+                <div class="insp-seccion-cuerpo d-flex flex-column gap-1">
+                    <div class="insp-tablero-indice" data-indice="ausentismo-porcentaje">–</div>
+                    <div class="insp-tablero-texto">
+                        (previsto − presente) / previsto, sobre <strong data-indice="ausentismo-computables">–</strong> actas computables
                     </div>
-                    <div class="card-body d-flex flex-column gap-1">
-                        <div class="insp-tablero-indice" data-indice="ausentismo-porcentaje">–</div>
-                        <div class="small">
-                            (previsto − presente) / previsto, sobre <strong data-indice="ausentismo-computables">–</strong> actas computables
-                        </div>
-                        <div class="small text-body-secondary">
-                            <span data-indice="ausentismo-excluidas">–</span> excluidas: sin constatación, sin dato (no informado o no constatado) o previsto igual a cero
-                        </div>
-                        <div class="insp-tablero-aviso small">El personal incluye docentes y no docentes; no equivale a adhesión al paro.</div>
+                    <div class="insp-tablero-texto-secundario">
+                        <span data-indice="ausentismo-excluidas">–</span> excluidas: sin constatación, sin dato (no informado o no constatado) o previsto igual a cero
                     </div>
-                </section>
-            </div>
-            <div class="col-md-4">
-                <section class="card card-custom h-100" aria-labelledby="tablero-h-aulas">
-                    <div class="card-header card-header-custom">
-                        <h2 class="h6 mb-0" id="tablero-h-aulas">Aulas en funcionamiento</h2>
+                    <div class="insp-tablero-aviso">El personal incluye docentes y no docentes; no equivale a adhesión al paro.</div>
+                </div>
+            </section>
+            <section class="insp-seccion" aria-labelledby="tablero-h-aulas">
+                <div class="insp-seccion-cabecera">
+                    <h2 id="tablero-h-aulas">Aulas en funcionamiento</h2>
+                </div>
+                <div class="insp-seccion-cuerpo d-flex flex-column gap-1">
+                    <div class="insp-tablero-indice" data-indice="aulas-porcentaje">–</div>
+                    <div class="insp-tablero-texto">
+                        funcionando / previstas, sobre <strong data-indice="aulas-computables">–</strong> actas computables
                     </div>
-                    <div class="card-body d-flex flex-column gap-1">
-                        <div class="insp-tablero-indice" data-indice="aulas-porcentaje">–</div>
-                        <div class="small">
-                            funcionando / previstas, sobre <strong data-indice="aulas-computables">–</strong> actas computables
-                        </div>
-                        <div class="small text-body-secondary">
-                            <span data-indice="aulas-excluidas">–</span> excluidas · totales por visitas, no por personas únicas
-                        </div>
+                    <div class="insp-tablero-texto-secundario">
+                        <span data-indice="aulas-excluidas">–</span> excluidas · totales por visitas, no por personas únicas
                     </div>
-                </section>
-            </div>
-            <div class="col-md-4">
-                <section class="card card-custom h-100" aria-labelledby="tablero-h-presencia">
-                    <div class="card-header card-header-custom">
-                        <h2 class="h6 mb-0" id="tablero-h-presencia">Presencia constatada</h2>
+                </div>
+            </section>
+            <section class="insp-seccion" aria-labelledby="tablero-h-presencia">
+                <div class="insp-seccion-cabecera">
+                    <h2 id="tablero-h-presencia">Presencia constatada</h2>
+                </div>
+                <div class="insp-seccion-cuerpo">
+                    <div class="insp-tablero-texto">
+                        Hay personal educativo <span class="text-body-secondary" data-tablero-presencia-total="personal"></span>
                     </div>
-                    <div class="card-body">
-                        <div data-tablero-grafico="presencia"></div>
-                        <div class="small text-body-secondary" data-tablero-presencia-denominador>–</div>
-                        <div class="small text-body-secondary mt-1">
-                            El personal incluye docentes y no docentes; no equivale a adhesión al paro.
-                        </div>
+                    <div data-tablero-presencia="personal"></div>
+                    <div class="insp-tablero-texto-secundario mb-2" data-tablero-presencia-leyenda="personal"></div>
+                    <div class="insp-tablero-texto">
+                        Hay estudiantes <span class="text-body-secondary" data-tablero-presencia-total="estudiantes"></span>
                     </div>
-                </section>
-            </div>
+                    <div data-tablero-presencia="estudiantes"></div>
+                    <div class="insp-tablero-texto-secundario" data-tablero-presencia-leyenda="estudiantes"></div>
+                    <div class="insp-tablero-texto-secundario mt-2" data-tablero-presencia-denominador>–</div>
+                    <div class="insp-tablero-texto-secundario mt-1">
+                        El personal incluye docentes y no docentes; no equivale a adhesión al paro.
+                    </div>
+                </div>
+            </section>
         </div>
-        <section class="card card-custom mb-3" aria-labelledby="tablero-h-ultimas">
-            <div class="card-header card-header-custom d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <h2 class="h6 mb-0" id="tablero-h-ultimas">Últimas actas</h2>
-                <a class="btn btn-sm btn-outline-primary"
+        <section class="insp-seccion" aria-labelledby="tablero-h-ultimas">
+            <div class="insp-seccion-cabecera">
+                <h2 id="tablero-h-ultimas">Últimas actas</h2>
+                <a class="btn btn-outline-primary btn-sm"
                    href="{% url 'inspecciones_tablero_exportar' %}"
                    data-tablero-exportar>Exportar CSV (filtros aplicados)</a>
             </div>
             <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0 insp-tablero-tabla">
+                <table class="table insp-tabla insp-tablero-tabla">
                     <thead>
                         <tr>
                             <th scope="col">Hora</th>

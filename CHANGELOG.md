@@ -1,3 +1,13 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-10-15 -->
+# Versión SISOC 15.10.2026
+
+## Corrección de Errores
+
+- [src/backends/inspecciones.] el panel de Inspecciones escolares se ve con el diseño aprobado en el backoffice oscuro; totales del panel corregidos; tablero más rápido. (PR #2701)
+- [src/backends/inspecciones.] editar una escuela del panel de Inspecciones trae sus datos y acepta varios mails. (PR #2703)
+- [src/backends/inspecciones.] la búsqueda de escuelas encuentra el Cueanexo escrito sin el 0 inicial o en parte. (PR #2706)
+<!-- AUTO-GENERATED RELEASE END: 2026-10-15 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-10-16 -->
 # Versión SISOC 16.10.2026
 
@@ -7,14 +17,6 @@
 - [src/backends/inspecciones.] el panel y el tablero de Inspecciones escolares se ven como el mockup aprobado (tema claro, cabecera blanca, barra lateral con logo) sin cambiar el resto del backoffice. (PR #2705)
 <!-- AUTO-GENERATED RELEASE END: 2026-10-16 -->
 
-<!-- AUTO-GENERATED RELEASE START: 2026-10-15 -->
-# Versión SISOC 15.10.2026
-
-## Corrección de Errores
-
-- [src/backends/inspecciones.] el panel de Inspecciones escolares se ve con el diseño aprobado en el backoffice oscuro; totales del panel corregidos; tablero más rápido. (PR #2701)
-- [src/backends/inspecciones.] editar una escuela del panel de Inspecciones trae sus datos y acepta varios mails. (PR #2703)
-<!-- AUTO-GENERATED RELEASE END: 2026-10-15 -->
 
 
 <!-- AUTO-GENERATED RELEASE START: 2026-10-14 -->

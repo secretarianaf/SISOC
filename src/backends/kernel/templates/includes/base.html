@@ -116,7 +116,7 @@
         {% endblock %}
         <div class="app-wrapper">
             {% block barra_lateral %}
-                {% include 'includes/sidebar/base.html' %}
+                {% include 'includes/sidebar/base.html' with con_logo=False tema_lateral="" %}
             {% endblock %}
             {% block main-content %}
                 {% comment %}

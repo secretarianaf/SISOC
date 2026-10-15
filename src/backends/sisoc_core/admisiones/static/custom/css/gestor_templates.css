@@ -187,12 +187,15 @@
 .gestor-templates .gt-editor .note-dropdown-item:hover,
 .gestor-templates .gt-editor .note-dropdown-item:focus { background: #27516a; color: #fff; }
 .gestor-templates .gt-editor .note-editing-area { background: #cbd7df; overflow: auto; padding: 1.5rem; }
-.gestor-templates .gt-editor .note-editing-area .note-editable { background: #fff; box-shadow: 0 .3rem 1rem rgba(6, 24, 43, .28); box-sizing: border-box; color: #1d2b3a; font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.15; margin: 0 auto; min-height: 297mm !important; padding: 20mm !important; width: 210mm; }
+.gestor-templates .gt-editor .note-editing-area .note-editable { background: #fff; box-shadow: 0 .3rem 1rem rgba(6, 24, 43, .28); box-sizing: border-box; color: #1d2b3a; font-family: Calibri, Carlito, Arial, sans-serif; font-size: 12pt; line-height: 1.15; margin: 0 auto; min-height: 297mm !important; padding: 27.8mm 25.4mm 25.4mm !important; text-align: justify; width: 210mm; }
+.gestor-templates .gt-editor .note-editing-area .note-editable p { margin: 0 0 12pt; }
 .gestor-templates .gt-editor .note-editing-area .note-codable { background: #fff; color: #1d2b3a; min-height: 28rem; padding: 1rem 1.15rem; }
 .gestor-templates .gt-editor .note-editing-area .note-editable table { border-collapse: collapse; margin: 1rem 0; max-width: 100%; width: 100%; }
 .gestor-templates .gt-editor .note-editing-area .note-editable th,
-.gestor-templates .gt-editor .note-editing-area .note-editable td { border: 1px solid #8ca9bb; padding: .45rem .55rem; vertical-align: top; }
-.gestor-templates .gt-editor .note-editing-area .note-editable th { background: #e6f1f5; font-weight: 700; }
+.gestor-templates .gt-editor .note-editing-area .note-editable td { border: 1px solid #000; line-height: 1; padding: 1pt 5.75pt; text-align: left; vertical-align: middle; }
+.gestor-templates .gt-editor .note-editing-area .note-editable th p,
+.gestor-templates .gt-editor .note-editing-area .note-editable td p { margin: 0; }
+.gestor-templates .gt-editor .note-editing-area .note-editable th { font-weight: 700; }
 .gestor-templates .gt-editor .note-editing-area .note-codable { border: 0; font-family: Consolas, "Courier New", monospace; line-height: 1.5; }
 .gestor-templates .gt-editor .note-statusbar { background: #dce8ef; border-top-color: #b2c8d8; }
 .gestor-templates .gt-editor .note-modal-content { color: #1d2b3a; }

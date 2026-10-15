@@ -394,6 +394,8 @@ class ExpedienteCiudadano(SoftDeleteModelMixin, models.Model):
 
     SUBSANACION_TIPO_LABELS = {
         "RENAPER": "RENAPER",
+        "ANSES": "ANSES",
+        "CONDICION_DIAGNOSTICA": "Condición diagnóstica",
         "DOCUMENTACION": "Documentación",
         "DATOS_PERSONALES": "Datos personales",
         "OTROS": "Otros",
@@ -878,9 +880,18 @@ class SubsanacionRespuesta(models.Model):
 
 
 class TipoSubsanacion(models.TextChoices):
+    """Motivo de una observación de subsanación.
+
+    ANSES y CONDICION_DIAGNOSTICA replican los tipos de documento de los
+    comentarios técnicos para que la Provincia vea qué ítem observó Nación
+    (issue #2678). DOCUMENTACION queda para los datos previos y la API legacy.
+    """
+
     DOCUMENTACION = "DOCUMENTACION", "Documentación"
     DATOS_PERSONALES = "DATOS_PERSONALES", "Datos personales"
     RENAPER = "RENAPER", "RENAPER"
+    ANSES = "ANSES", "ANSES"
+    CONDICION_DIAGNOSTICA = "CONDICION_DIAGNOSTICA", "Condición diagnóstica"
     OTROS = "OTROS", "Otros"
 
 
@@ -988,7 +999,7 @@ class SubsanacionObservacion(models.Model):
     subsanacion = models.ForeignKey(
         Subsanacion, on_delete=models.CASCADE, related_name="observaciones"
     )
-    tipo = models.CharField(max_length=20, choices=TipoSubsanacion.choices)
+    tipo = models.CharField(max_length=30, choices=TipoSubsanacion.choices)
     detalle = models.TextField(null=True, blank=True)
     creado_en = models.DateTimeField(auto_now_add=True)
 

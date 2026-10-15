@@ -42,13 +42,16 @@ from core.soft_delete.view_helpers import is_soft_deletable_instance
 
 logger = logging.getLogger("django")
 
-#: Los comentarios tecnicos se registran por tipo de documento; las
-#: observaciones de la Fase 2 usan las categorias previas. ANSES y condicion
-#: diagnostica son ambas cuestiones de documentacion respaldatoria.
+#: Cada tipo de documento de los comentarios tecnicos conserva su categoria en
+#: la observacion de subsanacion. Antes ANSES y condicion diagnostica se
+#: fundian en DOCUMENTACION y la Provincia no sabia cual de los dos corregir
+#: (issue #2678).
 MAPA_TIPO_DOCUMENTO_A_SUBSANACION = {
     TipoDocumentoComentario.RENAPER.value: TipoSubsanacion.RENAPER,
-    TipoDocumentoComentario.ANSES.value: TipoSubsanacion.DOCUMENTACION,
-    TipoDocumentoComentario.CONDICION_DIAGNOSTICA.value: TipoSubsanacion.DOCUMENTACION,
+    TipoDocumentoComentario.ANSES.value: TipoSubsanacion.ANSES,
+    TipoDocumentoComentario.CONDICION_DIAGNOSTICA.value: (
+        TipoSubsanacion.CONDICION_DIAGNOSTICA
+    ),
 }
 
 ACCIONES_REVISION = ("APROBAR", "RECHAZAR", "SUBSANAR", "ELIMINAR")

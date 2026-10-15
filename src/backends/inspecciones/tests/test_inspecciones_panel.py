@@ -539,3 +539,16 @@ def test_api_de_la_pwa_mantiene_los_campos(api_a, panel, geografia, asignada_a):
     assert buscadas[0]["localidad"] == "San Justo"
     assert campos <= set(asignadas[0])
     assert asignadas[0]["id"] == "060123400"
+
+
+def test_detalle_de_acta_valida_ofrece_anular_y_marcar_prueba(
+    panel, api_a, escuela, cerrar, imagen, nuevo_uuid
+):
+    numero, _ = _acta_cerrada(api_a, escuela, cerrar, imagen, nuevo_uuid)
+
+    html = panel.get(reverse("inspecciones_acta_detalle", args=[numero])).content
+    html = html.decode()
+
+    assert 'data-bs-target="#insp-modal-anular"' in html
+    assert reverse("inspecciones_anular_acta", args=[numero]) in html
+    assert reverse("inspecciones_marcar_prueba_acta", args=[numero]) in html

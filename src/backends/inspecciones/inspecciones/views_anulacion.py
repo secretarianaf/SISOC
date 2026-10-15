@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import NoReverseMatch, reverse
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 
@@ -48,10 +48,7 @@ class _AccionActaView(LoginRequiredMixin, UserPassesTestMixin, View):
             require_https=self.request.is_secure(),
         ):
             return siguiente
-        try:
-            return reverse("inspecciones_acta_detalle", args=[numero])
-        except NoReverseMatch:
-            return reverse("inspecciones_panel")
+        return reverse("inspecciones_acta_detalle", args=[numero])
 
 
 class AnularActaView(_AccionActaView):

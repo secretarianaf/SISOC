@@ -4,7 +4,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
 from django.core.exceptions import ValidationError
-from django.urls import NoReverseMatch, reverse
+from django.urls import reverse
 
 from inspecciones.models import Acta, EventoInspeccion
 from inspecciones.services.anulacion import anular_acta, marcar_prueba
@@ -22,10 +22,7 @@ def _acta(client, cerrar, escuela_obj=None):
 
 
 def _destino_por_defecto(numero):
-    try:
-        return reverse("inspecciones_acta_detalle", args=[numero])
-    except NoReverseMatch:
-        return reverse("inspecciones_panel")
+    return reverse("inspecciones_acta_detalle", args=[numero])
 
 
 def _mensajes(response):

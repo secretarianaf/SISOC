@@ -15,6 +15,7 @@ from inspecciones.views_ajax import (
     LocalidadesAjaxView,
     VerificarAsignacionAjaxView,
 )
+from inspecciones.views_anulacion import AnularActaView, MarcarPruebaActaView
 from inspecciones.views_asignaciones import (
     AsignacionCrearView,
     AsignacionesView,
@@ -147,5 +148,15 @@ urlpatterns = [
         "tablero/exportar.csv",
         TableroExportarView.as_view(),
         name="inspecciones_tablero_exportar",
+    ),
+    path(
+        "actas/<str:numero>/anular/",
+        AnularActaView.as_view(),
+        name="inspecciones_anular_acta",
+    ),
+    path(
+        "actas/<str:numero>/prueba/",
+        MarcarPruebaActaView.as_view(),
+        name="inspecciones_marcar_prueba_acta",
     ),
 ]

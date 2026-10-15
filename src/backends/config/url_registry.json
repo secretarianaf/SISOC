@@ -2410,6 +2410,11 @@
   "regex": "^inspecciones/ajax/asignaciones/verificar/\\Z"
  },
  {
+  "name": "inspecciones_anular_acta",
+  "namespace": "",
+  "regex": "^inspecciones/actas/(?P<numero>[^/]+)/anular/\\Z"
+ },
+ {
   "name": "inspecciones_asignacion_nueva",
   "namespace": "",
   "regex": "^inspecciones/asignaciones/nueva/\\Z"
@@ -2483,6 +2488,11 @@
   "name": "inspecciones_importar_escuelas_revision",
   "namespace": "",
   "regex": "^inspecciones/escuelas/importar/(?P<token>[^/]+)/\\Z"
+ },
+ {
+  "name": "inspecciones_marcar_prueba_acta",
+  "namespace": "",
+  "regex": "^inspecciones/actas/(?P<numero>[^/]+)/prueba/\\Z"
  },
  {
   "name": "inspecciones_panel",

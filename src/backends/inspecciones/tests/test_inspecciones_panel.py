@@ -58,6 +58,7 @@ def test_alta_de_escuela(panel, geografia):
         ({"cueanexo": "06012340"}, "cueanexo"),
         ({"cueanexo": "06012340A"}, "cueanexo"),
         ({"mail": "ep12@"}, "mail"),
+        ({"mail": "ep12@abc.gob.ar; roto@"}, "mail"),
         ({"cp": "1754-B"}, "cp"),
         ({"nombre": ""}, "nombre"),
     ],
@@ -133,6 +134,48 @@ def test_edicion_mantiene_codigo_y_quita_marca(panel, geografia):
     assert escuela.nombre == "EP 12 bis"
     assert escuela.a_revisar is False
     assert escuela.motivos_revision == []
+
+
+def test_edicion_trae_los_datos_de_la_escuela(panel, geografia):
+    escuela = Escuela.objects.create(
+        codigo="060890200",
+        cue="060890200",
+        nombre="CENTRO DE ADULTOS Nº736",
+        provincia=geografia["bsas"],
+        localidad_vinculada=geografia["san_justo"],
+        domicilio="3 SINDICATO DE LUZ Y FUERZA 481",
+        cp="1900",
+        telefono="0221 15-590-6972",
+        mail="centro736@abc.gob.ar",
+    )
+
+    form = panel.get(
+        reverse("inspecciones_escuela_editar", args=[escuela.pk]), **XHR
+    ).context["form"]
+
+    assert form["provincia"].value() == geografia["bsas"].pk
+    assert form["localidad"].value() == geografia["san_justo"].pk
+    assert form["cueanexo"].value() == "060890200"
+    assert form["nombre"].value() == "CENTRO DE ADULTOS Nº736"
+    assert form["domicilio"].value() == "3 SINDICATO DE LUZ Y FUERZA 481"
+    assert form["cp"].value() == "1900"
+    assert form["telefono"].value() == "0221 15-590-6972"
+    assert form["mail"].value() == "centro736@abc.gob.ar"
+
+
+def test_edicion_acepta_varios_mails_como_el_padron(panel, geografia):
+    escuela = Escuela.objects.create(codigo="060123400", cue="060123400", nombre="EP")
+    mails = "direccion@gmail.com; ep12@abc.gob.ar"
+
+    respuesta = panel.post(
+        reverse("inspecciones_escuela_editar", args=[escuela.pk]),
+        _datos_escuela(geografia, mail=mails),
+        **XHR,
+    )
+
+    assert respuesta.status_code == 200
+    escuela.refresh_from_db()
+    assert escuela.mail == mails
 
 
 def test_edicion_permite_conservar_su_propio_cueanexo(panel, geografia):

@@ -227,6 +227,17 @@ def test_detalle_del_acta_con_el_encabezado_del_mockup(
     assert "card-custom" not in html
     assert '<h1 class="insp-titulo">' not in html
     assert "insp-tabs" not in html
+    for titulo in (
+        "Inspector a cargo",
+        "Institución",
+        "Geolocalización",
+        "Firma responsable",
+        "Avance de la inspección",
+    ):
+        assert f">{titulo}</h3>" in html
+    assert "Editar institución" in html
+    assert 'class="insp-linea-tiempo"' in html
+    assert ">Ver ficha<" not in html
 
 
 def test_tablero_con_filtros_en_una_fila_y_contenedores_de_barras(panel):

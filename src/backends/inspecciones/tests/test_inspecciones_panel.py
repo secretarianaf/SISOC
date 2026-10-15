@@ -396,7 +396,7 @@ def test_listado_y_detalle_del_acta(panel, api_a, escuela, cerrar, imagen, nuevo
     assert codigos == [f"F{i:02d}" for i in range(17)]
     html = detalle.content.decode()
     assert "Personal presente / previsto" in html
-    assert detalle.context["resumen"]["personal"] == "20 / 24"
+    assert detalle.context["resumen_acta"]["personal"] == "20 / 24"
     assert reverse("inspecciones_acta_imagen", args=[numero, imagen_uuid]) in html
     imagen_respuesta = panel.get(
         reverse("inspecciones_acta_imagen", args=[numero, imagen_uuid])

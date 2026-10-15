@@ -78,26 +78,26 @@
         <div class="col-6 col-lg-3">
             <div class="insp-kpi">
                 <div class="insp-kpi-titulo">Escuela abierta</div>
-                <div class="insp-kpi-valor">{{ resumen.abierta }}</div>
+                <div class="insp-kpi-valor">{{ resumen_acta.abierta }}</div>
             </div>
         </div>
         <div class="col-6 col-lg-3">
             <div class="insp-kpi">
                 <div class="insp-kpi-titulo">Resultado de la constatación</div>
-                <div class="insp-kpi-valor fs-6">{{ resumen.resultado }}</div>
-                {% if resumen.motivo_parcial %}<span class="insp-nota">Motivo: {{ resumen.motivo_parcial }}</span>{% endif %}
+                <div class="insp-kpi-valor fs-6">{{ resumen_acta.resultado }}</div>
+                {% if resumen_acta.motivo_parcial %}<span class="insp-nota">Motivo: {{ resumen_acta.motivo_parcial }}</span>{% endif %}
             </div>
         </div>
         <div class="col-6 col-lg-3">
             <div class="insp-kpi">
                 <div class="insp-kpi-titulo">Personal presente / previsto</div>
-                <div class="insp-kpi-valor">{{ resumen.personal }}</div>
+                <div class="insp-kpi-valor">{{ resumen_acta.personal }}</div>
             </div>
         </div>
         <div class="col-6 col-lg-3">
             <div class="insp-kpi">
                 <div class="insp-kpi-titulo">Aulas funcionando / previstas</div>
-                <div class="insp-kpi-valor">{{ resumen.aulas }}</div>
+                <div class="insp-kpi-valor">{{ resumen_acta.aulas }}</div>
             </div>
         </div>
     </div>

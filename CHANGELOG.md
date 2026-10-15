@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-10-15 -->
+# Versión SISOC 15.10.2026
+
+## Corrección de Errores
+
+- [src/backends/inspecciones.] el panel de Inspecciones escolares se ve con el diseño aprobado en el backoffice oscuro; totales del panel corregidos; tablero más rápido. (PR #2701)
+<!-- AUTO-GENERATED RELEASE END: 2026-10-15 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-10-16 -->
 # Versión SISOC 16.10.2026
 

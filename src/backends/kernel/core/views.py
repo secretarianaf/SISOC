@@ -49,6 +49,7 @@ from core.services.favorite_filters import (
     obtener_items_obsoletos,
 )
 from core.backend_proxy import backend_de_seccion_favorita, reenviar_a_backend
+from core.services.layout_claro import contexto_layout_claro
 from users.territorial_scope import get_geography_scope_map
 
 logger = logging.getLogger(__name__)
@@ -378,7 +379,11 @@ def detalle_filtro_favorito(request, pk):
 def inicio_view(request):
     """Vista para la página de inicio del sistema"""
     # Es la pantalla raiz: no tiene "pantalla anterior" a la que volver (#2460).
-    return render(request, "inicio.html", {"ocultar_volver": True})
+    return render(
+        request,
+        "inicio.html",
+        contexto_layout_claro(request.user, [{"text": "Inicio"}]),
+    )
 
 
 def _extract_first_changelog_version(content):

@@ -103,40 +103,45 @@ $.widget.bridge("uibutton", $.ui.button);
         applyTheme(FORCED_THEME, {persist: true, notify: false});
     }
 
-    initializeTheme();
+    // Una página que el servidor renderiza en claro (data-bs-theme="light" en <html>,
+    // hoy solo Inspecciones escolares) conserva su tema: no se fuerza el oscuro,
+    // no se observa el atributo ni se sincroniza la preferencia.
+    if (document.documentElement.getAttribute("data-bs-theme") !== "light") {
+        initializeTheme();
 
-    const rootObserver = new MutationObserver(function(mutations) {
-        if (updatingThemeAttr) {
-            return;
-        }
-        mutations.forEach(function(mutation) {
-            if (mutation.type === "attributes" && mutation.attributeName === "data-bs-theme") {
-                synchronizeFromRootAttr();
+        const rootObserver = new MutationObserver(function(mutations) {
+            if (updatingThemeAttr) {
+                return;
+            }
+            mutations.forEach(function(mutation) {
+                if (mutation.type === "attributes" && mutation.attributeName === "data-bs-theme") {
+                    synchronizeFromRootAttr();
+                }
+            });
+        });
+
+        rootObserver.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ["data-bs-theme"],
+        });
+
+        window.addEventListener("storage", function(event) {
+            if (event.key === THEME_STORAGE_KEY) {
+                applyTheme(FORCED_THEME, {persist: true, notify: false});
             }
         });
-    });
 
-    rootObserver.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ["data-bs-theme"],
-    });
+        if (typeof window.matchMedia === "function") {
+            const colorSchemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+            const handleColorSchemeChange = function() {
+                applyTheme(FORCED_THEME, {persist: true, notify: false});
+            };
 
-    window.addEventListener("storage", function(event) {
-        if (event.key === THEME_STORAGE_KEY) {
-            applyTheme(FORCED_THEME, {persist: true, notify: false});
-        }
-    });
-
-    if (typeof window.matchMedia === "function") {
-        const colorSchemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
-        const handleColorSchemeChange = function() {
-            applyTheme(FORCED_THEME, {persist: true, notify: false});
-        };
-
-        if (typeof colorSchemeQuery.addEventListener === "function") {
-            colorSchemeQuery.addEventListener("change", handleColorSchemeChange);
-        } else if (typeof colorSchemeQuery.addListener === "function") {
-            colorSchemeQuery.addListener(handleColorSchemeChange);
+            if (typeof colorSchemeQuery.addEventListener === "function") {
+                colorSchemeQuery.addEventListener("change", handleColorSchemeChange);
+            } else if (typeof colorSchemeQuery.addListener === "function") {
+                colorSchemeQuery.addListener(handleColorSchemeChange);
+            }
         }
     }
 

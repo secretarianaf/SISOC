@@ -1,45 +1,32 @@
-{% extends "includes/main.html" %}
+{% extends "inspecciones/base_layout.html" %}
 {% load static %}
 {% block title %}Inspecciones escolares{% endblock %}
-{% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/user_form.css' %}" />
-    <link rel="stylesheet" href="{% static 'inspecciones/css/panel.css' %}" />
-{% endblock %}
-{% block breadcrumb %}
-    {% include "components/breadcrumb.html" with items=breadcrumb_items %}
-{% endblock %}
-{% block content %}
-    <div class="insp-panel">
-        <h1 class="mb-3">Inspecciones escolares</h1>
-        <div class="row g-2 mb-3">
-            <div class="col-6 col-lg-3">
+{% block contenido %}
+    {% block encabezado_panel %}
+        <h1 class="insp-titulo">Inspecciones escolares</h1>
+        {% if mostrar_totales %}
+            <div class="insp-totales">
                 <div class="insp-kpi">
                     <div class="insp-kpi-titulo">Escuelas en el catálogo</div>
-                    <div class="insp-kpi-valor">{{ resumen.escuelas }}</div>
+                    <div class="insp-kpi-valor">{{ totales_panel.escuelas }}</div>
                 </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="insp-kpi{% if resumen.escuelas_a_revisar %} insp-kpi-alerta{% endif %}">
+                <div class="insp-kpi{% if totales_panel.escuelas_a_revisar %} insp-kpi-alerta{% endif %}">
                     <div class="insp-kpi-titulo">Escuelas con datos a revisar</div>
-                    <div class="insp-kpi-valor">{{ resumen.escuelas_a_revisar }}</div>
+                    <div class="insp-kpi-valor">{{ totales_panel.escuelas_a_revisar }}</div>
                 </div>
-            </div>
-            <div class="col-6 col-lg-3">
                 <div class="insp-kpi">
-                    <div class="insp-kpi-titulo">Asignaciones de hoy ({{ resumen.jornada|date:"d/m" }})</div>
-                    <div class="insp-kpi-valor">{{ resumen.asignaciones_hoy }}</div>
+                    <div class="insp-kpi-titulo">Asignaciones de hoy ({{ totales_panel.jornada|date:"d/m" }})</div>
+                    <div class="insp-kpi-valor">{{ totales_panel.asignaciones_hoy }}</div>
                 </div>
-            </div>
-            <div class="col-6 col-lg-3">
                 <div class="insp-kpi">
                     <div class="insp-kpi-titulo">Actas cerradas hoy</div>
-                    <div class="insp-kpi-valor">{{ resumen.actas_hoy }}</div>
+                    <div class="insp-kpi-valor">{{ totales_panel.actas_hoy }}</div>
                 </div>
             </div>
-        </div>
+        {% endif %}
         {% include "inspecciones/_pestanas.html" with activa=pestana %}
-        {% block panel %}{% endblock %}
-    </div>
+    {% endblock %}
+    {% block panel %}{% endblock %}
     <div class="modal fade"
          id="insp-modal-form"
          tabindex="-1"

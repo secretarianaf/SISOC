@@ -1,0 +1,32 @@
+{% comment %}
+Paginación del mockup: ‹ 1 2 3 … N ›, página activa en teal. Conserva los filtros:
+`parametros_sin_pagina` es el querystring actual sin `page` (con & final o vacío).
+{% endcomment %}
+{% load pagination_tags %}
+{% if page_obj.has_other_pages %}
+    <nav class="insp-paginacion" aria-label="Páginas">
+        {% if page_obj.has_previous %}
+            <a class="insp-pagina"
+               href="?{{ parametros_sin_pagina }}page={{ page_obj.previous_page_number }}"
+               aria-label="Página anterior">‹</a>
+        {% else %}
+            <span class="insp-pagina deshabilitada" aria-hidden="true">‹</span>
+        {% endif %}
+        {% for i in page_obj|compact_page_range %}
+            {% if i == "..." or i == "…" %}
+                <span class="insp-pagina-puntos" aria-hidden="true">…</span>
+            {% elif i == page_obj.number %}
+                <span class="insp-pagina activa" aria-current="page">{{ i }}</span>
+            {% else %}
+                <a class="insp-pagina" href="?{{ parametros_sin_pagina }}page={{ i }}">{{ i }}</a>
+            {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+            <a class="insp-pagina"
+               href="?{{ parametros_sin_pagina }}page={{ page_obj.next_page_number }}"
+               aria-label="Página siguiente">›</a>
+        {% else %}
+            <span class="insp-pagina deshabilitada" aria-hidden="true">›</span>
+        {% endif %}
+    </nav>
+{% endif %}

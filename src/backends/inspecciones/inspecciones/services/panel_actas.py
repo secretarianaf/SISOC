@@ -358,7 +358,7 @@ def detalle_acta_panel(acta):
         "inspector_nombre": inspector.get("nombre") or nombre_actor(acta.inspector),
         "inspector_usuario": inspector.get("username") or acta.inspector.get_username(),
         "iniciada_at": fecha_hora_desde_texto(payload.get("creada_at")),
-        "resumen": _resumen(formulario, _obj(payload.get("respuestas"))),
+        "resumen_acta": _resumen(formulario, _obj(payload.get("respuestas"))),
         "respuestas": _respuestas(payload, formulario),
         "evidencia": _imagenes(instantanea, payload),
         "ubicacion": _ubicacion(payload, formulario),

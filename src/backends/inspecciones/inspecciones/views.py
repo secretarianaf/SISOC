@@ -60,6 +60,11 @@ class LayoutInspeccionesMixin:
         context["iniciales_usuario"] = iniciales(
             usuario.get_full_name() or usuario.get_username()
         )
+        perfil = getattr(usuario, "profile", None)
+        mostrar_rol = getattr(perfil, "get_inspecciones_rol_display", None)
+        context["rol_usuario"] = (
+            mostrar_rol() if mostrar_rol and perfil.inspecciones_rol else ""
+        )
         context["ocultar_volver"] = True
         return context
 

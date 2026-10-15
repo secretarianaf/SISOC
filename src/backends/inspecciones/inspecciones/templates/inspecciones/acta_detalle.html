@@ -1,4 +1,5 @@
 {% extends "inspecciones/base_panel.html" %}
+{% block encabezado_panel %}{% endblock %}
 {% block panel %}
     {% url 'inspecciones_anular_acta' acta.numero as url_anular %}
     {% url 'inspecciones_marcar_prueba_acta' acta.numero as url_prueba %}

@@ -3,27 +3,29 @@ Cabecera blanca del mockup: menú (solo en celular), breadcrumb a la izquierda y
 la derecha, nombre, rol, avatar con iniciales y salir. Reemplaza a
 includes/header.html solo en Inspecciones.
 {% endcomment %}
-<nav class="app-header navbar insp-cabecera" aria-label="Cabecera">
+<header class="app-header insp-cabecera">
     <button class="insp-cabecera-menu d-lg-none"
             type="button"
             data-lte-toggle="sidebar"
             aria-label="Abrir menú">
         <i class="bi bi-list" aria-hidden="true"></i>
     </button>
-    <ol class="insp-migas" aria-label="Ubicación">
-        {% for item in breadcrumb_items %}
-            <li>
-                {% if item.url and not forloop.last %}
-                    <a href="{{ item.url }}">{{ item.text }}</a>
-                {% else %}
-                    <strong aria-current="page">{{ item.text }}</strong>
-                {% endif %}
-            </li>
-        {% endfor %}
-    </ol>
+    <nav class="insp-migas" aria-label="Ubicación">
+        <ol>
+            {% for item in breadcrumb_items %}
+                <li>
+                    {% if item.url and not forloop.last %}
+                        <a href="{{ item.url }}">{{ item.text }}</a>
+                    {% else %}
+                        <strong aria-current="page">{{ item.text }}</strong>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    </nav>
     <div class="insp-cabecera-usuario">
         <span class="insp-cabecera-nombre">{{ request.user.get_full_name|default:request.user.username }}</span>
-        {% if request.user.profile.rol %}<span class="insp-cabecera-rol">{{ request.user.profile.rol }}</span>{% endif %}
+        {% if rol_usuario %}<span class="insp-cabecera-rol">{{ rol_usuario }}</span>{% endif %}
         <span class="insp-avatar insp-avatar-grande" aria-hidden="true">{{ iniciales_usuario }}</span>
         <form method="post" action="{% url 'logout' %}" class="d-inline">
             {% csrf_token %}
@@ -32,4 +34,4 @@ includes/header.html solo en Inspecciones.
             </button>
         </form>
     </div>
-</nav>
+</header>

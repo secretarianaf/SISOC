@@ -15,11 +15,10 @@ includes/base.html con sus valores por defecto (oscuro).
     <link rel="stylesheet" href="{% static 'inspecciones/css/panel.css' %}" />
     {% block head_inspecciones %}{% endblock %}
 {% endblock %}
-{% block cabecera %}
-    {% include "inspecciones/_cabecera.html" %}
-{% endblock %}
+{% block cabecera %}{% endblock %}
 {% block barra_lateral %}
     {% include "includes/sidebar/base.html" with con_logo=True tema_lateral="dark" %}
+    {% include "inspecciones/_cabecera.html" %}
 {% endblock %}
 {% block main-content %}
     <main class="app-main insp-main">

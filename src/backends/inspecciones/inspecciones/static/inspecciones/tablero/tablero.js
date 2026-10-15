@@ -1,7 +1,7 @@
 /*
  * Tablero en vivo de Inspecciones escolares.
  *
- * Consulta periódica (cada 10 s) al endpoint JSON del tablero; sin WebSockets
+ * Consulta periódica (cada 5 s) al endpoint JSON del tablero; sin WebSockets
  * ni SSE (gunicorn síncrono, sin Redis). Pausa con la pestaña oculta, avisa
  * la desconexión con la última hora buena y reintenta. Todo el texto que viene
  * del servidor se inserta con textContent (nunca innerHTML).

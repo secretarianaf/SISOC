@@ -49,7 +49,7 @@
                     <button type="submit" class="btn btn-outline-secondary">Buscar</button>
                 </noscript>
                 {% if a_revisar_activo %}<input type="hidden" name="a_revisar" value="1" />{% endif %}
-                <a class="insp-chip{% if a_revisar_activo %} activo{% endif %}" href="?{{ parametros_sin_revisar }}{% if not a_revisar_activo %}{% if parametros_sin_revisar %}&amp;{% endif %}a_revisar=1{% endif %}" aria-pressed="{% if a_revisar_activo %}true{% else %}false{% endif %}">
+                <a class="insp-chip{% if a_revisar_activo %} activo{% endif %}" href="?{{ parametros_sin_revisar }}{% if not a_revisar_activo %}{% if parametros_sin_revisar %}&amp;{% endif %}a_revisar=1{% endif %}">
                     <span class="insp-punto" aria-hidden="true"></span>
                     A revisar · {{ contador_a_revisar }}
                 </a>
@@ -109,7 +109,7 @@
                                 <td>{{ escuela.domicilio|default:"—" }}</td>
                                 <td>{{ escuela.cp|default:"—" }}</td>
                                 <td>{{ escuela.telefono|default:"—" }}</td>
-                                <td class="text-break">
+                                <td class="insp-mail">
                                     {% if "mail_invalido" in escuela.motivos_revision %}
                                         <span class="text-muted">{{ escuela.mail }}</span>
                                         <span class="insp-badge insp-badge-alerta">mail inválido</span>

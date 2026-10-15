@@ -25,7 +25,7 @@
                 <span class="insp-tablero-vivo-punto" aria-hidden="true"></span>
                 <span role="status" aria-live="polite" data-tablero-estado>Conectando…</span>
                 <span data-tablero-hace></span>
-                <span class="insp-tablero-vivo-intervalo">· se actualiza cada 5 s</span>
+                <span class="insp-tablero-vivo-intervalo">· se actualiza cada {% widthratio intervalo_ms 1000 1 %} s</span>
             </div>
         </div>
         {% include "inspecciones/_pestanas.html" with activa="tablero" %}

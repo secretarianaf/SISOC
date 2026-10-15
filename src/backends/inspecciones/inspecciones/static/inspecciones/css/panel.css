@@ -82,6 +82,11 @@
 }
 
 .insp-migas {
+    flex: 1;
+    min-width: 0;
+}
+
+.insp-migas ol {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -91,8 +96,6 @@
     gap: 6px;
     font-size: 13px;
     color: var(--insp-gris);
-    flex: 1;
-    min-width: 0;
 }
 
 .insp-migas li + li::before {
@@ -522,6 +525,11 @@
     white-space: nowrap;
     padding: 9px 12px;
     border-bottom: 1px solid #e5e7eb;
+}
+
+.insp-tabla .insp-mail {
+    min-width: 12rem;
+    overflow-wrap: anywhere;
 }
 
 .insp-tabla td {

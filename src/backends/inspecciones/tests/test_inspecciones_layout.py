@@ -52,7 +52,7 @@ def test_panel_sale_en_claro_con_la_cabecera_del_mockup(panel):
         r'<aside class="app-sidebar shadow"\s+data-bs-theme="dark"\s*>', html
     )
     assert "sidebar-brand" in html
-    assert 'class="app-header navbar insp-cabecera"' in html
+    assert '<header class="app-header insp-cabecera">' in html
     assert '<a href="/inicio/">Inicio</a>' in html
     assert '<strong aria-current="page">Inspecciones escolares</strong>' in html
     assert 'aria-label="Cerrar sesión"' in html
@@ -62,7 +62,7 @@ def test_tablero_usa_el_mismo_layout(panel):
     html = panel.get(reverse("inspecciones_tablero")).content.decode()
 
     assert 'data-bs-theme="light"' in html
-    assert 'class="app-header navbar insp-cabecera"' in html
+    assert '<header class="app-header insp-cabecera">' in html
     assert '<a href="/inicio/">Inicio</a>' in html
     assert '<strong aria-current="page">Tablero</strong>' in html
     assert "leaflet@1.9.4/dist/leaflet.js" in html
@@ -193,6 +193,8 @@ def test_detalle_del_acta_con_el_encabezado_del_mockup(
     assert f'<h1 class="insp-acta-numero">{numero}</h1>' in html
     assert 'class="insp-columnas-2-1"' in html
     assert "card-custom" not in html
+    assert '<h1 class="insp-titulo">' not in html
+    assert "insp-tabs" not in html
 
 
 def test_tablero_con_filtros_en_una_fila_y_contenedores_de_barras(panel):
@@ -231,3 +233,17 @@ def test_base_js_respeta_el_tema_claro_que_renderiza_el_servidor():
     )
 
     assert 'getAttribute("data-bs-theme") !== "light"' in js
+
+
+def test_cabecera_blanca_dentro_de_la_grilla_y_con_el_rol(panel, gestor):
+    gestor.profile.inspecciones_rol = "coordinacion"
+    gestor.profile.save(update_fields=["inspecciones_rol"])
+
+    html = panel.get(reverse("inspecciones_panel")).content.decode()
+
+    # la cabecera va dentro de .app-wrapper, al lado de la barra lateral (grilla de AdminLTE)
+    assert html.index('<div class="app-wrapper">') < html.index(
+        '<header class="app-header insp-cabecera">'
+    )
+    assert 'class="insp-cabecera-rol">Coordinación<' in html
+    assert '<nav class="insp-migas" aria-label="Ubicación">' in html

@@ -4,6 +4,7 @@
   const coordinator = document.getElementById('id_es_coordinador_equipo_tecnico_pwa');
   const territorial = document.getElementById('id_es_territorial_comedor');
   const relevador = document.getElementById('id_es_relevador_calle');
+  const inspector = document.getElementById('id_es_inspector_escolar');
 
   const show = (id, visible) => {
     const element = document.getElementById(id);
@@ -36,11 +37,17 @@
     show('relevador-calle-detalle-wrapper', Boolean(relevador?.checked));
   };
 
+  const syncInspeccionesVisibility = () => {
+    show('inspecciones-escolares-detalle-wrapper', Boolean(inspector?.checked));
+  };
+
   mobile?.addEventListener('change', syncMobileVisibility);
   coordinator?.addEventListener('change', syncMobileVisibility);
   territorial?.addEventListener('change', syncTerritorialVisibility);
   relevador?.addEventListener('change', syncRelevadorVisibility);
+  inspector?.addEventListener('change', syncInspeccionesVisibility);
   syncMobileVisibility();
   syncTerritorialVisibility();
   syncRelevadorVisibility();
+  syncInspeccionesVisibility();
 })();

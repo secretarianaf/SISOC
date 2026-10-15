@@ -31,6 +31,12 @@ from pwa.services.accesos import (
     get_assignable_pwa_permission_codes,
     sync_representante_accesses,
 )
+from usuarios.inspecciones_import import (
+    DatosInspecciones,
+    aplicar_inspecciones,
+    resolver_inspecciones_fila,
+    validar_unicidad_alta,
+)
 from usuarios.pwa_import_access import (
     SeleccionAccesosPWAImportacion,
     resolver_accesos_pwa_importacion,
@@ -54,6 +60,10 @@ USER_IMPORT_OPTIONAL_COLUMNS = (
     "accion_grupos",
     "organizaciones",
     "comedores",
+    # Inspecciones escolares: rol en el programa (inspector / coordinacion).
+    # Si se informa, DNI y correo son obligatorios y únicos.
+    "dni",
+    "inspecciones",
 )
 USER_IMPORT_KNOWN_COLUMNS = USER_IMPORT_REQUIRED_COLUMNS + USER_IMPORT_OPTIONAL_COLUMNS
 USER_IMPORT_TEMPLATE_HEADERS = (
@@ -67,6 +77,8 @@ USER_IMPORT_TEMPLATE_HEADERS = (
     "Rol",
     "Organizaciones",
     "Comedores",
+    "DNI",
+    "Inspecciones",
 )
 USER_IMPORT_CSV_HEADERS = (
     "Usuario",
@@ -616,12 +628,16 @@ class _ActualizarUsuarioParams:
     allowed_permiso_ids: set | None
     access_specs: list
     actor: object
+    inspecciones: DatosInspecciones = DatosInspecciones()
 
 
 def _procesar_usuario_existente(params: _ActualizarUsuarioParams) -> dict:
     changed = False
 
     with transaction.atomic():
+        if aplicar_inspecciones(params.user.profile, params.inspecciones):
+            changed = True
+
         if (
             params.username_raw
             and params.user.username.lower() != params.username_raw.lower()
@@ -720,6 +736,7 @@ class _CrearUsuarioParams:
     job: object
     permisos_pwa: list
     access_specs: list
+    inspecciones: DatosInspecciones = DatosInspecciones()
 
 
 @dataclass
@@ -738,15 +755,17 @@ class _DatosFilaValidados:
     allowed_permiso_ids: set | None
     tiene_asignaciones_pwa: bool
     access_specs: list
+    inspecciones: DatosInspecciones = DatosInspecciones()
 
 
 def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
+    solo_app = params.job.is_pwa_import or params.inspecciones.es_solo_app
     user = User(
         username=params.username_raw,
         email=params.email,
         first_name=params.nombre,
         last_name=params.apellido,
-        is_staff=not params.job.is_pwa_import,
+        is_staff=not solo_app,
         is_active=True,
     )
     user.set_unusable_password()
@@ -765,11 +784,12 @@ def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
         )
 
     profile = user.profile
-    profile.acceso_web = not params.job.is_pwa_import
+    profile.acceso_web = not solo_app
     profile.rol = params.rol
     if params.provincias_objs:
         profile.es_usuario_provincial = True
     profile.save(update_fields=["rol", "es_usuario_provincial", "acceso_web"])
+    aplicar_inspecciones(profile, params.inspecciones)
 
     for prov in params.provincias_objs:
         scope_key = ProfileTerritorialScope.build_scope_key(prov.pk)
@@ -842,6 +862,9 @@ def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaVa
         allowed_permiso_ids=permisos_fila.allowed_permiso_ids,
         tiene_asignaciones_pwa=permisos_fila.tiene_asignaciones_pwa,
         access_specs=permisos_fila.access_specs,
+        inspecciones=resolver_inspecciones_fila(
+            row_data, email=email, actor=job.requested_by
+        ),
     )
 
 
@@ -865,13 +888,18 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             allowed_permiso_ids=datos.allowed_permiso_ids,
             access_specs=datos.access_specs,
             actor=job.requested_by,
+            inspecciones=datos.inspecciones,
         )
         return _procesar_usuario_existente(params)
 
     if not datos.nombre or not datos.apellido:
         raise ValidationError("Los campos Nombre y Apellido son obligatorios.")
 
-    if job.is_pwa_import and not datos.tiene_asignaciones_pwa:
+    if (
+        job.is_pwa_import
+        and not datos.tiene_asignaciones_pwa
+        and not datos.inspecciones.rol
+    ):
         raise ValidationError(
             "Los usuarios PWA deben tener al menos una organizacion o comedor "
             "asignado en las columnas Organizaciones/Comedores del archivo."
@@ -892,6 +920,8 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             f"Ya existe un usuario con el username '{username_to_create}'."
         )
 
+    validar_unicidad_alta(datos.inspecciones, email=datos.email)
+
     with transaction.atomic():
         params = _CrearUsuarioParams(
             nombre=datos.nombre,
@@ -904,6 +934,7 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             job=job,
             permisos_pwa=datos.permisos_pwa,
             access_specs=datos.access_specs,
+            inspecciones=datos.inspecciones,
         )
         user, _password = _crear_usuario_nuevo(params)
 

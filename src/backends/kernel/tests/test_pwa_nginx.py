@@ -27,6 +27,7 @@ def test_active_nginx_exposes_both_espacios_routes(renderer):
     assert "127.0.0.1:8080/" in content
     assert "127.0.0.1:8081/" not in content
     assert "127.0.0.1:8082/" not in content
+    assert "127.0.0.1:8083/" not in content
     assert "rewrite ^/mobile/" not in content
     assert "location ^~ /pwa/espacioscomunitarios/" in content
     assert "proxy_pass http://127.0.0.1:8080/pwa/espacioscomunitarios/;" in content
@@ -44,6 +45,28 @@ def test_default_nginx_routes_both_new_apps_with_legacy_aliases(renderer):
     assert "rewrite ^/mobile2/(.*)$ /pwa/datacalle/$1 redirect;" in content
     assert "rewrite ^/mobile3/(.*)$ /pwa/gestionar/$1 redirect;" in content
     assert "rewrite ^/mobile/" not in content
+
+
+def test_inspecciones_routes_without_legacy_alias(renderer):
+    content = renderer.render(renderer.configuration(SCRIPTS / "pwas.json"))
+    assert (
+        "location = /pwa/inspecciones { return 302 /pwa/inspecciones/$is_args$args; }"
+    ) in content
+    assert "location ^~ /pwa/inspecciones/ {" in content
+    assert "proxy_pass http://127.0.0.1:8083/;" in content
+    # Sin ruta historica: no hay alias /mobileN/ ni rewrite hacia la canonica.
+    assert "rewrite ^/pwa/inspecciones/" not in content
+    assert "/mobile4" not in content
+
+
+def test_disabled_inspecciones_exposes_no_upstream(renderer):
+    apps = renderer.configuration(SCRIPTS / "pwas.json")
+    for app in apps:
+        if app["id"] == "inspecciones":
+            app["enabled"] = False
+    content = renderer.render(apps)
+    assert "127.0.0.1:8083/" not in content
+    assert "# inspecciones: disabled" in content
 
 
 def test_new_ready_pwa_routes_keep_suffix_and_query_without_cross_environment_host(
@@ -70,5 +93,5 @@ def test_preview_is_marked_and_not_the_active_include(renderer):
         renderer.configuration(SCRIPTS / "pwas.json"), preview=True
     )
     assert "PREVIEW ONLY" in content
-    for path in ("espacioscomunitarios", "datacalle", "gestionar"):
+    for path in ("espacioscomunitarios", "datacalle", "gestionar", "inspecciones"):
         assert f"location ^~ /pwa/{path}/" in content

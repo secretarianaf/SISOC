@@ -451,7 +451,21 @@ CENTROFAMILIA_CACHE_TIMEOUT = 300
 
 # CORS
 CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
+# Las PWA publicadas bajo /pwa/<app>/ del mismo dominio no necesitan CORS. Una
+# PWA servida desde otro origen (p. ej. Sisoc Inspecciones en QA o en desarrollo)
+# se habilita con PWA_CORS_ALLOWED_ORIGINS (lista separada por comas). Usa el
+# Token DRF por header, así que no se suma a CSRF_TRUSTED_ORIGINS.
+PWA_CORS_ALLOWED_ORIGINS = [
+    origen
+    for origen in (
+        _normalize_origin(valor)
+        for valor in os.getenv("PWA_CORS_ALLOWED_ORIGINS", "").split(",")
+    )
+    if origen
+]
+CORS_ALLOWED_ORIGINS = list(
+    dict.fromkeys([*CSRF_TRUSTED_ORIGINS, *PWA_CORS_ALLOWED_ORIGINS])
+)
 
 # REST Framework
 REST_FRAMEWORK = {

@@ -23,6 +23,7 @@ REPOSITORIES = {
     "espacios": "secretarianaf/Espacios-Comunitarios",
     "datacalle": "secretarianaf/DataCalle",
     "gestionar": "secretarianaf/Gestionar",
+    "inspecciones": "secretarianaf/Inspecciones",
 }
 
 

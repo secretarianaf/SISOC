@@ -1,0 +1,479 @@
+{% extends "inspecciones/base_panel.html" %}
+{% block encabezado_panel %}{% endblock %}
+{% block panel %}
+    {% url 'inspecciones_anular_acta' acta.numero as url_anular %}
+    {% url 'inspecciones_marcar_prueba_acta' acta.numero as url_prueba %}
+    {% if acta.estado == "anulada" %}
+        <div class="insp-aviso insp-aviso-rojo" role="alert">
+            <strong>Acta anulada</strong>
+            {% if acta.anulada_at %}el {{ acta.anulada_at|date:"d/m/Y H:i" }}{% endif %}
+            {% if acta.anulada_por %}por {{ acta.anulada_por.get_full_name|default:acta.anulada_por.username }}{% endif %}
+            .
+            {% if acta.motivo_anulacion %}Motivo: {{ acta.motivo_anulacion }}{% endif %}
+            <div class="small">Conserva su número y su contenido, pero no cuenta en los indicadores.</div>
+        </div>
+    {% endif %}
+    <div class="insp-acta-encabezado">
+        <div class="d-flex flex-column gap-2">
+            <div class="insp-acta-rotulo">Acta de inspección</div>
+            <h1 class="insp-acta-numero">{{ acta.numero }}</h1>
+            <div class="insp-acta-badges">
+                {% if acta.estado == "anulada" %}
+                    <span class="insp-badge insp-badge-error"><i aria-hidden="true"></i>Anulada</span>
+                {% else %}
+                    <span class="insp-badge insp-badge-ok"><i aria-hidden="true"></i>Finalizada</span>
+                {% endif %}
+                {% if recepcion.es_firma %}
+                    <span class="insp-badge insp-badge-info"><i aria-hidden="true"></i>Firmada por quien recibe</span>
+                {% elif recepcion.tipo == "excepcion" %}
+                    <span class="insp-badge insp-badge-alerta"><i aria-hidden="true"></i>Excepción de firma</span>
+                {% endif %}
+                {% if acta.notificacion_estado == "cargada" %}
+                    <span class="insp-badge insp-badge-ok"><i aria-hidden="true"></i>Notificación cargada</span>
+                {% else %}
+                    <span class="insp-badge insp-badge-alerta"><i aria-hidden="true"></i>Notificación pendiente</span>
+                {% endif %}
+                {% if acta.es_prueba %}<span class="insp-badge insp-badge-neutro">Prueba</span>{% endif %}
+            </div>
+            <div class="insp-acta-linea">
+                {{ escuela.nombre|default:"Escuela sin nombre" }} · Turno {{ turno|lower }} · cierre oficial {{ acta.cerrada_at|date:"d/m/Y H:i" }}
+            </div>
+        </div>
+        <div class="insp-acta-acciones">
+            {% if url_anular and acta.estado != "anulada" %}
+                <button type="button"
+                        class="btn btn-outline-danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#insp-modal-anular">Anular acta</button>
+            {% endif %}
+            {% if url_prueba and acta.estado != "anulada" %}
+                <form method="post" action="{{ url_prueba }}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}" />
+                    {% if acta.es_prueba %}
+                        <input type="hidden" name="es_prueba" value="0" />
+                        <button type="submit" class="btn btn-outline-secondary">Quitar marca de prueba</button>
+                    {% else %}
+                        <input type="hidden" name="es_prueba" value="1" />
+                        <button type="submit" class="btn btn-outline-secondary">Marcar como prueba</button>
+                    {% endif %}
+                </form>
+            {% endif %}
+            {% if ubicacion.tiene_coordenadas %}
+                <a class="btn btn-outline-primary"
+                   href="https://www.openstreetmap.org/?mlat={{ ubicacion.lat|stringformat:'s' }}&amp;mlon={{ ubicacion.lng|stringformat:'s' }}#map=18/{{ ubicacion.lat|stringformat:'s' }}/{{ ubicacion.lng|stringformat:'s' }}"
+                   target="_blank"
+                   rel="noopener noreferrer">Ver en el mapa</a>
+            {% endif %}
+            {% if acta.pdf %}
+                <a class="btn btn-primary"
+                   href="{% url 'inspecciones_acta_pdf' acta.numero %}">
+                    <i class="fas fa-download" aria-hidden="true"></i>Descargar PDF
+                </a>
+            {% else %}
+                <span class="btn btn-primary disabled" aria-disabled="true">PDF pendiente</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="insp-totales">
+        <div class="insp-kpi">
+            <div class="insp-kpi-titulo">Escuela abierta</div>
+            <div class="insp-kpi-valor">{{ resumen_acta.abierta }}</div>
+        </div>
+        <div class="insp-kpi">
+            <div class="insp-kpi-titulo">Resultado de la constatación</div>
+            <div class="insp-kpi-valor insp-kpi-valor-texto">{{ resumen_acta.resultado }}</div>
+            {% if resumen_acta.motivo_parcial %}
+                <span class="insp-nota">Motivo: {{ resumen_acta.motivo_parcial }}</span>
+            {% endif %}
+        </div>
+        <div class="insp-kpi">
+            <div class="insp-kpi-titulo">Personal presente / previsto</div>
+            <div class="insp-kpi-valor">{{ resumen_acta.personal }}</div>
+        </div>
+        <div class="insp-kpi">
+            <div class="insp-kpi-titulo">Aulas funcionando / previstas</div>
+            <div class="insp-kpi-valor">{{ resumen_acta.aulas }}</div>
+        </div>
+    </div>
+    <div class="insp-columnas-2-1">
+        <div>
+            <section class="insp-seccion" aria-labelledby="h-resp">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-resp">Respuestas del formulario</h3>
+                    <span class="insp-seccion-nota">Versión {{ formulario_version }}</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table insp-tabla">
+                        <thead>
+                            <tr>
+                                <th scope="col">Cód.</th>
+                                <th scope="col">Pregunta</th>
+                                <th scope="col">Respuesta</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fila in respuestas %}
+                                <tr>
+                                    <td class="insp-mono text-muted">{{ fila.codigo }}</td>
+                                    <td>{{ fila.pregunta }}</td>
+                                    <td>
+                                        {{ fila.respuesta|linebreaksbr }}
+                                        {% for nota in fila.notas %}<span class="insp-nota">{{ nota }}</span>{% endfor %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            <section class="insp-seccion" aria-labelledby="h-evid">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-evid">Evidencia fotográfica</h3>
+                    <span class="insp-seccion-nota">{{ evidencia|length }} imágenes</span>
+                </div>
+                <div class="insp-seccion-cuerpo">
+                    {% if evidencia %}
+                        <div class="insp-figuras">
+                            {% for imagen in evidencia %}
+                                <figure>
+                                    <a href="{% url 'inspecciones_acta_imagen' acta.numero imagen.uuid %}"
+                                       target="_blank"
+                                       rel="noopener">
+                                        <img class="insp-miniatura"
+                                             src="{% url 'inspecciones_acta_imagen' acta.numero imagen.uuid %}"
+                                             alt="{{ imagen.titulo }}{% if imagen.descripcion %}: {{ imagen.descripcion }}{% endif %}"
+                                             loading="lazy" />
+                                    </a>
+                                    <figcaption>
+                                        <strong>{{ imagen.titulo }}</strong>
+                                        {% if imagen.descripcion %}<div>{{ imagen.descripcion }}</div>{% endif %}
+                                        <div class="text-muted">
+                                            {% if imagen.capturada_at %}
+                                                Tomada {{ imagen.capturada_at|date:"H:i" }}
+                                            {% else %}
+                                                Fecha de captura no disponible
+                                            {% endif %}
+                                            {% if imagen.subida_at %}· subida {{ imagen.subida_at|date:"H:i" }}{% endif %}
+                                        </div>
+                                    </figcaption>
+                                </figure>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">El acta no tiene imágenes.</p>
+                    {% endif %}
+                </div>
+            </section>
+            <section class="insp-seccion" aria-labelledby="h-notif">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-notif">Notificación en papel</h3>
+                    {% if notificaciones %}
+                        <span class="insp-badge insp-badge-ok">Cargada</span>
+                    {% else %}
+                        <span class="insp-badge insp-badge-alerta">Pendiente</span>
+                    {% endif %}
+                </div>
+                <div class="insp-seccion-cuerpo">
+                    {% for notificacion in notificaciones %}
+                        <div class="{% if not forloop.first %}border-top pt-3 mt-3 text-muted{% endif %}">
+                            {% if not forloop.first %}<div class="small mb-2">Versión anterior (v{{ notificacion.version }})</div>{% endif %}
+                            <dl class="insp-dl mb-2">
+                                <dt>Cargada</dt>
+                                <dd>
+                                    {{ notificacion.cargada_at|date:"d/m/Y H:i" }} · por {{ notificacion.cargada_por }}
+                                </dd>
+                                <dt>Notificada</dt>
+                                <dd>
+                                    {{ notificacion.notificada_at|date:"d/m/Y H:i" }}
+                                </dd>
+                                <dt>Recibió</dt>
+                                <dd>
+                                    {{ notificacion.receptor|default:"—" }}
+                                </dd>
+                                <dt>Firma del papel</dt>
+                                <dd>
+                                    {{ notificacion.condicion_firma }}
+                                    {% if notificacion.motivo %}<span class="insp-nota">{{ notificacion.motivo }}</span>{% endif %}
+                                </dd>
+                                {% if notificacion.observaciones %}
+                                    <dt>Observaciones</dt>
+                                    <dd>
+                                        {{ notificacion.observaciones }}
+                                    </dd>
+                                {% endif %}
+                                {% if notificacion.motivo_correccion %}
+                                    <dt>Corrección</dt>
+                                    <dd>
+                                        {{ notificacion.motivo_correccion }}
+                                    </dd>
+                                {% endif %}
+                            </dl>
+                            <div class="d-flex gap-2 flex-wrap">
+                                {% for archivo in notificacion.archivos %}
+                                    <div>
+                                        <a href="{% url 'inspecciones_acta_notificacion_archivo' acta.numero archivo.uuid %}"
+                                           target="_blank"
+                                           rel="noopener">
+                                            <img class="insp-miniatura insp-miniatura-chica"
+                                                 src="{% url 'inspecciones_acta_notificacion_archivo' acta.numero archivo.uuid %}"
+                                                 alt="Notificación, página {{ archivo.orden }}"
+                                                 loading="lazy" />
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted mb-0">Todavía no se cargó la notificación en papel.</p>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+        <div>
+            <section class="insp-seccion" aria-labelledby="h-visita">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-visita">Inspector a cargo</h3>
+                </div>
+                <div class="insp-seccion-cuerpo">
+                    <dl class="insp-dl">
+                        <dt>Inspector</dt>
+                        <dd>
+                            {{ inspector_nombre }} <span class="text-muted">· {{ inspector_usuario }}</span>
+                        </dd>
+                        <dt>Jornada</dt>
+                        <dd>
+                            {{ acta.fecha_visita|date:"d/m/Y" }} · turno {{ turno|lower }}
+                        </dd>
+                        <dt>Inicio</dt>
+                        <dd>
+                            {{ iniciada_at|date:"H:i"|default:"—" }}
+                        </dd>
+                        <dt>Cierre oficial</dt>
+                        <dd>
+                            {{ acta.cerrada_at|date:"H:i" }}
+                        </dd>
+                        <dt>Formulario</dt>
+                        <dd>
+                            {{ formulario_version }}
+                        </dd>
+                        {% if motivo_nueva_visita %}
+                            <dt>Nueva visita</dt>
+                            <dd>
+                                {{ motivo_nueva_visita }}
+                            </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </section>
+            <section class="insp-seccion" aria-labelledby="h-esc">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-esc">Institución</h3>
+                    {% if escuela_catalogo %}
+                        <a class="insp-seccion-nota"
+                           href="{% url 'inspecciones_panel' %}?editar={{ escuela_catalogo.pk }}">Editar institución</a>
+                    {% elif carga_manual %}
+                        <span class="insp-badge insp-badge-alerta">Carga manual</span>
+                    {% endif %}
+                </div>
+                <div class="insp-seccion-cuerpo">
+                    <dl class="insp-dl">
+                        <dt>Cueanexo</dt>
+                        <dd class="insp-mono">
+                            {{ escuela.cueanexo|default:"—" }}
+                        </dd>
+                        {% if escuela_catalogo %}
+                            <dt>Provincia</dt>
+                            <dd>
+                                {{ escuela.provincia|default:"—" }}
+                            </dd>
+                            <dt>Localidad</dt>
+                            <dd>
+                                {{ escuela_catalogo.localidad|default:"—" }}
+                                {% if escuela_catalogo.distrito and escuela_catalogo.distrito != escuela_catalogo.localidad %}
+                                    · {{ escuela_catalogo.distrito }}
+                                {% endif %}
+                            </dd>
+                            <dt>Domicilio</dt>
+                            <dd>
+                                {{ escuela_catalogo.domicilio|default:"—" }}
+                                {% if escuela_catalogo.cp %}· {{ escuela_catalogo.cp }}{% endif %}
+                            </dd>
+                            <dt>Teléfono</dt>
+                            <dd>
+                                {{ escuela_catalogo.telefono|default:"—" }}
+                            </dd>
+                            <dt>Mail</dt>
+                            <dd class="text-break">
+                                {{ escuela_catalogo.mail|default:"—" }}
+                            </dd>
+                        {% else %}
+                            <dt>Localidad</dt>
+                            <dd>
+                                {{ escuela_snapshot.localidad|default:"—" }}
+                                {% if escuela_snapshot.distrito %}· {{ escuela_snapshot.distrito }}{% endif %}
+                            </dd>
+                            <dt>Domicilio</dt>
+                            <dd>
+                                {{ escuela_snapshot.domicilio|default:"—" }}
+                            </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </section>
+            <section class="insp-seccion" aria-labelledby="h-ubic">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-ubic">Geolocalización</h3>
+                    <span class="insp-badge {% if ubicacion.es_gps %}insp-badge-ok{% else %}insp-badge-alerta{% endif %}">{{ ubicacion.fuente }}</span>
+                </div>
+                <div class="insp-seccion-cuerpo">
+                    <dl class="insp-dl">
+                        {% if ubicacion.tiene_coordenadas %}
+                            <dt>Coordenadas</dt>
+                            <dd class="insp-mono">
+                                {{ ubicacion.lat|stringformat:"s" }}, {{ ubicacion.lng|stringformat:"s" }}
+                            </dd>
+                        {% endif %}
+                        {% if ubicacion.precision_m is not None %}
+                            <dt>Precisión</dt>
+                            <dd>
+                                ± {{ ubicacion.precision_m }} m
+                            </dd>
+                        {% endif %}
+                        {% if ubicacion.capturada_at %}
+                            <dt>Capturada</dt>
+                            <dd>
+                                {{ ubicacion.capturada_at|date:"H:i" }}
+                            </dd>
+                        {% endif %}
+                        {% if ubicacion.motivo_sin_gps %}
+                            <dt>Sin GPS</dt>
+                            <dd>
+                                {{ ubicacion.motivo_sin_gps }}
+                            </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </section>
+            <section class="insp-seccion" aria-labelledby="h-rec">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-rec">Firma responsable</h3>
+                </div>
+                <div class="insp-seccion-cuerpo">
+                    {% if recepcion.es_firma %}
+                        {% if recepcion.imagen_uuid %}
+                            <img class="insp-firma mb-2"
+                                 src="{% url 'inspecciones_acta_imagen' acta.numero recepcion.imagen_uuid %}"
+                                 alt="Firma de {{ recepcion.nombre }}" />
+                        {% endif %}
+                        <dl class="insp-dl">
+                            <dt>Firmó</dt>
+                            <dd>
+                                {{ recepcion.nombre }} · {{ recepcion.cargo }}
+                            </dd>
+                            <dt>Firmada</dt>
+                            <dd>
+                                {{ recepcion.firmada_at|date:"d/m/Y H:i"|default:"—" }}
+                            </dd>
+                            {% if recepcion.texto_mostrado %}
+                                <dt>Texto leído</dt>
+                                <dd class="small">
+                                    {{ recepcion.texto_mostrado }}
+                                </dd>
+                            {% endif %}
+                        </dl>
+                        <div class="small text-muted mt-2">Firma en pantalla. No es una firma digital certificada.</div>
+                    {% elif recepcion.tipo == "excepcion" %}
+                        <dl class="insp-dl">
+                            <dt>Excepción</dt>
+                            <dd>
+                                {{ recepcion.motivo_tipo }}
+                            </dd>
+                            <dt>Motivo</dt>
+                            <dd>
+                                {{ recepcion.motivo|default:"—" }}
+                            </dd>
+                            {% if recepcion.nombre or recepcion.cargo %}
+                                <dt>Quién atendió</dt>
+                                <dd>
+                                    {{ recepcion.nombre }}
+                                    {% if recepcion.cargo %}· {{ recepcion.cargo }}{% endif %}
+                                </dd>
+                            {% endif %}
+                            <dt>Registrada</dt>
+                            <dd>
+                                {{ recepcion.firmada_at|date:"d/m/Y H:i"|default:"—" }}
+                            </dd>
+                        </dl>
+                    {% else %}
+                        <p class="text-muted mb-0">Sin datos de recepción.</p>
+                    {% endif %}
+                </div>
+            </section>
+            <section class="insp-seccion" aria-labelledby="h-hist">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-hist">Avance de la inspección</h3>
+                </div>
+                <div class="insp-seccion-cuerpo">
+                    <ol class="insp-linea-tiempo">
+                        {% for evento in historial %}
+                            <li class="insp-hito insp-hito-{{ evento.codigo }}">
+                                <span class="insp-hito-punto" aria-hidden="true"></span>
+                                <span class="insp-hito-hora">{{ evento.at|date:"d/m H:i" }}</span>
+                                <span class="insp-hito-texto">{{ evento.accion }}{% if evento.actor %} · {{ evento.actor }}{% endif %}{% if evento.motivo %}<span class="insp-nota">Motivo: {{ evento.motivo }}</span>{% endif %}</span>
+                            </li>
+                        {% empty %}
+                            <li class="insp-hito">
+                                <span class="insp-hito-texto text-muted">Sin eventos.</span>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+            </section>
+        </div>
+    </div>
+    {% if url_anular and acta.estado != "anulada" %}
+        <div class="modal fade"
+             id="insp-modal-anular"
+             tabindex="-1"
+             aria-labelledby="insp-modal-anular-titulo"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <form class="modal-content" method="post" action="{{ url_anular }}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}" />
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="insp-modal-anular-titulo">Anular {{ acta.numero }}</h2>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            El acta conserva su número y su contenido, pero deja de contar en los indicadores.
+                            Esta acción queda registrada y no se puede deshacer.
+                        </p>
+                        <label class="form-label" for="id_motivo_anulacion">
+                            Motivo <span class="text-danger">*</span>
+                        </label>
+                        <textarea id="id_motivo_anulacion"
+                                  class="form-control"
+                                  name="motivo"
+                                  rows="4"
+                                  minlength="10"
+                                  required
+                                  aria-describedby="ayuda-motivo-anulacion"></textarea>
+                        <div id="ayuda-motivo-anulacion" class="form-text">Al menos 10 caracteres.</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button"
+                                class="btn btn-link text-secondary"
+                                data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">Anular acta</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

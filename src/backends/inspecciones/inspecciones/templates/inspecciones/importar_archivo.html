@@ -1,0 +1,30 @@
+{% extends "inspecciones/base_panel.html" %}
+{% block panel %}
+    <section class="card card-custom shadow-sm">
+        <div class="card-header card-header-custom">
+            <h2 class="h5 mb-0">{{ config.titulo }}</h2>
+        </div>
+        <form method="post"
+              enctype="multipart/form-data"
+              action="{% url url_subir %}"
+              data-insp-procesando="Leyendo el archivo… puede tardar unos segundos.">
+            {% csrf_token %}
+            <div class="card-body">
+                {% include "inspecciones/partials/pasos_importacion.html" with paso=1 %}
+                {% include config.ayuda %}
+                <label class="form-label" for="id_archivo">Archivo Excel (.xlsx) o CSV</label>
+                <input id="id_archivo"
+                       class="form-control{% if form.archivo.errors %} is-invalid{% endif %}"
+                       type="file"
+                       name="archivo"
+                       accept=".xlsx,.csv"
+                       required />
+                {% for error in form.archivo.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="card-footer d-flex justify-content-end gap-2">
+                <a class="btn btn-link text-secondary" href="{% url config.volver %}">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Revisar el archivo</button>
+            </div>
+        </form>
+    </section>
+{% endblock %}

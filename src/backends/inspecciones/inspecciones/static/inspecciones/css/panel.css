@@ -1,0 +1,298 @@
+/* Panel de Inspecciones escolares (backoffice).
+   Paleta Poncho (src/backends/kernel/static/custom/css/poncho.css); las tarjetas
+   usan .card-custom / .card-header-custom de user_form.css. */
+
+.insp-panel {
+    --insp-azul: var(--poncho-azul-principal, #232d4f);
+    --insp-teal: var(--poncho-verde-azulado, #3b8681);
+    --insp-teal-oscuro: #2f6b67;
+    --insp-beige: #f5f3ef;
+    --insp-borde: #e9e6e1;
+    --insp-dorado: #e7ba61;
+}
+
+.insp-panel h1 {
+    color: var(--insp-azul);
+    font-size: 1.4rem;
+    font-weight: 500;
+}
+
+/* Totales */
+.insp-kpi {
+    background: #fff;
+    border: 1px solid var(--insp-borde);
+    border-left: 3px solid #d4cfc7;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    height: 100%;
+}
+
+.insp-kpi.insp-kpi-alerta {
+    border-left-color: var(--insp-dorado);
+}
+
+.insp-kpi .insp-kpi-titulo {
+    color: #555;
+    font-size: 0.8rem;
+}
+
+.insp-kpi .insp-kpi-valor {
+    color: var(--insp-azul);
+    font-size: 1.4rem;
+    font-weight: 500;
+}
+
+/* Pestañas */
+.insp-tabs .nav-link {
+    color: #555;
+    border: 0;
+    border-bottom: 3px solid transparent;
+}
+
+.insp-tabs .nav-link.active {
+    color: var(--insp-azul);
+    font-weight: 500;
+    background: transparent;
+    border-bottom-color: var(--insp-teal);
+}
+
+/* Barra de filtros dentro del encabezado de la tarjeta */
+.insp-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.insp-filtros .form-control,
+.insp-filtros .form-select {
+    width: auto;
+    min-width: 11rem;
+}
+
+.insp-filtros .select2-container {
+    min-width: 13rem;
+    width: auto !important;
+}
+
+.insp-filtros .insp-espacio {
+    flex: 1;
+}
+
+/* Chips y estados */
+.insp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid #c9ced6;
+    border-radius: 15px;
+    background: #fff;
+    color: #333;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.75rem;
+    text-decoration: none;
+}
+
+.insp-chip.activo {
+    border-color: #e7a13a;
+    background: #fff1dc;
+    color: #7a3a00;
+}
+
+.insp-chip .insp-punto {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #e7a13a;
+}
+
+.insp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 0.1rem 0.55rem;
+    white-space: nowrap;
+}
+
+.insp-badge-alerta {
+    background: #fff1dc;
+    color: #7a3a00;
+}
+
+.insp-badge-info {
+    background: #e5f0fb;
+    color: #0b4f8a;
+}
+
+.insp-badge-ok {
+    background: #e6f3ec;
+    color: #1b5e20;
+}
+
+.insp-badge-error {
+    background: #fdecea;
+    color: #b42318;
+}
+
+.insp-badge-neutro {
+    background: #eee;
+    color: #555;
+}
+
+.insp-mono {
+    font-family: "Roboto Mono", SFMono-Regular, Menlo, monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.3px;
+}
+
+.insp-tabla th {
+    background: #fafaf8;
+    color: #555;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.insp-tabla td {
+    vertical-align: middle;
+}
+
+/* Pasos de la importación */
+.insp-pasos {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    list-style: none;
+    margin: 0 0 1rem;
+    padding: 0;
+}
+
+.insp-pasos li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    font-size: 0.85rem;
+}
+
+.insp-pasos .insp-paso-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #e5e7eb;
+    color: #555;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.insp-pasos .hecho .insp-paso-num {
+    background: var(--insp-teal);
+    color: #fff;
+}
+
+.insp-pasos .actual {
+    color: var(--insp-azul);
+    font-weight: 500;
+}
+
+.insp-pasos .actual .insp-paso-num {
+    background: var(--insp-azul);
+    color: #fff;
+}
+
+.insp-pasos .insp-paso-linea {
+    flex: 0 0 2rem;
+    height: 1px;
+    background: #ddd;
+}
+
+.insp-columna {
+    display: inline-flex;
+    border: 1px solid #d9e6e4;
+    background: #f2f8f7;
+    border-radius: 14px;
+    color: #1f4d4a;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.6rem;
+    margin: 0 0.25rem 0.25rem 0;
+}
+
+/* Detalle del acta */
+.insp-dl {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr);
+    gap: 0.4rem 0.75rem;
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.insp-dl dt {
+    color: #5f6368;
+    font-weight: 400;
+}
+
+.insp-dl dd {
+    margin: 0;
+}
+
+.insp-nota {
+    display: block;
+    color: #7a3a00;
+    font-size: 0.78rem;
+    margin-top: 0.15rem;
+}
+
+.insp-miniatura {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 4px;
+    background: #dcdad5;
+}
+
+.insp-firma {
+    max-width: 100%;
+    max-height: 120px;
+    background: #fff;
+    border: 1px solid var(--insp-borde);
+    border-radius: 4px;
+}
+
+.insp-evento {
+    display: flex;
+    gap: 0.6rem;
+    font-size: 0.85rem;
+    padding-bottom: 0.6rem;
+}
+
+.insp-evento .insp-evento-hora {
+    color: #5f6368;
+    flex: 0 0 6.5rem;
+}
+
+.insp-evento .insp-evento-punto {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--insp-teal);
+    margin-top: 0.35rem;
+}
+
+.insp-opcion-detalle {
+    display: block;
+    color: #5f6368;
+    font-size: 0.75rem;
+}
+
+@media (max-width: 767.98px) {
+    .insp-filtros .form-control,
+    .insp-filtros .form-select,
+    .insp-filtros .select2-container {
+        min-width: 100%;
+    }
+}

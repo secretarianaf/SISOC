@@ -1,14 +1,18 @@
 """Fixtures de Inspecciones escolares: usuarios por rol, escuela y payloads."""
 
 import copy
+import io
 import uuid
 
+import openpyxl
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
+from core.models import Localidad, Municipio, Provincia
 from inspecciones.models import AsignacionEscuela, Escuela
 from inspecciones.services.formato import hoy
 
@@ -68,6 +72,86 @@ def api_coord(coordinacion):
 @pytest.fixture
 def cliente_de():
     return _cliente
+
+
+@pytest.fixture
+def geografia(db):
+    """Provincias, municipios y localidades mínimos para el padrón.
+
+    - Buenos Aires: San Justo (única) y San José (en dos municipios).
+    - CABA: la localidad genérica de la ciudad y una homónima del padrón.
+    - Tierra del Fuego con su nombre oficial completo.
+    """
+    caba = Provincia.objects.create(nombre="Ciudad Autónoma de Buenos Aires")
+    bsas = Provincia.objects.create(nombre="Buenos Aires")
+    tdf = Provincia.objects.create(
+        nombre="Tierra del Fuego, Antártida e Islas del Atlántico Sur"
+    )
+    comuna = Municipio.objects.create(nombre="Comuna 1", provincia=caba)
+    matanza = Municipio.objects.create(nombre="La Matanza", provincia=bsas)
+    brown = Municipio.objects.create(nombre="Almirante Brown", provincia=bsas)
+    lomas = Municipio.objects.create(nombre="Lomas de Zamora", provincia=bsas)
+    ushuaia = Municipio.objects.create(nombre="Ushuaia", provincia=tdf)
+    return {
+        "caba": caba,
+        "bsas": bsas,
+        "tdf": tdf,
+        "caba_generica": Localidad.objects.create(
+            nombre="Ciudad Autónoma de Buenos Aires", municipio=comuna
+        ),
+        "caba_homonima": Localidad.objects.create(
+            nombre="Ciudad de Buenos Aires", municipio=comuna
+        ),
+        "san_justo": Localidad.objects.create(nombre="San Justo", municipio=matanza),
+        "san_jose_brown": Localidad.objects.create(nombre="San José", municipio=brown),
+        "san_jose_lomas": Localidad.objects.create(nombre="San José", municipio=lomas),
+        "ushuaia": Localidad.objects.create(nombre="Ushuaia", municipio=ushuaia),
+    }
+
+
+@pytest.fixture
+def gestor(db):
+    """Usuario del backoffice con el permiso de gestión (sin rol en la app)."""
+    user = get_user_model().objects.create_user(username="gestor", password="x")
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="inspecciones", codename="gestionar_inspecciones"
+        )
+    )
+    return user
+
+
+@pytest.fixture
+def panel(client, gestor):
+    client.force_login(gestor)
+    return client
+
+
+@pytest.fixture
+def planilla():
+    """Arma un ``.xlsx`` (o ``.csv``) subido, con filas de título opcionales."""
+
+    def construir(filas, *, nombre="padron.xlsx", titulo=True, segunda_hoja=True):
+        if nombre.endswith(".csv"):
+            texto = "\n".join(";".join(str(v) for v in fila) for fila in filas)
+            return SimpleUploadedFile(nombre, texto.encode("utf-8"))
+        libro = openpyxl.Workbook()
+        hoja = libro.active
+        hoja.title = "padron"
+        if titulo:
+            hoja.append(["Establecimiento - Localización"])
+        for fila in filas:
+            hoja.append(list(fila))
+        if segunda_hoja:
+            # Nunca se lee: puede tener datos personales.
+            otra = libro.create_sheet("- Usuarios")
+            otra.append(["Jurisdicción", "Localidad", "Cueanexo", "Nombre"])
+            otra.append(["Buenos Aires", "San Justo", "999999999", "NO LEER"])
+        contenido = io.BytesIO()
+        libro.save(contenido)
+        return SimpleUploadedFile(nombre, contenido.getvalue())
+
+    return construir
 
 
 @pytest.fixture

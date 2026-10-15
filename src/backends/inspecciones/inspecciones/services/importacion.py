@@ -1,45 +1,35 @@
-"""Importación por CSV del catálogo de escuelas y de las asignaciones.
+"""Importación masiva de asignaciones por jornada (``.xlsx`` o ``.csv``).
 
-Informa filas creadas, actualizadas, repetidas y rechazadas con su causa; las
-filas válidas se guardan aunque otras fallen. Nunca borra nada: una escuela o
-asignación que no viene en el archivo queda como estaba.
+Columnas: ``fecha`` (AAAA-MM-DD o DD/MM/AAAA), ``cueanexo`` (o el código de
+la escuela) e ``inspector`` (usuario, DNI o mail). Mismo flujo de tres pasos
+que las escuelas: ``analizar_asignaciones`` no escribe y
+``aplicar_asignaciones`` guarda; las dos clasifican igual.
+
+Informa filas nuevas, repetidas (ya estaban), restauradas (se habían quitado)
+y rechazadas con su causa; las filas válidas se guardan aunque otras fallen.
+Nunca borra nada. Si la escuela ya tiene otro inspector asignado ese día, se
+asigna igual (cuenta como otra visita) y queda como aviso.
 """
 
-import csv
-import io
 import re
-import unicodedata
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
 
 from inspecciones.models import AsignacionEscuela, Escuela
-from users.services_inspecciones import tiene_acceso_inspecciones
+from inspecciones.services.asignaciones import es_inspector
+from inspecciones.services.formato import nombre_actor
+from inspecciones.services.importacion_escuelas import normalizar_cueanexo
+from inspecciones.services.planillas import leer_planilla
 
-MAX_BYTES_CSV = 10 * 1024 * 1024
-SOLO_DIGITOS = re.compile(r"^\d+$")
-
-ALIAS_ESCUELAS = {
-    "codigo": "codigo",
-    "id": "codigo",
-    "clave": "codigo",
-    "cue": "cue",
-    "nombre": "nombre",
-    "escuela": "nombre",
-    "establecimiento": "nombre",
-    "distrito": "distrito",
-    "localidad": "localidad",
-    "domicilio": "domicilio",
-    "direccion": "domicilio",
-    "nivel": "nivel",
-}
 ALIAS_ASIGNACIONES = {
     "fecha": "fecha",
     "jornada": "fecha",
+    "cueanexo": "escuela",
+    "cue_anexo": "escuela",
     "escuela": "escuela",
     "codigo": "escuela",
     "cue": "escuela",
@@ -49,176 +39,218 @@ ALIAS_ASIGNACIONES = {
     "dni": "inspector",
     "correo": "inspector",
     "email": "inspector",
+    "mail": "inspector",
 }
+REQUERIDAS = ("fecha", "escuela", "inspector")
+ETIQUETAS_COLUMNA = {"fecha": "Fecha", "escuela": "Cueanexo", "inspector": "Inspector"}
+FORMATOS_FECHA = ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y")
+SERIAL_EXCEL = re.compile(r"^\d{5}$")
+ORIGEN_EXCEL = date(1899, 12, 30)
 
 
-@dataclass
-class ResultadoImportacion:
-    total: int = 0
-    creadas: int = 0
-    actualizadas: int = 0
-    sin_cambios: int = 0
-    rechazadas: list = field(default_factory=list)
-
-    def rechazar(self, fila, causa):
-        self.rechazadas.append({"fila": fila, "causa": causa})
-
-
-def _normalizar(texto):
-    texto = unicodedata.normalize("NFKD", str(texto or "").strip().lower())
-    texto = "".join(c for c in texto if not unicodedata.combining(c))
-    return re.sub(r"[^a-z0-9]+", "_", texto).strip("_")
-
-
-def _decodificar(archivo):
-    if archivo.size > MAX_BYTES_CSV:
-        raise ValidationError("El archivo CSV no puede superar los 10 MB.")
-    archivo.seek(0)
-    crudo = archivo.read()
-    for codificacion in ("utf-8-sig", "cp1252"):
+def fecha_de_texto(valor):
+    texto = str(valor or "").strip()
+    if SERIAL_EXCEL.match(texto):
+        # Una celda de fecha del .xlsx llega como número de serie de Excel.
+        return ORIGEN_EXCEL + timedelta(days=int(texto))
+    texto = texto[:10]
+    for formato in FORMATOS_FECHA:
         try:
-            return crudo.decode(codificacion)
-        except UnicodeDecodeError:
-            continue
-    raise ValidationError("No se pudo leer el archivo: guardalo como CSV UTF-8.")
-
-
-def leer_csv(archivo, alias, requeridas):
-    """Filas como ``(numero_de_fila, {columna: valor})`` con encabezados normalizados."""
-    texto = _decodificar(archivo)
-    try:
-        dialecto = csv.Sniffer().sniff(texto[:4096], delimiters=",;|\t")
-    except csv.Error:
-        dialecto = csv.excel
-    lector = csv.reader(io.StringIO(texto), dialect=dialecto)
-    try:
-        encabezados = next(lector)
-    except StopIteration as exc:
-        raise ValidationError("El archivo CSV está vacío.") from exc
-    columnas = [alias.get(_normalizar(nombre)) for nombre in encabezados]
-    faltantes = [c for c in requeridas if c not in columnas]
-    if faltantes:
-        raise ValidationError(
-            "Faltan columnas obligatorias: " + ", ".join(faltantes) + "."
-        )
-    filas = []
-    for numero, valores in enumerate(lector, start=2):
-        if not any(str(v).strip() for v in valores):
-            continue
-        fila = {}
-        for columna, valor in zip(columnas, valores):
-            if columna and not fila.get(columna):
-                fila[columna] = str(valor).strip()
-        filas.append((numero, fila))
-    return filas
-
-
-CAMPOS_ESCUELA = ("nombre", "cue", "distrito", "localidad", "domicilio", "nivel")
-
-
-def importar_escuelas(archivo):  # pylint: disable=too-many-locals
-    """Alta o actualización por ``codigo`` (si falta, el CUE es la clave)."""
-    resultado = ResultadoImportacion()
-    vistos = set()
-    for numero, fila in leer_csv(archivo, ALIAS_ESCUELAS, ("nombre", "cue")):
-        resultado.total += 1
-        cue = re.sub(r"\s+", "", fila.get("cue", ""))
-        codigo = fila.get("codigo") or cue
-        if not fila.get("nombre"):
-            resultado.rechazar(numero, "Falta el nombre de la escuela.")
-            continue
-        if cue and not SOLO_DIGITOS.match(cue):
-            resultado.rechazar(numero, f"El CUE '{cue}' lleva solo números.")
-            continue
-        if not codigo:
-            resultado.rechazar(numero, "Falta el CUE o el código de la escuela.")
-            continue
-        if codigo in vistos:
-            resultado.rechazar(numero, f"Código '{codigo}' repetido en el archivo.")
-            continue
-        vistos.add(codigo)
-        datos = {campo: fila.get(campo, "") for campo in CAMPOS_ESCUELA}
-        datos["cue"] = cue
-        with transaction.atomic():
-            escuela = Escuela.all_objects.filter(codigo=codigo).first()
-            if escuela is None:
-                Escuela.objects.create(codigo=codigo[:40], **datos)
-                resultado.creadas += 1
-                continue
-            cambios = {k: v for k, v in datos.items() if getattr(escuela, k) != v}
-            if escuela.deleted_at is not None:
-                cambios.update(deleted_at=None, deleted_by=None)
-            if not cambios:
-                resultado.sin_cambios += 1
-                continue
-            for clave, valor in cambios.items():
-                setattr(escuela, clave, valor)
-            escuela.save()
-            resultado.actualizadas += 1
-    return resultado
-
-
-def _fecha(valor):
-    for formato in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
-        try:
-            return datetime.strptime(valor.strip(), formato).date()
-        except (ValueError, AttributeError):
+            return datetime.strptime(texto, formato).date()
+        except ValueError:
             continue
     return None
 
 
+@dataclass
+class _Clasificacion:
+    total: int = 0
+    nuevas: list = field(default_factory=list)
+    restauradas: list = field(default_factory=list)
+    repetidas: int = 0
+    otra_visita: int = 0
+    rechazadas: int = 0
+    observaciones: list = field(default_factory=list)
+
+    def observar(self, numero, fila, tipo, detalle):
+        self.observaciones.append(
+            {
+                "fila": numero,
+                "cueanexo": str(fila.get("escuela", "")),
+                "nombre": str(fila.get("inspector", "")),
+                "tipo": tipo,
+                "motivo": "Rechazada" if tipo == "rechazada" else "Aviso",
+                "detalle": detalle,
+            }
+        )
+
+
+class _Resolutor:
+    """Busca escuelas e inspectores una sola vez por valor del archivo."""
+
+    def __init__(self):
+        self._escuelas = {}
+        self._inspectores = {}
+
+    def escuela(self, clave):
+        if clave not in self._escuelas:
+            self._escuelas[clave] = (
+                Escuela.objects.filter(Q(codigo=clave) | Q(cue=clave)).first()
+                if clave
+                else None
+            )
+        return clave, self._escuelas[clave]
+
+    def inspector(self, identificador):
+        identificador = str(identificador or "").strip()
+        if identificador not in self._inspectores:
+            self._inspectores[identificador] = _inspector(identificador)
+        return self._inspectores[identificador]
+
+
 def _inspector(identificador):
-    identificador = (identificador or "").strip()
     if not identificador:
         return None, "Falta el inspector."
-    user_model = get_user_model()
     filtro = Q(username__iexact=identificador) | Q(email__iexact=identificador)
-    if identificador.isdigit():
-        filtro |= Q(profile__dni=identificador)
-    candidatos = list(user_model.objects.filter(filtro).distinct()[:2])
+    dni = identificador.replace(".", "")
+    if dni.isdigit():
+        filtro |= Q(profile__dni=dni)
+    candidatos = list(get_user_model().objects.filter(filtro).distinct()[:2])
     if len(candidatos) != 1:
         return None, (
-            "No existe el inspector." if not candidatos else "Inspector ambiguo."
+            f"No existe el inspector '{identificador}'."
+            if not candidatos
+            else f"El inspector '{identificador}' es ambiguo."
         )
     usuario = candidatos[0]
-    if not tiene_acceso_inspecciones(usuario):
-        return None, "El usuario no pertenece a Inspecciones escolares."
+    if not es_inspector(usuario):
+        return None, (
+            f"'{identificador}' no tiene la sección Inspecciones escolares "
+            "con rol Inspector."
+        )
     return usuario, ""
 
 
-def importar_asignaciones(archivo, *, actor=None):
-    resultado = ResultadoImportacion()
-    for numero, fila in leer_csv(
-        archivo, ALIAS_ASIGNACIONES, ("fecha", "escuela", "inspector")
-    ):
+def _otra_visita(resultado, numero, fila, visita):
+    """Aviso si la escuela ya tiene otro inspector asignado esa jornada."""
+    escuela, inspector, fecha = visita
+    otros = list(
+        AsignacionEscuela.objects.filter(escuela=escuela, fecha=fecha)
+        .exclude(inspector=inspector)
+        .select_related("inspector")
+    )
+    if otros:
+        resultado.otra_visita += 1
+        nombres = ", ".join(nombre_actor(a.inspector) for a in otros)
+        resultado.observar(
+            numero,
+            fila,
+            "aviso",
+            f"{escuela.nombre} ya está asignada ese día a {nombres}: "
+            "cuenta como otra visita.",
+        )
+
+
+def _clasificar(filas):
+    resultado = _Clasificacion()
+    resolutor = _Resolutor()
+    vistos = set()
+    for numero, fila in filas:
         resultado.total += 1
-        fecha = _fecha(fila.get("fecha", ""))
+        fecha = date.fromisoformat(fila["fecha"]) if fila["fecha"] else None
+        clave, escuela = resolutor.escuela(fila["escuela"])
+        inspector, causa = resolutor.inspector(fila.get("inspector"))
         if fecha is None:
-            resultado.rechazar(numero, "Fecha inválida (AAAA-MM-DD o DD/MM/AAAA).")
+            causa = "Fecha inválida (AAAA-MM-DD o DD/MM/AAAA)."
+        elif escuela is None:
+            causa = f"No existe la escuela '{clave}'."
+        if fecha is None or escuela is None or inspector is None:
+            resultado.rechazadas += 1
+            resultado.observar(numero, fila, "rechazada", causa)
             continue
-        clave = re.sub(r"\s+", "", fila.get("escuela", ""))
-        escuela = Escuela.objects.filter(Q(codigo=clave) | Q(cue=clave)).first()
-        if not clave or escuela is None:
-            resultado.rechazar(numero, f"No existe la escuela '{clave}'.")
+        clave_visita = (escuela.pk, inspector.pk, fecha)
+        existente = AsignacionEscuela.all_objects.filter(
+            escuela=escuela, inspector=inspector, fecha=fecha
+        ).first()
+        if clave_visita in vistos or (existente and existente.deleted_at is None):
+            resultado.repetidas += 1
             continue
-        inspector, causa = _inspector(fila.get("inspector", ""))
-        if inspector is None:
-            resultado.rechazar(numero, causa)
-            continue
-        with transaction.atomic():
-            existente = AsignacionEscuela.all_objects.filter(
-                escuela=escuela, inspector=inspector, fecha=fecha
-            ).first()
-            if existente is None:
-                AsignacionEscuela.objects.create(
+        vistos.add(clave_visita)
+        _otra_visita(resultado, numero, fila, (escuela, inspector, fecha))
+        if existente is not None:
+            resultado.restauradas.append(existente)
+        else:
+            resultado.nuevas.append((escuela, inspector, fecha))
+    return resultado
+
+
+def _leer(archivo):
+    """``(meta, filas)`` normalizadas y en JSON, para guardar con la subida."""
+    planilla = leer_planilla(archivo, archivo.name, ALIAS_ASIGNACIONES, REQUERIDAS)
+    filas = []
+    for numero, fila in planilla.filas:
+        fecha = fecha_de_texto(fila.get("fecha"))
+        escuela = fila.get("escuela")
+        filas.append(
+            (
+                numero,
+                {
+                    "fecha": fecha.isoformat() if fecha else "",
+                    "escuela": normalizar_cueanexo(escuela)
+                    or "".join(str(escuela or "").split()),
+                    "inspector": str(fila.get("inspector") or "").strip(),
+                },
+            )
+        )
+    meta = {"fila_encabezado": planilla.fila_encabezado, "columnas": planilla.columnas}
+    return meta, filas
+
+
+def _resumen(meta, clasificacion):
+    return {
+        "total": clasificacion.total,
+        "fila_encabezado": meta["fila_encabezado"],
+        "columnas": [
+            {
+                "original": c["original"],
+                "campo": ETIQUETAS_COLUMNA[c["campo"]],
+                "renombrada": False,
+            }
+            for c in meta["columnas"]
+        ],
+        "nuevas": len(clasificacion.nuevas),
+        "restauradas": len(clasificacion.restauradas),
+        "repetidas": clasificacion.repetidas,
+        "otra_visita": clasificacion.otra_visita,
+        "rechazadas": clasificacion.rechazadas,
+        "a_importar": len(clasificacion.nuevas) + len(clasificacion.restauradas),
+    }
+
+
+def analizar_asignaciones(archivo):
+    """Revisión, sin escribir: ``{"resumen", "observaciones", "datos"}``."""
+    meta, filas = _leer(archivo)
+    clasificacion = _clasificar(filas)
+    return {
+        "resumen": _resumen(meta, clasificacion),
+        "observaciones": clasificacion.observaciones,
+        "datos": {"meta": meta, "filas": filas},
+    }
+
+
+def aplicar_asignaciones(datos, *, actor=None):
+    """Confirmación: vuelve a clasificar contra la base actual y guarda."""
+    clasificacion = _clasificar(datos["filas"])
+    with transaction.atomic():
+        AsignacionEscuela.objects.bulk_create(
+            [
+                AsignacionEscuela(
                     escuela=escuela, inspector=inspector, fecha=fecha, creada_por=actor
                 )
-                resultado.creadas += 1
-            elif existente.deleted_at is not None:
-                existente.deleted_at = None
-                existente.deleted_by = None
-                existente.save(update_fields=["deleted_at", "deleted_by"])
-                resultado.actualizadas += 1
-            else:
-                resultado.sin_cambios += 1
-    return resultado
+                for escuela, inspector, fecha in clasificacion.nuevas
+            ],
+            batch_size=1000,
+        )
+        for asignacion in clasificacion.restauradas:
+            asignacion.restore(user=actor, cascade=False)
+    return _resumen(datos["meta"], clasificacion), clasificacion.observaciones

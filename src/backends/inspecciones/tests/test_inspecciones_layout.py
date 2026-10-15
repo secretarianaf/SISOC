@@ -159,3 +159,12 @@ def test_aviso_de_escuela_ya_asignada_usa_el_aviso_ambar(panel):
     html = panel.get(reverse("inspecciones_asignacion_nueva"), **XHR).content.decode()
 
     assert 'class="insp-aviso insp-aviso-ambar d-none"' in html
+
+
+def test_subir_archivo_de_escuelas_muestra_la_caja_del_mockup(panel):
+    html = panel.get(reverse("inspecciones_importar_escuelas")).content.decode()
+
+    assert 'class="insp-dialogo"' in html
+    assert 'class="insp-dialogo-cerrar"' in html
+    assert 'class="insp-pasos"' in html
+    assert "card-custom" not in html

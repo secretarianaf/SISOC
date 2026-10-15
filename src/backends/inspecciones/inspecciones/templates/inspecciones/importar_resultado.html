@@ -1,19 +1,22 @@
 {% extends "inspecciones/base_panel.html" %}
 {% block panel %}
-    <section class="card card-custom shadow-sm">
-        <div class="card-header card-header-custom">
-            <h2 class="h5 mb-0">{{ config.titulo }}</h2>
+    <section class="insp-dialogo" aria-labelledby="insp-importar-titulo">
+        <div class="insp-dialogo-cabecera">
+            <h2 id="insp-importar-titulo">{{ config.titulo }}</h2>
+            <a class="insp-dialogo-cerrar" href="{% url config.volver %}" aria-label="Cerrar">×</a>
         </div>
-        <div class="card-body">
+        <div class="insp-dialogo-cuerpo">
             {% include "inspecciones/partials/pasos_importacion.html" with paso=3 %}
-            <div class="alert alert-success" role="status">
+            <div class="insp-aviso insp-aviso-ok" role="status">
                 <strong>Importación terminada.</strong>
                 Se guardaron {{ resumen.a_importar }} de {{ resumen.total }} filas de {{ nombre_archivo }}.
             </div>
             {% include "inspecciones/partials/resumen_importacion.html" %}
         </div>
-        <div class="card-footer d-flex justify-content-end">
-            <a class="btn btn-primary" href="{% url config.volver %}">Volver al listado</a>
+        <div class="insp-dialogo-pie">
+            <div class="insp-acciones">
+                <a class="btn btn-primary" href="{% url config.volver %}">Volver al listado</a>
+            </div>
         </div>
     </section>
 {% endblock %}

@@ -334,6 +334,7 @@ def _indice(filas, previsto, presente):
     """Agregado de un índice con su regla de computabilidad (§9)."""
     excluidas = Counter()
     suma_previsto = suma_presente = computables = 0
+    colegios = set()
     for fila in filas:
         if fila["resultado"] not in CONSTATADAS:
             excluidas["sin_constatacion"] += 1
@@ -348,12 +349,14 @@ def _indice(filas, previsto, presente):
             excluidas["denominador_cero"] += 1
             continue
         computables += 1
+        colegios.add(_clave_escuela(fila))
         suma_previsto += valor_previsto
         suma_presente += valor_presente
     return {
         "previsto": suma_previsto,
         "presente": suma_presente,
         "computables": computables,
+        "colegios": len(colegios),
         "excluidas": len(filas) - computables,
         "motivos_exclusion": {
             "sin_constatacion": excluidas["sin_constatacion"],

@@ -26,11 +26,6 @@
     gap: 12px;
 }
 
-.insp-totales-6 {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 10px;
-}
-
 .insp-totales-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -918,25 +913,42 @@ button.insp-dialogo-cerrar {
     border-radius: 4px;
 }
 
-.insp-evento {
+.insp-linea-tiempo {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 14px;
+    border-left: 2px solid #e9e6e1;
     display: flex;
-    gap: 10px;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.insp-hito {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     font-size: 13px;
-    padding-bottom: 8px;
 }
 
-.insp-evento .insp-evento-hora {
-    color: var(--insp-gris-claro);
-    flex: 0 0 6.5rem;
-}
-
-.insp-evento .insp-evento-punto {
-    flex: none;
-    width: 9px;
-    height: 9px;
+.insp-hito-punto {
+    position: absolute;
+    left: -21px;
+    top: 4px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background: var(--insp-teal);
-    margin-top: 5px;
+    border: 2px solid #fff;
+}
+
+.insp-hito-anulada .insp-hito-punto {
+    background: var(--insp-rojo);
+}
+
+.insp-hito-hora {
+    color: var(--insp-gris-claro);
+    font-size: 12px;
 }
 
 .insp-vacio {
@@ -964,7 +976,6 @@ button.insp-dialogo-cerrar {
 /* --- Responsive -------------------------------------------------------- */
 @media (max-width: 991.98px) {
     .insp-totales,
-    .insp-totales-6,
     .insp-totales-2 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }

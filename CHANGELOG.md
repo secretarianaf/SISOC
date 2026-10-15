@@ -6,6 +6,7 @@
 - [src/backends/inspecciones.] panel de Inspecciones escolares con escuelas, asignaciones, actas (anulación y prueba) y tablero en vivo con mapa. (PR #2698)
 - [src/backends/inspecciones.] el panel y el tablero de Inspecciones escolares se ven como el mockup aprobado (tema claro, cabecera blanca, barra lateral con logo) sin cambiar el resto del backoffice. (PR #2705)
 - [src/backends/kernel.] la página de Inicio usa el mismo marco claro que Inspecciones y la barra lateral de todo SISOC queda sin el panel de usuario y con el ítem activo marcado. (PR #2707)
+- [src/backends/inspecciones.] tablero de Inspecciones con los cambios pedidos (tarjetas, colegios computables, leyendas, mapa) y columna derecha del acta con títulos y avance. (PR #2708)
 <!-- AUTO-GENERATED RELEASE END: 2026-10-16 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-10-15 -->

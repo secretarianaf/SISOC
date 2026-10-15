@@ -98,7 +98,7 @@
             <span class="insp-espacio"></span>
             <span class="insp-tablero-ayuda">Los filtros aplican al mapa, los indicadores y la tabla</span>
         </form>
-        <div class="insp-totales insp-totales-6">
+        <div class="insp-totales insp-totales-5">
             <div class="insp-kpi insp-kpi-teal">
                 <div class="insp-kpi-titulo">Escuelas únicas inspeccionadas</div>
                 <div class="insp-kpi-valor" data-kpi="escuelas_unicas">–</div>
@@ -120,14 +120,6 @@
                 <div class="insp-kpi-detalle">
                     <span data-kpi="inspectores_sin_actividad">–</span> sin actas ni borradores
                 </div>
-            </div>
-            <div class="insp-kpi">
-                <div class="insp-kpi-titulo">Con firma / sin firma</div>
-                <div class="insp-kpi-valor">
-                    <span data-kpi="con_firma">–</span>
-                    <span class="insp-kpi-total">/ <span data-kpi="sin_firma">–</span></span>
-                </div>
-                <div class="insp-kpi-detalle" data-kpi="sin_firma_por_motivo">–</div>
             </div>
             <div class="insp-kpi insp-kpi-celeste">
                 <div class="insp-kpi-titulo">Borradores en curso</div>
@@ -153,17 +145,18 @@
                          data-tablero-mapa
                          role="region"
                          aria-label="Mapa de Argentina con las visitas con ubicación GPS, agrupadas por zona"></div>
-                    <div class="insp-tablero-leyenda">
-                        <div>
+                    <ul class="insp-tablero-leyenda insp-leyenda-lista">
+                        <li class="text-body-secondary">Qué significa cada color</li>
+                        <li>
                             <i class="insp-tablero-leyenda-punto insp-tablero-constatada"
                                aria-hidden="true"></i>Constatada (total o parcial)
-                        </div>
-                        <div>
+                        </li>
+                        <li>
                             <i class="insp-tablero-leyenda-punto insp-tablero-sin-constatacion"
                                aria-hidden="true"></i>Sin constatación (cerrada o no dejó ingresar)
-                        </div>
-                        <div class="text-body-secondary" data-tablero-sin-gps>–</div>
-                    </div>
+                        </li>
+                        <li class="text-body-secondary" data-tablero-sin-gps>–</li>
+                    </ul>
                 </div>
             </section>
             <div class="d-flex flex-column gap-3">
@@ -180,7 +173,8 @@
                     </div>
                     <div class="insp-seccion-cuerpo">
                         <div data-tablero-resultados></div>
-                        <div class="insp-leyenda" data-tablero-resultados-leyenda></div>
+                        <ul class="insp-leyenda-lista" data-tablero-resultados-leyenda>
+                        </ul>
                     </div>
                 </section>
             </div>
@@ -191,12 +185,22 @@
                     <h2 id="tablero-h-ausentismo">Ausentismo observado por colegio</h2>
                 </div>
                 <div class="insp-seccion-cuerpo d-flex flex-column gap-1">
-                    <div class="insp-tablero-indice" data-indice="ausentismo-porcentaje">–</div>
-                    <div class="insp-tablero-texto">
-                        (previsto − presente) / previsto, sobre <strong data-indice="ausentismo-computables">–</strong> actas computables
+                    <div class="insp-tablero-indice-fila">
+                        <div class="insp-tablero-indice" data-indice="ausentismo-porcentaje">–</div>
+                        <div class="insp-tablero-indice-numeros">
+                            <span data-indice="ausentismo-fraccion">–</span>
+                            <span class="insp-tablero-texto-secundario"
+                                  data-indice="ausentismo-fraccion-etiqueta">ausentes / previstos</span>
+                        </div>
+                    </div>
+                    <div class="insp-tablero-texto" data-indice="ausentismo-descripcion">–</div>
+                    <div class="insp-aviso insp-aviso-ambar d-none"
+                         role="status"
+                         data-indice="ausentismo-aviso-exceso">
+                        Hay más personal presente que el previsto: revisá la carga de las actas.
                     </div>
                     <div class="insp-tablero-texto-secundario">
-                        <span data-indice="ausentismo-excluidas">–</span> excluidas: sin constatación, sin dato (no informado o no constatado) o previsto igual a cero
+                        <span data-indice="ausentismo-excluidas">–</span>: sin constatación, sin dato (no informado o no constatado) o previsto igual a cero
                     </div>
                     <div class="insp-tablero-aviso">El personal incluye docentes y no docentes; no equivale a adhesión al paro.</div>
                 </div>
@@ -206,12 +210,17 @@
                     <h2 id="tablero-h-aulas">Aulas en funcionamiento</h2>
                 </div>
                 <div class="insp-seccion-cuerpo d-flex flex-column gap-1">
-                    <div class="insp-tablero-indice" data-indice="aulas-porcentaje">–</div>
-                    <div class="insp-tablero-texto">
-                        funcionando / previstas, sobre <strong data-indice="aulas-computables">–</strong> actas computables
+                    <div class="insp-tablero-indice-fila">
+                        <div class="insp-tablero-indice" data-indice="aulas-porcentaje">–</div>
+                        <div class="insp-tablero-indice-numeros">
+                            <span data-indice="aulas-fraccion">–</span>
+                            <span class="insp-tablero-texto-secundario"
+                                  data-indice="aulas-fraccion-etiqueta">funcionando / previstas</span>
+                        </div>
                     </div>
+                    <div class="insp-tablero-texto" data-indice="aulas-descripcion">–</div>
                     <div class="insp-tablero-texto-secundario">
-                        <span data-indice="aulas-excluidas">–</span> excluidas · totales por visitas, no por personas únicas
+                        <span data-indice="aulas-excluidas">–</span> · totales por visitas, no por personas únicas
                     </div>
                 </div>
             </section>
@@ -224,15 +233,17 @@
                         Hay personal educativo <span class="text-body-secondary" data-tablero-presencia-total="personal"></span>
                     </div>
                     <div data-tablero-presencia="personal"></div>
-                    <div class="insp-tablero-texto-secundario mb-2"
-                         data-tablero-presencia-leyenda="personal"></div>
+                    <ul class="insp-leyenda-lista mb-2"
+                        data-tablero-presencia-leyenda="personal">
+                    </ul>
                     <div class="insp-tablero-texto">
                         Hay estudiantes <span class="text-body-secondary"
        data-tablero-presencia-total="estudiantes"></span>
                     </div>
                     <div data-tablero-presencia="estudiantes"></div>
-                    <div class="insp-tablero-texto-secundario"
-                         data-tablero-presencia-leyenda="estudiantes"></div>
+                    <ul class="insp-leyenda-lista"
+                        data-tablero-presencia-leyenda="estudiantes">
+                    </ul>
                     <div class="insp-tablero-texto-secundario mt-2"
                          data-tablero-presencia-denominador>–</div>
                     <div class="insp-tablero-texto-secundario mt-1">

@@ -227,6 +227,18 @@ def test_detalle_del_acta_con_el_encabezado_del_mockup(
     assert "card-custom" not in html
     assert '<h1 class="insp-titulo">' not in html
     assert "insp-tabs" not in html
+    for titulo in (
+        "Inspector a cargo",
+        "Institución",
+        "Geolocalización",
+        "Firma responsable",
+        "Avance de la inspección",
+    ):
+        assert f">{titulo}</h3>" in html
+    assert "Editar institución" in html
+    assert 'class="insp-linea-tiempo"' in html
+    assert '<span class="insp-hito-texto text-muted">Sin eventos.</span>' not in html
+    assert ">Ver ficha<" not in html
 
 
 def test_tablero_con_filtros_en_una_fila_y_contenedores_de_barras(panel):
@@ -237,6 +249,17 @@ def test_tablero_con_filtros_en_una_fila_y_contenedores_de_barras(panel):
     assert "data-tablero-turnos" in html
     assert 'data-tablero-presencia="personal"' in html
     assert "card-custom" not in html
+    assert 'data-kpi="con_firma"' not in html
+    assert 'class="insp-totales insp-totales-5"' in html
+    assert 'data-indice="ausentismo-fraccion"' in html
+    assert 'data-indice="aulas-fraccion"' in html
+    assert 'data-indice="ausentismo-descripcion"' in html
+    assert 'data-indice="aulas-descripcion"' in html
+    assert re.search(
+        r'class="insp-aviso insp-aviso-ambar d-none"\s+role="status"\s+data-indice="ausentismo-aviso-exceso"',
+        html,
+    )
+    assert '<ul class="insp-leyenda-lista" data-tablero-resultados-leyenda>' in html
 
 
 def test_tablero_no_usa_apexcharts():
@@ -279,3 +302,17 @@ def test_cabecera_blanca_dentro_de_la_grilla_y_con_el_rol(panel, gestor):
     )
     assert 'class="insp-cabecera-rol">Coordinación<' in html
     assert '<nav class="insp-migas" aria-label="Ubicación">' in html
+
+
+def test_tablero_mapa_acotado_a_argentina():
+    tablero = (
+        Path(__file__)
+        .resolve()
+        .parents[1]
+        .joinpath("inspecciones", "static", "inspecciones", "tablero")
+    )
+    js = tablero.joinpath("tablero.js").read_text(encoding="utf-8")
+    css = tablero.joinpath("tablero.css").read_text(encoding="utf-8")
+
+    assert "maxBounds" in js and "minZoom" in js
+    assert "min-height: 560px" in css

@@ -233,7 +233,7 @@
         <div>
             <section class="insp-seccion" aria-labelledby="h-visita">
                 <div class="insp-seccion-cabecera">
-                    <h3 id="h-visita">Visita</h3>
+                    <h3 id="h-visita">Inspector a cargo</h3>
                 </div>
                 <div class="insp-seccion-cuerpo">
                     <dl class="insp-dl">
@@ -268,10 +268,10 @@
             </section>
             <section class="insp-seccion" aria-labelledby="h-esc">
                 <div class="insp-seccion-cabecera">
-                    <h3 id="h-esc">Escuela</h3>
+                    <h3 id="h-esc">Institución</h3>
                     {% if escuela_catalogo %}
                         <a class="insp-seccion-nota"
-                           href="{% url 'inspecciones_panel' %}?editar={{ escuela_catalogo.pk }}">Ver ficha</a>
+                           href="{% url 'inspecciones_panel' %}?editar={{ escuela_catalogo.pk }}">Editar institución</a>
                     {% elif carga_manual %}
                         <span class="insp-badge insp-badge-alerta">Carga manual</span>
                     {% endif %}
@@ -323,7 +323,7 @@
             </section>
             <section class="insp-seccion" aria-labelledby="h-ubic">
                 <div class="insp-seccion-cabecera">
-                    <h3 id="h-ubic">Ubicación</h3>
+                    <h3 id="h-ubic">Geolocalización</h3>
                     <span class="insp-badge {% if ubicacion.es_gps %}insp-badge-ok{% else %}insp-badge-alerta{% endif %}">{{ ubicacion.fuente }}</span>
                 </div>
                 <div class="insp-seccion-cuerpo">
@@ -357,7 +357,7 @@
             </section>
             <section class="insp-seccion" aria-labelledby="h-rec">
                 <div class="insp-seccion-cabecera">
-                    <h3 id="h-rec">Recepción</h3>
+                    <h3 id="h-rec">Firma responsable</h3>
                 </div>
                 <div class="insp-seccion-cuerpo">
                     {% if recepcion.es_firma %}
@@ -412,22 +412,22 @@
             </section>
             <section class="insp-seccion" aria-labelledby="h-hist">
                 <div class="insp-seccion-cabecera">
-                    <h3 id="h-hist">Historial</h3>
+                    <h3 id="h-hist">Avance de la inspección</h3>
                 </div>
                 <div class="insp-seccion-cuerpo">
-                    {% for evento in historial %}
-                        <div class="insp-evento">
-                            <span class="insp-evento-hora">{{ evento.at|date:"d/m H:i" }}</span>
-                            <span class="insp-evento-punto" aria-hidden="true"></span>
-                            <span>
-                                {{ evento.accion }}
-                                {% if evento.actor %}· {{ evento.actor }}{% endif %}
-                                {% if evento.motivo %}<span class="insp-nota">Motivo: {{ evento.motivo }}</span>{% endif %}
-                            </span>
-                        </div>
-                    {% empty %}
-                        <p class="text-muted mb-0">Sin eventos.</p>
-                    {% endfor %}
+                    <ol class="insp-linea-tiempo">
+                        {% for evento in historial %}
+                            <li class="insp-hito insp-hito-{{ evento.codigo }}">
+                                <span class="insp-hito-punto" aria-hidden="true"></span>
+                                <span class="insp-hito-hora">{{ evento.at|date:"d/m H:i" }}</span>
+                                <span class="insp-hito-texto">{{ evento.accion }}{% if evento.actor %} · {{ evento.actor }}{% endif %}{% if evento.motivo %}<span class="insp-nota">Motivo: {{ evento.motivo }}</span>{% endif %}</span>
+                            </li>
+                        {% empty %}
+                            <li class="insp-hito">
+                                <span class="insp-hito-texto text-muted">Sin eventos.</span>
+                            </li>
+                        {% endfor %}
+                    </ol>
                 </div>
             </section>
         </div>

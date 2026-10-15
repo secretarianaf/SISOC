@@ -106,6 +106,21 @@
     color: var(--insp-azul);
 }
 
+.insp-tablero-indice-fila {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.insp-tablero-indice-numeros {
+    display: flex;
+    flex-direction: column;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--insp-azul);
+}
+
 .insp-tablero-aviso {
     font-size: 11.5px;
     color: #7a3a00;
@@ -162,13 +177,27 @@
     width: 0;
 }
 
-.insp-leyenda {
+.insp-leyenda-lista {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
     display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
+    flex-direction: column;
+    gap: 4px;
     font-size: 12px;
     color: #444;
-    margin-top: 8px;
+}
+
+.insp-leyenda-lista li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.insp-leyenda-lista .insp-leyenda-punto,
+.insp-leyenda-lista .insp-tablero-leyenda-punto {
+    flex: none;
+    margin-right: 0;
 }
 
 .insp-leyenda-punto {
@@ -178,10 +207,6 @@
     border-radius: 2px;
     margin-right: 5px;
     vertical-align: -1px;
-}
-
-.insp-tablero-texto-secundario .insp-leyenda-item {
-    margin-right: 10px;
 }
 
 /* Mapa */
@@ -194,7 +219,7 @@
 
 .insp-tablero-mapa {
     flex: 1 1 auto;
-    min-height: 380px;
+    min-height: 560px;
     border-radius: 0 0 6px 6px;
 }
 
@@ -211,6 +236,12 @@
     font-size: 12px;
     line-height: 1.7;
     max-width: 16rem;
+}
+
+.insp-tablero-leyenda.insp-leyenda-lista {
+    margin: 0;
+    padding: 8px 10px;
+    gap: 0;
 }
 
 .insp-tablero-leyenda .text-body-secondary {
@@ -296,7 +327,16 @@
 .insp-tablero-badge-alerta { background: #fff1dc; color: #7a3a00; }
 .insp-tablero-badge-nueva { background: var(--insp-azul); color: #fff; margin-left: 6px; }
 
+.insp-totales-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
 @media (max-width: 991.98px) {
+    .insp-totales-5 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .insp-tablero-grilla-mapa,
     .insp-tablero-grilla-3 {
         grid-template-columns: minmax(0, 1fr);

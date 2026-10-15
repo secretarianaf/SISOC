@@ -9,7 +9,7 @@
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
-    <div class="insp-panel">
+    <div class="insp-panel" data-bs-theme="light">
         <h1 class="mb-3">Inspecciones escolares</h1>
         <div class="row g-2 mb-3">
             <div class="col-6 col-lg-3">
@@ -44,7 +44,8 @@
          id="insp-modal-form"
          tabindex="-1"
          aria-labelledby="insp-modal-form-titulo"
-         aria-hidden="true">
+         aria-hidden="true"
+         data-bs-theme="light">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content" data-insp-modal-contenido>
                 <div class="modal-body text-center text-muted py-5">Cargando…</div>

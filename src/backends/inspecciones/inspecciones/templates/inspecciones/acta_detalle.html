@@ -85,7 +85,9 @@
             <div class="insp-kpi">
                 <div class="insp-kpi-titulo">Resultado de la constatación</div>
                 <div class="insp-kpi-valor fs-6">{{ resumen_acta.resultado }}</div>
-                {% if resumen_acta.motivo_parcial %}<span class="insp-nota">Motivo: {{ resumen_acta.motivo_parcial }}</span>{% endif %}
+                {% if resumen_acta.motivo_parcial %}
+                    <span class="insp-nota">Motivo: {{ resumen_acta.motivo_parcial }}</span>
+                {% endif %}
             </div>
         </div>
         <div class="col-6 col-lg-3">

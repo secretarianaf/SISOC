@@ -20,7 +20,7 @@ Reglas que sigue todo el módulo:
 
 La respuesta se cachea ``CACHE_SEGUNDOS`` por combinación de filtros. El
 cache del proyecto es en memoria por proceso (``LocMemCache``), así que cada
-worker de gunicorn recalcula a lo sumo una vez cada 5 segundos.
+worker de gunicorn recalcula a lo sumo una vez cada 2 segundos.
 """
 
 import csv
@@ -41,7 +41,7 @@ from inspecciones.services.formato import fecha_desde_texto, hoy, iso
 from inspecciones.services.formularios import VERSION_ACTUAL, obtener_formulario
 from users.services_inspecciones import ROL_INSPECTOR
 
-CACHE_SEGUNDOS = 5
+CACHE_SEGUNDOS = 2
 CACHE_PREFIJO = "inspecciones:tablero:v1"
 MAX_ULTIMAS = 20
 

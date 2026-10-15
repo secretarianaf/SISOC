@@ -18,8 +18,8 @@ from tests.test_inspecciones_panel import _acta_cerrada
 pytestmark = pytest.mark.django_db
 
 
-def test_sisoc_sigue_en_oscuro_fuera_de_inspecciones(panel):
-    respuesta = panel.get(reverse("inicio"))
+def test_sisoc_sigue_en_oscuro_fuera_del_layout_claro(panel):
+    respuesta = panel.get(reverse("changelog"))
 
     assert respuesta.status_code == 200
     html = respuesta.content.decode()
@@ -30,6 +30,33 @@ def test_sisoc_sigue_en_oscuro_fuera_de_inspecciones(panel):
     assert "sidebar-brand" not in html
     assert "insp-cabecera" not in html
     assert re.search(r'<aside class="app-sidebar shadow"\s*>', html)
+    # La barra lateral ya no muestra el panel de usuario (va como en Inspecciones).
+    assert 'class="nav-item user-info' not in html
+    assert "user-panel" not in html
+
+
+def test_inicio_usa_el_marco_claro(panel):
+    html = panel.get(reverse("inicio")).content.decode()
+
+    assert 'data-bs-theme="light"' in html
+    assert "bg-body-tertiary insp-cuerpo" in html
+    assert '<header class="app-header insp-cabecera">' in html
+    assert '<strong aria-current="page">Inicio</strong>' in html
+    assert "sidebar-brand" in html
+    assert 'class="main-header"' not in html
+    assert "sisoc-volver" not in html
+    assert "inicio-presentacion" in html
+
+
+def test_el_helper_de_layout_claro_vive_en_el_kernel():
+    from core.services.layout_claro import (
+        contexto_layout_claro,
+        iniciales as iniciales_core,
+    )
+    from inspecciones.services.formato import iniciales
+
+    assert iniciales is iniciales_core
+    assert contexto_layout_claro.__module__ == "core.services.layout_claro"
 
 
 def test_iniciales_para_el_avatar():
@@ -79,18 +106,23 @@ def test_totales_generales_solo_en_la_pestana_escuelas(panel):
 
 
 def test_panel_css_no_conserva_el_parche_de_seccion_clara():
+    raiz = Path(__file__).resolve().parents[2]
     css = (
-        Path(__file__)
-        .resolve()
-        .parents[1]
-        .joinpath("inspecciones", "static", "inspecciones", "css", "panel.css")
+        raiz.joinpath("inspecciones", "inspecciones", "static", "inspecciones", "css")
+        .joinpath("panel.css")
         .read_text(encoding="utf-8")
     )
+    css_layout = raiz.joinpath(
+        "kernel", "static", "custom", "css", "layout_claro.css"
+    ).read_text(encoding="utf-8")
 
     assert 'body.dark-mode [data-bs-theme="light"]' not in css
+    assert 'body.dark-mode [data-bs-theme="light"]' not in css_layout
     assert ".insp-cuerpo" in css
-    assert ".insp-cabecera" in css
     assert ".insp-seccion-barra" in css
+    # La cabecera blanca pasó al layout claro compartido del kernel.
+    assert ".insp-cabecera" in css_layout
+    assert ".insp-cabecera" not in css
 
 
 XHR = {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}

@@ -220,6 +220,20 @@ def test_listado_filtra_y_pagina(panel, geografia):
     assert invalido.status_code == 200
 
 
+@pytest.mark.parametrize("texto", ["060556200", "60556200", "0556200", "556"])
+def test_busqueda_por_cueanexo_sin_el_cero_inicial_ni_el_principio(
+    panel, geografia, texto
+):
+    Escuela.objects.create(codigo="060556200", cue="060556200", nombre="EP 19")
+    Escuela.objects.create(codigo="060890200", cue="060890200", nombre="CA 736")
+
+    busqueda = panel.get(reverse("inspecciones_panel"), {"q": texto})
+    select = panel.get(reverse("inspecciones_ajax_escuelas"), {"q": texto}).json()
+
+    assert [e.nombre for e in busqueda.context["escuelas"]] == ["EP 19"]
+    assert [o["text"] for o in select["results"]] == ["EP 19"]
+
+
 # --- Búsquedas AJAX -----------------------------------------------------
 
 

@@ -16,13 +16,17 @@ MAX_RESULTADOS = 20
 
 
 def filtro_de_texto(texto):
-    """Nombre, Cueanexo o domicilio (el Cueanexo por prefijo)."""
+    """Nombre, Cueanexo o domicilio, por texto contenido.
+
+    El Cueanexo también por contenido y no por prefijo: lleva el 0 inicial y
+    quien busca suele escribirlo sin él (``60556200`` encuentra ``060556200``).
+    """
     texto = (texto or "").strip()
     if not texto:
         return Q()
     filtro = Q(nombre__icontains=texto) | Q(domicilio__icontains=texto)
     if texto.isdigit():
-        filtro |= Q(cue__startswith=texto) | Q(codigo__startswith=texto)
+        filtro |= Q(cue__contains=texto) | Q(codigo__contains=texto)
     return filtro
 
 

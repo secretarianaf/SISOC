@@ -202,3 +202,13 @@ def test_tablero_no_usa_apexcharts():
 
     assert "ApexCharts" not in js
     assert "data-tablero-turnos" in js
+
+
+def test_base_js_respeta_el_tema_claro_que_renderiza_el_servidor():
+    """base.js fuerza el oscuro en todo SISOC; una página renderizada en claro
+    (Inspecciones) tiene que conservarlo, si no inputs, tablas y modales salen oscuros."""
+    js = Path(__file__).resolve().parents[2].joinpath(
+        "kernel", "static", "custom", "js", "base.js"
+    ).read_text(encoding="utf-8")
+
+    assert 'getAttribute("data-bs-theme") !== "light"' in js

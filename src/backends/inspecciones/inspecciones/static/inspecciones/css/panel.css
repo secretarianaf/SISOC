@@ -380,8 +380,8 @@
 
 .insp-filtros .form-control,
 .insp-filtros .form-select {
-    width: auto;
-    min-width: 11rem;
+    width: 11rem !important;
+    min-width: 0;
     border-color: var(--insp-borde-control);
     padding: 0 10px;
 }
@@ -390,9 +390,13 @@
     padding-right: 2rem;
 }
 
+.insp-filtros input[type="date"].form-control {
+    width: 10rem !important;
+}
+
 .insp-filtros .select2-container {
-    min-width: 12rem;
-    width: auto !important;
+    width: 12rem !important;
+    min-width: 0;
 }
 
 .insp-filtros .select2-container .select2-selection--single .select2-selection__rendered {
@@ -419,7 +423,7 @@
 }
 
 .insp-busqueda .form-control {
-    width: 260px;
+    width: 260px !important;
     padding-left: 32px;
 }
 
@@ -430,7 +434,7 @@
 }
 
 .insp-jornada .form-control {
-    width: 160px;
+    width: 10rem !important;
     min-width: 0;
     text-align: center;
     font-weight: 500;
@@ -1171,6 +1175,8 @@ button.insp-dialogo-cerrar {
     .insp-filtros .form-control,
     .insp-filtros .form-select,
     .insp-filtros .select2-container,
+    .insp-filtros input[type="date"].form-control,
+    .insp-jornada .form-control,
     .insp-busqueda,
     .insp-busqueda .form-control {
         width: 100% !important;

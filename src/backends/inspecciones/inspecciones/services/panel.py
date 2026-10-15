@@ -1,10 +1,13 @@
-"""Totales del panel del backoffice (el dashboard de coordinación es otra etapa)."""
+"""Totales del panel del backoffice (el dashboard de coordinación es otra etapa).
+
+Las actas anuladas y las de prueba no cuentan en los indicadores.
+"""
 
 from datetime import datetime, time, timedelta
 
 from django.utils import timezone
 
-from inspecciones.models import Acta, AsignacionEscuela, Escuela, Inspeccion
+from inspecciones.models import Acta, AsignacionEscuela, Escuela
 from inspecciones.services.formato import hoy
 
 
@@ -21,13 +24,12 @@ def resumen_panel():
     return {
         "jornada": jornada,
         "escuelas": Escuela.objects.count(),
+        "escuelas_a_revisar": Escuela.objects.filter(a_revisar=True).count(),
         "asignaciones_hoy": AsignacionEscuela.objects.filter(fecha=jornada).count(),
-        "borradores": Inspeccion.objects.filter(
-            estado=Inspeccion.Estado.BORRADOR, revision__gt=0
-        ).count(),
         "actas_hoy": Acta.objects.filter(
             cerrada_at__gte=inicio,
             cerrada_at__lt=fin,
             estado=Acta.Estado.FINALIZADA,
+            es_prueba=False,
         ).count(),
     }

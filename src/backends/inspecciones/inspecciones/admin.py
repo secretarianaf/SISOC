@@ -39,9 +39,12 @@ class EscuelaResource(resources.ModelResource):
 @admin.register(Escuela)
 class EscuelaAdmin(BaseImportExportAdmin):
     resource_classes = [EscuelaResource]
-    list_display = ("nombre", "cue", "codigo", "distrito", "localidad", "nivel")
-    list_filter = ("distrito", "nivel")
+    list_display = ("nombre", "cue", "provincia", "localidad", "distrito", "a_revisar")
+    list_filter = ("a_revisar", "provincia", "nivel")
     search_fields = ("nombre", "cue", "codigo", "domicilio", "localidad")
+    list_select_related = ("provincia",)
+    # Hay ~15.000 localidades: sin raw_id el formulario arma un select enorme.
+    raw_id_fields = ("localidad_vinculada",)
 
 
 @admin.register(AsignacionEscuela)

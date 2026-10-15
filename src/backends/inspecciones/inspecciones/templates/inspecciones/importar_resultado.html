@@ -1,0 +1,19 @@
+{% extends "inspecciones/base_panel.html" %}
+{% block panel %}
+    <section class="card card-custom shadow-sm">
+        <div class="card-header card-header-custom">
+            <h2 class="h5 mb-0">{{ config.titulo }}</h2>
+        </div>
+        <div class="card-body">
+            {% include "inspecciones/partials/pasos_importacion.html" with paso=3 %}
+            <div class="alert alert-success" role="status">
+                <strong>Importación terminada.</strong>
+                Se guardaron {{ resumen.a_importar }} de {{ resumen.total }} filas de {{ nombre_archivo }}.
+            </div>
+            {% include "inspecciones/partials/resumen_importacion.html" %}
+        </div>
+        <div class="card-footer d-flex justify-content-end">
+            <a class="btn btn-primary" href="{% url config.volver %}">Volver al listado</a>
+        </div>
+    </section>
+{% endblock %}

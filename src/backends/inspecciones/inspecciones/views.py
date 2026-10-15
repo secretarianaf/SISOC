@@ -1,15 +1,19 @@
-"""Backoffice mínimo de Inspecciones escolares: importar escuelas y asignaciones."""
+"""Panel de Inspecciones escolares en el backoffice: base común de las vistas.
+
+Todas las vistas del panel (pantallas, AJAX, imágenes y PDF) exigen sesión y
+``puede_gestionar`` (coordinación, permiso ``gestionar_inspecciones`` o
+superusuario); sin permiso responden 403. Las vistas no tienen lógica:
+delegan en ``inspecciones.services``.
+
+- Escuelas: ``views_escuelas``; importaciones: ``views_importacion``.
+- Asignaciones: ``views_asignaciones``; actas: ``views_actas``.
+- Búsquedas de Select2: ``views_ajax``.
+"""
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.core.exceptions import ValidationError
-from django.views.generic.edit import FormView
+from django.urls import reverse
 
 from inspecciones.access import puede_gestionar
-from inspecciones.forms import ImportarCSVForm
-from inspecciones.services.importacion import (
-    importar_asignaciones,
-    importar_escuelas,
-)
 from inspecciones.services.panel import resumen_panel
 
 
@@ -18,61 +22,25 @@ class GestionInspeccionesMixin(LoginRequiredMixin, UserPassesTestMixin):
         return puede_gestionar(self.request.user)
 
 
-class PanelInspeccionesView(GestionInspeccionesMixin, FormView):
-    """Panel con los dos importadores. Cada subclase procesa uno."""
+def es_parcial(request):
+    """Pedido del modal (fetch): responde sólo el fragmento del formulario."""
+    return request.headers.get("x-requested-with") == "XMLHttpRequest"
 
-    template_name = "inspecciones/panel.html"
-    form_class = ImportarCSVForm
-    importador = None
-    titulo_resultado = ""
+
+class PanelMixin(GestionInspeccionesMixin):
+    """Contexto común: totales arriba, pestañas y miga de pan."""
+
+    pestana = "escuelas"
+    titulo = ""
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["resumen"] = resumen_panel()
-        context.setdefault("form_escuelas", ImportarCSVForm(prefix="escuelas"))
-        context.setdefault("form_asignaciones", ImportarCSVForm(prefix="asignaciones"))
-        context["breadcrumb_items"] = [{"text": "Inspecciones escolares"}]
+        # Pestaña activa de ``inspecciones/_pestanas.html``.
+        context["pestana"] = self.pestana
+        items = [{"text": "Inspecciones escolares"}]
+        if self.titulo:
+            items[0]["url"] = reverse("inspecciones_panel")
+            items.append({"text": self.titulo})
+        context["breadcrumb_items"] = items
         return context
-
-    def post(self, request, *args, **kwargs):
-        return self.http_method_not_allowed(request, *args, **kwargs)
-
-
-class _ImportarView(PanelInspeccionesView):
-    prefijo = ""
-
-    def get_form_kwargs(self):
-        return {**super().get_form_kwargs(), "prefix": self.prefijo}
-
-    def post(self, request, *args, **kwargs):
-        form = self.get_form()
-        contexto = {f"form_{self.prefijo}": form}
-        if form.is_valid():
-            try:
-                resultado = self.importar(form.cleaned_data["archivo"])
-            except ValidationError as exc:
-                form.add_error("archivo", exc)
-            else:
-                contexto["resultado"] = resultado
-                contexto["titulo_resultado"] = self.titulo_resultado
-                contexto[f"form_{self.prefijo}"] = ImportarCSVForm(prefix=self.prefijo)
-        return self.render_to_response(self.get_context_data(**contexto))
-
-    def importar(self, archivo):
-        raise NotImplementedError
-
-
-class ImportarEscuelasView(_ImportarView):
-    prefijo = "escuelas"
-    titulo_resultado = "Importación de escuelas"
-
-    def importar(self, archivo):
-        return importar_escuelas(archivo)
-
-
-class ImportarAsignacionesView(_ImportarView):
-    prefijo = "asignaciones"
-    titulo_resultado = "Importación de asignaciones"
-
-    def importar(self, archivo):
-        return importar_asignaciones(archivo, actor=self.request.user)

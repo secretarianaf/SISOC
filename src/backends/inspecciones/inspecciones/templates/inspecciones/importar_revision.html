@@ -1,0 +1,47 @@
+{% extends "inspecciones/base_panel.html" %}
+{% block panel %}
+    <section class="card card-custom shadow-sm">
+        <div class="card-header card-header-custom">
+            <h2 class="h5 mb-0">{{ config.titulo }}</h2>
+        </div>
+        <div class="card-body">
+            {% include "inspecciones/partials/pasos_importacion.html" with paso=2 %}
+            <p class="mb-3">
+                <i class="fas fa-file-alt me-1" aria-hidden="true"></i>
+                <strong>{{ nombre_archivo }}</strong> · {{ resumen.total }} filas
+                (encabezado en la fila {{ resumen.fila_encabezado }})
+            </p>
+            {% include "inspecciones/partials/resumen_importacion.html" %}
+        </div>
+        <div class="card-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                {% if total_observaciones %}
+                    <a href="{% url url_observaciones token %}">
+                        <i class="fas fa-download me-1" aria-hidden="true"></i>Descargar las {{ total_observaciones }} observaciones (CSV)
+                    </a>
+                {% endif %}
+            </div>
+            <div class="d-flex gap-2">
+                <form method="post" action="{% url url_cancelar token %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-link text-secondary">Cancelar</button>
+                </form>
+                <form method="post"
+                      action="{% url url_confirmar token %}"
+                      data-insp-procesando="Guardando… puede tardar unos segundos.">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="btn btn-primary"
+                            {% if not resumen.a_importar %}disabled{% endif %}>
+                        Importar {{ resumen.a_importar }}
+                        {% if tipo == "escuelas" %}
+                            escuelas
+                        {% else %}
+                            asignaciones
+                        {% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+{% endblock %}

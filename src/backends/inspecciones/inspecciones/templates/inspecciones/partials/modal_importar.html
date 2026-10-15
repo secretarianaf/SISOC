@@ -1,0 +1,39 @@
+<div class="modal fade"
+     id="insp-modal-importar"
+     tabindex="-1"
+     aria-labelledby="insp-modal-importar-titulo"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form class="modal-content"
+              method="post"
+              enctype="multipart/form-data"
+              action="{% url url_subir %}"
+              data-insp-procesando="Leyendo el archivo… puede tardar unos segundos.">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="insp-modal-importar-titulo">{{ titulo }}</h2>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                {% include "inspecciones/partials/pasos_importacion.html" with paso=1 %}
+                {% include ayuda %}
+                <label class="form-label" for="id_archivo_{{ tipo }}">Archivo Excel (.xlsx) o CSV</label>
+                <input id="id_archivo_{{ tipo }}"
+                       class="form-control"
+                       type="file"
+                       name="archivo"
+                       accept=".xlsx,.csv"
+                       required />
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-link text-secondary"
+                        data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Revisar el archivo</button>
+            </div>
+        </form>
+    </div>
+</div>

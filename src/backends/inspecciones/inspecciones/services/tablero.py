@@ -768,8 +768,10 @@ def filas_csv(filtros):
 
 
 def escribir_csv(destino, filtros):
-    """CSV con ``;`` y BOM (lo abre bien Excel en español)."""
-    destino.write("﻿")
+    """CSV con ``;`` (lo abre bien Excel en español).
+
+    El BOM UTF-8 lo antepone la respuesta HTTP (``core.services.csv_export``).
+    """
     escritor = csv.writer(destino, delimiter=";")
     for fila in filas_csv(filtros):
         escritor.writerow(fila)

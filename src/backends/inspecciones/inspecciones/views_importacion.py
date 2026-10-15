@@ -6,17 +6,16 @@ privado con un token entre la revisión y la confirmación
 """
 
 import csv
-import io
 import logging
 import time
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.views import View
 from django.views.generic import TemplateView
 
+from core.services.csv_export import build_csv_response
 from inspecciones.forms import ImportarArchivoForm
 from inspecciones.services.importacion import (
     analizar_asignaciones,
@@ -218,8 +217,9 @@ class ObservacionesCSVView(_ImportacionMixin, View):
             subida = self._subida()
         except SubidaInexistente:
             return self._vencida()
-        salida = io.StringIO()
-        escritor = csv.writer(salida, delimiter=";")
+        respuesta = build_csv_response(f"observaciones-{self.tipo}.csv")
+        respuesta["Cache-Control"] = "private, no-store"
+        escritor = csv.writer(respuesta, delimiter=";")
         escritor.writerow(["Fila", "Cueanexo", "Nombre", "Tipo", "Motivo", "Detalle"])
         for obs in subida["analisis"]["observaciones"]:
             escritor.writerow(
@@ -232,11 +232,4 @@ class ObservacionesCSVView(_ImportacionMixin, View):
                     obs["detalle"],
                 ]
             )
-        respuesta = HttpResponse(
-            "﻿" + salida.getvalue(), content_type="text/csv; charset=utf-8"
-        )
-        respuesta["Content-Disposition"] = (
-            f'attachment; filename="observaciones-{self.tipo}.csv"'
-        )
-        respuesta["Cache-Control"] = "private, no-store"
         return respuesta

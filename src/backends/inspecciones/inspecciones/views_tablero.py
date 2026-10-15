@@ -6,11 +6,12 @@ consultando ``inspecciones_tablero_datos`` cada 10 segundos (sin WebSockets:
 el stack corre con gunicorn síncrono y sin Redis).
 """
 
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.urls import reverse
 from django.views import View
 from django.views.generic import TemplateView
 
+from core.services.csv_export import build_csv_response
 from inspecciones.services.tablero import (
     datos_tablero,
     escribir_csv,
@@ -52,10 +53,7 @@ class TableroExportarView(GestionInspeccionesMixin, View):
 
     def get(self, request):
         filtros = leer_filtros(request.GET)
-        response = HttpResponse(content_type="text/csv; charset=utf-8")
-        response["Content-Disposition"] = (
-            f'attachment; filename="{nombre_archivo_csv(filtros)}"'
-        )
+        response = build_csv_response(nombre_archivo_csv(filtros))
         response["Cache-Control"] = "no-store"
         escribir_csv(response, filtros)
         return response

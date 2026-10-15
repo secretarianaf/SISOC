@@ -1,3 +1,12 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-10-16 -->
+# Versión SISOC 16.10.2026
+
+## Nuevas Funcionalidades
+
+- [src/backends/inspecciones.] panel de Inspecciones escolares con escuelas, asignaciones, actas (anulación y prueba) y tablero en vivo con mapa. (PR #2698)
+- [src/backends/inspecciones.] el panel y el tablero de Inspecciones escolares se ven como el mockup aprobado (tema claro, cabecera blanca, barra lateral con logo) sin cambiar el resto del backoffice. (PR #2705)
+<!-- AUTO-GENERATED RELEASE END: 2026-10-16 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-10-15 -->
 # Versión SISOC 15.10.2026
 
@@ -7,13 +16,6 @@
 - [src/backends/inspecciones.] editar una escuela del panel de Inspecciones trae sus datos y acepta varios mails. (PR #2703)
 <!-- AUTO-GENERATED RELEASE END: 2026-10-15 -->
 
-<!-- AUTO-GENERATED RELEASE START: 2026-10-16 -->
-# Versión SISOC 16.10.2026
-
-## Nuevas Funcionalidades
-
-- [src/backends/inspecciones.] panel de Inspecciones escolares con escuelas, asignaciones, actas (anulación y prueba) y tablero en vivo con mapa. (PR #2698)
-<!-- AUTO-GENERATED RELEASE END: 2026-10-16 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-10-14 -->
 # Versión SISOC 14.10.2026

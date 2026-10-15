@@ -7,7 +7,6 @@ el stack corre con gunicorn síncrono y sin Redis).
 """
 
 from django.http import JsonResponse
-from django.urls import reverse
 from django.views import View
 from django.views.generic import TemplateView
 
@@ -19,23 +18,20 @@ from inspecciones.services.tablero import (
     nombre_archivo_csv,
     opciones_filtros,
 )
-from inspecciones.views import GestionInspeccionesMixin
+from inspecciones.views import GestionInspeccionesMixin, LayoutInspeccionesMixin
 
 INTERVALO_MS = 5_000
 
 
-class TableroView(GestionInspeccionesMixin, TemplateView):
+class TableroView(LayoutInspeccionesMixin, GestionInspeccionesMixin, TemplateView):
     template_name = "inspecciones/tablero.html"
+    titulo = "Tablero"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["filtros"] = leer_filtros(self.request.GET)
         context["opciones"] = opciones_filtros()
         context["intervalo_ms"] = INTERVALO_MS
-        context["breadcrumb_items"] = [
-            {"text": "Inspecciones escolares", "url": reverse("inspecciones_panel")},
-            {"text": "Tablero"},
-        ]
         return context
 
 

@@ -54,3 +54,10 @@ def nombre_actor(user):
     if user is None:
         return ""
     return (user.get_full_name() or user.get_username() or "").strip()
+
+
+def iniciales(nombre):
+    """Hasta dos iniciales en mayúscula para el avatar; "?" si no hay nombre."""
+    partes = [parte for parte in (nombre or "").split() if parte]
+    letras = "".join(parte[0] for parte in partes[:2]).upper()
+    return letras or "?"

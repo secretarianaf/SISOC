@@ -74,14 +74,12 @@
             </div>
             {% for error in form.escuela.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
         </div>
-        <div class="alert alert-warning d-none"
+        <div class="insp-aviso insp-aviso-ambar d-none"
              role="status"
              data-insp-aviso-duplicada></div>
     </div>
     <div class="modal-footer">
-        <button type="button"
-                class="btn btn-link text-secondary"
-                data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancelar</button>
         <button type="submit" name="otra" value="1" class="btn btn-outline-primary">Asignar y cargar otra</button>
         <button type="submit" class="btn btn-primary">Asignar</button>
     </div>

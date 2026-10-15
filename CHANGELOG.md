@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-10-21 -->
+# Versión SISOC 21.10.2026
+
+## Nuevas Funcionalidades
+
+- [CDI] Botón Consultas en la barra superior de CDI para abrir la ticketera en otra pestaña. (PR #2726)
+<!-- AUTO-GENERATED RELEASE END: 2026-10-21 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-10-15 -->
 # Versión SISOC 15.10.2026
 

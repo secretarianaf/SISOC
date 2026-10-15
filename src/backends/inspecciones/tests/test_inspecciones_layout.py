@@ -193,3 +193,12 @@ def test_tablero_con_filtros_en_una_fila_y_contenedores_de_barras(panel):
     assert "data-tablero-turnos" in html
     assert 'data-tablero-presencia="personal"' in html
     assert "card-custom" not in html
+
+
+def test_tablero_no_usa_apexcharts():
+    js = Path(__file__).resolve().parents[1].joinpath(
+        "inspecciones", "static", "inspecciones", "tablero", "tablero.js"
+    ).read_text(encoding="utf-8")
+
+    assert "ApexCharts" not in js
+    assert "data-tablero-turnos" in js

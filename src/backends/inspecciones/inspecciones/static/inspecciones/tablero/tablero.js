@@ -115,10 +115,6 @@
         return parametros.toString();
     }
 
-    function colorTexto() {
-        return getComputedStyle(raiz).color || "#333";
-    }
-
     // --- Estado de la conexión ----------------------------------------------
 
     function actualizarHace() {
@@ -331,119 +327,91 @@
         fijarTexto('[data-indice="' + prefijo + '-excluidas"]', numero(indice.excluidas));
     }
 
-    // --- Gráficos (ApexCharts, ya cargado por el backoffice) ----------------
+    // --- Barras en el DOM (sin librería; anchos por CSSOM, la CSP lo permite) -
 
-    var graficos = {};
-
-    function opcionesBase(alto) {
-        return {
-            chart: {
-                type: "bar",
-                height: alto,
-                toolbar: { show: false },
-                animations: { enabled: false },
-                background: "transparent",
-                foreColor: colorTexto(),
-                fontFamily: "Roboto, sans-serif"
-            },
-            plotOptions: { bar: { horizontal: true, borderRadius: 3 } },
-            grid: { padding: { left: 4, right: 8 } },
-            legend: { position: "bottom", fontSize: "12px" },
-            noData: { text: "Sin actas con estos filtros" }
-        };
-    }
-
-    function grafico(clave, opciones) {
-        var contenedor = raiz.querySelector('[data-tablero-grafico="' + clave + '"]');
-        if (!contenedor) {
-            return;
-        }
-        if (typeof window.ApexCharts === "undefined") {
-            contenedor.textContent = "No se pudo cargar la librería de gráficos.";
-            contenedor.className = "small text-body-secondary";
-            return;
-        }
-        if (graficos[clave]) {
-            graficos[clave].updateOptions(opciones, false, false);
-            return;
-        }
-        graficos[clave] = new window.ApexCharts(contenedor, opciones);
-        graficos[clave].render();
-    }
-
-    function mostrarCantidad(valor, opciones) {
-        var serie = opciones.w.config.series[opciones.seriesIndex];
-        var cantidad = serie.data[opciones.dataPointIndex];
-        return cantidad ? numero(cantidad) : "";
+    function fijarAncho(nodo, porcentaje) {
+        nodo.style.width = Math.max(0, Math.min(100, porcentaje)) + "%";
     }
 
     function pintarTurnos(turnos) {
-        var opciones = opcionesBase(170);
-        opciones.series = [{
-            name: "Visitas",
-            data: turnos.map(function (t) {
-                return t.cantidad;
-            })
-        }];
-        opciones.xaxis = {
-            categories: turnos.map(function (t) {
-                return t.etiqueta;
-            }),
-            labels: { formatter: function (v) { return numero(Math.round(v)); } }
-        };
-        opciones.colors = [COLORES.teal];
-        opciones.dataLabels = { enabled: true, formatter: function (v) { return numero(v); } };
-        opciones.tooltip = { y: { formatter: function (v) { return numero(v) + " actas"; } } };
-        opciones.legend = { show: false };
-        grafico("turnos", opciones);
+        var contenedor = raiz.querySelector("[data-tablero-turnos]");
+        if (!contenedor) {
+            return;
+        }
+        var maximo = turnos.reduce(function (m, t) {
+            return Math.max(m, t.cantidad || 0);
+        }, 0);
+        var filas = document.createDocumentFragment();
+        turnos.forEach(function (turno) {
+            var fila = elemento("div", "insp-barra");
+            fila.appendChild(elemento("span", "insp-barra-etiqueta", turno.etiqueta));
+            var pista = elemento("div", "insp-barra-pista");
+            var relleno = elemento("div", "insp-barra-relleno");
+            fijarAncho(relleno, maximo ? (turno.cantidad / maximo) * 100 : 0);
+            pista.appendChild(relleno);
+            fila.appendChild(pista);
+            fila.appendChild(elemento("span", "insp-barra-valor", numero(turno.cantidad)));
+            filas.appendChild(fila);
+        });
+        contenedor.replaceChildren(filas);
     }
 
-    function opcionesApiladas(categorias, series, colores, alto) {
-        var opciones = opcionesBase(alto);
-        opciones.chart.stacked = true;
-        opciones.chart.stackType = "100%";
-        opciones.series = series;
-        opciones.colors = colores;
-        opciones.xaxis = { categories: categorias, labels: { formatter: function (v) { return v + " %"; } } };
-        opciones.dataLabels = { enabled: true, formatter: mostrarCantidad };
-        opciones.tooltip = {
-            y: {
-                formatter: function (valor, contexto) {
-                    var serie = contexto.w.config.series[contexto.seriesIndex];
-                    return numero(serie.data[contexto.dataPointIndex] || 0) + " actas";
-                }
-            }
-        };
-        return opciones;
+    function pintarSegmentos(contenedor, leyenda, categorias, colores) {
+        if (!contenedor) {
+            return;
+        }
+        var total = categorias.reduce(function (s, c) {
+            return s + (c.cantidad || 0);
+        }, 0);
+        var barra = elemento("div", "insp-segmentos");
+        barra.setAttribute("role", "img");
+        barra.setAttribute(
+            "aria-label",
+            categorias.map(function (c) { return numero(c.cantidad) + " " + c.etiqueta; }).join(", ")
+        );
+        categorias.forEach(function (categoria) {
+            var tramo = elemento("span", "insp-segmento");
+            tramo.style.backgroundColor = colores[categoria.valor] || COLORES.gris;
+            fijarAncho(tramo, total ? (categoria.cantidad / total) * 100 : 0);
+            barra.appendChild(tramo);
+        });
+        contenedor.replaceChildren(barra);
+        if (!leyenda) {
+            return;
+        }
+        var items = document.createDocumentFragment();
+        categorias.forEach(function (categoria) {
+            var item = elemento("span", "insp-leyenda-item");
+            var punto = elemento("i", "insp-leyenda-punto");
+            punto.setAttribute("aria-hidden", "true");
+            punto.style.backgroundColor = colores[categoria.valor] || COLORES.gris;
+            item.appendChild(punto);
+            item.appendChild(document.createTextNode(categoria.etiqueta + " · " + numero(categoria.cantidad)));
+            items.appendChild(item);
+        });
+        leyenda.replaceChildren(items);
     }
 
     function pintarResultados(resultados) {
-        var series = resultados.map(function (r) {
-            return { name: r.etiqueta + " · " + numero(r.cantidad), data: [r.cantidad] };
-        });
-        var colores = resultados.map(function (r) {
-            return COLOR_RESULTADO[r.valor] || COLORES.gris;
-        });
-        var opciones = opcionesApiladas(["Actas"], series, colores, 150);
-        opciones.yaxis = { labels: { show: false } };
-        grafico("resultados", opciones);
+        pintarSegmentos(
+            raiz.querySelector("[data-tablero-resultados]"),
+            raiz.querySelector("[data-tablero-resultados-leyenda]"),
+            resultados,
+            COLOR_RESULTADO
+        );
     }
 
     function pintarPresencia(presencia) {
-        var categorias = presencia.personal.categorias;
-        var series = categorias.map(function (categoria, indice) {
-            return {
-                name: categoria.etiqueta,
-                data: [categoria.cantidad, presencia.estudiantes.categorias[indice].cantidad]
-            };
+        ["personal", "estudiantes"].forEach(function (clave) {
+            var serie = presencia[clave];
+            pintarSegmentos(
+                raiz.querySelector('[data-tablero-presencia="' + clave + '"]'),
+                raiz.querySelector('[data-tablero-presencia-leyenda="' + clave + '"]'),
+                serie.categorias,
+                COLOR_PRESENCIA
+            );
+            fijarTexto('[data-tablero-presencia-total="' + clave + '"]', "(" + numero(serie.denominador) + ")");
         });
-        var colores = categorias.map(function (c) {
-            return COLOR_PRESENCIA[c.valor] || COLORES.gris;
-        });
-        grafico(
-            "presencia",
-            opcionesApiladas(["Hay personal educativo", "Hay estudiantes"], series, colores, 190)
-        );
         var personal = presencia.personal;
         var estudiantes = presencia.estudiantes;
         raiz.querySelector("[data-tablero-presencia-denominador]").textContent =

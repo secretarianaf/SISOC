@@ -180,6 +180,10 @@
     vertical-align: -1px;
 }
 
+.insp-tablero-texto-secundario .insp-leyenda-item {
+    margin-right: 10px;
+}
+
 /* Mapa */
 .insp-tablero-mapa-contenedor {
     position: relative;

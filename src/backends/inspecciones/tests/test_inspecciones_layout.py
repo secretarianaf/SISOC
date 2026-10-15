@@ -80,3 +80,39 @@ def test_panel_css_no_conserva_el_parche_de_seccion_clara():
     assert ".insp-cuerpo" in css
     assert ".insp-cabecera" in css
     assert ".insp-seccion-barra" in css
+
+
+XHR = {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}
+
+
+def _crear_escuelas(panel, geografia, cantidad):
+    for i in range(cantidad):
+        respuesta = panel.post(
+            reverse("inspecciones_escuela_nueva"),
+            {
+                "provincia": geografia["bsas"].pk,
+                "localidad": geografia["san_justo"].pk,
+                "cueanexo": f"06012{i:04d}",
+                "nombre": f"EP N° {i} Paginada",
+                "domicilio": "Av. Perón 3245",
+                "cp": "B1754",
+                "telefono": "",
+                "mail": "",
+            },
+            **XHR,
+        )
+        assert respuesta.status_code == 200, respuesta.content
+
+
+def test_listado_de_escuelas_con_el_pie_y_la_paginacion_del_mockup(panel, geografia):
+    _crear_escuelas(panel, geografia, 26)
+
+    html = panel.get(reverse("inspecciones_panel"), {"q": "Paginada"}).content.decode()
+
+    assert "Mostrando 1–25 de 26" in html
+    assert 'class="insp-paginacion"' in html
+    assert 'href="?q=Paginada&amp;page=2"' in html
+    assert '<span class="insp-pagina activa" aria-current="page">1</span>' in html
+    assert "Se encontraron" not in html
+    assert 'class="insp-seccion-barra"' in html
+    assert "card-custom" not in html

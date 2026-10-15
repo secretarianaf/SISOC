@@ -1,0 +1,30 @@
+{% extends "includes/base.html" %}
+{% load static %}
+{% comment %}
+Layout de Inspecciones escolares, igual al mockup aprobado: tema claro, cabecera
+blanca con breadcrumb y usuario, barra lateral azul con el logo y contenido sobre
+fondo claro. Solo las vistas de Inspecciones heredan de acá; el resto de SISOC usa
+includes/base.html con sus valores por defecto (oscuro).
+{% endcomment %}
+{% block tema %}light{% endblock %}
+{% block script_tema %}{% endblock %}
+{% block clase_body %}insp-cuerpo{% endblock %}
+{% block head %}
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono&display=swap" />
+    <link rel="stylesheet" href="{% static 'inspecciones/css/panel.css' %}" />
+    {% block head_inspecciones %}{% endblock %}
+{% endblock %}
+{% block cabecera %}
+    {% include "inspecciones/_cabecera.html" %}
+{% endblock %}
+{% block barra_lateral %}
+    {% include "includes/sidebar/base.html" with con_logo=True tema_lateral="dark" %}
+{% endblock %}
+{% block main-content %}
+    <main class="app-main insp-main">
+        <div class="insp-contenido">
+            {% block contenido %}{% endblock %}
+        </div>
+    </main>
+{% endblock %}

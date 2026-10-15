@@ -1,9 +1,7 @@
-{% extends "includes/main.html" %}
+{% extends "inspecciones/base_layout.html" %}
 {% load static %}
 {% block title %}Tablero · Inspecciones escolares{% endblock %}
-{% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/user_form.css' %}" />
-    <link rel="stylesheet" href="{% static 'inspecciones/css/panel.css' %}" />
+{% block head_inspecciones %}
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
@@ -15,12 +13,8 @@
     <link rel="stylesheet"
           href="{% static 'inspecciones/tablero/tablero.css' %}" />
 {% endblock %}
-{% block breadcrumb %}
-    {% include "components/breadcrumb.html" with items=breadcrumb_items %}
-{% endblock %}
-{% block content %}
+{% block contenido %}
     <div class="insp-tablero"
-         data-bs-theme="light"
          id="insp-tablero"
          data-url-datos="{% url 'inspecciones_tablero_datos' %}"
          data-url-exportar="{% url 'inspecciones_tablero_exportar' %}"

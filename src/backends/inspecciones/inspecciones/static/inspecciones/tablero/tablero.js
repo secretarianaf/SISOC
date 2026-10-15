@@ -462,7 +462,13 @@
             return;
         }
         var L = window.L;
-        mapa = L.map(contenedor, { scrollWheelZoom: false });
+        var LIMITES = L.latLngBounds(ARGENTINA).pad(0.08);
+        mapa = L.map(contenedor, {
+            scrollWheelZoom: false,
+            maxBounds: LIMITES,
+            maxBoundsViscosity: 1.0,
+            minZoom: 4
+        });
         mapa.fitBounds(ARGENTINA);
         L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             maxZoom: 19,

@@ -290,3 +290,17 @@ def test_cabecera_blanca_dentro_de_la_grilla_y_con_el_rol(panel, gestor):
     )
     assert 'class="insp-cabecera-rol">Coordinación<' in html
     assert '<nav class="insp-migas" aria-label="Ubicación">' in html
+
+
+def test_tablero_mapa_acotado_a_argentina():
+    tablero = (
+        Path(__file__)
+        .resolve()
+        .parents[1]
+        .joinpath("inspecciones", "static", "inspecciones", "tablero")
+    )
+    js = tablero.joinpath("tablero.js").read_text(encoding="utf-8")
+    css = tablero.joinpath("tablero.css").read_text(encoding="utf-8")
+
+    assert "maxBounds" in js and "minZoom" in js
+    assert "min-height: 560px" in css

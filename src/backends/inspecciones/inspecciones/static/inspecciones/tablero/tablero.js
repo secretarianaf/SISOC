@@ -300,31 +300,48 @@
         fijarTexto('[data-kpi="inspectores_con_actividad"]', numero(indicadores.inspectores.con_actividad));
         fijarTexto('[data-kpi="inspectores_habilitados"]', numero(indicadores.inspectores.habilitados));
         fijarTexto('[data-kpi="inspectores_sin_actividad"]', numero(indicadores.inspectores.sin_actividad));
-        fijarTexto('[data-kpi="con_firma"]', numero(indicadores.con_firma));
-        fijarTexto('[data-kpi="sin_firma"]', numero(indicadores.sin_firma));
-        var motivos = indicadores.sin_firma_por_motivo
-            .filter(function (m) {
-                return m.cantidad > 0;
-            })
-            .map(function (m) {
-                return numero(m.cantidad) + " " + m.etiqueta;
-            });
-        fijarTexto(
-            '[data-kpi="sin_firma_por_motivo"]',
-            motivos.length ? "sin firma: " + motivos.join(" · ") : "sin excepciones de firma"
-        );
         fijarTexto('[data-kpi="borradores_en_curso"]', numero(indicadores.borradores_en_curso));
         fijarTexto('[data-kpi="notificacion_pendiente"]', numero(indicadores.notificacion_pendiente));
         fijarTexto('[data-kpi="notificacion_cargada"]', numero(indicadores.notificacion_cargada));
     }
 
-    function pintarIndice(prefijo, indice) {
+    function plural(cantidad, singular, pluralizado) {
+        return numero(cantidad) + " " + (cantidad === 1 ? singular : pluralizado);
+    }
+
+    // opciones: descripcion (texto inicial), fraccion(indice) -> texto, exceso(indice) -> booleano
+    function pintarIndice(prefijo, indice, opciones) {
+        var selector = function (campo) {
+            return '[data-indice="' + prefijo + "-" + campo + '"]';
+        };
+        var actas = indice.computables + indice.excluidas;
         fijarTexto(
-            '[data-indice="' + prefijo + '-porcentaje"]',
+            selector("porcentaje"),
             indice.porcentaje === null ? "Sin datos computables" : formatoPorcentaje.format(indice.porcentaje) + " %"
         );
-        fijarTexto('[data-indice="' + prefijo + '-computables"]', numero(indice.computables));
-        fijarTexto('[data-indice="' + prefijo + '-excluidas"]', numero(indice.excluidas));
+        fijarTexto(selector("fraccion"), indice.computables ? opciones.fraccion(indice) : "–");
+        fijarTexto(
+            selector("descripcion"),
+            opciones.descripcion + " · " + plural(indice.colegios, "colegio", "colegios") + " · " +
+                numero(indice.computables) + " de " + plural(actas, "acta computable", "actas computables")
+        );
+        fijarTexto(selector("excluidas"), plural(indice.excluidas, "excluida", "excluidas"));
+        if (opciones.exceso) {
+            raiz.querySelectorAll(selector("aviso-exceso")).forEach(function (nodo) {
+                nodo.classList.toggle("d-none", !opciones.exceso(indice));
+            });
+        }
+    }
+
+    function fraccionAusentismo(indice) {
+        if (indice.presente > indice.previsto) {
+            return numero(indice.presente) + " presentes / " + numero(indice.previsto) + " previstos";
+        }
+        return numero(indice.previsto - indice.presente) + " / " + numero(indice.previsto);
+    }
+
+    function fraccionAulas(indice) {
+        return numero(indice.presente) + " / " + numero(indice.previsto);
     }
 
     // --- Barras en el DOM (sin librería; anchos por CSSOM, la CSP lo permite) -
@@ -381,7 +398,7 @@
         }
         var items = document.createDocumentFragment();
         categorias.forEach(function (categoria) {
-            var item = elemento("span", "insp-leyenda-item");
+            var item = elemento("li", "insp-leyenda-item");
             var punto = elemento("i", "insp-leyenda-punto");
             punto.setAttribute("aria-hidden", "true");
             punto.style.backgroundColor = colores[categoria.valor] || COLORES.gris;
@@ -629,8 +646,17 @@
 
     function pintar(datos) {
         pintarIndicadores(datos.indicadores);
-        pintarIndice("ausentismo", datos.ausentismo);
-        pintarIndice("aulas", datos.aulas);
+        pintarIndice("ausentismo", datos.ausentismo, {
+            descripcion: "Personal ausente sobre el previsto",
+            fraccion: fraccionAusentismo,
+            exceso: function (indice) {
+                return indice.presente > indice.previsto;
+            },
+        });
+        pintarIndice("aulas", datos.aulas, {
+            descripcion: "Aulas funcionando sobre las previstas",
+            fraccion: fraccionAulas,
+        });
         pintarTurnos(datos.turnos);
         pintarResultados(datos.resultados);
         pintarPresencia(datos.presencia);

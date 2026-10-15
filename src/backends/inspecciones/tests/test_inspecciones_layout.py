@@ -237,6 +237,13 @@ def test_tablero_con_filtros_en_una_fila_y_contenedores_de_barras(panel):
     assert "data-tablero-turnos" in html
     assert 'data-tablero-presencia="personal"' in html
     assert "card-custom" not in html
+    assert 'data-kpi="con_firma"' not in html
+    assert 'class="insp-totales insp-totales-5"' in html
+    assert 'data-indice="ausentismo-fraccion"' in html
+    assert 'data-indice="aulas-fraccion"' in html
+    assert 'data-indice="ausentismo-descripcion"' in html
+    assert 'data-indice="aulas-descripcion"' in html
+    assert '<ul class="insp-leyenda-lista" data-tablero-resultados-leyenda>' in html
 
 
 def test_tablero_no_usa_apexcharts():

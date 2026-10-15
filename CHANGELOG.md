@@ -5,6 +5,10 @@
 
 - [src/backends/inspecciones.] el mapa del tablero usa el mapa oficial del IGN y queda acotado a Argentina. (PR #2710)
 
+## Actualizaciones
+
+- [Release] Promoción a producción del 2026-10-15: relevamientos PNUD SIPH y PDF oficial GESTIONAR, georreferencia de dispositivos, celiaquía ANSES/condición diagnóstica, alcance del Administrador SIMEPI y limpieza de imágenes en deploy. (PR #2722)
+
 ## Corrección de Errores
 
 - [src/backends/inspecciones.] el panel de Inspecciones escolares se ve con el diseño aprobado en el backoffice oscuro; totales del panel corregidos; tablero más rápido. (PR #2701)

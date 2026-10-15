@@ -4,8 +4,12 @@ El resto de SISOC no cambia: sigue en oscuro, con su cabecera azul y su script
 que fuerza el tema.
 """
 
+from pathlib import Path
+
 import pytest
 from django.urls import reverse
+
+from inspecciones.services.formato import iniciales
 
 pytestmark = pytest.mark.django_db
 
@@ -21,9 +25,6 @@ def test_sisoc_sigue_en_oscuro_fuera_de_inspecciones(panel):
     assert 'class="main-header"' in html
     assert "sidebar-brand" not in html
     assert "insp-cabecera" not in html
-
-
-from inspecciones.services.formato import iniciales  # noqa: E402
 
 
 def test_iniciales_para_el_avatar():
@@ -68,3 +69,14 @@ def test_totales_generales_solo_en_la_pestana_escuelas(panel):
     assert "Escuelas en el catálogo" in escuelas
     assert "Escuelas en el catálogo" not in asignaciones
     assert "Escuelas en el catálogo" not in actas
+
+
+def test_panel_css_no_conserva_el_parche_de_seccion_clara():
+    css = Path(__file__).resolve().parents[1].joinpath(
+        "inspecciones", "static", "inspecciones", "css", "panel.css"
+    ).read_text(encoding="utf-8")
+
+    assert 'body.dark-mode [data-bs-theme="light"]' not in css
+    assert ".insp-cuerpo" in css
+    assert ".insp-cabecera" in css
+    assert ".insp-seccion-barra" in css

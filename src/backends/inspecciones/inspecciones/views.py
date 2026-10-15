@@ -13,8 +13,8 @@ delegan en ``inspecciones.services``.
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse
 
+from core.services.layout_claro import contexto_layout_claro
 from inspecciones.access import puede_gestionar
-from inspecciones.services.formato import iniciales
 from inspecciones.services.panel import resumen_panel
 
 
@@ -55,17 +55,7 @@ class LayoutInspeccionesMixin:
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        usuario = self.request.user
-        context["breadcrumb_items"] = self.migas()
-        context["iniciales_usuario"] = iniciales(
-            usuario.get_full_name() or usuario.get_username()
-        )
-        perfil = getattr(usuario, "profile", None)
-        mostrar_rol = getattr(perfil, "get_inspecciones_rol_display", None)
-        context["rol_usuario"] = (
-            mostrar_rol() if mostrar_rol and perfil.inspecciones_rol else ""
-        )
-        context["ocultar_volver"] = True
+        context.update(contexto_layout_claro(self.request.user, self.migas()))
         return context
 
 

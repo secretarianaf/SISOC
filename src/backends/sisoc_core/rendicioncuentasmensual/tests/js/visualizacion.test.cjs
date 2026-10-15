@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
 
-function visor() {
+function visor(textareas = []) {
     const handlers = {};
     let reloads = 0;
     class Element {
@@ -14,6 +14,7 @@ function visor() {
     const document = {
         visibilityState: 'visible',
         addEventListener(name, callback) { handlers[name] = callback; },
+        querySelectorAll(query) { return query === 'textarea[name="observaciones"]' ? textareas : []; },
     };
     const window = {
         location: { reload() { reloads++; } },
@@ -41,6 +42,26 @@ test('recuperar el foco sin abrir documentos conserva el formulario', () => {
     view.handlers.click({ target: new view.Element(false) });
     view.handlers.focus();
     assert.equal(view.reloads(), 0);
+});
+
+test('abrir un archivo en segundo plano no refresca en el próximo foco', () => {
+    const view = visor();
+    view.handlers.click({ target: new view.Element(true) });
+    view.handlers.focus();
+    assert.equal(view.reloads(), 0);
+});
+
+test('volver del visor con una observación sin guardar posterga el refresco', () => {
+    const textarea = { value: 'Falta la firma' };
+    const view = visor([textarea]);
+    view.handlers.click({ target: new view.Element(true) });
+    view.handlers.blur();
+    view.handlers.focus();
+    assert.equal(view.reloads(), 0);
+    textarea.value = '';
+    view.handlers.blur();
+    view.handlers.focus();
+    assert.equal(view.reloads(), 1);
 });
 
 test('la revisión muestra la observación anterior sin abrir el editor', () => {

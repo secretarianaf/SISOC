@@ -317,20 +317,43 @@ document.addEventListener("DOMContentLoaded", function () {
 // Actualizar la confirmación persistida al volver del visor de documentos.
 (function () {
     let documentoAbierto = false;
+    let salioDelDetalle = false;
     document.addEventListener("click", function (event) {
         if (
             event.target instanceof Element &&
             event.target.closest("a[data-refresh-visualizacion]")
         ) {
             documentoAbierto = true;
+            salioDelDetalle = false;
         }
     });
-    function actualizarAlVolver() {
-        if (documentoAbierto && document.visibilityState === "visible") {
-            documentoAbierto = false;
-            window.location.reload();
+    function hayObservacionesSinGuardar() {
+        return Array.from(
+            document.querySelectorAll('textarea[name="observaciones"]')
+        ).some(function (textarea) {
+            return textarea.value.trim() !== "";
+        });
+    }
+    function registrarSalida() {
+        if (documentoAbierto) {
+            salioDelDetalle = true;
         }
     }
+    function actualizarAlVolver() {
+        if (document.visibilityState === "hidden") {
+            registrarSalida();
+            return;
+        }
+        // Sin salida real (pestaña en segundo plano) o con texto sin guardar,
+        // se posterga la recarga para no perder la observación en edición.
+        if (!salioDelDetalle || hayObservacionesSinGuardar()) {
+            return;
+        }
+        documentoAbierto = false;
+        salioDelDetalle = false;
+        window.location.reload();
+    }
+    window.addEventListener("blur", registrarSalida);
     window.addEventListener("focus", actualizarAlVolver);
     document.addEventListener("visibilitychange", actualizarAlVolver);
 })();

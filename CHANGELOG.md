@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-10-21 -->
+# Versión SISOC 21.10.2026
+
+## Actualizaciones
+
+- [sin-area] feat(cdi): agregar botón Consultas en la cabecera. (PR #2726)
+<!-- AUTO-GENERATED RELEASE END: 2026-10-21 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-10-15 -->
 # Versión SISOC 15.10.2026
 

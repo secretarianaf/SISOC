@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-10-16 -->
+# Versión SISOC 16.10.2026
+
+## Nuevas Funcionalidades
+
+- [src/backends/inspecciones.] panel de Inspecciones escolares con escuelas, asignaciones, actas (anulación y prueba) y tablero en vivo con mapa. (PR #2698)
+<!-- AUTO-GENERATED RELEASE END: 2026-10-16 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-10-14 -->
 # Versión SISOC 14.10.2026
 

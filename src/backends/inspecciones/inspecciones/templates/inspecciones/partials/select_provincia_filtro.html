@@ -1,0 +1,12 @@
+<select id="filtro-provincia"
+        class="form-select"
+        name="provincia"
+        data-insp-auto-submit>
+    <option value="">Todas las provincias</option>
+    {% for provincia in filtro.fields.provincia.queryset %}
+        <option value="{{ provincia.pk }}"
+                {% if filtro.provincia.value|stringformat:'s' == provincia.pk|stringformat:'s' %}selected{% endif %}>
+            {{ provincia.nombre }}
+        </option>
+    {% endfor %}
+</select>

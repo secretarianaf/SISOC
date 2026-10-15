@@ -56,6 +56,25 @@ de ese repositorio. La primera operación prevista es el 15/10/2026.
    `firma_tipo`, `notificacion_estado`), `es_prueba`, `estado` con `anulada`,
    `Inspeccion.reemplaza` y eventos de auditoría.
 
+## Panel del backoffice (2026-10-15)
+
+Detalle en `docs/registro/cambios/2026-T4/2026-10-15-inspecciones-panel-backoffice.md`.
+
+9. **El Cueanexo reusa `codigo` y `cue`.** No hay columna nueva: `codigo`
+   (único, `id` de la API) y `cue` guardan el Cueanexo de las escuelas
+   nuevas, y `codigo` no cambia nunca porque la app lo guarda en sus
+   borradores. Una columna `cueanexo` aparte habría triplicado el dato.
+10. **`localidad` y `distrito` siguen siendo texto**, mantenidos desde la
+    localidad vinculada (`localidad_vinculada`, FK nula si no se resolvió).
+    Así la API de la PWA no cambia de forma y `services/escuelas.py` no se
+    toca.
+11. **La importación del padrón escribe con SQL directo** (`INSERT` múltiple
+    con el sufijo de conflicto que arma el backend de Django) y la
+    confirmación usa las filas normalizadas en la revisión, sin releer el
+    `.xlsx`. Con 64.495 filas, `bulk_create`/`bulk_update` y la doble lectura
+    no entraban en el `timeout` de Gunicorn; el `.xlsx` se lee en streaming
+    con `lxml` (sólo la primera hoja) porque `openpyxl` tardaba el doble.
+
 ## Alternativas descartadas
 
 - App en `sisoc_core`: evitaba un servicio nuevo, pero mezclaba un programa

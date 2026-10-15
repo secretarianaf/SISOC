@@ -7,6 +7,8 @@ const REQUIRED_CHECKS = [
   "sync_pr_artifacts",
 ];
 const BASELINE_CHECK = "release_baseline";
+// Rama que se promueve a main y que recibe las preparaciones del pre-deploy.
+const RELEASE_SOURCE_BRANCH = "homologacion";
 const SUCCESSFUL_CONCLUSIONS = new Set(["success", "neutral", "skipped"]);
 const FINAL_RELEASE_MARKER = /<!--\s*release-automation:\s*scheduled\s*-->/i;
 const PREPARATION_RELEASE_MARKER = /<!--\s*release-final-pr:\s*(\d+)\s*-->/i;
@@ -72,7 +74,7 @@ function isInternalPullRequest(pull, repositoryFullName) {
 
 function isPreparationPullRequest(pull, repositoryFullName) {
   return (
-    pull.base?.ref === "development" &&
+    pull.base?.ref === RELEASE_SOURCE_BRANCH &&
     isInternalPullRequest(pull, repositoryFullName) &&
     PREPARATION_BRANCH_PATTERN.test(pull.head?.ref || "") &&
     parsePreparationFinalNumber(pull.body) !== null
@@ -82,7 +84,7 @@ function isPreparationPullRequest(pull, repositoryFullName) {
 function isScheduledFinalPullRequest(pull, repositoryFullName) {
   return (
     pull.base?.ref === "main" &&
-    pull.head?.ref === "development" &&
+    pull.head?.ref === RELEASE_SOURCE_BRANCH &&
     isInternalPullRequest(pull, repositoryFullName) &&
     FINAL_RELEASE_MARKER.test(pull.body || "") &&
     parseReleaseDate(pull.body) !== null &&
@@ -175,7 +177,7 @@ async function markFinalPullRequestReady(github, owner, repo, pullNumber, core) 
   const repositoryFullName = `${owner}/${repo}`;
   if (!isScheduledFinalPullRequest(pull, repositoryFullName)) {
     throw new Error(
-      `PR #${pullNumber} no es una promocion programada valida development -> main.`,
+      `PR #${pullNumber} no es una promocion programada valida ${RELEASE_SOURCE_BRANCH} -> main.`,
     );
   }
 
@@ -199,7 +201,7 @@ async function setFinalReleaseHead(github, owner, repo, pullNumber, headSha, cor
   const repositoryFullName = `${owner}/${repo}`;
   if (!isScheduledFinalPullRequest(pull, repositoryFullName)) {
     throw new Error(
-      `PR #${pullNumber} no es una promocion programada valida development -> main.`,
+      `PR #${pullNumber} no es una promocion programada valida ${RELEASE_SOURCE_BRANCH} -> main.`,
     );
   }
 
@@ -485,7 +487,7 @@ async function armFinalForAutoMerge(github, owner, repo, pullNumber, core) {
       owner,
       repo,
       pull,
-      "El head de `development` cambió después del snapshot analizado. Se requiere una nueva ejecución de pre-deploy.",
+      `El head de \`${RELEASE_SOURCE_BRANCH}\` cambió después del snapshot analizado. Se requiere una nueva ejecución de pre-deploy.`,
       core,
     );
     return false;
@@ -558,7 +560,7 @@ async function processReadyFinalPullRequests(github, owner, repo, core) {
         owner,
         repo,
         pull,
-        "El head de `development` cambió después del snapshot analizado. Se requiere una nueva ejecución de pre-deploy.",
+        `El head de \`${RELEASE_SOURCE_BRANCH}\` cambió después del snapshot analizado. Se requiere una nueva ejecución de pre-deploy.`,
         core,
       );
       continue;
@@ -585,11 +587,11 @@ async function processReadyFinalPullRequests(github, owner, repo, core) {
       owner,
       repo,
       base: "main",
-      head: "development",
+      head: RELEASE_SOURCE_BRANCH,
     });
     if (comparison.data.behind_by !== 0) {
       core.info(
-        `PR final #${pull.number}: development aún no contiene el main más nuevo; se espera la sincronización descendente.`,
+        `PR final #${pull.number}: ${RELEASE_SOURCE_BRANCH} aún no contiene el main más nuevo; se espera la sincronización descendente.`,
       );
       continue;
     }

@@ -309,7 +309,7 @@
         return numero(cantidad) + " " + (cantidad === 1 ? singular : pluralizado);
     }
 
-    // opciones: descripcion (texto inicial), fraccion(indice) -> {texto, etiqueta}, exceso(indice) -> booleano
+    // opciones: descripcion (texto inicial), etiquetaBase (etiqueta sin datos), fraccion(indice) -> {texto, etiqueta}, exceso(indice) -> booleano
     function pintarIndice(prefijo, indice, opciones) {
         var selector = function (campo) {
             return '[data-indice="' + prefijo + "-" + campo + '"]';
@@ -337,23 +337,27 @@
         }
     }
 
+    function excedePrevisto(indice) {
+        return indice.presente > indice.previsto;
+    }
+
     function fraccionAusentismo(indice) {
-        if (indice.presente > indice.previsto) {
+        if (excedePrevisto(indice)) {
             return {
-                texto: numero(indice.presente) + " presentes / " + numero(indice.previsto) + " previstos",
-                etiqueta: "presentes / previstos",
+                texto: numero(indice.presente) + " / " + numero(indice.previsto),
+                etiqueta: "presentes / previstos"
             };
         }
         return {
             texto: numero(indice.previsto - indice.presente) + " / " + numero(indice.previsto),
-            etiqueta: "ausentes / previstos",
+            etiqueta: "ausentes / previstos"
         };
     }
 
     function fraccionAulas(indice) {
         return {
             texto: numero(indice.presente) + " / " + numero(indice.previsto),
-            etiqueta: "funcionando / previstas",
+            etiqueta: "funcionando / previstas"
         };
     }
 
@@ -470,6 +474,7 @@
             minZoom: 4
         });
         mapa.fitBounds(ARGENTINA);
+        mapa.setMinZoom(Math.min(4, mapa.getBoundsZoom(ARGENTINA)));
         L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             maxZoom: 19,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -669,14 +674,12 @@
             descripcion: "Personal ausente sobre el previsto",
             etiquetaBase: "ausentes / previstos",
             fraccion: fraccionAusentismo,
-            exceso: function (indice) {
-                return indice.presente > indice.previsto;
-            },
+            exceso: excedePrevisto
         });
         pintarIndice("aulas", datos.aulas, {
             descripcion: "Aulas funcionando sobre las previstas",
             etiquetaBase: "funcionando / previstas",
-            fraccion: fraccionAulas,
+            fraccion: fraccionAulas
         });
         pintarTurnos(datos.turnos);
         pintarResultados(datos.resultados);

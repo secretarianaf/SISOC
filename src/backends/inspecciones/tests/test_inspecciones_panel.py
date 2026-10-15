@@ -498,6 +498,22 @@ def test_detalle_muestra_anulacion_y_prueba(
     )
 
 
+def test_detalle_muestra_la_anulacion_en_la_linea_de_tiempo(
+    panel, api_a, escuela, cerrar, imagen, nuevo_uuid, coordinacion
+):
+    from inspecciones.models import Acta
+    from inspecciones.services.anulacion import anular_acta
+
+    numero, _ = _acta_cerrada(api_a, escuela, cerrar, imagen, nuevo_uuid)
+    anular_acta(Acta.objects.get(numero=numero), "Carga duplicada", coordinacion)
+
+    html = panel.get(reverse("inspecciones_acta_detalle", args=[numero])).content
+    html = html.decode()
+
+    assert 'class="insp-hito insp-hito-anulada"' in html
+    assert "Motivo: Carga duplicada" in html
+
+
 def test_imagen_de_otra_acta_no_se_sirve(
     panel, api_a, escuela, cerrar, imagen, nuevo_uuid
 ):

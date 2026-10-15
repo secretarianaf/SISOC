@@ -237,6 +237,7 @@ def test_detalle_del_acta_con_el_encabezado_del_mockup(
         assert f">{titulo}</h3>" in html
     assert "Editar institución" in html
     assert 'class="insp-linea-tiempo"' in html
+    assert '<span class="insp-hito-texto text-muted">Sin eventos.</span>' not in html
     assert ">Ver ficha<" not in html
 
 

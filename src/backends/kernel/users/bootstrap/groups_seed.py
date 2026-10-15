@@ -974,6 +974,7 @@ LISTADO_DEFINED_GROUPS = (
             "auth.role_usuarios_seccion_territorial_comedor",
             "auth.role_usuarios_seccion_equipos_tecnicos",
             "auth.role_usuarios_seccion_datacalle",
+            "auth.role_usuarios_seccion_inspecciones_escolares",
             "auth.role_usuarios_seccion_administracion",
             "acompanamientos.view_informacionrelevante",
             "admisiones.view_admision",

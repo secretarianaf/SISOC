@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-10-14 -->
+# Versión SISOC 14.10.2026
+
+## Nuevas Funcionalidades
+
+- [usuarios y vertical inspecciones.] Sección Inspecciones escolares en usuarios y API para la PWA de inspecciones (borradores, cierre con número oficial, PDF y notificación). (PR #2696)
+<!-- AUTO-GENERATED RELEASE END: 2026-10-14 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-10-07 -->
 # Versión SISOC 07.10.2026
 

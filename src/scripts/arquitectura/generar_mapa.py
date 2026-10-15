@@ -119,6 +119,7 @@ ZONAS = [
             "ver_para_ser_libre",
             "dispositivos",
             "datacalle",
+            "inspecciones",
         ],
     },
     {

@@ -20,6 +20,7 @@
 {% endblock %}
 {% block content %}
     <div class="insp-tablero"
+         data-bs-theme="light"
          id="insp-tablero"
          data-url-datos="{% url 'inspecciones_tablero_datos' %}"
          data-url-exportar="{% url 'inspecciones_tablero_exportar' %}"
@@ -30,7 +31,7 @@
                 <span class="insp-tablero-vivo-punto" aria-hidden="true"></span>
                 <span role="status" aria-live="polite" data-tablero-estado>Conectando…</span>
                 <span data-tablero-hace></span>
-                <span class="insp-tablero-vivo-intervalo">· se actualiza cada 10 s</span>
+                <span class="insp-tablero-vivo-intervalo">· se actualiza cada 5 s</span>
             </div>
         </div>
         {% include "inspecciones/_pestanas.html" with activa="tablero" %}

@@ -39,7 +39,8 @@
             }
             const minimo = parseInt($select.data("insp-min") || 0, 10);
             const provincia = $select.data("insp-provincia");
-            const $modal = $select.closest(".modal");
+            // El desplegable se cuelga del modal o de la sección con tema claro, no del body oscuro.
+            const $modal = $select.closest(".modal, [data-bs-theme]");
             $select.select2({
                 width: $select.closest(".insp-filtros").length ? "style" : "100%",
                 allowClear: true,

@@ -296,3 +296,98 @@
         min-width: 100%;
     }
 }
+
+/* Sección clara dentro del backoffice oscuro.
+   SISOC fuerza data-bs-theme="dark" en <html> (includes/new_base.html). El panel y el
+   tablero declaran data-bs-theme="light" en su raíz para verse como el diseño aprobado
+   (fondo claro, tarjetas blancas); Bootstrap 5.3 resuelve sus variables por sección.
+   Lo que sigue neutraliza las reglas del proyecto que cuelgan de body.dark-mode. */
+.insp-panel,
+.insp-tablero {
+    color-scheme: light;
+    color: var(--bs-body-color);
+    background: #f3f4f6;
+    border-radius: 8px;
+    padding: 1rem 1.25rem 1.25rem;
+}
+
+body.dark-mode [data-bs-theme="light"] .form-control:focus,
+body.dark-mode [data-bs-theme="light"] .form-select:focus {
+    background-color: var(--bs-body-bg) !important;
+}
+
+body.dark-mode [data-bs-theme="light"] .insp-filtros .select2-container {
+    width: auto !important;
+}
+
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5) .select2-selection--single,
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5) .select2-selection--multiple {
+    background-color: var(--bs-body-bg) !important;
+    border: 1px solid var(--bs-border-color) !important;
+}
+
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5).select2-container--focus .select2-selection--single,
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5).select2-container--focus .select2-selection--multiple,
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5).select2-container--open .select2-selection--single,
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5).select2-container--open .select2-selection--multiple {
+    background-color: var(--bs-body-bg) !important;
+    border-color: var(--insp-teal) !important;
+    box-shadow: 0 0 0 0.2rem rgba(59, 134, 129, 0.2) !important;
+}
+
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5) .select2-selection__rendered,
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5) .select2-selection__clear,
+body.dark-mode [data-bs-theme="light"] .select2-search--inline .select2-search__field {
+    color: var(--bs-body-color) !important;
+}
+
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5) .select2-selection__placeholder,
+body.dark-mode [data-bs-theme="light"] .select2-search--dropdown .select2-search__field::placeholder,
+body.dark-mode [data-bs-theme="light"] .select2-search--inline .select2-search__field::placeholder {
+    color: var(--bs-secondary-color) !important;
+}
+
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5) .select2-selection--single .select2-selection__arrow b {
+    border-color: var(--bs-secondary-color) transparent transparent transparent !important;
+}
+
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5).select2-container--open .select2-selection--single .select2-selection__arrow b {
+    border-color: transparent transparent var(--bs-secondary-color) transparent !important;
+}
+
+body.dark-mode [data-bs-theme="light"] .select2-dropdown,
+body.dark-mode [data-bs-theme="light"] .select2-results__option,
+body.dark-mode [data-bs-theme="light"] .select2-results__option[aria-selected] {
+    background-color: var(--bs-body-bg) !important;
+    border-color: var(--bs-border-color) !important;
+    color: var(--bs-body-color) !important;
+}
+
+body.dark-mode [data-bs-theme="light"] .select2-search--dropdown,
+body.dark-mode [data-bs-theme="light"] .select2-search--dropdown .select2-search__field {
+    background-color: var(--bs-body-bg) !important;
+    border-color: var(--bs-border-color) !important;
+    color: var(--bs-body-color) !important;
+}
+
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5) .select2-results__option--highlighted[aria-selected],
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5) .select2-results__option--highlighted[aria-selected="true"] {
+    background-color: var(--insp-teal) !important;
+    color: #fff !important;
+}
+
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5) .select2-selection--multiple .select2-selection__choice {
+    background-color: #f2f8f7 !important;
+    border: 1px solid #d9e6e4 !important;
+    color: #1f4d4a !important;
+}
+
+body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5) .select2-selection--multiple .select2-selection__choice__remove {
+    color: #1f4d4a !important;
+}
+
+/* El modal no fija color de texto propio (--bs-modal-color vacío) y heredaría el gris
+   claro del body oscuro: títulos y etiquetas quedaban sin contraste. */
+.modal[data-bs-theme="light"] .modal-content {
+    color: var(--bs-body-color);
+}

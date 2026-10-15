@@ -16,7 +16,7 @@
 
     var URL_DATOS = raiz.dataset.urlDatos;
     var URL_EXPORTAR = raiz.dataset.urlExportar;
-    var INTERVALO = parseInt(raiz.dataset.intervaloMs, 10) || 10000;
+    var INTERVALO = parseInt(raiz.dataset.intervaloMs, 10) || 5000;
     var DURACION_NUEVA = 8000;
     var ARGENTINA = [[-55.1, -73.6], [-21.7, -53.6]];
     var COLORES = {

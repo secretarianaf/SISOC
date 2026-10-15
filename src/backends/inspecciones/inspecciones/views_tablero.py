@@ -2,7 +2,7 @@
 
 Las tres rutas exigen sesión y ``puede_gestionar`` (403 sin permiso). La
 lógica vive en ``inspecciones.services.tablero``; la página se actualiza
-consultando ``inspecciones_tablero_datos`` cada 10 segundos (sin WebSockets:
+consultando ``inspecciones_tablero_datos`` cada 5 segundos (sin WebSockets:
 el stack corre con gunicorn síncrono y sin Redis).
 """
 
@@ -21,7 +21,7 @@ from inspecciones.services.tablero import (
 )
 from inspecciones.views import GestionInspeccionesMixin
 
-INTERVALO_MS = 10_000
+INTERVALO_MS = 5_000
 
 
 class TableroView(GestionInspeccionesMixin, TemplateView):

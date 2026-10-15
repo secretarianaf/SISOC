@@ -503,7 +503,7 @@ def test_cache_no_mezcla_combinaciones_de_filtros(inspector_a, geo):
     assert tablero.datos_tablero(todas)["indicadores"]["actas_validas"] == 2
 
 
-def test_cache_dura_cinco_segundos(monkeypatch, inspector_a, escuela):
+def test_cache_dura_dos_segundos(monkeypatch, inspector_a, escuela):
     llamadas = []
     original = tablero.cache.set
     monkeypatch.setattr(
@@ -515,7 +515,7 @@ def test_cache_dura_cinco_segundos(monkeypatch, inspector_a, escuela):
 
     tablero.datos_tablero(tablero.leer_filtros({}))
 
-    assert llamadas == [5]
+    assert llamadas == [tablero.CACHE_SEGUNDOS] == [2]
 
 
 # ------------------------------------------------------------ eficiencia

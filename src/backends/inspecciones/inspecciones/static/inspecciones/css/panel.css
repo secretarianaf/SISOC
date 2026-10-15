@@ -385,3 +385,9 @@ body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2
 body.dark-mode [data-bs-theme="light"] :is(.select2-container--default, .select2-container--bootstrap4, .select2-container--bootstrap5) .select2-selection--multiple .select2-selection__choice__remove {
     color: #1f4d4a !important;
 }
+
+/* El modal no fija color de texto propio (--bs-modal-color vacío) y heredaría el gris
+   claro del body oscuro: títulos y etiquetas quedaban sin contraste. */
+.modal[data-bs-theme="light"] .modal-content {
+    color: var(--bs-body-color);
+}

@@ -427,6 +427,13 @@
     font-weight: 500;
 }
 
+.insp-filtros .insp-boton-dia {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+    font-size: 16px;
+}
+
 .insp-espacio {
     flex: 1;
 }

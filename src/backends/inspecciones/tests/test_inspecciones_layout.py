@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from django.urls import reverse
 
+from inspecciones.services.asignaciones import asignaciones_de_jornada
 from inspecciones.services.formato import iniciales
 
 pytestmark = pytest.mark.django_db
@@ -114,5 +115,33 @@ def test_listado_de_escuelas_con_el_pie_y_la_paginacion_del_mockup(panel, geogra
     assert 'href="?q=Paginada&amp;page=2"' in html
     assert '<span class="insp-pagina activa" aria-current="page">1</span>' in html
     assert "Se encontraron" not in html
+    assert 'class="insp-seccion-barra"' in html
+    assert "card-custom" not in html
+
+
+def test_fila_de_asignacion_trae_las_iniciales_del_inspector(asignada_a, inspector_a):
+    inspector_a.first_name, inspector_a.last_name = "Laura", "Gómez"
+    inspector_a.save(update_fields=["first_name", "last_name"])
+
+    filas, _totales = asignaciones_de_jornada(asignada_a.fecha)
+
+    assert filas[0]["iniciales"] == "LG"
+
+
+def test_asignaciones_con_avatar_y_pie_del_mockup(panel, asignada_a):
+    html = panel.get(
+        reverse("inspecciones_asignaciones"), {"fecha": asignada_a.fecha.isoformat()}
+    ).content.decode()
+
+    assert 'class="insp-avatar" aria-hidden="true"' in html
+    assert 'class="insp-jornada"' in html
+    assert "Mostrando 1–1 de 1 · 1 inspectores" in html
+    assert "Escuelas en el catálogo" not in html
+    assert "card-custom" not in html
+
+
+def test_actas_usa_la_misma_seccion(panel):
+    html = panel.get(reverse("inspecciones_actas")).content.decode()
+
     assert 'class="insp-seccion-barra"' in html
     assert "card-custom" not in html

@@ -18,7 +18,7 @@ from django.db import transaction
 from django.db.models import Q
 
 from inspecciones.models import Acta, AsignacionEscuela, Inspeccion
-from inspecciones.services.formato import nombre_actor
+from inspecciones.services.formato import iniciales, nombre_actor
 from users.services_inspecciones import (
     ROL_INSPECTOR,
     ROLES_INSPECCIONES,
@@ -154,10 +154,12 @@ def _fila(asignacion, actas, en_curso):
         estado = ESTADO_EN_CURSO
     else:
         estado = ESTADO_PENDIENTE
+    inspector = asignacion.inspector
     return {
         "asignacion": asignacion,
         "escuela": asignacion.escuela,
-        "inspector": asignacion.inspector,
+        "inspector": inspector,
+        "iniciales": iniciales(inspector.get_full_name() or inspector.get_username()),
         "estado": estado,
         "estado_display": dict(ESTADOS)[estado],
         "actas": actas,

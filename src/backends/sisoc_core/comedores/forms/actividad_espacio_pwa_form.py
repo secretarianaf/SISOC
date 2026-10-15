@@ -1,5 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.db.models import Q
+from django.db.models.functions import Lower
 
 from core.models import Dia
 from pwa.models import ActividadEspacioPWA, CatalogoActividadPWA
@@ -14,6 +16,12 @@ def _format_activity_schedule(start_time, end_time):
 
 
 class ActividadEspacioPWAWebForm(forms.ModelForm):
+    categoria = forms.ChoiceField(
+        label="Categoría",
+        required=False,  # Compatibilidad con POST anteriores sin categoría.
+        widget=forms.Select(attrs={"class": "form-control", "required": True}),
+    )
+
     class Meta:
         model = ActividadEspacioPWA
         fields = (
@@ -39,11 +47,22 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
         self.comedor = comedor
         self._schedule_data = []
         self.schedule_errors = []
-        self.fields["catalogo_actividad"].queryset = (
-            CatalogoActividadPWA.objects.filter(activo=True).order_by(
-                "categoria", "actividad", "id"
-            )
+        catalogo = CatalogoActividadPWA.objects.filter(
+            Q(activo=True) | Q(pk=self.instance.catalogo_actividad_id)
+        ).order_by(Lower("actividad"), "id")
+        self.fields["catalogo_actividad"].queryset = catalogo
+        self.fields["catalogo_actividad"].label_from_instance = (
+            lambda obj: obj.actividad
         )
+        self.activity_options = list(catalogo.values("id", "categoria", "actividad"))
+        categorias = sorted(
+            {item["categoria"] for item in self.activity_options}, key=str.casefold
+        )
+        self.fields["categoria"].choices = [("", "Seleccionar")] + [
+            (categoria, categoria) for categoria in categorias
+        ]
+        if self.instance.catalogo_actividad_id:
+            self.initial["categoria"] = self.instance.catalogo_actividad.categoria
         self.day_options = list(Dia.objects.order_by("id"))
         self.schedule_rows = self._get_initial_schedule_rows()
 
@@ -103,6 +122,7 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
         catalogo_actividad = cleaned.get("catalogo_actividad")
+        self._validar_categoria(catalogo_actividad, cleaned.get("categoria"))
         self._schedule_data = []
         self.schedule_errors = [{} for _ in self.schedule_rows]
         parsed_rows = []
@@ -186,6 +206,17 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
 
         return cleaned
 
+    def _validar_categoria(self, catalogo_actividad, categoria):
+        if (
+            catalogo_actividad
+            and categoria
+            and catalogo_actividad.categoria != categoria
+        ):
+            self.add_error(
+                "catalogo_actividad",
+                "Selecciona una actividad de la categoría elegida.",
+            )
+
     def _clean_schedule_day(self, value):
         if not value:
             return ValidationError("Este campo es obligatorio.")
@@ -249,6 +280,7 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
 
     def get_service_data(self, schedule):
         data = dict(self.cleaned_data)
+        data.pop("categoria", None)
         data.update(schedule)
         data["horario_actividad"] = _format_activity_schedule(
             data.get("hora_inicio"),

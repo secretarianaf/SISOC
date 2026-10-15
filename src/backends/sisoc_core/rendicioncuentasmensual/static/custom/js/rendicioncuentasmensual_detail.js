@@ -94,14 +94,9 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        let display = document.getElementById("observaciones-display-" + documentoId);
-        if (!display) {
-            cell.innerHTML =
-                '<div class="ps-3" id="observaciones-display-' +
-                documentoId +
-                '"></div>';
-            display = document.getElementById("observaciones-display-" + documentoId);
-        }
+        cell.innerHTML =
+            '<div class="ps-3" id="observaciones-display-' + documentoId + '"></div>';
+        const display = document.getElementById("observaciones-display-" + documentoId);
 
         if (display) {
             display.innerHTML =
@@ -156,7 +151,17 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             if (observacionesRow) {
-                observacionesRow.classList.toggle("d-none", !mostrarObservaciones);
+                const observacionPrevia = document.getElementById(
+                    "observaciones-display-" + documentoId
+                );
+                observacionesRow.classList.toggle(
+                    "d-none", !mostrarObservaciones && !observacionPrevia
+                );
+                if (observacionesInput) {
+                    observacionesInput.parentElement.classList.toggle(
+                        "d-none", !mostrarObservaciones
+                    );
+                }
             }
 
             if (botonGuardar) {
@@ -308,3 +313,24 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 });
+
+// Actualizar la confirmación persistida al volver del visor de documentos.
+(function () {
+    let documentoAbierto = false;
+    document.addEventListener("click", function (event) {
+        if (
+            event.target instanceof Element &&
+            event.target.closest("a[data-refresh-visualizacion]")
+        ) {
+            documentoAbierto = true;
+        }
+    });
+    function actualizarAlVolver() {
+        if (documentoAbierto && document.visibilityState === "visible") {
+            documentoAbierto = false;
+            window.location.reload();
+        }
+    }
+    window.addEventListener("focus", actualizarAlVolver);
+    document.addEventListener("visibilitychange", actualizarAlVolver);
+})();

@@ -435,7 +435,7 @@ def test_detalle_muestra_anulacion_y_prueba(
     assert len(listado.context["filas"]) == 1
     validas = panel.get(reverse("inspecciones_actas"), {"estado": "validas"})
     assert validas.context["filas"] == []
-    assert panel.get(reverse("inspecciones_panel")).context["resumen"]["actas_hoy"] == 0
+    assert panel.get(reverse("inspecciones_panel")).context["totales_panel"]["actas_hoy"] == 0
 
 
 def test_imagen_de_otra_acta_no_se_sirve(

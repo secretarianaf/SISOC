@@ -36,7 +36,7 @@ def test_panel_muestra_los_totales(client, coordinacion, escuela):
 
     respuesta = client.get(reverse("inspecciones_panel"))
 
-    resumen = respuesta.context["resumen"]
+    resumen = respuesta.context["totales_panel"]
     assert resumen["escuelas"] == 1
     assert resumen["escuelas_a_revisar"] == 0
     assert "Escuelas con datos a revisar" in respuesta.content.decode()

@@ -471,14 +471,25 @@
             scrollWheelZoom: false,
             maxBounds: LIMITES,
             maxBoundsViscosity: 1.0,
-            minZoom: 4
+            zoomSnap: 0.25,
+            worldCopyJump: false
         });
+        mapa.attributionControl.setPrefix(false);
         mapa.fitBounds(ARGENTINA);
-        mapa.setMinZoom(Math.min(4, mapa.getBoundsZoom(ARGENTINA)));
-        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(mapa);
+        // El zoom mínimo es el que muestra Argentina entera: no se puede alejar ni ver el resto del mundo.
+        mapa.setMinZoom(mapa.getZoom());
+        // Mapa oficial del Instituto Geográfico Nacional (Argenmap, TMS: por eso {-y}).
+        // Rotula "Islas Malvinas (Arg.)"; las teselas se piden sólo dentro de los límites.
+        L.tileLayer(
+            "https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG%3A3857@png/{z}/{x}/{-y}.png",
+            {
+                maxZoom: 18,
+                noWrap: true,
+                bounds: LIMITES,
+                attribution:
+                    '<a href="https://www.ign.gob.ar/" target="_blank" rel="noopener">Instituto Geográfico Nacional</a>'
+            }
+        ).addTo(mapa);
         capaPuntos = L.markerClusterGroup({
             showCoverageOnHover: false,
             maxClusterRadius: 50,

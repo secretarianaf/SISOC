@@ -71,8 +71,11 @@ imágenes).
 - Leaflet 1.9.4 y Leaflet.markercluster 1.5.3 desde `cdn.jsdelivr.net` (el
   mismo CDN de ApexCharts y Chart.js), con versión fija e integridad SRI
   `sha256` como el resto de los scripts de jsdelivr del backoffice.
-- Teselas de OpenStreetMap (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`)
-  con su atribución.
+- Teselas del mapa oficial del Instituto Geográfico Nacional (Argenmap, TMS:
+  `https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG%3A3857@png/{z}/{x}/{-y}.png`),
+  con su atribución y sin el prefijo de Leaflet. Rotula "Islas Malvinas (Arg.)";
+  reemplazó a OpenStreetMap el 15/10/2026. El mapa no se puede alejar más allá
+  de Argentina (zoom mínimo = el que la muestra entera, `maxBounds`).
 - CSP (`config/middlewares/csp.py`): no hizo falta cambiarla. `script-src` y
   `style-src` ya permiten `https://cdn.jsdelivr.net`; las teselas son imágenes
   y `img-src` ya permite `https:`; el JSON del tablero es del mismo origen

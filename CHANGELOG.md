@@ -1,3 +1,17 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-10-15 -->
+# Versión SISOC 15.10.2026
+
+## Nuevas Funcionalidades
+
+- [src/backends/inspecciones.] el mapa del tablero usa el mapa oficial del IGN y queda acotado a Argentina. (PR #2710)
+
+## Corrección de Errores
+
+- [src/backends/inspecciones.] el panel de Inspecciones escolares se ve con el diseño aprobado en el backoffice oscuro; totales del panel corregidos; tablero más rápido. (PR #2701)
+- [src/backends/inspecciones.] editar una escuela del panel de Inspecciones trae sus datos y acepta varios mails. (PR #2703)
+- [src/backends/inspecciones.] la búsqueda de escuelas encuentra el Cueanexo escrito sin el 0 inicial o en parte. (PR #2706)
+<!-- AUTO-GENERATED RELEASE END: 2026-10-15 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-10-16 -->
 # Versión SISOC 16.10.2026
 
@@ -9,15 +23,6 @@
 - [src/backends/inspecciones.] tablero de Inspecciones con los cambios pedidos (tarjetas, colegios computables, leyendas, mapa) y columna derecha del acta con títulos y avance. (PR #2708)
 <!-- AUTO-GENERATED RELEASE END: 2026-10-16 -->
 
-<!-- AUTO-GENERATED RELEASE START: 2026-10-15 -->
-# Versión SISOC 15.10.2026
-
-## Corrección de Errores
-
-- [src/backends/inspecciones.] el panel de Inspecciones escolares se ve con el diseño aprobado en el backoffice oscuro; totales del panel corregidos; tablero más rápido. (PR #2701)
-- [src/backends/inspecciones.] editar una escuela del panel de Inspecciones trae sus datos y acepta varios mails. (PR #2703)
-- [src/backends/inspecciones.] la búsqueda de escuelas encuentra el Cueanexo escrito sin el 0 inicial o en parte. (PR #2706)
-<!-- AUTO-GENERATED RELEASE END: 2026-10-15 -->
 
 
 

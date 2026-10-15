@@ -20,6 +20,15 @@
                 </a>
             </div>
             <ul class="nav-links mb-0 d-flex align-items-center flex-wrap">
+                {% if 'centrodeinfancia' in pagina_actual %}
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light btn-sm text-nowrap"
+                           href="https://consultas.capitalhumano.gob.ar/canales/sisoc-cdi"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           aria-label="Consultas (se abre en una nueva pestaña)">Consultas</a>
+                    </li>
+                {% endif %}
                 <!--li class="nav-item">
                     <span class="nav-link nav-link-rounded">
                         <img src="{% static 'custom/img/iconos_navbar/user.svg' %}" alt="Usuario" /> <!--strong>{{ user.username }}</strong -->

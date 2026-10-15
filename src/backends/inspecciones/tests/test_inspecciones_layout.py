@@ -243,6 +243,10 @@ def test_tablero_con_filtros_en_una_fila_y_contenedores_de_barras(panel):
     assert 'data-indice="aulas-fraccion"' in html
     assert 'data-indice="ausentismo-descripcion"' in html
     assert 'data-indice="aulas-descripcion"' in html
+    assert re.search(
+        r'class="insp-aviso insp-aviso-ambar d-none"\s+role="status"\s+data-indice="ausentismo-aviso-exceso"',
+        html,
+    )
     assert '<ul class="insp-leyenda-lista" data-tablero-resultados-leyenda>' in html
 
 

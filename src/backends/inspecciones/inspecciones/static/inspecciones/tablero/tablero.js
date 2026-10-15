@@ -309,7 +309,7 @@
         return numero(cantidad) + " " + (cantidad === 1 ? singular : pluralizado);
     }
 
-    // opciones: descripcion (texto inicial), fraccion(indice) -> texto, exceso(indice) -> booleano
+    // opciones: descripcion (texto inicial), fraccion(indice) -> {texto, etiqueta}, exceso(indice) -> booleano
     function pintarIndice(prefijo, indice, opciones) {
         var selector = function (campo) {
             return '[data-indice="' + prefijo + "-" + campo + '"]';
@@ -319,11 +319,15 @@
             selector("porcentaje"),
             indice.porcentaje === null ? "Sin datos computables" : formatoPorcentaje.format(indice.porcentaje) + " %"
         );
-        fijarTexto(selector("fraccion"), indice.computables ? opciones.fraccion(indice) : "–");
+        var fraccion = opciones.fraccion(indice);
+        fijarTexto(selector("fraccion"), indice.computables ? fraccion.texto : "–");
+        fijarTexto(selector("fraccion-etiqueta"), indice.computables ? fraccion.etiqueta : opciones.etiquetaBase);
         fijarTexto(
             selector("descripcion"),
-            opciones.descripcion + " · " + plural(indice.colegios, "colegio", "colegios") + " · " +
-                numero(indice.computables) + " de " + plural(actas, "acta computable", "actas computables")
+            opciones.descripcion + " · " + (actas
+                ? plural(indice.colegios, "colegio", "colegios") + " · " +
+                    numero(indice.computables) + " de " + plural(actas, "acta computable", "actas computables")
+                : "sin actas computables")
         );
         fijarTexto(selector("excluidas"), plural(indice.excluidas, "excluida", "excluidas"));
         if (opciones.exceso) {
@@ -335,13 +339,22 @@
 
     function fraccionAusentismo(indice) {
         if (indice.presente > indice.previsto) {
-            return numero(indice.presente) + " presentes / " + numero(indice.previsto) + " previstos";
+            return {
+                texto: numero(indice.presente) + " presentes / " + numero(indice.previsto) + " previstos",
+                etiqueta: "presentes / previstos",
+            };
         }
-        return numero(indice.previsto - indice.presente) + " / " + numero(indice.previsto);
+        return {
+            texto: numero(indice.previsto - indice.presente) + " / " + numero(indice.previsto),
+            etiqueta: "ausentes / previstos",
+        };
     }
 
     function fraccionAulas(indice) {
-        return numero(indice.presente) + " / " + numero(indice.previsto);
+        return {
+            texto: numero(indice.presente) + " / " + numero(indice.previsto),
+            etiqueta: "funcionando / previstas",
+        };
     }
 
     // --- Barras en el DOM (sin librería; anchos por CSSOM, la CSP lo permite) -
@@ -648,6 +661,7 @@
         pintarIndicadores(datos.indicadores);
         pintarIndice("ausentismo", datos.ausentismo, {
             descripcion: "Personal ausente sobre el previsto",
+            etiquetaBase: "ausentes / previstos",
             fraccion: fraccionAusentismo,
             exceso: function (indice) {
                 return indice.presente > indice.previsto;
@@ -655,6 +669,7 @@
         });
         pintarIndice("aulas", datos.aulas, {
             descripcion: "Aulas funcionando sobre las previstas",
+            etiquetaBase: "funcionando / previstas",
             fraccion: fraccionAulas,
         });
         pintarTurnos(datos.turnos);

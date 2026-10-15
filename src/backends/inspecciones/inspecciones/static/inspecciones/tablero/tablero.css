@@ -227,17 +227,21 @@
     position: absolute;
     top: 12px;
     right: 12px;
-    margin: 0;
     z-index: 1000;
     background: #fff;
     color: #222;
     border: 1px solid #ddd;
     border-radius: 6px;
     padding: 8px 10px;
-    gap: 0;
     font-size: 12px;
     line-height: 1.7;
     max-width: 16rem;
+}
+
+.insp-tablero-leyenda.insp-leyenda-lista {
+    margin: 0;
+    padding: 8px 10px;
+    gap: 0;
 }
 
 .insp-tablero-leyenda .text-body-secondary {

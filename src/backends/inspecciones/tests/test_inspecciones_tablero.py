@@ -328,6 +328,20 @@ def test_ausentismo_y_aulas_solo_computables(inspector_a, escuela):
     assert aulas["colegios"] == 1
 
 
+def test_colegios_cuenta_escuelas_distintas_no_visitas(inspector_a, geo):
+    escuela_a = nueva_escuela("060000031", "a", geo)
+    escuela_b = nueva_escuela("060000032", "b", geo)
+    crear_acta(inspector_a, escuela_a)
+    crear_acta(inspector_a, escuela_b)
+    crear_acta(inspector_a, escuela_a, turno="manana")
+
+    resultado = datos()
+
+    assert resultado["ausentismo"]["computables"] == 3
+    assert resultado["ausentismo"]["colegios"] == 2
+    assert resultado["aulas"]["colegios"] == 2
+
+
 def test_indices_sin_computables_no_inventan_cero(inspector_a, escuela):
     crear_acta(inspector_a, escuela, resultado="no_ingreso", f09=None, f10=None)
 

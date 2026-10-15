@@ -255,6 +255,11 @@
     line-height: 1.15;
 }
 
+.insp-kpi-valor-texto {
+    font-size: 16px;
+    padding-top: 3px;
+}
+
 .insp-kpi-valor .insp-kpi-total {
     font-size: 15px;
     color: var(--insp-gris-claro);
@@ -867,6 +872,7 @@ button.insp-dialogo-cerrar {
 .insp-aviso-ambar { background: #fff7ea; color: #5c2c00; }
 .insp-aviso-celeste { background: #eef4fb; color: #0b3c66; }
 .insp-aviso-ok { background: #e6f3ec; color: #1b5e20; }
+.insp-aviso-rojo { background: #fdecea; color: #7a1f17; }
 
 .insp-archivo {
     display: flex;

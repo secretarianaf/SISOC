@@ -3,7 +3,7 @@
     {% url 'inspecciones_anular_acta' acta.numero as url_anular %}
     {% url 'inspecciones_marcar_prueba_acta' acta.numero as url_prueba %}
     {% if acta.estado == "anulada" %}
-        <div class="alert alert-danger" role="alert">
+        <div class="insp-aviso insp-aviso-rojo" role="alert">
             <strong>Acta anulada</strong>
             {% if acta.anulada_at %}el {{ acta.anulada_at|date:"d/m/Y H:i" }}{% endif %}
             {% if acta.anulada_por %}por {{ acta.anulada_por.get_full_name|default:acta.anulada_por.username }}{% endif %}
@@ -12,33 +12,33 @@
             <div class="small">Conserva su número y su contenido, pero no cuenta en los indicadores.</div>
         </div>
     {% endif %}
-    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-        <div>
-            <div class="small text-muted text-uppercase">Acta de inspección</div>
-            <h2 class="h4 mb-2">{{ acta.numero }}</h2>
-            <div class="d-flex flex-wrap gap-2 mb-2">
+    <div class="insp-acta-encabezado">
+        <div class="d-flex flex-column gap-2">
+            <div class="insp-acta-rotulo">Acta de inspección</div>
+            <h1 class="insp-acta-numero">{{ acta.numero }}</h1>
+            <div class="insp-acta-badges">
                 {% if acta.estado == "anulada" %}
-                    <span class="insp-badge insp-badge-error">Anulada</span>
+                    <span class="insp-badge insp-badge-error"><i aria-hidden="true"></i>Anulada</span>
                 {% else %}
-                    <span class="insp-badge insp-badge-ok">Finalizada</span>
+                    <span class="insp-badge insp-badge-ok"><i aria-hidden="true"></i>Finalizada</span>
                 {% endif %}
                 {% if recepcion.es_firma %}
-                    <span class="insp-badge insp-badge-info">Firmada por quien recibe</span>
+                    <span class="insp-badge insp-badge-info"><i aria-hidden="true"></i>Firmada por quien recibe</span>
                 {% elif recepcion.tipo == "excepcion" %}
-                    <span class="insp-badge insp-badge-alerta">Excepción de firma</span>
+                    <span class="insp-badge insp-badge-alerta"><i aria-hidden="true"></i>Excepción de firma</span>
                 {% endif %}
                 {% if acta.notificacion_estado == "cargada" %}
-                    <span class="insp-badge insp-badge-ok">Notificación cargada</span>
+                    <span class="insp-badge insp-badge-ok"><i aria-hidden="true"></i>Notificación cargada</span>
                 {% else %}
-                    <span class="insp-badge insp-badge-alerta">Notificación pendiente</span>
+                    <span class="insp-badge insp-badge-alerta"><i aria-hidden="true"></i>Notificación pendiente</span>
                 {% endif %}
                 {% if acta.es_prueba %}<span class="insp-badge insp-badge-neutro">Prueba</span>{% endif %}
             </div>
-            <div class="small text-muted">
+            <div class="insp-acta-linea">
                 {{ escuela.nombre|default:"Escuela sin nombre" }} · Turno {{ turno|lower }} · cierre oficial {{ acta.cerrada_at|date:"d/m/Y H:i" }}
             </div>
         </div>
-        <div class="d-flex flex-wrap gap-2">
+        <div class="insp-acta-acciones">
             {% if url_anular and acta.estado != "anulada" %}
                 <button type="button"
                         class="btn btn-outline-danger"
@@ -65,53 +65,44 @@
                    rel="noopener noreferrer">Ver en el mapa</a>
             {% endif %}
             {% if acta.pdf %}
-                <a class="btn btn-primary"
-                   href="{% url 'inspecciones_acta_pdf' acta.numero %}">
-                    <i class="fas fa-download me-1" aria-hidden="true"></i>Descargar PDF
+                <a class="btn btn-primary" href="{% url 'inspecciones_acta_pdf' acta.numero %}">
+                    <i class="fas fa-download" aria-hidden="true"></i>Descargar PDF
                 </a>
             {% else %}
                 <span class="btn btn-primary disabled" aria-disabled="true">PDF pendiente</span>
             {% endif %}
         </div>
     </div>
-    <div class="row g-2 mb-3">
-        <div class="col-6 col-lg-3">
-            <div class="insp-kpi">
-                <div class="insp-kpi-titulo">Escuela abierta</div>
-                <div class="insp-kpi-valor">{{ resumen_acta.abierta }}</div>
-            </div>
+    <div class="insp-totales">
+        <div class="insp-kpi">
+            <div class="insp-kpi-titulo">Escuela abierta</div>
+            <div class="insp-kpi-valor">{{ resumen_acta.abierta }}</div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="insp-kpi">
-                <div class="insp-kpi-titulo">Resultado de la constatación</div>
-                <div class="insp-kpi-valor fs-6">{{ resumen_acta.resultado }}</div>
-                {% if resumen_acta.motivo_parcial %}
-                    <span class="insp-nota">Motivo: {{ resumen_acta.motivo_parcial }}</span>
-                {% endif %}
-            </div>
+        <div class="insp-kpi">
+            <div class="insp-kpi-titulo">Resultado de la constatación</div>
+            <div class="insp-kpi-valor insp-kpi-valor-texto">{{ resumen_acta.resultado }}</div>
+            {% if resumen_acta.motivo_parcial %}
+                <span class="insp-nota">Motivo: {{ resumen_acta.motivo_parcial }}</span>
+            {% endif %}
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="insp-kpi">
-                <div class="insp-kpi-titulo">Personal presente / previsto</div>
-                <div class="insp-kpi-valor">{{ resumen_acta.personal }}</div>
-            </div>
+        <div class="insp-kpi">
+            <div class="insp-kpi-titulo">Personal presente / previsto</div>
+            <div class="insp-kpi-valor">{{ resumen_acta.personal }}</div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="insp-kpi">
-                <div class="insp-kpi-titulo">Aulas funcionando / previstas</div>
-                <div class="insp-kpi-valor">{{ resumen_acta.aulas }}</div>
-            </div>
+        <div class="insp-kpi">
+            <div class="insp-kpi-titulo">Aulas funcionando / previstas</div>
+            <div class="insp-kpi-valor">{{ resumen_acta.aulas }}</div>
         </div>
     </div>
-    <div class="row g-3">
-        <div class="col-lg-8 d-flex flex-column gap-3">
-            <section class="card card-custom shadow-sm" aria-labelledby="h-resp">
-                <div class="card-header card-header-custom d-flex justify-content-between">
-                    <h3 class="h6 mb-0 text-uppercase" id="h-resp">Respuestas del formulario</h3>
-                    <span class="small text-muted">Versión {{ formulario_version }}</span>
+    <div class="insp-columnas-2-1">
+        <div>
+            <section class="insp-seccion" aria-labelledby="h-resp">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-resp">Respuestas del formulario</h3>
+                    <span class="insp-seccion-nota">Versión {{ formulario_version }}</span>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-sm insp-tabla mb-0">
+                    <table class="table insp-tabla">
                         <thead>
                             <tr>
                                 <th scope="col">Cód.</th>
@@ -122,7 +113,7 @@
                         <tbody>
                             {% for fila in respuestas %}
                                 <tr>
-                                    <td class="small fw-bold text-muted">{{ fila.codigo }}</td>
+                                    <td class="insp-mono text-muted">{{ fila.codigo }}</td>
                                     <td>{{ fila.pregunta }}</td>
                                     <td>
                                         {{ fila.respuesta|linebreaksbr }}
@@ -134,16 +125,16 @@
                     </table>
                 </div>
             </section>
-            <section class="card card-custom shadow-sm" aria-labelledby="h-evid">
-                <div class="card-header card-header-custom d-flex justify-content-between">
-                    <h3 class="h6 mb-0 text-uppercase" id="h-evid">Evidencia fotográfica</h3>
-                    <span class="small text-muted">{{ evidencia|length }} imágenes</span>
+            <section class="insp-seccion" aria-labelledby="h-evid">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-evid">Evidencia fotográfica</h3>
+                    <span class="insp-seccion-nota">{{ evidencia|length }} imágenes</span>
                 </div>
-                <div class="card-body">
+                <div class="insp-seccion-cuerpo">
                     {% if evidencia %}
-                        <div class="row g-3">
+                        <div class="insp-figuras">
                             {% for imagen in evidencia %}
-                                <figure class="col-6 col-md-4 mb-0">
+                                <figure>
                                     <a href="{% url 'inspecciones_acta_imagen' acta.numero imagen.uuid %}"
                                        target="_blank"
                                        rel="noopener">
@@ -152,7 +143,7 @@
                                              alt="{{ imagen.titulo }}{% if imagen.descripcion %}: {{ imagen.descripcion }}{% endif %}"
                                              loading="lazy" />
                                     </a>
-                                    <figcaption class="small mt-1">
+                                    <figcaption>
                                         <strong>{{ imagen.titulo }}</strong>
                                         {% if imagen.descripcion %}<div>{{ imagen.descripcion }}</div>{% endif %}
                                         <div class="text-muted">
@@ -172,16 +163,16 @@
                     {% endif %}
                 </div>
             </section>
-            <section class="card card-custom shadow-sm" aria-labelledby="h-notif">
-                <div class="card-header card-header-custom d-flex justify-content-between">
-                    <h3 class="h6 mb-0 text-uppercase" id="h-notif">Notificación en papel</h3>
+            <section class="insp-seccion" aria-labelledby="h-notif">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-notif">Notificación en papel</h3>
                     {% if notificaciones %}
                         <span class="insp-badge insp-badge-ok">Cargada</span>
                     {% else %}
                         <span class="insp-badge insp-badge-alerta">Pendiente</span>
                     {% endif %}
                 </div>
-                <div class="card-body">
+                <div class="insp-seccion-cuerpo">
                     {% for notificacion in notificaciones %}
                         <div class="{% if not forloop.first %}border-top pt-3 mt-3 text-muted{% endif %}">
                             {% if not forloop.first %}<div class="small mb-2">Versión anterior (v{{ notificacion.version }})</div>{% endif %}
@@ -216,13 +207,13 @@
                                     </dd>
                                 {% endif %}
                             </dl>
-                            <div class="row g-2">
+                            <div class="d-flex gap-2 flex-wrap">
                                 {% for archivo in notificacion.archivos %}
-                                    <div class="col-4 col-md-3">
+                                    <div>
                                         <a href="{% url 'inspecciones_acta_notificacion_archivo' acta.numero archivo.uuid %}"
                                            target="_blank"
                                            rel="noopener">
-                                            <img class="insp-miniatura"
+                                            <img class="insp-miniatura insp-miniatura-chica"
                                                  src="{% url 'inspecciones_acta_notificacion_archivo' acta.numero archivo.uuid %}"
                                                  alt="Notificación, página {{ archivo.orden }}"
                                                  loading="lazy" />
@@ -237,12 +228,12 @@
                 </div>
             </section>
         </div>
-        <div class="col-lg-4 d-flex flex-column gap-3">
-            <section class="card card-custom shadow-sm" aria-labelledby="h-visita">
-                <div class="card-header card-header-custom">
-                    <h3 class="h6 mb-0 text-uppercase" id="h-visita">Visita</h3>
+        <div>
+            <section class="insp-seccion" aria-labelledby="h-visita">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-visita">Visita</h3>
                 </div>
-                <div class="card-body">
+                <div class="insp-seccion-cuerpo">
                     <dl class="insp-dl">
                         <dt>Inspector</dt>
                         <dd>
@@ -273,17 +264,17 @@
                     </dl>
                 </div>
             </section>
-            <section class="card card-custom shadow-sm" aria-labelledby="h-esc">
-                <div class="card-header card-header-custom d-flex justify-content-between">
-                    <h3 class="h6 mb-0 text-uppercase" id="h-esc">Escuela</h3>
+            <section class="insp-seccion" aria-labelledby="h-esc">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-esc">Escuela</h3>
                     {% if escuela_catalogo %}
-                        <a class="small"
+                        <a class="insp-seccion-nota"
                            href="{% url 'inspecciones_panel' %}?editar={{ escuela_catalogo.pk }}">Ver ficha</a>
                     {% elif carga_manual %}
                         <span class="insp-badge insp-badge-alerta">Carga manual</span>
                     {% endif %}
                 </div>
-                <div class="card-body">
+                <div class="insp-seccion-cuerpo">
                     <dl class="insp-dl">
                         <dt>Cueanexo</dt>
                         <dd class="insp-mono">
@@ -328,12 +319,12 @@
                     </dl>
                 </div>
             </section>
-            <section class="card card-custom shadow-sm" aria-labelledby="h-ubic">
-                <div class="card-header card-header-custom d-flex justify-content-between">
-                    <h3 class="h6 mb-0 text-uppercase" id="h-ubic">Ubicación</h3>
+            <section class="insp-seccion" aria-labelledby="h-ubic">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-ubic">Ubicación</h3>
                     <span class="insp-badge {% if ubicacion.es_gps %}insp-badge-ok{% else %}insp-badge-alerta{% endif %}">{{ ubicacion.fuente }}</span>
                 </div>
-                <div class="card-body">
+                <div class="insp-seccion-cuerpo">
                     <dl class="insp-dl">
                         {% if ubicacion.tiene_coordenadas %}
                             <dt>Coordenadas</dt>
@@ -362,11 +353,11 @@
                     </dl>
                 </div>
             </section>
-            <section class="card card-custom shadow-sm" aria-labelledby="h-rec">
-                <div class="card-header card-header-custom">
-                    <h3 class="h6 mb-0 text-uppercase" id="h-rec">Recepción</h3>
+            <section class="insp-seccion" aria-labelledby="h-rec">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-rec">Recepción</h3>
                 </div>
-                <div class="card-body">
+                <div class="insp-seccion-cuerpo">
                     {% if recepcion.es_firma %}
                         {% if recepcion.imagen_uuid %}
                             <img class="insp-firma mb-2"
@@ -417,11 +408,11 @@
                     {% endif %}
                 </div>
             </section>
-            <section class="card card-custom shadow-sm" aria-labelledby="h-hist">
-                <div class="card-header card-header-custom">
-                    <h3 class="h6 mb-0 text-uppercase" id="h-hist">Historial</h3>
+            <section class="insp-seccion" aria-labelledby="h-hist">
+                <div class="insp-seccion-cabecera">
+                    <h3 id="h-hist">Historial</h3>
                 </div>
-                <div class="card-body">
+                <div class="insp-seccion-cuerpo">
                     {% for evento in historial %}
                         <div class="insp-evento">
                             <span class="insp-evento-hora">{{ evento.at|date:"d/m H:i" }}</span>

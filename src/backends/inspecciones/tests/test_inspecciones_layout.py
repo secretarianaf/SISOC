@@ -12,6 +12,8 @@ from django.urls import reverse
 from inspecciones.services.asignaciones import asignaciones_de_jornada
 from inspecciones.services.formato import iniciales
 
+from tests.test_inspecciones_panel import _acta_cerrada
+
 pytestmark = pytest.mark.django_db
 
 
@@ -167,4 +169,17 @@ def test_subir_archivo_de_escuelas_muestra_la_caja_del_mockup(panel):
     assert 'class="insp-dialogo"' in html
     assert 'class="insp-dialogo-cerrar"' in html
     assert 'class="insp-pasos"' in html
+    assert "card-custom" not in html
+
+
+def test_detalle_del_acta_con_el_encabezado_del_mockup(
+    panel, api_a, escuela, cerrar, imagen, nuevo_uuid
+):
+    numero, _imagen_uuid = _acta_cerrada(api_a, escuela, cerrar, imagen, nuevo_uuid)
+
+    html = panel.get(reverse("inspecciones_acta_detalle", args=[numero])).content.decode()
+
+    assert 'class="insp-acta-rotulo"' in html
+    assert f'<h1 class="insp-acta-numero">{numero}</h1>' in html
+    assert 'class="insp-columnas-2-1"' in html
     assert "card-custom" not in html

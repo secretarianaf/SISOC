@@ -829,6 +829,14 @@
     margin-left: auto;
 }
 
+.insp-dialogo > form > .modal-header {
+    border-radius: 8px 8px 0 0;
+}
+
+.insp-dialogo > form > .modal-footer {
+    border-radius: 0 0 8px 8px;
+}
+
 /* Avisos de color */
 .insp-aviso {
     padding: 10px 12px;

@@ -20,7 +20,7 @@
     <div class="modal-body">
         <div data-insp-mensaje></div>
         {% if escuela.a_revisar %}
-            <div class="alert alert-warning small" role="status">
+            <div class="insp-aviso insp-aviso-ambar" role="status">
                 <strong>Datos a revisar:</strong> {{ escuela.motivos_revision_display|join:"; " }}.
                 {% if escuela.localidad_original %}Localidad del archivo: <em>{{ escuela.localidad_original }}</em>.{% endif %}
                 Al guardar con una localidad de la lista y un mail válido se quita la marca.
@@ -159,7 +159,7 @@
     </div>
     <div class="modal-footer">
         <button type="button"
-                class="btn btn-link text-secondary"
+                class="btn btn-link"
                 data-bs-dismiss="modal">Cancelar</button>
         {% if not escuela %}
             <button type="submit" name="otra" value="1" class="btn btn-outline-primary">Guardar y cargar otra</button>

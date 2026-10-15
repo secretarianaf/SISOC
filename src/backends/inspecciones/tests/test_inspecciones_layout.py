@@ -145,3 +145,17 @@ def test_actas_usa_la_misma_seccion(panel):
 
     assert 'class="insp-seccion-barra"' in html
     assert "card-custom" not in html
+
+
+def test_formulario_de_escuela_como_pagina_va_en_la_caja_del_mockup(panel):
+    html = panel.get(reverse("inspecciones_escuela_nueva")).content.decode()
+
+    assert 'class="insp-dialogo"' in html
+    assert "card-custom" not in html
+    assert "Guardar y cargar otra" in html
+
+
+def test_aviso_de_escuela_ya_asignada_usa_el_aviso_ambar(panel):
+    html = panel.get(reverse("inspecciones_asignacion_nueva"), **XHR).content.decode()
+
+    assert 'class="insp-aviso insp-aviso-ambar d-none"' in html

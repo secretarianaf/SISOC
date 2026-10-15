@@ -58,6 +58,7 @@ def test_alta_de_escuela(panel, geografia):
         ({"cueanexo": "06012340"}, "cueanexo"),
         ({"cueanexo": "06012340A"}, "cueanexo"),
         ({"mail": "ep12@"}, "mail"),
+        ({"mail": "ep12@abc.gob.ar; roto@"}, "mail"),
         ({"cp": "1754-B"}, "cp"),
         ({"nombre": ""}, "nombre"),
     ],
@@ -135,6 +136,48 @@ def test_edicion_mantiene_codigo_y_quita_marca(panel, geografia):
     assert escuela.motivos_revision == []
 
 
+def test_edicion_trae_los_datos_de_la_escuela(panel, geografia):
+    escuela = Escuela.objects.create(
+        codigo="060890200",
+        cue="060890200",
+        nombre="CENTRO DE ADULTOS Nº736",
+        provincia=geografia["bsas"],
+        localidad_vinculada=geografia["san_justo"],
+        domicilio="3 SINDICATO DE LUZ Y FUERZA 481",
+        cp="1900",
+        telefono="0221 15-590-6972",
+        mail="centro736@abc.gob.ar",
+    )
+
+    form = panel.get(
+        reverse("inspecciones_escuela_editar", args=[escuela.pk]), **XHR
+    ).context["form"]
+
+    assert form["provincia"].value() == geografia["bsas"].pk
+    assert form["localidad"].value() == geografia["san_justo"].pk
+    assert form["cueanexo"].value() == "060890200"
+    assert form["nombre"].value() == "CENTRO DE ADULTOS Nº736"
+    assert form["domicilio"].value() == "3 SINDICATO DE LUZ Y FUERZA 481"
+    assert form["cp"].value() == "1900"
+    assert form["telefono"].value() == "0221 15-590-6972"
+    assert form["mail"].value() == "centro736@abc.gob.ar"
+
+
+def test_edicion_acepta_varios_mails_como_el_padron(panel, geografia):
+    escuela = Escuela.objects.create(codigo="060123400", cue="060123400", nombre="EP")
+    mails = "direccion@gmail.com; ep12@abc.gob.ar"
+
+    respuesta = panel.post(
+        reverse("inspecciones_escuela_editar", args=[escuela.pk]),
+        _datos_escuela(geografia, mail=mails),
+        **XHR,
+    )
+
+    assert respuesta.status_code == 200
+    escuela.refresh_from_db()
+    assert escuela.mail == mails
+
+
 def test_edicion_permite_conservar_su_propio_cueanexo(panel, geografia):
     escuela = Escuela.objects.create(codigo="060123400", cue="060123400", nombre="EP")
 
@@ -175,6 +218,20 @@ def test_listado_filtra_y_pagina(panel, geografia):
         reverse("inspecciones_panel"), {"provincia": "x", "editar": "y"}
     )
     assert invalido.status_code == 200
+
+
+@pytest.mark.parametrize("texto", ["060556200", "60556200", "0556200", "556"])
+def test_busqueda_por_cueanexo_sin_el_cero_inicial_ni_el_principio(
+    panel, geografia, texto
+):
+    Escuela.objects.create(codigo="060556200", cue="060556200", nombre="EP 19")
+    Escuela.objects.create(codigo="060890200", cue="060890200", nombre="CA 736")
+
+    busqueda = panel.get(reverse("inspecciones_panel"), {"q": texto})
+    select = panel.get(reverse("inspecciones_ajax_escuelas"), {"q": texto}).json()
+
+    assert [e.nombre for e in busqueda.context["escuelas"]] == ["EP 19"]
+    assert [o["text"] for o in select["results"]] == ["EP 19"]
 
 
 # --- Búsquedas AJAX -----------------------------------------------------
@@ -396,7 +453,7 @@ def test_listado_y_detalle_del_acta(panel, api_a, escuela, cerrar, imagen, nuevo
     assert codigos == [f"F{i:02d}" for i in range(17)]
     html = detalle.content.decode()
     assert "Personal presente / previsto" in html
-    assert detalle.context["resumen"]["personal"] == "20 / 24"
+    assert detalle.context["resumen_acta"]["personal"] == "20 / 24"
     assert reverse("inspecciones_acta_imagen", args=[numero, imagen_uuid]) in html
     imagen_respuesta = panel.get(
         reverse("inspecciones_acta_imagen", args=[numero, imagen_uuid])
@@ -435,7 +492,26 @@ def test_detalle_muestra_anulacion_y_prueba(
     assert len(listado.context["filas"]) == 1
     validas = panel.get(reverse("inspecciones_actas"), {"estado": "validas"})
     assert validas.context["filas"] == []
-    assert panel.get(reverse("inspecciones_panel")).context["resumen"]["actas_hoy"] == 0
+    assert (
+        panel.get(reverse("inspecciones_panel")).context["totales_panel"]["actas_hoy"]
+        == 0
+    )
+
+
+def test_detalle_muestra_la_anulacion_en_la_linea_de_tiempo(
+    panel, api_a, escuela, cerrar, imagen, nuevo_uuid, coordinacion
+):
+    from inspecciones.models import Acta
+    from inspecciones.services.anulacion import anular_acta
+
+    numero, _ = _acta_cerrada(api_a, escuela, cerrar, imagen, nuevo_uuid)
+    anular_acta(Acta.objects.get(numero=numero), "Carga duplicada", coordinacion)
+
+    html = panel.get(reverse("inspecciones_acta_detalle", args=[numero])).content
+    html = html.decode()
+
+    assert 'class="insp-hito insp-hito-anulada"' in html
+    assert "Motivo: Carga duplicada" in html
 
 
 def test_imagen_de_otra_acta_no_se_sirve(

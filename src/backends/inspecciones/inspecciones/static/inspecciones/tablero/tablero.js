@@ -1,7 +1,7 @@
 /*
  * Tablero en vivo de Inspecciones escolares.
  *
- * Consulta periódica (cada 10 s) al endpoint JSON del tablero; sin WebSockets
+ * Consulta periódica (cada 5 s) al endpoint JSON del tablero; sin WebSockets
  * ni SSE (gunicorn síncrono, sin Redis). Pausa con la pestaña oculta, avisa
  * la desconexión con la última hora buena y reintenta. Todo el texto que viene
  * del servidor se inserta con textContent (nunca innerHTML).
@@ -16,7 +16,7 @@
 
     var URL_DATOS = raiz.dataset.urlDatos;
     var URL_EXPORTAR = raiz.dataset.urlExportar;
-    var INTERVALO = parseInt(raiz.dataset.intervaloMs, 10) || 10000;
+    var INTERVALO = parseInt(raiz.dataset.intervaloMs, 10) || 5000;
     var DURACION_NUEVA = 8000;
     var ARGENTINA = [[-55.1, -73.6], [-21.7, -53.6]];
     var COLORES = {
@@ -113,10 +113,6 @@
             parametros.set("localidad", estado.localidad);
         }
         return parametros.toString();
-    }
-
-    function colorTexto() {
-        return getComputedStyle(raiz).color || "#333";
     }
 
     // --- Estado de la conexión ----------------------------------------------
@@ -304,146 +300,152 @@
         fijarTexto('[data-kpi="inspectores_con_actividad"]', numero(indicadores.inspectores.con_actividad));
         fijarTexto('[data-kpi="inspectores_habilitados"]', numero(indicadores.inspectores.habilitados));
         fijarTexto('[data-kpi="inspectores_sin_actividad"]', numero(indicadores.inspectores.sin_actividad));
-        fijarTexto('[data-kpi="con_firma"]', numero(indicadores.con_firma));
-        fijarTexto('[data-kpi="sin_firma"]', numero(indicadores.sin_firma));
-        var motivos = indicadores.sin_firma_por_motivo
-            .filter(function (m) {
-                return m.cantidad > 0;
-            })
-            .map(function (m) {
-                return numero(m.cantidad) + " " + m.etiqueta;
-            });
-        fijarTexto(
-            '[data-kpi="sin_firma_por_motivo"]',
-            motivos.length ? "sin firma: " + motivos.join(" · ") : "sin excepciones de firma"
-        );
         fijarTexto('[data-kpi="borradores_en_curso"]', numero(indicadores.borradores_en_curso));
         fijarTexto('[data-kpi="notificacion_pendiente"]', numero(indicadores.notificacion_pendiente));
         fijarTexto('[data-kpi="notificacion_cargada"]', numero(indicadores.notificacion_cargada));
     }
 
-    function pintarIndice(prefijo, indice) {
-        fijarTexto(
-            '[data-indice="' + prefijo + '-porcentaje"]',
-            indice.porcentaje === null ? "Sin datos computables" : formatoPorcentaje.format(indice.porcentaje) + " %"
-        );
-        fijarTexto('[data-indice="' + prefijo + '-computables"]', numero(indice.computables));
-        fijarTexto('[data-indice="' + prefijo + '-excluidas"]', numero(indice.excluidas));
+    function plural(cantidad, singular, pluralizado) {
+        return numero(cantidad) + " " + (cantidad === 1 ? singular : pluralizado);
     }
 
-    // --- Gráficos (ApexCharts, ya cargado por el backoffice) ----------------
+    // opciones: descripcion (texto inicial), etiquetaBase (etiqueta sin datos), fraccion(indice) -> {texto, etiqueta}, exceso(indice) -> booleano
+    function pintarIndice(prefijo, indice, opciones) {
+        var selector = function (campo) {
+            return '[data-indice="' + prefijo + "-" + campo + '"]';
+        };
+        var actas = indice.computables + indice.excluidas;
+        fijarTexto(
+            selector("porcentaje"),
+            indice.porcentaje === null ? "Sin datos computables" : formatoPorcentaje.format(indice.porcentaje) + " %"
+        );
+        var fraccion = opciones.fraccion(indice);
+        fijarTexto(selector("fraccion"), indice.computables ? fraccion.texto : "–");
+        fijarTexto(selector("fraccion-etiqueta"), indice.computables ? fraccion.etiqueta : opciones.etiquetaBase);
+        fijarTexto(
+            selector("descripcion"),
+            opciones.descripcion + " · " + (actas
+                ? plural(indice.colegios, "colegio", "colegios") + " · " +
+                    numero(indice.computables) + " de " + plural(actas, "acta computable", "actas computables")
+                : "sin actas computables")
+        );
+        fijarTexto(selector("excluidas"), plural(indice.excluidas, "excluida", "excluidas"));
+        if (opciones.exceso) {
+            raiz.querySelectorAll(selector("aviso-exceso")).forEach(function (nodo) {
+                nodo.classList.toggle("d-none", !opciones.exceso(indice));
+            });
+        }
+    }
 
-    var graficos = {};
+    function excedePrevisto(indice) {
+        return indice.presente > indice.previsto;
+    }
 
-    function opcionesBase(alto) {
+    function fraccionAusentismo(indice) {
+        if (excedePrevisto(indice)) {
+            return {
+                texto: numero(indice.presente) + " / " + numero(indice.previsto),
+                etiqueta: "presentes / previstos"
+            };
+        }
         return {
-            chart: {
-                type: "bar",
-                height: alto,
-                toolbar: { show: false },
-                animations: { enabled: false },
-                background: "transparent",
-                foreColor: colorTexto(),
-                fontFamily: "Roboto, sans-serif"
-            },
-            plotOptions: { bar: { horizontal: true, borderRadius: 3 } },
-            grid: { padding: { left: 4, right: 8 } },
-            legend: { position: "bottom", fontSize: "12px" },
-            noData: { text: "Sin actas con estos filtros" }
+            texto: numero(indice.previsto - indice.presente) + " / " + numero(indice.previsto),
+            etiqueta: "ausentes / previstos"
         };
     }
 
-    function grafico(clave, opciones) {
-        var contenedor = raiz.querySelector('[data-tablero-grafico="' + clave + '"]');
-        if (!contenedor) {
-            return;
-        }
-        if (typeof window.ApexCharts === "undefined") {
-            contenedor.textContent = "No se pudo cargar la librería de gráficos.";
-            contenedor.className = "small text-body-secondary";
-            return;
-        }
-        if (graficos[clave]) {
-            graficos[clave].updateOptions(opciones, false, false);
-            return;
-        }
-        graficos[clave] = new window.ApexCharts(contenedor, opciones);
-        graficos[clave].render();
+    function fraccionAulas(indice) {
+        return {
+            texto: numero(indice.presente) + " / " + numero(indice.previsto),
+            etiqueta: "funcionando / previstas"
+        };
     }
 
-    function mostrarCantidad(valor, opciones) {
-        var serie = opciones.w.config.series[opciones.seriesIndex];
-        var cantidad = serie.data[opciones.dataPointIndex];
-        return cantidad ? numero(cantidad) : "";
+    // --- Barras en el DOM (sin librería; anchos por CSSOM, la CSP lo permite) -
+
+    function fijarAncho(nodo, porcentaje) {
+        nodo.style.width = Math.max(0, Math.min(100, porcentaje)) + "%";
     }
 
     function pintarTurnos(turnos) {
-        var opciones = opcionesBase(170);
-        opciones.series = [{
-            name: "Visitas",
-            data: turnos.map(function (t) {
-                return t.cantidad;
-            })
-        }];
-        opciones.xaxis = {
-            categories: turnos.map(function (t) {
-                return t.etiqueta;
-            }),
-            labels: { formatter: function (v) { return numero(Math.round(v)); } }
-        };
-        opciones.colors = [COLORES.teal];
-        opciones.dataLabels = { enabled: true, formatter: function (v) { return numero(v); } };
-        opciones.tooltip = { y: { formatter: function (v) { return numero(v) + " actas"; } } };
-        opciones.legend = { show: false };
-        grafico("turnos", opciones);
+        var contenedor = raiz.querySelector("[data-tablero-turnos]");
+        if (!contenedor) {
+            return;
+        }
+        var maximo = turnos.reduce(function (m, t) {
+            return Math.max(m, t.cantidad || 0);
+        }, 0);
+        var filas = document.createDocumentFragment();
+        turnos.forEach(function (turno) {
+            var fila = elemento("div", "insp-barra");
+            fila.appendChild(elemento("span", "insp-barra-etiqueta", turno.etiqueta));
+            var pista = elemento("div", "insp-barra-pista");
+            var relleno = elemento("div", "insp-barra-relleno");
+            fijarAncho(relleno, maximo ? (turno.cantidad / maximo) * 100 : 0);
+            pista.appendChild(relleno);
+            fila.appendChild(pista);
+            fila.appendChild(elemento("span", "insp-barra-valor", numero(turno.cantidad)));
+            filas.appendChild(fila);
+        });
+        contenedor.replaceChildren(filas);
     }
 
-    function opcionesApiladas(categorias, series, colores, alto) {
-        var opciones = opcionesBase(alto);
-        opciones.chart.stacked = true;
-        opciones.chart.stackType = "100%";
-        opciones.series = series;
-        opciones.colors = colores;
-        opciones.xaxis = { categories: categorias, labels: { formatter: function (v) { return v + " %"; } } };
-        opciones.dataLabels = { enabled: true, formatter: mostrarCantidad };
-        opciones.tooltip = {
-            y: {
-                formatter: function (valor, contexto) {
-                    var serie = contexto.w.config.series[contexto.seriesIndex];
-                    return numero(serie.data[contexto.dataPointIndex] || 0) + " actas";
-                }
-            }
-        };
-        return opciones;
+    function pintarSegmentos(contenedor, leyenda, categorias, colores) {
+        if (!contenedor) {
+            return;
+        }
+        var total = categorias.reduce(function (s, c) {
+            return s + (c.cantidad || 0);
+        }, 0);
+        var barra = elemento("div", "insp-segmentos");
+        barra.setAttribute("role", "img");
+        barra.setAttribute(
+            "aria-label",
+            categorias.map(function (c) { return numero(c.cantidad) + " " + c.etiqueta; }).join(", ")
+        );
+        categorias.forEach(function (categoria) {
+            var tramo = elemento("span", "insp-segmento");
+            tramo.style.backgroundColor = colores[categoria.valor] || COLORES.gris;
+            fijarAncho(tramo, total ? (categoria.cantidad / total) * 100 : 0);
+            barra.appendChild(tramo);
+        });
+        contenedor.replaceChildren(barra);
+        if (!leyenda) {
+            return;
+        }
+        var items = document.createDocumentFragment();
+        categorias.forEach(function (categoria) {
+            var item = elemento("li", "insp-leyenda-item");
+            var punto = elemento("i", "insp-leyenda-punto");
+            punto.setAttribute("aria-hidden", "true");
+            punto.style.backgroundColor = colores[categoria.valor] || COLORES.gris;
+            item.appendChild(punto);
+            item.appendChild(document.createTextNode(categoria.etiqueta + " · " + numero(categoria.cantidad)));
+            items.appendChild(item);
+        });
+        leyenda.replaceChildren(items);
     }
 
     function pintarResultados(resultados) {
-        var series = resultados.map(function (r) {
-            return { name: r.etiqueta + " · " + numero(r.cantidad), data: [r.cantidad] };
-        });
-        var colores = resultados.map(function (r) {
-            return COLOR_RESULTADO[r.valor] || COLORES.gris;
-        });
-        var opciones = opcionesApiladas(["Actas"], series, colores, 150);
-        opciones.yaxis = { labels: { show: false } };
-        grafico("resultados", opciones);
+        pintarSegmentos(
+            raiz.querySelector("[data-tablero-resultados]"),
+            raiz.querySelector("[data-tablero-resultados-leyenda]"),
+            resultados,
+            COLOR_RESULTADO
+        );
     }
 
     function pintarPresencia(presencia) {
-        var categorias = presencia.personal.categorias;
-        var series = categorias.map(function (categoria, indice) {
-            return {
-                name: categoria.etiqueta,
-                data: [categoria.cantidad, presencia.estudiantes.categorias[indice].cantidad]
-            };
+        ["personal", "estudiantes"].forEach(function (clave) {
+            var serie = presencia[clave];
+            pintarSegmentos(
+                raiz.querySelector('[data-tablero-presencia="' + clave + '"]'),
+                raiz.querySelector('[data-tablero-presencia-leyenda="' + clave + '"]'),
+                serie.categorias,
+                COLOR_PRESENCIA
+            );
+            fijarTexto('[data-tablero-presencia-total="' + clave + '"]', "(" + numero(serie.denominador) + ")");
         });
-        var colores = categorias.map(function (c) {
-            return COLOR_PRESENCIA[c.valor] || COLORES.gris;
-        });
-        grafico(
-            "presencia",
-            opcionesApiladas(["Hay personal educativo", "Hay estudiantes"], series, colores, 190)
-        );
         var personal = presencia.personal;
         var estudiantes = presencia.estudiantes;
         raiz.querySelector("[data-tablero-presencia-denominador]").textContent =
@@ -464,8 +466,15 @@
             return;
         }
         var L = window.L;
-        mapa = L.map(contenedor, { scrollWheelZoom: false });
+        var LIMITES = L.latLngBounds(ARGENTINA).pad(0.08);
+        mapa = L.map(contenedor, {
+            scrollWheelZoom: false,
+            maxBounds: LIMITES,
+            maxBoundsViscosity: 1.0,
+            minZoom: 4
+        });
         mapa.fitBounds(ARGENTINA);
+        mapa.setMinZoom(Math.min(4, mapa.getBoundsZoom(ARGENTINA)));
         L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             maxZoom: 19,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -661,8 +670,17 @@
 
     function pintar(datos) {
         pintarIndicadores(datos.indicadores);
-        pintarIndice("ausentismo", datos.ausentismo);
-        pintarIndice("aulas", datos.aulas);
+        pintarIndice("ausentismo", datos.ausentismo, {
+            descripcion: "Personal ausente sobre el previsto",
+            etiquetaBase: "ausentes / previstos",
+            fraccion: fraccionAusentismo,
+            exceso: excedePrevisto
+        });
+        pintarIndice("aulas", datos.aulas, {
+            descripcion: "Aulas funcionando sobre las previstas",
+            etiquetaBase: "funcionando / previstas",
+            fraccion: fraccionAulas
+        });
         pintarTurnos(datos.turnos);
         pintarResultados(datos.resultados);
         pintarPresencia(datos.presencia);

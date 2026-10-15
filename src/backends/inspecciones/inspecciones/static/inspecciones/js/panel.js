@@ -27,7 +27,7 @@
         }
         return $(
             "<span>" + escapar(opcion.text) +
-            '<span class="insp-opcion-detalle">' + escapar(opcion.detalle) + "</span></span>"
+            '<span class="insp-detalle">' + escapar(opcion.detalle) + "</span></span>"
         );
     }
 
@@ -39,6 +39,7 @@
             }
             const minimo = parseInt($select.data("insp-min") || 0, 10);
             const provincia = $select.data("insp-provincia");
+            // Dentro de un modal el desplegable se cuelga del modal (si no, queda detrás).
             const $modal = $select.closest(".modal");
             $select.select2({
                 width: $select.closest(".insp-filtros").length ? "style" : "100%",

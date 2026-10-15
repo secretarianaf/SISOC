@@ -1,0 +1,6 @@
+{% extends "includes/base_claro.html" %}
+{% load static %}
+{% block head_claro %}
+    <link rel="stylesheet" href="{% static 'inspecciones/css/panel.css' %}" />
+    {% block head_inspecciones %}{% endblock %}
+{% endblock %}

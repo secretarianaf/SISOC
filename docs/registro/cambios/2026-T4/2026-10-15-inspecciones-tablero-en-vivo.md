@@ -46,16 +46,20 @@ Las tres exigen `puede_gestionar_inspecciones` (coordinación o el permiso
 
 ## Tiempo real
 
-La página consulta `tablero/datos/` cada 10 segundos (sin WebSockets ni SSE:
+La página consulta `tablero/datos/` cada 5 segundos (sin WebSockets ni SSE:
 gunicorn síncrono y sin Redis), pausa con la pestaña oculta
 (`visibilitychange`), muestra "En vivo · actualizado hace N s", avisa la
 desconexión con la hora de la última consulta correcta y reintenta. Un acta
 nueva queda marcada "nueva" unos segundos en la tabla.
 
-La respuesta se cachea 5 segundos por combinación de filtros con el cache de
+La respuesta se cachea 2 segundos por combinación de filtros con el cache de
 Django (hoy `LocMemCache`, por proceso). Con N workers, la base recibe a lo
-sumo N cálculos cada 5 segundos por combinación de filtros, sin importar
+sumo N cálculos cada 2 segundos por combinación de filtros, sin importar
 cuántos coordinadores miren el tablero.
+
+Con esos valores, un acta cerrada aparece en el tablero como máximo 7 segundos
+después (intervalo más cache). Arrancó en 10 s y 5 s; en la prueba local de
+punta a punta se midieron 10,4 s, por encima del objetivo de menos de 10 s.
 
 Eficiencia: 7 consultas por cálculo, sin importar el volumen (agregados en la
 base y una sola lectura del conjunto filtrado, que de la `instantanea` trae

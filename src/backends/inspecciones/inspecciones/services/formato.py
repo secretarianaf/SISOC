@@ -5,6 +5,8 @@ from datetime import date, datetime
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 
+from core.services.layout_claro import iniciales  # noqa: F401
+
 
 def iso(valor):
     """ISO 8601 con la zona de Argentina (``2026-10-14T14:52:03-03:00``)."""

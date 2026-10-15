@@ -16,6 +16,7 @@ from inspecciones.services.asignaciones import (
 )
 from inspecciones.services.catalogo import escuela_con_cueanexo
 from inspecciones.services.formato import hoy
+from inspecciones.services.importacion_escuelas import mail_valido
 from inspecciones.services.planillas import MAX_BYTES_ARCHIVO
 
 CUEANEXO = re.compile(r"^\d{9}$")
@@ -56,16 +57,16 @@ class EscuelaForm(forms.Form):
     domicilio = forms.CharField(max_length=255)
     cp = forms.CharField(label="C. P.", max_length=20, required=False)
     telefono = forms.CharField(label="Teléfono", max_length=255, required=False)
-    mail = forms.EmailField(
-        max_length=255,
-        required=False,
-        error_messages={"invalid": "Ingresá un mail válido."},
-    )
+    # Texto y no EmailField: el padrón trae escuelas con varios mails, que el
+    # importador acepta si todos son válidos (``mail_valido``).
+    mail = forms.CharField(max_length=255, required=False)
 
     def __init__(self, *args, escuela=None, **kwargs):
         self.escuela = escuela or Escuela()
         self.escuela_duplicada = None
-        if escuela is not None and "initial" not in kwargs:
+        if escuela is not None:
+            # La vista (FormMixin) siempre pasa ``initial``, aunque vacío: los
+            # datos de la escuela van de base y lo que traiga la vista los pisa.
             kwargs["initial"] = {
                 "provincia": escuela.provincia_id,
                 "localidad": escuela.localidad_vinculada_id,
@@ -75,6 +76,7 @@ class EscuelaForm(forms.Form):
                 "cp": escuela.cp,
                 "telefono": escuela.telefono,
                 "mail": escuela.mail,
+                **(kwargs.get("initial") or {}),
             }
         super().__init__(*args, **kwargs)
         self.fields["provincia"].queryset = _provincias()
@@ -91,6 +93,14 @@ class EscuelaForm(forms.Form):
             localidad = duplicada.localidad or "sin localidad"
             raise forms.ValidationError(f"Ya existe: {duplicada.nombre} ({localidad}).")
         return cueanexo
+
+    def clean_mail(self):
+        mail = self.cleaned_data["mail"].strip()
+        if mail and not mail_valido(mail):
+            raise forms.ValidationError(
+                "Ingresá un mail válido (si son varios, separalos con ; o ,)."
+            )
+        return mail
 
     def clean_cp(self):
         cp = re.sub(r"\s+", "", self.cleaned_data["cp"]).upper()

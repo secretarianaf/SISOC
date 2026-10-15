@@ -1,0 +1,30 @@
+{% extends "includes/base.html" %}
+{% load static %}
+{% comment %}
+Layout claro compartido, igual al mockup aprobado: tema claro, cabecera blanca con
+breadcrumb y usuario, barra lateral azul con el logo y contenido sobre fondo claro.
+Lo usan Inicio e Inspecciones escolares; el resto de SISOC usa includes/base.html
+con sus valores por defecto (oscuro). El contexto sale de
+core.services.layout_claro.contexto_layout_claro.
+{% endcomment %}
+{% block tema %}light{% endblock %}
+{% block script_tema %}{% endblock %}
+{% block clase_body %}insp-cuerpo{% endblock %}
+{% block head %}
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono&display=swap" />
+    <link rel="stylesheet" href="{% static 'custom/css/layout_claro.css' %}" />
+    {% block head_claro %}{% endblock %}
+{% endblock %}
+{% block cabecera %}{% endblock %}
+{% block barra_lateral %}
+    {% include "includes/sidebar/base.html" with con_logo=True tema_lateral="dark" %}
+    {% include "includes/cabecera_clara.html" %}
+{% endblock %}
+{% block main-content %}
+    <main class="app-main insp-main">
+        <div class="insp-contenido">
+            {% block contenido %}{% endblock %}
+        </div>
+    </main>
+{% endblock %}

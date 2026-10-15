@@ -222,6 +222,36 @@ services:
       start_period: 1m
       retries: 6
 
+  # Backend de Inspecciones escolares (src/backends/config/backends.json); no
+  # publica puertos. Sus archivos privados viven en media/inspecciones/: el
+  # Nginx del host debe bloquear /media/inspecciones/ (ver
+  # docs/operacion/nginx/sisoc-produccion.conf).
+  backend_inspecciones:
+    image: sisoc/backend-inspecciones:${SISOC_RELEASE_SHA:-local}
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+      target: backend
+      args:
+        BACKEND: inspecciones
+    env_file:
+      - .env
+    environment:
+      TZ: America/Argentina/Buenos_Aires
+      DJANGO_SETTINGS_MODULE: inspecciones_runtime.settings
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_INSPECCIONES_WORKERS:-4}", "--log-level", "info"]
+    volumes:
+      - ./media:/sisoc/media
+      - ./static_root:/sisoc/static_root:ro
+      - ./logs:/sisoc/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen, Request; r = urlopen(Request('http://127.0.0.1:8000/health/', headers={'X-Forwarded-Proto': 'https'}), timeout=2); exit(0 if r.status == 200 else 1)"]
+      interval: 10s
+      timeout: 3s
+      start_period: 1m
+      retries: 6
+
   # Migrador único con la composición completa (config.settings_all). Lo corre
   # el deploy antes de actualizar servicios: `compose run --rm migrator`.
   # También corre collectstatic sobre static_root: es la única imagen con los

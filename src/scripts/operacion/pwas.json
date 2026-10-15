@@ -35,6 +35,18 @@
       "canonical_path": "/pwa/gestionar/",
       "legacy_path": "/mobile3/",
       "ssh_identity": "~/.ssh/sisoc-pwa-gestionar"
+    },
+    {
+      "id": "inspecciones",
+      "enabled": true,
+      "repository": "secretarianaf/Inspecciones",
+      "checkout": "Inspecciones",
+      "project": "sisoc-pwa-inspecciones",
+      "port": 8083,
+      "base_path": "/pwa/inspecciones/",
+      "canonical_path": "/pwa/inspecciones/",
+      "legacy_path": "/pwa/inspecciones/",
+      "ssh_identity": "~/.ssh/sisoc-pwa-inspecciones"
     }
   ]
 }

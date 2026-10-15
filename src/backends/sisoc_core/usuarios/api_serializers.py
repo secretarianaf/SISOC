@@ -13,6 +13,7 @@ from users.services_datacalle import (
     get_relevador_calle_provincias,
 )
 from users.services_auth import get_user_by_uid
+from users.services_inspecciones import get_inspecciones_rol
 from users.territorial_scope import serialize_profile_scopes
 
 
@@ -88,6 +89,8 @@ class UserContextSerializer(serializers.Serializer):
             "es_relevador_calle": profile.es_relevador_calle,
             "datacalle_rol": get_datacalle_rol(obj),
             "datacalle_provincias": get_relevador_calle_provincias(obj),
+            "es_inspector_escolar": profile.es_inspector_escolar,
+            "inspecciones_rol": get_inspecciones_rol(obj),
             "duplas_asignadas": list(
                 profile.duplas_asignadas.values_list("id", flat=True)
             ),

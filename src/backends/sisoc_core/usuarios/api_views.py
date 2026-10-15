@@ -42,6 +42,7 @@ from users.services_auth import (
     confirm_password_reset,
 )
 from users.services_datacalle import tiene_acceso_datacalle
+from users.services_inspecciones import tiene_acceso_inspecciones
 from pwa.services.accesos import (
     get_pwa_context,
     is_pwa_user,
@@ -134,6 +135,7 @@ class UserLoginViewSet(viewsets.ViewSet):
             not is_pwa_user(user)
             and not is_territorial_comedor_user(user)
             and not tiene_acceso_datacalle(user)
+            and not tiene_acceso_inspecciones(user)
         ):
             detail = "Este usuario no tiene acceso PWA activo."
             response = Response(

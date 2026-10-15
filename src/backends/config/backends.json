@@ -129,5 +129,19 @@
       "centrodefamilia",
       "centrodefamilia_monto"
     ]
+  },
+  "inspecciones": {
+    "apps": [
+      "inspecciones"
+    ],
+    "url_prefixes": [
+      "inspecciones/",
+      "api/inspecciones/"
+    ],
+    "urlconf": "inspecciones_runtime.urls",
+    "origin_env": "BACKEND_INSPECCIONES_ORIGIN",
+    "default_origin": "http://backend_inspecciones:8000",
+    "service": "backend_inspecciones",
+    "migrate_service": "migrator"
   }
 }

@@ -580,6 +580,11 @@
   "regex": "^api/territorial/comedores/$"
  },
  {
+  "name": "api-territorial-comedor-pdf-seguimiento-pnud",
+  "namespace": "",
+  "regex": "^api/territorial/comedores/(?P<pk>\\d+)/seguimientos-pnud/(?P<pnud_id>[0-9]+)/pdf/$"
+ },
+ {
   "name": "api-territorial-comedor-seguimientos-pnud",
   "namespace": "",
   "regex": "^api/territorial/comedores/(?P<pk>\\d+)/seguimientos-pnud/$"
@@ -715,9 +720,19 @@
   "regex": "^api/relevamiento\\Z"
  },
  {
+  "name": "api_relevamiento_pdf_oficial",
+  "namespace": "",
+  "regex": "^api/relevamiento/pdf\\-oficial\\Z"
+ },
+ {
   "name": "api_seguimiento",
   "namespace": "",
   "regex": "^api/relevamiento/seguimiento\\Z"
+ },
+ {
+  "name": "api_seguimiento_pdf_oficial",
+  "namespace": "",
+  "regex": "^api/relevamiento/seguimiento/pdf\\-oficial\\Z"
  },
  {
   "name": "api_sincronizar_territoriales",
@@ -1808,6 +1823,16 @@
   "name": "dispositivos_listar",
   "namespace": "",
   "regex": "^dispositivos/\\Z"
+ },
+ {
+  "name": "dispositivos_mapa",
+  "namespace": "",
+  "regex": "^dispositivos/mapa/\\Z"
+ },
+ {
+  "name": "dispositivos_ubicacion",
+  "namespace": "",
+  "regex": "^dispositivos/(?P<pk>[0-9]+)/ubicacion/\\Z"
  },
  {
   "name": "django-admindocs-bookmarklets",
@@ -3430,9 +3455,19 @@
   "regex": "^comedores/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimiento/(?P<pk>[0-9]+)/eliminar\\Z"
  },
  {
+  "name": "seguimiento_pdf",
+  "namespace": "",
+  "regex": "^comedores/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimiento/(?P<pk>[0-9]+)/pdf\\Z"
+ },
+ {
   "name": "seguimiento_pnud_detalle",
   "namespace": "",
   "regex": "^comedores/(?P<comedor_pk>[0-9]+)/seguimiento\\-pnud/(?P<pk>[0-9]+)\\Z"
+ },
+ {
+  "name": "seguimiento_pnud_pdf",
+  "namespace": "",
+  "regex": "^comedores/(?P<comedor_pk>[0-9]+)/seguimiento\\-pnud/(?P<pk>[0-9]+)/pdf\\Z"
  },
  {
   "name": "seguimiento_pnud_revision_coordinador",

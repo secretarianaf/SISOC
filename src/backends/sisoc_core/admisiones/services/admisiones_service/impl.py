@@ -3384,6 +3384,20 @@ class AdmisionService:
         return es_tecnico, es_abogado
 
     @staticmethod
+    def es_abogado_dupla_sin_rol_tecnico(user):
+        """El abogado de la dupla solo valida (acepta o rectifica) la
+        documentacion que envia el tecnico: no adjunta ni elimina archivos.
+        Un superusuario tiene todos los roles, por lo que no queda alcanzado.
+        """
+        if not user:
+            return False
+        es_tecnico, es_abogado = AdmisionService._resolver_roles_para_botones(user)
+        if not es_abogado or es_tecnico:
+            return False
+        groups = getattr(user, "groups", None)
+        return not (groups and groups.filter(name="Tecnico Comedor").exists())
+
+    @staticmethod
     def _get_boton_tecnico_informe(admision, informe_tecnico):
         if admision.estado_admision == "expediente_cargado" and not informe_tecnico:
             return "crear_informe_tecnico"

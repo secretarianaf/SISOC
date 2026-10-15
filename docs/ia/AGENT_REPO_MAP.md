@@ -2,6 +2,8 @@
 
 Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrolladores.
 
+- Mapa de dispositivos: `/dispositivos/mapa/`, `dispositivos.views.DispositivoMapView`, `geolocate_dispositivo` en services y `dispositivosMap.js`. Mantiene filtros/permisos/alcance del listado, integra provincia/estado en un único buscador combinable, paginación de tabla en el navegador de a 15 y selección de marcador por `?dispositivo=<pk>`; muestra marcadores individuales con Leaflet y usa Georef con coordenadas persistidas en `Dispositivo.ubicacion_georef` y firma de dirección para reutilización/invalidation; migración 0006 antes del deploy. Registro: `docs/registro/cambios/2026-T4/2026-10-13-dispositivos-mapa.md`.
+
 ## Como leer este documento
 
 Reglas vigentes y checklists: `docs/desarrollo/verticales_independientes.md`.
@@ -389,6 +391,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Los consumidores interdominio usan contratos Python acotados: `centrodefamilia.api` expone métricas para Dashboard, `ciudadanos.api` resuelve ciudadanos desde RENAPER y `catalogo_intervenciones.api` provee el catálogo autorizado para CDI.
 - Los receivers de auditoría de Centro de Infancia viven en `centrodeinfancia.signals` y llaman `audittrail.api`; Audittrail no debe importar modelos CDI.
 - Los alcances de usuarios propios de un dominio se registran mediante `iam.services.register_user_queryset_scope`; Centro de Infancia registra el suyo desde `centrodeinfancia.apps` para que `users` no importe dominios.
+- Esos registros son locales al proceso: el core que sirve `/usuarios/` no instala CDI. La exclusión de cuentas sin grupos para el alcance administrable SIMEPI vive en `users.services`; su regresión en `kernel/tests/test_usuarios_simepi_scope.py` debe correr también con `--ds=config.settings`.
 - Dispositivos, VAT y Ver para Ser Libre no exponen internals a otros dominios. La composición de rutas de preview de VAT se realiza desde `VAT.global_urls`.
 - Los efectos de backfill de soft delete se registran desde cada dominio en `core.soft_delete.registry`; `core.soft_delete.state_sync` no debe importar handlers de dominio.
 - Las restricciones de navegacion aportadas por dominios se registran en `core.services.sidebar_access`; el template tag global no debe importar reglas VAT.
@@ -593,8 +596,14 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   presentada funcionalmente como Asociación de hecho.
 - La descarga del Informe Técnico ofrece una copia transitoria "Descargar para
   GDE": prioriza el DOCX editado y, si no existe, el borrador. Se normaliza la
-  geometría OOXML de sus tablas antes de responder, sin reemplazar archivos ni
-  modificar estados.
+  geometría OOXML de sus tablas y LibreOffice Writer convierte una copia a DOC
+  binario, con temporales/perfil aislados y timeout, sin reemplazar archivos ni
+  modificar estados. El generador HTML del informe conserva `colspan`/`rowspan`
+  y no degrada plantillas publicadas a texto plano ante fallos. Entry points:
+  `src/backends/sisoc_core/admisiones/services/informes_service/impl.py`
+  (`GdeDocxService.generar_doc`) y
+  `src/backends/sisoc_core/admisiones/views/web_views.py`
+  (`descargar_informe_tecnico_para_gde`).
 - El Informe Tecnico Complementario se abre tanto desde Admision como desde el
   convenio seleccionado en `src/backends/sisoc_core/acompanamientos/views.py` y
   `src/backends/sisoc_core/acompanamientos/templates/acompañamiento_detail.html`.
@@ -751,6 +760,18 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Vouchers VAT: `src/backends/vat/VAT/services/voucher_service/`,
   `src/backends/vat/VAT/services/tipo_alumno_service.py`, tests VAT y
   `docs/vat/VOUCHER_SETUP.md`.
+
+### Si necesitas cambiar el alta de sedes adicionales INET
+
+- Permiso existente asignable a grupos: `VAT.add_institucionubicacion`; guard de
+  URL en `src/backends/vat/VAT/urls.py` y botón en
+  `src/backends/vat/VAT/templates/vat/centros/centro_detail.html`.
+- Alcance de alta: `InstitucionUbicacionCreateView` en
+  `src/backends/vat/VAT/views/institucion.py`, con `can_user_edit_centro` y
+  `filter_centros_queryset_for_management` de `services/access_scope.py`.
+- Regresión de permisos/grupos: `src/backends/vat/tests/test_ubicacion_create_permissions.py`.
+- Operación por grupos: `docs/vat/manual_usuario.md`; no agregar permisos
+  duplicados ni asignaciones por nombre de grupo para la misma acción.
 
 ### Si necesitas cambiar la búsqueda de Centros VAT por CUE
 

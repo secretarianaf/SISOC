@@ -13,6 +13,13 @@ from iam.services import user_has_permission_code
 
 register = template.Library()
 
+
+@register.simple_tag(takes_context=True)
+def optional_context_value(context, name, default=None):
+    """Lee parámetros opcionales de componentes sin resolver variables ausentes."""
+    return context.get(name, default)
+
+
 _DAYS = (
     "lunes",
     "martes",

@@ -153,7 +153,16 @@ GROUP_INHERITANCE = {
 
 
 GROUP_DELEGATION = {
-    UserGroups.SIMEPI_ADMINISTRADOR: (UserGroups.SIMEPI_EQUIPO_NACIONAL,),
+    # Administrador gestiona a todos los usuarios de CDI salvo a otros
+    # administradores (definición de producto, pedidos CDI 2026-10).
+    UserGroups.SIMEPI_ADMINISTRADOR: (
+        UserGroups.SIMEPI_EQUIPO_NACIONAL,
+        UserGroups.SIMEPI_EGP,
+        UserGroups.SIMEPI_ANALISTA_DATOS,
+        UserGroups.SIMEPI_AUDITORIA,
+        UserGroups.CDI_REFERENTE_CENTRO,
+        UserGroups.CDI_TRABAJADOR,
+    ),
     UserGroups.SIMEPI_EQUIPO_NACIONAL: (
         UserGroups.SIMEPI_EGP,
         UserGroups.SIMEPI_ANALISTA_DATOS,

@@ -30,7 +30,10 @@ def _script(path, content):
 
 @pytest.mark.parametrize("rollback_legacy", [False, True])
 @pytest.mark.parametrize("fail_health", [False, True])
-def test_wrapper_transicion_y_rollback(tmp_path, rollback_legacy, fail_health):
+@pytest.mark.parametrize("cleanup_falla", [False, True])
+def test_wrapper_transicion_y_rollback(
+    tmp_path, rollback_legacy, fail_health, cleanup_falla
+):
     checkout = tmp_path / "checkout"
     (checkout / ".git").mkdir(parents=True)
     registry = checkout / "src/backends/config/backends.json"
@@ -93,6 +96,15 @@ esac
 if [[ "$MOCK_FAIL" == 1 && "$SISOC_RELEASE_SHA" == "$MOCK_EXPECTED" && "$*" == *"migrate --check"* ]]; then
   exit 1
 fi
+case "$1 $2" in
+  "ps -aq") [[ "$MOCK_CLEANUP_FALLA" == 0 ]] || exit 1; echo contenedor ;;
+  "inspect --format") echo sha256:en-uso ;;
+  "image ls")
+    echo "sisoc/core:$MOCK_EXPECTED sha256:actual"
+    echo "sisoc/core:$MOCK_PREVIOUS sha256:anterior"
+    echo "sisoc/core:viejo sha256:viejo"
+    echo "sisoc/backend-cdi:viejo sha256:en-uso" ;;
+esac
 exit 0
 """,
     )
@@ -106,6 +118,7 @@ exit 0
         MOCK_EXPECTED=EXPECTED,
         MOCK_PREVIOUS=PREVIOUS,
         MOCK_FAIL=str(int(fail_health)),
+        MOCK_CLEANUP_FALLA=str(int(cleanup_falla)),
         MOCK_LEGACY=str(int(rollback_legacy)),
         MOCK_FLAG_NUEVO="--diff-base",
         MOCK_BIN=fake_bin.as_posix(),
@@ -153,9 +166,23 @@ exit 0
         else:
             assert f"--diff-base {EXPECTED}" in rollback
             assert "docker/compose/docker-compose.deploy.yml" in rollback
+        # Si el deploy falla no se limpia: el rollback puede usar las imágenes.
+        assert "docker:image rm" not in calls
     else:
         assert result.returncode == 0, result.stderr
         assert "reset:" not in calls
+        # Solo se borra la imagen que no usa ningún contenedor ni es de la
+        # revisión desplegada o la anterior.
+        borradas = [
+            linea for linea in calls.splitlines() if linea.startswith("docker:image rm")
+        ]
+        if cleanup_falla:
+            # El deploy ya estaba verificado: la limpieza fallida solo avisa.
+            assert borradas == []
+            assert "limpieza de imagenes viejas no termino" in result.stdout
+        else:
+            assert borradas == ["docker:image rm sisoc/core:viejo"]
+            assert "docker:builder prune -f --filter until=72h" in calls
     assert (checkout / ".head").read_text(encoding="utf-8").strip() == (
         PREVIOUS if fail_health else EXPECTED
     )

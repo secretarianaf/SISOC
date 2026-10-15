@@ -3,7 +3,8 @@
 Cubre los 8 puntos: campos de capacitación, motivo aprobado != declarado,
 ``menu.receta`` como lista, cantidades presencial/vianda del día, fotos del
 seguimiento, ``norecibio_porque``/``nosencilla_porque`` como texto, motivo de
-funcionamiento y bloque ``comedor`` en el PATCH de seguimiento.
+funcionamiento y bloque ``comedor`` en el PATCH de seguimiento (que desde #2643
+se acepta pero ya no actualiza el legajo).
 """
 
 import io
@@ -358,7 +359,9 @@ def test_funcionamiento_motivo_se_persiste_en_su_bloque():
 
 
 @pytest.mark.django_db
-def test_bloque_comedor_actualiza_domicilio_desde_el_seguimiento():
+def test_bloque_comedor_no_actualiza_domicilio_desde_el_seguimiento():
+    """#2643: solo el relevamiento inicial actualiza el legajo. El bloque
+    ``comedor`` de un seguimiento se acepta (la app lo mandaba) pero no se aplica."""
     user, comedor, _, seguimiento = _escenario("comedor_block")
 
     response = _token_client(user).patch(
@@ -376,6 +379,6 @@ def test_bloque_comedor_actualiza_domicilio_desde_el_seguimiento():
 
     assert response.status_code == 200
     comedor.refresh_from_db()
-    assert comedor.calle == "Av. Siempre Viva"
-    assert comedor.numero == 742
-    assert comedor.barrio == "Centro"
+    assert comedor.calle is None
+    assert comedor.numero is None
+    assert comedor.barrio is None

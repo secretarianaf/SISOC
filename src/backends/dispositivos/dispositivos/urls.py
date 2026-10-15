@@ -5,11 +5,27 @@ from dispositivos.views import (
     DispositivoUpdateView,
     DispositivoDeleteView,
     DispositivoListView,
+    DispositivoMapView,
+    DispositivoLocationView,
     DispositivoDetailView,
 )
 
 
 urlpatterns = [
+    path(
+        "dispositivos/mapa/",
+        permissions_any_required(["dispositivos.view_dispositivo"])(
+            DispositivoMapView.as_view()
+        ),
+        name="dispositivos_mapa",
+    ),
+    path(
+        "dispositivos/<int:pk>/ubicacion/",
+        permissions_any_required(["dispositivos.view_dispositivo"])(
+            DispositivoLocationView.as_view()
+        ),
+        name="dispositivos_ubicacion",
+    ),
     path(
         "dispositivos/crear",
         permissions_any_required(["dispositivos.add_dispositivo"])(

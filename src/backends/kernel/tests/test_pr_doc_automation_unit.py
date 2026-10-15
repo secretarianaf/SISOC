@@ -33,6 +33,10 @@ def test_pr_docs_workflow_detecta_artefactos_nuevos_no_trackeados():
     assert "generate_pr_artifacts:" in workflow
     assert "contents: write" in workflow
     assert "github.event.sender.login != 'github-actions[bot]'" in workflow
+    # El push sale con la GitHub App para que los checks del commit corran
+    # sin aprobación manual, y sus propios pushes no regeneran artefactos.
+    assert "github.event.sender.login != 'secretarianaf-sisoc-release[bot]'" in workflow
+    assert "token: ${{ steps.app-token.outputs.token }}" in workflow
     assert (
         "group: pr-docs-${{ github.event.pull_request.number || github.ref }}"
         in workflow

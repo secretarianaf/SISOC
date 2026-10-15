@@ -1,8 +1,12 @@
 import logging
 import os
+import shutil
+import subprocess
+import tempfile
 import traceback
 from datetime import date, datetime
 from io import BytesIO
+from pathlib import Path
 from typing import Any
 
 from django.conf import settings
@@ -16,11 +20,11 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.text import slugify
 from docx import Document
-from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum import text as docx_text
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
-from docx.shared import Mm, Pt
+from docx.shared import Mm, Pt, RGBColor
 from htmldocx import HtmlToDocx
 
 from ...utils import (
@@ -29,6 +33,14 @@ from ...utils import (
     numeros_gde_por_campo_de_informe,
 )
 from ..docx_service import AdmisionesContextService, DocumentTemplateService
+from .formato_docx import (
+    ALINEACIONES_HTML,
+    CENTRADO_VERTICAL,
+    PARRAFO_VACIO_EDITOR,
+    SUCESORES_BORDES_TABLA,
+    SUCESORES_ESPACIADO_CONTEXTUAL,
+    MembreteInformeTecnico,
+)
 from admisiones.forms.admisiones_forms import (
     InformeTecnicoBaseForm,
     InformeTecnicoJuridicoForm,
@@ -66,6 +78,81 @@ DIAS_SEMANA = (
 )
 
 
+class _InformeHtmlToDocx(HtmlToDocx):
+    """Conserva la grilla de las tablas HTML con colspan y rowspan."""
+
+    def run_process(self, html):
+        # El editor deja los renglones vacíos como <p><br></p>: en el navegador
+        # ocupan una línea, pero htmldocx los convierte en un párrafo con salto.
+        super().run_process(PARRAFO_VACIO_EDITOR.sub(r"<p\1></p>", html))
+
+    def handle_table(self):
+        # htmldocx 0.0.6 cuenta las celdas de la primera fila, no las columnas
+        # ocupadas. Un encabezado combinado deja una grilla demasiado pequeña.
+        table_soup = self.tables[self.table_no]
+        filas = self.get_table_rows(table_soup)
+        ocupadas = set()
+        celdas = []
+        columnas = 0
+        for numero_fila, fila in enumerate(filas):
+            numero_columna = 0
+            for celda in self.get_table_columns(fila):
+                while (numero_fila, numero_columna) in ocupadas:
+                    numero_columna += 1
+                colspan = int(celda.get("colspan", 1))
+                rowspan = int(celda.get("rowspan", 1))
+                if colspan < 1 or rowspan < 1 or numero_fila + rowspan > len(filas):
+                    raise ValueError("La tabla contiene celdas combinadas inválidas.")
+                posiciones = {
+                    (f, c)
+                    for f in range(numero_fila, numero_fila + rowspan)
+                    for c in range(numero_columna, numero_columna + colspan)
+                }
+                if posiciones & ocupadas:
+                    raise ValueError(
+                        "La tabla contiene celdas combinadas superpuestas."
+                    )
+                ocupadas.update(posiciones)
+                celdas.append((numero_fila, numero_columna, rowspan, colspan, celda))
+                numero_columna += colspan
+                columnas = max(columnas, numero_columna)
+
+        if not filas or not columnas:
+            raise ValueError("La tabla no contiene celdas.")
+        tabla = self.doc.add_table(len(filas), columnas)
+        if self.table_style:
+            tabla.style = self.table_style
+        for fila, columna, rowspan, colspan, celda in celdas:
+            destino = tabla.cell(fila, columna)
+            if rowspan > 1 or colspan > 1:
+                destino = destino.merge(
+                    tabla.cell(fila + rowspan - 1, columna + colspan - 1)
+                )
+            contenido = self.get_cell_html(celda)
+            if celda.name == "th":
+                contenido = f"<b>{contenido}</b>"
+            parser = type(self)()
+            parser.copy_settings_from(self)
+            parser.add_html_to_cell(contenido, destino)
+            self._alinear_celda(celda, destino)
+
+        self.instances_to_skip = len(table_soup.find_all("table"))
+        self.skip_tag = "table"
+        self.skip = True
+        self.table = None
+
+    def _alinear_celda(self, celda_soup, celda):
+        """Traslada el ``text-align`` de la celda HTML a sus párrafos."""
+
+        estilos = self.parse_dict_string(celda_soup.get("style") or "")
+        alineacion = ALINEACIONES_HTML.get(estilos.get("text-align", "").strip())
+        if alineacion is None:
+            return
+        for parrafo in celda.paragraphs:
+            if parrafo.alignment is None:
+                parrafo.alignment = alineacion
+
+
 class GdeDocxService:
     """Prepara copias transitorias de DOCX para su importación en GDE."""
 
@@ -96,6 +183,7 @@ class GdeDocxService:
             contenido = archivo_docx.read()
             documento = Document(BytesIO(contenido))
             cls._justificar_estilo_normal(documento)
+            cls._quitar_encabezados_y_pies(documento)
             ancho_disponible = cls._ancho_disponible_documento_dxa(documento)
             for tabla in documento.tables:
                 cls._normalizar_tabla(tabla, ancho_disponible)
@@ -113,6 +201,56 @@ class GdeDocxService:
             if hasattr(archivo_docx, "close"):
                 archivo_docx.close()
 
+    @classmethod
+    def generar_doc(cls, archivo_docx, informe_pk=None):
+        """Convierte una copia normalizada a Word 97-2003 para GDE."""
+
+        normalizado = cls.generar(archivo_docx, informe_pk=informe_pk)
+        if normalizado is None:
+            return None
+        try:
+            ejecutable = shutil.which("libreoffice") or shutil.which("soffice")
+            if not ejecutable:
+                raise RuntimeError("LibreOffice no está disponible.")
+            with tempfile.TemporaryDirectory(prefix="informe-gde-") as temp_dir:
+                temp_path = Path(temp_dir)
+                entrada = temp_path / "informe.docx"
+                salida = temp_path / "informe.doc"
+                entrada.write_bytes(normalizado.read())
+                profile_uri = (temp_path / "libreoffice-profile").resolve().as_uri()
+                resultado = subprocess.run(
+                    [
+                        ejecutable,
+                        "--headless",
+                        "--nologo",
+                        "--nodefault",
+                        "--nofirststartwizard",
+                        f"-env:UserInstallation={profile_uri}",
+                        "--convert-to",
+                        "doc:MS Word 97",
+                        "--outdir",
+                        str(temp_path),
+                        str(entrada),
+                    ],
+                    capture_output=True,
+                    check=False,
+                    timeout=120,
+                )
+                if resultado.returncode != 0 or not salida.is_file():
+                    raise RuntimeError("LibreOffice no generó el documento para GDE.")
+                contenido = salida.read_bytes()
+                if not contenido.startswith(bytes.fromhex("d0cf11e0a1b11ae1")):
+                    raise RuntimeError("La salida no es un documento Word 97-2003.")
+                return ContentFile(contenido, name="informe-para-gde.doc")
+        except (OSError, RuntimeError, subprocess.TimeoutExpired):
+            logger.exception(
+                "No se pudo convertir el informe a DOC para GDE",
+                extra={"informe_pk": informe_pk},
+            )
+            return None
+        finally:
+            normalizado.close()
+
     @staticmethod
     def _justificar_estilo_normal(documento):
         """Evita que el contenido sin alineación explícita quede a la izquierda."""
@@ -120,6 +258,25 @@ class GdeDocxService:
         documento.styles["Normal"].paragraph_format.alignment = (
             docx_text.WD_ALIGN_PARAGRAPH.JUSTIFY
         )
+
+    @staticmethod
+    def _quitar_encabezados_y_pies(documento):
+        """Entrega a GDE solo el cuerpo: GDE pone su propio membrete y numeración.
+
+        El borrador de validación lleva el membrete institucional (imagen y
+        campo de página), que GDE duplicaría o podría rechazar.
+        """
+
+        for seccion in documento.sections:
+            for nombre in (
+                "header",
+                "footer",
+                "first_page_header",
+                "first_page_footer",
+                "even_page_header",
+                "even_page_footer",
+            ):
+                getattr(seccion, nombre).is_linked_to_previous = True
 
     @staticmethod
     def _ancho_disponible_documento_dxa(documento):
@@ -216,13 +373,19 @@ class GdeDocxService:
 
 
 class InformeService:
-    COLOR_BORDE_TABLA_TEMPLATE = "7A8EA1"
-    COLOR_ENCABEZADO_TABLA_TEMPLATE = "EAF3F2"
+    # Hoja, tipografía y tablas del modelo institucional del Informe Técnico.
+    COLOR_BORDE_TABLA_TEMPLATE = "000000"
     ANCHO_PAGINA_TEMPLATE_MM = 210
     ALTO_PAGINA_TEMPLATE_MM = 297
-    MARGEN_PAGINA_TEMPLATE_MM = 20
-    FUENTE_BASE_TEMPLATE = "Times New Roman"
+    MARGEN_SUPERIOR_TEMPLATE_MM = 27.8
+    MARGEN_PAGINA_TEMPLATE_MM = 25.4
+    DISTANCIA_ENCABEZADO_TEMPLATE_MM = 6
+    DISTANCIA_PIE_TEMPLATE_MM = 12.7
+    FUENTE_BASE_TEMPLATE = "Calibri"
     TAMANIO_FUENTE_BASE_TEMPLATE_PT = 12
+    TAMANIO_TITULO_TEMPLATE_PT = 13
+    INTERLINEADO_TEMPLATE = 1.15
+    ESPACIO_ENTRE_PARRAFOS_TEMPLATE_PT = 12
 
     @staticmethod
     def _get_base_url():
@@ -244,7 +407,7 @@ class InformeService:
             doc = Document()
             if estilizar_tablas_templates:
                 InformeService._configurar_documento_template(doc)
-            HtmlToDocx().add_html_to_document(html_content, doc)
+            _InformeHtmlToDocx().add_html_to_document(html_content, doc)
             if estilizar_tablas_templates:
                 InformeService._aplicar_estilo_tablas_templates(doc)
             buffer = BytesIO()
@@ -258,6 +421,10 @@ class InformeService:
             logger.warning(
                 f"Error generando DOCX: {str(e)}", extra={"informe_pk": informe_pk}
             )
+            if estilizar_tablas_templates:
+                # Una plantilla publicada debe conservar su estructura: no se
+                # entrega un documento aparentemente válido con tablas perdidas.
+                return None
             try:
                 fallback_doc = Document()
                 if estilizar_tablas_templates:
@@ -621,23 +788,74 @@ class InformeService:
 
     @classmethod
     def _configurar_documento_template(cls, documento):
-        """Configura la hoja base compartida por editor y DOCX dinámico."""
+        """Configura hoja, estilos y membrete compartidos por editor y DOCX."""
 
         seccion = documento.sections[0]
         seccion.page_width = Mm(cls.ANCHO_PAGINA_TEMPLATE_MM)
         seccion.page_height = Mm(cls.ALTO_PAGINA_TEMPLATE_MM)
-        seccion.top_margin = Mm(cls.MARGEN_PAGINA_TEMPLATE_MM)
+        seccion.top_margin = Mm(cls.MARGEN_SUPERIOR_TEMPLATE_MM)
         seccion.right_margin = Mm(cls.MARGEN_PAGINA_TEMPLATE_MM)
         seccion.bottom_margin = Mm(cls.MARGEN_PAGINA_TEMPLATE_MM)
         seccion.left_margin = Mm(cls.MARGEN_PAGINA_TEMPLATE_MM)
+        seccion.header_distance = Mm(cls.DISTANCIA_ENCABEZADO_TEMPLATE_MM)
+        seccion.footer_distance = Mm(cls.DISTANCIA_PIE_TEMPLATE_MM)
 
         estilo_normal = documento.styles["Normal"]
-        estilo_normal.font.name = cls.FUENTE_BASE_TEMPLATE
-        estilo_normal.font.size = Pt(cls.TAMANIO_FUENTE_BASE_TEMPLATE_PT)
+        cls._asignar_fuente_estilo(estilo_normal, cls.TAMANIO_FUENTE_BASE_TEMPLATE_PT)
+        formato_normal = estilo_normal.paragraph_format
+        formato_normal.alignment = ALINEACIONES_HTML["justify"]
+        formato_normal.line_spacing = cls.INTERLINEADO_TEMPLATE
+        formato_normal.space_before = 0
+        formato_normal.space_after = Pt(cls.ESPACIO_ENTRE_PARRAFOS_TEMPLATE_PT)
+
+        # Los títulos de Word vienen en Calibri Light celeste; el modelo los usa
+        # en la fuente del cuerpo, en negrita y negro.
+        for nivel in range(1, 10):
+            estilo_titulo = documento.styles[f"Heading {nivel}"]
+            cls._asignar_fuente_estilo(
+                estilo_titulo,
+                (
+                    cls.TAMANIO_TITULO_TEMPLATE_PT
+                    if nivel == 1
+                    else cls.TAMANIO_FUENTE_BASE_TEMPLATE_PT
+                ),
+            )
+            estilo_titulo.font.bold = True
+            estilo_titulo.font.italic = False
+            estilo_titulo.font.color.rgb = RGBColor(0, 0, 0)
+            estilo_titulo.paragraph_format.space_before = Pt(
+                cls.ESPACIO_ENTRE_PARRAFOS_TEMPLATE_PT
+            )
+            estilo_titulo.paragraph_format.space_after = Pt(
+                cls.ESPACIO_ENTRE_PARRAFOS_TEMPLATE_PT
+            )
+
+        # Los ítems de una lista van seguidos, como en el modelo.
+        for nombre_estilo in ("List Bullet", "List Number"):
+            propiedades = documento.styles[nombre_estilo].element.get_or_add_pPr()
+            if propiedades.find(qn("w:contextualSpacing")) is None:
+                propiedades.insert_element_before(
+                    OxmlElement("w:contextualSpacing"),
+                    *SUCESORES_ESPACIADO_CONTEXTUAL,
+                )
+
+        MembreteInformeTecnico.aplicar(documento)
+
+    @classmethod
+    def _asignar_fuente_estilo(cls, estilo, tamanio_pt):
+        """Fija la fuente sin depender de las fuentes del tema de Office."""
+
+        estilo.font.name = cls.FUENTE_BASE_TEMPLATE
+        estilo.font.size = Pt(tamanio_pt)
+        fuentes = estilo.element.get_or_add_rPr().find(qn("w:rFonts"))
+        for atributo in ("asciiTheme", "hAnsiTheme", "eastAsiaTheme", "cstheme"):
+            fuentes.attrib.pop(qn(f"w:{atributo}"), None)
+        fuentes.set(qn("w:eastAsia"), cls.FUENTE_BASE_TEMPLATE)
+        fuentes.set(qn("w:cs"), cls.FUENTE_BASE_TEMPLATE)
 
     @classmethod
     def _aplicar_estilo_tablas_templates(cls, documento):
-        """Aplica una grilla legible a las tablas de templates dinámicos.
+        """Aplica la grilla del modelo a las tablas de templates dinámicos.
 
         htmldocx crea la estructura de la tabla pero no traslada los estilos CSS
         del editor al documento Word. El formato se aplica sobre OOXML para que
@@ -646,33 +864,38 @@ class InformeService:
 
         for tabla in documento.tables:
             tabla.alignment = WD_TABLE_ALIGNMENT.CENTER  # pylint: disable=no-member
-            cls._aplicar_bordes_tabla_template(tabla)
-            for indice_fila, fila in enumerate(tabla.rows):
-                es_encabezado = indice_fila == 0 and cls._fila_es_encabezado(fila)
-                for celda in fila.cells:
-                    celda.vertical_alignment = (  # pylint: disable=no-member
-                        WD_CELL_VERTICAL_ALIGNMENT.CENTER
-                    )
-                    cls._aplicar_margenes_celda_template(celda)
-                    for parrafo in celda.paragraphs:
-                        parrafo.paragraph_format.space_after = 0
-                        parrafo.paragraph_format.space_before = 0
-                    if es_encabezado:
-                        cls._aplicar_fondo_encabezado_template(celda)
-
-    @staticmethod
-    def _fila_es_encabezado(fila):
-        """Reconoce los <th> ya convertidos por htmldocx como texto en negrita."""
-
-        return all(
-            any(
-                run.bold
-                for parrafo in celda.paragraphs
-                for run in parrafo.runs
-                if run.text.strip()
+            # La grilla HTML por defecto asigna el mismo ancho a todas las
+            # columnas. Los nombres de prestación necesitan más espacio que
+            # cada día; se ajusta únicamente el cuadro documental de 9 columnas.
+            if (
+                len(tabla.columns) == 9
+                and tabla.cell(0, 0).text.strip().lower() == "tipo de prestación"
+                and tabla.cell(0, 8).text.strip().lower() == "total semanal"
+            ):
+                # 20% para el tipo, 65% repartido entre días y 15% para el total.
+                for columna, peso in zip(
+                    tabla.columns, (28, 13, 13, 13, 13, 13, 13, 13, 21)
+                ):
+                    columna.width = Mm(peso)
+            GdeDocxService._normalizar_tabla(  # pylint: disable=protected-access
+                tabla,
+                GdeDocxService._ancho_disponible_documento_dxa(  # pylint: disable=protected-access
+                    documento
+                ),
             )
-            for celda in fila.cells
-        )
+            cls._aplicar_bordes_tabla_template(tabla)
+            for fila in tabla.rows:
+                for celda in fila.cells:
+                    # tcMar va antes que vAlign en el esquema de tcPr.
+                    cls._aplicar_margenes_celda_template(celda)
+                    celda.vertical_alignment = CENTRADO_VERTICAL
+                    for parrafo in celda.paragraphs:
+                        formato = parrafo.paragraph_format
+                        formato.space_after = 0
+                        formato.space_before = 0
+                        formato.line_spacing = 1
+                        if formato.alignment is None:
+                            formato.alignment = ALINEACIONES_HTML["left"]
 
     @classmethod
     def _aplicar_bordes_tabla_template(cls, tabla):
@@ -680,7 +903,7 @@ class InformeService:
         bordes = propiedades_tabla.first_child_found_in("w:tblBorders")
         if bordes is None:
             bordes = OxmlElement("w:tblBorders")
-            propiedades_tabla.append(bordes)
+            propiedades_tabla.insert_element_before(bordes, *SUCESORES_BORDES_TABLA)
 
         for lado in ("top", "left", "bottom", "right", "insideH", "insideV"):
             borde = bordes.find(qn(f"w:{lado}"))
@@ -688,7 +911,7 @@ class InformeService:
                 borde = OxmlElement(f"w:{lado}")
                 bordes.append(borde)
             borde.set(qn("w:val"), "single")
-            borde.set(qn("w:sz"), "6")
+            borde.set(qn("w:sz"), "4")
             borde.set(qn("w:space"), "0")
             borde.set(qn("w:color"), cls.COLOR_BORDE_TABLA_TEMPLATE)
 
@@ -703,10 +926,10 @@ class InformeService:
             propiedades_celda.append(margenes)
 
         for lado, valor in (
-            ("top", "80"),
-            ("start", "110"),
-            ("bottom", "80"),
-            ("end", "110"),
+            ("top", "20"),
+            ("start", "115"),
+            ("bottom", "20"),
+            ("end", "115"),
         ):
             margen = margenes.find(qn(f"w:{lado}"))
             if margen is None:
@@ -714,19 +937,6 @@ class InformeService:
                 margenes.append(margen)
             margen.set(qn("w:w"), valor)
             margen.set(qn("w:type"), "dxa")
-
-    @classmethod
-    def _aplicar_fondo_encabezado_template(cls, celda):
-        propiedades_celda = (
-            celda._tc.get_or_add_tcPr()
-        )  # pylint: disable=protected-access
-        sombreado = propiedades_celda.find(qn("w:shd"))
-        if sombreado is None:
-            sombreado = OxmlElement("w:shd")
-            propiedades_celda.append(sombreado)
-        sombreado.set(qn("w:val"), "clear")
-        sombreado.set(qn("w:color"), "auto")
-        sombreado.set(qn("w:fill"), cls.COLOR_ENCABEZADO_TABLA_TEMPLATE)
 
     @staticmethod
     def actualizar_estado_informe(informe, nuevo_estado, tipo=None):

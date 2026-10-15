@@ -517,6 +517,62 @@ def test_expediente_detail_expone_motivo_rechazo_para_provincia(client):
 
 
 @pytest.mark.django_db
+def test_expediente_detail_muestra_el_motivo_como_listado(client):
+    """Cada observación del motivo va en un ítem propio (issue #2678)."""
+    provincia = Provincia.objects.create(nombre="Córdoba")
+    user = User.objects.create_user(username="prov_listado", password="pass")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+    profile, _ = Profile.objects.get_or_create(user=user)
+    profile.es_usuario_provincial = True
+    profile.provincia = provincia
+    profile.save()
+
+    expediente = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=EstadoExpediente.objects.create(nombre="EN_ESPERA_LISTADO"),
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Diaz",
+        nombre="Sofia",
+        fecha_nacimiento=date(2001, 3, 3),
+        documento=35666777,
+        provincia=provincia,
+    )
+    legajo = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano,
+        estado=EstadoLegajo.objects.create(nombre="DOCUMENTO_PENDIENTE_LISTADO"),
+        revision_tecnico=RevisionTecnico.SUBSANAR,
+    )
+    HistorialValidacionTecnica.objects.create(
+        legajo=legajo,
+        estado_anterior=RevisionTecnico.PENDIENTE,
+        estado_nuevo=RevisionTecnico.SUBSANAR,
+        usuario=user,
+        motivo="RENAPER: Adjuntar DNI.\nANSES: Registra Obra Social.\n\nTexto libre.",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    legajo_ctx = response.context["legajos_enriquecidos"][0]
+    assert legajo_ctx.observacion_tecnica_items == [
+        "RENAPER: Adjuntar DNI.",
+        "ANSES: Registra Obra Social.",
+        "Texto libre.",
+    ]
+    html = response.content.decode()
+    assert "<li>RENAPER: Adjuntar DNI.</li>" in html
+    assert "<li>ANSES: Registra Obra Social.</li>" in html
+    assert "<li>Texto libre.</li>" in html
+
+
+@pytest.mark.django_db
 def test_expediente_detail_expone_motivo_rechazo_para_tecnico(client):
     user = User.objects.create_user(username="tecnico_rechazo", password="pass")
     permission = Permission.objects.get(
@@ -580,6 +636,16 @@ def test_subsanacion_tipo_display_devuelve_etiqueta_legible():
     assert (
         ExpedienteCiudadano(subsanacion_tipo="RENAPER").subsanacion_tipo_display
         == "RENAPER"
+    )
+    assert (
+        ExpedienteCiudadano(subsanacion_tipo="ANSES").subsanacion_tipo_display
+        == "ANSES"
+    )
+    assert (
+        ExpedienteCiudadano(
+            subsanacion_tipo="CONDICION_DIAGNOSTICA"
+        ).subsanacion_tipo_display
+        == "Condición diagnóstica"
     )
     # Sin tipo registrado (subsanaciones antiguas) no rompe y cae a vacío.
     assert ExpedienteCiudadano().subsanacion_tipo_display == ""

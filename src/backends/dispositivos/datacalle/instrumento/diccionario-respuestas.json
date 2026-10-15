@@ -323,7 +323,7 @@
     "calculado": false,
     "soloExportacion": false,
     "requerido": false,
-    "soloHistorico": false,
+    "soloHistorico": true,
     "visibleSi": {
       "campo": "realizaEntrevista",
       "es": "yaEntrevistada"
@@ -651,7 +651,10 @@
     "soloHistorico": false,
     "visibleSi": {
       "campo": "vivioSiempreLocalidad",
-      "es": "no"
+      "en": [
+        "no",
+        "nsnc"
+      ]
     },
     "etiqueta": "8. ¿De qué lugar proviene?",
     "matriz": null
@@ -669,7 +672,10 @@
       "todas": [
         {
           "campo": "vivioSiempreLocalidad",
-          "es": "no"
+          "en": [
+            "no",
+            "nsnc"
+          ]
         },
         {
           "campo": "dondeViviaAntes",
@@ -693,7 +699,10 @@
       "todas": [
         {
           "campo": "vivioSiempreLocalidad",
-          "es": "no"
+          "en": [
+            "no",
+            "nsnc"
+          ]
         },
         {
           "campo": "dondeViviaAntes",
@@ -717,7 +726,10 @@
       "todas": [
         {
           "campo": "vivioSiempreLocalidad",
-          "es": "no"
+          "en": [
+            "no",
+            "nsnc"
+          ]
         },
         {
           "campo": "dondeViviaAntes",
@@ -741,7 +753,10 @@
       "todas": [
         {
           "campo": "vivioSiempreLocalidad",
-          "es": "no"
+          "en": [
+            "no",
+            "nsnc"
+          ]
         },
         {
           "campo": "dondeViviaAntes",
@@ -765,7 +780,10 @@
       "todas": [
         {
           "campo": "vivioSiempreLocalidad",
-          "es": "no"
+          "en": [
+            "no",
+            "nsnc"
+          ]
         },
         {
           "campo": "dondeViviaAntes",

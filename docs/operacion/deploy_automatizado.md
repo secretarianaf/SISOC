@@ -87,11 +87,11 @@ usan force push, rebase automático ni resolución automática de conflictos. La
 mutaciones de PR se autentican con el token técnico acotado que se documenta
 más abajo, nunca con un PAT personal ni con un merge directo.
 
-## Promoción semanal `development -> main`
+## Promoción semanal `homologacion -> main`
 
 La tarea de Codex se ejecuta los miércoles a las 16:30 y no espera a que CI
-termine. Crea o reutiliza un PR final exacto `development -> main` en draft, y
-un PR temporal `codex/predeploy-dev-main-AAAAMMDD -> development` solo si hay
+termine. Crea o reutiliza un PR final exacto `homologacion -> main` en draft, y
+un PR temporal `codex/predeploy-dev-main-AAAAMMDD -> homologacion` solo si hay
 saneamiento versionable. Ambos PRs incluyen metadata y evidencia para generar
 los artefactos spec-as-source desde el diff real.
 
@@ -99,13 +99,18 @@ El PR temporal se arma con auto-merge nativo y GitHub lo integra cuando sus
 checks requeridos terminan. `.github/workflows/release-orchestrator.yml`
 continúa por eventos: deja listo el PR final, crea el check pendiente
 `release_baseline` y habilita su auto-merge. Cuando los otros checks están
-verdes y `development` contiene el `main` más reciente, crea el tag anotado
+verdes y `homologacion` contiene el `main` más reciente, crea el tag anotado
 `AAAA.MM.DD-stable` apuntando al `main` que se reemplaza, publica su release de
 baseline y recién entonces completa `release_baseline`. El tag no se
 sobreescribe: si el nombre ya apunta a otro SHA, el workflow se bloquea para
 conservar un rollback inequívoco.
 
-El body del PR final también fija el SHA de `development` analizado. Un push
+El workflow toma el script de `homologacion`. Los disparos `schedule` y
+`workflow_run` leen el YAML de la rama por defecto (`development`) y el cierre
+de PRs hacia `homologacion` lee el de `homologacion`: un cambio en el
+orquestador debe llegar a las dos ramas antes del pre-deploy siguiente.
+
+El body del PR final también fija el SHA de `homologacion` analizado. Un push
 posterior no se promueve por accidente: deja el PR bloqueado hasta que la tarea
 programada vuelva a analizar y actualizar el snapshot.
 
@@ -221,12 +226,13 @@ En `production`, configurar Required reviewers. Esa regla materializa la
 aprobación manual antes de que el job de producción corra en el runner
 self-hosted.
 
-Mantener una ruleset base para `development`, `homologacion` y `main` con
-`deploy_guard`, `architecture_imports`, `gitleaks` y `sync_pr_artifacts`; y
-una ruleset exclusiva para `main` que suma `release_baseline`, cuya fuente debe
-ser la GitHub App `SISOC Release Automation`. En ambas,
-exigir que la rama esté al día y dejar el conteo de aprobaciones en cero para
-estos flujos. Habilitar Auto-merge en el repositorio. Estas opciones requieren
+Mantener la ruleset base `Proteccion` para `development`, `homologacion` y
+`main` con `deploy_guard`, `architecture_imports`, `gitleaks` y
+`sync_pr_artifacts`, sin exigir rama al día; y la ruleset `Promocion automatica
+a main`, exclusiva de `main`, que suma `release_baseline` con fuente en la
+GitHub App `secretarianaf SISOC Release` y exige que la rama esté al día. Con
+ella activa, a `main` solo llega el PR final programado: un PR directo nunca
+recibe `release_baseline`. Ambas dejan el conteo de aprobaciones en cero. Habilitar Auto-merge en el repositorio. Estas opciones requieren
 rol de administrador y complementan, no sustituyen, los gates versionados.
 
 Crear una GitHub App privada de servicio, instalada solamente en
@@ -271,6 +277,21 @@ y verifica nuevamente migraciones y salud antes de informar el resultado.
 Este rollback cubre checkout y contenedores, no revierte migraciones de base de
 datos. Para una migracion incompatible se mantiene el procedimiento de
 `docs/operacion/infraestructura.md`, seccion 9, incluyendo el backup acordado.
+
+## Limpieza de imagenes
+
+Cada deploy construye imagenes `sisoc/*` con el SHA en el tag. Despues de un
+deploy verificado, `deploy_verified.sh` borra las `sisoc/*` que ya no sirven y
+la cache de build de mas de 3 dias. Conserva:
+
+- las imagenes que usa algun contenedor, aunque este detenido (el deploy
+  selectivo deja servicios con imagenes de un SHA anterior);
+- las de la revision desplegada y la anterior.
+
+No toca volumenes, contenedores ni imagenes que no sean `sisoc/*`. Si el deploy
+falla, no limpia. Si la limpieza falla, el deploy queda verificado igual, con un
+warning en el log y en el Summary. Un rollback que necesite una imagen borrada
+la reconstruye.
 
 ## Fallas frecuentes
 

@@ -554,22 +554,9 @@
                                                                     <div class="p-2 rounded"
                                                                          style="background:rgba(255,255,255,.04);
                                                                                 border:1px solid rgba(255,255,255,.08)">
-                                                                        <span class="d-block text-break motivo-multilinea">{{ leg.observacion_tecnica_texto }}</span>
+                                                                        {% include "celiaquia/partials/motivo_lista.html" with items=leg.observacion_tecnica_items %}
                                                                     </div>
                                                                 </div>
-                                                            {% else %}
-                                                                {% comment %}
-                                                        <div class="small muted">Observación (subsanación):</div>
-                                                        <div class="mt-1">
-                                                            {% if leg.subsanacion_motivo %}
-                                                                <div class="p-2 rounded" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08)">
-                                                                    <span class="d-block text-break motivo-multilinea">{{ leg.subsanacion_motivo }}</span>
-                                                                </div>
-                                                            {% else %}
-                                                                <span class="muted">-</span>
-                                                            {% endif %}
-                                                        </div>
-                                                                {% endcomment %}
                                                             {% endif %}
                                                             {% if leg.subsanacion_renaper_comentario %}
                                                                 <div class="small muted mt-2">Respuesta provincia:</div>
@@ -588,21 +575,13 @@
                                                                     <div class="p-2 rounded"
                                                                          style="background:rgba(255,255,255,.04);
                                                                                 border:1px solid rgba(255,255,255,.08)">
-                                                                        <span class="d-block text-break motivo-multilinea">{{ leg.observacion_tecnica_texto }}</span>
+                                                                        {% include "celiaquia/partials/motivo_lista.html" with items=leg.observacion_tecnica_items %}
                                                                     </div>
                                                                 </div>
                                                             {% else %}
                                                                 <div class="small muted">Comentario enviado a provincia:</div>
                                                                 <div class="mt-1">
-                                                                    {% if leg.subsanacion_motivo %}
-                                                                        <div class="p-2 rounded"
-                                                                             style="background:rgba(255,255,255,.04);
-                                                                                    border:1px solid rgba(255,255,255,.08)">
-                                                                            <span class="d-block text-break motivo-multilinea">{{ leg.subsanacion_motivo }}</span>
-                                                                        </div>
-                                                                    {% else %}
-                                                                        <span class="muted">-</span>
-                                                                    {% endif %}
+                                                                    <span class="muted">-</span>
                                                                 </div>
                                                             {% endif %}
                                                             {% if leg.subsanacion_renaper_comentario %}
@@ -669,6 +648,10 @@
                                                                 <div class="small muted mb-1">
                                                                     {% if leg.subsanacion_tipo == "RENAPER" %}
                                                                         Subsanación RENAPER solicitada
+                                                                    {% elif leg.subsanacion_tipo == "ANSES" %}
+                                                                        Subsanación ANSES solicitada
+                                                                    {% elif leg.subsanacion_tipo == "CONDICION_DIAGNOSTICA" %}
+                                                                        Subsanación por condición diagnóstica solicitada
                                                                     {% elif leg.subsanacion_tipo == "DOCUMENTACION" %}
                                                                         Subsanación por documentación solicitada
                                                                     {% elif leg.subsanacion_tipo == "DATOS_PERSONALES" %}
@@ -795,21 +778,13 @@
                                                     <div class="p-2 rounded"
                                                          style="background:rgba(255,255,255,.04);
                                                                 border:1px solid rgba(255,255,255,.08)">
-                                                        <span class="d-block text-break motivo-multilinea">{{ leg.observacion_tecnica_texto }}</span>
+                                                        {% include "celiaquia/partials/motivo_lista.html" with items=leg.observacion_tecnica_items %}
                                                     </div>
                                                 </div>
                                             {% else %}
                                                 <div class="small muted">Observación (subsanación):</div>
                                                 <div class="mt-1">
-                                                    {% if leg.subsanacion_motivo %}
-                                                        <div class="p-2 rounded"
-                                                             style="background:rgba(255,255,255,.04);
-                                                                    border:1px solid rgba(255,255,255,.08)">
-                                                            <span class="d-block text-break motivo-multilinea">{{ leg.subsanacion_motivo }}</span>
-                                                        </div>
-                                                    {% else %}
-                                                        <span class="muted">-</span>
-                                                    {% endif %}
+                                                    <span class="muted">-</span>
                                                 </div>
                                             {% endif %}
                                             {% if leg.subsanacion_renaper_comentario %}
@@ -829,7 +804,7 @@
                                                     <div class="p-2 rounded"
                                                          style="background:rgba(255,255,255,.04);
                                                                 border:1px solid rgba(255,255,255,.08)">
-                                                        <span class="d-block text-break motivo-multilinea">{{ leg.observacion_tecnica_texto }}</span>
+                                                        {% include "celiaquia/partials/motivo_lista.html" with items=leg.observacion_tecnica_items %}
                                                     </div>
                                                 </div>
                                             {% endif %}
@@ -892,6 +867,10 @@
                                                 <div class="small muted mb-1">
                                                     {% if leg.subsanacion_tipo == "RENAPER" %}
                                                         Subsanación RENAPER solicitada
+                                                    {% elif leg.subsanacion_tipo == "ANSES" %}
+                                                        Subsanación ANSES solicitada
+                                                    {% elif leg.subsanacion_tipo == "CONDICION_DIAGNOSTICA" %}
+                                                        Subsanación por condición diagnóstica solicitada
                                                     {% elif leg.subsanacion_tipo == "DOCUMENTACION" %}
                                                         Subsanación por documentación solicitada
                                                     {% elif leg.subsanacion_tipo == "DATOS_PERSONALES" %}
@@ -1539,7 +1518,7 @@
                 <form class="modal-content" id="form-corregir-evaluacion" method="post">
                     {% csrf_token %}
                     <div class="modal-header">
-                        <h5 class="modal-title" id="modalCorregirEvaluacionLabel">Corregir evaluación final</h5>
+                        <h5 class="modal-title" id="modalCorregirEvaluacionLabel">Corregir evaluación técnica</h5>
                         <button type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
@@ -1551,15 +1530,15 @@
                             Estado actual: <strong id="corregir-estado-actual">—</strong>
                         </p>
                         <div class="mb-3">
-                            <label for="corregir-nuevo-estado" class="form-label">Nuevo estado *</label>
+                            <label for="corregir-nuevo-estado" class="form-label">Seleccione acción *</label>
                             <select id="corregir-nuevo-estado"
                                     name="nuevo_estado"
                                     class="form-select"
                                     required>
                                 <option value="">Seleccionar...</option>
-                                <option value="APROBADO">Aceptado</option>
-                                <option value="RECHAZADO">Rechazado</option>
-                                <option value="SUBSANADO">Subsanado</option>
+                                <option value="APROBADO">Validar</option>
+                                <option value="RECHAZADO">Rechazar</option>
+                                <option value="SUBSANADO">Marcar como subsanado</option>
                             </select>
                         </div>
                         <div class="mb-2">

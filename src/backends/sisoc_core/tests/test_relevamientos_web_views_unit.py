@@ -390,6 +390,9 @@ def test_detail_view_get_context_data_sin_relaciones_retorna_none(mocker):
         return_value={},
     )
     mocker.patch(
+        "relevamientos.views.web_views.pdf_oficial.documento_de", return_value=None
+    )
+    mocker.patch(
         "relevamientos.views.web_views.Relevamiento.objects.filter",
         return_value=SimpleNamespace(
             only=lambda *a, **k: SimpleNamespace(order_by=lambda *x, **y: timeline)
@@ -449,6 +452,9 @@ def test_detail_view_get_context_data_limita_timeline_y_agrega_datos(mocker):
     mocker.patch(
         "django.views.generic.detail.SingleObjectMixin.get_context_data",
         return_value={},
+    )
+    mocker.patch(
+        "relevamientos.views.web_views.pdf_oficial.documento_de", return_value=None
     )
     filter_mock = mocker.patch(
         "relevamientos.views.web_views.Relevamiento.objects.filter",

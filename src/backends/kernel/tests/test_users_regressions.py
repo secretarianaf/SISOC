@@ -610,10 +610,9 @@ def test_user_list_paginas_de_25_registros(client):
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     "grupo_nacional",
-    [
-        UserGroups.SIMEPI_ADMINISTRADOR,
-        UserGroups.SIMEPI_EQUIPO_NACIONAL,
-    ],
+    # SIMEPI - Administrador ve solo a los usuarios de CDI que administra
+    # (ver cdi/tests/test_usuarios_simepi_admin.py).
+    [UserGroups.SIMEPI_EQUIPO_NACIONAL],
 )
 def test_user_list_nacional_puede_buscar_y_visualizar_todos_los_usuarios(
     grupo_nacional,

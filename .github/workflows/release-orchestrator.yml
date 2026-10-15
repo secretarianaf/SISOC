@@ -6,14 +6,14 @@ on:
     workflow_dispatch:
         inputs:
             release_pr:
-                description: Numero del PR final development -> main que debe pasar a ready
+                description: Numero del PR final homologacion -> main que debe pasar a ready
                 required: true
                 type: string
     pull_request:
         types:
             - closed
         branches:
-            - development
+            - homologacion
     workflow_run:
         workflows:
             - Tests automatizados
@@ -43,7 +43,7 @@ jobs:
             - name: Checkout de la automatizacion versionada
               uses: actions/checkout@v6.0.2
               with:
-                  ref: development
+                  ref: homologacion
                   persist-credentials: false
 
             - name: Validar GitHub App de automatizacion

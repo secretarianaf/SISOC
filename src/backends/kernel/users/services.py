@@ -2,7 +2,7 @@ import logging
 from typing import List, Tuple
 
 from django.contrib.auth.models import Permission, User
-from django.db.models import Case, CharField, Count, F, Q, Value, When
+from django.db.models import Case, CharField, Count, Exists, F, OuterRef, Q, Value, When
 from django.urls import NoReverseMatch, reverse
 
 from core.constants import UserGroups
@@ -51,10 +51,10 @@ def _reverse_optional(url_name):
 
 
 class UsuariosService:
-    USUARIOS_NACIONALES_CON_VISIBILIDAD_GLOBAL = (
-        UserGroups.SIMEPI_ADMINISTRADOR,
-        UserGroups.SIMEPI_EQUIPO_NACIONAL,
-    )
+    # SIMEPI - Administrador no está: ve y edita solo a los usuarios de CDI que
+    # puede administrar (su alcance delegable), así el listado y la edición
+    # coinciden.
+    USUARIOS_NACIONALES_CON_VISIBILIDAD_GLOBAL = (UserGroups.SIMEPI_EQUIPO_NACIONAL,)
 
     @staticmethod
     def get_pending_mobile_password_reset_count() -> int:
@@ -132,6 +132,21 @@ class UsuariosService:
             return base_qs
         if actor.is_superuser:
             return base_qs
+
+        # El ABM corre en el core, donde CDI no está instalado. Este límite de
+        # identidad no puede depender de los scopes registrados por el backend.
+        # El conjunto vacío cumple la delegación, pero no identifica una cuenta
+        # de CDI. Se conserva la excepción del propio actor.
+        if actor.groups.filter(
+            name__in=(
+                UserGroups.SIMEPI_ADMINISTRADOR,
+                UserGroups.SIMEPI_EQUIPO_NACIONAL,
+                UserGroups.SIMEPI_ANALISTA_DATOS,
+                UserGroups.SIMEPI_AUDITORIA,
+            )
+        ).exists():
+            tiene_grupos = User.groups.through.objects.filter(user_id=OuterRef("pk"))
+            base_qs = base_qs.filter(Q(pk=actor.pk) | Exists(tiene_grupos))
 
         # Deny-by-default: un actor no-superuser que gestiona usuarios pero no
         # tiene un alcance delegable configurado solo se ve a sí mismo. Debe

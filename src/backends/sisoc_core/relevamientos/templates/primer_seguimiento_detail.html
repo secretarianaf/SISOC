@@ -60,6 +60,13 @@
             {% endif %}
         </div>
         <div class="col-auto">
+            {% if pdf_oficial %}
+                <a href="{% url 'seguimiento_pdf' comedor.id relevamiento.id seguimiento.id %}"
+                   class="btn btn-secondary mr-1"
+                   title="Formato oficial de Gestionar, enviado el {{ pdf_oficial.fecha_actualizacion|date:'d/m/Y H:i' }}">Descargar PDF</a>
+            {% else %}
+                <small class="text-muted mr-2">El PDF se genera cuando el territorial lo envía desde Gestionar.</small>
+            {% endif %}
             {% if perms.relevamientos.change_primerseguimiento %}
                 <a href="{% url 'seguimiento_editar' comedor.id relevamiento.id seguimiento.id %}"
                    class="btn btn-primary mr-1">Editar</a>

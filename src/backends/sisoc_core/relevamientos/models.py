@@ -2130,6 +2130,10 @@ class SeguimientoPnud(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Mo
     con decenas de campos cada uno, sin columnas equivalentes en los modelos
     PAC. **No actualizan el legajo del comedor.** Pasan por el mismo ciclo de
     validación del coordinador (N16) que relevamientos y seguimientos.
+
+    El Seguimiento SIPH (#2651, Servicios Integrales de Promoción Humana) es un
+    formulario más, común a las dos líneas: n veces por comedor, con o sin
+    relevamiento inicial, desde SISOC (asignado) o desde la app.
     """
 
     FORMULARIO_SECOS = "secos"
@@ -2137,6 +2141,7 @@ class SeguimientoPnud(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Mo
     FORMULARIO_II_B1 = "iib1"
     FORMULARIO_II_A = "iia"
     FORMULARIO_II_B = "iib"
+    FORMULARIO_SIPH = "siph"
     FORMULARIO_CHOICES = [
         (
             FORMULARIO_SECOS,
@@ -2149,6 +2154,10 @@ class SeguimientoPnud(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Mo
         (FORMULARIO_II_B1, "FORM II B.1 — Virtual · Módulo (Línea Tradicional)"),
         (FORMULARIO_II_A, "FORM II A — Presencial · Vianda (Línea Tradicional)"),
         (FORMULARIO_II_B, "FORM II B — Presencial · Módulo (Línea Tradicional)"),
+        (
+            FORMULARIO_SIPH,
+            "FORM-SIPH — Seguimiento SIPH (Línea Tradicional y Módulos Secos)",
+        ),
     ]
 
     comedor = models.ForeignKey(
@@ -2184,3 +2193,59 @@ class SeguimientoPnud(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Mo
         completado en la app): el coordinador no tiene nada que revisar, y un
         ``Validado`` es definitivo."""
         return self.estado_validacion is None and not self.datos
+
+
+class PdfOficialGestionar(models.Model):
+    """PDF oficial que arma Gestionar para un relevamiento o un seguimiento (#2630).
+
+    La app imprime cada formulario como réplica del PDF oficial (capa fija y
+    datos en posiciones medidas). Al enviarlo sube ese mismo documento como
+    HTML autocontenido (fuentes e imágenes en ``data:``); SISOC lo convierte a
+    PDF con weasyprint y guarda el resultado en ``pdf`` para no rehacerlo en
+    cada descarga. Refleja lo que envió el territorial: una edición posterior
+    desde SISOC no lo modifica.
+    """
+
+    relevamiento = models.OneToOneField(
+        Relevamiento,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="pdf_oficial_gestionar",
+    )
+    seguimiento = models.OneToOneField(
+        PrimerSeguimiento,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="pdf_oficial_gestionar",
+    )
+    html = models.TextField()
+    pdf = models.BinaryField(blank=True, null=True, editable=False)
+    version_app = models.CharField(max_length=20, blank=True, default="")
+    usuario = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="pdfs_oficiales_gestionar",
+    )
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "PDF oficial de Gestionar"
+        verbose_name_plural = "PDFs oficiales de Gestionar"
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(relevamiento__isnull=False, seguimiento__isnull=True)
+                    | models.Q(relevamiento__isnull=True, seguimiento__isnull=False)
+                ),
+                name="pdf_oficial_gestionar_un_solo_registro",
+            )
+        ]
+
+    def __str__(self):
+        if self.relevamiento_id:
+            return f"PDF oficial del relevamiento {self.relevamiento_id}"
+        return f"PDF oficial del seguimiento {self.seguimiento_id}"

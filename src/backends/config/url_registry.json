@@ -3140,6 +3140,16 @@
   "regex": "^rendicion_cuentas_final/listar/\\Z"
  },
  {
+  "name": "rendicioncuentasmensual_auditoria",
+  "namespace": "",
+  "regex": "^rendicioncuentasmensual/rendicioncuentasmensual/auditoria/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_auditoria_nueva",
+  "namespace": "",
+  "regex": "^rendicioncuentasmensual/rendicioncuentasmensual/auditoria/\\Z"
+ },
+ {
   "name": "rendicioncuentasmensual_create",
   "namespace": "",
   "regex": "^rendicioncuentasmensual/rendicioncuentasmensual/nuevo/(?P<comedor_id>[0-9]+)/\\Z"

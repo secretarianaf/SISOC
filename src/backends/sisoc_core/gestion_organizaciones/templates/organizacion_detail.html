@@ -997,12 +997,10 @@
                                                 <th>Conv.</th>
                                                 <th>N° de Rend.</th>
                                                 <th>Período</th>
-                                                <th>Monto auditado</th>
                                                 <th>Validación Territorial</th>
                                                 <th>Revisión para Carga</th>
                                                 <th>Cargada para Auditoría</th>
                                                 <th>Auditada</th>
-                                                <th>Observaciones</th>
                                                 <th>Detalle</th>
                                             </tr>
                                         </thead>
@@ -1018,13 +1016,7 @@
                                                             {{ rendicion.get_mes_display }} {{ rendicion.anio }}
                                                         {% endif %}
                                                     </td>
-                                                    <td>
-                                                        {% if rendicion.monto_rendido != None %}
-                                                            ${{ rendicion.monto_rendido|floatformat:2 }}
-                                                        {% else %}
-                                                            -
-                                                        {% endif %}
-                                                    </td>
+
                                                     <td>
                                                         {% if rendicion.validacion_territorial_finalizada %}
                                                             ✔
@@ -1053,13 +1045,7 @@
                                                             -
                                                         {% endif %}
                                                     </td>
-                                                    <td>
-                                                        {% if rendicion.observaciones %}
-                                                            ✔
-                                                        {% else %}
-                                                            -
-                                                        {% endif %}
-                                                    </td>
+
                                                     <td>
                                                         <a class="btn btn-sm btn-outline-light"
                                                            href="{% url 'organizacion_rendicion_detalle' organizacion.id rendicion.id %}">Ver</a>

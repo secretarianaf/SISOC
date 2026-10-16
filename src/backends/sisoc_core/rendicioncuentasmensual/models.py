@@ -593,6 +593,7 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         null=True,
         verbose_name="Monto observado",
     )
+    validada = models.BooleanField(blank=True, null=True, verbose_name="¿Validada?")
     genera_acta_auditoria = models.BooleanField(
         blank=True,
         null=True,
@@ -605,10 +606,21 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         related_name="incluida_en_actas",
         verbose_name="Rendiciones incluidas en el acta",
     )
+    rendicion_origen_acta = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="rendiciones_del_acta",
+        verbose_name="Rendición que originó el acta de auditoría",
+    )
     fecha_validacion_territorial = models.DateTimeField(blank=True, null=True)
     fecha_validacion_auditoria = models.DateTimeField(blank=True, null=True)
     fecha_carga_auditoria = models.DateTimeField(blank=True, null=True)
     fecha_auditada = models.DateTimeField(blank=True, null=True)
+    fecha_gestion_auditoria = models.DateTimeField(
+        blank=True, null=True, verbose_name="Fecha de cierre de gestión de auditoría"
+    )
     acta_auditoria = models.FileField(
         upload_to="rendicioncuentasmensual/auditoria/actas/",
         blank=True,
@@ -669,6 +681,14 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         verbose_name_plural = "Rendiciones de Cuenta Mensuales"
 
     @property
+    def es_origen_acta(self):
+        return (
+            self.pk is not None
+            and self.genera_acta_auditoria is True
+            and self.rendicion_origen_acta_id == self.pk
+        )
+
+    @property
     def validacion_territorial_finalizada(self):
         return self.fecha_validacion_territorial is not None or self.etapa_proceso in {
             self.ETAPA_REVISION_AUDITORIA,
@@ -724,6 +744,14 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
 
     @property
     def estado_proceso_display(self):
+        if (
+            self.etapa_proceso == self.ETAPA_AUDITORIA
+            and self.subestado_proceso == self.SUBESTADO_EN_CURSO
+            and self.validada is True
+            and self.fecha_gestion_auditoria
+            and self.genera_acta_auditoria is False
+        ):
+            return "Auditoría validada sin acta"
         if (
             self.etapa_proceso == self.ETAPA_AUDITORIA
             and self.subestado_proceso == self.SUBESTADO_FINALIZADA

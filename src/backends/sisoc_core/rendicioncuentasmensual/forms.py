@@ -31,6 +31,10 @@ class RendicionCuentaMensualForm(forms.ModelForm):
         fields = "__all__"
         exclude = [
             "comedor",
+            "validada",
+            "rendicion_origen_acta",
+            "genera_acta_auditoria",
+            "rendiciones_incluidas",
             "etapa_proceso",
             "subestado_proceso",
             "monto_rendido",
@@ -38,6 +42,7 @@ class RendicionCuentaMensualForm(forms.ModelForm):
             "fecha_validacion_auditoria",
             "fecha_carga_auditoria",
             "fecha_auditada",
+            "fecha_gestion_auditoria",
             "acta_auditoria",
             "fecha_regularizacion",
             "documento_regularizacion",
@@ -220,7 +225,9 @@ class RendicionProcesoForm(forms.Form):
         widget=forms.Textarea(attrs={"rows": 3}),
     )
     acta_auditoria = forms.FileField(required=False)
-    documento_regularizacion = forms.FileField(required=False)
+    documento_regularizacion = forms.FileField(
+        required=False, label="Acta Complementaria"
+    )
 
     def __init__(self, *args, rendicion=None, **kwargs):
         super().__init__(*args, **kwargs)

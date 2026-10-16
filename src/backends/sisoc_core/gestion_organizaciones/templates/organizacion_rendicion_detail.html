@@ -35,15 +35,7 @@
                             {% endif %}
                         </strong>
                     </div>
-                    <div class="col-md-4">
-                        <small class="text-muted d-block">Monto Auditado</small><strong>
-                            {% if rendicion.monto_rendido != None %}
-                                ${{ rendicion.monto_rendido|floatformat:2 }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </strong>
-                    </div>
+
                     <div class="col-md-4">
                         <small class="text-muted d-block">Estado del proceso</small><strong>{{ rendicion.get_etapa_proceso_display }} — {{ rendicion.get_subestado_proceso_display }}</strong>
                     </div>
@@ -103,9 +95,7 @@
                     <div class="col-md-4">
                         <small class="text-muted d-block">Fecha de Auditada</small><strong>{{ rendicion.fecha_auditada|date:"d/m/Y H:i"|default:"-" }}</strong>
                     </div>
-                    <div class="col-12">
-                        <small class="text-muted d-block">Observaciones</small><strong>{{ rendicion.observaciones|default:"-" }}</strong>
-                    </div>
+
                     <div class="col-md-4">
                         <small class="text-muted d-block">PDF Acta de Auditoría</small>
                         {% if rendicion.acta_auditoria %}
@@ -127,7 +117,7 @@
                         <small class="text-muted d-block">Fecha de Regularización</small><strong>{{ rendicion.fecha_regularizacion|date:"d/m/Y H:i"|default:"-" }}</strong>
                     </div>
                     <div class="col-md-4">
-                        <small class="text-muted d-block">PDF Regularización</small>
+                        <small class="text-muted d-block">Acta Complementaria</small>
                         {% if rendicion.documento_regularizacion %}
                             <a href="{{ rendicion.documento_regularizacion.url }}" target="_blank">Ver archivo</a>
                         {% else %}

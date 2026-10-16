@@ -458,7 +458,7 @@ def test_selector_usa_la_etiqueta_de_proyecto_convenio_numero_y_periodo():
 
 
 @pytest.mark.django_db
-def test_detalle_tradicional_muestra_campos_en_el_orden_requerido(
+def test_pantalla_auditoria_tradicional_muestra_campos_sin_montos(
     client,
     superuser,
 ):
@@ -466,27 +466,27 @@ def test_detalle_tradicional_muestra_campos_en_el_orden_requerido(
     client.force_login(superuser)
 
     response = client.get(
-        reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
+        reverse("rendicioncuentasmensual_auditoria", kwargs={"pk": rendicion.pk})
     )
     html = response.content.decode()
 
     assert response.status_code == 200
     posiciones = [
-        html.index('name="monto_rendido"'),
-        html.index('name="monto_observado"'),
+        html.index('name="validada"'),
         html.index('name="genera_acta_auditoria"'),
-        html.index('name="rendiciones_incluidas"'),
-        html.index('id="resultado-auditoria"'),
+        html.index('name="acta_auditoria"'),
+        html.index('name="resultado"'),
         html.index('name="observaciones"'),
     ]
     assert posiciones == sorted(posiciones)
-    assert 'id="rendiciones-incluidas-container"' in html
-    assert "Monto auditado" in html
+    assert "Rendiciones incluidas en el acta" in html
+    assert 'name="monto_rendido"' not in html
+    assert 'name="monto_observado"' not in html
     assert "Monto rendido" not in html
 
 
 @pytest.mark.django_db
-def test_detalle_secos_mantiene_flujo_sin_campos_exclusivos_de_tradicional(
+def test_detalle_secos_enlaza_gestion_de_auditoria(
     client,
     superuser,
 ):
@@ -499,16 +499,16 @@ def test_detalle_secos_mantiene_flujo_sin_campos_exclusivos_de_tradicional(
     html = response.content.decode()
 
     assert response.status_code == 200
-    assert 'name="monto_rendido"' in html
-    assert "Monto auditado" in html
-    assert "Monto rendido" not in html
-    assert 'name="acta_auditoria"' in html
-    assert 'id="id_genera_acta_auditoria_' not in html
-    assert 'id="id_rendiciones_incluidas"' not in html
+    assert (
+        reverse("rendicioncuentasmensual_auditoria", kwargs={"pk": rendicion.pk})
+        in html
+    )
+    assert 'name="monto_rendido"' not in html
+    assert 'name="acta_auditoria"' not in html
 
 
 @pytest.mark.django_db
-def test_post_tradicional_entrega_la_rendicion_al_formulario(client, superuser):
+def test_post_historico_deriva_a_gestion_nueva_sin_cerrar_auditoria(client, superuser):
     proyecto = _crear_proyecto("PROY-POST")
     rendicion = _crear_rendicion(proyecto=proyecto, numero_rendicion=2)
     incluida = _crear_rendicion(
@@ -529,7 +529,10 @@ def test_post_tradicional_entrega_la_rendicion_al_formulario(client, superuser):
     )
 
     assert response.status_code == 302
+    assert response.url == reverse(
+        "rendicioncuentasmensual_auditoria", kwargs={"pk": rendicion.pk}
+    )
     rendicion.refresh_from_db()
-    assert rendicion.genera_acta_auditoria is True
-    assert list(rendicion.rendiciones_incluidas.all()) == [incluida]
-    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_FINALIZADA
+    assert rendicion.genera_acta_auditoria is None
+    assert not rendicion.rendiciones_incluidas.exists()
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO

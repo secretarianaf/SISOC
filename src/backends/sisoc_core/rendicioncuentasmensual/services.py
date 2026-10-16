@@ -364,6 +364,45 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         )
 
     @staticmethod
+    def rendiciones_elegibles_para_auditoria(rendicion):
+        """Scope por código y organización, incluyendo rendiciones legadas."""
+        proyecto = rendicion.proyecto
+        comedor = rendicion.comedor
+        codigo = (
+            getattr(proyecto, "codigo", None)
+            or getattr(comedor, "codigo_de_proyecto", "")
+            or ""
+        ).strip()
+        organizacion_id = getattr(proyecto, "organizacion_id", None) or getattr(
+            comedor, "organizacion_id", None
+        )
+        if not codigo or not organizacion_id:
+            return RendicionCuentaMensual.objects.none()
+        return (
+            RendicionCuentaMensual.objects.filter(
+                Q(proyecto__codigo=codigo, proyecto__organizacion_id=organizacion_id)
+                | Q(
+                    proyecto__isnull=True,
+                    comedor__codigo_de_proyecto=codigo,
+                    comedor__organizacion_id=organizacion_id,
+                ),
+                deleted_at__isnull=True,
+                validada=True,
+                genera_acta_auditoria=False,
+                fecha_gestion_auditoria__isnull=False,
+                etapa_proceso=RendicionCuentaMensual.ETAPA_AUDITORIA,
+                subestado_proceso__in=[
+                    RendicionCuentaMensual.SUBESTADO_PENDIENTE,
+                    RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+                ],
+            )
+            .filter(Q(acta_auditoria="") | Q(acta_auditoria__isnull=True))
+            .exclude(pk=rendicion.pk)
+            .select_related("proyecto", "comedor__organizacion")
+            .order_by("periodo_inicio", "convenio", "numero_rendicion", "pk")
+        )
+
+    @staticmethod
     def siguiente_numero_rendicion(
         *, comedor, convenio, proyecto=None, excluir_pk=None
     ):
@@ -1555,6 +1594,44 @@ class RendicionProcesoService:
     def ejecutar(
         *, rendicion, accion, datos, actor=None
     ):  # pylint: disable=too-many-statements,too-many-branches,too-many-locals
+        acciones_auditoria = {
+            RendicionProcesoService.ACCION_INICIAR_AUDITORIA,
+            RendicionProcesoService.ACCION_FINALIZAR_SIN_OBSERVACIONES,
+            RendicionProcesoService.ACCION_FINALIZAR_CON_OBSERVACIONES,
+        }
+        acciones_regularizacion = {
+            RendicionProcesoService.ACCION_INICIAR_REGULARIZACION,
+            RendicionProcesoService.ACCION_FINALIZAR_REGULARIZACION,
+        }
+        if accion in acciones_auditoria:
+            rendicion = RendicionCuentaMensual.objects.select_for_update().get(
+                pk=rendicion.pk
+            )
+            if (
+                rendicion.fecha_gestion_auditoria
+                or rendicion.genera_acta_auditoria is True
+            ):
+                raise ValidationError(
+                    "La gestión de auditoría está cerrada y no admite nuevas acciones."
+                )
+        grupo_regularizacion = []
+        if accion in acciones_regularizacion:
+            ids_grupo = list(
+                rendicion.rendiciones_incluidas.values_list("pk", flat=True)
+            )
+            grupo_regularizacion = list(
+                RendicionCuentaMensual.objects.select_for_update()
+                .filter(pk__in=[rendicion.pk, *ids_grupo])
+                .order_by("pk")
+            )
+            rendicion = next(
+                item for item in grupo_regularizacion if item.pk == rendicion.pk
+            )
+            if not rendicion.es_origen_acta:
+                raise ValidationError(
+                    "La regularización debe gestionarse desde la rendición "
+                    "que originó el acta de auditoría."
+                )
         etapa_previa = rendicion.etapa_proceso
         rendiciones_para_asociar = None
         ahora = timezone.now()
@@ -1714,6 +1791,8 @@ class RendicionProcesoService:
             rendicion.monto_observado = datos.get("monto_observado")
             if es_linea_tradicional:
                 rendicion.genera_acta_auditoria = genera_acta
+            if rendicion.genera_acta_auditoria is True:
+                rendicion.rendicion_origen_acta = rendicion
             acta_auditoria = datos.get("acta_auditoria")
             if acta_auditoria:
                 rendicion.acta_auditoria = acta_auditoria
@@ -1754,4 +1833,23 @@ class RendicionProcesoService:
         # se define una única vez y no revalida ni borra vínculos históricos.
         if rendiciones_para_asociar is not None:
             rendicion.rendiciones_incluidas.set(rendiciones_para_asociar)
+        for incluida in grupo_regularizacion:
+            if incluida.pk == rendicion.pk:
+                continue
+            if incluida.etapa_proceso != rendicion.etapa_proceso:
+                RendicionCuentaMensualService.resetear_visualizaciones_rendicion(
+                    incluida
+                )
+            for campo in (
+                "etapa_proceso",
+                "subestado_proceso",
+                "documento_regularizacion",
+                "fecha_regularizacion",
+            ):
+                setattr(incluida, campo, getattr(rendicion, campo))
+            # pylint: disable=protected-access
+            RendicionCuentaMensualService._aplicar_usuario_ultima_modificacion(
+                incluida, actor
+            )
+            incluida.save()
         return rendicion

@@ -49,7 +49,8 @@
                     {% csrf_token %}
                     {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
                     <div class="row">
-                        <div class="col-md-8">{{ form.catalogo_actividad|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.categoria|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.catalogo_actividad|as_crispy_field }}</div>
                         <div class="col-md-4">{{ form.vigencia_actividad_meses|as_crispy_field }}</div>
                     </div>
                     <div class="mb-3">
@@ -152,8 +153,21 @@
     </template>
 {% endblock %}
 {% block customJS %}
+    {{ form.activity_options|json_script:"activity-options" }}
     <script nonce="{{ request.csp_nonce }}">
         (function () {
+            const categorySelect = document.getElementById('id_categoria');
+            const activitySelect = document.getElementById('id_catalogo_actividad');
+            const activityOptions = JSON.parse(document.getElementById('activity-options').textContent);
+            function filterActivities(selectedId) {
+                activitySelect.replaceChildren(new Option('Seleccionar', ''));
+                activityOptions.filter((item) => item.categoria === categorySelect.value).forEach((item) => {
+                    activitySelect.add(new Option(item.actividad, String(item.id), false, String(item.id) === selectedId));
+                });
+                activitySelect.disabled = !categorySelect.value;
+            }
+            filterActivities(activitySelect.value);
+            categorySelect.addEventListener('change', () => filterActivities(''));
             const rowsContainer = document.getElementById('schedule-rows');
             const addButton = document.getElementById('add-schedule-row');
             const template = document.getElementById('schedule-row-template');

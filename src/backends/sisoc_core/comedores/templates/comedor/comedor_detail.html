@@ -454,31 +454,31 @@
                                         <th scope="col" class="text-start">Prestacion</th>
                                         <th scope="col">
                                             <span class="d-block">Lunes</span>
-                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                            <span class="d-block prestaciones-subhead">Prestaciones</span>
                                         </th>
                                         <th scope="col">
                                             <span class="d-block">Martes</span>
-                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                            <span class="d-block prestaciones-subhead">Prestaciones</span>
                                         </th>
                                         <th scope="col">
                                             <span class="d-block">Miercoles</span>
-                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                            <span class="d-block prestaciones-subhead">Prestaciones</span>
                                         </th>
                                         <th scope="col">
                                             <span class="d-block">Jueves</span>
-                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                            <span class="d-block prestaciones-subhead">Prestaciones</span>
                                         </th>
                                         <th scope="col">
                                             <span class="d-block">Viernes</span>
-                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                            <span class="d-block prestaciones-subhead">Prestaciones</span>
                                         </th>
                                         <th scope="col">
                                             <span class="d-block">Sabado</span>
-                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                            <span class="d-block prestaciones-subhead">Prestaciones</span>
                                         </th>
                                         <th scope="col">
                                             <span class="d-block">Domingo</span>
-                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                            <span class="d-block prestaciones-subhead">Prestaciones</span>
                                         </th>
                                     </tr>
                                 </thead>
@@ -681,6 +681,74 @@
                                             {% endwith %}
                                         </td>
                                     </tr>
+                                    {% if es_linea_tradicional %}
+                                        <tr>
+                                            <th scope="row" class="text-start prestaciones-row">Merienda Reforzada</th>
+                                            <td>
+                                                {% with val=informe_tecnico|getattr:"aprobadas_merienda_reforzada_lunes" %}
+                                                    {% if val == "0" %}
+                                                        -
+                                                    {% else %}
+                                                        {{ val|default_if_none:"-" }}
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {% with val=informe_tecnico|getattr:"aprobadas_merienda_reforzada_martes" %}
+                                                    {% if val == "0" %}
+                                                        -
+                                                    {% else %}
+                                                        {{ val|default_if_none:"-" }}
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {% with val=informe_tecnico|getattr:"aprobadas_merienda_reforzada_miercoles" %}
+                                                    {% if val == "0" %}
+                                                        -
+                                                    {% else %}
+                                                        {{ val|default_if_none:"-" }}
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {% with val=informe_tecnico|getattr:"aprobadas_merienda_reforzada_jueves" %}
+                                                    {% if val == "0" %}
+                                                        -
+                                                    {% else %}
+                                                        {{ val|default_if_none:"-" }}
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {% with val=informe_tecnico|getattr:"aprobadas_merienda_reforzada_viernes" %}
+                                                    {% if val == "0" %}
+                                                        -
+                                                    {% else %}
+                                                        {{ val|default_if_none:"-" }}
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {% with val=informe_tecnico|getattr:"aprobadas_merienda_reforzada_sabado" %}
+                                                    {% if val == "0" %}
+                                                        -
+                                                    {% else %}
+                                                        {{ val|default_if_none:"-" }}
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {% with val=informe_tecnico|getattr:"aprobadas_merienda_reforzada_domingo" %}
+                                                    {% if val == "0" %}
+                                                        -
+                                                    {% else %}
+                                                        {{ val|default_if_none:"-" }}
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                        </tr>
+                                    {% endif %}
                                     <tr>
                                         <th scope="row" class="text-start prestaciones-row">Cena</th>
                                         <td>

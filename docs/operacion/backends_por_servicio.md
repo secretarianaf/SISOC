@@ -57,6 +57,15 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
 
 ## Configuración
 
+- **Dependencias Python.** `core`, `backend` y `migrator` heredan la base con
+  `requirements/base.txt`; desarrollo/CI usa el último target `dev`, que agrega
+  `requirements/all.txt`. Se mantienen Django Extensions, Debug Toolbar y Silk
+  con sus auxiliares de formato/profiling porque los settings actuales los usan.
+  Pytest, linters, coverage, factories y debugpy quedan en dev/test. No cambia
+  DEBUG/ENABLE_SILK ni se optimizan todavía paquetes Debian o dependencias por
+  vertical. El cambio requiere reconstrucción completa de imágenes; el ensayo
+  local offline no alcanzó esa etapa por falta de caché APT. Ver
+  `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-dependencias-runtime-dev.md`.
 - **`src/backends/config/backends.json`** es la fuente única. Por cada backend declara sus
   apps, prefijos de URL, URLconf, origen en la red de Compose y servicios de
   Compose. De ahí leen los settings, el proxy y el deploy.

@@ -278,14 +278,60 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v6.0.2
 
-            - name: Construir imagenes core, backend y migrador
+            - name: Construir imagenes core, backend, migrador y desarrollo
               run: |
                   docker build -q -f docker/django/Dockerfile --target core -t sisoc-ci/core .
                   docker build -q -f docker/django/Dockerfile --target migrator -t sisoc-ci/migrator .
+                  docker build -q -f docker/django/Dockerfile --target dev -t sisoc-ci/dev .
                   for backend in $(python3 -c 'import json; print(" ".join(json.load(open("src/backends/config/backends.json"))))'); do
                       docker build -q -f docker/django/Dockerfile --target backend \
                           --build-arg BACKEND="$backend" -t "sisoc-ci/backend-$backend" .
                   done
+
+            - name: Verificar dependencias de runtime y desarrollo
+              run: |
+                  set -euo pipefail
+                  docker run --rm sisoc-ci/core python -m pip check
+                  docker run --rm sisoc-ci/dev python -m pip check
+                  python3 - <<'PY'
+                  import json
+                  import subprocess
+                  from pathlib import Path
+
+                  def pins(path):
+                      result = {}
+                      for line in Path(path).read_text().splitlines():
+                          line = line.strip()
+                          if not line or line.startswith(("#", "-")):
+                              continue
+                          package, version = line.split("==", 1)
+                          name = package.split("[", 1)[0].lower().replace("_", "-")
+                          result[name] = version
+                      return result
+
+                  runtime = pins("requirements/base.txt")
+                  tools = pins("requirements/dev.txt") | pins("requirements/test.txt")
+                  assert not runtime.keys() & tools.keys(), "Hay pins mezclados entre perfiles"
+                  probe = '''
+                  import importlib.metadata as metadata
+                  import json
+                  import sys
+                  installed = {d.metadata["Name"].lower().replace("_", "-"): d.version for d in metadata.distributions()}
+                  required, forbidden = map(json.loads, sys.argv[1:])
+                  for package, version in required.items():
+                      assert installed.get(package) == version, (package, version, installed.get(package))
+                  assert not set(forbidden) & installed.keys(), sorted(set(forbidden) & installed.keys())
+                  print("Perfil de dependencias verificado")
+                  '''
+                  for image, required, forbidden in (
+                      ("sisoc-ci/core", runtime, sorted(tools)),
+                      ("sisoc-ci/dev", runtime | tools, []),
+                  ):
+                      subprocess.run([
+                          "docker", "run", "--rm", image, "python", "-c", probe,
+                          json.dumps(required), json.dumps(forbidden),
+                      ], check=True)
+                  PY
 
             - name: Verificar aislamiento y arranque
               run: |

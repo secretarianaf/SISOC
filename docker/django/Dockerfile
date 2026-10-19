@@ -49,10 +49,10 @@ RUN echo "es_AR.UTF-8 UTF-8" >> /etc/locale.gen && \
     echo "LANG=es_AR.UTF-8" > /etc/default/locale && \
     echo "LC_ALL=es_AR.UTF-8" >> /etc/default/locale
 
-# Instalación de dependencias de la aplicación
+# Runtime compartido. Herramientas de desarrollo/tests se agregan en el target dev.
 COPY ./requirements ./requirements
 RUN python -m pip install --upgrade pip setuptools wheel
-RUN python -m pip install --no-cache-dir --retries 5 --timeout 60 -r requirements/all.txt
+RUN python -m pip install --no-cache-dir --retries 5 --timeout 60 -r requirements/base.txt
 
 # El código vive en src/backends/: así gunicorn, celery y manage.py encuentran
 # `config`, que a su vez agrega el kernel y los verticales al sys.path.
@@ -109,3 +109,4 @@ CMD ["python", "./docker/django/entrypoint.py"]
 # Desarrollo y CI: el código se monta con bind mount (docker-compose.yml). Es
 # el último stage para que `docker compose build` sin target siga igual.
 FROM base AS dev
+RUN python -m pip install --no-cache-dir --retries 5 --timeout 60 -r requirements/all.txt

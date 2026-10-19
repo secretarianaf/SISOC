@@ -131,7 +131,12 @@ Para import-linter, reproducir el `PYTHONPATH` de
 `.github/workflows/architecture.yml`, que incluye config, kernel y todos los
 dueños; ejecutar `lint-imports` y `lint-imports --config .importlinter_celiaquia_config`.
 `service_images` construye core, migrador y todos los backends y verifica
-arranque y ausencia de apps ajenas. No reemplaza tests funcionales, MySQL
+arranque y ausencia de apps ajenas. También construye `dev`, ejecuta `pip check`
+y verifica versiones y ausencia de tooling dev/test en core, con presencia en
+dev. `core`, `backend` y `migrator` heredan `requirements/base.txt`; el último
+target `dev` agrega `requirements/all.txt`. Las apps de diagnóstico que usa
+la configuración compartida permanecen en base para conservar su funcionamiento.
+Esto no reemplaza tests funcionales, MySQL
 de migración ni aceptación manual. Si no se ejecuta, informarlo.
 
 Para administración de deploy, usar la misma composición y variables del

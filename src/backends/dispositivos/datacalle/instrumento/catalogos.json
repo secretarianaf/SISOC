@@ -1010,15 +1010,11 @@
     ]
   },
   "programaSocialPropio": {
-    "$comentario": "Formulario FINAL PAPEL, VII.25 — subopciones de 'Programa Social'. Los códigos `volverAlTrabajo` y `acompanamientoSocial` son los mismos del catálogo `programaSocial`, que se conserva entero para leer el histórico AppSheet (lista plana, sin padre).",
+    "$comentario": "Formulario FINAL PAPEL, VII.25 — subopciones de 'Programa Social'. Los códigos `volverAlTrabajo` y `acompanamientoSocial` son los mismos del catálogo `programaSocial`, que se conserva entero para leer el histórico AppSheet (lista plana, sin padre). 4.1.1 (SISOC#2724): el área reemplaza 'Volver al trabajo' por 'Programa Local / Provincial', con código propio porque es otro programa; `volverAlTrabajo` queda retirada para leer y reenviar los casos ya guardados.",
     "opciones": [
       {
-        "codigo": "volverAlTrabajo",
-        "etiqueta": "Volver al trabajo",
-        "legacy": [
-          "Volver al Trabajo",
-          "Programa Social: Volver al trabajo"
-        ]
+        "codigo": "programaLocalProvincial",
+        "etiqueta": "Programa Local / Provincial"
       },
       {
         "codigo": "acompanamientoSocial",
@@ -1030,6 +1026,15 @@
       {
         "codigo": "otros",
         "etiqueta": "Otros"
+      },
+      {
+        "codigo": "volverAlTrabajo",
+        "etiqueta": "Volver al trabajo",
+        "legacy": [
+          "Volver al Trabajo",
+          "Programa Social: Volver al trabajo"
+        ],
+        "retirada": true
       }
     ]
   },

@@ -1,4 +1,4 @@
-# Instrumento DataCalle — **4.0.0**
+# Instrumento DataCalle — **4.1.1**
 
 Copia de los artefactos que publica la app en
 `Desktop/DataCalle-SISOC/contrato/`. **No editar a mano**: los regenera
@@ -22,6 +22,13 @@ Copiar los tres archivos desde `contrato/` y **subir la versión pinneada** en
 El pin está ahí para que una copia vieja falle en CI en vez de pasar inadvertida:
 pasó con la 2.1.0 (publicada el 16/9, tomada el 18/9) y otra vez con la 2.3.0,
 3.0.0 y 3.1.0, que nunca se tomaron y dejaron el endpoint cuatro versiones atrás.
+
+## Qué cambió en 4.1.1 (#2724, 2026-10-19)
+
+En la 25, la subopción de "Programa Social" "Volver al trabajo" pasa a
+"Programa Local / Provincial" con código nuevo (`programaLocalProvincial`).
+`volverAlTrabajo` queda `retirada`: los casos ya guardados la siguen mostrando.
+Sin claves nuevas: `diccionario-respuestas.json` no cambia.
 
 ## Qué cambió en 4.0.0 (formulario FINAL en papel, 2026-10-01)
 

@@ -56,9 +56,29 @@ python -m pytest -o addopts= --create-db -q \
 Docker local aislado, MySQL efímero en tmpfs, sin puertos publicados ni
 integraciones externas. SQLite temporal se elimina con el entorno de pruebas.
 Las verificaciones locales no sustituyen los checks del nuevo HEAD remoto ni
-la aceptación humana. No hay merge, deploy ni cambios sobre datos reales.
+la aceptación humana. Los ensayos descritos no ejecutaron merge, deploy ni
+cambios sobre datos reales.
 
 La única modificación productiva es la coherencia de la referencia al perfil
 devuelto por el formulario; no cambia schema, permisos ni persistencia. Su
 reversión consiste en revertir ese fix, lo que reintroduciría los tres casos
 reproducidos. El resto corrige pruebas y documentación del contrato vigente.
+
+## Preparación de la incorporación autorizada
+
+El usuario autorizó posteriormente fusionar el PR #2734 a `development` cuando
+cumpla los controles. Se verificó que ese merge dispara el workflow
+`.github/workflows/deploy.yml`, job `deploy-qa`, sin aprobación intermedia del
+Environment. Informado ese efecto, el usuario autorizó expresamente también
+el deploy automático de QA. No se autorizaron promociones ni despliegues de
+HML/PRD, ni operaciones manuales sobre datos.
+
+Se integró `origin/development` (`7c14fb090`) sin conflictos ni reescritura de
+historial. Respecto de la base anterior, sólo aporta el enlace de Consultas CDI
+en la cabecera y documentación de promociones anteriores. `djlint` de la
+cabecera y el control de rutas documentales pasan. CI debe validar el nuevo
+HEAD integrado antes del merge; las reglas vigentes no se omiten.
+
+Merge y despliegue son resultados separados: el estado y SHA de cada uno se
+verifican en el PR y en el job de QA. La autorización no demuestra aceptación
+funcional ni comprensión humana de cada contrato; ambas siguen sin verificarse.

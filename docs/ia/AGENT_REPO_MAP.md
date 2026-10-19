@@ -9,7 +9,9 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 Lectura de la topología final y el PR: `docs/desarrollo/arquitectura_servicios_2641.md`
 y `docs/diagramas/issue-2641-servicios.svg`. La publicación se autorizó el
 2026-10-19; los límites previos de commit/push de registros históricos no expresan
-la autorización actual. Merge, deploy y entornos existentes siguen sin autorizar.
+la autorización actual. Posteriormente se autorizó fusionar el PR #2734 a
+`development`, con CI aprobado, y su deploy automático de QA. Esa autorización
+no se extiende a HML, PRD ni operaciones manuales sobre datos.
 El ABM independiente distingue controles HTML vaciados mediante `_identity_present`
 de omisiones parciales, antes de clasificar efectos en Comedores; los campos
 deshabilitados no emiten marcador. Evidencia y alcance de revisión:

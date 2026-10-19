@@ -146,6 +146,7 @@ runtime `dispositivos_runtime`, prefijos web/API y servicio único
 - [ ] Ajustar composición completa (`settings_all`/`urls_all` según corresponda), `pytest.ini`, `.pylintrc` y contratos de imports. `src/backends/config/__init__.py` y architecture CI descubren carpetas; no mantienen una lista manual equivalente.
 - [ ] Agregar servicio/imagen en `docker/compose/docker-compose.deploy.yml` y revisar overrides del entorno. PAS muestra cómo declarar `extra_services` para workers.
 - [ ] Regenerar URLs; revisar rutas públicas/redirects compatibles, contribuciones y favoritos si los aporta.
+- [ ] Si aporta un ítem al menú lateral: la regla de visibilidad vive en el kernel (`users.services_<programa>`) y se registra con `registrar_predicado_sidebar` en `src/backends/kernel/core/apps.py`, porque el menú se arma en backends que no instalan la app. Ejemplo: `inspecciones_gestion` (Inspecciones escolares).
 - [ ] Correr tests de arranque/rutas y job `service_images` (itera el registro); probar plan de deploy selectivo y esquema compatible.
 
 Caso recorrido: CDF extraído al backend `cdf`, con runtime, registro,

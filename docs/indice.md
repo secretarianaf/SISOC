@@ -52,6 +52,7 @@
 - `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-build-limpio-docker.md`: build real de 14 targets y verificación de dependencias, arranque, aislamiento y OCR sintético; sin deploy.
 - `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-smoke-http-docker.md`: smoke HTTP sintético de las imágenes nuevas, permisos/CSRF, caída y recuperación de Comedores sin reiniciar portal, y collectstatic; aceptación humana pendiente.
 - `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-revision-publicacion.md`: autorización de publicación, commits por snapshots y corrección del vaciado de controles de identidad detectada en revisión.
+- `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-correcciones-ci.md`: causas y correcciones de CI del PR #2734, perfil devuelto y harness SQLite/MySQL de auditoría y HTTP.
 - `docs/implementaciones/sentry.md`: implementación de Sentry (activación por entorno, variables, logging y validación).
 - `docs/implementaciones/audittrail_mvp_fase1.md`: release notes y guía operativa de Fase 1 del MVP de auditoría (deploy/rollback, soporte, riesgos y métricas).
 - `docs/implementaciones/audittrail_fase2.md`: metadata persistida (`AuditEntryMeta`), contexto de auditoría para procesos y guía de deploy/rollback de Fase 2.

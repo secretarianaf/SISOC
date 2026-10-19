@@ -608,6 +608,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `src/backends/kernel/templates/includes/sidebar/`
 - `src/backends/kernel/templates/components/`
 - `src/backends/kernel/static/custom/js/sidebar.js`
+- layout claro (Inicio, Inspecciones): `includes/base_claro.html` +
+  `core.services.layout_claro.contexto_layout_claro`; el resto extiende
+  `includes/base.html` (oscuro). Ver
+  `docs/registro/cambios/2026-T4/2026-10-15-kernel-layout-claro-barra-lateral.md`.
 
 ### Si necesitas cambiar endpoints API
 

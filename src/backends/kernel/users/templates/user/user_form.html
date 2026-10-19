@@ -201,7 +201,9 @@
                                         </div>
                                         <p id="mobile-organizaciones-empty-state"
                                            class="text-muted small mb-0 mt-2"
-                                           style="display: none">No hay organizaciones que coincidan con la búsqueda.</p>
+                                           style="display: none">
+                                            No hay organizaciones que coincidan con la búsqueda.
+                                        </p>
                                     </div>
                                     <div id="mobile-comedores-organizacion-panel"
                                          class="mobile-selector-table-panel mt-3">
@@ -310,9 +312,15 @@
                         </div>
                         <div class="card-body">
                             <div id="relevador-calle-toggle-wrapper">{{ form.es_relevador_calle|as_crispy_field }}</div>
+                            {% if not form.es_relevador_calle.field.disabled %}
+                                <input type="hidden" name="_identity_present" value="es_relevador_calle" />
+                            {% endif %}
                             <div id="relevador-calle-detalle-wrapper" style="display: none">
                                 {{ form.datacalle_rol|as_crispy_field }}
                                 {{ form.provincias_datacalle|as_crispy_field }}
+                                {% if not form.provincias_datacalle.field.disabled %}
+                                    <input type="hidden" name="_identity_present" value="provincias_datacalle" />
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -329,6 +337,9 @@
                         </div>
                         <div class="card-body">
                             <div id="inspecciones-escolares-toggle-wrapper">{{ form.es_inspector_escolar|as_crispy_field }}</div>
+                            {% if not form.es_inspector_escolar.field.disabled %}
+                                <input type="hidden" name="_identity_present" value="es_inspector_escolar" />
+                            {% endif %}
                             <div id="inspecciones-escolares-detalle-wrapper" style="display: none">
                                 {{ form.inspecciones_rol|as_crispy_field }}
                             </div>
@@ -400,6 +411,7 @@
                     </div>
                     <div class="card-body">
                         {{ form.groups | as_crispy_field }}
+                        {% if not form.groups.field.disabled %}<input type="hidden" name="_identity_present" value="groups" />{% endif %}
                         {{ form.rol|as_crispy_field }}
                     </div>
                 </div>
@@ -413,6 +425,9 @@
                     </div>
                     <div class="card-body">
                         {{ form.es_usuario_provincial|as_crispy_field }}
+                        {% if not form.es_usuario_provincial.field.disabled %}
+                            <input type="hidden" name="_identity_present" value="es_usuario_provincial" />
+                        {% endif %}
                         <div class="d-none" id="legacy-provincia-field">{{ form.provincia|as_crispy_field }}</div>
                         {{ form.territorial_scopes }}
                         {{ form.initial_territorial_scopes|json_script:"territorial-scopes-initial" }}
@@ -470,10 +485,25 @@
                         </div>
                         <div class="card-body">
                             {{ form.user_permissions|as_crispy_field }}
+                            {% if not form.user_permissions.field.disabled %}
+                                <input type="hidden" name="_identity_present" value="user_permissions" />
+                            {% endif %}
                             {{ form.acceso_web|as_crispy_field }}
+                            {% if not form.acceso_web.field.disabled %}
+                                <input type="hidden" name="_identity_present" value="acceso_web" />
+                            {% endif %}
                             {{ form.acceso_siis|as_crispy_field }}
+                            {% if not form.acceso_siis.field.disabled %}
+                                <input type="hidden" name="_identity_present" value="acceso_siis" />
+                            {% endif %}
                             {{ form.grupos_asignables|as_crispy_field }}
+                            {% if not form.grupos_asignables.field.disabled %}
+                                <input type="hidden" name="_identity_present" value="grupos_asignables" />
+                            {% endif %}
                             {{ form.roles_asignables|as_crispy_field }}
+                            {% if not form.roles_asignables.field.disabled %}
+                                <input type="hidden" name="_identity_present" value="roles_asignables" />
+                            {% endif %}
                         </div>
                     </div>
                 {% endif %}

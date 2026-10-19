@@ -15,7 +15,10 @@ from users.form_sections import (
     TerritorialScopeFormMixin,
 )
 from users.identity_fields import IdentityFieldsForm
-from users.admin_operations import operacion_requiere_espacios
+from users.admin_operations import (
+    normalizar_controles_vaciados,
+    operacion_requiere_espacios,
+)
 from users.models import Profile
 from users.profile_utils import get_profile_or_none
 from users.services_datacalle import validar_alcance_coordinador
@@ -34,6 +37,8 @@ class IdentityAdminForm(
     def __init__(self, *args, **kwargs):
         self.actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
+        if self.is_bound:
+            self.data = normalizar_controles_vaciados(self.data)
         self.generated_password = None
         self.password_was_auto_generated = False
         self.fields["email"].required = False

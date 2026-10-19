@@ -208,6 +208,120 @@ def test_edicion_generica_no_revoca_accesos_omitidos(client, mocker):
     remote.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "field", ["acceso_web", "acceso_siis", "groups", "user_permissions"]
+)
+def test_edicion_generica_permite_vaciar_control_presentado(field):
+    from users.admin_forms import CustomUserChangeForm
+
+    admin = User.objects.create_superuser(username="admin_vaciado", password=PASSWORD)
+    user = User.objects.create_user(username="vaciado_explicito", password=PASSWORD)
+    user.profile.acceso_web = True
+    user.profile.acceso_siis = True
+    user.profile.save(update_fields=["acceso_web", "acceso_siis"])
+    group, _ = Group.objects.get_or_create(name="Usuario Ver")
+    permission = Permission.objects.get(
+        content_type__app_label="auth", codename="view_user"
+    )
+    user.groups.add(group)
+    user.user_permissions.add(permission)
+    data = QueryDict(mutable=True)
+    data.setlist("_identity_present", [field])
+    form = CustomUserChangeForm(instance=user, actor=admin, data=data)
+    assert form.is_valid(), form.errors
+    form.save()
+    user.refresh_from_db()
+    if field in {"acceso_web", "acceso_siis"}:
+        assert not getattr(user.profile, field)
+    else:
+        assert not getattr(user, field).exists()
+
+
+def test_vaciado_presentado_revalida_dependencia_del_permiso():
+    user = User.objects.create_user(username="vaciado_dependiente")
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="pwa", codename="manage_nomina_pwa"
+        )
+    )
+    data = QueryDict(mutable=True)
+    data.setlist("_identity_present", ["user_permissions"])
+    assert operacion_requiere_espacios(data, user)
+
+
+def test_formulario_renderizado_declara_controles_vaciables(client, mocker):
+    admin = User.objects.create_superuser(username="admin_presentes", password=PASSWORD)
+    user = User.objects.create_user(username="formulario_presentes")
+    client.force_login(admin)
+    mocker.patch(
+        "usuarios.views.reenviar_operacion_usuario",
+        return_value=HttpResponse(status=503),
+    )
+    response = client.get(f"/usuarios/editar/{user.pk}/")
+    assert response.status_code == 200
+    presentes = set(
+        re.findall(
+            r'name="_identity_present"\s+value="([^"]+)"', response.content.decode()
+        )
+    )
+    assert {"acceso_web", "acceso_siis", "groups", "user_permissions"} <= presentes
+
+
+def test_marcador_no_habilita_campo_fuera_de_seccion_del_actor():
+    from users.admin_forms import CustomUserChangeForm
+
+    actor = User.objects.create_user(username="actor_sin_administracion")
+    user = User.objects.create_user(username="acceso_protegido")
+    user.profile.acceso_web = True
+    user.profile.save(update_fields=["acceso_web"])
+    data = QueryDict(mutable=True)
+    data.setlist("_identity_present", ["acceso_web"])
+    form = CustomUserChangeForm(instance=user, actor=actor, data=data)
+    assert form.fields["acceso_web"].disabled
+    assert form.is_valid(), form.errors
+    form.save()
+    user.refresh_from_db()
+    assert user.profile.acceso_web
+
+
+def test_autoedicion_provincial_no_declara_vaciado_de_control_deshabilitado(
+    client, mocker
+):
+    from core.models import Provincia
+
+    actor = User.objects.create_superuser(
+        username="provincial_propio", password=PASSWORD
+    )
+    actor.profile.es_usuario_provincial = True
+    actor.profile.provincia = Provincia.objects.create(nombre="Provincia propia")
+    actor.profile.save(update_fields=["es_usuario_provincial", "provincia"])
+    client.force_login(actor)
+    remote = mocker.patch(
+        "usuarios.views.reenviar_operacion_usuario",
+        return_value=HttpResponse(status=503),
+    )
+    response = client.get(f"/usuarios/editar/{actor.pk}/")
+    assert response.status_code == 200
+    presentes = re.findall(
+        r'name="_identity_present"\s+value="([^"]+)"', response.content.decode()
+    )
+    assert "es_usuario_provincial" not in presentes
+    remote.reset_mock()
+    response = client.post(
+        f"/usuarios/editar/{actor.pk}/",
+        {
+            "first_name": "Independiente",
+            "acceso_web": "on",
+            "_identity_present": presentes,
+        },
+    )
+    assert response.status_code == 302
+    actor.refresh_from_db()
+    assert actor.first_name == "Independiente"
+    assert actor.profile.es_usuario_provincial
+    remote.assert_not_called()
+
+
 def test_delegacion_actual_sin_cambios_no_bloquea_guardado_personal(client, mocker):
     admin = User.objects.create_superuser(
         username="admin_delegacion", password=PASSWORD

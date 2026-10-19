@@ -15,6 +15,52 @@ from users.form_sections import CAMPOS_POR_SECCION
 from users.profile_utils import get_profile_or_none
 from users.secciones_usuario import SECCIONES_COMEDORES
 
+BOOLEANOS_IDENTIDAD = frozenset(
+    {
+        "acceso_web",
+        "acceso_siis",
+        "es_usuario_provincial",
+        "es_relevador_calle",
+        "es_inspector_escolar",
+    }
+)
+MULTIPLES_IDENTIDAD = frozenset(
+    {
+        "groups",
+        "user_permissions",
+        "grupos_asignables",
+        "roles_asignables",
+        "provincias_datacalle",
+    }
+)
+
+
+def normalizar_controles_vaciados(data):
+    """Distingue controles HTML vaciados de campos omitidos en un POST parcial.
+
+    La presencia expresa intención, no autorización: los campos deshabilitados
+    y la clasificación de efectos de dominio se siguen validando en el servidor.
+    """
+    presentes = (
+        data.getlist("_identity_present")
+        if hasattr(data, "getlist")
+        else data.get("_identity_present", [])
+    )
+    if isinstance(presentes, str):
+        presentes = [presentes]
+    vaciados = (BOOLEANOS_IDENTIDAD | MULTIPLES_IDENTIDAD).intersection(presentes)
+    if not vaciados:
+        return data
+    normalized = data.copy()
+    for name in vaciados:
+        if name not in normalized:
+            if name in MULTIPLES_IDENTIDAD and hasattr(normalized, "setlist"):
+                normalized.setlist(name, [])
+            else:
+                normalized[name] = [] if name in MULTIPLES_IDENTIDAD else ""
+    return normalized
+
+
 DOMAIN_FIELDS = frozenset(
     name for section in SECCIONES_COMEDORES for name in CAMPOS_POR_SECCION[section]
 )
@@ -95,6 +141,7 @@ def _ids(data, field):
 
 def operacion_requiere_espacios(data, instance=None):
     """Campos explícitos y efectos indirectos; omitir no significa revocar."""
+    data = normalizar_controles_vaciados(data)
     return (
         bool(DOMAIN_FIELDS.intersection(data))
         or _permission_changes_require_domain(data, instance)

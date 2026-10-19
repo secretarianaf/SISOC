@@ -15,6 +15,7 @@ modifican workflows, umbrales, reglas de incorporación ni dependencias.
 | Probes HTTP SQLite | El subprocess abría otra DB en memoria; `DATABASE_NAME` no sustituye esa configuración de tests | Fixture explícita `http_probe_database`: copia SQLite temporal compartida y restauración de la conexión original; transmitir la configuración efectiva antes de `django.setup()` |
 | Migración de auditoría SQLite | CI usa syncdb (`TEST.MIGRATE=False`), sin historial; el executor intentaba crear tablas existentes. El schema editor tampoco puede correr dentro de la transacción envolvente | Ejecutar operaciones reales con estados históricos sólo en SQLite sin historial; conservar `MigrationExecutor` completo para MySQL y usar prueba transaccional para duplicados |
 | Mapa y Select2 | Dueños, imports y ubicación del template anteriores al traslado | Afirmar fronteras actuales: auditoría común en kernel, historial de dominio en Comedores; conservar cobertura AST de namespace packages mediante una fuente sintética |
+| JavaScript de `deploy_guard` | El test de acceso móvil abría el template en `sisoc_core/usuarios`, donde ya no existe | Leer la plantilla compartida desde `kernel/users`; mantener el controlador JavaScript real en Usuarios y las 25 comprobaciones de acceso móvil |
 | Gitleaks | Prosa identificada como clave y fingerprint histórico desplazado por el formateo del template | Reformular la prosa y actualizar exclusivamente la línea del fingerprint ya existente; contenido exceptuado idéntico al anterior, sin ampliar allowlists |
 
 ## Validación
@@ -38,6 +39,10 @@ modifican workflows, umbrales, reglas de incorporación ni dependencias.
   conservación de filas, constraints, ContentTypes, permisos y asignaciones,
   rechazo de duplicados y ambos probes HTTP. Contenedor y red eliminados al
   terminar, sin tocar otros proyectos.
+- Comandos JavaScript completos de `deploy_guard`: **63 aprobadas** con Node
+  24.13.0 local, sin DB ni red. Antes, el test de acceso móvil abortaba con
+  `ENOENT` al leer el template anterior; corregida únicamente esa ruta, sus
+  25 casos se ejecutan y conservan las aserciones. El workflow no se cambia.
 - Suite integral remota y checks del nuevo HEAD: pendientes de ejecución tras
   publicar estos commits; su estado se verifica en Checks del PR.
 

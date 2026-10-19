@@ -204,22 +204,7 @@ CORE_APPS = [
     # Gestión de usuarios del core (ver usuarios/apps.py).
     "usuarios",
     "dashboard.apps.DashboardConfig",
-    "comedores",
-    "gestion_organizaciones",
-    "duplas",
-    "admisiones",
-    "intervenciones",
-    "historial",
-    "acompanamientos",
-    "expedientespagos",
-    "relevamientos",
-    "rendicioncuentasfinal",
-    "rendicioncuentasmensual",
-    "importarexpediente",
-    "comunicados",
     "insumos",
-    "pwa",
-    "ocr",
     "encuestas",
 ]
 INSTALLED_APPS = SHARED_APPS + KERNEL_APPS + CORE_APPS
@@ -230,6 +215,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "users.middleware_admin_body.UserAdminBodyMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "users.middleware.FirstLoginPasswordChangeMiddleware",
@@ -264,6 +250,7 @@ TEMPLATES = [
                 "sentry.context_processors.sentry_frontend",
                 "core.context_processors.footer_version",
                 "core.context_processors.boton_volver",
+                "core.context_processors.admin_backends",
                 "encuestas.context_processors.ronda_pendiente",
             ],
         },
@@ -294,6 +281,7 @@ SISOC_BACKENDS = {
         "url_prefixes": tuple(spec["url_prefixes"]),
         "favorite_sections": tuple(spec.get("favorite_sections", ())),
         "ciudadano_contributions": tuple(spec.get("ciudadano_contributions", ())),
+        "admin_links": tuple(spec.get("admin_links", ())),
         "origin": os.getenv(spec["origin_env"], spec["default_origin"]),
     }
     for name, spec in load_backends_registry().items()

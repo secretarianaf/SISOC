@@ -6,7 +6,7 @@ const { test } = require('node:test');
 const { runInNewContext } = require('node:vm');
 
 const root = resolve(__dirname, '../..');
-const template = readFileSync(resolve(root, 'usuarios/templates/user/user_form.html'), 'utf8');
+const template = readFileSync(resolve(root, '../kernel/users/templates/user/user_form.html'), 'utf8');
 const secondaryNames = [...new Set(
   [...template.matchAll(/form\.((?:puede_|es_)\w+)/g)].map(match => match[1]),
 )].filter(name => name !== 'es_representante_pwa');

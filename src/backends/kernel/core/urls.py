@@ -10,25 +10,17 @@ from core.views import (
     inicio_view,
     load_localidad,
     load_municipios,
-    MontoPrestacionProgramaListView,
-    MontoPrestacionProgramaCreateView,
-    MontoPrestacionProgramaUpdateView,
-    MontoPrestacionProgramaDeleteView,
-    MontoPrestacionProgramaDetailView,
     ProgramaListView,
     ProgramaCreateView,
     ProgramaDetailView,
     ProgramaUpdateView,
     ProgramaDeleteView,
 )
-from core.decorators import permissions_any_required
 from .trash_views import (
     TrashListView,
     TrashRestorePreviewView,
     TrashRestoreView,
 )
-
-GRUPOS_MONTO_PRESTACION = ["Gestor prestaciones", "Prestacion"]
 
 
 urlpatterns = [
@@ -64,41 +56,6 @@ urlpatterns = [
         "ajax/columnas-preferencias/",
         columnas_preferencias,
         name="column_preferences",
-    ),
-    path(
-        "montoprestacion/listar",
-        permissions_any_required(GRUPOS_MONTO_PRESTACION)(
-            MontoPrestacionProgramaListView.as_view()
-        ),
-        name="montoprestacion_listar",
-    ),
-    path(
-        "montoprestacion/crear",
-        permissions_any_required(GRUPOS_MONTO_PRESTACION)(
-            MontoPrestacionProgramaCreateView.as_view()
-        ),
-        name="montoprestacion_crear",
-    ),
-    path(
-        "montoprestacion/<int:pk>/editar",
-        permissions_any_required(GRUPOS_MONTO_PRESTACION)(
-            MontoPrestacionProgramaUpdateView.as_view()
-        ),
-        name="montoprestacion_editar",
-    ),
-    path(
-        "montoprestacion/<int:pk>/eliminar",
-        permissions_any_required(GRUPOS_MONTO_PRESTACION)(
-            MontoPrestacionProgramaDeleteView.as_view()
-        ),
-        name="montoprestacion_eliminar",
-    ),
-    path(
-        "montoprestacion/<int:pk>/detalle",
-        permissions_any_required(GRUPOS_MONTO_PRESTACION)(
-            MontoPrestacionProgramaDetailView.as_view()
-        ),
-        name="montoprestacion_detalle",
     ),
     path("programas/", ProgramaListView.as_view(), name="programa_listar"),
     path("programas/crear/", ProgramaCreateView.as_view(), name="programa_crear"),

@@ -245,7 +245,8 @@ def test_el_coordinador_puede_habilitar_a_un_usuario_existente(provincia):
     salir del perfil: para un usuario que todavía no es relevador sería vacío,
     y clean exige al menos una provincia sobre un campo deshabilitado.
     """
-    from usuarios.forms import CustomUserChangeForm
+    # Cambiar programas de un usuario existente requiere validar al dueño.
+    from pwa.user_forms import CustomUserChangeForm
 
     coordinador = _coordinador_datacalle(provincia, "coord_habilita")
     existente = get_user_model().objects.create_user(

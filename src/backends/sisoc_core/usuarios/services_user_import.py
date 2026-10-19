@@ -26,20 +26,19 @@ from users.models import (
 from users.services_auth import generate_temporary_password_for_user
 from users.services_delegation import effective_delegatable_group_ids
 from users.territorial_scope import sync_profile_territorial_scopes
-from pwa.models import AccesoComedorPWA
-from pwa.services.accesos import (
+from users.pwa_import_access import (
+    construir_especificaciones_accesos,
     get_assignable_pwa_permission_codes,
     sync_representante_accesses,
+    validar_fila_sin_adaptador,
+    SeleccionAccesosPWAImportacion,
+    resolver_accesos_pwa_importacion,
 )
 from usuarios.inspecciones_import import (
     DatosInspecciones,
     aplicar_inspecciones,
     resolver_inspecciones_fila,
     validar_unicidad_alta,
-)
-from usuarios.pwa_import_access import (
-    SeleccionAccesosPWAImportacion,
-    resolver_accesos_pwa_importacion,
 )
 
 User = get_user_model()
@@ -402,37 +401,6 @@ def _resolver_provincias(provincias_raw: str) -> list:
     return provincias
 
 
-def _build_pwa_access_specs(
-    seleccion: SeleccionAccesosPWAImportacion,
-) -> list[dict]:
-    """Arma los accesos PWA a partir de organizaciones y comedores de la fila.
-
-    Un usuario asociado a una organizacion opera con todos los comedores de
-    esa organizacion; un comedor asignado explicitamente que no pertenezca a
-    ninguna organizacion seleccionada queda asociado como espacio individual.
-    """
-    specs_by_comedor_id: dict[int, dict] = {}
-
-    for comedor_organizacion in seleccion.comedores_por_organizacion:
-        specs_by_comedor_id[comedor_organizacion.comedor_id] = {
-            "comedor_id": comedor_organizacion.comedor_id,
-            "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
-            "organizacion_id": comedor_organizacion.organizacion_id,
-        }
-
-    for comedor_id in seleccion.comedor_ids:
-        specs_by_comedor_id.setdefault(
-            comedor_id,
-            {
-                "comedor_id": comedor_id,
-                "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO,
-                "organizacion_id": None,
-            },
-        )
-
-    return list(specs_by_comedor_id.values())
-
-
 def _get_pwa_permission_ids(codes: set) -> set:
     permission_ids = set()
     for code in codes:
@@ -501,7 +469,7 @@ def _resolver_permisos_fila(row_data: dict, job: UserImportJob) -> _PermisosFila
         seleccion_pwa = SeleccionAccesosPWAImportacion()
     comedor_id = seleccion_pwa.comedor_id_alimentar_comunidad
 
-    access_specs = _build_pwa_access_specs(seleccion_pwa)
+    access_specs = construir_especificaciones_accesos(seleccion_pwa)
     if job.is_pwa_import and seleccion_pwa.tiene_asignaciones and not access_specs:
         raise ValidationError(
             "Las organizaciones o comedores indicados no tienen comedores "
@@ -869,10 +837,20 @@ def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaVa
 
 
 def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dict:
+    validar_fila_sin_adaptador(
+        row_data,
+        is_pwa_import=job.is_pwa_import,
+        user=None,
+    )
     datos = _validar_y_preparar_fila(row_data, job)
     existing_user = _resolver_usuario_objetivo(
         row_data,
         accion_explicita=datos.accion_explicita,
+    )
+    # Revalidar efectos reales después de resolver la fila y el usuario, antes
+    # de cualquier escritura. También cubre revocaciones por reemplazo.
+    validar_fila_sin_adaptador(
+        row_data, is_pwa_import=job.is_pwa_import, user=existing_user
     )
 
     if existing_user is not None:

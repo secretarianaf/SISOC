@@ -137,7 +137,7 @@ Expandir si hace falta:
 ```bash
 bash src/scripts/ai/preflight.sh general
 bash src/scripts/ai/preflight.sh bugfix-view src/backends/kernel/core/views.py
-bash src/scripts/ai/preflight.sh feature-api src/backends/sisoc_core/comunicados/api_views.py
+bash src/scripts/ai/preflight.sh feature-api src/backends/comedores/comunicados/api_views.py
 ```
 
 Para consultar o refrescar memoria operativa manualmente:

@@ -920,7 +920,6 @@ forbidden_modules =
     dashboard
     encuestas
     insumos
-    ocr
 ignore_imports =
 
 [importlinter:contract:portal-sin-comedores]
@@ -932,7 +931,6 @@ source_modules =
     dashboard
     encuestas
     insumos
-    ocr
 forbidden_modules =
     comedores
     gestion_organizaciones
@@ -1012,4 +1010,78 @@ forbidden_modules =
     importarexpediente
     comunicados
     pwa
+ignore_imports =
+
+[importlinter:contract:ocr-sin-otros-servicios]
+name = OCR no importa portal ni otros backends
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    ocr
+forbidden_modules =
+    usuarios
+    dashboard
+    encuestas
+    insumos
+    dispositivos
+    datacalle
+    ver_para_ser_libre
+    pas
+    VAT
+    celiaquia
+    centrodeinfancia
+    ticketera
+    centrodefamilia
+    inspecciones
+    comedores
+    gestion_organizaciones
+    duplas
+    admisiones
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    importarexpediente
+    comunicados
+    pwa
+ignore_imports =
+
+[importlinter:contract:otros-servicios-sin-ocr]
+name = portal y otros backends no importan OCR
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    usuarios
+    dashboard
+    encuestas
+    insumos
+    dispositivos
+    datacalle
+    ver_para_ser_libre
+    pas
+    VAT
+    celiaquia
+    centrodeinfancia
+    ticketera
+    centrodefamilia
+    inspecciones
+    comedores
+    gestion_organizaciones
+    duplas
+    admisiones
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    importarexpediente
+    comunicados
+    pwa
+forbidden_modules =
+    ocr
 ignore_imports =

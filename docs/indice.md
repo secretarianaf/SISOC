@@ -45,6 +45,7 @@
 ### 4. Guías funcionales e implementaciones
 - `docs/implementaciones/csp.md`: configuración y uso de CSP (nonce en templates, modo report-only, checklist de validación).
 - `docs/implementaciones/ocr.md`: OCR de documentos: modelo Tesseract, preprocesado, worker y parámetros por entorno.
+- `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-c4-ocr.md`: extracción de OCR y worker validada localmente; evidencia y límites.
 - `docs/implementaciones/sentry.md`: implementación de Sentry (activación por entorno, variables, logging y validación).
 - `docs/implementaciones/audittrail_mvp_fase1.md`: release notes y guía operativa de Fase 1 del MVP de auditoría (deploy/rollback, soporte, riesgos y métricas).
 - `docs/implementaciones/audittrail_fase2.md`: metadata persistida (`AuditEntryMeta`), contexto de auditoría para procesos y guía de deploy/rollback de Fase 2.

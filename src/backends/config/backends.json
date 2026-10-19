@@ -327,5 +327,30 @@
         ]
       }
     ]
+  },
+  "ocr": {
+    "apps": [
+      "ocr"
+    ],
+    "url_prefixes": [
+      "ocr/",
+      "admin/ocr/"
+    ],
+    "urlconf": "ocr_runtime.urls",
+    "origin_env": "BACKEND_OCR_ORIGIN",
+    "default_origin": "http://backend_ocr:8000",
+    "service": "backend_ocr",
+    "migrate_service": "migrator",
+    "extra_services": [
+      "ocr_worker",
+      "user_import_worker"
+    ],
+    "admin_links": [
+      {
+        "label": "OCR",
+        "url": "/admin/ocr/",
+        "app_label": "ocr"
+      }
+    ]
   }
 }

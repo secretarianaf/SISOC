@@ -57,7 +57,7 @@ CANCELAR_DE_FORMULARIO = {
     "src/backends/comedores/comedores/templates/comedor/cursos_app_mobile_form.html",
     "src/backends/comedores/comunicados/templates/comunicados/mailing_form.html",
     "src/backends/dispositivos/dispositivos/templates/dispositivos_form.html",
-    "src/backends/sisoc_core/ocr/templates/ocr/ocr_upload.html",
+    "src/backends/ocr/ocr/templates/ocr/ocr_upload.html",
     "src/backends/pas/pas/templates/pas/informe_form.html",
     "src/backends/pas/pas/templates/pas/persona_form.html",
     "src/backends/kernel/templates/core/trash_restore_confirm.html",

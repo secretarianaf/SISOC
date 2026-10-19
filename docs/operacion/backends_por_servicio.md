@@ -15,8 +15,9 @@ Para desarrollar y revisar cambios, usar `docs/desarrollo/verticales_independien
 | `cdf` | centrodefamilia | `/centrodefamilia/`, `/api/centrodefamilia/` |
 | `inspecciones` | inspecciones (inspecciones escolares, PWA Sisoc Inspecciones) | `/inspecciones/`, `/api/inspecciones/` |
 | `comedores` (C3 validado localmente) | cluster de catorce apps, Espacios comunitarios (`pwa`), mailing | rutas históricas de comedores/admisiones/organizaciones/rendiciones, Montos, AJAX y APIs; prefijos exactos en el registro |
+| `ocr` (C4 validado localmente) | OCR, lotes/documentos y worker existente | `/ocr/`, `/admin/ocr/` |
 
-**El core** corre Usuarios, Dashboard, Encuestas, Insumos y OCR de
+**El core** corre Usuarios, Dashboard, Encuestas e Insumos de
 `src/backends/sisoc_core/`. C3 separa localmente las catorce apps de Comedores
 y Espacios comunitarios en `src/backends/comedores/`, con su runtime y backend.
 No se ha ejecutado su incorporación ni deploy. No es un backend detrás del proxy: es el proceso que recibe el
@@ -102,7 +103,7 @@ nuevo:
 | Cambio | Plan |
 | --- | --- |
 | Solo `src/backends/<x>/**` | **Selectivo:** construye ese backend y el migrador, migra, y recrea solo ese servicio y sus `extra_services` (`up --no-deps`). Sólo mailing/importación pueden faltar en ese entorno; otros servicios ausentes fuerzan completo. Todos los backends incluyen el importador con imagen del migrador; Comedores también incluye mailing. |
-| Solo `src/backends/sisoc_core/**` | **Selectivo:** construye la imagen del core y el migrador, migra, y recrea los servicios con imagen `sisoc/core` y el rol `user_import_worker` del entorno (en QA, `django` y `ocr_worker`; en PRD, además los workers de importación y credenciales; mailing pasa a Comedores en C3). Los backends no se reinician. Si no se pueden resolver esos servicios, hace un deploy completo. |
+| Solo `src/backends/sisoc_core/**` | **Selectivo:** construye la imagen del core y el migrador, migra, y recrea los servicios con imagen `sisoc/core` y el rol `user_import_worker` del entorno (en QA, `django`; en PRD, además los workers de importación y credenciales; mailing pertenece a Comedores y OCR a su backend). Los backends no se reinician. Si no se pueden resolver esos servicios, hace un deploy completo. |
 | Solo `src/frontends/apps/<x>/**` | **Selectivo:** solo `front_<x>`. |
 | Solo docs/Markdown salvo CHANGELOG, `.github/`, `src/scripts/github/`, `src/backends/<dueño>/tests/` o `src/frontends/e2e/` | **Ninguno:** no se reinicia nada. Los tests dentro de una app siguen la regla del dueño. |
 | Compartidos de `src/frontends/` (paquetes, config, lockfile) | **Selectivo:** todos los fronts; sin migrador. |

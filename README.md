@@ -82,7 +82,7 @@ Decisión: `docs/registro/decisiones/2026-10-02-estructura-src-backends.md`.
 
 | Carpeta | Propósito |
 |-|-|
-| `src/backends/` | Código Django. `src/backends/config/` es el proyecto (settings, urls, registro de backends); `src/backends/kernel/` es el código común con templates, estáticos y tests compartidos; `src/backends/sisoc_core/` conserva Usuarios, Dashboard, Encuestas, Insumos y OCR. Comedores y Espacios comunitarios viven en `src/backends/comedores/`. Cada vertical (comedores, pas, cdi, cdf, celiaquia, dispositivos, inspecciones, vat, vpsl) tiene su carpeta y contenedor. Guía: `docs/desarrollo/verticales_independientes.md`. |
+| `src/backends/` | Código Django. `src/backends/config/` es el proyecto (settings, urls, registro de backends); `src/backends/kernel/` es el código común con templates, estáticos y tests compartidos; `src/backends/sisoc_core/` conserva Usuarios, Dashboard, Encuestas e Insumos. Comedores y Espacios comunitarios viven en `src/backends/comedores/`; OCR tiene su dueño en `src/backends/ocr/`. Cada vertical (comedores, ocr, pas, cdi, cdf, celiaquia, dispositivos, inspecciones, vat, vpsl) tiene su carpeta y contenedor. Guía: `docs/desarrollo/verticales_independientes.md`. |
 | `src/frontends/` | Workspace npm del Front v2: `apps/<modulo>/`, `packages/`, opciones base de TypeScript en `src/frontends/config/` y `e2e/`. Las entradas de npm, TypeScript, ESLint, Vitest y Playwright permanecen en su ubicación convencional para conservar su detección automática. |
 | `docs/` | Documentación: índice en `docs/indice.md`, registros por trimestre en `docs/registro/`. |
 | `docker/` | Dockerfile, entrypoint y `docker/compose/` con los overrides de deploy, Celery, Codex y fronts. |

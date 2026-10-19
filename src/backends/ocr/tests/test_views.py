@@ -5,6 +5,7 @@ from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.middleware.csrf import get_token
 
 from ocr.models import OCRJob, OCRJobDocument
 
@@ -190,3 +191,45 @@ class OCRDocumentDownloadViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, b"")
+
+    def test_download_requires_ocr_permission_even_for_owner(self):
+        self.user.user_permissions.clear()
+        self._login()
+        response = self.client.get(
+            reverse("ocr_document_download", kwargs={"doc_pk": self.doc.pk})
+        )
+        self.assertEqual(response.status_code, 403)
+
+
+class OCRCSRFTest(TestCase):
+    def test_upload_without_csrf_creates_no_job(self):
+        user = User.objects.create_user(username="csrf_ocr", password="pass")
+        _give_ocr_permission(user)
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(user)
+
+        response = client.post(reverse("ocr_upload"), {"archivos": _make_png()})
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(OCRJob.objects.exists())
+
+    def test_upload_with_permission_session_and_csrf_creates_owned_job(self):
+        from django.test import RequestFactory
+
+        user = User.objects.create_user(username="csrf_ok_ocr", password="pass")
+        _give_ocr_permission(user)
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(user)
+        request = RequestFactory().get("/ocr/")
+        token = get_token(request)
+        client.cookies["csrftoken"] = request.META["CSRF_COOKIE"]
+
+        response = client.post(
+            reverse("ocr_upload"),
+            {"archivos": _make_png(), "csrfmiddlewaretoken": token},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        job = OCRJob.objects.get()
+        self.assertEqual(job.requested_by, user)
+        self.assertEqual(job.documents.count(), 1)

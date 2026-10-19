@@ -15,4 +15,7 @@ Guía vigente: [Verticales independientes](../desarrollo/verticales_independient
   validados localmente; C3 está implementado y validado localmente desde el
   2026-10-16, sin incorporación ni deploy.
   #2725 continúa postergado y requiere autorización separada.
+- C4 de #2641 separa OCR y su worker con aprobación del responsable; implementado
+  y validado localmente, incluidas imágenes, registro y rollback sintético.
+  Ver `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-c4-ocr.md`.
 - Antecedente histórico: `docs/registro/decisiones/2026-07-21-modulos-nuevos-extraibles.md`.

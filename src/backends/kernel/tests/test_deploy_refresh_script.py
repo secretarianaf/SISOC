@@ -288,7 +288,7 @@ CORE_COMPOSE_JSON = json.dumps(
     {
         "services": {
             "django": {"image": "sisoc/core:" + EXPECTED_REVISION},
-            "ocr_worker": {"image": "sisoc/core:" + EXPECTED_REVISION},
+            "ocr_worker": {"image": "sisoc/backend-ocr:" + EXPECTED_REVISION},
             "backend_pas": {"image": "sisoc/backend-pas:" + EXPECTED_REVISION},
         }
     }
@@ -353,10 +353,11 @@ def test_cambio_en_sisoc_core_recrea_solo_los_servicios_del_core(tmp_path):
     )
 
     assert resultado.returncode == 0, resultado.stdout + resultado.stderr
-    assert "servicios del core: django ocr_worker" in resultado.stdout
-    assert "up -d --no-deps django ocr_worker" in resultado.stdout
+    assert "servicios del core: django" in resultado.stdout
+    assert "up -d --no-deps django" in resultado.stdout
     assert "run --rm migrator" in resultado.stdout
     assert "backend_pas" not in resultado.stdout
+    assert "ocr_worker" not in resultado.stdout
 
 
 def test_sin_servicios_del_core_resueltos_hace_deploy_completo(tmp_path):
@@ -383,7 +384,7 @@ def test_cambio_usuarios_actualiza_importador_con_imagen_compuesta(tmp_path):
         tmp_path, ["src/backends/sisoc_core/usuarios/views.py"], json.dumps(config)
     )
     assert resultado.returncode == 0, resultado.stdout + resultado.stderr
-    assert "up -d --no-deps django ocr_worker user_import_worker" in resultado.stdout
+    assert "up -d --no-deps django user_import_worker" in resultado.stdout
     assert "mailing_worker" not in resultado.stdout
 
 
@@ -413,6 +414,27 @@ def test_backend_ausente_en_compose_fuerza_fallback_completo(tmp_path):
         tmp_path,
         ["src/backends/comedores/comedores/views.py"],
         '{"services": {"django": {}}}',
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "No se pudieron resolver los servicios seleccionados" in resultado.stdout
+    assert "up -d --no-deps" not in resultado.stdout
+
+
+def test_selectivo_ocr_actualiza_su_worker_sin_reiniciar_portal(tmp_path):
+    config = {"services": {"django": {}, "backend_ocr": {}, "ocr_worker": {}}}
+    resultado = _run_selectivo(
+        tmp_path, ["src/backends/ocr/ocr/services_ocr.py"], json.dumps(config)
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "up -d --no-deps backend_ocr ocr_worker" in resultado.stdout
+    assert "up -d --no-deps django" not in resultado.stdout
+
+
+def test_worker_ocr_ausente_fuerza_fallback_completo(tmp_path):
+    resultado = _run_selectivo(
+        tmp_path,
+        ["src/backends/ocr/ocr/services_ocr.py"],
+        '{"services": {"backend_ocr": {}}}',
     )
     assert resultado.returncode == 0, resultado.stdout + resultado.stderr
     assert "No se pudieron resolver los servicios seleccionados" in resultado.stdout

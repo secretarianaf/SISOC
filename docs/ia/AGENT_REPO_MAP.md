@@ -59,7 +59,7 @@ no importa Historial al guardar. Aprobación y consecuencias:
 `docs/registro/decisiones/2026-10-15-c2-importador-y-montos-comedores.md`.
 C3 implementado y validado localmente desde el 2026-10-16: catorce apps en
 `src/backends/comedores/`, `comedores_runtime` y registro del proxy; portal con
-Usuarios/Dashboard/Encuestas/Insumos/OCR. El admin real está en el dueño, con
+Usuarios/Dashboard/Encuestas/Insumos (OCR se separa en C4). El admin real está en el dueño, con
 excepción legacy de auditoría en kernel antes del proxy. `admin_links` conserva
 navegación desde el índice del portal, filtrada por permisos. Mailing usa la
 imagen Comedores; el importador usa `sisoc/migrator` + `config.settings_all`
@@ -78,6 +78,13 @@ No confundir código local, build con base reutilizada, CI o deploy. Registro:
 Registros: `docs/registro/cambios/2026-T4/2026-10-15-issue-2641-c0-espacios-comunitarios.md`
 y `docs/registro/decisiones/2026-10-15-identidad-y-espacios-comunitarios.md`.
 Evidencia C1: `docs/registro/cambios/2026-T4/2026-10-15-issue-2641-c1-identidad-y-disponibilidad.md`.
+
+C4 aprobado el 2026-10-16: `src/backends/ocr/ocr/` y `ocr_runtime`, sin instalar
+Usuarios ni otros backends. Web y `ocr_worker` usan la misma imagen backend;
+`process_ocr_jobs` conserva comando/semántica. Tests en `src/backends/ocr/tests/`
+y `src/backends/kernel/tests/test_ocr_runtime.py`; el selector exige OCR worker también en QA.
+Registro y límites: `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-c4-ocr.md`.
+No declarar imágenes/runtime completo validados con el harness SQLite reducido.
 
 ## Como leer este documento
 
@@ -168,7 +175,7 @@ Reglas vigentes y checklists: `docs/desarrollo/verticales_independientes.md`.
 | black / pylint / djlint | Hecho observado | `pyproject.toml`, `requirements/dev.txt`, `requirements/lint.txt` |
 | import-linter | Hecho observado | `.importlinter`, `.importlinter_celiaquia_config`, `requirements/arch.txt` |
 | Sentry | Hecho observado | `.env.example`, `requirements/base.txt` |
-| OCR / PDF / DOCX / Excel tooling | Hecho observado | `requirements/base.txt`, app `src/backends/sisoc_core/ocr/`, templates docx/pdf |
+| OCR / PDF / DOCX / Excel tooling | Hecho observado | `requirements/base.txt`, app `src/backends/ocr/ocr/`, templates docx/pdf |
 
 ### Frontend
 
@@ -433,7 +440,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `src/backends/comedores/duplas/` | equipos tecnicos/duplas | `models.py`, `views.py` | Bajo-Medio |
 | `src/backends/dispositivos/dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
 | `src/backends/comedores/importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
-| `src/backends/sisoc_core/ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
+| `src/backends/ocr/ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `src/backends/vpsl/ver_para_ser_libre/` | dominio VPSL compartido por SISOC y el servicio HTTP React; desde PR #2566 el itinerario evalua cartas sin sedes tentativas, cada jornada posee sede/localidad/ubicacion/vehiculos y checklist con habilitacion automatica, y el registro nominal guarda graduaciones; las sedes previas permanecen para historial; la compatibilidad del PR #2566 conserva localidad historica, copia checklists y permite editar registros previos sin inventar graduacion; `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py` y `services/access.py` exponen el flujo React con permisos, contrato JSON/multipart y alcance provincial | `models.py`, `forms.py`, `views.py`, `api_urls.py`, `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py`, `services/access.py`, `services/workflow.py`, `services/map_location.py`, `migrations/0015_vpsl_ubicacion_vehiculos_graduaciones.py`, `migrations/0016_copiar_checklist_sede_a_jornadas.py`, `src/backends/vpsl/ver_para_ser_libre/tests/test_api.py`, `src/backends/vpsl/ver_para_ser_libre/tests/test_api_contract.py`, `src/backends/vpsl/ver_para_ser_libre/tests/test_jornada_location.py` | Alto |
 | `src/backends/pas/pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV—, Informes PAS versionados, circuito mensual de cruces SINTyS/RENAPER, Panel de Control y Formación pendiente; el padrón lateral de Formación pagina por scroll mediante `/pas/formacion/personas` | `models.py`, `api.py`, `views.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `services/cruces_service.py`, `services/supervivencia_service.py`, `services/persona_service.py`, `services/formacion_service.py`, `src/backends/pas/pas/templates/pas/`, `src/backends/pas/pas/static/custom/js/pas_formacion.js`, `management/commands/`, `urls.py`, `migrations/` | Alto |
 | `src/backends/kernel/audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
@@ -799,7 +806,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar OCR / procesamiento documental
 
-- `src/backends/sisoc_core/ocr/`
+- `src/backends/ocr/ocr/`
 - `docker/django/entrypoint.py` para rol `ocr_worker`
 - dependencias PDF/OCR en `requirements/base.txt`
 
@@ -1101,7 +1108,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | GESTIONAR | `src/backends/comedores/comedores/tasks.py`, `src/backends/comedores/relevamientos/tasks.py`, commands relacionados |
 | docx/pdf | `src/backends/comedores/admisiones/services/`, `src/backends/comedores/comedores/services/certificacion_prestaciones_service.py`, `src/backends/comedores/pwa/services/nomina_destinatarios_pdf_service.py`, `src/backends/comedores/pwa/files/varios/` |
 | PWA | `src/backends/comedores/pwa/api_views.py`, `src/backends/comedores/pwa/services/`, tests `test_pwa_*` |
-| OCR | `src/backends/sisoc_core/ocr/`, `docker/django/entrypoint.py` |
+| OCR | `src/backends/ocr/ocr/`, `docker/django/entrypoint.py` |
 | encuestas | `src/backends/sisoc_core/encuestas/services.py`, `src/backends/sisoc_core/encuestas/middleware.py`, `docs/registro/analisis/2026-08-28-modulo-encuestas.md` |
 | auditoria | `src/backends/kernel/audittrail/`, docs `audittrail_*` |
 | release/deploy | `docs/operacion/*.md`, workflows, compose deploy |
@@ -1111,7 +1118,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ## Zonas no analizadas a fondo en esta pasada
 
 - logica interna completa de `dashboard`, `dispositivos`, `duplas`, `expedientespagos`, `historial`, `intervenciones`, `organizaciones`, `rendicioncuentasfinal`, `rendicioncuentasmensual`, `ver_para_ser_libre`
-- detalle fino de `src/backends/sisoc_core/ocr/`
+- detalle fino de `src/backends/ocr/ocr/`
 - contratos completos de cada API mas alla del routing y docs encontradas
 - flujos exactos de algunos workers (`mailing`, `ciudadanos_import_worker`) fuera del entrypoint
 

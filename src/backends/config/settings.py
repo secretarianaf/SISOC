@@ -205,7 +205,6 @@ CORE_APPS = [
     "usuarios",
     "dashboard.apps.DashboardConfig",
     "insumos",
-    "ocr",
     "encuestas",
 ]
 INSTALLED_APPS = SHARED_APPS + KERNEL_APPS + CORE_APPS

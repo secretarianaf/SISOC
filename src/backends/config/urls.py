@@ -71,7 +71,6 @@ urlpatterns = [
     # API URLs
     path("api/users/", include("usuarios.api_urls")),
     path("api/renaper/", include("core.api_urls")),
-    path("ocr/", include("ocr.urls")),
     path("", include("encuestas.urls")),
 ]
 

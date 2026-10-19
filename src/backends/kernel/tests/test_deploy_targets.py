@@ -218,3 +218,36 @@ def test_celery_de_pas_ausente_tampoco_se_considera_opcional():
             {"services": {"backend_pas": {}}},
             ["backend_pas", "celery_pas_worker", "user_import_worker"],
         )
+
+
+def test_ocr_actualiza_web_worker_y_adaptador_compuesto():
+    assert deploy_targets.planificar(["src/backends/ocr/ocr/services_ocr.py"]) == (
+        "selectivo",
+        ["backend_ocr", "ocr_worker", "user_import_worker"],
+        True,
+    )
+    assert deploy_targets.planificar(["src/backends/ocr/tests/test_views.py"]) == (
+        "ninguno",
+        [],
+        False,
+    )
+
+
+def test_ocr_worker_es_obligatorio_tambien_en_qa():
+    with pytest.raises(ValueError, match="ocr_worker"):
+        deploy_targets.servicios_presentes(
+            {"services": {"backend_ocr": {}}},
+            ["backend_ocr", "ocr_worker", "user_import_worker"],
+        )
+
+
+def test_selectivo_portal_no_reinicia_ocr_extraido():
+    assert deploy_targets.servicios_core(
+        {
+            "services": {
+                "django": {"image": "sisoc/core:abc"},
+                "ocr_worker": {"image": "sisoc/backend-ocr:abc"},
+                "backend_ocr": {"image": "sisoc/backend-ocr:abc"},
+            }
+        }
+    ) == ["django"]

@@ -11,7 +11,7 @@ reemplaza sus rutas. Para operar, ver [backends por servicio](../operacion/backe
 | Dueño | Ubicación | Ejemplo y criterio |
 | --- | --- | --- |
 | Kernel | `src/backends/kernel/<app>/` | Identidad (`users`, `iam`), ciudadanos, organizaciones, catálogo de intervenciones, auditoría y utilidades comunes. Lo necesitan varios procesos y puede arrancar sin el core ni verticales. |
-| Core de entrada | `src/backends/sisoc_core/<app>/` | Usuarios, Dashboard, Encuestas, Insumos y OCR; Comedores/Espacios están en `src/backends/comedores/`. No confundir con la app técnica `src/backends/kernel/core/`. |
+| Core de entrada | `src/backends/sisoc_core/<app>/` | Usuarios, Dashboard, Encuestas e Insumos; Comedores/Espacios están en `src/backends/comedores/` y OCR en `src/backends/ocr/`. No confundir con la app técnica `src/backends/kernel/core/`. |
 | Vertical | `src/backends/<vertical>/<app>/` | Regla, modelo, vista, template, estático o test de ese programa. CDI contiene centrodeinfancia y ticketera; CDF contiene centrodefamilia. |
 | Runtime del vertical | `src/backends/<vertical>/<vertical>_runtime/` | Settings y URLconf que componen kernel + apps propias, sin core ni otros verticales. |
 | Front React | `src/frontends/apps/<modulo>/` | Pantallas del módulo; paquetes comunes en `src/frontends/packages/`. |
@@ -30,10 +30,17 @@ de operadores y fachada de accesos están en
 `src/backends/comedores/comedores/territoriales_pnud.py`.
 C1 preparó identidad, ABM compuesto y auditoría; C2, consumidores, adaptador
 local del importador y Montos. C3 está implementado y validado localmente: `comedores_runtime`
-compone las catorce apps del dueño, sin las cinco apps del portal. Registro y
+compone las catorce apps del dueño, sin las apps del portal. Registro y
 Compose declaran `backend_comedores`, sin puertos publicados. No está desplegado;
 el importador reutiliza la imagen completa del migrador, con rol de worker y
 `config.settings_all`, según la elección C3 aprobada.
+
+C4 separa OCR en `src/backends/ocr/ocr/`, con tests en
+`src/backends/ocr/tests/`, `ocr_runtime`, web `backend_ocr` y el worker existente
+en su misma imagen. Conserva `ocr.use_ocr`, tablas/labels, URLs y almacenamiento.
+Importa el mixin del kernel sin pasar por Usuarios. El importador completo
+sigue actualizándose con OCR. Estado de validación y reversa:
+`docs/registro/cambios/2026-T4/2026-10-16-issue-2641-c4-ocr.md`.
 
 Ejemplos reales: `organizaciones` y `catalogo_intervenciones` son maestros
 compartidos; `Firmante` está en `gestion_organizaciones` porque depende de

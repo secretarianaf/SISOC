@@ -300,7 +300,7 @@ jobs:
                   def ok(image, *cmd, settings=None):
                       extra = ["-e", f"DJANGO_SETTINGS_MODULE={settings}"] if settings else []
                       return subprocess.run(["docker", "run", "--rm", *env, *extra, image, *cmd]).returncode == 0
-                  core_apps = ["usuarios", "dashboard", "encuestas", "insumos", "ocr"]
+                  core_apps = ["usuarios", "dashboard", "encuestas", "insumos"]
                   for name, spec in backends.items():
                       image = f"sisoc-ci/backend-{name}"
                       settings = spec["urlconf"].split(".")[0] + ".settings"
@@ -312,6 +312,7 @@ jobs:
                   print("Aislamiento verificado")
                   PY
                   docker run --rm $CHECK_ENV -e DJANGO_SETTINGS_MODULE=comedores_runtime.settings sisoc-ci/backend-comedores python manage.py help process_mailing_jobs
+                  docker run --rm $CHECK_ENV -e DJANGO_SETTINGS_MODULE=ocr_runtime.settings sisoc-ci/backend-ocr python manage.py help process_ocr_jobs
                   docker run --rm $CHECK_ENV -e DJANGO_SERVICE_ROLE=user_import_worker sisoc-ci/migrator python manage.py help process_user_import_jobs
                   docker run --rm $CHECK_ENV -e DJANGO_SERVICE_ROLE=user_import_worker sisoc-ci/migrator python -c 'import config, django; django.setup(); from django.apps import apps; from users import pwa_import_access; assert apps.is_installed("usuarios") and apps.is_installed("comedores"); assert pwa_import_access._adaptador is not None'
                   docker run --rm $CHECK_ENV sisoc-ci/migrator python manage.py makemigrations --check --dry-run

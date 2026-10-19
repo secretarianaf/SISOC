@@ -22,6 +22,26 @@ def _load_entrypoint_module():
     return module
 
 
+def test_rol_ocr_ejecuta_comando_sin_migrar_ni_arrancar_web(mocker, monkeypatch):
+    module = _load_entrypoint_module()
+    mocker.patch.object(module, "wait_for_mysql")
+    command = mocker.patch.object(module, "run_command")
+    prepare = mocker.patch.object(module, "preparar_db")
+    static = mocker.patch.object(module, "cache_busting")
+    web = mocker.patch.object(module, "run_django_commands")
+    monkeypatch.setenv("DJANGO_SERVICE_ROLE", "ocr_worker")
+    monkeypatch.setenv("ENVIRONMENT", "prd")
+
+    module.main()
+
+    command.assert_called_once_with(
+        ["python", "manage.py", "process_ocr_jobs"], stage="ocr_worker"
+    )
+    prepare.assert_not_called()
+    static.assert_not_called()
+    web.assert_not_called()
+
+
 def test_rol_importador_en_imagen_migrador_no_migra_ni_arranca_web(mocker, monkeypatch):
     module = _load_entrypoint_module()
     mocker.patch.object(module, "wait_for_mysql")

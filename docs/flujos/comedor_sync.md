@@ -32,4 +32,4 @@ Las referencias de evidencia abreviadas de Comedores se resuelven bajo `src/back
 - Si cambios no disparan sync (solo `foto_legajo`), es esperado (campo excluido). Evidencia: comedores/signals.py:53-59.
 
 ## Tests existentes
-- `src/backends/sisoc_core/tests/test_comedores_tasks_unit.py` cubre las tareas de envío y baja a GESTIONAR; `src/backends/sisoc_core/importarexpediente/tests/test_import_flow.py` las mockea en la importación.
+- `src/backends/comedores/tests/test_comedores_tasks_unit.py` cubre las tareas de envío y baja a GESTIONAR; `src/backends/comedores/importarexpediente/tests/test_import_flow.py` las mockea en la importación.

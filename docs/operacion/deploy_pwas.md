@@ -54,7 +54,7 @@ versionado no equivale a un despliegue. Ver evidencia inicial en
 
 Inspecciones se despliega igual que DataCalle hoy: por el workflow propio de su
 repositorio (`secretarianaf/Inspecciones`, `.github/workflows/deploy.yml` y
-`scripts/operacion/deploy_frontend.sh`), no por el deploy de SISOC. Ese deploy
+`secretarianaf/Inspecciones:scripts/operacion/deploy_frontend.sh`), no por el deploy de SISOC. Ese deploy
 corre con `--without-mobile` en PRD y HML y no ejecuta `deploy_pwas.py`, asi que
 fusionar este cambio no depende del aprovisionamiento de la PWA. Su entrada en
 `pwas.json` sirve para que `render_pwa_nginx.py` genere el snippet con

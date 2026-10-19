@@ -24,7 +24,7 @@ el executor completo en MySQL. Los cambios compuestos del ABM se prueban con
 `pwa.user_forms`; la omisión independiente conserva sus asignaciones. Causas y
 evidencia: `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-correcciones-ci.md`.
 El test JS `src/backends/sisoc_core/tests/js/user_mobile_access.test.js` combina
-la plantilla compartida de `kernel/users` con el controlador de Usuarios/core;
+la plantilla compartida de `src/backends/kernel/users` con el controlador de Usuarios/core;
 `deploy_guard` lo ejecuta junto a los demás tests JS, sin cambiar sus aserciones.
 
 Fronteras propuestas aprobadas; C0 implementado, revisado y validado localmente

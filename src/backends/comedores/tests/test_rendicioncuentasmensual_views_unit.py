@@ -319,7 +319,7 @@ def test_permiso_de_etapa_habilita_acceso_al_detalle(client, django_user_model):
     )
 
     assert response.status_code == 200
-    assert "Comenzar Auditoría" in response.content.decode()
+    assert "Gestionar Auditoría" in response.content.decode()
 
 
 def test_global_list_exporta_solo_columnas_activas_y_en_su_orden(mocker):
@@ -606,6 +606,13 @@ def test_detail_view_contexto_expone_documentacion_agrupada(mocker):
         estado="finalizada",
         etapa_proceso=module.RendicionCuentaMensual.ETAPA_AUDITORIA,
         subestado_proceso=module.RendicionCuentaMensual.SUBESTADO_FINALIZADA,
+        rendiciones_incluidas=SimpleNamespace(all=lambda: []),
+        validada=None,
+        genera_acta_auditoria=None,
+        fecha_gestion_auditoria=None,
+        fecha_auditada=None,
+        acta_auditoria=None,
+        es_origen_acta=False,
     )
     view.request = _Req(user=_user(), GET={})
     view.kwargs = {"pk": 7}

@@ -20,8 +20,9 @@ coordinada cuando cambie este contrato.
 - Una subsanación conserva la etapa que la originó. Al reanudar Auditoría se
   preservan documentos ya validados; solo el primer inicio restablece los
   documentos heredados desde Territorial.
-- El cierre administrativo de Auditoría usa un único formulario con monto,
-  acta, resultado y observaciones condicionales.
+- La gestión de Auditoría usa una pantalla propia dentro de Rendiciones,
+  con validación obligatoria Sí/No, acta, resultado y observaciones
+  condicionales, sin montos (issue #2673). Ver el apartado Auditoría conjunta.
 - Una solicitud de documento faltante se registra por categoría, aun cuando la
   categoría ya tenga archivos. La PWA habilita esa categoría durante la
   subsanación y la solicitud se cierra al adjuntar un archivo nuevo.
@@ -74,6 +75,106 @@ Una solicitud de documento faltante puede acumularse durante la revisión. La
 etapa deriva a subsanación al finalizar la revisión si queda alguna solicitud
 activa; al adjuntar un archivo nuevo se cierra la solicitud de su categoría.
 Las observaciones quedan visibles debajo de la categoría solicitada.
+
+## Auditoría conjunta (issue #2673)
+
+Desde el listado se accede a «Nueva Auditoría» y se selecciona una rendición
+existente en Auditoría pendiente o en curso. Desde el detalle se accede con
+sus datos generales precargados. Ambos caminos requieren el permiso
+`manage_auditoria_stage`; no crean nuevas rendiciones ni modifican datos
+generales. La selección manual admite búsqueda por organización, proyecto y
+período. El filtro predeterminado es Proyecto; la búsqueda se aplica en el
+servidor y devuelve una tabla paginada con acción «Gestionar» por fila.
+Al abrir o limpiar la pantalla no se listan rendiciones. El texto de búsqueda
+es obligatorio, incluidos los envíos directos al servidor. Proyecto consulta
+solo código/nombre del proyecto (con fallback al código del comedor legado);
+Organización consulta solo su nombre. Las coincidencias son parciales y no
+distinguen mayúsculas ni tildes españolas, normalizando entrada y columnas
+consultadas sin depender de una collation concreta.
+Período admite `MM/AAAA`, `DD/MM/AAAA`, `AAAA` y sus variantes ISO, buscando
+rendiciones cuyos períodos se superponen con la fecha o ventana ingresada.
+No se definió un alta de auditorías sin rendiciones en el issue.
+
+`validada` es un booleano nullable para conservar los históricos sin atribuirles
+una validación inexistente. En los paneles `NULL` y `False` se muestran como
+«Validada: No». La gestión usa un check obligatorio; no permite guardar una
+respuesta negativa. Una vez persistida como verdadera, la validación se muestra
+como «Sí» y no se puede modificar, tampoco mediante POST.
+
+El primer ingreso permite guardar solo el check, sin decidir sobre el acta:
+queda `validada=True`, `genera_acta_auditoria=NULL`, subestado `en_curso` y
+`fecha_gestion_auditoria=NULL`. Se vuelve al detalle base y se puede reingresar.
+Al reingresar validada, la decisión de acta Sí/No es obligatoria. Si se elige
+Sí/No ya en el primer ingreso, también se puede validar y cerrar en un solo paso.
+El botón dice «Guardar» cuando se guarda solo la validación y «Guardar y cerrar
+Auditoría» cuando se toma la decisión de acta o la validación ya estaba guardada.
+
+Guardar una decisión explícita Sí/No registra `fecha_gestion_auditoria` y
+cierra la gestión individual: no puede reabrirse desde el detalle, el buscador
+ni por GET/POST directo. Con No conserva el subestado interno `en_curso` por
+compatibilidad y muestra «Auditoría validada sin acta». Continúa siendo
+elegible como rendición adicional de un acta posterior, sin volver a editarla.
+Esa etiqueta exige validación afirmativa, decisión No, gestión cerrada y
+subestado `en_curso`; no reemplaza el resultado de auditorías ya finalizadas.
+Guardar solo la validación no habilita su inclusión en otra acta: antes debe
+cerrarse con decisión No.
+Para generar acta, la rendición actual debe estar validada y se exige resultado;
+las observaciones son obligatorias únicamente para un resultado con observaciones.
+El archivo de acta y el Acta Complementaria siguen siendo opcionales.
+
+La rendición actual se incluye automáticamente y aparece marcada y bloqueada
+en la lista de inclusión. Las otras opciones son casillas sin buscador. El selector adicional ofrece
+rendiciones activas en Auditoría pendiente/en curso, del mismo código de
+proyecto y organización, `validada=True`, `genera_acta_auditoria=False` y sin
+archivo de acta.
+También exige `fecha_gestion_auditoria` para excluir rendiciones que todavía
+no fueron auditadas, aunque tengan otros datos precargados. La fila de la
+rendición actual es compacta, gris y marcada como inclusión fija.
+Incluye el fallback histórico por comedor; no limita la
+selección a dos períodos. Mantiene la regla previa por línea: solo Línea
+Tradicional admite rendiciones incluidas, y únicamente de Línea Tradicional. Se muestra un resumen documental por rendición seleccionada.
+En el detalle se omiten el título y los desplegables de documentación incluida
+si validación y generación de acta están ambos sin definir. El formulario de
+gestión es una pantalla transitoria para Volver; vuelve al detalle o a los
+resultados según el origen, conservando los filtros mediante la navegación
+unificada. El detalle tiene como destino jerárquico el listado de rendiciones.
+
+El guardado bloquea las filas en orden de PK y vuelve a validar la elegibilidad
+dentro de la transacción. Replica validación, acta, resultado, observaciones
+(solo con resultado con observaciones; nunca vacía las existentes),
+Acta Complementaria y las relaciones del grupo; los archivos se almacenan una
+sola vez. El cierre impide volver a gestionar la auditoría, pero si finaliza
+con observaciones mantiene el proceso de regularización existente: «Iniciar
+regularización» y, cuando está en curso, carga de Acta Complementaria y
+«Finalizar regularización». Estas acciones requieren `manage_regularizacion_stage`
+y están permitidas aunque haya acta afirmativa y fecha de cierre de auditoría,
+únicamente desde la rendición que originó el acta. `rendicion_origen_acta`
+identifica esa base en todos los integrantes; el valor Sí replicado a una
+rendición incorporada no le habilita acciones de regularización. El servicio
+también rechaza acciones enviadas directamente desde una incorporada.
+Una rendición sin origen registrado (Línea Secos o acta legada no conciliada)
+gestiona su propia regularización, como antes, sin propagarla a otras.
+Las transiciones y el documento complementario se replican al grupo, incluso
+si sus validaciones históricas son NULL, con bloqueo de filas en orden de PK.
+Los campos de validación, decisión, inclusión y origen del acta no son editables
+desde el formulario general. La tarjeta «Acciones del proceso»
+se muestra únicamente si existe una acción autorizada para el estado actual.
+Las actas cerradas no se pueden reabrir desde esta pantalla. Los formularios y servicios históricos de proceso se conservan como
+compatibilidad para sus callers existentes; los POST antiguos de auditoría en
+el detalle redirigen a la pantalla nueva sin escribir ni cerrar la rendición.
+
+El legajo de organización omite Monto Auditado y Observaciones en listado y
+detalle. Aplicar `rendicioncuentasmensual.0023_issue_2673_validada` con el
+migrador antes de publicar el core nuevo, seguida de
+`rendicioncuentasmensual.0024_cierre_gestion_auditoria` y
+`rendicioncuentasmensual.0025_origen_acta_auditoria`. La 0025 recupera la base
+de grupos históricos coherentes por el orden de inserción de sus vínculos
+(el guardado insertaba primero los de la base); los casos inconsistentes
+quedan sin origen y cada rendición regulariza por separado, como antes.
+La 0024 solo agrega `fecha_gestion_auditoria`: no hay gestiones históricas
+con validación registrada que cerrar.
+No hace falta publicar otros backends
+ni modificar contratos de la PWA.
 
 ## Contrato de carga
 

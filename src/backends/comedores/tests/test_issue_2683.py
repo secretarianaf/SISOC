@@ -225,7 +225,7 @@ def test_migracion_seguros_conserva_contrato_de_campos():
     from rendicioncuentasmensual.models import SolicitudDocumentoFaltante
 
     migration = import_module(
-        "rendicioncuentasmensual.migrations.0023_issue_2683_planilla_seguros_ii"
+        "rendicioncuentasmensual.migrations.0026_issue_2683_planilla_seguros_ii"
     )
     modelos = {
         "documentacionadjunta": DocumentacionAdjunta,

@@ -139,7 +139,7 @@
             <div class="alert alert-warning">La rendición tiene documentación pendiente de correcciones.</div>
         {% endif %}
 
-        {% if puede_revision_territorial or puede_revision_auditoria or puede_auditoria or puede_regularizacion %}
+        {% if mostrar_acciones_proceso %}
             <div class="card mb-4">
                 <div class="card-body">
                     <h5>Acciones del proceso</h5>
@@ -182,52 +182,11 @@
                                 </form>
                             {% endif %}
                         {% endif %}
-                        {% if puede_auditoria and rendicion.etapa_proceso == 'auditoria' and rendicion.subestado_proceso == 'pendiente' %}
-                            <form method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="accion_proceso" value="iniciar_auditoria" />
-                                <button class="btn btn-primary">Comenzar Auditoría</button>
-                            </form>
+                        {% if puede_gestionar_auditoria %}
+                            <a class="btn btn-primary"
+                               href="{% url 'rendicioncuentasmensual_auditoria' rendicion.pk %}">Gestionar Auditoría</a>
                         {% endif %}
                     </div>
-
-                    {% if puede_auditoria and rendicion.etapa_proceso == 'auditoria' and rendicion.subestado_proceso == 'en_curso' %}
-                        <form method="post"
-                              enctype="multipart/form-data"
-                              class="mt-3"
-                              id="finalizar-auditoria-form">
-                            {% csrf_token %}
-                            <input type="hidden"
-                                   name="accion_proceso"
-                                   id="accion-auditoria"
-                                   value="finalizar_sin_observaciones" />
-                            <div class="row">
-                                {% if rendicion.linea_programatica == 'tradicional' %}
-                                    <div class="col-lg-6">{{ proceso_form.monto_rendido|as_crispy_field }}</div>
-                                    <div class="col-lg-6">{{ proceso_form.monto_observado|as_crispy_field }}</div>
-                                    <div class="col-12">{{ proceso_form.genera_acta_auditoria|as_crispy_field }}</div>
-                                    <div class="col-12 d-none" id="rendiciones-incluidas-container">
-                                        {{ proceso_form.rendiciones_incluidas|as_crispy_field }}
-                                    </div>
-                                    <div class="col-12">{{ proceso_form.acta_auditoria|as_crispy_field }}</div>
-                                {% else %}
-                                    <div class="col-lg-6">{{ proceso_form.monto_rendido|as_crispy_field }}</div>
-                                    <div class="col-lg-6">{{ proceso_form.acta_auditoria|as_crispy_field }}</div>
-                                {% endif %}
-                                <div class="col-12 mb-3">
-                                    <label for="resultado-auditoria" class="form-label">Resultado de la Auditoría</label>
-                                    <select id="resultado-auditoria" class="form-select" required>
-                                        <option value="finalizar_sin_observaciones">Finalizar sin observaciones</option>
-                                        <option value="finalizar_con_observaciones">Finalizar con observaciones</option>
-                                    </select>
-                                </div>
-                                <div class="col-12 d-none" id="observaciones-auditoria-container">
-                                    {{ proceso_form.observaciones|as_crispy_field }}
-                                </div>
-                            </div>
-                            <button class="btn btn-success" type="submit">Guardar</button>
-                        </form>
-                    {% endif %}
 
                     {% if puede_regularizacion and rendicion.etapa_proceso == 'auditoria' and rendicion.subestado_proceso == 'finalizada_con_observaciones' %}
                         <form method="post" class="mt-3">
@@ -242,6 +201,52 @@
                             {{ proceso_form.documento_regularizacion|as_crispy_field }}
                             <button class="btn btn-success">Finalizar regularización</button>
                         </form>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+        {% if rendicion.etapa_proceso == 'auditoria' or rendicion.etapa_proceso == 'regularizacion' %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5>Auditoría</h5>
+                    <div class="row gy-3">
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">Validada</small><strong>{{ rendicion.validada|yesno:"Sí,No,No" }}</strong>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">¿Se genera acta de auditoría?</small><strong>{{ rendicion.genera_acta_auditoria|yesno:"Sí,No,Sin definir" }}</strong>
+                        </div>
+                        {% if rendicion.genera_acta_auditoria %}
+                            <div class="col-md-4">
+                                <small class="text-muted d-block">Resultado de la Auditoría</small>
+                                <strong>
+                                    {% if rendicion.etapa_proceso == 'regularizacion' %}
+                                        Finalizada con Observaciones
+                                    {% else %}
+                                        {{ rendicion.estado_proceso_display }}
+                                    {% endif %}
+                                </strong>
+                            </div>
+                            {% if rendicion.acta_auditoria %}
+                                <div class="col-md-6">
+                                    <a href="{{ rendicion.acta_auditoria.url }}"
+                                       target="_blank"
+                                       rel="noopener">Acta de Auditoría</a>
+                                </div>
+                            {% endif %}
+                            {% if rendicion.documento_regularizacion %}
+                                <div class="col-md-6">
+                                    <a href="{{ rendicion.documento_regularizacion.url }}"
+                                       target="_blank"
+                                       rel="noopener">Acta Complementaria</a>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    {% if mostrar_documentacion_auditoria %}
+                        <h6 class="mt-4">Documentación de las rendiciones incluidas</h6>
+                        {% include "components/auditoria_documentacion.html" %}
                     {% endif %}
                 </div>
             </div>
@@ -614,37 +619,4 @@
         </div>
     </div>
     <script src="{% static 'custom/js/rendicioncuentasmensual_detail.js' %}?v=20260821-1"></script>
-    <script nonce="{{ request.csp_nonce }}">
-        (function () {
-            var resultado = document.getElementById("resultado-auditoria");
-            var accion = document.getElementById("accion-auditoria");
-            var observacionesContainer = document.getElementById("observaciones-auditoria-container");
-            var observaciones = document.getElementById("id_observaciones");
-            var generaActaInputs = document.querySelectorAll('input[name="genera_acta_auditoria"]');
-            var rendicionesContainer = document.getElementById("rendiciones-incluidas-container");
-            var rendicionesSelect = document.getElementById("id_rendiciones_incluidas");
-            if (generaActaInputs.length && rendicionesContainer && rendicionesSelect) {
-                function actualizarRendicionesIncluidas() {
-                    var seleccion = document.querySelector('input[name="genera_acta_auditoria"]:checked');
-                    var generaActa = seleccion && seleccion.value === "True";
-                    rendicionesContainer.classList.toggle("d-none", !generaActa);
-                    rendicionesSelect.disabled = !generaActa;
-                }
-                generaActaInputs.forEach(function (input) {
-                    input.addEventListener("change", actualizarRendicionesIncluidas);
-                });
-                actualizarRendicionesIncluidas();
-            }
-            if (!resultado || !accion || !observacionesContainer || !observaciones) return;
-            function actualizarResultadoAuditoria() {
-                var conObservaciones = resultado.value === "finalizar_con_observaciones";
-                accion.value = resultado.value;
-                observacionesContainer.classList.toggle("d-none", !conObservaciones);
-                observaciones.required = conObservaciones;
-                if (!conObservaciones) observaciones.value = "";
-            }
-            resultado.addEventListener("change", actualizarResultadoAuditoria);
-            actualizarResultadoAuditoria();
-        })();
-    </script>
 {% endblock %}

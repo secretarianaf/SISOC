@@ -20,7 +20,7 @@
 
 ## Migración y publicación
 
-- `rendicioncuentasmensual.0023_issue_2683_planilla_seguros_ii` actualiza únicamente choices de dos campos; no cambia códigos ni archivos.
+- `rendicioncuentasmensual.0026_issue_2683_planilla_seguros_ii` actualiza únicamente choices de dos campos; no cambia códigos ni archivos.
 - Publicar backend y mobile coordinadamente para alinear la multiplicidad e historial de seguros: al subsanar `planilla_seguros`, mobile debe enviar `documento_subsanado_id`; sin él, el archivo se suma y el observado sigue bloqueando la presentación. Ejecutar migraciones con el migrador habitual.
 - La migración no se aplicó sobre una base de negocio durante el desarrollo. La publicación de código se realiza por PR de SISOC a `development` y push autorizado de mobile a `main`.
 

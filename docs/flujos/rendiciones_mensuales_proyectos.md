@@ -117,8 +117,8 @@ También exige `fecha_gestion_auditoria` para excluir rendiciones que todavía
 no fueron auditadas, aunque tengan otros datos precargados. La fila de la
 rendición actual es compacta, gris y marcada como inclusión fija.
 Incluye el fallback histórico por comedor; no limita la
-selección a dos períodos ni a una línea, porque el issue no define esas
-restricciones. Se muestra un resumen documental por rendición seleccionada.
+selección a dos períodos. Mantiene la regla previa por línea: solo Línea
+Tradicional admite rendiciones incluidas, y únicamente de Línea Tradicional. Se muestra un resumen documental por rendición seleccionada.
 En el detalle se omiten el título y los desplegables de documentación incluida
 si validación y generación de acta están ambos sin definir. El formulario de
 gestión es una pantalla transitoria para Volver; vuelve al detalle o a los
@@ -126,7 +126,8 @@ resultados según el origen, conservando los filtros mediante la navegación
 unificada. El detalle tiene como destino jerárquico el listado de rendiciones.
 
 El guardado bloquea las filas en orden de PK y vuelve a validar la elegibilidad
-dentro de la transacción. Replica validación, acta, resultado, observaciones,
+dentro de la transacción. Replica validación, acta, resultado, observaciones
+(solo con resultado con observaciones; nunca vacía las existentes),
 Acta Complementaria y las relaciones del grupo; los archivos se almacenan una
 sola vez. El cierre impide volver a gestionar la auditoría, pero si finaliza
 con observaciones mantiene el proceso de regularización existente: «Iniciar
@@ -137,6 +138,8 @@ y están permitidas aunque haya acta afirmativa y fecha de cierre de auditoría,
 identifica esa base en todos los integrantes; el valor Sí replicado a una
 rendición incorporada no le habilita acciones de regularización. El servicio
 también rechaza acciones enviadas directamente desde una incorporada.
+Una rendición sin origen registrado (Línea Secos o acta legada no conciliada)
+gestiona su propia regularización, como antes, sin propagarla a otras.
 Las transiciones y el documento complementario se replican al grupo, incluso
 si sus validaciones históricas son NULL, con bloqueo de filas en orden de PK.
 Los campos de validación, decisión, inclusión y origen del acta no son editables
@@ -153,10 +156,9 @@ migrador antes de publicar el core nuevo, seguida de
 `rendicioncuentasmensual.0025_origen_acta_auditoria`. La 0025 recupera la base
 de grupos históricos coherentes por el orden de inserción de sus vínculos
 (el guardado insertaba primero los de la base); los casos inconsistentes
-quedan sin origen y requieren conciliación antes de habilitar acciones.
-La 0024 marca como
-cerradas las gestiones existentes en Auditoría/Regularización con respuestas
-explícitas a validación y generación de acta, usando las fechas ya registradas.
+quedan sin origen y cada rendición regulariza por separado, como antes.
+La 0024 solo agrega `fecha_gestion_auditoria`: no hay gestiones históricas
+con validación registrada que cerrar.
 No hace falta publicar otros backends
 ni modificar contratos de la PWA.
 

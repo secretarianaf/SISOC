@@ -682,11 +682,12 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
 
     @property
     def es_origen_acta(self):
-        return (
-            self.pk is not None
-            and self.genera_acta_auditoria is True
-            and self.rendicion_origen_acta_id == self.pk
-        )
+        # Sin origen registrado (Secos o actas legadas) la rendición se
+        # gestiona sola; solo las incorporadas a un acta ajena quedan afuera.
+        return self.pk is not None and self.rendicion_origen_acta_id in {
+            None,
+            self.pk,
+        }
 
     @property
     def validacion_territorial_finalizada(self):

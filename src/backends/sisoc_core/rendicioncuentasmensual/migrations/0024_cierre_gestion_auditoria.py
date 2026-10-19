@@ -1,19 +1,5 @@
 # pylint: disable=invalid-name
 from django.db import migrations, models
-from django.db.models.functions import Coalesce
-
-
-def registrar_gestiones_existentes(apps, schema_editor):
-    rendicion = apps.get_model("rendicioncuentasmensual", "RendicionCuentaMensual")
-    rendicion.objects.using(schema_editor.connection.alias).filter(
-        etapa_proceso__in=["auditoria", "regularizacion"],
-        validada__isnull=False,
-        genera_acta_auditoria__isnull=False,
-    ).update(
-        fecha_gestion_auditoria=Coalesce(
-            "fecha_auditada", "fecha_carga_auditoria", "ultima_modificacion"
-        )
-    )
 
 
 class Migration(migrations.Migration):
@@ -29,5 +15,4 @@ class Migration(migrations.Migration):
                 verbose_name="Fecha de cierre de gestión de auditoría",
             ),
         ),
-        migrations.RunPython(registrar_gestiones_existentes, migrations.RunPython.noop),
     ]

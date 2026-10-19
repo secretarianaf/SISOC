@@ -31,15 +31,19 @@ ni duplicar información general. No se solicitan montos en esta pantalla.
 - Las incorporadas deben estar activas, en Auditoría pendiente/en curso,
   validadas, con gestión cerrada sin acta y sin archivo de acta; comparten
   código de proyecto y organización. Hay fallback legado por comedor.
-  No se impone un máximo de períodos ni una restricción por línea.
+  No se impone un máximo de períodos. Se conserva la regla previa: solo
+  Línea Tradicional admite incorporadas, y solo de Línea Tradicional.
 - La base se incluye automáticamente. El grupo comparte resultado,
-  observaciones, documentos, fechas y vínculos. El guardado bloquea filas
+  documentos, fechas y vínculos; las observaciones solo se replican con
+  resultado con observaciones y nunca se vacían las existentes. El guardado bloquea filas
   en orden de PK y revalida las selecciones dentro de la transacción.
 - Una auditoría finalizada con observaciones permite regularización solo
   desde la rendición que originó el acta, con el permiso existente. Las
   incorporadas reciben las transiciones y Acta Complementaria, pero no
   pueden ejecutarlas ni mediante POST directo. La propagación también
-  contempla grupos históricos cuyo campo de validación es NULL.
+  contempla grupos históricos cuyo campo de validación es NULL. Las
+  rendiciones sin origen (Línea Secos o actas legadas no conciliadas)
+  regularizan por sí mismas, sin propagar, como en el flujo anterior.
 - «Acciones del proceso» se muestra cuando existe alguna acción autorizada
   para el estado y la rendición actuales; no depende solo de tener acta.
 
@@ -93,14 +97,13 @@ Aplicar con settings completos mediante el migrador, antes de publicar el core:
 
 1. `0023_issue_2673_validada`: booleano nullable, sin inferir validaciones
    históricas desde fechas de revisión.
-2. `0024_cierre_gestion_auditoria`: marca gestiones existentes con validación
-   y decisión explícitas, usando fecha auditada, de carga o última modificación.
+2. `0024_cierre_gestion_auditoria`: agrega `fecha_gestion_auditoria`. No
+   migra datos: `validada` recién se crea en la 0023 y está NULL en todas.
 3. `0025_origen_acta_auditoria`: persiste la base en todos los integrantes.
    Recupera actas individuales y grupos históricos coherentes por el orden
    de inserción de vínculos: los guardados anteriores insertaban primero los
    de la base. No infiere por número de rendición ni estado actual. Los grupos
-   inconsistentes quedan sin origen y requieren conciliación antes de ofrecer
-   acciones. Esta recuperación depende de conservar el orden de esos vínculos.
+   inconsistentes quedan sin origen y cada integrante regulariza por separado. Esta recuperación depende de conservar el orden de esos vínculos.
 
 Las tres migraciones están aplicadas en la base local verificada `sisoc-local`.
 No hace falta publicar otras verticales. El rollback de imagen puede conservar

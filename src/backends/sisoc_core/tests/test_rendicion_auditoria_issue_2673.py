@@ -719,3 +719,108 @@ def test_etiqueta_sin_acta_no_sustituye_resultados_historicos(
         fecha_gestion_auditoria=timezone.now() if cerrada else None,
     )
     assert rendicion.estado_proceso_display == etiqueta
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("linea", ["secos", "tradicional"])
+def test_rendicion_sin_origen_regulariza_sola_sin_propagar(
+    proyecto, superuser, settings, linea
+):
+    settings.STORAGES = {
+        **settings.STORAGES,
+        "default": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
+    }
+    # Secos nunca registró decisión de acta; las actas legadas no conciliadas
+    # quedan sin origen y con vínculos que antes no replicaban estado.
+    base = crear_rendicion(
+        proyecto,
+        linea_programatica=linea,
+        genera_acta_auditoria=None if linea == "secos" else True,
+        subestado_proceso="finalizada_con_observaciones",
+        fecha_auditada=timezone.now(),
+    )
+    vinculada = crear_sin_acta(proyecto, numero_rendicion=2)
+    if linea == "tradicional":
+        base.rendiciones_incluidas.set([vinculada])
+    assert base.es_origen_acta
+    RendicionProcesoService.ejecutar(
+        rendicion=base, actor=superuser, accion="iniciar_regularizacion", datos={}
+    )
+    RendicionProcesoService.ejecutar(
+        rendicion=base,
+        actor=superuser,
+        accion="finalizar_regularizacion",
+        datos={
+            "documento_regularizacion": SimpleUploadedFile(
+                "complementaria.pdf", b"%PDF-1.4 complemento"
+            ),
+        },
+    )
+    base.refresh_from_db()
+    vinculada.refresh_from_db()
+    assert base.etapa_proceso == "regularizacion"
+    assert base.subestado_proceso == "finalizada"
+    assert vinculada.etapa_proceso == "auditoria"
+    assert vinculada.subestado_proceso == "en_curso"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "resultado,esperadas",
+    [
+        ("finalizada", ("Nota base", "Nota incluida")),
+        ("finalizada_con_observaciones", ("Faltan comprobantes",) * 2),
+    ],
+)
+def test_acta_no_vacia_observaciones_generales(
+    proyecto, superuser, resultado, esperadas
+):
+    base = crear_rendicion(proyecto, observaciones="Nota base")
+    incluida = crear_sin_acta(
+        proyecto, numero_rendicion=2, observaciones="Nota incluida"
+    )
+    AuditoriaService.guardar(
+        rendicion=base,
+        actor=superuser,
+        datos={
+            "validada": True,
+            "genera_acta_auditoria": True,
+            "resultado": resultado,
+            "observaciones": (
+                "Faltan comprobantes"
+                if resultado == "finalizada_con_observaciones"
+                else ""
+            ),
+            "rendiciones_incluidas": [incluida],
+        },
+    )
+    base.refresh_from_db()
+    incluida.refresh_from_db()
+    assert (base.observaciones, incluida.observaciones) == esperadas
+
+
+@pytest.mark.django_db
+def test_elegibles_respetan_regla_de_linea(proyecto, superuser):
+    tradicional = crear_rendicion(proyecto)
+    elegible = crear_sin_acta(proyecto, numero_rendicion=2)
+    secos_cerrada = crear_sin_acta(
+        proyecto, numero_rendicion=3, linea_programatica="secos"
+    )
+    secos = crear_rendicion(proyecto, numero_rendicion=4, linea_programatica="secos")
+    assert list(
+        RendicionCuentaMensualService.rendiciones_elegibles_para_auditoria(tradicional)
+    ) == [elegible]
+    assert not RendicionCuentaMensualService.rendiciones_elegibles_para_auditoria(
+        secos
+    ).exists()
+    with pytest.raises(ValidationError):
+        AuditoriaService.guardar(
+            rendicion=secos,
+            actor=superuser,
+            datos={
+                "validada": True,
+                "genera_acta_auditoria": True,
+                "resultado": "finalizada",
+                "rendiciones_incluidas": [secos_cerrada],
+            },
+        )

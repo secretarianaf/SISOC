@@ -376,7 +376,11 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         organizacion_id = getattr(proyecto, "organizacion_id", None) or getattr(
             comedor, "organizacion_id", None
         )
-        if not codigo or not organizacion_id:
+        if (
+            not codigo
+            or not organizacion_id
+            or rendicion.linea_programatica != RendicionCuentaMensual.LINEA_TRADICIONAL
+        ):
             return RendicionCuentaMensual.objects.none()
         return (
             RendicionCuentaMensual.objects.filter(
@@ -387,6 +391,7 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
                     comedor__organizacion_id=organizacion_id,
                 ),
                 deleted_at__isnull=True,
+                linea_programatica=RendicionCuentaMensual.LINEA_TRADICIONAL,
                 validada=True,
                 genera_acta_auditoria=False,
                 fecha_gestion_auditoria__isnull=False,
@@ -1616,12 +1621,11 @@ class RendicionProcesoService:
                 )
         grupo_regularizacion = []
         if accion in acciones_regularizacion:
-            ids_grupo = list(
-                rendicion.rendiciones_incluidas.values_list("pk", flat=True)
-            )
+            # Solo se propaga a rendiciones con este origen: los vínculos
+            # legados sin origen no replicaban estado y no deben empezar a hacerlo.
             grupo_regularizacion = list(
                 RendicionCuentaMensual.objects.select_for_update()
-                .filter(pk__in=[rendicion.pk, *ids_grupo])
+                .filter(Q(pk=rendicion.pk) | Q(rendicion_origen_acta_id=rendicion.pk))
                 .order_by("pk")
             )
             rendicion = next(

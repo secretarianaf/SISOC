@@ -282,16 +282,15 @@ class AuditoriaService:
         actual.genera_acta_auditoria = datos["genera_acta_auditoria"]
         actual.fecha_carga_auditoria = actual.fecha_carga_auditoria or ahora
         actual.subestado_proceso = RendicionCuentaMensual.SUBESTADO_EN_CURSO
+        # Observaciones es un campo general: solo se escribe si hay observaciones.
+        con_observaciones = datos.get("resultado") == "finalizada_con_observaciones"
         if actual.genera_acta_auditoria:
             actual.rendicion_origen_acta = actual
             actual.estado = RendicionCuentaMensual.ESTADO_FINALIZADA
             actual.subestado_proceso = datos["resultado"]
             actual.fecha_auditada = ahora
-            actual.observaciones = (
-                datos["observaciones"]
-                if datos["resultado"] == "finalizada_con_observaciones"
-                else None
-            )
+            if con_observaciones:
+                actual.observaciones = datos["observaciones"]
             for campo in ("acta_auditoria", "documento_regularizacion"):
                 if datos.get(campo):
                     setattr(actual, campo, datos[campo])
@@ -316,9 +315,9 @@ class AuditoriaService:
                         "fecha_carga_auditoria",
                         "fecha_auditada",
                         "fecha_gestion_auditoria",
-                        "observaciones",
                         "acta_auditoria",
                         "documento_regularizacion",
+                        *(("observaciones",) if con_observaciones else ()),
                     ):
                         setattr(item, campo, getattr(actual, campo))
                     RendicionCuentaMensualService._aplicar_usuario_ultima_modificacion(

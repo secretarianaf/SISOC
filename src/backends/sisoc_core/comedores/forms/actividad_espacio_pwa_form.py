@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.db.models.functions import Lower
 
 from core.models import Dia
+from core.services.text_encoding import normalize_text
 from pwa.models import ActividadEspacioPWA, CatalogoActividadPWA
 
 
@@ -56,7 +57,7 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
         )
         self.activity_options = list(catalogo.values("id", "categoria", "actividad"))
         categorias = sorted(
-            {item["categoria"] for item in self.activity_options}, key=str.casefold
+            {item["categoria"] for item in self.activity_options}, key=normalize_text
         )
         self.fields["categoria"].choices = [("", "Seleccionar")] + [
             (categoria, categoria) for categoria in categorias

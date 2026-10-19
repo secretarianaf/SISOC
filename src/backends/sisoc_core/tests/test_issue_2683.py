@@ -1,6 +1,7 @@
 """Regresiones de rendiciones y actividades de Abordaje Comunitario (#2683)."""
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from comedores.forms.actividad_espacio_pwa_form import ActividadEspacioPWAWebForm
@@ -87,6 +88,41 @@ def test_planilla_seguros_admite_varios_archivos_sin_reemplazarlos(scopes):
 
 
 @pytest.mark.django_db
+def test_subsanar_planilla_seguros_exige_indicar_el_documento_observado(scopes):
+    """Contrato con mobile: sin documento_subsanado_id el archivo se suma y no
+    reemplaza al observado, que sigue bloqueando la presentación."""
+    comedor, proyecto, _, _ = scopes
+    rendicion = _crear_rendicion(
+        comedor,
+        proyecto=proyecto,
+        estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
+    )
+    observado = DocumentacionAdjunta.objects.create(
+        rendicion_cuenta_mensual=rendicion,
+        categoria="planilla_seguros",
+        archivo="observado.pdf",
+        nombre="Observado",
+        estado="subsanar",
+        observaciones="Debe incluir la firma",
+    )
+    nuevo = RendicionCuentaMensualService.adjuntar_documentacion_mobile(
+        rendicion=rendicion,
+        categoria="planilla_seguros",
+        documento_data={
+            "archivo": SimpleUploadedFile("nuevo.pdf", b"contenido"),
+            "nombre": "Nuevo",
+        },
+    )
+    assert nuevo.documento_subsanado_id is None
+    observado.refresh_from_db()
+    assert observado.estado == DocumentacionAdjunta.ESTADO_SUBSANAR
+    with pytest.raises(ValidationError):
+        RendicionCuentaMensualService.presentar_rendicion_mobile(rendicion)
+
+
+@pytest.mark.django_db
 def test_actividades_separan_categoria_y_nombre_y_conservan_catalogo_existente(scopes):
     comedor, _, _, _ = scopes
     CatalogoActividadPWA.objects.all().delete()
@@ -94,6 +130,9 @@ def test_actividades_separan_categoria_y_nombre_y_conservan_catalogo_existente(s
         categoria="Salud", actividad="Yoga", activo=False
     )
     CatalogoActividadPWA.objects.create(categoria="Arte", actividad="Dibujo")
+    CatalogoActividadPWA.objects.create(
+        categoria="Ámbito comunitario", actividad="Huerta"
+    )
     dia, _ = Dia.objects.get_or_create(nombre="Lunes")
     actividad = ActividadEspacioPWA.objects.create(
         comedor=comedor,
@@ -105,6 +144,7 @@ def test_actividades_separan_categoria_y_nombre_y_conservan_catalogo_existente(s
     assert form.initial["categoria"] == "Salud"
     assert list(form.fields["categoria"].choices) == [
         ("", "Seleccionar"),
+        ("Ámbito comunitario", "Ámbito comunitario"),
         ("Arte", "Arte"),
         ("Salud", "Salud"),
     ]

@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
 
-function visor(textareas = []) {
+function visor(textareas = [], selectores = []) {
     const handlers = {};
     let reloads = 0;
     class Element {
@@ -14,7 +14,10 @@ function visor(textareas = []) {
     const document = {
         visibilityState: 'visible',
         addEventListener(name, callback) { handlers[name] = callback; },
-        querySelectorAll(query) { return query === 'textarea[name="observaciones"]' ? textareas : []; },
+        querySelectorAll(query) {
+            if (query === 'textarea[name="observaciones"]') return textareas;
+            return query === '.js-documento-estado' ? selectores : [];
+        },
     };
     const window = {
         location: { reload() { reloads++; } },
@@ -59,6 +62,19 @@ test('volver del visor con una observación sin guardar posterga el refresco', (
     view.handlers.focus();
     assert.equal(view.reloads(), 0);
     textarea.value = '';
+    view.handlers.blur();
+    view.handlers.focus();
+    assert.equal(view.reloads(), 1);
+});
+
+test('volver del visor con un estado elegido sin guardar posterga el refresco', () => {
+    const selector = { value: 'validado' };
+    const view = visor([], [selector]);
+    view.handlers.click({ target: new view.Element(true) });
+    view.handlers.blur();
+    view.handlers.focus();
+    assert.equal(view.reloads(), 0);
+    selector.value = '';
     view.handlers.blur();
     view.handlers.focus();
     assert.equal(view.reloads(), 1);

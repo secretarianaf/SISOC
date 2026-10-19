@@ -327,12 +327,20 @@ document.addEventListener("DOMContentLoaded", function () {
             salioDelDetalle = false;
         }
     });
-    function hayObservacionesSinGuardar() {
-        return Array.from(
+    // Al guardar una revisión se quitan su selector y su textarea, así que
+    // cualquier valor presente es una revisión todavía sin guardar.
+    function hayRevisionesSinGuardar() {
+        const observaciones = Array.from(
             document.querySelectorAll('textarea[name="observaciones"]')
         ).some(function (textarea) {
             return textarea.value.trim() !== "";
         });
+        const estados = Array.from(
+            document.querySelectorAll(".js-documento-estado")
+        ).some(function (selector) {
+            return selector.value !== "";
+        });
+        return observaciones || estados;
     }
     function registrarSalida() {
         if (documentoAbierto) {
@@ -344,9 +352,9 @@ document.addEventListener("DOMContentLoaded", function () {
             registrarSalida();
             return;
         }
-        // Sin salida real (pestaña en segundo plano) o con texto sin guardar,
-        // se posterga la recarga para no perder la observación en edición.
-        if (!salioDelDetalle || hayObservacionesSinGuardar()) {
+        // Sin salida real (pestaña en segundo plano) o con una revisión sin
+        // guardar, se posterga la recarga para no perder lo que está en edición.
+        if (!salioDelDetalle || hayRevisionesSinGuardar()) {
             return;
         }
         documentoAbierto = false;

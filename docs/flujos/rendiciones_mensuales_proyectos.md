@@ -34,10 +34,12 @@ Reenviar las correcciones desde mobile deja la etapa territorial o de Revisión
 para Carga en `subsanado`. El documento nuevo conserva la observación que motivó
 su reemplazo hasta que se registre otra observación o se lo valide. El detalle
 web mantiene esa observación visible durante la revisión y se recarga al volver
-después de abrir un archivo para actualizar la confirmación de lectura.
+después de abrir un archivo para actualizar la confirmación de lectura, salvo
+que haya una revisión sin guardar.
 
 `planilla_seguros` se presenta como «Planilla de Seguros II», admite varios
-archivos y conserva historial de subsanaciones como Documentación Adicional.
+archivos y conserva historial de subsanaciones como Documentación Adicional:
+para subsanar un archivo observado, mobile debe indicar `documento_subsanado_id`.
 Mobile muestra «Rendición Cargada» para `finalizada`, sin cambiar ese código.
 
 ## Etapas, permisos y estados visibles

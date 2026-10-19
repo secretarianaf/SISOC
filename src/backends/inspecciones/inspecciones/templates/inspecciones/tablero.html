@@ -18,6 +18,7 @@
          id="insp-tablero"
          data-url-datos="{% url 'inspecciones_tablero_datos' %}"
          data-url-exportar="{% url 'inspecciones_tablero_exportar' %}"
+         data-url-descargar="{% url 'inspecciones_tablero_descargar_actas' %}"
          data-intervalo-ms="{{ intervalo_ms }}">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
             <h1 class="insp-titulo">Inspecciones escolares</h1>
@@ -255,6 +256,9 @@
         <section class="insp-seccion" aria-labelledby="tablero-h-ultimas">
             <div class="insp-seccion-cabecera">
                 <h2 id="tablero-h-ultimas">Últimas actas</h2>
+                <a class="btn btn-outline-primary btn-sm"
+                   href="{% url 'inspecciones_tablero_descargar_actas' %}"
+                   data-tablero-descargar>Descargar actas completas</a>
                 <a class="btn btn-outline-primary btn-sm"
                    href="{% url 'inspecciones_tablero_exportar' %}"
                    data-tablero-exportar>Exportar CSV (filtros aplicados)</a>

@@ -222,6 +222,8 @@ class IdentityAdminForm(
         for name in ("grupos_asignables", "roles_asignables"):
             if creating or name in changed:
                 getattr(profile, name).set(self.cleaned_data.get(name, []))
+        # El signal de alta puede haber cacheado otra instancia del perfil.
+        user.profile = profile
 
 
 class UserCreationForm(IdentityAdminForm):

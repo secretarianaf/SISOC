@@ -2,9 +2,12 @@
 
 import json
 from argparse import ArgumentParser
+from io import StringIO
 
 import pytest
 from django.apps import apps
+from django.db import transaction
+from django.db.models.signals import post_save
 from unittest.mock import patch
 
 from core.management.commands.load_fixtures import Command
@@ -80,3 +83,125 @@ def test_add_arguments_reconoce_overwrite():
     options = parser.parse_args(["--overwrite"])
 
     assert options.force is True
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("force", [False, True])
+def test_load_fixtures_reintenta_fk_entre_archivos_sin_repetir_exitos(
+    tmp_path, monkeypatch, force
+):
+    """Una carga resuelve la cadena inversa, incluso con un archivo parcial."""
+    fixtures = tmp_path / "fixtures"
+    fixtures.mkdir()
+    entries = {
+        "a_localidades.json": [
+            {
+                "model": "core.localidad",
+                "pk": 99003,
+                "fields": {"nombre": "Pendiente", "municipio": 99002},
+            },
+            {
+                "model": "core.localidad",
+                "pk": 99004,
+                "fields": {"nombre": "Independiente", "municipio": None},
+            },
+        ],
+        "b_municipios.json": [
+            {
+                "model": "core.municipio",
+                "pk": 99002,
+                "fields": {"nombre": "Municipio sintético", "provincia": 99001},
+            }
+        ],
+        "c_provincias.json": [
+            {
+                "model": "core.provincia",
+                "pk": 99001,
+                "fields": {"nombre": "Provincia sintética"},
+            }
+        ],
+    }
+    for name, data in entries.items():
+        (fixtures / name).write_text(json.dumps(data), encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    localidad = apps.get_model("core", "Localidad")
+    saved = []
+
+    def track_save(sender, instance, **kwargs):
+        transaction.on_commit(lambda pk=instance.pk: saved.append(pk))
+
+    post_save.connect(track_save, sender=localidad)
+    errors = StringIO()
+    command = Command(stdout=StringIO(), stderr=errors)
+    command.force = force
+    try:
+        command.load_fixtures()
+    finally:
+        post_save.disconnect(track_save, sender=localidad)
+
+    assert localidad.objects.get(pk=99003).municipio.provincia_id == 99001
+    assert localidad.objects.get(pk=99004).municipio_id is None
+    assert sorted(saved) == [99003, 99004]
+    assert errors.getvalue() == ""
+
+
+@pytest.mark.django_db(transaction=True)
+def test_load_fixtures_reporta_fk_irresoluble_y_conserva_exitos(tmp_path, monkeypatch):
+    fixtures = tmp_path / "fixtures"
+    fixtures.mkdir()
+    (fixtures / "parcial.json").write_text(
+        json.dumps(
+            [
+                {
+                    "model": "core.municipio",
+                    "pk": 99002,
+                    "fields": {"nombre": "Sin padre", "provincia": 99001},
+                },
+                {
+                    "model": "core.localidad",
+                    "pk": 99004,
+                    "fields": {"nombre": "Independiente", "municipio": None},
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    errors = StringIO()
+    command = Command(stdout=StringIO(), stderr=errors)
+    command.force = False
+
+    command.load_fixtures()
+
+    assert not apps.get_model("core", "Municipio").objects.filter(pk=99002).exists()
+    assert apps.get_model("core", "Localidad").objects.filter(pk=99004).exists()
+    assert errors.getvalue().count("Falló guardar registro") == 1
+    assert "core.municipio(pk=99002)" in errors.getvalue()
+
+
+@pytest.mark.parametrize("force", [False, True])
+def test_load_fixtures_conserva_criterio_de_tabla_ocupada(tmp_path, monkeypatch, force):
+    provincia = apps.get_model("core", "Provincia")
+    provincia.objects.create(pk=99001, nombre="Nombre orgánico")
+    fixtures = tmp_path / "fixtures"
+    fixtures.mkdir()
+    (fixtures / "provincia.json").write_text(
+        json.dumps(
+            [
+                {
+                    "model": "core.provincia",
+                    "pk": 99001,
+                    "fields": {"nombre": "Nombre de fixture"},
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    command = Command(stdout=StringIO(), stderr=StringIO())
+    command.force = force
+
+    command.load_fixtures()
+
+    expected = "Nombre de fixture" if force else "Nombre orgánico"
+    assert provincia.objects.get(pk=99001).nombre == expected

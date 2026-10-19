@@ -189,6 +189,7 @@ def test_audit_detail_get_context_data_and_resolver_passthrough(mocker):
     view = module.AuditLogDetailView()
     view.object = SimpleNamespace(
         changes_display_dict={},
+        changes_dict={},
         content_type=SimpleNamespace(model_class=lambda: None),
         action=module.LogEntry.Action.UPDATE,
         actor=None,

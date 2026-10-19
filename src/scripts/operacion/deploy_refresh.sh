@@ -395,7 +395,7 @@ main() {
   fi
   log "plan=$MODO servicios='${SERVICIOS}' migrar=$MIGRAR"
   local -a compose=("${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR")
-  # @core: los servicios con imagen sisoc/core en este entorno (web y workers).
+  # @core: imagen del portal y worker de importación con grafo completo.
   # Si no se pueden resolver, no se arriesga un deploy parcial.
   if [[ " $SERVICIOS " == *" @core "* ]]; then
     local core_services=""
@@ -410,6 +410,19 @@ main() {
   fi
   local -a servicios=()
   read -r -a servicios <<< "$SERVICIOS"
+  if [[ "$MODO" == selectivo ]]; then
+    local servicios_presentes=""
+    if servicios_presentes="$("${compose[@]}" config --format json | python3 "$ROOT_DIR/src/scripts/operacion/deploy_targets.py" --servicios-presentes "${servicios[@]}")"; then
+      read -r -a servicios <<< "$servicios_presentes"
+      log "servicios presentes del plan: $servicios_presentes"
+      if [[ "${#servicios[@]}" -eq 0 ]]; then
+        MODO=ninguno
+      fi
+    else
+      log "No se pudieron resolver los servicios seleccionados: deploy completo."
+      MODO=completo
+    fi
+  fi
 
   case "$MODO" in
     ninguno)

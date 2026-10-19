@@ -79,28 +79,41 @@ def test_separa_fachada_publica_de_import_de_internals(generador, apps):
     aristas, peso = generador.aristas_de_imports(apps)
     por_clave = {(a["src"], a["dst"]): a for a in aristas}
 
-    # dashboard consume comedores sólo por su fachada (contrato declarado).
-    assert por_clave[("dashboard", "comedores")]["kind"] == "api"
+    assert por_clave[("relevamientos", "audittrail")]["kind"] == "api"
+    assert por_clave[("dashboard", "core")]["kind"] == "internal"
+    # Las métricas de Comedores llegan por su contribución HTTP desde C3.
+    assert ("dashboard", "comedores") not in por_clave
     assert peso["comedores"]["lineas"] > 0
 
 
-def test_ve_dependencias_que_import_linter_no_puede_ver(generador, apps):
-    """El AST alcanza namespace packages; grimp no.
+def test_ve_imports_dentro_de_namespace_packages(generador, monkeypatch, tmp_path):
+    """El AST también debe recorrer servicios sin archivos __init__.py."""
+    backends = tmp_path / "src" / "backends"
+    servicios = backends / "sisoc_core" / "origen" / "services"
+    servicios.mkdir(parents=True)
+    (backends / "kernel" / "destino").mkdir(parents=True)
+    (servicios / "consulta.py").write_text(
+        "from destino.models import Registro\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(generador, "RAIZ", tmp_path)
+    monkeypatch.setattr(generador, "BACKENDS", backends)
 
-    `.importlinter` lo documenta como limitación conocida: sólo analiza paquetes
-    con `__init__.py`, así que `historial.services` queda fuera de su grafo. Por
-    eso el contrato `core-no-domains` no detecta `core/views.py -> historial`,
-    que sí viola lo declarado y no está en el baseline de `ignore_imports`.
+    aristas, _ = generador.aristas_de_imports(["origen", "destino"])
 
-    Si algún día se corta ese import (o `historial/services/__init__.py` aparece
-    y el linter empieza a verlo), este test falla y hay que actualizarlo.
-    """
+    assert len(aristas) == 1
+    assert aristas[0]["src"] == "origen"
+    assert aristas[0]["dst"] == "destino"
+    assert aristas[0]["kind"] == "internal"
+    assert aristas[0]["ejemplos"] == [
+        "src/backends/sisoc_core/origen/services/consulta.py -> destino.models"
+    ]
+
+
+def test_core_no_recupera_dependencias_de_dominio(generador, apps):
     aristas, _ = generador.aristas_de_imports(apps)
     desde_core = {a["dst"] for a in aristas if a["src"] == "core"}
 
-    assert "historial" in desde_core
-    # El resto de lo que importa core es núcleo compartido, no dominio.
-    assert desde_core - {"historial"} <= {"users", "iam"}
+    assert desde_core <= {"users", "iam", "audittrail"}
 
 
 def test_un_enlace_suelto_no_queda_dentro_del_grupo_anterior(menu):
@@ -186,7 +199,11 @@ def test_servicios_conservan_duenos_y_prefijos_del_registro(generador, apps):
     registro = generador._registro_backends()
     assert set(por_id) == {"kernel", "sisoc_core", *registro}
     assert "core" in por_id["kernel"]["apps"]
-    assert "historial" in por_id["sisoc_core"]["apps"]
+    assert "audittrail" in por_id["kernel"]["apps"]
+    assert "audittrail" not in por_id["sisoc_core"]["apps"]
+    assert {
+        servicio["id"] for servicio in lista if "historial" in servicio["apps"]
+    } == {"comedores"}
     for identificador, spec in registro.items():
         assert por_id[identificador]["service"] == spec["service"]
         assert por_id[identificador]["apps"] == spec["apps"]

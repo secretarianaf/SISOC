@@ -1560,6 +1560,11 @@
   "regex": "^comedores/listar\\Z"
  },
  {
+  "name": "comedores-metricas-dashboard",
+  "namespace": "",
+  "regex": "^api/comedores/metricas\\-dashboard/\\Z"
+ },
+ {
   "name": "comedores_acompanamiento_ajax",
   "namespace": "",
   "regex": "^acompanamientos/acompanamiento/ajax/\\Z"
@@ -6032,7 +6037,7 @@
  {
   "name": "app_list",
   "namespace": "admin",
-  "regex": "^admin/(?P<app_label>auth|auditlog|authtoken|rest_framework_api_key|users|core|organizaciones|catalogo_intervenciones|ciudadanos|dashboard|comedores|gestion_organizaciones|duplas|admisiones|intervenciones|historial|acompanamientos|expedientespagos|relevamientos|rendicioncuentasfinal|rendicioncuentasmensual|comunicados|insumos|pwa|ocr|encuestas|dispositivos|ver_para_ser_libre|pas|VAT|celiaquia|centrodeinfancia|centrodefamilia|inspecciones)/$"
+  "regex": "^admin/(?P<app_label>auth|auditlog|authtoken|rest_framework_api_key|users|core|organizaciones|catalogo_intervenciones|ciudadanos|audittrail|dashboard|insumos|encuestas|dispositivos|ver_para_ser_libre|pas|VAT|celiaquia|centrodeinfancia|centrodefamilia|inspecciones|comedores|gestion_organizaciones|duplas|admisiones|intervenciones|historial|acompanamientos|expedientespagos|relevamientos|rendicioncuentasfinal|rendicioncuentasmensual|comunicados|pwa|ocr)/$"
  },
  {
   "name": "auditlog_logentry_add",
@@ -6058,6 +6063,31 @@
   "name": "auditlog_logentry_history",
   "namespace": "admin",
   "regex": "^admin/auditlog/logentry/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "audittrail_auditoriasesionpwa_add",
+  "namespace": "admin",
+  "regex": "^admin/audittrail/auditoriasesionpwa/add/\\Z"
+ },
+ {
+  "name": "audittrail_auditoriasesionpwa_change",
+  "namespace": "admin",
+  "regex": "^admin/audittrail/auditoriasesionpwa/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "audittrail_auditoriasesionpwa_changelist",
+  "namespace": "admin",
+  "regex": "^admin/audittrail/auditoriasesionpwa/\\Z"
+ },
+ {
+  "name": "audittrail_auditoriasesionpwa_delete",
+  "namespace": "admin",
+  "regex": "^admin/audittrail/auditoriasesionpwa/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "audittrail_auditoriasesionpwa_history",
+  "namespace": "admin",
+  "regex": "^admin/audittrail/auditoriasesionpwa/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "auth_group_add",
@@ -9288,31 +9318,6 @@
   "name": "pwa_auditoriaoperacionpwa_history",
   "namespace": "admin",
   "regex": "^admin/pwa/auditoriaoperacionpwa/(?P<object_id>.+)/history/\\Z"
- },
- {
-  "name": "pwa_auditoriasesionpwa_add",
-  "namespace": "admin",
-  "regex": "^admin/pwa/auditoriasesionpwa/add/\\Z"
- },
- {
-  "name": "pwa_auditoriasesionpwa_change",
-  "namespace": "admin",
-  "regex": "^admin/pwa/auditoriasesionpwa/(?P<object_id>.+)/change/\\Z"
- },
- {
-  "name": "pwa_auditoriasesionpwa_changelist",
-  "namespace": "admin",
-  "regex": "^admin/pwa/auditoriasesionpwa/\\Z"
- },
- {
-  "name": "pwa_auditoriasesionpwa_delete",
-  "namespace": "admin",
-  "regex": "^admin/pwa/auditoriasesionpwa/(?P<object_id>.+)/delete/\\Z"
- },
- {
-  "name": "pwa_auditoriasesionpwa_history",
-  "namespace": "admin",
-  "regex": "^admin/pwa/auditoriasesionpwa/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "pwa_catalogoactividadpwa_add",

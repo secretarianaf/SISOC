@@ -3,6 +3,7 @@
 ## Mapa de documentos
 ### 1. Contexto y arquitectura
 - `docs/desarrollo/verticales_independientes.md`: guía vigente para ubicar código, respetar boundaries, probar los cuatro checklists y diagnosticar/deplegar por servicio.
+- `docs/desarrollo/arquitectura_servicios_2641.md`: diagrama de servicios después de #2641, lectura del PR y límites compartidos; implementación local pendiente de incorporación.
 - `docs/contexto/panorama.md`: visión general del sistema, su alcance y casos de uso principales.
 - `docs/contexto/dominio.md`: modelo del dominio central y relaciones clave entre entidades.
 - `docs/contexto/arquitectura.md`: resumen de la arquitectura técnica (apps, servicios, dependencias).
@@ -45,6 +46,13 @@
 ### 4. Guías funcionales e implementaciones
 - `docs/implementaciones/csp.md`: configuración y uso de CSP (nonce en templates, modo report-only, checklist de validación).
 - `docs/implementaciones/ocr.md`: OCR de documentos: modelo Tesseract, preprocesado, worker y parámetros por entorno.
+- `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-c4-ocr.md`: extracción de OCR y worker validada localmente; evidencia y límites.
+- `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-fixtures-ciudadanos.md`: revalidación local de importación de ciudadanos y corrección del orden entre fixtures; preserva C0–C4.
+- `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-dependencias-runtime-dev.md`: separación conservadora de dependencias y evolución de la validación local; CI pendiente.
+- `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-build-limpio-docker.md`: build real de 14 targets y verificación de dependencias, arranque, aislamiento y OCR sintético; sin deploy.
+- `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-smoke-http-docker.md`: smoke HTTP sintético de las imágenes nuevas, permisos/CSRF, caída y recuperación de Comedores sin reiniciar portal, y collectstatic; aceptación humana pendiente.
+- `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-revision-publicacion.md`: autorización de publicación, commits por snapshots y corrección del vaciado de controles de identidad detectada en revisión.
+- `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-correcciones-ci.md`: causas y correcciones de CI del PR #2734, perfil devuelto y harness SQLite/MySQL de auditoría y HTTP.
 - `docs/implementaciones/sentry.md`: implementación de Sentry (activación por entorno, variables, logging y validación).
 - `docs/implementaciones/audittrail_mvp_fase1.md`: release notes y guía operativa de Fase 1 del MVP de auditoría (deploy/rollback, soporte, riesgos y métricas).
 - `docs/implementaciones/audittrail_fase2.md`: metadata persistida (`AuditEntryMeta`), contexto de auditoría para procesos y guía de deploy/rollback de Fase 2.
@@ -108,6 +116,6 @@
 ## Contexto mínimo
 - Stack: Django + MySQL con despliegue vía Docker Compose. Evidencia: README.md:1-4 y docker-compose.yml:1-34.
 - Variables de entorno documentadas en `.env.example` (incluye DB, GESTIONAR, RENAPER, puertos y dominio). Evidencia: .env.example:1-51.
-- Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: src/backends/sisoc_core/comedores/tasks.py, src/backends/sisoc_core/relevamientos/tasks.py, src/backends/kernel/core/integrations/renaper.py, src/backends/kernel/core/services/renaper.py.
+- Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: src/backends/comedores/comedores/tasks.py, src/backends/comedores/relevamientos/tasks.py, src/backends/kernel/core/integrations/renaper.py, src/backends/kernel/core/services/renaper.py.
 
 - `docs/implementaciones/pas_control_mensual_celery.md`: funcionamiento, lotes, programación mensual, operación y retiro cron PAS.

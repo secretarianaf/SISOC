@@ -35,10 +35,15 @@ JUSTIFICACIONES = {
 }
 
 
-def listar_actas_panel(*, fecha=None, inspector_id=None, provincia_id=None, estado=""):
+def listar_actas_panel(
+    *, fecha=None, inspector_id=None, provincia_id=None, estado="", numero=""
+):
     queryset = Acta.objects.select_related(
         "inspector", "escuela__provincia", "escuela__localidad_vinculada"
     )
+    numero = (numero or "").strip()
+    if numero:
+        queryset = queryset.filter(numero__icontains=numero)
     if fecha:
         queryset = queryset.filter(fecha_visita=fecha)
     if inspector_id:

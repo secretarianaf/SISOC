@@ -628,3 +628,126 @@ def test_detalle_de_acta_valida_ofrece_anular_y_marcar_prueba(
     assert 'data-bs-target="#insp-modal-anular"' in html
     assert reverse("inspecciones_anular_acta", args=[numero]) in html
     assert reverse("inspecciones_marcar_prueba_acta", args=[numero]) in html
+
+
+# --- Buscadores por número de acta y por escuela (#2718) ------------------
+
+
+def _acta_simple(inspector, escuela, secuencia, **campos):
+    import uuid as uuid_lib
+
+    from django.utils import timezone
+
+    from inspecciones.models import Acta, Inspeccion
+
+    fecha = campos.pop("fecha", hoy())
+    inspeccion = Inspeccion.objects.create(
+        uuid=uuid_lib.uuid4(),
+        inspector=inspector,
+        estado=Inspeccion.Estado.FINALIZADA,
+        revision=1,
+        escuela=escuela,
+        fecha_visita=fecha,
+        turno="tarde",
+        resultado="cerrada",
+    )
+    numero = f"ACTA-2026-{secuencia:06d}"
+    return Acta.objects.create(
+        inspeccion=inspeccion,
+        inspector=inspector,
+        escuela=escuela,
+        numero=numero,
+        anio=2026,
+        secuencia=secuencia,
+        cerrada_at=timezone.now(),
+        fecha_visita=fecha,
+        turno="tarde",
+        resultado="cerrada",
+        firma_tipo="excepcion",
+        formulario_version="v1",
+        instantanea={"numero": numero, "payload": {}},
+        instantanea_sha256="0" * 64,
+        **campos,
+    )
+
+
+def _numeros_listados(respuesta):
+    return {fila["acta"].numero for fila in respuesta.context["filas"]}
+
+
+def test_actas_se_buscan_por_numero_completo_o_parcial(
+    panel, escuela, inspector_a, inspector_b
+):
+    _acta_simple(inspector_a, escuela, 230)
+    _acta_simple(inspector_b, escuela, 45)
+    url = reverse("inspecciones_actas")
+
+    completo = panel.get(url, {"numero": "ACTA-2026-000230"})
+    parcial = panel.get(url, {"numero": "230"})
+    minusculas = panel.get(url, {"numero": " acta-2026-00023 "})
+    vacio = panel.get(url, {"numero": ""})
+
+    assert _numeros_listados(completo) == {"ACTA-2026-000230"}
+    assert _numeros_listados(parcial) == {"ACTA-2026-000230"}
+    assert _numeros_listados(minusculas) == {"ACTA-2026-000230"}
+    assert _numeros_listados(vacio) == {"ACTA-2026-000230", "ACTA-2026-000045"}
+
+
+def test_busqueda_de_acta_se_combina_con_los_demas_filtros(
+    panel, escuela, inspector_a, inspector_b
+):
+    _acta_simple(inspector_a, escuela, 230)
+    _acta_simple(inspector_b, escuela, 231)
+    url = reverse("inspecciones_actas")
+
+    del_inspector = panel.get(url, {"numero": "23", "inspector": inspector_a.pk})
+    otra_fecha = panel.get(
+        url, {"numero": "23", "fecha": (hoy() + timedelta(days=1)).isoformat()}
+    )
+    anuladas = panel.get(url, {"numero": "23", "estado": "anuladas"})
+
+    assert _numeros_listados(del_inspector) == {"ACTA-2026-000230"}
+    assert _numeros_listados(otra_fecha) == set()
+    assert _numeros_listados(anuladas) == set()
+
+
+def test_actas_sin_coincidencias_informa_y_conserva_el_valor(
+    panel, escuela, inspector_a
+):
+    _acta_simple(inspector_a, escuela, 230)
+
+    respuesta = panel.get(reverse("inspecciones_actas"), {"numero": "999"})
+
+    html = respuesta.content.decode()
+    assert respuesta.context["filas"] == []
+    assert "No hay actas con los filtros elegidos." in html
+    assert 'name="numero"' in html
+    assert 'value="999"' in html
+    assert "Buscar por número de acta" in html
+
+
+def test_asignaciones_se_filtran_por_escuela(panel, escuela, inspector_a, inspector_b):
+    otra = Escuela.objects.create(
+        codigo="060555500", nombre="EP N° 99 Belgrano", cue="060555500"
+    )
+    AsignacionEscuela.objects.create(
+        escuela=escuela, inspector=inspector_a, fecha=hoy()
+    )
+    AsignacionEscuela.objects.create(escuela=otra, inspector=inspector_b, fecha=hoy())
+    url = reverse("inspecciones_asignaciones")
+
+    de_una = panel.get(url, {"escuela": otra.pk})
+    combinado = panel.get(url, {"escuela": otra.pk, "inspector": inspector_a.pk})
+    sin_filtro = panel.get(url, {"escuela": ""})
+    invalido = panel.get(url, {"escuela": "abc"})
+
+    assert [f["escuela"] for f in de_una.context["filas"]] == [otra]
+    assert de_una.context["escuela_filtro"]["text"] == "EP N° 99 Belgrano"
+    assert combinado.context["filas"] == []
+    assert "No hay asignaciones para esta jornada con los filtros elegidos." in (
+        combinado.content.decode()
+    )
+    assert len(sin_filtro.context["filas"]) == 2
+    assert len(invalido.context["filas"]) == 2
+    assert 'name="escuela"' in de_una.content.decode()
+    assert "Buscar por escuela" in de_una.content.decode()

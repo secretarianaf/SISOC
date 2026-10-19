@@ -5,11 +5,12 @@ import re
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.http import FileResponse, Http404, JsonResponse
 from django.urls import reverse, reverse_lazy
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect
@@ -40,6 +41,11 @@ from rendicioncuentasmensual.forms import (
     DocumentacionAdjuntaForm,
     RendicionProcesoForm,
     RendicionDatosForm,
+)
+from rendicioncuentasmensual.auditoria import (
+    AuditoriaBusquedaForm,
+    AuditoriaForm,
+    AuditoriaService,
 )
 from rendicioncuentasmensual.filter_config import (
     BOOL_OPS,
@@ -350,7 +356,7 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
             cls._permission_for_action(accion),
         )
 
-    def post(  # pylint: disable=too-many-return-statements,too-many-branches,too-many-locals
+    def post(  # pylint: disable=too-many-return-statements,too-many-branches,too-many-locals,too-many-statements
         self, request, *args, **kwargs
     ):
         rendicion = self.get_object()
@@ -411,6 +417,30 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
         if accion_proceso:
             if not self._user_can_run_action(request.user, accion_proceso):
                 raise PermissionDenied
+            if accion_proceso in {
+                RendicionProcesoService.ACCION_INICIAR_AUDITORIA,
+                RendicionProcesoService.ACCION_FINALIZAR_SIN_OBSERVACIONES,
+                RendicionProcesoService.ACCION_FINALIZAR_CON_OBSERVACIONES,
+            }:
+                disponible = (
+                    AuditoriaService.disponibles().filter(pk=rendicion.pk).exists()
+                )
+                messages.info(
+                    request,
+                    (
+                        "Gestioná la Auditoría desde su pantalla específica."
+                        if disponible
+                        else "Esta rendición ya no admite gestionar su Auditoría."
+                    ),
+                )
+                destino = (
+                    "rendicioncuentasmensual_auditoria"
+                    if disponible
+                    else "rendicioncuentasmensual_detail"
+                )
+                return HttpResponseRedirect(
+                    reverse(destino, kwargs={"pk": rendicion.pk})
+                )
             form = RendicionProcesoForm(
                 request.POST,
                 request.FILES,
@@ -570,14 +600,194 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
             self.request.user
         )
         context["puede_auditoria"] = self._user_can_auditoria(self.request.user)
-        context["puede_regularizacion"] = self._user_can_regularizacion(
-            self.request.user
+        context["puede_regularizacion"] = (
+            self._user_can_regularizacion(self.request.user)
+            and rendicion.es_origen_acta
         )
         context["puede_editar_datos"] = user_has_permission_code(
             self.request.user, "rendicioncuentasmensual.edit_rendicion_data"
         )
         context["proceso_form"] = RendicionProcesoForm(rendicion=rendicion)
+        context["volver_url"] = reverse("rendicioncuentasmensual_global_list")
+        context["mostrar_documentacion_auditoria"] = (
+            rendicion.validada is not None
+            or rendicion.genera_acta_auditoria is not None
+        )
+        context["puede_gestionar_auditoria"] = (
+            context["puede_auditoria"]
+            and not rendicion.fecha_gestion_auditoria
+            and not rendicion.fecha_auditada
+            and rendicion.genera_acta_auditoria is not True
+            and not rendicion.acta_auditoria
+            and rendicion.etapa_proceso == RendicionCuentaMensual.ETAPA_AUDITORIA
+            and rendicion.subestado_proceso
+            in {
+                RendicionCuentaMensual.SUBESTADO_PENDIENTE,
+                RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+            }
+        )
+        subestados_revision = {
+            RendicionCuentaMensual.SUBESTADO_PENDIENTE,
+            RendicionCuentaMensual.SUBESTADO_SUBSANADO,
+            RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+        }
+        context["mostrar_acciones_proceso"] = any(
+            [
+                context["puede_gestionar_auditoria"],
+                context["puede_revision_territorial"]
+                and rendicion.etapa_proceso
+                == RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+                and rendicion.subestado_proceso in subestados_revision,
+                context["puede_revision_auditoria"]
+                and rendicion.etapa_proceso
+                == RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA
+                and rendicion.subestado_proceso in subestados_revision,
+                context["puede_regularizacion"]
+                and (
+                    (
+                        rendicion.etapa_proceso
+                        == RendicionCuentaMensual.ETAPA_AUDITORIA
+                        and rendicion.subestado_proceso
+                        == RendicionCuentaMensual.SUBESTADO_FINALIZADA_CON_OBSERVACIONES
+                    )
+                    or (
+                        rendicion.etapa_proceso
+                        == RendicionCuentaMensual.ETAPA_REGULARIZACION
+                        and rendicion.subestado_proceso
+                        == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+                    )
+                ),
+            ]
+        )
+        if context["mostrar_documentacion_auditoria"] and rendicion.etapa_proceso in {
+            RendicionCuentaMensual.ETAPA_AUDITORIA,
+            RendicionCuentaMensual.ETAPA_REGULARIZACION,
+        }:
+            context["resumenes"] = [
+                {
+                    "rendicion": rendicion,
+                    "categorias": context["documentacion_por_categoria"],
+                }
+            ] + [
+                {
+                    "rendicion": item,
+                    "categorias": RendicionCuentaMensualService.obtener_documentacion_para_detalle(
+                        item
+                    ),
+                }
+                for item in rendicion.rendiciones_incluidas.all()
+            ]
         return context
+
+
+class RendicionAuditoriaView(LoginRequiredMixin, View):
+    template_name = "rendicioncuentasmensual_auditoria.html"
+
+    def get(self, request, pk=None):
+        if pk is None:
+            seleccion = request.GET.get("rendicion")
+            if seleccion:
+                if not seleccion.isdecimal():
+                    raise Http404
+                rendicion = get_object_or_404(
+                    AuditoriaService.disponibles(), pk=seleccion
+                )
+                return HttpResponseRedirect(
+                    reverse(
+                        "rendicioncuentasmensual_auditoria", kwargs={"pk": rendicion.pk}
+                    )
+                )
+            busqueda_form = AuditoriaBusquedaForm.desde_parametros(request.GET)
+            busqueda_realizada = busqueda_form.is_bound
+            disponibles = (
+                AuditoriaService.buscar(busqueda_form.cleaned_data)
+                if busqueda_realizada and busqueda_form.is_valid()
+                else AuditoriaService.disponibles().none()
+            )
+            page_obj = Paginator(
+                disponibles.order_by("proyecto__codigo", "periodo_inicio", "pk"), 20
+            ).get_page(request.GET.get("page"))
+            return render(
+                request,
+                self.template_name,
+                {
+                    "disponibles": page_obj,
+                    "page_obj": page_obj,
+                    "is_paginated": page_obj.has_other_pages(),
+                    "busqueda_form": busqueda_form,
+                    "busqueda_realizada": busqueda_realizada,
+                    "busqueda_valida": busqueda_realizada and not busqueda_form.errors,
+                    "volver_url": reverse("rendicioncuentasmensual_global_list"),
+                },
+            )
+        rendicion = get_object_or_404(AuditoriaService.disponibles(), pk=pk)
+        form = AuditoriaForm(
+            rendicion=rendicion,
+            initial={
+                "validada": rendicion.validada,
+                "genera_acta_auditoria": rendicion.genera_acta_auditoria,
+            },
+        )
+        return self._render(request, rendicion, form)
+
+    def post(self, request, pk=None):
+        if pk is None:
+            raise Http404
+        rendicion = get_object_or_404(AuditoriaService.disponibles(), pk=pk)
+        form = AuditoriaForm(request.POST, request.FILES, rendicion=rendicion)
+        if form.is_valid():
+            try:
+                rendicion = AuditoriaService.guardar(
+                    rendicion=rendicion, datos=form.cleaned_data, actor=request.user
+                )
+            except ValidationError as error:
+                form.add_error(
+                    None,
+                    RendicionCuentaMensualDetailView.format_validation_error(error),
+                )
+            else:
+                messages.success(request, AuditoriaService.mensaje_guardado(rendicion))
+                return HttpResponseRedirect(
+                    reverse(
+                        "rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk}
+                    )
+                )
+        return self._render(request, rendicion, form)
+
+    def _render(self, request, rendicion, form):
+        volver_a_busqueda = request.GET.get("origen") == "busqueda"
+        volver_url = (
+            reverse("rendicioncuentasmensual_auditoria_nueva")
+            if volver_a_busqueda
+            else reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
+        )
+        candidatas = RendicionCuentaMensualService.rendiciones_elegibles_para_auditoria(
+            rendicion
+        )
+        resumenes = [
+            {
+                "rendicion": item,
+                "categorias": RendicionCuentaMensualService.obtener_documentacion_para_detalle(
+                    item
+                ),
+            }
+            for item in [rendicion, *candidatas]
+        ]
+        return render(
+            request,
+            self.template_name,
+            {
+                "rendicion": rendicion,
+                "form": form,
+                "scope_proyecto": RendicionCuentaMensualService.obtener_scope_proyecto(
+                    rendicion
+                ),
+                "resumenes": resumenes,
+                "volver_url": volver_url,
+                "volver_a_busqueda": volver_a_busqueda,
+                "volver_transitoria": True,
+            },
+        )
 
 
 class RendicionCuentaMensualDownloadPdfView(LoginRequiredMixin, DetailView):

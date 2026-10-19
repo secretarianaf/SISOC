@@ -9,6 +9,7 @@ from rendicioncuentasmensual.views import (
     RendicionCuentaMensualDeleteView,
     RendicionCuentaMensualCreateView,
     RendicionCuentaMensualUpdateView,
+    RendicionAuditoriaView,
     eliminar_archivo,
 )
 
@@ -22,6 +23,20 @@ _RENDICION_STAGE_PERMS = [
 _RENDICION_ACCESS_PERMS = _RENDICION_PERM + _RENDICION_STAGE_PERMS
 
 urlpatterns = [
+    path(
+        "rendicioncuentasmensual/auditoria/",
+        permissions_any_required(["rendicioncuentasmensual.manage_auditoria_stage"])(
+            RendicionAuditoriaView.as_view()
+        ),
+        name="rendicioncuentasmensual_auditoria_nueva",
+    ),
+    path(
+        "rendicioncuentasmensual/auditoria/<int:pk>/",
+        permissions_any_required(["rendicioncuentasmensual.manage_auditoria_stage"])(
+            RendicionAuditoriaView.as_view()
+        ),
+        name="rendicioncuentasmensual_auditoria",
+    ),
     path(
         "rendicioncuentasmensual/listado/",
         permissions_any_required(_RENDICION_ACCESS_PERMS)(

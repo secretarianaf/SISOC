@@ -953,7 +953,7 @@ def test_presentar_rendicion_mobile_rechaza_documentos_observados_vigentes(mocke
 
 
 @pytest.mark.django_db
-def test_presentar_rendicion_mobile_reanuda_revision_territorial_sin_nuevo_inicio(
+def test_presentar_rendicion_mobile_deja_revision_territorial_subsanada(
     mocker,
 ):
     rendicion = SimpleNamespace(
@@ -983,7 +983,7 @@ def test_presentar_rendicion_mobile_reanuda_revision_territorial_sin_nuevo_inici
     assert rendicion.etapa_proceso == (
         RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
     )
-    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_SUBSANADO
 
 
 @pytest.mark.django_db

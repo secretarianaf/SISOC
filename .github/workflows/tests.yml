@@ -388,6 +388,7 @@ jobs:
                   src/backends/dispositivos/dispositivos/tests/js/dispositivosMap.test.js
                   src/backends/celiaquia/tests/js/showAlert.test.js
                   src/backends/comedores/tests/js/informeTecnicoCambiosSinGuardar.test.js
+                  src/backends/comedores/tests/js/rendicionVisualizacion.test.js
                   src/backends/sisoc_core/tests/js/user_mobile_access.test.js
 
             - name: Validate required CI checks

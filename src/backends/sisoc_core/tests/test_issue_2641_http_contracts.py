@@ -8,7 +8,6 @@ from pathlib import Path
 
 import pytest
 from django.contrib.auth.models import Permission, User
-from django.db import connection
 from django.test import Client, RequestFactory
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -22,17 +21,23 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 
 @pytest.fixture
-def owner_process(tmp_path, monkeypatch):
+def owner_process(tmp_path, monkeypatch, http_probe_database):
     """Runtime dueño C3, loopback y misma DB sintética en otro proceso."""
     if os.name != "posix":
         pytest.skip(
             "Este probe de procesos se ejecuta en el contenedor Linux de pruebas."
         )
     script = """
-import sys, time
+import importlib, json, os, sys, time
 started = time.monotonic()
 import config, django
+database = json.loads(os.environ['SISOC_HTTP_PROBE_DATABASE'])
+runtime_settings = importlib.import_module(os.environ['DJANGO_SETTINGS_MODULE'])
+runtime_settings.DATABASES = {'default': database}
 django.setup()
+from django.db import connection
+assert connection.settings_dict['ENGINE'] == database['ENGINE']
+assert connection.settings_dict['NAME'] == database['NAME']
 print(f'OWNER_SETUP_SECONDS={time.monotonic() - started:.3f}', file=sys.stderr, flush=True)
 from django.core.wsgi import get_wsgi_application
 from django.urls import resolve
@@ -46,7 +51,7 @@ server.serve_forever()
 """
     env = {
         **os.environ,
-        "DATABASE_NAME": connection.settings_dict["NAME"],
+        "SISOC_HTTP_PROBE_DATABASE": http_probe_database,
         "DJANGO_SETTINGS_MODULE": "comedores_runtime.settings",
         "WAIT_FOR_DB": "false",
     }
@@ -172,6 +177,7 @@ def test_operacion_compuesta_http_valida_sesion_csrf_y_guarda_completa(owner_pro
     client.force_login(admin)
     page = client.get("/usuarios/crear/")
     assert page.status_code == 200
+    assert page.streaming, owner_process.contract_log.read_text()
     # Completar/cerrar la respuesta de streaming antes de iniciar el POST.
     b"".join(page.streaming_content)
     page.close()

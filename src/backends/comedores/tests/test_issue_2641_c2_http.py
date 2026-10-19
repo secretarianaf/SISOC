@@ -11,7 +11,6 @@ from pathlib import Path
 import pytest
 import requests
 from django.contrib.auth.models import User
-from django.db import connection
 from django.test import Client
 from django.urls import reverse
 
@@ -28,12 +27,18 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 
 @pytest.fixture
-def propietario_http(tmp_path):
+def propietario_http(tmp_path, http_probe_database):
     script = """
-import sys, time
+import importlib, json, os, sys, time
 started = time.monotonic()
 import config, django
+database = json.loads(os.environ['SISOC_HTTP_PROBE_DATABASE'])
+runtime_settings = importlib.import_module(os.environ['DJANGO_SETTINGS_MODULE'])
+runtime_settings.DATABASES = {'default': database}
 django.setup()
+from django.db import connection
+assert connection.settings_dict['ENGINE'] == database['ENGINE']
+assert connection.settings_dict['NAME'] == database['NAME']
 print(f'OWNER_SETUP_SECONDS={time.monotonic() - started:.3f}', file=sys.stderr, flush=True)
 from django.urls import resolve
 from django.core.wsgi import get_wsgi_application
@@ -46,7 +51,7 @@ server.serve_forever()
 """
     env = {
         **os.environ,
-        "DATABASE_NAME": connection.settings_dict["NAME"],
+        "SISOC_HTTP_PROBE_DATABASE": http_probe_database,
         "DJANGO_SETTINGS_MODULE": "comedores_runtime.settings",
         "WAIT_FOR_DB": "false",
     }
@@ -54,6 +59,7 @@ server.serve_forever()
     with log_path.open("w", encoding="utf-8") as log:
         process = subprocess.Popen(
             [sys.executable, "-u", "-c", script],
+            cwd=Path(__file__).resolve().parents[4],
             env=env,
             stdout=subprocess.PIPE,
             stderr=log,

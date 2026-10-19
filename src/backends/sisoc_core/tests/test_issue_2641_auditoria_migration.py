@@ -8,6 +8,7 @@ from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
+from django.test import override_settings
 
 from audittrail.models import AuditoriaSesionPWA
 
@@ -21,12 +22,41 @@ NEXT = [
 ]
 
 
+def _migrate_auditoria(targets):
+    """Ejecuta el traslado también sobre el esquema SQLite creado por syncdb.
+
+    Esa DB no tiene historial: MigrationExecutor intentaría crear de nuevo
+    todas sus tablas. Sólo en ese caso se aplican/revierten las operaciones
+    reales del traslado con sus estados históricos, sin inventar registros.
+    MySQL y las DB migradas conservan el recorrido completo del executor.
+    """
+    executor = MigrationExecutor(connection)
+    if connection.vendor != "sqlite" or executor.loader.applied_migrations:
+        executor.migrate(targets)
+        return
+
+    state = executor.loader.project_state(PREVIOUS)
+    transitions = []
+    for key in NEXT:
+        migration = executor.loader.get_migration(*key)
+        transitions.append((migration, state))
+        state = migration.mutate_state(state)
+    backwards = targets == PREVIOUS
+    for migration, before in reversed(transitions) if backwards else transitions:
+        with connection.schema_editor(atomic=False) as schema_editor:
+            if backwards:
+                migration.unapply(before.clone(), schema_editor)
+            else:
+                migration.apply(before.clone(), schema_editor)
+
+
 @pytest.mark.django_db(transaction=True)
+@override_settings(MIGRATION_MODULES={})
 def test_upgrade_y_reversa_conservan_filas_permisos_y_asignaciones():
     executor = MigrationExecutor(connection)
     latest = executor.loader.graph.leaf_nodes()
     try:
-        executor.migrate(PREVIOUS)
+        _migrate_auditoria(PREVIOUS)
         old_apps = executor.loader.project_state(PREVIOUS).apps
         old_model = old_apps.get_model("pwa", "AuditoriaSesionPWA")
         user = User.objects.create_user(username="migracion_auditoria")
@@ -65,8 +95,7 @@ def test_upgrade_y_reversa_conservan_filas_permisos_y_asignaciones():
                 cursor, "pwa_auditoriasesionpwa"
             )
         ct_id, event_id = content_type.pk, event.pk
-        executor = MigrationExecutor(connection)
-        executor.migrate(NEXT)
+        _migrate_auditoria(NEXT)
         content_type.refresh_from_db()
         assert content_type.pk == ct_id
         assert content_type.app_label == "audittrail"
@@ -116,8 +145,7 @@ def test_upgrade_y_reversa_conservan_filas_permisos_y_asignaciones():
             )
             == operational_permissions
         )
-        executor = MigrationExecutor(connection)
-        executor.migrate(PREVIOUS)
+        _migrate_auditoria(PREVIOUS)
         content_type.refresh_from_db()
         assert content_type.app_label == "pwa"
         assert content_type.pk == ct_id
@@ -134,11 +162,11 @@ def test_upgrade_y_reversa_conservan_filas_permisos_y_asignaciones():
             set(group.permissions.values_list("id", flat=True)) == group_permission_ids
         )
     finally:
-        MigrationExecutor(connection).migrate(latest)
+        _migrate_auditoria(latest)
         ContentType.objects.clear_cache()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_dos_content_types_se_rechazan_sin_borrar_ni_fusionar():
     migration = importlib.import_module(
         "audittrail.migrations.0002_auditoria_sesion_desde_pwa"

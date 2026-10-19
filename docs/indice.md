@@ -47,7 +47,8 @@
 - `docs/implementaciones/ocr.md`: OCR de documentos: modelo Tesseract, preprocesado, worker y parámetros por entorno.
 - `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-c4-ocr.md`: extracción de OCR y worker validada localmente; evidencia y límites.
 - `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-fixtures-ciudadanos.md`: revalidación local de importación de ciudadanos y corrección del orden entre fixtures; preserva C0–C4.
-- `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-dependencias-runtime-dev.md`: separación conservadora de dependencias de imágenes; validación offline y build limpio pendiente.
+- `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-dependencias-runtime-dev.md`: separación conservadora de dependencias y evolución de la validación local; CI pendiente.
+- `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-build-limpio-docker.md`: build real de 14 targets y verificación de dependencias, arranque, aislamiento y OCR sintético; sin deploy.
 - `docs/implementaciones/sentry.md`: implementación de Sentry (activación por entorno, variables, logging y validación).
 - `docs/implementaciones/audittrail_mvp_fase1.md`: release notes y guía operativa de Fase 1 del MVP de auditoría (deploy/rollback, soporte, riesgos y métricas).
 - `docs/implementaciones/audittrail_fase2.md`: metadata persistida (`AuditEntryMeta`), contexto de auditoría para procesos y guía de deploy/rollback de Fase 2.

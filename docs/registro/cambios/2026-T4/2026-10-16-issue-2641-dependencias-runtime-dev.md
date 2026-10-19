@@ -1,9 +1,16 @@
 # #2641: dependencias de runtime y desarrollo
 
-Estado: **implementado localmente; build limpio y CI pendientes**.
-El responsable aprobó la propuesta conservadora y validación local offline con
-«apruebo». No autoriza descargas, CI remota, incorporación o deploy. No se crea
-otro corte ni se reabren las fronteras C0–C4.
+Estado: **implementado y build limpio validado localmente; CI pendiente**.
+Actualización posterior: el responsable habilitó continuar en Docker tras la
+consulta de descargas. Los 14 targets y verificaciones de perfiles/arranque
+pasaron en imágenes nuevas. La evidencia inicial de este documento conserva
+el fallo offline; el resultado posterior está en
+`docs/registro/cambios/2026-T4/2026-10-16-issue-2641-build-limpio-docker.md`.
+La aprobación inicial de la propuesta conservadora y validación local offline
+fue «apruebo»; entonces no habilitaba descargas, CI remota, incorporación o
+deploy. La autorización posterior de descargas se describe arriba; CI remota,
+incorporación y deploy siguen fuera de alcance. No se crea otro corte ni se
+reabren las fronteras C0–C4.
 
 ## Cambio y motivo
 
@@ -67,6 +74,9 @@ sólo el harness y se repitieron esos cuatro casos con éxito; no se cambió
 producción para ocultar un fallo. Los otros cuatro habían pasado.
 
 ## Pendiente, reversa y preservación
+
+El siguiente párrafo describe el cierre inicial; el build local fue completado
+en la actualización enlazada arriba. CI remota e incorporación siguen pendientes.
 
 Falta reconstruir base, core, backends, migrador y dev con sus dependencias
 disponibles, ejecutar `pip check`, confirmar ausencia física de tooling y el

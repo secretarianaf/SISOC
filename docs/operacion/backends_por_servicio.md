@@ -63,9 +63,10 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
   con sus auxiliares de formato/profiling porque los settings actuales los usan.
   Pytest, linters, coverage, factories y debugpy quedan en dev/test. No cambia
   DEBUG/ENABLE_SILK ni se optimizan todavía paquetes Debian o dependencias por
-  vertical. El cambio requiere reconstrucción completa de imágenes; el ensayo
-  local offline no alcanzó esa etapa por falta de caché APT. Ver
-  `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-dependencias-runtime-dev.md`.
+  vertical. Se validaron localmente los 14 targets, con perfiles, `pip check`,
+  arranque e aislamiento en imágenes nuevas. La primera incorporación requiere
+  reconstrucción completa; CI remota y despliegue siguen pendientes. Evidencia:
+  `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-build-limpio-docker.md`.
 - **`src/backends/config/backends.json`** es la fuente única. Por cada backend declara sus
   apps, prefijos de URL, URLconf, origen en la red de Compose y servicios de
   Compose. De ahí leen los settings, el proxy y el deploy.

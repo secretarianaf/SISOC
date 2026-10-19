@@ -17,9 +17,12 @@ cambia.
   (finalizadas, no de prueba, con los filtros del querystring).
 - El PDF es el original del acta (`Acta.pdf`), el que genera la app con los
   datos del reporte y las imágenes y sube al cerrar. No se genera otro formato.
-- Una acta sin PDF todavía (`pdf_estado = pendiente`) no se puede incluir: se
-  lista en `ACTAS_SIN_PDF.txt` dentro del ZIP. Si ninguna tiene PDF, se informa.
-- Tope: 100 actas por descarga; si se supera, mensaje para acotar los filtros.
+- Una acta sin PDF todavía (`pdf_estado = pendiente`), o cuyo archivo falta en
+  disco, no se puede incluir: se lista en `ACTAS_SIN_PDF.txt` dentro del ZIP.
+  Si ninguna tiene PDF, se informa.
+- Topes: 100 actas y 250 MB por descarga (el ZIP se arma dentro del pedido y lo
+  sirve un worker síncrono de gunicorn); si se superan, mensaje para acotar los
+  filtros.
   El ZIP se arma en un archivo temporal, copiando por bloques, sin cargar los
   PDF en memoria.
 - Sin actas para los filtros: vuelve al tablero con el aviso «No hay actas para

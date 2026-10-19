@@ -131,3 +131,34 @@ def test_el_boton_esta_antes_del_csv(client, coordinacion):
     descargar = html.index("Descargar actas completas")
     assert descargar < html.index("Exportar CSV (filtros aplicados)")
     assert "data-tablero-descargar" in html
+
+
+def test_supera_el_tope_de_bytes_informa(
+    client, coordinacion, inspector_a, escuela, monkeypatch
+):
+    monkeypatch.setattr(descarga_actas, "MAX_BYTES", len(PDF))
+    con_pdf(crear_acta(inspector_a, escuela))
+    con_pdf(crear_acta(inspector_a, escuela))
+    client.force_login(coordinacion)
+
+    response = client.get(URL, follow=True)
+
+    textos = [str(m) for m in response.context["messages"]]
+    assert textos == [descarga_actas.mensaje_tope_bytes(len(PDF))]
+
+
+def test_pdf_faltante_en_disco_se_lista_en_el_zip(
+    client, coordinacion, inspector_a, escuela
+):
+    con_pdf(crear_acta(inspector_a, escuela))
+    perdida = con_pdf(crear_acta(inspector_a, escuela))
+    perdida.pdf.storage.delete(perdida.pdf.name)
+    client.force_login(coordinacion)
+
+    response = client.get(URL)
+
+    assert response["Content-Type"] == "application/zip"
+    with zipfile.ZipFile(io.BytesIO(b"".join(response.streaming_content))) as zf:
+        assert f"{perdida.numero}.pdf" not in zf.namelist()
+        listado = zf.read(descarga_actas.NOMBRE_FALTANTES).decode("utf-8")
+    assert perdida.numero in listado

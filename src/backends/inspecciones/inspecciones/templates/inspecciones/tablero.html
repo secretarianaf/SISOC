@@ -256,12 +256,14 @@
         <section class="insp-seccion" aria-labelledby="tablero-h-ultimas">
             <div class="insp-seccion-cabecera">
                 <h2 id="tablero-h-ultimas">Últimas actas</h2>
-                <a class="btn btn-outline-primary btn-sm"
-                   href="{% url 'inspecciones_tablero_descargar_actas' %}"
-                   data-tablero-descargar>Descargar actas completas</a>
-                <a class="btn btn-outline-primary btn-sm"
-                   href="{% url 'inspecciones_tablero_exportar' %}"
-                   data-tablero-exportar>Exportar CSV (filtros aplicados)</a>
+                <div class="d-flex flex-wrap justify-content-end gap-2">
+                    <a class="btn btn-outline-primary btn-sm"
+                       href="{% url 'inspecciones_tablero_descargar_actas' %}"
+                       data-tablero-descargar>Descargar actas completas</a>
+                    <a class="btn btn-outline-primary btn-sm"
+                       href="{% url 'inspecciones_tablero_exportar' %}"
+                       data-tablero-exportar>Exportar CSV (filtros aplicados)</a>
+                </div>
             </div>
             <div class="table-responsive">
                 <table class="table insp-tabla insp-tablero-tabla">

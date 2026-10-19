@@ -1,7 +1,8 @@
-                        {% if situacion_calle_pwa %}
-                            <span class="badge bg-danger ms-2 align-middle" style="font-size: 0.75rem;">Situación de calle</span>
-                        {% endif %}
-                        {% if persona_con_celiaquia_pwa %}
-                            <span class="badge bg-warning text-dark ms-2 align-middle"
-                                  style="font-size: 0.75rem">Persona con Celiaquía</span>
-                        {% endif %}
+
+{% if situacion_calle_pwa %}
+    <span class="badge bg-danger ms-2 align-middle" style="font-size: 0.75rem;">Situación de calle</span>
+{% endif %}
+{% if persona_con_celiaquia_pwa %}
+    <span class="badge bg-warning text-dark ms-2 align-middle"
+          style="font-size: 0.75rem">Persona con Celiaquía</span>
+{% endif %}

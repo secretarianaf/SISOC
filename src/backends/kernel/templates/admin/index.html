@@ -1,17 +1,19 @@
 {% extends "admin/index.html" %}
 
 {% block content %}
-  {{ block.super }}
-  {% if backend_admin_links %}
-    <div class="module" id="backend-admin-links">
-      <table>
-        <caption>Administración de dominios</caption>
-        <tbody>
-          {% for link in backend_admin_links %}
-            <tr><th scope="row"><a href="{{ link.url }}">{{ link.label }}</a></th></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  {% endif %}
+    {{ block.super }}
+    {% if backend_admin_links %}
+        <div class="module" id="backend-admin-links">
+            <table>
+                <caption>Administración de dominios</caption>
+                <tbody>
+                    {% for link in backend_admin_links %}
+                        <tr>
+                            <th scope="row"><a href="{{ link.url }}">{{ link.label }}</a></th>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
 {% endblock %}

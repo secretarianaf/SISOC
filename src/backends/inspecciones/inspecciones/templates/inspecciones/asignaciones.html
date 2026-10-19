@@ -1,0 +1,176 @@
+{% extends "inspecciones/base_panel.html" %}
+{% block panel %}
+    <div class="insp-totales">
+        <div class="insp-kpi">
+            <div class="insp-kpi-titulo">Asignaciones de la jornada</div>
+            <div class="insp-kpi-valor">{{ totales.total }}</div>
+        </div>
+        <div class="insp-kpi insp-kpi-ambar">
+            <div class="insp-kpi-titulo">Pendientes</div>
+            <div class="insp-kpi-valor">{{ totales.pendiente }}</div>
+        </div>
+        <div class="insp-kpi insp-kpi-celeste">
+            <div class="insp-kpi-titulo">En curso (borrador)</div>
+            <div class="insp-kpi-valor">{{ totales.en_curso }}</div>
+        </div>
+        <div class="insp-kpi insp-kpi-teal">
+            <div class="insp-kpi-titulo" title="Sin actas anuladas ni de prueba">Finalizadas</div>
+            <div class="insp-kpi-valor">{{ totales.finalizada }}</div>
+        </div>
+    </div>
+    <section class="insp-seccion">
+        <div class="insp-seccion-barra">
+            <form method="get"
+                  action="{% url 'inspecciones_asignaciones' %}"
+                  class="insp-filtros">
+                <div class="insp-jornada" role="group" aria-label="Jornada">
+                    <a class="btn btn-outline-secondary insp-boton-dia"
+                       href="{{ url_anterior }}"
+                       aria-label="Día anterior">‹</a>
+                    <label class="visually-hidden" for="filtro-fecha">Jornada</label>
+                    <input id="filtro-fecha"
+                           class="form-control"
+                           type="date"
+                           name="fecha"
+                           value="{{ fecha|date:'Y-m-d' }}"
+                           data-insp-auto-submit />
+                    <a class="btn btn-outline-secondary insp-boton-dia"
+                       href="{{ url_siguiente }}"
+                       aria-label="Día siguiente">›</a>
+                    <a class="btn btn-outline-secondary{% if es_hoy %} disabled{% endif %}"
+                       href="{{ url_hoy }}">Hoy</a>
+                </div>
+                <label class="visually-hidden" for="filtro-inspector">Inspector</label>
+                <select id="filtro-inspector"
+                        name="inspector"
+                        data-insp-select2="{% url 'inspecciones_ajax_inspectores' %}?alcance=programa"
+                        data-insp-min="3"
+                        data-insp-auto-submit
+                        data-placeholder="Todos los inspectores">
+                    <option value=""></option>
+                    {% if inspector_filtro %}
+                        <option value="{{ inspector_filtro.id }}" selected>{{ inspector_filtro.text }}</option>
+                    {% endif %}
+                </select>
+                <label class="visually-hidden" for="filtro-provincia">Provincia</label>
+                {% include "inspecciones/partials/select_provincia_filtro.html" %}
+                <label class="visually-hidden" for="filtro-estado">Estado</label>
+                <select id="filtro-estado"
+                        class="form-select"
+                        name="estado"
+                        data-insp-auto-submit>
+                    {% for valor, etiqueta in filtro.fields.estado.choices %}
+                        <option value="{{ valor }}"
+                                {% if filtro.estado.value == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                    {% endfor %}
+                </select>
+                <label class="visually-hidden" for="filtro-estado-acta">Estado del acta</label>
+                <select id="filtro-estado-acta"
+                        class="form-select"
+                        name="estado_acta"
+                        data-insp-auto-submit>
+                    {% for valor, etiqueta in filtro.fields.estado_acta.choices %}
+                        <option value="{{ valor }}"
+                                {% if filtro.estado_acta.value == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                    {% endfor %}
+                </select>
+                <span class="insp-espacio"></span>
+                <button type="button"
+                        class="btn btn-outline-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#insp-modal-importar">
+                    <i class="fas fa-upload" aria-hidden="true"></i>Importar Excel/CSV
+                </button>
+                <button type="button"
+                        class="btn btn-primary"
+                        data-insp-modal-url="{% url 'inspecciones_asignacion_nueva' %}?fecha={{ fecha|date:'Y-m-d' }}">
+                    <i class="fas fa-plus" aria-hidden="true"></i>Nueva asignación
+                </button>
+            </form>
+        </div>
+        {% if filas %}
+            <div class="table-responsive">
+                <table class="table insp-tabla">
+                    <thead>
+                        <tr>
+                            <th scope="col">Inspector</th>
+                            <th scope="col">Escuela</th>
+                            <th scope="col">Localidad · Provincia</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col">Acta</th>
+                            <th scope="col">
+                                <span class="visually-hidden">Acciones</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fila in filas %}
+                            <tr>
+                                <td>
+                                    <div class="insp-persona">
+                                        <span class="insp-avatar" aria-hidden="true">{{ fila.iniciales }}</span>
+                                        <div>
+                                            {{ fila.inspector.get_full_name|default:fila.inspector.username }}
+                                            <span class="insp-detalle insp-mono">{{ fila.inspector.username }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {{ fila.escuela.nombre }}
+                                    <span class="insp-detalle insp-mono">{{ fila.escuela.cueanexo }}</span>
+                                </td>
+                                <td>
+                                    {{ fila.escuela.localidad|default:"—" }}
+                                    {% if fila.escuela.provincia_id %}· {{ fila.escuela.provincia.nombre }}{% endif %}
+                                </td>
+                                <td>
+                                    <span class="insp-badge {% if fila.estado == 'finalizada' %}insp-badge-ok{% elif fila.estado == 'en_curso' %}insp-badge-info{% else %}insp-badge-alerta{% endif %}"><i aria-hidden="true"></i>{{ fila.estado_display }}</span>
+                                </td>
+                                <td>
+                                    {% for acta in fila.actas %}
+                                        <div>
+                                            <a href="{% url 'inspecciones_acta_detalle' acta.numero %}">{{ acta.numero }}</a>
+                                            {% include "inspecciones/partials/chips_acta.html" %}
+                                        </div>
+                                    {% empty %}
+                                        —
+                                    {% endfor %}
+                                </td>
+                                <td class="text-end">
+                                    {% if fila.se_puede_quitar %}
+                                        <form method="post"
+                                              action="{% url 'inspecciones_asignacion_quitar' fila.asignacion.pk %}"
+                                              data-insp-confirmar="¿Quitar la asignación de {{ fila.escuela.nombre }} a {{ fila.inspector.get_full_name|default:fila.inspector.username }}?">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="insp-boton-icono insp-boton-quitar"
+                                                    aria-label="Quitar asignación de {{ fila.escuela.nombre }}">
+                                                <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <span class="insp-boton-icono deshabilitado"
+                                              title="No se puede quitar: ya tiene acta">–<span class="visually-hidden">No se puede quitar: ya tiene acta</span></span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="insp-vacio">
+                <i class="fas fa-calendar-day" aria-hidden="true"></i>
+                <strong>No hay asignaciones</strong>
+                No hay asignaciones para esta jornada con los filtros elegidos.
+            </div>
+        {% endif %}
+        {% if page_obj.paginator.count %}
+            <div class="insp-seccion-pie">
+                <span>Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }} · {{ totales.inspectores }} inspectores</span>
+                {% include "inspecciones/partials/paginacion.html" %}
+            </div>
+        {% endif %}
+    </section>
+    {% include "inspecciones/partials/modal_importar.html" with tipo="asignaciones" titulo="Importar asignaciones" url_subir="inspecciones_importar_asignaciones" ayuda="inspecciones/partials/ayuda_importar_asignaciones.html" %}
+{% endblock %}

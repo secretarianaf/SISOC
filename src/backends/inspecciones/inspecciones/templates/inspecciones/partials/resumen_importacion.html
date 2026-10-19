@@ -1,0 +1,126 @@
+<div class="insp-columnas">
+    <span>Columnas reconocidas:</span>
+    {% for columna in resumen.columnas %}
+        <span class="insp-columna">
+            {% if columna.renombrada %}
+                {{ columna.original }} → {{ columna.campo }}
+            {% else %}
+                {{ columna.original }}
+            {% endif %}
+        </span>
+    {% endfor %}
+</div>
+<div class="insp-totales">
+    {% if tipo == "escuelas" %}
+        <div class="insp-kpi insp-kpi-teal">
+            <div class="insp-kpi-titulo">Nuevas</div>
+            <div class="insp-kpi-valor">{{ resumen.nuevas_sin_observaciones }}</div>
+        </div>
+        <div class="insp-kpi">
+            <div class="insp-kpi-titulo">Actualizadas</div>
+            <div class="insp-kpi-valor">{{ resumen.actualizadas_sin_observaciones }}</div>
+        </div>
+        <div class="insp-kpi insp-kpi-ambar">
+            <div class="insp-kpi-titulo">
+                {% if paso == 3 %}
+                    Importadas a revisar
+                {% else %}
+                    Se importan a revisar
+                {% endif %}
+            </div>
+            <div class="insp-kpi-valor">{{ resumen.a_revisar }}</div>
+        </div>
+        {% if resumen.sin_cambios %}
+            <div class="insp-kpi">
+                <div class="insp-kpi-titulo">Sin cambios</div>
+                <div class="insp-kpi-valor">{{ resumen.sin_cambios }}</div>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="insp-kpi insp-kpi-teal">
+            <div class="insp-kpi-titulo">Nuevas</div>
+            <div class="insp-kpi-valor">{{ resumen.nuevas }}</div>
+        </div>
+        {% if resumen.restauradas %}
+            <div class="insp-kpi">
+                <div class="insp-kpi-titulo">Se vuelven a asignar</div>
+                <div class="insp-kpi-valor">{{ resumen.restauradas }}</div>
+            </div>
+        {% endif %}
+        <div class="insp-kpi">
+            <div class="insp-kpi-titulo">Ya estaban asignadas</div>
+            <div class="insp-kpi-valor">{{ resumen.repetidas }}</div>
+        </div>
+        <div class="insp-kpi insp-kpi-ambar">
+            <div class="insp-kpi-titulo">Otra visita el mismo día</div>
+            <div class="insp-kpi-valor">{{ resumen.otra_visita }}</div>
+        </div>
+    {% endif %}
+    <div class="insp-kpi{% if resumen.rechazadas %} insp-kpi-rojo{% endif %}">
+        <div class="insp-kpi-titulo">Rechazadas</div>
+        <div class="insp-kpi-valor">{{ resumen.rechazadas }}</div>
+    </div>
+</div>
+{% if tipo == "escuelas" and resumen.motivos or resumen.equivalencias %}
+    <div class="insp-totales insp-totales-2">
+        {% if resumen.motivos %}
+            <div class="insp-aviso insp-aviso-ambar">
+                <strong>A revisar: se importan igual y quedan marcadas</strong>
+                <ul>
+                    {% for motivo in resumen.motivos %}<li>{{ motivo.cantidad }} · {{ motivo.etiqueta|lower }}</li>{% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        {% if resumen.equivalencias %}
+            <div class="insp-aviso insp-aviso-celeste">
+                <strong>Equivalencias de provincia aplicadas</strong>
+                <ul>
+                    {% for equivalencia in resumen.equivalencias %}
+                        <li>{{ equivalencia.desde }} → {{ equivalencia.hacia }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}
+{% if observaciones %}
+    <div class="insp-seccion">
+        <div class="insp-seccion-cabecera">
+            <h3>Primeras filas a revisar</h3>
+            {% if total_observaciones > observaciones|length %}
+                <span class="insp-seccion-nota">{{ observaciones|length }} de {{ total_observaciones }}</span>
+            {% endif %}
+        </div>
+        <div class="table-responsive">
+            <table class="table insp-tabla">
+                <thead>
+                    <tr>
+                        <th scope="col">Fila</th>
+                        <th scope="col">Cueanexo</th>
+                        <th scope="col">
+                            {% if tipo == "escuelas" %}
+                                Escuela
+                            {% else %}
+                                Inspector
+                            {% endif %}
+                        </th>
+                        <th scope="col">Observación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for obs in observaciones %}
+                        <tr>
+                            <td>{{ obs.fila }}</td>
+                            <td class="insp-mono">{{ obs.cueanexo|default:"—" }}</td>
+                            <td>{{ obs.nombre|default:"—" }}</td>
+                            <td>
+                                <span class="insp-badge {% if obs.tipo == "rechazada" %}insp-badge-error{% else %}insp-badge-alerta{% endif %}">{{ obs.motivo }}</span>
+                                {{ obs.detalle }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}

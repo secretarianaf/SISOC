@@ -7,7 +7,7 @@ está en [Rendiciones mensuales](../../../flujos/rendiciones_mensuales_proyectos
 
 ## Comportamiento final
 
-Nueva pantalla de Auditoría dentro de `sisoc_core/rendicioncuentasmensual`,
+Nueva pantalla de Auditoría dentro de `comedores/rendicioncuentasmensual`,
 accesible desde el detalle y desde «Nueva Auditoría», ubicado sobre la tabla
 del listado. Se gestionan rendiciones existentes, sin crear auditorías sueltas
 ni duplicar información general. No se solicitan montos en esta pantalla.

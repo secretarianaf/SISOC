@@ -3,6 +3,7 @@
 ## Mapa de documentos
 ### 1. Contexto y arquitectura
 - `docs/desarrollo/verticales_independientes.md`: guía vigente para ubicar código, respetar boundaries, probar los cuatro checklists y diagnosticar/deplegar por servicio.
+- `docs/desarrollo/arquitectura_servicios_2641.md`: diagrama de servicios después de #2641, lectura del PR y límites compartidos; implementación local pendiente de incorporación.
 - `docs/contexto/panorama.md`: visión general del sistema, su alcance y casos de uso principales.
 - `docs/contexto/dominio.md`: modelo del dominio central y relaciones clave entre entidades.
 - `docs/contexto/arquitectura.md`: resumen de la arquitectura técnica (apps, servicios, dependencias).
@@ -45,6 +46,13 @@
 ### 4. Guías funcionales e implementaciones
 - `docs/implementaciones/csp.md`: configuración y uso de CSP (nonce en templates, modo report-only, checklist de validación).
 - `docs/implementaciones/ocr.md`: OCR de documentos: modelo Tesseract, preprocesado, worker y parámetros por entorno.
+- `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-c4-ocr.md`: extracción de OCR y worker validada localmente; evidencia y límites.
+- `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-fixtures-ciudadanos.md`: revalidación local de importación de ciudadanos y corrección del orden entre fixtures; preserva C0–C4.
+- `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-dependencias-runtime-dev.md`: separación conservadora de dependencias y evolución de la validación local; CI pendiente.
+- `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-build-limpio-docker.md`: build real de 14 targets y verificación de dependencias, arranque, aislamiento y OCR sintético; sin deploy.
+- `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-smoke-http-docker.md`: smoke HTTP sintético de las imágenes nuevas, permisos/CSRF, caída y recuperación de Comedores sin reiniciar portal, y collectstatic; aceptación humana pendiente.
+- `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-revision-publicacion.md`: autorización de publicación, commits por snapshots y corrección del vaciado de controles de identidad detectada en revisión.
+- `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-correcciones-ci.md`: causas y correcciones de CI del PR #2734, perfil devuelto y harness SQLite/MySQL de auditoría y HTTP.
 - `docs/implementaciones/sentry.md`: implementación de Sentry (activación por entorno, variables, logging y validación).
 - `docs/implementaciones/audittrail_mvp_fase1.md`: release notes y guía operativa de Fase 1 del MVP de auditoría (deploy/rollback, soporte, riesgos y métricas).
 - `docs/implementaciones/audittrail_fase2.md`: metadata persistida (`AuditEntryMeta`), contexto de auditoría para procesos y guía de deploy/rollback de Fase 2.
@@ -66,6 +74,11 @@
 - `docs/implementaciones/celiaquia_comentarios_tecnicos.md`: comentarios técnicos, publicación a Provincia y vínculo con Subsanar/Rechazar.
 - `docs/vat/`: guías funcionales, API, operación de vouchers y desarrollo del módulo VAT.
 - `docs/vat/manual_usuario.md`: operación de INET/VAT, incluido el Buscador por Ciudadano y su alcance de acceso.
+- `docs/registro/cambios/2026-T4/2026-10-14-inspecciones-escolares-backend.md`: backend de la PWA Sisoc Inspecciones (API `/api/inspecciones/`, rol por programa en usuarios, importación de escuelas y asignaciones, diferencias con el contrato y requisitos de deploy).
+- `docs/registro/cambios/2026-T4/2026-10-15-inspecciones-panel-backoffice.md`: panel del backoffice de Inspecciones escolares (catálogo con datos del padrón y marca "a revisar", importación en tres pasos con medición del padrón real, asignaciones por jornada, listado y detalle de actas, rutas y deploy).
+- `docs/registro/cambios/2026-T4/2026-10-14-inspecciones-anulacion-actas.md`: anulación de actas y marca de acta de prueba desde el backoffice de Inspecciones escolares (servicio, vistas, efecto en la API de la PWA).
+- `docs/registro/cambios/2026-T4/2026-10-15-inspecciones-tablero-en-vivo.md`: tablero en vivo de Inspecciones escolares (indicadores por consulta periódica, mapa de Argentina con Leaflet y OpenStreetMap, exportación CSV, CSP y rendimiento).
+- `docs/registro/decisiones/2026-10-14-inspecciones-escolares-backend.md`: vertical propio, permisos, cierre numerado transaccional e idempotencia de Inspecciones escolares.
 
 ### 5. Flujos y sincronizaciones
 - `docs/flujos/comedor_sync.md`: cómo funciona la sincronización de comedores con servicios externos.
@@ -103,6 +116,6 @@
 ## Contexto mínimo
 - Stack: Django + MySQL con despliegue vía Docker Compose. Evidencia: README.md:1-4 y docker-compose.yml:1-34.
 - Variables de entorno documentadas en `.env.example` (incluye DB, GESTIONAR, RENAPER, puertos y dominio). Evidencia: .env.example:1-51.
-- Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: src/backends/sisoc_core/comedores/tasks.py, src/backends/sisoc_core/relevamientos/tasks.py, src/backends/kernel/core/integrations/renaper.py, src/backends/kernel/core/services/renaper.py.
+- Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: src/backends/comedores/comedores/tasks.py, src/backends/comedores/relevamientos/tasks.py, src/backends/kernel/core/integrations/renaper.py, src/backends/kernel/core/services/renaper.py.
 
 - `docs/implementaciones/pas_control_mensual_celery.md`: funcionamiento, lotes, programación mensual, operación y retiro cron PAS.

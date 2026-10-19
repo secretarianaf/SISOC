@@ -44,7 +44,7 @@ djlint src/backends/kernel/templates/ --check
 
 Django 5.2 + MySQL 8.4, desplegado con Docker Compose. Python 3.11+.
 
-**Organización de apps:** cada dominio de negocio es una Django app propia (`src/backends/sisoc_core/comedores/`, `src/backends/pas/pas/`, `src/backends/kernel/users/`, etc.). La lógica de negocio vive en `<app>/services/`, nunca en views ni modelos. Las views son CBVs sin lógica. DRF coexiste con las views tradicionales; los serializers van en `api_serializers.py` y las API views en `api_views.py`.
+**Organización de apps:** cada dominio de negocio es una Django app propia (`src/backends/comedores/comedores/`, `src/backends/pas/pas/`, `src/backends/kernel/users/`, etc.). La lógica de negocio vive en `<app>/services/`, nunca en views ni modelos. Las views son CBVs sin lógica. DRF coexiste con las views tradicionales; los serializers van en `api_serializers.py` y las API views en `api_views.py`.
 
 **Core compartido:** `src/backends/kernel/core/` expone utilidades reutilizables (soft delete, permisos, cache, auth de API, validadores). No duplicar lo que ya existe ahí.
 

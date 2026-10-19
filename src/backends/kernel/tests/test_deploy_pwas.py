@@ -239,6 +239,20 @@ def test_config_rejects_unknown_repository_and_duplicate_ports(tmp_path):
         deploy.configuration(config)
 
 
+def test_inspecciones_is_allowlisted_with_its_own_identity_and_port():
+    apps = {
+        app["id"]: app
+        for app in deploy.configuration(REPO_ROOT / "src/scripts/operacion/pwas.json")
+    }
+    app = apps["inspecciones"]
+    assert app["repository"] == deploy.REPOSITORIES["inspecciones"]
+    assert app["repository"] == "secretarianaf/Inspecciones"
+    assert app["project"] == "sisoc-pwa-inspecciones"
+    assert app["port"] == 8083
+    assert app["base_path"] == "/pwa/inspecciones/"
+    assert app["ssh_identity"] == "~/.ssh/sisoc-pwa-inspecciones"
+
+
 def test_snapshot_rejects_traversal(tmp_path, monkeypatch):
     output = io.BytesIO()
     with tarfile.open(fileobj=output, mode="w") as tar:

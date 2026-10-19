@@ -317,6 +317,11 @@ server {
         return 404;
     }
 
+    # Evidencia de Inspecciones escolares: sólo por la API, con los permisos del acta.
+    location ^~ /media/inspecciones/ {
+        return 404;
+    }
+
     location /media/ {
         alias /opt/sisoc/SISOC/media/;
         try_files $uri =404;

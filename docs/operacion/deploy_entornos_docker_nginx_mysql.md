@@ -380,6 +380,11 @@ server {
         return 404;
     }
 
+    # Evidencia de Inspecciones escolares: sólo por la API, con los permisos del acta.
+    location ^~ /media/inspecciones/ {
+        return 404;
+    }
+
     location /media/ {
         alias $APP_ROOT/media/;
         try_files \\$uri =404;
@@ -810,6 +815,11 @@ server {
 
     # Las DDJJ contienen PII y sólo se descargan por la vista autenticada PAS.
     location ^~ /media/pas/ddjj/ {
+        return 404;
+    }
+
+    # Evidencia de Inspecciones escolares: sólo por la API, con los permisos del acta.
+    location ^~ /media/inspecciones/ {
         return 404;
     }
 

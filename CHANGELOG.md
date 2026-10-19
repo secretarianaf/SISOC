@@ -1,3 +1,52 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-10-21 -->
+# Versión SISOC 21.10.2026
+
+## Nuevas Funcionalidades
+
+- [CDI] Botón Consultas en la barra superior de CDI para abrir la ticketera en otra pestaña. (PR #2726)
+<!-- AUTO-GENERATED RELEASE END: 2026-10-21 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-10-15 -->
+# Versión SISOC 15.10.2026
+
+## Nuevas Funcionalidades
+
+- [src/backends/inspecciones.] el mapa del tablero usa el mapa oficial del IGN y queda acotado a Argentina. (PR #2710)
+
+## Actualizaciones
+
+- [Release] Promoción a producción del 2026-10-15: relevamientos PNUD SIPH y PDF oficial GESTIONAR, georreferencia de dispositivos, celiaquía ANSES/condición diagnóstica, alcance del Administrador SIMEPI y limpieza de imágenes en deploy. (PR #2722)
+
+## Corrección de Errores
+
+- [src/backends/inspecciones.] el panel de Inspecciones escolares se ve con el diseño aprobado en el backoffice oscuro; totales del panel corregidos; tablero más rápido. (PR #2701)
+- [src/backends/inspecciones.] editar una escuela del panel de Inspecciones trae sus datos y acepta varios mails. (PR #2703)
+- [src/backends/inspecciones.] la búsqueda de escuelas encuentra el Cueanexo escrito sin el 0 inicial o en parte. (PR #2706)
+<!-- AUTO-GENERATED RELEASE END: 2026-10-15 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-10-16 -->
+# Versión SISOC 16.10.2026
+
+## Nuevas Funcionalidades
+
+- [src/backends/inspecciones.] panel de Inspecciones escolares con escuelas, asignaciones, actas (anulación y prueba) y tablero en vivo con mapa. (PR #2698)
+- [src/backends/inspecciones.] el panel y el tablero de Inspecciones escolares se ven como el mockup aprobado (tema claro, cabecera blanca, barra lateral con logo) sin cambiar el resto del backoffice. (PR #2705)
+- [src/backends/kernel.] la página de Inicio usa el mismo marco claro que Inspecciones y la barra lateral de todo SISOC queda sin el panel de usuario y con el ítem activo marcado. (PR #2707)
+- [src/backends/inspecciones.] tablero de Inspecciones con los cambios pedidos (tarjetas, colegios computables, leyendas, mapa) y columna derecha del acta con títulos y avance. (PR #2708)
+<!-- AUTO-GENERATED RELEASE END: 2026-10-16 -->
+
+
+
+
+
+<!-- AUTO-GENERATED RELEASE START: 2026-10-14 -->
+# Versión SISOC 14.10.2026
+
+## Nuevas Funcionalidades
+
+- [usuarios y vertical inspecciones.] Sección Inspecciones escolares en usuarios y API para la PWA de inspecciones (borradores, cierre con número oficial, PDF y notificación). (PR #2696)
+<!-- AUTO-GENERATED RELEASE END: 2026-10-14 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-10-07 -->
 # Versión SISOC 07.10.2026
 

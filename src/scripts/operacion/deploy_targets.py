@@ -7,6 +7,7 @@ Uso:
     deploy_targets.py <sha_desplegado> <sha_nuevo>
     deploy_targets.py --files <archivo>...   (para pruebas)
     deploy_targets.py --servicios-core < <docker compose config --format json>
+    deploy_targets.py --servicios-presentes <servicio>... < compose.json
 
 Salida (una línea, para ``eval`` en bash):
     MODO=<completo|selectivo|ninguno> SERVICIOS="<svc> <svc>" MIGRAR=<0|1>
@@ -17,8 +18,8 @@ Reglas (ver docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md y
   (src/backends/config/backends.json) y corre el migrador.
 - ``src/backends/sisoc_core/**`` despliega solo los servicios del core: el marcador
   ``@core``, que ``deploy_refresh.sh`` traduce a los servicios con imagen
-  ``sisoc/core`` del entorno (``--servicios-core``). Ninguna imagen de vertical
-  incluye ``sisoc_core``, así que los backends no cambian.
+  ``sisoc/core`` y al worker compuesto de importación (``--servicios-core``).
+  Ninguna imagen web de vertical incluye ``sisoc_core``.
 - ``src/backends/<x>/tests/**`` (kernel incluido) no despliega nada.
 - ``src/backends/kernel/**`` y ``src/backends/config/**`` no son verticales:
   los usan todas las imágenes, así que son despliegue completo.
@@ -54,6 +55,8 @@ NO_VERTICALES = ("config", "kernel")
 CORE_DIR = "sisoc_core"
 CORE_MARCADOR = "@core"
 CORE_IMAGEN = "sisoc/core:"
+# Declarados sólo en docker-compose.produccion.yml; pueden faltar en QA.
+WORKERS_OPCIONALES = {"mailing_worker", "user_import_worker"}
 
 
 def _sin_deploy(ruta: str) -> bool:
@@ -117,12 +120,33 @@ def planificar(archivos: list[str]) -> tuple[str, list[str], bool]:
 
 
 def servicios_core(config: dict) -> list[str]:
-    """Servicios del ``docker compose config`` que corren la imagen del core."""
+    """Procesos con código del portal, incluido su importador compuesto.
+
+    El rol existente identifica al importador aunque su imagen ya no sea la
+    del web. Omitirlo dejaría Usuarios viejo después de un selectivo @core.
+    """
     return sorted(
         nombre
         for nombre, servicio in (config.get("services") or {}).items()
         if str(servicio.get("image", "")).startswith(CORE_IMAGEN)
+        or (servicio.get("environment") or {}).get("DJANGO_SERVICE_ROLE")
+        == "user_import_worker"
     )
+
+
+def servicios_presentes(config: dict, seleccionados: list[str]) -> list[str]:
+    """Resuelve el plan en el entorno sin exigir sus workers opcionales.
+
+    Mailing e importación viven en el override de producción (HML/PRD). Otros
+    servicios ausentes, incluido Celery, obligan al fallback completo.
+    """
+    disponibles = config.get("services") or {}
+    faltantes = set(seleccionados) - disponibles.keys() - WORKERS_OPCIONALES
+    if faltantes:
+        raise ValueError(
+            "Servicios obligatorios ausentes: " + ", ".join(sorted(faltantes))
+        )
+    return sorted(set(seleccionados).intersection(disponibles))
 
 
 def archivos_entre(base: str, destino: str) -> list[str]:
@@ -138,6 +162,13 @@ def archivos_entre(base: str, destino: str) -> list[str]:
 def main(argv: list[str]) -> int:
     if argv[:1] == ["--servicios-core"]:
         print(" ".join(servicios_core(json.load(sys.stdin))))
+        return 0
+    if argv[:1] == ["--servicios-presentes"]:
+        try:
+            print(" ".join(servicios_presentes(json.load(sys.stdin), argv[1:])))
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
         return 0
     if argv[:1] == ["--files"]:
         archivos = argv[1:]

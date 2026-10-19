@@ -219,7 +219,7 @@ subsanación de Territorial y otra de Auditoría antes de promover a producción
 
 ## Referencias
 
-- `src/backends/sisoc_core/rendicioncuentasmensual/services.py`
-- `src/backends/sisoc_core/gestion_organizaciones/views.py`
+- `src/backends/comedores/rendicioncuentasmensual/services.py`
+- `src/backends/comedores/gestion_organizaciones/views.py`
 - `docs/registro/cambios/2026-T3/2026-08-10-fixes-admisiones-pwa-rendiciones.md`
 - `docs/registro/cambios/2026-T3/2026-08-12-correcciones-issues-reabiertos.md`

@@ -10,7 +10,7 @@ const repositoryFullName = "dsocial118/SISOC";
 function pull(overrides = {}) {
   return {
     base: { ref: "main" },
-    head: { ref: "development", repo: { full_name: repositoryFullName } },
+    head: { ref: "homologacion", repo: { full_name: repositoryFullName } },
     body: [
       "<!-- release-automation: scheduled -->",
       "<!-- release-date: 2026-07-29 -->",
@@ -24,7 +24,7 @@ function pull(overrides = {}) {
 test("reconoce un PR final programado y deriva su tag estable", () => {
   const finalPull = pull({
     head: {
-      ref: "development",
+      ref: "homologacion",
       sha: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       repo: { full_name: repositoryFullName },
     },
@@ -70,10 +70,10 @@ test("acepta los estados controlados de preparación", () => {
   assert.equal(orchestrator.parseReleasePreparation("<!-- release-preparation: 2140 -->"), 2140);
 });
 
-test("detecta cuando development avanzó después del snapshot", () => {
+test("detecta cuando homologacion avanzó después del snapshot", () => {
   const stale = pull({
     head: {
-      ref: "development",
+      ref: "homologacion",
       sha: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       repo: { full_name: repositoryFullName },
     },
@@ -84,7 +84,7 @@ test("detecta cuando development avanzó después del snapshot", () => {
 
 test("solo habilita preparaciones internas con el prefijo controlado", () => {
   const preparation = pull({
-    base: { ref: "development" },
+    base: { ref: "homologacion" },
     head: {
       ref: "codex/predeploy-dev-main-20260729",
       repo: { full_name: repositoryFullName },
@@ -100,7 +100,7 @@ test("solo habilita preparaciones internas con el prefijo controlado", () => {
   assert.equal(
     orchestrator.isPreparationPullRequest(
       pull({
-        base: { ref: "development" },
+        base: { ref: "homologacion" },
         head: { ref: "feature/unsafe", repo: { full_name: repositoryFullName } },
         body: "<!-- release-final-pr: 2140 -->",
       }),
@@ -122,4 +122,31 @@ test("clasifica checks faltantes, pendientes y fallidos", () => {
     pending: ["architecture_imports"],
     failed: ["sync_pr_artifacts (failure)"],
   });
+});
+
+test("ya no promueve desde development ni prepara sobre development", () => {
+  const legacyFinal = pull({
+    head: {
+      ref: "development",
+      sha: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repo: { full_name: repositoryFullName },
+    },
+  });
+  const legacyPreparation = pull({
+    base: { ref: "development" },
+    head: {
+      ref: "codex/predeploy-dev-main-20260729",
+      repo: { full_name: repositoryFullName },
+    },
+    body: "<!-- release-final-pr: 2140 -->",
+  });
+
+  assert.equal(
+    orchestrator.isScheduledFinalPullRequest(legacyFinal, repositoryFullName),
+    false,
+  );
+  assert.equal(
+    orchestrator.isPreparationPullRequest(legacyPreparation, repositoryFullName),
+    false,
+  );
 });

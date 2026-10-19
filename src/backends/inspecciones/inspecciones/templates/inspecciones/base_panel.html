@@ -1,0 +1,45 @@
+{% extends "inspecciones/base_layout.html" %}
+{% load static %}
+{% block title %}Inspecciones escolares{% endblock %}
+{% block contenido %}
+    {% block encabezado_panel %}
+        <h1 class="insp-titulo">Inspecciones escolares</h1>
+        {% if mostrar_totales %}
+            <div class="insp-totales">
+                <div class="insp-kpi">
+                    <div class="insp-kpi-titulo">Escuelas en el catálogo</div>
+                    <div class="insp-kpi-valor">{{ totales_panel.escuelas }}</div>
+                </div>
+                <div class="insp-kpi{% if totales_panel.escuelas_a_revisar %} insp-kpi-alerta{% endif %}">
+                    <div class="insp-kpi-titulo">Escuelas con datos a revisar</div>
+                    <div class="insp-kpi-valor">{{ totales_panel.escuelas_a_revisar }}</div>
+                </div>
+                <div class="insp-kpi">
+                    <div class="insp-kpi-titulo">Asignaciones de hoy ({{ totales_panel.jornada|date:"d/m" }})</div>
+                    <div class="insp-kpi-valor">{{ totales_panel.asignaciones_hoy }}</div>
+                </div>
+                <div class="insp-kpi">
+                    <div class="insp-kpi-titulo">Actas cerradas hoy</div>
+                    <div class="insp-kpi-valor">{{ totales_panel.actas_hoy }}</div>
+                </div>
+            </div>
+        {% endif %}
+        {% include "inspecciones/_pestanas.html" with activa=pestana %}
+    {% endblock %}
+    {% block panel %}{% endblock %}
+    <div class="modal fade"
+         id="insp-modal-form"
+         tabindex="-1"
+         aria-labelledby="insp-modal-form-titulo"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content" data-insp-modal-contenido>
+                <div class="modal-body text-center text-muted py-5">Cargando…</div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'inspecciones/js/panel.js' %}"></script>
+    {% block panel_js %}{% endblock %}
+{% endblock %}

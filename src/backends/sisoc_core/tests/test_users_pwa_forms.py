@@ -10,8 +10,8 @@ from core.constants import UserGroups
 from core.models import Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
-from usuarios.forms import (
-    BackofficeAuthenticationForm,
+from usuarios.auth_forms import BackofficeAuthenticationForm
+from pwa.user_forms import (
     CustomUserChangeForm,
     PWA_OPERATION_PERMISSION_FIELDS,
     UserCreationForm,

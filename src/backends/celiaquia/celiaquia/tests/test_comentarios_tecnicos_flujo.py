@@ -418,9 +418,34 @@ def test_subsanar_deriva_las_observaciones_del_legajo(client, coordinador, legaj
 
     subsanacion = Subsanacion.objects.get(legajo=legajo)
     tipos = sorted(o.tipo for o in subsanacion.observaciones.all())
-    # RENAPER mapea a RENAPER; condición diagnóstica, a DOCUMENTACION.
-    assert tipos == [TipoSubsanacion.DOCUMENTACION, TipoSubsanacion.RENAPER]
+    # Cada tipo de documento conserva su categoría (issue #2678).
+    assert tipos == [TipoSubsanacion.CONDICION_DIAGNOSTICA, TipoSubsanacion.RENAPER]
     assert legajo.subsanaciones.count() == 1
+
+
+def test_subsanar_por_anses_no_se_informa_como_documentacion(
+    client, coordinador, legajo
+):
+    """ANSES llega a la Provincia como ANSES, no como "Documentación" (#2678)."""
+    ComentariosTecnicosService.registrar(
+        legajo,
+        tipo_documento="ANSES",
+        tiene_observaciones=True,
+        observacion_codigo="ANSES_CODEM_EXCEPCIONAL",
+        usuario=coordinador,
+    )
+    client.force_login(coordinador)
+
+    client.post(
+        _url_revisar(legajo),
+        data={"accion": "SUBSANAR", "observaciones_ids": _ids_opciones(legajo)},
+    )
+
+    subsanacion = Subsanacion.objects.get(legajo=legajo)
+    assert [o.tipo for o in subsanacion.observaciones.all()] == [TipoSubsanacion.ANSES]
+    assert subsanacion.tipos_display == ["ANSES"]
+    legajo.refresh_from_db()
+    assert legajo.subsanacion_tipo_display == "ANSES"
 
 
 def test_subsanar_sin_observaciones_ni_texto_libre_falla(client, coordinador, legajo):

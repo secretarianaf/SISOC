@@ -580,6 +580,11 @@
   "regex": "^api/territorial/comedores/$"
  },
  {
+  "name": "api-territorial-comedor-pdf-seguimiento-pnud",
+  "namespace": "",
+  "regex": "^api/territorial/comedores/(?P<pk>\\d+)/seguimientos-pnud/(?P<pnud_id>[0-9]+)/pdf/$"
+ },
+ {
   "name": "api-territorial-comedor-seguimientos-pnud",
   "namespace": "",
   "regex": "^api/territorial/comedores/(?P<pk>\\d+)/seguimientos-pnud/$"
@@ -633,6 +638,71 @@
   "name": "api_estadisticas_territoriales",
   "namespace": "",
   "regex": "^comedores/territoriales/estadisticas/\\Z"
+ },
+ {
+  "name": "api_inspecciones_acta",
+  "namespace": "",
+  "regex": "^api/inspecciones/actas/(?P<numero>[^/]+)/\\Z"
+ },
+ {
+  "name": "api_inspecciones_acta_notificaciones",
+  "namespace": "",
+  "regex": "^api/inspecciones/actas/(?P<numero>[^/]+)/notificaciones/\\Z"
+ },
+ {
+  "name": "api_inspecciones_acta_pdf",
+  "namespace": "",
+  "regex": "^api/inspecciones/actas/(?P<numero>[^/]+)/pdf/\\Z"
+ },
+ {
+  "name": "api_inspecciones_actas",
+  "namespace": "",
+  "regex": "^api/inspecciones/actas/\\Z"
+ },
+ {
+  "name": "api_inspecciones_borrador",
+  "namespace": "",
+  "regex": "^api/inspecciones/borradores/(?P<inspeccion_uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/\\Z"
+ },
+ {
+  "name": "api_inspecciones_borrador_imagen",
+  "namespace": "",
+  "regex": "^api/inspecciones/borradores/(?P<inspeccion_uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/imagenes/(?P<imagen_uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/\\Z"
+ },
+ {
+  "name": "api_inspecciones_borradores",
+  "namespace": "",
+  "regex": "^api/inspecciones/borradores/\\Z"
+ },
+ {
+  "name": "api_inspecciones_escuela_ficha",
+  "namespace": "",
+  "regex": "^api/inspecciones/escuelas/(?P<codigo>[^/]+)/\\Z"
+ },
+ {
+  "name": "api_inspecciones_escuelas_asignadas",
+  "namespace": "",
+  "regex": "^api/inspecciones/escuelas/asignadas/\\Z"
+ },
+ {
+  "name": "api_inspecciones_escuelas_buscar",
+  "namespace": "",
+  "regex": "^api/inspecciones/escuelas/\\Z"
+ },
+ {
+  "name": "api_inspecciones_finalizar",
+  "namespace": "",
+  "regex": "^api/inspecciones/borradores/(?P<inspeccion_uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/finalizar/\\Z"
+ },
+ {
+  "name": "api_inspecciones_imagen",
+  "namespace": "",
+  "regex": "^api/inspecciones/imagenes/(?P<imagen_uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/\\Z"
+ },
+ {
+  "name": "api_inspecciones_notificacion_archivo",
+  "namespace": "",
+  "regex": "^api/inspecciones/notificaciones/archivos/(?P<archivo_uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/\\Z"
  },
  {
   "name": "api_obtener_territoriales",
@@ -1490,6 +1560,11 @@
   "regex": "^comedores/listar\\Z"
  },
  {
+  "name": "comedores-metricas-dashboard",
+  "namespace": "",
+  "regex": "^api/comedores/metricas\\-dashboard/\\Z"
+ },
+ {
   "name": "comedores_acompanamiento_ajax",
   "namespace": "",
   "regex": "^acompanamientos/acompanamiento/ajax/\\Z"
@@ -2318,6 +2393,156 @@
   "name": "inicio",
   "namespace": "",
   "regex": "^inicio/\\Z"
+ },
+ {
+  "name": "inspecciones_acta_detalle",
+  "namespace": "",
+  "regex": "^inspecciones/actas/(?P<numero>[^/]+)/\\Z"
+ },
+ {
+  "name": "inspecciones_acta_imagen",
+  "namespace": "",
+  "regex": "^inspecciones/actas/(?P<numero>[^/]+)/imagenes/(?P<imagen_uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/\\Z"
+ },
+ {
+  "name": "inspecciones_acta_notificacion_archivo",
+  "namespace": "",
+  "regex": "^inspecciones/actas/(?P<numero>[^/]+)/notificaciones/(?P<archivo_uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/\\Z"
+ },
+ {
+  "name": "inspecciones_acta_pdf",
+  "namespace": "",
+  "regex": "^inspecciones/actas/(?P<numero>[^/]+)/pdf/\\Z"
+ },
+ {
+  "name": "inspecciones_actas",
+  "namespace": "",
+  "regex": "^inspecciones/actas/\\Z"
+ },
+ {
+  "name": "inspecciones_ajax_escuelas",
+  "namespace": "",
+  "regex": "^inspecciones/ajax/escuelas/\\Z"
+ },
+ {
+  "name": "inspecciones_ajax_inspectores",
+  "namespace": "",
+  "regex": "^inspecciones/ajax/inspectores/\\Z"
+ },
+ {
+  "name": "inspecciones_ajax_localidades",
+  "namespace": "",
+  "regex": "^inspecciones/ajax/localidades/\\Z"
+ },
+ {
+  "name": "inspecciones_ajax_verificar_asignacion",
+  "namespace": "",
+  "regex": "^inspecciones/ajax/asignaciones/verificar/\\Z"
+ },
+ {
+  "name": "inspecciones_anular_acta",
+  "namespace": "",
+  "regex": "^inspecciones/actas/(?P<numero>[^/]+)/anular/\\Z"
+ },
+ {
+  "name": "inspecciones_asignacion_nueva",
+  "namespace": "",
+  "regex": "^inspecciones/asignaciones/nueva/\\Z"
+ },
+ {
+  "name": "inspecciones_asignacion_quitar",
+  "namespace": "",
+  "regex": "^inspecciones/asignaciones/(?P<pk>[0-9]+)/quitar/\\Z"
+ },
+ {
+  "name": "inspecciones_asignaciones",
+  "namespace": "",
+  "regex": "^inspecciones/asignaciones/\\Z"
+ },
+ {
+  "name": "inspecciones_escuela_editar",
+  "namespace": "",
+  "regex": "^inspecciones/escuelas/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "inspecciones_escuela_nueva",
+  "namespace": "",
+  "regex": "^inspecciones/escuelas/nueva/\\Z"
+ },
+ {
+  "name": "inspecciones_importar_asignaciones",
+  "namespace": "",
+  "regex": "^inspecciones/asignaciones/importar/\\Z"
+ },
+ {
+  "name": "inspecciones_importar_asignaciones_cancelar",
+  "namespace": "",
+  "regex": "^inspecciones/asignaciones/importar/(?P<token>[^/]+)/cancelar/\\Z"
+ },
+ {
+  "name": "inspecciones_importar_asignaciones_confirmar",
+  "namespace": "",
+  "regex": "^inspecciones/asignaciones/importar/(?P<token>[^/]+)/confirmar/\\Z"
+ },
+ {
+  "name": "inspecciones_importar_asignaciones_observaciones",
+  "namespace": "",
+  "regex": "^inspecciones/asignaciones/importar/(?P<token>[^/]+)/observaciones\\.csv\\Z"
+ },
+ {
+  "name": "inspecciones_importar_asignaciones_revision",
+  "namespace": "",
+  "regex": "^inspecciones/asignaciones/importar/(?P<token>[^/]+)/\\Z"
+ },
+ {
+  "name": "inspecciones_importar_escuelas",
+  "namespace": "",
+  "regex": "^inspecciones/escuelas/importar/\\Z"
+ },
+ {
+  "name": "inspecciones_importar_escuelas_cancelar",
+  "namespace": "",
+  "regex": "^inspecciones/escuelas/importar/(?P<token>[^/]+)/cancelar/\\Z"
+ },
+ {
+  "name": "inspecciones_importar_escuelas_confirmar",
+  "namespace": "",
+  "regex": "^inspecciones/escuelas/importar/(?P<token>[^/]+)/confirmar/\\Z"
+ },
+ {
+  "name": "inspecciones_importar_escuelas_observaciones",
+  "namespace": "",
+  "regex": "^inspecciones/escuelas/importar/(?P<token>[^/]+)/observaciones\\.csv\\Z"
+ },
+ {
+  "name": "inspecciones_importar_escuelas_revision",
+  "namespace": "",
+  "regex": "^inspecciones/escuelas/importar/(?P<token>[^/]+)/\\Z"
+ },
+ {
+  "name": "inspecciones_marcar_prueba_acta",
+  "namespace": "",
+  "regex": "^inspecciones/actas/(?P<numero>[^/]+)/prueba/\\Z"
+ },
+ {
+  "name": "inspecciones_panel",
+  "namespace": "",
+  "regex": "^inspecciones/\\Z"
+ },
+ {
+  "name": "inspecciones_tablero",
+  "namespace": "",
+  "regex": "^inspecciones/tablero/\\Z"
+ },
+ {
+  "name": "inspecciones_tablero_datos",
+  "namespace": "",
+  "regex": "^inspecciones/tablero/datos/\\Z"
+ },
+ {
+  "name": "inspecciones_tablero_exportar",
+  "namespace": "",
+  "regex": "^inspecciones/tablero/exportar\\.csv\\Z"
  },
  {
   "name": "insumos_categorias_crear",
@@ -3255,9 +3480,9 @@
   "regex": "^comedores/(?P<comedor_pk>[0-9]+)/seguimiento\\-pnud/(?P<pk>[0-9]+)\\Z"
  },
  {
-  "name": "seguimiento_pnud_docx",
+  "name": "seguimiento_pnud_pdf",
   "namespace": "",
-  "regex": "^comedores/(?P<comedor_pk>[0-9]+)/seguimiento\\-pnud/(?P<pk>[0-9]+)/docx\\Z"
+  "regex": "^comedores/(?P<comedor_pk>[0-9]+)/seguimiento\\-pnud/(?P<pk>[0-9]+)/pdf\\Z"
  },
  {
   "name": "seguimiento_pnud_revision_coordinador",
@@ -5822,7 +6047,7 @@
  {
   "name": "app_list",
   "namespace": "admin",
-  "regex": "^admin/(?P<app_label>auth|auditlog|authtoken|rest_framework_api_key|users|core|organizaciones|catalogo_intervenciones|ciudadanos|dashboard|comedores|gestion_organizaciones|duplas|admisiones|intervenciones|historial|acompanamientos|expedientespagos|relevamientos|rendicioncuentasfinal|rendicioncuentasmensual|comunicados|insumos|pwa|ocr|encuestas|dispositivos|ver_para_ser_libre|pas|VAT|celiaquia|centrodeinfancia|centrodefamilia)/$"
+  "regex": "^admin/(?P<app_label>auth|auditlog|authtoken|rest_framework_api_key|users|core|organizaciones|catalogo_intervenciones|ciudadanos|audittrail|dashboard|insumos|encuestas|dispositivos|ver_para_ser_libre|pas|VAT|celiaquia|centrodeinfancia|centrodefamilia|inspecciones|comedores|gestion_organizaciones|duplas|admisiones|intervenciones|historial|acompanamientos|expedientespagos|relevamientos|rendicioncuentasfinal|rendicioncuentasmensual|comunicados|pwa|ocr)/$"
  },
  {
   "name": "auditlog_logentry_add",
@@ -5848,6 +6073,31 @@
   "name": "auditlog_logentry_history",
   "namespace": "admin",
   "regex": "^admin/auditlog/logentry/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "audittrail_auditoriasesionpwa_add",
+  "namespace": "admin",
+  "regex": "^admin/audittrail/auditoriasesionpwa/add/\\Z"
+ },
+ {
+  "name": "audittrail_auditoriasesionpwa_change",
+  "namespace": "admin",
+  "regex": "^admin/audittrail/auditoriasesionpwa/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "audittrail_auditoriasesionpwa_changelist",
+  "namespace": "admin",
+  "regex": "^admin/audittrail/auditoriasesionpwa/\\Z"
+ },
+ {
+  "name": "audittrail_auditoriasesionpwa_delete",
+  "namespace": "admin",
+  "regex": "^admin/audittrail/auditoriasesionpwa/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "audittrail_auditoriasesionpwa_history",
+  "namespace": "admin",
+  "regex": "^admin/audittrail/auditoriasesionpwa/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "auth_group_add",
@@ -8235,6 +8485,171 @@
   "regex": "^admin/\\Z"
  },
  {
+  "name": "inspecciones_acta_add",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/acta/add/\\Z"
+ },
+ {
+  "name": "inspecciones_acta_change",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/acta/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "inspecciones_acta_changelist",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/acta/\\Z"
+ },
+ {
+  "name": "inspecciones_acta_delete",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/acta/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "inspecciones_acta_history",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/acta/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "inspecciones_asignacionescuela_add",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/asignacionescuela/add/\\Z"
+ },
+ {
+  "name": "inspecciones_asignacionescuela_change",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/asignacionescuela/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "inspecciones_asignacionescuela_changelist",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/asignacionescuela/\\Z"
+ },
+ {
+  "name": "inspecciones_asignacionescuela_delete",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/asignacionescuela/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "inspecciones_asignacionescuela_history",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/asignacionescuela/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "inspecciones_escuela_add",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/escuela/add/\\Z"
+ },
+ {
+  "name": "inspecciones_escuela_change",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/escuela/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "inspecciones_escuela_changelist",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/escuela/\\Z"
+ },
+ {
+  "name": "inspecciones_escuela_delete",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/escuela/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "inspecciones_escuela_export",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/escuela/export/\\Z"
+ },
+ {
+  "name": "inspecciones_escuela_history",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/escuela/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "inspecciones_escuela_import",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/escuela/import/\\Z"
+ },
+ {
+  "name": "inspecciones_escuela_process_import",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/escuela/process_import/\\Z"
+ },
+ {
+  "name": "inspecciones_eventoinspeccion_add",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/eventoinspeccion/add/\\Z"
+ },
+ {
+  "name": "inspecciones_eventoinspeccion_change",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/eventoinspeccion/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "inspecciones_eventoinspeccion_changelist",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/eventoinspeccion/\\Z"
+ },
+ {
+  "name": "inspecciones_eventoinspeccion_delete",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/eventoinspeccion/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "inspecciones_eventoinspeccion_history",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/eventoinspeccion/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "inspecciones_inspeccion_add",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/inspeccion/add/\\Z"
+ },
+ {
+  "name": "inspecciones_inspeccion_change",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/inspeccion/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "inspecciones_inspeccion_changelist",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/inspeccion/\\Z"
+ },
+ {
+  "name": "inspecciones_inspeccion_delete",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/inspeccion/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "inspecciones_inspeccion_history",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/inspeccion/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "inspecciones_notificacionpapel_add",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/notificacionpapel/add/\\Z"
+ },
+ {
+  "name": "inspecciones_notificacionpapel_change",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/notificacionpapel/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "inspecciones_notificacionpapel_changelist",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/notificacionpapel/\\Z"
+ },
+ {
+  "name": "inspecciones_notificacionpapel_delete",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/notificacionpapel/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "inspecciones_notificacionpapel_history",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/notificacionpapel/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "insumos_insumo_add",
   "namespace": "admin",
   "regex": "^admin/insumos/insumo/add/\\Z"
@@ -8913,31 +9328,6 @@
   "name": "pwa_auditoriaoperacionpwa_history",
   "namespace": "admin",
   "regex": "^admin/pwa/auditoriaoperacionpwa/(?P<object_id>.+)/history/\\Z"
- },
- {
-  "name": "pwa_auditoriasesionpwa_add",
-  "namespace": "admin",
-  "regex": "^admin/pwa/auditoriasesionpwa/add/\\Z"
- },
- {
-  "name": "pwa_auditoriasesionpwa_change",
-  "namespace": "admin",
-  "regex": "^admin/pwa/auditoriasesionpwa/(?P<object_id>.+)/change/\\Z"
- },
- {
-  "name": "pwa_auditoriasesionpwa_changelist",
-  "namespace": "admin",
-  "regex": "^admin/pwa/auditoriasesionpwa/\\Z"
- },
- {
-  "name": "pwa_auditoriasesionpwa_delete",
-  "namespace": "admin",
-  "regex": "^admin/pwa/auditoriasesionpwa/(?P<object_id>.+)/delete/\\Z"
- },
- {
-  "name": "pwa_auditoriasesionpwa_history",
-  "namespace": "admin",
-  "regex": "^admin/pwa/auditoriasesionpwa/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "pwa_catalogoactividadpwa_add",

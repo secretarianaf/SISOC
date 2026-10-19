@@ -1,0 +1,7 @@
+{% comment %}
+    Motivo de subsanación/rechazo como listado: un ítem por observación (issue #2678).
+    Recibe `items`, la lista de renglones que arma la vista.
+{% endcomment %}
+<ul class="mb-0 ps-3 text-break">
+    {% for item in items %}<li>{{ item }}</li>{% endfor %}
+</ul>

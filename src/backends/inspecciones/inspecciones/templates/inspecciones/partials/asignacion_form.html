@@ -1,0 +1,86 @@
+<form method="post"
+      action="{{ form_action }}"
+      novalidate
+      data-insp-form-modal
+      data-insp-verificar="{% url 'inspecciones_ajax_verificar_asignacion' %}"
+      aria-labelledby="insp-modal-form-titulo">
+    {% csrf_token %}
+    <div class="modal-header">
+        <h2 class="modal-title h5" id="insp-modal-form-titulo">Nueva asignación</h2>
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Cerrar"></button>
+    </div>
+    <div class="modal-body">
+        <div data-insp-mensaje></div>
+        {% for error in form.non_field_errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
+        <div class="mb-3">
+            <label class="form-label" for="id_fecha">
+                Jornada <span class="text-danger">*</span>
+            </label>
+            <input id="id_fecha"
+                   name="fecha"
+                   type="date"
+                   class="form-control{% if form.fecha.errors %} is-invalid{% endif %}"
+                   value="{{ form.fecha.value|date:'Y-m-d'|default:form.fecha.value|default:'' }}"
+                   data-insp-verifica
+                   required />
+            {% for error in form.fecha.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="id_inspector">
+                Inspector <span class="text-danger">*</span>
+            </label>
+            <select id="id_inspector"
+                    name="inspector"
+                    class="form-select{% if form.inspector.errors %} is-invalid{% endif %}"
+                    data-insp-select2="{% url 'inspecciones_ajax_inspectores' %}"
+                    data-insp-min="3"
+                    data-placeholder="Usuario, nombre, apellido o DNI"
+                    data-insp-verifica
+                    aria-describedby="ayuda-inspector"
+                    required>
+                <option value=""></option>
+                {% if inspector_inicial %}
+                    <option value="{{ inspector_inicial.id }}" selected>{{ inspector_inicial.text }}</option>
+                {% endif %}
+            </select>
+            <div id="ayuda-inspector" class="form-text">
+                Solo usuarios con la sección Inspecciones escolares y rol Inspector. Escribí al menos 3 letras.
+            </div>
+            {% for error in form.inspector.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="id_escuela">
+                Escuela <span class="text-danger">*</span>
+            </label>
+            <select id="id_escuela"
+                    name="escuela"
+                    class="form-select{% if form.escuela.errors %} is-invalid{% endif %}"
+                    data-insp-select2="{% url 'inspecciones_ajax_escuelas' %}"
+                    data-insp-min="3"
+                    data-placeholder="Nombre, Cueanexo o domicilio"
+                    data-insp-verifica
+                    aria-describedby="ayuda-escuela"
+                    required>
+                <option value=""></option>
+                {% if escuela_inicial %}
+                    <option value="{{ escuela_inicial.id }}" selected>{{ escuela_inicial.text }}</option>
+                {% endif %}
+            </select>
+            <div id="ayuda-escuela" class="form-text">
+                Busca por nombre, Cueanexo o domicilio desde 3 letras · 20 resultados como máximo.
+            </div>
+            {% for error in form.escuela.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="insp-aviso insp-aviso-ambar d-none"
+             role="status"
+             data-insp-aviso-duplicada></div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" name="otra" value="1" class="btn btn-outline-primary">Asignar y cargar otra</button>
+        <button type="submit" class="btn btn-primary">Asignar</button>
+    </div>
+</form>

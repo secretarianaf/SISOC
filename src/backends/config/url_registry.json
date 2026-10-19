@@ -2540,6 +2540,11 @@
   "regex": "^inspecciones/tablero/datos/\\Z"
  },
  {
+  "name": "inspecciones_tablero_descargar_actas",
+  "namespace": "",
+  "regex": "^inspecciones/tablero/descargar\\-actas/\\Z"
+ },
+ {
   "name": "inspecciones_tablero_exportar",
   "namespace": "",
   "regex": "^inspecciones/tablero/exportar\\.csv\\Z"

@@ -16,6 +16,7 @@
 
     var URL_DATOS = raiz.dataset.urlDatos;
     var URL_EXPORTAR = raiz.dataset.urlExportar;
+    var URL_DESCARGAR = raiz.dataset.urlDescargar;
     var INTERVALO = parseInt(raiz.dataset.intervaloMs, 10) || 5000;
     var DURACION_NUEVA = 8000;
     var ARGENTINA = [[-55.1, -73.6], [-21.7, -53.6]];
@@ -45,6 +46,7 @@
     var selectProvincia = formulario.elements.provincia;
     var selectLocalidad = formulario.elements.localidad;
     var enlaceExportar = raiz.querySelector("[data-tablero-exportar]");
+    var enlaceDescargar = raiz.querySelector("[data-tablero-descargar]");
     var vivo = raiz.querySelector("[data-tablero-vivo]");
     var textoEstado = raiz.querySelector("[data-tablero-estado]");
     var textoHace = raiz.querySelector("[data-tablero-hace]");
@@ -245,6 +247,7 @@
         var pedido = querystring();
         history.replaceState(null, "", window.location.pathname + (pedido ? "?" + pedido : ""));
         enlaceExportar.href = URL_EXPORTAR + (pedido ? "?" + pedido : "");
+        enlaceDescargar.href = URL_DESCARGAR + (pedido ? "?" + pedido : "");
         estado.vistos = null;
         estado.ajustarMapa = true;
         estado.firmaPuntos = null;
@@ -701,6 +704,7 @@
     }
 
     enlaceExportar.href = URL_EXPORTAR + (querystring() ? "?" + querystring() : "");
+    enlaceDescargar.href = URL_DESCARGAR + (querystring() ? "?" + querystring() : "");
     iniciarMapa();
     consultar();
 })();

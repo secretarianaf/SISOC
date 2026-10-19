@@ -1,9 +1,21 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-10-21 -->
+# Versión SISOC 21.10.2026
+
+## Nuevas Funcionalidades
+
+- [CDI] Botón Consultas en la barra superior de CDI para abrir la ticketera en otra pestaña. (PR #2726)
+<!-- AUTO-GENERATED RELEASE END: 2026-10-21 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-10-15 -->
 # Versión SISOC 15.10.2026
 
 ## Nuevas Funcionalidades
 
 - [src/backends/inspecciones.] el mapa del tablero usa el mapa oficial del IGN y queda acotado a Argentina. (PR #2710)
+
+## Actualizaciones
+
+- [Release] Promoción a producción del 2026-10-15: relevamientos PNUD SIPH y PDF oficial GESTIONAR, georreferencia de dispositivos, celiaquía ANSES/condición diagnóstica, alcance del Administrador SIMEPI y limpieza de imágenes en deploy. (PR #2722)
 
 ## Corrección de Errores
 

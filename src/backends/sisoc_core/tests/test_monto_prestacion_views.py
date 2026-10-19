@@ -173,3 +173,20 @@ def test_delete_no_borra_si_falla_historial(
         )
 
     assert MontoPrestacionPrograma.objects.filter(pk=prestacion.pk).exists()
+
+
+def test_admin_montos_pertenece_a_comedores_con_nombre_y_permisos_originales(
+    client, user, gestor_prestaciones_user
+):
+    from django.contrib import admin
+    from django.urls import resolve
+
+    registro = admin.site._registry[MontoPrestacionPrograma]
+    assert registro.__class__.__module__ == "comedores.admin"
+    path = reverse("admin:core_montoprestacionprograma_changelist")
+    assert path == "/admin/core/montoprestacionprograma/"
+    assert resolve(path).func.model_admin is registro
+    client.force_login(user)
+    assert client.get(path).status_code == 302
+    client.force_login(gestor_prestaciones_user)
+    assert client.get(path).status_code == 200

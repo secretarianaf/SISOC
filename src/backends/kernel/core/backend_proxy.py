@@ -228,8 +228,22 @@ def pedir_json_a_backend(request, spec, path, timeout=4):
         return None
 
 
+# Propiedad de secciones del cluster aprobado; no registra un runtime C3.
+APPS_SECCIONES_FAVORITAS = {
+    "comedores": "comedores",
+    "admisiones_tecnicos": "admisiones",
+    "admisiones_legales": "admisiones",
+    "acompanamientos": "acompanamientos",
+    "duplas": "duplas",
+    "rendiciones": "rendicioncuentasmensual",
+}
+
+
 def backend_de_seccion_favorita(seccion):
     """Backend dueño de una sección de filtros favoritos, si no es del core."""
+    app_label = APPS_SECCIONES_FAVORITAS.get(seccion)
+    if app_label is not None:
+        return backend_de_app(app_label)
     for spec in getattr(settings, "SISOC_BACKENDS", {}).values():
         if seccion in spec.get("favorite_sections", ()):
             return spec

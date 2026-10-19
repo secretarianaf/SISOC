@@ -23,4 +23,7 @@ def obtener_contexto(ciudadano: Any, _logger: Any) -> dict[str, Any]:
 
 
 def registrar_contribucion_ciudadano() -> None:
-    registrar_contribucion_detalle("pwa", obtener_contexto)
+    registrar_contribucion_detalle("pwa", obtener_contexto, "pwa/ciudadano_flags.html")
+    registrar_contribucion_detalle(
+        "pwa_badges", obtener_contexto, "pwa/ciudadano_badges.html"
+    )

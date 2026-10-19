@@ -11,5 +11,6 @@ Guía vigente: [Verticales independientes](../desarrollo/verticales_independient
 - URLs en registros; recursos por app; grafo completo/collectstatic en migrador.
 - Cambiar de app conservando db_table y content type requiere migraciones de estado.
 - Verificar contratos de imports, runtime/imagen aislada y plan de deploy real.
-- Aplicar los cuatro checklists de la guía; las propuestas de #2641 siguen fuera de alcance.
+- Aplicar los cuatro checklists de la guía. C0–C2 de #2641 están aprobados y
+  validados localmente; C3 (imagen/runtime/deploy) y #2725 requieren su propia señal.
 - Antecedente histórico: `docs/registro/decisiones/2026-07-21-modulos-nuevos-extraibles.md`.

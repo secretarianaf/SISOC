@@ -39,9 +39,27 @@ la última muestra completa en `src/backends/sisoc_core/dashboard/comedores_metr
 callbacks retirados de `dashboard.signals` ni imports de cálculo en dashboard.
 El template compartido del ABM está en `src/backends/kernel/users/templates/user/user_form.html`.
 
-El importador `usuarios.pwa_import_access` queda para C2. El core conserva su
+C2 validado localmente con 280 pruebas focalizadas:
+`src/backends/kernel/ciudadanos/detail_contributions.py` declara
+dueños de los cuatro fragmentos HTML de Comedores/Espacios; los templates viven
+en sus apps. Las seis secciones favoritas se declaran por app en
+`src/backends/kernel/core/backend_proxy.py`, reutilizando proxy y validación.
+`src/backends/kernel/audittrail/views.py` conserva changes_dict de modelos no
+instalados. Evidencia HTTP/PDF y límites:
+`docs/registro/cambios/2026-T4/2026-10-15-issue-2641-c2-consumidores-y-recursos.md`.
+El contrato local del importador está en
+`src/backends/kernel/users/pwa_import_access.py`; Comedores registra su adaptador
+en `src/backends/sisoc_core/comedores/pwa_user_import.py`. Lectura/cola/reportes
+siguen en Usuarios. No partir el commit de usuario/accesos/checkpoint por HTTP;
+sin proveedor se bloquean sólo filas dependientes antes de escribir. C3 resuelve
+la imagen del worker sin hacer depender el web de Comedores de la app Usuarios.
+Montos opera en `src/backends/sisoc_core/comedores/views/montos_prestacion.py`,
+con rutas/templates del dueño y modelo/tabla compartidos en kernel. El kernel ya
+no importa Historial al guardar. Aprobación y consecuencias:
+`docs/registro/decisiones/2026-10-15-c2-importador-y-montos-comedores.md`.
+El core conserva su
 runtime; C3 todavía debe verificar imagen, proceso y selector separados.
-No hay backend Comedores extraído ni nueva topología en C1.
+No hay backend Comedores extraído ni nueva topología en C0–C2.
 Registros: `docs/registro/cambios/2026-T4/2026-10-15-issue-2641-c0-espacios-comunitarios.md`
 y `docs/registro/decisiones/2026-10-15-identidad-y-espacios-comunitarios.md`.
 Evidencia C1: `docs/registro/cambios/2026-T4/2026-10-15-issue-2641-c1-identidad-y-disponibilidad.md`.
@@ -444,7 +462,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Las restricciones PWA por programa de Comedores se consultan mediante `users.pwa_comedores`; Comedores registra la capacidad concreta durante su arranque.
 - Las pruebas de alcance territorial que ejercitan `Ciudadano` viven en `src/backends/kernel/ciudadanos/test_territorial_scope.py`; el módulo heredado de regresiones de Users vive en `src/backends/kernel/tests/test_users_regressions.py` para no abrir imports de dominio dentro de la app.
 - Los querysets de dominio requeridos por formularios administrativos de Users se registran en `users.form_catalogs`; `users.forms` no debe importar modelos de Comedores, Duplas ni Organizaciones.
-- La expansión de organizaciones y comedores del importador PWA se resuelve mediante `users.pwa_import_access`; Comedores registra el proveedor y `users.services_user_import` sólo consume IDs y especificaciones de acceso.
+- La expansión de organizaciones y comedores del importador PWA se resuelve mediante `users.pwa_import_access`; Comedores registra el adaptador local y `usuarios.services_user_import` conserva la operación completa con IDs, permisos y especificaciones de acceso, sin importar ORM de Espacios.
 - `pwa.api` es la fachada pública de la proyección de accesos de Espacios comunitarios por organización. `comedores.signals` y `sincronizar_accesos_pwa_organizaciones` sólo le pasan IDs; `AccesoOrganizacionPWA` es la fuente de verdad y `AccesoComedorPWA` la proyección. El save/soft-delete/restore de `Comedor` es transaccional para estos side effects y los envíos a GESTIONAR quedan en `on_commit`.
 
 ### Convenciones visibles

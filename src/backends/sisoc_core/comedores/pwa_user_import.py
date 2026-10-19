@@ -2,15 +2,21 @@
 
 from django.core.exceptions import ValidationError
 
+from pwa.models import AccesoComedorPWA
+from pwa.services.accesos import (
+    get_assignable_pwa_permission_codes,
+    sync_representante_accesses,
+)
 from comedores.models import Comedor
 from comedores.services.capacitaciones_certificados_service import (
     is_alimentar_comunidad_program,
 )
 from organizaciones.models import Organizacion
-from usuarios.pwa_import_access import (
+from users.pwa_import_access import (
     ComedorOrganizacionPWA,
     SeleccionAccesosPWAImportacion,
-    registrar_resolvedor_accesos_pwa_importacion,
+    AdaptadorImportacionPWA,
+    registrar_adaptador_importacion_pwa,
 )
 
 
@@ -83,6 +89,45 @@ def resolver_accesos_pwa_importacion(
     )
 
 
+def construir_especificaciones_accesos(
+    seleccion: SeleccionAccesosPWAImportacion,
+) -> list[dict]:
+    """Arma los accesos PWA a partir de organizaciones y comedores de la fila.
+
+    Un usuario asociado a una organizacion opera con todos los comedores de
+    esa organizacion; un comedor asignado explicitamente que no pertenezca a
+    ninguna organizacion seleccionada queda asociado como espacio individual.
+    """
+    specs_by_comedor_id: dict[int, dict] = {}
+
+    for comedor_organizacion in seleccion.comedores_por_organizacion:
+        specs_by_comedor_id[comedor_organizacion.comedor_id] = {
+            "comedor_id": comedor_organizacion.comedor_id,
+            "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+            "organizacion_id": comedor_organizacion.organizacion_id,
+        }
+
+    for comedor_id in seleccion.comedor_ids:
+        specs_by_comedor_id.setdefault(
+            comedor_id,
+            {
+                "comedor_id": comedor_id,
+                "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO,
+                "organizacion_id": None,
+            },
+        )
+
+    return list(specs_by_comedor_id.values())
+
+
+ADAPTADOR_IMPORTACION = AdaptadorImportacionPWA(
+    resolver=resolver_accesos_pwa_importacion,
+    construir_especificaciones=construir_especificaciones_accesos,
+    permisos_asignables=get_assignable_pwa_permission_codes,
+    sincronizar=sync_representante_accesses,
+)
+
+
 def registrar_resolvedor_user_import_pwa() -> None:
-    """Conecta el proveedor de Comedores con la importación PWA de Users."""
-    registrar_resolvedor_accesos_pwa_importacion(resolver_accesos_pwa_importacion)
+    """Registra el adaptador local; no reparte la transacción entre procesos."""
+    registrar_adaptador_importacion_pwa(ADAPTADOR_IMPORTACION)

@@ -43,4 +43,11 @@ def obtener_contexto(ciudadano: Any, logger: Any) -> dict[str, Any]:
 
 
 def registrar_contribucion_ciudadano() -> None:
-    registrar_contribucion_detalle("comedores", obtener_contexto)
+    registrar_contribucion_detalle(
+        "comedores", obtener_contexto, "comedor/ciudadano_seccion.html"
+    )
+    registrar_contribucion_detalle(
+        "comedores_colaboraciones",
+        obtener_contexto,
+        "comedor/ciudadano_colaboraciones.html",
+    )

@@ -29,8 +29,9 @@ de operadores y fachada de accesos están en
 `src/backends/sisoc_core/pwa/api.py`. Los helpers territoriales PNUD viven en
 `src/backends/sisoc_core/comedores/territoriales_pnud.py`.
 El runtime sigue siendo el core; esto todavía no extrae un backend Comedores.
-La operación usuario/accesos, el importador y la auditoría compartida requieren
-resolver las fronteras de C1 antes de separar procesos.
+Identidad, ABM compuesto y auditoría se prepararon en C1. C2 prepara consumidores,
+adaptador local del importador y pantallas de Montos con Historial en Comedores.
+La separación real de procesos e imágenes corresponde a C3.
 
 Ejemplos reales: `organizaciones` y `catalogo_intervenciones` son maestros
 compartidos; `Firmante` está en `gestion_organizaciones` porque depende de
@@ -282,3 +283,30 @@ C1 pasó 392 pruebas focalizadas locales; no demuestra por sí solo independenci
 Evidencia: `docs/registro/cambios/2026-T4/2026-10-15-issue-2641-c1-identidad-y-disponibilidad.md`.
 Decisión y consecuencias:
 `docs/registro/decisiones/2026-10-15-identidad-y-espacios-comunitarios.md`.
+
+## #2641 C2: consumidores y recursos en preparación
+
+Ciudadano 360 inserta HTML de Comedores y Espacios renderizado por su dueño.
+`src/backends/kernel/ciudadanos/detail_contributions.py` declara las apps de los
+cuatro fragmentos; `src/backends/kernel/core/backend_proxy.py` declara las seis
+secciones favoritas del cluster. Ambos reutilizan `backend_de_app` y el proxy
+actual. C3 todavía debe registrar/montar el backend real; no se anticipa su
+runtime ni se considera probada la imagen por una prueba HTTP de contratos.
+
+El visor de auditoría conserva el diff persistido si el modelo no está instalado.
+Los recursos siguen en sus apps y cuatro variantes de certificación se generan
+con BASE_DIR ajeno; eso no sustituye probar la imagen final. El admin requiere
+modelos y rutas reales del dueño; los stubs sólo permiten reverse.
+
+C2 conserva el importador transversal en Usuarios con adaptador **local** en
+`src/backends/kernel/users/pwa_import_access.py`: el worker confirma usuario,
+accesos y checkpoint sin repartir la transacción por HTTP. Sin adaptador se
+rechazan filas dependientes antes de escribir; las independientes y de
+Inspecciones siguen funcionando. La imagen del worker se resuelve en C3.
+
+Montos opera desde `src/backends/sisoc_core/comedores/views/montos_prestacion.py`,
+con rutas y templates propios, URLs/permisos conservados y modelo/tabla en kernel.
+El kernel ya no importa Historial para guardar esas pantallas. Decisión:
+`docs/registro/decisiones/2026-10-15-c2-importador-y-montos-comedores.md`.
+Evidencia y límites:
+`docs/registro/cambios/2026-T4/2026-10-15-issue-2641-c2-consumidores-y-recursos.md`.

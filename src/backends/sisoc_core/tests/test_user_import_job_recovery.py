@@ -46,7 +46,8 @@ def test_stale_user_import_requeues_and_old_worker_cannot_write():
     assert job.next_row_index == 0
 
 
-@pytest.mark.django_db
+# El worker cierra conexiones entre filas; necesita transacciones reales.
+@pytest.mark.django_db(transaction=True)
 def test_user_import_yields_to_other_job_and_resumes(mocker):
     owner = User.objects.create_user(username="user_import_fair_queue")
     large = UserImportJob.objects.create(
@@ -98,7 +99,7 @@ def test_user_import_yields_to_other_job_and_resumes(mocker):
     ]
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_user_creation_rolls_back_if_row_checkpoint_fails(mocker):
     owner = User.objects.create_user(username="user_import_atomic_owner")
     job = UserImportJob.objects.create(

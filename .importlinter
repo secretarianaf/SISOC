@@ -846,12 +846,41 @@ source_modules =
     pwa.identity_services
     pwa.user_forms
     pwa.user_admin_views
+    pwa.ciudadano_detail
+    comedores.ciudadano_detail
+    comedores.pwa_user_import
+    comedores.views.montos_prestacion
 forbidden_modules =
     usuarios
     dashboard
     encuestas
     ocr
     insumos
+ignore_imports =
+
+[importlinter:contract:importador-sin-orm-espacios]
+name = el importador transversal usa el adaptador kernel sin ORM de Espacios
+type = forbidden
+allow_indirect_imports = False
+source_modules =
+    usuarios.services_user_import
+    usuarios.services_user_import_jobs
+    usuarios.views_user_import
+forbidden_modules =
+    pwa
+    comedores
+    duplas
+    historial
+    relevamientos
+    admisiones
+    acompanamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    expedientespagos
+    importarexpediente
+    intervenciones
+    gestion_organizaciones
+    comunicados
 ignore_imports =
 
 [importlinter:contract:dashboard-muestra-sin-orm-comedores]

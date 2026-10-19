@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.urls import path
+from django.urls import include, path
 from django.views.generic.base import RedirectView
 from comedores.views import (
     ActividadEspacioPWACreateView,
@@ -66,6 +66,7 @@ from intervenciones.views import (
 from core.decorators import permissions_all_required, permissions_any_required
 
 urlpatterns = [
+    path("", include("comedores.montos_urls")),
     path(
         "comedores/listar",
         permissions_any_required(

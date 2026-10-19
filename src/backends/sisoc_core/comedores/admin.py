@@ -1,5 +1,8 @@
 from django.contrib import admin
 
+from core.models import MontoPrestacionPrograma
+from core.resources import MontoPrestacionProgramaResource
+
 from core.admin_import_export import BaseExportAdmin, BaseImportExportAdmin
 from comedores.models import (
     CapacitacionComedorCertificado,
@@ -148,3 +151,20 @@ class CapacitacionComedorCertificadoAdmin(admin.ModelAdmin):
     search_fields = ("comedor__nombre",)
     raw_id_fields = ("comedor", "presentado_por", "revisado_por")
     readonly_fields = ("observacion", "creado", "modificado")
+
+
+# Montos de prestación: impacto económico directo, solo exportación.
+@admin.register(MontoPrestacionPrograma)
+class MontoPrestacionProgramaAdmin(BaseExportAdmin):
+    resource_classes = [MontoPrestacionProgramaResource]
+    list_display = (
+        "programa",
+        "desayuno_valor",
+        "almuerzo_valor",
+        "merienda_valor",
+        "cena_valor",
+        "fecha_creacion",
+    )
+    list_filter = ("programa",)
+    raw_id_fields = ("usuario_creador",)
+    readonly_fields = ("fecha_creacion", "fecha_modificacion")

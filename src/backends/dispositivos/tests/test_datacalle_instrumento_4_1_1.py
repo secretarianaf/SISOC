@@ -10,7 +10,6 @@ import pytest
 
 from datacalle.models import Encuesta
 from datacalle.services.instrumento import (
-    etiqueta_de_codigo,
     get_catalogos,
     get_version,
     respuestas_legibles,
@@ -45,6 +44,8 @@ def test_un_caso_con_volver_al_trabajo_se_sigue_leyendo():
     caso = Encuesta(respuestas={"programaSocialCual": ["volverAlTrabajo"]})
 
     assert _valor(caso, "programaSocialCual") == "Volver al trabajo"
-    assert (
-        etiqueta_de_codigo("programaSocial", "volverAlTrabajo") == "Volver al Trabajo"
-    )
+    # Se conserva retirada en el catálogo de la 25: si una sincronización la
+    # borra, los casos viejos pasan a mostrar la clave cruda.
+    opciones = get_catalogos()["programaSocialPropio"]["opciones"]
+    retirada = next(o for o in opciones if o["codigo"] == "volverAlTrabajo")
+    assert retirada.get("retirada") is True

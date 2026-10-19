@@ -108,6 +108,6 @@
 ## Contexto mínimo
 - Stack: Django + MySQL con despliegue vía Docker Compose. Evidencia: README.md:1-4 y docker-compose.yml:1-34.
 - Variables de entorno documentadas en `.env.example` (incluye DB, GESTIONAR, RENAPER, puertos y dominio). Evidencia: .env.example:1-51.
-- Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: src/backends/sisoc_core/comedores/tasks.py, src/backends/sisoc_core/relevamientos/tasks.py, src/backends/kernel/core/integrations/renaper.py, src/backends/kernel/core/services/renaper.py.
+- Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: src/backends/comedores/comedores/tasks.py, src/backends/comedores/relevamientos/tasks.py, src/backends/kernel/core/integrations/renaper.py, src/backends/kernel/core/services/renaper.py.
 
 - `docs/implementaciones/pas_control_mensual_celery.md`: funcionamiento, lotes, programación mensual, operación y retiro cron PAS.

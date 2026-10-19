@@ -20,6 +20,8 @@ from usuarios.auth_views import (
 )
 
 urlpatterns = [
+    # Compatibilidad C1: esta auditoria pertenece al kernel, incluso bajo /admin/pwa/.
+    path("admin/pwa/auditoriasesionpwa/", include("audittrail.legacy_admin_urls")),
     # Verticales que corren en su propio backend (src/backends/config/backends.json).
     *backend_proxy_urlpatterns(),
     # SOLO compatibilidad: URLs de Centro de Familia anteriores a su prefijo
@@ -57,36 +59,18 @@ urlpatterns = [
         name="password_reset_complete",
     ),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
-    path("admin/pwa/auditoriasesionpwa/", include("audittrail.legacy_admin_urls")),
     path("admin/", admin.site.urls),
     path("", include("usuarios.urls")),
     path("", include("django.contrib.auth.urls")),
     path("", include("core.urls")),
     path("", include("dashboard.urls")),
-    path("", include("comedores.urls")),
-    path("", include("gestion_organizaciones.urls")),
-    path("", include("duplas.urls")),
     path("", include("audittrail.urls")),
     path("", include("ciudadanos.urls")),
-    path("", include("admisiones.urls")),
     path("", include("healthcheck.urls")),
-    path("acompanamientos/", include("acompanamientos.urls")),
-    path("expedientespagos/", include("expedientespagos.urls")),
-    path("", include("rendicioncuentasfinal.urls")),
-    path("", include("relevamientos.urls")),
     path("", include("insumos.urls")),
-    path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
-    path("interno/usuarios/", include("pwa.user_admin_urls")),
-    path("interno/espacios/", include("pwa.identity_urls")),
     # API URLs
     path("api/users/", include("usuarios.api_urls")),
-    path("api/comedores/", include("comedores.api_urls")),
-    path("api/territorial/", include("comedores.api_urls_territorial")),
-    path("api/comunicados/", include("comunicados.api_urls")),
     path("api/renaper/", include("core.api_urls")),
-    path("api/pwa/", include("pwa.api_urls")),
-    path("", include("importarexpediente.urls")),
-    path("", include("comunicados.urls")),
     path("ocr/", include("ocr.urls")),
     path("", include("encuestas.urls")),
 ]

@@ -12,7 +12,7 @@ def test_pwa_health_endpoint_returns_ok():
     """El health-check verifica la base de datos, por eso necesita `django_db`.
 
     El contrato completo (503, recuperación, no filtrar detalle del error) se
-    cubre en `src/backends/sisoc_core/tests/test_pwa_healthcheck_api.py`.
+    cubre en `src/backends/comedores/tests/test_pwa_healthcheck_api.py`.
     """
     client = Client()
     response = client.get("/api/pwa/health/")

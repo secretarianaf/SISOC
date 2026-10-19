@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 import zipfile
 
+from django.apps import apps
 from lxml import etree
 
 from comedores.services.certificacion_prestaciones_service import (
@@ -33,11 +34,7 @@ def test_fallback_inserta_leyenda_en_plantilla(monkeypatch, tmp_path):
         get_full_name=lambda: "Usuario de prueba",
     )
     template_path = (
-        Path(__file__).resolve().parents[4]
-        / "src"
-        / "backends"
-        / "sisoc_core"
-        / "pwa"
+        Path(apps.get_app_config("pwa").path)
         / "files"
         / "varios"
         / "PRESTACIONES.1.docx"
@@ -78,11 +75,7 @@ def test_completar_plantilla_usa_dni_certificador(monkeypatch, tmp_path):
         get_full_name=lambda: "Usuario de prueba",
     )
     template_path = (
-        Path(__file__).resolve().parents[4]
-        / "src"
-        / "backends"
-        / "sisoc_core"
-        / "pwa"
+        Path(apps.get_app_config("pwa").path)
         / "files"
         / "varios"
         / "PRESTACIONES.1.docx"

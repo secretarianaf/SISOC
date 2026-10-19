@@ -46,16 +46,16 @@ TAG_RE = re.compile(r"<(a|button)\b[^>]*>(.*?)</\1>", re.I | re.S)
 # Antes esto era una heuristica por distancia (cualquier type="submit" a menos
 # de 400 caracteres eximia al boton), y dejaba pasar los de navegacion pura.
 CANCELAR_DE_FORMULARIO = {
-    "src/backends/sisoc_core/admisiones/templates/admisiones/informe_tecnico_complementario_detalle.html",
-    "src/backends/sisoc_core/admisiones/templates/admisiones/informe_tecnico_form.html",
+    "src/backends/comedores/admisiones/templates/admisiones/informe_tecnico_complementario_detalle.html",
+    "src/backends/comedores/admisiones/templates/admisiones/informe_tecnico_form.html",
     "src/backends/cdi/centrodeinfancia/templates/centrodeinfancia/intervencion_form.html",
     "src/backends/cdi/centrodeinfancia/templates/centrodeinfancia/nomina_form.html",
     "src/backends/kernel/ciudadanos/templates/ciudadanos/ciudadano_form.html",
     "src/backends/kernel/ciudadanos/templates/ciudadanos/grupofamiliar_form.html",
-    "src/backends/sisoc_core/comedores/templates/comedor/actividad_espacio_pwa_form.html",
-    "src/backends/sisoc_core/comedores/templates/comedor/actividades_pnud_form.html",
-    "src/backends/sisoc_core/comedores/templates/comedor/cursos_app_mobile_form.html",
-    "src/backends/sisoc_core/comunicados/templates/comunicados/mailing_form.html",
+    "src/backends/comedores/comedores/templates/comedor/actividad_espacio_pwa_form.html",
+    "src/backends/comedores/comedores/templates/comedor/actividades_pnud_form.html",
+    "src/backends/comedores/comedores/templates/comedor/cursos_app_mobile_form.html",
+    "src/backends/comedores/comunicados/templates/comunicados/mailing_form.html",
     "src/backends/dispositivos/dispositivos/templates/dispositivos_form.html",
     "src/backends/sisoc_core/ocr/templates/ocr/ocr_upload.html",
     "src/backends/pas/pas/templates/pas/informe_form.html",
@@ -69,7 +69,7 @@ CANCELAR_DE_FORMULARIO = {
     "src/backends/vpsl/ver_para_ser_libre/templates/ver_para_ser_libre/simple_form.html",
     # Paso atras de un wizard dentro de un modal (btnVolverResyncConvenio), no
     # navegacion entre pantallas.
-    "src/backends/sisoc_core/admisiones/templates/admisiones/admisiones_tecnicos_form.html",
+    "src/backends/comedores/admisiones/templates/admisiones/admisiones_tecnicos_form.html",
 }
 
 

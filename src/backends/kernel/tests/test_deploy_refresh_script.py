@@ -349,7 +349,7 @@ def _run_selectivo(tmp_path, archivos, compose_json):
 
 def test_cambio_en_sisoc_core_recrea_solo_los_servicios_del_core(tmp_path):
     resultado = _run_selectivo(
-        tmp_path, ["src/backends/sisoc_core/comedores/views.py"], CORE_COMPOSE_JSON
+        tmp_path, ["src/backends/sisoc_core/usuarios/views.py"], CORE_COMPOSE_JSON
     )
 
     assert resultado.returncode == 0, resultado.stdout + resultado.stderr
@@ -361,10 +361,59 @@ def test_cambio_en_sisoc_core_recrea_solo_los_servicios_del_core(tmp_path):
 
 def test_sin_servicios_del_core_resueltos_hace_deploy_completo(tmp_path):
     resultado = _run_selectivo(
-        tmp_path, ["src/backends/sisoc_core/comedores/views.py"], '{"services": {}}'
+        tmp_path, ["src/backends/sisoc_core/usuarios/views.py"], '{"services": {}}'
     )
 
     assert resultado.returncode == 0, resultado.stdout + resultado.stderr
     assert "No se pudieron resolver los servicios del core" in resultado.stdout
     assert "--no-deps" not in resultado.stdout
     assert " up -d" in resultado.stdout
+
+
+def test_cambio_usuarios_actualiza_importador_con_imagen_compuesta(tmp_path):
+    config = json.loads(CORE_COMPOSE_JSON)
+    config["services"]["user_import_worker"] = {
+        "image": "sisoc/migrator:" + EXPECTED_REVISION,
+        "environment": {"DJANGO_SERVICE_ROLE": "user_import_worker"},
+    }
+    config["services"]["mailing_worker"] = {
+        "image": "sisoc/backend-comedores:" + EXPECTED_REVISION,
+    }
+    resultado = _run_selectivo(
+        tmp_path, ["src/backends/sisoc_core/usuarios/views.py"], json.dumps(config)
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "up -d --no-deps django ocr_worker user_import_worker" in resultado.stdout
+    assert "mailing_worker" not in resultado.stdout
+
+
+def test_comedores_en_qa_no_recrea_workers_que_solo_existen_en_prd(tmp_path):
+    config = {"services": {"django": {}, "backend_comedores": {}}}
+    resultado = _run_selectivo(
+        tmp_path,
+        ["src/backends/comedores/comedores/views.py"],
+        json.dumps(config),
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "up -d --no-deps backend_comedores\n" in resultado.stdout
+    assert "up -d --no-deps backend_comedores mailing_worker" not in resultado.stdout
+
+
+def test_otro_backend_en_prd_actualiza_tambien_importador_del_migrador(tmp_path):
+    config = {"services": {"backend_vat": {}, "user_import_worker": {}}}
+    resultado = _run_selectivo(
+        tmp_path, ["src/backends/vat/VAT/views.py"], json.dumps(config)
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "up -d --no-deps backend_vat user_import_worker" in resultado.stdout
+
+
+def test_backend_ausente_en_compose_fuerza_fallback_completo(tmp_path):
+    resultado = _run_selectivo(
+        tmp_path,
+        ["src/backends/comedores/comedores/views.py"],
+        '{"services": {"django": {}}}',
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "No se pudieron resolver los servicios seleccionados" in resultado.stdout
+    assert "up -d --no-deps" not in resultado.stdout

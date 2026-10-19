@@ -16,6 +16,9 @@
     "migrate_service": "migrator",
     "favorite_sections": [
       "dispositivos"
+    ],
+    "extra_services": [
+      "user_import_worker"
     ]
   },
   "vpsl": {
@@ -30,7 +33,10 @@
     "origin_env": "BACKEND_VPSL_ORIGIN",
     "default_origin": "http://backend_vpsl:8000",
     "service": "backend_vpsl",
-    "migrate_service": "migrator"
+    "migrate_service": "migrator",
+    "extra_services": [
+      "user_import_worker"
+    ]
   },
   "pas": {
     "apps": [
@@ -47,7 +53,8 @@
     "migrate_service": "migrator",
     "extra_services": [
       "celery_pas_worker",
-      "celery_beat"
+      "celery_beat",
+      "user_import_worker"
     ]
   },
   "vat": {
@@ -71,6 +78,9 @@
     ],
     "ciudadano_contributions": [
       "vat"
+    ],
+    "extra_services": [
+      "user_import_worker"
     ]
   },
   "celiaquia": {
@@ -89,6 +99,9 @@
     "migrate_service": "migrator",
     "ciudadano_contributions": [
       "celiaquia"
+    ],
+    "extra_services": [
+      "user_import_worker"
     ]
   },
   "cdi": {
@@ -105,7 +118,10 @@
     "origin_env": "BACKEND_CDI_ORIGIN",
     "default_origin": "http://backend_cdi:8000",
     "service": "backend_cdi",
-    "migrate_service": "migrator"
+    "migrate_service": "migrator",
+    "extra_services": [
+      "user_import_worker"
+    ]
   },
   "cdf": {
     "apps": [
@@ -128,6 +144,9 @@
     "ciudadano_contributions": [
       "centrodefamilia",
       "centrodefamilia_monto"
+    ],
+    "extra_services": [
+      "user_import_worker"
     ]
   },
   "inspecciones": {
@@ -142,6 +161,171 @@
     "origin_env": "BACKEND_INSPECCIONES_ORIGIN",
     "default_origin": "http://backend_inspecciones:8000",
     "service": "backend_inspecciones",
-    "migrate_service": "migrator"
+    "migrate_service": "migrator",
+    "extra_services": [
+      "user_import_worker"
+    ]
+  },
+  "comedores": {
+    "apps": [
+      "comedores",
+      "gestion_organizaciones",
+      "duplas",
+      "admisiones",
+      "intervenciones",
+      "historial",
+      "acompanamientos",
+      "expedientespagos",
+      "relevamientos",
+      "rendicioncuentasfinal",
+      "rendicioncuentasmensual",
+      "importarexpediente",
+      "comunicados",
+      "pwa"
+    ],
+    "url_prefixes": [
+      "comedores/",
+      "comedores_nuevo/",
+      "organizaciones/",
+      "equipo-tecnico/",
+      "admision/",
+      "admisiones/",
+      "intervencion/",
+      "acompanamientos/",
+      "expedientespagos/",
+      "rendicion_cuentas_final/",
+      "rendicioncuentasmensual/",
+      "importarexpedientes/",
+      "comunicados/",
+      "montoprestacion/",
+      "api/comedores/",
+      "api/territorial/",
+      "api/comunicados/",
+      "api/pwa/",
+      "api/relevamiento",
+      "ajax/load-organizaciones/",
+      "ajax/actualizar-estado/",
+      "ajax/actualizar-numero-gde/",
+      "ajax/actualizar-numero-gde-organizacion/",
+      "ajax/actualizar-convenio-numero/",
+      "ajax/actualizar-vigente-pwa/",
+      "ajax/actualizar-personas-conveniadas-nomina/",
+      "ajax/actualizar-num-expediente/",
+      "admin/comedores/",
+      "admin/gestion_organizaciones/",
+      "admin/duplas/",
+      "admin/admisiones/",
+      "admin/intervenciones/",
+      "admin/historial/",
+      "admin/acompanamientos/",
+      "admin/expedientespagos/",
+      "admin/relevamientos/",
+      "admin/rendicioncuentasfinal/",
+      "admin/rendicioncuentasmensual/",
+      "admin/importarexpediente/",
+      "admin/comunicados/",
+      "admin/pwa/",
+      "admin/core/montoprestacionprograma/"
+    ],
+    "urlconf": "comedores_runtime.urls",
+    "origin_env": "BACKEND_COMEDORES_ORIGIN",
+    "default_origin": "http://backend_comedores:8000",
+    "service": "backend_comedores",
+    "migrate_service": "migrator",
+    "extra_services": [
+      "mailing_worker",
+      "user_import_worker"
+    ],
+    "favorite_sections": [
+      "comedores",
+      "admisiones_tecnicos",
+      "admisiones_legales",
+      "acompanamientos",
+      "duplas",
+      "rendiciones"
+    ],
+    "ciudadano_contributions": [
+      "comedores",
+      "comedores_colaboraciones",
+      "pwa",
+      "pwa_badges"
+    ],
+    "admin_links": [
+      {
+        "label": "Comedores",
+        "url": "/admin/comedores/",
+        "app_label": "comedores"
+      },
+      {
+        "label": "Gestión de organizaciones",
+        "url": "/admin/gestion_organizaciones/",
+        "app_label": "gestion_organizaciones"
+      },
+      {
+        "label": "Duplas",
+        "url": "/admin/duplas/",
+        "app_label": "duplas"
+      },
+      {
+        "label": "Admisiones",
+        "url": "/admin/admisiones/",
+        "app_label": "admisiones"
+      },
+      {
+        "label": "Intervenciones",
+        "url": "/admin/intervenciones/",
+        "app_label": "intervenciones"
+      },
+      {
+        "label": "Historial",
+        "url": "/admin/historial/",
+        "app_label": "historial"
+      },
+      {
+        "label": "Acompañamientos",
+        "url": "/admin/acompanamientos/",
+        "app_label": "acompanamientos"
+      },
+      {
+        "label": "Expedientes de pago",
+        "url": "/admin/expedientespagos/",
+        "app_label": "expedientespagos"
+      },
+      {
+        "label": "Relevamientos",
+        "url": "/admin/relevamientos/",
+        "app_label": "relevamientos"
+      },
+      {
+        "label": "Rendición de cuentas final",
+        "url": "/admin/rendicioncuentasfinal/",
+        "app_label": "rendicioncuentasfinal"
+      },
+      {
+        "label": "Rendición de cuentas mensual",
+        "url": "/admin/rendicioncuentasmensual/",
+        "app_label": "rendicioncuentasmensual"
+      },
+      {
+        "label": "Comunicados",
+        "url": "/admin/comunicados/",
+        "app_label": "comunicados"
+      },
+      {
+        "label": "Espacios comunitarios",
+        "url": "/admin/pwa/",
+        "app_label": "pwa"
+      },
+      {
+        "label": "Montos de prestación",
+        "url": "/admin/core/montoprestacionprograma/",
+        "permissions": [
+          "core.view_montoprestacionprograma",
+          "core.change_montoprestacionprograma",
+          "core.add_montoprestacionprograma",
+          "core.delete_montoprestacionprograma"
+        ]
+      }
+    ]
   }
 }

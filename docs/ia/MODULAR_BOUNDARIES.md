@@ -1,7 +1,7 @@
 # Boundaries de servicios y módulos
 
 Guía vigente: [Verticales independientes](../desarrollo/verticales_independientes.md).
-- SISOC tiene core de entrada, siete backends y una DB compartida; no un único deployable.
+- SISOC tiene core de entrada y backends registrados y una DB compartida; no un único deployable.
 - Clasificar el cambio por dueño: kernel, sisoc_core, vertical o frontend.
 - Kernel no importa core/verticales; un servicio no importa otro, tampoco su api.py.
 - Dentro de un mismo servicio, reutilizar APIs/services públicos y patrones existentes.
@@ -12,5 +12,7 @@ Guía vigente: [Verticales independientes](../desarrollo/verticales_independient
 - Cambiar de app conservando db_table y content type requiere migraciones de estado.
 - Verificar contratos de imports, runtime/imagen aislada y plan de deploy real.
 - Aplicar los cuatro checklists de la guía. C0–C2 de #2641 están aprobados y
-  validados localmente; C3 (imagen/runtime/deploy) y #2725 requieren su propia señal.
+  validados localmente; C3 está implementado y validado localmente desde el
+  2026-10-16, sin incorporación ni deploy.
+  #2725 continúa postergado y requiere autorización separada.
 - Antecedente histórico: `docs/registro/decisiones/2026-07-21-modulos-nuevos-extraibles.md`.

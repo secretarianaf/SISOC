@@ -36,7 +36,7 @@ def test_plantilla_tradicional_incluye_merienda_reforzada(tmp_path):
 
     _completar_plantilla(
         Path(settings.BASE_DIR)
-        / "src/backends/sisoc_core/pwa/files/varios/PROGRAMA.ALIMENTAR.COMUNIDAD.docx",
+        / "src/backends/comedores/pwa/files/varios/PROGRAMA.ALIMENTAR.COMUNIDAD.docx",
         destino,
         comedor=comedor,
         periodo=date(2035, 1, 1),
@@ -73,7 +73,7 @@ def test_plantilla_subusuario_incluye_los_dni_de_ambos_firmantes(tmp_path):
 
     _completar_plantilla(
         Path(settings.BASE_DIR)
-        / "src/backends/sisoc_core/pwa/files/varios/PRESTACIONES.2.docx",
+        / "src/backends/comedores/pwa/files/varios/PRESTACIONES.2.docx",
         destino,
         comedor=comedor,
         periodo=date(2035, 1, 1),

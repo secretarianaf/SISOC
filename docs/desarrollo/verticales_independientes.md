@@ -11,7 +11,7 @@ reemplaza sus rutas. Para operar, ver [backends por servicio](../operacion/backe
 | Dueño | Ubicación | Ejemplo y criterio |
 | --- | --- | --- |
 | Kernel | `src/backends/kernel/<app>/` | Identidad (`users`, `iam`), ciudadanos, organizaciones, catálogo de intervenciones, auditoría y utilidades comunes. Lo necesitan varios procesos y puede arrancar sin el core ni verticales. |
-| Core de entrada | `src/backends/sisoc_core/<app>/` | Comedores/admisiones/rendiciones y servicios propios como dashboard, encuestas, PWA, usuarios y gestión de organizaciones. No confundir con la app técnica `src/backends/kernel/core/`. |
+| Core de entrada | `src/backends/sisoc_core/<app>/` | Usuarios, Dashboard, Encuestas, Insumos y OCR; Comedores/Espacios están en `src/backends/comedores/`. No confundir con la app técnica `src/backends/kernel/core/`. |
 | Vertical | `src/backends/<vertical>/<app>/` | Regla, modelo, vista, template, estático o test de ese programa. CDI contiene centrodeinfancia y ticketera; CDF contiene centrodefamilia. |
 | Runtime del vertical | `src/backends/<vertical>/<vertical>_runtime/` | Settings y URLconf que componen kernel + apps propias, sin core ni otros verticales. |
 | Front React | `src/frontends/apps/<modulo>/` | Pantallas del módulo; paquetes comunes en `src/frontends/packages/`. |
@@ -24,14 +24,16 @@ programa va en sus services; compartirla no basta para convertirla en kernel.
 Preparación C0 de #2641: **Espacios comunitarios** es el nombre del dominio
 móvil que conserva el identificador técnico `pwa`. Sus permisos, serializers
 de operadores y fachada de accesos están en
-`src/backends/sisoc_core/pwa/api_permissions.py`,
-`src/backends/sisoc_core/pwa/operadores_serializers.py` y
-`src/backends/sisoc_core/pwa/api.py`. Los helpers territoriales PNUD viven en
-`src/backends/sisoc_core/comedores/territoriales_pnud.py`.
-El runtime sigue siendo el core; esto todavía no extrae un backend Comedores.
-Identidad, ABM compuesto y auditoría se prepararon en C1. C2 prepara consumidores,
-adaptador local del importador y pantallas de Montos con Historial en Comedores.
-La separación real de procesos e imágenes corresponde a C3.
+`src/backends/comedores/pwa/api_permissions.py`,
+`src/backends/comedores/pwa/operadores_serializers.py` y
+`src/backends/comedores/pwa/api.py`. Los helpers territoriales PNUD viven en
+`src/backends/comedores/comedores/territoriales_pnud.py`.
+C1 preparó identidad, ABM compuesto y auditoría; C2, consumidores, adaptador
+local del importador y Montos. C3 está implementado y validado localmente: `comedores_runtime`
+compone las catorce apps del dueño, sin las cinco apps del portal. Registro y
+Compose declaran `backend_comedores`, sin puertos publicados. No está desplegado;
+el importador reutiliza la imagen completa del migrador, con rol de worker y
+`config.settings_all`, según la elección C3 aprobada.
 
 Ejemplos reales: `organizaciones` y `catalogo_intervenciones` son maestros
 compartidos; `Firmante` está en `gestion_organizaciones` porque depende de
@@ -57,7 +59,7 @@ flowchart LR
     U[Usuario] --> N[Nginx del host]
     N --> C[django: core de entrada y proxy]
     C --> K[Kernel compartido en cada imagen]
-    C --> B[Backends: dispositivos, vpsl, pas, vat, celiaquia, cdi, cdf]
+    C --> B[Backends: dispositivos, vpsl, pas, vat, celiaquia, cdi, cdf, inspecciones, comedores]
     C --> F[front_modulo: React por /v2/]
     B --> K
     C --> DB[(MySQL compartido)]
@@ -72,7 +74,9 @@ flowchart LR
     P --> R[Redis PAS]
 ```
 
-Cada imagen contiene kernel + config + su dueño. El core recibe el tráfico y
+Cada imagen web contiene kernel + config + su dueño. Migrador e importador
+de Usuarios reutilizan la imagen de composición completa, con roles distintos;
+el importador no migra ni sirve tráfico. El core recibe el tráfico y
 aplica sus middleware antes del proxy. El backend usa la sesión y DB
 compartidas, la misma clave de sesión y sus controles de permisos/CSRF; no
 confiar en un ID de usuario recibido como sustituto de autorización.
@@ -188,7 +192,7 @@ ceros si no está disponible: esos ceros no demuestran ausencia de actividad.
 - [ ] Probar instalación vacía y actualización desde estado previo en MySQL aislado: IDs, filas, relaciones, permisos/auditoría y `makemigrations --check --dry-run`.
 - [ ] Definir compatibilidad con imágenes previas y reversa probada antes de incorporar; rollback de deploy no revierte la migración.
 
-Caso recorrido: `src/backends/sisoc_core/gestion_organizaciones/migrations/0001_firmante_desde_organizaciones.py`
+Caso recorrido: `src/backends/comedores/gestion_organizaciones/migrations/0001_firmante_desde_organizaciones.py`
 y `src/backends/kernel/organizaciones/migrations/0023_firmante_a_gestion.py`, bajo sus dueños
 actuales. Conservan `organizaciones_firmante`; reasignan el content type y
 fallan explícitamente si ambos labels existen. Catálogos usan el mismo patrón
@@ -202,8 +206,8 @@ acumula servicios hasta encontrar un cambio que exige **completo**.
 
 | Archivos cambiados | Plan |
 | --- | --- |
-| Solo código/recursos en `src/backends/<vertical>/` registrado | Selectivo: backend + `extra_services`; migrador y collectstatic. |
-| Solo `src/backends/sisoc_core/` | Selectivo: marcador `@core`, resuelto a servicios cuya imagen comienza con `sisoc/core:`; migrador. Si no se resuelven, fallback completo. |
+| Solo código/recursos en `src/backends/<vertical>/` registrado | Selectivo: backend + `extra_services`; sólo mailing/importación ausentes se omiten por ser de producción. Migrador y collectstatic. La imagen completa del importador requiere actualizarlo ante cambios de cualquier backend. |
+| Solo `src/backends/sisoc_core/` | Selectivo: marcador `@core`, resuelto a servicios con imagen `sisoc/core:` y al rol `user_import_worker`, que también contiene Usuarios; migrador. Si no se resuelven, fallback completo. |
 | Kernel, config (incluido registro de URLs), requirements, docker/compose o `CHANGELOG.md` | Completo. Por eso agregar un prefijo suele convertir un cambio de vertical en completo. |
 | Solo `src/frontends/apps/<modulo>/` | Selectivo: `front_<modulo>`, sin migrador. |
 | Frontend compartido, configuración o lockfile dentro de `src/frontends/` | Selectivo: todos los fronts descubiertos, sin migrador. |
@@ -218,7 +222,7 @@ Comprobar el conjunto real de archivos, no solo el nombre del PR:
 
 ```bash
 python src/scripts/operacion/deploy_targets.py --files src/backends/pas/pas/tasks.py
-python src/scripts/operacion/deploy_targets.py --files src/backends/sisoc_core/comedores/views.py
+python src/scripts/operacion/deploy_targets.py --files src/backends/comedores/comedores/views.py
 python src/scripts/operacion/deploy_targets.py --files docs/desarrollo/verticales_independientes.md
 ```
 
@@ -290,8 +294,8 @@ Ciudadano 360 inserta HTML de Comedores y Espacios renderizado por su dueño.
 `src/backends/kernel/ciudadanos/detail_contributions.py` declara las apps de los
 cuatro fragmentos; `src/backends/kernel/core/backend_proxy.py` declara las seis
 secciones favoritas del cluster. Ambos reutilizan `backend_de_app` y el proxy
-actual. C3 todavía debe registrar/montar el backend real; no se anticipa su
-runtime ni se considera probada la imagen por una prueba HTTP de contratos.
+actual. C3 registra el backend real. Las pruebas HTTP de contratos de C2
+conservan su límite: por sí solas no acreditan aislamiento de imágenes.
 
 El visor de auditoría conserva el diff persistido si el modelo no está instalado.
 Los recursos siguen en sus apps y cuatro variantes de certificación se generan
@@ -302,9 +306,10 @@ C2 conserva el importador transversal en Usuarios con adaptador **local** en
 `src/backends/kernel/users/pwa_import_access.py`: el worker confirma usuario,
 accesos y checkpoint sin repartir la transacción por HTTP. Sin adaptador se
 rechazan filas dependientes antes de escribir; las independientes y de
-Inspecciones siguen funcionando. La imagen del worker se resuelve en C3.
+Inspecciones siguen funcionando. C3 reutiliza `sisoc/migrator` con rol explícito
+`user_import_worker`, sin migraciones ni web; carga todo el grafo.
 
-Montos opera desde `src/backends/sisoc_core/comedores/views/montos_prestacion.py`,
+Montos opera desde `src/backends/comedores/comedores/views/montos_prestacion.py`,
 con rutas y templates propios, URLs/permisos conservados y modelo/tabla en kernel.
 El kernel ya no importa Historial para guardar esas pantallas. Decisión:
 `docs/registro/decisiones/2026-10-15-c2-importador-y-montos-comedores.md`.

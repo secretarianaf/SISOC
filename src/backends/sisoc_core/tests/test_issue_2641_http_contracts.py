@@ -23,27 +23,31 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 @pytest.fixture
 def owner_process(tmp_path, monkeypatch):
-    """Sólo loopback del contenedor aislado; misma DB sintética, otro proceso."""
+    """Runtime dueño C3, loopback y misma DB sintética en otro proceso."""
     if os.name != "posix":
         pytest.skip(
             "Este probe de procesos se ejecuta en el contenedor Linux de pruebas."
         )
     script = """
+import sys, time
+started = time.monotonic()
 import config, django
 django.setup()
+print(f'OWNER_SETUP_SECONDS={time.monotonic() - started:.3f}', file=sys.stderr, flush=True)
 from django.core.wsgi import get_wsgi_application
 from django.urls import resolve
 from wsgiref.simple_server import make_server
 resolve('/interno/espacios/login/')
 resolve('/interno/usuarios/operacion/')
 server = make_server('127.0.0.1', 0, get_wsgi_application())
+print(f'OWNER_READY_SECONDS={time.monotonic() - started:.3f}', file=sys.stderr, flush=True)
 print('READY http://127.0.0.1:' + str(server.server_port), flush=True)
 server.serve_forever()
 """
     env = {
         **os.environ,
         "DATABASE_NAME": connection.settings_dict["NAME"],
-        "DJANGO_SETTINGS_MODULE": "config.settings_all",
+        "DJANGO_SETTINGS_MODULE": "comedores_runtime.settings",
         "WAIT_FOR_DB": "false",
     }
     log_path = tmp_path / "owner-http.log"
@@ -62,13 +66,14 @@ server.serve_forever()
                 assert selector.select(timeout=30), log_path.read_text()
                 line = process.stdout.readline().strip()
             assert line.startswith("READY "), line + log_path.read_text()
+            print(log_path.read_text())
             origin = line.removeprefix("READY ")
             process.contract_log = log_path
             from core import internal_services
 
             original_owner = internal_services.backend_de_app
             # Destino del contrato inyectado en el test. El registro, imágenes y
-            # topología reales pertenecen a C3 y no se dan por probados aquí.
+            # topología/imágenes no se dan por probados sólo con este loopback.
             monkeypatch.setattr(
                 internal_services,
                 "backend_de_app",

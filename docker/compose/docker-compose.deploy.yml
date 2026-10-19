@@ -60,6 +60,33 @@ services:
       start_period: 1m
       retries: 6
 
+  # Comedores y Espacios comunitarios; sin puertos publicados.
+  backend_comedores:
+    image: sisoc/backend-comedores:${SISOC_RELEASE_SHA:-local}
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+      target: backend
+      args:
+        BACKEND: comedores
+    env_file:
+      - .env
+    environment:
+      TZ: America/Argentina/Buenos_Aires
+      DJANGO_SETTINGS_MODULE: comedores_runtime.settings
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_COMEDORES_WORKERS:-2}", "--log-level", "info"]
+    volumes:
+      - ./media:/sisoc/media
+      - ./static_root:/sisoc/static_root:ro
+      - ./logs:/sisoc/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen, Request; r = urlopen(Request('http://127.0.0.1:8000/health/', headers={'X-Forwarded-Proto': 'https'}), timeout=2); exit(0 if r.status == 200 else 1)"]
+      interval: 10s
+      timeout: 3s
+      start_period: 1m
+      retries: 6
+
   # Backend de Ver para Ser Libre (src/backends/config/backends.json); no publica puertos.
   backend_vpsl:
     image: sisoc/backend-vpsl:${SISOC_RELEASE_SHA:-local}

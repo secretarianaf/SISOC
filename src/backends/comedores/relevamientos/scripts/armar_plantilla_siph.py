@@ -10,8 +10,8 @@ Se corre una sola vez cuando el área cambia el formulario; el resultado va a
 
 Uso (dentro del contenedor de Django, que tiene python-docx):
 
-    python -I src/backends/sisoc_core/relevamientos/scripts/armar_plantilla_siph.py \
-        <docx_del_area> src/backends/sisoc_core/relevamientos/templates/relevamientos/docx/seguimiento_siph.docx
+    python -I src/backends/comedores/relevamientos/scripts/armar_plantilla_siph.py \
+        <docx_del_area> src/backends/comedores/relevamientos/templates/relevamientos/docx/seguimiento_siph.docx
 """
 
 import re

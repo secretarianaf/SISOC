@@ -75,7 +75,7 @@ COPY . /repo
 RUN python /repo/src/scripts/arquitectura/generar_mapa.py --imagen
 RUN rm -rf /repo/src/frontends
 
-# SISOC core: config, kernel y su cluster (sisoc_core), sin los backends por vertical.
+# Portal: config, kernel y apps de sisoc_core, sin el cluster Comedores ni verticales.
 FROM source AS core_source
 RUN find /repo/src/backends -mindepth 1 -maxdepth 1 ! -name config ! -name kernel ! -name sisoc_core -exec rm -rf {} +
 

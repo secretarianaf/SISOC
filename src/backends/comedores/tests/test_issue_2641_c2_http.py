@@ -1,4 +1,4 @@
-"""HTTP entre procesos sobre DB sintética; no acredita imágenes separadas."""
+"""HTTP hacia el runtime dueño C3; sin acreditar por sí solo imágenes separadas."""
 
 import json
 import os
@@ -30,19 +30,24 @@ pytestmark = pytest.mark.django_db(transaction=True)
 @pytest.fixture
 def propietario_http(tmp_path):
     script = """
+import sys, time
+started = time.monotonic()
 import config, django
 django.setup()
+print(f'OWNER_SETUP_SECONDS={time.monotonic() - started:.3f}', file=sys.stderr, flush=True)
 from django.urls import resolve
 from django.core.wsgi import get_wsgi_application
 from wsgiref.simple_server import make_server
 resolve('/ciudadanos/1/contribucion/comedores/')
 server = make_server('127.0.0.1', 0, get_wsgi_application())
+print(f'OWNER_READY_SECONDS={time.monotonic() - started:.3f}', file=sys.stderr, flush=True)
 print('READY http://127.0.0.1:' + str(server.server_port), flush=True)
 server.serve_forever()
 """
     env = {
         **os.environ,
         "DATABASE_NAME": connection.settings_dict["NAME"],
+        "DJANGO_SETTINGS_MODULE": "comedores_runtime.settings",
         "WAIT_FOR_DB": "false",
     }
     log_path = tmp_path / "c2-owner.log"
@@ -60,6 +65,7 @@ server.serve_forever()
                 assert selector.select(timeout=30), log_path.read_text()
                 line = process.stdout.readline().strip()
             assert line.startswith("READY "), line + log_path.read_text()
+            print(log_path.read_text())
             yield process, line.removeprefix("READY ")
         finally:
             if process.poll() is None:

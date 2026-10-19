@@ -1,8 +1,9 @@
 # Arquitectura
 
 Desde #2251/#2309 SISOC corre como varios servicios construidos desde el mismo
-repo: el **core** (proxy de entrada y apps de Comedores), un **backend por
-vertical** (PAS, CDI, CDF, Celiaquía, Dispositivos, VAT, VPSL), un **migrador**
+repo: el **core** (proxy de entrada, Usuarios, Dashboard, Encuestas, Insumos y OCR), un **backend por
+vertical** (PAS, CDI, CDF, Celiaquía, Dispositivos, Inspecciones, VAT, VPSL y
+Comedores en desarrollo C3 local), un **migrador**
 único, workers dedicados, Celery de PAS y el **front v2** en React. El diagrama
 de abajo describe un proceso Django; el core reenvía a cada backend los
 prefijos que declara `src/backends/config/backends.json`. Ver
@@ -53,7 +54,7 @@ Evidencia: src/backends/config/settings.py; src/backends/config/urls.py; comedor
 ## 2) Capas existentes
 - Presentación: vistas Django y DRF (urls en `src/backends/config/urls.py`), plantillas en `src/backends/kernel/templates/` y apps propias. Evidencia: src/backends/config/urls.py:12-44; src/backends/config/settings.py:105-120.
 - Middleware: seguridad, sesiones, CORS, CSRF, autenticación, auditlog, mensajes, XFrame, XSS custom, threadlocals; en DEBUG se agregan debug_toolbar y silk. Evidencia: src/backends/config/settings.py:85-99,359-366.
-- Servicios/negocio: servicios en apps (ej. `src/backends/sisoc_core/comedores/services`, `src/backends/cdf/centrodefamilia/services`), sincronización con GESTIONAR en `tasks.py` y consulta técnica compartida de RENAPER en `src/backends/kernel/core/integrations/renaper.py` con fachada `src/backends/kernel/core/services/renaper.py`.
+- Servicios/negocio: servicios en apps (ej. `src/backends/comedores/comedores/services`, `src/backends/cdf/centrodefamilia/services`), sincronización con GESTIONAR en `tasks.py` y consulta técnica compartida de RENAPER en `src/backends/kernel/core/integrations/renaper.py` con fachada `src/backends/kernel/core/services/renaper.py`.
 - Dominio/persistencia: modelos en cada app; DB configurada a MySQL. Evidencia: src/backends/config/settings.py:153-168; apps listadas en src/backends/config/settings.py:42-83.
 - Serialización/API schema: DRF + drf-spectacular. Evidencia: src/backends/config/settings.py:195-234.
 

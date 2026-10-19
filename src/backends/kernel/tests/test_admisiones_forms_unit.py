@@ -307,10 +307,10 @@ def test_numero_expediente_campos_son_editables_y_responsivos():
 
 def test_modales_expediente_usan_layout_amplio_y_parcial_compartido():
     tecnicos = Path(
-        "src/backends/sisoc_core/admisiones/templates/admisiones/admisiones_tecnicos_form.html"
+        "src/backends/comedores/admisiones/templates/admisiones/admisiones_tecnicos_form.html"
     ).read_text(encoding="utf-8")
     legales = Path(
-        "src/backends/sisoc_core/admisiones/templates/admisiones/admisiones_legales_detalle.html"
+        "src/backends/comedores/admisiones/templates/admisiones/admisiones_legales_detalle.html"
     ).read_text(encoding="utf-8")
 
     assert tecnicos.count("modal-expediente-amplio") == 2

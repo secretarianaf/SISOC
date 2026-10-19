@@ -5,7 +5,7 @@
  * puede dar falsos positivos: pide interacción real del usuario (`isTrusted`)
  * además de un valor distinto al de carga.
  *
- * Correr con:  node src/backends/sisoc_core/tests/js/informeTecnicoCambiosSinGuardar.test.js
+ * Correr con:  node src/backends/comedores/tests/js/informeTecnicoCambiosSinGuardar.test.js
  */
 
 function crearCampo(nombre, valor, extra = {}) {

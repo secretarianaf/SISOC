@@ -71,3 +71,7 @@ Evidencia en
 `docs/registro/cambios/2026-T4/2026-10-15-issue-2641-c2-consumidores-y-recursos.md`.
 La aprobación define la elección; no acredita comprensión humana ni aceptación
 funcional manual, cuyos ejercicios fueron delegados/declinados anteriormente.
+
+Continuación C3 aprobada el 2026-10-16: se reutiliza la imagen completa del
+migrador para el worker con rol propio, sin migrar ni servir HTTP. Ver
+`docs/registro/decisiones/2026-10-16-c3-worker-importacion-imagen-migrador.md`.

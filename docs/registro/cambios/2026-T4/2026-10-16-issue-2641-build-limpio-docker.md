@@ -100,3 +100,12 @@ verificado por SHA256. De las 1908 entradas recibidas, 1903 siguen idénticas;
 los cinco cruces son documentación actualizada, más este registro nuevo.
 Los respaldos previos no se sobrescriben. El patch no sustituye el ZIP porque
 el árbol conserva archivos sin rastrear.
+
+## Actualización 2026-10-19
+
+Se completaron migraciones, fixtures y smoke HTTP con usuarios sintéticos sobre
+estas imágenes nuevas, más `collectstatic` aislado. Navegación, permisos/CSRF y
+caída/recuperación local de Comedores aprobados, sin reiniciar el portal.
+Evidencia y límites: `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-smoke-http-docker.md`.
+Esto actualiza sólo esos pendientes locales: aceptación humana, CI remota y
+operaciones de entornos existentes siguen sin ejecutarse.

@@ -408,7 +408,7 @@ futura, no una afirmación de que hayan pasado.
 
 | Pendiente | Evidencia o tratamiento propuesto |
 | --- | --- |
-| Smoke con usuario: Comedores/CDI/CDF/VAT/PAS/ciudadano/favoritos | No ejecutado. Mantener abierto; requiere entorno y aceptación humana |
+| Smoke con usuario: Comedores/CDI/CDF/VAT/PAS/ciudadano/favoritos | Automatizado local en Docker con usuarios sintéticos y las imágenes nuevas: navegación, permisos/CSRF y caída/recuperación aprobados. `collectstatic` local aprobado. Aceptación humana y smoke de entornos existentes siguen pendientes. Evidencia: `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-smoke-http-docker.md` |
 | Deploy selectivo core/vertical, rollback y uptime ajeno | Selector probado; ejecución real pendiente, con SHAs y uptime |
 | Salud backends/workers PAS y promoción HML | No se accedió a entornos; no inferir estado actual del run histórico |
 | Grupo Docker temporal QA | No verificado; ninguna modificación de accesos |

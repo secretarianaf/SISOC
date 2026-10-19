@@ -63,7 +63,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "Facturas y Tickets Prestación Alimentaria",
         ),
         (CATEGORIA_COMPROBANTES_SIPH, "Facturas y Tickets SIPH"),
-        (CATEGORIA_PLANILLA_SEGUROS, "Planilla de Seguros"),
+        (CATEGORIA_PLANILLA_SEGUROS, "Planilla de Seguros II"),
         (CATEGORIA_OTROS, "Documentación Adicional"),
     ]
 
@@ -155,9 +155,9 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         },
         {
             "codigo": CATEGORIA_PLANILLA_SEGUROS,
-            "label": "Planilla de Seguros",
+            "label": "Planilla de Seguros II",
             "required": False,
-            "multiple": False,
+            "multiple": True,
             "order": 11,
             "lineas": (LINEA_TRADICIONAL,),
         },
@@ -272,7 +272,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             },
             {
                 "codigo": CATEGORIA_PLANILLA_SEGUROS,
-                "label": "Planilla de Seguros",
+                "label": "Planilla de Seguros II",
                 "filename": "Planilla.II.Seguros.Actualizacion.-.Tradicional.docx",
                 "order": 9,
             },

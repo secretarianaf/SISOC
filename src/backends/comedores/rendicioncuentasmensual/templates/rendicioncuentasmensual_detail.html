@@ -170,7 +170,7 @@
                                     <input type="hidden"
                                            name="accion_proceso"
                                            value="iniciar_revision_auditoria" />
-                                    <button class="btn btn-primary">Iniciar revisión de Auditoría</button>
+                                    <button class="btn btn-primary">Iniciar revisión para carga</button>
                                 </form>
                             {% elif rendicion.subestado_proceso == 'en_curso' %}
                                 <form method="post">
@@ -384,7 +384,8 @@
                                                     <a href="{% url 'rendicioncuentasmensual_documento_ver' archivo.id %}"
                                                        class="btn btn-ver"
                                                        target="_blank"
-                                                       title="Ver archivo">
+                                                       title="Ver archivo"
+                                                       data-refresh-visualizacion="true">
                                                         <i class="fas fa-eye"></i>
                                                         Ver
                                                     </a>
@@ -399,9 +400,14 @@
                                         </tr>
                                         {% if archivo.observaciones or archivo.estado == 'presentado' and puede_revisar_documentos %}
                                             <tr id="observaciones-row-{{ archivo.id }}"
-                                                class="documento-detail-row {% if archivo.estado == 'presentado' and puede_revisar_documentos %}d-none{% endif %}">
+                                                class="documento-detail-row {% if archivo.estado == 'presentado' and puede_revisar_documentos and not archivo.observaciones %}d-none{% endif %}">
                                                 <td colspan="5" class="text-start pt-0 pb-1">
                                                     {% if puede_revisar_documentos and archivo.estado == 'presentado' %}
+                                                        {% if archivo.observaciones %}
+                                                            <div class="ps-3" id="observaciones-display-{{ archivo.id }}">
+                                                                <strong>Observaciones:</strong> {{ archivo.observaciones }}
+                                                            </div>
+                                                        {% endif %}
                                                         <div class="d-flex align-items-start gap-2">
                                                             <textarea id="observaciones-{{ archivo.id }}"
                                                                       name="observaciones"
@@ -466,7 +472,8 @@
                                                                 <a href="{% url 'rendicioncuentasmensual_documento_ver' subsanacion.id %}"
                                                                    class="btn btn-ver"
                                                                    target="_blank"
-                                                                   title="Ver archivo">
+                                                                   title="Ver archivo"
+                                                                   data-refresh-visualizacion="true">
                                                                     <i class="fas fa-eye"></i>
                                                                     Ver
                                                                 </a>
@@ -540,7 +547,8 @@
                                                                 <a href="{% url 'rendicioncuentasmensual_documento_ver' subsanacion.id %}"
                                                                    class="btn btn-ver"
                                                                    target="_blank"
-                                                                   title="Ver archivo">
+                                                                   title="Ver archivo"
+                                                                   data-refresh-visualizacion="true">
                                                                     <i class="fas fa-eye"></i>
                                                                     Ver
                                                                 </a>
@@ -555,9 +563,14 @@
                                                     </tr>
                                                     {% if subsanacion.estado == 'presentado' or subsanacion.observaciones %}
                                                         <tr id="observaciones-row-{{ subsanacion.id }}"
-                                                            class="documento-detail-row {% if subsanacion.estado == 'presentado' %}d-none{% endif %}">
+                                                            class="documento-detail-row {% if subsanacion.estado == 'presentado' and not subsanacion.observaciones %}d-none{% endif %}">
                                                             <td colspan="5" class="text-start pt-0 pb-1 ps-4">
                                                                 {% if subsanacion.estado == 'presentado' %}
+                                                                    {% if subsanacion.observaciones %}
+                                                                        <div class="ps-3" id="observaciones-display-{{ subsanacion.id }}">
+                                                                            <strong>Observaciones:</strong> {{ subsanacion.observaciones }}
+                                                                        </div>
+                                                                    {% endif %}
                                                                     <div class="d-flex align-items-start gap-2">
                                                                         <textarea id="observaciones-{{ subsanacion.id }}"
                                                                                   name="observaciones"

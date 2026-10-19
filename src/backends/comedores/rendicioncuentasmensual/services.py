@@ -100,6 +100,7 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         DocumentacionAdjunta.CATEGORIA_COMPROBANTES_ALIMENTARIO,
         DocumentacionAdjunta.CATEGORIA_COMPROBANTES_SIPH,
         DocumentacionAdjunta.CATEGORIA_OTROS,
+        DocumentacionAdjunta.CATEGORIA_PLANILLA_SEGUROS,
     }
     PERMISOS_POR_ETAPA = {
         RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION: (
@@ -1151,6 +1152,9 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
             archivo=archivo,
             rendicion_cuenta_mensual=rendicion,
             documento_subsanado=documento_subsanado,
+            observaciones=(
+                documento_subsanado.observaciones if documento_subsanado else None
+            ),
         )
         RendicionCuentaMensualService._aplicar_usuario_ultima_modificacion(
             rendicion, actor
@@ -1248,12 +1252,7 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         } and rendicion.subestado_proceso == (
             RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES
         ):
-            rendicion.subestado_proceso = (
-                RendicionCuentaMensual.SUBESTADO_SUBSANADO
-                if rendicion.etapa_proceso
-                == RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA
-                else RendicionCuentaMensual.SUBESTADO_EN_CURSO
-            )
+            rendicion.subestado_proceso = RendicionCuentaMensual.SUBESTADO_SUBSANADO
         else:
             rendicion.etapa_proceso = (
                 RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION

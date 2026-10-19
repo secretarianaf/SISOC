@@ -479,6 +479,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Las restricciones de navegacion aportadas por dominios se registran en `core.services.sidebar_access`; el template tag global no debe importar reglas VAT.
 - El endpoint Select2 de organizaciones vive en `gestion_organizaciones.views` y `gestion_organizaciones.urls`, aunque conserva la ruta global `ajax/load-organizaciones/`.
 - Los post-procesos de dominio de `load_fixtures` se registran en `core.services.fixture_post_load`; el comando de `core` no debe importar sus servicios directamente.
+- `load_fixtures` reintenta registros pendientes entre archivos hasta que no haya progreso, sin repetir los ya guardados ni reevaluar el criterio de tablas vacías para archivos parciales. Regresión: `src/backends/kernel/tests/test_load_fixtures_command.py`; no reemplazar esto por un orden fijo de carpetas.
 - La auditoria de autenticacion se solicita desde `users.auth_audit`; PWA registra el persistidor de `AuditoriaSesionPWA` durante su arranque.
 - La sincronizacion entre `Profile.duplas_asignadas` y `Dupla.coordinador` se suscribe desde `duplas.signals`; `users` no debe conocer el modelo Dupla.
 - Las restricciones PWA por programa de Comedores se consultan mediante `users.pwa_comedores`; Comedores registra la capacidad concreta durante su arranque.

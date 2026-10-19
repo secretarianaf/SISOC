@@ -414,7 +414,7 @@ futura, no una afirmación de que hayan pasado.
 | Grupo Docker temporal QA | No verificado; ninguna modificación de accesos |
 | Lentitud de ciudadano/dashboard CDF/favoritos | Sin mediciones; diferir optimización/cache hasta necesidad y decisión |
 | CPU/RAM y workers | Sin mediciones; no se proponen límites |
-| Fixtures en DB vacía e importación ciudadanos SQLite | Hay reintentos FK y tests de load_fixtures en código; no prueban que el antecedente esté resuelto. Reproducción pendiente |
+| Fixtures en DB vacía e importación ciudadanos SQLite | Revalidado localmente después de C4: importación SQLite aprobada; reproducido y corregido el orden entre fixtures de departamentos IPI/provincias. Evidencia y límites: `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-fixtures-ciudadanos.md`. Sin ejecución en entornos existentes |
 | Redirects legacy CDF | Siguen en `config.urls`; no retirar sin evidencia de uso/compatibilidad |
 | Dependencias runtime/dev | Dockerfile instala `requirements/all.txt`; antecedente confirmado, separación no ejecutada |
 | Coordinación #2577 y `/v2/` | Fronts registrados VPSL/Celiaquía y router existente; preservar contratos/rutas, coordinar al cortar |

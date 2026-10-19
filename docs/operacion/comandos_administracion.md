@@ -2,8 +2,12 @@
 
 ## Core
 - `load_fixtures`: carga fixtures en modo upsert (no borra) y acepta
-  `--force`/`--overwrite` para reaplicar las entradas existentes. Después
-  sincroniza el catálogo de intervenciones y el territorio del fixture. La
+  `--force`/`--overwrite` para reaplicar las entradas existentes. Tras
+  recorrer los archivos, reintenta sólo los registros fallidos para resolver
+  FKs hacia fixtures posteriores, incluso si un archivo quedó parcialmente
+  cargado. Detiene los reintentos si no hay progreso y reporta los errores
+  restantes; no cambia el criterio inicial de tablas vacías ni fuerza cargas.
+  Luego sincroniza el catálogo de intervenciones y el territorio del fixture. La
   sincronización territorial es create-only: resuelve claves naturales
   normalizadas, conserva filas ya presentes —incluidas las creadas
   orgánicamente— y reporta las filas que no pudo incorporar por integridad.

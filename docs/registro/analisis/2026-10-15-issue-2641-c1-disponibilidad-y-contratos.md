@@ -24,7 +24,7 @@ formulario mientras otra falla. Conservar datos anteriores no implica usarlos
 para autorizar nuevas acciones.
 
 Siguen confirmados: nombre **Espacios comunitarios**, proxy actual durante la
-preparación, sesión/Token existentes, DB/almacenamiento/migrador compartidos,
+preparación, sesión y credenciales existentes, DB/almacenamiento/migrador compartidos,
 #2725 postergado, sin commits/push/merge/deploy autorizados. El usuario delegó
 la revisión y pidió omitir el ejercicio de modos de falla; no se lo vuelve a pedir.
 

@@ -10,7 +10,7 @@ from django.urls import reverse
 
 from core.constants import UserGroups
 from core.models import Provincia
-from usuarios.forms import CustomUserChangeForm, UserCreationForm
+from pwa.user_forms import CustomUserChangeForm, UserCreationForm
 from users.secciones_usuario import (
     SECCION_ADMINISTRACION,
     SECCION_DATACALLE,

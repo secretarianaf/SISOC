@@ -1,76 +1,12 @@
 import hashlib
-import uuid
 
 from django.contrib.auth.models import User
 from django.db import models
 
+from audittrail.models import AuditoriaSesionPWA  # pylint: disable=unused-import
 from comedores.models import Comedor
 from comedores.models import Nomina
 from core.models import Dia
-
-
-class AuditoriaSesionPWA(models.Model):
-    """Auditoría de eventos de autenticación/uso de API PWA."""
-
-    EVENTO_LOGIN_OK = "login_ok"
-    EVENTO_LOGIN_ERROR = "login_error"
-    EVENTO_LOGOUT = "logout"
-    EVENTO_TOKEN_INVALIDO = "token_invalido"
-    EVENTO_ME_OK = "me_ok"
-
-    RESULTADO_OK = "ok"
-    RESULTADO_ERROR = "error"
-
-    EVENTO_CHOICES = (
-        (EVENTO_LOGIN_OK, "Login exitoso"),
-        (EVENTO_LOGIN_ERROR, "Login fallido"),
-        (EVENTO_LOGOUT, "Logout"),
-        (EVENTO_TOKEN_INVALIDO, "Token inválido"),
-        (EVENTO_ME_OK, "Consulta de contexto"),
-    )
-    RESULTADO_CHOICES = (
-        (RESULTADO_OK, "OK"),
-        (RESULTADO_ERROR, "Error"),
-    )
-
-    user = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="auditorias_pwa",
-    )
-    username_intentado = models.CharField(max_length=150, null=True, blank=True)
-    evento = models.CharField(max_length=30, choices=EVENTO_CHOICES)
-    resultado = models.CharField(max_length=10, choices=RESULTADO_CHOICES)
-    fecha_evento = models.DateTimeField(auto_now_add=True, db_index=True)
-    ip = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.CharField(max_length=512, null=True, blank=True)
-    path = models.CharField(max_length=255)
-    metodo_http = models.CharField(max_length=10)
-    codigo_respuesta = models.PositiveSmallIntegerField(null=True, blank=True)
-    motivo_error = models.CharField(max_length=255, null=True, blank=True)
-    session_id = models.UUIDField(default=uuid.uuid4, editable=False, db_index=True)
-    rol_pwa_snapshot = models.JSONField(default=list, blank=True)
-    comedor_ids_snapshot = models.JSONField(default=list, blank=True)
-    app_version = models.CharField(max_length=50, null=True, blank=True)
-    platform = models.CharField(max_length=30, null=True, blank=True)
-    is_standalone = models.BooleanField(null=True, blank=True)
-
-    class Meta:
-        verbose_name = "Auditoría sesión PWA"
-        verbose_name_plural = "Auditorías sesiones PWA"
-        indexes = [
-            models.Index(fields=["user", "fecha_evento"]),
-            models.Index(fields=["evento", "fecha_evento"]),
-            models.Index(fields=["resultado", "fecha_evento"]),
-        ]
-
-    def __str__(self):
-        username = (
-            self.user.username if self.user_id else self.username_intentado or "-"
-        )
-        return f"{self.evento} - {username} - {self.fecha_evento:%Y-%m-%d %H:%M:%S}"
 
 
 class AuditoriaOperacionPWA(models.Model):

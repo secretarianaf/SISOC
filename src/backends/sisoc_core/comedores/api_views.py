@@ -94,7 +94,7 @@ from pwa.services.accesos import (
     list_operadores_for_comedor,
     update_operador_permissions,
 )
-from usuarios.api_permissions import (
+from pwa.api_permissions import (
     CanViewPwaRendicionesPermission,
     CanViewPwaUsuariosPermission,
     HasMobileRendicionPermission,
@@ -104,7 +104,7 @@ from usuarios.api_permissions import (
     IsPWARepresentativeForComedor,
     IsPWAWriteAllowed,
 )
-from usuarios.api_serializers import (
+from pwa.operadores_serializers import (
     OperadorCreateResponseSerializer,
     OperadorCreateSerializer,
     OperadorListSerializer,

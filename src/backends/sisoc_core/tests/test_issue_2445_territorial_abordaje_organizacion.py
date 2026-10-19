@@ -8,7 +8,7 @@ from django.urls import reverse
 from core.models import Provincia
 from gestion_organizaciones.forms import OrganizacionForm
 from organizaciones.models import Organizacion
-from usuarios.services_territoriales import (
+from comedores.territoriales_pnud import (
     ROL_RESPONSABLE_TERRITORIAL_PNUD,
     ROL_TERRITORIAL_PNUD,
     etiqueta_territorial,

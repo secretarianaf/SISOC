@@ -84,12 +84,12 @@ from pwa.view_helpers import (
     serialize_ciudadano_local,
     serialize_renaper_data,
 )
-from usuarios.api_permissions import CanViewPwaColaboradoresPermission
-from usuarios.api_permissions import HasPwaColaboradoresPermission
-from usuarios.api_permissions import HasPwaNominaPermission
-from usuarios.api_permissions import IsPWAAuthenticatedToken
-from usuarios.api_permissions import IsPWAUserForComedor
-from usuarios.api_permissions import IsPWAWriteAllowed
+from pwa.api_permissions import CanViewPwaColaboradoresPermission
+from pwa.api_permissions import HasPwaColaboradoresPermission
+from pwa.api_permissions import HasPwaNominaPermission
+from pwa.api_permissions import IsPWAAuthenticatedToken
+from pwa.api_permissions import IsPWAUserForComedor
+from pwa.api_permissions import IsPWAWriteAllowed
 from comedores.models import (
     ActividadColaboradorEspacio,
     ColaboradorEspacio,

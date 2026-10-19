@@ -4,6 +4,48 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 - Mapa de dispositivos: `/dispositivos/mapa/`, `dispositivos.views.DispositivoMapView`, `geolocate_dispositivo` en services y `dispositivosMap.js`. Mantiene filtros/permisos/alcance del listado, integra provincia/estado en un único buscador combinable, paginación de tabla en el navegador de a 15 y selección de marcador por `?dispositivo=<pk>`; muestra marcadores individuales con Leaflet y usa Georef con coordenadas persistidas en `Dispositivo.ubicacion_georef` y firma de dirección para reutilización/invalidation; migración 0006 antes del deploy. Registro: `docs/registro/cambios/2026-T4/2026-10-13-dispositivos-mapa.md`.
 
+## #2641: preparación de Comedores y Espacios comunitarios
+
+Fronteras propuestas aprobadas; C0 implementado, revisado y validado localmente
+con 135 pruebas focalizadas MySQL. **Espacios comunitarios** conserva el identificador
+técnico `pwa`. Permisos en `src/backends/sisoc_core/pwa/api_permissions.py`,
+serializers de operadores en `src/backends/sisoc_core/pwa/operadores_serializers.py`,
+fachada de accesos en `src/backends/sisoc_core/pwa/api.py` y helpers PNUD en
+`src/backends/sisoc_core/comedores/territoriales_pnud.py`.
+No usar los módulos anteriores de `usuarios` para esas responsabilidades.
+
+C1 tiene contratos y traslado de auditoría aprobados, con implementación local
+**validada con 392 pruebas focalizadas MySQL**, sin merge ni deploy. Entradas de identidad: `src/backends/sisoc_core/usuarios/auth_forms.py`,
+`src/backends/sisoc_core/usuarios/auth_views.py`, `src/backends/sisoc_core/usuarios/api_views.py`; DTOs y formularios compartidos:
+`src/backends/kernel/users/credentials.py`, `account_forms.py`, `admin_forms.py`,
+`form_sections.py` e `identity_fields.py`. Las rutas públicas se conservan.
+
+Las reglas/formularios compuestos viven en `src/backends/sisoc_core/pwa/user_forms.py` y
+`src/backends/sisoc_core/pwa/user_admin_views.py`; los contratos de login/contexto en
+`src/backends/sisoc_core/pwa/identity_services.py`. `src/backends/kernel/core/internal_services.py` reutiliza transporte,
+sesión/Token y adaptadores locales del dueño. Los campos/efectos se clasifican
+en `src/backends/kernel/users/admin_operations.py`; ausencia de un campo no revoca sus accesos.
+`src/backends/kernel/users/middleware_admin_body.py` conserva multipart antes de CSRF
+sólo en el POST del ABM; no exime sus controles. El recupero web revoca el Token previo.
+
+La auditoría de sesión pertenece a `src/backends/kernel/audittrail/models.py` y `auth.py`.
+Migraciones `src/backends/kernel/audittrail/migrations/0002_auditoria_sesion_desde_pwa.py` y
+`src/backends/sisoc_core/pwa/migrations/0027_auditoria_sesion_a_kernel.py`: estado y ContentType, misma tabla/IDs;
+los cuatro permisos del modelo pasan de `pwa` a `audittrail`.
+No cambia `pwa.manage_*`. No revertir sólo la imagen ignorando esta metadata.
+
+Indicadores: `src/backends/sisoc_core/comedores/dashboard_metrics.py` calcula/autoriza; el portal guarda
+la última muestra completa en `src/backends/sisoc_core/dashboard/comedores_metrics.py`. No restaurar los
+callbacks retirados de `dashboard.signals` ni imports de cálculo en dashboard.
+El template compartido del ABM está en `src/backends/kernel/users/templates/user/user_form.html`.
+
+El importador `usuarios.pwa_import_access` queda para C2. El core conserva su
+runtime; C3 todavía debe verificar imagen, proceso y selector separados.
+No hay backend Comedores extraído ni nueva topología en C1.
+Registros: `docs/registro/cambios/2026-T4/2026-10-15-issue-2641-c0-espacios-comunitarios.md`
+y `docs/registro/decisiones/2026-10-15-identidad-y-espacios-comunitarios.md`.
+Evidencia C1: `docs/registro/cambios/2026-T4/2026-10-15-issue-2641-c1-identidad-y-disponibilidad.md`.
+
 ## Como leer este documento
 
 Reglas vigentes y checklists: `docs/desarrollo/verticales_independientes.md`.
@@ -403,7 +445,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Las pruebas de alcance territorial que ejercitan `Ciudadano` viven en `src/backends/kernel/ciudadanos/test_territorial_scope.py`; el módulo heredado de regresiones de Users vive en `src/backends/kernel/tests/test_users_regressions.py` para no abrir imports de dominio dentro de la app.
 - Los querysets de dominio requeridos por formularios administrativos de Users se registran en `users.form_catalogs`; `users.forms` no debe importar modelos de Comedores, Duplas ni Organizaciones.
 - La expansión de organizaciones y comedores del importador PWA se resuelve mediante `users.pwa_import_access`; Comedores registra el proveedor y `users.services_user_import` sólo consume IDs y especificaciones de acceso.
-- `users.api` es la fachada pública de la proyección PWA por organización. `comedores.signals` y `sincronizar_accesos_pwa_organizaciones` sólo le pasan IDs; `AccesoOrganizacionPWA` es la fuente de verdad y `AccesoComedorPWA` la proyección. El save/soft-delete/restore de `Comedor` es transaccional para estos side effects y los envíos a GESTIONAR quedan en `on_commit`.
+- `pwa.api` es la fachada pública de la proyección de accesos de Espacios comunitarios por organización. `comedores.signals` y `sincronizar_accesos_pwa_organizaciones` sólo le pasan IDs; `AccesoOrganizacionPWA` es la fuente de verdad y `AccesoComedorPWA` la proyección. El save/soft-delete/restore de `Comedor` es transaccional para estos side effects y los envíos a GESTIONAR quedan en `on_commit`.
 
 ### Convenciones visibles
 
@@ -492,7 +534,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 - `src/backends/kernel/users/bootstrap/groups_seed.py`
 - `src/backends/kernel/users/services_group_permissions.py`
-- `src/backends/sisoc_core/usuarios/api_permissions.py`
+- `src/backends/sisoc_core/pwa/api_permissions.py`
 - permisos especificos por app, por ejemplo `src/backends/celiaquia/celiaquia/permissions.py`
 - docs: `docs/implementaciones/usuarios_perfil_iam.md`
 
@@ -617,7 +659,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `src/backends/sisoc_core/pwa/api_urls.py`
 - `src/backends/sisoc_core/pwa/api_views.py`
 - `src/backends/sisoc_core/pwa/services/accesos.py`: alcance PWA, accesos y coordinador de equipo técnico PWA.
-- `src/backends/sisoc_core/usuarios/api_permissions.py`: permisos de lectura y veto transversal de escritura
+- `src/backends/sisoc_core/pwa/api_permissions.py`: permisos de lectura y veto transversal de escritura
   para roles PWA de solo lectura.
 - Toda mutación PWA debe incluir `IsPWAWriteAllowed`, excepto las acciones
   personales expresamente permitidas (contraseña y suscripciones push).
@@ -1017,7 +1059,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | Necesidad | Mirar primero |
 | --- | --- |
 | login / reset / perfil | `src/backends/sisoc_core/usuarios/views.py`, `src/backends/sisoc_core/usuarios/forms.py`, templates `src/backends/kernel/users/templates/` |
-| grupos / permisos | `src/backends/kernel/users/bootstrap/groups_seed.py`, `src/backends/sisoc_core/usuarios/api_permissions.py`, docs IAM |
+| grupos / permisos | `src/backends/kernel/users/bootstrap/groups_seed.py`, `src/backends/sisoc_core/pwa/api_permissions.py`, docs IAM |
 | navbar / sidebar / layout | `src/backends/kernel/templates/includes/`, `src/backends/kernel/templates/includes/sidebar/`, `src/backends/kernel/static/custom/js/sidebar.js` |
 | filtro/listado generico | `src/backends/kernel/core/`, `src/backends/kernel/templates/components/data_table.html`, JS de la pantalla |
 | comedores | `src/backends/sisoc_core/comedores/models.py`, `tasks.py`, `signals.py`, tests `test_comedor*` |

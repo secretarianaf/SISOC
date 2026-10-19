@@ -45,3 +45,8 @@ class ComedoresConfig(AppConfig):
         )
 
         registrar_resolvedor_user_import_pwa()
+        from comedores.dashboard_metrics import (  # pylint: disable=import-outside-toplevel
+            registrar_metricas_dashboard,
+        )
+
+        registrar_metricas_dashboard()

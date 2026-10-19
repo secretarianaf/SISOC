@@ -11,7 +11,7 @@ from core.backend_proxy import backend_proxy_urlpatterns
 from core.legacy_redirects import redirecciones_legacy
 from core.url_registry import stub_urlpatterns
 from core.v2_frontend import frontend_v2
-from usuarios.views import (
+from usuarios.auth_views import (
     PasswordResetConfirmCustomView,
     SisocPasswordResetCompleteView,
     SisocPasswordResetDoneView,
@@ -57,6 +57,7 @@ urlpatterns = [
         name="password_reset_complete",
     ),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
+    path("admin/pwa/auditoriasesionpwa/", include("audittrail.legacy_admin_urls")),
     path("admin/", admin.site.urls),
     path("", include("usuarios.urls")),
     path("", include("django.contrib.auth.urls")),
@@ -75,6 +76,8 @@ urlpatterns = [
     path("", include("relevamientos.urls")),
     path("", include("insumos.urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
+    path("interno/usuarios/", include("pwa.user_admin_urls")),
+    path("interno/espacios/", include("pwa.identity_urls")),
     # API URLs
     path("api/users/", include("usuarios.api_urls")),
     path("api/comedores/", include("comedores.api_urls")),

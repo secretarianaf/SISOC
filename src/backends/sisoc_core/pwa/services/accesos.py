@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+
 from datetime import timedelta
 from typing import Iterable
 
@@ -16,21 +17,26 @@ from django.db import IntegrityError, transaction
 from django.db.models import Exists, F, OuterRef, Q
 from django.utils import timezone
 
-from core.models import Provincia
 from users.form_catalogs import obtener_queryset_formulario
 from users.models import (
     Profile,
-    TerritorialComedorProvincia,
 )
+from users.profile_utils import get_profile_or_none
+from users.services_territorial_comedor import (  # pylint: disable=unused-import
+    is_territorial_comedor_user,
+    get_territorial_comedor_provincia_ids,
+    get_territorial_comedor_provincias,
+)
+from iam.services import get_effective_permission_codes
+
 from pwa.models import (
     AccesoComedorPWA,
     AccesoOrganizacionPWA,
     AuditAccesoComedorPWA,
     CoordinadorEquipoTecnicoPWA,
 )
+
 from pwa.services.capacidades_comedores import es_comedor_alimentar_comunidad
-from users.profile_utils import get_profile_or_none
-from iam.services import get_effective_permission_codes
 
 User = get_user_model()
 
@@ -153,45 +159,6 @@ def get_coordinador_pwa_comedor_ids(user) -> list[int]:
 def is_pwa_user(user) -> bool:
     """Indica si el usuario tiene al menos un acceso PWA activo."""
     return get_access_rows(user).exists() or is_coordinador_equipo_tecnico_pwa(user)
-
-
-def is_territorial_comedor_user(user) -> bool:
-    """Indica si el usuario es territorial de comedores (SISOC - Mobile).
-
-    Rol simple marcado con ``Profile.es_territorial_comedor``; no depende de
-    ``AccesoComedorPWA``. Habilita el login mobile del territorial.
-    """
-    if not user or not getattr(user, "is_authenticated", False):
-        return False
-    profile = get_profile_or_none(user)
-    return bool(getattr(profile, "es_territorial_comedor", False))
-
-
-def get_territorial_comedor_provincia_ids(user) -> list[int]:
-    """IDs de provincias de alcance de un usuario territorial de comedores."""
-    if not is_territorial_comedor_user(user):
-        return []
-    profile = get_profile_or_none(user)
-    if not profile:
-        return []
-    return list(
-        TerritorialComedorProvincia.objects.filter(profile=profile)
-        .values_list("provincia_id", flat=True)
-        .distinct()
-    )
-
-
-def get_territorial_comedor_provincias(user) -> list[dict]:
-    """Provincias de alcance del territorial como ``[{id, nombre}]`` (por nombre)."""
-    provincia_ids = get_territorial_comedor_provincia_ids(user)
-    if not provincia_ids:
-        return []
-    return [
-        {"id": provincia.id, "nombre": provincia.nombre}
-        for provincia in Provincia.objects.filter(id__in=provincia_ids).order_by(
-            "nombre"
-        )
-    ]
 
 
 def get_territorial_comedor_users_for_provincia(provincia_id):

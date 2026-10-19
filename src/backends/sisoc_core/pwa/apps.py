@@ -5,6 +5,7 @@ from django.db.models.signals import post_migrate
 class PwaConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "pwa"
+    verbose_name = "Espacios comunitarios"
 
     def ready(self):
         from pwa.signals import (
@@ -21,8 +22,13 @@ class PwaConfig(AppConfig):
         )
 
         registrar_contribucion_ciudadano()
-        from pwa.auth_audit import (  # pylint: disable=import-outside-toplevel
-            registrar_auditoria_auth_pwa,
+        from pwa.identity_services import (  # pylint: disable=import-outside-toplevel
+            registrar_servicios_identidad,
         )
 
-        registrar_auditoria_auth_pwa()
+        registrar_servicios_identidad()
+        from pwa.user_admin_views import (  # pylint: disable=import-outside-toplevel
+            registrar_operacion_usuario,
+        )
+
+        registrar_operacion_usuario()

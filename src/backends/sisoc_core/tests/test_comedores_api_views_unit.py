@@ -4,7 +4,7 @@ from datetime import date, datetime
 from types import SimpleNamespace
 
 from comedores import api_views as module
-from usuarios.api_permissions import IsPWAUserForComedor, IsPWAWriteAllowed
+from pwa.api_permissions import IsPWAUserForComedor, IsPWAWriteAllowed
 
 
 def _build_view(request=None):

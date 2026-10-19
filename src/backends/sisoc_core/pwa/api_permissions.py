@@ -1,3 +1,5 @@
+"""Permisos de Espacios comunitarios (app técnica pwa)."""
+
 from rest_framework.permissions import BasePermission
 
 from iam.services import user_has_permission_code

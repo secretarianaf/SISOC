@@ -9,7 +9,7 @@ from django.db.models import Q
 
 from organizaciones.models import Organizacion
 from rendicioncuentasmensual.models import RendicionCuentaMensual
-from usuarios.services_territoriales import (
+from comedores.territoriales_pnud import (
     etiqueta_territorial,
     usuarios_territoriales_pnud,
 )

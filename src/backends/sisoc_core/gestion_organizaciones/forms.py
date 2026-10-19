@@ -10,7 +10,7 @@ from organizaciones.models import (
 )
 from gestion_organizaciones.models import Firmante
 from core.models import Municipio, Provincia, Localidad
-from usuarios.services_territoriales import (
+from comedores.territoriales_pnud import (
     etiqueta_territorial,
     usuarios_territoriales_pnud,
 )

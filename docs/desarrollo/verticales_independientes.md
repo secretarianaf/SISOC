@@ -20,6 +20,18 @@ reemplaza sus rutas. Para operar, ver [backends por servicio](../operacion/backe
 
 Antes de agregar algo, buscar su dueño y un patrón existente. Una regla de un
 programa va en sus services; compartirla no basta para convertirla en kernel.
+
+Preparación C0 de #2641: **Espacios comunitarios** es el nombre del dominio
+móvil que conserva el identificador técnico `pwa`. Sus permisos, serializers
+de operadores y fachada de accesos están en
+`src/backends/sisoc_core/pwa/api_permissions.py`,
+`src/backends/sisoc_core/pwa/operadores_serializers.py` y
+`src/backends/sisoc_core/pwa/api.py`. Los helpers territoriales PNUD viven en
+`src/backends/sisoc_core/comedores/territoriales_pnud.py`.
+El runtime sigue siendo el core; esto todavía no extrae un backend Comedores.
+La operación usuario/accesos, el importador y la auditoría compartida requieren
+resolver las fronteras de C1 antes de separar procesos.
+
 Ejemplos reales: `organizaciones` y `catalogo_intervenciones` son maestros
 compartidos; `Firmante` está en `gestion_organizaciones` porque depende de
 `comedores.Programas`. Una nueva responsabilidad del kernel necesita revisión
@@ -247,3 +259,26 @@ y documentos marcados explícitamente como históricos al comienzo.
 Un literal relativo a una app se marca explícitamente
 en su línea; no se hace pasar por ruta desde la raíz. Los ejemplos y comandos
 de esta guía se revisan además contra archivos existentes y el plan de deploy.
+
+
+## #2641 C1: contratos aprobados de identidad y Espacios
+
+El portal conserva identidad y administración independiente. Comedores valida
+la elegibilidad/contexto de Espacios y ejecuta cada operación compuesta completa
+con los servicios compartidos de identidad, una transacción y controles propios
+de sesión, CSRF, permisos y alcance. No usar un header de usuario como identidad
+ni repartir el guardado del mismo formulario entre procesos. Campos omitidos
+conservan accesos; efectos ambiguos de grupos/roles requieren al dueño.
+
+El contexto agrega `espacios_comunitarios_disponible`. Su fallback no autoriza
+mutaciones. El recupero de otros programas y usuarios mixtos usa el enlace web
+central. El indicador persistido sólo cambia con una muestra completa y válida;
+fallas conservan los últimos valores y se informan en la pantalla.
+
+Auditoría de sesión: `audittrail.AuditoriaSesionPWA`, misma tabla/IDs y asignaciones,
+con cuatro prefijos de permiso trasladados de `pwa` a `audittrail`. El rollback
+necesita coordinar estado/ContentType y código, no sólo volver a la imagen.
+C1 pasó 392 pruebas focalizadas locales; no demuestra por sí solo independencia de imagen o deploy.
+Evidencia: `docs/registro/cambios/2026-T4/2026-10-15-issue-2641-c1-identidad-y-disponibilidad.md`.
+Decisión y consecuencias:
+`docs/registro/decisiones/2026-10-15-identidad-y-espacios-comunitarios.md`.

@@ -6,6 +6,15 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ## #2641: preparación de Comedores y Espacios comunitarios
 
+Lectura de la topología final y el PR: `docs/desarrollo/arquitectura_servicios_2641.md`
+y `docs/diagramas/issue-2641-servicios.svg`. La publicación se autorizó el
+2026-10-19; los límites previos de commit/push de registros históricos no expresan
+la autorización actual. Merge, deploy y entornos existentes siguen sin autorizar.
+El ABM independiente distingue controles HTML vaciados mediante `_identity_present`
+de omisiones parciales, antes de clasificar efectos en Comedores; los campos
+deshabilitados no emiten marcador. Evidencia y alcance de revisión:
+`docs/registro/cambios/2026-T4/2026-10-19-issue-2641-revision-publicacion.md`.
+
 Fronteras propuestas aprobadas; C0 implementado, revisado y validado localmente
 con 135 pruebas focalizadas MySQL. **Espacios comunitarios** conserva el identificador
 técnico `pwa`. Permisos en `src/backends/comedores/pwa/api_permissions.py`,

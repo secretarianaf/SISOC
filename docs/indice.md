@@ -3,6 +3,7 @@
 ## Mapa de documentos
 ### 1. Contexto y arquitectura
 - `docs/desarrollo/verticales_independientes.md`: guía vigente para ubicar código, respetar boundaries, probar los cuatro checklists y diagnosticar/deplegar por servicio.
+- `docs/desarrollo/arquitectura_servicios_2641.md`: diagrama de servicios después de #2641, lectura del PR y límites compartidos; implementación local pendiente de incorporación.
 - `docs/contexto/panorama.md`: visión general del sistema, su alcance y casos de uso principales.
 - `docs/contexto/dominio.md`: modelo del dominio central y relaciones clave entre entidades.
 - `docs/contexto/arquitectura.md`: resumen de la arquitectura técnica (apps, servicios, dependencias).
@@ -50,6 +51,7 @@
 - `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-dependencias-runtime-dev.md`: separación conservadora de dependencias y evolución de la validación local; CI pendiente.
 - `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-build-limpio-docker.md`: build real de 14 targets y verificación de dependencias, arranque, aislamiento y OCR sintético; sin deploy.
 - `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-smoke-http-docker.md`: smoke HTTP sintético de las imágenes nuevas, permisos/CSRF, caída y recuperación de Comedores sin reiniciar portal, y collectstatic; aceptación humana pendiente.
+- `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-revision-publicacion.md`: autorización de publicación, commits por snapshots y corrección del vaciado de controles de identidad detectada en revisión.
 - `docs/implementaciones/sentry.md`: implementación de Sentry (activación por entorno, variables, logging y validación).
 - `docs/implementaciones/audittrail_mvp_fase1.md`: release notes y guía operativa de Fase 1 del MVP de auditoría (deploy/rollback, soporte, riesgos y métricas).
 - `docs/implementaciones/audittrail_fase2.md`: metadata persistida (`AuditEntryMeta`), contexto de auditoría para procesos y guía de deploy/rollback de Fase 2.

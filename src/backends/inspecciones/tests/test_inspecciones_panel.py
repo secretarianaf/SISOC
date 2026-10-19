@@ -693,6 +693,23 @@ def test_actas_se_buscan_por_numero_completo_o_parcial(
     assert _numeros_listados(vacio) == {"ACTA-2026-000230", "ACTA-2026-000045"}
 
 
+def test_busqueda_solo_con_digitos_mira_la_secuencia_y_no_el_anio(
+    panel, escuela, inspector_a, inspector_b
+):
+    _acta_simple(inspector_a, escuela, 230)
+    _acta_simple(inspector_b, escuela, 45)
+    url = reverse("inspecciones_actas")
+
+    assert _numeros_listados(panel.get(url, {"numero": "26"})) == set()
+    assert _numeros_listados(panel.get(url, {"numero": "2026"})) == set()
+    assert _numeros_listados(panel.get(url, {"numero": "000230"})) == {
+        "ACTA-2026-000230"
+    }
+    assert _numeros_listados(panel.get(url, {"numero": "2026-000045"})) == {
+        "ACTA-2026-000045"
+    }
+
+
 def test_busqueda_de_acta_se_combina_con_los_demas_filtros(
     panel, escuela, inspector_a, inspector_b
 ):

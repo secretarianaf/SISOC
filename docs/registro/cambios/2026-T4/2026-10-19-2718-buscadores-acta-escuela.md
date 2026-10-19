@@ -11,8 +11,11 @@ Fecha: 2026-10-19. Relacionado con #2718 (puntos 1 y 3).
 
 - `inspecciones_actas` acepta `numero`: coincidencia parcial o completa, sin
   distinguir mayúsculas (`ACTA-2026-000230` o `230`), combinable con fecha,
-  inspector, provincia y estado. Vacío, vuelve al listado según los demás
-  filtros. Sin coincidencias, muestra «No hay actas con los filtros elegidos.».
+  inspector, provincia y estado. Si se escriben sólo dígitos (hasta 6), se
+  buscan en la secuencia y no en el año: `26` o `2026` no traen todas las actas
+  del año. Vacío (también con la cruz del campo), vuelve al listado según los
+  demás filtros. Sin coincidencias, muestra «No hay actas con los filtros
+  elegidos.».
 - `inspecciones_asignaciones` acepta `escuela` (id): Select2 con la misma
   búsqueda AJAX que el alta de asignaciones (nombre, Cueanexo o domicilio, desde
   3 letras), combinable con jornada, inspector, provincia y estados. Sin

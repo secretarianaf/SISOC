@@ -7,7 +7,10 @@ se sirven por vistas del panel (sesión + permiso de gestión), nunca por
 ``/media``.
 """
 
+import re
+
 from django.db.models import Q
+from django.db.models.functions import Right
 from django.http import Http404
 
 from inspecciones.models import (
@@ -26,6 +29,9 @@ from inspecciones.services.formato import fecha_hora_desde_texto, nombre_actor
 
 SIN_DATO = "—"
 
+# Sólo dígitos: se buscan en la secuencia (``ACTA-AAAA-NNNNNN``), no en el año.
+_SOLO_SECUENCIA = re.compile(r"[0-9]{1,6}")
+
 # Justificaciones de advertencias: en qué respuesta se muestran.
 JUSTIFICACIONES = {
     "presentes_superan": ("f10", "Presentes superan lo previsto"),
@@ -42,7 +48,11 @@ def listar_actas_panel(
         "inspector", "escuela__provincia", "escuela__localidad_vinculada"
     )
     numero = (numero or "").strip()
-    if numero:
+    if _SOLO_SECUENCIA.fullmatch(numero):
+        queryset = queryset.alias(secuencia_texto=Right("numero", 6)).filter(
+            secuencia_texto__contains=numero
+        )
+    elif numero:
         queryset = queryset.filter(numero__icontains=numero)
     if fecha:
         queryset = queryset.filter(fecha_visita=fecha)

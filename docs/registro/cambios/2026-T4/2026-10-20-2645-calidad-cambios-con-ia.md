@@ -23,6 +23,12 @@ label que pone el revisor.
   técnica", no mergea ni usa el label de excepción.
 - **Skill `cambio-guiado`.** Flujo completo con autorrevisión de armonía, con un
   ejemplo sobre el patrón real de filtros avanzados de Comedores.
+- **Skill `usuario-no-tecnico`.** Envuelve `cambio-guiado` con lo que hace
+  falta para que quien no programa lleve una tarea de punta a punta: rama nueva
+  desde `origin/development`, verificación visual guiada en el entorno local
+  (con un caso negativo y confirmación explícita antes del commit), PR con la
+  plantilla completa y seguimiento de CI. La regla de la verificación visual
+  vive en `AGENTS.md`.
 - **Copilot.** `.github/copilot-instructions.md` resume esas reglas, porque
   Copilot no carga skills.
 - **Plantilla de PR.** Secciones "En lenguaje simple" (qué cambia, cómo probarlo,

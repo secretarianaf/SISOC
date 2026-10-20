@@ -12,7 +12,7 @@ Guia principal y fuente de verdad para IAs que trabajen en SISOC (Codex, Claude 
 
 ## Responsabilidades del agente
 
-Quien pide el cambio puede no saber programar. El agente es responsable de la calidad y de que el cambio encaje en el sistema; no delega ese criterio en quien pide. Flujo completo: skill `cambio-guiado`.
+Quien pide el cambio puede no saber programar. El agente es responsable de la calidad y de que el cambio encaje en el sistema; no delega ese criterio en quien pide. Flujo completo: skill `cambio-guiado`; de punta a punta (rama, verificacion visual y PR): skill `usuario-no-tecnico`.
 
 - Antes de tocar codigo, entender el problema y el resultado esperado. Si el pedido es ambiguo, preguntar en lenguaje simple; no adivinar.
 - Buscar un caso parecido que ya exista en el repo y seguirlo; nombrarlo en el PR ("se hizo como `X`").
@@ -20,6 +20,7 @@ Quien pide el cambio puede no saber programar. El agente es responsable de la ca
 - Cambios chicos: una intencion por PR. Si el pedido es grande, proponer partes.
 - Siempre con tests de lo que cambia (CI exige tests y 80% de cobertura de las lineas cambiadas).
 - Zonas delicadas: migraciones, permisos, settings, `src/backends/config/`, `src/backends/kernel/`, workflows, `docker/` y dependencias. Se pueden tocar, pero el PR lo marca como **"Requiere revision tecnica"** y explica el riesgo en simple. CI agrega el label `requiere-revision-tecnica`.
+- Si el cambio se ve en pantalla, antes del commit y del PR guiar a quien pidio a verificarlo en el entorno local, paso a paso y con un caso que no deberia funcionar; seguir solo con su confirmacion y dejarlo en "Pruebas Manuales" del PR. Si el entorno no levanta, decirlo en el PR.
 - No mergear ni desplegar. No usar el label `excepcion-calidad`: lo pone el revisor.
 - El PR explica en lenguaje simple que cambia, como probarlo y que podria romperse (plantilla en `.github/pull_request_template.md`).
 
@@ -75,7 +76,7 @@ Guia vigente y cuatro checklists: `docs/desarrollo/verticales_independientes.md`
 - `src/scripts/ai/preflight.sh <tipo> [path]`: resumen corto del contexto.
 - `python src/scripts/ai/context_memory.py preflight --target <path>`: resuelve memoria reutilizable y detecta si quedo vieja.
 - `python src/scripts/ci/check_docs_paths.py --existencia <docs.md>`: rutas documentadas vigentes y existentes (CI lo corre sobre los Markdown del PR).
-- Skills del repo: la fuente esta en `.agents/skills/` y `.claude/skills/` es una copia generada (ver `docs/ia/SKILLS.md`). Actuales: `cambio-guiado`, `registro-cambios`, `verticales-checklist`, `migracion-app-label`, `frontend-ui-ux`, `tema-verde-institucional`.
+- Skills del repo: la fuente esta en `.agents/skills/` y `.claude/skills/` es una copia generada (ver `docs/ia/SKILLS.md`). Actuales: `cambio-guiado`, `usuario-no-tecnico`, `registro-cambios`, `verticales-checklist`, `migracion-app-label`, `frontend-ui-ux`, `tema-verde-institucional`.
 
 ## Documentacion
 

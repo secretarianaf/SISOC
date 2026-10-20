@@ -61,6 +61,10 @@ script: también la saca de `.claude/skills/`.
 - `cambio-guiado`: flujo completo de un pedido (entender, ubicar, seguir un
   patrón, tests, autorrevisión de armonía y PR en lenguaje simple), pensado para
   cuando quien pide no sabe programar. Aplica "Responsabilidades del agente" de `AGENTS.md`.
+- `usuario-no-tecnico`: la tarea de punta a punta para quien no programa (rama
+  desde `origin/development`, `cambio-guiado`, verificación visual guiada en el
+  entorno local, PR completo y seguimiento de CI). Se invoca con
+  `/usuario-no-tecnico` en Claude Code.
 - `registro-cambios`: crea la entrada de `docs/registro/` (cambio, decisión o
   plan) según `docs/registro/README.md`, o justifica que no aplica.
 - `verticales-checklist`: elige y recorre el checklist de

@@ -1,0 +1,69 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Formularios de Calidad{% endblock %}
+{% block titulo-pagina %}Formularios de Calidad{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between mb-3">
+            <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
+               class="btn btn-outline-secondary">Volver al legajo</a>
+            {% if puede_editar %}
+                <a href="{% url 'centrodeinfancia_calidad_cargar' centro.id %}"
+                   class="btn btn-primary">
+                    {% if borrador %}
+                        Continuar borrador
+                    {% else %}
+                        Nuevo formulario
+                    {% endif %}
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h3 class="mb-1">{{ centro.nombre }}</h3>
+                <p class="text-muted mb-0">Historial de formularios de calidad enviados por el centro.</p>
+                {% if borrador %}
+                    <p class="text-warning mb-0 mt-2">
+                        Hay un borrador sin enviar, guardado el {{ borrador.modificado|date:"d/m/Y H:i" }}.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="table-responsive mt-3">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha de envío</th>
+                        <th>Enviado por</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for formulario in formularios %}
+                        <tr>
+                            <td>{{ formulario.id }}</td>
+                            <td>{{ formulario.fecha_envio|date:"d/m/Y H:i" }}</td>
+                            <td>{{ formulario.enviado_por.get_full_name|default:formulario.enviado_por.username|default:"-" }}</td>
+                            <td>
+                                <a href="{% url 'centrodeinfancia_calidad_detalle' centro.id formulario.id %}"
+                                   class="btn btn-sm btn-primary">Ver</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                Todavía no hay formularios de calidad enviados para este centro.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj %}
+    </div>
+{% endblock %}

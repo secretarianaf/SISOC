@@ -1195,6 +1195,21 @@
   "regex": "^centrodeinfancia/ajax/load\\-departamentos\\-ipi/\\Z"
  },
  {
+  "name": "centrodeinfancia_calidad_cargar",
+  "namespace": "",
+  "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/calidad/cargar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_calidad_detalle",
+  "namespace": "",
+  "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/calidad/(?P<form_pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_calidad_listado",
+  "namespace": "",
+  "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/calidad/\\Z"
+ },
+ {
   "name": "centrodeinfancia_crear",
   "namespace": "",
   "regex": "^centrodeinfancia/crear\\Z"

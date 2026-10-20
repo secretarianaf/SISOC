@@ -63,7 +63,9 @@ Decisiones del responsable:
 - Tests nuevos `src/backends/kernel/tests/test_check_docs_paths.py` y el caso
   `markdown` de `test_pr_lint_tools_unit.py`, junto con `test_sync_skills.py`:
   corridos localmente sin Django (`-p no:django --noconftest`); la suite completa
-  en Docker queda para CI.
+  en Docker queda para CI. La imagen de tests no trae `git`: ahí se saltean los
+  dos tests que dependen de `git check-ignore` (probado con `PATH` sin git), y
+  el job `docs_paths`, que corre en el runner con git, cubre ese caso.
 - `python src/scripts/ai/sync_skills.py --check` y
   `python src/scripts/ai/context_memory.py preflight --target AGENTS.md`.
 

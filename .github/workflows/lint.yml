@@ -211,8 +211,9 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ github.token }}
               run: |
-                  mapfile -t docs < <(python src/scripts/ci/pr_lint_tools.py changed-files --kind markdown \
-                    | python -c "import json, sys; print('\n'.join(json.load(sys.stdin)))")
+                  # Asignación aparte: si falla la detección, el step falla (bash -e).
+                  docs_json="$(python src/scripts/ci/pr_lint_tools.py changed-files --kind markdown)"
+                  mapfile -t docs < <(python -c "import json, sys; print('\n'.join(json.loads(sys.argv[1])))" "$docs_json")
                   python src/scripts/ci/check_docs_paths.py --existencia "${docs[@]}"
 
     black:

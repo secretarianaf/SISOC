@@ -1,8 +1,21 @@
 """Verificación de rutas documentadas (src/scripts/ci/check_docs_paths.py)."""
 
+import shutil
 import subprocess
 
+import pytest
+
 from scripts.ci import check_docs_paths
+
+
+def _git_disponible(cwd):
+    """La imagen de tests no trae git; el job docs_paths cubre ese caso en CI."""
+    if shutil.which("git") is None:
+        return False
+    resultado = subprocess.run(
+        ["git", "rev-parse", "--git-dir"], cwd=cwd, capture_output=True, check=False
+    )
+    return resultado.returncode == 0
 
 
 def _repo(tmp_path):
@@ -50,6 +63,7 @@ def test_ignora_lo_que_no_es_una_ruta_verificable(tmp_path):
     assert _faltantes(root, texto) == []
 
 
+@pytest.mark.skipif(shutil.which("git") is None, reason="git no disponible")
 def test_ignora_rutas_ignoradas_por_git(tmp_path):
     root = _repo(tmp_path)
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
@@ -58,6 +72,10 @@ def test_ignora_rutas_ignoradas_por_git(tmp_path):
     assert _faltantes(root, "Salida local: `src/cache/memoria/`.") == []
 
 
+@pytest.mark.skipif(
+    not _git_disponible(check_docs_paths.ROOT),
+    reason="sin git no se distinguen las salidas locales ignoradas",
+)
 def test_los_docs_de_agentes_citan_rutas_existentes():
     """Si falla: corregir la ruta citada o marcarla como relativa a la app."""
 

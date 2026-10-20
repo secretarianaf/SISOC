@@ -10,6 +10,19 @@ Guia principal y fuente de verdad para IAs que trabajen en SISOC (Codex, Claude 
 - Evitar sobreingenieria, refactors amplios, churn cosmetico y dependencias nuevas salvo necesidad clara.
 - Si falta contexto critico, explicitar supuesto, impacto y seguir con la opcion mas segura.
 
+## Responsabilidades del agente
+
+Quien pide el cambio puede no saber programar. El agente es responsable de la calidad y de que el cambio encaje en el sistema; no delega ese criterio en quien pide. Flujo completo: skill `cambio-guiado`.
+
+- Antes de tocar codigo, entender el problema y el resultado esperado. Si el pedido es ambiguo, preguntar en lenguaje simple; no adivinar.
+- Buscar un caso parecido que ya exista en el repo y seguirlo; nombrarlo en el PR ("se hizo como `X`").
+- No agregar dependencias, modelos, abstracciones, settings ni permisos nuevos sin decirlo explicitamente en el PR y por que hacen falta.
+- Cambios chicos: una intencion por PR. Si el pedido es grande, proponer partes.
+- Siempre con tests de lo que cambia (CI exige tests y 80% de cobertura de las lineas cambiadas).
+- Zonas delicadas: migraciones, permisos, settings, `src/backends/config/`, `src/backends/kernel/`, workflows, `docker/` y dependencias. Se pueden tocar, pero el PR lo marca como **"Requiere revision tecnica"** y explica el riesgo en simple. CI agrega el label `requiere-revision-tecnica`.
+- No mergear ni desplegar. No usar el label `excepcion-calidad`: lo pone el revisor.
+- El PR explica en lenguaje simple que cambia, como probarlo y que podria romperse (plantilla en `.github/pull_request_template.md`).
+
 ## Antes de empezar
 
 - Partir siempre de `development` actualizado (`git fetch origin` y rama nueva desde `origin/development`). No revertir cambios ajenos; si aparece conflicto con trabajo de otro, explicitarlo antes de seguir.
@@ -62,7 +75,7 @@ Guia vigente y cuatro checklists: `docs/desarrollo/verticales_independientes.md`
 - `src/scripts/ai/preflight.sh <tipo> [path]`: resumen corto del contexto.
 - `python src/scripts/ai/context_memory.py preflight --target <path>`: resuelve memoria reutilizable y detecta si quedo vieja.
 - `python src/scripts/ci/check_docs_paths.py --existencia <docs.md>`: rutas documentadas vigentes y existentes (CI lo corre sobre los Markdown del PR).
-- Skills del repo: la fuente esta en `.agents/skills/` y `.claude/skills/` es una copia generada (ver `docs/ia/SKILLS.md`). Actuales: `registro-cambios`, `verticales-checklist`, `migracion-app-label`, `frontend-ui-ux`, `tema-verde-institucional`.
+- Skills del repo: la fuente esta en `.agents/skills/` y `.claude/skills/` es una copia generada (ver `docs/ia/SKILLS.md`). Actuales: `cambio-guiado`, `registro-cambios`, `verticales-checklist`, `migracion-app-label`, `frontend-ui-ux`, `tema-verde-institucional`.
 
 ## Documentacion
 
@@ -80,6 +93,7 @@ Tooling real del repo (configuracion y comandos en `docs/ia/TESTING.md` y `docs/
 Tests:
 - Toda funcionalidad nueva incluye tests; todo bugfix, un test de regresion cuando sea viable.
 - Si no se agrega test, explicar por que en la entrega.
+- CI (`quality_gate`) falla si un PR modifica Python de una app sin tocar tests o si las lineas cambiadas quedan bajo 80% de cobertura. Un test que solo ejecuta lineas sin verificar el resultado no cuenta como test: cada test afirma el comportamiento esperado.
 
 ## Guias
 

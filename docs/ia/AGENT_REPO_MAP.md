@@ -896,7 +896,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `RELEASE_AUTOMATION_APP_CLIENT_ID` y secret
   `RELEASE_AUTOMATION_APP_PRIVATE_KEY`; no sustituirla por un PAT.
 - `.importlinter`
-- `src/scripts/ci/pr_lint_tools.py`, `src/scripts/ci/pr_doc_automation.py`
+- `src/scripts/ci/pr_lint_tools.py`, `src/scripts/ci/pr_doc_automation.py`, `src/scripts/ci/quality_gate.py`
 
 ## Testing, linting, build y deploy
 
@@ -906,6 +906,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `pylint src/scripts/*.py src/backends/config/*.py src/backends/!(config)/*/*.py --rcfile=.pylintrc` (CI, con `extglob`; localmente, pasar los archivos tocados)
 - `djlint . --configuration=.djlintrc --check`
 - `python src/scripts/ci/check_docs_paths.py --existencia <docs.md>` (job `docs_paths`)
+- `python src/scripts/ci/quality_gate.py gate --coverage coverage.xml` (job `quality_gate`: tests y 80% de cobertura de líneas cambiadas; label `excepcion-calidad`) y `quality_gate.py zonas` (job `zonas_sensibles`, label `requiere-revision-tecnica`)
 - CI tiene autofix para PRs internos con Black, DJLint y normalizacion de encoding.
 
 ### Tests detectados

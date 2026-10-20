@@ -17,23 +17,14 @@ Evitar:
 
 ## Lectura inicial obligatoria
 
-Para cualquier tarea:
-1. `AGENTS.md`
-2. `docs/indice.md`
-3. memoria reutilizable aplicable (`docs/contexto/memoria/` o `.codex/cache/context-memory/`), si existe
-4. archivo(s) objetivo
-5. tests del modulo o flujo afectado, si existen
-6. una sola guia de `docs/ia/` elegida por tipo de tarea
+La lista vive en `AGENTS.md` (seccion "Contexto minimo"). Esta guia ayuda a
+elegir la guia del paso 6 y a decidir cuando ampliar.
 
 ## Elegir una sola guia inicial
 
-Para cambios entre servicios, comenzar por `docs/desarrollo/verticales_independientes.md`:
-- identificar dueño y kernel autorizado antes de ampliar contexto;
-- no importar código de otro servicio; reutilizar contratos HTML/JSON/favoritos;
-- abrir registro, runtime, contrato de imports y tests solo del flujo afectado;
-- revisar URLs, recursos por app, migrador y plan de deploy;
-- distinguir composición completa de imagen aislada y evidencia documental de funcional.
-
+- cambio entre servicios: `docs/desarrollo/verticales_independientes.md`
+  (identificar dueño antes de ampliar contexto; abrir registro, runtime,
+  contrato de imports y tests solo del flujo afectado)
 - bugfix o feature web/API: `docs/ia/TESTING.md`
 - nuevo modulo de dominio, dependencia interdominio o preparacion de extraccion:
   `docs/ia/MODULAR_BOUNDARIES.md`
@@ -122,13 +113,6 @@ Inicial:
 Expandir si hace falta:
 - services o views dependientes
 - docs de seguridad o dominio
-
-## Worktrees y cambios locales
-
-- Nunca trabajar sobre el checkout principal.
-- Crear worktrees de tarea fuera del repo principal, en `../worktrees/<slug>`.
-- No revertir cambios del usuario.
-- Si aparece conflicto con trabajo ajeno, explicitarlo antes de seguir.
 
 ## Helper recomendado
 

@@ -35,7 +35,9 @@ rompen en Windows con `core.symlinks=false` (ver
    ```
 
 3. Si la skill necesita archivos de apoyo (plantillas, ejemplos), ponerlos en
-   la misma carpeta y referenciarlos desde `SKILL.md`.
+   la misma carpeta y referenciarlos desde `SKILL.md`. Las skills de proceso
+   llevan un `ejemplo.md` con un caso real del repo.
+   Una skill no agrega reglas: aplica una guía de `docs/` y la cita como fuente.
 4. Sincronizar y commitear las dos carpetas:
 
    ```bash
@@ -56,6 +58,12 @@ script: también la saca de `.claude/skills/`.
 
 ## Skills actuales
 
+- `registro-cambios`: crea la entrada de `docs/registro/` (cambio, decisión o
+  plan) según `docs/registro/README.md`, o justifica que no aplica.
+- `verticales-checklist`: elige y recorre el checklist de
+  `docs/desarrollo/verticales_independientes.md` dejando evidencia por ítem.
+- `migracion-app-label`: traslado de un modelo entre apps conservando tabla,
+  IDs y content type (checklist 4 de la guía de verticales).
 - `tema-verde-institucional`: paleta y tema de Material UI del diseño verde
   institucional (claro y oscuro). Origen: adjunto de #2639.
 - `frontend-ui-ux`: diseño e implementación de UI/UX en templates Django, CSS

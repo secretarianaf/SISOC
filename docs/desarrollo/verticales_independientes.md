@@ -260,10 +260,9 @@ registra los experimentos y el alcance de cada comprobación.
 
 Usar los checklists anteriores en el PR: dueño, dependencia, rutas/registro,
 sesión/permisos, degradación, esquema/rollback, servicios de deploy y evidencia
-local/CI/manual diferenciada. No hace falta una skill adicional: ya existen
-estos checklists y los controles de arquitectura. Una skill puede ser útil
-si futuros cambios repiten pasos mecánicos; no introducir otro flujo obligatorio
-sin un problema observado que estos controles no resuelvan.
+local/CI/manual diferenciada. Las skills `verticales-checklist` y
+`migracion-app-label` (#2645) recorren estos checklists paso a paso; no agregan
+reglas ni otro flujo obligatorio, y si difieren de esta guía vale la guía.
 
 ## Vigencia de rutas documentadas
 
@@ -275,7 +274,11 @@ Excluye `docs/registro/`, `docs/plans/`, `docs/analisis/` y `docs/infra/`
 (snapshots históricos), las memorias validadas por commit en `docs/contexto/memoria/`
 y documentos marcados explícitamente como históricos al comienzo.
 Un literal relativo a una app se marca explícitamente
-en su línea; no se hace pasar por ruta desde la raíz. Los ejemplos y comandos
+en su línea; no se hace pasar por ruta desde la raíz. Con `--existencia <docs.md>`
+también falla si esos documentos citan una ruta desde la raíz o un enlace
+relativo que no existe (omite comodines, placeholders y salidas ignoradas por
+Git). El job `docs_paths` de `.github/workflows/lint.yml` lo aplica a los
+Markdown modificados por el PR. Los ejemplos y comandos
 de esta guía se revisan además contra archivos existentes y el plan de deploy.
 
 

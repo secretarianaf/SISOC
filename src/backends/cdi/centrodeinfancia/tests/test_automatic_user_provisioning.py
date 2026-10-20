@@ -108,8 +108,17 @@ def _guardar_trabajador(client, centro, trabajador=None, **datos):
     )
 
 
-def _usuario_temporal(username, email, *, must_change_password):
-    user = User.objects.create_user(username=username, email=email, password="test1234")
+def _usuario_temporal(
+    username, email, *, must_change_password, first_name="Lia", last_name="Paz"
+):
+    # Por defecto es la persona de las fichas de estos tests (Lia Paz, sin DNI).
+    user = User.objects.create_user(
+        username=username,
+        email=email,
+        password="test1234",
+        first_name=first_name,
+        last_name=last_name,
+    )
     profile, _ = Profile.objects.get_or_create(user=user)
     profile.must_change_password = must_change_password
     profile.save(update_fields=["must_change_password"])
@@ -149,16 +158,20 @@ def test_guardar_cdi_crea_referente_automaticamente(client):
 
 
 @pytest.mark.django_db
-def test_guardar_cdi_vincula_referente_con_email_existente(client):
+def test_guardar_cdi_con_email_de_otra_persona_crea_cuenta_propia(client):
+    # El email del referente suele ser el institucional del centro: que ya lo use
+    # otra cuenta (p. ej. de otro programa) no la convierte en el referente.
     actor = _actor()
-    existente = User.objects.create_user(
-        username="referente-existente",
-        email="lia.existente@example.com",
+    ajena = User.objects.create_user(
+        username="5686746",
+        email="institucional@example.com",
         password="test1234",
+        first_name="Nidia",
+        last_name="Quinteros",
     )
     client.force_login(actor)
     centro = CentroDeInfancia.objects.create(
-        nombre="CDI Referente existente",
+        nombre="CDI Email institucional",
         telefono="1122334455",
         telefono_referente="1199887766",
     )
@@ -168,7 +181,42 @@ def test_guardar_cdi_vincula_referente_con_email_existente(client):
         centro,
         nombre_referente="Lia",
         apellido_referente="Paz",
-        email_referente=existente.email,
+        email_referente=ajena.email,
+    )
+
+    assert response.status_code == 302
+    acceso = AccesoCDI.objects.get(centro=centro)
+    assert acceso.user != ajena
+    assert (acceso.user.first_name, acceso.user.last_name) == ("Lia", "Paz")
+    assert acceso.user.email == "institucional@example.com"
+    assert acceso.user.profile.dni
+    assert not ajena.groups.filter(name=UserGroups.CDI_REFERENTE_CENTRO).exists()
+
+
+@pytest.mark.django_db
+def test_guardar_cdi_vincula_la_cuenta_existente_de_la_misma_persona_por_dni(client):
+    actor = _actor()
+    client.force_login(actor)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Referente existente",
+        telefono="1122334455",
+        telefono_referente="1199887766",
+    )
+    cuil = _payload_cdi(centro)["cuil_referente"].replace("-", "")
+    existente = User.objects.create_user(
+        username="referente-existente",
+        email="otro.email@example.com",
+        password="test1234",
+    )
+    existente.profile.dni = cuil[2:10].lstrip("0")
+    existente.profile.save(update_fields=["dni"])
+
+    response = _guardar_centro(
+        client,
+        centro,
+        nombre_referente="Lia",
+        apellido_referente="Paz",
+        email_referente="lia@example.com",
     )
 
     assert response.status_code == 302
@@ -530,6 +578,8 @@ def test_email_referente_se_sincroniza_con_el_acceso_del_email_anterior(client):
         "acceso-ajeno-estable",
         "acceso.ajeno@example.com",
         must_change_password=True,
+        first_name="Otra",
+        last_name="Persona",
     )
     referente = _usuario_temporal(
         "referente-correcto-estable",

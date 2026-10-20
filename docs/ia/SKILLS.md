@@ -58,6 +58,9 @@ script: también la saca de `.claude/skills/`.
 
 ## Skills actuales
 
+- `cambio-guiado`: flujo completo de un pedido (entender, ubicar, seguir un
+  patrón, tests, autorrevisión de armonía y PR en lenguaje simple), pensado para
+  cuando quien pide no sabe programar. Aplica "Responsabilidades del agente" de `AGENTS.md`.
 - `registro-cambios`: crea la entrada de `docs/registro/` (cambio, decisión o
   plan) según `docs/registro/README.md`, o justifica que no aplica.
 - `verticales-checklist`: elige y recorre el checklist de

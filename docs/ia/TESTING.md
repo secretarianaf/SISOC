@@ -62,8 +62,9 @@ CI ejecuta:
 - `migrations_check`: `docker compose exec -T django python manage.py makemigrations --check --dry-run` con MySQL
 - `pytest`: `docker compose run --build --rm --no-deps -T django pytest -n auto --cov=. --cov-report=term-missing --cov-fail-under=75` en PRs
 - `mysql_compat`: `docker compose exec -T django pytest -m mysql_compat -q` en PRs
+- `quality_gate` (en PRs, después de `pytest`): falla si el PR modifica Python de una app (`src/backends/`, sin tests ni migraciones) sin tocar ningún test, o si las líneas Python nuevas/modificadas medibles quedan bajo 80% de cobertura (`src/scripts/ci/quality_gate.py` sobre el `coverage.xml` de `pytest`). Excepción legítima (refactor sin cambio de comportamiento, cambio de settings): el revisor pone el label `excepcion-calidad` y se vuelve a correr el job `quality_gate`.
 - `release_quality` y `service_images`: calidad de release e imágenes por servicio (ver `docs/desarrollo/verticales_independientes.md`)
-- `deploy_guard`: corre los tests Node de release y de JavaScript, y exige los checks requeridos (`gitleaks`, `encoding_check`, `black`, `djlint`, `pylint`, `docs_paths`, `smoke`, `pytest`, `migrations_check`, `mysql_compat`, `release_quality`, `frontend`, `service_images` y `release_sanity` cuando el PR apunta a `main`)
+- `deploy_guard`: corre los tests Node de release y de JavaScript, y exige los checks requeridos (`gitleaks`, `encoding_check`, `black`, `djlint`, `pylint`, `docs_paths`, `smoke`, `pytest`, `migrations_check`, `mysql_compat`, `release_quality`, `frontend`, `service_images`, `quality_gate` y `release_sanity` cuando el PR apunta a `main`)
 
 ## Qué testear (checklist por tipo de cambio)
 
@@ -156,8 +157,8 @@ docker compose exec django pytest -n auto src/backends/comedores/tests/test_mont
 
 ## CI (referencia)
 
-- `.github/workflows/tests.yml` ejecuta smoke, migrations check, pytest con cobertura, compatibilidad MySQL, `release_quality`, `service_images` y deploy guard.
-- `.github/workflows/lint.yml` ejecuta autofix acotado en PRs internos, `encoding_check`, `skills_sync`, `docs_paths`, `black`, `djlint` y `pylint`.
+- `.github/workflows/tests.yml` ejecuta smoke, migrations check, pytest con cobertura, compatibilidad MySQL, `release_quality`, `service_images`, `quality_gate` y deploy guard.
+- `.github/workflows/lint.yml` ejecuta autofix acotado en PRs internos, `encoding_check`, `skills_sync`, `docs_paths`, `zonas_sensibles` (aviso no bloqueante: label `requiere-revision-tecnica` si el PR toca rutas delicadas), `black`, `djlint` y `pylint`.
 
 ## Cómo evitar tests frágiles en templates/views
 

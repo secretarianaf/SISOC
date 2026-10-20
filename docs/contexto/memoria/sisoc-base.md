@@ -5,7 +5,7 @@ summary = "Resumen operativo del repo para arrancar tareas IA con menos lecturas
 paths = ["AGENTS.md", "CLAUDE.md", "docs/indice.md", "docs/ia", "docs/operacion/codex_desktop.md", "src/scripts/ai", ".agents/skills", ".codex/environments/environment.toml"]
 default = true
 confidence = "alta"
-validated_commit = "981adec97"
+validated_commit = "f4af8d293"
 validated_at = "2026-10-20"
 +++
 
@@ -24,7 +24,8 @@ validated_at = "2026-10-20"
 - `AGENTS.md`: fuente de verdad para agentes; `CLAUDE.md` y `.codex/rules.md` solo agregan lo especifico de cada herramienta.
 - `docs/ia/CONTEXT_HYGIENE.md`: que guia leer segun la tarea y cuando ampliar.
 - `docs/ia/AGENT_REPO_MAP.md`: mapa para ubicar codigo; no se lee entero al inicio.
-- `.agents/skills/`: skills del repo (`registro-cambios`, `verticales-checklist`, `migracion-app-label`, UI); `.claude/skills/` es copia generada.
+- `.agents/skills/`: skills del repo (`cambio-guiado`, `registro-cambios`, `verticales-checklist`, `migracion-app-label`, UI); `.claude/skills/` es copia generada.
+- `AGENTS.md` ("Responsabilidades del agente"): quien pide puede no saber programar; el agente responde por la calidad. CI: `quality_gate` (tests + 80% de cobertura del diff, label `excepcion-calidad`) y `zonas_sensibles` (label `requiere-revision-tecnica`).
 - `src/scripts/ai/preflight.sh`: resumen operativo corto por task kind.
 - `src/scripts/ai/context_memory.py`: resuelve memoria reusable y detecta si quedo vieja.
 

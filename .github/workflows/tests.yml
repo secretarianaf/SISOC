@@ -402,6 +402,7 @@ jobs:
                         "black",
                         "djlint",
                         "pylint",
+                        "docs_paths",
                         "smoke",
                         "pytest",
                         "migrations_check",

@@ -191,6 +191,30 @@ jobs:
             - name: Verificar que .claude/skills/ coincide con .agents/skills/
               run: python src/scripts/ai/sync_skills.py --check
 
+    docs_paths:
+        # Raíces movidas en todos los docs vigentes; existencia de rutas solo en
+        # los Markdown del PR, para no bloquear PRs ajenos por deuda previa.
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v6.0.2
+              with:
+                  fetch-depth: 0
+
+            - name: Set up Python
+              uses: actions/setup-python@v6.2.0
+              with:
+                  python-version: '3.11.15'
+
+            - name: Verificar rutas documentadas
+              shell: bash
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+              run: |
+                  mapfile -t docs < <(python src/scripts/ci/pr_lint_tools.py changed-files --kind markdown \
+                    | python -c "import json, sys; print('\n'.join(json.load(sys.stdin)))")
+                  python src/scripts/ci/check_docs_paths.py --existencia "${docs[@]}"
+
     black:
         runs-on: ubuntu-latest
         needs:

@@ -287,6 +287,31 @@ def test_la_provincia_ve_su_respuesta_separada_de_la_de_nacion(
     assert provincia.nombre_archivo in html
 
 
+@pytest.mark.parametrize("usuario_fixture", ["coordinador", "provincial"])
+def test_el_comentario_de_la_provincia_queda_en_el_historial(
+    request, client, coordinador, provincial, legajo, usuario_fixture
+):
+    """Issue #2713: el comentario opcional de la respuesta tiene que seguir
+    visible para Nación y Provincia cuando la subsanación ya no está activa,
+    es decir, en el historial."""
+    client.force_login(coordinador)
+    _subsanar(client, legajo)
+    legajo.refresh_from_db()
+    SubsanacionService.responder(
+        legajo=legajo,
+        archivos=[_pdf("dni.pdf")],
+        usuario=provincial,
+        descripcion="Se envía DNI nuevamente",
+    )
+
+    client.force_login(request.getfixturevalue(usuario_fixture))
+    html = client.get(_url_detalle(legajo)).content.decode()
+
+    # Fuera del bloque de la subsanación activa (que se oculta al confirmar).
+    historial = html.split("Historial de subsanaciones", 1)[1]
+    assert "Se envía DNI nuevamente" in historial
+
+
 def test_el_modal_recibe_los_limites_del_backend(client, coordinador, legajo):
     """Los límites se declaran una sola vez, en `celiaquia/validators.py`.
 

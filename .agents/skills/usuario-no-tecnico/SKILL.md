@@ -13,16 +13,18 @@ Aplica `AGENTS.md` ("Antes de empezar" y "Responsabilidades del agente"); si alg
 de acá difiere, vale `AGENTS.md`. Quien pide decide **qué** quiere; vos respondés
 por **cómo** se hace. Hablale siempre en español y sin términos técnicos.
 
-Si no te dieron el pedido, pedí: número de issue (o "sin issue"), qué pasa hoy,
-qué debería pasar, quién lo usa y en qué pantalla o reporte.
+Si no te dieron el pedido, pedí: qué pasa hoy, qué debería pasar, quién lo usa
+y en qué pantalla o reporte. El issue es opcional: muchas tareas no tienen uno;
+si hay, anotar su número. No crear issues por tu cuenta.
 
 ## 1. Preparar la rama
 
 - `git status`. Si hay cambios sin commitear que no son tuyos, parar y avisar:
   no borrarlos, ni stash, ni reset.
 - `git fetch origin` y rama nueva desde `origin/development`:
-  `git switch -c <tipo>/<issue>-<descripcion-corta> origin/development`
-  (`feat`, `fix`, `docs` o `refactor`; por ejemplo `feat/2718-descarga-actas`).
+  `git switch -c <tipo>/<descripcion-corta> origin/development`
+  (`feat`, `fix`, `docs` o `refactor`; si hay issue, su número va adelante de la
+  descripción: `feat/2718-descarga-actas`; si no, `feat/filtro-otra-categoria`).
 - Nunca trabajar ni commitear directo en `development`, `homologacion` ni `main`.
 
 ## 2. Entender el pedido
@@ -77,7 +79,8 @@ en el PR.
 - Push de la rama y PR contra `development`:
   `gh pr create --base development --title "<tipo>(<app>): <resumen>" --body-file <archivo>`
 - El cuerpo sigue `.github/pull_request_template.md` con **todas** las secciones
-  completas: issue vinculado, resumen, cambios, pruebas automáticas, pruebas
+  completas: issue vinculado (si no hay, poner "Sin issue" y contar en el
+  resumen quién lo pidió y para qué), resumen, cambios, pruebas automáticas, pruebas
   manuales (los pasos de la verificación visual y que quien pidió los
   confirmó), lenguaje simple, patrón seguido, zonas sensibles, checklist y
   metadata para documentación.

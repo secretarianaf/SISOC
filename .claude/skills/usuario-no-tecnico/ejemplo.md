@@ -9,7 +9,7 @@ caso sigue vigente.
 ```bash
 git status            # limpio
 git fetch origin
-git switch -c feat/<issue>-filtro-otra-categoria origin/development
+git switch -c feat/filtro-otra-categoria origin/development   # sin issue
 ```
 
 ## 2. Lo que se le devuelve a quien pidió
@@ -42,6 +42,8 @@ corren los tests y se repite desde el paso 1.
 ## 5. PR
 
 Título: `feat(comedores): filtrar por otra categorización`.
+En "Información de la Tarea": "Sin issue. Lo pidió el equipo que usa el listado
+de comedores para encontrar merenderos cargados como otra categoría."
 En "Pruebas Manuales":
 
 > Verificación visual en entorno local con quien pidió: filtro con "merendero"

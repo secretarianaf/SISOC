@@ -245,6 +245,7 @@ Componente para mostrar los archivos requeridos segun el tipo de legajo (hijo o 
                             </a>
                             <span class="badge badge-light">{{ arch.get_origen_display }}</span>
                             {% if arch.observacion %}<span class="badge badge-info">{{ arch.observacion.get_tipo_display }}</span>{% endif %}
+                            {% if arch.descripcion %}— {{ arch.descripcion }}{% endif %}
                             <span class="text-muted">
                                 ({{ arch.creado_en|date:"d/m/Y H:i" }}
                                 {% if arch.usuario %}· {{ arch.usuario.get_full_name|default:arch.usuario.username }}{% endif %}

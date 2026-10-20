@@ -2,124 +2,80 @@
 
 Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrolladores.
 
-- Mapa de dispositivos: `/dispositivos/mapa/`, `dispositivos.views.DispositivoMapView`, `geolocate_dispositivo` en services y `dispositivosMap.js`. Mantiene filtros/permisos/alcance del listado, integra provincia/estado en un único buscador combinable, paginación de tabla en el navegador de a 15 y selección de marcador por `?dispositivo=<pk>`; muestra marcadores individuales con Leaflet y usa Georef con coordenadas persistidas en `Dispositivo.ubicacion_georef` y firma de dirección para reutilización/invalidation; migración 0006 antes del deploy. Registro: `docs/registro/cambios/2026-T4/2026-10-13-dispositivos-mapa.md`.
+Es un mapa para ubicar código: el estado de cada PR, issue o corte (aprobaciones,
+conteos de pruebas, autorizaciones) vive en `docs/registro/`, no acá.
 
-## #2641: preparación de Comedores y Espacios comunitarios
+## Comedores y Espacios comunitarios (#2641)
 
-Lectura de la topología final y el PR: `docs/desarrollo/arquitectura_servicios_2641.md`
-y `docs/diagramas/issue-2641-servicios.svg`. La publicación se autorizó el
-2026-10-19; los límites previos de commit/push de registros históricos no expresan
-la autorización actual. Posteriormente se autorizó fusionar el PR #2734 a
-`development`, con CI aprobado, y su deploy automático de QA. Esa autorización
-no se extiende a HML, PRD ni operaciones manuales sobre datos.
-El ABM independiente distingue controles HTML vaciados mediante `_identity_present`
-de omisiones parciales, antes de clasificar efectos en Comedores; los campos
-deshabilitados no emiten marcador. Evidencia y alcance de revisión:
-`docs/registro/cambios/2026-T4/2026-10-19-issue-2641-revision-publicacion.md`.
+Topología: `docs/desarrollo/arquitectura_servicios_2641.md` y
+`docs/diagramas/issue-2641-servicios.svg`. Estado y evidencia de cada corte
+(C0–C4): registros `issue-2641` en `docs/registro/cambios/2026-T4/` y
+decisiones del 2026-10-15 y 2026-10-16 en `docs/registro/decisiones/`.
 
-CI del PR #2734: `conftest.py::http_probe_database` comparte sólo la DB sintética
-de probes HTTP entre procesos (SQLite temporal; configuración efectiva en MySQL).
-Los tests del traslado de auditoría contemplan syncdb sin historial en SQLite y
-el executor completo en MySQL. Los cambios compuestos del ABM se prueban con
-`pwa.user_forms`; la omisión independiente conserva sus asignaciones. Causas y
-evidencia: `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-correcciones-ci.md`.
-El test JS `src/backends/sisoc_core/tests/js/user_mobile_access.test.js` combina
-la plantilla compartida de `src/backends/kernel/users` con el controlador de Usuarios/core;
-`deploy_guard` lo ejecuta junto a los demás tests JS, sin cambiar sus aserciones.
+- **Espacios comunitarios** conserva el identificador técnico `pwa`. Permisos en
+  `src/backends/comedores/pwa/api_permissions.py`, serializers de operadores en
+  `src/backends/comedores/pwa/operadores_serializers.py`, fachada de accesos en
+  `src/backends/comedores/pwa/api.py` y helpers PNUD en
+  `src/backends/comedores/comedores/territoriales_pnud.py`. No usar los módulos
+  anteriores de `usuarios` para esas responsabilidades.
+- Identidad: entradas en `src/backends/sisoc_core/usuarios/auth_forms.py`,
+  `src/backends/sisoc_core/usuarios/auth_views.py` y
+  `src/backends/sisoc_core/usuarios/api_views.py`; DTOs y formularios compartidos en
+  `src/backends/kernel/users/` (`credentials.py`, `account_forms.py`,
+  `admin_forms.py`, `form_sections.py`, `identity_fields.py`). Las rutas públicas se conservan.
+- ABM compuesto: `src/backends/comedores/pwa/user_forms.py`,
+  `src/backends/comedores/pwa/user_admin_views.py` y contratos de login/contexto en
+  `src/backends/comedores/pwa/identity_services.py`. Campos/efectos se clasifican en
+  `src/backends/kernel/users/admin_operations.py`: la ausencia de un campo no revoca
+  sus accesos y `_identity_present` distingue controles vaciados de omisiones.
+  `src/backends/kernel/users/middleware_admin_body.py` conserva multipart antes de
+  CSRF solo en el POST del ABM. Template compartido:
+  `src/backends/kernel/users/templates/user/user_form.html`. Transporte interno:
+  `src/backends/kernel/core/internal_services.py`.
+- Auditoría de sesión: `src/backends/kernel/audittrail/models.py` y `auth.py`.
+  Migraciones `src/backends/kernel/audittrail/migrations/0002_auditoria_sesion_desde_pwa.py` y
+  `src/backends/comedores/pwa/migrations/0027_auditoria_sesion_a_kernel.py`: estado y
+  ContentType, misma tabla/IDs. No revertir solo la imagen ignorando esta metadata.
+- Indicadores: `src/backends/comedores/comedores/dashboard_metrics.py` calcula/autoriza;
+  el portal guarda la última muestra completa en
+  `src/backends/sisoc_core/dashboard/comedores_metrics.py`. No restaurar los callbacks
+  retirados de `dashboard.signals`.
+- Consumidores: `src/backends/kernel/ciudadanos/detail_contributions.py` (fragmentos
+  HTML) y `src/backends/kernel/core/backend_proxy.py` (favoritos).
+  `src/backends/kernel/audittrail/views.py` conserva changes_dict de modelos no instalados.
+- Importador de usuarios: contrato local en `src/backends/kernel/users/pwa_import_access.py`
+  y adaptador en `src/backends/comedores/comedores/pwa_user_import.py`. Corre con
+  `sisoc/migrator`, `config.settings_all` y rol `user_import_worker`, sin migración
+  ni web. No partir el commit de usuario/accesos/checkpoint por HTTP.
+- Montos: `src/backends/comedores/comedores/views/montos_prestacion.py`, con modelo/tabla en kernel.
+- Runtime: `comedores_runtime` compone las catorce apps de `src/backends/comedores/`;
+  el portal (`src/backends/sisoc_core/`) conserva Usuarios, Dashboard, Encuestas e
+  Insumos. Tests del dominio en `src/backends/comedores/tests/`.
+- OCR: `src/backends/ocr/ocr/` y `ocr_runtime`; web y `ocr_worker` usan la misma
+  imagen backend. Tests en `src/backends/ocr/tests/` y
+  `src/backends/kernel/tests/test_ocr_runtime.py`.
+- Selector de deploy: `@core` incluye el rol `user_import_worker`; reglas en
+  `docs/desarrollo/verticales_independientes.md` ("Qué se despliega").
+- Tests de CI: `conftest.py::http_probe_database` comparte solo la DB sintética de
+  probes HTTP; el test JS `src/backends/sisoc_core/tests/js/user_mobile_access.test.js`
+  corre en `deploy_guard`.
 
-Fronteras propuestas aprobadas; C0 implementado, revisado y validado localmente
-con 135 pruebas focalizadas MySQL. **Espacios comunitarios** conserva el identificador
-técnico `pwa`. Permisos en `src/backends/comedores/pwa/api_permissions.py`,
-serializers de operadores en `src/backends/comedores/pwa/operadores_serializers.py`,
-fachada de accesos en `src/backends/comedores/pwa/api.py` y helpers PNUD en
-`src/backends/comedores/comedores/territoriales_pnud.py`.
-No usar los módulos anteriores de `usuarios` para esas responsabilidades.
+## Dispositivos: mapa
 
-C1 tiene contratos y traslado de auditoría aprobados, con implementación local
-**validada con 392 pruebas focalizadas MySQL**, sin merge ni deploy. Entradas de identidad: `src/backends/sisoc_core/usuarios/auth_forms.py`,
-`src/backends/sisoc_core/usuarios/auth_views.py`, `src/backends/sisoc_core/usuarios/api_views.py`; DTOs y formularios compartidos:
-`src/backends/kernel/users/credentials.py`, `account_forms.py`, `admin_forms.py`,
-`form_sections.py` e `identity_fields.py`. Las rutas públicas se conservan.
-
-Las reglas/formularios compuestos viven en `src/backends/comedores/pwa/user_forms.py` y
-`src/backends/comedores/pwa/user_admin_views.py`; los contratos de login/contexto en
-`src/backends/comedores/pwa/identity_services.py`. `src/backends/kernel/core/internal_services.py` reutiliza transporte,
-sesión/Token y adaptadores locales del dueño. Los campos/efectos se clasifican
-en `src/backends/kernel/users/admin_operations.py`; ausencia de un campo no revoca sus accesos.
-`src/backends/kernel/users/middleware_admin_body.py` conserva multipart antes de CSRF
-sólo en el POST del ABM; no exime sus controles. El recupero web revoca el Token previo.
-
-La auditoría de sesión pertenece a `src/backends/kernel/audittrail/models.py` y `auth.py`.
-Migraciones `src/backends/kernel/audittrail/migrations/0002_auditoria_sesion_desde_pwa.py` y
-`src/backends/comedores/pwa/migrations/0027_auditoria_sesion_a_kernel.py`: estado y ContentType, misma tabla/IDs;
-los cuatro permisos del modelo pasan de `pwa` a `audittrail`.
-No cambia `pwa.manage_*`. No revertir sólo la imagen ignorando esta metadata.
-
-Indicadores: `src/backends/comedores/comedores/dashboard_metrics.py` calcula/autoriza; el portal guarda
-la última muestra completa en `src/backends/sisoc_core/dashboard/comedores_metrics.py`. No restaurar los
-callbacks retirados de `dashboard.signals` ni imports de cálculo en dashboard.
-El template compartido del ABM está en `src/backends/kernel/users/templates/user/user_form.html`.
-
-C2 validado localmente con 280 pruebas focalizadas:
-`src/backends/kernel/ciudadanos/detail_contributions.py` declara
-dueños de los cuatro fragmentos HTML de Comedores/Espacios; los templates viven
-en sus apps. Las seis secciones favoritas se declaran por app en
-`src/backends/kernel/core/backend_proxy.py`, reutilizando proxy y validación.
-`src/backends/kernel/audittrail/views.py` conserva changes_dict de modelos no
-instalados. Evidencia HTTP/PDF y límites:
-`docs/registro/cambios/2026-T4/2026-10-15-issue-2641-c2-consumidores-y-recursos.md`.
-El contrato local del importador está en
-`src/backends/kernel/users/pwa_import_access.py`; Comedores registra su adaptador
-en `src/backends/comedores/comedores/pwa_user_import.py`. Lectura/cola/reportes
-siguen en Usuarios. No partir el commit de usuario/accesos/checkpoint por HTTP;
-sin proveedor se bloquean sólo filas dependientes antes de escribir. C3 usa la imagen del migrador para el worker, sin hacer depender el web de
-Comedores de la app Usuarios.
-Montos opera en `src/backends/comedores/comedores/views/montos_prestacion.py`,
-con rutas/templates del dueño y modelo/tabla compartidos en kernel. El kernel ya
-no importa Historial al guardar. Aprobación y consecuencias:
-`docs/registro/decisiones/2026-10-15-c2-importador-y-montos-comedores.md`.
-C3 implementado y validado localmente desde el 2026-10-16: catorce apps en
-`src/backends/comedores/`, `comedores_runtime` y registro del proxy; portal con
-Usuarios/Dashboard/Encuestas/Insumos (OCR se separa en C4). El admin real está en el dueño, con
-excepción legacy de auditoría en kernel antes del proxy. `admin_links` conserva
-navegación desde el índice del portal, filtrada por permisos. Mailing usa la
-imagen Comedores; el importador usa `sisoc/migrator` + `config.settings_all`
-y rol `user_import_worker`, sin migración ni web. Decisión aprobada:
-`docs/registro/decisiones/2026-10-16-c3-worker-importacion-imagen-migrador.md`.
-El selector
-resuelve `@core` incluyendo el rol existente `user_import_worker`, aunque cambie
-de imagen: contiene Usuarios y debe actualizarse también con el portal. Todos
-los backends lo declaran como extra por contener todo el grafo. El selector
-resuelve el plan según Compose: sólo mailing/importación pueden faltar; otros
-servicios ausentes fuerzan fallback completo. No imprimir el JSON de Compose con sus variables.
-Los tests exclusivos del dominio (111, clasificación y JS) están en
-`src/backends/comedores/tests/`; las integraciones transversales siguen en portal.
-No confundir código local, build con base reutilizada, CI o deploy. Registro:
-`docs/registro/cambios/2026-T4/2026-10-16-issue-2641-c3-runtime-comedores.md`.
-Registros: `docs/registro/cambios/2026-T4/2026-10-15-issue-2641-c0-espacios-comunitarios.md`
-y `docs/registro/decisiones/2026-10-15-identidad-y-espacios-comunitarios.md`.
-Evidencia C1: `docs/registro/cambios/2026-T4/2026-10-15-issue-2641-c1-identidad-y-disponibilidad.md`.
-
-C4 aprobado el 2026-10-16: `src/backends/ocr/ocr/` y `ocr_runtime`, sin instalar
-Usuarios ni otros backends. Web y `ocr_worker` usan la misma imagen backend;
-`process_ocr_jobs` conserva comando/semántica. Tests en `src/backends/ocr/tests/`
-y `src/backends/kernel/tests/test_ocr_runtime.py`; el selector exige OCR worker también en QA.
-Registro y límites: `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-c4-ocr.md`.
-No declarar imágenes/runtime completo validados con el harness SQLite reducido.
+- `/dispositivos/mapa/`, `dispositivos.views.DispositivoMapView`, `geolocate_dispositivo`
+  en services y `dispositivosMap.js`. Mantiene filtros/permisos/alcance del listado,
+  paginación en el navegador de a 15 y selección por `?dispositivo=<pk>`; usa Georef
+  con coordenadas persistidas en `Dispositivo.ubicacion_georef`. Registro:
+  `docs/registro/cambios/2026-T4/2026-10-13-dispositivos-mapa.md`.
 
 ## Como leer este documento
 
-Reglas vigentes y checklists: `docs/desarrollo/verticales_independientes.md`.
-- Kernel no importa core/verticales; un servicio no importa otro.
-- Datos remotos por contribuciones HTML/JSON/reenvío; permisos en el dueño.
-- Prefijos y reverse en registros; recursos por app; grafo completo en migrador.
-- Controlar imports, runtime/imagen aislada y plan con `deploy_targets.py`.
-- Comprobar referencias documentales con `src/scripts/ci/check_docs_paths.py`.
+Reglas entre servicios: `AGENTS.md` ("Verticales independientes") y la guía
+`docs/desarrollo/verticales_independientes.md`. Plan de deploy por archivos:
+`src/scripts/operacion/deploy_targets.py`.
 - DX del ordenamiento #2639: conservar las entradas autodetectables en la raíz
-  del repo o del workspace npm. Pylint de CI enumera `src/scripts/*.py` además
-  de config/apps; el debugger nativo de `.vscode/launch.json` usa
-  `config.settings_all`. Evidencia y límites:
-  `docs/registro/cambios/2026-T4/2026-10-05-2639-auditoria-orden-dx.md`.
+  del repo o del workspace npm; el debugger nativo de `.vscode/launch.json` usa
+  `config.settings_all`.
 
 - Estructura del monorepo (#1931/#2251): el codigo comun vive en `src/backends/kernel/`
   (`core`, `users`, `iam`, `ciudadanos`, `audittrail`), cada vertical migra a
@@ -137,11 +93,6 @@ Reglas vigentes y checklists: `docs/desarrollo/verticales_independientes.md`.
   formularios, importacion masiva, API de login PWA) vive en `src/backends/sisoc_core/usuarios/`; los
   accesos PWA (`AccesoComedorPWA` y afines) y su logica, en `src/backends/comedores/pwa/`
   (`pwa.services.accesos`), con sus tablas `users_*` de siempre.
-
-- Sincronizacion DataCalle: los cambios de main de #2452/#2453 se incorporan a
-  development conservando coordinadores PWA y su checkbox maestro. La migracion
-  users/0051 une las hojas de configuracion mobile y DataCalle sin operaciones.
-  Evidencia/conflictos: docs/registro/cambios/2026-09-08-sincronizacion-datacalle-main.md.
 
 - PWA privadas: Espacios Comunitarios, DataCalle y Gestionar despliegan desde sus
   propios repositorios y ramas `main`, `homologacion` y `development`. SISOC ya
@@ -271,8 +222,8 @@ SISOC/
 |   |   |-- config/          # proyecto Django: settings, urls, middleware, registro de backends
 |   |   |-- kernel/          # codigo comun (core, users, iam, ciudadanos, audittrail, ...)
 |   |   |                    # + templates/, static/ y tests/ compartidos
-|   |   |-- sisoc_core/      # cluster de Comedores y apps propias del core
-|   |   `-- <vertical>/      # pas, cdi, cdf, celiaquia, dispositivos, vat, vpsl, inspecciones
+|   |   |-- sisoc_core/      # portal: usuarios, dashboard, encuestas, insumos
+|   |   `-- <vertical>/      # comedores, ocr, pas, cdi, cdf, celiaquia, dispositivos, vat, vpsl, inspecciones
 |   |-- frontends/           # apps/, packages/, e2e/; entradas de herramientas autodetectables
 |   |   `-- config/          # opciones base compartidas de TypeScript
 |   `-- scripts/             # helpers IA, CI, operacion, frontend y GitHub
@@ -427,7 +378,7 @@ SISOC/
 | Ruta | Responsabilidad |
 | --- | --- |
 | `src/backends/kernel/tests/` | suite transversal, smoke, contratos API, seguridad, componentes |
-| `src/backends/<vertical>/tests/` | tests de cada vertical (incluye PWA y Comedores en `sisoc_core/tests/`) |
+| `src/backends/<vertical>/tests/` | tests de cada vertical (PWA y Comedores en `src/backends/comedores/tests/`) |
 | `*/tests/` | tests cercanos al modulo |
 | `.github/workflows/` | contratos CI reales |
 | `.importlinter` | boundaries arquitectonicos parciales |
@@ -464,7 +415,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `src/backends/ocr/ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `src/backends/vpsl/ver_para_ser_libre/` | dominio VPSL compartido por SISOC y el servicio HTTP React; desde PR #2566 el itinerario evalua cartas sin sedes tentativas, cada jornada posee sede/localidad/ubicacion/vehiculos y checklist con habilitacion automatica, y el registro nominal guarda graduaciones; las sedes previas permanecen para historial; la compatibilidad del PR #2566 conserva localidad historica, copia checklists y permite editar registros previos sin inventar graduacion; `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py` y `services/access.py` exponen el flujo React con permisos, contrato JSON/multipart y alcance provincial | `models.py`, `forms.py`, `views.py`, `api_urls.py`, `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py`, `services/access.py`, `services/workflow.py`, `services/map_location.py`, `migrations/0015_vpsl_ubicacion_vehiculos_graduaciones.py`, `migrations/0016_copiar_checklist_sede_a_jornadas.py`, `src/backends/vpsl/ver_para_ser_libre/tests/test_api.py`, `src/backends/vpsl/ver_para_ser_libre/tests/test_api_contract.py`, `src/backends/vpsl/ver_para_ser_libre/tests/test_jornada_location.py` | Alto |
 | `src/backends/pas/pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV—, Informes PAS versionados, circuito mensual de cruces SINTyS/RENAPER, Panel de Control y Formación pendiente; el padrón lateral de Formación pagina por scroll mediante `/pas/formacion/personas` | `models.py`, `api.py`, `views.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `services/cruces_service.py`, `services/supervivencia_service.py`, `services/persona_service.py`, `services/formacion_service.py`, `src/backends/pas/pas/templates/pas/`, `src/backends/pas/pas/static/custom/js/pas_formacion.js`, `management/commands/`, `urls.py`, `migrations/` | Alto |
-| `src/backends/kernel/audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
+| `src/backends/kernel/audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service/impl.py` | Alto |
 | `src/backends/comedores/historial/` | historial de dominio | `models.py`, `services/` | Bajo |
 | `src/backends/comedores/intervenciones/` | intervenciones sobre casos | tests + archivos del modulo | Bajo; exploracion parcial |
 | `src/backends/kernel/catalogo_intervenciones/` | catálogos de intervención compartidos por Comedores y CDI (tablas `intervenciones_*`) | `models.py`, `api.py`, `services_catalogo.py`, `fixtures/` | Medio |
@@ -500,8 +451,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Las restricciones de navegacion aportadas por dominios se registran en `core.services.sidebar_access`; el template tag global no debe importar reglas VAT.
 - El endpoint Select2 de organizaciones vive en `gestion_organizaciones.views` y `gestion_organizaciones.urls`, aunque conserva la ruta global `ajax/load-organizaciones/`.
 - Los post-procesos de dominio de `load_fixtures` se registran en `core.services.fixture_post_load`; el comando de `core` no debe importar sus servicios directamente.
-- `docker/django/Dockerfile`: base de deploy instala `requirements/base.txt`; `dev` agrega `all.txt`. Conservar en base las apps de diagnóstico de los settings y sus auxiliares. `service_images` comprueba versiones, `pip check` y perfiles de dependencias. Los 14 targets y el aislamiento pasaron localmente en imágenes nuevas; ejecución remota pendiente. Evidencia: `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-build-limpio-docker.md`.
-- Smoke HTTP sintético de esas imágenes y `collectstatic` local aprobados el 2026-10-19; Comedores puede detenerse/recuperarse sin reiniciar portal en ese ensayo. Usar nombres de rutas (`reverse()`), no suponer que el prefijo es un listado. Alcance, comandos y límites: `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-smoke-http-docker.md`. No acredita aceptación humana, CI ni entornos existentes.
+- `docker/django/Dockerfile`: base de deploy instala `requirements/base.txt`; `dev` agrega `all.txt`. Conservar en base las apps de diagnóstico de los settings y sus auxiliares. `service_images` comprueba versiones, `pip check` y perfiles de dependencias. Evidencia: `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-build-limpio-docker.md`.
+- Smoke HTTP de imágenes: usar nombres de rutas (`reverse()`), no suponer que el prefijo es un listado. Comandos y límites: `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-smoke-http-docker.md`.
 - `load_fixtures` reintenta registros pendientes entre archivos hasta que no haya progreso, sin repetir los ya guardados ni reevaluar el criterio de tablas vacías para archivos parciales. Regresión: `src/backends/kernel/tests/test_load_fixtures_command.py`; no reemplazar esto por un orden fijo de carpetas.
 - La auditoria de autenticacion se solicita desde `users.auth_audit`; PWA registra el persistidor de `AuditoriaSesionPWA` durante su arranque.
 - La sincronizacion entre `Profile.duplas_asignadas` y `Dupla.coordinador` se suscribe desde `duplas.signals`; `users` no debe conocer el modelo Dupla.
@@ -565,7 +516,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Decisiones: `docs/registro/decisiones/2026-10-06-auth-siis-accesos-independientes.md`.
 - Login/API y formularios: `src/backends/sisoc_core/usuarios/`; perfil y middleware compartido: `src/backends/kernel/users/`.
 - Riesgos revisados: limpieza de grupos/permisos PWA al combinar accesos, alcance territorial compartido de DataCalle, login y sesiones del Django admin, inicializacion historica del flag web y compatibilidad del login legacy. No importar PWA/core desde el kernel para inicializar flags.
-- La entrega contempla guia y API key por canal privado; no se emitio ninguna clave ni se autorizo desplegar durante la alineacion.
+- La guía y la API key se entregan por canal privado.
 
 ### Si necesitas cambiar la importacion masiva de usuarios
 
@@ -735,7 +686,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - alcance de nómina por admisión vigente o comedor directo:
   `src/backends/comedores/pwa/services/nomina_queryset_service.py`
 - frontend: `mobile/src/api/` y `mobile/src/features/home/`
-- tests `src/backends/sisoc_core/tests/test_pwa_*`
+- tests `src/backends/comedores/tests/test_pwa_*` (algunos transversales en `src/backends/sisoc_core/tests/`)
 - docs: `docs/implementaciones/pwa_backend.md`,
   `docs/implementaciones/comedores_certificaciones_prestaciones.md`,
   `docs/seguridad/security_baseline_pwa.md`
@@ -952,8 +903,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Lint y formato detectados
 
 - `black --check . --config pyproject.toml`
-- `pylint **/*.py --rcfile=.pylintrc`
+- `pylint src/scripts/*.py src/backends/config/*.py src/backends/!(config)/*/*.py --rcfile=.pylintrc` (CI, con `extglob`; localmente, pasar los archivos tocados)
 - `djlint . --configuration=.djlintrc --check`
+- `python src/scripts/ci/check_docs_paths.py --existencia <docs.md>` (job `docs_paths`)
 - CI tiene autofix para PRs internos con Black, DJLint y normalizacion de encoding.
 
 ### Tests detectados
@@ -1003,7 +955,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 - `docker compose up -d --build`
 - `docker compose exec django pytest -n auto`
-- `pylint **/*.py --rcfile=.pylintrc`
+- `pylint` de todo el repo (ver "Lint y formato detectados")
 - `lint-imports`
 
 ### Pedir permiso o tener especial cuidado antes de correr
@@ -1061,11 +1013,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Base minima siempre
 
-1. `AGENTS.md`
-2. `docs/indice.md`
-3. este `docs/ia/AGENT_REPO_MAP.md`
-4. archivo objetivo
-5. tests cercanos
+La de `AGENTS.md` ("Contexto minimo"). Este mapa se consulta para ubicar
+codigo, no se lee entero al inicio.
 
 ### Segun el tipo de tarea
 
@@ -1152,7 +1101,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - logica interna completa de `dashboard`, `dispositivos`, `duplas`, `expedientespagos`, `historial`, `intervenciones`, `organizaciones`, `rendicioncuentasfinal`, `rendicioncuentasmensual`, `ver_para_ser_libre`
 - detalle fino de `src/backends/ocr/ocr/`
 - contratos completos de cada API mas alla del routing y docs encontradas
-- flujos exactos de algunos workers (`mailing`, `ciudadanos_import_worker`) fuera del entrypoint
+- flujos exactos de algunos workers (`mailing_worker`, `ciudadanos_import_worker`) fuera del entrypoint
 
 Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las toque.
 
@@ -1221,5 +1170,5 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `src/backends/sisoc_core/usuarios/siis_api_views.py` y `services_siis.py`: login SIIS por `app`, token firmado administrativo y alta server-to-server. No reutilizar Token DRF legacy; cualquier API key válida es aceptada por decisión explícita.
 - `src/backends/kernel/users/models.py`, `admin.py`, `middleware.py`: flags `acceso_web`/`acceso_siis`, gate admin y sesión web. El flag no concede staff/permisos; API y logout están exentos del gate web.
 - `src/backends/kernel/users/migrations/0060_profile_accesos_siis_web.py` y `src/backends/comedores/pwa/migrations/0026_inicializar_acceso_web.py`: schema kernel y backfill histórico core. Aplicar con migrador completo; no recalcular flags en runtime ni repetir backfill sobre habilitaciones administradas.
-- `src/backends/sisoc_core/tests/test_users_siis.py`: contrato, denegaciones, credenciales administrativas, duplicados, gate web y backfill. Pruebas Django pendientes por dependencias locales incompletas.
-- `docs/registro/cambios/2026-T4/2026-10-06-auth-siis.md`: evidencia local, comandos pendientes y riesgo de rollback a código que ignora el flag. Entrega operativa y API key pendientes.
+- `src/backends/sisoc_core/tests/test_users_siis.py`: contrato, denegaciones, credenciales administrativas, duplicados, gate web y backfill.
+- `docs/registro/cambios/2026-T4/2026-10-06-auth-siis.md`: evidencia y riesgo de rollback a código que ignora el flag.

@@ -161,6 +161,7 @@ def generar_usuario_delegado(  # pylint: disable=too-many-arguments
     limite_check: Optional[Callable[[], bool]] = None,
     request=None,
     delegacion_autorizada: bool = False,
+    usuario_desde_dni: bool = False,
 ) -> dict:
     """Crea un usuario con grupo fijo, lo vincula a una entidad y envía credenciales.
 
@@ -175,6 +176,9 @@ def generar_usuario_delegado(  # pylint: disable=too-many-arguments
             propia y acotada (p. ej. el referente responsable de un CDI genera
             referentes solo para ese CDI). Evita habilitarle la delegación del
             grupo en general. Úsese solo después de esa verificación.
+        usuario_desde_dni: arma el nombre de usuario con el DNI de ``datos``
+            (si lo tiene) en vez de con el email. Para entidades cuyo email es
+            institucional y lo comparten varias personas.
 
     Returns:
         dict con `user`, `password` (temporal en claro) y `email_enviado`.
@@ -201,7 +205,9 @@ def generar_usuario_delegado(  # pylint: disable=too-many-arguments
         )
 
     email = _validar_email(datos)
-    username = _generar_username_unico(_slug_base_desde_email(email))
+    dni = "".join(ch for ch in str(datos.dni or "") if ch.isdigit())
+    base = dni if usuario_desde_dni and dni else _slug_base_desde_email(email)
+    username = _generar_username_unico(base)
 
     with transaction.atomic():
         user = User(

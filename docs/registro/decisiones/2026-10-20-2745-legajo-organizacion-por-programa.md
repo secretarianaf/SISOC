@@ -47,10 +47,21 @@
   dentro sin cambiar su resultado. No se agrega un campo nuevo a `Programas`.
 - Carga inicial versionada: una migración de datos idempotente de la Etapa 1
   crea `ProgramaOrganizacion` a partir de los programas de todos los
-  comedores de cada organización (incluidos los dados de baja) y asigna
-  `LineaProyecto` a los proyectos cuyos comedores tienen un único programa de
-  Abordaje. Reemplaza la query manual: es reproducible en QA, homologación y
-  producción.
+  comedores de cada organización (incluidos los dados de baja y los
+  programas distintos de los tres) y asigna a cada proyecto existente la
+  línea de los comedores que lo usan: hoy la línea está en el comedor y pasa
+  al proyecto (confirmado por el área usuaria el 21/10/2026). Los proyectos
+  con comedores de líneas distintas o sin comedores quedan sin línea y se
+  informan en el log. Reemplaza la query manual: es reproducible en QA,
+  homologación y producción.
+- No se pierde información (requisito del área usuaria, sección 2.1 del
+  plan): migraciones de esquema solo aditivas; migraciones de datos que solo
+  agregan filas en tablas nuevas, idempotentes y con reversa `noop`; FKs
+  nuevas con `on_delete=PROTECT`; formularios que desactivan en lugar de
+  borrar; auditoría en Historial; y un legajo donde todo registro existente
+  tiene un lugar visible (bloques "Sin programa asignado" y "Rendiciones de
+  otras líneas", programas distintos de los tres y Documentación aunque
+  falte Alimentar).
 - Mientras una organización no tenga programas cargados, las reglas nuevas
   de `ComedorForm` y `FirmanteForm` no se aplican: el alta y la edición
   funcionan como hoy. Esto evita bloquear altas si alguna etapa llega a

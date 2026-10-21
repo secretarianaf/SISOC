@@ -110,6 +110,13 @@ Comunitario:
     firmantes y avales (`organizaciones.view_organizacion`). Es un permiso de
     lectura que habilita escritura; se acepta como riesgo conocido para no
     sumar permisos (definición 17).
+25. Hoy la línea se asigna a los comedores (por su programa); ese dato pasa a
+    los proyectos. La carga inicial asigna automáticamente, con los datos
+    actuales, la línea de cada proyecto existente a partir de la línea de los
+    comedores que lo usan (confirmado el 21/10/2026).
+26. Ninguna información existente puede perderse: ni borrarse, ni
+    modificarse sin rastro, ni quedar oculta en el legajo sin un lugar donde
+    verse. Aplica a todo el desarrollo (sección 2.1).
 
 ### 1.3 Cambios de datos
 
@@ -200,15 +207,16 @@ Nombres propuestos (se confirman en la decisión técnica):
 
 ### 1.6 Fuera de alcance
 
-- Completar a mano Región, Subzona y Datos de Convenio de organizaciones y
-  proyectos existentes: la carga inicial solo cubre programas y líneas.
+- Completar Región, Subzona y Datos de Convenio de organizaciones y proyectos
+  existentes: son datos nuevos y se cargan a mano; la carga inicial solo
+  cubre programas y líneas.
 - Cambios en la app mobile/PWA o en rendiciones más allá del filtro por línea.
 - Corregir rendiciones cuya línea no coincide con la de su proyecto.
 - Unificar las dos fuentes de código de proyecto.
 
 ## 2. Roadmap de implementación
 
-Reglas para todas las etapas:
+Reglas para todas las etapas (además de la sección 2.1):
 
 - Un PR por etapa contra `development` (la Etapa 1 se puede partir en dos).
   Commits en español con `<type>(<scope>): <subject>`.
@@ -219,6 +227,61 @@ Reglas para todas las etapas:
 - Antes de abrir cada PR: `git fetch origin` y rebase sobre
   `origin/development`.
 - Ninguna etapa cambia permisos, grupos ni el filtro de acceso por dupla.
+
+### 2.1 Preservación de datos (obligatoria en todas las etapas)
+
+Requisito del área usuaria (definición 26). Cada PR debe cumplirlo y su
+descripción debe decir cómo.
+
+**En la base de datos**
+
+1. Migraciones de esquema solo aditivas: no se borra, renombra ni cambia el
+   tipo de ninguna tabla o columna existente. Se conservan tal cual
+   `Comedor.programa`, `Comedor.proyecto`, `Comedor.codigo_de_proyecto`,
+   `Firmante.programa`, `Organizacion.territoriales_abordaje_comunitario`,
+   `ProyectoOrganizacion`, `RendicionCuentaMensual.linea_programatica` y la
+   documentación.
+2. Migraciones de datos solo agregan filas en las tablas nuevas. Nunca
+   actualizan ni borran filas existentes. Son idempotentes (volver a
+   correrlas no duplica ni pisa datos cargados a mano) y su reversa es
+   `RunPython.noop`: revertir no borra lo que los usuarios ya cargaron.
+3. Las FKs nuevas usan `on_delete=PROTECT`: borrar un programa, una región,
+   una subzona, una organización o un proyecto con datos asociados falla en
+   lugar de borrar en cascada.
+4. La carga inicial no excluye registros: incluye comedores dados de baja,
+   todos los programas que usen los comedores (también los que no sean los
+   tres del legajo) y deja registro (log de la migración) de cuántas
+   organizaciones, programas y proyectos procesó y cuáles quedaron sin línea.
+5. Los formularios nunca borran: los proyectos que se quitan se desactivan
+   (`activo=False`, como hoy); no se puede quitar un programa de la
+   organización si tiene proyectos, firmantes, comedores o rendiciones
+   asociados.
+6. Todo alta o cambio en las tablas nuevas queda en Historial (auditoría).
+7. Antes de desplegar migraciones en producción, respaldo de la base según
+   el procedimiento operativo habitual.
+
+**En la pantalla (nada queda oculto sin lugar)**
+
+8. Firmantes y comedores sin programa, o con un programa que la organización
+   no tiene cargado, se muestran en un bloque "Sin programa asignado" del
+   legajo, visible en cualquier programa seleccionado.
+9. Si la organización tiene programas distintos de los tres (por ejemplo,
+   PNUD), cada uno tiene su propia opción en el selector y muestra sus
+   firmantes y comedores.
+10. Documentación: si la organización tiene documentos cargados pero no tiene
+    Alimentar Comunidad, la sección se muestra igual.
+11. Proyectos sin línea: se listan en un aviso en las pestañas de Abordaje,
+    con enlace a la edición de la organización.
+12. Rendiciones cuya línea no corresponde a ningún programa cargado de la
+    organización: se muestran en un bloque "Rendiciones de otras líneas" para
+    que no queden ocultas.
+
+**Verificación**
+
+13. Cada migración de datos tiene tests que comparan conteos antes y después
+    (ninguna fila existente cambia) y un test que la corre dos veces.
+14. En homologación y producción se corren los conteos de la Etapa 6 antes y
+    después del despliegue.
 
 Comandos de referencia (de `CLAUDE.md`):
 
@@ -256,31 +319,43 @@ Archivos: `src/backends/comedores/gestion_organizaciones/models.py`,
 `admin.py`, `migrations/` y tests nuevos en
 `src/backends/comedores/gestion_organizaciones/tests/`.
 
+0. Antes de escribir la carga inicial: listar en cada entorno (QA, HML,
+   PRD) los programas distintos que usan los comedores y cuántos comedores
+   tiene cada uno, para confirmar qué registros de `Programas` son Secos y
+   Tradicional. En el código hay comentarios contradictorios sobre los IDs 3
+   y 4 (`comedores/utils.py` los describe como PNUD y
+   `rendicioncuentasmensual/services.py` como Secos/Tradicional).
 1. Crear los seis modelos de la sección 1.3 con sus restricciones
    (`UniqueConstraint`) y validaciones en `clean()` (subzona de la región,
    línea válida, imprevistos solo en Tradicional).
 2. Migración de esquema (`makemigrations gestion_organizaciones`), solo
-   aditiva: no toca tablas existentes.
+   aditiva: no toca tablas existentes. FKs nuevas con `on_delete=PROTECT`.
 3. Migración de datos aparte que carga las 5 regiones y 28 subzonas del
-   Anexo A, con función de reversa.
-4. Migración de datos de carga inicial (definiciones 15 y 18), idempotente y
-   con reversa:
+   Anexo A (idempotente; reversa `noop`).
+4. Migración de datos de carga inicial (definiciones 15, 18 y 25),
+   cumpliendo la sección 2.1:
    - crea un `ProgramaOrganizacion` por cada programa distinto de los
-     comedores de cada organización, incluidos los dados de baja;
-   - asigna `LineaProyecto` a los proyectos existentes cuando todos los
-     comedores que los usan (`Comedor.proyecto`) tienen el mismo programa de
-     Abordaje; los demás quedan sin línea y se completan desde la edición de
-     la organización (propuesta, a confirmar con el área usuaria);
-   - no borra ni modifica registros existentes: volver a correrla no duplica.
+     comedores de cada organización, incluidos los dados de baja y los
+     programas que no son los tres del legajo;
+   - asigna `LineaProyecto` a cada proyecto existente con la línea de los
+     comedores que lo usan (`Comedor.proyecto` → `Comedor.programa`);
+   - si los comedores de un proyecto tienen líneas distintas, o el proyecto
+     no lo usa ningún comedor, el proyecto queda sin línea (no se adivina) y
+     se informa en el log de la migración;
+   - solo agrega filas en tablas nuevas; no toca ningún dato existente;
+     volver a correrla no duplica ni pisa líneas cargadas a mano.
 5. Registrar los modelos en el admin (catálogos editables para corregirlos
    sin deploy).
 6. Auditoría: agregar señales para `ProgramaOrganizacion`, `LineaProyecto`,
    `DatosRegionOrganizacion` y `ConvenioProyecto` siguiendo el patrón de
    `audit_signals.py`, para que aparezcan en Historial.
-7. Tests: restricciones únicas, validaciones de `clean()`, que la migración
-   del catálogo deja 5 regiones y 28 subzonas, y que la carga inicial crea los
-   programas esperados (con comedores activos y dados de baja), asigna línea
-   solo a proyectos sin ambigüedad y no duplica al correrse dos veces.
+7. Tests: restricciones únicas, validaciones de `clean()`, `PROTECT` en las
+   FKs nuevas, que la migración del catálogo deja 5 regiones y 28 subzonas, y
+   que la carga inicial: crea los programas esperados (comedores activos,
+   dados de baja y de otros programas), asigna la línea de los comedores a
+   cada proyecto, deja sin línea los ambiguos, no cambia ninguna fila
+   existente (conteos y valores antes/después) y no duplica al correrse dos
+   veces.
 
 Hecho cuando: migraciones aplicadas con el migrador (grafo completo), tests
 en verde, sin cambios visibles para el usuario. Al desplegarse, todas las
@@ -413,14 +488,20 @@ Archivos: `OrganizacionDetailView` y template `organizacion_detail.html`
    "Sin programas asignados".
 5. Botones de editar de Proyectos y Región llevan a la edición de la
    organización (ancla a la sección); el de Convenio, a la pantalla nueva.
-6. Proyectos sin línea (los que la carga inicial no pudo asignar): aviso en
-   las pestañas de Abordaje con enlace a la edición de la organización.
+6. Reglas de visibilidad de la sección 2.1 (puntos 8 a 12): bloque "Sin
+   programa asignado", opción propia para programas distintos de los tres,
+   Documentación visible si hay documentos aunque falte Alimentar, aviso de
+   proyectos sin línea y bloque "Rendiciones de otras líneas".
 7. Conservar estilos actuales (badges, botones, columnas de Documentación).
 8. Tests de vista: organización con uno, dos y tres programas; sin
    programas; parámetro de programa inválido; Documentación solo en
-   Alimentar; Rendiciones solo en Abordaje y filtradas por la línea de la
-   rendición, incluidas las sin proyecto; aviso de proyectos sin línea;
-   usuario sin permiso de edición no ve los botones.
+   Alimentar y también con documentos sin Alimentar; Rendiciones filtradas
+   por la línea de la rendición, incluidas las sin proyecto y las de otras
+   líneas; firmante y comedor sin programa visibles; programa distinto de los
+   tres visible; aviso de proyectos sin línea; usuario sin permiso de
+   edición no ve los botones. Test de no pérdida: todo firmante, comedor,
+   documento, proyecto y rendición de la organización aparece en alguna
+   parte del legajo.
 
 Hecho cuando: el legajo coincide con B v3 para todas las combinaciones de
 programas.
@@ -432,13 +513,17 @@ de datos (definición 15) y las reglas no bloquean a organizaciones sin
 programas (definición 22), así que no hay un orden de despliegue que cuidar.
 Esta etapa solo verifica el resultado.
 
-1. En homologación, después de desplegar la Etapa 1: contar organizaciones
-   con comedores sin `ProgramaOrganizacion` (debe ser cero) y proyectos
-   activos sin `LineaProyecto` (deben ser solo los ambiguos).
+1. Antes y después de desplegar la Etapa 1 en homologación, contar:
+   organizaciones, comedores, firmantes, proyectos, rendiciones y documentos
+   (deben ser iguales: nada se borró); organizaciones con comedores sin
+   `ProgramaOrganizacion` (debe ser cero); proyectos activos sin
+   `LineaProyecto` (deben coincidir con los ambiguos del log); rendiciones
+   cuya línea no está entre los programas de su organización (deben verse
+   en el bloque de otras líneas).
 2. Revisar con el área usuaria una muestra de organizaciones con cada
    combinación de programas y completar la línea de los proyectos que
    quedaron sin asignar.
-3. Repetir el conteo en producción después del despliegue.
+3. Repetir los conteos en producción, con respaldo previo de la base.
 
 Hecho cuando: los conteos dan lo esperado en homologación y producción.
 
@@ -460,7 +545,9 @@ Hecho cuando: los conteos dan lo esperado en homologación y producción.
 | Romper el boundary kernel/vertical | Todo lo nuevo en `gestion_organizaciones`; `import-linter` en cada PR |
 | Etapas 3–5 en producción antes de que existan programas (no hay feature flag) | Carga inicial como migración en la Etapa 1 (definición 15) y reglas que no bloquean a organizaciones sin programas (definición 22) |
 | Legajo vacío para organizaciones sin programas | La carga inicial cubre todas las que tienen comedores; aviso para las que no tienen |
-| Proyectos existentes sin línea | La carga asigna los que no son ambiguos; el resto se completa desde la edición (aviso en el legajo) |
+| Pérdida de información (borrado, cambio sin rastro u ocultamiento) | Sección 2.1 en cada PR: migraciones aditivas, reversa `noop`, `PROTECT`, auditoría, bloques de registros sin programa y test de no pérdida |
+| Proyectos existentes sin línea | La carga asigna la línea de sus comedores; los ambiguos quedan sin línea, en el log y con aviso en el legajo |
+| Programas distintos de los tres o IDs mal identificados | Etapa 1 paso 0: listar programas por entorno antes de la carga; opción propia en el legajo |
 | Rendiciones sin proyecto o con línea distinta a la del proyecto | Manda la línea de la rendición (definición 23); tests de ambos casos |
 | Escritura de montos de convenio con un permiso de lectura | Riesgo aceptado (definición 24); revisar si cambia la política de permisos |
 | Funciones de `utils.py` que reciben comedor usadas con un programa | Variantes que reciben programa (Etapa 2, paso 0) con tests de equivalencia |

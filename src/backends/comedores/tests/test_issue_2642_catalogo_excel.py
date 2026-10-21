@@ -25,8 +25,12 @@ def _cargar():
 
 @pytest.mark.django_db
 def test_excel_carga_cinco_regiones_y_28_subzonas_sin_duplicar_san_juan():
-    region = RegionAbordajeComunitario.objects.create(nombre="AGBA", activo=False)
-    zona = SubzonaAbordajeComunitario.objects.create(nombre="NOROESTE")
+    region, _ = RegionAbordajeComunitario.objects.update_or_create(
+        nombre="AGBA", defaults={"activo": False}
+    )
+    zona, _ = SubzonaAbordajeComunitario.objects.update_or_create(
+        nombre="NOROESTE", defaults={"region": None}
+    )
     _cargar()
     _cargar()
     assert set(
@@ -60,8 +64,12 @@ def test_excel_carga_cinco_regiones_y_28_subzonas_sin_duplicar_san_juan():
 
 @pytest.mark.django_db
 def test_provisorios_se_desactivan_sin_perder_asignaciones():
-    region = RegionAbordajeComunitario.objects.create(nombre="Región 1")
-    zona = SubzonaAbordajeComunitario.objects.create(nombre="Zona 1")
+    region, _ = RegionAbordajeComunitario.objects.update_or_create(
+        nombre="Región 1", defaults={"activo": True}
+    )
+    zona, _ = SubzonaAbordajeComunitario.objects.update_or_create(
+        nombre="Zona 1", defaults={"activo": True}
+    )
     provincia = Provincia.objects.create(nombre="Provincia de prueba")
     organizacion = Organizacion.objects.create(
         nombre="Legado",

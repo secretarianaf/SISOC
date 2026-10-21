@@ -51,6 +51,9 @@ No se aplicaron migraciones a la base local ni se hizo deploy.
 - 61 tests aprobados: catálogo, idempotencia, preservación de asignaciones
   provisorias, validación de combinaciones Región/Subzona y regresiones cercanas.
   El test de concurrencia MySQL se omite en esta ejecución SQLite.
+- 60 tests aprobados en MySQL temporal, incluidas las migraciones del catálogo
+  y concurrencia. Los tests de carga admiten una base vacía o ya inicializada
+  por las migraciones y conservan las verificaciones de idempotencia y asignaciones.
 - Chrome: cinco regiones, filtrado de subzonas, limpieza de una selección
   incompatible al cambiar región y presentación móvil verificados con datos
   ficticios y los mismos valores del Excel.

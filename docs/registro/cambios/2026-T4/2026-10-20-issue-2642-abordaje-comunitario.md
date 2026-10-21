@@ -95,7 +95,7 @@ No se agregan dependencias frontend: se reutilizan estilos y componentes locales
 - 347 tests aprobados y uno omitido en SQLite (el test de concurrencia requiere MySQL).
 - Después de endurecer el POST de nuevas asignaciones, 66 regresiones focalizadas
   adicionales aprobaron, incluida la exigencia de proyecto ante cargas manuales.
-- 56 tests aprobados sobre MySQL 8.4 temporal, incluida la aplicación del grafo de
+- 60 tests aprobados sobre MySQL 8.4 temporal, incluida la aplicación del grafo de
   migraciones y dos inicios simultáneos con un solo cupo disponible.
 - Mobile: seis tests aprobados, TypeScript, build Vite y ESLint de archivos modificados.
 - Chrome con datos ficticios: revisión de escritorio y ancho móvil, colapso por

@@ -42,11 +42,19 @@ def test_catalogos_provisorios_no_duplican_y_admiten_renombrar_asignados(scopes)
     editor = SimpleNamespace(connection=connection)
     migracion.cargar_catalogos_provisorios(apps, editor)
     migracion.cargar_catalogos_provisorios(apps, editor)
-    assert set(RegionAbordajeComunitario.objects.values_list("nombre", flat=True)) == {
+    assert set(
+        RegionAbordajeComunitario.objects.filter(
+            nombre__in=("Región 1", "Región 2")
+        ).values_list("nombre", flat=True)
+    ) == {
         "Región 1",
         "Región 2",
     }
-    assert set(SubzonaAbordajeComunitario.objects.values_list("nombre", flat=True)) == {
+    assert set(
+        SubzonaAbordajeComunitario.objects.filter(
+            nombre__in=("Zona 1", "Zona 2")
+        ).values_list("nombre", flat=True)
+    ) == {
         "Zona 1",
         "Zona 2",
     }

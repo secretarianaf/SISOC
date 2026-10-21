@@ -259,6 +259,9 @@
                         <h5 class="mb-1">Documentacion asociada</h5>
                         <small class="text-muted">
                             Cada documento presentado puede validarse o enviarse a subsanacion de forma independiente.
+                            {% if puede_revisar_documentos %}
+                                Podés cambiar las selecciones guardadas hasta presionar Finalizar Revisión.
+                            {% endif %}
                         </small>
                     </div>
                 </div>
@@ -328,7 +331,7 @@
                                 </tr>
                                 {% if categoria.archivos %}
                                     {% for archivo in categoria.archivos %}
-                                        <tr class="{% if archivo.observaciones or archivo.estado == 'presentado' and puede_revisar_documentos %}documento-row-with-details{% endif %}">
+                                        <tr class="{% if archivo.observaciones or puede_revisar_documentos %}documento-row-with-details{% endif %}">
                                             <td>{{ archivo.nombre }}</td>
                                             <td id="estado-cell-{{ archivo.id }}">
                                                 {% if archivo.get_estado_visual == 'subsanado' %}
@@ -342,7 +345,7 @@
                                                 {% endif %}
                                             </td>
                                             <td id="revision-cell-{{ archivo.id }}">
-                                                {% if puede_revisar_documentos and archivo.estado == 'presentado' %}
+                                                {% if puede_revisar_documentos %}
                                                     <form id="revision-documento-{{ archivo.id }}" method="post">
                                                         {% csrf_token %}
                                                         <input type="hidden" name="documento_id" value="{{ archivo.id }}" />
@@ -354,8 +357,14 @@
                                                                 data-documento-id="{{ archivo.id }}"
                                                                 required>
                                                             <option value="">Seleccionar accion</option>
-                                                            <option value="validado">Validar</option>
-                                                            <option value="subsanar">A subsanar</option>
+                                                            <option value="validado"
+                                                                    {% if archivo.estado == 'validado' %}selected{% endif %}>
+                                                                Validar
+                                                            </option>
+                                                            <option value="subsanar"
+                                                                    {% if archivo.estado == 'subsanar' %}selected{% endif %}>
+                                                                A subsanar
+                                                            </option>
                                                         </select>
                                                         <button type="submit"
                                                                 form="revision-documento-{{ archivo.id }}"
@@ -398,11 +407,11 @@
                                                 </div>
                                             </td>
                                         </tr>
-                                        {% if archivo.observaciones or archivo.estado == 'presentado' and puede_revisar_documentos %}
+                                        {% if archivo.observaciones or puede_revisar_documentos %}
                                             <tr id="observaciones-row-{{ archivo.id }}"
-                                                class="documento-detail-row {% if archivo.estado == 'presentado' and puede_revisar_documentos and not archivo.observaciones %}d-none{% endif %}">
+                                                class="documento-detail-row {% if puede_revisar_documentos and not archivo.observaciones %}d-none{% endif %}">
                                                 <td colspan="5" class="text-start pt-0 pb-1">
-                                                    {% if puede_revisar_documentos and archivo.estado == 'presentado' %}
+                                                    {% if puede_revisar_documentos %}
                                                         {% if archivo.observaciones %}
                                                             <div class="ps-3" id="observaciones-display-{{ archivo.id }}">
                                                                 <strong>Observaciones:</strong> {{ archivo.observaciones }}
@@ -415,7 +424,7 @@
                                                                       class="documento-observaciones-input form-control form-control-sm js-observaciones-input"
                                                                       data-documento-id="{{ archivo.id }}"
                                                                       rows="2"
-                                                                      placeholder="Observaciones para subsanacion"></textarea>
+                                                                      placeholder="Observaciones para subsanacion">{{ archivo.observaciones|default_if_none:"" }}</textarea>
                                                             <button type="submit"
                                                                     form="revision-documento-{{ archivo.id }}"
                                                                     id="guardar-revision-observaciones-{{ archivo.id }}"
@@ -507,7 +516,7 @@
                                                             {% endif %}
                                                         </td>
                                                         <td id="revision-cell-{{ subsanacion.id }}">
-                                                            {% if puede_revisar_documentos and subsanacion.estado == 'presentado' %}
+                                                            {% if puede_revisar_documentos and subsanacion.es_documento_vigente %}
                                                                 <form id="revision-documento-{{ subsanacion.id }}" method="post">
                                                                     {% csrf_token %}
                                                                     <input type="hidden" name="documento_id" value="{{ subsanacion.id }}" />

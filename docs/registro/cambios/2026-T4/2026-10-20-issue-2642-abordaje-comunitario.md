@@ -107,3 +107,18 @@ No se agregan dependencias frontend: se reutilizan estilos y componentes locales
   35 segundos tanto en HEAD como con este cambio; no se reformateó masivamente.
 - El MySQL temporal no tiene volúmenes ni puertos publicados y se elimina al cerrar.
 - No se aplicaron migraciones a la base local ni se hizo deploy.
+
+## Correcciones durante CI del PR #2751
+
+- Regenerado el registro de URLs para las pantallas de administración de regiones
+  y subzonas. Los tests de permisos de mensajes verifican primero que la
+  notificación exista para el usuario autorizado al finalizar la revisión.
+- El test histórico de la migración 0019 restaura ahora todas las migraciones
+  vigentes al terminar, para no dejar un esquema incompleto a los tests siguientes.
+  La suite completa de compatibilidad MySQL aprueba sus 15 tests.
+- Suite completa SQLite: 7.204 tests aprobados y 26 omitidos; cobertura total
+  89,92 % y cobertura de líneas modificadas 92,46 %.
+- Actualizado únicamente Vitest de 4.1.11 a 4.1.12 y sus paquetes asociados para
+  resolver los avisos GHSA-qxg6-89mg-rqv8 y GHSA-xp26-3454-mjgp, que comenzaron
+  a bloquear la auditoría npm durante el seguimiento del PR. Es una dependencia
+  de pruebas; se mantiene la misma versión mayor y menor.

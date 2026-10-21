@@ -68,42 +68,6 @@ document.addEventListener("DOMContentLoaded", function () {
         );
     };
 
-    const bloquearRevisionCelda = function (documentoId) {
-        const revisionCell = document.getElementById("revision-cell-" + documentoId);
-        if (revisionCell) {
-            revisionCell.innerHTML = '<span class="text-muted">-</span>';
-        }
-    };
-
-    const actualizarObservaciones = function (documentoId, observaciones) {
-        const observacionesRow = document.getElementById(
-            "observaciones-row-" + documentoId
-        );
-        if (!observacionesRow) {
-            return;
-        }
-
-        if (!observaciones) {
-            observacionesRow.classList.add("d-none");
-            return;
-        }
-
-        observacionesRow.classList.remove("d-none");
-        const cell = observacionesRow.querySelector("td");
-        if (!cell) {
-            return;
-        }
-
-        cell.innerHTML =
-            '<div class="ps-3" id="observaciones-display-' + documentoId + '"></div>';
-        const display = document.getElementById("observaciones-display-" + documentoId);
-
-        if (display) {
-            display.innerHTML =
-                "<strong>Observaciones:</strong> " + escapeHtml(observaciones);
-        }
-    };
-
     const setSubmitterLoading = function (submitter, isLoading) {
         if (!submitter) {
             return;
@@ -231,11 +195,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         );
                     }
 
-                    bloquearRevisionCelda(documentoId);
-                    actualizarObservaciones(
-                        documentoId,
-                        data.documento.observaciones
-                    );
+                    window.location.reload();
                     renderRendicionBadge(
                         data.rendicion.estado,
                         data.rendicion.estado_display

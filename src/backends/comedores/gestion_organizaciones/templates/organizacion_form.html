@@ -23,6 +23,7 @@
                   class="w-100"
                   enctype="multipart/form-data">
                 {% csrf_token %}
+                {{ form.non_field_errors }}
                 {{ form.cuil_duplicado_confirmado }}
                 {{ form.cuil_duplicado_confirmado_valor }}
 
@@ -34,7 +35,7 @@
                             Progreso del Formulario
                         </h4>
                         <span class="progress-stats">
-                            <span id="completedSections">0</span>/4 secciones completadas
+                            <span id="completedSections">0</span>/5 secciones completadas
                         </span>
                     </div>
                     <div class="progress-bar-container">
@@ -242,9 +243,82 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group row">
-                            <div class="col-12">{{ form.territoriales_abordaje_comunitario|as_crispy_field }}</div>
+                    </div>
+                </div>
+
+                <div class="section-card" data-section="abordaje">
+                    <div class="section-header"
+                         data-toggle-section="abordaje"
+                         role="button"
+                         tabindex="0"
+                         aria-controls="section-abordaje"
+                         aria-expanded="true">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Datos Abordaje Comunitario</h3>
+                                <p class="section-subtitle">Información opcional y territoriales por proyecto</p>
+                            </div>
                         </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-abordaje"><i class="fas fa-circle"></i> Sin completar</span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-abordaje">
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.region_abordaje|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.subzona_abordaje|as_crispy_field }}</div>
+                        </div>
+                        {{ form.asignaciones_territoriales }}
+                        {{ form.subzonas_abordaje|json_script:"subzonas-abordaje-json" }}
+                        {% for error in form.asignaciones_territoriales.errors %}
+                            <div class="alert alert-danger" role="alert">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-group row">
+                            <div class="col-md-5">
+                                <label for="asignacion-proyecto">Código de Proyecto</label>
+                                <select id="asignacion-proyecto" class="form-control"></select>
+                            </div>
+                            <div class="col-md-5">
+                                <label for="asignacion-territorial">Territorial Asignado Abordaje Comunitario</label>
+                                <select id="asignacion-territorial" class="form-control">
+                                    <option value="">Seleccionar territorial</option>
+                                    {% for valor, etiqueta in form.fields.territoriales_abordaje_comunitario.choices %}
+                                        <option value="{{ valor }}">{{ etiqueta }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button"
+                                        id="agregar-asignacion-territorial"
+                                        class="btn btn-primary">Agregar</button>
+                            </div>
+                        </div>
+                        <p id="asignacion-territorial-error"
+                           class="text-danger d-none"
+                           role="alert"></p>
+                        <div id="asignaciones-territoriales-listado"
+                             class="list-group"
+                             aria-live="polite"></div>
+                        {% if form.instance.pk %}
+                            {% with anteriores=form.instance.territoriales_abordaje_comunitario.all %}
+                                {% if anteriores %}
+                                    <p class="text-muted mt-3">
+                                        Asignaciones anteriores sin proyecto:
+                                        {% for usuario in anteriores %}
+                                            {{ usuario.get_full_name|default:usuario.username }}
+                                            {% if not forloop.last %},{% endif %}
+                                        {% endfor %}
+                                        . Se conservan; agregá su asociación al proyecto correspondiente.
+                                    </p>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
                     </div>
                 </div>
 
@@ -338,6 +412,7 @@
     </div>
 {% endblock %}
 {% block customJS %}
+    <script src="{% static 'custom/js/organizacion_abordaje.js' %}"></script>
     <!-- URLs de Django para AJAX -->
     <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";

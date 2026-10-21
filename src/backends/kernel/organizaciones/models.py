@@ -87,6 +87,40 @@ class Aval(SoftDeleteModelMixin, models.Model):
         verbose_name_plural = "Avales"
 
 
+class RegionAbordajeComunitario(models.Model):
+    nombre = models.CharField(max_length=255, unique=True)
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        ordering = ["nombre"]
+        verbose_name = "Región de Abordaje Comunitario"
+        verbose_name_plural = "Regiones de Abordaje Comunitario"
+
+
+class SubzonaAbordajeComunitario(models.Model):
+    nombre = models.CharField(max_length=255, unique=True)
+    activo = models.BooleanField(default=True)
+    region = models.ForeignKey(
+        RegionAbordajeComunitario,
+        on_delete=models.PROTECT,
+        related_name="subzonas",
+        null=True,
+        blank=True,
+        verbose_name="Región",
+    )
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        ordering = ["nombre"]
+        verbose_name = "Subzona de Abordaje Comunitario"
+        verbose_name_plural = "Subzonas de Abordaje Comunitario"
+
+
 class Organizacion(SoftDeleteModelMixin, models.Model):
     nombre = models.CharField(max_length=255)
     sigla = models.CharField(max_length=30, blank=True, null=True, verbose_name="Sigla")
@@ -125,6 +159,20 @@ class Organizacion(SoftDeleteModelMixin, models.Model):
         blank=True, null=True, verbose_name="Fecha de vencimiento"
     )
     sin_vencimiento = models.BooleanField(default=False)
+    region_abordaje = models.ForeignKey(
+        RegionAbordajeComunitario,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name="Región",
+    )
+    subzona_abordaje = models.ForeignKey(
+        SubzonaAbordajeComunitario,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name="Subzona",
+    )
     fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     territoriales_abordaje_comunitario = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
@@ -154,6 +202,12 @@ class ProyectoOrganizacion(models.Model):
     codigo = models.CharField(max_length=255)
     nombre = models.CharField(max_length=255, blank=True, null=True)
     activo = models.BooleanField(default=True)
+    territoriales = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name="proyectos_abordaje",
+        verbose_name="Territoriales asignados",
+    )
 
     def __str__(self):
         return self.nombre or self.codigo

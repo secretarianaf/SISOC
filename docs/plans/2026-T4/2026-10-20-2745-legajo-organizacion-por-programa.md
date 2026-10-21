@@ -1,9 +1,8 @@
-# Plan: legajo de Organización desdoblado por programa
+# Plan: legajo de Organización desdoblado por programa (#2745)
 
 Estado: aprobado funcionalmente por el área usuaria el 20/10/2026; pendiente
-de revisión técnica. Sin implementar. Rama de trabajo:
-`feat/legajo-organizacion-por-programa` (desde `origin/development`
-`42504f854`). Sin issue asignado todavía.
+de revisión técnica en el PR de documentación. Sin implementar. Issue:
+#2745. La implementación se hará en PRs posteriores, uno por etapa.
 
 Las definiciones funcionales de la sección 1.2 son del área usuaria y se
 acordaron sobre mockups del 19 y 20/10/2026 (variante "B v3"). La ubicación
@@ -16,7 +15,7 @@ Mockups (artifact privado, compartir antes de difundir):
 https://claude.ai/artifact/CLXfC8znpFSP35yxRNGUik — tableros "B v2" y "B v3".
 
 Decisión técnica asociada:
-`docs/registro/decisiones/2026-10-20-legajo-organizacion-por-programa.md`.
+`docs/registro/decisiones/2026-10-20-2745-legajo-organizacion-por-programa.md`.
 
 ## 1. Descripción de los cambios
 
@@ -208,7 +207,7 @@ djlint src/backends/comedores/gestion_organizaciones/templates/ --check
 Objetivo: dejar registrada y revisada la decisión de arquitectura.
 
 1. Escribir
-   `docs/registro/decisiones/2026-10-20-legajo-organizacion-por-programa.md`
+   `docs/registro/decisiones/2026-10-20-2745-legajo-organizacion-por-programa.md`
    con: modelos nuevos en `gestion_organizaciones`, línea del proyecto en una
    tabla nueva 1:1 (no mover `ProyectoOrganizacion` ni agregarle una FK desde
    el kernel), catálogo de Región/Subzona por migración de datos, reutilizar

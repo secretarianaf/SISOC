@@ -1,14 +1,14 @@
-# 2026-10-20 - Datos por programa de la Organización en gestion_organizaciones
+# 2026-10-20 - Datos por programa de la Organización en gestion_organizaciones (#2745)
 
 ## Estado
 - propuesta (aprobada funcionalmente por el área usuaria el 20/10/2026;
-  pendiente de revisión técnica antes de implementar)
+  se revisa en el PR de documentación del issue #2745, antes de implementar)
 
 ## Contexto
 - El legajo de Organización debe desdoblarse por programa (Alimentar
   Comunidad, Abordaje Comunitario – Línea Secos y Línea Tradicional). Las
   definiciones funcionales y el roadmap están en
-  `docs/plans/2026-T4/2026-10-20-legajo-organizacion-por-programa.md`.
+  `docs/plans/2026-T4/2026-10-20-2745-legajo-organizacion-por-programa.md`.
 - Hacen falta datos nuevos: programas de la organización, línea de cada
   proyecto, Región/Subzona y Datos de Convenio por proyecto. Todos dependen
   de `comedores.Programas` o son propios de Abordaje.
@@ -80,7 +80,8 @@ aprobó la ubicación de los datos y el uso de permisos existentes.
   no debe llegar a producción antes de esa carga.
 
 ## Referencias
-- Plan: `docs/plans/2026-T4/2026-10-20-legajo-organizacion-por-programa.md`.
+- Issue: #2745.
+- Plan: `docs/plans/2026-T4/2026-10-20-2745-legajo-organizacion-por-programa.md`.
 - Guía de verticales: `docs/desarrollo/verticales_independientes.md`.
 - Precedente: `Firmante` en
   `src/backends/comedores/gestion_organizaciones/models.py`.

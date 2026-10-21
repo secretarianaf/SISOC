@@ -39,13 +39,33 @@
 - El catálogo de Región (5) y Subzona (28) del Anexo A del plan se carga con
   una migración de datos reversible, para que sea igual en todos los
   entornos, y queda editable desde el admin.
-- Para reconocer cada programa se reutilizan las funciones existentes de
-  `comedores/utils.py` (o variantes que reciban el programa); no se agrega un
-  campo nuevo a `Programas`.
+- Para reconocer cada programa se agregan en `comedores/utils.py` variantes
+  que reciben un `Programas` (patrón de `permite_codigo_de_proyecto`), porque
+  `is_abordaje_comunitario_linea_secos_program` y
+  `is_abordaje_comunitario_linea_tradicional_program` reciben un comedor y con
+  un programa devuelven `False` sin error. Las funciones actuales las usan por
+  dentro sin cambiar su resultado. No se agrega un campo nuevo a `Programas`.
+- Carga inicial versionada: una migración de datos idempotente de la Etapa 1
+  crea `ProgramaOrganizacion` a partir de los programas de todos los
+  comedores de cada organización (incluidos los dados de baja) y asigna
+  `LineaProyecto` a los proyectos cuyos comedores tienen un único programa de
+  Abordaje. Reemplaza la query manual: es reproducible en QA, homologación y
+  producción.
+- Mientras una organización no tenga programas cargados, las reglas nuevas
+  de `ComedorForm` y `FirmanteForm` no se aplican: el alta y la edición
+  funcionan como hoy. Esto evita bloquear altas si alguna etapa llega a
+  producción antes que los datos (no hay feature flag).
+- La línea de una rendición la define
+  `RendicionCuentaMensual.linea_programatica`, no `LineaProyecto`. Las
+  rendiciones sin proyecto se muestran en la pestaña de su línea; una
+  rendición con línea distinta a la de su proyecto se muestra en la de su
+  propia línea.
 - Las acciones nuevas usan los controles existentes:
   `permissions_any_required(["organizaciones.view_organizacion"])` en las
   vistas y `_puede_ver_todas_las_organizaciones` para mostrar acciones en el
-  legajo. No se crean permisos ni grupos.
+  legajo. No se crean permisos ni grupos. Para Datos de Convenio esto
+  significa que un permiso de lectura habilita escribir montos: el área
+  usuaria lo acepta como riesgo conocido (21/10/2026) para no sumar permisos.
 
 Checklist 1 de `docs/desarrollo/verticales_independientes.md` (app en un
 vertical existente), recorrido sobre `gestion_organizaciones`:
@@ -65,7 +85,11 @@ vertical existente), recorrido sobre `gestion_organizaciones`:
   PR de implementación (no ejecutado en esta etapa).
 
 Esta decisión la propuso el agente a partir del código; el área usuaria
-aprobó la ubicación de los datos y el uso de permisos existentes.
+aprobó la ubicación de los datos y el uso de permisos existentes. La carga
+inicial versionada, las reglas que no bloquean sin programas, la fuente de
+la línea de las rendiciones y la aceptación del riesgo de permisos del
+convenio responden a la revisión del PR #2746 (21/10/2026) y las eligió el
+área usuaria entre las opciones propuestas.
 
 ## Consecuencias
 - Positivas: respeta el boundary kernel/vertical, todos los cambios de
@@ -75,12 +99,21 @@ aprobó la ubicación de los datos y el uso de permisos existentes.
   join más). Para saber si un programa es Secos o Tradicional se sigue
   dependiendo del nombre del registro: renombrar un programa desde el admin
   rompe ese reconocimiento.
-- Los datos existentes (programas de cada organización y línea de cada
-  proyecto) quedan vacíos hasta la carga inicial por query; el legajo nuevo
-  no debe llegar a producción antes de esa carga.
+- La carga inicial viaja con la Etapa 1, así que no hay un orden de
+  despliegue que cuidar. Los proyectos con comedores de líneas distintas (o
+  sin comedores) quedan sin línea y se completan a mano desde la edición de
+  la organización.
+- Mientras una organización no tenga programas, sus comedores y firmantes no
+  quedan restringidos: es una ventana deliberada para no bloquear la
+  operación.
+- Una rendición con línea distinta a la de su proyecto aparece en una
+  pestaña distinta a la del proyecto. Corregir esos datos queda fuera de
+  alcance.
+- Riesgo aceptado: quien puede ver organizaciones puede cargar montos de
+  convenio.
 
 ## Referencias
-- Issue: #2745.
+- Issue: #2745. Revisión: PR #2746.
 - Plan: `docs/plans/2026-T4/2026-10-20-2745-legajo-organizacion-por-programa.md`.
 - Guía de verticales: `docs/desarrollo/verticales_independientes.md`.
 - Precedente: `Firmante` en

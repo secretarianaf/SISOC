@@ -1,4 +1,5 @@
 """Opciones provisorias acordadas para Región y Subzona (#2642)."""
+
 # pylint: disable=invalid-name
 
 from django.db import migrations

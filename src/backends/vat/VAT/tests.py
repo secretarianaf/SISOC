@@ -5511,6 +5511,76 @@ def test_api_vat_comisiones_curso_lista_por_curso(vat_api_client, vat_curso_base
     assert payload["results"][0]["curso"] == curso.id
 
 
+# Issue #2750: un consumidor mandaba curso_id="26-1912-14" y el ORM respondía 500.
+FILTROS_NUMERICOS_API_VAT = [
+    ("centros", "provincia_id"),
+    ("centros", "municipio_id"),
+    ("centros", "localidad_id"),
+    ("municipios", "provincia_id"),
+    ("localidades", "municipio_id"),
+    ("localidades", "provincia_id"),
+    ("subsectores", "sector_id"),
+    ("titulos-referencia", "sector_id"),
+    ("titulos-referencia", "subsector_id"),
+    ("planes-curriculares", "sector_id"),
+    ("planes-curriculares", "subsector_id"),
+    ("planes-curriculares", "titulo_referencia_id"),
+    ("planes-curriculares", "modalidad_cursada_id"),
+    ("inscripciones-oferta", "oferta_id"),
+    ("vouchers", "ciudadano_id"),
+    ("vouchers", "programa_id"),
+    ("vouchers/por-ciudadano", "ciudadano_id"),
+    ("institucion-contactos", "centro_id"),
+    ("institucion-identificadores", "centro_id"),
+    ("institucion-ubicaciones", "centro_id"),
+    ("cursos", "centro_id"),
+    ("cursos", "provincia_id"),
+    ("cursos", "municipio_id"),
+    ("cursos", "modalidad_id"),
+    ("cursos", "programa_id"),
+    ("comisiones-curso", "curso_id"),
+    ("comisiones-curso", "centro_id"),
+    ("comisiones-curso", "provincia_id"),
+    ("comisiones-curso", "municipio_id"),
+    ("ofertas-institucionales", "centro_id"),
+    ("comisiones", "oferta_id"),
+    ("comision-horarios", "comision_id"),
+    ("inscripciones", "ciudadano_id"),
+    ("inscripciones", "comision_id"),
+    ("inscripciones", "comision_curso_id"),
+    ("evaluaciones", "comision_id"),
+    ("resultado-evaluaciones", "evaluacion_id"),
+    ("web/centros", "provincia_id"),
+    ("web/centros", "municipio_id"),
+    ("web/centros", "localidad_id"),
+    ("web/titulos", "sector_id"),
+    ("web/titulos", "subsector_id"),
+    ("web/cursos", "centro_id"),
+    ("web/cursos", "titulo_id"),
+    ("web/cursos", "programa_id"),
+    ("web/cursos", "ciclo_lectivo"),
+    ("web/inscripciones", "ciudadano_id"),
+]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(("recurso", "parametro"), FILTROS_NUMERICOS_API_VAT)
+def test_api_vat_filtro_numerico_invalido_responde_400(
+    vat_api_client, recurso, parametro
+):
+    response = vat_api_client.get(f"/api/vat/{recurso}/?{parametro}=26-1912-14")
+
+    assert response.status_code == 400
+    assert response.json()[parametro] == ["Debe ser un número entero."]
+
+
+@pytest.mark.django_db
+def test_api_vat_filtro_numerico_vacio_se_ignora(vat_api_client):
+    response = vat_api_client.get("/api/vat/comisiones-curso/?curso_id=")
+
+    assert response.status_code == 200
+
+
 @pytest.mark.django_db
 def test_api_vat_comisiones_curso_lista_incluye_horarios_y_sesiones(
     vat_api_client, vat_curso_base

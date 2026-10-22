@@ -1,8 +1,45 @@
-﻿from django.conf import settings
+﻿from pathlib import PurePath
+
+from django.conf import settings
 from django.db import models
 
 from comedores.models import Comedor
 from core.soft_delete import SoftDeleteModelMixin
+
+
+# Margen para el sufijo "_XXXXXXX" que agrega Storage cuando el nombre ya existe.
+_MARGEN_SUFIJO_STORAGE = 8
+
+
+def _nombre_archivo_acotado(carpeta, filename, max_length=100):
+    """Deja una sola extensión y acota el nombre para que entre en ``max_length``.
+
+    ``Storage.get_available_name`` toma como extensión todos los sufijos
+    (``FORM.V.CERTIFICACION.pdf`` -> raíz ``FORM``); si el nombre ya existe y
+    no entra, no puede recortar la raíz y falla con ``SuspiciousFileOperation``.
+    """
+    nombre = PurePath(filename).name
+    sufijo = PurePath(nombre).suffix
+    extension = sufijo[:10]
+    raiz = nombre[: len(nombre) - len(sufijo)].replace(".", "_")
+    disponible = max_length - len(carpeta) - len(extension) - _MARGEN_SUFIJO_STORAGE
+    return f"{carpeta}{raiz[: max(disponible, 1)] or 'archivo'}{extension}"
+
+
+def documentacion_adjunta_upload_to(instance, filename):
+    return _nombre_archivo_acotado(
+        "rendicioncuentasmensualdocumentos_adjuntos/", filename
+    )
+
+
+def acta_auditoria_upload_to(instance, filename):
+    return _nombre_archivo_acotado("rendicioncuentasmensual/auditoria/actas/", filename)
+
+
+def documento_regularizacion_upload_to(instance, filename):
+    return _nombre_archivo_acotado(
+        "rendicioncuentasmensual/auditoria/regularizaciones/", filename
+    )
 
 
 class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
@@ -298,7 +335,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         verbose_name="Observaciones",
     )
     archivo = models.FileField(
-        upload_to="rendicioncuentasmensualdocumentos_adjuntos/",
+        upload_to=documentacion_adjunta_upload_to,
         verbose_name="Archivo",
     )
     fecha_creacion = models.DateTimeField(
@@ -622,14 +659,14 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         blank=True, null=True, verbose_name="Fecha de cierre de gestión de auditoría"
     )
     acta_auditoria = models.FileField(
-        upload_to="rendicioncuentasmensual/auditoria/actas/",
+        upload_to=acta_auditoria_upload_to,
         blank=True,
         null=True,
         verbose_name="PDF Acta de Auditoría",
     )
     fecha_regularizacion = models.DateTimeField(blank=True, null=True)
     documento_regularizacion = models.FileField(
-        upload_to="rendicioncuentasmensual/auditoria/regularizaciones/",
+        upload_to=documento_regularizacion_upload_to,
         blank=True,
         null=True,
         verbose_name="PDF Regularización",

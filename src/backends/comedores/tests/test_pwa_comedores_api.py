@@ -1148,6 +1148,52 @@ def test_rendicion_mobile_creada_para_otro_proyecto_del_espacio_permite_adjuntar
 
 
 @pytest.mark.django_db
+def test_adjuntar_rendicion_con_puntos_en_el_nombre_guarda_dos_veces(
+    comedores, settings, tmp_path
+):
+    # Issue #2750: Storage tomaba ".V.CERTIFICACION_...pdf" como extensión y
+    # fallaba con SuspiciousFileOperation al no poder acortar el nombre.
+    settings.MEDIA_ROOT = str(tmp_path)
+    comedor_1, _ = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_adjuntar_nombre_largo",
+    )
+    _grant_mobile_rendicion_permission(representante)
+    client = _token_client(representante)
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=comedor_1, mes=4, anio=2026
+    )
+    nombre = "FORM_1234567.V.CERTIFICACION_DE_PRESTACIONES_-_PRESTACION_ALIMENTARIA.pdf"
+
+    for _ in range(2):
+        response = client.post(
+            f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/documentacion/",
+            {
+                "archivo": SimpleUploadedFile(
+                    nombre, b"%PDF-1.4 test content", content_type="application/pdf"
+                ),
+                "categoria": DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+            },
+            format="multipart",
+        )
+        assert response.status_code == 201
+
+    archivos = [
+        documento.archivo.name
+        for documento in DocumentacionAdjunta.objects.filter(
+            rendicion_cuenta_mensual=rendicion
+        )
+    ]
+    assert len(set(archivos)) == 2
+    for archivo in archivos:
+        assert archivo.endswith(".pdf")
+        assert archivo.count(".") == 1
+        assert len(archivo) <= 100
+
+
+@pytest.mark.django_db
 def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     settings.MEDIA_ROOT = str(tmp_path)
     comedor_1, _ = comedores

@@ -10,11 +10,8 @@ Fuentes complementarias:
 ## Resumen real del sistema (alto nivel)
 
 - Monorepo Django con core de entrada, backends independientes y DB compartida.
-- Guia vigente: `docs/desarrollo/verticales_independientes.md` (ubicación, reglas y checklists).
-- Kernel no importa core/verticales; un servicio no importa otro.
-- Datos entre procesos por contratos HTML/JSON/favoritos; no por imports Python.
-- URLs por registro, recursos por dueño, migraciones/collectstatic por migrador.
-- Validar imports, runtimes/imágenes aisladas y plan de deploy según archivos.
+- Reglas entre servicios: `AGENTS.md` ("Verticales independientes") y la guía
+  `docs/desarrollo/verticales_independientes.md` (ubicación, reglas y checklists).
 - Web server-side con templates Django + Bootstrap/JS.
 - APIs con DRF (`api_views.py`, serializers).
 - Lógica de negocio distribuida en `services/` y utilidades por app.
@@ -29,7 +26,7 @@ Fuentes complementarias:
 ## 1) Presentación
 
 Incluye:
-- Django views (function-based y class-based views)
+- Django views: class-based para código nuevo; hay function-based heredadas que se toleran (ver `AGENTS.md`)
 - DRF views / viewsets
 - templates Django
 - urls
@@ -100,7 +97,7 @@ Regla:
 Frecuentes en apps:
 - `views.py` (web)
 - `api_views.py` (DRF)
-- `serializers.py` / `api_serializers.py`
+- `api_serializers.py` (algunas apps heredadas usan `serializers.py`)
 - `forms.py`
 - `services/`
 - `signals.py`

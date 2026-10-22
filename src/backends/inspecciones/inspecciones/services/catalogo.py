@@ -97,6 +97,14 @@ def opcion_escuela(escuela):
     return {"id": escuela.pk, "text": escuela.nombre, "detalle": detalle}
 
 
+def opcion_escuela_por_id(escuela_id):
+    """Opción inicial del Select2 del filtro (``None`` si no hay o no existe)."""
+    if not escuela_id:
+        return None
+    escuela = Escuela.objects.select_related("provincia").filter(pk=escuela_id).first()
+    return opcion_escuela(escuela) if escuela else None
+
+
 def buscar_escuelas_select(texto):
     """Para el alta de asignaciones: desde 3 letras, hasta 20 resultados."""
     texto = (texto or "").strip()

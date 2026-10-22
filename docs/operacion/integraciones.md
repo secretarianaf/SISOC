@@ -24,9 +24,9 @@
   Para que tome efecto se debe actualizar el entorno del proceso Django y
   recargarlo según el runbook de la plataforma; no requiere un cambio de
   código. Para volver al comportamiento por ambiente, quitar la variable.
-  Evidencia: `src/backends/config/settings.py`, `src/backends/sisoc_core/comedores/tasks.py`,
-  `src/backends/sisoc_core/comedores/services/territorial_service/impl.py`, `src/backends/sisoc_core/relevamientos/tasks.py`
-  y `src/backends/sisoc_core/comedores/management/commands/sync_comedores_gestionar.py`.
+  Evidencia: `src/backends/config/settings.py`, `src/backends/comedores/comedores/tasks.py`,
+  `src/backends/comedores/comedores/services/territorial_service/impl.py`, `src/backends/comedores/relevamientos/tasks.py`
+  y `src/backends/comedores/comedores/management/commands/sync_comedores_gestionar.py`.
 - RENAPER: cliente HTTP compartido en `src/backends/kernel/core/integrations/renaper.py`, con autenticación efímera por consulta y fachada compatible en `src/backends/kernel/core/services/renaper.py`; credenciales `RENAPER_API_*`, timeout y retries/backoff configurables. No persiste tokens en cache ni registra DNI, tokens o payloads remotos.
 - Google Maps: clave opcional `GOOGLE_MAPS_API_KEY`. Evidencia: src/backends/config/settings.py:241.
 - Correo saliente: Django usa `send_mail` y puede operar con backend SMTP. Para Resend, la configuración recomendada es `EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, `EMAIL_HOST=smtp.resend.com`, `EMAIL_PORT=587`, `EMAIL_HOST_USER=resend`, `EMAIL_HOST_PASSWORD=<API_KEY>`, `EMAIL_USE_TLS=true`, `EMAIL_USE_SSL=false` y un `DEFAULT_FROM_EMAIL` verificado en el proveedor. Si falta alguno de los datos críticos del SMTP, SISOC vuelve al backend de consola para no romper entornos locales. Evidencia: src/backends/config/settings.py:189-242; src/backends/kernel/users/services_auth.py:45-81.

@@ -82,7 +82,8 @@ def test_la_copia_local_esta_en_la_version_del_contrato():
     # 4.1.0 (#2664) suma el formulario de menores sin claves nuevas; ver
     # test_datacalle_instrumento_4_1_0.py. Las retiradas son 28 y no 27 por la
     # ENMIENDA del área del 1/10, que llegó con esa misma sincronización.
-    assert get_version() == "4.1.0"
+    # 4.1.1 (#2724) solo cambia una opción de la 25.
+    assert get_version() == "4.1.1"
     diccionario = json.loads(
         (RUTA_INSTRUMENTO / "diccionario-respuestas.json").read_text(encoding="utf-8")
     )

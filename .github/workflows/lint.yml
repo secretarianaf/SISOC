@@ -191,6 +191,92 @@ jobs:
             - name: Verificar que .claude/skills/ coincide con .agents/skills/
               run: python src/scripts/ai/sync_skills.py --check
 
+    docs_paths:
+        # Raíces movidas en todos los docs vigentes; existencia de rutas solo en
+        # los Markdown del PR, para no bloquear PRs ajenos por deuda previa.
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v6.0.2
+              with:
+                  fetch-depth: 0
+
+            - name: Set up Python
+              uses: actions/setup-python@v6.2.0
+              with:
+                  python-version: '3.11.15'
+
+            - name: Verificar rutas documentadas
+              shell: bash
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+              run: |
+                  # Asignación aparte: si falla la detección, el step falla (bash -e).
+                  docs_json="$(python src/scripts/ci/pr_lint_tools.py changed-files --kind markdown)"
+                  mapfile -t docs < <(python -c "import json, sys; print('\n'.join(json.loads(sys.argv[1])))" "$docs_json")
+                  python src/scripts/ci/check_docs_paths.py --existencia "${docs[@]}"
+
+    zonas_sensibles:
+        # Aviso no bloqueante: label y comentario si el PR toca rutas delicadas
+        # (src/scripts/ci/quality_gate.py, es_sensible). No corre en forks.
+        if: >-
+            github.event_name == 'pull_request'
+            && github.event.pull_request.head.repo.full_name == github.repository
+        runs-on: ubuntu-latest
+        continue-on-error: true
+        permissions:
+            contents: read
+            issues: write
+            pull-requests: write
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v6.0.2
+              with:
+                  fetch-depth: 2
+
+            - name: Set up Python
+              uses: actions/setup-python@v6.2.0
+              with:
+                  python-version: '3.11.15'
+
+            - name: Detectar rutas sensibles
+              id: zonas
+              run: echo "rutas=$(python src/scripts/ci/quality_gate.py zonas)" >> "$GITHUB_OUTPUT"
+
+            - name: Marcar el PR
+              uses: actions/github-script@v8
+              env:
+                  RUTAS: ${{ steps.zonas.outputs.rutas }}
+              with:
+                  script: |
+                      const rutas = JSON.parse(process.env.RUTAS || "[]");
+                      const label = "requiere-revision-tecnica";
+                      const marca = "<!-- zonas-sensibles -->";
+                      const issue_number = context.payload.pull_request.number;
+                      const base = { owner: context.repo.owner, repo: context.repo.repo, issue_number };
+                      const comentarios = await github.paginate(github.rest.issues.listComments, base);
+                      const previo = comentarios.find((c) => c.body?.includes(marca));
+                      if (rutas.length === 0) {
+                        await github.rest.issues.removeLabel({ ...base, name: label }).catch(() => {});
+                        if (previo) await github.rest.issues.deleteComment({ ...base, comment_id: previo.id });
+                        return;
+                      }
+                      await github.rest.issues.addLabels({ ...base, labels: [label] });
+                      const lista = rutas.slice(0, 50).map((r) => "- `" + r + "`");
+                      if (rutas.length > 50) lista.push(`- ... y ${rutas.length - 50} más`);
+                      const body = [
+                        marca,
+                        "**Requiere revisión técnica**: este PR toca rutas delicadas " +
+                          "(configuración, kernel, migraciones, permisos, workflows o dependencias).",
+                        "",
+                        ...lista,
+                      ].join("\n");
+                      if (previo) {
+                        await github.rest.issues.updateComment({ ...base, comment_id: previo.id, body });
+                      } else {
+                        await github.rest.issues.createComment({ ...base, body });
+                      }
+
     black:
         runs-on: ubuntu-latest
         needs:

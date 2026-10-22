@@ -1,0 +1,281 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block title %}Auditoría de rendiciones{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/rendicioncuentasmensual_detail.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/rendicioncuentasmensual_auditoria.css' %}" />
+{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'rendicioncuentasmensual_global_list' %}">Rendiciones</a>
+        </li>
+        <li class="breadcrumb-item active">Auditoría</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="comedor-list-container">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="fw-bold">Auditoría de rendiciones</h2>
+                <p class="text-muted mb-0">
+                    Validá la rendición y, si corresponde, generá un acta compartida entre los períodos seleccionados.
+                </p>
+            </div>
+        </div>
+        {% if not rendicion %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="mb-3">Buscar una rendición para auditar</h5>
+                    <form method="get" class="auditoria-busqueda">
+                        <div>
+                            <label for="{{ busqueda_form.filtro.id_for_label }}" class="form-label">Filtro</label>
+                            {{ busqueda_form.filtro }}
+                            {{ busqueda_form.filtro.errors }}
+                        </div>
+                        <div>
+                            <label for="{{ busqueda_form.busqueda.id_for_label }}" class="form-label">Búsqueda</label>
+                            {{ busqueda_form.busqueda }}
+                            {{ busqueda_form.busqueda.errors }}
+                            <small id="ayuda-busqueda-auditoria" class="text-muted d-block mt-1">Buscá por el código o el nombre del proyecto.</small>
+                        </div>
+                        <div class="d-flex gap-2 auditoria-busqueda-acciones">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search" aria-hidden="true"></i> Buscar
+                            </button>
+                            <a class="btn btn-outline-secondary"
+                               href="{% url 'rendicioncuentasmensual_auditoria_nueva' %}">Limpiar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card comedor-table-card">
+                <div class="card-body">
+                    <h5>Rendiciones disponibles</h5>
+                    <p class="text-muted">
+                        {% if not busqueda_realizada %}
+                            Seleccioná un filtro e ingresá un texto para buscar rendiciones.
+                        {% else %}
+                            Solo se muestran rendiciones que todavía permiten gestionar su auditoría. Elegí una con el botón Gestionar.
+                        {% endif %}
+                    </p>
+                    <div class="table-responsive">
+                        <table class="table table-comedor-moderno">
+                            <caption class="visually-hidden">Rendiciones disponibles para iniciar la gestión de auditoría</caption>
+                            <thead>
+                                <tr>
+                                    <th>Proyecto</th>
+                                    <th>Organización</th>
+                                    <th>Convenio / Rendición</th>
+                                    <th>Período</th>
+                                    <th>Validada</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in disponibles %}
+                                    <tr>
+                                        <td>
+                                            {% if item.proyecto %}
+                                                {{ item.proyecto.codigo }}
+                                            {% else %}
+                                                {{ item.comedor.codigo_de_proyecto|default:"Sin proyecto" }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if item.proyecto %}
+                                                {{ item.proyecto.organizacion.nombre }}
+                                            {% else %}
+                                                {{ item.comedor.organizacion.nombre|default:"Sin organización" }}
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ item.convenio|default:"Sin convenio" }} · {{ item.numero_rendicion|default:item.pk }}</td>
+                                        <td>{{ item.periodo_inicio|date:"d/m/Y" }} al {{ item.periodo_fin|date:"d/m/Y" }}</td>
+                                        <td>{{ item.validada|yesno:"Sí,No,No" }}</td>
+                                        <td>
+                                            <a href="{% url 'rendicioncuentasmensual_auditoria' item.pk %}?origen=busqueda"
+                                               class="btn btn-primary btn-sm"
+                                               aria-label="Gestionar auditoría de la rendición {{ item.numero_rendicion|default:item.pk }}, convenio {{ item.convenio }}, proyecto {% if item.proyecto %}{{ item.proyecto.codigo }}{% else %}{{ item.comedor.codigo_de_proyecto }}{% endif %}">Gestionar <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    {% if busqueda_valida %}
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4">
+                                                No hay rendiciones disponibles para esta búsqueda. Probá otro texto o filtro.
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if busqueda_valida %}
+                        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=busqueda_form.busqueda.value %}
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="mb-3">Información general · Rendición {{ rendicion.numero_rendicion|default:rendicion.pk }}</h5>
+                    <dl class="auditoria-informacion mb-0">
+                        <div>
+                            <dt>Organización</dt>
+                            <dd>
+                                {{ scope_proyecto.organizacion.nombre|default:"Sin organización" }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt>Proyecto</dt>
+                            <dd>
+                                {{ scope_proyecto.proyecto_codigo|default:"Sin proyecto" }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt>Convenio</dt>
+                            <dd>
+                                {{ rendicion.convenio|default:"Sin dato" }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt>Período</dt>
+                            <dd>
+                                {{ rendicion.periodo_inicio|date:"d/m/Y" }} al {{ rendicion.periodo_fin|date:"d/m/Y" }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt>Línea programática</dt>
+                            <dd>
+                                {{ rendicion.get_linea_programatica_display }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="mb-3">Auditoría</h5>
+                    <form method="post"
+                          enctype="multipart/form-data"
+                          id="auditoria-form"
+                          data-validada="{{ form.ya_validada|yesno:'true,false' }}">
+                        {% csrf_token %}
+                        {{ form.non_field_errors }}
+                        <div class="auditoria-decisiones">
+                            <div class="mb-3">
+                                {% if form.ya_validada %}
+                                    <div class="form-label">Validada</div>
+                                    <div class="auditoria-validacion-estado">
+                                        <i class="fas fa-check-circle text-success" aria-hidden="true"></i>
+                                        <strong>Sí</strong>
+                                    </div>
+                                    <small class="text-muted d-block">Validación guardada. No se puede modificar.</small>
+                                {% else %}
+                                    <div class="form-label">
+                                        Validada<span class="asteriskField">*</span>
+                                    </div>
+                                    <label class="auditoria-validacion-control"
+                                           for="{{ form.validada.id_for_label }}">
+                                        {{ form.validada }}
+                                        <span>Confirmar validación</span>
+                                    </label>
+                                    {% for error in form.validada.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                {% endif %}
+                            </div>
+                            <div>{{ form.genera_acta_auditoria|as_crispy_field }}</div>
+                        </div>
+                        <div id="campos-acta">
+                            <fieldset class="border rounded p-2 mb-3 auditoria-inclusion">
+                                <legend class="float-none w-auto px-2 fs-6">Rendiciones incluidas en el acta</legend>
+                                <p class="text-muted small mb-2">
+                                    La actual se incluye siempre. Podés sumar rendiciones del mismo proyecto y organización, validadas y auditadas sin acta.
+                                </p>
+                                <label class="auditoria-rendicion-opcion auditoria-rendicion-actual"
+                                       for="rendicion-actual-incluida">
+                                    <input id="rendicion-actual-incluida"
+                                           type="checkbox"
+                                           class="form-check-input"
+                                           data-inclusion-obligatoria="true"
+                                           checked
+                                           disabled />
+                                    <span class="auditoria-opcion-datos">
+                                        <strong>Rendición {{ rendicion.numero_rendicion|default:rendicion.pk }} · {{ rendicion.convenio|default:"Sin convenio" }}</strong>
+                                        <span>{{ rendicion.periodo_inicio|date:"d/m/Y" }} al {{ rendicion.periodo_fin|date:"d/m/Y" }}</span>
+                                        <small><i class="fas fa-lock" aria-hidden="true"></i> Actual · Inclusión fija</small>
+                                    </span>
+                                </label>
+                                {{ form.rendiciones_incluidas.errors }}
+                                {% for opcion in form.rendiciones_incluidas %}
+                                    <label class="auditoria-rendicion-opcion" for="{{ opcion.id_for_label }}">
+                                        {{ opcion.tag }}
+                                        {% with incluida=opcion.data.value.instance %}
+                                            <span class="auditoria-opcion-datos">
+                                                <strong>Rendición {{ incluida.numero_rendicion|default:incluida.pk }} · {{ incluida.convenio|default:"Sin convenio" }}</strong>
+                                                <span>{{ incluida.periodo_inicio|date:"d/m/Y" }} al {{ incluida.periodo_fin|date:"d/m/Y" }}</span>
+                                                <small class="text-muted">{{ incluida.get_linea_programatica_display }}</small>
+                                            </span>
+                                        {% endwith %}
+                                    </label>
+                                {% empty %}
+                                    <p class="mb-0 text-muted">No hay otras rendiciones elegibles para incluir.</p>
+                                {% endfor %}
+                            </fieldset>
+                            <div class="row">
+                                <div class="col-md-6">{{ form.acta_auditoria|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ form.resultado|as_crispy_field }}</div>
+                            </div>
+                            <div id="campos-observaciones">
+                                {{ form.observaciones|as_crispy_field }}
+                                {{ form.documento_regularizacion|as_crispy_field }}
+                            </div>
+                        </div>
+                        <p class="text-muted">
+                            <i id="auditoria-cierre-icono"
+                               class="fas fa-lock"
+                               aria-hidden="true"
+                               {% if not form.ya_validada %}hidden{% endif %}></i>
+                            <span id="auditoria-guardar-ayuda">
+                                {% if form.ya_validada %}
+                                    Al guardar la decisión sobre el acta, la gestión de esta rendición se cierra.
+                                {% else %}
+                                    Podés guardar la validación y decidir sobre el acta más adelante.
+                                {% endif %}
+                            </span>
+                        </p>
+                        <button type="submit" class="btn btn-success" id="auditoria-guardar">
+                            {% if form.ya_validada %}
+                                Guardar y cerrar Auditoría
+                            {% else %}
+                                Guardar
+                            {% endif %}
+                        </button>
+                        <a class="btn btn-secondary"
+                           href="{{ volver_url }}"
+                           data-sisoc-volver
+                           data-volver-fallback="{{ volver_url }}">
+                            {% if volver_a_busqueda %}
+                                Volver a resultados
+                            {% else %}
+                                Volver al detalle
+                            {% endif %}
+                        </a>
+                    </form>
+                </div>
+            </div>
+            <div class="card comedor-table-card">
+                <div class="card-body">
+                    <h5>Documentación de las rendiciones seleccionadas</h5>
+                    {% include "components/auditoria_documentacion.html" %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/rendicioncuentasmensual_auditoria.js' %}"></script>
+{% endblock %}

@@ -51,6 +51,12 @@ GENERATED_ARTIFACTS = {
 }
 TEMPLATE_SUFFIXES = {".html", ".htm", ".djhtml", ".jinja", ".j2"}
 PYTHON_SUFFIXES = {".py"}
+MARKDOWN_SUFFIXES = {".md"}
+SUFFIXES_BY_KIND = {
+    "python": PYTHON_SUFFIXES,
+    "templates": TEMPLATE_SUFFIXES,
+    "markdown": MARKDOWN_SUFFIXES,
+}
 MOJIBAKE_REPLACEMENTS = {
     "\u00c3\u00a1": "\u00e1",
     "\u00c3\u00a9": "\u00e9",
@@ -265,7 +271,7 @@ def is_binary_content(data: bytes) -> bool:
 def list_changed_files(kind: str) -> int:
     """Imprime como JSON los archivos cambiados relevantes para un tipo."""
 
-    suffixes = TEMPLATE_SUFFIXES if kind == "templates" else PYTHON_SUFFIXES
+    suffixes = SUFFIXES_BY_KIND[kind]
     files = [
         str(path)
         for path in get_changed_files()
@@ -400,7 +406,7 @@ def build_parser() -> argparse.ArgumentParser:
     changed_files_parser = subparsers.add_parser("changed-files")
     changed_files_parser.add_argument(
         "--kind",
-        choices=("python", "templates"),
+        choices=tuple(SUFFIXES_BY_KIND),
         required=True,
     )
 

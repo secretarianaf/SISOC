@@ -792,3 +792,296 @@ forbidden_modules =
     duplas
     gestion_organizaciones
 ignore_imports =
+
+[importlinter:contract:espacios-comunitarios-helpers-no-usuarios]
+name = los helpers de Espacios comunitarios pertenecen al dominio, no a Usuarios
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    pwa.api
+    pwa.api_permissions
+    pwa.operadores_serializers
+    comedores.territoriales_pnud
+forbidden_modules =
+    usuarios
+ignore_imports =
+
+[importlinter:contract:comedores-no-serializers-autenticacion]
+name = Comedores y Espacios comunitarios no importan serializers de autenticacion
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    comedores
+    pwa
+    gestion_organizaciones
+    rendicioncuentasmensual
+forbidden_modules =
+    usuarios.api_serializers
+ignore_imports =
+
+[importlinter:contract:identidad-sin-comedores]
+name = identidad y datos propios no importan Comedores ni Espacios comunitarios
+type = forbidden
+allow_indirect_imports = False
+source_modules =
+    usuarios.auth_forms
+    usuarios.auth_views
+    usuarios.forms
+    usuarios.api_serializers
+    usuarios.api_views
+    usuarios.services_password_reset_pwa
+    audittrail.auth
+forbidden_modules =
+    comedores
+    pwa
+    duplas
+    relevamientos
+ignore_imports =
+
+[importlinter:contract:contratos-espacios-no-portal]
+name = los contratos de Espacios no necesitan instalar el portal
+type = forbidden
+allow_indirect_imports = False
+source_modules =
+    pwa.identity_services
+    pwa.user_forms
+    pwa.user_admin_views
+    pwa.ciudadano_detail
+    comedores.ciudadano_detail
+    comedores.pwa_user_import
+    comedores.views.montos_prestacion
+forbidden_modules =
+    usuarios
+    dashboard
+    encuestas
+    ocr
+    insumos
+ignore_imports =
+
+[importlinter:contract:importador-sin-orm-espacios]
+name = el importador transversal usa el adaptador kernel sin ORM de Espacios
+type = forbidden
+allow_indirect_imports = False
+source_modules =
+    usuarios.services_user_import
+    usuarios.services_user_import_jobs
+    usuarios.views_user_import
+forbidden_modules =
+    pwa
+    comedores
+    duplas
+    historial
+    relevamientos
+    admisiones
+    acompanamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    expedientespagos
+    importarexpediente
+    intervenciones
+    gestion_organizaciones
+    comunicados
+ignore_imports =
+
+[importlinter:contract:dashboard-muestra-sin-orm-comedores]
+name = la ultima muestra del portal no importa ORM ni calculos de Comedores
+type = forbidden
+allow_indirect_imports = False
+source_modules =
+    dashboard.comedores_metrics
+forbidden_modules =
+    comedores
+    relevamientos
+    pwa
+    duplas
+ignore_imports =
+
+[importlinter:contract:comedores-sin-portal]
+name = comedores-sin-portal
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    comedores
+    gestion_organizaciones
+    duplas
+    admisiones
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    importarexpediente
+    comunicados
+    pwa
+forbidden_modules =
+    usuarios
+    dashboard
+    encuestas
+    insumos
+ignore_imports =
+
+[importlinter:contract:portal-sin-comedores]
+name = portal-sin-comedores
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    usuarios
+    dashboard
+    encuestas
+    insumos
+forbidden_modules =
+    comedores
+    gestion_organizaciones
+    duplas
+    admisiones
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    importarexpediente
+    comunicados
+    pwa
+ignore_imports =
+
+[importlinter:contract:comedores-sin-otros-backends]
+name = Comedores no instala otros backends
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    comedores
+    gestion_organizaciones
+    duplas
+    admisiones
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    importarexpediente
+    comunicados
+    pwa
+forbidden_modules =
+    dispositivos
+    datacalle
+    ver_para_ser_libre
+    pas
+    VAT
+    celiaquia
+    centrodeinfancia
+    ticketera
+    centrodefamilia
+    inspecciones
+ignore_imports =
+
+[importlinter:contract:otros-backends-sin-comedores]
+name = otros backends no instalan el cluster Comedores
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    dispositivos
+    datacalle
+    ver_para_ser_libre
+    pas
+    VAT
+    celiaquia
+    centrodeinfancia
+    ticketera
+    centrodefamilia
+    inspecciones
+forbidden_modules =
+    comedores
+    gestion_organizaciones
+    duplas
+    admisiones
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    importarexpediente
+    comunicados
+    pwa
+ignore_imports =
+
+[importlinter:contract:ocr-sin-otros-servicios]
+name = OCR no importa portal ni otros backends
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    ocr
+forbidden_modules =
+    usuarios
+    dashboard
+    encuestas
+    insumos
+    dispositivos
+    datacalle
+    ver_para_ser_libre
+    pas
+    VAT
+    celiaquia
+    centrodeinfancia
+    ticketera
+    centrodefamilia
+    inspecciones
+    comedores
+    gestion_organizaciones
+    duplas
+    admisiones
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    importarexpediente
+    comunicados
+    pwa
+ignore_imports =
+
+[importlinter:contract:otros-servicios-sin-ocr]
+name = portal y otros backends no importan OCR
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    usuarios
+    dashboard
+    encuestas
+    insumos
+    dispositivos
+    datacalle
+    ver_para_ser_libre
+    pas
+    VAT
+    celiaquia
+    centrodeinfancia
+    ticketera
+    centrodefamilia
+    inspecciones
+    comedores
+    gestion_organizaciones
+    duplas
+    admisiones
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    importarexpediente
+    comunicados
+    pwa
+forbidden_modules =
+    ocr
+ignore_imports =

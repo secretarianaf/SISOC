@@ -19,7 +19,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from openpyxl import Workbook
 
-from usuarios.forms import CustomUserChangeForm, UserCreationForm
+from pwa.user_forms import CustomUserChangeForm, UserCreationForm
 from users.models import (
     BulkCredentialsJob,
     BulkCredentialsJobRow,
@@ -464,9 +464,10 @@ def test_user_import_row_email_existente_crea_usuario_nuevo():
     assert creado.profile.temporary_password_plaintext
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 def test_user_import_job_agrupa_credenciales_para_email_duplicado(settings, tmp_path):
+    # El worker cierra conexiones entre filas; no debe correr en el atomic de pytest.
     settings.MEDIA_ROOT = tmp_path
     operator = User.objects.create_user(username="import_operator")
     upload = _build_user_import_excel_file(
@@ -518,9 +519,10 @@ def test_user_import_job_agrupa_credenciales_para_email_duplicado(settings, tmp_
     assert all(row.created_user.profile.temporary_password_plaintext for row in rows)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 def test_user_import_job_reprocesado_no_reenvia_credenciales(settings, tmp_path):
+    # Modela el worker real, fuera de una transacción envolvente de TestCase.
     settings.MEDIA_ROOT = tmp_path
     operator = User.objects.create_user(username="import_resume_operator")
     upload = _build_user_import_excel_file(

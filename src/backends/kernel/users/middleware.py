@@ -5,6 +5,13 @@ from django.http import HttpResponseForbidden
 from users.profile_utils import get_profile_or_none, needs_profile_confirmation
 
 
+# Representan el mismo login/contexto API servido por /api/users/. Una cookie
+# web previa no puede cambiar su tratamiento al atravesar el contrato interno.
+AUTH_INTERNAL_API_PATHS = {
+    "/interno/espacios/login/",
+    "/interno/espacios/contexto/",
+}
+
 COMMON_EXEMPT_PATHS = {
     "/logout",
     "/logout/",
@@ -13,7 +20,7 @@ COMMON_EXEMPT_PATHS = {
     "/api/users/logout/",
     "/api/users/password-reset/request/",
     "/api/users/password-reset/confirm/",
-}
+} | AUTH_INTERNAL_API_PATHS
 
 COMMON_EXEMPT_PREFIXES = (
     "/static/",
@@ -46,7 +53,9 @@ class FirstLoginPasswordChangeMiddleware:
             if (
                 not getattr(profile, "acceso_web", False)
                 and not request.path.startswith(("/api/", "/static/", "/media/"))
-                and request.path not in {"/logout", "/logout/", "/admin/logout/"}
+                and request.path
+                not in {"/logout", "/logout/", "/admin/logout/"}
+                | AUTH_INTERNAL_API_PATHS
             ):
                 return HttpResponseForbidden(
                     "Este usuario no tiene acceso SISOC web habilitado."

@@ -1,5 +1,7 @@
 """Fixtures globales de pytest para todos los tests (kernel y verticales)."""
 
+import json
+
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
@@ -52,3 +54,30 @@ def api_client(api_key):
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Api-Key {api_key}")
     return client
+
+
+@pytest.fixture
+def http_probe_database(transactional_db, tmp_path, monkeypatch):
+    """Comparte sólo la DB sintética del probe con su subprocess dueño.
+
+    SQLite en memoria no cruza procesos, ni siquiera con su URI de cache
+    compartida. La copia temporal conserva el esquema/datos de este worker;
+    al terminar se restaura su conexión original, sin tocar otras pruebas.
+    """
+    from django.db import connection  # pylint: disable=import-outside-toplevel
+
+    if connection.vendor != "sqlite":
+        yield json.dumps(connection.settings_dict)
+        return
+
+    connection.ensure_connection()
+    original = connection.connection
+    with monkeypatch.context() as patch:
+        patch.setitem(connection.settings_dict, "NAME", str(tmp_path / "probe.sqlite3"))
+        patch.setattr(connection, "connection", None)
+        try:
+            connection.ensure_connection()
+            original.backup(connection.connection)
+            yield json.dumps(connection.settings_dict)
+        finally:
+            connection.close()

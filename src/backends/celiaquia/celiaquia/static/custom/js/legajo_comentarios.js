@@ -56,17 +56,38 @@ function observacionesDe(tipo) {
     return catalogo[tipo] || [];
 }
 
+// Las observaciones se muestran como radios para que los textos largos corten
+// línea dentro del modal (el desplegable nativo de un <select> no lo hace).
 function poblarObservaciones(tipo) {
-    const selObs = document.getElementById('comentario-observacion');
-    if (!selObs) return;
+    const contenedor = document.getElementById('comentario-observacion');
+    if (!contenedor) return;
 
-    selObs.innerHTML = '<option value="">Seleccioná una observación…</option>';
-    observacionesDe(tipo).forEach(obs => {
-        const option = document.createElement('option');
-        option.value = obs.codigo;
-        option.textContent = obs.texto;
-        if (obs.libre) option.dataset.libre = '1';
-        selObs.appendChild(option);
+    contenedor.innerHTML = '';
+    const observaciones = observacionesDe(tipo);
+    if (!observaciones.length) {
+        contenedor.innerHTML = '<p class="text-muted small mb-0">Seleccioná primero un tipo de documento.</p>';
+        return;
+    }
+    observaciones.forEach((obs, indice) => {
+        const id = `comentario-observacion-${indice}`;
+        const item = document.createElement('div');
+        item.className = 'form-check mb-1';
+
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.className = 'form-check-input';
+        radio.name = 'observacion_codigo';
+        radio.id = id;
+        radio.value = obs.codigo;
+        if (obs.libre) radio.dataset.libre = '1';
+
+        const label = document.createElement('label');
+        label.className = 'form-check-label';
+        label.htmlFor = id;
+        label.textContent = obs.texto;
+
+        item.append(radio, label);
+        contenedor.appendChild(item);
     });
 }
 
@@ -79,10 +100,12 @@ function actualizarVisibilidadTecnico() {
 
     const tieneObservaciones = selTiene.value === 'si';
     wrapObs.classList.toggle('d-none', !tieneObservaciones);
-    selObs.required = tieneObservaciones;
-    if (!tieneObservaciones) selObs.value = '';
+    selObs.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.required = tieneObservaciones;
+        if (!tieneObservaciones) radio.checked = false;
+    });
 
-    const opcion = selObs.selectedOptions[0];
+    const opcion = selObs.querySelector('input[type="radio"]:checked');
     const esLibre = tieneObservaciones && opcion?.dataset.libre === '1';
     const textarea = document.getElementById('comentario-observacion-libre');
     wrapLibre.classList.toggle('d-none', !esLibre);

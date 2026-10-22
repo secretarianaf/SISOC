@@ -2147,14 +2147,14 @@
                                     <option value="no">No</option>
                                 </select>
                             </div>
-                            <div class="mb-3 d-none" id="comentario-observacion-wrapper">
-                                <label for="comentario-observacion" class="form-label">Observaciones *</label>
-                                <select id="comentario-observacion"
-                                        name="observacion_codigo"
-                                        class="form-select">
-                                    <option value="">Seleccioná una observación…</option>
-                                </select>
-                            </div>
+                            {# Radios y no <select>: el desplegable nativo no corta líneas y los textos largos quedaban fuera de pantalla. #}
+                            <fieldset class="mb-3 d-none" id="comentario-observacion-wrapper">
+                                <legend class="form-label fs-6">Observaciones *</legend>
+                                <div id="comentario-observacion"
+                                     class="comentario-observacion-opciones border rounded p-2">
+                                    <p class="text-muted small mb-0">Seleccioná primero un tipo de documento.</p>
+                                </div>
+                            </fieldset>
                             <div class="mb-3 d-none" id="comentario-libre-wrapper">
                                 <label for="comentario-observacion-libre" class="form-label">Redactá la observación *</label>
                                 <textarea id="comentario-observacion-libre"
@@ -2268,8 +2268,8 @@
     <script src="{% static 'custom/js/expediente_detail_config.js' %}?v=20260902-comentarios-tecnicos"></script>
     <script src="{% static 'custom/js/registros_erroneos.js' %}?v=20260326-guardado-parcial-siempre"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
-    <script src="{% static 'custom/js/expediente_detail.js' %}?v=20260930-aprobar-recarga"></script>
+    <script src="{% static 'custom/js/expediente_detail.js' %}?v=20261022-renaper-comparacion"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
-    <script src="{% static 'custom/js/legajo_comentarios.js' %}?v=20260902-comentarios-tecnicos"></script>
+    <script src="{% static 'custom/js/legajo_comentarios.js' %}?v=20261022-observaciones-radios"></script>
 {% endblock %}

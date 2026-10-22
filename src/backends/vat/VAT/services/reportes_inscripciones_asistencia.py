@@ -3,12 +3,21 @@ from __future__ import annotations
 import csv
 from io import BytesIO
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, time, timedelta
+from datetime import timezone as dt_timezone
 
 from django.core.cache import cache
-from django.db.models import Count, Q
+from django.db.models import (
+    Count,
+    DateField,
+    DateTimeField,
+    ExpressionWrapper,
+    F,
+    Q,
+)
 from django.db.models.functions import TruncMonth
 from django.http import HttpResponse
+from django.utils import timezone
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
@@ -24,6 +33,11 @@ from core.services.csv_export import build_csv_response
 
 
 DATE_INPUT_FORMAT = "%Y-%m-%d"
+# El MySQL de PRD no tiene cargadas las tablas de zonas horarias: ``__date`` y
+# ``TruncMonth`` con la zona de Argentina devuelven NULL (#2750). Argentina no
+# tiene horario de verano desde 2009, así que el mes se calcula corriendo la
+# fecha a UTC-3 y truncando en UTC, sin ``CONVERT_TZ``.
+DESFASE_ARGENTINA = timedelta(hours=3)
 # Las opciones de los filtros dependen solo del alcance del usuario (no de los
 # filtros aplicados), por lo que se cachean para evitar ~8 queries pesadas en
 # cada carga del reporte. No hay invalidación explícita: un cambio de alcance o
@@ -64,6 +78,17 @@ def _parse_date(value: str):
         return None
 
 
+def _inicio_del_dia(fecha):
+    return timezone.make_aware(datetime.combine(fecha, time.min))
+
+
+def _mes_de_inscripcion():
+    fecha_local = ExpressionWrapper(
+        F("fecha_inscripcion") - DESFASE_ARGENTINA, output_field=DateTimeField()
+    )
+    return TruncMonth(fecha_local, output_field=DateField(), tzinfo=dt_timezone.utc)
+
+
 def _normalize_id(value: str) -> int | None:
     if not value:
         return None
@@ -89,10 +114,13 @@ def _apply_filters(queryset, filtros: ReporteFiltros):
     fecha_desde = _parse_date(filtros.fecha_desde)
     fecha_hasta = _parse_date(filtros.fecha_hasta)
 
+    # Rango explícito en vez de ``__date`` (ver DESFASE_ARGENTINA).
     if fecha_desde:
-        queryset = queryset.filter(fecha_inscripcion__date__gte=fecha_desde)
+        queryset = queryset.filter(fecha_inscripcion__gte=_inicio_del_dia(fecha_desde))
     if fecha_hasta:
-        queryset = queryset.filter(fecha_inscripcion__date__lte=fecha_hasta)
+        queryset = queryset.filter(
+            fecha_inscripcion__lt=_inicio_del_dia(fecha_hasta + timedelta(days=1))
+        )
 
     provincia_id = _normalize_id(filtros.provincia_id)
     municipio_id = _normalize_id(filtros.municipio_id)
@@ -239,7 +267,7 @@ def build_reporte_inscripciones_asistencia(user, filtros: ReporteFiltros):
 
     queryset = _apply_filters(base_inscripciones_queryset_for_user(user), filtros)
     if group_by == "mes":
-        queryset = queryset.annotate(mes_ref=TruncMonth("fecha_inscripcion"))
+        queryset = queryset.annotate(mes_ref=_mes_de_inscripcion())
 
     grouping_fields = _group_fields(group_by)
     rows = list(

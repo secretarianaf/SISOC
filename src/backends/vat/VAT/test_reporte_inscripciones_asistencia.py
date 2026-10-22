@@ -1,8 +1,11 @@
-from datetime import date, time
+from datetime import date, datetime, time
+from zoneinfo import ZoneInfo
 
 import pytest
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 
 from VAT.models import (
     AsistenciaSesion,
@@ -540,3 +543,95 @@ def test_build_detalle_queryset_respeta_scope_y_pagina():
     assert len(page1_ids) == 2
     assert len(page2_ids) == 1
     assert page1_ids.isdisjoint(page2_ids)
+
+
+ARGENTINA = ZoneInfo("America/Argentina/Buenos_Aires")
+
+
+def _inscripciones_en_bordes_de_mes(username):
+    """Inscripciones a las 23:30 del 30/04 y 00:30 del 01/05, hora argentina.
+
+    En UTC ambas caen el 01/05, así que solo un cálculo en hora local las separa.
+    """
+    provincia = Provincia.objects.create(nombre="Mendoza")
+    municipio = Municipio.objects.create(nombre="Capital", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    referente = User.objects.create_user(username=username, password="test1234")
+    _grant_referente_role(referente)
+    centro = _centro_basico(
+        "CFP Meses", f"CFP-{username}", provincia, municipio, localidad, referente
+    )
+    comision = _build_comision_curso(
+        centro=centro, localidad=localidad, modalidad=modalidad, suffix=username
+    )
+    for documento, fecha in (
+        (40222001, datetime(2026, 4, 30, 23, 30, tzinfo=ARGENTINA)),
+        (40222002, datetime(2026, 5, 1, 0, 30, tzinfo=ARGENTINA)),
+    ):
+        inscripcion = Inscripcion.objects.create(
+            ciudadano=Ciudadano.objects.create(
+                apellido="Mes",
+                nombre=str(documento),
+                tipo_documento=Ciudadano.DOCUMENTO_DNI,
+                documento=documento,
+            ),
+            comision_curso=comision,
+            estado="inscripta",
+        )
+        Inscripcion.objects.filter(pk=inscripcion.pk).update(fecha_inscripcion=fecha)
+    return referente
+
+
+@pytest.mark.django_db
+def test_reporte_por_mes_agrupa_en_hora_argentina():
+    referente = _inscripciones_en_bordes_de_mes("rep-meses")
+
+    resultado = build_reporte_inscripciones_asistencia(
+        referente, ReporteFiltros(group_by="mes")
+    )
+
+    totales = {row["grupo"]: row["inscripciones_total"] for row in resultado["rows"]}
+    assert totales == {"2026-04": 1, "2026-05": 1}
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("fecha_desde", "fecha_hasta", "esperadas"),
+    [
+        ("2026-04-30", "2026-04-30", 1),
+        ("2026-05-01", "2026-05-01", 1),
+        ("2026-04-30", "2026-05-01", 2),
+        ("2026-05-02", "", 0),
+    ],
+)
+def test_reporte_filtra_fechas_por_dia_argentino(fecha_desde, fecha_hasta, esperadas):
+    referente = _inscripciones_en_bordes_de_mes("rep-fechas")
+
+    resultado = build_reporte_inscripciones_asistencia(
+        referente,
+        ReporteFiltros(fecha_desde=fecha_desde, fecha_hasta=fecha_hasta),
+    )
+
+    assert resultado["resumen"]["inscripciones_total"] == esperadas
+
+
+@pytest.mark.django_db
+@pytest.mark.mysql_compat
+def test_reporte_no_depende_de_las_tablas_de_zonas_horarias():
+    # Issue #2750: en PRD CONVERT_TZ devuelve NULL y el reporte daba 500.
+    if connection.vendor != "mysql":
+        pytest.skip("Requiere MySQL real.")
+    referente = _inscripciones_en_bordes_de_mes("rep-mysql")
+
+    with CaptureQueriesContext(connection) as queries:
+        resultado = build_reporte_inscripciones_asistencia(
+            referente,
+            ReporteFiltros(
+                group_by="mes", fecha_desde="2026-04-01", fecha_hasta="2026-05-31"
+            ),
+        )
+
+    assert not [q for q in queries if "CONVERT_TZ" in q["sql"]]
+    totales = {row["grupo"]: row["inscripciones_total"] for row in resultado["rows"]}
+    assert totales == {"2026-04": 1, "2026-05": 1}

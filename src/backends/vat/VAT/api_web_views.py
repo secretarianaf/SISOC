@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
 from core.api_auth import HasAPIKeyOrToken
+from VAT.api_views import query_param_entero
 from VAT.models import (
     Centro,
     ComisionCurso,
@@ -119,9 +120,9 @@ class VatWebCentroViewSet(viewsets.ReadOnlyModelViewSet):
         if q:
             queryset = queryset.filter(Q(nombre__icontains=q) | Q(codigo__icontains=q))
 
-        provincia_id = self.request.query_params.get("provincia_id")
-        municipio_id = self.request.query_params.get("municipio_id")
-        localidad_id = self.request.query_params.get("localidad_id")
+        provincia_id = query_param_entero(self.request, "provincia_id")
+        municipio_id = query_param_entero(self.request, "municipio_id")
+        localidad_id = query_param_entero(self.request, "localidad_id")
         if provincia_id:
             queryset = queryset.filter(provincia_id=provincia_id)
         if municipio_id:
@@ -280,8 +281,8 @@ class VatWebTituloViewSet(viewsets.ReadOnlyModelViewSet):
                 Q(nombre__icontains=q) | Q(codigo_referencia__icontains=q)
             )
 
-        sector_id = self.request.query_params.get("sector_id")
-        subsector_id = self.request.query_params.get("subsector_id")
+        sector_id = query_param_entero(self.request, "sector_id")
+        subsector_id = query_param_entero(self.request, "subsector_id")
         if sector_id:
             queryset = queryset.filter(plan_estudio__sector_id=sector_id)
         if subsector_id:
@@ -432,10 +433,10 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
                 | Q(curso__plan_estudio__titulos__nombre__icontains=q)
             )
 
-        centro_id = self.request.query_params.get("centro_id")
-        titulo_id = self.request.query_params.get("titulo_id")
-        programa_id = self.request.query_params.get("programa_id")
-        ciclo_lectivo = self.request.query_params.get("ciclo_lectivo")
+        centro_id = query_param_entero(self.request, "centro_id")
+        titulo_id = query_param_entero(self.request, "titulo_id")
+        programa_id = query_param_entero(self.request, "programa_id")
+        ciclo_lectivo = query_param_entero(self.request, "ciclo_lectivo")
         estado = self.request.query_params.get("estado")
         usa_voucher = self.request.query_params.get("usa_voucher")
 
@@ -500,7 +501,7 @@ class VatWebInscripcionViewSet(
             .order_by("-fecha_inscripcion")
         )
 
-        ciudadano_id = self.request.query_params.get("ciudadano_id")
+        ciudadano_id = query_param_entero(self.request, "ciudadano_id")
         documento = self.request.query_params.get("documento")
         estado = self.request.query_params.get("estado")
 

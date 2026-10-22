@@ -1,16 +1,24 @@
-"""Provisionamiento automático de usuarios vinculados al dominio CDI."""
+"""Provisionamiento automático de usuarios vinculados al dominio CDI.
+
+El referente se identifica por DNI (o, en fichas sin DNI, por nombre y
+apellido), nunca por email: el email del referente suele ser el institucional
+del centro y lo comparten varias personas, incluso cuentas de otros programas.
+"""
 
 import logging
+import unicodedata
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 
 from centrodeinfancia.models import AccesoCDI, CentroDeInfancia
 from centrodeinfancia.services_accesos_cdi import asignar_responsable
 from core.constants import UserGroups
+from core.validators import solo_digitos
 from users.models import Profile
 from users.services_generate_user import DatosUsuarioDelegado, generar_usuario_delegado
 from users.territorial_scope import sync_profile_territorial_scopes
@@ -18,6 +26,74 @@ from users.territorial_scope import sync_profile_territorial_scopes
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+
+def _dni_desde(dni, cuil):
+    """DNI informado o, si falta, el que está dentro del CUIL."""
+    dni = solo_digitos(dni)
+    if dni:
+        return dni
+    cuil = solo_digitos(cuil)
+    return cuil[2:10].lstrip("0") if len(cuil) == 11 else ""
+
+
+def _dni_referente(centro):
+    return _dni_desde(centro.dni_referente, centro.cuil_referente)
+
+
+def _normalizar_nombre(*partes):
+    texto = unicodedata.normalize("NFKD", " ".join(p or "" for p in partes))
+    texto = "".join(ch for ch in texto if not unicodedata.combining(ch))
+    return " ".join(texto.lower().split())
+
+
+def _nombre_referente(centro):
+    return _normalizar_nombre(centro.nombre_referente, centro.apellido_referente)
+
+
+def _dni_cuenta(user):
+    """DNI de la cuenta: el del perfil, el del CUIL o un usuario que es un DNI.
+
+    Las cuentas de referentes (y las de otros programas, como PNUD) usan el DNI
+    como nombre de usuario.
+    """
+    profile = getattr(user, "profile", None)
+    dni = _dni_desde(getattr(profile, "dni", ""), getattr(profile, "cuil", ""))
+    if dni:
+        return dni
+    return user.username if user.username.isdigit() else ""
+
+
+def _es_la_persona_del_referente(user, centro):
+    """La cuenta es de la persona de la ficha: mismo DNI o, sin DNI, mismo nombre."""
+    dni_ficha = _dni_referente(centro)
+    dni_cuenta = _dni_cuenta(user)
+    if dni_ficha and dni_cuenta:
+        return dni_ficha == dni_cuenta
+    return _normalizar_nombre(user.first_name, user.last_name) == _nombre_referente(
+        centro
+    )
+
+
+def _usuario_del_referente(centro):
+    """Cuenta existente de la persona de la ficha, o ``None`` si hay que crearla.
+
+    Primero se busca entre los usuarios del CDI (recupera un referente histórico)
+    y después, por DNI, una cuenta de la misma persona en otro programa.
+    """
+    accesos = AccesoCDI.objects.select_related("user__profile").filter(centro=centro)
+    for acceso in accesos.order_by("pk"):
+        if _es_la_persona_del_referente(acceso.user, centro):
+            return acceso.user
+    dni = _dni_referente(centro)
+    if not dni:
+        return None
+    cuentas = list(
+        User.objects.filter(Q(profile__dni=dni) | Q(username=dni))
+        .distinct()
+        .order_by("pk")[:2]
+    )
+    return cuentas[0] if len(cuentas) == 1 else None
 
 
 def _vincular_referente_responsable(user, centro, actor):
@@ -59,11 +135,8 @@ def crear_referente_cdi_automaticamente(
         return
     if not reemplaza_responsable and AccesoCDI.objects.filter(centro=centro).exists():
         return
-    usuarios_existentes = list(
-        User.objects.filter(email__iexact=datos_referente["email"]).order_by("pk")[:2]
-    )
-    if len(usuarios_existentes) == 1:
-        usuario = usuarios_existentes[0]
+    usuario = _usuario_del_referente(centro)
+    if usuario:
         grupo, _ = Group.objects.get_or_create(name=UserGroups.CDI_REFERENTE_CENTRO)
         usuario.groups.add(grupo)
         # Si tenía un acceso suspendido o dado de baja, vuelve a estar activo.
@@ -73,22 +146,16 @@ def crear_referente_cdi_automaticamente(
             f"Usuario existente «{usuario.username}» asociado como referente responsable.",
         )
         return
-    if usuarios_existentes:
-        logger.warning(
-            "No se vinculó referente CDI por email ambiguo centro_id=%s email=%s",
-            centro.id,
-            datos_referente["email"],
-        )
-        messages.warning(
-            request,
-            "El CDI se guardó sin vincular referente: el email está asociado a más de un usuario.",
-        )
-        return
 
+    # Persona sin cuenta: se crea aunque su email ya lo use otra cuenta.
     try:
         resultado = generar_usuario_delegado(
             actor=request.user,
-            datos=DatosUsuarioDelegado(**datos_referente),
+            datos=DatosUsuarioDelegado(
+                **datos_referente,
+                dni=_dni_referente(centro),
+                cuil=solo_digitos(centro.cuil_referente),
+            ),
             grupo_nombre=UserGroups.CDI_REFERENTE_CENTRO,
             vinculo_callback=lambda nuevo_usuario: _vincular_referente_responsable(
                 nuevo_usuario, centro, request.user
@@ -97,6 +164,9 @@ def crear_referente_cdi_automaticamente(
             # Quien puede editar la ficha del CDI define a su referente; el
             # usuario se crea solo para este CDI.
             delegacion_autorizada=True,
+            # El email suele ser institucional: si ya lo usa otra cuenta, el
+            # usuario se arma con el DNI.
+            usuario_dni_si_email_en_uso=True,
         )
     except ValidationError as exc:
         logger.warning(
@@ -211,86 +281,66 @@ def _sincronizar_email_si_cuenta_temporal(request, user, email, tipo_usuario):
     messages.success(request, f"Email del {tipo_usuario} actualizado.")
 
 
-def _cambio_persona_referente(dni_anterior, dni_actual):
-    """El referente es otra persona si cambió el DNI.
+def _cambio_persona_referente(anterior, centro):
+    """El referente es otra persona si cambió el DNI o, sin DNI, el nombre.
 
-    Sin DNI anterior (fichas previas) no se puede saber: se toma como la misma
-    persona y, si cambió el email, se sincroniza como antes.
+    El email no cuenta: dos referentes pueden compartir el institucional.
     """
-    anterior = "".join(ch for ch in str(dni_anterior or "") if ch.isdigit())
-    actual = "".join(ch for ch in str(dni_actual or "") if ch.isdigit())
-    return bool(anterior and actual and anterior != actual)
+    dni_anterior = _dni_desde(
+        anterior.get("dni_referente"), anterior.get("cuil_referente")
+    )
+    dni_actual = _dni_referente(centro)
+    if dni_anterior and dni_actual:
+        return dni_anterior != dni_actual
+    return _normalizar_nombre(
+        anterior.get("nombre_referente"), anterior.get("apellido_referente")
+    ) != _nombre_referente(centro)
 
 
-def actualizar_referente_cdi(request, centro, *, dni_anterior, email_anterior):
+def _acceso_responsable(centro):
+    return (
+        AccesoCDI.objects.select_related("user__profile")
+        .filter(centro=centro, activo=True, es_responsable=True)
+        .first()
+    )
+
+
+def actualizar_referente_cdi(request, centro, *, anterior):
     """Refleja en los usuarios del CDI el referente guardado en la ficha.
 
+    ``anterior`` son los datos del referente antes de guardar la ficha.
+
     - CDI sin usuarios: crea el referente inicial como responsable.
-    - Cambió la persona (otro DNI): el nuevo pasa a ser el responsable y el
-      anterior conserva su acceso; solo el responsable nuevo puede suspenderlo o
-      darlo de baja. No se toca el email de la cuenta anterior.
+    - Cambió la persona: el nuevo pasa a ser el responsable con su propia
+      cuenta (existente por DNI o nueva) y el anterior conserva la suya y su
+      acceso; solo el responsable nuevo puede suspenderlo o darlo de baja.
+    - El responsable no es la persona de la ficha (o no hay): se recupera la
+      cuenta de esa persona o se crea.
     - Misma persona con otro email: se sincroniza el email de su cuenta.
     """
     if not AccesoCDI.objects.filter(centro=centro).exists():
         crear_referente_cdi_automaticamente(request, centro)
         return
-    if _cambio_persona_referente(dni_anterior, centro.dni_referente):
+    responsable = _acceso_responsable(centro)
+    cambio_persona = _cambio_persona_referente(anterior, centro)
+    if (
+        cambio_persona
+        or responsable is None
+        or not _es_la_persona_del_referente(responsable.user, centro)
+    ):
         crear_referente_cdi_automaticamente(request, centro, reemplaza_responsable=True)
-        return
-    if not AccesoCDI.objects.filter(
-        centro=centro, activo=True, es_responsable=True
-    ).exists():
-        # Recuperar la cuenta de la misma persona antes de sincronizar el email;
-        # buscar solo por el email nuevo podría crear otra cuenta innecesariamente.
-        candidatos = list(
-            AccesoCDI.objects.filter(
-                centro=centro,
-                user__email__iexact=(
-                    email_anterior or centro.email_referente or ""
-                ).strip(),
-            )[:2]
-        )
-        if len(candidatos) == 1:
-            asignar_responsable(candidatos[0])
-        else:
-            crear_referente_cdi_automaticamente(
-                request, centro, reemplaza_responsable=True
-            )
+        responsable = _acceso_responsable(centro)
     email_actual = (centro.email_referente or "").strip()
-    if email_actual.lower() != (email_anterior or "").strip().lower():
-        sincronizar_email_referente_cdi(request, centro, email_anterior)
-
-
-def sincronizar_email_referente_cdi(request, centro, email_anterior):
-    """Actualiza solo el acceso que corresponde al email anterior del referente."""
-    accesos = AccesoCDI.objects.select_related("user", "user__profile").filter(
-        centro=centro,
-        activo=True,
-    )
-    # El responsable es el referente de la ficha: es la cuenta a sincronizar.
-    candidatos = list(accesos.filter(es_responsable=True)[:2])
-    if not candidatos and email_anterior:
-        candidatos = list(
-            accesos.filter(user__email__iexact=(email_anterior or "").strip())[:2]
-        )
-    if not candidatos:
-        candidatos = list(accesos.order_by("pk")[:2])
-    acceso = candidatos[0] if len(candidatos) == 1 else None
-    if acceso:
+    email_anterior = (anterior.get("email_referente") or "").strip()
+    # Un referente que vuelve recupera su cuenta, que puede tener un email viejo
+    # aunque el de la ficha sea el mismo que el del referente saliente.
+    if (
+        responsable
+        and (cambio_persona or email_actual.lower() != email_anterior.lower())
+        and _es_la_persona_del_referente(responsable.user, centro)
+    ):
         _sincronizar_email_si_cuenta_temporal(
-            request,
-            acceso.user,
-            centro.email_referente,
-            "referente",
-        )
-    elif candidatos:
-        logger.warning(
-            "No se sincronizó email de referente por accesos ambiguos centro_id=%s",
-            centro.id,
-        )
-        messages.warning(
-            request,
-            "No se actualizó el email del referente porque el CDI tiene múltiples accesos activos.",
+            request, responsable.user, email_actual, "referente"
         )
 
 

@@ -110,7 +110,13 @@ function initializeRenaperBloque(container) {
         });
     }
     const manual = container.querySelector("[data-renaper-manual]");
-    if (manual) manual.addEventListener("click", function () { pasarAManual(container); });
+    if (manual) {
+        manual.addEventListener("click", function () {
+            // RENAPER no encontró a la persona: la carga manual con DNI es válida.
+            container.dataset.manualPorRenaper = "1";
+            pasarAManual(container);
+        });
+    }
     const cambiar = container.querySelector("[data-renaper-cambiar]");
     if (cambiar) cambiar.addEventListener("click", function () { cambiarPersona(container); });
     const cancelar = container.querySelector("[data-renaper-cancelar]");
@@ -128,14 +134,37 @@ function initializeRenaperBloque(container) {
 
     const tipo = inputTipo(container);
     if (tipo) {
+        const conDni = (container.dataset.tiposConDni || "").split(",");
+        let tipoAnterior = tipo.value;
         tipo.addEventListener("change", function () {
-            const conDni = (container.dataset.tiposConDni || "").split(",");
-            if (container.dataset.renaperModo === "dni" && tipo.value && !conDni.includes(tipo.value)) {
+            const modo = container.dataset.renaperModo;
+            const teniaDni = !tipoAnterior || conDni.includes(tipoAnterior);
+            tipoAnterior = tipo.value;
+            if (tipo.value && !conDni.includes(tipo.value)) delete container.dataset.manualPorRenaper;
+            if (modo === "dni" && tipo.value && !conDni.includes(tipo.value)) {
                 pasarAManual(container);
                 mostrarMensaje(container, "Sin DNI no hay datos para consultar en RENAPER: completá los datos manualmente.", false);
+            } else if (modo === "manual" && !teniaDni && conDni.includes(tipo.value)
+                && container.dataset.manualPorRenaper !== "1") {
+                // La carga manual era por no tener DNI: con DNI se vuelve a validar.
+                volverAValidarDni(container);
             }
         });
     }
+}
+
+function volverAValidarDni(container) {
+    // Lo cargado a mano se descarta: si quedara oculto se enviaría igual y la
+    // persona no pasaría por RENAPER.
+    const dni = inputDni(container);
+    camposIdentidad(container).forEach(function (nombreCampo) {
+        const input = inputDeCampo(nombreCampo);
+        if (input && input !== dni) liberarCampo(input, true);
+    });
+    setInstruccion(container, null);
+    mostrarMensaje(container, "Con este tipo de documento hay que validar el DNI con RENAPER.", false);
+    setModo(container, "dni");
+    enfocarDni(container);
 }
 
 function abrirBloqueDelCampoInvalido(event) {

@@ -62,6 +62,7 @@ class ActasView(PanelMixin, ListView):
             inspector_id=filtro.valor("inspector"),
             provincia_id=provincia.pk if provincia else None,
             estado=filtro.valor("estado") or "",
+            numero=filtro.valor("numero") or "",
         )
 
     def get_context_data(self, **kwargs):

@@ -7,7 +7,7 @@ Fuente de verdad general: `../../AGENTS.md`.
 ## Alineación con el repo (importante)
 
 El proyecto ya tiene configuración de logging en `src/backends/config/settings.py` y utilidades en `src/backends/kernel/core/utils.py`:
-- handlers por nivel (`info`, `warning`, `error`, `critical`)
+- handlers por nivel (`info_file`, `warning_file`, `error_file`, `critical_file`) y `sentry`
 - handler de datos estructurados (`data_file`)
 - `core.utils.DailyFileHandler`
 - `core.utils.JSONDataFormatter`

@@ -29,7 +29,6 @@ from ciudadanos.ciudadanos_filter_config import (
 )
 from ciudadanos.forms import CiudadanoFiltroForm, CiudadanoForm, GrupoFamiliarForm
 from ciudadanos.detail_contributions import (
-    obtener_contexto_contribucion,
     es_contribucion_local,
     renderizar_contribucion,
     renderizar_contribucion_local,
@@ -211,6 +210,10 @@ class CiudadanosDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
     permission_required = "ciudadanos.view_ciudadano"
     raise_exception = True
     CONTRIBUCIONES_RENDERIZADAS = (
+        "comedores",
+        "comedores_colaboraciones",
+        "pwa",
+        "pwa_badges",
         "celiaquia",
         "vat",
         "centrodefamilia",
@@ -243,8 +246,6 @@ class CiudadanosDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
         )
         ctx.update(self.get_programas_context(ciudadano))
         ctx.update(self.get_historial_context(ciudadano))
-        ctx.update(self.get_comedor_context(ciudadano))
-        ctx.update(self.get_flags_sociales_context(ciudadano))
         # Secciones de verticales que pueden correr en otro backend: llegan
         # ya renderizadas (ciudadanos.detail_contributions).
         ctx["contribuciones_html"] = {
@@ -300,26 +301,6 @@ class CiudadanosDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
             ],
             "historial_comedor": [float(h.monto_comedor) for h in historial],
         }
-
-    def get_comedor_context(self, ciudadano):
-        return obtener_contexto_contribucion(
-            "comedores",
-            ciudadano,
-            logger,
-            lambda: {"nominas_comedor": [], "colaboraciones_comedor": []},
-        )
-
-    def get_flags_sociales_context(self, ciudadano):
-        return obtener_contexto_contribucion(
-            "pwa",
-            ciudadano,
-            logger,
-            lambda: {
-                "pertenece_comunidad_indigena": False,
-                "situacion_calle_pwa": False,
-                "persona_con_celiaquia_pwa": False,
-            },
-        )
 
 
 class CiudadanosCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):

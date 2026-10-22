@@ -340,7 +340,7 @@ def test_catalogos_sirven_el_instrumento_vigente(provincia):
     # contrato hay que subirla acá, así la copia no queda vieja sin que nadie
     # lo note (pasó con 2.1.0, publicado el 16/9 y tomado el 18/9; y otra vez
     # con 2.3.0/3.0.0/3.1.0, que nunca se tomaron).
-    assert respuesta.data["version"] == "4.1.0"
+    assert respuesta.data["version"] == "4.1.1"
     assert "faseRelevamiento" in respuesta.data["catalogos"]
     assert respuesta.data["cuestionario"]["paginas"]
 

@@ -1,0 +1,137 @@
+.auditoria-decisiones {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 1.5rem;
+}
+
+.auditoria-validacion-control,
+.auditoria-validacion-estado {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: calc(2.25rem + 2px);
+    margin: 0;
+    padding: 0.375rem 0;
+}
+
+.auditoria-validacion-control {
+    width: fit-content;
+    cursor: pointer;
+}
+
+.auditoria-validacion-control .form-check-input {
+    float: none;
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    border-width: 2px;
+    border-color: var(--bs-secondary-color);
+    cursor: pointer;
+}
+
+.auditoria-validacion-control .form-check-input:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.auditoria-informacion {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+}
+
+.auditoria-informacion dt {
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
+    font-weight: 400;
+    margin-bottom: 0.5rem;
+}
+
+.auditoria-informacion dd {
+    margin: 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.auditoria-busqueda {
+    display: grid;
+    grid-template-columns: 12rem minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: start;
+}
+
+.auditoria-busqueda-acciones {
+    margin-top: 2rem;
+}
+
+.auditoria-rendicion-opcion {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.5rem 0.625rem;
+    margin-bottom: 0.375rem;
+    font-size: 0.875rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+.auditoria-rendicion-opcion .form-check-input {
+    flex-shrink: 0;
+    margin: 0.25rem 0 0;
+}
+
+.auditoria-rendicion-opcion:focus-within,
+.auditoria-rendicion-opcion:not(.auditoria-rendicion-actual):hover {
+    border-color: var(--bs-primary);
+}
+
+.auditoria-rendicion-actual {
+    background: var(--bs-secondary-bg);
+    color: var(--bs-secondary-color);
+    cursor: default;
+}
+
+.auditoria-rendicion-actual .form-check-input {
+    opacity: 0.5;
+}
+
+.auditoria-opcion-datos {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.125rem 0.75rem;
+}
+
+.auditoria-opcion-datos small {
+    font-size: 0.75rem;
+}
+
+.auditoria-inclusion legend {
+    margin-bottom: 0.25rem;
+}
+
+@media (max-width: 991.98px) {
+    .auditoria-busqueda {
+        grid-template-columns: 10rem minmax(0, 1fr);
+    }
+
+    .auditoria-busqueda-acciones {
+        grid-column: 1 / -1;
+        margin-top: 0;
+    }
+
+    .auditoria-informacion {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .auditoria-busqueda,
+    .auditoria-decisiones,
+    .auditoria-informacion {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

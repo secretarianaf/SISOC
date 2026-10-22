@@ -1,6 +1,6 @@
 {
   "id": "datacalle-encuesta",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "origen": "Formulario_PSC_versión_FINAL_PAPEL_1.docx (área sustantiva, 2026-10-01) — docs/FORMULARIO-FINAL-PAPEL.md; menores de 14 a 17: FORMULARIO_MENORES_DE_13_A_17_AÑOS.pdf (SISOC#2664, 2026-10-08) — docs/FORMULARIO-MENORES-14-17.md",
   "entidad": "encuesta",
   "paginas": [
@@ -1264,7 +1264,7 @@
               }
             ]
           },
-          "nota": "Papel, VII.25, subopciones de 'Programa Social': Volver al trabajo · Acompañamiento Social · Otros."
+          "nota": "Papel, VII.25, subopciones de 'Programa Social': Programa Local / Provincial · Acompañamiento Social · Otros. 4.1.1 (SISOC#2724): 'Programa Local / Provincial' reemplaza a 'Volver al trabajo'."
         },
         {
           "id": "programaSocialHijosCual",

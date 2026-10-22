@@ -39,7 +39,7 @@ Para dar acceso a un grupo:
 ## Preprocesamiento de imagen
 
 Antes de pasar cada imagen a Tesseract, el sistema aplica un pipeline de
-limpieza con OpenCV (`src/backends/sisoc_core/ocr/services_preprocess.py`, función
+limpieza con OpenCV (`src/backends/ocr/ocr/services_preprocess.py`, función
 `preprocess_for_ocr`) para mejorar la precisión en documentos "sucios":
 sellos superpuestos, fondos grises, texto inclinado y ruido de digitalización.
 
@@ -149,10 +149,10 @@ python manage.py process_ocr_jobs --once
 
 ### Docker (producción)
 
-El servicio `ocr_worker` en `docker/compose/docker-compose.produccion.yml` arranca el worker automáticamente:
+El servicio `ocr_worker` en `docker/compose/docker-compose.deploy.yml` arranca el worker automáticamente. En C4 usa la imagen `sisoc/backend-ocr` y `ocr_runtime.settings`, igual que `backend_ocr`, con entrypoint explícito para ejecutar `process_ocr_jobs` sin migrar ni arrancar HTTP:
 
 ```bash
-docker compose --project-directory . -f docker/compose/docker-compose.produccion.yml up ocr_worker
+docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml up ocr_worker
 ```
 
 La variable de entorno que lo activa es:
@@ -263,7 +263,7 @@ aporta robustez ante escaneos rotados.
 
 ## Corrección ortográfica (OCR_SPELLCHECK)
 
-`src/backends/sisoc_core/ocr/services_postprocess.py::correct_text` aplica una corrección ortográfica
+`src/backends/ocr/ocr/services_postprocess.py::correct_text` aplica una corrección ortográfica
 **local y offline** (con `pyspellchecker`, diccionario español embebido) al
 texto extraído, al final de `extract_text_from_file`. Es muy conservadora:
 
@@ -338,7 +338,7 @@ Los tests usan mocks para aislar Tesseract, pdf2image y OpenCV (cv2), por lo que
 Para medir el impacto de cambios en el preprocesado o en la configuración de
 Tesseract hay un comando que procesa un archivo con el pipeline real y lo
 compara contra un texto de referencia (*ground-truth*), reportando recall /
-precision / F1 de palabras (ver `src/backends/sisoc_core/ocr/eval_metrics.py`):
+precision / F1 de palabras (ver `src/backends/ocr/ocr/eval_metrics.py`):
 
 ```bash
 # Recall del pipeline actual contra un ground-truth

@@ -16,13 +16,13 @@ Configuración relevante:
 - `pytest.ini` define `DJANGO_SETTINGS_MODULE=config.settings_all` (kernel, core y verticales)
 - `python_files = tests.py test_*.py *_tests.py`
 - `addopts = --reuse-db`
-- marker `smoke`
+- `pythonpath` con `src/backends` y cada dueño: por eso funcionan `import core`, `import pas`, etc.
+- markers `smoke` y `mysql_compat`
 
 ## Regla obligatoria de cobertura mínima
 
-- Toda funcionalidad nueva debe incluir testing mínimo.
-- Todo bugfix debe incluir test de regresión cuando sea viable.
-- Si no se agrega test, explicar por qué en la entrega.
+La regla vive en `AGENTS.md` (sección "Validación"): funcionalidad nueva con
+tests, bugfix con regresión cuando sea viable y justificación si no se agrega.
 
 ## Pirámide de tests (pragmática para este repo)
 
@@ -62,7 +62,9 @@ CI ejecuta:
 - `migrations_check`: `docker compose exec -T django python manage.py makemigrations --check --dry-run` con MySQL
 - `pytest`: `docker compose run --build --rm --no-deps -T django pytest -n auto --cov=. --cov-report=term-missing --cov-fail-under=75` en PRs
 - `mysql_compat`: `docker compose exec -T django pytest -m mysql_compat -q` en PRs
-- `deploy_guard`: exige checks requeridos (`encoding_check`, `black`, `djlint`, `pylint`, `smoke`, `pytest`, `migrations_check`, `mysql_compat` y `release_sanity` cuando el PR apunta a `main`)
+- `quality_gate` (en PRs, después de `pytest`): falla si el PR modifica Python de una app (`src/backends/`, sin tests ni migraciones) sin tocar ningún test, o si las líneas Python nuevas/modificadas medibles quedan bajo 80% de cobertura (`src/scripts/ci/quality_gate.py` sobre el `coverage.xml` de `pytest`). Excepción legítima (refactor sin cambio de comportamiento, cambio de settings): el revisor pone el label `excepcion-calidad` y se vuelve a correr el job `quality_gate`.
+- `release_quality` y `service_images`: calidad de release e imágenes por servicio (ver `docs/desarrollo/verticales_independientes.md`)
+- `deploy_guard`: corre los tests Node de release y de JavaScript, y exige los checks requeridos (`gitleaks`, `encoding_check`, `black`, `djlint`, `pylint`, `docs_paths`, `smoke`, `pytest`, `migrations_check`, `mysql_compat`, `release_quality`, `frontend`, `service_images`, `quality_gate` y `release_sanity` cuando el PR apunta a `main`)
 
 ## Qué testear (checklist por tipo de cambio)
 
@@ -128,7 +130,8 @@ Agregar tests de:
 ## Entorno de tests (nota importante)
 
 Según `src/backends/config/settings.py`, durante tests:
-- puede usarse SQLite en memoria (`:memory:`) si no hay `DATABASE_HOST` o `USE_SQLITE_FOR_TESTS=1`
+- se usa SQLite en memoria (`:memory:`) por defecto: `USE_SQLITE_FOR_TESTS` vale `True` salvo que se lo apague, y también si falta `DATABASE_HOST`
+- MySQL real solo con `USE_SQLITE_FOR_TESTS=0` y `DATABASE_HOST` (lo hace el job `mysql_compat` en CI)
 - `SECRET_KEY` de test se define si falta
 
 Implicancia:
@@ -149,13 +152,13 @@ docker compose exec django pytest -m smoke
 
 # Un archivo o subset (ejemplo)
 
-docker compose exec django pytest -n auto src/backends/kernel/core/tests/test_monto_prestacion_views.py
+docker compose exec django pytest -n auto src/backends/comedores/tests/test_monto_prestacion_views.py
 ```
 
 ## CI (referencia)
 
-- `.github/workflows/tests.yml` ejecuta smoke, migrations check, pytest con cobertura, compatibilidad MySQL y deploy guard.
-- `.github/workflows/lint.yml` ejecuta autofix acotado en PRs internos, `encoding_check`, `black`, `djlint` y `pylint`.
+- `.github/workflows/tests.yml` ejecuta smoke, migrations check, pytest con cobertura, compatibilidad MySQL, `release_quality`, `service_images`, `quality_gate` y deploy guard.
+- `.github/workflows/lint.yml` ejecuta autofix acotado en PRs internos, `encoding_check`, `skills_sync`, `docs_paths`, `zonas_sensibles` (aviso no bloqueante: label `requiere-revision-tecnica` si el PR toca rutas delicadas), `black`, `djlint` y `pylint`.
 
 ## Cómo evitar tests frágiles en templates/views
 

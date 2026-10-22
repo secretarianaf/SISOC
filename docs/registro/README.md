@@ -62,7 +62,7 @@ PR:
 
 ```powershell
 $env:GITHUB_TOKEN = gh auth token
-python scripts/ci/pr_doc_automation.py --repository dsocial118/SISOC --pr <numero>
+python src/scripts/ci/pr_doc_automation.py --repository secretarianaf/SISOC --pr <numero>
 ```
 
 Revisar y commitear únicamente los paths generados. Para una promoción a

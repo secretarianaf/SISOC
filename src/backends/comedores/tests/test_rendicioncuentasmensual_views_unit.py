@@ -1,0 +1,951 @@
+"""Tests unitarios para vistas web de rendiciones mensuales."""
+
+import json
+from datetime import date
+from io import BytesIO
+from types import SimpleNamespace
+
+import pytest
+from django.contrib.auth.models import Group, Permission
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import RequestFactory
+from django.http import FileResponse
+from django.urls import reverse
+from pypdf import PdfWriter
+
+from django.core.cache import cache
+
+from rendicioncuentasmensual import views as module
+from rendicioncuentasmensual import filter_config as module_filtros
+
+
+class _Req(SimpleNamespace):
+    pass
+
+
+def _user():
+    return SimpleNamespace(is_authenticated=True)
+
+
+def _pdf_bytes():
+    writer = PdfWriter()
+    writer.add_blank_page(width=72, height=72)
+    buffer = BytesIO()
+    writer.write(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+def test_global_list_view_get_queryset_delega_en_service(mocker):
+    view = module.RendicionCuentaMensualGlobalListView()
+    view.request = _Req(user=_user(), GET={})
+
+    expected = [SimpleNamespace(id=1)]
+    service_mock = mocker.patch(
+        "rendicioncuentasmensual.views.RendicionCuentaMensualService.obtener_todas_rendiciones_cuentas_mensuales",
+        return_value=expected,
+    )
+
+    assert view.get_queryset() == expected
+    service_mock.assert_called_once_with()
+
+
+@pytest.mark.django_db
+def test_global_list_filtra_por_el_estado_compuesto_mostrado_en_la_columna():
+    en_curso = module.RendicionCuentaMensual.objects.create(
+        mes=4,
+        anio=2026,
+        estado=module.RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=module.RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=module.RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+    )
+    module.RendicionCuentaMensual.objects.create(
+        mes=5,
+        anio=2026,
+        estado=module.RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=module.RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
+        subestado_proceso=module.RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+    )
+    request = RequestFactory().get(
+        "/rendicioncuentasmensual/rendicioncuentasmensual/listado/",
+        {
+            "filters": json.dumps(
+                {
+                    "logic": "AND",
+                    "items": [
+                        {
+                            "field": "estado_proceso",
+                            "op": "eq",
+                            "value": "revision_documentacion:en_curso",
+                        }
+                    ],
+                }
+            )
+        },
+    )
+    view = module.RendicionCuentaMensualGlobalListView()
+    view.request = request
+
+    assert list(view.get_queryset()) == [en_curso]
+
+
+@pytest.mark.django_db
+def test_global_list_excluye_estado_compuesto_con_operador_ne():
+    excluida = module.RendicionCuentaMensual.objects.create(
+        mes=4,
+        anio=2026,
+        estado=module.RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=module.RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=module.RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+    )
+    incluida = module.RendicionCuentaMensual.objects.create(
+        mes=5,
+        anio=2026,
+        estado=module.RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=module.RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
+        subestado_proceso=module.RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+    )
+    request = RequestFactory().get(
+        "/rendicioncuentasmensual/rendicioncuentasmensual/listado/",
+        {
+            "filters": json.dumps(
+                {
+                    "logic": "AND",
+                    "items": [
+                        {
+                            "field": "estado_proceso",
+                            "op": "ne",
+                            "value": "revision_documentacion:en_curso",
+                        }
+                    ],
+                }
+            )
+        },
+    )
+    view = module.RendicionCuentaMensualGlobalListView()
+    view.request = request
+
+    assert list(view.get_queryset()) == [incluida]
+    assert excluida not in view.get_queryset()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("field_name", "model_choices"),
+    [
+        (
+            "linea_programatica",
+            module.RendicionCuentaMensual.LINEA_PROGRAMATICA_CHOICES,
+        ),
+        ("estado", module.RendicionCuentaMensual.ESTADO_CHOICES),
+        ("etapa_proceso", module.RendicionCuentaMensual.ETAPA_PROCESO_CHOICES),
+    ],
+)
+def test_global_list_filtros_choice_exponen_todos_los_valores_del_modelo(
+    field_name, model_choices
+):
+    config = module.get_filters_ui_config()
+    filtro = next(field for field in config["fields"] if field["name"] == field_name)
+
+    assert [(choice["value"], choice["label"]) for choice in filtro["choices"]] == [
+        (value, label) for value, label in model_choices
+    ]
+
+
+@pytest.mark.django_db
+def test_global_list_filtros_preseleccionan_proyecto_como_campo_por_defecto():
+    """El listado abre con Proyecto elegido, sin depender del HTML renderizado."""
+    cache.delete(module_filtros.FILTERS_UI_CONFIG_CACHE_KEY)
+
+    config = module.get_filters_ui_config()
+
+    assert config["defaultField"] == "codigo_proyecto"
+    assert config["fields"][0]["name"] == "codigo_proyecto"
+    assert config["fields"][0]["label"] == "Proyecto"
+
+
+@pytest.mark.django_db
+def test_global_list_conserva_todos_los_filtros_disponibles():
+    """El default no puede achicar el set de filtros ni sus operadores."""
+    cache.delete(module_filtros.FILTERS_UI_CONFIG_CACHE_KEY)
+
+    config = module.get_filters_ui_config()
+
+    assert [field["name"] for field in config["fields"]] == [
+        field["name"] for field in module_filtros.FILTER_FIELDS
+    ]
+    assert set(config["operators"]) == {
+        "text",
+        "number",
+        "date",
+        "choice",
+        "boolean",
+    }
+
+
+@pytest.mark.django_db
+def test_global_list_view_contexto_expone_campo_por_defecto(mocker):
+    view = module.RendicionCuentaMensualGlobalListView()
+    view.request = _Req(user=_user(), GET={})
+
+    mocker.patch(
+        "django.views.generic.list.MultipleObjectMixin.get_context_data",
+        return_value={"rendiciones_cuentas_mensuales": []},
+    )
+    mocker.patch.object(
+        view,
+        "_get_columns_context",
+        return_value={
+            "column_active_keys": ["proyecto"],
+            "column_config": {"available": []},
+        },
+    )
+
+    contexto = view.get_context_data()
+
+    assert contexto["filters_config"]["defaultField"] == "codigo_proyecto"
+
+
+@pytest.mark.django_db
+def test_global_list_view_contexto_expone_titulo(mocker):
+    view = module.RendicionCuentaMensualGlobalListView()
+    view.request = _Req(user=_user(), GET={})
+
+    mocker.patch(
+        "django.views.generic.list.MultipleObjectMixin.get_context_data",
+        return_value={"rendiciones_cuentas_mensuales": []},
+    )
+    mocker.patch.object(
+        view,
+        "_get_columns_context",
+        return_value={
+            "column_active_keys": ["proyecto", "estado"],
+            "column_config": {"available": []},
+        },
+    )
+
+    contexto = view.get_context_data()
+
+    assert contexto["titulo_listado"] == "Rendiciones"
+    assert contexto["rendiciones_cuentas_mensuales"] == []
+    assert contexto["active_columns"] == ["proyecto", "estado"]
+    assert contexto["breadcrumb_items"][0]["text"] == "Organizaciones"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("permission_codename", "acciones"),
+    [
+        (
+            "manage_territorial_stage",
+            ["iniciar_revision_territorial", "finalizar_revision_territorial"],
+        ),
+        (
+            "manage_auditoria_review_stage",
+            ["iniciar_revision_auditoria", "finalizar_revision_auditoria"],
+        ),
+        (
+            "manage_auditoria_stage",
+            [
+                "iniciar_auditoria",
+                "finalizar_sin_observaciones",
+                "finalizar_con_observaciones",
+            ],
+        ),
+        (
+            "manage_regularizacion_stage",
+            ["iniciar_regularizacion", "finalizar_regularizacion"],
+        ),
+    ],
+)
+def test_grupo_con_permiso_de_etapa_puede_realizar_todas_sus_acciones(
+    django_user_model, permission_codename, acciones
+):
+    user = django_user_model.objects.create_user(
+        username=f"usuario-{permission_codename}"
+    )
+    group = Group.objects.create(name=f"Grupo {permission_codename}")
+    permission = Permission.objects.get(
+        content_type__app_label="rendicioncuentasmensual",
+        codename=permission_codename,
+    )
+    group.permissions.add(permission)
+    user.groups.add(group)
+
+    for accion in acciones:
+        assert module.RendicionCuentaMensualDetailView._user_can_run_action(
+            user, accion
+        )
+
+
+@pytest.mark.django_db
+def test_permiso_de_auditoria_no_habilita_regularizacion(django_user_model):
+    user = django_user_model.objects.create_user(username="usuario-auditoria")
+    group = Group.objects.create(name="Grupo sólo Auditoría")
+    group.permissions.add(
+        Permission.objects.get(
+            content_type__app_label="rendicioncuentasmensual",
+            codename="manage_auditoria_stage",
+        )
+    )
+    user.groups.add(group)
+
+    assert not module.RendicionCuentaMensualDetailView._user_can_run_action(
+        user, "iniciar_regularizacion"
+    )
+
+
+@pytest.mark.django_db
+def test_permiso_de_etapa_habilita_acceso_al_detalle(client, django_user_model):
+    rendicion = module.RendicionCuentaMensual.objects.create(
+        mes=4,
+        anio=2026,
+        etapa_proceso=module.RendicionCuentaMensual.ETAPA_AUDITORIA,
+        subestado_proceso=module.RendicionCuentaMensual.SUBESTADO_PENDIENTE,
+    )
+    user = django_user_model.objects.create_user(username="usuario-acceso-etapa")
+    group = Group.objects.create(name="Grupo acceso etapa")
+    group.permissions.add(
+        Permission.objects.get(
+            content_type__app_label="rendicioncuentasmensual",
+            codename="manage_auditoria_stage",
+        )
+    )
+    user.groups.add(group)
+    client.force_login(user)
+
+    response = client.get(
+        reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
+    )
+
+    assert response.status_code == 200
+    assert "Gestionar Auditoría" in response.content.decode()
+
+
+def test_global_list_exporta_solo_columnas_activas_y_en_su_orden(mocker):
+    view = module.RendicionCuentaMensualGlobalListView()
+    view.request = _Req(user=_user(), GET={})
+    mocker.patch.object(
+        view,
+        "_get_columns_context",
+        return_value={"column_active_keys": ["estado", "proyecto"]},
+    )
+
+    assert view.get_export_columns() == [
+        ("Estado", "estado_proceso_display"),
+        ("Proyecto", "comedor.codigo_de_proyecto"),
+    ]
+
+
+def test_global_list_exporta_periodo_como_se_muestra_en_la_grilla():
+    view = module.RendicionCuentaMensualGlobalListView()
+    rendicion = SimpleNamespace(
+        periodo_inicio=date(2026, 8, 3),
+        periodo_fin=date(2026, 8, 31),
+        mes=8,
+        anio=2026,
+    )
+
+    assert view.resolve_field(rendicion, "periodo_exportacion") == (
+        "03/08/2026 - 31/08/2026"
+    )
+
+
+@pytest.mark.parametrize(
+    ("etapa", "badge_class"),
+    [
+        ("revision_documentacion", "etapa-territorial"),
+        ("revision_auditoria", "etapa-revision-auditoria"),
+        ("auditoria", "etapa-auditoria"),
+        ("carga_documentacion", "etapa-carga"),
+        ("regularizacion", "etapa-regularizacion"),
+    ],
+)
+def test_global_list_diferencia_colores_por_etapa(etapa, badge_class):
+    rendicion = module.RendicionCuentaMensual(etapa_proceso=etapa)
+
+    assert rendicion.etapa_badge_class == badge_class
+
+
+def test_update_view_usa_template_especifico_para_datos():
+    assert module.RendicionCuentaMensualUpdateView.template_name == (
+        "rendicioncuentasmensual_datos_form.html"
+    )
+
+
+@pytest.mark.django_db
+def test_update_view_renderiza_datos_de_rendicion_para_usuario_autorizado(
+    client, superuser
+):
+    rendicion = module.RendicionCuentaMensual.objects.create(mes=4, anio=2026)
+    client.force_login(superuser)
+
+    response = client.get(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk})
+    )
+
+    assert response.status_code == 200
+    assert 'name="convenio"' in response.content.decode()
+    assert 'name="numero_rendicion"' in response.content.decode()
+    assert 'name="periodo_inicio"' in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_update_view_guarda_sin_periodo_en_rendicion_historica(client, superuser):
+    """Editar ya no exige completar campos: lo vacio conserva lo que habia."""
+    rendicion = module.RendicionCuentaMensual.objects.create(mes=4, anio=2026)
+    client.force_login(superuser)
+
+    response = client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data={
+            "convenio": "P01",
+            "numero_rendicion": "1",
+            "periodo_inicio": "",
+            "periodo_fin": "",
+            "nombre": "Rendición histórica",
+        },
+    )
+
+    assert response.status_code == 302
+    rendicion.refresh_from_db()
+    assert rendicion.periodo_inicio is None
+    assert rendicion.periodo_fin is None
+    assert rendicion.nombre == "Rendición histórica"
+    assert (rendicion.mes, rendicion.anio) == (4, 2026)
+
+
+def _rendicion_editable(**kwargs):
+    datos = {
+        "mes": 8,
+        "anio": 2026,
+        "convenio": "P02",
+        "numero_rendicion": 1,
+        "nombre": "Rendición agosto",
+        "periodo_inicio": date(2026, 8, 1),
+        "periodo_fin": date(2026, 8, 31),
+    }
+    datos.update(kwargs)
+    return module.RendicionCuentaMensual.objects.create(**datos)
+
+
+def _payload_edicion(**overrides):
+    datos = {
+        "convenio": "P02",
+        "numero_rendicion": "1",
+        "periodo_inicio": "2026-08-01",
+        "periodo_fin": "2026-08-31",
+        "nombre": "Rendición agosto",
+    }
+    datos.update(overrides)
+    return datos
+
+
+@pytest.mark.django_db
+def test_update_view_precarga_las_fechas_en_formato_iso(client, superuser):
+    """El input date solo entiende ISO; con dd/mm/aaaa el campo se veia vacio."""
+    rendicion = _rendicion_editable()
+    client.force_login(superuser)
+
+    response = client.get(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk})
+    )
+    html = response.content.decode()
+
+    assert response.status_code == 200
+    assert 'value="2026-08-01"' in html
+    assert 'value="2026-08-31"' in html
+    assert 'value="P02" selected' in html
+    assert 'value="1" selected' in html
+
+
+@pytest.mark.django_db
+def test_update_view_guardar_sin_cambios_no_altera_nada(client, superuser):
+    rendicion = _rendicion_editable()
+    client.force_login(superuser)
+
+    response = client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data=_payload_edicion(),
+    )
+
+    assert response.status_code == 302
+    rendicion.refresh_from_db()
+    assert rendicion.convenio == "P02"
+    assert rendicion.numero_rendicion == 1
+    assert rendicion.periodo_inicio == date(2026, 8, 1)
+    assert rendicion.periodo_fin == date(2026, 8, 31)
+    assert rendicion.nombre == "Rendición agosto"
+
+
+@pytest.mark.django_db
+def test_update_view_modifica_un_campo_y_conserva_el_resto(client, superuser):
+    rendicion = _rendicion_editable()
+    client.force_login(superuser)
+
+    response = client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data=_payload_edicion(
+            convenio="",
+            numero_rendicion="",
+            periodo_inicio="",
+            periodo_fin="",
+            nombre="Rendición agosto corregida",
+        ),
+    )
+
+    assert response.status_code == 302
+    rendicion.refresh_from_db()
+    assert rendicion.nombre == "Rendición agosto corregida"
+    assert rendicion.convenio == "P02"
+    assert rendicion.numero_rendicion == 1
+    assert rendicion.periodo_inicio == date(2026, 8, 1)
+    assert rendicion.periodo_fin == date(2026, 8, 31)
+
+
+@pytest.mark.django_db
+def test_update_view_permite_limpiar_el_nombre_opcional(client, superuser):
+    rendicion = _rendicion_editable()
+    client.force_login(superuser)
+
+    client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data=_payload_edicion(nombre=""),
+    )
+
+    rendicion.refresh_from_db()
+    assert rendicion.nombre is None
+
+
+@pytest.mark.django_db
+def test_update_view_rechaza_usuario_sin_permiso(client, django_user_model):
+    rendicion = _rendicion_editable()
+    usuario = django_user_model.objects.create_user(
+        username="sin_permiso_edicion", password="x"
+    )
+    client.force_login(usuario)
+
+    response = client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data=_payload_edicion(nombre="Intento no autorizado"),
+    )
+
+    assert response.status_code in (302, 403)
+    rendicion.refresh_from_db()
+    assert rendicion.nombre == "Rendición agosto"
+
+
+@pytest.mark.django_db
+def test_update_view_aplica_las_mismas_reglas_de_dominio_que_el_alta(client, superuser):
+    """Convenio, numero y periodo se validan con la misma regla del alta."""
+    rendicion = _rendicion_editable()
+    client.force_login(superuser)
+
+    fuera_de_secuencia = client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data=_payload_edicion(numero_rendicion="4"),
+    )
+    assert fuera_de_secuencia.status_code == 200
+    assert fuera_de_secuencia.context["form"].errors["numero_rendicion"]
+
+    periodo_invalido = client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data=_payload_edicion(periodo_fin="2026-09-30"),
+    )
+    assert periodo_invalido.status_code == 200
+    assert periodo_invalido.context["form"].errors["periodo_fin"]
+
+    rendicion.refresh_from_db()
+    assert rendicion.numero_rendicion == 1
+    assert rendicion.periodo_fin == date(2026, 8, 31)
+
+
+@pytest.mark.django_db
+def test_update_view_permite_extender_el_periodo_en_linea_secos(client, superuser):
+    """La ventana de tres meses de Secos tambien rige en la edicion web."""
+    rendicion = _rendicion_editable(
+        linea_programatica=module.RendicionCuentaMensual.LINEA_SECOS
+    )
+    client.force_login(superuser)
+
+    response = client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data=_payload_edicion(periodo_fin="2026-10-31"),
+    )
+
+    assert response.status_code == 302
+    rendicion.refresh_from_db()
+    assert rendicion.periodo_fin == date(2026, 10, 31)
+
+
+@pytest.mark.django_db
+def test_update_view_actualiza_mes_y_anio_desde_periodo(client, superuser):
+    rendicion = module.RendicionCuentaMensual.objects.create(mes=4, anio=2026)
+    client.force_login(superuser)
+
+    response = client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data={
+            "convenio": "P01",
+            "numero_rendicion": "1",
+            "periodo_inicio": "2026-08-01",
+            "periodo_fin": "2026-08-31",
+            "nombre": "Rendición agosto",
+        },
+    )
+
+    assert response.status_code == 302
+    rendicion.refresh_from_db()
+    assert (rendicion.mes, rendicion.anio) == (8, 2026)
+
+
+def test_detail_view_contexto_expone_documentacion_agrupada(mocker):
+    view = module.RendicionCuentaMensualDetailView()
+    rendicion = SimpleNamespace(
+        id=7,
+        estado="finalizada",
+        etapa_proceso=module.RendicionCuentaMensual.ETAPA_AUDITORIA,
+        subestado_proceso=module.RendicionCuentaMensual.SUBESTADO_FINALIZADA,
+        rendiciones_incluidas=SimpleNamespace(all=lambda: []),
+        validada=None,
+        genera_acta_auditoria=None,
+        fecha_gestion_auditoria=None,
+        fecha_auditada=None,
+        acta_auditoria=None,
+        es_origen_acta=False,
+    )
+    view.request = _Req(user=_user(), GET={})
+    view.kwargs = {"pk": 7}
+
+    mocker.patch(
+        "django.views.generic.detail.SingleObjectMixin.get_context_data",
+        return_value={},
+    )
+    mocker.patch(
+        "rendicioncuentasmensual.views.RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual",
+        return_value=rendicion,
+    )
+    agrupada = [{"codigo": "formulario_ii", "label": "Formulario II", "archivos": []}]
+    agrupada_mock = mocker.patch(
+        "rendicioncuentasmensual.views.RendicionCuentaMensualService.obtener_documentacion_para_detalle",
+        return_value=agrupada,
+    )
+    scope = {
+        "organizacion": SimpleNamespace(nombre="Org"),
+        "proyecto_codigo": "PROY-01",
+        "comedores_relacionados": [],
+    }
+    scope_mock = mocker.patch(
+        "rendicioncuentasmensual.views.RendicionCuentaMensualService.obtener_scope_proyecto",
+        return_value=scope,
+    )
+    mocker.patch(
+        "rendicioncuentasmensual.views.RendicionCuentaMensualService.rendicion_esta_completamente_validada",
+        return_value=False,
+    )
+
+    contexto = view.get_context_data()
+
+    assert contexto["rendicion"] is rendicion
+    assert contexto["documentacion_por_categoria"] == agrupada
+    assert contexto["scope_proyecto"] == scope
+    assert contexto["puede_revisar_documentos"] is False
+    agrupada_mock.assert_called_once_with(rendicion)
+    scope_mock.assert_called_once_with(rendicion)
+
+
+def test_detail_view_post_actualiza_documento_y_redirige(mocker):
+    request = RequestFactory().post(
+        "/rendicioncuentasmensual/detalle/7/",
+        data={
+            "documento_id": "9",
+            "estado": "validado",
+            "observaciones": "",
+        },
+    )
+    request.user = _user()
+    setattr(request, "_messages", mocker.Mock())
+
+    rendicion = SimpleNamespace(
+        pk=7,
+        archivos_adjuntos=SimpleNamespace(
+            filter=lambda **_kwargs: SimpleNamespace(
+                first=lambda: SimpleNamespace(id=9)
+            )
+        ),
+    )
+
+    get_object_mock = mocker.patch.object(
+        module.RendicionCuentaMensualDetailView,
+        "get_object",
+        return_value=rendicion,
+    )
+    mocker.patch.object(
+        module.RendicionCuentaMensualDetailView,
+        "_user_can_review_documentos",
+        return_value=True,
+    )
+    update_mock = mocker.patch(
+        "rendicioncuentasmensual.views.RendicionCuentaMensualService.actualizar_estado_documento_revision"
+    )
+    success_mock = mocker.patch("rendicioncuentasmensual.views.messages.success")
+
+    view = module.RendicionCuentaMensualDetailView()
+    view.request = request
+    view.kwargs = {"pk": 7}
+
+    response = view.post(request)
+
+    assert response.status_code == 302
+    assert response.url.endswith("/rendicioncuentasmensual/detalle/7/")
+    get_object_mock.assert_called_once_with()
+    update_mock.assert_called_once()
+    assert update_mock.call_args.kwargs["actor"] is request.user
+    success_mock.assert_called_once()
+
+
+def test_detail_view_post_ajax_actualiza_documento_y_devuelve_json(mocker):
+    request = RequestFactory().post(
+        "/rendicioncuentasmensual/detalle/7/",
+        data={
+            "documento_id": "9",
+            "estado": "validado",
+            "observaciones": "",
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+    request.user = _user()
+    setattr(request, "_messages", mocker.Mock())
+
+    documento = SimpleNamespace(
+        id=9,
+        estado="validado",
+        observaciones=None,
+        refresh_from_db=mocker.Mock(),
+        get_estado_display=lambda: "Validado",
+        get_estado_visual=lambda: "validado",
+        get_estado_visual_display=lambda: "Validado",
+    )
+    rendicion = SimpleNamespace(
+        pk=7,
+        estado="finalizada",
+        refresh_from_db=mocker.Mock(),
+        get_estado_display=lambda: "Presentación finalizada",
+        archivos_adjuntos=SimpleNamespace(
+            filter=lambda **_kwargs: SimpleNamespace(first=lambda: documento)
+        ),
+    )
+
+    mocker.patch.object(
+        module.RendicionCuentaMensualDetailView,
+        "get_object",
+        return_value=rendicion,
+    )
+    mocker.patch.object(
+        module.RendicionCuentaMensualDetailView,
+        "_user_can_review_documentos",
+        return_value=True,
+    )
+    update_mock = mocker.patch(
+        "rendicioncuentasmensual.views.RendicionCuentaMensualService.actualizar_estado_documento_revision"
+    )
+    mocker.patch(
+        "rendicioncuentasmensual.views.RendicionCuentaMensualService.rendicion_esta_completamente_validada",
+        return_value=True,
+    )
+
+    view = module.RendicionCuentaMensualDetailView()
+    view.request = request
+    view.kwargs = {"pk": 7}
+
+    response = view.post(request)
+
+    assert response.status_code == 200
+    body = json.loads(response.content)
+    assert body["success"] is True
+    assert body["rendicion"]["puede_descargar_pdf"] is True
+    update_mock.assert_called_once()
+
+
+def test_detail_view_post_ajax_rechaza_revision_sin_permiso(mocker):
+    request = RequestFactory().post(
+        "/rendicioncuentasmensual/detalle/7/",
+        data={"documento_id": "9", "estado": "validado"},
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+    request.user = _user()
+    setattr(request, "_messages", mocker.Mock())
+
+    rendicion = SimpleNamespace(
+        pk=7,
+        archivos_adjuntos=SimpleNamespace(
+            filter=lambda **_kwargs: SimpleNamespace(
+                first=lambda: SimpleNamespace(id=9)
+            )
+        ),
+    )
+    mocker.patch.object(
+        module.RendicionCuentaMensualDetailView,
+        "get_object",
+        return_value=rendicion,
+    )
+    update_mock = mocker.patch(
+        "rendicioncuentasmensual.views.RendicionCuentaMensualService.actualizar_estado_documento_revision"
+    )
+
+    view = module.RendicionCuentaMensualDetailView()
+    view.request = request
+    view.kwargs = {"pk": 7}
+
+    response = view.post(request)
+
+    assert response.status_code == 403
+    body = json.loads(response.content)
+    assert body == {
+        "success": False,
+        "message": "No tiene permisos para revisar documentos.",
+    }
+    update_mock.assert_not_called()
+
+
+def test_download_pdf_view_devuelve_archivo(mocker):
+    request = RequestFactory().get("/rendicioncuentasmensual/detalle/7/descargar-pdf/")
+    request.user = _user()
+    setattr(request, "_messages", mocker.Mock())
+
+    rendicion = SimpleNamespace(pk=7, id=7, numero_rendicion=12)
+    buffer = BytesIO(b"%PDF-1.4 test")
+    mocker.patch(
+        "rendicioncuentasmensual.views.RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual",
+        return_value=rendicion,
+    )
+    pdf_mock = mocker.patch(
+        "rendicioncuentasmensual.views.RendicionCuentaMensualService.generar_pdf_descarga_rendicion",
+        return_value=buffer,
+    )
+
+    view = module.RendicionCuentaMensualDownloadPdfView()
+    view.request = request
+    view.kwargs = {"pk": 7}
+
+    response = view.get(request)
+
+    assert isinstance(response, FileResponse)
+    assert 'filename="rendicion-12.pdf"' in response.headers["Content-Disposition"]
+    pdf_mock.assert_called_once_with(rendicion)
+
+
+@pytest.mark.django_db
+def test_download_pdf_view_no_falla_por_pdf_invalido(
+    settings, tmp_path, client, superuser
+):
+    settings.MEDIA_ROOT = str(tmp_path)
+    rendicion = module.RendicionCuentaMensual.objects.create(
+        mes=6,
+        anio=2026,
+        estado=module.RendicionCuentaMensual.ESTADO_FINALIZADA,
+    )
+    module.DocumentacionAdjunta.objects.create(
+        nombre="documento-bueno.pdf",
+        categoria=module.DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        estado=module.DocumentacionAdjunta.ESTADO_VALIDADO,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "documento-bueno.pdf",
+            _pdf_bytes(),
+            content_type="application/pdf",
+        ),
+    )
+    module.DocumentacionAdjunta.objects.create(
+        nombre="documento-invalido.pdf",
+        categoria=module.DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
+        estado=module.DocumentacionAdjunta.ESTADO_VALIDADO,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "documento-invalido.pdf",
+            b"%PDF-1.4 truncado",
+            content_type="application/pdf",
+        ),
+    )
+
+    client.force_login(superuser)
+    response = client.get(
+        reverse("rendicioncuentasmensual_download_pdf", kwargs={"pk": rendicion.pk})
+    )
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/pdf"
+    assert b"".join(response.streaming_content)[:4] == b"%PDF"
+
+
+def test_download_pdf_view_usa_nombre_solicitado_por_issue_2305():
+    rendicion = SimpleNamespace(
+        id=88,
+        numero_rendicion=1,
+        proyecto=SimpleNamespace(codigo="APAR043"),
+        comedor=SimpleNamespace(codigo_de_proyecto="CODIGO-LEGACY"),
+        convenio="P01",
+        periodo_inicio=date(2026, 7, 6),
+        mes=7,
+        anio=2026,
+    )
+
+    assert (
+        module.RendicionCuentaMensualDownloadPdfView.construir_nombre_archivo(rendicion)
+        == "APAR043-P01-RENDICION_1-JUL2026.pdf"
+    )
+
+
+def test_download_pdf_view_normaliza_partes_inseguras_del_nombre():
+    rendicion = SimpleNamespace(
+        id=88,
+        numero_rendicion=2,
+        proyecto=None,
+        comedor=SimpleNamespace(codigo_de_proyecto="PROY/ 02"),
+        convenio="P/02",
+        periodo_inicio=None,
+        mes=8,
+        anio=2026,
+    )
+
+    assert (
+        module.RendicionCuentaMensualDownloadPdfView.construir_nombre_archivo(rendicion)
+        == "PROY_02-P_02-RENDICION_2-AGO2026.pdf"
+    )
+
+
+def test_detail_view_post_muestra_error_si_documento_no_existe(mocker):
+    request = RequestFactory().post(
+        "/rendicioncuentasmensual/detalle/7/",
+        data={"documento_id": "999", "estado": "validado"},
+    )
+    request.user = _user()
+    setattr(request, "_messages", mocker.Mock())
+
+    rendicion = SimpleNamespace(
+        pk=7,
+        archivos_adjuntos=SimpleNamespace(
+            filter=lambda **_kwargs: SimpleNamespace(first=lambda: None)
+        ),
+    )
+    mocker.patch.object(
+        module.RendicionCuentaMensualDetailView,
+        "get_object",
+        return_value=rendicion,
+    )
+    mocker.patch.object(
+        module.RendicionCuentaMensualDetailView,
+        "_user_can_review_documentos",
+        return_value=True,
+    )
+    error_mock = mocker.patch("rendicioncuentasmensual.views.messages.error")
+
+    view = module.RendicionCuentaMensualDetailView()
+    view.request = request
+    view.kwargs = {"pk": 7}
+
+    response = view.post(request)
+
+    assert response.status_code == 302
+    assert response.url.endswith("/rendicioncuentasmensual/detalle/7/")
+    error_mock.assert_called_once_with(request, "El documento seleccionado no existe.")

@@ -402,13 +402,7 @@
                 <div>
                     <h1>
                         {{ ciudadano.nombre }} {{ ciudadano.apellido }}
-                        {% if situacion_calle_pwa %}
-                            <span class="badge bg-danger ms-2 align-middle" style="font-size: 0.75rem;">Situación de calle</span>
-                        {% endif %}
-                        {% if persona_con_celiaquia_pwa %}
-                            <span class="badge bg-warning text-dark ms-2 align-middle"
-                                  style="font-size: 0.75rem">Persona con Celiaquía</span>
-                        {% endif %}
+                        {{ contribuciones_html.pwa_badges|safe }}
                     </h1>
                     <p class="subtitle mb-0">
                         {{ ciudadano.get_tipo_documento_display }} {{ ciudadano.numero_documento|default:"Sin documento" }}
@@ -635,36 +629,7 @@
                                         <strong>Origen del Dato:</strong>
                                         <span class="value">{{ ciudadano.get_origen_dato_display }}</span>
                                     </div>
-                                    <div class="info-row">
-                                        <strong>Pueblo originario:</strong>
-                                        <span class="value">
-                                            {% if pertenece_comunidad_indigena %}
-                                                Sí
-                                            {% else %}
-                                                No
-                                            {% endif %}
-                                        </span>
-                                    </div>
-                                    <div class="info-row">
-                                        <strong>Situación de calle:</strong>
-                                        <span class="value">
-                                            {% if situacion_calle_pwa %}
-                                                Sí
-                                            {% else %}
-                                                No
-                                            {% endif %}
-                                        </span>
-                                    </div>
-                                    <div class="info-row">
-                                        <strong>Persona con Celiaquía:</strong>
-                                        <span class="value">
-                                            {% if persona_con_celiaquia_pwa %}
-                                                Sí
-                                            {% else %}
-                                                No
-                                            {% endif %}
-                                        </span>
-                                    </div>
+                                    {{ contribuciones_html.pwa|safe }}
                                 </div>
                             </div>
                         </div>
@@ -1209,136 +1174,7 @@
             <div class="tab-pane fade" id="comedor">
                 <div class="row">
                     <div class="col-12">
-                        <div class="tabla-legajo" style="border: 2px solid var(--gold);">
-                            <h5 class="mb-3">
-                                <span>Comedores</span>
-                                {% if nomina_actual and nomina_actual.estado == 'activo' %}
-                                    <span class="badge"
-                                          style="background: rgba(46, 125, 51, 0.6);
-                                                 color: white;
-                                                 padding: 0.35rem 0.75rem;
-                                                 font-size: 0.75rem;
-                                                 margin-left: 0.5rem">Activo</span>
-                                {% endif %}
-                            </h5>
-                            {% if nomina_actual %}
-                                {% with comedor_actual=nomina_actual.admision.comedor %}
-                                    <div style="display: grid;
-                                                grid-template-columns: 1fr 1fr;
-                                                gap: 1rem;
-                                                margin-bottom: 1.5rem">
-                                        <div>
-                                            <small style="color: rgba(255,255,255,0.7);">Comedor</small>
-                                            <div style="font-size: 0.95rem;
-                                                        color: rgba(255,255,255,0.95);
-                                                        margin-top: 0.25rem">
-                                                {% if comedor_actual and comedor_actual.id %}
-                                                    <a href="{% url 'comedor_detalle' comedor_actual.id %}"
-                                                       style="color: #E7BA61;
-                                                              text-decoration: underline">
-                                                        {{ comedor_actual.nombre }}
-                                                    </a>
-                                                {% else %}
-                                                    -
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <small style="color: rgba(255,255,255,0.7);">Tipo</small>
-                                            <div style="font-size: 0.95rem;
-                                                        color: rgba(255,255,255,0.95);
-                                                        margin-top: 0.25rem">
-                                                {{ comedor_actual.tipocomedor.nombre|default:"-" }}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <small style="color: rgba(255,255,255,0.7);">Provincia</small>
-                                            <div style="font-size: 0.95rem;
-                                                        color: rgba(255,255,255,0.95);
-                                                        margin-top: 0.25rem">
-                                                {{ comedor_actual.provincia.nombre|default:"-" }}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <small style="color: rgba(255,255,255,0.7);">Municipio</small>
-                                            <div style="font-size: 0.95rem;
-                                                        color: rgba(255,255,255,0.95);
-                                                        margin-top: 0.25rem">
-                                                {{ comedor_actual.municipio.nombre|default:"-" }}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <small style="color: rgba(255,255,255,0.7);">Estado</small>
-                                            <div style="font-size: 0.95rem;
-                                                        color: rgba(255,255,255,0.95);
-                                                        margin-top: 0.25rem">
-                                                {% if nomina_actual.estado == 'activo' %}
-                                                    <span class="badge" style="background: var(--green);">Activo</span>
-                                                {% elif nomina_actual.estado == 'espera' %}
-                                                    <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En espera</span>
-                                                {% else %}
-                                                    <span class="badge" style="background: rgba(255,255,255,0.2);">Baja</span>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <small style="color: rgba(255,255,255,0.7);">Fecha Registro</small>
-                                            <div style="font-size: 0.95rem;
-                                                        color: rgba(255,255,255,0.95);
-                                                        margin-top: 0.25rem">
-                                                {{ nomina_actual.fecha|date:"d/m/Y" }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endwith %}
-                                {% if nominas_comedor|length > 1 %}
-                                    <h6 style="margin-top: 1.5rem;
-                                               margin-bottom: 1rem;
-                                               border-top: 1px solid rgba(255,255,255,0.1);
-                                               padding-top: 1rem">Historial de Comedores</h6>
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>Comedor</th>
-                                                <th>Estado</th>
-                                                <th>Fecha</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for nomina in nominas_comedor %}
-                                                <tr>
-                                                    <td>
-                                                        {% with comedor=nomina.admision.comedor %}
-                                                            {% if comedor and comedor.id %}
-                                                                <a href="{% url 'comedor_detalle' comedor.id %}"
-                                                                   style="color: #E7BA61;
-                                                                          text-decoration: underline">
-                                                                    {{ comedor.nombre }}
-                                                                </a>
-                                                            {% else %}
-                                                                -
-                                                            {% endif %}
-                                                        {% endwith %}
-                                                    </td>
-                                                    <td>
-                                                        {% if nomina.estado == 'activo' %}
-                                                            <span class="badge" style="background: var(--green);">Activo</span>
-                                                        {% elif nomina.estado == 'espera' %}
-                                                            <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En espera</span>
-                                                        {% else %}
-                                                            <span class="badge" style="background: rgba(255,255,255,0.2);">Baja</span>
-                                                        {% endif %}
-                                                    </td>
-                                                    <td>{{ nomina.fecha|date:"d/m/Y" }}</td>
-                                                </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                {% endif %}
-                            {% else %}
-                                <p style="color: rgba(255,255,255,0.5);">No hay registros de comedores.</p>
-                            {% endif %}
-                        </div>
+                        {{ contribuciones_html.comedores|safe }}
                         <div class="tabla-legajo">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="mb-0">Interacciones</h5>
@@ -1946,52 +1782,7 @@
         </div>
 
 
-        {% if colaboraciones_comedor %}
-            <div class="row px-4 mt-3">
-                <div class="col-12">
-                    <div class="tabla-legajo">
-                        <h5 class="mb-3">Colaboraciones en comedores</h5>
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Comedor</th>
-                                    <th>Fecha alta</th>
-                                    <th>Fecha baja</th>
-                                    <th>Actividades</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for colaboracion in colaboraciones_comedor %}
-                                    <tr>
-                                        <td>
-                                            {% if colaboracion.comedor and colaboracion.comedor.id %}
-                                                <a href="{% url 'comedor_detalle' colaboracion.comedor.id %}"
-                                                   style="color: #E7BA61;
-                                                          text-decoration: underline">
-                                                    {{ colaboracion.comedor.nombre }}
-                                                </a>
-                                            {% else %}
-                                                -
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ colaboracion.fecha_alta|date:"d/m/Y"|default:"-" }}</td>
-                                        <td>{{ colaboracion.fecha_baja|date:"d/m/Y"|default:"-" }}</td>
-                                        <td>
-                                            {% for actividad in colaboracion.actividades.all %}
-                                                {{ actividad.nombre }}
-                                                {% if not forloop.last %},{% endif %}
-                                            {% empty %}
-                                                -
-                                            {% endfor %}
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
+        {{ contribuciones_html.comedores_colaboraciones|safe }}
 
     </div>
 

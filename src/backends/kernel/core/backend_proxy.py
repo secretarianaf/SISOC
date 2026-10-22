@@ -126,7 +126,9 @@ def _raw_body(upstream):
         upstream.close()
 
 
-def _forward(request, origin, path):
+def _forward(  # pylint: disable=too-many-arguments
+    request, origin, path, *, body=None, query_string=None, uncertain_on_failure=False
+):
     # Si algún middleware del core tocó la sesión, se guarda antes de reenviar
     # y no se vuelve a guardar después, para no pisar lo que escriba el backend.
     session = getattr(request, "session", None)
@@ -138,22 +140,43 @@ def _forward(request, origin, path):
     if any(segmento in {".", ".."} for segmento in path.split("/")):
         raise Http404
     url = origin.rstrip("/") + "/" + quote(path, safe=PATH_SAFE_CHARS)
-    if request.META.get("QUERY_STRING"):
-        url += "?" + request.META["QUERY_STRING"]
+    query_string = (
+        request.META.get("QUERY_STRING") if query_string is None else query_string
+    )
+    if query_string:
+        url += "?" + query_string
 
     try:
         upstream = requests.request(
             request.method,
             url,
             headers=outbound_headers(request),
-            data=_RequestBody(request) if request.META.get("CONTENT_LENGTH") else None,
+            data=(
+                body
+                if body is not None
+                else (
+                    _RequestBody(request)
+                    if request.META.get("CONTENT_LENGTH")
+                    else None
+                )
+            ),
             allow_redirects=False,
             stream=True,
             timeout=(CONNECT_TIMEOUT_SECONDS, READ_TIMEOUT_SECONDS),
         )
     except requests.Timeout:
+        if uncertain_on_failure:
+            return HttpResponse(
+                "No se pudo confirmar el resultado. Verificá el usuario antes de reintentar.",
+                status=504,
+            )
         return HttpResponse("El servicio no respondió a tiempo.", status=504)
     except requests.RequestException:
+        if uncertain_on_failure:
+            return HttpResponse(
+                "No se pudo confirmar el resultado. Verificá el usuario antes de reintentar.",
+                status=503,
+            )
         return HttpResponse("El servicio no está disponible.", status=503)
 
     if request.method == "HEAD":
@@ -205,17 +228,32 @@ def pedir_json_a_backend(request, spec, path, timeout=4):
         return None
 
 
+# Propiedad de secciones del cluster aprobado; no registra un runtime C3.
+APPS_SECCIONES_FAVORITAS = {
+    "comedores": "comedores",
+    "admisiones_tecnicos": "admisiones",
+    "admisiones_legales": "admisiones",
+    "acompanamientos": "acompanamientos",
+    "duplas": "duplas",
+    "rendiciones": "rendicioncuentasmensual",
+}
+
+
 def backend_de_seccion_favorita(seccion):
     """Backend dueño de una sección de filtros favoritos, si no es del core."""
+    app_label = APPS_SECCIONES_FAVORITAS.get(seccion)
+    if app_label is not None:
+        return backend_de_app(app_label)
     for spec in getattr(settings, "SISOC_BACKENDS", {}).values():
         if seccion in spec.get("favorite_sections", ()):
             return spec
     return None
 
 
-def reenviar_a_backend(request, spec):
+def reenviar_a_backend(request, spec, **kwargs):
     """Reenvía este request, tal cual, al backend ``spec``."""
-    return _forward(request, spec["origin"], request.path_info.lstrip("/"))
+    path = kwargs.pop("path", request.path_info.lstrip("/"))
+    return _forward(request, spec["origin"], path, **kwargs)
 
 
 def _proxy_view(origin):

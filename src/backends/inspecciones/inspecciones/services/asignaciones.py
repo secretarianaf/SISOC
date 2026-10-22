@@ -168,7 +168,13 @@ def _fila(asignacion, actas, en_curso):
 
 
 def asignaciones_de_jornada(
-    fecha, *, inspector_id=None, provincia_id=None, estado="", estado_acta=""
+    fecha,
+    *,
+    inspector_id=None,
+    escuela_id=None,
+    provincia_id=None,
+    estado="",
+    estado_acta="",
 ):
     """``(filas, totales)`` de la jornada; los totales ignoran los estados."""
     queryset = AsignacionEscuela.objects.filter(fecha=fecha).select_related(
@@ -176,6 +182,8 @@ def asignaciones_de_jornada(
     )
     if inspector_id:
         queryset = queryset.filter(inspector_id=inspector_id)
+    if escuela_id:
+        queryset = queryset.filter(escuela_id=escuela_id)
     if provincia_id:
         queryset = queryset.filter(escuela__provincia_id=provincia_id)
     asignaciones = list(

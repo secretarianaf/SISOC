@@ -27,7 +27,7 @@ from inspecciones.services.asignaciones import (
     otras_asignaciones,
     quitar_asignacion,
 )
-from inspecciones.services.catalogo import opcion_escuela
+from inspecciones.services.catalogo import opcion_escuela, opcion_escuela_por_id
 from inspecciones.services.formato import hoy, nombre_actor
 from inspecciones.views import PanelMixin, es_parcial
 
@@ -51,9 +51,11 @@ class AsignacionesView(PanelMixin, TemplateView):
         fecha = filtro.valor("fecha") or hoy()
         provincia = filtro.valor("provincia")
         inspector_id = filtro.valor("inspector")
+        escuela_id = filtro.valor("escuela")
         filas, totales = asignaciones_de_jornada(
             fecha,
             inspector_id=inspector_id,
+            escuela_id=escuela_id,
             provincia_id=provincia.pk if provincia else None,
             estado=filtro.valor("estado") or "",
             estado_acta=filtro.valor("estado_acta") or "",
@@ -72,6 +74,7 @@ class AsignacionesView(PanelMixin, TemplateView):
             is_paginated=pagina.has_other_pages(),
             totales=totales,
             inspector_filtro=opcion_inspector_por_id(inspector_id),
+            escuela_filtro=opcion_escuela_por_id(escuela_id),
             form_importar=ImportarArchivoForm(),
         )
         return context

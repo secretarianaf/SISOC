@@ -24,7 +24,7 @@ from users.services_inspecciones import (
     es_coordinacion_inspecciones,
     tiene_acceso_inspecciones,
 )
-from usuarios.forms import CustomUserChangeForm, UserCreationForm
+from pwa.user_forms import CustomUserChangeForm, UserCreationForm
 from usuarios.services_user_import import process_single_user_import_row
 
 pytestmark = pytest.mark.django_db

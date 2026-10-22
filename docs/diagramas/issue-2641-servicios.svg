@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1640" viewBox="0 0 1600 1640" role="img" aria-labelledby="title desc">
+<title id="title">Servicios SISOC después de #2641</title>
+<desc id="desc">Portal de entrada, diez backends propios, frontends React, workers y migrador. MySQL, sesión y archivos siguen compartidos. Kernel se empaqueta en cada imagen Django. Es una arquitectura validada localmente, sin afirmar despliegue.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#55716b"/></marker></defs>
+<rect width="1600" height="1640" fill="#f4f6f3"/>
+<g font-family="Arial,DejaVu Sans,sans-serif" fill="#203c36">
+<rect width="1600" height="115" fill="#064f4a"/>
+<text x="48" y="49" font-size="32" font-weight="700" fill="white">SISOC · Servicios después de #2641</text>
+<text x="48" y="87" font-size="20" fill="#d9eee7">Implementación local · Recursos compartidos · Despliegue y aceptación pendientes</text>
+<rect x="40" y="150" width="320" height="100" rx="14" fill="white" stroke="#c9d8d2" stroke-width="2"/>
+<text x="62" y="185" font-size="23" font-weight="700" fill="#203c36">Personas y aplicaciones</text>
+<text x="62" y="219" font-size="18" font-weight="400" fill="#203c36">Navegador · apps móviles</text>
+<rect x="430" y="150" width="340" height="100" rx="14" fill="white" stroke="#c9d8d2" stroke-width="2"/>
+<text x="452" y="185" font-size="23" font-weight="700" fill="#203c36">Nginx del host</text>
+<text x="452" y="219" font-size="18" font-weight="400" fill="#203c36">Entrada HTTP y rutas existentes</text>
+<rect x="930" y="150" width="630" height="100" rx="14" fill="white" stroke="#c9d8d2" stroke-width="2"/>
+<text x="952" y="185" font-size="23" font-weight="700" fill="#203c36">Frontends React</text>
+<text x="952" y="219" font-size="18" font-weight="400" fill="#203c36">front_vpsl · front_celiaquia · rutas /v2/</text>
+<path d="M360 200 H425" fill="none" stroke="#55716b" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M770 200 H925" fill="none" stroke="#55716b" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="814" y="184" font-size="17" font-weight="400" fill="#203c36">/v2/</text>
+<rect x="300" y="310" width="1000" height="145" rx="14" fill="white" stroke="#04756f" stroke-width="2"/>
+<text x="322" y="345" font-size="23" font-weight="700" fill="#203c36">Portal / core · django</text>
+<text x="322" y="379" font-size="18" font-weight="400" fill="#203c36">Usuarios · Dashboard · Encuestas · Insumos</text>
+<text x="322" y="406" font-size="18" font-weight="400" fill="#203c36">Autenticación, controles comunes y proxy hacia el dueño</text>
+<text x="322" y="433" font-size="18" font-weight="400" fill="#203c36">Imagen sisoc/core · sesión y CSRF conservados entre procesos</text>
+<path d="M600 250 V305" fill="none" stroke="#55716b" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M800 455 V500 H275 M800 500 H1325" fill="none" stroke="#55716b" stroke-width="2.5"/>
+<path d="M275 500 V535" fill="none" stroke="#55716b" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M800 500 V535" fill="none" stroke="#55716b" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1325 500 V535" fill="none" stroke="#55716b" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="40" y="540" width="470" height="220" rx="14" fill="white" stroke="#04756f" stroke-width="2"/>
+<text x="62" y="575" font-size="23" font-weight="700" fill="#203c36">NUEVO · Comedores</text>
+<text x="62" y="609" font-size="18" font-weight="400" fill="#203c36">Comedores, admisiones y rendiciones</text>
+<text x="62" y="636" font-size="18" font-weight="400" fill="#203c36">Espacios comunitarios (pwa) y resto</text>
+<text x="62" y="663" font-size="18" font-weight="400" fill="#203c36">del cluster de 14 apps</text>
+<text x="62" y="690" font-size="18" font-weight="400" fill="#203c36">Imagen sisoc/backend-comedores</text>
+<text x="62" y="717" font-size="18" font-weight="400" fill="#203c36">Proceso backend_comedores</text>
+<rect x="565" y="540" width="470" height="220" rx="14" fill="white" stroke="#04756f" stroke-width="2"/>
+<text x="587" y="575" font-size="23" font-weight="700" fill="#203c36">NUEVO · OCR</text>
+<text x="587" y="609" font-size="18" font-weight="400" fill="#203c36">HTTP /ocr/ y administración OCR</text>
+<text x="587" y="636" font-size="18" font-weight="400" fill="#203c36">Imagen sisoc/backend-ocr</text>
+<text x="587" y="663" font-size="18" font-weight="400" fill="#203c36">Proceso backend_ocr</text>
+<text x="587" y="690" font-size="18" font-weight="400" fill="#203c36">El worker OCR es otro proceso</text>
+<rect x="1090" y="540" width="470" height="220" rx="14" fill="white" stroke="#c9d8d2" stroke-width="2"/>
+<text x="1112" y="575" font-size="23" font-weight="700" fill="#203c36">Ocho backends conservados</text>
+<text x="1112" y="609" font-size="18" font-weight="400" fill="#203c36">Dispositivos/Datacalle · VPSL · PAS</text>
+<text x="1112" y="636" font-size="18" font-weight="400" fill="#203c36">VAT · Celiaquía · CDI · CDF · Inspecciones</text>
+<text x="1112" y="663" font-size="18" font-weight="400" fill="#203c36">Una imagen y proceso por backend</text>
+<text x="1112" y="690" font-size="18" font-weight="400" fill="#203c36">Autorización y CSRF en cada dueño</text>
+<text x="52" y="801" font-size="18" font-weight="700" fill="#203c36">PROCESOS AUXILIARES · La imagen indica el código disponible; cada servicio se ejecuta por separado</text>
+<rect x="40" y="825" width="1520" height="410" rx="18" fill="#e8eeeb"/>
+<rect x="62" y="845" width="475" height="165" rx="14" fill="white" stroke="#c9d8d2" stroke-width="2"/>
+<text x="84" y="880" font-size="23" font-weight="700" fill="#203c36">OCR worker</text>
+<text x="84" y="914" font-size="18" font-weight="400" fill="#203c36">ocr_worker · imagen backend-ocr</text>
+<text x="84" y="941" font-size="18" font-weight="400" fill="#203c36">process_ocr_jobs</text>
+<text x="84" y="968" font-size="18" font-weight="400" fill="#203c36">Jobs y documentos existentes</text>
+<rect x="562" y="845" width="475" height="165" rx="14" fill="white" stroke="#c9d8d2" stroke-width="2"/>
+<text x="584" y="880" font-size="23" font-weight="700" fill="#203c36">Mailing</text>
+<text x="584" y="914" font-size="18" font-weight="400" fill="#203c36">mailing_worker · backend-comedores</text>
+<text x="584" y="941" font-size="18" font-weight="400" fill="#203c36">Override de HML/PRD</text>
+<text x="584" y="968" font-size="18" font-weight="400" fill="#203c36">Correo del dominio Comedores</text>
+<rect x="1062" y="845" width="475" height="165" rx="14" fill="white" stroke="#b28632" stroke-width="2"/>
+<text x="1084" y="880" font-size="23" font-weight="700" fill="#203c36">Importación de usuarios</text>
+<text x="1084" y="914" font-size="18" font-weight="400" fill="#203c36">user_import_worker · imagen migrator</text>
+<text x="1084" y="941" font-size="18" font-weight="400" fill="#203c36">Grafo completo; rol propio · HML/PRD</text>
+<text x="1084" y="968" font-size="18" font-weight="400" fill="#203c36">Sin migrate ni servidor HTTP</text>
+<rect x="62" y="1040" width="475" height="165" rx="14" fill="white" stroke="#c9d8d2" stroke-width="2"/>
+<text x="84" y="1075" font-size="23" font-weight="700" fill="#203c36">Workers del core</text>
+<text x="84" y="1109" font-size="18" font-weight="400" fill="#203c36">bulk_credentials_worker</text>
+<text x="84" y="1136" font-size="18" font-weight="400" fill="#203c36">ciudadanos_import_worker</text>
+<text x="84" y="1163" font-size="18" font-weight="400" fill="#203c36">Imagen core · override de HML/PRD</text>
+<rect x="562" y="1040" width="475" height="165" rx="14" fill="white" stroke="#c9d8d2" stroke-width="2"/>
+<text x="584" y="1075" font-size="23" font-weight="700" fill="#203c36">Tareas PAS</text>
+<text x="584" y="1109" font-size="18" font-weight="400" fill="#203c36">celery_pas_worker + celery_beat</text>
+<text x="584" y="1136" font-size="18" font-weight="400" fill="#203c36">Imagen backend-pas</text>
+<text x="584" y="1163" font-size="18" font-weight="400" fill="#203c36">Broker Redis y volúmenes propios PAS</text>
+<rect x="1062" y="1040" width="475" height="165" rx="14" fill="white" stroke="#b28632" stroke-width="2"/>
+<text x="1084" y="1075" font-size="23" font-weight="700" fill="#203c36">Migrador único</text>
+<text x="1084" y="1109" font-size="18" font-weight="400" fill="#203c36">migrator · config.settings_all</text>
+<text x="1084" y="1136" font-size="18" font-weight="400" fill="#203c36">migrate + collectstatic · perfil migrate</text>
+<text x="1084" y="1163" font-size="18" font-weight="400" fill="#203c36">Imagen completa; sin servidor HTTP</text>
+<path d="M800 1235 V1300" fill="none" stroke="#55716b" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="830" y="1277" font-size="18" font-weight="400" fill="#203c36">Acceso a recursos según el rol</text>
+<path d="M1560 760 H1580 V1400 H1563" fill="none" stroke="#55716b" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="40" y="1305" width="1520" height="190" rx="18" fill="#fff3d8" stroke="#d8bd7c"/>
+<text x="62" y="1343" font-size="21" font-weight="700" fill="#203c36">RECURSOS COMPARTIDOS</text>
+<rect x="62" y="1365" width="475" height="105" rx="14" fill="white" stroke="#d8bd7c" stroke-width="2"/>
+<text x="84" y="1400" font-size="23" font-weight="700" fill="#203c36">MySQL + sesiones</text>
+<text x="84" y="1434" font-size="18" font-weight="400" fill="#203c36">Una DB; una caída puede afectar a todos</text>
+<rect x="562" y="1365" width="475" height="105" rx="14" fill="white" stroke="#d8bd7c" stroke-width="2"/>
+<text x="584" y="1400" font-size="23" font-weight="700" fill="#203c36">Media y logs</text>
+<text x="584" y="1434" font-size="18" font-weight="400" fill="#203c36">Archivos compartidos según el proceso</text>
+<rect x="1062" y="1365" width="475" height="105" rx="14" fill="white" stroke="#d8bd7c" stroke-width="2"/>
+<text x="1084" y="1400" font-size="23" font-weight="700" fill="#203c36">static_root</text>
+<text x="1084" y="1434" font-size="18" font-weight="400" fill="#203c36">Migrador escribe; servicios web leen RO</text>
+<text x="48" y="1540" font-size="22" font-weight="700" fill="#203c36">Kernel: biblioteca común dentro de cada imagen Django; no es otro servidor.</text>
+<text x="48" y="1575" font-size="20" font-weight="400" fill="#203c36">#2725 postergado: DB, credenciales, storage y migradores por vertical quedan para esa etapa.</text>
+<text x="48" y="1610" font-size="18" font-weight="400" fill="#203c36">Fuentes: backends.json + Compose deploy / produccion / celery · El diagrama no expresa límites de CPU/RAM.</text>
+</g></svg>

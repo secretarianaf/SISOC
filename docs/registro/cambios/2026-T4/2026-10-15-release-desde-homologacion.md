@@ -36,6 +36,11 @@ puede integrarse en `main` (en el último mes fueron 29 de 33). Todo cambio
 llega a producción por `development -> homologacion -> main`. Rollback:
 desactivar la ruleset `Promocion automatica a main` y revertir este PR.
 
+Efecto secundario (agregado 2026-10-19): las notas de
+`docs/registro/releases/pending/` y el `CHANGELOG.md` sólo se generan para PRs
+con base `main`, así que los PRs de feature dejan de aportar su nota. Ver
+`docs/registro/releases/README.md`; queda pendiente de decisión.
+
 ## Transición
 
 `schedule` y `workflow_run` leen el YAML de `development` y el script de

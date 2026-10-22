@@ -1,0 +1,35 @@
+{% for resumen in resumenes %}
+    <details class="border rounded p-3 mb-3 js-resumen-rendicion"
+             data-rendicion="{{ resumen.rendicion.pk }}"
+             data-actual="{% if resumen.rendicion.pk == rendicion.pk %}true{% else %}false{% endif %}">
+        <summary>
+            Rendición {{ resumen.rendicion.numero_rendicion|default:resumen.rendicion.pk }} · {{ resumen.rendicion.convenio|default:"Sin convenio" }} · {{ resumen.rendicion.periodo_inicio|date:"d/m/Y" }} al {{ resumen.rendicion.periodo_fin|date:"d/m/Y" }}
+        </summary>
+        <div class="table-responsive mt-3">
+            <table class="table table-comedor-moderno">
+                <thead>
+                    <tr>
+                        <th>Categoría</th>
+                        <th>Documento</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for categoria in resumen.categorias %}
+                        {% for archivo in categoria.archivos %}
+                            <tr>
+                                <td>{{ categoria.label }}</td>
+                                <td>
+                                    <a href="{% url 'rendicioncuentasmensual_documento_ver' archivo.pk %}"
+                                       target="_blank"
+                                       rel="noopener">{{ archivo.nombre }}</a>
+                                </td>
+                                <td>{{ archivo.get_estado_display }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </details>
+{% endfor %}

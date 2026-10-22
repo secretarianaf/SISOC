@@ -86,7 +86,7 @@ pendiente de validación en destino. Aplica tanto a `comedores.Nomina` como a
 - `centros_para_derivar` se construye con `aplicar_scope_centros_cdi`.
 
 ## UI
-- Templates: `src/backends/sisoc_core/comedores/templates/comedor/nomina_detail.html` y
+- Templates: `src/backends/comedores/comedores/templates/comedor/nomina_detail.html` y
   `src/backends/cdi/centrodeinfancia/templates/centrodeinfancia/nomina_detail.html`.
 - JS común: `src/backends/kernel/static/custom/js/nomina_derivar.js` (ambos templates incluyen el
   mismo script). El payload POST usa la clave `centro_destino_id`.
@@ -101,7 +101,7 @@ pendiente de validación en destino. Aplica tanto a `comedores.Nomina` como a
   cerrar el flujo a usos no-HTTP (comandos, tareas async).
 
 ## Tests
-- `src/backends/sisoc_core/comedores/test_derivar_service.py`: casos servicio (camino feliz directo,
+- `src/backends/comedores/comedores/test_derivar_service.py`: casos servicio (camino feliz directo,
   con admisión, fallas por estado/duplicado/admisión inexistente) + vistas
   AJAX (405 sin POST, 302/403 sin auth, 400 entrada inválida, 200 OK).
 - `src/backends/cdi/centrodeinfancia/tests/test_derivar_service.py`: análogos para CDI,

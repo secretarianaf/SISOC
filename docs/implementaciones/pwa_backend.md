@@ -82,7 +82,7 @@ propia transacción y aplica el mismo contrato de totalidad que el formulario:
 una organización seleccionada incluye sus comedores actuales y futuros, sin
 exclusiones manuales.
 
-Servicios de dominio: `src/backends/sisoc_core/pwa/services/accesos.py`
+Servicios de dominio: `src/backends/comedores/pwa/services/accesos.py`
 
 - `is_pwa_user(user)`
 - `get_accessible_comedor_ids(user)`
@@ -486,11 +486,11 @@ Modelo: `pwa.AuditoriaOperacionPWA`
 
 ## Tests automatizados relevantes
 
-- `src/backends/sisoc_core/tests/test_users_api_login.py`
-- `src/backends/sisoc_core/tests/test_users_services_pwa.py`
+- `src/backends/comedores/tests/test_users_api_login.py`
+- `src/backends/comedores/tests/test_users_services_pwa.py`
 - `src/backends/sisoc_core/tests/test_users_pwa_forms.py`
-- `src/backends/sisoc_core/tests/test_pwa_accesos_organizacion.py`
-- `src/backends/sisoc_core/tests/test_pwa_comedores_api.py`
+- `src/backends/comedores/tests/test_pwa_accesos_organizacion.py`
+- `src/backends/comedores/tests/test_pwa_comedores_api.py`
 
 Cobertura actual incluye auth, contexto, scope por comedor, gestión de operadores, nómina, rendiciones, documentos y prestación.
 

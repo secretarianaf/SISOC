@@ -11,11 +11,9 @@ from core.models import (
     Turno,
     Programa,
     Nacionalidad,
-    MontoPrestacionPrograma,
 )
 from core.resources import (
     LocalidadResource,
-    MontoPrestacionProgramaResource,
     MunicipioResource,
     ProgramaResource,
 )
@@ -90,20 +88,3 @@ class ProgramaAdmin(BaseExportAdmin):
 class NacionalidadAdmin(BaseImportExportAdmin):
     list_display = ("id", "nacionalidad")
     search_fields = ("nacionalidad",)
-
-
-# Montos de prestación: impacto económico directo, solo exportación.
-@admin.register(MontoPrestacionPrograma)
-class MontoPrestacionProgramaAdmin(BaseExportAdmin):
-    resource_classes = [MontoPrestacionProgramaResource]
-    list_display = (
-        "programa",
-        "desayuno_valor",
-        "almuerzo_valor",
-        "merienda_valor",
-        "cena_valor",
-        "fecha_creacion",
-    )
-    list_filter = ("programa",)
-    raw_id_fields = ("usuario_creador",)
-    readonly_fields = ("fecha_creacion", "fecha_modificacion")

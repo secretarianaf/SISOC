@@ -1,0 +1,1 @@
+"""Runtime independiente de OCR."""

@@ -35,6 +35,7 @@ from inspecciones.views_importacion import (
 )
 from inspecciones.views_tablero import (
     TableroDatosView,
+    TableroDescargarActasView,
     TableroExportarView,
     TableroView,
 )
@@ -148,6 +149,11 @@ urlpatterns = [
         "tablero/exportar.csv",
         TableroExportarView.as_view(),
         name="inspecciones_tablero_exportar",
+    ),
+    path(
+        "tablero/descargar-actas/",
+        TableroDescargarActasView.as_view(),
+        name="inspecciones_tablero_descargar_actas",
     ),
     path(
         "actas/<str:numero>/anular/",

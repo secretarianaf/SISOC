@@ -14,6 +14,7 @@ from ciudadanos.views import (
     GrupoFamiliarDeleteView,
     descartar_revision,
     marcar_revisado,
+    contribucion_detalle_ciudadano,
 )
 from ciudadanos.api_views import buscar_ciudadanos
 from ciudadanos.views_export import CiudadanosExportView
@@ -27,6 +28,12 @@ from ciudadanos.views_importacion_masiva import (
 
 
 urlpatterns = [
+    # Composición local: mismo contrato que urlpatterns_de_backend, sin nombre
+    # público adicional. Cada dueño registra únicamente sus fragmentos.
+    path(
+        "ciudadanos/<int:pk>/contribucion/<str:nombre>/",
+        contribucion_detalle_ciudadano,
+    ),
     path(
         "ciudadanos/listar",
         login_required(CiudadanosListView.as_view()),

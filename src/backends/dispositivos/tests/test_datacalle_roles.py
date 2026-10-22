@@ -680,7 +680,7 @@ def test_el_administrador_del_formulario_queda_sin_alcance(provincia):
 @pytest.mark.django_db
 def test_pasar_de_relevador_a_coordinador_limpia_la_tabla_del_relevador(provincia):
     """``_sync_relevador_calle_provincias`` escribía filas para los tres roles."""
-    from usuarios.forms import CustomUserChangeForm
+    from pwa.user_forms import CustomUserChangeForm
 
     relevador = _usuario("muta_rol", "entrevistador", provincia)
     assert relevador.profile.relevador_calle_provincias.exists() is True
@@ -728,7 +728,7 @@ def test_un_usuario_provincial_no_puede_cambiarse_la_provincia(provincia):
     """
     import json
 
-    from usuarios.forms import CustomUserChangeForm
+    from pwa.user_forms import CustomUserChangeForm
 
     salta = Provincia.objects.create(nombre="Salta")
     coord = _usuario("coord_se_muda", "coordinador", provincia, staff=True)
@@ -914,7 +914,7 @@ def test_el_rol_coordinador_no_le_borra_las_otras_provincias(provincia):
     Córdoba perdía Salta y Jujuy en todos esos módulos, sin error y sin aviso.
     La decisión es rechazar, no pisar.
     """
-    from usuarios.forms import CustomUserChangeForm
+    from pwa.user_forms import CustomUserChangeForm
 
     salta = Provincia.objects.create(nombre="Salta")
     jujuy = Provincia.objects.create(nombre="Jujuy")
@@ -949,7 +949,7 @@ def test_el_rol_administrador_no_deja_irrestricto_al_que_tenia_alcance(provincia
     """El administrador nacional no tiene alcance: quitárselo a un usuario que
     sí lo tenía lo vuelve irrestricto en **todo** el backoffice, no sólo en
     DataCalle."""
-    from usuarios.forms import CustomUserChangeForm
+    from pwa.user_forms import CustomUserChangeForm
 
     usuario = _con_alcance("una_provincia", [provincia])
 
@@ -977,7 +977,7 @@ def test_un_alcance_municipal_no_se_ensancha_al_hacerlo_coordinador(provincia):
     """Derivar a provincia completa a quien hoy sólo ve un municipio le
     **ensancha** el acceso en los otros módulos: también es conflicto."""
     from core.models import Municipio
-    from usuarios.forms import CustomUserChangeForm
+    from pwa.user_forms import CustomUserChangeForm
 
     municipio = Municipio.objects.create(nombre="Capital", provincia=provincia)
     usuario = _con_alcance("solo_municipio", [provincia], municipio=municipio)
@@ -1024,7 +1024,7 @@ def test_bajar_de_coordinador_a_relevador_saca_el_grupo_de_coordinador(provincia
     cambio de rol y el degradado seguía con permisos de coordinador."""
     from django.contrib.auth.models import Group
 
-    from usuarios.forms import CustomUserChangeForm
+    from pwa.user_forms import CustomUserChangeForm
 
     grupo, _ = Group.objects.get_or_create(name="Coordinador DataCalle")
     coord = _usuario("baja_a_relevador", "coordinador", provincia, staff=True)
@@ -1054,7 +1054,7 @@ def test_destildar_datacalle_deja_el_perfil_sin_grupo_ni_rol(provincia):
     en el backoffice."""
     from django.contrib.auth.models import Group
 
-    from usuarios.forms import CustomUserChangeForm
+    from pwa.user_forms import CustomUserChangeForm
 
     grupo, _ = Group.objects.get_or_create(name="Coordinador DataCalle")
     coord = _usuario("pierde_datacalle", "coordinador", provincia, staff=True)
@@ -1063,7 +1063,11 @@ def test_destildar_datacalle_deja_el_perfil_sin_grupo_ni_rol(provincia):
     form = CustomUserChangeForm(
         instance=coord,
         actor=_superusuario("super_destilda"),
-        data=_datos_edicion(coord),
+        data=_datos_edicion(
+            coord,
+            _identity_present=["es_relevador_calle"],
+            datacalle_rol="",
+        ),
     )
 
     assert form.is_valid(), form.errors
@@ -1074,3 +1078,33 @@ def test_destildar_datacalle_deja_el_perfil_sin_grupo_ni_rol(provincia):
     assert coord.profile.datacalle_rol == ""
     assert coord.profile.es_relevador_calle is False
     assert coord.profile.relevador_calle_provincias.exists() is False
+
+
+@pytest.mark.django_db
+def test_omitir_datacalle_preserva_el_perfil_y_el_grupo(provincia):
+    """Una edición parcial independiente no expresa una baja de DataCalle."""
+    from django.contrib.auth.models import Group
+
+    from usuarios.forms import CustomUserChangeForm
+
+    grupo, _ = Group.objects.get_or_create(name="Coordinador DataCalle")
+    coord = _usuario("conserva_datacalle", "coordinador", provincia, staff=True)
+    coord.groups.add(grupo)
+
+    form = CustomUserChangeForm(
+        instance=coord,
+        actor=_superusuario("super_omite_datacalle"),
+        data=_datos_edicion(coord, first_name="Nombre corregido"),
+    )
+
+    assert form.is_valid(), form.errors
+    form.save()
+    coord.refresh_from_db()
+    assert coord.first_name == "Nombre corregido"
+    assert coord.groups.filter(name="Coordinador DataCalle").exists()
+    assert coord.profile.datacalle_rol == "coordinador"
+    assert coord.profile.es_relevador_calle is True
+    assert coord.profile.es_usuario_provincial is True
+    assert list(
+        coord.profile.territorial_scopes.values_list("provincia_id", flat=True)
+    ) == [provincia.id]

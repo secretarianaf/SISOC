@@ -197,6 +197,7 @@ class EscuelasFiltroForm(_FiltroForm):
 class AsignacionesFiltroForm(_FiltroForm):
     fecha = forms.DateField(required=False)
     inspector = _id_opcional("Inspector")
+    escuela = _id_opcional("Escuela")
     provincia = _provincia_opcional()
     estado = forms.ChoiceField(
         choices=[("", "Todos los estados"), *ESTADOS], required=False
@@ -208,6 +209,9 @@ class AsignacionesFiltroForm(_FiltroForm):
 
 class ActasFiltroForm(_FiltroForm):
     fecha = forms.DateField(required=False)
+    numero = forms.CharField(
+        label="Buscar por número de acta", required=False, max_length=50
+    )
     inspector = _id_opcional("Inspector")
     provincia = _provincia_opcional()
     estado = forms.ChoiceField(

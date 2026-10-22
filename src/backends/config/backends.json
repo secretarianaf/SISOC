@@ -7,7 +7,8 @@
     "url_prefixes": [
       "dispositivos/",
       "datacalle/",
-      "api/datacalle/"
+      "api/datacalle/",
+      "admin/dispositivos/"
     ],
     "urlconf": "dispositivos_runtime.urls",
     "origin_env": "BACKEND_DISPOSITIVOS_ORIGIN",
@@ -19,6 +20,13 @@
     ],
     "extra_services": [
       "user_import_worker"
+    ],
+    "admin_links": [
+      {
+        "label": "Dispositivos",
+        "url": "/admin/dispositivos/",
+        "app_label": "dispositivos"
+      }
     ]
   },
   "vpsl": {
@@ -27,7 +35,8 @@
     ],
     "url_prefixes": [
       "ver-para-ser-libre/",
-      "api/vpsl/"
+      "api/vpsl/",
+      "admin/ver_para_ser_libre/"
     ],
     "urlconf": "vpsl_runtime.urls",
     "origin_env": "BACKEND_VPSL_ORIGIN",
@@ -36,6 +45,13 @@
     "migrate_service": "migrator",
     "extra_services": [
       "user_import_worker"
+    ],
+    "admin_links": [
+      {
+        "label": "Ver Para Ser Libres",
+        "url": "/admin/ver_para_ser_libre/",
+        "app_label": "ver_para_ser_libre"
+      }
     ]
   },
   "pas": {
@@ -44,7 +60,8 @@
     ],
     "url_prefixes": [
       "pas/",
-      "media/pas/"
+      "media/pas/",
+      "admin/pas/"
     ],
     "urlconf": "pas_runtime.urls",
     "origin_env": "BACKEND_PAS_ORIGIN",
@@ -55,6 +72,13 @@
       "celery_pas_worker",
       "celery_beat",
       "user_import_worker"
+    ],
+    "admin_links": [
+      {
+        "label": "PAS",
+        "url": "/admin/pas/",
+        "app_label": "pas"
+      }
     ]
   },
   "vat": {
@@ -66,7 +90,8 @@
       "api/vat/",
       "api/schema/VAT/",
       "api/docs/VAT/",
-      "api/redoc/VAT/"
+      "api/redoc/VAT/",
+      "admin/VAT/"
     ],
     "urlconf": "vat_runtime.urls",
     "origin_env": "BACKEND_VAT_ORIGIN",
@@ -81,6 +106,13 @@
     ],
     "extra_services": [
       "user_import_worker"
+    ],
+    "admin_links": [
+      {
+        "label": "VAT",
+        "url": "/admin/VAT/",
+        "app_label": "VAT"
+      }
     ]
   },
   "celiaquia": {
@@ -90,7 +122,8 @@
     "url_prefixes": [
       "celiaquia/",
       "reporter-provincias/",
-      "api/celiaquia/"
+      "api/celiaquia/",
+      "admin/celiaquia/"
     ],
     "urlconf": "celiaquia_runtime.urls",
     "origin_env": "BACKEND_CELIAQUIA_ORIGIN",
@@ -102,6 +135,13 @@
     ],
     "extra_services": [
       "user_import_worker"
+    ],
+    "admin_links": [
+      {
+        "label": "Celiaquía",
+        "url": "/admin/celiaquia/",
+        "app_label": "celiaquia"
+      }
     ]
   },
   "cdi": {
@@ -112,7 +152,8 @@
     "url_prefixes": [
       "centrodeinfancia/",
       "simepi/",
-      "api/ticketera/"
+      "api/ticketera/",
+      "admin/centrodeinfancia/"
     ],
     "urlconf": "cdi_runtime.urls",
     "origin_env": "BACKEND_CDI_ORIGIN",
@@ -121,6 +162,13 @@
     "migrate_service": "migrator",
     "extra_services": [
       "user_import_worker"
+    ],
+    "admin_links": [
+      {
+        "label": "Centros de Desarrollo Infantil",
+        "url": "/admin/centrodeinfancia/",
+        "app_label": "centrodeinfancia"
+      }
     ]
   },
   "cdf": {
@@ -129,7 +177,8 @@
     ],
     "url_prefixes": [
       "centrodefamilia/",
-      "api/centrodefamilia/"
+      "api/centrodefamilia/",
+      "admin/centrodefamilia/"
     ],
     "urlconf": "cdf_runtime.urls",
     "origin_env": "BACKEND_CDF_ORIGIN",
@@ -147,6 +196,13 @@
     ],
     "extra_services": [
       "user_import_worker"
+    ],
+    "admin_links": [
+      {
+        "label": "Centros de Familia",
+        "url": "/admin/centrodefamilia/",
+        "app_label": "centrodefamilia"
+      }
     ]
   },
   "inspecciones": {
@@ -155,7 +211,8 @@
     ],
     "url_prefixes": [
       "inspecciones/",
-      "api/inspecciones/"
+      "api/inspecciones/",
+      "admin/inspecciones/"
     ],
     "urlconf": "inspecciones_runtime.urls",
     "origin_env": "BACKEND_INSPECCIONES_ORIGIN",
@@ -164,6 +221,13 @@
     "migrate_service": "migrator",
     "extra_services": [
       "user_import_worker"
+    ],
+    "admin_links": [
+      {
+        "label": "Inspecciones escolares",
+        "url": "/admin/inspecciones/",
+        "app_label": "inspecciones"
+      }
     ]
   },
   "comedores": {

@@ -6,14 +6,14 @@ Para desarrollar y revisar cambios, usar `docs/desarrollo/verticales_independien
 
 | Backend | Apps | Prefijos |
 | --- | --- | --- |
-| `dispositivos` | dispositivos, datacalle | `/dispositivos/`, `/datacalle/`, `/api/datacalle/` |
-| `vpsl` | ver_para_ser_libre | `/ver-para-ser-libre/`, `/api/vpsl/` (el front React sigue en `/v2/vpsl/`) |
-| `pas` | pas (más Celery: `celery_pas_worker`, `celery_beat`) | `/pas/`, `/media/pas/` |
-| `vat` | VAT | `/vat/`, `/api/vat/`, `/api/schema/VAT/`, `/api/docs/VAT/`, `/api/redoc/VAT/` |
-| `celiaquia` | celiaquia | `/celiaquia/`, `/reporter-provincias/`, `/api/celiaquia/` |
-| `cdi` | centrodeinfancia, ticketera | `/centrodeinfancia/`, `/simepi/`, `/api/ticketera/` |
-| `cdf` | centrodefamilia | `/centrodefamilia/`, `/api/centrodefamilia/` |
-| `inspecciones` | inspecciones (inspecciones escolares, PWA Sisoc Inspecciones) | `/inspecciones/`, `/api/inspecciones/` |
+| `dispositivos` | dispositivos, datacalle | `/dispositivos/`, `/datacalle/`, `/api/datacalle/`, `/admin/dispositivos/` |
+| `vpsl` | ver_para_ser_libre | `/ver-para-ser-libre/`, `/api/vpsl/`, `/admin/ver_para_ser_libre/` (el front React sigue en `/v2/vpsl/`) |
+| `pas` | pas (más Celery: `celery_pas_worker`, `celery_beat`) | `/pas/`, `/media/pas/`, `/admin/pas/` |
+| `vat` | VAT | `/vat/`, `/api/vat/`, `/api/schema/VAT/`, `/api/docs/VAT/`, `/api/redoc/VAT/`, `/admin/VAT/` |
+| `celiaquia` | celiaquia | `/celiaquia/`, `/reporter-provincias/`, `/api/celiaquia/`, `/admin/celiaquia/` |
+| `cdi` | centrodeinfancia, ticketera | `/centrodeinfancia/`, `/simepi/`, `/api/ticketera/`, `/admin/centrodeinfancia/` |
+| `cdf` | centrodefamilia | `/centrodefamilia/`, `/api/centrodefamilia/`, `/admin/centrodefamilia/` |
+| `inspecciones` | inspecciones (inspecciones escolares, PWA Sisoc Inspecciones) | `/inspecciones/`, `/api/inspecciones/`, `/admin/inspecciones/` |
 | `comedores` (C3 validado localmente) | cluster de catorce apps, Espacios comunitarios (`pwa`), mailing | rutas históricas de comedores/admisiones/organizaciones/rendiciones, Montos, AJAX y APIs; prefijos exactos en el registro |
 | `ocr` (C4 validado localmente) | OCR, lotes/documentos y worker existente | `/ocr/`, `/admin/ocr/` |
 

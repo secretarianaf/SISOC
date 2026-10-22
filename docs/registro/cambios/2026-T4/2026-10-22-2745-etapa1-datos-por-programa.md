@@ -25,6 +25,9 @@ la decisión `docs/registro/decisiones/2026-10-20-2745-legajo-organizacion-por-p
   reciben comedor las usan sin cambiar su resultado.
 - Admin de los seis modelos y auditoría (Historial de la organización) en
   `src/backends/comedores/gestion_organizaciones/audit_signals.py`.
+- `src/backends/config/url_registry.json` regenerado con
+  `generar_registro_urls`: solo agrega las URLs del admin de los modelos
+  nuevos, bajo el prefijo existente `admin/gestion_organizaciones/`.
 
 ## Comportamiento
 

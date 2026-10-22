@@ -156,6 +156,45 @@ def test_crud_dispositivo_con_permisos(client, user_con_permisos, provincia_muni
 
 
 @pytest.mark.django_db
+def test_eliminar_dispositivo_con_relevamientos_avisa_en_vez_de_500(
+    client, user_con_permisos, provincia_municipio
+):
+    # Issue #2750: el FK PROTECT de datacalle.Relevamiento daba ProtectedError (500).
+    import datetime  # pylint: disable=import-outside-toplevel
+
+    from datacalle.models import Relevamiento  # pylint: disable=import-outside-toplevel
+
+    provincia, municipio = provincia_municipio
+    dispositivo = _crear_dispositivo(provincia, municipio)
+    Relevamiento.objects.create(
+        denominacion="Operativo con dispositivo",
+        provincia=provincia,
+        fase=Relevamiento.Fase.ESPACIO_PUBLICO,
+        area_operativa="Plaza",
+        fecha_inicio=datetime.date(2026, 10, 13),
+        fecha_fin=datetime.date(2026, 10, 17),
+        dispositivo=dispositivo,
+    )
+    client.force_login(user_con_permisos)
+
+    response = client.post(
+        reverse("dispositivos_eliminar", kwargs={"pk": dispositivo.pk}), follow=True
+    )
+
+    assert response.redirect_chain[0] == (
+        reverse("dispositivos_detalle", kwargs={"pk": dispositivo.pk}),
+        302,
+    )
+    assert Dispositivo.objects.filter(pk=dispositivo.pk).exists()
+    mensajes = [str(m) for m in response.context["messages"]]
+    assert any(
+        "No se puede eliminar el dispositivo" in m
+        and str(Relevamiento._meta.verbose_name_plural) in m
+        for m in mensajes
+    )
+
+
+@pytest.mark.django_db
 def test_sin_permiso_view_dispositivo_devuelve_403(client, provincia_municipio):
     provincia, municipio = provincia_municipio
     user = User.objects.create_user(username="sin-permiso", password="test1234")

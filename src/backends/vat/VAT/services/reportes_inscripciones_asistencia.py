@@ -22,7 +22,14 @@ from openpyxl import Workbook
 from openpyxl.styles import Font
 
 from ciudadanos.models import Ciudadano
-from VAT.models import Centro, Comision, ComisionCurso, Curso, Inscripcion
+from VAT.models import (
+    Centro,
+    Comision,
+    ComisionCurso,
+    Curso,
+    Inscripcion,
+    SesionComision,
+)
 from VAT.services.access_scope import filter_centros_queryset_for_user
 from VAT.services.tipo_alumno_service import (
     tiene_voucher_activo_subquery,
@@ -196,27 +203,67 @@ def _row_annotations():
             filter=Q(asistencias__presente=False),
             distinct=True,
         ),
-        "sesiones_programadas": Count(
-            "comision_curso__sesiones__id",
-            filter=Q(comision_curso__sesiones__estado="programada"),
-            distinct=True,
-        )
-        + Count(
-            "comision__sesiones__id",
-            filter=Q(comision__sesiones__estado="programada"),
-            distinct=True,
-        ),
-        "sesiones_realizadas": Count(
-            "comision_curso__sesiones__id",
-            filter=Q(comision_curso__sesiones__estado="realizada"),
-            distinct=True,
-        )
-        + Count(
-            "comision__sesiones__id",
-            filter=Q(comision__sesiones__estado="realizada"),
-            distinct=True,
-        ),
     }
+
+
+def _sesiones_por_comision(campo: str, ids) -> dict[int, dict[str, int]]:
+    """Sesiones programadas y realizadas de cada comisión (``campo`` es el FK)."""
+    if not ids:
+        return {}
+    return {
+        fila[campo]: fila
+        for fila in SesionComision.objects.filter(**{f"{campo}__in": ids})
+        .values(campo)
+        .annotate(
+            programadas=Count("id", filter=Q(estado="programada")),
+            realizadas=Count("id", filter=Q(estado="realizada")),
+        )
+    }
+
+
+def _sumar_sesiones(queryset, grouping_fields, rows, resumen) -> None:
+    """Agrega ``sesiones_programadas`` y ``sesiones_realizadas`` a filas y resumen.
+
+    Contarlas en la misma consulta que las asistencias multiplicaba las filas
+    (inscripciones x asistencias x sesiones) y el reporte daba 504 (#2750). Las
+    sesiones son de la comisión, así que se cuentan por comisión y se suman las
+    comisiones distintas de cada grupo.
+    """
+    comisiones_por_grupo: dict[tuple, dict[str, set]] = {}
+    for par in queryset.values(
+        *grouping_fields, "comision_curso_id", "comision_id"
+    ).distinct():
+        grupo = comisiones_por_grupo.setdefault(
+            tuple(par[campo] for campo in grouping_fields),
+            {"comision_curso_id": set(), "comision_id": set()},
+        )
+        for campo in ("comision_curso_id", "comision_id"):
+            if par[campo] is not None:
+                grupo[campo].add(par[campo])
+
+    todas = {"comision_curso_id": set(), "comision_id": set()}
+    for grupo in comisiones_por_grupo.values():
+        for campo, ids in grupo.items():
+            todas[campo] |= ids
+    sesiones = {
+        campo: _sesiones_por_comision(campo, ids) for campo, ids in todas.items()
+    }
+
+    def totales(comisiones):
+        resultado = {"sesiones_programadas": 0, "sesiones_realizadas": 0}
+        for campo, ids in comisiones.items():
+            for comision_id in ids:
+                fila = sesiones[campo].get(comision_id)
+                if fila:
+                    resultado["sesiones_programadas"] += fila["programadas"]
+                    resultado["sesiones_realizadas"] += fila["realizadas"]
+        return resultado
+
+    vacio = {"comision_curso_id": set(), "comision_id": set()}
+    for row in rows:
+        clave = tuple(row[campo] for campo in grouping_fields)
+        row.update(totales(comisiones_por_grupo.get(clave, vacio)))
+    resumen.update(totales(todas))
 
 
 def _group_fields(group_by: str):
@@ -277,6 +324,7 @@ def build_reporte_inscripciones_asistencia(user, filtros: ReporteFiltros):
     )
 
     resumen = queryset.aggregate(**_row_annotations())
+    _sumar_sesiones(queryset, grouping_fields, rows, resumen)
     resumen_presentes = resumen.get("presentes") or 0
     resumen_ausentes = resumen.get("ausentes") or 0
     resumen_total_asistencia = resumen_presentes + resumen_ausentes

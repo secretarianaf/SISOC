@@ -29,7 +29,10 @@ class GenerarUsuarioCDIForm(CamposRenaperFormMixin, forms.Form):
     email = forms.EmailField(
         label="Email",
         widget=forms.EmailInput(attrs={"class": "form-control"}),
-        help_text="Se usará para enviarle las credenciales. El usuario será el DNI.",
+        help_text=(
+            "Se usará para enviarle las credenciales. Si otra cuenta ya usa "
+            "este email, el usuario será el DNI."
+        ),
     )
     dni = forms.CharField(
         max_length=16,

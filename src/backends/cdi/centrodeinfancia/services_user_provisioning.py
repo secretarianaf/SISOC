@@ -164,8 +164,9 @@ def crear_referente_cdi_automaticamente(
             # Quien puede editar la ficha del CDI define a su referente; el
             # usuario se crea solo para este CDI.
             delegacion_autorizada=True,
-            # El email suele ser institucional: el usuario se arma con el DNI.
-            usuario_desde_dni=True,
+            # El email suele ser institucional: si ya lo usa otra cuenta, el
+            # usuario se arma con el DNI.
+            usuario_dni_si_email_en_uso=True,
         )
     except ValidationError as exc:
         logger.warning(

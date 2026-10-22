@@ -153,6 +153,8 @@ def test_guardar_cdi_crea_referente_automaticamente(client):
     assert response.status_code == 302
     acceso = AccesoCDI.objects.get(centro=centro)
     assert acceso.user.email == "lia.paz@example.com"
+    # Email que no usa otra cuenta: el usuario se arma desde el email.
+    assert acceso.user.username == "lia.paz"
     assert acceso.user.groups.filter(name=UserGroups.CDI_REFERENTE_CENTRO).exists()
     assert acceso.creado_por == actor
 
@@ -190,6 +192,8 @@ def test_guardar_cdi_con_email_de_otra_persona_crea_cuenta_propia(client):
     assert (acceso.user.first_name, acceso.user.last_name) == ("Lia", "Paz")
     assert acceso.user.email == "institucional@example.com"
     assert acceso.user.profile.dni
+    # Email ya usado por otra cuenta: el usuario es el DNI.
+    assert acceso.user.username == acceso.user.profile.dni
     assert not ajena.groups.filter(name=UserGroups.CDI_REFERENTE_CENTRO).exists()
 
 

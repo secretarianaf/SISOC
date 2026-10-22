@@ -53,12 +53,14 @@ Rama `Fix_PedidoEzequiel`. Observaciones de CDI sobre los tickets 2657 y 2658.
      CDI 212.
    - El email solo se sincroniza sobre la cuenta del responsable cuando es la
      persona de la ficha.
-   - El usuario de los referentes CDI (alta automática y "Generar usuario") es
-     su DNI, no el email: con un email compartido, los usuarios salían con el
-     nombre de otra persona (`cpi.centro-2`). `generar_usuario_delegado` suma
-     la opción `usuario_desde_dni`, apagada por defecto: CDF, VAT y
-     trabajadores CDI siguen igual. Una cuenta cuyo usuario es un DNI (como
-     las de PNUD) se reconoce como de esa persona.
+   - Usuario de los referentes CDI (alta automática y "Generar usuario"): si
+     otra cuenta ya usa el email, el usuario es el DNI, como en PNUD; si no,
+     se arma desde el email, como hasta ahora. Con un email compartido, el
+     usuario salía con el nombre de otra persona (`cpi.centro-2`). Decisión de
+     Producto: el DNI solo cuando el email se repite. `generar_usuario_delegado`
+     suma la opción `usuario_dni_si_email_en_uso`, apagada por defecto: CDF,
+     VAT y trabajadores CDI siguen igual. Una cuenta cuyo usuario es un DNI
+     (como las de PNUD) se reconoce como de esa persona.
 
 ## Trade-offs
 
@@ -67,6 +69,9 @@ Rama `Fix_PedidoEzequiel`. Observaciones de CDI sobre los tickets 2657 y 2658.
   nueva. Se prefirió eso a asociar la cuenta de otra persona.
 - Cuentas con el mismo DNI en varios usuarios fuera del CDI: no se elige
   ninguna y se crea una nueva.
+- Con el DNI solo ante un email repetido, la primera persona que usa un email
+  institucional queda con ese email como usuario (`cpi.centro`) aunque después
+  deje de ser referente. Cada persona igual tiene su propia cuenta y sus datos.
 
 ## Tests
 

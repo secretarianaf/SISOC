@@ -12,12 +12,13 @@ from django.utils import timezone
 class DailyFileHandler(logging.FileHandler):
     """Administrador de archivos que crea un log diario en un subdirectorio.
 
-    Cada instancia genera un archivo de log dentro de una carpeta con la fecha
-    actual, facilitando la organización y revisión de registros.
+    Escribe en ``<carpeta>/<AAAA-MM-DD>/<archivo>`` según la fecha local de cada
+    registro. Antes la fecha se fijaba al crear el handler y un proceso que
+    seguía vivo al otro día escribía en la carpeta de su arranque (#2750).
     """
 
     def __init__(self, filename, mode="a", encoding=None, delay=False):
-        """Inicializar el manejador creando una carpeta por día.
+        """Inicializar el manejador creando la carpeta del día.
 
         Args:
             filename: Ruta base del archivo de log.
@@ -26,14 +27,38 @@ class DailyFileHandler(logging.FileHandler):
             delay: Retrasar la creación del archivo hasta el primer registro.
         """
 
-        current_date = timezone.localtime().strftime("%Y-%m-%d")
-        daily_folder = Path(filename).parent / current_date
-        daily_folder.mkdir(parents=True, exist_ok=True)
-        self._ensure_group_writable(daily_folder)
-        daily_filename = daily_folder / Path(filename).name
+        self._base_filename = Path(filename)
+        self._current_date = self._today()
+        daily_filename = self._prepare_daily_filename(self._current_date)
         super().__init__(daily_filename, mode, encoding, delay)
         if daily_filename.exists():
             self._ensure_group_writable(daily_filename)
+
+    @staticmethod
+    def _today() -> str:
+        return timezone.localtime().strftime("%Y-%m-%d")
+
+    def _prepare_daily_filename(self, current_date: str) -> Path:
+        daily_folder = self._base_filename.parent / current_date
+        daily_folder.mkdir(parents=True, exist_ok=True)
+        self._ensure_group_writable(daily_folder)
+        return daily_folder / self._base_filename.name
+
+    def emit(self, record):
+        # ``Handler.handle`` llama a ``emit`` con el lock tomado.
+        today = self._today()
+        if today != self._current_date:
+            daily_filename = self._prepare_daily_filename(today)
+            if self.stream:
+                self.stream.close()
+                self.stream = None
+            self.baseFilename = str(daily_filename.absolute())
+            self._current_date = today
+            super().emit(record)
+            if daily_filename.exists():
+                self._ensure_group_writable(daily_filename)
+            return
+        super().emit(record)
 
     @staticmethod
     def _ensure_group_writable(path: Path) -> None:

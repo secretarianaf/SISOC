@@ -734,7 +734,7 @@ def test_grupofamiliar_delete_get_success_url_uses_safe_redirect(mocker):
     assert view.get_success_url() == "/destino"
 
 
-def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
+def test_ciudadanos_detail_cdf_context(mocker):
     ciudadano = SimpleNamespace(pk=9)
 
     # CDF es una contribución renderizada del vertical (centrodefamilia.ciudadano_detail).
@@ -763,54 +763,6 @@ def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
     )
     cdf_ok = cdf_detail.obtener_contexto(ciudadano, Mock())
     assert cdf_ok["costo_total_cdf"] == 1200
-
-    orig_import = __import__
-
-    # Comedor import error
-    def fake_import2(name, *args, **kwargs):
-        if name == "comedores.models":
-            raise ImportError("no comedor")
-        return orig_import(name, *args, **kwargs)
-
-    mocker.patch("builtins.__import__", side_effect=fake_import2)
-    comedor_ctx = module.CiudadanosDetailView().get_comedor_context(ciudadano)
-    assert comedor_ctx == {"nominas_comedor": [], "colaboraciones_comedor": []}
-
-    mocker.patch("builtins.__import__", side_effect=orig_import)
-    nom_qs = _ExpedientesList([SimpleNamespace(id=7)])
-    colab_qs = _ExpedientesList([SimpleNamespace(id=9)])
-
-    def _select_related_nomina(*args, **kwargs):
-        assert args == (
-            "admision__comedor__provincia",
-            "admision__comedor__municipio",
-            "admision__comedor__tipocomedor",
-        )
-        return SimpleNamespace(order_by=lambda *x, **y: nom_qs)
-
-    def _select_related_colaborador(*args, **kwargs):
-        assert args == (
-            "comedor__provincia",
-            "comedor__municipio",
-            "comedor__tipocomedor",
-        )
-        return SimpleNamespace(
-            prefetch_related=lambda *x, **y: SimpleNamespace(
-                order_by=lambda *a, **b: colab_qs
-            )
-        )
-
-    mocker.patch(
-        "comedores.models.Nomina.objects.filter",
-        return_value=SimpleNamespace(select_related=_select_related_nomina),
-    )
-    mocker.patch(
-        "comedores.models.ColaboradorEspacio.objects.filter",
-        return_value=SimpleNamespace(select_related=_select_related_colaborador),
-    )
-    comedor_ok = module.CiudadanosDetailView().get_comedor_context(ciudadano)
-    assert comedor_ok["nomina_actual"].id == 7
-    assert comedor_ok["colaboraciones_comedor"][0].id == 9
 
 
 def test_ciudadanos_detail_vat_context_resume_por_programa(mocker):

@@ -2,23 +2,25 @@ from django.urls import path
 from django.contrib.auth.views import LogoutView
 from core.decorators import permissions_all_required, permissions_any_required
 from users.services import BULK_CREDENTIALS_PERMISSION_CODE
+from usuarios.auth_views import (
+    ConfirmacionDatosView,
+    FirstLoginPasswordChangeView,
+    MiCuentaView,
+    PasswordResetConfirmCustomView,
+    UsuariosLoginView,
+)
 from usuarios.views import (
     BulkCredentialsJobDetailView,
     BulkCredentialsJobResumeView,
     BulkCredentialsTemplateView,
     BulkCredentialsUploadView,
-    FirstLoginPasswordChangeView,
     GroupCreateView,
     UserCreateView,
     UserDeleteView,
     GroupListView,
     GroupUpdateView,
-    ConfirmacionDatosView,
-    MiCuentaView,
-    PasswordResetConfirmCustomView,
     UserListView,
     UserUpdateView,
-    UsuariosLoginView,
     UserActiveView,
 )
 from usuarios.views_export import UserExportView, GroupExportView

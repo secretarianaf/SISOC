@@ -21,25 +21,16 @@ def test_ciudadano_detail_template_incluye_accion_eliminar():
     assert "ciudadanos_eliminar" in content
 
 
-def test_ciudadano_detail_template_usa_admision_comedor_con_guardas():
-    repo_root = Path(__file__).resolve().parents[4]
-    template_path = (
-        repo_root
-        / "src"
-        / "backends"
-        / "kernel"
-        / "ciudadanos"
-        / "templates"
-        / "ciudadanos"
-        / "ciudadano_detail.html"
+def test_ciudadano_detail_delega_comedores_y_espacios_en_fragmentos():
+    template = (
+        Path(__file__).resolve().parents[1]
+        / "ciudadanos/templates/ciudadanos/ciudadano_detail.html"
     )
-
-    content = template_path.read_text(encoding="utf-8")
-
-    assert "nomina_actual.admision.comedor" in content
-    assert "nomina.admision.comedor" in content
-    assert "nomina_actual.comedor.id" not in content
-    assert "nomina.comedor.id" not in content
+    content = template.read_text(encoding="utf-8")
+    for nombre in ("comedores", "comedores_colaboraciones", "pwa", "pwa_badges"):
+        assert "contribuciones_html." + nombre + "|safe" in content
+    assert "nomina_actual.admision.comedor" not in content
+    assert "situacion_calle_pwa" not in content
 
 
 def test_ciudadano_detail_template_incluye_pestana_vat():

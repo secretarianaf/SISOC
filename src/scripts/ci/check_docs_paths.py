@@ -6,9 +6,17 @@ Solo stdlib, sin Django ni DB. No interpreta imports Python, URLs públicas ni
 Los registros, planes, análisis y snapshots de infraestructura son históricos;
 no se reescriben. Una ruta relativa a una app debe aclararse con el comentario
 ``<!-- docs-paths: relativo a la app -->`` en esa misma línea.
+
+Con ``--existencia DOC...`` también falla si esos documentos vigentes citan una
+ruta que no existe: literales que empiezan con una entrada de la raíz del repo
+(``src/``, ``docs/``...) y enlaces Markdown relativos al documento. Omite
+comodines, placeholders (``<app>``) y rutas ignoradas por Git (salidas locales).
+CI lo aplica solo a los Markdown modificados por el PR.
 """
 
+import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -16,6 +24,8 @@ ROOT = Path(__file__).resolve().parents[3]
 HISTORICOS = {"registro", "plans", "analisis", "infra", "memoria"}
 LITERALES = re.compile(r"`([^`\n]+)`|\]\(([^)\n]+)\)")
 RELATIVO = "<!-- docs-paths: relativo a la app -->"
+HISTORICA = "<!-- docs-paths: referencia histórica -->"
+NO_RUTA = re.compile(r"[*?<>{}\[\]$|…]|\.\.\.|://|^mailto:|AAAA|YYYY")
 
 
 def raices_movidas(root):
@@ -58,7 +68,7 @@ def documentos(root):
 def detectar(texto, destinos):
     """Devuelve línea, ruta anterior y raíz actual para literales inequívocos."""
     for numero, linea in enumerate(texto.splitlines(), 1):
-        if RELATIVO in linea or "<!-- docs-paths: referencia histórica -->" in linea:
+        if RELATIVO in linea or HISTORICA in linea:
             continue
         for literal in LITERALES.finditer(linea):
             valor = (literal.group(1) or literal.group(2)).strip()
@@ -77,19 +87,88 @@ def detectar(texto, destinos):
                     yield numero, valor, "docker/compose/" + ruta
 
 
-def main():
-    """Informa hallazgos y termina con 1 cuando hay referencias obsoletas."""
+def candidatas(texto, doc, root):
+    """Devuelve línea, literal y ruta absoluta de cada referencia verificable."""
+    raices = {p.name for p in root.iterdir() if p.name != ".git"}
+    for numero, linea in enumerate(texto.splitlines(), 1):
+        if RELATIVO in linea or HISTORICA in linea:
+            continue
+        for literal in LITERALES.finditer(linea):
+            valor = (literal.group(1) or literal.group(2)).strip()
+            # Sin ancla ni sufijo de línea/símbolo (`archivo.py:12`, `.py::Clase`).
+            ruta = valor.split("#", 1)[0].split(":", 1)[0]
+            if not ruta or " " in valor or NO_RUTA.search(valor):
+                continue
+            if literal.group(2) is not None and not ruta.startswith("/"):
+                yield numero, valor, (doc.parent / ruta).resolve()
+            elif "/" in ruta and ruta.removeprefix("./").split("/", 1)[0] in raices:
+                yield numero, valor, root / ruta.removeprefix("./")
+
+
+def ignorados(root, rutas):
+    """Subconjunto de rutas ignoradas por Git; vacío si Git no está disponible."""
+    relativas = [
+        r.relative_to(root).as_posix() for r in rutas if r.is_relative_to(root)
+    ]
+    if not relativas:
+        return set()
+    # Con "/" final también aplican los patrones de directorio que aún no existe.
+    relativas += [ruta + "/" for ruta in relativas]
+    try:
+        salida = subprocess.run(
+            ["git", "check-ignore", "--stdin"],
+            cwd=root,
+            input="\n".join(relativas),
+            capture_output=True,
+            text=True,
+            check=False,
+        ).stdout
+    except OSError:
+        return set()
+    return {root / linea.rstrip("/") for linea in salida.splitlines() if linea}
+
+
+def faltantes(doc, root):
+    """Devuelve línea y literal de las rutas citadas en doc que no existen."""
+    referencias = [
+        ref
+        for ref in candidatas(doc.read_text(encoding="utf-8"), doc, root)
+        if not ref[2].exists()
+    ]
+    excluidas = ignorados(root, [ref[2] for ref in referencias])
+    return [
+        (numero, valor) for numero, valor, ruta in referencias if ruta not in excluidas
+    ]
+
+
+def main(argv=None):
+    """Informa hallazgos y termina con 1 cuando hay referencias obsoletas o rotas."""
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--existencia",
+        nargs="*",
+        default=[],
+        metavar="DOC",
+        help="Markdown en los que además se verifica que las rutas citadas existan.",
+    )
+    args = parser.parse_args(argv)
     destinos = raices_movidas(ROOT)
+    a_verificar = {(ROOT / doc).resolve() for doc in args.existencia}
     hallazgos = 0
     cantidad = 0
     for path in documentos(ROOT):
         cantidad += 1
+        relativo = path.relative_to(ROOT).as_posix()
         for linea, ruta, destino in detectar(
             path.read_text(encoding="utf-8"), destinos
         ):
-            print(f"{path.relative_to(ROOT).as_posix()}:{linea}: {ruta} -> {destino}")
+            print(f"{relativo}:{linea}: {ruta} -> {destino}")
             hallazgos += 1
-    print(f"{cantidad} documentos vigentes; {hallazgos} referencias obsoletas.")
+        if path.resolve() in a_verificar:
+            for linea, ruta in faltantes(path, ROOT):
+                print(f"{relativo}:{linea}: {ruta} no existe")
+                hallazgos += 1
+    print(f"{cantidad} documentos vigentes; {hallazgos} referencias obsoletas o rotas.")
     return int(bool(hallazgos))
 
 

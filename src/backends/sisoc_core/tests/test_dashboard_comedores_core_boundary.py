@@ -1,67 +1,136 @@
+"""Métricas autorizadas en el dueño y última muestra completa en el portal."""
+
 from datetime import date
 from decimal import Decimal
-
-from django.core.cache import cache
-
+import pytest
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
+from django.test import RequestFactory
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient
 from comedores.models import Comedor, ValorComida
-from dashboard import signals
+from core.internal_services import RespuestaInterna
+from dashboard.comedores_metrics import METRIC_KEYS, actualizar_metricas_comedores
 from dashboard.models import Dashboard
-from dashboard.utils import (
-    calcular_presupuesto_comida,
-    calcular_presupuesto_desayuno,
-    calcular_presupuesto_merienda,
-    contar_comedores_activos,
-)
-from relevamientos.api import contar_relevamientos
+
+pytestmark = pytest.mark.django_db
 
 
-def test_dashboard_uses_public_comedores_projection(db):
-    cache.clear()
+@pytest.fixture
+def request_metrics():
+    user = get_user_model().objects.create_user(username="metricas")
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="dashboard", codename="view_dashboard"
+        )
+    )
+    request = RequestFactory().get("/dashboard/")
+    request.user = user
+    return request
+
+
+def test_calculo_preserva_semantica_y_normalizacion(request_metrics):
     Comedor.objects.create(nombre="Espacio de prueba")
     ValorComida.objects.create(
         tipo="desayuno", valor=Decimal("12.50"), fecha=date.today()
     )
-    ValorComida.objects.create(
-        tipo="merienda", valor=Decimal("7.50"), fecha=date.today()
+    assert actualizar_metricas_comedores(request_metrics)
+    data = dict(Dashboard.objects.values_list("llave", "cantidad"))
+    assert data == dict(zip(METRIC_KEYS, (1, 0, 12, 0, 0)))
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        RespuestaInterna(503, None),
+        RespuestaInterna(403, {}),
+        RespuestaInterna(200, {"cantidad_comedores_activos": 999}),
+        RespuestaInterna(200, {key: True for key in METRIC_KEYS}),
+        RespuestaInterna(200, {key: "9" for key in METRIC_KEYS}),
+        RespuestaInterna(200, {key: 2**63 for key in METRIC_KEYS}),
+        RespuestaInterna(200, []),
+    ],
+)
+def test_falla_no_reemplaza_ni_mezcla_muestra(request_metrics, mocker, response):
+    previous = {key: index + 10 for index, key in enumerate(METRIC_KEYS)}
+    previous["otra_metrica"] = 42
+    for key, value in previous.items():
+        Dashboard.objects.create(llave=key, cantidad=value)
+    mocker.patch(
+        "dashboard.comedores_metrics.pedir_json_interno", return_value=response
     )
-    ValorComida.objects.create(
-        tipo="comida", valor=Decimal("20.00"), fecha=date.today()
+    assert not actualizar_metricas_comedores(request_metrics)
+    assert dict(Dashboard.objects.values_list("llave", "cantidad")) == previous
+
+
+def test_reemplazo_completo_es_atomico(request_metrics, mocker):
+    for key in METRIC_KEYS:
+        Dashboard.objects.create(llave=key, cantidad=7)
+    mocker.patch(
+        "dashboard.comedores_metrics.pedir_json_interno",
+        return_value=RespuestaInterna(200, {key: 99 for key in METRIC_KEYS}),
     )
+    original = Dashboard.objects.update_or_create
 
-    assert contar_comedores_activos() == 1
-    assert calcular_presupuesto_desayuno() == Decimal("12.50")
-    assert calcular_presupuesto_merienda() == Decimal("7.50")
-    assert calcular_presupuesto_comida() == Decimal("20.00")
+    def fail_after_first(*args, **kwargs):
+        if kwargs["llave"] == METRIC_KEYS[1]:
+            raise RuntimeError("fallo antes del commit")
+        return original(*args, **kwargs)
 
-
-def test_relevamientos_public_count_starts_empty(db):
-    assert contar_relevamientos() == 0
-
-
-def test_dashboard_refresh_invalidates_cached_metrics_before_persisting(db, mocker):
-    cache.clear()
-    metrics = (
-        ("contar_comedores_activos", "cantidad_comedores_activos", 3),
-        ("contar_relevamientos_activos", "cantidad_relevamientos_activos", 4),
-        ("calcular_presupuesto_desayuno", "presupuesto_desayuno", 5),
-        ("calcular_presupuesto_merienda", "presupuesto_merienda", 6),
-        ("calcular_presupuesto_comida", "presupuesto_comida", 7),
+    mocker.patch.object(
+        Dashboard.objects, "update_or_create", side_effect=fail_after_first
     )
-    for cache_key, _dashboard_key, _value in metrics:
-        cache.set(cache_key, 0)
+    with pytest.raises(RuntimeError):
+        actualizar_metricas_comedores(request_metrics)
+    assert set(Dashboard.objects.values_list("cantidad", flat=True)) == {7}
 
-    mocker.patch.object(signals, "_tablas_requeridas_existen", return_value=True)
 
-    for function_name, cache_key, value in metrics:
+def test_endpoint_revalida_permiso_y_no_confia_en_id_cliente(request_metrics):
+    user = get_user_model().objects.create_user(username="sin_permiso_metricas")
+    token = Token.objects.create(user=user)
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+    response = client.get(
+        "/api/comedores/metricas-dashboard/",
+        HTTP_X_USER_ID=str(request_metrics.user.pk),
+    )
+    assert response.status_code == 403
+    client.credentials()
+    assert client.get("/api/comedores/metricas-dashboard/").status_code in (401, 403)
 
-        def calculate(key=cache_key, result=value):
-            assert cache.get(key) is None
-            return result
 
-        mocker.patch.object(signals, function_name, side_effect=calculate)
+def test_sin_muestra_no_inventa_ceros(request_metrics, mocker):
+    mocker.patch(
+        "dashboard.comedores_metrics.pedir_json_interno",
+        return_value=RespuestaInterna(503, None),
+    )
+    assert not actualizar_metricas_comedores(request_metrics)
+    assert not Dashboard.objects.exists()
 
-    signals.update_dashboard_comedores()
 
-    assert dict(Dashboard.objects.values_list("llave", "cantidad")) == {
-        dashboard_key: value for _cache_key, dashboard_key, value in metrics
-    }
+def test_pantalla_muestra_muestra_anterior_y_aviso(client, request_metrics, mocker):
+    for key in METRIC_KEYS:
+        Dashboard.objects.create(llave=key, cantidad=123)
+    mocker.patch(
+        "dashboard.comedores_metrics.pedir_json_interno",
+        return_value=RespuestaInterna(503, None),
+    )
+    client.force_login(request_metrics.user)
+    response = client.get("/dashboard/centro-de-familia")
+    assert response.status_code == 200
+    assert response.context["cantidad_comedores_activos"] == 123
+    assert response.context["metricas_comedores_desactualizadas"] is True
+    assert "últimos valores disponibles" in response.content.decode()
+    assert '<div class="card-amount">123</div>' in response.content.decode()
+
+
+def test_pantalla_sin_muestra_informa_ausencia(client, request_metrics, mocker):
+    mocker.patch(
+        "dashboard.comedores_metrics.pedir_json_interno",
+        return_value=RespuestaInterna(503, None),
+    )
+    client.force_login(request_metrics.user)
+    response = client.get("/dashboard/centro-de-familia")
+    assert response.context["cantidad_comedores_activos"] is None
+    assert "Todavía no hay información disponible" in response.content.decode()
+    assert "Sin información" in response.content.decode()

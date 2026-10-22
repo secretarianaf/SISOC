@@ -36,6 +36,15 @@
                                 {% if filtro.estado.value == valor %}selected{% endif %}>{{ etiqueta }}</option>
                     {% endfor %}
                 </select>
+                <label class="visually-hidden" for="filtro-numero">Buscar por número de acta</label>
+                <input id="filtro-numero"
+                       class="form-control"
+                       type="search"
+                       name="numero"
+                       maxlength="50"
+                       placeholder="Buscar por número de acta"
+                       value="{{ filtro.numero.value|default:'' }}"
+                       data-insp-auto-submit />
                 {% if request.GET %}
                     <a class="btn btn-link" href="{% url 'inspecciones_actas' %}">Limpiar filtros</a>
                 {% endif %}

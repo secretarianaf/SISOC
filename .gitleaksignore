@@ -1,4 +1,4 @@
-src/backends/sisoc_core/dashboard/templates/dashboard.html:grafana-api-key:32
+src/backends/sisoc_core/dashboard/templates/dashboard.html:grafana-api-key:42
 src/backends/sisoc_core/dashboard/fixtures/tableros.json:grafana-api-key:9
 src/backends/sisoc_core/dashboard/fixtures/tableros.json:grafana-api-key:25
 src/backends/sisoc_core/dashboard/fixtures/tableros.json:grafana-api-key:41

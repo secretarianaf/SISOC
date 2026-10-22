@@ -99,6 +99,13 @@
             // La provincia vacía también limpia la localidad antes de enviar.
             enviar(this.form);
         });
+        // La cruz de un campo de búsqueda lo vacía sin disparar "change".
+        const busqueda = "form input[type=search][data-insp-auto-submit]";
+        $(document).on("search", busqueda, function () {
+            if (!this.value) {
+                enviar(this.form);
+            }
+        });
     }
 
     function iniciarConfirmaciones() {

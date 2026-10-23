@@ -34,7 +34,7 @@
                             Progreso del Formulario
                         </h4>
                         <span class="progress-stats">
-                            <span id="completedSections">0</span>/4 secciones completadas
+                            <span id="completedSections">0</span>/5 secciones completadas
                         </span>
                     </div>
                     <div class="progress-bar-container">
@@ -224,11 +224,49 @@
                                     <span class="tooltip-text">Fecha de vencimiento del convenio o acuerdo</span>
                                 </span>
                             </div>
-                            <div class="col-md-6 d-flex">
-                                {{ form.codigos_proyecto }}
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-12">{{ form.territoriales_abordaje_comunitario|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 5: Programas, proyectos y región (#2745) -->
+                <div class="section-card" data-section="programas">
+                    <div class="section-header" data-toggle-section="programas">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Programas</h3>
+                                <p class="section-subtitle">Programas, proyectos por línea y datos de región</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-programas">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-programas">
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.programas|as_crispy_field }}</div>
+                            <div class="col-md-6" id="datos-region">
+                                <p class="fw-bold mb-2">Datos de Región (Abordaje Comunitario)</p>
+                                {{ form.region|as_crispy_field }}
+                                {{ form.subzona|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-12">
+                                {{ form.proyectos_lineas }}
                                 <div class="border rounded p-3 w-100">
                                     <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
-                                        <label class="form-label fw-bold mb-0">Códigos de Proyecto</label>
+                                        <label class="form-label fw-bold mb-0">Proyectos</label>
                                         <button type="button"
                                                 class="btn btn-primary btn-sm"
                                                 data-bs-toggle="modal"
@@ -238,12 +276,13 @@
                                     </div>
                                     <div id="proyectos-listado" class="list-group"></div>
                                     <p id="proyectos-vacio" class="text-muted mb-0 py-2">No hay proyectos agregados.</p>
-                                    {% for error in form.codigos_proyecto.errors %}<div class="text-danger small mt-2">{{ error }}</div>{% endfor %}
+                                    <p class="text-muted small mb-0 mt-2">
+                                        Cada proyecto pertenece a una línea de Abordaje Comunitario.
+                                        Quitar un proyecto lo desactiva: su línea y su convenio se conservan.
+                                    </p>
+                                    {% for error in form.proyectos_lineas.errors %}<div class="text-danger small mt-2">{{ error }}</div>{% endfor %}
                                 </div>
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-12">{{ form.territoriales_abordaje_comunitario|as_crispy_field }}</div>
                         </div>
                     </div>
                 </div>
@@ -345,7 +384,9 @@
         var cuilCheckAjaxUrl = "{{ cuil_check_ajax_url }}";
         var organizacionPk = "{{ organizacion_pk|default:'' }}";
         var tipoEntidadOriginal = "{{ form.instance.tipo_entidad_id|default:'' }}";
+        var convenioProyectoUrlBase = "{% url 'organizacion_proyecto_convenio' 0 %}";
     </script>
+    {{ form.datos_formulario|json_script:"organizacion-form-datos" }}
 
     <!-- Scripts externos -->
     <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
@@ -370,67 +411,177 @@
         var hiddenConfirmado = document.getElementById("id_cuil_duplicado_confirmado");
         var hiddenConfirmadoValor = document.getElementById("id_cuil_duplicado_confirmado_valor");
         var submitBtn = document.querySelector('#organizacionForm button[type="submit"]');
-        var proyectosInput = document.getElementById("id_codigos_proyecto");
+        var proyectosInput = document.getElementById("id_proyectos_lineas");
         var proyectosListado = document.getElementById("proyectos-listado");
         var proyectosVacio = document.getElementById("proyectos-vacio");
         var proyectoNuevoInput = document.getElementById("nuevo-codigo-proyecto");
         var proyectoNuevoError = document.getElementById("nuevo-codigo-proyecto-error");
         var agregarProyectoBtn = document.getElementById("agregarProyectoBtn");
         var modalAgregarProyectoEl = document.getElementById("modalAgregarProyecto");
+        var datosForm = JSON.parse(document.getElementById("organizacion-form-datos").textContent);
+        var programasInputs = document.querySelectorAll('input[name="programas"]');
+        var datosRegion = document.getElementById("datos-region");
+        var regionSelect = document.getElementById("id_region");
+        var subzonaSelect = document.getElementById("id_subzona");
         var debounceTimer = null;
         var requestSeq = 0;
+        var guardadosPorCodigo = {};
+        datosForm.proyectos.forEach(function (proyecto) {
+            guardadosPorCodigo[proyecto.codigo] = proyecto;
+        });
+        var proyectos = [];
 
-        function proyectosActuales() {
-            return (proyectosInput.value || "").split(",").map(function (codigo) {
-                return codigo.trim();
-            }).filter(Boolean);
+        // Líneas de Abordaje tildadas en "Programas": son las opciones de línea.
+        function lineasElegidas() {
+            var tildados = {};
+            programasInputs.forEach(function (input) {
+                if (input.checked) tildados[input.value] = true;
+            });
+            return datosForm.abordaje.filter(function (programa) {
+                return tildados[String(programa.id)];
+            });
         }
 
-        function renderProyectos(codigos) {
-            proyectosInput.value = codigos.join(", ");
+        function nombreLinea(id) {
+            var programa = datosForm.abordaje.find(function (p) { return p.id === id; });
+            return programa ? programa.nombre : "Línea " + id;
+        }
+
+        function leerProyectos() {
+            try {
+                var filas = JSON.parse(proyectosInput.value || "[]");
+                return Array.isArray(filas) ? filas : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function guardarProyectos() {
+            proyectosInput.value = JSON.stringify(proyectos.map(function (fila) {
+                return { codigo: fila.codigo, linea: fila.linea };
+            }));
+        }
+
+        function selectorLinea(fila) {
+            var select = document.createElement("select");
+            select.className = "form-select form-select-sm";
+            select.setAttribute("aria-label", "Línea del proyecto " + fila.codigo);
+            var opciones = lineasElegidas().map(function (p) { return { id: p.id, nombre: p.nombre }; });
+            if (fila.linea && !opciones.some(function (o) { return o.id === fila.linea; })) {
+                opciones.push({ id: fila.linea, nombre: nombreLinea(fila.linea) });
+            }
+            var vacia = document.createElement("option");
+            vacia.value = "";
+            vacia.textContent = "Sin línea";
+            select.appendChild(vacia);
+            opciones.forEach(function (opcion) {
+                var option = document.createElement("option");
+                option.value = opcion.id;
+                option.textContent = opcion.nombre;
+                option.selected = opcion.id === fila.linea;
+                select.appendChild(option);
+            });
+            select.addEventListener("change", function () {
+                fila.linea = select.value ? Number(select.value) : null;
+                guardarProyectos();
+                renderProyectos();
+            });
+            return select;
+        }
+
+        function renderProyectos() {
+            guardarProyectos();
             proyectosListado.innerHTML = "";
-            proyectosVacio.classList.toggle("d-none", codigos.length > 0);
-            codigos.forEach(function (codigo, index) {
-                var item = document.createElement("span");
-                item.className = "list-group-item d-flex align-items-center justify-content-between gap-3";
+            proyectosVacio.classList.toggle("d-none", proyectos.length > 0);
+            proyectos.forEach(function (fila, index) {
+                var item = document.createElement("div");
+                item.className = "list-group-item d-flex flex-wrap align-items-center gap-3";
                 var texto = document.createElement("span");
-                texto.className = "text-break fw-semibold";
-                texto.appendChild(document.createTextNode(codigo));
+                texto.className = "text-break fw-semibold flex-grow-1";
+                texto.appendChild(document.createTextNode(fila.codigo));
                 item.appendChild(texto);
+                var contenedorLinea = document.createElement("div");
+                contenedorLinea.appendChild(selectorLinea(fila));
+                item.appendChild(contenedorLinea);
+                var guardado = guardadosPorCodigo[fila.codigo];
+                // El convenio se carga sobre el proyecto ya guardado con su línea.
+                if (guardado && guardado.linea && guardado.linea === fila.linea) {
+                    var convenio = document.createElement("a");
+                    convenio.className = "btn btn-outline-primary btn-sm flex-shrink-0";
+                    convenio.href = convenioProyectoUrlBase.replace("/0/", "/" + guardado.id + "/");
+                    convenio.textContent = guardado.convenio ? "Editar convenio" : "Cargar convenio";
+                    item.appendChild(convenio);
+                }
                 var eliminar = document.createElement("button");
                 eliminar.type = "button";
                 eliminar.className = "btn btn-outline-danger btn-sm flex-shrink-0";
-                eliminar.setAttribute("aria-label", "Eliminar proyecto " + codigo);
+                eliminar.setAttribute("aria-label", "Quitar proyecto " + fila.codigo);
                 eliminar.innerHTML = '<i class="fas fa-times"></i>';
                 eliminar.addEventListener("click", function () {
-                    var actualizados = proyectosActuales();
-                    actualizados.splice(index, 1);
-                    renderProyectos(actualizados);
+                    proyectos.splice(index, 1);
+                    renderProyectos();
                 });
                 item.appendChild(eliminar);
                 proyectosListado.appendChild(item);
             });
         }
 
+        function renderSubzonas() {
+            if (!regionSelect || !subzonaSelect) return;
+            var actual = subzonaSelect.value;
+            var region = Number(regionSelect.value);
+            subzonaSelect.innerHTML = "";
+            var vacia = document.createElement("option");
+            vacia.value = "";
+            vacia.textContent = "---------";
+            subzonaSelect.appendChild(vacia);
+            datosForm.subzonas.filter(function (s) { return s.region === region; }).forEach(function (s) {
+                var option = document.createElement("option");
+                option.value = s.id;
+                option.textContent = s.nombre;
+                option.selected = String(s.id) === actual;
+                subzonaSelect.appendChild(option);
+            });
+        }
+
+        function renderRegion() {
+            if (datosRegion) {
+                datosRegion.classList.toggle("d-none", lineasElegidas().length === 0);
+            }
+        }
+
+        programasInputs.forEach(function (input) {
+            input.addEventListener("change", function () {
+                renderRegion();
+                renderProyectos();
+            });
+        });
+        if (regionSelect) {
+            regionSelect.addEventListener("change", renderSubzonas);
+        }
+        renderSubzonas();
+        renderRegion();
+
         if (proyectosInput && agregarProyectoBtn && modalAgregarProyectoEl) {
-            renderProyectos(proyectosActuales());
+            proyectos = leerProyectos();
+            renderProyectos();
             var modalAgregarProyecto = bootstrap.Modal.getOrCreateInstance(modalAgregarProyectoEl);
             agregarProyectoBtn.addEventListener("click", function () {
                 var codigo = proyectoNuevoInput.value.trim();
-                var codigos = proyectosActuales();
                 proyectoNuevoError.classList.add("d-none");
                 if (!codigo) {
                     proyectoNuevoError.textContent = "Ingresá un código de proyecto.";
                     proyectoNuevoError.classList.remove("d-none");
                     return;
                 }
-                if (codigos.some(function (actual) { return actual.toLowerCase() === codigo.toLowerCase(); })) {
+                if (proyectos.some(function (fila) { return fila.codigo.toLowerCase() === codigo.toLowerCase(); })) {
                     proyectoNuevoError.textContent = "El proyecto ya fue agregado.";
                     proyectoNuevoError.classList.remove("d-none");
                     return;
                 }
-                codigos.push(codigo);
-                renderProyectos(codigos);
+                var lineas = lineasElegidas();
+                proyectos.push({ codigo: codigo, linea: lineas.length === 1 ? lineas[0].id : null });
+                renderProyectos();
                 proyectoNuevoInput.value = "";
                 modalAgregarProyecto.hide();
             });

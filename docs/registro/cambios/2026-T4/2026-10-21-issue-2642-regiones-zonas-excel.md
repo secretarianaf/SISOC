@@ -22,9 +22,8 @@ dentro de la misma región en el Excel y se carga una sola vez.
   FK opcional Subzona–Región y carga cinco regiones y 28 subzonas activas.
   Usa modelos históricos y el alias de base del migrador. No depende del
   archivo en Downloads durante el despliegue.
-- Región 1/2 y Zona 1/2 se desactivan, sin borrar filas ni asignaciones. No se
-  infiere una correspondencia con los nuevos valores. Los registros existentes
-  con opciones provisorias pueden guardarse sin cambiarlas.
+- Las opciones provisorias Región 1/2 y Zona 1/2 de la primera iteración no
+  llegaron a desplegarse; se retiró su migración y la 0026 depende de la 0024.
 - En alta/edición de Organización, Subzona depende de Región tanto en el
   selector JavaScript como en la validación de Django. Cambiar Región descarta
   una subzona incompatible. Ambos campos siguen siendo opcionales; seleccionar
@@ -49,7 +48,8 @@ No se aplicaron migraciones a la base local ni se hizo deploy.
 ## Validación
 
 - 61 tests aprobados: catálogo, idempotencia, preservación de asignaciones
-  provisorias, validación de combinaciones Región/Subzona y regresiones cercanas.
+  con opciones inactivas, validación de combinaciones Región/Subzona y
+  regresiones cercanas.
   El test de concurrencia MySQL se omite en esta ejecución SQLite.
 - 60 tests aprobados en MySQL temporal, incluidas las migraciones del catálogo
   y concurrencia. Los tests de carga admiten una base vacía o ya inicializada

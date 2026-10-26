@@ -9,7 +9,10 @@
    con fallback a la organización del comedor para registros históricos.
 3. Solo una rendición por proyecto puede estar en Territorial en curso,
    pendiente de correcciones o subsanada. Iniciar otra muestra la rendición
-   que ocupa el cupo; pasar a Revisión para Carga pendiente lo libera.
+   que ocupa el cupo; pasar a Revisión para Carga pendiente lo libera. Si por
+   datos previos a la regla varias ya ocupan el cupo, una subsanada solo cede
+   ante las en curso o las del proyecto creadas antes, para que
+   siempre haya una que pueda reanudarse.
 4. Comedores ordena sus filtros alfabéticamente por etiqueta y Organizaciones
    reutiliza el mismo componente de filtros combinables, con sus campos propios.
 5. Formulario I aparece después de Seguros II cuando corresponde y antes de
@@ -40,10 +43,10 @@
 ## Decisiones y datos pendientes
 
 - El 21/10 se recibió `REGIONES_Y_ZONAS.xlsx`: la migración
-  `organizaciones.0026_issue_2642_regiones_zonas_excel` reemplaza las opciones
-  provisorias por cinco regiones y 28 subzonas vinculadas. Las provisorias se
-  desactivan, conservando cualquier FK existente, sin inferir equivalencias.
-  El selector y el POST restringen las subzonas a la región elegida.
+  `organizaciones.0026_issue_2642_regiones_zonas_excel` carga cinco regiones y
+  28 subzonas vinculadas. Las opciones provisorias de la primera iteración no
+  llegaron a desplegarse y se retiraron del PR. El selector y el POST
+  restringen las subzonas a la región elegida.
   Detalle: `docs/registro/cambios/2026-T4/2026-10-21-issue-2642-regiones-zonas-excel.md`.
 - Se interpreta AMBA como coincidencia exacta de código **o nombre** de proyecto,
   ignorando mayúsculas y espacios externos. Si el área define otro identificador,
@@ -53,7 +56,8 @@
   para no romper cargas offline ya preparadas por versiones previas de Mobile.
 - Las asignaciones generales anteriores no reciben proyectos inferidos. Se
   muestran separadamente y se conservan. Al asociar explícitamente una persona
-  a un proyecto se retira su asignación general; las demás siguen disponibles.
+  a un proyecto se retira su asignación general; las demás siguen disponibles
+  hasta que se marquen en «Quitar asignaciones anteriores sin proyecto».
 - Los estados históricos inconsistentes no se corrigen automáticamente.
 
 ## Dueños, esquema y compatibilidad
@@ -78,14 +82,13 @@ No se agregan dependencias frontend: se reutilizan estilos y componentes locales
 ## Despliegue y reversa
 
 - Ejecutar en el migrador `organizaciones.0024_issue_2642_abordaje_comunitario`,
-  `organizaciones.0025_issue_2642_catalogos_provisorios`,
   `organizaciones.0026_issue_2642_regiones_zonas_excel` y `rendicioncuentasmensual.0027_issue_2642_abordaje_comunitario`.
 - Publicar backend Comedores y generar sus estáticos por el circuito habitual.
 - Coordinar la PWA del repositorio `SISOC-EspaciosComunitarios`, rama
   `Fixes-Issue-2642`: contexto y tipo de proyectos, selectores de solo lectura y tests.
-- El catálogo definitivo se carga con la migración 0026. Las organizaciones
-  que todavía tengan opciones provisorias pueden conservarlas al editar otro
-  dato; deben reasignarse manualmente cuando se conozca su correspondencia.
+- El catálogo definitivo se carga con la migración 0026. Una opción que luego
+  se desactive desde Django Admin se conserva en las organizaciones que ya la
+  tienen asignada, pero no se ofrece para nuevas asignaciones.
 - Para revertir, preservar previamente catálogos, asociaciones y borradores;
   coordinar la vuelta del backend y Mobile antes de deshacer las migraciones.
   Revertirlas borra datos de campos/tablas nuevos y pierde decisiones sin confirmar.
@@ -122,3 +125,17 @@ No se agregan dependencias frontend: se reutilizan estilos y componentes locales
   resolver los avisos GHSA-qxg6-89mg-rqv8 y GHSA-xp26-3454-mjgp, que comenzaron
   a bloquear la auditoría npm durante el seguimiento del PR. Es una dependencia
   de pruebas; se mantiene la misma versión mayor y menor.
+
+## Correcciones de la revisión técnica del PR #2751
+
+- Cupo territorial: una rendición subsanada ya ocupa el cupo, así que solo
+  cede ante las en curso o ante otras del proyecto que ocupen el cupo y sean
+  más antiguas. Evita que rendiciones que ya convivían antes de la regla se
+  bloqueen mutuamente sin salida. El estado se valida bajo bloqueo antes del
+  cupo, para informar el motivo correcto.
+- Legajo: las asignaciones generales anteriores pueden quitarse marcándolas,
+  sin necesidad de asociarlas a un proyecto.
+- Se retiró `organizaciones.0025` (opciones provisorias nunca desplegadas);
+  la 0026 depende directamente de la 0024.
+- El historial de subsanaciones del detalle es de solo lectura: solo el
+  documento vigente admite decisiones, como ya validaba el servicio.

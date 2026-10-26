@@ -95,7 +95,10 @@
                                         <div class="col-md-6">{{ form.latitud.as_field_group }}</div>
                                         <div class="col-md-6">{{ form.longitud.as_field_group }}</div>
                                         <div class="col-12">
-                                            <input type="hidden" id="jornada-provincia" data-name="provincia" value="{{ itinerario.provincia.nombre }}" />
+                                            <input type="hidden"
+                                                   id="jornada-provincia"
+                                                   data-name="provincia"
+                                                   value="{{ itinerario.provincia.nombre }}" />
                                             {% url 'address_preview' as address_preview_url %}
                                             {% include "components/map_pin_editor.html" with latitude_field="id_latitud" longitude_field="id_longitud" generic_search=True always_visible=True preview_frame="ubicacion-mapa" search_url=address_preview_url address_fields="id_direccion,jornada-provincia,id_localidad" %}
                                         </div>

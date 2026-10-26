@@ -523,7 +523,8 @@
                                     {% google_maps_query ciudadano.latitud ciudadano.longitud as citizen_map_query %}
                                     {% if citizen_map_query %}
                                         <iframe title="Ubicación del ciudadano"
-                                                width="100%" height="450"
+                                                width="100%"
+                                                height="450"
                                                 src="https://www.google.com/maps?q={{ citizen_map_query }}&amp;output=embed"
                                                 loading="lazy"></iframe>
                                     {% elif ciudadano.foto %}
@@ -1791,8 +1792,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    {% if google_maps_api_key %}
-    {% endif %}
+    {% if google_maps_api_key %}{% endif %}
     <script nonce="{{ request.csp_nonce }}">
 let mesActual = new Date().getMonth() + 1;
 let anioActual = new Date().getFullYear();

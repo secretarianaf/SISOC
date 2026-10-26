@@ -18,7 +18,7 @@
                     {% url 'address_preview' as address_preview_url %}
                     <div data-centro-location-editor
                          {% if form.tipo.value != 'faro' and form.tipo.value != 'adherido' %}hidden{% endif %}>
-                    {% include "components/map_pin_editor.html" with latitude_field="id_latitud" longitude_field="id_longitud" generic_search=True always_visible=True search_url=address_preview_url address_fields="id_calle,id_numero,id_provincia,id_municipio,id_localidad" %}
+                        {% include "components/map_pin_editor.html" with latitude_field="id_latitud" longitude_field="id_longitud" generic_search=True always_visible=True search_url=address_preview_url address_fields="id_calle,id_numero,id_provincia,id_municipio,id_localidad" %}
                     </div>
                 {% endif %}
             {% endfor %}

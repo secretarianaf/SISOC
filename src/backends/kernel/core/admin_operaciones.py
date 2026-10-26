@@ -43,7 +43,11 @@ from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from unfold.decorators import action
-from unfold.widgets import UnfoldAdminSelectWidget, UnfoldAdminTextareaWidget
+from unfold.widgets import (
+    UnfoldAdminSelectMultipleWidget,
+    UnfoldAdminSelectWidget,
+    UnfoldAdminTextareaWidget,
+)
 
 from audittrail.context import audit_context
 
@@ -101,14 +105,23 @@ class ConfirmarOperacionForm(forms.Form):
         if operacion.motivo_min_largo:
             motivo.validators.append(MinLengthValidator(operacion.motivo_min_largo))
         for nombre, campo in (operacion.campos() if operacion.campos else {}).items():
-            if isinstance(campo, forms.ChoiceField) and not isinstance(
-                campo.widget, forms.HiddenInput
-            ):
-                campo.widget = UnfoldAdminSelectWidget(choices=campo.choices)
-            self.fields[nombre] = campo
+            self.fields[nombre] = _con_widget_unfold(campo)
 
     def clean_motivo(self):
         return (self.cleaned_data.get("motivo") or "").strip()
+
+
+def _con_widget_unfold(campo: forms.Field) -> forms.Field:
+    """Aplica el widget de Unfold a los selects, simples o múltiples."""
+    if isinstance(campo.widget, forms.HiddenInput) or not isinstance(
+        campo, forms.ChoiceField
+    ):
+        return campo
+    if isinstance(campo, (forms.MultipleChoiceField, forms.ModelMultipleChoiceField)):
+        campo.widget = UnfoldAdminSelectMultipleWidget(choices=campo.choices)
+    else:
+        campo.widget = UnfoldAdminSelectWidget(choices=campo.choices)
+    return campo
 
 
 def _valor_estado(obj, campo):

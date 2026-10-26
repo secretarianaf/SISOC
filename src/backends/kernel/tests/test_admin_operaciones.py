@@ -212,3 +212,24 @@ def test_historial_muestra_eventos_de_auditlog(auth_client, superuser):
     html = response.content.decode()
     assert "historial-auditlog" in html
     assert "Corrección de soporte" in html
+
+
+def test_form_de_confirmacion_respeta_selects_multiples():
+    operacion = Operacion(
+        slug="multi",
+        titulo="Multi",
+        ejecutar=_renombrar,
+        campos=lambda: {
+            "opciones": forms.MultipleChoiceField(choices=[("a", "A"), ("b", "B")]),
+            "una": forms.ChoiceField(choices=[("x", "X")]),
+        },
+    )
+
+    form = admin_operaciones.ConfirmarOperacionForm(
+        {"opciones": ["a", "b"], "una": "x"}, operacion=operacion
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["opciones"] == ["a", "b"]
+    assert form.fields["opciones"].widget.allow_multiple_selected
+    assert not form.fields["una"].widget.allow_multiple_selected

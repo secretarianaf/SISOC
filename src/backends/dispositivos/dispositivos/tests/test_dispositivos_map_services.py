@@ -44,7 +44,7 @@ def test_georef_cache_y_cambio_direccion(device, monkeypatch):
             {"total": 1, "direcciones": [{"ubicacion": {"lat": -32.94, "lon": -60.63}}]}
         )
     )
-    monkeypatch.setattr("dispositivos.services.requests.get", lookup)
+    monkeypatch.setattr("core.services.geolocation.requests.get", lookup)
     assert geolocate_dispositivo(device) == {
         "status": "located",
         "lat": -32.94,
@@ -60,7 +60,7 @@ def test_georef_cache_y_cambio_direccion(device, monkeypatch):
 
 def test_georef_no_elige_coincidencia_ambigua(device, monkeypatch):
     lookup = Mock(return_value=response({"total": 2, "direcciones": [{}, {}]}))
-    monkeypatch.setattr("dispositivos.services.requests.get", lookup)
+    monkeypatch.setattr("core.services.geolocation.requests.get", lookup)
     assert geolocate_dispositivo(device) == {"status": "ambiguous"}
     assert lookup.call_count == 1
 
@@ -77,7 +77,7 @@ def test_georef_fallback_departamento(device, monkeypatch):
             ),
         ]
     )
-    monkeypatch.setattr("dispositivos.services.requests.get", lookup)
+    monkeypatch.setattr("core.services.geolocation.requests.get", lookup)
     assert geolocate_dispositivo(device)["status"] == "located"
     assert lookup.call_args.kwargs["params"]["departamento"] == "Rosario"
 
@@ -92,14 +92,14 @@ def test_georef_fallback_departamento(device, monkeypatch):
 )
 def test_georef_vacio_o_invalido(device, monkeypatch, payload):
     monkeypatch.setattr(
-        "dispositivos.services.requests.get", Mock(return_value=response(payload))
+        "core.services.geolocation.requests.get", Mock(return_value=response(payload))
     )
     assert geolocate_dispositivo(device)["status"] in ("not_found", "unavailable")
 
 
 def test_georef_timeout_no_cachea_error(device, monkeypatch):
     lookup = Mock(side_effect=requests.Timeout())
-    monkeypatch.setattr("dispositivos.services.requests.get", lookup)
+    monkeypatch.setattr("core.services.geolocation.requests.get", lookup)
     assert geolocate_dispositivo(device) == {"status": "unavailable"}
     assert geolocate_dispositivo(device) == {"status": "unavailable"}
     assert lookup.call_count == 2
@@ -121,7 +121,7 @@ def mock_location(monkeypatch):
             {"total": 1, "direcciones": [{"ubicacion": {"lat": -32.94, "lon": -60.63}}]}
         )
     )
-    monkeypatch.setattr("dispositivos.services.requests.get", lookup)
+    monkeypatch.setattr("core.services.geolocation.requests.get", lookup)
     return lookup
 
 
@@ -191,7 +191,7 @@ def test_persiste_resultados_sin_punto_hasta_cambiar_direccion(
     persisted_device, monkeypatch, payload, status
 ):
     lookup = Mock(return_value=response(payload))
-    monkeypatch.setattr("dispositivos.services.requests.get", lookup)
+    monkeypatch.setattr("core.services.geolocation.requests.get", lookup)
     assert geolocate_dispositivo(persisted_device) == {"status": status}
     calls = lookup.call_count
     cache.clear()
@@ -208,7 +208,7 @@ def test_persiste_resultados_sin_punto_hasta_cambiar_direccion(
 
 def test_no_persiste_servicio_no_disponible(persisted_device, monkeypatch):
     monkeypatch.setattr(
-        "dispositivos.services.requests.get",
+        "core.services.geolocation.requests.get",
         Mock(side_effect=requests.Timeout),
     )
     assert geolocate_dispositivo(persisted_device) == {"status": "unavailable"}
@@ -225,7 +225,7 @@ def test_no_sobrescribe_direccion_editada_durante_consulta(
             {"total": 1, "direcciones": [{"ubicacion": {"lat": -32.94, "lon": -60.63}}]}
         )
 
-    monkeypatch.setattr("dispositivos.services.requests.get", lookup)
+    monkeypatch.setattr("core.services.geolocation.requests.get", lookup)
     geolocate_dispositivo(persisted_device)
     persisted_device.refresh_from_db()
     assert persisted_device.calle == "Calle nueva"
@@ -237,7 +237,7 @@ def test_coordenadas_manuales_prioritarias_sin_consulta(
     device, monkeypatch, coordinates
 ):
     lookup = Mock(side_effect=AssertionError("No debe consultar Georef"))
-    monkeypatch.setattr("dispositivos.services.requests.get", lookup)
+    monkeypatch.setattr("core.services.geolocation.requests.get", lookup)
     device.latitud, device.longitud = coordinates
     expected = {"status": "located", "lat": coordinates[0], "lon": coordinates[1]}
     assert geolocate_dispositivo(device) == expected

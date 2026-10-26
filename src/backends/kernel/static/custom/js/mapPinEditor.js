@@ -11,6 +11,7 @@
                 root.hidden = true;
                 return;
             }
+            const alwaysVisible = root.dataset.alwaysVisible === "true";
             const start = root.querySelector("[data-pin-start]");
             const panel = root.querySelector("[data-pin-panel]");
             const status = root.querySelector("[data-pin-status]");
@@ -24,12 +25,13 @@
                 const lat = Number(latitude.value), lng = Number(longitude.value);
                 return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? [lat, lng] : null;
             };
-            function position(latlng, zoom = 16) {
+            function position(latlng, zoom = 18) {
                 if (!marker) {
                     marker = L.marker(latlng, { draggable: true, title: "Ubicación del legajo" }).addTo(map);
                     marker.on("dragend", () => commitPosition(marker.getLatLng()));
                 } else marker.setLatLng(latlng);
-                map.setView(latlng, zoom);
+                map.invalidateSize({ pan: false });
+                map.setView(latlng, zoom, { animate: false });
             }
             function commitPosition(latlng) {
                 const lat = Number(latlng.lat), lng = Number(latlng.lng);
@@ -45,16 +47,16 @@
                 longitude.dispatchEvent(new Event("input", { bubbles: true }));
                 status.textContent = "Coordenadas actualizadas. Guardá el formulario para confirmar la ubicación.";
             }
-            async function openEditor() {
+            async function openEditor(resolveAddress = true) {
                 if (typeof L === "undefined") {
                     status.textContent = "No se pudo cargar el editor. Podés ingresar las coordenadas en los campos del formulario.";
                     return;
                 }
-                if (panel.hidden) original = [latitude.value, longitude.value];
+                if (!original || panel.hidden) original = [latitude.value, longitude.value];
                 edited = false;
                 const currentGeneration = ++generation;
                 panel.hidden = false;
-                start.hidden = true;
+                start.hidden = !alwaysVisible;
                 if (preview) preview.hidden = true;
                 if (!map) {
                     map = L.map(root.querySelector("[data-pin-map]"), { worldCopyJump: true });
@@ -65,18 +67,24 @@
                 }
                 map.invalidateSize();
                 const current = coordinates();
-                position(current || [-38.4, -63.6], current ? 16 : 4);
+                position(current || [-38.4, -63.6], current ? 18 : 4);
                 status.textContent = current ? "Arrastrá el pin para ajustar la ubicación." : "Acercá el mapa y colocá el pin en el centro, o arrastralo hasta la ubicación correcta.";
                 const searchDraft = Boolean(root.dataset.searchUrl);
                 const searchSaved = root.dataset.locationUrl && addressSnapshot() === originalAddress;
-                if (!current && (searchDraft || searchSaved)) {
+                if (resolveAddress && !current && (searchDraft || searchSaved)) {
                     const requestedAddress = addressSnapshot();
                     status.textContent = "Buscando el domicilio para ubicar el pin…";
                     try {
                         const options = { headers: { Accept: "application/json" } };
                         if (searchDraft) {
                             const body = new URLSearchParams();
-                            addressFields.filter(Boolean).forEach(field => body.append(field.name, field.value));
+                            addressFields.filter(Boolean).forEach(field => {
+                                let value = field.value;
+                                if (root.dataset.genericSearch === "true" && field.tagName === "SELECT") {
+                                    value = field.value && field.selectedOptions.length ? field.selectedOptions[0].textContent.trim() : "";
+                                }
+                                body.append(field.name, value);
+                            });
                             const csrf = latitude.form && latitude.form.querySelector("[name=csrfmiddlewaretoken]");
                             options.method = "POST";
                             options.headers["X-CSRFToken"] = csrf ? csrf.value : "";
@@ -118,9 +126,13 @@
                 [latitude.value, longitude.value] = original;
                 latitude.dispatchEvent(new Event("input", { bubbles: true }));
                 longitude.dispatchEvent(new Event("input", { bubbles: true }));
-                panel.hidden = true;
+                panel.hidden = !alwaysVisible;
                 start.hidden = false;
                 if (preview) preview.hidden = false;
+                if (alwaysVisible && map) {
+                    const current = coordinates();
+                    position(current || [-38.4, -63.6], current ? 18 : 4);
+                }
                 status.textContent = "Ajuste descartado. Se conservaron las coordenadas anteriores.";
             });
             [latitude, longitude].forEach(field => field.addEventListener("change", () => {
@@ -128,6 +140,10 @@
                 const current = coordinates();
                 if (map && current && !panel.hidden) position(current);
             }));
+            const section = root.closest ? root.closest(".collapse") : null;
+            if (section && typeof window !== "undefined" && window.jQuery) {
+                window.jQuery(section).on("shown.bs.collapse", () => { if (map) map.invalidateSize(); });
+            }
             const form = latitude.form;
             if (form) form.addEventListener("reset", () => {
                 generation += 1;
@@ -135,6 +151,7 @@
                 start.hidden = false;
                 if (preview) preview.hidden = false;
             });
+            if (alwaysVisible) openEditor(false);
         });
     }
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initialize);

@@ -956,7 +956,7 @@ def test_mapa_incluye_ubicacion_guardada_vigente(
     provincia, municipio = provincia_municipio
     device = _crear_dispositivo(provincia, municipio)
     monkeypatch.setattr(
-        "dispositivos.services.requests.get",
+        "core.services.geolocation.requests.get",
         Mock(
             return_value=Mock(
                 raise_for_status=Mock(),

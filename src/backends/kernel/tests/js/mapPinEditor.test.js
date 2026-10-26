@@ -4,7 +4,7 @@ const { resolve } = require("node:path");
 const { test } = require("node:test");
 const { runInNewContext } = require("node:vm");
 const source = readFileSync(resolve(__dirname, "../../static/custom/js/mapPinEditor.js"), "utf8");
-function setup({ lat = "-34.9", lng = "-57.9", locationUrl = "", fetch, searchUrl = "", disabled = false, library = true } = {}) {
+function setup({ lat = "-34.9", lng = "-57.9", locationUrl = "", fetch, searchUrl = "", disabled = false, library = true, alwaysVisible = false } = {}) {
     const element = (value = "") => ({
         value, hidden: false, handlers: {}, disabled: false, events: [],
         addEventListener(name, callback) { this.handlers[name] = callback; },
@@ -17,9 +17,9 @@ function setup({ lat = "-34.9", lng = "-57.9", locationUrl = "", fetch, searchUr
     fields.calle.name = "calle";
     const nodes = Object.fromEntries(["start", "panel", "status", "map", "center", "cancel"].map(name => [name, element()]));
     nodes.panel.hidden = true;
-    const root = { handlers: {}, addEventListener(name, cb) { this.handlers[name] = cb; }, dataset: { latitudeField: "latitude", longitudeField: "longitude", previewFrame: "preview", locationUrl, searchUrl, addressFields: "calle" }, querySelector: key => nodes[key.slice(10, -1)] };
+    const root = { handlers: {}, addEventListener(name, cb) { this.handlers[name] = cb; }, dataset: { alwaysVisible: String(alwaysVisible), latitudeField: "latitude", longitudeField: "longitude", previewFrame: "preview", locationUrl, searchUrl, addressFields: "calle" }, querySelector: key => nodes[key.slice(10, -1)] };
     const views = [];
-    const map = { setView(position, zoom) { views.push({ position, zoom }); }, invalidateSize() {}, getCenter: () => ({ lat: -35, lng: -58 }), getZoom: () => 12 };
+    const map = { setView(position, zoom, options) { views.push({ position, zoom, options }); }, invalidateSize() {}, getCenter: () => ({ lat: -35, lng: -58 }), getZoom: () => 12 };
     const marker = { on(name, handler) { this[name] = handler; }, addTo() { return this; }, setLatLng(value) { this.position = value; }, getLatLng() { return this.position; } };
     const context = {
         document: { readyState: "complete", querySelectorAll: () => [root], getElementById: id => fields[id] },
@@ -156,4 +156,54 @@ test("domicilio inválido o ambiguo avisa sin completar coordenadas", async () =
         assert.equal(fields.latitude.value, "");
         assert.match(nodes.status.textContent, /Completá|varias coincidencias|No se encontró/);
     }
+});
+
+test("búsqueda compartida envía nombre geográfico seleccionado en vez de ID", async () => {
+    let body;
+    const { fields, nodes, root } = setup({ lat: "", lng: "", searchUrl: "/previsualizar/", fetch: async (_, options) => {
+        body = options.body;
+        return { ok: true, json: async () => ({ status: "located", lat: -34, lon: -58 }) };
+    } });
+    root.dataset.genericSearch = "true";
+    fields.calle.name = "provincia";
+    fields.calle.tagName = "SELECT";
+    fields.calle.value = "12";
+    fields.calle.selectedOptions = [{ textContent: "Buenos Aires" }];
+    await nodes.start.handlers.click();
+    assert.equal(body.get("provincia"), "Buenos Aires");
+});
+
+
+test("mapa visible por defecto sin buscar ni completar campos al cargar", () => {
+    const { fields, nodes, views } = setup({ lat: "", lng: "", searchUrl: "/buscar/", alwaysVisible: true });
+    assert.equal(nodes.panel.hidden, false);
+    assert.equal(nodes.start.hidden, false);
+    assert.equal(views.length, 1);
+    assert.equal(fields.latitude.value, "");
+    assert.equal(fields.longitude.value, "");
+});
+test("descartar mantiene mapa visible y restaura las coordenadas", () => {
+    const { fields, nodes, marker } = setup({ alwaysVisible: true });
+    marker.position = { lat: 1, lng: 2 };
+    marker.dragend();
+    nodes.cancel.handlers.click();
+    assert.equal(nodes.panel.hidden, false);
+    assert.equal(nodes.start.hidden, false);
+    assert.equal(fields.latitude.value, "-34.9");
+    assert.equal(fields.longitude.value, "-57.9");
+});
+
+
+test("buscar dirección centra con zoom de calle sin animación pendiente", async () => {
+    const { nodes, views, map } = setup({ lat: "", lng: "", searchUrl: "/buscar/", alwaysVisible: true, fetch: async () => ({ ok: true, json: async () => ({ status: "located", lat: -34.123456, lon: -58.123456 }) }) });
+    let applied;
+    map.setView = (position, zoom, options) => {
+        // Leaflet puede ignorar otro zoom animado mientras termina el anterior.
+        if (options && options.animate === false) applied = { position, zoom };
+    };
+    await nodes.start.handlers.click();
+    assert.equal(views[0].zoom, 4);
+    assert.equal(applied.position[0], -34.123456);
+    assert.equal(applied.position[1], -58.123456);
+    assert.equal(applied.zoom, 18);
 });

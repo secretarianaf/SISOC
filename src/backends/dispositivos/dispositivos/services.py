@@ -4,7 +4,6 @@ import logging
 import math
 from urllib.parse import quote
 
-import requests
 from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Q
@@ -14,6 +13,8 @@ from users.territorial_scope import (
     get_geography_scope_map,
     is_territorial_user,
 )
+
+from core.services.geolocation import locate_address
 
 from .models import Dispositivo
 
@@ -169,47 +170,16 @@ def geolocate_dispositivo(device):
         "DISPOSITIVOS_GEOREF_URL",
         "https://apis.datos.gob.ar/georef/api/direcciones",
     )
-    try:
-        for territory in ("localidad", "departamento"):
-            response = requests.get(
-                endpoint,
-                params={
-                    "direccion": address,
-                    "provincia": device.provincia.nombre,
-                    territory: (
-                        device.localidad.nombre
-                        if territory == "localidad" and device.localidad_id
-                        else device.municipio.nombre
-                    ),
-                    "max": 2,
-                },
-                timeout=8,
-                headers={"User-Agent": "SISOC-Dispositivos/1.0"},
-            )
-            response.raise_for_status()
-            payload = response.json()
-            matches = payload["direcciones"]
-            total = int(payload["total"])
-            if total == 0:
-                continue
-            result = {"status": "ambiguous"}
-            if total == 1 and len(matches) == 1:
-                location = matches[0]["ubicacion"]
-                lat, lon = float(location["lat"]), float(location["lon"])
-                if not (
-                    math.isfinite(lat)
-                    and math.isfinite(lon)
-                    and -90 <= lat <= 90
-                    and -180 <= lon <= 180
-                ):
-                    raise ValueError("Coordenadas inválidas")
-                result = {"status": "located", "lat": lat, "lon": lon}
-            break
-        else:
-            result = {"status": "not_found"}
-    except (requests.RequestException, ValueError, TypeError, KeyError, IndexError):
+    result = locate_address(
+        address=address,
+        province=device.provincia.nombre,
+        locality=device.localidad.nombre if device.localidad_id else "",
+        municipality=device.municipio.nombre,
+        endpoint=endpoint,
+    )
+    if result["status"] == "unavailable":
         logger.warning("Georef no disponible para dispositivo %s", device.pk)
-        return {"status": "unavailable"}
+        return result
     _save_dispositivo_location(device, signature, result)
     cache.set(key, result, timeout=86400 * (30 if result["status"] == "located" else 1))
     return result

@@ -12,8 +12,8 @@ No se escribe desde el navegador a un endpoint genérico de modelos.
 | Módulo | Mapas encontrados | Persistencia y trabajo pendiente |
 | --- | --- | --- |
 | Dispositivos | Alta/edición y legajo; mapa general | Latitud/longitud del #2777. Primera integración del editor compartido. El mapa general permite consultar; la edición se hace en el formulario autorizado. |
-| Comedores | Legajo | Coordenadas existentes. Integrar editor en formulario y conservar el mapa de consulta. |
-| CDI | Legajo | Coordenadas y validaciones existentes. Integrar en formulario. |
+| Comedores | Legajo | Editor integrado en formulario; mantiene mapa de consulta y guardado propios. Verificación visual pendiente. |
+| CDI | Legajo | Editor integrado en formulario, con validación argentina existente. Verificación visual pendiente. |
 | Centros de Familia | Legajo | No tiene coordenadas en Centro. Requiere migración aditiva y prioridad sobre domicilio en consulta. |
 | Ciudadanos | Legajo con Google Maps JS | Coordenadas existentes. Revisar formulario, permisos y representación numérica. |
 | Ver para ser libres | Sedes y jornadas Django; formularios y consultas React | Coordenadas existentes. Revisar limpieza automática en SedeCreateVPSLForm.save y resolución de ubicacion_url en JornadaVPSLForm para que no sobreescriban el ajuste manual ni alteren domicilio. Integrar ambos frontends. |

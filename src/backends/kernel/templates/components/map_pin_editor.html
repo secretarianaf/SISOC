@@ -5,14 +5,22 @@
       crossorigin="anonymous" />
 <link rel="stylesheet" href="{% static 'custom/css/mapPinEditor.css' %}" />
 <div data-pin-editor
+     data-always-visible="{{ always_visible|yesno:'true,false' }}"
      data-latitude-field="{{ latitude_field }}"
      data-longitude-field="{{ longitude_field }}"
      data-preview-frame="{{ preview_frame }}"
+     data-generic-search="{{ generic_search|yesno:'true,false' }}"
      data-search-url="{{ search_url|default:'' }}"
      data-location-url="{{ location_url|default:'' }}"
      data-address-fields="{{ address_fields|default:'' }}">
-    <button type="button" class="btn btn-secondary mb-2" data-pin-start>Ajustar pin en el mapa</button>
-    <div data-pin-panel hidden>
+    <button type="button" class="btn btn-secondary mb-2" data-pin-start>
+        {% if always_visible %}
+            Buscar dirección en el mapa
+        {% else %}
+            Ajustar pin en el mapa
+        {% endif %}
+    </button>
+    <div data-pin-panel {% if not always_visible %}hidden{% endif %}>
         <p>
             Arrastrá el pin hasta la ubicación correcta. El domicilio escrito se conserva. Los cambios se guardan al guardar el formulario.
         </p>

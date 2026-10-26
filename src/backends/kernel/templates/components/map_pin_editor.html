@@ -1,0 +1,32 @@
+{% load static %}
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H"
+      crossorigin="anonymous" />
+<link rel="stylesheet" href="{% static 'custom/css/mapPinEditor.css' %}" />
+<div data-pin-editor
+     data-latitude-field="{{ latitude_field }}"
+     data-longitude-field="{{ longitude_field }}"
+     data-preview-frame="{{ preview_frame }}"
+     data-search-url="{{ search_url|default:'' }}"
+     data-location-url="{{ location_url|default:'' }}"
+     data-address-fields="{{ address_fields|default:'' }}">
+    <button type="button" class="btn btn-secondary mb-2" data-pin-start>Ajustar pin en el mapa</button>
+    <div data-pin-panel hidden>
+        <p>
+            Arrastrá el pin hasta la ubicación correcta. El domicilio escrito se conserva. Los cambios se guardan al guardar el formulario.
+        </p>
+        <div class="map-pin-editor"
+             data-pin-map
+             aria-label="Mapa para ajustar la ubicación"></div>
+        <div class="d-flex flex-wrap gap-2 my-2">
+            <button type="button" class="btn btn-secondary" data-pin-center>Colocar pin en el centro del mapa</button>
+            <button type="button" class="btn btn-secondary" data-pin-cancel>Descartar ajuste del pin</button>
+        </div>
+    </div>
+    <p class="text-muted" role="status" aria-live="polite" data-pin-status></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH"
+        crossorigin="anonymous"></script>
+<script src="{% static 'custom/js/mapPinEditor.js' %}" defer></script>

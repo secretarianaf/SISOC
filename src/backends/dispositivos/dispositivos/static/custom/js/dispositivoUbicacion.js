@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     const value = (name) => field(name).value.trim();
     const selectedName = (select) => select.value ? select.selectedOptions[0].textContent.trim() : "";
-    function preview() {
+    function preview(event) {
         const lat = value("latitud");
         const lon = value("longitud");
         let query;
@@ -55,6 +55,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         frame.src = `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
         status.textContent = "Ubicación previsualizada. Guardá el dispositivo para confirmar los datos.";
+        if (event && event.type === "click") {
+            const editor = document.querySelector("[data-pin-editor]");
+            if (editor) editor.dispatchEvent(new Event("pin:preview"));
+        }
     }
     button.addEventListener("click", preview);
     if ((value("latitud") && value("longitud")) || (value("calle") && municipio.value && provincia.value)) preview();

@@ -7,11 +7,19 @@ from dispositivos.views import (
     DispositivoListView,
     DispositivoMapView,
     DispositivoLocationView,
+    DispositivoLocationPreviewView,
     DispositivoDetailView,
 )
 
 
 urlpatterns = [
+    path(
+        "dispositivos/ubicacion/previsualizar/",
+        permissions_any_required(
+            ["dispositivos.add_dispositivo", "dispositivos.change_dispositivo"]
+        )(DispositivoLocationPreviewView.as_view()),
+        name="dispositivos_previsualizar_ubicacion",
+    ),
     path(
         "dispositivos/mapa/",
         permissions_any_required(["dispositivos.view_dispositivo"])(

@@ -28,7 +28,7 @@ from .dispositivos_filter_config import (
     TEXT_OPS as DISPOSITIVOS_TEXT_OPS,
     get_filters_ui_config,
 )
-from .forms import DispositivoForm
+from .forms import DispositivoForm, DispositivoUbicacionForm
 from .models import Dispositivo
 from .services import (
     apply_dispositivos_scope,
@@ -707,5 +707,24 @@ class DispositivoLocationView(LoginRequiredMixin, View):
         response = JsonResponse(
             result, status=503 if result["status"] == "unavailable" else 200
         )
+        response["Cache-Control"] = "private, no-store"
+        return response
+
+
+class DispositivoLocationPreviewView(LoginRequiredMixin, View):
+    """Busca un domicilio autorizado en borrador, sin guardar el dispositivo."""
+
+    def post(self, request):
+        form = DispositivoUbicacionForm(request.POST, user=request.user)
+        if not form.is_valid():
+            response = JsonResponse(
+                {"status": "invalid", "errors": form.errors}, status=400
+            )
+        else:
+            device = Dispositivo(**form.cleaned_data)
+            result = geolocate_dispositivo(device)
+            response = JsonResponse(
+                result, status=503 if result["status"] == "unavailable" else 200
+            )
         response["Cache-Control"] = "private, no-store"
         return response

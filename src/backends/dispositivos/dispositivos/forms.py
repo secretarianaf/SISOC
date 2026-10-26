@@ -718,3 +718,15 @@ class DispositivoForm(forms.ModelForm):
             )
 
         return cleaned_data
+
+
+class DispositivoUbicacionForm(forms.Form):
+    """Valida solo el domicilio en borrador, con el mismo alcance que el alta."""
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        source = DispositivoForm(data=self.data, user=user)
+        self.fields = {
+            name: source.fields[name]
+            for name in ("provincia", "municipio", "localidad", "calle", "altura")
+        }

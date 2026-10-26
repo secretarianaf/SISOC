@@ -1042,3 +1042,183 @@ def test_edicion_coordenadas_requiere_permiso(client, provincia_municipio):
     assert response.status_code == 403
     device.refresh_from_db()
     assert str(device.latitud) == "-34.900000"
+
+
+@pytest.mark.django_db
+def test_editor_pin_solo_en_formulario_y_guardado_en_legajo(
+    client, user_con_permisos, provincia_municipio
+):
+    provincia, municipio = provincia_municipio
+    device = _crear_dispositivo(provincia, municipio, latitud="-34.9", longitud="-57.9")
+    client.force_login(user_con_permisos)
+    edit_url = reverse("dispositivos_editar", args=[device.pk])
+    response = client.get(edit_url)
+    assert response.status_code == 200
+    assert b"data-pin-editor" in response.content
+    assert b'data-latitude-field="id_latitud"' in response.content
+    assert (
+        reverse("dispositivos_ubicacion", args=[device.pk]).encode() in response.content
+    )
+    device.refresh_from_db()
+    assert str(device.latitud) == "-34.900000"
+    payload = _form_post_data(
+        provincia,
+        municipio,
+        latitud="-34.123456",
+        longitud="-58.123456",
+        calle=device.calle,
+        altura=device.altura,
+    )
+    response = client.post(edit_url, payload)
+    assert response.status_code == 302
+    device.refresh_from_db()
+    assert str(device.latitud) == "-34.123456"
+    assert str(device.longitud) == "-58.123456"
+    assert device.calle == payload["calle"]
+    assert device.altura == payload["altura"]
+    response = client.get(reverse("dispositivos_detalle", args=[device.pk]))
+    assert response.status_code == 200
+    assert response.context["mapa_query"] == "-34.123456%2C-58.123456"
+    assert b"data-pin-editor" not in response.content
+
+
+@pytest.mark.django_db
+def test_guardado_pin_invalido_conserva_coordenadas(
+    client, user_con_permisos, provincia_municipio
+):
+    provincia, municipio = provincia_municipio
+    device = _crear_dispositivo(provincia, municipio, latitud="-34.9", longitud="-57.9")
+    client.force_login(user_con_permisos)
+    response = client.post(
+        reverse("dispositivos_editar", args=[device.pk]),
+        _form_post_data(provincia, municipio, latitud="91", longitud="0"),
+    )
+    assert response.status_code == 200
+    assert "latitud" in response.context["form"].errors
+    device.refresh_from_db()
+    assert str(device.latitud) == "-34.900000"
+    assert str(device.longitud) == "-57.900000"
+
+
+@pytest.mark.django_db
+def test_busqueda_domicilio_en_borrador_no_guarda(
+    client, user_con_permisos, provincia_municipio, monkeypatch
+):
+    provincia, municipio = provincia_municipio
+    client.force_login(user_con_permisos)
+    count = Dispositivo.objects.count()
+    locations = []
+
+    def locate(device):
+        locations.append(device)
+        return {"status": "located", "lat": -34.9, "lon": -57.9}
+
+    monkeypatch.setattr("dispositivos.views.geolocate_dispositivo", locate)
+    response = client.post(
+        reverse("dispositivos_previsualizar_ubicacion"),
+        {
+            "provincia": provincia.pk,
+            "municipio": municipio.pk,
+            "calle": "Domicilio nuevo",
+            "altura": "123",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {"status": "located", "lat": -34.9, "lon": -57.9}
+    assert locations[0].pk is None
+    assert locations[0].calle == "Domicilio nuevo"
+    assert locations[0].municipio == municipio
+    assert Dispositivo.objects.count() == count
+    assert response["Cache-Control"] == "private, no-store"
+
+
+@pytest.mark.django_db
+def test_busqueda_domicilio_rechaza_geografia_invalida(
+    client, user_con_permisos, dos_provincias, monkeypatch
+):
+    provincia_a, municipio_a, provincia_b, municipio_b = dos_provincias
+    client.force_login(user_con_permisos)
+    monkeypatch.setattr(
+        "dispositivos.views.geolocate_dispositivo",
+        lambda _: pytest.fail("No debe buscar una dirección inválida"),
+    )
+    response = client.post(
+        reverse("dispositivos_previsualizar_ubicacion"),
+        {
+            "provincia": provincia_a.pk,
+            "municipio": municipio_b.pk,
+            "calle": "Calle",
+            "altura": "123",
+        },
+    )
+    assert response.status_code == 400
+    assert "municipio" in response.json()["errors"]
+    response = client.post(reverse("dispositivos_previsualizar_ubicacion"), {})
+    assert response.status_code == 400
+    assert "calle" in response.json()["errors"]
+
+
+@pytest.mark.django_db
+def test_busqueda_domicilio_respeta_alcance_territorial(
+    client, dos_provincias, monkeypatch
+):
+    provincia_a, municipio_a, provincia_b, municipio_b = dos_provincias
+    user = _crear_usuario_provincial("pin-provincia", provincia=provincia_a)
+    client.force_login(user)
+    monkeypatch.setattr(
+        "dispositivos.views.geolocate_dispositivo",
+        lambda _: pytest.fail("No debe buscar fuera de alcance"),
+    )
+    response = client.post(
+        reverse("dispositivos_previsualizar_ubicacion"),
+        {
+            "provincia": provincia_b.pk,
+            "municipio": municipio_b.pk,
+            "calle": "Calle",
+            "altura": "123",
+        },
+    )
+    assert response.status_code == 400
+    assert "provincia" in response.json()["errors"]
+
+
+@pytest.mark.django_db
+def test_busqueda_domicilio_requiere_permiso_y_csrf(
+    client, user_con_permisos, provincia_municipio
+):
+    from django.test import Client
+
+    url = reverse("dispositivos_previsualizar_ubicacion")
+    user = User.objects.create_user(username="pin-sin-edicion")
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="dispositivos", codename="view_dispositivo"
+        )
+    )
+    client.force_login(user)
+    assert client.post(url).status_code == 403
+    protected = Client(enforce_csrf_checks=True)
+    protected.force_login(user_con_permisos)
+    assert protected.post(url).status_code == 403
+
+
+@pytest.mark.django_db
+def test_busqueda_domicilio_servicio_no_disponible(
+    client, user_con_permisos, provincia_municipio, monkeypatch
+):
+    provincia, municipio = provincia_municipio
+    client.force_login(user_con_permisos)
+    monkeypatch.setattr(
+        "dispositivos.views.geolocate_dispositivo", lambda _: {"status": "unavailable"}
+    )
+    response = client.post(
+        reverse("dispositivos_previsualizar_ubicacion"),
+        {
+            "provincia": provincia.pk,
+            "municipio": municipio.pk,
+            "calle": "Calle",
+            "altura": "123",
+        },
+    )
+    assert response.status_code == 503
+    assert response.json() == {"status": "unavailable"}

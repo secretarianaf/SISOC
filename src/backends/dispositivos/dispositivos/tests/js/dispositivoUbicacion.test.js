@@ -19,7 +19,7 @@ function setup(values = {}, fetch = async () => ({ ok: true, json: async () => [
     nodes["dispositivo-mapa"] = { src: "original" };
     nodes["dispositivo-mapa-buscar"] = { addEventListener(_, cb) { this.click = cb; } };
     runInNewContext(source, {
-        document: { getElementById: id => nodes[id], addEventListener: (_, cb) => cb() },
+        document: { querySelector: () => null, getElementById: id => nodes[id], addEventListener: (_, cb) => cb() },
         window: { ajaxLoadLocalidadesUrl: "/localidades/" }, fetch,
         Option: function(text, value) { this.text = text; this.value = value; },
     });

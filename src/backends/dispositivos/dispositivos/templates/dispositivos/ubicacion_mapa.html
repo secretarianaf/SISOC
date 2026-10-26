@@ -9,6 +9,13 @@
                 Se priorizan latitud y longitud. Si ambas están vacías, se busca por domicilio. La previsualización no guarda cambios.
             </p>
         {% endif %}
+        {% if editable %}
+            {% url 'dispositivos_previsualizar_ubicacion' as search_location_url %}
+            {% if form.instance.pk %}
+                {% url 'dispositivos_ubicacion' form.instance.pk as saved_location_url %}
+            {% endif %}
+            {% include "components/map_pin_editor.html" with latitude_field="id_latitud" longitude_field="id_longitud" preview_frame="dispositivo-mapa" location_url=saved_location_url search_url=search_location_url address_fields="id_calle,id_altura,id_provincia,id_municipio,id_localidad" %}
+        {% endif %}
         <iframe id="dispositivo-mapa"
                 title="Ubicación del dispositivo"
                 width="100%"

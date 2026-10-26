@@ -14,44 +14,44 @@
             {% component "unfold/components/text.html" %}
             {{ operacion.descripcion }}
         {% endcomponent %}
+{% endif %}
+{% if operacion.destructiva %}
+    {% include "unfold/helpers/messages/warning.html" with message="Esta operación no se puede deshacer desde el admin. Revisá los registros antes de confirmar." %}
+{% endif %}
+<div>
+    <h2 class="font-semibold mb-2 text-font-important-light dark:text-font-important-dark">
+        Registros ({{ objetos|length }}
+        {% if en_lote %}de un máximo de {{ max_registros }}{% endif %}
+        )
+    </h2>
+    <ul class="leading-relaxed list-disc pl-5">
+        {% for obj in objetos %}<li>{{ obj }}</li>{% endfor %}
+    </ul>
+</div>
+<form method="post" novalidate>
+    {% csrf_token %}
+    {% if en_lote %}
+        <input type="hidden"
+               name="action"
+               value="{{ operacion.nombre_accion }}_lote" />
+        {% for obj in objetos %}<input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}" />{% endfor %}
     {% endif %}
-    {% if operacion.destructiva %}
-        {% include "unfold/helpers/messages/warning.html" with message="Esta operación no se puede deshacer desde el admin. Revisá los registros antes de confirmar." %}
+    <input type="hidden" name="confirmar_operacion" value="1" />
+    {% if form.non_field_errors %}
+        {% include "unfold/helpers/messages/errornote.html" with errors=form.non_field_errors %}
     {% endif %}
-    <div>
-        <h2 class="font-semibold mb-2 text-font-important-light dark:text-font-important-dark">
-            Registros ({{ objetos|length }}
-            {% if en_lote %}de un máximo de {{ max_registros }}{% endif %}
-            )
-        </h2>
-        <ul class="leading-relaxed list-disc pl-5">
-            {% for obj in objetos %}<li>{{ obj }}</li>{% endfor %}
-        </ul>
+    <div class="flex flex-col gap-3 mb-6">
+        {% for field in form %}
+            {% include "unfold/helpers/field.html" %}
+        {% endfor %}
     </div>
-    <form method="post" novalidate>
-        {% csrf_token %}
-        {% if en_lote %}
-            <input type="hidden"
-                   name="action"
-                   value="{{ operacion.nombre_accion }}_lote" />
-            {% for obj in objetos %}<input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}" />{% endfor %}
-        {% endif %}
-        <input type="hidden" name="confirmar_operacion" value="1" />
-        {% if form.non_field_errors %}
-            {% include "unfold/helpers/messages/errornote.html" with errors=form.non_field_errors %}
-        {% endif %}
-        <div class="flex flex-col gap-3 mb-6">
-            {% for field in form %}
-                {% include "unfold/helpers/field.html" %}
-            {% endfor %}
-        </div>
-        <div class="flex flex-row gap-2">
-            {% component "unfold/components/button.html" with submit=1 variant=operacion.destructiva|yesno:"danger,primary" %}
-            Confirmar
-        {% endcomponent %}
-        {% component "unfold/components/button.html" with href=changelist_url variant="default" %}
-        Cancelar
+    <div class="flex flex-row gap-2">
+        {% component "unfold/components/button.html" with submit=1 variant=operacion.destructiva|yesno:"danger,primary" %}
+        Confirmar
     {% endcomponent %}
+    {% component "unfold/components/button.html" with href=changelist_url variant="default" %}
+    Cancelar
+{% endcomponent %}
 </div>
 </form>
 </div>

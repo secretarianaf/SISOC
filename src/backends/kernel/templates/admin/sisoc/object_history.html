@@ -8,7 +8,7 @@
     {% if auditlog_historial.rows %}
         <div class="mb-8" id="historial-auditlog">
             {% component "unfold/components/table.html" with table=auditlog_historial title="Auditoría (auditlog)" %}
-        {% endcomponent %}
+    {% endcomponent %}
     </div>
 {% else %}
     {% include "unfold/helpers/messages/info.html" with message="Este registro no tiene eventos de auditoría." %}

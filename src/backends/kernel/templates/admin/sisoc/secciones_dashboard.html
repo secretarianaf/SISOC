@@ -20,14 +20,14 @@
                     {% endcomponent %}
                     {% component "unfold/components/title.html" with class=kpi.alerta|yesno:"text-red-600," %}
                     {{ kpi.valor }}
-                {% endcomponent %}
-                {% if kpi.detalle %}
-                    {% component "unfold/components/text.html" %}
-                    {{ kpi.detalle }}
-                {% endcomponent %}
-            {% endif %}
-        {% endcomponent %}
-    {% endfor %}
+            {% endcomponent %}
+            {% if kpi.detalle %}
+                {% component "unfold/components/text.html" %}
+                {{ kpi.detalle }}
+            {% endcomponent %}
+        {% endif %}
+{% endcomponent %}
+{% endfor %}
 </div>
 {% endif %}
 {% if seccion.graficos %}
@@ -42,10 +42,10 @@
                 {% component "unfold/components/chart/bar.html" with data=grafico.datos_json height=220 %}
             {% endcomponent %}
         {% endif %}
-    {% else %}
-        {% component "unfold/components/text.html" %}
-        Sin datos todavía.
-    {% endcomponent %}
+{% else %}
+    {% component "unfold/components/text.html" %}
+    Sin datos todavía.
+{% endcomponent %}
 {% endif %}
 {% endcomponent %}
 {% endfor %}

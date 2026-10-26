@@ -8,7 +8,7 @@ import rendicioncuentasmensual.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("rendicioncuentasmensual", "0026_issue_2683_planilla_seguros_ii"),
+        ("rendicioncuentasmensual", "0027_issue_2642_abordaje_comunitario"),
     ]
 
     operations = [

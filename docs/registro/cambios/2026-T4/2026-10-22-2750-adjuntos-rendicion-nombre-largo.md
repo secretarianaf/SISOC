@@ -13,7 +13,7 @@ Se agregó `_nombre_archivo_acotado` en
 funciones `upload_to` (`documentacion_adjunta_upload_to`,
 `acta_auditoria_upload_to`, `documento_regularizacion_upload_to`), una por cada
 `FileField` de rendición. La migración
-`src/backends/comedores/rendicioncuentasmensual/migrations/0027_upload_to_nombre_acotado.py`
+`src/backends/comedores/rendicioncuentasmensual/migrations/0028_upload_to_nombre_acotado.py`
 solo cambia el estado de Django: no altera columnas.
 
 ## Comportamiento

@@ -1,22 +1,54 @@
 from django.contrib import admin
+from django.core.exceptions import ValidationError
+from unfold.contrib.filters.admin import (
+    AutocompleteSelectFilter,
+    RangeDateTimeFilter,
+)
 
 from core.admin_base import SisocModelAdmin
+from core.admin_operaciones import Operacion, OperacionesAdminMixin
 from pwa.models import (
+    AccesoComedorPWA,
+    AccesoOrganizacionPWA,
     ActividadEspacioPWA,
     AuditoriaOperacionPWA,
     AuditAccesoComedorPWA,
     CatalogoActividadPWA,
     ColaboradorEspacioPWA,
+    CoordinadorEquipoTecnicoPWA,
     InscriptoActividadEspacioPWA,
     LecturaMensajePWA,
     NominaEspacioPWA,
     PushSubscriptionPWA,
     RegistroAsistenciaNominaPWA,
 )
+from pwa.services.accesos import deactivate_coordinador_equipo_tecnico_pwa_access
+from pwa.services.actividades_service import soft_delete_actividad_espacio
+from pwa.services.colaboradores_service import soft_delete_colaborador
+
+# ``Nomina.__str__`` usa el ciudadano y el comedor (directo o de la admisión).
+NOMINA_RELACIONADAS = (
+    "nomina__ciudadano",
+    "nomina__comedor",
+    "nomina__admision__comedor",
+)
+
+
+class SoloLecturaAdminMixin:
+    """Tablas de auditoría: se consultan, no se editan desde el admin."""
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(AuditoriaOperacionPWA)
-class AuditoriaOperacionPWAAdmin(SisocModelAdmin):
+class AuditoriaOperacionPWAAdmin(SoloLecturaAdminMixin, SisocModelAdmin):
     list_display = (
         "fecha_evento",
         "accion",
@@ -25,7 +57,13 @@ class AuditoriaOperacionPWAAdmin(SisocModelAdmin):
         "comedor",
         "user",
     )
-    list_filter = ("accion", "entidad", "comedor")
+    list_select_related = ("comedor", "user")
+    list_filter = (
+        "accion",
+        "entidad",
+        ("fecha_evento", RangeDateTimeFilter),
+        ("comedor", AutocompleteSelectFilter),
+    )
     search_fields = ("entidad", "entidad_id", "user__username", "comedor__nombre")
     readonly_fields = (
         "fecha_evento",
@@ -51,12 +89,18 @@ class LecturaMensajePWAAdmin(SisocModelAdmin):
         "fecha_visto",
         "fecha_creacion",
     )
-    list_filter = ("visto", "comedor")
+    list_select_related = ("comunicado", "comedor", "user")
+    list_filter = (
+        "visto",
+        ("fecha_visto", RangeDateTimeFilter),
+        ("comedor", AutocompleteSelectFilter),
+    )
     search_fields = (
         "comunicado__titulo",
         "comedor__nombre",
         "user__username",
     )
+    autocomplete_fields = ("comunicado", "comedor", "user")
     readonly_fields = ("fecha_creacion", "fecha_actualizacion")
 
 
@@ -69,8 +113,10 @@ class PushSubscriptionPWAAdmin(SisocModelAdmin):
         "fecha_actualizacion",
         "fecha_baja",
     )
-    list_filter = ("activo",)
+    list_select_related = ("user",)
+    list_filter = ("activo", ("fecha_baja", RangeDateTimeFilter))
     search_fields = ("user__username", "endpoint", "user_agent")
+    autocomplete_fields = ("user",)
     readonly_fields = (
         "fecha_creacion",
         "fecha_actualizacion",
@@ -78,8 +124,23 @@ class PushSubscriptionPWAAdmin(SisocModelAdmin):
     )
 
 
+def baja_colaborador_pwa(colaborador, usuario, _datos):
+    return soft_delete_colaborador(colaborador=colaborador, actor=usuario)
+
+
 @admin.register(ColaboradorEspacioPWA)
-class ColaboradorEspacioPWAAdmin(SisocModelAdmin):
+class ColaboradorEspacioPWAAdmin(OperacionesAdminMixin, SisocModelAdmin):
+    operaciones = (
+        Operacion(
+            slug="baja",
+            titulo="Dar de baja colaborador PWA",
+            ejecutar=baja_colaborador_pwa,
+            campo_estado="activo",
+            motivo_obligatorio=True,
+            destructiva=True,
+            icono="person_remove",
+        ),
+    )
     list_display = (
         "id",
         "comedor",
@@ -92,7 +153,12 @@ class ColaboradorEspacioPWAAdmin(SisocModelAdmin):
         "activo",
         "fecha_creacion",
     )
-    list_filter = ("activo", "comedor")
+    list_select_related = ("comedor",)
+    list_filter = (
+        "activo",
+        ("fecha_creacion", RangeDateTimeFilter),
+        ("comedor", AutocompleteSelectFilter),
+    )
     search_fields = (
         "nombre",
         "apellido",
@@ -101,6 +167,7 @@ class ColaboradorEspacioPWAAdmin(SisocModelAdmin):
         "telefono",
         "rol_funcion",
     )
+    autocomplete_fields = ("comedor",)
     readonly_fields = (
         "fecha_creacion",
         "fecha_actualizacion",
@@ -118,8 +185,24 @@ class CatalogoActividadPWAAdmin(SisocModelAdmin):
     readonly_fields = ("fecha_creacion", "fecha_actualizacion")
 
 
+def baja_actividad_pwa(actividad, usuario, _datos):
+    return soft_delete_actividad_espacio(actividad=actividad, actor=usuario)
+
+
 @admin.register(ActividadEspacioPWA)
-class ActividadEspacioPWAAdmin(SisocModelAdmin):
+class ActividadEspacioPWAAdmin(OperacionesAdminMixin, SisocModelAdmin):
+    operaciones = (
+        Operacion(
+            slug="baja",
+            titulo="Dar de baja actividad PWA",
+            descripcion="También desactiva las inscripciones activas.",
+            ejecutar=baja_actividad_pwa,
+            campo_estado="activo",
+            motivo_obligatorio=True,
+            destructiva=True,
+            icono="event_busy",
+        ),
+    )
     list_display = (
         "id",
         "comedor",
@@ -133,13 +216,21 @@ class ActividadEspacioPWAAdmin(SisocModelAdmin):
         "activo",
         "fecha_alta",
     )
-    list_filter = ("activo", "dia_actividad", "catalogo_actividad__categoria")
+    list_select_related = ("comedor", "catalogo_actividad", "dia_actividad")
+    list_filter = (
+        "activo",
+        "dia_actividad",
+        "catalogo_actividad__categoria",
+        ("fecha_alta", RangeDateTimeFilter),
+        ("comedor", AutocompleteSelectFilter),
+    )
     search_fields = (
         "comedor__nombre",
         "catalogo_actividad__categoria",
         "catalogo_actividad__actividad",
         "responsable_actividad",
     )
+    autocomplete_fields = ("comedor", "catalogo_actividad")
     readonly_fields = (
         "fecha_alta",
         "fecha_actualizacion",
@@ -158,13 +249,23 @@ class InscriptoActividadEspacioPWAAdmin(SisocModelAdmin):
         "activo",
         "fecha_alta",
     )
-    list_filter = ("activo", "actividad_espacio__comedor")
+    list_select_related = (
+        "actividad_espacio__comedor",
+        "actividad_espacio__catalogo_actividad",
+        *NOMINA_RELACIONADAS,
+    )
+    list_filter = (
+        "activo",
+        ("fecha_alta", RangeDateTimeFilter),
+        ("actividad_espacio__comedor", AutocompleteSelectFilter),
+    )
     search_fields = (
         "actividad_espacio__comedor__nombre",
         "nomina__ciudadano__apellido",
         "nomina__ciudadano__nombre",
         "nomina__ciudadano__documento",
     )
+    raw_id_fields = ("actividad_espacio", "nomina")
     readonly_fields = (
         "fecha_alta",
         "fecha_actualizacion",
@@ -189,6 +290,7 @@ class NominaEspacioPWAAdmin(SisocModelAdmin):
         "activo",
         "fecha_alta",
     )
+    list_select_related = NOMINA_RELACIONADAS
     list_filter = (
         "activo",
         "es_indocumentado",
@@ -197,6 +299,7 @@ class NominaEspacioPWAAdmin(SisocModelAdmin):
         "persona_con_celiaquia",
         "asistencia_alimentaria",
         "asistencia_actividades",
+        ("fecha_alta", RangeDateTimeFilter),
     )
     search_fields = (
         "nomina__ciudadano__apellido",
@@ -204,6 +307,7 @@ class NominaEspacioPWAAdmin(SisocModelAdmin):
         "nomina__ciudadano__documento",
         "identificador_interno",
     )
+    raw_id_fields = ("nomina",)
     readonly_fields = (
         "fecha_alta",
         "fecha_actualizacion",
@@ -223,13 +327,20 @@ class RegistroAsistenciaNominaPWAAdmin(SisocModelAdmin):
         "fecha_toma_asistencia",
         "tomado_por",
     )
-    list_filter = ("periodicidad", "periodo_referencia")
+    list_select_related = (*NOMINA_RELACIONADAS, "tomado_por")
+    list_filter = (
+        "periodicidad",
+        "periodo_referencia",
+        ("fecha_toma_asistencia", RangeDateTimeFilter),
+    )
     search_fields = (
         "nomina__ciudadano__apellido",
         "nomina__ciudadano__nombre",
         "nomina__ciudadano__documento",
         "tomado_por__username",
     )
+    raw_id_fields = ("nomina",)
+    autocomplete_fields = ("tomado_por",)
     readonly_fields = (
         "fecha_toma_asistencia",
         "metadata",
@@ -237,7 +348,7 @@ class RegistroAsistenciaNominaPWAAdmin(SisocModelAdmin):
 
 
 @admin.register(AuditAccesoComedorPWA)
-class AuditAccesoComedorPWAAdmin(SisocModelAdmin):
+class AuditAccesoComedorPWAAdmin(SoloLecturaAdminMixin, SisocModelAdmin):
     list_display = (
         "fecha_evento",
         "accion",
@@ -245,7 +356,8 @@ class AuditAccesoComedorPWAAdmin(SisocModelAdmin):
         "comedor",
         "actor",
     )
-    list_filter = ("accion", "fecha_evento")
+    list_select_related = ("user", "comedor", "actor")
+    list_filter = ("accion", ("fecha_evento", RangeDateTimeFilter))
     search_fields = (
         "user__username",
         "user__email",
@@ -264,8 +376,88 @@ class AuditAccesoComedorPWAAdmin(SisocModelAdmin):
         "metadata",
     )
 
-    def has_add_permission(self, request):
-        return False
 
-    def has_change_permission(self, request, obj=None):
-        return False
+# Los accesos se gestionan desde el ABM de usuarios y la PWA (que validan
+# roles y alcance). El admin los muestra para soporte; la desactivación de
+# operadores queda en la PWA porque el service exige un representante actor.
+@admin.register(AccesoComedorPWA)
+class AccesoComedorPWAAdmin(SisocModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "comedor",
+        "organizacion",
+        "rol",
+        "tipo_asociacion",
+        "activo",
+        "fecha_creacion",
+        "fecha_baja",
+    )
+    list_select_related = ("user", "comedor", "organizacion")
+    list_filter = (
+        "rol",
+        "tipo_asociacion",
+        "activo",
+        ("fecha_creacion", RangeDateTimeFilter),
+        ("comedor", AutocompleteSelectFilter),
+    )
+    search_fields = (
+        "user__username",
+        "user__email",
+        "comedor__nombre",
+        "organizacion__nombre",
+    )
+    autocomplete_fields = ("user", "comedor", "creado_por")
+    raw_id_fields = ("organizacion",)
+    readonly_fields = ("fecha_creacion", "fecha_baja", "fecha_actualizacion")
+
+
+@admin.register(AccesoOrganizacionPWA)
+class AccesoOrganizacionPWAAdmin(SisocModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "organizacion",
+        "activo",
+        "fecha_creacion",
+        "fecha_baja",
+    )
+    list_select_related = ("user", "organizacion")
+    list_filter = ("activo", ("fecha_creacion", RangeDateTimeFilter))
+    search_fields = (
+        "user__username",
+        "user__email",
+        "organizacion__nombre",
+        "organizacion__cuit",
+    )
+    autocomplete_fields = ("user", "creado_por")
+    raw_id_fields = ("organizacion",)
+    readonly_fields = ("fecha_creacion", "fecha_baja", "fecha_actualizacion")
+
+
+def desactivar_coordinador_pwa(coordinador, _usuario, _datos):
+    if not coordinador.activo:
+        raise ValidationError("El coordinador PWA ya está inactivo.")
+    return deactivate_coordinador_equipo_tecnico_pwa_access(coordinador.user)
+
+
+@admin.register(CoordinadorEquipoTecnicoPWA)
+class CoordinadorEquipoTecnicoPWAAdmin(OperacionesAdminMixin, SisocModelAdmin):
+    operaciones = (
+        Operacion(
+            slug="desactivar",
+            titulo="Desactivar coordinador PWA",
+            descripcion="Quita el alcance PWA de solo lectura del coordinador.",
+            ejecutar=desactivar_coordinador_pwa,
+            campo_estado="activo",
+            motivo_obligatorio=True,
+            destructiva=True,
+            icono="person_off",
+        ),
+    )
+    list_display = ("id", "user", "activo", "fecha_creacion", "fecha_actualizacion")
+    list_select_related = ("user",)
+    list_filter = ("activo", ("fecha_creacion", RangeDateTimeFilter))
+    search_fields = ("user__username", "user__email")
+    autocomplete_fields = ("user", "duplas", "comedores_adicionales")
+    readonly_fields = ("fecha_creacion", "fecha_actualizacion")

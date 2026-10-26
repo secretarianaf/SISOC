@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from core.admin_base import SisocModelAdmin
 from .models import (
     Actividad,
     AccesoCDF,
@@ -14,26 +15,26 @@ from .models import (
 
 
 @admin.register(Centro)
-class CentroAdmin(admin.ModelAdmin):
+class CentroAdmin(SisocModelAdmin):
     list_display = ("nombre", "tipo", "activo", "faro_asociado")
     list_filter = ("tipo", "activo")
     search_fields = ("nombre",)
 
 
 @admin.register(Categoria)
-class CategoriaAdmin(admin.ModelAdmin):
+class CategoriaAdmin(SisocModelAdmin):
     list_display = ("nombre",)
     search_fields = ("nombre",)
 
 
 @admin.register(Actividad)
-class ActividadAdmin(admin.ModelAdmin):
+class ActividadAdmin(SisocModelAdmin):
     list_display = ("nombre", "categoria")
     list_filter = ("categoria",)
     search_fields = ("nombre",)
 
 
-class ActividadCentroAdmin(admin.ModelAdmin):
+class ActividadCentroAdmin(SisocModelAdmin):
     list_display = (
         "centro",
         "actividad",
@@ -52,14 +53,14 @@ class ActividadCentroAdmin(admin.ModelAdmin):
 
 
 @admin.register(ParticipanteActividad)
-class ParticipanteActividadAdmin(admin.ModelAdmin):
+class ParticipanteActividadAdmin(SisocModelAdmin):
     list_display = ("actividad_centro", "ciudadano", "fecha_registro")
     search_fields = ("ciudadano__apellido", "ciudadano__nombre", "ciudadano__documento")
     list_filter = ("actividad_centro__centro",)
 
 
 @admin.register(Responsable)
-class ResponsableAdmin(admin.ModelAdmin):
+class ResponsableAdmin(SisocModelAdmin):
     list_display = ("apellido", "nombre", "dni", "cuil", "vinculo_parental", "genero")
     list_filter = ("vinculo_parental", "genero", "provincia")
     search_fields = ("apellido", "nombre", "dni", "cuil")
@@ -68,7 +69,7 @@ class ResponsableAdmin(admin.ModelAdmin):
 
 
 @admin.register(Beneficiario)
-class BeneficiarioAdmin(admin.ModelAdmin):
+class BeneficiarioAdmin(SisocModelAdmin):
     list_display = (
         "apellido",
         "nombre",
@@ -84,7 +85,7 @@ class BeneficiarioAdmin(admin.ModelAdmin):
 
 
 @admin.register(AccesoCDF)
-class AccesoCDFAdmin(admin.ModelAdmin):
+class AccesoCDFAdmin(SisocModelAdmin):
     list_display = ("user", "centro", "activo", "fecha_creacion")
     list_filter = ("activo",)
     search_fields = ("user__username", "user__email", "centro__nombre")
@@ -93,7 +94,7 @@ class AccesoCDFAdmin(admin.ModelAdmin):
 
 
 @admin.register(CabalArchivo)
-class CabalArchivoAdmin(admin.ModelAdmin):
+class CabalArchivoAdmin(SisocModelAdmin):
     list_display = (
         "nombre_original",
         "usuario",
@@ -113,7 +114,7 @@ class CabalArchivoAdmin(admin.ModelAdmin):
 
 
 @admin.register(InformeCabalRegistro)
-class InformeCabalRegistroAdmin(admin.ModelAdmin):
+class InformeCabalRegistroAdmin(SisocModelAdmin):
     list_display = (
         "archivo",
         "centro",

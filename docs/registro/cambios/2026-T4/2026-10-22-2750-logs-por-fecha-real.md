@@ -14,6 +14,14 @@ del archivo abierto. Si cambió, cierra el archivo, crea la carpeta del día con
 permiso de escritura de grupo y sigue escribiendo ahí. El cambio de archivo
 pasa con el lock del handler tomado (`Handler.handle`).
 
+La fecha sale de `record.created` (el momento del registro) en la zona horaria
+de Django, no de `timezone.now()`: así un `timezone.now` parcheado en tests no
+rompe el logging. Si calcular la fecha o cambiar de archivo falla, el handler
+usa `handleError` como el resto de `logging` y no propaga la excepción al
+código que loguea. Cada proceso abre su propio archivo en modo append; no hay
+renombrado ni rotación compartida, así que varios workers pueden escribir el
+mismo día sin pisarse.
+
 ## Comportamiento
 
 - Los errores de hoy quedan en `logs/<hoy>/error.log`, aunque el proceso haya
@@ -38,5 +46,8 @@ pasa con el lock del handler tomado (`Handler.handle`).
   del 21/10 con el mismo handler terminan en carpetas distintas, con permiso de
   grupo. Falla con el handler anterior y pasa con el nuevo. El test que ya
   existía sigue pasando.
+- `test_daily_file_handler_no_depende_de_timezone_now`: con `timezone.now`
+  parcheado a un string, loguear no lanza. La primera versión del PR rompía
+  3 tests de `comedores` que parchean `timezone.now` y loguean un error.
 - black sin cambios; pylint 10/10.
 - No verificado en PRD: se ve al día siguiente de desplegar.

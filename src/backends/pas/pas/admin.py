@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib import messages
 
+from core.admin_base import SisocModelAdmin
 from pas.models import (
     PasAviso,
     PasCircuitoMensual,
@@ -18,13 +19,13 @@ from pas.services.ddjj_service import regenerar_invitacion
 
 
 @admin.register(PasEstado)
-class PasEstadoAdmin(admin.ModelAdmin):
+class PasEstadoAdmin(SisocModelAdmin):
     list_display = ("nombre", "descripcion")
     search_fields = ("nombre", "descripcion")
 
 
 @admin.register(PasAviso)
-class PasAvisoAdmin(admin.ModelAdmin):
+class PasAvisoAdmin(SisocModelAdmin):
     list_display = ("codigo", "descripcion", "observacion")
     list_filter = ("estados",)
     search_fields = ("codigo", "descripcion")
@@ -32,7 +33,7 @@ class PasAvisoAdmin(admin.ModelAdmin):
 
 
 @admin.register(PasPersona)
-class PasPersonaAdmin(admin.ModelAdmin):
+class PasPersonaAdmin(SisocModelAdmin):
     list_display = ("id_persona", "apellidos", "nombres", "dni", "provincia", "estado")
     list_filter = ("estado", "provincia")
     search_fields = ("id_persona", "apellidos", "nombres", "dni", "cuit")
@@ -53,7 +54,7 @@ class PasPersonaAdmin(admin.ModelAdmin):
 
 
 @admin.register(PasHistorialEstado)
-class PasHistorialEstadoAdmin(admin.ModelAdmin):
+class PasHistorialEstadoAdmin(SisocModelAdmin):
     list_display = ("persona", "estado_anterior", "estado_nuevo", "fecha_cambio")
     list_filter = ("estado_nuevo", "fecha_cambio")
     search_fields = ("persona__apellidos", "persona__nombres", "persona__dni")
@@ -61,7 +62,7 @@ class PasHistorialEstadoAdmin(admin.ModelAdmin):
 
 
 @admin.register(PasInforme)
-class PasInformeAdmin(admin.ModelAdmin):
+class PasInformeAdmin(SisocModelAdmin):
     list_display = ("numero", "usuario", "creado", "total_personas", "total_cambios")
     list_filter = ("creado", "usuario")
     search_fields = (
@@ -74,7 +75,7 @@ class PasInformeAdmin(admin.ModelAdmin):
 
 
 @admin.register(PasCircuitoMensual)
-class PasCircuitoMensualAdmin(admin.ModelAdmin):
+class PasCircuitoMensualAdmin(SisocModelAdmin):
     list_display = (
         "periodo",
         "fecha_exportacion_sintys",
@@ -90,7 +91,7 @@ class PasCircuitoMensualAdmin(admin.ModelAdmin):
 
 
 @admin.register(PasControlRenaper)
-class PasControlRenaperAdmin(admin.ModelAdmin):
+class PasControlRenaperAdmin(SisocModelAdmin):
     list_display = ("persona", "fecha_consulta", "resultado", "consultado")
     list_filter = ("fecha_consulta", "resultado")
     search_fields = ("persona__dni", "persona__apellidos", "persona__nombres")
@@ -105,7 +106,7 @@ class PasControlRenaperAdmin(admin.ModelAdmin):
 
 
 @admin.register(PasIncompatibilidad)
-class PasIncompatibilidadAdmin(admin.ModelAdmin):
+class PasIncompatibilidadAdmin(SisocModelAdmin):
     list_display = (
         "persona",
         "categoria",
@@ -118,7 +119,7 @@ class PasIncompatibilidadAdmin(admin.ModelAdmin):
 
 
 @admin.register(PasInvitacionDDJJ)
-class PasInvitacionDDJJAdmin(admin.ModelAdmin):
+class PasInvitacionDDJJAdmin(SisocModelAdmin):
     list_display = ("persona", "token", "creada", "vence", "utilizada", "revocada")
     readonly_fields = (
         "token",
@@ -138,7 +139,7 @@ class PasInvitacionDDJJAdmin(admin.ModelAdmin):
 
 
 @admin.register(PasDeclaracionJurada)
-class PasDeclaracionJuradaAdmin(admin.ModelAdmin):
+class PasDeclaracionJuradaAdmin(SisocModelAdmin):
     list_display = ("persona", "version", "presentada", "finalizada")
     search_fields = ("persona__dni", "persona__apellidos", "persona__nombres")
     readonly_fields = tuple(field.name for field in PasDeclaracionJurada._meta.fields)
@@ -154,7 +155,7 @@ class PasDeclaracionJuradaAdmin(admin.ModelAdmin):
 
 
 @admin.register(PasExportacionTokens)
-class PasExportacionTokensAdmin(admin.ModelAdmin):
+class PasExportacionTokensAdmin(SisocModelAdmin):
     list_display = ("fecha", "usuario", "cantidad")
     readonly_fields = ("fecha", "usuario", "cantidad")
     ordering = ("-fecha", "-id")

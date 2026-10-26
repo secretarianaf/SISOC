@@ -1,4 +1,5 @@
 from django.contrib import admin
+from unfold.contrib.filters.admin import RangeDateTimeFilter
 
 from core.admin_base import SisocModelAdmin
 from dispositivos.models import Dispositivo
@@ -13,9 +14,16 @@ class DispositivoAdmin(SisocModelAdmin):
         "municipio",
         "created_at",
     )
+    list_select_related = ("provincia", "municipio")
     search_fields = (
+        "=id",
         "nombre_institucion",
         "razon_social",
         "cuit_institucion",
     )
-    list_filter = ("tipo_dispositivo", "modalidad_funcionamiento", "provincia")
+    list_filter = (
+        "tipo_dispositivo",
+        "modalidad_funcionamiento",
+        "provincia",
+        ("created_at", RangeDateTimeFilter),
+    )

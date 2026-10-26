@@ -1,4 +1,5 @@
 from django.contrib import admin
+from core.admin_base import SisocModelAdmin, SisocTabularInline
 from .models import (
     Centro,
     ModalidadInstitucional,
@@ -33,7 +34,7 @@ from .models import (
 
 
 @admin.register(Centro)
-class CentroAdmin(admin.ModelAdmin):
+class CentroAdmin(SisocModelAdmin):
     list_display = ("nombre", "tipo_gestion", "activo")
     list_filter = ("activo", "tipo_gestion")
     search_fields = ("nombre",)
@@ -76,7 +77,7 @@ class CentroAdmin(admin.ModelAdmin):
 
 
 @admin.register(ModalidadInstitucional)
-class ModalidadInstitucionalAdmin(admin.ModelAdmin):
+class ModalidadInstitucionalAdmin(SisocModelAdmin):
     list_display = ("nombre", "activo", "fecha_creacion")
     list_filter = ("activo", "fecha_creacion")
     search_fields = ("nombre",)
@@ -84,26 +85,26 @@ class ModalidadInstitucionalAdmin(admin.ModelAdmin):
 
 
 @admin.register(Sector)
-class SectorAdmin(admin.ModelAdmin):
+class SectorAdmin(SisocModelAdmin):
     list_display = ("nombre",)
     search_fields = ("nombre",)
     inlines = []
 
 
-class SubsectorInline(admin.TabularInline):
+class SubsectorInline(SisocTabularInline):
     model = Subsector
     extra = 1
 
 
 @admin.register(Subsector)
-class SubsectorAdmin(admin.ModelAdmin):
+class SubsectorAdmin(SisocModelAdmin):
     list_display = ("nombre", "sector")
     list_filter = ("sector",)
     search_fields = ("nombre",)
 
 
 @admin.register(TituloReferencia)
-class TituloReferenciaAdmin(admin.ModelAdmin):
+class TituloReferenciaAdmin(SisocModelAdmin):
     list_display = ("nombre", "plan_estudio", "activo")
     list_filter = ("plan_estudio", "activo")
     search_fields = (
@@ -123,14 +124,14 @@ class TituloReferenciaAdmin(admin.ModelAdmin):
 
 
 @admin.register(ModalidadCursada)
-class ModalidadCursadaAdmin(admin.ModelAdmin):
+class ModalidadCursadaAdmin(SisocModelAdmin):
     list_display = ("nombre", "activo")
     list_filter = ("activo",)
     search_fields = ("nombre",)
 
 
 @admin.register(PlanVersionCurricular)
-class PlanVersionCurricularAdmin(admin.ModelAdmin):
+class PlanVersionCurricularAdmin(SisocModelAdmin):
     list_display = (
         "sector",
         "subsector",
@@ -157,7 +158,7 @@ class PlanVersionCurricularAdmin(admin.ModelAdmin):
 
 
 @admin.register(InscripcionOferta)
-class InscripcionOfertaAdmin(admin.ModelAdmin):
+class InscripcionOfertaAdmin(SisocModelAdmin):
     list_display = ("ciudadano", "oferta", "estado", "fecha_inscripcion")
     list_filter = ("estado", "fecha_inscripcion")
     search_fields = ("ciudadano__nombre", "ciudadano__apellido")
@@ -175,7 +176,7 @@ class InscripcionOfertaAdmin(admin.ModelAdmin):
 
 
 @admin.register(Curso)
-class CursoAdmin(admin.ModelAdmin):
+class CursoAdmin(SisocModelAdmin):
     list_display = (
         "nombre",
         "centro",
@@ -190,7 +191,7 @@ class CursoAdmin(admin.ModelAdmin):
 
 
 @admin.register(SolicitudInscripcionPublica)
-class SolicitudInscripcionPublicaAdmin(admin.ModelAdmin):
+class SolicitudInscripcionPublicaAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "comision_curso",
@@ -213,14 +214,14 @@ class SolicitudInscripcionPublicaAdmin(admin.ModelAdmin):
 # ============================================================================
 
 
-class VoucherRecargaInline(admin.TabularInline):
+class VoucherRecargaInline(SisocTabularInline):
     model = VoucherRecarga
     extra = 0
     readonly_fields = ("fecha_recarga",)
     fields = ("cantidad", "motivo", "autorizado_por", "fecha_recarga")
 
 
-class VoucherUsoInline(admin.TabularInline):
+class VoucherUsoInline(SisocTabularInline):
     model = VoucherUso
     extra = 0
     readonly_fields = ("fecha_uso",)
@@ -228,7 +229,7 @@ class VoucherUsoInline(admin.TabularInline):
 
 
 @admin.register(Voucher)
-class VoucherAdmin(admin.ModelAdmin):
+class VoucherAdmin(SisocModelAdmin):
     list_display = (
         "ciudadano",
         "cantidad_disponible",
@@ -282,7 +283,7 @@ class VoucherAdmin(admin.ModelAdmin):
 
 
 @admin.register(VoucherRecarga)
-class VoucherRecargaAdmin(admin.ModelAdmin):
+class VoucherRecargaAdmin(SisocModelAdmin):
     list_display = ("voucher", "cantidad", "motivo", "fecha_recarga", "autorizado_por")
     list_filter = ("motivo", "fecha_recarga")
     search_fields = (
@@ -298,7 +299,7 @@ class VoucherRecargaAdmin(admin.ModelAdmin):
 
 
 @admin.register(VoucherUso)
-class VoucherUsoAdmin(admin.ModelAdmin):
+class VoucherUsoAdmin(SisocModelAdmin):
     list_display = ("voucher", "inscripcion_oferta", "cantidad_usada", "fecha_uso")
     list_filter = ("fecha_uso",)
     search_fields = (
@@ -316,7 +317,7 @@ class VoucherUsoAdmin(admin.ModelAdmin):
 
 
 @admin.register(VoucherLog)
-class VoucherLogAdmin(admin.ModelAdmin):
+class VoucherLogAdmin(SisocModelAdmin):
     list_display = (
         "voucher",
         "tipo_evento",
@@ -371,7 +372,7 @@ class VoucherLogAdmin(admin.ModelAdmin):
 
 
 @admin.register(InstitucionContacto)
-class InstitucionContactoAdmin(admin.ModelAdmin):
+class InstitucionContactoAdmin(SisocModelAdmin):
     list_display = (
         "centro",
         "tipo",
@@ -386,7 +387,7 @@ class InstitucionContactoAdmin(admin.ModelAdmin):
 
 
 @admin.register(InstitucionIdentificadorHist)
-class InstitucionIdentificadorHistAdmin(admin.ModelAdmin):
+class InstitucionIdentificadorHistAdmin(SisocModelAdmin):
     list_display = (
         "centro",
         "tipo_identificador",
@@ -400,7 +401,7 @@ class InstitucionIdentificadorHistAdmin(admin.ModelAdmin):
 
 
 @admin.register(InstitucionUbicacion)
-class InstitucionUbicacionAdmin(admin.ModelAdmin):
+class InstitucionUbicacionAdmin(SisocModelAdmin):
     list_display = ("centro", "localidad", "rol_ubicacion", "es_principal", "domicilio")
     list_filter = ("rol_ubicacion", "es_principal")
     search_fields = ("centro__nombre", "localidad__nombre", "domicilio")
@@ -412,14 +413,14 @@ class InstitucionUbicacionAdmin(admin.ModelAdmin):
 # ============================================================================
 
 
-class ComisionInline(admin.TabularInline):
+class ComisionInline(SisocTabularInline):
     model = Comision
     extra = 0
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
 
 
 @admin.register(OfertaInstitucional)
-class OfertaInstitucionalAdmin(admin.ModelAdmin):
+class OfertaInstitucionalAdmin(SisocModelAdmin):
     list_display = (
         "centro",
         "plan_curricular",
@@ -448,14 +449,14 @@ class OfertaInstitucionalAdmin(admin.ModelAdmin):
     )
 
 
-class ComisionHorarioInline(admin.TabularInline):
+class ComisionHorarioInline(SisocTabularInline):
     model = ComisionHorario
     extra = 0
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
 
 
 @admin.register(Comision)
-class ComisionAdmin(admin.ModelAdmin):
+class ComisionAdmin(SisocModelAdmin):
     list_display = (
         "codigo_comision",
         "nombre",
@@ -486,7 +487,7 @@ class ComisionAdmin(admin.ModelAdmin):
 
 
 @admin.register(ComisionHorario)
-class ComisionHorarioAdmin(admin.ModelAdmin):
+class ComisionHorarioAdmin(SisocModelAdmin):
     list_display = (
         "comision",
         "dia_semana",
@@ -506,7 +507,7 @@ class ComisionHorarioAdmin(admin.ModelAdmin):
 
 
 @admin.register(Inscripcion)
-class InscripcionAdmin(admin.ModelAdmin):
+class InscripcionAdmin(SisocModelAdmin):
     list_display = ("ciudadano", "comision", "estado", "fecha_inscripcion", "programa")
     list_filter = (
         "estado",
@@ -547,7 +548,7 @@ class InscripcionAdmin(admin.ModelAdmin):
 
 
 @admin.register(AsistenciaSesion)
-class AsistenciaSesionAdmin(admin.ModelAdmin):
+class AsistenciaSesionAdmin(SisocModelAdmin):
     list_display = (
         "sesion",
         "inscripcion",
@@ -569,7 +570,7 @@ class AsistenciaSesionAdmin(admin.ModelAdmin):
 # ============================================================================
 
 
-class ResultadoEvaluacionInline(admin.TabularInline):
+class ResultadoEvaluacionInline(SisocTabularInline):
     model = ResultadoEvaluacion
     extra = 0
     readonly_fields = ("fecha_registro", "fecha_creacion", "fecha_modificacion")
@@ -577,7 +578,7 @@ class ResultadoEvaluacionInline(admin.TabularInline):
 
 
 @admin.register(Evaluacion)
-class EvaluacionAdmin(admin.ModelAdmin):
+class EvaluacionAdmin(SisocModelAdmin):
     list_display = ("comision", "nombre", "tipo", "fecha", "es_final", "ponderacion")
     list_filter = ("tipo", "es_final", "comision__oferta__centro")
     search_fields = ("nombre", "comision__codigo_comision")
@@ -600,7 +601,7 @@ class EvaluacionAdmin(admin.ModelAdmin):
 
 
 @admin.register(ResultadoEvaluacion)
-class ResultadoEvaluacionAdmin(admin.ModelAdmin):
+class ResultadoEvaluacionAdmin(SisocModelAdmin):
     list_display = (
         "inscripcion",
         "evaluacion",

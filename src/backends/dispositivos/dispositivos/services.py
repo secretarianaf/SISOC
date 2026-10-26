@@ -2,6 +2,7 @@ import hashlib
 import json
 import logging
 import math
+from urllib.parse import quote
 
 import requests
 from django.conf import settings
@@ -18,7 +19,9 @@ from .models import Dispositivo
 
 
 def get_dispositivos_queryset():
-    return Dispositivo.objects.select_related("provincia", "municipio").order_by(
+    return Dispositivo.objects.select_related(
+        "provincia", "municipio", "localidad"
+    ).order_by(
         "-created_at",
         "nombre_institucion",
     )
@@ -87,6 +90,8 @@ def _location_signature(device):
         device.provincia_id,
         device.provincia.nombre,
     ]
+    if device.localidad_id:
+        address.extend([device.localidad_id, device.localidad.nombre])
     return hashlib.sha256(json.dumps(address, ensure_ascii=False).encode()).hexdigest()
 
 
@@ -97,13 +102,19 @@ _PERSISTED_STATUSES = ("located", "ambiguous", "not_found")
 
 def get_saved_dispositivo_location(device):
     """Reutiliza el resultado guardado solo si corresponde a la dirección actual."""
+    if device.latitud is not None and device.longitud is not None:
+        return {
+            "status": "located",
+            "lat": float(device.latitud),
+            "lon": float(device.longitud),
+        }
     saved = device.ubicacion_georef
-    if not isinstance(saved, dict) or saved.get("signature") != _location_signature(
-        device
+    result = saved.get("result") if isinstance(saved, dict) else None
+    if (
+        not isinstance(result, dict)
+        or saved.get("signature") != _location_signature(device)
+        or result.get("status") not in _PERSISTED_STATUSES
     ):
-        return None
-    result = saved.get("result")
-    if not isinstance(result, dict) or result.get("status") not in _PERSISTED_STATUSES:
         return None
     if result["status"] != "located":
         return {"status": result["status"]}
@@ -131,6 +142,9 @@ def _save_dispositivo_location(device, signature, result):
         altura=device.altura,
         municipio_id=device.municipio_id,
         provincia_id=device.provincia_id,
+        localidad_id=device.localidad_id,
+        latitud__isnull=True,
+        longitud__isnull=True,
     ).update(ubicacion_georef=saved)
     if updated:
         device.ubicacion_georef = saved
@@ -162,7 +176,11 @@ def geolocate_dispositivo(device):
                 params={
                     "direccion": address,
                     "provincia": device.provincia.nombre,
-                    territory: device.municipio.nombre,
+                    territory: (
+                        device.localidad.nombre
+                        if territory == "localidad" and device.localidad_id
+                        else device.municipio.nombre
+                    ),
                     "max": 2,
                 },
                 timeout=8,
@@ -195,3 +213,23 @@ def geolocate_dispositivo(device):
     _save_dispositivo_location(device, signature, result)
     cache.set(key, result, timeout=86400 * (30 if result["status"] == "located" else 1))
     return result
+
+
+def get_dispositivo_map_query(device):
+    """Prioriza coordenadas explícitas, luego domicilio, sin consultar servicios."""
+    if device.latitud is not None and device.longitud is not None:
+        query = f"{device.latitud},{device.longitud}"
+    else:
+        query = ", ".join(
+            filter(
+                None,
+                [
+                    f"{device.calle} {device.altura}".strip(),
+                    str(device.localidad) if device.localidad_id else "",
+                    str(device.municipio),
+                    str(device.provincia),
+                    "Argentina",
+                ],
+            )
+        )
+    return quote(query)

@@ -34,6 +34,7 @@ from .services import (
     apply_dispositivos_scope,
     delete_dispositivo,
     get_dispositivos_queryset,
+    get_dispositivo_map_query,
     get_saved_dispositivo_location,
     geolocate_dispositivo,
     save_dispositivo_from_form,
@@ -126,6 +127,7 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         dispositivo = self.object
+        context["mapa_query"] = get_dispositivo_map_query(dispositivo)
         context["breadcrumb_items"] = [
             {"text": "Dispositivos", "url": reverse("dispositivos_listar")},
             {"text": dispositivo.nombre_institucion},
@@ -163,6 +165,16 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                         "label": "Municipio",
                         "value": _format_value(str(dispositivo.municipio)),
                     },
+                    {
+                        "label": "Localidad",
+                        "value": (
+                            str(dispositivo.localidad)
+                            if dispositivo.localidad_id
+                            else "-"
+                        ),
+                    },
+                    {"label": "Latitud", "value": _format_value(dispositivo.latitud)},
+                    {"label": "Longitud", "value": _format_value(dispositivo.longitud)},
                     {
                         "label": "Calle",
                         "value": _format_value(dispositivo.calle),

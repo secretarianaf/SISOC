@@ -6,7 +6,7 @@ import pytest
 import requests
 from django.core.cache import cache
 
-from core.models import Municipio, Provincia
+from core.models import Localidad, Municipio, Provincia
 from dispositivos.models import Dispositivo
 from dispositivos.services import geolocate_dispositivo, get_saved_dispositivo_location
 
@@ -230,3 +230,42 @@ def test_no_sobrescribe_direccion_editada_durante_consulta(
     persisted_device.refresh_from_db()
     assert persisted_device.calle == "Calle nueva"
     assert persisted_device.ubicacion_georef == {}
+
+
+@pytest.mark.parametrize("coordinates", [(0, 0), (-34.9, -57.9)])
+def test_coordenadas_manuales_prioritarias_sin_consulta(
+    device, monkeypatch, coordinates
+):
+    lookup = Mock(side_effect=AssertionError("No debe consultar Georef"))
+    monkeypatch.setattr("dispositivos.services.requests.get", lookup)
+    device.latitud, device.longitud = coordinates
+    expected = {"status": "located", "lat": coordinates[0], "lon": coordinates[1]}
+    assert geolocate_dispositivo(device) == expected
+    device.calle = "Otra calle"
+    assert get_saved_dispositivo_location(device) == expected
+    lookup.assert_not_called()
+
+
+def test_georef_usa_localidad_y_su_cambio_invalida_cache(device, monkeypatch):
+    lookup = mock_location(monkeypatch)
+    device.localidad = Localidad(pk=1, nombre="Localidad A", municipio=device.municipio)
+    geolocate_dispositivo(device)
+    assert lookup.call_args.kwargs["params"]["localidad"] == "Localidad A"
+    device.localidad = Localidad(pk=2, nombre="Localidad B", municipio=device.municipio)
+    geolocate_dispositivo(device)
+    assert lookup.call_count == 2
+    assert lookup.call_args.kwargs["params"]["localidad"] == "Localidad B"
+
+
+def test_query_mapa_prioriza_coordenadas_y_fallback_domicilio(device):
+    from urllib.parse import unquote
+    from dispositivos.services import get_dispositivo_map_query
+
+    assert (
+        unquote(get_dispositivo_map_query(device))
+        == "San Martín 500, Rosario, Santa Fe, Argentina"
+    )
+    device.localidad = Localidad(pk=1, nombre="Centro", municipio=device.municipio)
+    assert "Centro, Rosario" in unquote(get_dispositivo_map_query(device))
+    device.latitud, device.longitud = 0, 0
+    assert unquote(get_dispositivo_map_query(device)) == "0,0"

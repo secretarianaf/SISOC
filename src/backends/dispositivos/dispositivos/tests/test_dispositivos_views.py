@@ -1002,3 +1002,43 @@ def test_mapa_opciones_de_provincia_no_dependen_del_filtro(
         (provincia_a.pk, provincia_a.nombre),
         (provincia_b.pk, provincia_b.nombre),
     }
+
+
+@pytest.mark.django_db
+def test_ficha_mapa_coordenadas_y_edicion(
+    client, user_con_permisos, provincia_municipio
+):
+    provincia, municipio = provincia_municipio
+    device = _crear_dispositivo(provincia, municipio, latitud="-34.9", longitud="-57.9")
+    client.force_login(user_con_permisos)
+    response = client.get(reverse("dispositivos_detalle", args=[device.pk]))
+    assert response.status_code == 200
+    assert response.context["mapa_query"] == "-34.900000%2C-57.900000"
+    assert b'id="dispositivo-mapa"' in response.content
+    response = client.get(reverse("dispositivos_editar", args=[device.pk]))
+    assert response.status_code == 200
+    for name in ("localidad", "latitud", "longitud"):
+        assert f'id="id_{name}"'.encode() in response.content
+    assert b"Previsualizar" in response.content
+    device.refresh_from_db()
+    assert str(device.latitud) == "-34.900000"
+
+
+@pytest.mark.django_db
+def test_edicion_coordenadas_requiere_permiso(client, provincia_municipio):
+    provincia, municipio = provincia_municipio
+    device = _crear_dispositivo(provincia, municipio, latitud="-34.9", longitud="-57.9")
+    user = User.objects.create_user(username="solo-lectura")
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="dispositivos", codename="view_dispositivo"
+        )
+    )
+    client.force_login(user)
+    response = client.post(
+        reverse("dispositivos_editar", args=[device.pk]),
+        {"latitud": "0", "longitud": "0"},
+    )
+    assert response.status_code == 403
+    device.refresh_from_db()
+    assert str(device.latitud) == "-34.900000"

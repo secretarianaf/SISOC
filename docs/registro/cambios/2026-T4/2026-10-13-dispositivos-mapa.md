@@ -22,7 +22,7 @@ La cache por dirección conserva resultados positivos por 30 días y negativos p
 
 ## Permisos y límites
 
-Ambas rutas requieren `dispositivos.view_dispositivo` y conservan el alcance territorial del listado. La geocodificación envía solo la dirección al proveedor, sin CUIT, DNI ni contactos. El endpoint de ubicación responde con `Cache-Control: private, no-store`.
+Ambas rutas requieren `dispositivos.view_dispositivo` (desde #2759 también `dispositivos.ver_mapa_dispositivo`, ver `2026-10-22-dispositivos-permiso-mapa.md`) y conservan el alcance territorial del listado. La geocodificación envía solo la dirección al proveedor, sin CUIT, DNI ni contactos. El endpoint de ubicación responde con `Cache-Control: private, no-store`.
 
 Un punto por **cada** dispositivo, criterio del issue, depende de resolver las direcciones ambiguas/sin coincidencia o incorporar coordenadas verificadas. No hay localidad propia en Dispositivo y municipio/departamento no siempre coinciden. La normalización del proveedor no equivale a confirmación humana en terreno. La implementación está validada localmente; no se desplegó ni verificó en homologación.
 

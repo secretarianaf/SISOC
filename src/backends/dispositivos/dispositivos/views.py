@@ -7,7 +7,7 @@ from django.views import View
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.db.models import ProtectedError, Q
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import (
@@ -108,9 +108,11 @@ class DispositivoListView(LoginRequiredMixin, ListView):
         context["seccion_filtros_favoritos"] = SeccionesFiltrosFavoritos.DISPOSITIVOS
         query = self.request.GET.copy()
         query.pop("page", None)
-        context["map_url"] = reverse("dispositivos_mapa")
-        if query:
-            context["map_url"] += "?" + query.urlencode()
+        context["map_url"] = None
+        if self.request.user.has_perm("dispositivos.ver_mapa_dispositivo"):
+            context["map_url"] = reverse("dispositivos_mapa")
+            if query:
+                context["map_url"] += "?" + query.urlencode()
         context["titulo"] = "Buscar Dispositivos"
         return context
 
@@ -581,7 +583,20 @@ class DispositivoDeleteView(LoginRequiredMixin, DeleteView):
 
     def form_valid(self, form):
         self.object = self.get_object()
-        delete_dispositivo(self.object)
+        try:
+            delete_dispositivo(self.object)
+        except ProtectedError as exc:
+            asociados = sorted(
+                {str(obj._meta.verbose_name_plural) for obj in exc.protected_objects}
+            )
+            messages.error(
+                self.request,
+                "No se puede eliminar el dispositivo porque tiene registros "
+                f"asociados: {', '.join(asociados)}.",
+            )
+            return HttpResponseRedirect(
+                reverse("dispositivos_detalle", kwargs={"pk": self.object.pk})
+            )
         messages.success(self.request, "Dispositivo eliminado correctamente.")
         return HttpResponseRedirect(self.get_success_url())
 

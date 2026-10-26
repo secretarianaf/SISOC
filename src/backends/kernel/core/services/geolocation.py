@@ -10,6 +10,12 @@ GEOREF_URL = "https://apis.datos.gob.ar/georef/api/direcciones"
 def locate_address(
     *, address, province, locality="", municipality="", endpoint=GEOREF_URL
 ):
+    # Georef no encuentra direcciones al repetir CABA como filtro de localidad.
+    if (
+        province.strip().casefold() == "ciudad autónoma de buenos aires"
+        and locality.strip().casefold() == province.strip().casefold()
+    ):
+        locality = ""
     territories = [("localidad", locality or municipality)]
     if municipality:
         territories.append(("departamento", municipality))
@@ -31,7 +37,7 @@ def locate_address(
                 continue
             matches = payload["direcciones"]
             if total != 1 or len(matches) != 1:
-                return {"status": "ambiguous"}
+                return _ambiguous_result(matches)
             lat = float(matches[0]["ubicacion"]["lat"])
             lon = float(matches[0]["ubicacion"]["lon"])
             if not (
@@ -45,3 +51,19 @@ def locate_address(
     except (requests.RequestException, ValueError, TypeError, KeyError, IndexError):
         return {"status": "unavailable"}
     return {"status": "not_found"}
+
+
+def _ambiguous_result(matches):
+    result = {"status": "ambiguous"}
+    if matches:
+        point = matches[0].get("ubicacion", {})
+        lat, lon = point.get("lat"), point.get("lon")
+        if (
+            all(isinstance(value, (int, float)) for value in (lat, lon))
+            and math.isfinite(lat)
+            and math.isfinite(lon)
+            and -90 <= lat <= 90
+            and -180 <= lon <= 180
+        ):
+            result["suggestion"] = {"lat": lat, "lon": lon}
+    return result

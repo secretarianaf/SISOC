@@ -22,7 +22,7 @@ function setup({ lat = "-34.9", lng = "-57.9", locationUrl = "", fetch, searchUr
     const map = { setView(position, zoom, options) { views.push({ position, zoom, options }); }, invalidateSize() {}, getCenter: () => ({ lat: -35, lng: -58 }), getZoom: () => 12 };
     const marker = { on(name, handler) { this[name] = handler; }, addTo() { return this; }, setLatLng(value) { this.position = value; }, getLatLng() { return this.position; } };
     const context = {
-        document: { readyState: "complete", querySelectorAll: () => [root], getElementById: id => fields[id] },
+        document: { readyState: "complete", addEventListener() {}, querySelectorAll: () => [root], getElementById: id => fields[id] },
         URLSearchParams,
         Event: function(type) { this.type = type; }, fetch: fetch || (() => { throw new Error("No debe consultar red"); }),
     };
@@ -206,4 +206,43 @@ test("buscar dirección centra con zoom de calle sin animación pendiente", asyn
     assert.equal(applied.position[0], -34.123456);
     assert.equal(applied.position[1], -58.123456);
     assert.equal(applied.zoom, 18);
+});
+
+
+test("desmontar el editor libera el mapa y descarta búsquedas pendientes", async () => {
+    let resolveResponse;
+    const { nodes, root, map, fields } = setup({ lat: "", lng: "", searchUrl: "/buscar/", fetch: () => new Promise(resolve => { resolveResponse = resolve; }) });
+    map.remove = () => { map.removed = true; };
+    const pending = nodes.start.handlers.click();
+    root.handlers["pin:destroy"]();
+    resolveResponse({ ok: true, json: async () => ({ status: "located", lat: -34, lon: -58 }) });
+    await pending;
+    assert.equal(map.removed, true);
+    assert.equal(root.dataset.initialized, undefined);
+    assert.equal(fields.latitude.value, "");
+});
+
+
+test("buscar otra dirección reemplaza el punto anterior solo al confirmar búsqueda", async () => {
+    const { fields, nodes, root } = setup({ alwaysVisible: true, searchUrl: "/buscar/", fetch: async () => ({ ok: true, json: async () => ({ status: "located", lat: -35, lon: -59 }) }) });
+    root.dataset.genericSearch = "true";
+    fields.calle.value = "Otra dirección";
+    await nodes.start.handlers.click();
+    assert.equal(fields.latitude.value, "-35.000000");
+    assert.equal(fields.longitude.value, "-59.000000");
+    nodes.cancel.handlers.click();
+    assert.equal(fields.latitude.value, "-34.9");
+    assert.equal(fields.longitude.value, "-57.9");
+});
+
+test("dirección ambigua acerca el mapa sin completar coordenadas hasta confirmar el pin", async () => {
+    const { fields, nodes, views } = setup({ lat: "", lng: "", searchUrl: "/preview/", fetch: async () => ({ ok: true, json: async () => ({ status: "ambiguous", suggestion: { lat: -34.91, lon: -57.96 } }) }) });
+    await nodes.start.handlers.click();
+    assert.equal(views.at(-1).position[0], -34.91);
+    assert.equal(views.at(-1).zoom, 15);
+    assert.equal(fields.latitude.value, "");
+    assert.equal(fields.longitude.value, "");
+    assert.match(nodes.status.textContent, /zona aproximada/);
+    nodes.center.handlers.click();
+    assert.equal(fields.latitude.value, "-35.000000");
 });

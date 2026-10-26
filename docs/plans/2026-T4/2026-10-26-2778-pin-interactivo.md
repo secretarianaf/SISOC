@@ -12,11 +12,11 @@ No se escribe desde el navegador a un endpoint genérico de modelos.
 | Módulo | Mapas encontrados | Persistencia y trabajo pendiente |
 | --- | --- | --- |
 | Dispositivos | Alta/edición y legajo; mapa general | Latitud/longitud del #2777. Primera integración del editor compartido. El mapa general permite consultar; la edición se hace en el formulario autorizado. |
-| Comedores | Legajo | Editor integrado en formulario; mantiene mapa de consulta y guardado propios. Verificación visual pendiente. |
-| CDI | Legajo | Editor integrado en formulario, con validación argentina existente. Verificación visual pendiente. |
-| Centros de Familia | Legajo | Coordenadas opcionales incorporadas mediante migración aditiva, editor y prioridad en consulta. Verificación visual pendiente. |
-| Ciudadanos | Legajo con Google Maps JS | Editor integrado al formulario existente y consulta normalizada del punto guardado, incluido cero. Verificación visual pendiente. |
-| Ver para ser libres | Sedes y jornadas Django; formularios y consultas React | Coordenadas existentes. Revisar limpieza automática en SedeCreateVPSLForm.save y resolución de ubicacion_url en JornadaVPSLForm para que no sobreescriban el ajuste manual ni alteren domicilio. Integrar ambos frontends. |
+| Comedores | Legajo | Editor integrado en formulario; mantiene mapa de consulta y guardado propios. Verificación visual confirmada. |
+| CDI | Legajo | Editor integrado en formulario, con validación argentina existente. Verificación visual confirmada. |
+| Centros de Familia | Legajo | Coordenadas opcionales incorporadas mediante migración aditiva, editor y prioridad en consulta. Verificación visual confirmada. |
+| Ciudadanos | Legajo con Google Maps JS | Editor integrado al formulario existente y consulta normalizada del punto guardado, incluido cero. Verificación visual confirmada. |
+| Ver para ser libres | Sedes y jornadas Django; formularios y consultas React | Editor integrado en sedes y jornadas Django/React. Reglas de guardado adaptadas y compatibilidad anterior probada. Sedes Django confirmadas, incluidas búsqueda CABA y formato de Localidad. Sedes React también confirmadas, incluida distribución y búsqueda. Jornadas React confirmadas, incluida búsqueda por dirección/localidad sin enlace. |
 | Inspecciones | Tablero de escuelas | Vista agregada, sin legajo editable de ubicación en el tablero. No habilitar escrituras desde allí; documentar el alcance al cerrar el relevamiento. |
 
 ## Primera etapa implementada
@@ -37,9 +37,10 @@ antigua se descarta si cambió el domicilio o se movió/descartó el pin.
 
 ## Límites y cierre
 
-Esta primera etapa no cierra #2778. Falta integrar los demás módulos de la tabla,
-validar sus permisos y reglas de guardado, comprobar runtimes aislados y hacer
-verificación visual por etapa antes de commits/PRs. El editor compartido del
+Las cuatro etapas están implementadas y confirmadas visualmente. Falta actualizar la rama con los cambios concurrentes de development y publicar para
+verificar CI; el push sigue pendiente de autorización explícita. Los mapas
+agregados de Dispositivos e Inspecciones conservan consulta sin escritura
+directa: el ajuste se confirma en el formulario autorizado del legajo. El editor compartido del
 kernel no importa ni conoce modelos de verticales.
 
 Cambios del kernel requieren revisión técnica y despliegue de sus consumidores

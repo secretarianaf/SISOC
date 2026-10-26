@@ -126,7 +126,66 @@ def test_formularios_incluyen_editor_y_busqueda_compartida(
     assert b'data-latitude-field="id_latitud"' in response.content
     assert b'data-longitude-field="id_longitud"' in response.content
     assert b'data-generic-search="true"' in response.content
+    assert b"custom/js/mapPinEditor.js?v=2778-6" in response.content
     assert b'data-always-visible="true"' in response.content
     assert reverse("address_preview").encode() in response.content
     if route == "centro_create":
         assert b"centro_form.js?v=2778-2" in response.content
+
+
+def test_direccion_ambigua_ofrece_zona_sin_elegir_coordenadas(monkeypatch):
+    response = Mock(
+        json=Mock(
+            return_value={
+                "total": 75,
+                "direcciones": [{"ubicacion": {"lat": -34.91, "lon": -57.96}}],
+            }
+        ),
+        raise_for_status=Mock(),
+    )
+    monkeypatch.setattr(
+        "core.services.geolocation.requests.get", Mock(return_value=response)
+    )
+    result = locate_address(
+        address="Calle 12 345", province="Buenos Aires", locality="La Plata"
+    )
+    assert result == {
+        "status": "ambiguous",
+        "suggestion": {"lat": -34.91, "lon": -57.96},
+    }
+    assert "lat" not in result
+
+
+def test_caba_como_localidad_no_impide_buscar_direccion(monkeypatch):
+    response = Mock(
+        json=Mock(
+            return_value={
+                "total": 1,
+                "direcciones": [{"ubicacion": {"lat": -34.57, "lon": -58.47}}],
+            }
+        ),
+        raise_for_status=Mock(),
+    )
+    lookup = Mock(return_value=response)
+    monkeypatch.setattr("core.services.geolocation.requests.get", lookup)
+    result = locate_address(
+        address="Domicilio de prueba 123",
+        province="Ciudad Autónoma de Buenos Aires",
+        locality="Ciudad Autónoma de Buenos Aires",
+    )
+    assert result == {"status": "located", "lat": -34.57, "lon": -58.47}
+    params = lookup.call_args.kwargs["params"]
+    assert params["provincia"] == "Ciudad Autónoma de Buenos Aires"
+    assert "localidad" not in params
+
+
+def test_caba_con_barrio_conserva_filtro_de_localidad(monkeypatch):
+    response = Mock(json=Mock(return_value={"total": 0}), raise_for_status=Mock())
+    lookup = Mock(return_value=response)
+    monkeypatch.setattr("core.services.geolocation.requests.get", lookup)
+    assert locate_address(
+        address="Domicilio de prueba 123",
+        province="Ciudad Autónoma de Buenos Aires",
+        locality="Villa Urquiza",
+    ) == {"status": "not_found"}
+    assert lookup.call_args.kwargs["params"]["localidad"] == "Villa Urquiza"

@@ -71,7 +71,8 @@
                 status.textContent = current ? "Arrastrá el pin para ajustar la ubicación." : "Acercá el mapa y colocá el pin en el centro, o arrastralo hasta la ubicación correcta.";
                 const searchDraft = Boolean(root.dataset.searchUrl);
                 const searchSaved = root.dataset.locationUrl && addressSnapshot() === originalAddress;
-                if (resolveAddress && !current && (searchDraft || searchSaved)) {
+                const explicitAddressSearch = alwaysVisible && root.dataset.genericSearch === "true";
+                if (resolveAddress && (!current || explicitAddressSearch) && (searchDraft || searchSaved)) {
                     const requestedAddress = addressSnapshot();
                     status.textContent = "Buscando el domicilio para ubicar el pin…";
                     try {
@@ -83,7 +84,7 @@
                                 if (root.dataset.genericSearch === "true" && field.tagName === "SELECT") {
                                     value = field.value && field.selectedOptions.length ? field.selectedOptions[0].textContent.trim() : "";
                                 }
-                                body.append(field.name, value);
+                                body.append(field.dataset?.name || field.name, value);
                             });
                             const csrf = latitude.form && latitude.form.querySelector("[name=csrfmiddlewaretoken]");
                             options.method = "POST";
@@ -104,6 +105,11 @@
                             position([lat, lng]);
                             commitPosition({ lat, lng });
                             status.textContent = "Coordenadas completadas desde el domicilio. Podés ajustar el pin; guardá el formulario para confirmar la ubicación.";
+                        } else if (result.status === "ambiguous" && result.suggestion
+                            && Number.isFinite(result.suggestion.lat) && Number.isFinite(result.suggestion.lon)
+                            && Math.abs(result.suggestion.lat) <= 90 && Math.abs(result.suggestion.lon) <= 180) {
+                            position([result.suggestion.lat, result.suggestion.lon], 15);
+                            status.textContent = "Hay varias coincidencias. El mapa muestra una zona aproximada: ubicá el pin en el lugar correcto para completar las coordenadas.";
                         } else {
                             status.textContent = result.status === "ambiguous"
                                 ? "El domicilio tiene varias coincidencias. Completá la dirección o colocá el pin manualmente."
@@ -151,9 +157,15 @@
                 start.hidden = false;
                 if (preview) preview.hidden = false;
             });
+            root.addEventListener("pin:destroy", () => {
+                generation += 1;
+                if (map) map.remove();
+                delete root.dataset.initialized;
+            }, { once: true });
             if (alwaysVisible) openEditor(false);
         });
     }
+    document.addEventListener("pin:init", initialize);
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initialize);
     else initialize();
 })();

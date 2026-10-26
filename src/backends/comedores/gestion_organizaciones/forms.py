@@ -53,6 +53,12 @@ class OrganizacionForm(forms.ModelForm):
         label="Territorial Asignado Abordaje Comunitario",
         widget=forms.SelectMultiple(attrs={"class": "form-control"}),
     )
+    quitar_territoriales_sin_proyecto = TerritorialesMultipleChoiceField(
+        queryset=get_user_model().objects.none(),
+        required=False,
+        label="Quitar asignaciones anteriores sin proyecto",
+        widget=forms.CheckboxSelectMultiple,
+    )
     cuil_duplicado_confirmado = forms.BooleanField(
         required=False,
         widget=forms.HiddenInput,
@@ -139,6 +145,11 @@ class OrganizacionForm(forms.ModelForm):
                     | Q(pk__in=por_proyecto)
                 )
                 .order_by("last_name", "first_name", "username")
+            )
+            self.fields["quitar_territoriales_sin_proyecto"].queryset = (
+                self.instance.territoriales_abordaje_comunitario.order_by(
+                    "last_name", "first_name", "username"
+                )
             )
         self.fields["territoriales_abordaje_comunitario"].queryset = queryset
 
@@ -317,9 +328,10 @@ class OrganizacionForm(forms.ModelForm):
                     )
                 # Al asociar explícitamente una persona a un proyecto deja de
                 # ser una asignación general. Las demás asignaciones legadas
-                # se conservan hasta que se elija su proyecto.
+                # se conservan hasta que se elija su proyecto o se quiten.
                 organizacion.territoriales_abordaje_comunitario.remove(
-                    *{item["territorial"] for item in asignaciones}
+                    *{item["territorial"] for item in asignaciones},
+                    *self.cleaned_data.get("quitar_territoriales_sin_proyecto", []),
                 )
         return organizacion
 

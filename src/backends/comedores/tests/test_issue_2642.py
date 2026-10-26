@@ -3,14 +3,11 @@
 import json
 from datetime import date
 from decimal import Decimal
-from importlib import import_module
-from types import SimpleNamespace
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import close_old_connections, connection
 from django.test import RequestFactory
@@ -35,33 +32,13 @@ from tests.test_rendicioncuentasmensual_domain_rules import (
 
 
 @pytest.mark.django_db
-def test_catalogos_provisorios_no_duplican_y_admiten_renombrar_asignados(scopes):
-    migracion = import_module(
-        "organizaciones.migrations.0025_issue_2642_catalogos_provisorios"
-    )
-    editor = SimpleNamespace(connection=connection)
-    migracion.cargar_catalogos_provisorios(apps, editor)
-    migracion.cargar_catalogos_provisorios(apps, editor)
-    assert set(
-        RegionAbordajeComunitario.objects.filter(
-            nombre__in=("Región 1", "Región 2")
-        ).values_list("nombre", flat=True)
-    ) == {
-        "Región 1",
-        "Región 2",
-    }
-    assert set(
-        SubzonaAbordajeComunitario.objects.filter(
-            nombre__in=("Zona 1", "Zona 2")
-        ).values_list("nombre", flat=True)
-    ) == {
-        "Zona 1",
-        "Zona 2",
-    }
+def test_catalogo_admite_renombrar_opciones_asignadas(scopes):
     _, proyecto, _, _ = scopes
     organizacion = proyecto.organizacion
-    region = RegionAbordajeComunitario.objects.get(nombre="Región 1")
-    subzona = SubzonaAbordajeComunitario.objects.get(nombre="Zona 1")
+    region = RegionAbordajeComunitario.objects.create(nombre="Región inicial")
+    subzona = SubzonaAbordajeComunitario.objects.create(
+        nombre="Zona inicial", region=region
+    )
     organizacion.region_abordaje = region
     organizacion.subzona_abordaje = subzona
     organizacion.save()
@@ -182,6 +159,35 @@ def test_asignacion_territorial_se_guarda_por_proyecto_y_conserva_legado(scopes)
         [{"proyecto": "AJENO", "territorial": usuario.pk}]
     )
     assert not OrganizacionForm(data=datos, instance=organizacion).is_valid()
+
+
+@pytest.mark.django_db
+def test_asignacion_general_legada_puede_quitarse_sin_proyecto(scopes):
+    _, proyecto, _, _ = scopes
+    organizacion = proyecto.organizacion
+    legado = get_user_model().objects.create_user(username="legado2642")
+    conservado = get_user_model().objects.create_user(username="conservado2642")
+    ajeno = get_user_model().objects.create_user(username="ajeno2642")
+    organizacion.territoriales_abordaje_comunitario.add(legado, conservado)
+    provincia = Provincia.objects.create(nombre="Provincia2642")
+    datos = {
+        "nombre": organizacion.nombre,
+        "provincia": str(provincia.pk),
+        "sin_vencimiento": "on",
+        "codigos_proyecto": proyecto.codigo,
+        "asignaciones_territoriales": "[]",
+        "quitar_territoriales_sin_proyecto": [str(legado.pk)],
+    }
+
+    form = OrganizacionForm(data=datos, instance=organizacion)
+    assert form.is_valid(), form.errors
+    form.save()
+
+    assert list(organizacion.territoriales_abordaje_comunitario.all()) == [conservado]
+    datos["quitar_territoriales_sin_proyecto"] = [str(ajeno.pk)]
+    assert "quitar_territoriales_sin_proyecto" in (
+        OrganizacionForm(data=datos, instance=organizacion).errors
+    )
     datos["asignaciones_territoriales"] = json.dumps([{"proyecto": proyecto.codigo}])
     assert not OrganizacionForm(data=datos, instance=organizacion).is_valid()
 

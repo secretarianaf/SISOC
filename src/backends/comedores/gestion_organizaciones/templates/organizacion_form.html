@@ -305,19 +305,13 @@
                         <div id="asignaciones-territoriales-listado"
                              class="list-group"
                              aria-live="polite"></div>
-                        {% if form.instance.pk %}
-                            {% with anteriores=form.instance.territoriales_abordaje_comunitario.all %}
-                                {% if anteriores %}
-                                    <p class="text-muted mt-3">
-                                        Asignaciones anteriores sin proyecto:
-                                        {% for usuario in anteriores %}
-                                            {{ usuario.get_full_name|default:usuario.username }}
-                                            {% if not forloop.last %},{% endif %}
-                                        {% endfor %}
-                                        . Se conservan; agregá su asociación al proyecto correspondiente.
-                                    </p>
-                                {% endif %}
-                            {% endwith %}
+                        {% if form.fields.quitar_territoriales_sin_proyecto.queryset %}
+                            <div class="mt-3">
+                                <p class="text-muted mb-1">
+                                    Hay asignaciones anteriores sin proyecto. Se conservan hasta que agregues su asociación al proyecto correspondiente o marques quitarlas.
+                                </p>
+                                {{ form.quitar_territoriales_sin_proyecto|as_crispy_field }}
+                            </div>
                         {% endif %}
                     </div>
                 </div>

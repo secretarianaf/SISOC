@@ -1,0 +1,80 @@
+{# Validación RENAPER de una persona del formulario (ver static/custom/js/cdiRenaperBloques.js). #}
+{# Parámetros: bloque, dni_field (id del input de DNI), tipo_field (id del tipo de documento, opcional), #}
+{# permite_cambiar (bool), opcional (bool) y texto_agregar. El form aporta modo, campos y verificación. #}
+{# Sin JS todos los paneles quedan ocultos y se ven todos los campos, como una carga manual. #}
+<div class="renaper-bloque mb-3"
+     data-renaper-bloque="{{ bloque }}"
+     data-renaper-url="{% url 'centrodeinfancia_renaper_bloque' bloque %}"
+     data-renaper-modo="{{ modo }}"
+     data-renaper-campos="{{ campos }}"
+     data-dni-input="{{ dni_field }}"
+     data-tipos-con-dni="{{ form.tipos_documento_con_dni }}"
+     {% if tipo_field %}data-tipo-input="{{ tipo_field }}"{% endif %}
+     {% if verificado %}data-verificado-servidor="1"{% endif %}
+     {% if permite_cambiar %}data-permite-cambiar="1"{% endif %}
+     {% if opcional %}data-opcional="1"{% endif %}>
+    <input type="hidden"
+           name="renaper_token_{{ bloque }}"
+           value="{{ token|default:'' }}" />
+
+    {% if opcional %}
+        <div data-renaper-panel="agregar" hidden>
+            <button type="button"
+                    class="btn btn-sm btn-outline-info"
+                    data-renaper-agregar>
+                <i class="fas fa-plus me-1"></i>{{ texto_agregar }}
+            </button>
+        </div>
+    {% endif %}
+
+    <div data-renaper-panel="dni" hidden>
+        <p class="small mb-2" style="color:#9ca3af;" data-renaper-instruccion>
+            Ingresá el DNI y validalo con RENAPER: los datos de identidad se completan solos.
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-sm btn-info" data-renaper-consultar>
+                <i class="fas fa-id-card me-1"></i>Validar con RENAPER
+            </button>
+            {# Solo aparece si RENAPER no encuentra a la persona o no responde. #}
+            <button type="button"
+                    class="btn btn-sm btn-outline-light"
+                    data-renaper-manual
+                    hidden>
+                <i class="fas fa-keyboard me-1"></i>Cargar manualmente
+            </button>
+            <button type="button"
+                    class="btn btn-sm btn-secondary"
+                    data-renaper-cancelar
+                    hidden>Cancelar</button>
+        </div>
+    </div>
+
+    <div data-renaper-panel="manual" hidden>
+        <button type="button"
+                class="btn btn-sm btn-outline-info"
+                data-renaper-consultar>
+            <i class="fas fa-id-card me-1"></i>Validar con RENAPER
+        </button>
+    </div>
+
+    <div class="p-3 rounded"
+         style="background:#1f2a37;
+                border:1px solid #2f855a"
+         data-renaper-panel="verificado"
+         hidden>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge bg-success"><i class="fas fa-id-card me-1"></i>Verificado por RENAPER</span>
+            {% if permite_cambiar %}
+                <button type="button"
+                        class="btn btn-sm btn-outline-light"
+                        data-renaper-cambiar>
+                    <i class="fas fa-user-edit me-1"></i>Cambiar persona
+                </button>
+            {% endif %}
+        </div>
+        <dl class="row mb-0" data-renaper-datos>
+        </dl>
+    </div>
+
+    <small class="d-block mt-2" data-renaper-mensaje></small>
+</div>

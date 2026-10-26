@@ -7,7 +7,7 @@ import pytest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-DEPLOY_SCRIPT = REPO_ROOT / "scripts" / "operacion" / "deploy_refresh.sh"
+DEPLOY_SCRIPT = REPO_ROOT / "src" / "scripts" / "operacion" / "deploy_refresh.sh"
 HTTPS_MOBILE_REMOTE = "https://github.com/dsocial118/SISOC-Mobile.git"
 EXPECTED_REVISION = "a" * 40
 
@@ -35,7 +35,7 @@ def _backend_checkout(tmp_path: Path, *, include_celery: bool = True) -> Path:
     checkout.mkdir()
     (checkout / ".branch").write_text("development\n", encoding="utf-8")
 
-    script = checkout / "scripts" / "operacion" / "deploy_refresh.sh"
+    script = checkout / "src" / "scripts" / "operacion" / "deploy_refresh.sh"
     script.parent.mkdir(parents=True)
     script.write_bytes(DEPLOY_SCRIPT.read_bytes().replace(b"\r\n", b"\n"))
     compose = checkout / "docker" / "compose"
@@ -119,7 +119,7 @@ def _run_deploy(
     env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
     args = [
         "bash",
-        str(backend_checkout / "scripts" / "operacion" / "deploy_refresh.sh"),
+        str(backend_checkout / "src" / "scripts" / "operacion" / "deploy_refresh.sh"),
     ]
     if origin_revision:
         env["FAKE_ORIGIN_SHA"] = origin_revision
@@ -288,7 +288,7 @@ CORE_COMPOSE_JSON = json.dumps(
     {
         "services": {
             "django": {"image": "sisoc/core:" + EXPECTED_REVISION},
-            "ocr_worker": {"image": "sisoc/core:" + EXPECTED_REVISION},
+            "ocr_worker": {"image": "sisoc/backend-ocr:" + EXPECTED_REVISION},
             "backend_pas": {"image": "sisoc/backend-pas:" + EXPECTED_REVISION},
         }
     }
@@ -298,9 +298,9 @@ CORE_COMPOSE_JSON = json.dumps(
 def _run_selectivo(tmp_path, archivos, compose_json):
     """Deploy en dry-run con --diff-base: el plan sale de deploy_targets.py."""
     checkout = _backend_checkout(tmp_path)
-    operacion = checkout / "scripts" / "operacion"
+    operacion = checkout / "src" / "scripts" / "operacion"
     (operacion / "deploy_targets.py").write_bytes(
-        (REPO_ROOT / "scripts" / "operacion" / "deploy_targets.py").read_bytes()
+        (REPO_ROOT / "src" / "scripts" / "operacion" / "deploy_targets.py").read_bytes()
     )
     (checkout / "src" / "backends" / "config").mkdir(parents=True)
     (checkout / "src" / "backends" / "config" / "backends.json").write_bytes(
@@ -349,22 +349,93 @@ def _run_selectivo(tmp_path, archivos, compose_json):
 
 def test_cambio_en_sisoc_core_recrea_solo_los_servicios_del_core(tmp_path):
     resultado = _run_selectivo(
-        tmp_path, ["src/backends/sisoc_core/comedores/views.py"], CORE_COMPOSE_JSON
+        tmp_path, ["src/backends/sisoc_core/usuarios/views.py"], CORE_COMPOSE_JSON
     )
 
     assert resultado.returncode == 0, resultado.stdout + resultado.stderr
-    assert "servicios del core: django ocr_worker" in resultado.stdout
-    assert "up -d --no-deps django ocr_worker" in resultado.stdout
+    assert "servicios del core: django" in resultado.stdout
+    assert "up -d --no-deps django" in resultado.stdout
     assert "run --rm migrator" in resultado.stdout
     assert "backend_pas" not in resultado.stdout
+    assert "ocr_worker" not in resultado.stdout
 
 
 def test_sin_servicios_del_core_resueltos_hace_deploy_completo(tmp_path):
     resultado = _run_selectivo(
-        tmp_path, ["src/backends/sisoc_core/comedores/views.py"], '{"services": {}}'
+        tmp_path, ["src/backends/sisoc_core/usuarios/views.py"], '{"services": {}}'
     )
 
     assert resultado.returncode == 0, resultado.stdout + resultado.stderr
     assert "No se pudieron resolver los servicios del core" in resultado.stdout
     assert "--no-deps" not in resultado.stdout
     assert " up -d" in resultado.stdout
+
+
+def test_cambio_usuarios_actualiza_importador_con_imagen_compuesta(tmp_path):
+    config = json.loads(CORE_COMPOSE_JSON)
+    config["services"]["user_import_worker"] = {
+        "image": "sisoc/migrator:" + EXPECTED_REVISION,
+        "environment": {"DJANGO_SERVICE_ROLE": "user_import_worker"},
+    }
+    config["services"]["mailing_worker"] = {
+        "image": "sisoc/backend-comedores:" + EXPECTED_REVISION,
+    }
+    resultado = _run_selectivo(
+        tmp_path, ["src/backends/sisoc_core/usuarios/views.py"], json.dumps(config)
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "up -d --no-deps django user_import_worker" in resultado.stdout
+    assert "mailing_worker" not in resultado.stdout
+
+
+def test_comedores_en_qa_no_recrea_workers_que_solo_existen_en_prd(tmp_path):
+    config = {"services": {"django": {}, "backend_comedores": {}}}
+    resultado = _run_selectivo(
+        tmp_path,
+        ["src/backends/comedores/comedores/views.py"],
+        json.dumps(config),
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "up -d --no-deps backend_comedores\n" in resultado.stdout
+    assert "up -d --no-deps backend_comedores mailing_worker" not in resultado.stdout
+
+
+def test_otro_backend_en_prd_actualiza_tambien_importador_del_migrador(tmp_path):
+    config = {"services": {"backend_vat": {}, "user_import_worker": {}}}
+    resultado = _run_selectivo(
+        tmp_path, ["src/backends/vat/VAT/views.py"], json.dumps(config)
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "up -d --no-deps backend_vat user_import_worker" in resultado.stdout
+
+
+def test_backend_ausente_en_compose_fuerza_fallback_completo(tmp_path):
+    resultado = _run_selectivo(
+        tmp_path,
+        ["src/backends/comedores/comedores/views.py"],
+        '{"services": {"django": {}}}',
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "No se pudieron resolver los servicios seleccionados" in resultado.stdout
+    assert "up -d --no-deps" not in resultado.stdout
+
+
+def test_selectivo_ocr_actualiza_su_worker_sin_reiniciar_portal(tmp_path):
+    config = {"services": {"django": {}, "backend_ocr": {}, "ocr_worker": {}}}
+    resultado = _run_selectivo(
+        tmp_path, ["src/backends/ocr/ocr/services_ocr.py"], json.dumps(config)
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "up -d --no-deps backend_ocr ocr_worker" in resultado.stdout
+    assert "up -d --no-deps django" not in resultado.stdout
+
+
+def test_worker_ocr_ausente_fuerza_fallback_completo(tmp_path):
+    resultado = _run_selectivo(
+        tmp_path,
+        ["src/backends/ocr/ocr/services_ocr.py"],
+        '{"services": {"backend_ocr": {}}}',
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "No se pudieron resolver los servicios seleccionados" in resultado.stdout
+    assert "up -d --no-deps" not in resultado.stdout

@@ -78,3 +78,24 @@ def boton_volver(request):
         "volver_texto": "Volver",
         "volver_transitoria": _es_pantalla_transitoria(request),
     }
+
+
+def admin_backends(request):
+    """Accesos a admins de modelos ausentes del portal, sin importar sus apps."""
+    from django.conf import settings  # pylint: disable=import-outside-toplevel
+
+    user = getattr(request, "user", None)
+    if request.path != "/admin/" or not user or not user.is_active or not user.is_staff:
+        return {"backend_admin_links": []}
+    links = []
+    for spec in getattr(settings, "SISOC_BACKENDS", {}).values():
+        for link in spec.get("admin_links", ()):
+            app_label = link.get("app_label")
+            permitted = (
+                user.has_module_perms(app_label)
+                if app_label
+                else any(user.has_perm(perm) for perm in link.get("permissions", ()))
+            )
+            if permitted:
+                links.append(link)
+    return {"backend_admin_links": links}

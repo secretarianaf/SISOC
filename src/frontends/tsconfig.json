@@ -8,7 +8,7 @@
     "asi que sin esto un error de tipos en @sisoc/ui o @sisoc/api solo",
     "aparecia si alguna app importaba justo ese archivo."
   ],
-  "extends": "./tsconfig.base.json",
+  "extends": "./config/tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
     "types": ["vite/client", "vitest/globals", "node"]

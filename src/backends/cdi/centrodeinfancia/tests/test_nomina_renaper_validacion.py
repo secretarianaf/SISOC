@@ -76,6 +76,114 @@ def test_alta_token_valido_marca_validacion(client, alta):
 
 
 @pytest.mark.parametrize(
+    "campo,valor",
+    [
+        ("dni", "55555555"),
+        ("apellido", "Otro"),
+        ("nombre", "Otra"),
+        ("fecha_nacimiento", (date.today() - timedelta(days=800)).isoformat()),
+    ],
+)
+def test_alta_boton_renaper_bloquea_identidad_del_nino(client, alta, campo, valor):
+    url, data, _, result = alta
+    with patch(
+        "centrodeinfancia.services_renaper_bloques.obtener_datos_ciudadano_desde_renaper",
+        return_value=result,
+    ):
+        consulta = client.get(
+            reverse("centrodeinfancia_renaper_bloque", args=["nino"]),
+            {"dni": data["dni"]},
+        )
+    assert consulta.status_code == 200
+    response = client.post(
+        url,
+        {**data, campo: valor, "renaper_token_nino": consulta.json()["token"]},
+    )
+    assert response.status_code == 302
+    nomina = NominaCentroInfancia.objects.get()
+    assert str(getattr(nomina, campo)) == str(data[campo])
+    assert {"dni", "apellido", "nombre", "fecha_nacimiento"} <= set(
+        nomina.campos_verificados_renaper
+    )
+    assert nomina.ciudadano.estado_validacion_renaper == Ciudadano.RENAPER_VALIDADO
+    assert nomina.ciudadano.origen_dato == "renaper"
+
+
+def test_alta_invalida_conserva_token_del_boton_renaper(client, alta):
+    url, data, _, result = alta
+    with patch(
+        "centrodeinfancia.services_renaper_bloques.obtener_datos_ciudadano_desde_renaper",
+        return_value=result,
+    ):
+        token = client.get(
+            reverse("centrodeinfancia_renaper_bloque", args=["nino"]),
+            {"dni": data["dni"]},
+        ).json()["token"]
+    response = client.post(
+        url, {**data, "calle_domicilio": "", "renaper_token_nino": token}
+    )
+    assert response.status_code == 200
+    assert response.context["renaper_tokens"]["nino"] == token
+    assert response.context["form"].fields["nombre"].disabled is True
+    assert not Ciudadano.objects.exists()
+
+
+@pytest.mark.parametrize("caso", ["alterado", "otro_usuario", "vencido"])
+def test_alta_no_confia_en_token_invalido_del_boton(client, alta, caso):
+    url, data, _, result = alta
+    with patch(
+        "centrodeinfancia.services_renaper_bloques.obtener_datos_ciudadano_desde_renaper",
+        return_value=result,
+    ):
+        token = client.get(
+            reverse("centrodeinfancia_renaper_bloque", args=["nino"]),
+            {"dni": data["dni"]},
+        ).json()["token"]
+    if caso == "alterado":
+        token += "alterado"
+    elif caso == "otro_usuario":
+        otro = User.objects.create_superuser("otro-boton-renaper", "", "test1234")
+        client.force_login(otro)
+    with patch(
+        "django.core.signing.time.time",
+        return_value=time.time() + (3601 if caso == "vencido" else 0),
+    ):
+        response = client.post(url, {**data, "renaper_token_nino": token})
+    assert response.status_code == 302
+    nomina = NominaCentroInfancia.objects.get()
+    assert nomina.campos_verificados_renaper == []
+    assert nomina.ciudadano.origen_dato == "manual"
+
+
+def test_token_del_boton_no_reemplaza_ciudadano_seleccionado(client, alta):
+    url, data, _, result = alta
+    ciudadano = Ciudadano.objects.create(
+        documento=data["dni"],
+        apellido=data["apellido"],
+        nombre=data["nombre"],
+        fecha_nacimiento=data["fecha_nacimiento"],
+    )
+    result = deepcopy(result)
+    result["data"]["documento"] = 99888777
+    with patch(
+        "centrodeinfancia.services_renaper_bloques.obtener_datos_ciudadano_desde_renaper",
+        return_value=result,
+    ):
+        token = client.get(
+            reverse("centrodeinfancia_renaper_bloque", args=["nino"]),
+            {"dni": "99888777"},
+        ).json()["token"]
+    response = client.post(
+        url, {**data, "ciudadano_id": ciudadano.pk, "renaper_token_nino": token}
+    )
+    assert response.status_code == 302
+    nomina = NominaCentroInfancia.objects.get()
+    assert nomina.ciudadano == ciudadano
+    assert nomina.dni == int(data["dni"])
+    assert nomina.campos_verificados_renaper == []
+
+
+@pytest.mark.parametrize(
     "caso", ["sin_token", "alterado", "otro_cdi", "otro_usuario", "vencido"]
 )
 def test_alta_no_confia_en_origen_del_post(client, alta, caso):
@@ -117,15 +225,20 @@ def test_alta_no_confia_en_origen_del_post(client, alta, caso):
         ("fecha_nacimiento", (date.today() - timedelta(days=800)).isoformat()),
     ],
 )
-def test_token_no_valida_identidad_modificada(client, alta, campo, valor):
+def test_alta_ignora_identidad_alterada_en_post(client, alta, campo, valor):
+    # Con token vigente la identidad queda bloqueada: lo que llegue en el POST
+    # para esos campos se descarta y se guarda lo que devolvió RENAPER.
     url, data, token, _ = alta
     response = client.post(url, {**data, campo: valor, "renaper_prefill_token": token})
     assert response.status_code == 302
-    ciudadano = Ciudadano.objects.get(
-        documento=valor if campo == "dni" else data["dni"]
+    nomina = NominaCentroInfancia.objects.get()
+    assert str(getattr(nomina, campo)) == str(data[campo])
+    assert {"dni", "apellido", "nombre", "fecha_nacimiento"} <= set(
+        nomina.campos_verificados_renaper
     )
-    assert ciudadano.estado_validacion_renaper == Ciudadano.RENAPER_NO_CONSULTADO
-    assert ciudadano.origen_dato == "manual"
+    ciudadano = Ciudadano.objects.get(documento=data["dni"])
+    assert ciudadano.estado_validacion_renaper == Ciudadano.RENAPER_VALIDADO
+    assert ciudadano.origen_dato == "renaper"
 
 
 @pytest.mark.parametrize("seleccionado", [True, False])
@@ -156,7 +269,7 @@ def test_post_invalido_conserva_token_sin_reconsultar(client, alta):
         "centrodeinfancia.views.obtener_datos_ciudadano_desde_renaper"
     ) as consultar:
         response = client.post(
-            url, {**data, "nombre": "", "renaper_prefill_token": token}
+            url, {**data, "calle_domicilio": "", "renaper_prefill_token": token}
         )
     assert response.status_code == 200
     assert response.context["renaper_prefill_token"] == token

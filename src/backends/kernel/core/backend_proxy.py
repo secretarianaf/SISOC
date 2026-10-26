@@ -11,16 +11,21 @@ Contrato con el backend:
   valida CSRF por su cuenta con la cookie y los headers originales. Por eso
   esta vista es ``csrf_exempt``: el core no valida dos veces.
 - ``Host`` es el que el core ya validó contra ``ALLOWED_HOSTS``.
-  ``X-Forwarded-Proto`` y ``X-Forwarded-For`` los calcula el core y **pisan**
-  los que mande el cliente. ``X-Forwarded-Host`` no se reenvía.
+  ``X-Forwarded-Proto`` lo calcula el core y **pisa** el del cliente.
+  ``X-Forwarded-For`` conserva la cadena recibida y le agrega ``REMOTE_ADDR``
+  (convención de proxies): solo el último salto es confiable.
+  ``X-Forwarded-Host`` no se reenvía.
+- El path viaja codificado otra vez y sin segmentos ``.``/``..``: un
+  ``%2e%2e`` no puede salir del prefijo declarado.
 - El backend no se publica fuera de la red de Compose: solo el core lo alcanza.
 """
 
 from http.cookies import SimpleCookie
+from urllib.parse import quote
 
 import requests
 from django.conf import settings
-from django.http import HttpResponse, StreamingHttpResponse
+from django.http import Http404, HttpResponse, StreamingHttpResponse
 from django.urls import re_path
 from django.views.decorators.csrf import csrf_exempt
 
@@ -48,6 +53,8 @@ REQUEST_HEADERS_SET_BY_CORE = {
     "x-forwarded-proto",
 }
 RESPONSE_HEADERS_SET_BY_CORE = {"set-cookie"}
+# Caracteres que pueden ir sin codificar en un path (RFC 3986 pchar y "/").
+PATH_SAFE_CHARS = "/:@!$&'()*+,;="
 
 
 def outbound_headers(request):
@@ -119,30 +126,57 @@ def _raw_body(upstream):
         upstream.close()
 
 
-def _forward(request, origin, path):
+def _forward(  # pylint: disable=too-many-arguments
+    request, origin, path, *, body=None, query_string=None, uncertain_on_failure=False
+):
     # Si algún middleware del core tocó la sesión, se guarda antes de reenviar
     # y no se vuelve a guardar después, para no pisar lo que escriba el backend.
     session = getattr(request, "session", None)
     if session is not None and session.modified:
         session.save()
 
-    url = origin.rstrip("/") + "/" + path
-    if request.META.get("QUERY_STRING"):
-        url += "?" + request.META["QUERY_STRING"]
+    # ``path`` llega decodificado: se rechazan los segmentos punto y se vuelve
+    # a codificar para que ``%3F``, ``%23`` o ``%25`` lleguen tal cual.
+    if any(segmento in {".", ".."} for segmento in path.split("/")):
+        raise Http404
+    url = origin.rstrip("/") + "/" + quote(path, safe=PATH_SAFE_CHARS)
+    query_string = (
+        request.META.get("QUERY_STRING") if query_string is None else query_string
+    )
+    if query_string:
+        url += "?" + query_string
 
     try:
         upstream = requests.request(
             request.method,
             url,
             headers=outbound_headers(request),
-            data=_RequestBody(request) if request.META.get("CONTENT_LENGTH") else None,
+            data=(
+                body
+                if body is not None
+                else (
+                    _RequestBody(request)
+                    if request.META.get("CONTENT_LENGTH")
+                    else None
+                )
+            ),
             allow_redirects=False,
             stream=True,
             timeout=(CONNECT_TIMEOUT_SECONDS, READ_TIMEOUT_SECONDS),
         )
     except requests.Timeout:
+        if uncertain_on_failure:
+            return HttpResponse(
+                "No se pudo confirmar el resultado. Verificá el usuario antes de reintentar.",
+                status=504,
+            )
         return HttpResponse("El servicio no respondió a tiempo.", status=504)
     except requests.RequestException:
+        if uncertain_on_failure:
+            return HttpResponse(
+                "No se pudo confirmar el resultado. Verificá el usuario antes de reintentar.",
+                status=503,
+            )
         return HttpResponse("El servicio no está disponible.", status=503)
 
     if request.method == "HEAD":
@@ -194,17 +228,32 @@ def pedir_json_a_backend(request, spec, path, timeout=4):
         return None
 
 
+# Propiedad de secciones del cluster aprobado; no registra un runtime C3.
+APPS_SECCIONES_FAVORITAS = {
+    "comedores": "comedores",
+    "admisiones_tecnicos": "admisiones",
+    "admisiones_legales": "admisiones",
+    "acompanamientos": "acompanamientos",
+    "duplas": "duplas",
+    "rendiciones": "rendicioncuentasmensual",
+}
+
+
 def backend_de_seccion_favorita(seccion):
     """Backend dueño de una sección de filtros favoritos, si no es del core."""
+    app_label = APPS_SECCIONES_FAVORITAS.get(seccion)
+    if app_label is not None:
+        return backend_de_app(app_label)
     for spec in getattr(settings, "SISOC_BACKENDS", {}).values():
         if seccion in spec.get("favorite_sections", ()):
             return spec
     return None
 
 
-def reenviar_a_backend(request, spec):
+def reenviar_a_backend(request, spec, **kwargs):
     """Reenvía este request, tal cual, al backend ``spec``."""
-    return _forward(request, spec["origin"], request.path_info.lstrip("/"))
+    path = kwargs.pop("path", request.path_info.lstrip("/"))
+    return _forward(request, spec["origin"], path, **kwargs)
 
 
 def _proxy_view(origin):

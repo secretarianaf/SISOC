@@ -10,7 +10,7 @@ from django.utils import timezone
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
-from docx.shared import Mm, Pt
+from docx.shared import Mm, Pt, RGBColor
 
 from admisiones.services import informes_service as module
 
@@ -362,17 +362,234 @@ def test_generate_docx_content_estiliza_tablas_de_templates_dinamicos():
     estilo_normal = documento.styles["Normal"]
 
     assert "w:tblBorders" in propiedades_tabla
-    assert 'w:color="7A8EA1"' in propiedades_tabla
-    assert 'w:fill="EAF3F2"' in propiedades_encabezado
+    assert 'w:color="000000"' in propiedades_tabla
+    assert "w:shd" not in propiedades_encabezado
     assert "w:tcMar" in propiedades_celda
     assert abs(seccion.page_width - Mm(210)) <= 635
     assert abs(seccion.page_height - Mm(297)) <= 635
-    assert abs(seccion.top_margin - Mm(20)) <= 635
-    assert abs(seccion.right_margin - Mm(20)) <= 635
-    assert abs(seccion.bottom_margin - Mm(20)) <= 635
-    assert abs(seccion.left_margin - Mm(20)) <= 635
-    assert estilo_normal.font.name == "Times New Roman"
+    assert abs(seccion.top_margin - Mm(27.8)) <= 635
+    assert abs(seccion.right_margin - Mm(25.4)) <= 635
+    assert abs(seccion.bottom_margin - Mm(25.4)) <= 635
+    assert abs(seccion.left_margin - Mm(25.4)) <= 635
+    assert estilo_normal.font.name == "Calibri"
     assert estilo_normal.font.size == Pt(12)
+    assert estilo_normal.paragraph_format.alignment == WD_ALIGN_PARAGRAPH.JUSTIFY
+
+
+def test_generate_docx_content_template_agrega_membrete_y_numero_de_pagina():
+    archivo_docx = module.InformeService._generate_docx_content(
+        "<h1>Informe Técnico Social</h1><p>Cuerpo</p>",
+        estilizar_tablas_templates=True,
+    )
+
+    documento = Document(BytesIO(archivo_docx.read()))
+    seccion = documento.sections[0]
+    encabezado = seccion.header
+    texto_encabezado = " ".join(parrafo.text for parrafo in encabezado.paragraphs)
+    estilo_titulo = documento.styles["Heading 1"]
+    fuentes_titulo = estilo_titulo.element.rPr.find(qn("w:rFonts"))
+
+    # GDE no admite tablas: el membrete se arma con párrafos y tabulaciones.
+    assert encabezado.tables == []
+    assert "PROGRAMA ALIMENTAR" in texto_encabezado
+    assert "COMUNIDAD" in texto_encabezado
+    assert "Ministerio de Capital Humano" in texto_encabezado
+    assert "<pic:pic" in encabezado._element.xml
+    assert 'w:color="002060"' in encabezado.paragraphs[-1]._p.pPr.xml
+    assert 'w:instr="PAGE"' in seccion.footer._element.xml
+    assert estilo_titulo.font.name == "Calibri"
+    assert estilo_titulo.font.color.rgb == RGBColor(0, 0, 0)
+    assert fuentes_titulo.get(qn("w:asciiTheme")) is None
+
+
+def test_generate_docx_content_renglon_vacio_del_editor_ocupa_una_linea():
+    archivo_docx = module.InformeService._generate_docx_content(
+        '<p>Antes</p><p><br></p><p style="text-align: center;"><br /></p><p>Después</p>',
+        estilizar_tablas_templates=True,
+    )
+
+    documento = Document(BytesIO(archivo_docx.read()))
+    parrafos = documento.paragraphs
+
+    assert [parrafo.text for parrafo in parrafos] == ["Antes", "", "", "Después"]
+    assert all("w:br" not in parrafo._p.xml for parrafo in parrafos)
+
+
+def test_generate_docx_content_respeta_celdas_combinadas():
+    contenido = (
+        "<table>"
+        '<tr><th rowspan="2">Tipo</th>'
+        '<th colspan="2" style="text-align: center;">Días</th></tr>'
+        "<tr><th>L</th><th>M</th></tr>"
+        "<tr><td>Desayuno</td><td>10</td><td>20</td></tr>"
+        "</table>"
+    )
+
+    archivo_docx = module.InformeService._generate_docx_content(
+        contenido,
+        estilizar_tablas_templates=True,
+    )
+
+    documento = Document(BytesIO(archivo_docx.read()))
+    tabla = documento.tables[0]
+
+    assert len(tabla.rows) == 3
+    assert len(tabla.columns) == 3
+    assert tabla.cell(0, 1)._tc is tabla.cell(0, 2)._tc
+    assert tabla.cell(0, 0)._tc.tcPr.xml.count("w:vMerge") == 1
+    assert tabla.cell(0, 1).text == "Días"
+    assert tabla.cell(0, 1).paragraphs[0].alignment == WD_ALIGN_PARAGRAPH.CENTER
+    assert tabla.cell(1, 2).text == "M"
+    assert tabla.cell(2, 0).text == "Desayuno"
+    assert tabla.cell(2, 2).text == "20"
+
+
+def test_template_publicado_no_se_degrada_a_texto_plano_si_falla_conversion(mocker):
+    mocker.patch(
+        "admisiones.services.informes_service.HtmlToDocx.add_html_to_document",
+        side_effect=ValueError("Tabla inválida"),
+    )
+
+    resultado = module.InformeService._generate_docx_content(
+        "<table><tr><td>Desayuno</td><td>100</td></tr></table>",
+        estilizar_tablas_templates=True,
+    )
+
+    assert resultado is None
+
+
+@pytest.mark.parametrize("variante", ["Incorporación", "Renovación"])
+def test_template_conserva_variante_y_cuadros_con_celdas_combinadas(variante):
+    contenido = (
+        f"<p>{variante}: contenido propio del informe.</p>"
+        '<table><tr><th rowspan="2">Prestación</th>'
+        '<th colspan="2">Días</th></tr><tr><th>L</th><th>M</th></tr>'
+        "<tr><td>Desayuno</td><td>100</td><td>20</td></tr></table>"
+        "<ol><li>Criterio propio A</li><li>Criterio propio B</li>"
+        "<li>Criterio propio C</li></ol>"
+    )
+    resultado = module.InformeService._generate_docx_content(
+        contenido, estilizar_tablas_templates=True
+    )
+
+    assert resultado is not None
+    documento = Document(BytesIO(resultado.read()))
+    assert len(documento.tables) == 1
+    assert documento.tables[0].cell(2, 1).text == "100"
+    assert documento.tables[0].cell(2, 2).text == "20"
+    assert 'w:gridSpan w:val="2"' in documento.tables[0]._tbl.xml
+    assert 'w:vMerge w:val="restart"' in documento.tables[0]._tbl.xml
+    assert documento.paragraphs[0].text == f"{variante}: contenido propio del informe."
+    assert [p.text for p in documento.paragraphs if "Criterio" in p.text] == [
+        "Criterio propio A",
+        "Criterio propio B",
+        "Criterio propio C",
+    ]
+
+
+def test_template_rechaza_rowspan_fuera_de_la_tabla():
+    resultado = module.InformeService._generate_docx_content(
+        '<table><tr><td rowspan="2">Dato</td></tr></table>',
+        estilizar_tablas_templates=True,
+    )
+
+    assert resultado is None
+
+
+def test_template_da_espacio_a_los_nombres_del_cuadro_de_prestaciones():
+    contenido = (
+        '<table><tr><th rowspan="2">Tipo de Prestación</th>'
+        '<th colspan="7">Prestaciones aprobadas</th>'
+        '<th rowspan="2">Total semanal</th></tr>'
+        "<tr><th>L</th><th>M</th><th>M</th><th>J</th><th>V</th><th>S</th><th>D</th></tr>"
+        "<tr><td>Desayuno</td><td>100</td><td>20</td><td>0</td><td>0</td>"
+        "<td>0</td><td>0</td><td>0</td><td>120</td></tr></table>"
+    )
+    resultado = module.InformeService._generate_docx_content(
+        contenido, estilizar_tablas_templates=True
+    )
+    tabla = Document(BytesIO(resultado.read())).tables[0]
+    anchos = [columna.width.twips for columna in tabla.columns]
+
+    assert anchos[0] > anchos[8] > max(anchos[1:8])
+    assert max(anchos[1:8]) - min(anchos[1:8]) <= 1
+    assert tabla.cell(2, 0).text == "Desayuno"
+    assert tabla.cell(2, 8).text == "120"
+
+
+def test_gde_convierte_a_doc_real_sin_modificar_el_docx_original(mocker):
+    documento = Document()
+    documento.add_paragraph("Contenido aprobado de renovación")
+    documento.add_table(rows=1, cols=1).cell(0, 0).text = "100"
+    buffer = BytesIO()
+    documento.save(buffer)
+    original = buffer.getvalue()
+    archivo = BytesIO(original)
+    mocker.patch.object(module.shutil, "which", return_value="/usr/bin/libreoffice")
+    contenido_doc = bytes.fromhex("d0cf11e0a1b11ae1") + b"documento convertido"
+
+    def convertir(comando, **kwargs):
+        entrada = module.Path(comando[-1])
+        normalizado = Document(entrada)
+        assert normalizado.paragraphs[0].text == "Contenido aprobado de renovación"
+        assert normalizado.tables[0].cell(0, 0).text == "100"
+        assert kwargs["timeout"] == 120
+        assert "doc:MS Word 97" in comando
+        entrada.with_suffix(".doc").write_bytes(contenido_doc)
+        return SimpleNamespace(returncode=0)
+
+    proceso = mocker.patch.object(module.subprocess, "run", side_effect=convertir)
+    resultado = module.GdeDocxService.generar_doc(archivo, informe_pk=44)
+
+    assert resultado.name.endswith(".doc")
+    assert resultado.read() == contenido_doc
+    assert buffer.getvalue() == original
+    assert proceso.call_count == 1
+    assert not module.Path(proceso.call_args.args[0][-1]).parent.exists()
+
+
+@pytest.mark.parametrize("fallo", ["ausente", "timeout", "error", "sin_salida", "docx"])
+def test_gde_no_entrega_doc_si_la_conversion_falla(mocker, fallo):
+    documento = Document()
+    buffer = BytesIO()
+    documento.save(buffer)
+    mocker.patch.object(
+        module.shutil,
+        "which",
+        return_value=None if fallo == "ausente" else "libreoffice",
+    )
+
+    def convertir(comando, **_kwargs):
+        if fallo == "timeout":
+            raise module.subprocess.TimeoutExpired(comando, 120)
+        if fallo == "docx":
+            module.Path(comando[-1]).with_suffix(".doc").write_bytes(buffer.getvalue())
+        return SimpleNamespace(returncode=1 if fallo == "error" else 0)
+
+    proceso = mocker.patch.object(module.subprocess, "run", side_effect=convertir)
+    resultado = module.GdeDocxService.generar_doc(BytesIO(buffer.getvalue()))
+
+    assert resultado is None
+    if fallo == "ausente":
+        proceso.assert_not_called()
+
+
+def test_generar_docx_para_gde_quita_membrete_y_numero_de_pagina():
+    borrador = module.InformeService._generate_docx_content(
+        "<p>Cuerpo del informe</p>",
+        estilizar_tablas_templates=True,
+    )
+
+    resultado = module.GdeDocxService.generar(borrador)
+
+    assert resultado is not None
+    normalizado = Document(BytesIO(resultado.read()))
+    seccion = normalizado.sections[0]
+    assert normalizado.paragraphs[0].text == "Cuerpo del informe"
+    assert seccion.header.is_linked_to_previous
+    assert seccion.footer.is_linked_to_previous
+    assert "w:headerReference" not in seccion._sectPr.xml
+    assert "w:footerReference" not in seccion._sectPr.xml
 
 
 def test_generar_docx_para_gde_normaliza_tablas_y_prioriza_docx_editado():

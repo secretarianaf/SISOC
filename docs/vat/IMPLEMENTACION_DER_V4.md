@@ -1,3 +1,7 @@
+<!-- docs-paths: documento histórico -->
+
+Registro histórico de DER V4: las rutas y migraciones corresponden a los commits citados, anteriores a los squashes y a src/. Para trabajar hoy, ver [Verticales independientes](../desarrollo/verticales_independientes.md).
+
 # Implementación DER v4 - VAT Module
 
 **Fecha**: 21 de Marzo 2026

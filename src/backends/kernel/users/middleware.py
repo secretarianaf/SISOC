@@ -1,17 +1,26 @@
 from django.shortcuts import redirect
 from django.urls import reverse, NoReverseMatch
+from django.http import HttpResponseForbidden
 
 from users.profile_utils import get_profile_or_none, needs_profile_confirmation
 
 
+# Representan el mismo login/contexto API servido por /api/users/. Una cookie
+# web previa no puede cambiar su tratamiento al atravesar el contrato interno.
+AUTH_INTERNAL_API_PATHS = {
+    "/interno/espacios/login/",
+    "/interno/espacios/contexto/",
+}
+
 COMMON_EXEMPT_PATHS = {
     "/logout",
     "/logout/",
+    "/admin/logout/",
     "/api/users/login/",
     "/api/users/logout/",
     "/api/users/password-reset/request/",
     "/api/users/password-reset/confirm/",
-}
+} | AUTH_INTERNAL_API_PATHS
 
 COMMON_EXEMPT_PREFIXES = (
     "/static/",
@@ -41,6 +50,16 @@ class FirstLoginPasswordChangeMiddleware:
         user = getattr(request, "user", None)
         if user and getattr(user, "is_authenticated", False):
             profile = get_profile_or_none(user)
+            if (
+                not getattr(profile, "acceso_web", False)
+                and not request.path.startswith(("/api/", "/static/", "/media/"))
+                and request.path
+                not in {"/logout", "/logout/", "/admin/logout/"}
+                | AUTH_INTERNAL_API_PATHS
+            ):
+                return HttpResponseForbidden(
+                    "Este usuario no tiene acceso SISOC web habilitado."
+                )
             must_change = bool(getattr(profile, "must_change_password", False))
             if must_change and not self._is_exempt_path(request.path):
                 return redirect("password_change_required")

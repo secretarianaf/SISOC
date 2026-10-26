@@ -241,9 +241,9 @@ cuando llega el `PATCH` con el estado final.
   esté en `Pendiente` o `Visita pendiente` (nunca finalizado).
 - **`Finalizado`**: la visita se completó sin novedades y fue validada por el
   coordinador. GESTIONAR, al confirmar el alta con `2xx` y devolver `Rows`,
-  puede además devolver `docPDF`; SISOC lo persiste y habilita el botón "Ver
-  PDF" en el detalle (visible solo para `Finalizado` y
-  `Finalizado/Excepciones`).
+  puede además devolver `docPDF`; SISOC lo persiste. El botón "Descargar PDF"
+  del detalle (visible solo para `Finalizado` y `Finalizado/Excepciones`) ya
+  no usa `docPDF`: desde #2630 SISOC genera su propio PDF (ver §9).
 - **`Finalizado/Excepciones`**: la visita terminó en excepción (no se pudo
   relevar con normalidad) y fue validada por el coordinador. En este caso se
   completa el bloque `Excepcion` (motivo, descripción, geolocalización,
@@ -373,6 +373,13 @@ el botón "Ver PDF" cuando el relevamiento está `Finalizado` o
 verificar/corregir):** con la aplicación nueva, el enlace de cada PDF no
 apunta a ningún lado y devuelve error 404. Estos PDF deben existir y ser
 accesibles — es un problema operativo a resolver, no una decisión de diseño.
+
+**Resuelto en #2630 (2026-10-06):** el 404 se debía a que el PDF de `docPDF`
+lo generaba AppSheet al finalizar dentro de AppSheet, y con la app nueva la
+visita se cierra en SISOC. La app arma su propio PDF en el navegador y no lo
+sube. SISOC ahora genera el PDF con weasyprint a partir de las mismas
+secciones que muestra el detalle (`relevamiento_pdf`). Detalle en
+`docs/registro/cambios/2026-T4/2026-10-06-2630-correcciones-comedores-octubre.md`.
 
 ---
 

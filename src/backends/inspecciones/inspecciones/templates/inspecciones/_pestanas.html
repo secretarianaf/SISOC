@@ -1,0 +1,29 @@
+{% comment %}
+Pestañas del panel. Recibe `activa`: "tablero", "escuelas", "asignaciones" o "actas".
+La pestaña Tablero se muestra sólo si existe la ruta `inspecciones_tablero`.
+{% endcomment %}
+{% url 'inspecciones_tablero' as url_tablero %}
+<ul class="nav insp-tabs border-bottom mb-3" aria-label="Secciones">
+    {% if url_tablero %}
+        <li class="nav-item">
+            <a class="nav-link{% if activa == 'tablero' %} active{% endif %}"
+               href="{{ url_tablero }}"
+               {% if activa == 'tablero' %}aria-current="page"{% endif %}>Tablero</a>
+        </li>
+    {% endif %}
+    <li class="nav-item">
+        <a class="nav-link{% if activa == 'escuelas' %} active{% endif %}"
+           href="{% url 'inspecciones_panel' %}"
+           {% if activa == 'escuelas' %}aria-current="page"{% endif %}>Escuelas</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link{% if activa == 'asignaciones' %} active{% endif %}"
+           href="{% url 'inspecciones_asignaciones' %}"
+           {% if activa == 'asignaciones' %}aria-current="page"{% endif %}>Asignaciones</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link{% if activa == 'actas' %} active{% endif %}"
+           href="{% url 'inspecciones_actas' %}"
+           {% if activa == 'actas' %}aria-current="page"{% endif %}>Actas</a>
+    </li>
+</ul>

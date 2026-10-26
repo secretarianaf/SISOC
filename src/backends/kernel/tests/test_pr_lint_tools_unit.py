@@ -45,7 +45,7 @@ def test_get_changed_files_usa_api_del_pr_si_falta_el_rango_git(monkeypatch):
         "_fetch_github_json",
         lambda url: (
             [
-                {"filename": "scripts/ci/pr_lint_tools.py"},
+                {"filename": "src/scripts/ci/pr_lint_tools.py"},
                 {"filename": "VAT/serializers.py"},
             ]
             if "page=1" in url
@@ -54,7 +54,7 @@ def test_get_changed_files_usa_api_del_pr_si_falta_el_rango_git(monkeypatch):
     )
 
     assert pr_lint_tools.get_changed_files() == [
-        Path("scripts/ci/pr_lint_tools.py"),
+        Path("src/scripts/ci/pr_lint_tools.py"),
         Path("VAT/serializers.py"),
     ]
 
@@ -81,14 +81,14 @@ def test_get_changed_files_usa_fallback_si_falta_el_base_sha(monkeypatch):
         if args == ("show", "--pretty=", "--name-only", "HEAD"):
             return _completed_process(
                 *args,
-                stdout="scripts/ci/pr_lint_tools.py\nVAT/serializers.py\n",
+                stdout="src/scripts/ci/pr_lint_tools.py\nVAT/serializers.py\n",
             )
         raise AssertionError(f"Comando git no esperado: {args}")
 
     monkeypatch.setattr(pr_lint_tools, "run_git_command", fake_run_git_command)
 
     assert pr_lint_tools.get_changed_files() == [
-        Path("scripts/ci/pr_lint_tools.py"),
+        Path("src/scripts/ci/pr_lint_tools.py"),
         Path("VAT/serializers.py"),
     ]
 
@@ -109,6 +109,21 @@ def test_list_changed_files_excluye_artefactos_generados(monkeypatch, capsys):
     assert pr_lint_tools.list_changed_files("templates") == 0
     emitidos = [Path(item) for item in json.loads(capsys.readouterr().out)]
     assert emitidos == [Path("src/backends/kernel/templates/changelog.html")]
+
+
+def test_list_changed_files_markdown(monkeypatch, capsys):
+    """check_docs_paths verifica la existencia de rutas solo en los .md del PR."""
+
+    monkeypatch.setattr(
+        pr_lint_tools,
+        "get_changed_files",
+        lambda: [Path("AGENTS.md"), Path("docs/ia/TESTING.md"), Path("README.txt")],
+    )
+    monkeypatch.setattr(Path, "is_file", lambda self: True)
+
+    assert pr_lint_tools.list_changed_files("markdown") == 0
+    emitidos = [Path(item) for item in json.loads(capsys.readouterr().out)]
+    assert emitidos == [Path("AGENTS.md"), Path("docs/ia/TESTING.md")]
 
 
 @pytest.mark.skipif(

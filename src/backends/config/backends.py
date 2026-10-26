@@ -1,7 +1,7 @@
 """Registro de backends por vertical (``src/backends/config/backends.json``).
 
 Solo stdlib: lo leen los settings, el proxy del core y los scripts de deploy
-(`scripts/operacion/deploy_targets.py`), que corren en el host sin Django.
+(`src/scripts/operacion/deploy_targets.py`), que corren en el host sin Django.
 
 Cada entrada describe un backend en ``src/backends/<nombre>/``:
 
@@ -11,8 +11,12 @@ Cada entrada describe un backend en ``src/backends/<nombre>/``:
 - ``origin_env`` / ``default_origin``: dónde escucha el backend en la red de
   Compose.
 - ``service`` / ``migrate_service``: servicios de Compose de web y migración.
-- ``extra_services``: otros servicios con el mismo código (Celery de PAS);
-  el deploy selectivo los recrea junto con el backend.
+- ``extra_services``: procesos que incluyen código del backend (Celery de PAS,
+  importador con imagen completa); se recrean junto al dueño. Sólo mailing e
+  importación pueden faltar por vivir en el override de producción; el resto
+  de servicios seleccionados ausentes obliga al fallback completo.
+- ``admin_links``: enlaces del índice admin del portal a ModelAdmins remotos;
+  filtrados por permisos, sin sustituir la autorización del dueño.
 - ``favorite_sections``: secciones de filtros favoritos del backend; el core
   le reenvía esos pedidos.
 - ``ciudadano_contributions``: secciones de Ciudadano 360 que el core le pide

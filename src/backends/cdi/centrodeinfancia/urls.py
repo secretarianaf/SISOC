@@ -27,6 +27,7 @@ from centrodeinfancia.views import (
     TrabajadorCentroInfanciaDetailView,
     TrabajadorCentroInfanciaUpdateView,
     centrodeinfancia_ajax,
+    consultar_renaper_bloque,
     asistencia_nomina_calendario,
     load_departamentos_ipi,
     eliminar_archivo_intervencion_centrodeinfancia,
@@ -49,7 +50,10 @@ from centrodeinfancia.views_reportes import (
     ReporteCDIDescargaView,
     ReportesCDIView,
 )
-from centrodeinfancia.views_usuario_cdi import GenerarUsuarioCDIView
+from centrodeinfancia.views_usuario_cdi import (
+    GenerarUsuarioCDIView,
+    cambiar_estado_usuario_cdi,
+)
 from centrodeinfancia.views_usuario_egp import GenerarUsuarioEGPView
 
 
@@ -112,6 +116,13 @@ urlpatterns = [
         name="centrodeinfancia_generar_usuario",
     ),
     path(
+        "centrodeinfancia/<int:pk>/usuarios/<int:acceso_id>/estado/",
+        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
+            cambiar_estado_usuario_cdi
+        ),
+        name="centrodeinfancia_usuario_estado",
+    ),
+    path(
         "centrodeinfancia/editar/<int:pk>",
         permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
             CentroDeInfanciaUpdateView.as_view()
@@ -136,6 +147,18 @@ urlpatterns = [
             load_departamentos_ipi
         ),
         name="centrodeinfancia_ajax_load_departamentos_ipi",
+    ),
+    path(
+        "centrodeinfancia/ajax/renaper/<str:bloque>/",
+        permissions_any_required(
+            [
+                "centrodeinfancia.add_centrodeinfancia",
+                "centrodeinfancia.change_centrodeinfancia",
+                "centrodeinfancia.add_nominacentroinfancia",
+                "centrodeinfancia.change_nominacentroinfancia",
+            ]
+        )(consultar_renaper_bloque),
+        name="centrodeinfancia_renaper_bloque",
     ),
     path(
         "centrodeinfancia/<int:pk>/nomina/",

@@ -2,8 +2,8 @@
 
 Este documento describe **exactamente** lo que ejecutan los comandos:
 
-- `users/management/commands/create_test_users.py`
-- `users/management/commands/create_groups.py`
+- `src/backends/kernel/users/management/commands/create_test_users.py`
+- `src/backends/kernel/users/management/commands/create_groups.py`
 
 ## Comando: create_groups
 
@@ -14,7 +14,7 @@ python manage.py create_groups
 ```
 
 Comportamiento:
-- Crea (si no existen) los grupos listados en `users/bootstrap/groups_seed.py`.
+- Crea (si no existen) los grupos listados en `src/backends/kernel/users/bootstrap/groups_seed.py`.
 - Para cada grupo, sincroniza permisos desde la semilla declarativa bootstrap.
 - No elimina grupos ni permisos existentes.
 
@@ -30,7 +30,7 @@ Comportamiento:
 - Recorre los grupos existentes y asigna los permisos configurados en el registro IAM.
 - Se recomienda ejecutarlo luego de `migrate` en staging/producción para mantener compatibilidad con grupos históricos.
 
-La lista completa de grupos bootstrap y sus permisos canónicos se mantiene en `users/bootstrap/groups_seed.py`.
+La lista completa de grupos bootstrap y sus permisos canónicos se mantiene en `src/backends/kernel/users/bootstrap/groups_seed.py`.
 
 ## Comando: create_test_users
 

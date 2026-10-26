@@ -121,7 +121,7 @@ artefacto inesperado. No inspeccionar ni borrar sin aprobacion.
 
 ### Contrato cron historico peligroso y desactualizado
 
-`scripts/crontab` usa paths inexistentes y `docker system prune --volumes`.
+`src/scripts/crontab` usa paths inexistentes y `docker system prune --volumes`.
 `sisoc-deploy` ahora tiene una sola tarea segura y verificada; cron de root sigue
 pendiente.
 

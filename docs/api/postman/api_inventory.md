@@ -38,9 +38,9 @@ Todas las APIs (internas y externas) están documentadas en la colección única
 | 8 - API web | 11 | centros, títulos y cursos (list/retrieve), `voucher-estado`, listado/alta/prevalidación de inscripciones y registros PAV por DNI |
 
 La cobertura corresponde a los métodos de negocio registrados en
-`VAT/api_urls.py`: GET, POST, PUT, PATCH y DELETE según cada ViewSet, más sus
+`src/backends/vat/VAT/api_urls.py`: GET, POST, PUT, PATCH y DELETE según cada ViewSet, más sus
 acciones custom. No se duplican HEAD/OPTIONS generados automáticamente por DRF y
-no se incluyen vistas HTML ni AJAX internas de `VAT/urls.py`.
+no se incluyen vistas HTML ni AJAX internas de `src/backends/vat/VAT/urls.py`.
 
 La consulta `GET /api/vat/centros/?cue=<CUE>` mantiene la paginación habitual y
 devuelve la ficha institucional/formativa ampliada del Centro. Busca CUE vigente,

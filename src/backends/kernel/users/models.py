@@ -108,8 +108,22 @@ class Profile(models.Model):
         COORDINADOR = "coordinador", "Coordinador Provincial"
         ENTREVISTADOR = "entrevistador", "Relevador"
 
+    class InspeccionesRol(models.TextChoices):
+        """Roles de la PWA Sisoc Inspecciones (inspecciones escolares).
+
+        Coordinación ve todas las actas y borradores; la administración del
+        programa (catálogo de escuelas, asignaciones) es una función de
+        coordinación. Ver
+        docs/registro/decisiones/2026-10-14-inspecciones-escolares-backend.md
+        """
+
+        INSPECTOR = "inspector", "Inspector"
+        COORDINACION = "coordinacion", "Coordinación"
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     dni = models.CharField(max_length=16, blank=True)
+    acceso_web = models.BooleanField(default=True, verbose_name="Acceso SISOC web")
+    acceso_siis = models.BooleanField(default=False, verbose_name="Acceso SIIS")
     cuil = models.CharField(max_length=16, blank=True)
     tipo_usuario = models.CharField(
         max_length=10,
@@ -224,6 +238,25 @@ class Profile(models.Model):
         help_text=(
             "Rol con el que el usuario opera en SISOC - Mobile DataCalle. "
             "Obligatorio cuando es_relevador_calle esta activo."
+        ),
+    )
+    es_inspector_escolar = models.BooleanField(
+        default=False,
+        verbose_name="Pertenece a Inspecciones escolares",
+        help_text=(
+            "Habilita el acceso a la PWA Sisoc Inspecciones. El rol en el "
+            "programa se define en inspecciones_rol."
+        ),
+    )
+    inspecciones_rol = models.CharField(
+        max_length=20,
+        choices=InspeccionesRol.choices,
+        blank=True,
+        default="",
+        verbose_name="Rol en Inspecciones escolares",
+        help_text=(
+            "Inspector (ve y modifica lo propio) o Coordinación (ve todo). "
+            "Obligatorio cuando es_inspector_escolar esta activo."
         ),
     )
     # ``duplas_asignadas`` (duplas que coordina este perfil) lo declara

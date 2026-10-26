@@ -58,24 +58,28 @@ class Command(BaseCommand):
         # (permite completar tablas faltantes sin bloquear toda la fixture).
         return any(self.model_is_empty(m) for m in models)
 
-    def upsert_fixture(self, fixture_path):
+    def upsert_fixture(self, fixture_path, *, objects=None, report_errors=True):
         # pylint: disable=too-many-locals
         """Deserializa y guarda: si PK existe actualiza, si no inserta.
 
         Este es el mecanismo oficial para "pisar" fixtures sin borrar datos:
         con ``--force`` o ``--overwrite`` vuelve a persistir el JSON sobre la
         base existente.
-        """
-        try:
-            with open(fixture_path, "r", encoding="utf-8") as f:
-                objects = list(
-                    serializers.deserialize("json", f, ignorenonexistent=True)
-                )
-        except Exception as e:
-            self.stderr.write(f"❌ No se pudo deserializar {fixture_path}: {e}")
-            return
 
-        created, updated, failed = 0, 0, 0
+        Devuelve objetos fallidos y errores para reintentarlos entre archivos.
+        Con ``objects`` reutiliza sólo esos pendientes, sin volver a leer el JSON.
+        """
+        if objects is None:
+            try:
+                with open(fixture_path, "r", encoding="utf-8") as f:
+                    objects = list(
+                        serializers.deserialize("json", f, ignorenonexistent=True)
+                    )
+            except Exception as e:
+                self.stderr.write(f"❌ No se pudo deserializar {fixture_path}: {e}")
+                return []
+
+        created, updated = 0, 0
         pending = list(objects)
         last_errors = {}
 
@@ -110,26 +114,33 @@ class Command(BaseCommand):
                     last_errors[id(obj)] = e
 
             if not next_pending:
+                pending = []
                 break
 
             if not progress:
-                failed = len(next_pending)
-                for obj in next_pending:
-                    obj_label = (
-                        f"{obj.object._meta.label_lower}"
-                        f"(pk={getattr(obj.object, 'pk', None)})"
-                    )
-                    error = last_errors.get(id(obj))
-                    self.stderr.write(
-                        f"⚠️  Falló guardar registro de {fixture_path} [{obj_label}]: {error}"
-                    )
+                pending = next_pending
                 break
 
             pending = next_pending
 
+        failures = [(obj, last_errors[id(obj)]) for obj in pending]
+        if report_errors:
+            self.report_fixture_failures(fixture_path, failures)
+        status = "failed" if report_errors else "pending"
         self.stdout.write(
-            f"✅ {fixture_path}: created={created}, updated≈{updated}, failed={failed}"
+            f"✅ {fixture_path}: created={created}, updated≈{updated}, "
+            f"{status}={len(failures)}"
         )
+        return failures
+
+    def report_fixture_failures(self, fixture_path, failures):
+        for obj, error in failures:
+            obj_label = (
+                f"{obj.object._meta.label_lower}(pk={getattr(obj.object, 'pk', None)})"
+            )
+            self.stderr.write(
+                f"⚠️  Falló guardar registro de {fixture_path} [{obj_label}]: {error}"
+            )
 
     def load_fixtures(self):
         fixtures = []
@@ -146,9 +157,32 @@ class Command(BaseCommand):
             return
 
         self.stdout.write("📥 Cargando fixtures (sin borrar nada)...")
+        pending = {}
         for fx in fixtures:
             if self.should_load_fixture(fx):
-                self.upsert_fixture(fx)
+                pending[fx] = self.upsert_fixture(fx, report_errors=False)
+        pending = {fx: failures for fx, failures in pending.items() if failures}
+
+        # Una FK puede apuntar a un fixture que se carga después. Conservar sólo
+        # objetos fallidos: volver a chequear tablas vacías omitiría los archivos
+        # parcialmente cargados, y releerlos repetiría escrituras ya exitosas.
+        while pending:
+            remaining = sum(len(failures) for failures in pending.values())
+            retry_pending = {}
+            for fx, failures in pending.items():
+                failures = self.upsert_fixture(
+                    fx,
+                    objects=[obj for obj, _ in failures],
+                    report_errors=False,
+                )
+                if failures:
+                    retry_pending[fx] = failures
+            pending = retry_pending
+            if sum(len(failures) for failures in pending.values()) >= remaining:
+                break
+
+        for fx, failures in pending.items():
+            self.report_fixture_failures(fx, failures)
 
     def sync_post_load_catalogs(self):
         for mensaje in ejecutar_fixture_post_load_handlers():

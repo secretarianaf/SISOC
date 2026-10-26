@@ -13,6 +13,13 @@ from iam.services import user_has_permission_code
 
 register = template.Library()
 
+
+@register.simple_tag(takes_context=True)
+def optional_context_value(context, name, default=None):
+    """Lee parámetros opcionales de componentes sin resolver variables ausentes."""
+    return context.get(name, default)
+
+
 _DAYS = (
     "lunes",
     "martes",
@@ -99,6 +106,12 @@ def is_cdi_local_sidebar_only(user):
 def is_datacalle_sidebar_only(user):
     """Indica si el menú debe mostrar sólo Situación de Calle (QA-0014)."""
     return resolver_predicado_sidebar("datacalle", user)
+
+
+@register.filter
+def puede_gestionar_inspecciones(user):
+    """Link al panel de Inspecciones escolares: permiso o rol de coordinación."""
+    return resolver_predicado_sidebar("inspecciones_gestion", user)
 
 
 @register.filter

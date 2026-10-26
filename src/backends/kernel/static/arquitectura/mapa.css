@@ -1,5 +1,5 @@
 /* Mapa de arquitectura de SISOC — hoja generada, no editar la copia de static/.
-   Fuente: scripts/arquitectura/plantilla/mapa.css */
+   Fuente: src/scripts/arquitectura/plantilla/mapa.css */
 
 html:has(> body > .mapa-app),
 html:has(> body > .mapa-app) > body { margin: 0; padding: 0; height: 100%; }

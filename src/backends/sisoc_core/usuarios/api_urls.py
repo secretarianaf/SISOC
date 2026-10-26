@@ -1,5 +1,6 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+from usuarios.siis_api_views import SIISAdminTokenView, SIISUserCreateView
 
 from usuarios.api_views import (
     PasswordChangeRequiredViewSet,
@@ -31,5 +32,9 @@ router.register(
 )
 
 urlpatterns = [
+    path(
+        "siis/admin-token/", SIISAdminTokenView.as_view(), name="api-siis-admin-token"
+    ),
+    path("siis/", SIISUserCreateView.as_view(), name="api-siis-user-create"),
     path("", include(router.urls)),
 ]

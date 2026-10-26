@@ -1,0 +1,148 @@
+{% extends "inspecciones/base_panel.html" %}
+{% block panel %}
+    <section class="insp-seccion"
+             {% if editar_id %}data-insp-abrir-modal="{% url 'inspecciones_escuela_editar' editar_id %}"{% endif %}>
+        <div class="insp-seccion-barra">
+            <form method="get"
+                  action="{% url 'inspecciones_panel' %}"
+                  class="insp-filtros"
+                  role="search">
+                <label class="insp-busqueda">
+                    <span class="visually-hidden">Buscar</span>
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input id="filtro-q"
+                           class="form-control"
+                           type="search"
+                           name="q"
+                           value="{{ filtro.q.value|default:'' }}"
+                           placeholder="Nombre, Cueanexo o domicilio" />
+                </label>
+                <label class="visually-hidden" for="filtro-provincia">Provincia</label>
+                <select id="filtro-provincia"
+                        class="form-select"
+                        name="provincia"
+                        data-insp-auto-submit
+                        data-insp-limpia="#filtro-localidad">
+                    <option value="">Todas las provincias</option>
+                    {% for provincia in filtro.fields.provincia.queryset %}
+                        <option value="{{ provincia.pk }}"
+                                {% if filtro.provincia.value|stringformat:'s' == provincia.pk|stringformat:'s' %}selected{% endif %}>
+                            {{ provincia.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <label class="visually-hidden" for="filtro-localidad">Localidad</label>
+                <select id="filtro-localidad"
+                        name="localidad"
+                        data-insp-select2="{% url 'inspecciones_ajax_localidades' %}"
+                        data-insp-provincia="#filtro-provincia"
+                        data-insp-min="0"
+                        data-insp-auto-submit
+                        data-placeholder="{% if filtro.provincia.value %}Todas las localidades{% else %}Elegí provincia{% endif %}"
+                        {% if not filtro.provincia.value %}disabled{% endif %}>
+                    <option value=""></option>
+                    {% if localidad_filtro %}
+                        <option value="{{ localidad_filtro.id }}" selected>{{ localidad_filtro.text }}</option>
+                    {% endif %}
+                </select>
+                <noscript>
+                    <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+                </noscript>
+                {% if a_revisar_activo %}<input type="hidden" name="a_revisar" value="1" />{% endif %}
+                <a class="insp-chip{% if a_revisar_activo %} activo{% endif %}" href="?{{ parametros_sin_revisar }}{% if not a_revisar_activo %}{% if parametros_sin_revisar %}&amp;{% endif %}a_revisar=1{% endif %}">
+                    <span class="insp-punto" aria-hidden="true"></span>
+                    A revisar · {{ contador_a_revisar }}
+                </a>
+                <span class="insp-espacio"></span>
+                <button type="button"
+                        class="btn btn-outline-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#insp-modal-importar">
+                    <i class="fas fa-upload" aria-hidden="true"></i>Importar Excel/CSV
+                </button>
+                <button type="button"
+                        class="btn btn-primary"
+                        data-insp-modal-url="{% url 'inspecciones_escuela_nueva' %}">
+                    <i class="fas fa-plus" aria-hidden="true"></i>Nueva escuela
+                </button>
+            </form>
+        </div>
+        {% if escuelas %}
+            <div class="table-responsive">
+                <table class="table insp-tabla">
+                    <thead>
+                        <tr>
+                            <th scope="col">Cueanexo</th>
+                            <th scope="col">Nombre</th>
+                            <th scope="col">Provincia</th>
+                            <th scope="col">Localidad</th>
+                            <th scope="col">Domicilio</th>
+                            <th scope="col">C. P.</th>
+                            <th scope="col">Teléfono</th>
+                            <th scope="col">Mail</th>
+                            <th scope="col">
+                                <span class="visually-hidden">Acciones</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for escuela in escuelas %}
+                            <tr>
+                                <td class="insp-mono">{{ escuela.cueanexo }}</td>
+                                <td>{{ escuela.nombre }}</td>
+                                <td>{{ escuela.provincia.nombre|default:"—" }}</td>
+                                <td>
+                                    {% if escuela.localidad_vinculada_id %}
+                                        {{ escuela.localidad }}
+                                        {% if escuela.distrito and escuela.distrito != escuela.localidad %}
+                                            <span class="insp-detalle">{{ escuela.distrito }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">{{ escuela.localidad_original|default:escuela.localidad|default:"—" }}</span>
+                                        {% if "localidad_repetida" in escuela.motivos_revision %}
+                                            <span class="insp-badge insp-badge-alerta">localidad repetida</span>
+                                        {% elif "localidad_inexistente" in escuela.motivos_revision %}
+                                            <span class="insp-badge insp-badge-alerta">localidad a revisar</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>{{ escuela.domicilio|default:"—" }}</td>
+                                <td>{{ escuela.cp|default:"—" }}</td>
+                                <td>{{ escuela.telefono|default:"—" }}</td>
+                                <td class="insp-mail">
+                                    {% if "mail_invalido" in escuela.motivos_revision %}
+                                        <span class="text-muted">{{ escuela.mail }}</span>
+                                        <span class="insp-badge insp-badge-alerta">mail inválido</span>
+                                    {% else %}
+                                        {{ escuela.mail|default:"—" }}
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <button type="button"
+                                            class="insp-boton-icono"
+                                            data-insp-modal-url="{% url 'inspecciones_escuela_editar' escuela.pk %}"
+                                            aria-label="Editar {{ escuela.nombre }}">
+                                        <i class="fas fa-pen" aria-hidden="true"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="insp-vacio">
+                <i class="fas fa-school" aria-hidden="true"></i>
+                <strong>No hay escuelas</strong>
+                No hay escuelas que coincidan con la búsqueda o los filtros.
+            </div>
+        {% endif %}
+        {% if page_obj.paginator.count %}
+            <div class="insp-seccion-pie">
+                <span>Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }}</span>
+                {% include "inspecciones/partials/paginacion.html" %}
+            </div>
+        {% endif %}
+    </section>
+    {% include "inspecciones/partials/modal_importar.html" with tipo="escuelas" titulo="Importar escuelas" url_subir="inspecciones_importar_escuelas" ayuda="inspecciones/partials/ayuda_importar_escuelas.html" %}
+{% endblock %}

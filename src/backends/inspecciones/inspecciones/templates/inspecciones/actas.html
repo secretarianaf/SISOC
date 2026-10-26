@@ -1,0 +1,126 @@
+{% extends "inspecciones/base_panel.html" %}
+{% block panel %}
+    <section class="insp-seccion">
+        <div class="insp-seccion-barra">
+            <form method="get"
+                  action="{% url 'inspecciones_actas' %}"
+                  class="insp-filtros">
+                <label class="visually-hidden" for="filtro-fecha">Fecha de la visita</label>
+                <input id="filtro-fecha"
+                       class="form-control"
+                       type="date"
+                       name="fecha"
+                       value="{{ filtro.fecha.value|default:'' }}"
+                       data-insp-auto-submit />
+                <label class="visually-hidden" for="filtro-inspector">Inspector</label>
+                <select id="filtro-inspector"
+                        name="inspector"
+                        data-insp-select2="{% url 'inspecciones_ajax_inspectores' %}?alcance=programa"
+                        data-insp-min="3"
+                        data-insp-auto-submit
+                        data-placeholder="Todos los inspectores">
+                    <option value=""></option>
+                    {% if inspector_filtro %}
+                        <option value="{{ inspector_filtro.id }}" selected>{{ inspector_filtro.text }}</option>
+                    {% endif %}
+                </select>
+                <label class="visually-hidden" for="filtro-provincia">Provincia</label>
+                {% include "inspecciones/partials/select_provincia_filtro.html" %}
+                <label class="visually-hidden" for="filtro-estado">Estado del acta</label>
+                <select id="filtro-estado"
+                        class="form-select"
+                        name="estado"
+                        data-insp-auto-submit>
+                    {% for valor, etiqueta in filtro.fields.estado.choices %}
+                        <option value="{{ valor }}"
+                                {% if filtro.estado.value == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                    {% endfor %}
+                </select>
+                <label class="visually-hidden" for="filtro-numero">Buscar por número de acta</label>
+                <input id="filtro-numero"
+                       class="form-control"
+                       type="search"
+                       name="numero"
+                       maxlength="50"
+                       placeholder="Buscar por número de acta"
+                       value="{{ filtro.numero.value|default:'' }}"
+                       data-insp-auto-submit />
+                {% if request.GET %}
+                    <a class="btn btn-link" href="{% url 'inspecciones_actas' %}">Limpiar filtros</a>
+                {% endif %}
+            </form>
+        </div>
+        {% if filas %}
+            <div class="table-responsive">
+                <table class="table insp-tabla">
+                    <thead>
+                        <tr>
+                            <th scope="col">Número</th>
+                            <th scope="col">Escuela</th>
+                            <th scope="col">Provincia · Localidad</th>
+                            <th scope="col">Turno</th>
+                            <th scope="col">Inspector</th>
+                            <th scope="col">Hora</th>
+                            <th scope="col">Firma</th>
+                            <th scope="col">Notificación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fila in filas %}
+                            {% with acta=fila.acta %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'inspecciones_acta_detalle' acta.numero %}">{{ acta.numero }}</a>
+                                        {% include "inspecciones/partials/chips_acta.html" %}
+                                    </td>
+                                    <td>
+                                        {{ fila.escuela.nombre|default:"—" }}
+                                        <span class="insp-detalle insp-mono">{{ fila.escuela.cueanexo }}</span>
+                                    </td>
+                                    <td>
+                                        {{ fila.escuela.provincia|default:"—" }}
+                                        {% if fila.escuela.localidad %}· {{ fila.escuela.localidad }}{% endif %}
+                                    </td>
+                                    <td>{{ fila.turno }}</td>
+                                    <td>{{ acta.inspector.get_full_name|default:acta.inspector.username }}</td>
+                                    <td>
+                                        {{ acta.fecha_visita|date:"d/m/Y" }}
+                                        <span class="insp-detalle">{{ acta.cerrada_at|date:"H:i" }}</span>
+                                    </td>
+                                    <td>
+                                        {% if acta.firma_tipo == "firma" %}
+                                            <span class="insp-badge insp-badge-info">Firmada</span>
+                                        {% elif acta.firma_tipo == "excepcion" %}
+                                            <span class="insp-badge insp-badge-alerta">Excepción</span>
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if acta.notificacion_estado == "cargada" %}
+                                            <span class="insp-badge insp-badge-ok">Cargada</span>
+                                        {% else %}
+                                            <span class="insp-badge insp-badge-alerta">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endwith %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="insp-vacio">
+                <i class="fas fa-file-signature" aria-hidden="true"></i>
+                <strong>No hay actas</strong>
+                No hay actas con los filtros elegidos.
+            </div>
+        {% endif %}
+        {% if page_obj.paginator.count %}
+            <div class="insp-seccion-pie">
+                <span>Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }}</span>
+                {% include "inspecciones/partials/paginacion.html" %}
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

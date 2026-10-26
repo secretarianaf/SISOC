@@ -1,8 +1,9 @@
 # Arquitectura
 
 Desde #2251/#2309 SISOC corre como varios servicios construidos desde el mismo
-repo: el **core** (proxy de entrada y apps de Comedores), un **backend por
-vertical** (PAS, CDI, CDF, Celiaquía, Dispositivos, VAT, VPSL), un **migrador**
+repo: el **core** (proxy de entrada, Usuarios, Dashboard, Encuestas e Insumos), un **backend por
+vertical** (PAS, CDI, CDF, Celiaquía, Dispositivos, Inspecciones, VAT, VPSL y
+Comedores en desarrollo C3 local), un **migrador**
 único, workers dedicados, Celery de PAS y el **front v2** en React. El diagrama
 de abajo describe un proceso Django; el core reenvía a cada backend los
 prefijos que declara `src/backends/config/backends.json`. Ver
@@ -10,9 +11,9 @@ prefijos que declara `src/backends/config/backends.json`. Ver
 `docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md` y
 `docs/registro/decisiones/2026-10-02-estructura-src-backends.md`.
 
-Las rutas de evidencia sin prefijo (`comedores/...`, `core/...`) son relativas
-a la raíz de código que contiene esa app (`src/backends/kernel/`,
-`src/backends/sisoc_core/` o `src/backends/<vertical>/`).
+Las referencias abreviadas de evidencia se resuelven bajo el dueño de la app
+(`src/backends/kernel/`, `src/backends/sisoc_core/` o `src/backends/<vertical>/`).
+Las rutas que comienzan con src/ parten de la raíz del repositorio.
 
 ## 1) Diagrama textual (ASCII)
 ```
@@ -53,7 +54,7 @@ Evidencia: src/backends/config/settings.py; src/backends/config/urls.py; comedor
 ## 2) Capas existentes
 - Presentación: vistas Django y DRF (urls en `src/backends/config/urls.py`), plantillas en `src/backends/kernel/templates/` y apps propias. Evidencia: src/backends/config/urls.py:12-44; src/backends/config/settings.py:105-120.
 - Middleware: seguridad, sesiones, CORS, CSRF, autenticación, auditlog, mensajes, XFrame, XSS custom, threadlocals; en DEBUG se agregan debug_toolbar y silk. Evidencia: src/backends/config/settings.py:85-99,359-366.
-- Servicios/negocio: servicios en apps (ej. `comedores/services`, `centrodefamilia/services`), sincronización con GESTIONAR en `tasks.py` y consulta técnica compartida de RENAPER en `core/integrations/renaper.py` con fachada `core/services/renaper.py`.
+- Servicios/negocio: servicios en apps (ej. `src/backends/comedores/comedores/services`, `src/backends/cdf/centrodefamilia/services`), sincronización con GESTIONAR en `tasks.py` y consulta técnica compartida de RENAPER en `src/backends/kernel/core/integrations/renaper.py` con fachada `src/backends/kernel/core/services/renaper.py`.
 - Dominio/persistencia: modelos en cada app; DB configurada a MySQL. Evidencia: src/backends/config/settings.py:153-168; apps listadas en src/backends/config/settings.py:42-83.
 - Serialización/API schema: DRF + drf-spectacular. Evidencia: src/backends/config/settings.py:195-234.
 
@@ -64,7 +65,7 @@ Evidencia: src/backends/config/settings.py; src/backends/config/urls.py; comedor
 
 ## 4) Asincronía
 - Celery con Redis solo para PAS (`docker/compose/docker-compose.celery.yml`: `celery_pas_worker` y `celery_beat`). No hay Kafka.
-- Workers dedicados con la imagen del core, elegidos por `DJANGO_SERVICE_ROLE` (`docker/django/entrypoint.py`): credenciales masivas, importación de ciudadanos y de usuarios, mailing, OCR y rondas de encuestas.
+- Workers elegidos por `DJANGO_SERVICE_ROLE` (`docker/django/entrypoint.py`): credenciales masivas, ciudadanos y encuestas usan core; mailing, Comedores; OCR, su backend; importación de usuarios, la imagen completa del migrador con rol de worker. DB/storage/migrador siguen compartidos. C3 y C4 describen código local: no acreditan deploy.
 - Hilos (`threading.Thread` + `ThreadPoolExecutor`) para llamadas HTTP a GESTIONAR en comedores/relevamientos. Evidencia: comedores/tasks.py:1-249; relevamientos/tasks.py:1-144.
 - Cron programados externos: purga auditlog y limpieza de logs (scripts/crontab). Evidencia: scripts/crontab:2-5; audittrail/management/commands/purge_auditlog.py:1-38; scripts/borrar_logs.py:1-43.
 

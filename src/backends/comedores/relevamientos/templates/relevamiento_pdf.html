@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Relevamiento {{ relevamiento.id }} - {{ relevamiento.comedor.nombre }}</title>
+        <style>
+            @page {
+                size: A4;
+                margin: 1.4cm 1.2cm 1.6cm;
+                @bottom-left {
+                    content: "SISOC - Relevamiento N.º {{ relevamiento.id }}";
+                    font-family: "DejaVu Sans", Arial, sans-serif;
+                    font-size: 7pt;
+                    color: #555;
+                }
+                @bottom-right {
+                    content: "Página " counter(page) " de " counter(pages);
+                    font-family: "DejaVu Sans", Arial, sans-serif;
+                    font-size: 7pt;
+                    color: #555;
+                }
+            }
+            body { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 8pt; color: #111; }
+            .pdf-encabezado { border: 1.5pt solid #04756f; padding: 8pt 10pt; margin-bottom: 10pt; }
+            .pdf-encabezado h1 { font-size: 13pt; margin: 0 0 2pt; color: #04756f; }
+            .pdf-encabezado h2 { font-size: 11pt; margin: 0 0 6pt; }
+            .pdf-encabezado table { width: 100%; border-collapse: collapse; }
+            .pdf-encabezado td { padding: 1pt 4pt 1pt 0; vertical-align: top; width: 33%; }
+            .pdf-dato { color: #555; }
+            /* Secciones del detalle: markup Bootstrap sin su CSS ni su JS. */
+            .card { border: 0.75pt solid #bbb; margin-bottom: 8pt; page-break-inside: auto; }
+            .card-header { background: #e9f2f1; padding: 3pt 6pt; border-bottom: 0.75pt solid #bbb; }
+            .card-title { font-size: 9.5pt; margin: 0; }
+            .card-tools, button, .carousel-indicators, .carousel-control-prev,
+            .carousel-control-next, .visually-hidden, iframe, script { display: none; }
+            .card-body { padding: 2pt 6pt; }
+            .row { display: flex; flex-wrap: wrap; margin: 3pt 0; }
+            .row > [class^="col"], .row > [class*=" col"] { box-sizing: border-box; min-width: 0; padding: 2pt 4pt 2pt 0; }
+            .col { flex: 1 1 0; }
+            /* Domicilio: columnas más anchas para que los valores sean legibles. */
+            .col-1 { width: 20%; }
+            .col-2 { width: 16.66%; }
+            .col-3 { width: 25%; }
+            .col-4 { width: 33.33%; }
+            .col-5 { width: 41.66%; }
+            .col-6 { width: 50%; }
+            .col-8 { width: 66.66%; }
+            .col-12 { width: 100%; }
+            .comment-text { display: block; overflow-wrap: break-word; }
+            .username { display: block; font-weight: bold; font-size: 8.5pt; }
+            .username.me-2 { display: inline; margin-right: 3pt; }
+            .username img { width: 9pt; height: 9pt; vertical-align: middle; }
+            /* Prestación alimentaria: 7 días x 2 columnas tienen que entrar en A4. */
+            .card-body table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 6pt; }
+            th, td { border: 0.5pt solid #ccc; padding: 1pt 1.5pt; word-wrap: break-word; }
+            a { color: inherit; text-decoration: none; }
+            .carousel-item img { display: block; max-width: 100%; max-height: 9cm; width: auto; height: auto; }
+            .carousel-item { display: block; margin-bottom: 6pt; page-break-inside: avoid; }
+        </style>
+    </head>
+    <body>
+        <div class="pdf-encabezado">
+            <h1>Acompañamiento Territorial</h1>
+            <h2>{{ relevamiento.comedor.nombre }}</h2>
+            <table>
+                <tr>
+                    <td>
+                        <span class="pdf-dato">Relevamiento N.º {{ relevamiento.id }}</span>
+                    </td>
+                    <td>
+                        <span class="pdf-dato">SISOC Id del comedor:</span> {{ relevamiento.comedor.id }}
+                    </td>
+                    <td>
+                        <span class="pdf-dato">Estado:</span> {{ estado_visible|default_if_none:"Sin información" }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <span class="pdf-dato">Fecha de visita:</span> {{ relevamiento.fecha_visita|date:"d/m/Y H:i"|default:"Sin información" }}
+                    </td>
+                    <td>
+                        <span class="pdf-dato">Territorial:</span> {{ relevamiento.territorial_nombre|default_if_none:"Sin información" }}
+                    </td>
+                    <td>
+                        <span class="pdf-dato">Validación:</span> {{ relevamiento.estado_validacion|default:"Sin enviar" }}
+                    </td>
+                </tr>
+            </table>
+        </div>
+        {% include "relevamiento_detail_secciones.html" %}
+    </body>
+</html>

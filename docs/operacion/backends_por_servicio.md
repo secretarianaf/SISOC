@@ -2,20 +2,25 @@
 
 Guía operativa del ADR `docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md`.
 
+Para desarrollar y revisar cambios, usar `docs/desarrollo/verticales_independientes.md`.
+
 | Backend | Apps | Prefijos |
 | --- | --- | --- |
-| `dispositivos` | dispositivos, datacalle | `/dispositivos/`, `/datacalle/`, `/api/datacalle/` |
-| `vpsl` | ver_para_ser_libre | `/ver-para-ser-libre/`, `/api/vpsl/` (el front React sigue en `/v2/vpsl/`) |
-| `pas` | pas (más Celery: `celery_pas_worker`, `celery_beat`) | `/pas/`, `/media/pas/` |
-| `vat` | VAT | `/vat/`, `/api/vat/`, `/api/schema/VAT/`, `/api/docs/VAT/`, `/api/redoc/VAT/` |
-| `celiaquia` | celiaquia | `/celiaquia/`, `/reporter-provincias/` |
-| `cdi` | centrodeinfancia, ticketera | `/centrodeinfancia/`, `/simepi/`, `/api/ticketera/` |
-| `cdf` | centrodefamilia | `/centrodefamilia/`, `/api/centrodefamilia/` |
+| `dispositivos` | dispositivos, datacalle | `/dispositivos/`, `/datacalle/`, `/api/datacalle/`, `/admin/dispositivos/` |
+| `vpsl` | ver_para_ser_libre | `/ver-para-ser-libre/`, `/api/vpsl/`, `/admin/ver_para_ser_libre/` (el front React sigue en `/v2/vpsl/`) |
+| `pas` | pas (más Celery: `celery_pas_worker`, `celery_beat`) | `/pas/`, `/media/pas/`, `/admin/pas/` |
+| `vat` | VAT | `/vat/`, `/api/vat/`, `/api/schema/VAT/`, `/api/docs/VAT/`, `/api/redoc/VAT/`, `/admin/VAT/` |
+| `celiaquia` | celiaquia | `/celiaquia/`, `/reporter-provincias/`, `/api/celiaquia/`, `/admin/celiaquia/` |
+| `cdi` | centrodeinfancia, ticketera | `/centrodeinfancia/`, `/simepi/`, `/api/ticketera/`, `/admin/centrodeinfancia/` |
+| `cdf` | centrodefamilia | `/centrodefamilia/`, `/api/centrodefamilia/`, `/admin/centrodefamilia/` |
+| `inspecciones` | inspecciones (inspecciones escolares, PWA Sisoc Inspecciones) | `/inspecciones/`, `/api/inspecciones/`, `/admin/inspecciones/` |
+| `comedores` (C3 validado localmente) | cluster de catorce apps, Espacios comunitarios (`pwa`), mailing | rutas históricas de comedores/admisiones/organizaciones/rendiciones, Montos, AJAX y APIs; prefijos exactos en el registro |
+| `ocr` (C4 validado localmente) | OCR, lotes/documentos y worker existente | `/ocr/`, `/admin/ocr/` |
 
-**El core** corre las apps de `src/backends/sisoc_core/`: el cluster de Comedores
-(comedores, admisiones, relevamientos, intervenciones, rendiciones, etc.) y
-los servicios propios del core (dashboard, comunicados, encuestas, OCR, PWA,
-usuarios). No es un backend detrás del proxy: es el proceso que recibe el
+**El core** corre Usuarios, Dashboard, Encuestas e Insumos de
+`src/backends/sisoc_core/`. C3 separa localmente las catorce apps de Comedores
+y Espacios comunitarios en `src/backends/comedores/`, con su runtime y backend.
+No se ha ejecutado su incorporación ni deploy. No es un backend detrás del proxy: es el proceso que recibe el
 tráfico. Por eso no figura en `src/backends/config/backends.json`. Un cambio solo en
 `src/backends/sisoc_core/**` recrea solo los servicios del core (ver Deploy).
 
@@ -23,7 +28,7 @@ tráfico. Por eso no figura en `src/backends/config/backends.json`. Un cambio so
 avales) y `catalogo_intervenciones` (tipos, subtipos, destinatarios y
 contactos) viven en `src/backends/kernel/`, porque los usan CDI, CDF y el core. Las
 pantallas de organizaciones y el modelo `Firmante`, que se relaciona con
-comedores, quedan en el core (`gestion_organizaciones`). Las tablas no
+comedores, quedan en Comedores (`gestion_organizaciones`). Las tablas no
 cambiaron de nombre.
 
 **URLs viejas de CDF.** `/centros/`, `/actividades/`, `/ajax/actividades/`,
@@ -46,12 +51,22 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
   encuesta obligatoria. El backend autentica con la misma sesión (misma DB y
   `SECRET_KEY`) y valida CSRF por su cuenta.
 - **Datos compartidos.** Una sola DB, `media/` como volumen compartido y
-  `static_root/`, que recolecta el core y el backend lee en modo solo lectura.
+  `static_root/`, que recolecta el migrador y los servicios web leen en modo solo lectura.
 - **Si el backend se cae,** el core responde 503 en sus prefijos y el resto de
   SISOC sigue funcionando.
 
 ## Configuración
 
+- **Dependencias Python.** `core`, `backend` y `migrator` heredan la base con
+  `requirements/base.txt`; desarrollo/CI usa el último target `dev`, que agrega
+  `requirements/all.txt`. Se mantienen Django Extensions, Debug Toolbar y Silk
+  con sus auxiliares de formato/profiling porque los settings actuales los usan.
+  Pytest, linters, coverage, factories y debugpy quedan en dev/test. No cambia
+  DEBUG/ENABLE_SILK ni se optimizan todavía paquetes Debian o dependencias por
+  vertical. Se validaron localmente los 14 targets, con perfiles, `pip check`,
+  arranque e aislamiento en imágenes nuevas. La primera incorporación requiere
+  reconstrucción completa; CI remota y despliegue siguen pendientes. Evidencia:
+  `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-build-limpio-docker.md`.
 - **`src/backends/config/backends.json`** es la fuente única. Por cada backend declara sus
   apps, prefijos de URL, URLconf, origen en la red de Compose y servicios de
   Compose. De ahí leen los settings, el proxy y el deploy.
@@ -91,17 +106,20 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
 
 ## Deploy
 
-`scripts/operacion/deploy_refresh.sh` decide el plan con
-`scripts/operacion/deploy_targets.py`, comparando el SHA que corre hoy con el
+`src/scripts/operacion/deploy_refresh.sh` decide el plan con
+`src/scripts/operacion/deploy_targets.py`, comparando el SHA que corre hoy con el
 nuevo:
 
 | Cambio | Plan |
 | --- | --- |
-| Solo `src/backends/<x>/**` | **Selectivo:** construye ese backend y el migrador, migra, y recrea solo ese servicio (`up --no-deps`). |
-| Solo `src/backends/sisoc_core/**` | **Selectivo:** construye la imagen del core y el migrador, migra, y recrea solo los servicios con imagen `sisoc/core` del entorno (en QA, `django` y `ocr_worker`; en PRD, además los workers de importación, credenciales y mailing). Los backends no se reinician. Si no se pueden resolver esos servicios, hace un deploy completo. |
+| Solo `src/backends/<x>/**` | **Selectivo:** construye ese backend y el migrador, migra, y recrea solo ese servicio y sus `extra_services` (`up --no-deps`). Sólo mailing/importación pueden faltar en ese entorno; otros servicios ausentes fuerzan completo. Todos los backends incluyen el importador con imagen del migrador; Comedores también incluye mailing. |
+| Solo `src/backends/sisoc_core/**` | **Selectivo:** construye la imagen del core y el migrador, migra, y recrea los servicios con imagen `sisoc/core` y el rol `user_import_worker` del entorno (en QA, `django`; en PRD, además los workers de importación y credenciales; mailing pertenece a Comedores y OCR a su backend). Los backends no se reinician. Si no se pueden resolver esos servicios, hace un deploy completo. |
 | Solo `src/frontends/apps/<x>/**` | **Selectivo:** solo `front_<x>`. |
-| Solo docs, tests o `.github/` | **Ninguno:** no se reinicia nada. |
-| Cualquier otra cosa (kernel, core, config, templates, static, requirements, docker, compose, `CHANGELOG.md`) | **Completo:** construye todo, baja el stack, migra y levanta. |
+| Solo docs/Markdown salvo CHANGELOG, `.github/`, `src/scripts/github/`, `src/backends/<dueño>/tests/` o `src/frontends/e2e/` | **Ninguno:** no se reinicia nada. Los tests dentro de una app siguen la regla del dueño. |
+| Compartidos de `src/frontends/` (paquetes, config, lockfile) | **Selectivo:** todos los fronts; sin migrador. |
+| `docker/frontends/` o `src/scripts/frontends/` | **Selectivo:** todos los fronts; sin migrador. |
+| Otros scripts de `src/scripts/` | **Completo:** el selector no exceptúa esas rutas. |
+| Cualquier otra cosa (kernel, config, recursos compartidos, requirements, docker, compose, `CHANGELOG.md`) | **Completo:** construye todo, baja el stack, migra y levanta. |
 
 - **Migraciones.** El servicio `migrator` (`docker compose --profile migrate
   run --rm migrator`) aplica todo el grafo con `config.settings_all`. Los

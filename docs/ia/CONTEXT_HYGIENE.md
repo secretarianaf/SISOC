@@ -17,16 +17,14 @@ Evitar:
 
 ## Lectura inicial obligatoria
 
-Para cualquier tarea:
-1. `AGENTS.md`
-2. `docs/indice.md`
-3. memoria reutilizable aplicable (`docs/contexto/memoria/` o `.codex/cache/context-memory/`), si existe
-4. archivo(s) objetivo
-5. tests del modulo o flujo afectado, si existen
-6. una sola guia de `docs/ia/` elegida por tipo de tarea
+La lista vive en `AGENTS.md` (seccion "Contexto minimo"). Esta guia ayuda a
+elegir la guia del paso 6 y a decidir cuando ampliar.
 
 ## Elegir una sola guia inicial
 
+- cambio entre servicios: `docs/desarrollo/verticales_independientes.md`
+  (identificar dueño antes de ampliar contexto; abrir registro, runtime,
+  contrato de imports y tests solo del flujo afectado)
 - bugfix o feature web/API: `docs/ia/TESTING.md`
 - nuevo modulo de dominio, dependencia interdominio o preparacion de extraccion:
   `docs/ia/MODULAR_BOUNDARIES.md`
@@ -116,27 +114,20 @@ Expandir si hace falta:
 - services o views dependientes
 - docs de seguridad o dominio
 
-## Worktrees y cambios locales
-
-- Nunca trabajar sobre el checkout principal.
-- Crear worktrees de tarea fuera del repo principal, en `../worktrees/<slug>`.
-- No revertir cambios del usuario.
-- Si aparece conflicto con trabajo ajeno, explicitarlo antes de seguir.
-
 ## Helper recomendado
 
-`scripts/ai/preflight.sh` resume el arranque minimo segun el tipo de tarea:
+`src/scripts/ai/preflight.sh` resume el arranque minimo segun el tipo de tarea:
 
 ```bash
-bash scripts/ai/preflight.sh general
-bash scripts/ai/preflight.sh bugfix-view src/backends/kernel/core/views.py
-bash scripts/ai/preflight.sh feature-api src/backends/sisoc_core/comunicados/api_views.py
+bash src/scripts/ai/preflight.sh general
+bash src/scripts/ai/preflight.sh bugfix-view src/backends/kernel/core/views.py
+bash src/scripts/ai/preflight.sh feature-api src/backends/comedores/comunicados/api_views.py
 ```
 
 Para consultar o refrescar memoria operativa manualmente:
 
 ```bash
-python scripts/ai/context_memory.py preflight --target src/backends/kernel/core/views.py
-python scripts/ai/context_memory.py scaffold --slug core --title "Core" --summary "Resumen operativo de core" --path core/ --path tests/test_core_*.py
-python scripts/ai/context_memory.py refresh --file docs/contexto/memoria/core.md
+python src/scripts/ai/context_memory.py preflight --target src/backends/kernel/core/views.py
+python src/scripts/ai/context_memory.py scaffold --slug core --title "Core" --summary "Resumen operativo de core" --path src/backends/kernel/core/ --path src/backends/kernel/tests/test_core_*.py
+python src/scripts/ai/context_memory.py refresh --file docs/contexto/memoria/core.md
 ```

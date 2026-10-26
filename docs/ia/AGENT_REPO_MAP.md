@@ -2,7 +2,80 @@
 
 Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrolladores.
 
+Es un mapa para ubicar código: el estado de cada PR, issue o corte (aprobaciones,
+conteos de pruebas, autorizaciones) vive en `docs/registro/`, no acá.
+
+## Comedores y Espacios comunitarios (#2641)
+
+Topología: `docs/desarrollo/arquitectura_servicios_2641.md` y
+`docs/diagramas/issue-2641-servicios.svg`. Estado y evidencia de cada corte
+(C0–C4): registros `issue-2641` en `docs/registro/cambios/2026-T4/` y
+decisiones del 2026-10-15 y 2026-10-16 en `docs/registro/decisiones/`.
+
+- **Espacios comunitarios** conserva el identificador técnico `pwa`. Permisos en
+  `src/backends/comedores/pwa/api_permissions.py`, serializers de operadores en
+  `src/backends/comedores/pwa/operadores_serializers.py`, fachada de accesos en
+  `src/backends/comedores/pwa/api.py` y helpers PNUD en
+  `src/backends/comedores/comedores/territoriales_pnud.py`. No usar los módulos
+  anteriores de `usuarios` para esas responsabilidades.
+- Identidad: entradas en `src/backends/sisoc_core/usuarios/auth_forms.py`,
+  `src/backends/sisoc_core/usuarios/auth_views.py` y
+  `src/backends/sisoc_core/usuarios/api_views.py`; DTOs y formularios compartidos en
+  `src/backends/kernel/users/` (`credentials.py`, `account_forms.py`,
+  `admin_forms.py`, `form_sections.py`, `identity_fields.py`). Las rutas públicas se conservan.
+- ABM compuesto: `src/backends/comedores/pwa/user_forms.py`,
+  `src/backends/comedores/pwa/user_admin_views.py` y contratos de login/contexto en
+  `src/backends/comedores/pwa/identity_services.py`. Campos/efectos se clasifican en
+  `src/backends/kernel/users/admin_operations.py`: la ausencia de un campo no revoca
+  sus accesos y `_identity_present` distingue controles vaciados de omisiones.
+  `src/backends/kernel/users/middleware_admin_body.py` conserva multipart antes de
+  CSRF solo en el POST del ABM. Template compartido:
+  `src/backends/kernel/users/templates/user/user_form.html`. Transporte interno:
+  `src/backends/kernel/core/internal_services.py`.
+- Auditoría de sesión: `src/backends/kernel/audittrail/models.py` y `auth.py`.
+  Migraciones `src/backends/kernel/audittrail/migrations/0002_auditoria_sesion_desde_pwa.py` y
+  `src/backends/comedores/pwa/migrations/0027_auditoria_sesion_a_kernel.py`: estado y
+  ContentType, misma tabla/IDs. No revertir solo la imagen ignorando esta metadata.
+- Indicadores: `src/backends/comedores/comedores/dashboard_metrics.py` calcula/autoriza;
+  el portal guarda la última muestra completa en
+  `src/backends/sisoc_core/dashboard/comedores_metrics.py`. No restaurar los callbacks
+  retirados de `dashboard.signals`.
+- Consumidores: `src/backends/kernel/ciudadanos/detail_contributions.py` (fragmentos
+  HTML) y `src/backends/kernel/core/backend_proxy.py` (favoritos).
+  `src/backends/kernel/audittrail/views.py` conserva changes_dict de modelos no instalados.
+- Importador de usuarios: contrato local en `src/backends/kernel/users/pwa_import_access.py`
+  y adaptador en `src/backends/comedores/comedores/pwa_user_import.py`. Corre con
+  `sisoc/migrator`, `config.settings_all` y rol `user_import_worker`, sin migración
+  ni web. No partir el commit de usuario/accesos/checkpoint por HTTP.
+- Montos: `src/backends/comedores/comedores/views/montos_prestacion.py`, con modelo/tabla en kernel.
+- Runtime: `comedores_runtime` compone las catorce apps de `src/backends/comedores/`;
+  el portal (`src/backends/sisoc_core/`) conserva Usuarios, Dashboard, Encuestas e
+  Insumos. Tests del dominio en `src/backends/comedores/tests/`.
+- OCR: `src/backends/ocr/ocr/` y `ocr_runtime`; web y `ocr_worker` usan la misma
+  imagen backend. Tests en `src/backends/ocr/tests/` y
+  `src/backends/kernel/tests/test_ocr_runtime.py`.
+- Selector de deploy: `@core` incluye el rol `user_import_worker`; reglas en
+  `docs/desarrollo/verticales_independientes.md` ("Qué se despliega").
+- Tests de CI: `conftest.py::http_probe_database` comparte solo la DB sintética de
+  probes HTTP; el test JS `src/backends/sisoc_core/tests/js/user_mobile_access.test.js`
+  corre en `deploy_guard`.
+
+## Dispositivos: mapa
+
+- `/dispositivos/mapa/`, `dispositivos.views.DispositivoMapView`, `geolocate_dispositivo`
+  en services y `dispositivosMap.js`. Mantiene filtros/permisos/alcance del listado,
+  paginación en el navegador de a 15 y selección por `?dispositivo=<pk>`; usa Georef
+  con coordenadas persistidas en `Dispositivo.ubicacion_georef`. Registro:
+  `docs/registro/cambios/2026-T4/2026-10-13-dispositivos-mapa.md`.
+
 ## Como leer este documento
+
+Reglas entre servicios: `AGENTS.md` ("Verticales independientes") y la guía
+`docs/desarrollo/verticales_independientes.md`. Plan de deploy por archivos:
+`src/scripts/operacion/deploy_targets.py`.
+- DX del ordenamiento #2639: conservar las entradas autodetectables en la raíz
+  del repo o del workspace npm; el debugger nativo de `.vscode/launch.json` usa
+  `config.settings_all`.
 
 - Estructura del monorepo (#1931/#2251): el codigo comun vive en `src/backends/kernel/`
   (`core`, `users`, `iam`, `ciudadanos`, `audittrail`), cada vertical migra a
@@ -12,26 +85,21 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
   `docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md`.
 - Backends por vertical (`src/backends/`, registro en `src/backends/config/backends.json`):
   `dispositivos` (con datacalle), `vpsl`, `pas` (con Celery), `vat` y
-  `celiaquia`. El core los atiende por proxy. Para tests y desarrollo todo
+  `celiaquia`, `cdi`, `cdf`, `inspecciones` y `comedores`. El core los atiende por proxy. Para tests y desarrollo todo
   corre junto con `config.settings_all`. Guia:
   `docs/operacion/backends_por_servicio.md`.
 - `src/backends/kernel/users` es identidad y permisos (modelos, middleware, alcance
   territorial, delegacion, roles). La gestion de usuarios del core (pantallas,
-  formularios, importacion masiva, API de login PWA) vive en `usuarios/`; los
-  accesos PWA (`AccesoComedorPWA` y afines) y su logica, en `pwa/`
+  formularios, importacion masiva, API de login PWA) vive en `src/backends/sisoc_core/usuarios/`; los
+  accesos PWA (`AccesoComedorPWA` y afines) y su logica, en `src/backends/comedores/pwa/`
   (`pwa.services.accesos`), con sus tablas `users_*` de siempre.
-
-- Sincronizacion DataCalle: los cambios de main de #2452/#2453 se incorporan a
-  development conservando coordinadores PWA y su checkbox maestro. La migracion
-  users/0051 une las hojas de configuracion mobile y DataCalle sin operaciones.
-  Evidencia/conflictos: docs/registro/cambios/2026-09-08-sincronizacion-datacalle-main.md.
 
 - PWA privadas: Espacios Comunitarios, DataCalle y Gestionar despliegan desde sus
   propios repositorios y ramas `main`, `homologacion` y `development`. SISOC ya
-  no las activa como parte de su deploy. `scripts/operacion/pwas.json` y
+  no las activa como parte de su deploy. `src/scripts/operacion/pwas.json` y
   `deploy_pwas.py` quedan como herramientas operativas compatibles, no como el
   disparador automatico. `render_pwa_nginx.py` genera el include compartido;
-  `scripts/infra/install_qa_pwa_nginx.sh` lo instala transaccionalmente en el
+  `src/scripts/infra/install_qa_pwa_nginx.sh` lo instala transaccionalmente en el
   vhost HTTP de QA con backup y rollback. Contrato, aliases y riesgos:
   `docs/operacion/deploy_pwas.md`. No mover `/sisoc/SISOC-Mobile` ni asumir
   acceso publico de Git. Verificar tambien estabilidad de workers tras desplegar:
@@ -52,8 +120,8 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - El repo mezcla backoffice web tradicional, APIs internas/server-to-server, flujos asincronos simples (hilos y workers dedicados; Celery solo para PAS), y una capa PWA/API para ciertos casos de uso.
 - La logica de negocio suele vivir en `services/` cuando la app la tiene, pero coexisten apps mas legacy con mas logica en `views.py`, `models.py` o `tasks.py`.
 - Hay un esfuerzo explicito de control arquitectonico incremental con `import-linter` (`.importlinter`) para evitar que el monolito siga acoplandose.
-- Los modulos nuevos deben nacer como verticales extraibles dentro del monolito; la regla aplicable y sus limites actuales viven en `docs/ia/MODULAR_BOUNDARIES.md`.
-- VPSL convive con sus pantallas Django existentes y el nuevo React en `/v2/vpsl/`. La app está en `src/frontends/apps/vpsl/`, usa `@sisoc/ui` y `@sisoc/api`, y se sirve desde `front_vpsl` por el router autenticado `src/backends/kernel/core/v2_frontend.py`. La API `/api/vpsl/` corre en el Django principal y reutiliza la lógica del dominio, con adaptadores de ModelForms/vistas existentes y alcance compartido en `services/access.py`. Ver `docs/implementaciones/frontend_v2.md` y `docs/operacion/ver_para_ser_libre_react.md`.
+- Los modulos nuevos se ubican en el dueño correspondiente y respetan los servicios ya separados; reglas y límites actuales en `docs/ia/MODULAR_BOUNDARIES.md`.
+- VPSL convive con sus pantallas Django existentes y el nuevo React en `/v2/vpsl/`. La app está en `src/frontends/apps/vpsl/`, usa `@sisoc/ui` y `@sisoc/api`, y se sirve desde `front_vpsl` por el router autenticado `src/backends/kernel/core/v2_frontend.py`. La API `/api/vpsl/` corre en el backend VPSL (o en el proceso único local con settings_all) y reutiliza la lógica del dominio, con adaptadores de ModelForms/vistas existentes y alcance compartido en `services/access.py`. Ver `docs/implementaciones/frontend_v2.md` y `docs/operacion/ver_para_ser_libre_react.md`.
 - Registro nominal React: `src/frontends/apps/vpsl/src/Workflow.tsx` replica las secciones y reglas condicionales de `registro_form.html`; el schema de `api_workflow.py` incluye `renaper_estado` oculto y `graduacion_opcional` desde el ModelForm oficial para registros históricos. Crear usa Guardar y continuar y recarga el schema para el siguiente número de acta. La compatibilidad con PR #2566 se verifica en `src/backends/vpsl/ver_para_ser_libre/tests/test_api_compatibilidad.py` y `src/frontends/apps/vpsl/src/Workflow.test.tsx`; los límites de promoción están en `docs/operacion/ver_para_ser_libre_react.md`.
 - El tema visual de Front v2 usa `getTheme(mode)` de `src/frontends/packages/ui/src/theme.ts`, con correcciones de contraste AA; las reglas de componentes y UX vigentes están en `docs/implementaciones/frontend_v2.md`.
 
@@ -79,7 +147,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | black / pylint / djlint | Hecho observado | `pyproject.toml`, `requirements/dev.txt`, `requirements/lint.txt` |
 | import-linter | Hecho observado | `.importlinter`, `.importlinter_celiaquia_config`, `requirements/arch.txt` |
 | Sentry | Hecho observado | `.env.example`, `requirements/base.txt` |
-| OCR / PDF / DOCX / Excel tooling | Hecho observado | `requirements/base.txt`, app `ocr/`, templates docx/pdf |
+| OCR / PDF / DOCX / Excel tooling | Hecho observado | `requirements/base.txt`, app `src/backends/ocr/ocr/`, templates docx/pdf |
 
 ### Frontend
 
@@ -88,7 +156,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Templates Django server-side | Hecho observado | `src/backends/kernel/templates/`, `*/templates/` |
 | JS/CSS estaticos propios | Hecho observado | compartidos en `src/backends/kernel/static/custom/`; los de un solo vertical en `<app>/static/custom/` |
 | Bootstrap/AdminLTE/Select2 | Hecho observado | `src/backends/kernel/static/dist/`, `requirements`, templates |
-| PWA backend + endpoints | Hecho observado | `pwa/`, `src/backends/config/urls.py`, docs PWA |
+| PWA backend + endpoints | Hecho observado | `src/backends/comedores/pwa/`, `src/backends/config/urls.py`, docs PWA |
 | Toolchain Node | Hecho observado | workspace npm en `src/frontends/` (front v2); la raiz no tiene `package.json` |
 | Front v2 React 19 + Vite + MUI | Hecho observado | `src/frontends/apps/vpsl/`, `src/frontends/apps/celiaquia/`, `src/frontends/packages/ui/`, `src/frontends/packages/api/` |
 
@@ -100,7 +168,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Compose separado para deploy | Hecho observado | `docker/compose/docker-compose.deploy.yml`, `docker/compose/docker-compose.produccion.yml` |
 | GitHub Actions para lint/tests/arquitectura/release sanity | Hecho observado | `.github/workflows/` |
 | Promoción event-driven y sincronización descendente con gates | Hecho observado | `.github/workflows/release-orchestrator.yml`, `.github/workflows/deploy.yml`, `docs/operacion/deploy_automatizado.md` |
-| Helpers de Codex/worktrees | Hecho observado | `scripts/ai/`, `.codex/environments/environment.toml` |
+| Helpers de Codex/worktrees | Hecho observado | `src/scripts/ai/`, `.codex/environments/environment.toml` |
 
 ## Que tipo de proyecto es
 
@@ -135,11 +203,11 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ### Helpers operativos del repo
 
-- `scripts/ai/codex_task.ps1 <slug>`: crea branch `codex/<slug>`, worktree en `../worktrees/<slug>` y bootstrap.
-- `scripts/ai/codex_run.ps1 up`: bootstrap + levantar entorno.
-- `scripts/ai/codex_run.ps1 validate`: corre `black`, `djlint`, smoke tests y `makemigrations --check`.
-- `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado, hace fast-forward antes de validar los Compose y bloquea una revisión obsoleta antes del downtime. Así un checkout anterior puede incorporar un Compose nuevo de forma segura.
-- `scripts/operacion/deploy_verified.sh`: wrapper de CI para QA/HML/PRD; valida migraciones y healthcheck y restaura automáticamente el checkout/stack anterior ante un fallo.
+- `src/scripts/ai/codex_task.ps1 <slug>`: crea branch `codex/<slug>`, worktree en `../worktrees/<slug>` y bootstrap.
+- `src/scripts/ai/codex_run.ps1 up`: bootstrap + levantar entorno.
+- `src/scripts/ai/codex_run.ps1 validate`: corre `black`, `djlint`, smoke tests y `makemigrations --check`.
+- `src/scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado, hace fast-forward antes de validar los Compose y bloquea una revisión obsoleta antes del downtime. Así un checkout anterior puede incorporar un Compose nuevo de forma segura.
+- `src/scripts/operacion/deploy_verified.sh`: wrapper de CI para QA/HML/PRD; valida migraciones y healthcheck y restaura automáticamente el checkout/stack anterior ante un fallo.
 
 ## Estructura general del proyecto
 
@@ -154,12 +222,13 @@ SISOC/
 |   |   |-- config/          # proyecto Django: settings, urls, middleware, registro de backends
 |   |   |-- kernel/          # codigo comun (core, users, iam, ciudadanos, audittrail, ...)
 |   |   |                    # + templates/, static/ y tests/ compartidos
-|   |   |-- sisoc_core/      # cluster de Comedores y apps propias del core
-|   |   `-- <vertical>/      # pas, cdi, cdf, celiaquia, dispositivos, vat, vpsl
-|   `-- frontends/           # front v2 en React (apps/<modulo>/, packages/)
+|   |   |-- sisoc_core/      # portal: usuarios, dashboard, encuestas, insumos
+|   |   `-- <vertical>/      # comedores, ocr, pas, cdi, cdf, celiaquia, dispositivos, vat, vpsl, inspecciones
+|   |-- frontends/           # apps/, packages/, e2e/; entradas de herramientas autodetectables
+|   |   `-- config/          # opciones base compartidas de TypeScript
+|   `-- scripts/             # helpers IA, CI, operacion, frontend y GitHub
 |-- docs/                    # fuente de verdad operativa y arquitectonica
-|-- docker/                  # Dockerfile, entrypoint y compose/ (overrides de deploy)
-|-- scripts/                 # helpers IA, CI y operacion
+|-- docker/                  # imagenes Django/frontend y compose/ (overrides de deploy)
 |-- requirements/            # dependencias Python (all.txt = base + dev + test)
 |-- .github/workflows/       # CI, lint, arquitectura, release
 |-- docker-compose.yml       # stack local (los overrides viven en docker/compose/)
@@ -175,8 +244,8 @@ SISOC/
 | --- | --- | --- |
 | `src/backends/config/` | configuracion global de Django, URLs y middleware | cambios cross-cutting, auth, API docs, seguridad, entorno |
 | `docs/` | documentacion operativa y de arquitectura | siempre antes de expandir contexto |
-| `scripts/ai/` | flujo recomendado para worktrees/validacion desde Codex | tareas de agentes, bootstrap, validaciones |
-| `scripts/ci/` | automatizaciones de PR docs y lint | si falla CI o hay autoformato |
+| `src/scripts/ai/` | flujo recomendado para worktrees/validacion desde Codex | tareas de agentes, bootstrap, validaciones |
+| `src/scripts/ci/` | automatizaciones de PR docs y lint | si falla CI o hay autoformato |
 | `docker/` | runtime contenedorizado real y compose de deploy | bugs de arranque/deploy |
 | `src/backends/kernel/templates/components/` | primitives HTML reutilizables | cambios de UI server-side compartidos |
 | `src/backends/kernel/static/custom/js/` | JS compartido entre verticales | bugs front puntuales en templates |
@@ -218,7 +287,7 @@ SISOC/
 - PAS usa Celery/Redis mediante `docker/compose/docker-compose.celery.yml`; mantiene un solo
   lote activo global y paralelismo acotado dentro del lote.
 - El resto de la asincronia sigue siendo "simple":
-  - hilos / `ThreadPoolExecutor` en syncs (`src/backends/sisoc_core/comedores/tasks.py`, `src/backends/sisoc_core/relevamientos/tasks.py`);
+  - hilos / `ThreadPoolExecutor` en syncs (`src/backends/comedores/comedores/tasks.py`, `src/backends/comedores/relevamientos/tasks.py`);
   - workers dedicados por `DJANGO_SERVICE_ROLE` en `docker/django/entrypoint.py`.
 
 ### Roles de contenedor detectados
@@ -284,7 +353,7 @@ SISOC/
 | `src/backends/kernel/core/` | utilidades transversales, fixtures, soft delete, API auxiliar, paginacion, benchmark/debug tooling |
 | `src/backends/kernel/users/` | auth, login/reset, perfiles, grupos, import masivo de usuarios, permisos PWA |
 | `src/backends/kernel/audittrail/` | auditoria propia del sistema |
-| `healthcheck/` | endpoint de salud |
+| `src/backends/kernel/healthcheck/` | endpoint de salud |
 
 ### Presentacion/UI compartida
 
@@ -300,16 +369,16 @@ SISOC/
 | Ruta | Responsabilidad |
 | --- | --- |
 | `docker/` | runtime contenedorizado |
-| `scripts/operacion/` | refresh/deploy operativo |
-| `scripts/ci/` | utilidades de CI |
-| `scripts/ai/` | bootstrap/worktrees/doctor/validate/context memory |
+| `src/scripts/operacion/` | refresh/deploy operativo |
+| `src/scripts/ci/` | utilidades de CI |
+| `src/scripts/ai/` | bootstrap/worktrees/doctor/validate/context memory |
 
 ### Tests y calidad
 
 | Ruta | Responsabilidad |
 | --- | --- |
 | `src/backends/kernel/tests/` | suite transversal, smoke, contratos API, seguridad, componentes |
-| `src/backends/<vertical>/tests/` | tests de cada vertical (incluye PWA y Comedores en `sisoc_core/tests/`) |
+| `src/backends/<vertical>/tests/` | tests de cada vertical (PWA y Comedores en `src/backends/comedores/tests/`) |
 | `*/tests/` | tests cercanos al modulo |
 | `.github/workflows/` | contratos CI reales |
 | `.importlinter` | boundaries arquitectonicos parciales |
@@ -323,33 +392,34 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `src/backends/kernel/users/` | autenticacion, perfiles, grupos, login/reset, import y credenciales masivas | `models.py`, `views.py`, `api_views.py`, `management/commands/`, `services_*` | Alto |
 | `src/backends/kernel/core/` | utilidades transversales, helpers, soft delete, filtros/paginacion, comandos compartidos | `views.py`, `services/`, `management/commands/`, `utils.py` | Alto |
 | `src/backends/sisoc_core/dashboard/` | tableros internos | `urls.py`, `views.py`, templates | Medio |
-| `src/backends/sisoc_core/comedores/` | dominio fuerte: comedores, nomina, estados, sync GESTIONAR y API territorial PWA | `models.py`, `api_views.py`, `api_views_territorial.py`, `tasks.py`, `signals.py`, `services/`, `urls.py` | Alto |
-| `src/backends/sisoc_core/relevamientos/` | relevamientos y sync externo asociado | `models.py`, `tasks.py`, `views.py`, commands | Alto |
+| `src/backends/comedores/comedores/` | dominio fuerte: comedores, nomina, estados, sync GESTIONAR y API territorial PWA | `models.py`, `api_views.py`, `api_views_territorial.py`, `tasks.py`, `signals.py`, `services/`, `urls.py` | Alto |
+| `src/backends/comedores/relevamientos/` | relevamientos y sync externo asociado | `models.py`, `tasks.py`, `views.py`, commands | Alto |
 | `src/backends/kernel/ciudadanos/` | gestion de ciudadanos/beneficiarios | `models.py`, `views.py`, `api_views.py`, forms | Medio |
 | `src/backends/cdf/centrodefamilia/` | backend propio (`/centrodefamilia/`); beneficiarios/centros/familia + API | `models.py`, `views.py`, `api_views.py`, `services/` | Alto |
-| `celiaquia/` | modulo especializado con bastante logica en services y vistas; expone un contrato Python acotado | `api.py`, `models.py`, `views/`, `services/`, `permissions.py`, tests | Alto |
-| `src/backends/sisoc_core/admisiones/` | flujo de admision, legales/tecnicos, generacion DOCX/PDF y correcciones operativas auditadas | `views/web_views.py`, `services/`, `forms/`, `management/commands/`, templates `docx/` y `pdf/` | Alto |
-| `VAT/` | modulo amplio propio con views, API, services y reportes | `models.py`, `views/`, `api_views.py`, `services/`, `serializers.py`; docs `docs/vat/` | Alto |
-| `src/backends/sisoc_core/pwa/` | endpoints backend para experiencia PWA | `api_urls.py`, `api_views.py`, `services/`, `models.py` | Medio |
+| `src/backends/inspecciones/inspecciones/` | backend propio: inspecciones escolares (PWA Sisoc Inspecciones), API `/api/inspecciones/`, cierre numerado transaccional, archivos privados, panel del backoffice `/inspecciones/` (escuelas, asignaciones, actas; importacion del padron en tres pasos) | `models.py`, `api_views.py`, `services/cierre.py`, `services/validacion.py`, `services/importacion_escuelas.py`, `services/panel_actas.py` | Alto |
+| `src/backends/celiaquia/celiaquia/` | modulo especializado con bastante logica en services y vistas; expone un contrato Python acotado | `api.py`, `models.py`, `views/`, `services/`, `permissions.py`, tests | Alto |
+| `src/backends/comedores/admisiones/` | flujo de admision, legales/tecnicos, generacion DOCX/PDF y correcciones operativas auditadas | `views/web_views.py`, `services/`, `forms/`, `management/commands/`, templates `docx/` y `pdf/` | Alto |
+| `src/backends/vat/VAT/` | modulo amplio propio con views, API, services y reportes | `models.py`, `views/`, `api_views.py`, `services/`, `serializers.py`; docs `docs/vat/` | Alto |
+| `src/backends/comedores/pwa/` | endpoints backend para experiencia PWA | `api_urls.py`, `api_views.py`, `services/`, `models.py` | Medio |
 | `src/backends/cdi/ticketera/` | corre en el backend de CDI; API server-to-server con kill-switch | `api_urls.py`, `api_views.py`, `api_serializers.py` | Medio |
-| `src/backends/sisoc_core/comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
-| `src/backends/kernel/organizaciones/` + `src/backends/sisoc_core/gestion_organizaciones/` | datos maestros en el kernel; pantallas, forms y `Firmante` en el core (`gestion_organizaciones`). Entidades/organizaciones vinculadas; edición modal de proyectos y detalle con rendiciones por relación directa o legado | `models.py`, `forms.py`, `views.py`, templates de organización | Alto |
+| `src/backends/comedores/comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
+| `src/backends/kernel/organizaciones/` + `src/backends/comedores/gestion_organizaciones/` | datos maestros en el kernel; pantallas, forms y `Firmante` en el core (`gestion_organizaciones`). Entidades/organizaciones vinculadas; edición modal de proyectos y detalle con rendiciones por relación directa o legado | `models.py`, `forms.py`, `views.py`, templates de organización | Alto |
 | `src/backends/cdi/centrodeinfancia/` | backend propio (`/centrodeinfancia/`, `/simepi/`); dominio de centros de infancia, personal, asistencia y descargables provinciales | `models.py`, `services.py`, `services_nomina_ninos_pdf.py`, `views.py`, `tests/`, urls | Alto |
-| `src/backends/sisoc_core/acompanamientos/` | seguimiento/acompanamientos | `views.py`, `acompanamiento_service.py`, `services/filter_config.py`, templates | Medio |
-| `src/backends/sisoc_core/expedientespagos/` | expedientes de pagos | `models.py`, `views.py`, urls | Bajo |
-| `src/backends/sisoc_core/rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
-| `src/backends/sisoc_core/rendicioncuentasmensual/` | rendición mensual, revisión Territorial/Auditoría, subsanaciones y datos expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, templates, urls | Alto |
-| `src/backends/sisoc_core/duplas/` | equipos tecnicos/duplas | `models.py`, `views.py` | Bajo-Medio |
-| `dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
-| `src/backends/sisoc_core/importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
-| `src/backends/sisoc_core/ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
-| `ver_para_ser_libre/` | dominio VPSL compartido por SISOC y el servicio HTTP React; desde PR #2566 el itinerario evalua cartas sin sedes tentativas, cada jornada posee sede/localidad/ubicacion/vehiculos y checklist con habilitacion automatica, y el registro nominal guarda graduaciones; las sedes previas permanecen para historial; la compatibilidad del PR #2566 conserva localidad historica, copia checklists y permite editar registros previos sin inventar graduacion; `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py` y `services/access.py` exponen el flujo React con permisos, contrato JSON/multipart y alcance provincial | `models.py`, `forms.py`, `views.py`, `api_urls.py`, `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py`, `services/access.py`, `services/workflow.py`, `services/map_location.py`, `migrations/0015_vpsl_ubicacion_vehiculos_graduaciones.py`, `migrations/0016_copiar_checklist_sede_a_jornadas.py`, `ver_para_ser_libre/tests/test_api.py`, `ver_para_ser_libre/tests/test_api_contract.py`, `ver_para_ser_libre/tests/test_jornada_location.py` | Alto |
-| `pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV—, Informes PAS versionados, circuito mensual de cruces SINTyS/RENAPER, Panel de Control y Formación pendiente; el padrón lateral de Formación pagina por scroll mediante `/pas/formacion/personas` | `models.py`, `api.py`, `views.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `services/cruces_service.py`, `services/supervivencia_service.py`, `services/persona_service.py`, `services/formacion_service.py`, `src/backends/pas/pas/templates/pas/`, `src/backends/pas/pas/static/custom/js/pas_formacion.js`, `management/commands/`, `urls.py`, `migrations/` | Alto |
-| `src/backends/kernel/audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
-| `src/backends/sisoc_core/historial/` | historial de dominio | `models.py`, `services/` | Bajo |
-| `src/backends/sisoc_core/intervenciones/` | intervenciones sobre casos | tests + archivos del modulo | Bajo; exploracion parcial |
+| `src/backends/comedores/acompanamientos/` | seguimiento/acompanamientos | `views.py`, `acompanamiento_service.py`, `services/filter_config.py`, templates | Medio |
+| `src/backends/comedores/expedientespagos/` | expedientes de pagos | `models.py`, `views.py`, urls | Bajo |
+| `src/backends/comedores/rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
+| `src/backends/comedores/rendicioncuentasmensual/` | rendición mensual, revisión Territorial/Auditoría, subsanaciones y datos expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, templates, urls | Alto |
+| `src/backends/comedores/duplas/` | equipos tecnicos/duplas | `models.py`, `views.py` | Bajo-Medio |
+| `src/backends/dispositivos/dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
+| `src/backends/comedores/importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
+| `src/backends/ocr/ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
+| `src/backends/vpsl/ver_para_ser_libre/` | dominio VPSL compartido por SISOC y el servicio HTTP React; desde PR #2566 el itinerario evalua cartas sin sedes tentativas, cada jornada posee sede/localidad/ubicacion/vehiculos y checklist con habilitacion automatica, y el registro nominal guarda graduaciones; las sedes previas permanecen para historial; la compatibilidad del PR #2566 conserva localidad historica, copia checklists y permite editar registros previos sin inventar graduacion; `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py` y `services/access.py` exponen el flujo React con permisos, contrato JSON/multipart y alcance provincial | `models.py`, `forms.py`, `views.py`, `api_urls.py`, `api_views.py`, `api_workflow.py`, `api_inputs.py`, `api_requests.py`, `services/access.py`, `services/workflow.py`, `services/map_location.py`, `migrations/0015_vpsl_ubicacion_vehiculos_graduaciones.py`, `migrations/0016_copiar_checklist_sede_a_jornadas.py`, `src/backends/vpsl/ver_para_ser_libre/tests/test_api.py`, `src/backends/vpsl/ver_para_ser_libre/tests/test_api_contract.py`, `src/backends/vpsl/ver_para_ser_libre/tests/test_jornada_location.py` | Alto |
+| `src/backends/pas/pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV—, Informes PAS versionados, circuito mensual de cruces SINTyS/RENAPER, Panel de Control y Formación pendiente; el padrón lateral de Formación pagina por scroll mediante `/pas/formacion/personas` | `models.py`, `api.py`, `views.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `services/cruces_service.py`, `services/supervivencia_service.py`, `services/persona_service.py`, `services/formacion_service.py`, `src/backends/pas/pas/templates/pas/`, `src/backends/pas/pas/static/custom/js/pas_formacion.js`, `management/commands/`, `urls.py`, `migrations/` | Alto |
+| `src/backends/kernel/audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service/impl.py` | Alto |
+| `src/backends/comedores/historial/` | historial de dominio | `models.py`, `services/` | Bajo |
+| `src/backends/comedores/intervenciones/` | intervenciones sobre casos | tests + archivos del modulo | Bajo; exploracion parcial |
 | `src/backends/kernel/catalogo_intervenciones/` | catálogos de intervención compartidos por Comedores y CDI (tablas `intervenciones_*`) | `models.py`, `api.py`, `services_catalogo.py`, `fixtures/` | Medio |
-| `sentry/` | soporte/integracion local de sentry | codigo del modulo si toca observabilidad | Bajo |
+| `src/backends/kernel/sentry/` | soporte/integracion local de sentry | codigo del modulo si toca observabilidad | Bajo |
 | `src/backends/sisoc_core/encuestas/` | encuestas periodicas a usuarios logueados: preguntas con logica condicional, segmentacion, rondas recurrentes, bloqueo global si son obligatorias, resultados y export | `models.py`, `services.py`, `services_resultados.py`, `middleware.py`, `context_processors.py`, `management/commands/process_encuestas_rondas.py`, `tests/` | Alto (modulo propio, doc completa en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`) |
 
 ## Patrones arquitectonicos y de codigo
@@ -375,18 +445,22 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Los consumidores interdominio usan contratos Python acotados: `centrodefamilia.api` expone métricas para Dashboard, `ciudadanos.api` resuelve ciudadanos desde RENAPER y `catalogo_intervenciones.api` provee el catálogo autorizado para CDI.
 - Los receivers de auditoría de Centro de Infancia viven en `centrodeinfancia.signals` y llaman `audittrail.api`; Audittrail no debe importar modelos CDI.
 - Los alcances de usuarios propios de un dominio se registran mediante `iam.services.register_user_queryset_scope`; Centro de Infancia registra el suyo desde `centrodeinfancia.apps` para que `users` no importe dominios.
+- Esos registros son locales al proceso: el core que sirve `/usuarios/` no instala CDI. La exclusión de cuentas sin grupos para el alcance administrable SIMEPI vive en `users.services`; su regresión en `src/backends/kernel/tests/test_usuarios_simepi_scope.py` debe correr también con `--ds=config.settings`.
 - Dispositivos, VAT y Ver para Ser Libre no exponen internals a otros dominios. La composición de rutas de preview de VAT se realiza desde `VAT.global_urls`.
 - Los efectos de backfill de soft delete se registran desde cada dominio en `core.soft_delete.registry`; `core.soft_delete.state_sync` no debe importar handlers de dominio.
 - Las restricciones de navegacion aportadas por dominios se registran en `core.services.sidebar_access`; el template tag global no debe importar reglas VAT.
 - El endpoint Select2 de organizaciones vive en `gestion_organizaciones.views` y `gestion_organizaciones.urls`, aunque conserva la ruta global `ajax/load-organizaciones/`.
 - Los post-procesos de dominio de `load_fixtures` se registran en `core.services.fixture_post_load`; el comando de `core` no debe importar sus servicios directamente.
+- `docker/django/Dockerfile`: base de deploy instala `requirements/base.txt`; `dev` agrega `all.txt`. Conservar en base las apps de diagnóstico de los settings y sus auxiliares. `service_images` comprueba versiones, `pip check` y perfiles de dependencias. Evidencia: `docs/registro/cambios/2026-T4/2026-10-16-issue-2641-build-limpio-docker.md`.
+- Smoke HTTP de imágenes: usar nombres de rutas (`reverse()`), no suponer que el prefijo es un listado. Comandos y límites: `docs/registro/cambios/2026-T4/2026-10-19-issue-2641-smoke-http-docker.md`.
+- `load_fixtures` reintenta registros pendientes entre archivos hasta que no haya progreso, sin repetir los ya guardados ni reevaluar el criterio de tablas vacías para archivos parciales. Regresión: `src/backends/kernel/tests/test_load_fixtures_command.py`; no reemplazar esto por un orden fijo de carpetas.
 - La auditoria de autenticacion se solicita desde `users.auth_audit`; PWA registra el persistidor de `AuditoriaSesionPWA` durante su arranque.
 - La sincronizacion entre `Profile.duplas_asignadas` y `Dupla.coordinador` se suscribe desde `duplas.signals`; `users` no debe conocer el modelo Dupla.
 - Las restricciones PWA por programa de Comedores se consultan mediante `users.pwa_comedores`; Comedores registra la capacidad concreta durante su arranque.
 - Las pruebas de alcance territorial que ejercitan `Ciudadano` viven en `src/backends/kernel/ciudadanos/test_territorial_scope.py`; el módulo heredado de regresiones de Users vive en `src/backends/kernel/tests/test_users_regressions.py` para no abrir imports de dominio dentro de la app.
 - Los querysets de dominio requeridos por formularios administrativos de Users se registran en `users.form_catalogs`; `users.forms` no debe importar modelos de Comedores, Duplas ni Organizaciones.
-- La expansión de organizaciones y comedores del importador PWA se resuelve mediante `users.pwa_import_access`; Comedores registra el proveedor y `users.services_user_import` sólo consume IDs y especificaciones de acceso.
-- `users.api` es la fachada pública de la proyección PWA por organización. `comedores.signals` y `sincronizar_accesos_pwa_organizaciones` sólo le pasan IDs; `AccesoOrganizacionPWA` es la fuente de verdad y `AccesoComedorPWA` la proyección. El save/soft-delete/restore de `Comedor` es transaccional para estos side effects y los envíos a GESTIONAR quedan en `on_commit`.
+- La expansión de organizaciones y comedores del importador PWA se resuelve mediante `users.pwa_import_access`; Comedores registra el adaptador local y `usuarios.services_user_import` conserva la operación completa con IDs, permisos y especificaciones de acceso, sin importar ORM de Espacios.
+- `pwa.api` es la fachada pública de la proyección de accesos de Espacios comunitarios por organización. `comedores.signals` y `sincronizar_accesos_pwa_organizaciones` sólo le pasan IDs; `AccesoOrganizacionPWA` es la fuente de verdad y `AccesoComedorPWA` la proyección. El save/soft-delete/restore de `Comedor` es transaccional para estos side effects y los envíos a GESTIONAR quedan en `on_commit`.
 
 ### Convenciones visibles
 
@@ -424,7 +498,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   Territorial comedor, Equipos técnicos, DataCalle, Administración de accesos)
   se habilitan por permiso `auth.role_usuarios_seccion_*`: catálogo en
   `src/backends/kernel/users/secciones_usuario.py`, campos en `CAMPOS_POR_SECCION` de
-  `users/forms.py`. Una sección nueva de un programa se agrega ahí, con su
+  `src/backends/sisoc_core/usuarios/forms.py`. Una sección nueva de un programa se agrega ahí, con su
   permiso en el seed. Decisión:
   `docs/registro/decisiones/2026-09-29-usuarios-secciones-por-permiso.md`.
 - La autogestión vive en `MiCuentaForm`, `MiCuentaView` y la ruta `/mi-cuenta/`.
@@ -433,6 +507,16 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   El middleware solo bloquea web: `/api/` está exento; al tocar ese flujo, revisar
   `src/backends/kernel/users/profile_utils.py`, las migraciones `0044`/`0045` y
   `src/backends/sisoc_core/tests/test_users_mi_cuenta.py`.
+
+### Si necesitas implementar la integracion de autenticacion SIIS
+
+- Alineacion y criterios: `docs/plans/2026-T4/2026-10-06-autenticacion-siis.md`.
+- Contrato HTTP acordado para el equipo externo: `docs/integraciones/siis_api.md`; implementación local pendiente de validación e incorporación; no implica disponibilidad desplegada.
+- Colección para integrar y probar SIIS: `docs/api/postman/SIIS.postman_collection.json`, con las tres operaciones y ejemplos guardados; variables de credenciales vacías, completar en un entorno privado.
+- Decisiones: `docs/registro/decisiones/2026-10-06-auth-siis-accesos-independientes.md`.
+- Login/API y formularios: `src/backends/sisoc_core/usuarios/`; perfil y middleware compartido: `src/backends/kernel/users/`.
+- Riesgos revisados: limpieza de grupos/permisos PWA al combinar accesos, alcance territorial compartido de DataCalle, login y sesiones del Django admin, inicializacion historica del flag web y compatibilidad del login legacy. No importar PWA/core desde el kernel para inicializar flags.
+- La guía y la API key se entregan por canal privado.
 
 ### Si necesitas cambiar la importacion masiva de usuarios
 
@@ -457,7 +541,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   resolver relaciones por nombre (`core`, `intervenciones`).
 - `src/backends/config/settings.py`: bloque `IMPORT_EXPORT_*` (transacciones, preview
   obligatorio, permisos requeridos, escape de formulas).
-- `src/backends/sisoc_core/tests/test_admin_import_export.py`.
+- `src/backends/comedores/tests/test_admin_import_export.py`.
 - docs: `docs/registro/cambios/2026-T3/2026-07-27-import-export-admin.md` lista que
   modelo quedo habilitado y cual no, con motivo.
 
@@ -465,7 +549,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 - `src/backends/kernel/users/bootstrap/groups_seed.py`
 - `src/backends/kernel/users/services_group_permissions.py`
-- `src/backends/sisoc_core/usuarios/api_permissions.py`
+- `src/backends/comedores/pwa/api_permissions.py`
 - permisos especificos por app, por ejemplo `src/backends/celiaquia/celiaquia/permissions.py`
 - docs: `docs/implementaciones/usuarios_perfil_iam.md`
 
@@ -475,13 +559,17 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `src/backends/kernel/templates/includes/sidebar/`
 - `src/backends/kernel/templates/components/`
 - `src/backends/kernel/static/custom/js/sidebar.js`
+- layout claro (Inicio, Inspecciones): `includes/base_claro.html` +
+  `core.services.layout_claro.contexto_layout_claro`; el resto extiende
+  `includes/base.html` (oscuro). Ver
+  `docs/registro/cambios/2026-T4/2026-10-15-kernel-layout-claro-barra-lateral.md`.
 
 ### Si necesitas cambiar endpoints API
 
 - router global: `src/backends/config/urls.py`
 - por app: `api_urls.py`, `api_views.py`, `api_serializers.py`, `serializers.py`
-- si es PWA: `src/backends/sisoc_core/pwa/api_urls.py`, `src/backends/sisoc_core/pwa/api_views.py`
-- si es Ticketera: `ticketera/api_*`
+- si es PWA: `src/backends/comedores/pwa/api_urls.py`, `src/backends/comedores/pwa/api_views.py`
+- si es Ticketera: `src/backends/cdi/ticketera/api_*`
 
 ### Si necesitas cambiar una pantalla HTML tradicional
 
@@ -492,34 +580,34 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar negocio de Comedores
 
-- `src/backends/sisoc_core/comedores/models.py`
-- `src/backends/sisoc_core/comedores/tasks.py`
-- `src/backends/sisoc_core/comedores/signals.py`
-- `src/backends/sisoc_core/comedores/services/`
-- `src/backends/sisoc_core/comedores/api_views.py`
-- `src/backends/sisoc_core/comedores/api_views_territorial.py` (scope provincial PWA, altas idempotentes y edición)
-- `src/backends/sisoc_core/comedores/api_serializers.py::TerritorialComedorWriteSerializer` (validacion de
+- `src/backends/comedores/comedores/models.py`
+- `src/backends/comedores/comedores/tasks.py`
+- `src/backends/comedores/comedores/signals.py`
+- `src/backends/comedores/comedores/services/`
+- `src/backends/comedores/comedores/api_views.py`
+- `src/backends/comedores/comedores/api_views_territorial.py` (scope provincial PWA, altas idempotentes y edición)
+- `src/backends/comedores/comedores/api_serializers.py::TerritorialComedorWriteSerializer` (validacion de
   altas/ediciones territoriales, catalogos y jerarquia geografica)
 - tests `src/backends/sisoc_core/tests/test_comedor*`, `src/backends/sisoc_core/tests/test_comedores*`
 - docs de flujo: `docs/flujos/comedor_sync.md`
 - certificaciones mensuales de prestaciones: regla de pendiente en
-  `src/backends/sisoc_core/comedores/utils.py`, API en `src/backends/sisoc_core/comedores/api_views.py`, card e historial web en
-  `src/backends/sisoc_core/comedores/views/comedor.py` y `src/backends/sisoc_core/comedores/templates/comedor/`
+  `src/backends/comedores/comedores/utils.py`, API en `src/backends/comedores/comedores/api_views.py`, card e historial web en
+  `src/backends/comedores/comedores/views/comedor.py` y `src/backends/comedores/comedores/templates/comedor/`
 
 ### Si necesitas cambiar Relevamientos
 
-- `src/backends/sisoc_core/relevamientos/models.py`
-- `src/backends/sisoc_core/relevamientos/service.py` (asignación territorial local/legacy)
-- `src/backends/sisoc_core/relevamientos/tasks.py`
-- `relevamientos/views.py`
-- `tests/test_relevamientos*` y `src/backends/sisoc_core/tests/test_territorial_api.py`
+- `src/backends/comedores/relevamientos/models.py`
+- `src/backends/comedores/relevamientos/service.py` (asignación territorial local/legacy)
+- `src/backends/comedores/relevamientos/tasks.py`
+- `src/backends/comedores/relevamientos/views/web_views.py`
+- `src/backends/sisoc_core/tests/test_relevamientos*` y `src/backends/comedores/tests/test_territorial_api.py`
 - docs: `docs/flujos/relevamiento_sync.md`
 
 ### Si necesitas cambiar importacion de expedientes de pago
 
-- `src/backends/sisoc_core/importarexpediente/views.py` coordina upload, validacion, importacion y acciones posteriores por lote.
-- `src/backends/sisoc_core/importarexpediente/services.py` concentra parsing y reglas de negocio del Excel/CSV.
-- `src/backends/sisoc_core/importarexpediente/tests/` cubre el flujo de carga, detalle, descarga, duplicados, estados y fechas de acreditacion.
+- `src/backends/comedores/importarexpediente/views.py` coordina upload, validacion, importacion y acciones posteriores por lote.
+- `src/backends/comedores/importarexpediente/services.py` concentra parsing y reglas de negocio del Excel/CSV.
+- `src/backends/comedores/importarexpediente/tests/` cubre el flujo de carga, detalle, descarga, duplicados, estados y fechas de acreditacion.
 - Las fechas de acreditacion masivas se actualizan por lote mediante `RegistroImportado`; no buscar `ExpedientePago` globalmente por `comedor_id`.
 - El endpoint de fechas de acreditacion requiere `importarexpediente.change_archivosimportados` o `expedientespagos.change_expedientepago`.
 
@@ -541,13 +629,13 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar Admisiones / documentos
 
-- `src/backends/sisoc_core/admisiones/views/web_views.py`
-- `src/backends/sisoc_core/admisiones/services/`
-- `src/backends/sisoc_core/admisiones/forms/`
-- `src/backends/sisoc_core/admisiones/management/commands/corregir_expedientes_issue_2272.py`: preflight, aplicación transaccional y verificación de la corrección de expedientes de #2272; ejecutar --apply sólo tras un preflight correcto, en ventana sin escrituras, y confirmar con --verify.
-- templates `src/backends/sisoc_core/admisiones/templates/admisiones/docx/`
-- templates `src/backends/sisoc_core/admisiones/templates/admisiones/pdf/`
-- `src/backends/sisoc_core/admisiones/tests/`
+- `src/backends/comedores/admisiones/views/web_views.py`
+- `src/backends/comedores/admisiones/services/`
+- `src/backends/comedores/admisiones/forms/`
+- `src/backends/comedores/admisiones/management/commands/corregir_expedientes_issue_2272.py`: preflight, aplicación transaccional y verificación de la corrección de expedientes de #2272; ejecutar --apply sólo tras un preflight correcto, en ventana sin escrituras, y confirmar con --verify.
+- templates `src/backends/comedores/admisiones/templates/admisiones/docx/`
+- templates `src/backends/comedores/admisiones/templates/admisiones/pdf/`
+- `src/backends/comedores/admisiones/tests/`
 - El catálogo de variables de contenido se persiste como
   `VariableTemplateInformeTecnico`; guarda expresiones Django sin delimitadores
   (por ejemplo, `informe.nombre_organizacion`). Sólo las variables activas se
@@ -555,13 +643,13 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   cuatro modelos DOCX vigentes y `0074` agrega los alias planos compatibles
   con el primer editor del Gestor.
 - Templates dinámicos de Informe Técnico: condiciones, versiones y publicaciones
-  en `src/backends/sisoc_core/admisiones/models/admisiones.py`; servicio en
-  `src/backends/sisoc_core/admisiones/services/templates_informe_tecnico_service/`; UI de gestión en
-  `src/backends/sisoc_core/admisiones/views/templates_informe_tecnico.py` y
-  `src/backends/sisoc_core/admisiones/templates/admisiones/templates_informes_tecnicos/`. La UI se
+  en `src/backends/comedores/admisiones/models/admisiones.py`; servicio en
+  `src/backends/comedores/admisiones/services/templates_informe_tecnico_service/`; UI de gestión en
+  `src/backends/comedores/admisiones/views/templates_informe_tecnico.py` y
+  `src/backends/comedores/admisiones/templates/admisiones/templates_informes_tecnicos/`. La UI se
   agrupa visualmente bajo Gestor de templates mediante el parcial
   `includes/navigation.html` y los estilos aislados
-  `src/backends/sisoc_core/admisiones/static/custom/css/gestor_templates.css`; el sidebar anida Templates,
+  `src/backends/comedores/admisiones/static/custom/css/gestor_templates.css`; el sidebar anida Templates,
   Variables documentales e Incidencias de templates. Las incidencias se
   agrupan por combinación abierta; las vistas previas son DOCX temporales con
   marca de agua y nunca se adjuntan a la admisión. Al crear un template, el
@@ -569,39 +657,45 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   presentada funcionalmente como Asociación de hecho.
 - La descarga del Informe Técnico ofrece una copia transitoria "Descargar para
   GDE": prioriza el DOCX editado y, si no existe, el borrador. Se normaliza la
-  geometría OOXML de sus tablas antes de responder, sin reemplazar archivos ni
-  modificar estados.
+  geometría OOXML de sus tablas y LibreOffice Writer convierte una copia a DOC
+  binario, con temporales/perfil aislados y timeout, sin reemplazar archivos ni
+  modificar estados. El generador HTML del informe conserva `colspan`/`rowspan`
+  y no degrada plantillas publicadas a texto plano ante fallos. Entry points:
+  `src/backends/comedores/admisiones/services/informes_service/impl.py`
+  (`GdeDocxService.generar_doc`) y
+  `src/backends/comedores/admisiones/views/web_views.py`
+  (`descargar_informe_tecnico_para_gde`).
 - El Informe Tecnico Complementario se abre tanto desde Admision como desde el
-  convenio seleccionado en `src/backends/sisoc_core/acompanamientos/views.py` y
-  `src/backends/sisoc_core/acompanamientos/templates/acompañamiento_detail.html`.
+  convenio seleccionado en `src/backends/comedores/acompanamientos/views.py` y
+  `src/backends/comedores/acompanamientos/templates/acompañamiento_detail.html`.
 - Documentación canónica: `docs/implementaciones/admisiones_informes_tecnicos.md`.
 
 ### Si necesitas cambiar PWA
 
 - La interfaz vive en el repositorio Git anidado `mobile/`; revisar su estado y
   validaciones por separado del repositorio Django.
-- `src/backends/sisoc_core/pwa/models.py`
-- `src/backends/sisoc_core/pwa/api_urls.py`
-- `src/backends/sisoc_core/pwa/api_views.py`
-- `src/backends/sisoc_core/pwa/services/accesos.py`: alcance PWA, accesos y coordinador de equipo técnico PWA.
-- `src/backends/sisoc_core/usuarios/api_permissions.py`: permisos de lectura y veto transversal de escritura
+- `src/backends/comedores/pwa/models.py`
+- `src/backends/comedores/pwa/api_urls.py`
+- `src/backends/comedores/pwa/api_views.py`
+- `src/backends/comedores/pwa/services/accesos.py`: alcance PWA, accesos y coordinador de equipo técnico PWA.
+- `src/backends/comedores/pwa/api_permissions.py`: permisos de lectura y veto transversal de escritura
   para roles PWA de solo lectura.
 - Toda mutación PWA debe incluir `IsPWAWriteAllowed`, excepto las acciones
   personales expresamente permitidas (contraseña y suscripciones push).
-- `src/backends/sisoc_core/pwa/services/`
+- `src/backends/comedores/pwa/services/`
 - alcance de nómina por admisión vigente o comedor directo:
-  `src/backends/sisoc_core/pwa/services/nomina_queryset_service.py`
+  `src/backends/comedores/pwa/services/nomina_queryset_service.py`
 - frontend: `mobile/src/api/` y `mobile/src/features/home/`
-- tests `src/backends/sisoc_core/tests/test_pwa_*`
+- tests `src/backends/comedores/tests/test_pwa_*` (algunos transversales en `src/backends/sisoc_core/tests/`)
 - docs: `docs/implementaciones/pwa_backend.md`,
   `docs/implementaciones/comedores_certificaciones_prestaciones.md`,
   `docs/seguridad/security_baseline_pwa.md`
 
 ### Si necesitas cambiar documentos DOCX/PDF de prestaciones o nóminas
 
-- plantillas versionadas: `src/backends/sisoc_core/pwa/files/varios/PROGRAMA.ALIMENTAR.COMUNIDAD.docx` y `src/backends/sisoc_core/pwa/files/varios/NOMINA.DE.DESTINATARIOS.docx`
-- certificación de prestaciones: `src/backends/sisoc_core/comedores/services/certificacion_prestaciones_service.py`
-- nómina de destinatarios: `src/backends/sisoc_core/pwa/services/nomina_destinatarios_pdf_service.py`
+- plantillas versionadas: `src/backends/comedores/pwa/files/varios/PROGRAMA.ALIMENTAR.COMUNIDAD.docx` y `src/backends/comedores/pwa/files/varios/NOMINA.DE.DESTINATARIOS.docx`
+- certificación de prestaciones: `src/backends/comedores/comedores/services/certificacion_prestaciones_service.py`
+- nómina de destinatarios: `src/backends/comedores/pwa/services/nomina_destinatarios_pdf_service.py`
 - descarga provincial de niños SIMEPI: endpoint
   `centrodeinfancia_nomina_ninos_pdf`, servicio
   `src/backends/cdi/centrodeinfancia/services_nomina_ninos_pdf.py` y pruebas
@@ -610,31 +704,35 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   excluye fichas mayores de 48 meses y entrega un JPEG por página
 - contrato canónico de esa descarga, privacidad y formularios CDI:
   `docs/implementaciones/centrodeinfancia_nomina_ninos_simepi.md`
-- conversión e incrustación de Office en rendiciones: `src/backends/sisoc_core/rendicioncuentasmensual/service_helpers.py`
+- conversión e incrustación de Office en rendiciones: `src/backends/comedores/rendicioncuentasmensual/service_helpers.py`
 - el runtime Django requiere LibreOffice Writer/Calc para convertir DOCX/XLSX a PDF
 
 ### Si necesitas cambiar rendiciones mensuales u Organizaciones
 
-- estados, etapas, subsanaciones y alcance por proyecto: `src/backends/sisoc_core/rendicioncuentasmensual/services.py`
+- estados, etapas, subsanaciones y alcance por proyecto: `src/backends/comedores/rendicioncuentasmensual/services.py`
+- gestión conjunta de Auditoría (#2673): `src/backends/comedores/rendicioncuentasmensual/auditoria.py`, `RendicionAuditoriaView` y `rendicioncuentasmensual_auditoria.html`; entradas `rendicioncuentasmensual_auditoria_nueva` y `rendicioncuentasmensual_auditoria`. Requiere migraciones `0023_issue_2673_validada`, `0024_cierre_gestion_auditoria` y `0025_origen_acta_auditoria`. Con acta se bloquean/revalidan las rendiciones y se replican datos/documentos/vínculos. La regularización de auditorías con observaciones sigue en `RendicionProcesoService`, también si tienen acta o cierre, con permiso `manage_regularizacion_stage`, solo desde la base identificada por `rendicion_origen_acta` (migración `0025_origen_acta_auditoria`). La restricción se aplica en vista y servicio; las incorporadas reciben los cambios sin ofrecer acciones. La migración recupera grupos coherentes por el primer vínculo insertado por la base; sin origen (Secos o legadas inconsistentes) cada rendición regulariza sola, sin propagar. Solo Línea Tradicional admite incorporadas, de su misma línea; las observaciones generales no se vacían ni se replican sin resultado con observaciones. Cobertura vigente de validación en dos pasos, cierre, búsqueda, permisos, regularización y origen histórico: `src/backends/comedores/tests/test_rendicion_auditoria_issue_2673.py`.
+- cierre de gestión de Auditoría (2026-10-15): migración `0024_cierre_gestion_auditoria` y campo `fecha_gestion_auditoria` impiden reabrir gestiones cerradas con decisión Sí/No de acta. Guardar solo la validación conserva ese campo y la decisión de acta en NULL, permitiendo reingresar; al reingresar, validación inmutable y acta obligatoria. Las cerradas validadas sin acta permanecen elegibles para inclusión desde otra rendición. Con resultado con observaciones se permite iniciar/finalizar regularización; el cierre solo bloquea volver a gestionar la auditoría. El buscador usa `AuditoriaBusquedaForm` + `AuditoriaService.buscar`, filtro Proyecto por defecto y tabla paginada. «Acciones del proceso» depende de `mostrar_acciones_proceso`, que combina permisos y estado.
+- búsqueda y navegación de Auditoría: texto obligatorio, tabla inicialmente vacía y coincidencia parcial sin tildes españolas mediante `normalize_text` y expresiones SQL en el campo elegido. El selector de inclusión exige cierre previo sin acta. Los campos de validación, decisión, inclusión y origen no son editables desde el formulario general. Registro consolidado: `docs/registro/cambios/2026-T4/2026-10-14-auditoria-rendiciones-2673.md`. El formulario declara `volver_transitoria=True` y destino explícito; los enlaces del buscador indican `origen=busqueda` para conservar el regreso a resultados y filtros.
 - regla única de datos generales (convenio, número secuencial, período): `RendicionCuentaMensualService.validar_datos_generales`; la usan el formulario web, el alta y la edición de la PWA. No duplicarla
 - el número de rendición es secuencial por proyecto + convenio y se serializa con `select_for_update()`: cualquier camino de escritura nuevo tiene que correr dentro de `transaction.atomic` o el bloqueo no protege nada
 - la ventana del período depende de la línea programática: 3 meses en `secos`, 1 mes en el resto (`periodo_fin_maximo`)
-- solicitudes de documentos faltantes y categorías documentales: `src/backends/sisoc_core/rendicioncuentasmensual/models.py`; el catálogo depende de la línea (`CATEGORIAS_CONFIG["lineas"]`) y web y API lo resuelven con `RendicionCuentaMensualService.obtener_categorias_visibles`; el contrato PWA se serializa en `src/backends/sisoc_core/comedores/api_serializers.py`
+- solicitudes de documentos faltantes y categorías documentales: `src/backends/comedores/rendicioncuentasmensual/models.py`; el catálogo depende de la línea (`CATEGORIAS_CONFIG["lineas"]`) y web y API lo resuelven con `RendicionCuentaMensualService.obtener_categorias_visibles`; el contrato PWA se serializa en `src/backends/comedores/comedores/api_serializers.py`
+- ajustes #2683: `src/backends/comedores/tests/test_issue_2683.py`; seguros admite múltiples archivos con historial, las subsanaciones conservan observaciones y Territorial vuelve a `subsanado`. Selectores dependientes de actividades: `src/backends/comedores/comedores/forms/actividad_espacio_pwa_form.py`; conservan la FK existente. Registro: `docs/registro/cambios/2026-T4/2026-10-14-2683-abordaje-comunitario.md`
 - confirmación de lectura de documentos: campos `visualizacion_*` en `DocumentacionAdjunta` y vista `RendicionDocumentoVerView`; los documentos se sirven por Django, no por la URL de media
 - etiquetas visibles ≠ valores persistidos: la etapa `revision_auditoria` se muestra como «Revisión para Carga». No cambiar valores internos para acomodar un label
 - asociación actual: `RendicionCuentaMensual.proyecto`; conservar fallback por `comedor.codigo_de_proyecto` para datos legados
-- listado y detalle del legajo: `organizaciones/views.py` y templates `organizacion_*`
+- listado y detalle del legajo: `src/backends/comedores/gestion_organizaciones/views.py` y templates `organizacion_*`
 - proyectos editables: `OrganizacionForm.codigos_proyecto` mantiene el contrato CSV mediante un campo oculto
-- tests: `src/backends/sisoc_core/tests/test_rendicioncuentasmensual_services_unit.py`, `src/backends/sisoc_core/tests/test_rendicioncuentasmensual_domain_rules.py`, `src/backends/sisoc_core/tests/test_rendicioncuentasmensual_visualizacion.py`, `src/backends/sisoc_core/tests/test_rendicioncuentasmensual_acta_auditoria.py` y `organizaciones/tests.py`
+- tests: `src/backends/comedores/tests/test_rendicioncuentasmensual_services_unit.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_domain_rules.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_visualizacion.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_acta_auditoria.py` y `src/backends/comedores/gestion_organizaciones/tests.py`
 - escenarios QA de permisos por etapa: `python manage.py seed_rendicion_stage_examples --comedor-id <id>` (solicita la contraseña de forma interactiva)
 - documentación canónica: `docs/flujos/rendiciones_mensuales_proyectos.md`
 - contratos que consume la PWA (estados internos, health-check, edición de datos generales): `docs/implementaciones/pwa_backend.md`
 
 ### Si necesitas cambiar altas de ciudadanos en nómina
 
-- `src/backends/sisoc_core/comedores/forms/comedor_form.py`, `src/backends/sisoc_core/comedores/views/nomina.py` y
-  `src/backends/sisoc_core/comedores/services/comedor_service/impl.py`
-- `src/backends/sisoc_core/tests/test_comedor_form_unit.py` y `src/backends/sisoc_core/tests/test_nomina_views_unit.py`
+- `src/backends/comedores/comedores/forms/comedor_form.py`, `src/backends/comedores/comedores/views/nomina.py` y
+  `src/backends/comedores/comedores/services/comedor_service/impl.py`
+- `src/backends/comedores/tests/test_comedor_form_unit.py` y `src/backends/comedores/tests/test_nomina_views_unit.py`
 - documentación canónica: `docs/implementaciones/comedores_nomina_ciudadanos.md`
 
 ### Si necesitas cambiar exportaciones CSV
@@ -659,7 +757,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `src/backends/sisoc_core/encuestas/management/commands/process_encuestas_rondas.py` + servicio `encuestas_worker` en `docker-compose.yml`: abre/cierra rondas por fecha, sin Celery.
 - `src/backends/kernel/users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas`, `Administrador de Encuestas` (permiso `aprobar_encuesta`) y `Encuestas Resultados`.
 - Guía funcional canónica: `docs/implementaciones/encuestas.md`. El análisis histórico y sus decisiones de diseño quedan en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
-- Aprobación: `solicitar_publicacion` / `publicar` / `rechazar_publicacion` en `services.py`; borrador → pendiente → publicada o borrador. La ruta histórica `publicar/` ahora solicita, `aprobar/` y `rechazar/` requieren `aprobar_encuesta`. Revisión de solo lectura en `revision/`; pendientes bloquean edición y segmentación. Migración `0004` + `create_groups`. Tests en `test_encuestas_aprobacion.py`; `tests/helpers.py` prepara rondas recorriendo el circuito.
+- Aprobación: `solicitar_publicacion` / `publicar` / `rechazar_publicacion` en `services.py`; borrador → pendiente → publicada o borrador. La ruta histórica `publicar/` ahora solicita, `aprobar/` y `rechazar/` requieren `aprobar_encuesta`. Revisión de solo lectura en `revision/`; pendientes bloquean edición y segmentación. Migración `0004` + `create_groups`. Tests en `test_encuestas_aprobacion.py`; `src/backends/sisoc_core/encuestas/tests/helpers.py` prepara rondas recorriendo el circuito.
 - Portabilidad JSON: `exportar_encuesta` / `importar_encuesta` en `services.py`, endpoints `/encuestas/<pk>/exportar/` y `/encuestas/importar/`. Formato v3, admite v1/v2; importar crea borrador nuevo y vuelve al listado. Segmentacion optativa, contiene documentos personales si se incluye.
 - Modalidades: obligatoria, postergable y opcional (`Encuesta.es_opcional`). `descartar_ronda` registra descarte por usuario/ronda en `RecordatorioUsuario`, sin computar respuesta. Migracion `0003_encuesta_opcional` necesaria antes de servir el cambio y reiniciar workers.
 - UI: `encuestaForm.css` y `encuestaResponder.css` comparten tokens Poncho. Regresiones en `test_encuestas_portabilidad.py` y `test_encuestas_opcionales.py`.
@@ -691,14 +789,14 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar OCR / procesamiento documental
 
-- `ocr/`
+- `src/backends/ocr/ocr/`
 - `docker/django/entrypoint.py` para rol `ocr_worker`
 - dependencias PDF/OCR en `requirements/base.txt`
 
 ### Si necesitas cambiar syncs externos
 
-- GESTIONAR: `src/backends/config/settings.py`, `src/backends/sisoc_core/comedores/tasks.py`,
-  `src/backends/sisoc_core/comedores/services/territorial_service/impl.py`, `src/backends/sisoc_core/relevamientos/tasks.py`,
+- GESTIONAR: `src/backends/config/settings.py`, `src/backends/comedores/comedores/tasks.py`,
+  `src/backends/comedores/comedores/services/territorial_service/impl.py`, `src/backends/comedores/relevamientos/tasks.py`,
   management commands relacionados, `.env.example`. El flag
   `GESTIONAR_INTEGRATION_ENABLED` corta todo el tráfico AppSheet/GESTIONAR; no
   usarlo como interruptor parcial.
@@ -717,7 +815,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   no agregar columnas en el medio ni saltear ese scope. La descarga usa el
   permiso propio `auth.role_reportes_cdi`, no el global `role_exportar_a_csv`.
   Contrato: `docs/implementaciones/centrodeinfancia_reportes.md`.
-- Ticketera: `ticketera/`, `docs/integraciones/ticketera_api.md`
+- Ticketera: `src/backends/cdi/ticketera/`, `docs/integraciones/ticketera_api.md`
 
 ### Si necesitas cambiar preinscriptos CDF o vouchers VAT
 
@@ -727,6 +825,18 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Vouchers VAT: `src/backends/vat/VAT/services/voucher_service/`,
   `src/backends/vat/VAT/services/tipo_alumno_service.py`, tests VAT y
   `docs/vat/VOUCHER_SETUP.md`.
+
+### Si necesitas cambiar el alta de sedes adicionales INET
+
+- Permiso existente asignable a grupos: `VAT.add_institucionubicacion`; guard de
+  URL en `src/backends/vat/VAT/urls.py` y botón en
+  `src/backends/vat/VAT/templates/vat/centros/centro_detail.html`.
+- Alcance de alta: `InstitucionUbicacionCreateView` en
+  `src/backends/vat/VAT/views/institucion.py`, con `can_user_edit_centro` y
+  `filter_centros_queryset_for_management` de `services/access_scope.py`.
+- Regresión de permisos/grupos: `src/backends/vat/tests/test_ubicacion_create_permissions.py`.
+- Operación por grupos: `docs/vat/manual_usuario.md`; no agregar permisos
+  duplicados ni asignaciones por nombre de grupo para la misma acción.
 
 ### Si necesitas cambiar la búsqueda de Centros VAT por CUE
 
@@ -759,11 +869,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `.github/workflows/architecture.yml`
 - `.github/workflows/release-sanity.yml`
 - `.github/workflows/release-orchestrator.yml`
-- `.github/scripts/sync_main_downstream.js`: crea y actualiza ramas técnicas
+- `src/scripts/github/sync_main_downstream.js`: crea y actualiza ramas técnicas
   `automation/promote-<origen>-to-<destino>` después de un deploy verificado.
   Rechaza una rama origen que ya no coincida con el SHA desplegado y habilita
   auto-merge para respetar los checks del destino.
-- `.github/scripts/sync_main_downstream.test.js` cubre la promoción exacta y
+- `src/scripts/github/sync_main_downstream.test.js` cubre la promoción exacta y
   el rechazo de runs obsoletos; `deploy_guard` ejecuta las pruebas Node de
   ambos orquestadores.
 - `.github/workflows/deploy.yml`
@@ -780,21 +890,23 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   directorio temporal y valida host, servidor y schema de DB esperados, sin
   tocar el checkout vivo.
 - Al cambiar la fecha explícita de un PR a `main`,
-  `scripts/ci/pr_doc_automation.py` regenera o elimina el bloque de changelog
+  `src/scripts/ci/pr_doc_automation.py` regenera o elimina el bloque de changelog
   previo de ese PR para no dejar una release fantasma.
 - La automatización de promociones usa una GitHub App privada: variable
   `RELEASE_AUTOMATION_APP_CLIENT_ID` y secret
   `RELEASE_AUTOMATION_APP_PRIVATE_KEY`; no sustituirla por un PAT.
 - `.importlinter`
-- `scripts/ci/pr_lint_tools.py`, `scripts/ci/pr_doc_automation.py`
+- `src/scripts/ci/pr_lint_tools.py`, `src/scripts/ci/pr_doc_automation.py`, `src/scripts/ci/quality_gate.py`
 
 ## Testing, linting, build y deploy
 
 ### Lint y formato detectados
 
 - `black --check . --config pyproject.toml`
-- `pylint **/*.py --rcfile=.pylintrc`
+- `pylint src/scripts/*.py src/backends/config/*.py src/backends/!(config)/*/*.py --rcfile=.pylintrc` (CI, con `extglob`; localmente, pasar los archivos tocados)
 - `djlint . --configuration=.djlintrc --check`
+- `python src/scripts/ci/check_docs_paths.py --existencia <docs.md>` (job `docs_paths`)
+- `python src/scripts/ci/quality_gate.py gate --coverage coverage.xml` (job `quality_gate`: tests y 80% de cobertura de líneas cambiadas; label `excepcion-calidad`) y `quality_gate.py zonas` (job `zonas_sensibles`, label `requiere-revision-tecnica`)
 - CI tiene autofix para PRs internos con Black, DJLint y normalizacion de encoding.
 
 ### Tests detectados
@@ -836,15 +948,15 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `Get-ChildItem`, `git ls-files`, `rg`
 - `docker compose config --services`
 - `python manage.py show_urls` si existiera dependencia instalada y entorno levantado
-- `scripts/ai/codex_doctor.ps1`
-- `scripts/ai/codex_run.ps1 smoke`
-- `scripts/ai/codex_run.ps1 validate`
+- `src/scripts/ai/codex_doctor.ps1`
+- `src/scripts/ai/codex_run.ps1 smoke`
+- `src/scripts/ai/codex_run.ps1 validate`
 
 ### Seguros pero potencialmente costosos
 
 - `docker compose up -d --build`
 - `docker compose exec django pytest -n auto`
-- `pylint **/*.py --rcfile=.pylintrc`
+- `pylint` de todo el repo (ver "Lint y formato detectados")
 - `lint-imports`
 
 ### Pedir permiso o tener especial cuidado antes de correr
@@ -865,7 +977,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `docker/django/entrypoint.py`: side effects de arranque, migraciones, workers.
 - `src/backends/kernel/users/bootstrap/groups_seed.py` y comandos de grupos: permisos globales.
 - `src/backends/sisoc_core/encuestas/middleware.py`: middleware global nuevo (registrado en `src/backends/config/settings.py`), puede bloquear la navegacion de cualquier usuario autenticado en cualquier vista del sistema si tiene una encuesta obligatoria pendiente.
-- `src/backends/sisoc_core/comedores/tasks.py` y `src/backends/sisoc_core/relevamientos/tasks.py`: syncs externos, threads y side effects.
+- `src/backends/comedores/comedores/tasks.py` y `src/backends/comedores/relevamientos/tasks.py`: syncs externos, threads y side effects.
 - `signals.py` de varias apps: pueden disparar efectos colaterales no obvios.
 - `src/backends/kernel/templates/includes/` y `src/backends/kernel/templates/components/`: impacto transversal de UI.
 - `custom/js/` (en `src/backends/kernel/static/` y en cada `<app>/static/`): mucho JS parece estar acoplado a IDs/clases exactas del HTML.
@@ -902,11 +1014,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Base minima siempre
 
-1. `AGENTS.md`
-2. `docs/indice.md`
-3. este `docs/ia/AGENT_REPO_MAP.md`
-4. archivo objetivo
-5. tests cercanos
+La de `AGENTS.md` ("Contexto minimo"). Este mapa se consulta para ubicar
+codigo, no se lee entero al inicio.
 
 ### Segun el tipo de tarea
 
@@ -923,6 +1032,24 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | deploy/infra | `docs/operacion/infraestructura.md`, `docs/operacion/instalacion.md`, `docs/infra/QA_OPERATIONS.md`, `docs/infra/ENVIRONMENT_DATABASES.md` |
 
 ## Notas utiles sobre calidad y arquitectura
+
+### Mapa web de arquitectura
+
+- `/arquitectura/` y `/arquitectura/grafo.json` exigen sesión. El grafo vive en
+  `var/arquitectura/grafo.json`, fuera de estáticos y de Git.
+- `src/scripts/arquitectura/generar_mapa.py` lee el registro
+  `src/backends/config/backends.json`, los dueños de las apps, los workspaces
+  `src/frontends/apps/` y las claves de `FRONTEND_V2_UPSTREAMS`, sin ejecutar
+  settings ni consultar la DB. La asociación frontend/backend por nombre es
+  inferida; no demuestra consumo HTTP ni servicios activos.
+- La etapa `source` de `docker/django/Dockerfile` ejecuta el generador con
+  `--imagen` antes de quitar frontends y verticales. El arranque conserva esa
+  captura completa (`var/arquitectura/grafo-imagen.json`); no reconstruye un
+  mapa parcial desde el core aislado. `.dockerignore` excluye `var` para evitar
+  capturas locales dentro de una nueva imagen.
+- `python src/scripts/arquitectura/generar_mapa.py --docs` actualiza el grafo
+  documental y `docs/arquitectura/mapa_sisoc.html`. El arranque no escribe docs.
+- Pruebas focalizadas: `src/backends/kernel/tests/test_mapa_arquitectura_generador.py`.
 
 ### Import-linter
 
@@ -954,28 +1081,28 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | Necesidad | Mirar primero |
 | --- | --- |
 | login / reset / perfil | `src/backends/sisoc_core/usuarios/views.py`, `src/backends/sisoc_core/usuarios/forms.py`, templates `src/backends/kernel/users/templates/` |
-| grupos / permisos | `src/backends/kernel/users/bootstrap/groups_seed.py`, `src/backends/sisoc_core/usuarios/api_permissions.py`, docs IAM |
+| grupos / permisos | `src/backends/kernel/users/bootstrap/groups_seed.py`, `src/backends/comedores/pwa/api_permissions.py`, docs IAM |
 | navbar / sidebar / layout | `src/backends/kernel/templates/includes/`, `src/backends/kernel/templates/includes/sidebar/`, `src/backends/kernel/static/custom/js/sidebar.js` |
 | filtro/listado generico | `src/backends/kernel/core/`, `src/backends/kernel/templates/components/data_table.html`, JS de la pantalla |
-| comedores | `src/backends/sisoc_core/comedores/models.py`, `tasks.py`, `signals.py`, tests `test_comedor*` |
-| relevamientos | `src/backends/sisoc_core/relevamientos/models.py`, `tasks.py`, `views.py` |
+| comedores | `src/backends/comedores/comedores/models.py`, `tasks.py`, `signals.py`, tests `test_comedor*` |
+| relevamientos | `src/backends/comedores/relevamientos/models.py`, `tasks.py`, `views.py` |
 | RENAPER | `src/backends/kernel/core/integrations/renaper.py`, `src/backends/kernel/core/services/renaper.py` |
-| GESTIONAR | `src/backends/sisoc_core/comedores/tasks.py`, `src/backends/sisoc_core/relevamientos/tasks.py`, commands relacionados |
-| docx/pdf | `src/backends/sisoc_core/admisiones/services/`, `src/backends/sisoc_core/comedores/services/certificacion_prestaciones_service.py`, `src/backends/sisoc_core/pwa/services/nomina_destinatarios_pdf_service.py`, `src/backends/sisoc_core/pwa/files/varios/` |
-| PWA | `src/backends/sisoc_core/pwa/api_views.py`, `src/backends/sisoc_core/pwa/services/`, tests `test_pwa_*` |
-| OCR | `ocr/`, `docker/django/entrypoint.py` |
+| GESTIONAR | `src/backends/comedores/comedores/tasks.py`, `src/backends/comedores/relevamientos/tasks.py`, commands relacionados |
+| docx/pdf | `src/backends/comedores/admisiones/services/`, `src/backends/comedores/comedores/services/certificacion_prestaciones_service.py`, `src/backends/comedores/pwa/services/nomina_destinatarios_pdf_service.py`, `src/backends/comedores/pwa/files/varios/` |
+| PWA | `src/backends/comedores/pwa/api_views.py`, `src/backends/comedores/pwa/services/`, tests `test_pwa_*` |
+| OCR | `src/backends/ocr/ocr/`, `docker/django/entrypoint.py` |
 | encuestas | `src/backends/sisoc_core/encuestas/services.py`, `src/backends/sisoc_core/encuestas/middleware.py`, `docs/registro/analisis/2026-08-28-modulo-encuestas.md` |
 | auditoria | `src/backends/kernel/audittrail/`, docs `audittrail_*` |
 | release/deploy | `docs/operacion/*.md`, workflows, compose deploy |
-| CI rota por estilo | `.github/workflows/lint.yml`, `scripts/ci/pr_lint_tools.py` |
+| CI rota por estilo | `.github/workflows/lint.yml`, `src/scripts/ci/pr_lint_tools.py` |
 | CI rota por imports | `.importlinter`, `requirements/arch.txt` |
 
 ## Zonas no analizadas a fondo en esta pasada
 
 - logica interna completa de `dashboard`, `dispositivos`, `duplas`, `expedientespagos`, `historial`, `intervenciones`, `organizaciones`, `rendicioncuentasfinal`, `rendicioncuentasmensual`, `ver_para_ser_libre`
-- detalle fino de `ocr/`
+- detalle fino de `src/backends/ocr/ocr/`
 - contratos completos de cada API mas alla del routing y docs encontradas
-- flujos exactos de algunos workers (`mailing`, `ciudadanos_import_worker`) fuera del entrypoint
+- flujos exactos de algunos workers (`mailing_worker`, `ciudadanos_import_worker`) fuera del entrypoint
 
 Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las toque.
 
@@ -1029,8 +1156,8 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
   serializan por PR y el push automático reintenta con `fetch` + `rebase` si
   otra automatización hizo avanzar la rama; los conflictos reales bloquean.
 - `.github/workflows/deploy.yml`
-- `scripts/ai/codex_run.ps1`
-- `scripts/ai/codex_task.ps1`
+- `src/scripts/ai/codex_run.ps1`
+- `src/scripts/ai/codex_task.ps1`
 - `.codex/environments/environment.toml`
 - inventario de archivos con `git ls-files`
 - inventario estructural de apps y scripts via shell
@@ -1038,4 +1165,11 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 ## PAS Celery mensual
 - `src/backends/config/celery.py`, `src/backends/pas/pas/tasks.py`, `src/backends/pas/pas/services/supervivencia_jobs.py`: programación, reconciliación y un lote exclusivo por MySQL GET_LOCK; dentro del lote, ventanas transaccionales, dos clientes por hilo y límite agregado inicial de 16 solicitudes/s.
 - `docker/compose/docker-compose.celery.yml` se incorpora desde deploy_refresh; Redis persistente, Beat único y worker PAS.
-- Runbook funcional: `docs/implementaciones/pas_control_mensual_celery.md`; retirada cron: `scripts/infra/remove_pas_cron.sh`.
+- Runbook funcional: `docs/implementaciones/pas_control_mensual_celery.md`; retirada cron: `src/scripts/infra/remove_pas_cron.sh`.
+
+## SIIS y control explícito de acceso web
+- `src/backends/sisoc_core/usuarios/siis_api_views.py` y `services_siis.py`: login SIIS por `app`, token firmado administrativo y alta server-to-server. No reutilizar Token DRF legacy; cualquier API key válida es aceptada por decisión explícita.
+- `src/backends/kernel/users/models.py`, `admin.py`, `middleware.py`: flags `acceso_web`/`acceso_siis`, gate admin y sesión web. El flag no concede staff/permisos; API y logout están exentos del gate web.
+- `src/backends/kernel/users/migrations/0060_profile_accesos_siis_web.py` y `src/backends/comedores/pwa/migrations/0026_inicializar_acceso_web.py`: schema kernel y backfill histórico core. Aplicar con migrador completo; no recalcular flags en runtime ni repetir backfill sobre habilitaciones administradas.
+- `src/backends/sisoc_core/tests/test_users_siis.py`: contrato, denegaciones, credenciales administrativas, duplicados, gate web y backfill.
+- `docs/registro/cambios/2026-T4/2026-10-06-auth-siis.md`: evidencia y riesgo de rollback a código que ignora el flag.

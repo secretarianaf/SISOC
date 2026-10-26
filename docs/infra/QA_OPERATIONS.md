@@ -121,8 +121,8 @@ No hay un restart inocuo: el entrypoint ejecuta migraciones, fixtures,
 especifica:
 
 ```bash
-bash scripts/infra/restart_qa.sh
-bash scripts/infra/deploy_qa.sh
+bash src/scripts/infra/restart_qa.sh
+bash src/scripts/infra/deploy_qa.sh
 ```
 
 Sin flags solo muestran el plan y no hacen cambios.

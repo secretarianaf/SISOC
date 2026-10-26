@@ -234,10 +234,10 @@ leyeron credenciales.
 Artefactos principales:
 
 - `.github/workflows/deploy.yml`.
-- `scripts/operacion/deploy_refresh.sh`.
+- `src/scripts/operacion/deploy_refresh.sh`.
 - `docker/compose/docker-compose.deploy.yml`.
 - `docker/django/entrypoint.py`.
-- `scripts/crontab` como contrato versionado, no como prueba de instalacion.
+- `src/scripts/crontab` como contrato versionado, no como prueba de instalacion.
 
 Flujo actual confirmado por codigo y runner activo:
 
@@ -266,7 +266,7 @@ Valida host/entorno, solo actua con `/` al 80% o mas, conserva 14 dias y no poda
 volumenes. Los eventos van al journal con tag `sisoc-qa-disk-cleanup`. El crontab
 de root no fue auditado.
 
-El archivo historico `scripts/crontab` no coincide con la instalacion real:
+El archivo historico `src/scripts/crontab` no coincide con la instalacion real:
 
 - limpieza diaria de logs;
 - `docker system prune` semanal;
@@ -307,7 +307,7 @@ Detectadas por configuracion/codigo versionado, no validadas con llamadas reales
 - base MySQL real, una vez identificada y respaldada consistentemente;
 - NGINX y configuracion de red/firewall;
 - definicion/registro del runner, sin copiar tokens del runner viejo;
-- cron efectivo, no solo `scripts/crontab`;
+- cron efectivo, no solo `src/scripts/crontab`;
 - logs solo si existe necesidad legal u operativa;
 - no depender de dumps locales antiguos; los dos detectados fueron eliminados con
   aprobacion y no eran backups validados.

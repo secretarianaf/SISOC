@@ -2,39 +2,39 @@ version = 1
 name = "SISOC Codex"
 
 [setup]
-script = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_bootstrap.ps1 -NoStart"
+script = "powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_bootstrap.ps1 -NoStart"
 
 [[actions]]
 name = "Bootstrap Codex"
 icon = "play"
-command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_bootstrap.ps1"
+command = "powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_bootstrap.ps1"
 
 [[actions]]
 name = "Levantar App Local"
 icon = "globe"
-command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 up --expose-ports"
+command = "powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_run.ps1 up --expose-ports"
 
 [[actions]]
 name = "Diagnosticar Entorno"
 icon = "terminal"
-command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_doctor.ps1"
+command = "powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_doctor.ps1"
 
 [[actions]]
 name = "Validar Harness"
 icon = "beaker"
-command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 validate"
+command = "powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_run.ps1 validate"
 
 [[actions]]
 name = "Ver Memoria IA"
 icon = "book"
-command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_context.ps1"
+command = "powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_context.ps1"
 
 [[actions]]
 name = "Tests Smoke"
 icon = "beaker"
-command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 smoke"
+command = "powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_run.ps1 smoke"
 
 [[actions]]
 name = "Abrir Shell Django"
 icon = "terminal"
-command = "powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 shell"
+command = "powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_run.ps1 shell"

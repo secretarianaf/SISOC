@@ -7,7 +7,7 @@ Estado: documentado; no se ejecuto deploy ni restart durante la auditoria.
 1. Un push o dispatch a `development` dispara `.github/workflows/deploy.yml`.
 2. El job usa el runner self-hosted `sisoc-qa` en `qa-old`.
 3. GitHub Environment `qa` aporta `APP_ROOT`.
-4. `scripts/operacion/deploy_refresh.sh` valida entorno, branch y Compose.
+4. `src/scripts/operacion/deploy_refresh.sh` valida entorno, branch y Compose.
 5. Ejecuta fetch, validacion Compose, `compose down`, pull `--ff-only`, build/up
    y `ps`.
 6. El entrypoint ejecuta migraciones y comandos con escritura en DB antes de
@@ -42,13 +42,13 @@ git -C /home/admin-ssies/sisoc-comedores-test/BACKOFFICE status --short --branch
 El wrapper no cambia nada sin flags:
 
 ```bash
-bash scripts/infra/deploy_qa.sh
+bash src/scripts/infra/deploy_qa.sh
 ```
 
 La ejecucion real requiere aprobacion explicita de deploy y de escrituras DB:
 
 ```bash
-bash scripts/infra/deploy_qa.sh --apply --acknowledge-db-writes
+bash src/scripts/infra/deploy_qa.sh --apply --acknowledge-db-writes
 ```
 
 No ejecutar este comando como parte de una auditoria o health check.

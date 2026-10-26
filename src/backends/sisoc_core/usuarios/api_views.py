@@ -1,7 +1,13 @@
 import logging
+from collections.abc import Mapping
 
-from drf_spectacular.utils import extend_schema
-from django.contrib.auth import authenticate
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    PolymorphicProxySerializer,
+    extend_schema,
+    inline_serializer,
+)
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from rest_framework import serializers, status, viewsets
@@ -12,10 +18,12 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from usuarios.api_serializers import (
+    LoginSerializer,
     PasswordChangeRequiredSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     UserContextSerializer,
+    contexto_espacios_valido,
 )
 from usuarios.auth_audit import (
     EVENTO_LOGIN_ERROR,
@@ -27,43 +35,19 @@ from usuarios.auth_audit import (
     registrar_evento_auth,
 )
 from usuarios.services_password_reset_pwa import request_password_reset_for_identity
+from usuarios.services_siis import SIISUserResponseSerializer
+from core.internal_services import pedir_json_interno
+
 from users.rate_limits import hit_rate_limit
-from users.profile_utils import get_profile_or_none
 from users.services_auth import (
     change_password_for_authenticated_user,
     confirm_password_reset,
 )
 from users.services_datacalle import tiene_acceso_datacalle
-from pwa.services.accesos import (
-    get_pwa_context,
-    is_pwa_user,
-    is_territorial_comedor_user,
-)
+from users.services_inspecciones import tiene_acceso_inspecciones
+from users.services_territorial_comedor import is_territorial_comedor_user
 
 logger = logging.getLogger("django")
-
-
-class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    password = serializers.CharField(write_only=True, trim_whitespace=False)
-
-    def _raise_read_only(self):
-        raise NotImplementedError("Serializer de solo lectura.")
-
-    def create(self, validated_data):
-        return self._raise_read_only()
-
-    def update(self, instance, validated_data):
-        return self._raise_read_only()
-
-    def validate(self, attrs):
-        user = authenticate(
-            username=attrs.get("username"), password=attrs.get("password")
-        )
-        if not user or not user.is_active:
-            raise AuthenticationFailed("Credenciales inválidas.")
-        attrs["user"] = user
-        return attrs
 
 
 @extend_schema(tags=["Auth"])
@@ -71,8 +55,57 @@ class UserLoginViewSet(viewsets.ViewSet):
     authentication_classes = []
     permission_classes = [AllowAny]
 
-    @extend_schema(request=LoginSerializer)
+    @extend_schema(
+        request=LoginSerializer,
+        parameters=[
+            OpenApiParameter(
+                name="Authorization",
+                location=OpenApiParameter.HEADER,
+                type=str,
+                description="Api-Key <clave válida>, obligatoria solo para app=siis.",
+            )
+        ],
+        responses={
+            200: PolymorphicProxySerializer(
+                component_name="UserLoginResponse",
+                resource_type_field_name=None,
+                serializers=[
+                    SIISUserResponseSerializer,
+                    inline_serializer(
+                        name="LegacyUserLoginResponse",
+                        fields={
+                            "token": serializers.CharField(),
+                            "token_type": serializers.CharField(),
+                            "user_id": serializers.IntegerField(),
+                            "username": serializers.CharField(),
+                        },
+                    ),
+                ],
+            ),
+            400: OpenApiResponse(description="Payload o aplicación inválidos."),
+            401: OpenApiResponse(
+                description="Credenciales inválidas o rechazo legacy."
+            ),
+            403: OpenApiResponse(description="SIIS: API key o habilitación inválidas."),
+            503: OpenApiResponse(
+                description="Espacios comunitarios no disponible; elegibilidad sin confirmar."
+            ),
+            429: OpenApiResponse(
+                description="SIIS: demasiados intentos por identidad."
+            ),
+        },
+    )
     def create(self, request):
+        if not isinstance(request.data, Mapping):
+            return Response(
+                {"detail": "El cuerpo debe ser un objeto JSON."}, status=400
+            )
+        if request.data.get("app") == "siis":
+            from usuarios.siis_api_views import siis_login
+
+            return siis_login(request, self)
+        if "app" in request.data:
+            return Response({"detail": "Aplicación no admitida."}, status=400)
         serializer = LoginSerializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)
@@ -96,29 +129,14 @@ class UserLoginViewSet(viewsets.ViewSet):
             )
             return response
         user = serializer.validated_data["user"]
-        # RN05: el criterio de acceso a la app es el rol, no el flag. El flag
-        # (es_relevador_calle) lo llevan los tres roles por contrato con la
-        # app, pero si algun dia queda seteado sin rol, no debe alcanzar.
-        if (
-            not is_pwa_user(user)
-            and not is_territorial_comedor_user(user)
-            and not tiene_acceso_datacalle(user)
+        # Las capacidades de los demás programas se resuelven en identidad.
+        # No consultar Comedores como condición de éxito de esos usuarios.
+        if not (
+            tiene_acceso_datacalle(user)
+            or tiene_acceso_inspecciones(user)
+            or is_territorial_comedor_user(user)
         ):
-            detail = "Este usuario no tiene acceso PWA activo."
-            response = Response(
-                {"detail": detail},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-            registrar_evento_auth(
-                request=request,
-                evento=EVENTO_LOGIN_ERROR,
-                resultado=RESULTADO_ERROR,
-                user=user,
-                username_intentado=request.data.get("username"),
-                codigo_respuesta=response.status_code,
-                motivo_error=detail,
-            )
-            return response
+            return self._login_espacios(request, user, serializer.validated_data)
 
         token, _ = Token.objects.get_or_create(user=user)
         response = Response(
@@ -139,6 +157,60 @@ class UserLoginViewSet(viewsets.ViewSet):
             codigo_respuesta=response.status_code,
         )
         return response
+
+    def _login_espacios(self, request, user, credentials):
+        result = pedir_json_interno(
+            request,
+            "pwa",
+            "/interno/espacios/login/",
+            method="POST",
+            data={
+                "username": credentials["username"],
+                "password": credentials["password"],
+            },
+        )
+        if result.status == 200 and isinstance(result.data, dict):
+            payload = result.data.get("login", {})
+            if not isinstance(payload, dict):
+                payload = {}
+            if (
+                payload.get("user_id") == user.id
+                and payload.get("username") == user.username
+                and payload.get("token_type") == "Token"
+                and isinstance(payload.get("token"), str)
+                and Token.objects.filter(key=payload["token"], user=user).exists()
+            ):
+                registrar_evento_auth(
+                    request=request,
+                    evento=EVENTO_LOGIN_OK,
+                    resultado=RESULTADO_OK,
+                    user=user,
+                    username_intentado=user.username,
+                    codigo_respuesta=200,
+                    contexto=result.data.get("pwa"),
+                )
+                return Response(
+                    {
+                        key: payload[key]
+                        for key in ("token", "token_type", "user_id", "username")
+                    }
+                )
+        code = 401 if result.status == 401 else 503
+        detail = (
+            "Este usuario no tiene acceso PWA activo."
+            if code == 401
+            else "Espacios comunitarios no está disponible. Intente nuevamente."
+        )
+        registrar_evento_auth(
+            request=request,
+            evento=EVENTO_LOGIN_ERROR,
+            resultado=RESULTADO_ERROR,
+            user=user,
+            username_intentado=user.username,
+            codigo_respuesta=code,
+            motivo_error=detail,
+        )
+        return Response({"detail": detail}, status=code)
 
 
 @extend_schema(tags=["Auth"])
@@ -171,36 +243,20 @@ class UserContextViewSet(viewsets.ViewSet):
 
     @extend_schema(responses=UserContextSerializer)
     def list(self, request):
-        try:
-            serializer = UserContextSerializer(request.user)
-            payload = serializer.data
-        except (
-            Exception
-        ):  # pragma: no cover - fallback defensivo para no cortar login PWA
-            logger.exception(
-                "Fallo serializando /api/users/me/ para user_id=%s",
-                getattr(request.user, "id", None),
+        result = pedir_json_interno(request, "pwa", "/interno/espacios/contexto/")
+        data = result.data
+        available = result.status == 200 and contexto_espacios_valido(data)
+        if not available:
+            logger.warning(
+                "Contexto de Espacios no disponible para user_id=%s", request.user.pk
             )
-            profile = get_profile_or_none(request.user)
-            try:
-                pwa_context = get_pwa_context(request.user)
-            except Exception:  # pragma: no cover - fallback ultra defensivo
-                pwa_context = {"roles": [], "read_only": False}
-            payload = {
-                "id": getattr(request.user, "id", None),
-                "username": getattr(request.user, "username", ""),
-                "email": getattr(request.user, "email", ""),
-                "first_name": getattr(request.user, "first_name", ""),
-                "last_name": getattr(request.user, "last_name", ""),
-                "pwa": {
-                    "roles": pwa_context["roles"],
-                    "read_only": pwa_context["read_only"],
-                    "must_change_password": bool(
-                        getattr(profile, "must_change_password", False)
-                    ),
-                },
-                "permissions": [],
-            }
+        payload = UserContextSerializer(
+            request.user,
+            context={
+                "espacios": data if available else {},
+                "espacios_disponible": available,
+            },
+        ).data
         response = Response(payload, status=status.HTTP_200_OK)
         registrar_evento_auth(
             request=request,
@@ -208,6 +264,7 @@ class UserContextViewSet(viewsets.ViewSet):
             resultado=RESULTADO_OK,
             user=request.user,
             codigo_respuesta=response.status_code,
+            contexto=data["pwa"] if available else None,
         )
         return response
 

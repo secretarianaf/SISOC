@@ -319,7 +319,7 @@
     ]
   },
   "nivelEducativo": {
-    "$comentario": "Formulario FINAL PAPEL, IV.9: las 10 opciones del papel ya existían con el mismo código. 'Otro' y 'No sabe / no contesta' quedan retiradas (el papel no las tiene); se conservan para leer y reenviar el histórico.",
+    "$comentario": "Formulario FINAL PAPEL, IV.9, con la ENMIENDA 2026-10-01 del área (docs/FORMULARIO-FINAL-PAPEL.md, 'Enmiendas del área posteriores a la entrega'): las 10 opciones del papel ya existían con el mismo código, y 'Otro' vuelve a ofrecerse porque el área lo pidió. Va SIN campo abierto, igual que el 'Otro' de la 1: el área no pidió ninguno y no se inventa una clave. 'No sabe / no contesta' sigue retirada (el papel no la tiene y el área no la pidió); se conserva para leer y reenviar el histórico.",
     "opciones": [
       {
         "codigo": "primarioIncompleto",
@@ -363,8 +363,7 @@
       },
       {
         "codigo": "otro",
-        "etiqueta": "Otro",
-        "retirada": true
+        "etiqueta": "Otro"
       },
       {
         "codigo": "nsnc",
@@ -1011,15 +1010,11 @@
     ]
   },
   "programaSocialPropio": {
-    "$comentario": "Formulario FINAL PAPEL, VII.25 — subopciones de 'Programa Social'. Los códigos `volverAlTrabajo` y `acompanamientoSocial` son los mismos del catálogo `programaSocial`, que se conserva entero para leer el histórico AppSheet (lista plana, sin padre).",
+    "$comentario": "Formulario FINAL PAPEL, VII.25 — subopciones de 'Programa Social'. Los códigos `volverAlTrabajo` y `acompanamientoSocial` son los mismos del catálogo `programaSocial`, que se conserva entero para leer el histórico AppSheet (lista plana, sin padre). 4.1.1 (SISOC#2724): el área reemplaza 'Volver al trabajo' por 'Programa Local / Provincial', con código propio porque es otro programa; `volverAlTrabajo` queda retirada para leer y reenviar los casos ya guardados.",
     "opciones": [
       {
-        "codigo": "volverAlTrabajo",
-        "etiqueta": "Volver al trabajo",
-        "legacy": [
-          "Volver al Trabajo",
-          "Programa Social: Volver al trabajo"
-        ]
+        "codigo": "programaLocalProvincial",
+        "etiqueta": "Programa Local / Provincial"
       },
       {
         "codigo": "acompanamientoSocial",
@@ -1031,6 +1026,15 @@
       {
         "codigo": "otros",
         "etiqueta": "Otros"
+      },
+      {
+        "codigo": "volverAlTrabajo",
+        "etiqueta": "Volver al trabajo",
+        "legacy": [
+          "Volver al Trabajo",
+          "Programa Social: Volver al trabajo"
+        ],
+        "retirada": true
       }
     ]
   },
@@ -1068,7 +1072,7 @@
     ]
   },
   "varianteCuestionario": {
-    "$comentario": "Formulario FINAL PAPEL: hay UN solo cuestionario. `adolescente`, `sietePreguntas` y `finAnticipado` quedan retiradas, conservando código y etiqueta para leer los casos ya guardados.",
+    "$comentario": "4.1.0 (SISOC#2664): `adolescente` vuelve como formulario de menores (14 a 17 años que aceptan responder). `sietePreguntas` y `finAnticipado` siguen retiradas, conservando código y etiqueta para leer los casos ya guardados.",
     "opciones": [
       {
         "codigo": "completo",
@@ -1095,8 +1099,7 @@
       },
       {
         "codigo": "adolescente",
-        "etiqueta": "Formulario abreviado (menores de 18 años)",
-        "retirada": true
+        "etiqueta": "Formulario de menores (14 a 17 años)"
       }
     ]
   },
@@ -1445,7 +1448,7 @@
     ]
   },
   "realizaEntrevista": {
-    "$comentario": "Formulario FINAL PAPEL, III.1. Los cuatro motivos del papel van literales. `noRotundo` y `yaEntrevistada` SE CONSERVAN por decisión del juez (DECISIÓN CLIENTE 8.1): el papel encabeza la pregunta con 'si la persona no quiere o no puede responder', y sin una opción para el rechazo voluntario el encuestador tendría que marcar un motivo falso. `otro` queda retirada, para leer y reenviar el histórico.",
+    "$comentario": "Formulario FINAL PAPEL, III.1, con la ENMIENDA 2026-10-01 del área (docs/FORMULARIO-FINAL-PAPEL.md, 'Enmiendas del área posteriores a la entrega'). Los cuatro motivos del papel van literales. `noRotundo` SE CONSERVA (DECISIÓN CLIENTE 8.1, que el área no pidió revertir): el papel encabeza la pregunta con 'si la persona no quiere o no puede responder', y sin una opción para el rechazo voluntario el encuestador tendría que marcar un motivo falso. `yaEntrevistada` la retira el área por la enmienda: deja de ofrecerse y se conserva para leer y reenviar el histórico. `otro` vuelve a ofrecerse por la misma enmienda, con la etiqueta 'Otro' a secas: el área la pidió SIN campo abierto, por eso no dice '(especificar)' y `otroMotivoNoEntrevista` sigue `soloHistorico`.",
     "opciones": [
       {
         "codigo": "si",
@@ -1479,13 +1482,16 @@
       },
       {
         "codigo": "yaEntrevistada",
-        "etiqueta": "Dice que ya fue entrevistada en esta ronda"
+        "etiqueta": "Dice que ya fue entrevistada en esta ronda",
+        "retirada": true
       },
       {
         "codigo": "otro",
-        "etiqueta": "Otro (especificar)",
+        "etiqueta": "Otro",
         "otro": true,
-        "retirada": true
+        "legacy": [
+          "Otro (especificar)"
+        ]
       }
     ]
   },

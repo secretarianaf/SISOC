@@ -23,7 +23,7 @@ responsable. No se propone ni ejecuta ningun cambio TLS en esta fase.
 
 ### 3. Cron root combina runtime vigente con paths historicos
 
-Root tiene cuatro entradas que coinciden por familia con `scripts/crontab`:
+Root tiene cuatro entradas que coinciden por familia con `src/scripts/crontab`:
 HetrixTools, poda Docker, limpieza en un path `/home/admin-ssies` inexistente y
 `purge_auditlog` desde un path `/opt/ssies` inexistente. El contrato versionado
 incluye `docker system prune` con 24h y `--volumes`.

@@ -31,7 +31,7 @@ class Command(BaseCommand):
             result = subprocess.run(
                 [
                     sys.executable,
-                    str(base_dir / "scripts/arquitectura/generar_mapa.py"),
+                    str(base_dir / "src/scripts/arquitectura/generar_mapa.py"),
                 ],
                 cwd=settings.BASE_DIR,
                 timeout=120,

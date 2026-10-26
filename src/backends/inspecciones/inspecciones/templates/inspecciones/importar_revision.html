@@ -1,0 +1,55 @@
+{% extends "inspecciones/base_panel.html" %}
+{% block panel %}
+    <section class="insp-dialogo" aria-labelledby="insp-importar-titulo">
+        <div class="insp-dialogo-cabecera">
+            <h2 id="insp-importar-titulo">{{ config.titulo }}</h2>
+            <form method="post" action="{% url url_cancelar token %}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="insp-dialogo-cerrar"
+                        aria-label="Cerrar y descartar el archivo">×</button>
+            </form>
+        </div>
+        <div class="insp-dialogo-cuerpo">
+            {% include "inspecciones/partials/pasos_importacion.html" with paso=2 %}
+            <div class="insp-archivo">
+                <i class="fas fa-file-alt" aria-hidden="true"></i>
+                <div class="insp-espacio">
+                    <strong>{{ nombre_archivo }}</strong> · {{ resumen.total }} filas · encabezado en la fila {{ resumen.fila_encabezado }}
+                </div>
+                <a href="{% url url_subir %}">Cambiar archivo</a>
+            </div>
+            {% include "inspecciones/partials/resumen_importacion.html" %}
+        </div>
+        <div class="insp-dialogo-pie">
+            <div>
+                {% if total_observaciones %}
+                    <a href="{% url url_observaciones token %}">
+                        <i class="fas fa-download" aria-hidden="true"></i> Descargar las {{ total_observaciones }} observaciones (CSV)
+                    </a>
+                {% endif %}
+            </div>
+            <div class="insp-acciones">
+                <form method="post" action="{% url url_cancelar token %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-link">Cancelar</button>
+                </form>
+                <form method="post"
+                      action="{% url url_confirmar token %}"
+                      data-insp-procesando="Guardando… puede tardar unos segundos.">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="btn btn-primary"
+                            {% if not resumen.a_importar %}disabled{% endif %}>
+                        Importar {{ resumen.a_importar }}
+                        {% if tipo == "escuelas" %}
+                            escuelas
+                        {% else %}
+                            asignaciones
+                        {% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+{% endblock %}

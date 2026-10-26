@@ -1,20 +1,34 @@
 import logging
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.core.exceptions import ValidationError
-from django.shortcuts import get_object_or_404
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 from django.views.generic import FormView
 
 from centrodeinfancia.access import (
     GRUPO_CDI_REFERENTE_CENTRO,
+    es_auditor_simepi,
+    es_responsable_cdi,
     puede_generar_usuario_cdi,
     usuarios_cdi_restantes,
 )
 from centrodeinfancia.forms_generar_usuario import GenerarUsuarioCDIForm
 from centrodeinfancia.models import AccesoCDI, CentroDeInfancia
+from centrodeinfancia.services_renaper_bloques import BLOQUE_USUARIO
+from centrodeinfancia.views import _RenaperBloquesFormMixin
+from centrodeinfancia.services_accesos_cdi import (
+    ACCION_BAJA,
+    ACCION_REACTIVAR,
+    ACCION_SUSPENDER,
+    asignar_responsable,
+    cambiar_estado_acceso,
+)
 from users.services_generate_user import (
     DatosUsuarioDelegado,
     generar_usuario_delegado,
@@ -23,12 +37,23 @@ from users.services_generate_user import (
 logger = logging.getLogger("django")
 
 
-class GenerarUsuarioCDIView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+class GenerarUsuarioCDIView(
+    LoginRequiredMixin, UserPassesTestMixin, _RenaperBloquesFormMixin, FormView
+):
     """Genera un usuario "CDI - Referente centro" precargado para un CDI."""
 
     template_name = "centrodeinfancia/generar_usuario_cdi.html"
     form_class = GenerarUsuarioCDIForm
     raise_exception = True
+    renaper_bloques = (BLOQUE_USUARIO,)
+
+    # Campo de la ficha del CDI -> campo de este formulario.
+    _CAMPOS_REFERENTE_FICHA = {
+        "nombre_referente": "first_name",
+        "apellido_referente": "last_name",
+        "dni_referente": "dni",
+        "cuil_referente": "cuil",
+    }
 
     def dispatch(self, request, *args, **kwargs):
         self.centro = get_object_or_404(CentroDeInfancia, pk=kwargs["pk"])
@@ -51,6 +76,28 @@ class GenerarUsuarioCDIView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             "cuil": self.centro.cuil_referente or "",
         }
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if not kwargs.get("valores_renaper"):
+            kwargs["valores_renaper"] = self._valores_verificados_de_la_ficha()
+        return kwargs
+
+    def _valores_verificados_de_la_ficha(self):
+        """Identidad del referente de la ficha que ya validó RENAPER.
+
+        Solo para el primer usuario, que se precarga con el referente: si la
+        ficha tiene esos datos verificados, se muestran como verificados sin
+        pedir una nueva consulta. Salen de la base, no del POST.
+        """
+        if AccesoCDI.objects.filter(centro=self.centro).exists():
+            return {}
+        verificados = set(self.centro.campos_verificados_renaper or [])
+        return {
+            campo_form: getattr(self.centro, campo_ficha)
+            for campo_ficha, campo_form in self._CAMPOS_REFERENTE_FICHA.items()
+            if campo_ficha in verificados and getattr(self.centro, campo_ficha)
+        }
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["centro"] = self.centro
@@ -59,6 +106,20 @@ class GenerarUsuarioCDIView(LoginRequiredMixin, UserPassesTestMixin, FormView):
 
     def get_success_url(self):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.centro.pk})
+
+    def _vincular_usuario(self, nuevo_usuario):
+        with transaction.atomic():
+            # Las altas simultáneas deben decidir sobre el mismo estado del CDI.
+            CentroDeInfancia.objects.select_for_update().get(pk=self.centro.pk)
+            acceso = AccesoCDI.objects.create(
+                user=nuevo_usuario,
+                centro=self.centro,
+                creado_por=self.request.user,
+            )
+            if not AccesoCDI.objects.filter(
+                centro=self.centro, es_responsable=True, activo=True
+            ).exists():
+                asignar_responsable(acceso)
 
     def form_valid(self, form):
         datos = DatosUsuarioDelegado(
@@ -73,13 +134,14 @@ class GenerarUsuarioCDIView(LoginRequiredMixin, UserPassesTestMixin, FormView):
                 actor=self.request.user,
                 datos=datos,
                 grupo_nombre=GRUPO_CDI_REFERENTE_CENTRO,
-                vinculo_callback=lambda nuevo_usuario: AccesoCDI.objects.create(
-                    user=nuevo_usuario,
-                    centro=self.centro,
-                    creado_por=self.request.user,
-                ),
+                vinculo_callback=self._vincular_usuario,
                 limite_check=lambda: usuarios_cdi_restantes(self.centro) > 0,
                 request=self.request,
+                # El responsable genera referentes solo para su CDI (ya validado
+                # en test_func) sin tener la delegación del grupo en general.
+                delegacion_autorizada=es_responsable_cdi(
+                    self.request.user, self.centro
+                ),
             )
         except ValidationError as exc:
             for mensaje in exc.messages:
@@ -102,3 +164,44 @@ class GenerarUsuarioCDIView(LoginRequiredMixin, UserPassesTestMixin, FormView):
                 "puede_generar_otro": usuarios_cdi_restantes(self.centro) > 0,
             },
         )
+
+
+_MENSAJES_ACCION = {
+    ACCION_SUSPENDER: "suspendido",
+    ACCION_REACTIVAR: "reactivado",
+    ACCION_BAJA: "dado de baja",
+}
+
+
+@login_required
+@require_POST
+def cambiar_estado_usuario_cdi(request, pk, acceso_id):
+    """Botonera de "Usuarios del centro": suspender, reactivar o dar de baja.
+
+    Los permisos y las reglas (propio usuario, responsable, estados válidos) los
+    aplica ``cambiar_estado_acceso``.
+    """
+    if es_auditor_simepi(request.user):
+        raise PermissionDenied("El rol Auditoría tiene acceso de solo lectura.")
+    centro = get_object_or_404(CentroDeInfancia, pk=pk)
+    acceso = get_object_or_404(
+        AccesoCDI.objects.select_related("user", "centro"), pk=acceso_id, centro=centro
+    )
+    accion = request.POST.get("accion", "")
+    try:
+        cambiar_estado_acceso(
+            actor=request.user,
+            acceso=acceso,
+            accion=accion,
+            motivo=request.POST.get("motivo", ""),
+        )
+    except ValidationError as exc:
+        messages.error(request, " ".join(exc.messages))
+    else:
+        messages.success(
+            request,
+            f"Usuario «{acceso.user.username}» {_MENSAJES_ACCION[accion]}.",
+        )
+    return redirect(
+        reverse("centrodeinfancia_detalle", kwargs={"pk": centro.pk}) + "#usuarios"
+    )

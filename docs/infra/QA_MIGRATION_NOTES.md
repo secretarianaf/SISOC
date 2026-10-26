@@ -25,7 +25,7 @@ Estas notas no autorizan una migracion. La fuente canonica confirmada es
 | `.env` | Transferencia por canal seguro fuera de Git; validar owner/modo 600 en destino. No copiar a backups versionados. |
 | Base MySQL autoritativa | Dump consistente o mecanismo acordado con Infra, solo tras confirmar host/schema y aprobar la operacion. |
 | NGINX | Respaldar `nginx.conf`, `sites-available/staging.conf`, symlinks habilitados y metadata. |
-| Cron efectivo | Exportar root/`sisoc-deploy` con redaccion de secretos; no alcanza con `scripts/crontab`. |
+| Cron efectivo | Exportar root/`sisoc-deploy` con redaccion de secretos; no alcanza con `src/scripts/crontab`. |
 | Configuracion systemd | Runner y cualquier unidad SISOC/custom; preferir reinstalar runner. |
 | Logs | Solo si hay requisito operativo, legal o de auditoria; no son necesarios para arrancar. |
 | Evidencia de versiones | SO, Docker, Compose, NGINX, MySQL, imagen Python y commit desplegado. |

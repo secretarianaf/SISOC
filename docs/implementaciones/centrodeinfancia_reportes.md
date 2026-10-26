@@ -52,7 +52,7 @@ las que ya estaban:
 | `renaper_nino_motivo` | Por qué el indicador del niño/a no dice "Sí". Vacío cuando está validado. |
 
 Las primeras tres se calculan con
-`centrodeinfancia/services_renaper_estado.py`, el mismo servicio que usa el PDF
+`src/backends/cdi/centrodeinfancia/services_renaper_estado.py`, el mismo servicio que usa el PDF
 provincial de nómina infantil. Por eso coinciden con él para las columnas que
 ambos publican.
 
@@ -103,7 +103,7 @@ demás. Tenerlo tampoco alcanza para entrar acá.
 
 Lo reciben SIMEPI Administrador, Analista de datos, Equipo Nacional, Auditoría y
 EGP, más Admin para que los perfiles administrativos no pierdan el acceso
-(`users/migrations/0052_bootstrap_reportes_cdi_permission.py`).
+(`src/backends/kernel/users/migrations/0052_bootstrap_reportes_cdi_permission.py`).
 
 Los roles CDI locales —Referente centro y Trabajador— **no** lo reciben: el
 módulo se pensó para el equipo nacional y provincial. Dárselo es una decisión
@@ -133,10 +133,10 @@ asincrónica antes que optimizar consultas.
 
 ## Referencias de implementación
 
-- `centrodeinfancia/services_reportes.py`: columnas, alcance y armado del libro.
-- `centrodeinfancia/views_reportes.py`: pantalla, permiso de exportación y
+- `src/backends/cdi/centrodeinfancia/services_reportes.py`: columnas, alcance y armado del libro.
+- `src/backends/cdi/centrodeinfancia/views_reportes.py`: pantalla, permiso de exportación y
   cabeceras de la descarga.
-- `centrodeinfancia/tests/test_reportes.py`: contrato de columnas, alcance por
+- `src/backends/cdi/centrodeinfancia/tests/test_reportes.py`: contrato de columnas, alcance por
   rol, indicadores RENAPER y permisos.
 - `docs/implementaciones/centrodeinfancia_nomina_renaper.md`: cómo se alimenta
   el estado de validación que estas columnas leen.

@@ -79,12 +79,16 @@ RESPUESTAS_HISTORICAS = {
 
 
 def test_la_copia_local_esta_en_la_version_del_contrato():
-    assert get_version() == "4.0.0"
+    # 4.1.0 (#2664) suma el formulario de menores sin claves nuevas; ver
+    # test_datacalle_instrumento_4_1_0.py. Las retiradas son 28 y no 27 por la
+    # ENMIENDA del área del 1/10, que llegó con esa misma sincronización.
+    # 4.1.1 (#2724) solo cambia una opción de la 25.
+    assert get_version() == "4.1.1"
     diccionario = json.loads(
         (RUTA_INSTRUMENTO / "diccionario-respuestas.json").read_text(encoding="utf-8")
     )
     assert len(diccionario) == 88
-    assert sum(1 for campo in diccionario if campo["soloHistorico"]) == 27
+    assert sum(1 for campo in diccionario if campo["soloHistorico"]) == 28
 
 
 def test_un_caso_4_0_0_se_lee_con_las_claves_nuevas():

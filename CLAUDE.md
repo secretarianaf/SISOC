@@ -1,63 +1,34 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guía para Claude Code en este repositorio.
 
-Fuente de verdad para comportamiento de IA: `AGENTS.md`.
+**Leer `AGENTS.md` antes de cualquier tarea.** Es la fuente de verdad para agentes: arranque mínimo, reglas de código, verticales independientes, documentación y validación. Este archivo solo agrega lo específico de Claude Code; si algo de acá contradice `AGENTS.md`, vale `AGENTS.md`.
 
-## Arranque mínimo
+## Específico de Claude Code
 
-1. `AGENTS.md`
-2. `docs/indice.md`
-3. archivo objetivo + tests cercanos
-4. una guía relevante de `docs/ia/` según la tarea
-5. ampliar solo con evidencia concreta
+- Partir de `development` actualizado. `.claude/settings.json` fija `worktree.baseRef: fresh` para los worktrees que crea Claude Code; igual confirmar la base antes de abrir el PR.
+- Skills: `.claude/skills/` es una copia generada de `.agents/skills/`. Editar la fuente y correr `python src/scripts/ai/sync_skills.py` (ver `docs/ia/SKILLS.md`).
+- `.claude/settings.json` permite `docker compose *` sin confirmación; `.claude/settings.local.json` es personal y está ignorado por Git.
 
 ## Comandos
 
+En un entorno local aislado (`docker compose up`). Son los mismos chequeos que corre CI (`.github/workflows/lint.yml` y `tests.yml`).
+
 ```bash
-# Levantar el stack local
-docker compose up
-
-# Ejecutar todos los tests (paralelo)
+# Tests: todos en paralelo, un archivo, smoke o MySQL real
 docker compose exec django pytest -n auto
-
-# Ejecutar un archivo de tests específico
-docker compose exec django pytest src/backends/<kernel|vertical>/tests/test_<modulo>.py -v
-
-# Solo tests smoke (sin DB real)
+docker compose exec django pytest src/backends/<dueño>/tests/test_<modulo>.py -v
 docker compose exec django pytest -m smoke
-
-# Tests que requieren MySQL real (CI)
 docker compose exec django pytest -m mysql_compat
 
-# Formatear Python
-black .
+# Migraciones sin cambios pendientes
+docker compose exec django python manage.py makemigrations --check --dry-run
 
-# Lint Python
-pylint <app>/
+# Formato y lint de los archivos tocados
+docker compose exec django black --config pyproject.toml <archivos.py>
+docker compose exec django pylint --rcfile=.pylintrc <archivos.py>
+docker compose exec django djlint <templates.html> --check --configuration=.djlintrc
 
-# Lint templates Django
-djlint src/backends/kernel/templates/ --check
+# Rutas citadas en los docs tocados
+python src/scripts/ci/check_docs_paths.py --existencia <docs.md>
 ```
-
-## Arquitectura
-
-Django 5.2 + MySQL 8.4, desplegado con Docker Compose. Python 3.11+.
-
-**Organización de apps:** cada dominio de negocio es una Django app propia (`src/backends/sisoc_core/comedores/`, `src/backends/pas/pas/`, `src/backends/kernel/users/`, etc.). La lógica de negocio vive en `<app>/services/`, nunca en views ni modelos. Las views son CBVs sin lógica. DRF coexiste con las views tradicionales; los serializers van en `api_serializers.py` y las API views en `api_views.py`.
-
-**Core compartido:** `src/backends/kernel/core/` expone utilidades reutilizables (soft delete, permisos, cache, auth de API, validadores). No duplicar lo que ya existe ahí.
-
-**Estructura (#1931/#2251/#2639):** todo el código vive en `src/`. `src/backends/kernel/` contiene el código común (`core`, `users`, `iam`, `ciudadanos`, `audittrail`) y los templates/static compartidos; el cluster de Comedores y los servicios propios del core van a `src/backends/sisoc_core/`, cada vertical a `src/backends/<vertical>/` y cada front a `src/frontends/apps/<modulo>/`. Los imports no cambian (`import core`, `import users`): `src/backends/config/__init__.py` agrega el kernel y los verticales al `sys.path`. Ver `docs/registro/decisiones/2026-10-02-estructura-src-backends.md`.
-
-**Configuración central:** `src/backends/config/settings.py` centraliza DB, cache, middleware, apps instaladas, logging custom e integraciones externas (GESTIONAR, RENAPER, Sentry, PWA). El stack de middleware define contexto de seguridad, sesión, auditoría y thread-locals en ese orden — el orden importa.
-
-**Tests:** junto a su dueño: los transversales en `src/backends/kernel/tests/`, los de cada vertical en `src/backends/<vertical>/tests/` o dentro de la app; los fixtures globales están en el `conftest.py` raíz. SQLite in-memory por defecto; el marker `mysql_compat` activa MySQL real. `pytest --reuse-db` reutiliza el schema entre corridas para acelerar.
-
-**Registro de cambios:** todo cambio funcional visible, decisión de arquitectura o trade-off importante debe registrarse en `docs/registro/` (ver `docs/registro/README.md`).
-
-## Reglas cortas
-
-- No inventar modelos, endpoints, permisos ni settings sin evidencia en el repo o pedido explícito.
-- Cambios pequeños y revisables; no mezclar feature + refactor + formateo masivo.
-- Respetar `docs/ia/CONTEXT_HYGIENE.md` para decidir cuánto contexto cargar.

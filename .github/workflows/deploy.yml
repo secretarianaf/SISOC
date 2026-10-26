@@ -55,7 +55,7 @@ jobs:
                   fi
                   previous_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   git -C "$APP_ROOT" merge --ff-only origin/development
-                  SISOC_ROOT_DIR="$APP_ROOT" bash "$APP_ROOT/scripts/operacion/deploy_verified.sh" \
+                  SISOC_ROOT_DIR="$APP_ROOT" bash "$APP_ROOT/src/scripts/operacion/deploy_verified.sh" \
                       --environment qa \
                       --expected-revision "$EXPECTED_SHA" \
                       --rollback-revision "$previous_sha" \
@@ -97,7 +97,7 @@ jobs:
                       show_django_diagnostics
                       exit 1
                   fi
-                  wait_for "healthcheck de QA" 30 bash "$APP_ROOT/scripts/infra/healthcheck_qa.sh"
+                  wait_for "healthcheck de QA" 30 bash "$APP_ROOT/src/scripts/infra/healthcheck_qa.sh"
                   wait_for "Front v2 VPSL de QA" 30 docker compose -f "$APP_ROOT/docker/compose/docker-compose.deploy.yml" --project-directory "$APP_ROOT" exec -T front_vpsl wget -q -O /dev/null http://127.0.0.1:8080/v2/vpsl/
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
@@ -147,7 +147,7 @@ jobs:
                   git -C "$APP_ROOT" diff --quiet
                   git -C "$APP_ROOT" diff --cached --quiet
                   deploy_script="$(mktemp "${RUNNER_TEMP:-/tmp}/sisoc-deploy-verified.XXXXXXXX")"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_verified.sh" > "$deploy_script"
+                  git -C "$APP_ROOT" show "$EXPECTED_SHA:src/scripts/operacion/deploy_verified.sh" > "$deploy_script"
                   SISOC_ROOT_DIR="$APP_ROOT" bash "$deploy_script" \
                       --environment homologacion \
                       --expected-revision "$EXPECTED_SHA"
@@ -189,7 +189,7 @@ jobs:
                       show_django_diagnostics
                       exit 1
                   fi
-                  wait_for "healthcheck de HML" 30 bash "$APP_ROOT/scripts/infra/healthcheck_hml.sh"
+                  wait_for "healthcheck de HML" 30 bash "$APP_ROOT/src/scripts/infra/healthcheck_hml.sh"
                   wait_for "Front v2 VPSL de HML" 30 docker compose -f "$APP_ROOT/docker/compose/docker-compose.deploy.yml" -f "$APP_ROOT/docker/compose/docker-compose.produccion.yml" --project-directory "$APP_ROOT" exec -T front_vpsl wget -q -O /dev/null http://127.0.0.1:8080/v2/vpsl/
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
@@ -238,7 +238,7 @@ jobs:
                   git -C "$APP_ROOT" diff --quiet
                   git -C "$APP_ROOT" diff --cached --quiet
                   deploy_script="$(mktemp "${RUNNER_TEMP:-/tmp}/sisoc-deploy-verified.XXXXXXXX")"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_verified.sh" > "$deploy_script"
+                  git -C "$APP_ROOT" show "$EXPECTED_SHA:src/scripts/operacion/deploy_verified.sh" > "$deploy_script"
                   SISOC_ROOT_DIR="$APP_ROOT" bash "$deploy_script" \
                       --environment production \
                       --expected-revision "$EXPECTED_SHA"
@@ -280,7 +280,7 @@ jobs:
                       show_django_diagnostics
                       exit 1
                   fi
-                  if ! wait_for "healthcheck de produccion" 30 bash "$APP_ROOT/scripts/infra/healthcheck_prod.sh"; then
+                  if ! wait_for "healthcheck de produccion" 30 bash "$APP_ROOT/src/scripts/infra/healthcheck_prod.sh"; then
                       show_django_diagnostics
                       exit 1
                   fi
@@ -333,7 +333,7 @@ jobs:
               with:
                 github-token: ${{ steps.app-token.outputs.token }}
                 script: |
-                    const { run } = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/sync_main_downstream.js`);
+                    const { run } = require(`${process.env.GITHUB_WORKSPACE}/src/scripts/github/sync_main_downstream.js`);
                     await run({
                       github,
                       context,
@@ -379,7 +379,7 @@ jobs:
               with:
                 github-token: ${{ steps.app-token.outputs.token }}
                 script: |
-                    const { run } = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/sync_main_downstream.js`);
+                    const { run } = require(`${process.env.GITHUB_WORKSPACE}/src/scripts/github/sync_main_downstream.js`);
                     await run({
                       github,
                       context,

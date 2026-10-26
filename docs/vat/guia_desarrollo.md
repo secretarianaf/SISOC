@@ -528,7 +528,7 @@ Auth: API Key (`HasAPIKey`).
 
 ### 7.5 Tests
 
-- `VAT/tests.py` → vacío.
+- `src/backends/vat/VAT/tests.py` → vacío.
 - Tests globales relacionados: `test_beneficiarios_service_unit.py`, `test_centro_views_unit.py`, `test_consulta_renaper_unit.py`.
 
 ---

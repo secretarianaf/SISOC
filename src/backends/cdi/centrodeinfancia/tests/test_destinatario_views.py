@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 from django import forms
@@ -12,6 +13,7 @@ from centrodeinfancia.models import (
     NOMINA_VACUNAS,
     CentroDeInfancia,
     NominaCentroInfancia,
+    calcular_edad_y_unidad,
 )
 from centrodeinfancia.tests.test_destinatario_form import datos_validos
 from core.models import Provincia
@@ -509,3 +511,78 @@ class TestNominaCentroInfanciaDestinatarioDetailView:
             kwargs={"pk": centro.pk, "nomina_id": nomina_otro.pk},
         )
         assert client.get(url).status_code in (404, 403)
+
+
+# ─────────────────────────────────────────────────────────
+# Edad en el detalle del destinatario
+# ─────────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "fecha_nacimiento,esperado",
+    [
+        (date(2026, 2, 6), (8, "meses")),
+        (date(2025, 10, 7), (11, "meses")),  # un día antes del primer año
+        (date(2025, 10, 6), (1, "anios")),
+        (date(2024, 3, 15), (2, "anios")),
+    ],
+)
+def test_calcular_edad_y_unidad(fecha_nacimiento, esperado):
+    assert calcular_edad_y_unidad(fecha_nacimiento, hoy=date(2026, 10, 6)) == esperado
+
+
+@pytest.mark.django_db
+def test_detalle_muestra_la_edad_calculada(usuario_view, centro, nomina):
+    # Dos años y un mes: robusto a años bisiestos y al día en que corra el test.
+    nomina.fecha_nacimiento = date.today() - timedelta(days=365 * 2 + 31)
+    nomina.edad_unidad = "meses"  # unidad vieja guardada en el alta
+    nomina.save()
+    client = Client()
+    client.force_login(usuario_view)
+
+    response = client.get(
+        reverse(
+            "centrodeinfancia_nomina_destinatario_ver",
+            kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
+        )
+    )
+
+    assert response.status_code == 200
+    assert nomina.edad_display == "2 años"
+    assert "2 años" in response.content.decode()
+
+
+# ─────────────────────────────────────────────────────────
+# Contrato template ↔ JS del pueblo originario
+# ─────────────────────────────────────────────────────────
+
+DESTINATARIO_FORM_JS = (
+    Path(__file__).resolve().parent.parent
+    / "static"
+    / "custom"
+    / "js"
+    / "destinatarioForm.js"
+)
+
+
+@pytest.mark.django_db
+def test_form_destinatario_renderiza_lo_que_el_js_usa_para_pueblo_originario(
+    usuario_add, centro, ciudadano
+):
+    """El JS muestra "¿Cuál?" al marcar Indígena; si no encuentra los checkboxes,
+    la fila queda oculta y el modelo rechaza el guardado sin que se vea por qué."""
+    client = Client()
+    client.force_login(usuario_add)
+    url = reverse("centrodeinfancia_nomina_crear", kwargs={"pk": centro.pk})
+
+    html = client.get(f"{url}?ciudadano_id={ciudadano.pk}").content.decode()
+    js = DESTINATARIO_FORM_JS.read_text(encoding="utf-8")
+
+    assert 'name="grupo_pertenencia" value="indigena"' in html
+    assert 'id="row-pueblo-originario"' in html
+    assert 'name="pueblo_originario_cual"' in html
+    # crispy no genera un contenedor "id_grupo_pertenencia": el JS no puede
+    # depender de él (fue la causa de que nunca se mostrara la fila).
+    assert 'id="id_grupo_pertenencia"' not in html
+    assert "#id_grupo_pertenencia" not in js
+    assert 'getCheckedValues("grupo_pertenencia")' in js

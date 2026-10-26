@@ -18,16 +18,8 @@ Todo pedido deberia incluir:
 
 ## Lectura minima antes de implementar
 
-No hace falta leer `docs/ia/*` completo.
-
-Base obligatoria:
-1. `AGENTS.md`
-2. `docs/indice.md`
-3. archivo objetivo
-4. tests del modulo
-5. una sola guia relevante de `docs/ia/`
-
-Ampliar solo si el cambio lo exige.
+No hace falta leer `docs/ia/*` completo: seguir el "Contexto minimo" de
+`AGENTS.md` y ampliar solo si el cambio lo exige (`docs/ia/CONTEXT_HYGIENE.md`).
 
 ## Flujo sugerido
 
@@ -61,10 +53,5 @@ Secuencia corta:
 
 ## Spec-as-source
 
-Registrar en `docs/`:
-- cambios funcionales visibles,
-- decisiones de diseno,
-- cambios de seguridad o permisos,
-- trade-offs relevantes.
-
+Que registrar y donde: `docs/registro/README.md` (skill `registro-cambios`).
 Si no aplica, explicitarlo en la entrega.

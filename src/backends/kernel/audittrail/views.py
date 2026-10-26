@@ -35,8 +35,14 @@ class AuditLogResolveMixin:
         Normaliza los valores old/new y resuelve FKs a su __str__ para que la UI muestre
         algo legible. Evita consultas innecesarias para valores nulos o vacíos.
         """
-        changes = getattr(entry, "changes_display_dict", None) or {}
         model_cls = entry.content_type.model_class()
+        # auditlog formatea usando model._meta: en el portal el modelo remoto
+        # puede no estar instalado. Conservar el diff persistido, sin ORM ajeno.
+        changes = (
+            entry.changes_dict
+            if model_cls is None
+            else getattr(entry, "changes_display_dict", None)
+        ) or {}
         resolved = {}
         fk_cache = getattr(self, "_audit_fk_cache", None)
         if fk_cache is None:

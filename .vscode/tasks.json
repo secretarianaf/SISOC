@@ -4,19 +4,19 @@
     {
       "label": "AI: Preflight (general)",
       "type": "shell",
-      "command": "bash scripts/ai/preflight.sh general",
+      "command": "bash src/scripts/ai/preflight.sh general",
       "problemMatcher": []
     },
     {
       "label": "AI: Preflight (bugfix-view)",
       "type": "shell",
-      "command": "bash scripts/ai/preflight.sh bugfix-view ${relativeFile}",
+      "command": "bash src/scripts/ai/preflight.sh bugfix-view ${relativeFile}",
       "problemMatcher": []
     },
     {
       "label": "AI: Preflight (feature-api)",
       "type": "shell",
-      "command": "bash scripts/ai/preflight.sh feature-api ${relativeFile}",
+      "command": "bash src/scripts/ai/preflight.sh feature-api ${relativeFile}",
       "problemMatcher": []
     },
     {

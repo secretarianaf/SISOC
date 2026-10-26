@@ -12,7 +12,9 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
+from django.http import Http404
 from django.test import RequestFactory, override_settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from core.backend_proxy import _forward, backend_proxy_urlpatterns
 
@@ -85,6 +87,49 @@ def test_reenvia_metodo_path_query_y_body(backend):
     assert datos["method"] == "POST"
     assert datos["path"] == "/dispositivos/crear?x=1"
     assert datos["body_len"] > 0
+
+
+def test_upload_ocr_conserva_multipart_sesion_y_csrf(backend):
+    request = RequestFactory().post(
+        "/ocr/",
+        {
+            "archivos": SimpleUploadedFile("scan.png", b"synthetic-image"),
+            "csrfmiddlewaretoken": "synthetic-csrf",
+        },
+        HTTP_COOKIE="sessionid=synthetic-session; csrftoken=synthetic-csrf",
+        HTTP_X_CSRFTOKEN="synthetic-csrf",
+    )
+    original_length = int(request.META["CONTENT_LENGTH"])
+
+    response = _forward(request, backend, "ocr/")
+    data = json.loads(_contenido(response))
+
+    assert data["path"] == "/ocr/"
+    assert data["method"] == "POST"
+    assert data["body_len"] == original_length
+    assert data["headers"]["content-type"].startswith("multipart/form-data; boundary=")
+    assert data["headers"]["cookie"] == request.META["HTTP_COOKIE"]
+    assert data["headers"]["x-csrftoken"] == "synthetic-csrf"
+
+
+@pytest.mark.parametrize(
+    "path", ["dispositivos/../admin/", "dispositivos/./x", "dispositivos/.."]
+)
+def test_rechaza_segmentos_punto_para_no_salir_del_prefijo(backend, path):
+    """``%2e%2e`` llega decodificado como ``..`` en ``path``."""
+    request = RequestFactory().get("/dispositivos/%2e%2e/admin/")
+
+    with pytest.raises(Http404):
+        _forward(request, backend, path)
+
+
+def test_reenvia_el_path_codificado(backend):
+    request = RequestFactory().get("/dispositivos/a%3Fb%23c%25d%20e/")
+
+    response = _forward(request, backend, "dispositivos/a?b#c%d e/ñ")
+    datos = json.loads(_contenido(response))
+
+    assert datos["path"] == "/dispositivos/a%3Fb%23c%25d%20e/%C3%B1"
 
 
 def test_body_mayor_al_limite_de_memoria_se_reenvia_completo(backend):

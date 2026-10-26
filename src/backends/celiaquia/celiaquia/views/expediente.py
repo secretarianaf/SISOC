@@ -279,6 +279,17 @@ def _formatear_observaciones_historial(observaciones):
     return "\n".join(partes) or observaciones
 
 
+def _items_motivo(texto):
+    """Motivo de subsanación/rechazo partido en un ítem por renglón.
+
+    El motivo se guarda con un salto de línea por observación (issue #2592);
+    la pantalla los muestra como listado para que la Provincia distinga cada
+    pedido de Nación (issue #2678). Los renglones vacíos (el separador del
+    texto libre) se descartan.
+    """
+    return [linea.strip() for linea in (texto or "").splitlines() if linea.strip()]
+
+
 def _user_scope_provincias(user):
     provincia_ids = sorted({scope.provincia_id for scope in get_effective_scopes(user)})
     if not provincia_ids:
@@ -980,6 +991,9 @@ class ExpedienteDetailView(DetailView):
             elif legajo.subsanacion_motivo:
                 legajo.observacion_tecnica_titulo = "Observación (subsanación)"
                 legajo.observacion_tecnica_texto = legajo.subsanacion_motivo
+            legajo.observacion_tecnica_items = _items_motivo(
+                legajo.observacion_tecnica_texto
+            )
 
             if (
                 legajo.es_responsable
@@ -1894,7 +1908,7 @@ class CorregirEvaluacionView(View):
             return JsonResponse(
                 {
                     "success": False,
-                    "error": "No tenés permiso para corregir evaluaciones finales.",
+                    "error": "No tenés permiso para corregir evaluaciones técnicas.",
                 },
                 status=403,
             )

@@ -21,4 +21,8 @@ def register_tracked_models():
 
         if already_registered:
             continue
+        included_fields = getattr(definition, "included_fields", ())
+        if included_fields:
+            auditlog.register(model, include_fields=list(included_fields))
+            continue
         auditlog.register(model, exclude_fields=definition.get_excluded_fields())

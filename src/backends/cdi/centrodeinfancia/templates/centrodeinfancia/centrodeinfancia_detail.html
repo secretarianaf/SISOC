@@ -373,6 +373,7 @@
                                         <th>Email</th>
                                         <th>Estado</th>
                                         {% if puede_ver_credenciales_cdi %}<th>Contraseña temporal</th>{% endif %}
+                                        {% if puede_administrar_usuarios_cdi %}<th>Acciones</th>{% endif %}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -380,14 +381,22 @@
                                         <tr>
                                             <td>
                                                 <code>{{ acceso.user.username }}</code>
+                                                {% if acceso.es_responsable %}
+                                                    <span class="cdf-pill cdf-pill--teal ms-1"
+                                                          title="Referente vigente en la ficha del CDI">Responsable</span>
+                                                {% endif %}
                                             </td>
                                             <td>{{ acceso.user.get_full_name|default:"-" }}</td>
                                             <td>{{ acceso.user.email|default:"-" }}</td>
                                             <td>
-                                                {% if acceso.activo %}
+                                                {% if acceso.estado == "activo" %}
                                                     <span class="cdf-pill cdf-pill--success">Activo</span>
+                                                {% elif acceso.estado == "suspendido" %}
+                                                    <span class="cdf-pill cdf-pill--gold"
+                                                          {% if acceso.motivo_estado %}title="Motivo: {{ acceso.motivo_estado }}"{% endif %}>Suspendido</span>
                                                 {% else %}
-                                                    <span class="cdf-pill cdf-pill--muted">Baja</span>
+                                                    <span class="cdf-pill cdf-pill--muted"
+                                                          {% if acceso.motivo_estado %}title="Motivo: {{ acceso.motivo_estado }}"{% endif %}>Baja</span>
                                                 {% endif %}
                                             </td>
                                             {% if puede_ver_credenciales_cdi %}
@@ -400,6 +409,46 @@
                                                         {% endif %}
                                                     {% else %}
                                                         <span class="cdf-td-muted">No disponible</span>
+                                                    {% endif %}
+                                                </td>
+                                            {% endif %}
+                                            {% if puede_administrar_usuarios_cdi %}
+                                                <td>
+                                                    {% if acceso.es_responsable or acceso.user_id == request.user.id or acceso.estado == "baja" %}
+                                                        <span class="cdf-td-muted">—</span>
+                                                    {% else %}
+                                                        <div class="d-flex flex-wrap gap-1">
+                                                            {% if acceso.estado == "activo" %}
+                                                                <button type="button"
+                                                                        class="cdf-btn cdf-btn--gold usuario-estado-btn"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#modalEstadoUsuario"
+                                                                        data-url="{% url 'centrodeinfancia_usuario_estado' centro.id acceso.id %}"
+                                                                        data-accion="suspender"
+                                                                        data-usuario="{{ acceso.user.get_full_name|default:acceso.user.username }}">
+                                                                    Suspender
+                                                                </button>
+                                                            {% else %}
+                                                                <button type="button"
+                                                                        class="cdf-btn cdf-btn--success usuario-estado-btn"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#modalEstadoUsuario"
+                                                                        data-url="{% url 'centrodeinfancia_usuario_estado' centro.id acceso.id %}"
+                                                                        data-accion="reactivar"
+                                                                        data-usuario="{{ acceso.user.get_full_name|default:acceso.user.username }}">
+                                                                    Reactivar
+                                                                </button>
+                                                            {% endif %}
+                                                            <button type="button"
+                                                                    class="cdf-btn cdf-btn--danger usuario-estado-btn"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#modalEstadoUsuario"
+                                                                    data-url="{% url 'centrodeinfancia_usuario_estado' centro.id acceso.id %}"
+                                                                    data-accion="baja"
+                                                                    data-usuario="{{ acceso.user.get_full_name|default:acceso.user.username }}">
+                                                                Dar de baja
+                                                            </button>
+                                                        </div>
                                                     {% endif %}
                                                 </td>
                                             {% endif %}
@@ -768,6 +817,46 @@
             </div>
         {% endif %}
 
+        {% if puede_administrar_usuarios_cdi %}
+            <div class="modal fade"
+                 id="modalEstadoUsuario"
+                 tabindex="-1"
+                 aria-labelledby="modalEstadoUsuarioLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form method="post" id="usuarioEstadoForm">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion" id="usuarioEstadoAccion" />
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalEstadoUsuarioLabel">Confirmar</h5>
+                                <button type="button"
+                                        class="btn-close btn-close-white"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p id="usuarioEstadoTexto"></p>
+                                <div id="usuarioEstadoMotivoGrupo">
+                                    <label for="usuarioEstadoMotivo" class="form-label">Motivo *</label>
+                                    <textarea class="form-control"
+                                              id="usuarioEstadoMotivo"
+                                              name="motivo"
+                                              rows="3"
+                                              maxlength="500"></textarea>
+                                    <small class="text-muted">Queda registrado en la auditoría.</small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary" id="usuarioEstadoConfirmar">Confirmar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         {% if puede_eliminar_trabajadores %}
             <div class="modal fade"
                  id="modalEliminarTrabajador"
@@ -847,7 +936,10 @@
             const railLeft = document.getElementById("cdiTabsLeft");
             const railRight = document.getElementById("cdiTabsRight");
             const panels = Array.from(document.querySelectorAll(".cdi-panel"));
-            let activePanel = 0;
+            // "#usuarios" (por ejemplo, al volver de la botonera) abre esa solapa.
+            let activePanel = Math.max(0, panels.findIndex(function(panel) {
+                return "#" + panel.dataset.panel === window.location.hash;
+            }));
 
             function renderSideTabs() {
                 if (!railLeft || !railRight) {
@@ -886,6 +978,49 @@
                     });
                 });
             }
+
+            {% if puede_administrar_usuarios_cdi %}
+            const ACCIONES_USUARIO = {
+                suspender: {
+                    texto: "¿Suspender a {usuario}? No va a poder ingresar al centro hasta que se lo reactive.",
+                    boton: "Suspender",
+                    clase: "btn-warning",
+                    motivo: true,
+                },
+                reactivar: {
+                    texto: "¿Reactivar a {usuario}? Vuelve a tener acceso al centro.",
+                    boton: "Reactivar",
+                    clase: "btn-success",
+                    motivo: false,
+                },
+                baja: {
+                    texto: "¿Dar de baja a {usuario}? Pierde el acceso a este centro de forma definitiva y libera un cupo.",
+                    boton: "Dar de baja",
+                    clase: "btn-danger",
+                    motivo: true,
+                },
+            };
+            const usuarioEstadoForm = document.getElementById("usuarioEstadoForm");
+            const usuarioEstadoMotivo = document.getElementById("usuarioEstadoMotivo");
+            document.querySelectorAll(".usuario-estado-btn").forEach(function(button) {
+                button.addEventListener("click", function() {
+                    const accion = ACCIONES_USUARIO[this.dataset.accion];
+                    if (!accion || !usuarioEstadoForm) {
+                        return;
+                    }
+                    usuarioEstadoForm.action = this.dataset.url;
+                    document.getElementById("usuarioEstadoAccion").value = this.dataset.accion;
+                    document.getElementById("usuarioEstadoTexto").textContent =
+                        accion.texto.replace("{usuario}", this.dataset.usuario || "este usuario");
+                    document.getElementById("usuarioEstadoMotivoGrupo").hidden = !accion.motivo;
+                    usuarioEstadoMotivo.required = accion.motivo;
+                    usuarioEstadoMotivo.value = "";
+                    const confirmar = document.getElementById("usuarioEstadoConfirmar");
+                    confirmar.textContent = accion.boton;
+                    confirmar.className = "btn " + accion.clase;
+                });
+            });
+            {% endif %}
 
             {% if puede_eliminar_trabajadores %}
             const trabajadorDeleteForm = document.getElementById("trabajadorDeleteForm");

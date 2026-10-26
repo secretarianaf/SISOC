@@ -91,13 +91,15 @@
                     {% endif %}
 
                     {% if query and no_resultados %}
-                        <div class="alert alert-info mt-2 mb-0">
-                            {% if renaper_precarga %}
-                                No se encontraron coincidencias en el sistema. Se precargaron datos desde RENAPER; complete la ficha para agregar a la nómina.
-                            {% else %}
-                                No se encontraron coincidencias para el DNI buscado. Puede completar la ficha manualmente.
-                            {% endif %}
-                        </div>
+                        {% if renaper_precarga %}
+                            <div class="alert alert-success mt-2 mb-0">
+                                <i class="fas fa-id-card me-1"></i>Datos de identidad obtenidos de RENAPER. Completá el resto de la ficha para agregar al niño/a a la nómina.
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info mt-2 mb-0">
+                                No se encontraron datos para el DNI buscado. Podés completar la ficha manualmente.
+                            </div>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>
@@ -247,6 +249,9 @@
                         </div>
                     </div>
                     <div class="section-body collapse show" id="section-nino">
+                        {% if is_edit or form.bloques_verificados_renaper.nino %}
+                            {% include "centrodeinfancia/partials/renaper_bloque.html" with bloque="nino" dni_field="id_dni" tipo_field="id_tipo_documentacion" modo=form.modos_renaper.nino campos=form.campos_bloque_renaper.nino verificado=form.bloques_verificados_renaper.nino token=renaper_tokens.nino %}
+                        {% endif %}
                         <div class="form-group row">
                             <div class="col-md-3">{{ form.apellido|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.nombre|as_crispy_field }}</div>
@@ -290,22 +295,26 @@
                         </div>
                     </div>
                     <div class="section-body collapse show" id="section-responsable1">
-                        <div class="form-group row">
-                            <div class="col-md-3">{{ form.responsable_legal_1_relacion|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.responsable_legal_1_apellido|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.responsable_legal_1_nombre|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.responsable_legal_1_fecha_nacimiento|as_crispy_field }}</div>
-                        </div>
+                        {# Documento → validación RENAPER → identidad → datos a completar. #}
                         <div class="form-group row">
                             <div class="col-md-3">{{ form.responsable_legal_1_tipo_documentacion|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.responsable_legal_1_dni|as_crispy_field }}</div>
+                        </div>
+                        {% include "centrodeinfancia/partials/renaper_bloque.html" with bloque="responsable_legal_1" dni_field="id_responsable_legal_1_dni" tipo_field="id_responsable_legal_1_tipo_documentacion" modo=form.modos_renaper.responsable_legal_1 campos=form.campos_bloque_renaper.responsable_legal_1 verificado=form.bloques_verificados_renaper.responsable_legal_1 token=renaper_tokens.responsable_legal_1 permite_cambiar=True %}
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.responsable_legal_1_apellido|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_nombre|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_fecha_nacimiento|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.responsable_legal_1_cuit|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.responsable_legal_1_telefono|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
-                            <div class="col-md-3">{{ form.responsable_legal_1_pais_nacimiento|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.responsable_legal_1_nacionalidad|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.responsable_legal_1_sexo_registral|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_nacionalidad|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.responsable_legal_1_relacion|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_telefono|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_pais_nacimiento|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.responsable_legal_1_nivel_educativo|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
@@ -336,22 +345,26 @@
                         </div>
                     </div>
                     <div class="section-body collapse show" id="section-responsable2">
-                        <div class="form-group row">
-                            <div class="col-md-3">{{ form.responsable_legal_2_relacion|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.responsable_legal_2_apellido|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.responsable_legal_2_nombre|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.responsable_legal_2_fecha_nacimiento|as_crispy_field }}</div>
-                        </div>
+                        {# Documento → validación RENAPER → identidad → datos a completar. #}
                         <div class="form-group row">
                             <div class="col-md-3">{{ form.responsable_legal_2_tipo_documentacion|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.responsable_legal_2_dni|as_crispy_field }}</div>
+                        </div>
+                        {% include "centrodeinfancia/partials/renaper_bloque.html" with bloque="responsable_legal_2" dni_field="id_responsable_legal_2_dni" tipo_field="id_responsable_legal_2_tipo_documentacion" modo=form.modos_renaper.responsable_legal_2 campos=form.campos_bloque_renaper.responsable_legal_2 verificado=form.bloques_verificados_renaper.responsable_legal_2 token=renaper_tokens.responsable_legal_2 permite_cambiar=True opcional=True texto_agregar="Agregar responsable 2" %}
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.responsable_legal_2_apellido|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_nombre|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_fecha_nacimiento|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.responsable_legal_2_cuit|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.responsable_legal_2_telefono|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
-                            <div class="col-md-3">{{ form.responsable_legal_2_pais_nacimiento|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.responsable_legal_2_nacionalidad|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.responsable_legal_2_sexo_registral|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_nacionalidad|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.responsable_legal_2_relacion|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_telefono|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_pais_nacimiento|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.responsable_legal_2_nivel_educativo|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
@@ -708,5 +721,7 @@
         window.ajaxLoadDepartamentosIpiUrl = "{% url 'centrodeinfancia_ajax_load_departamentos_ipi' %}";
     </script>
     <script src="{% static 'custom/js/destinatarioForm.js' %}"
+            nonce="{{ request.csp_nonce }}"></script>
+    <script src="{% static 'custom/js/cdiRenaperBloques.js' %}"
             nonce="{{ request.csp_nonce }}"></script>
 {% endblock %}

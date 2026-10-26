@@ -167,6 +167,9 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
     cuil_referente = models.CharField(
         max_length=16, blank=True, null=True, verbose_name="CUIL del referente"
     )
+    # Campos del referente que vinieron de RENAPER (alta o validación posterior).
+    # Quedan bloqueados en la edición; email y teléfono siguen editables.
+    campos_verificados_renaper = models.JSONField(default=list, blank=True)
     meses_funcionamiento = models.JSONField(default=list, blank=True)
     dias_funcionamiento = models.JSONField(default=list, blank=True)
     tipo_jornada = models.CharField(
@@ -739,6 +742,29 @@ NOMINA_EDAD_UNIDAD_CHOICES = [
     ("meses", "Meses"),
     ("anios", "Años"),
 ]
+
+
+def calcular_edad_y_unidad(fecha_nacimiento, hoy=None):
+    """Edad en meses antes del primer año y en años cumplidos desde entonces.
+
+    Devuelve ``(edad, unidad)`` con ``unidad`` en ``NOMINA_EDAD_UNIDAD_CHOICES``.
+    """
+    hoy = hoy or date.today()
+    meses = (
+        (hoy.year - fecha_nacimiento.year) * 12
+        + hoy.month
+        - fecha_nacimiento.month
+        - (hoy.day < fecha_nacimiento.day)
+    )
+    if meses < 12:
+        return max(meses, 0), "meses"
+    anios = (
+        hoy.year
+        - fecha_nacimiento.year
+        - ((hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
+    )
+    return max(anios, 0), "anios"
+
 
 NOMINA_COBERTURA_SALUD_CHOICES = [
     ("publica_exclusiva", "Pública exclusiva"),
@@ -1719,6 +1745,10 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
     )
 
+    # Campos del niño/a y de los responsables que vinieron de RENAPER. Quedan
+    # bloqueados en la edición; los teléfonos siguen editables.
+    campos_verificados_renaper = models.JSONField(default=list, blank=True)
+
     class Meta:
         verbose_name = "Nómina Centro de Desarrollo Infantil"
         verbose_name_plural = "Nóminas Centro de Desarrollo Infantil"
@@ -1740,6 +1770,20 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
                 < (self.fecha_nacimiento.month, self.fecha_nacimiento.day)
             )
         )
+
+    @property
+    def edad_display(self):
+        """Edad al día de hoy con su unidad ("8 meses", "1 año", "2 años").
+
+        Se calcula en el momento: la unidad guardada en ``edad_unidad`` queda
+        desactualizada cuando el niño/a cumple el año.
+        """
+        if not self.fecha_nacimiento:
+            return None
+        edad, unidad = calcular_edad_y_unidad(self.fecha_nacimiento)
+        if unidad == "meses":
+            return f"{edad} {'mes' if edad == 1 else 'meses'}"
+        return f"{edad} {'año' if edad == 1 else 'años'}"
 
     @property
     def apoyo_desarrollo_unificado_display(self):
@@ -2671,9 +2715,21 @@ class AccesoCDI(models.Model):
     usuario provincial genera usuarios "CDI - Referente centro" asociados a un
     centro puntual (relación 1..N, máximo definido en la capa de servicio).
     El rol/permisos los aporta el grupo, no este modelo.
+
+    ``estado`` es la fuente de verdad (activo, suspendido o baja) y ``activo``
+    queda sincronizado para las consultas existentes: solo un acceso activo
+    habilita el CDI. ``es_responsable`` marca al referente vigente de la ficha,
+    el único referente que administra los usuarios del centro.
     """
 
     LIMITE_USUARIOS_POR_CENTRO = 10
+
+    class Estado(models.TextChoices):
+        ACTIVO = "activo", "Activo"
+        # Temporal: se puede reactivar y sigue ocupando cupo.
+        SUSPENDIDO = "suspendido", "Suspendido"
+        # Definitiva para este CDI: libera cupo.
+        BAJA = "baja", "Baja"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -2693,6 +2749,18 @@ class AccesoCDI(models.Model):
         related_name="accesos_cdi_creados",
     )
     activo = models.BooleanField(default=True)
+    estado = models.CharField(
+        max_length=16, choices=Estado.choices, default=Estado.ACTIVO
+    )
+    es_responsable = models.BooleanField(
+        default=False,
+        help_text="Referente vigente de la ficha: administra los usuarios del CDI.",
+    )
+    motivo_estado = models.TextField(
+        blank=True,
+        default="",
+        help_text="Motivo de la última suspensión o baja.",
+    )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_baja = models.DateTimeField(null=True, blank=True)
 
@@ -2712,5 +2780,16 @@ class AccesoCDI(models.Model):
         ]
 
     def __str__(self):
-        estado = "activo" if self.activo else "baja"
-        return f"{self.user_id} - {self.centro_id} ({estado})"
+        return f"{self.user_id} - {self.centro_id} ({self.estado})"
+
+    def save(self, *args, **kwargs):
+        # Un acceso *creado* con ``activo=False`` sin estado explícito es una baja
+        # (semántica previa al campo ``estado``). En una actualización manda el
+        # estado: al reactivar, la instancia todavía trae ``activo=False``.
+        if self._state.adding and not self.activo and self.estado == self.Estado.ACTIVO:
+            self.estado = self.Estado.BAJA
+        self.activo = self.estado == self.Estado.ACTIVO
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            kwargs["update_fields"] = set(update_fields) | {"activo", "estado"}
+        super().save(*args, **kwargs)

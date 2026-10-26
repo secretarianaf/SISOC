@@ -1,0 +1,357 @@
+/* Tablero en vivo de Inspecciones escolares, igual al mockup.
+   Los tokens comunes vienen de panel.css (body.insp-cuerpo). Sin estilos en línea:
+   anchos y colores dinámicos se fijan desde tablero.js por CSSOM. */
+
+.insp-tablero {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* "En vivo" */
+.insp-tablero-vivo {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    background: #e6f3ec;
+    color: #1b5e20;
+}
+
+.insp-tablero-vivo-punto {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #2e7d32;
+    box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.2);
+}
+
+.insp-tablero-vivo [data-tablero-estado] {
+    font-weight: 500;
+}
+
+.insp-tablero-vivo[data-estado="desconectado"] {
+    background: #fdecea;
+    color: #8a1c13;
+}
+
+.insp-tablero-vivo[data-estado="desconectado"] .insp-tablero-vivo-punto {
+    background: #c62828;
+    box-shadow: 0 0 0 4px rgba(198, 40, 40, 0.2);
+}
+
+.insp-tablero-vivo[data-estado="cargando"],
+.insp-tablero-vivo[data-estado="pausado"] {
+    background: #eef0f3;
+    color: #444;
+}
+
+.insp-tablero-vivo[data-estado="cargando"] .insp-tablero-vivo-punto,
+.insp-tablero-vivo[data-estado="pausado"] .insp-tablero-vivo-punto {
+    background: #8a8f98;
+    box-shadow: none;
+}
+
+/* Filtros: barra beige suelta, controles de 34 px como el mockup */
+.insp-tablero .insp-seccion-barra.insp-filtros {
+    border: 1px solid var(--insp-borde);
+    border-radius: 6px;
+    padding: 10px 12px;
+    gap: 8px;
+}
+
+.insp-tablero .insp-filtros .form-control,
+.insp-tablero .insp-filtros .form-select {
+    height: 34px;
+    min-height: 34px;
+    min-width: 9rem;
+    font-size: 13px;
+}
+
+.insp-tablero-ayuda {
+    font-size: 12px;
+    color: var(--insp-gris-claro);
+}
+
+/* Grillas */
+.insp-tablero-grilla-mapa {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    gap: 14px;
+    align-items: stretch;
+}
+
+.insp-tablero-grilla-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.insp-tablero-texto {
+    font-size: 12.5px;
+    color: #333;
+}
+
+.insp-tablero-texto-secundario {
+    font-size: 11.5px;
+    color: var(--insp-gris-claro);
+}
+
+.insp-tablero-indice {
+    font-size: 30px;
+    font-weight: 500;
+    color: var(--insp-azul);
+}
+
+.insp-tablero-indice-fila {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.insp-tablero-indice-numeros {
+    display: flex;
+    flex-direction: column;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--insp-azul);
+}
+
+.insp-tablero-aviso {
+    font-size: 11.5px;
+    color: #7a3a00;
+    background: #fff7ea;
+    padding: 6px 8px;
+    border-radius: 4px;
+}
+
+/* Barras de turnos */
+.insp-barra {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr) 56px;
+    gap: 10px;
+    align-items: center;
+    font-size: 12.5px;
+    margin-bottom: 8px;
+}
+
+.insp-barra:last-child {
+    margin-bottom: 0;
+}
+
+.insp-barra-pista {
+    height: 12px;
+    background: #eef0ee;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.insp-barra-relleno {
+    height: 12px;
+    border-radius: 6px;
+    background: var(--insp-teal);
+    width: 0;
+}
+
+.insp-barra-valor {
+    text-align: right;
+}
+
+/* Barra segmentada (resultado, presencia) */
+.insp-segmentos {
+    display: flex;
+    height: 14px;
+    border-radius: 7px;
+    overflow: hidden;
+    background: #eef0ee;
+    margin: 4px 0;
+}
+
+.insp-segmento {
+    display: block;
+    height: 14px;
+    width: 0;
+}
+
+.insp-leyenda-lista {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: #444;
+}
+
+.insp-leyenda-lista li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.insp-leyenda-lista .insp-leyenda-punto,
+.insp-leyenda-lista .insp-tablero-leyenda-punto {
+    flex: none;
+    margin-right: 0;
+}
+
+.insp-leyenda-punto {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 5px;
+    vertical-align: -1px;
+}
+
+/* Mapa */
+.insp-tablero-mapa-contenedor {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+}
+
+.insp-tablero-mapa {
+    flex: 1 1 auto;
+    min-height: 560px;
+    border-radius: 0 0 6px 6px;
+}
+
+.insp-tablero-leyenda {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1000;
+    background: #fff;
+    color: #222;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.7;
+    max-width: 16rem;
+}
+
+.insp-tablero-leyenda.insp-leyenda-lista {
+    margin: 0;
+    padding: 8px 10px;
+    gap: 0;
+}
+
+.insp-tablero-leyenda .text-body-secondary {
+    color: var(--insp-gris-claro) !important;
+}
+
+.insp-tablero-leyenda-punto {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.insp-tablero-constatada { background: var(--insp-teal); }
+.insp-tablero-sin-constatacion { background: #c26a00; }
+
+.insp-tablero-grupo {
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    color: #fff;
+    font: 500 12px Roboto, sans-serif;
+    background: var(--insp-teal);
+}
+
+.insp-tablero-grupo.insp-tablero-grupo-mixto {
+    background: linear-gradient(135deg, var(--insp-teal) 50%, #c26a00 50%);
+}
+
+.insp-tablero-grupo.insp-tablero-grupo-sin-constatacion {
+    background: #c26a00;
+}
+
+.insp-tablero-popup dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px 10px;
+    margin: 5px 0 0;
+    font-size: 12.5px;
+}
+
+.insp-tablero-popup dt { font-weight: 500; }
+.insp-tablero-popup dd { margin: 0; }
+
+/* Últimas actas */
+.insp-tablero-tabla td,
+.insp-tablero-tabla th {
+    white-space: nowrap;
+    font-size: 12.5px;
+    padding: 8px 12px;
+}
+
+.insp-tablero-tabla td.insp-tablero-escuela {
+    white-space: normal;
+    min-width: 14rem;
+}
+
+.insp-tablero-tabla .insp-tablero-numero {
+    font-family: "Roboto Mono", monospace;
+    font-size: 12px;
+}
+
+.insp-tablero-tabla tr.insp-tablero-nueva > td {
+    background: #f2f8f7;
+    transition: background 1s ease;
+}
+
+.insp-tablero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.insp-tablero-badge-ok { background: #e6f3ec; color: #1b5e20; }
+.insp-tablero-badge-alerta { background: #fff1dc; color: #7a3a00; }
+.insp-tablero-badge-nueva { background: var(--insp-azul); color: #fff; margin-left: 6px; }
+
+.insp-totales-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+@media (max-width: 991.98px) {
+    .insp-totales-5 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .insp-tablero-grilla-mapa,
+    .insp-tablero-grilla-3 {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 575.98px) {
+    .insp-tablero-mapa {
+        min-height: 320px;
+    }
+
+    .insp-tablero-leyenda {
+        position: static;
+        max-width: none;
+        border-radius: 0;
+        border-width: 1px 0 0;
+    }
+}

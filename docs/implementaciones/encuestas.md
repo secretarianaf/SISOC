@@ -83,7 +83,7 @@ reemplaza los listados individuales y cambiar a otro tipo limpia los grupos.
 
 El listado usa el mismo buscador combinable de Usuarios (`search_bar.html` y
 `advanced_filters.js`): título, estado, anónima y recurrente. El contrato `filters`
-se valida con `AdvancedFilterEngine` y un mapa cerrado en `encuestas/filters.py`.
+se valida con `AdvancedFilterEngine` y un mapa cerrado en `src/backends/sisoc_core/encuestas/filters.py`.
 Los enlaces anteriores con `busqueda` y `estado` se redirigen a filtros visibles;
 la paginación conserva los filtros. Resetear vuelve al listado completo.
 La bandeja del aprobador ofrece un acceso a pendientes usando ese mismo filtro.
@@ -128,17 +128,17 @@ y de los descartes almacenados.
 
 ## Puntos de entrada
 
-- Dominio y reglas: `encuestas/models.py`, `encuestas/services.py` y
-  `encuestas/services_resultados.py`.
+- Dominio y reglas: `src/backends/sisoc_core/encuestas/models.py`, `src/backends/sisoc_core/encuestas/services.py` y
+  `src/backends/sisoc_core/encuestas/services_resultados.py`.
 - Portabilidad: `exportar_encuesta` / `importar_encuesta` en `services.py`;
   `/encuestas/<pk>/exportar/` y `/encuestas/importar/`.
 - Descarte: `/encuestas/responder/<pk>/descartar/` (identificador de ronda).
 - Presentación: `src/backends/sisoc_core/encuestas/static/custom/css/encuestaForm.css`,
-  `src/backends/sisoc_core/encuestas/static/custom/css/encuestaResponder.css` y templates en `encuestas/templates/`.
-- Regresiones de portabilidad/modalidad: `encuestas/tests/test_encuestas_portabilidad.py`
-  y `encuestas/tests/test_encuestas_opcionales.py`.
-- Bloqueo transversal: `encuestas/middleware.py`.
-- Operación de rondas: `encuestas/management/commands/process_encuestas_rondas.py`
+  `src/backends/sisoc_core/encuestas/static/custom/css/encuestaResponder.css` y templates en `src/backends/sisoc_core/encuestas/templates/`.
+- Regresiones de portabilidad/modalidad: `src/backends/sisoc_core/encuestas/tests/test_encuestas_portabilidad.py`
+  y `src/backends/sisoc_core/encuestas/tests/test_encuestas_opcionales.py`.
+- Bloqueo transversal: `src/backends/sisoc_core/encuestas/middleware.py`.
+- Operación de rondas: `src/backends/sisoc_core/encuestas/management/commands/process_encuestas_rondas.py`
   y el servicio `encuestas_worker`.
 - Diseño y decisiones históricas: `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
 

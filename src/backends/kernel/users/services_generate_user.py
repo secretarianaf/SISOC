@@ -160,6 +160,7 @@ def generar_usuario_delegado(  # pylint: disable=too-many-arguments
     vinculo_callback: Callable[[User], None],
     limite_check: Optional[Callable[[], bool]] = None,
     request=None,
+    delegacion_autorizada: bool = False,
 ) -> dict:
     """Crea un usuario con grupo fijo, lo vincula a una entidad y envía credenciales.
 
@@ -170,6 +171,10 @@ def generar_usuario_delegado(  # pylint: disable=too-many-arguments
         vinculo_callback: asocia el usuario creado a su entidad (CDI/Org/...).
         limite_check: si se provee y devuelve False, se rechaza la creación.
         request: opcional, para construir la URL de login del mail.
+        delegacion_autorizada: el dominio ya autorizó al actor con una regla
+            propia y acotada (p. ej. el referente responsable de un CDI genera
+            referentes solo para ese CDI). Evita habilitarle la delegación del
+            grupo en general. Úsese solo después de esa verificación.
 
     Returns:
         dict con `user`, `password` (temporal en claro) y `email_enviado`.
@@ -185,7 +190,9 @@ def generar_usuario_delegado(  # pylint: disable=too-many-arguments
             "Ejecute la semilla/sincronización de grupos."
         )
 
-    if not _actor_puede_delegar_grupo(actor, grupo):
+    if actor is None or not getattr(actor, "is_authenticated", False):
+        raise ValidationError("No tiene permisos para asignar el grupo requerido.")
+    if not delegacion_autorizada and not _actor_puede_delegar_grupo(actor, grupo):
         raise ValidationError("No tiene permisos para asignar el grupo requerido.")
 
     if limite_check is not None and not limite_check():

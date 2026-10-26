@@ -10,7 +10,7 @@ tema de color institucional o el trabajo de UI). Las usan Codex y Claude Code.
 | `.agents/skills/<nombre>/SKILL.md` | **Fuente**: se edita acá | Codex |
 | `.claude/skills/<nombre>/SKILL.md` | Copia generada: **no se edita a mano** | Claude Code |
 
-La copia la genera `scripts/ai/sync_skills.py`. No se usan symlinks porque se
+La copia la genera `src/scripts/ai/sync_skills.py`. No se usan symlinks porque se
 rompen en Windows con `core.symlinks=false` (ver
 `docs/registro/decisiones/2026-10-02-estructura-src-backends.md`).
 
@@ -35,11 +35,13 @@ rompen en Windows con `core.symlinks=false` (ver
    ```
 
 3. Si la skill necesita archivos de apoyo (plantillas, ejemplos), ponerlos en
-   la misma carpeta y referenciarlos desde `SKILL.md`.
+   la misma carpeta y referenciarlos desde `SKILL.md`. Las skills de proceso
+   llevan un `ejemplo.md` con un caso real del repo.
+   Una skill no agrega reglas: aplica una guía de `docs/` y la cita como fuente.
 4. Sincronizar y commitear las dos carpetas:
 
    ```bash
-   python scripts/ai/sync_skills.py
+   python src/scripts/ai/sync_skills.py
    git add .agents/skills .claude/skills
    ```
 
@@ -48,14 +50,27 @@ script: también la saca de `.claude/skills/`.
 
 ## Validación
 
-- `python scripts/ai/sync_skills.py --check` falla si la copia difiere de la
+- `python src/scripts/ai/sync_skills.py --check` falla si la copia difiere de la
   fuente (sin distinguir CRLF/LF).
 - Corre en CI (`skills_sync` en `.github/workflows/lint.yml`), en
-  `scripts/ai/preflight.sh` y en el test
+  `src/scripts/ai/preflight.sh` y en el test
   `src/backends/kernel/tests/test_sync_skills.py`.
 
 ## Skills actuales
 
+- `cambio-guiado`: flujo completo de un pedido (entender, ubicar, seguir un
+  patrón, tests, autorrevisión de armonía y PR en lenguaje simple), pensado para
+  cuando quien pide no sabe programar. Aplica "Responsabilidades del agente" de `AGENTS.md`.
+- `usuario-no-tecnico`: la tarea de punta a punta para quien no programa (rama
+  desde `origin/development`, `cambio-guiado`, verificación visual guiada en el
+  entorno local, PR completo y seguimiento de CI). Se invoca con
+  `/usuario-no-tecnico` en Claude Code.
+- `registro-cambios`: crea la entrada de `docs/registro/` (cambio, decisión o
+  plan) según `docs/registro/README.md`, o justifica que no aplica.
+- `verticales-checklist`: elige y recorre el checklist de
+  `docs/desarrollo/verticales_independientes.md` dejando evidencia por ítem.
+- `migracion-app-label`: traslado de un modelo entre apps conservando tabla,
+  IDs y content type (checklist 4 de la guía de verticales).
 - `tema-verde-institucional`: paleta y tema de Material UI del diseño verde
   institucional (claro y oscuro). Origen: adjunto de #2639.
 - `frontend-ui-ux`: diseño e implementación de UI/UX en templates Django, CSS

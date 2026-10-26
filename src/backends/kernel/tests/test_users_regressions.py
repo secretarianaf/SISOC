@@ -10,6 +10,10 @@ from django.urls import reverse
 from centrodeinfancia.models import AccesoCDI, CentroDeInfancia, Trabajador
 from core.constants import UserGroups
 from core.models import Localidad, Municipio, Provincia
+from pwa.user_forms import (
+    CustomUserChangeForm as CompositeUserChangeForm,
+    UserCreationForm as CompositeUserCreationForm,
+)
 from usuarios.forms import CustomUserChangeForm, UserCreationForm
 from users.models import ProfileTerritorialScope
 from users.services import UsuariosService
@@ -155,7 +159,7 @@ def test_edicion_usuario_precarga_y_actualiza_datos_identificatorios_y_tipo():
 
 
 @pytest.mark.django_db
-def test_edicion_usuario_requiere_tipo_usuario():
+def test_edicion_usuario_rechaza_tipo_usuario_vacio():
     user = User.objects.create_user(username="usuario-edicion-sin-tipo", password="x")
 
     form = CustomUserChangeForm(
@@ -163,12 +167,31 @@ def test_edicion_usuario_requiere_tipo_usuario():
         data={
             "username": user.username,
             "email": "",
+            "tipo_usuario": "",
             "territorial_scopes": "[]",
         },
     )
 
     assert not form.is_valid()
     assert "tipo_usuario" in form.errors
+
+
+@pytest.mark.django_db
+def test_edicion_usuario_preserva_tipo_usuario_omitido():
+    user = User.objects.create_user(username="usuario-edicion-omite-tipo", password="x")
+    user.profile.tipo_usuario = "externo"
+    user.profile.save(update_fields=["tipo_usuario"])
+
+    form = CustomUserChangeForm(
+        instance=user,
+        data={"username": user.username, "email": "nuevo@example.com"},
+    )
+
+    assert form.is_valid(), form.errors
+    form.save()
+    user.refresh_from_db()
+    assert user.email == "nuevo@example.com"
+    assert user.profile.tipo_usuario == "externo"
 
 
 @pytest.mark.django_db
@@ -368,7 +391,8 @@ def test_user_creation_form_limits_groups_and_roles_by_actor_scope():
         )
     )
 
-    form = UserCreationForm(
+    # Los roles auth arbitrarios requieren las validaciones del dueño.
+    form = CompositeUserCreationForm(
         actor=actor,
         data={
             "username": "nuevo_usuario",
@@ -396,7 +420,7 @@ def test_user_creation_form_rejects_egp_without_province_scope():
     egp = Group.objects.create(name=UserGroups.SIMEPI_EGP)
     actor.groups.add(equipo)
 
-    form = UserCreationForm(
+    form = CompositeUserCreationForm(
         actor=actor,
         data={
             "username": "egp-sin-scope",
@@ -432,7 +456,7 @@ def test_user_creation_form_accepts_egp_with_single_province_scope():
     )
     data["groups"] = [egp.pk]
 
-    form = UserCreationForm(actor=actor, data=data)
+    form = CompositeUserCreationForm(actor=actor, data=data)
 
     assert form.is_valid(), form.errors
     user = form.save()
@@ -465,7 +489,7 @@ def test_user_creation_form_accepts_egp_with_multiple_full_province_scopes():
     )
     data["groups"] = [egp.pk]
 
-    form = UserCreationForm(actor=actor, data=data)
+    form = CompositeUserCreationForm(actor=actor, data=data)
 
     assert form.is_valid(), form.errors
     user = form.save()
@@ -493,7 +517,7 @@ def test_user_change_form_no_permite_quitar_scope_a_egp():
     target.profile.save(update_fields=["es_usuario_provincial"])
     ProfileTerritorialScope.objects.create(profile=target.profile, provincia=provincia)
 
-    form = CustomUserChangeForm(
+    form = CompositeUserChangeForm(
         actor=actor,
         instance=target,
         data={
@@ -521,7 +545,7 @@ def test_user_creation_form_persists_assignable_scope_in_profile():
         "role_vat_referente", "Role VAT Referente"
     )
 
-    form = UserCreationForm(
+    form = CompositeUserCreationForm(
         actor=actor,
         data={
             "username": "delegador",
@@ -610,10 +634,9 @@ def test_user_list_paginas_de_25_registros(client):
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     "grupo_nacional",
-    [
-        UserGroups.SIMEPI_ADMINISTRADOR,
-        UserGroups.SIMEPI_EQUIPO_NACIONAL,
-    ],
+    # SIMEPI - Administrador ve solo a los usuarios de CDI que administra
+    # (ver cdi/tests/test_usuarios_simepi_admin.py).
+    [UserGroups.SIMEPI_EQUIPO_NACIONAL],
 )
 def test_user_list_nacional_puede_buscar_y_visualizar_todos_los_usuarios(
     grupo_nacional,

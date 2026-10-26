@@ -49,8 +49,8 @@ services:
   front_vpsl:
     image: ${VPSL_IMAGE_TAG:-sisoc/front-vpsl:local}
     build:
-      context: ./src/frontends
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: docker/frontends/Dockerfile
       target: prod
       args:
         APP: vpsl
@@ -67,8 +67,8 @@ services:
   front_celiaquia:
     image: sisoc/front-celiaquia:local
     build:
-      context: ./src/frontends
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: docker/frontends/Dockerfile
       target: prod
       args:
         APP: celiaquia

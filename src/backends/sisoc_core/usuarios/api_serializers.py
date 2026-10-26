@@ -1,17 +1,19 @@
 from rest_framework import serializers
-from django.contrib.auth import password_validation
-from django.core.exceptions import ValidationError as DjangoValidationError
 
 from iam.services import get_effective_permission_codes, get_effective_role_names
-from pwa.models import AccesoComedorPWA
-from pwa.services.accesos import get_pwa_context, get_territorial_comedor_provincias
+from users.credentials import LoginSerializer
+from users.credentials import (
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordChangeRequiredSerializer,
+)
+from users.services_territorial_comedor import get_territorial_comedor_provincias
 from users.profile_utils import get_profile_or_none
-from users.services import UserPermissionService
 from users.services_datacalle import (
     get_datacalle_rol,
     get_relevador_calle_provincias,
 )
-from users.services_auth import get_user_by_uid
+from users.services_inspecciones import get_inspecciones_rol
 from users.territorial_scope import serialize_profile_scopes
 
 
@@ -29,6 +31,7 @@ class UserContextSerializer(serializers.Serializer):
     pwa = serializers.SerializerMethodField()
     roles = serializers.SerializerMethodField()
     permissions = serializers.SerializerMethodField()
+    espacios_comunitarios_disponible = serializers.SerializerMethodField()
 
     def _raise_read_only(self):
         raise NotImplementedError("Serializer de solo lectura.")
@@ -59,26 +62,47 @@ class UserContextSerializer(serializers.Serializer):
             "es_relevador_calle": profile.es_relevador_calle,
             "datacalle_rol": get_datacalle_rol(obj),
             "datacalle_provincias": get_relevador_calle_provincias(obj),
-            "duplas_asignadas": list(
-                profile.duplas_asignadas.values_list("id", flat=True)
+            "es_inspector_escolar": profile.es_inspector_escolar,
+            "inspecciones_rol": get_inspecciones_rol(obj),
+            "duplas_asignadas": self.context.get("espacios", {}).get(
+                "duplas_asignadas", []
             ),
         }
 
     def get_scope(self, obj):
         if not getattr(obj, "is_authenticated", False):
             return {}
-        is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(obj)
+        espacios = self.context.get("espacios", {})
         profile = get_profile_or_none(obj)
         return {
-            "is_coordinador": is_coordinador,
-            "duplas_ids": duplas_ids,
+            "is_coordinador": bool(
+                getattr(get_profile_or_none(obj), "es_coordinador", False)
+            ),
+            "duplas_ids": espacios.get("duplas_ids", []),
             "es_usuario_provincial": getattr(profile, "es_usuario_provincial", False),
             "provincia_id": getattr(profile, "provincia_id", None),
             "territorial_scopes": serialize_profile_scopes(profile),
         }
 
     def get_pwa(self, obj):
-        return get_pwa_context(obj)
+        return self.context.get("espacios", {}).get(
+            "pwa",
+            {
+                "is_pwa_user": False,
+                "roles": [],
+                "comedores_representados": [],
+                "comedor_operador_id": None,
+                "tipo_asociacion": None,
+                "organizaciones_ids": [],
+                "read_only": True,
+                "must_change_password": bool(
+                    getattr(get_profile_or_none(obj), "must_change_password", False)
+                ),
+            },
+        )
+
+    def get_espacios_comunitarios_disponible(self, obj) -> bool:
+        return self.context.get("espacios_disponible", False)
 
     def get_roles(self, obj):
         if not getattr(obj, "is_authenticated", False):
@@ -91,195 +115,50 @@ class UserContextSerializer(serializers.Serializer):
         return sorted(get_effective_permission_codes(obj))
 
 
-class OperadorCreateSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=150)
-    email = serializers.EmailField(required=False, allow_blank=True)
-    password = serializers.CharField(write_only=True, trim_whitespace=False)
-    comedor_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        required=False,
-        allow_empty=False,
-    )
-    permission_codes = serializers.ListField(
-        child=serializers.CharField(max_length=150),
-        required=False,
-        allow_empty=True,
-    )
-
-    def _raise_read_only(self):
-        raise NotImplementedError("Serializer de solo lectura.")
-
-    def create(self, validated_data):
-        return self._raise_read_only()
-
-    def update(self, instance, validated_data):
-        return self._raise_read_only()
+__all__ = [
+    "LoginSerializer",
+    "PasswordResetRequestSerializer",
+    "PasswordResetConfirmSerializer",
+    "PasswordChangeRequiredSerializer",
+    "UserContextSerializer",
+    "contexto_espacios_valido",
+]
 
 
-class OperadorPermissionsUpdateSerializer(serializers.Serializer):
-    permission_codes = serializers.ListField(
-        child=serializers.CharField(max_length=150),
-        required=False,
-        allow_empty=True,
-    )
+def contexto_espacios_valido(data):
+    """Valida el DTO completo antes de declarar disponible el contexto remoto."""
+    if not isinstance(data, dict) or not isinstance(data.get("pwa"), dict):
+        return False
+    pwa = data["pwa"]
 
-    def _raise_read_only(self):
-        raise NotImplementedError("Serializer de solo lectura.")
-
-    def create(self, validated_data):
-        return self._raise_read_only()
-
-    def update(self, instance, validated_data):
-        return self._raise_read_only()
-
-
-class OperadorListSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(source="user_id", read_only=True)
-    username = serializers.CharField(source="user.username", read_only=True)
-    email = serializers.EmailField(source="user.email", read_only=True)
-    creado_por_id = serializers.IntegerField(source="creado_por.id", read_only=True)
-    creado_por_username = serializers.CharField(
-        source="creado_por.username",
-        read_only=True,
-    )
-    permission_codes = serializers.SerializerMethodField()
-    comedor_ids = serializers.SerializerMethodField()
-
-    class Meta:
-        model = AccesoComedorPWA
-        fields = (
-            "id",
-            "username",
-            "email",
-            "creado_por_id",
-            "creado_por_username",
-            "permission_codes",
-            "comedor_ids",
-            "activo",
-            "fecha_creacion",
+    def ids(value):
+        return isinstance(value, list) and all(
+            isinstance(item, int) and not isinstance(item, bool) and item > 0
+            for item in value
         )
 
-    def get_permission_codes(self, obj):
-        return sorted(get_effective_permission_codes(obj.user))
-
-    def get_comedor_ids(self, obj):
-        return sorted(
-            obj.user.accesos_pwa.filter(
-                rol=AccesoComedorPWA.ROL_OPERADOR,
-                activo=True,
-            ).values_list("comedor_id", flat=True)
-        )
-
-
-class OperadorCreateResponseSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(source="user_id", read_only=True)
-    username = serializers.CharField(source="user.username", read_only=True)
-    email = serializers.EmailField(source="user.email", read_only=True)
-    comedor_id = serializers.IntegerField(read_only=True)
-    creado_por_id = serializers.IntegerField(source="creado_por.id", read_only=True)
-    creado_por_username = serializers.CharField(
-        source="creado_por.username",
-        read_only=True,
+    bools_ok = all(
+        isinstance(pwa.get(key), bool)
+        for key in ("is_pwa_user", "read_only", "must_change_password")
     )
-    permission_codes = serializers.SerializerMethodField()
-    comedor_ids = serializers.SerializerMethodField()
-
-    class Meta:
-        model = AccesoComedorPWA
-        fields = (
-            "id",
-            "username",
-            "email",
-            "comedor_id",
-            "comedor_ids",
-            "creado_por_id",
-            "creado_por_username",
-            "permission_codes",
-            "rol",
-            "activo",
+    lists_ok = all(
+        ids(pwa.get(key)) for key in ("comedores_representados", "organizaciones_ids")
+    ) and all(ids(data.get(key)) for key in ("duplas_asignadas", "duplas_ids"))
+    operador = pwa.get("comedor_operador_id")
+    return (
+        bools_ok
+        and lists_ok
+        and "comedor_operador_id" in pwa
+        and (
+            operador is None
+            or (
+                isinstance(operador, int)
+                and not isinstance(operador, bool)
+                and operador > 0
+            )
         )
-
-    def get_permission_codes(self, obj):
-        return sorted(get_effective_permission_codes(obj.user))
-
-    def get_comedor_ids(self, obj):
-        return sorted(
-            obj.user.accesos_pwa.filter(
-                rol=AccesoComedorPWA.ROL_OPERADOR,
-                activo=True,
-            ).values_list("comedor_id", flat=True)
-        )
-
-
-class PasswordResetRequestSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-    username = serializers.CharField(required=True, max_length=150)
-
-    def _raise_read_only(self):
-        raise NotImplementedError("Serializer de solo lectura.")
-
-    def create(self, validated_data):
-        return self._raise_read_only()
-
-    def update(self, instance, validated_data):
-        return self._raise_read_only()
-
-    def validate(self, attrs):
-        email = (attrs.get("email") or "").strip()
-        username = (attrs.get("username") or "").strip()
-
-        attrs["username"] = username
-        attrs["email"] = email
-        return attrs
-
-
-class PasswordResetConfirmSerializer(serializers.Serializer):
-    uid = serializers.CharField()
-    token = serializers.CharField()
-    new_password = serializers.CharField(write_only=True, trim_whitespace=False)
-
-    def _raise_read_only(self):
-        raise NotImplementedError("Serializer de solo lectura.")
-
-    def create(self, validated_data):
-        return self._raise_read_only()
-
-    def update(self, instance, validated_data):
-        return self._raise_read_only()
-
-    def validate(self, attrs):
-        uid = attrs.get("uid")
-        user = get_user_by_uid(uid)
-        if not user:
-            raise serializers.ValidationError({"detail": "Token inválido o expirado."})
-
-        try:
-            password_validation.validate_password(attrs.get("new_password"), user=user)
-        except DjangoValidationError as exc:
-            raise serializers.ValidationError(
-                {"new_password": list(getattr(exc, "messages", [str(exc)]))}
-            ) from exc
-        return attrs
-
-
-class PasswordChangeRequiredSerializer(serializers.Serializer):
-    new_password = serializers.CharField(write_only=True, trim_whitespace=False)
-
-    def _raise_read_only(self):
-        raise NotImplementedError("Serializer de solo lectura.")
-
-    def create(self, validated_data):
-        return self._raise_read_only()
-
-    def update(self, instance, validated_data):
-        return self._raise_read_only()
-
-    def validate(self, attrs):
-        user = self.context["request"].user
-        try:
-            password_validation.validate_password(attrs.get("new_password"), user=user)
-        except DjangoValidationError as exc:
-            raise serializers.ValidationError(
-                {"new_password": list(getattr(exc, "messages", [str(exc)]))}
-            ) from exc
-        return attrs
+        and "tipo_asociacion" in pwa
+        and (pwa["tipo_asociacion"] is None or isinstance(pwa["tipo_asociacion"], str))
+        and isinstance(pwa.get("roles"), list)
+        and all(isinstance(role, str) for role in pwa["roles"])
+    )

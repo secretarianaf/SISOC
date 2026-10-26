@@ -223,7 +223,7 @@ No se ejecuto `nginx -t`, no se edito configuracion y no se recargo NGINX.
   `purge_auditlog`, path historico bajo `/home/admin-ssies`, path historico bajo
   `/opt/ssies` y HetrixTools.
 - Los dos paths historicos ya no existen.
-- `scripts/crontab` versionado contiene esas cuatro entradas, incluida una poda
+- `src/scripts/crontab` versionado contiene esas cuatro entradas, incluida una poda
   Docker semanal con retencion 24h y `--volumes`.
 
 El contador puntual de `--volumes` del preflight tuvo un error de argumentos y
@@ -253,7 +253,7 @@ artefacto frontend servido por NGINX.
 1. Un push a `main` dispara `.github/workflows/deploy.yml`.
 2. El job usa GitHub Environment `production` y runner `sisoc-produccion`.
 3. `APP_ROOT` apunta al checkout ya provisionado; no usa `actions/checkout`.
-4. Ejecuta `scripts/operacion/deploy_refresh.sh --yes`.
+4. Ejecuta `src/scripts/operacion/deploy_refresh.sh --yes`.
 5. El script baja el stack, hace pull `--ff-only`, reconstruye y levanta.
 6. El entrypoint puede ejecutar migraciones y otras escrituras DB.
 

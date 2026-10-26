@@ -142,6 +142,8 @@ class GenerarUsuarioCDIView(
                 delegacion_autorizada=es_responsable_cdi(
                     self.request.user, self.centro
                 ),
+                # El email del CDI suele ser institucional y compartido.
+                usuario_dni_si_email_en_uso=True,
             )
         except ValidationError as exc:
             for mensaje in exc.messages:

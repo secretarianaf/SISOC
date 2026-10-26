@@ -170,8 +170,15 @@ CDI_INTERVENCIONES_VISIBLE = _safe_bool_env("CDI_INTERVENCIONES_VISIBLE", False)
 # tienen su propio settings en src/backends/<vertical>/<vertical>_runtime/ y
 # src/backends/config/settings_all.py compone todo en un solo proceso (tests y desarrollo).
 SHARED_APPS = [
+    # Admin con Unfold (#2789): sus templates tienen que ir antes que los del
+    # admin de Django. BasicAppConfig no reemplaza admin.site; el sitio lo
+    # instala core.admin_apps.SisocAdminConfig (solo superusuarios).
+    "unfold.apps.BasicAppConfig",
+    "unfold.contrib.filters",
+    "unfold.contrib.import_export",
+    "unfold.contrib.inlines",
     # Django
-    "django.contrib.admin",
+    "core.admin_apps.SisocAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -779,6 +786,53 @@ IMPORT_EXPORT_IMPORT_PERMISSION_CODE = "change"
 IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
 # Neutraliza fórmulas en las celdas exportadas (CSV/formula injection).
 IMPORT_EXPORT_ESCAPE_FORMULAE_ON_EXPORT = True
+
+# Django Unfold (admin de desarrollo y soporte, issue #2789). Ver
+# docs/registro/decisiones/2026-10-26-2789-admin-unfold-autoservicio.md
+UNFOLD = {
+    "SITE_TITLE": "SISOC admin",
+    "SITE_HEADER": "SISOC",
+    "SITE_SUBHEADER": "Desarrollo y soporte",
+    "SITE_URL": "/",
+    "SHOW_VIEW_ON_SITE": False,
+    "ENVIRONMENT": "core.admin_navigation.badge_entorno",
+    "ENVIRONMENT_TITLE_PREFIX": "core.admin_navigation.prefijo_titulo_entorno",
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+        "navigation": "core.admin_navigation.navegacion_sidebar",
+    },
+    # Verde institucional (skill tema-verde-institucional): teal #04756F y
+    # neutrales "piedra".
+    "COLORS": {
+        "base": {
+            "50": "#FAFAF9",
+            "100": "#F5F5F4",
+            "200": "#E7E5E4",
+            "300": "#D6D3D1",
+            "400": "#A8A29E",
+            "500": "#78716C",
+            "600": "#57534E",
+            "700": "#44403C",
+            "800": "#292524",
+            "900": "#1C1917",
+            "950": "#0C0A09",
+        },
+        "primary": {
+            "50": "#E4F1F0",
+            "100": "#C6E3E1",
+            "200": "#9DCECB",
+            "300": "#6FB8B4",
+            "400": "#379F9B",
+            "500": "#0A8A84",
+            "600": "#04756F",
+            "700": "#045F5B",
+            "800": "#045049",
+            "900": "#073B38",
+            "950": "#052A28",
+        },
+    },
+}
 
 # Config propia (constantes)
 PROG_MILD = 24

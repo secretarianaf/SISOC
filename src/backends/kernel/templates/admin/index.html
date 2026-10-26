@@ -1,19 +1,22 @@
 {% extends "admin/index.html" %}
-
+{% load unfold %}
+{% comment %}
+    Índice del admin con Unfold (#2789). Los admins que sirve otro backend
+    (config/backends.json) se listan acá y en el sidebar ("Otros servicios").
+{% endcomment %}
 {% block content %}
-    {{ block.super }}
     {% if backend_admin_links %}
-        <div class="module" id="backend-admin-links">
-            <table>
-                <caption>Administración de dominios</caption>
-                <tbody>
-                    {% for link in backend_admin_links %}
-                        <tr>
-                            <th scope="row"><a href="{{ link.url }}">{{ link.label }}</a></th>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="mb-8" id="backend-admin-links">
+            {% component "unfold/components/card.html" with title="Administración de otros servicios" %}
+            <div class="flex flex-row flex-wrap gap-4">
+                {% for link in backend_admin_links %}
+                    {% component "unfold/components/link.html" with href=link.url icon="open_in_new" %}
+                    {{ link.label }}
+                {% endcomponent %}
+            {% endfor %}
         </div>
-    {% endif %}
-{% endblock %}
+    {% endcomponent %}
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock content %}

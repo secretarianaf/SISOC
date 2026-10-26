@@ -74,18 +74,21 @@ def test_portal_reenvia_solo_el_admin_del_dueno(backend, app_label):
 
 
 @pytest.mark.parametrize("backend,app_label", ADMINS_DE_VERTICALES.items())
-def test_indice_admin_muestra_el_vertical_solo_con_permiso(backend, app_label):
+def test_indice_admin_muestra_el_vertical_solo_a_superusuarios(backend, app_label):
+    # Issue #2789: el admin es solo para superusuarios; staff con permiso del
+    # módulo ya no alcanza.
     request = RequestFactory().get("/admin/")
     request.user = SimpleNamespace(
+        is_authenticated=True,
         is_active=True,
         is_staff=True,
-        has_module_perms=lambda app: app == app_label,
+        is_superuser=True,
     )
     spec = load_backends_registry()[backend]
     with override_settings(SISOC_BACKENDS={backend: spec}):
         urls = [link["url"] for link in admin_backends(request)["backend_admin_links"]]
         assert urls == [f"/admin/{app_label}/"]
-        request.user.has_module_perms = lambda app: False
+        request.user.is_superuser = False
         assert not admin_backends(request)["backend_admin_links"]
 
 

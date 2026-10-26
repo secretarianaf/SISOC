@@ -25,6 +25,7 @@ django-crispy-forms==2.5
 django-formtools==2.6.1
 django-auditlog==3.2.1
 django-import-export==4.3.14
+django-unfold==0.91.0
 djangorestframework==3.16.1
 djangorestframework-api-key==3.1.0
 docutils==0.19

@@ -7,6 +7,7 @@ from drf_spectacular.views import (
     SpectacularRedocView,
 )
 from config.urls_dev import dev_urlpatterns
+from core.admin_site import admindocs_urlpatterns
 from core.backend_proxy import backend_proxy_urlpatterns
 from core.legacy_redirects import redirecciones_legacy
 from core.url_registry import stub_urlpatterns
@@ -58,7 +59,8 @@ urlpatterns = [
         SisocPasswordResetCompleteView.as_view(),
         name="password_reset_complete",
     ),
-    path("admin/doc/", include("django.contrib.admindocs.urls")),
+    # Misma regla que el admin (#2789): solo superusuarios.
+    path("admin/doc/", include(admindocs_urlpatterns())),
     path("admin/", admin.site.urls),
     path("", include("usuarios.urls")),
     path("", include("django.contrib.auth.urls")),

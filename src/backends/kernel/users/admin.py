@@ -3,6 +3,7 @@ from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
+from unfold.contrib.filters.admin import RangeDateTimeFilter
 from unfold.forms import (
     AdminPasswordChangeForm,
     AuthenticationForm,
@@ -37,6 +38,13 @@ class UserAdmin(BaseUserAdmin, SisocModelAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
     change_password_form = AdminPasswordChangeForm
+    # search_fields de BaseUserAdmin (username, nombre, apellido, email): User
+    # es destino de autocomplete de todos los dominios.
+    list_filter = (
+        *BaseUserAdmin.list_filter,
+        ("last_login", RangeDateTimeFilter),
+        ("date_joined", RangeDateTimeFilter),
+    )
 
 
 @admin.register(Group)
@@ -56,5 +64,6 @@ class ProfileAdmin(SisocModelAdmin):
     )
     list_filter = ("must_change_password", "source", "acceso_web", "acceso_siis")
     search_fields = ("user__username", "user__email")
-    raw_id_fields = ("user",)
+    list_select_related = ("user",)
+    autocomplete_fields = ("user",)
     readonly_fields = ("fecha_creacion",)

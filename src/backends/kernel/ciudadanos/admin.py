@@ -1,6 +1,16 @@
 from django.contrib import admin
+from unfold.contrib.filters.admin import (
+    AutocompleteSelectFilter,
+    ChoicesDropdownFilter,
+    RangeDateFilter,
+    RangeDateTimeFilter,
+)
 
 from core.admin_base import SisocModelAdmin
+from core.admin_operaciones import Operacion, OperacionesAdminMixin
+from ciudadanos.services_importacion_masiva_jobs import (
+    request_resume_ciudadanos_import_job,
+)
 from ciudadanos.models import (
     Ciudadano,
     CiudadanosImportJob,
@@ -14,9 +24,36 @@ from ciudadanos.models import (
 
 @admin.register(Ciudadano)
 class CiudadanoAdmin(SisocModelAdmin):
-    list_display = ("apellido", "nombre", "tipo_documento", "documento", "activo")
-    search_fields = ("apellido", "nombre", "documento")
-    list_filter = ("activo", "tipo_documento", "sexo")
+    list_display = (
+        "apellido",
+        "nombre",
+        "tipo_documento",
+        "documento",
+        "estado_validacion_renaper",
+        "requiere_revision_manual",
+        "activo",
+    )
+    search_fields = ("apellido", "nombre", "documento", "cuil_cuit")
+    list_filter = (
+        "activo",
+        "tipo_documento",
+        ("estado_validacion_renaper", ChoicesDropdownFilter),
+        "requiere_revision_manual",
+        ("estado_revision_manual", ChoicesDropdownFilter),
+        ("tipo_registro_identidad", ChoicesDropdownFilter),
+        "sexo",
+        ("creado", RangeDateTimeFilter),
+    )
+    # Territorio y usuarios son tablas grandes: un <select> con todas las filas
+    # vuelve inusable el formulario en PRD.
+    autocomplete_fields = (
+        "provincia",
+        "municipio",
+        "localidad",
+        "creado_por",
+        "modificado_por",
+        "deleted_by",
+    )
     readonly_fields = ("creado", "modificado")
 
     def get_readonly_fields(self, request, obj=None):
@@ -40,6 +77,7 @@ class GrupoFamiliarAdmin(SisocModelAdmin):
     )
     list_filter = ("vinculo", "estado_relacion", "conviven", "cuidador_principal")
     autocomplete_fields = ("ciudadano_1", "ciudadano_2")
+    list_select_related = ("ciudadano_1", "ciudadano_2")
 
 
 @admin.register(ProgramaTransferencia)
@@ -55,6 +93,7 @@ class ProgramaTransferenciaAdmin(SisocModelAdmin):
     search_fields = ("ciudadano__apellido", "ciudadano__nombre", "ciudadano__documento")
     list_filter = ("tipo", "categoria", "activo")
     autocomplete_fields = ("ciudadano",)
+    list_select_related = ("ciudadano",)
     readonly_fields = ("creado", "modificado")
 
 
@@ -72,6 +111,7 @@ class HistorialTransferenciaAdmin(SisocModelAdmin):
     search_fields = ("ciudadano__apellido", "ciudadano__nombre", "ciudadano__documento")
     list_filter = ("anio", "mes")
     autocomplete_fields = ("ciudadano",)
+    list_select_related = ("ciudadano",)
     readonly_fields = ("creado", "modificado")
 
 
@@ -79,13 +119,31 @@ class HistorialTransferenciaAdmin(SisocModelAdmin):
 class InteraccionAdmin(SisocModelAdmin):
     list_display = ("ciudadano", "tipo", "fecha", "responsable", "estado")
     search_fields = ("ciudadano__apellido", "ciudadano__nombre", "tipo")
-    list_filter = ("estado", "fecha")
+    list_filter = ("estado", ("fecha", RangeDateFilter))
     autocomplete_fields = ("ciudadano", "responsable")
+    list_select_related = ("ciudadano", "responsable")
     readonly_fields = ("creado", "modificado")
 
 
+def _reanudar_importacion(job, _usuario, _datos):
+    return request_resume_ciudadanos_import_job(job=job)
+
+
 @admin.register(CiudadanosImportJob)
-class CiudadanosImportJobAdmin(SisocModelAdmin):
+class CiudadanosImportJobAdmin(OperacionesAdminMixin, SisocModelAdmin):
+    operaciones = (
+        Operacion(
+            slug="reanudar",
+            titulo="Reanudar lote fallido",
+            descripcion=(
+                "Vuelve el lote a pendiente para que el worker siga desde la "
+                "última fila procesada. Solo aplica a lotes fallidos."
+            ),
+            ejecutar=_reanudar_importacion,
+            campo_estado="status",
+            icono="replay",
+        ),
+    )
     list_display = (
         "id",
         "requested_by",
@@ -95,8 +153,12 @@ class CiudadanosImportJobAdmin(SisocModelAdmin):
         "processed_rows",
         "requested_at",
     )
-    list_filter = ("status",)
+    list_filter = (
+        ("status", ChoicesDropdownFilter),
+        ("requested_at", RangeDateTimeFilter),
+    )
     search_fields = ("original_filename", "requested_by__username")
+    list_select_related = ("requested_by",)
     readonly_fields = (
         "requested_by",
         "original_filename",
@@ -127,14 +189,21 @@ class CiudadanosImportJobAdmin(SisocModelAdmin):
         return False
 
     def has_change_permission(self, request, obj=None):
-        return False
+        # Sin edición del registro: el formulario queda de solo lectura. El
+        # permiso a nivel modelo (obj=None) habilita las operaciones.
+        return obj is None and super().has_change_permission(request)
 
 
 @admin.register(CiudadanosImportJobRow)
 class CiudadanosImportJobRowAdmin(SisocModelAdmin):
     list_display = ("job", "fila", "documento_raw", "status", "processed_at")
-    list_filter = ("status",)
+    list_filter = (
+        ("job", AutocompleteSelectFilter),
+        ("status", ChoicesDropdownFilter),
+        ("processed_at", RangeDateTimeFilter),
+    )
     search_fields = ("documento_raw", "dni", "cuil")
+    list_select_related = ("job",)
     raw_id_fields = ("job", "ciudadano")
     readonly_fields = (
         "job",

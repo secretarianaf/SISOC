@@ -124,7 +124,8 @@ def query_param_entero(request, nombre: str) -> str | None:
     valor = (request.query_params.get(nombre) or "").strip()
     if not valor:
         return None
-    if not valor.isdigit():
+    # isascii: dígitos Unicode como "²" pasan isdigit() pero int() los rechaza.
+    if not (valor.isascii() and valor.isdigit()):
         raise ValidationError({nombre: ["Debe ser un número entero."]})
     return valor
 

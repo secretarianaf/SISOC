@@ -437,6 +437,9 @@ class VatWebCursoViewSet(viewsets.ReadOnlyModelViewSet):
         titulo_id = query_param_entero(self.request, "titulo_id")
         programa_id = query_param_entero(self.request, "programa_id")
         ciclo_lectivo = query_param_entero(self.request, "ciclo_lectivo")
+        # El lookup __year arma datetime.date(año, 1, 1): fuera de 1..9999 da 500.
+        if ciclo_lectivo and not 1 <= int(ciclo_lectivo) <= 9999:
+            raise ValidationError({"ciclo_lectivo": ["Debe ser un año válido."]})
         estado = self.request.query_params.get("estado")
         usa_voucher = self.request.query_params.get("usa_voucher")
 

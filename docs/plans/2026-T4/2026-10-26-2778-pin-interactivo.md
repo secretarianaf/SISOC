@@ -37,8 +37,9 @@ antigua se descarta si cambió el domicilio o se movió/descartó el pin.
 
 ## Límites y cierre
 
-Las cuatro etapas están implementadas y confirmadas visualmente. Falta actualizar la rama con los cambios concurrentes de development y publicar para
-verificar CI; el push sigue pendiente de autorización explícita. Los mapas
+Las cuatro etapas están implementadas y confirmadas visualmente. Development
+está integrado y las verificaciones locales pasaron. Se autorizó publicar un
+único PR para #2777 y #2778; falta verificar CI. Los mapas
 agregados de Dispositivos e Inspecciones conservan consulta sin escritura
 directa: el ajuste se confirma en el formulario autorizado del legajo. El editor compartido del
 kernel no importa ni conoce modelos de verticales.

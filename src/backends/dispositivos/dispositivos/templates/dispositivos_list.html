@@ -31,12 +31,14 @@
                                             <td>{{ dispositivo.municipio }}</td>
                                             <td>
                                                 <div class="comedor-actions">
-                                                    <a href="{{ map_url }}{% if '?' in map_url %}&amp;{% else %}?{% endif %}dispositivo={{ dispositivo.pk }}"
-                                                       class="btn btn-ver"
-                                                       title="Ver ubicación en el mapa">
-                                                        <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
-                                                        Ver en mapa
-                                                    </a>
+                                                    {% if map_url %}
+                                                        <a href="{{ map_url }}{% if '?' in map_url %}&amp;{% else %}?{% endif %}dispositivo={{ dispositivo.pk }}"
+                                                           class="btn btn-ver"
+                                                           title="Ver ubicación en el mapa">
+                                                            <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                                                            Ver en mapa
+                                                        </a>
+                                                    {% endif %}
                                                     <a href="{% url 'dispositivos_detalle' dispositivo.pk %}"
                                                        class="btn btn-ver"
                                                        title="Ver detalles">

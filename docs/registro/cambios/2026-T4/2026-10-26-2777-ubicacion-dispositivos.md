@@ -53,3 +53,8 @@ No agrega dependencias, modelos, settings ni permisos nuevos.
 - Persistencia y permisos verificados mediante tests automáticos; no se afirma
   una prueba manual de guardado.
 - CI: pendiente de publicación del PR. Sin merge ni despliegue.
+
+Integración final con development: la migración 0008 de Dispositivos une los
+campos nuevos con 0007_alter_dispositivo_options, conservando el permiso de mapa
+incorporado concurrentemente. Migraciones aplicadas en local y sin cambios
+pendientes de generar. El PR se publica junto al #2778 por decisión del usuario.

@@ -305,3 +305,6 @@ class Dispositivo(models.Model):
         verbose_name = "Dispositivo"
         verbose_name_plural = "Dispositivos"
         ordering = ["-created_at", "nombre_institucion"]
+        permissions = [
+            ("ver_mapa_dispositivo", "Puede ver el mapa de dispositivos"),
+        ]

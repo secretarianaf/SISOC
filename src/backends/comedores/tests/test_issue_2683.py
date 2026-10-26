@@ -8,7 +8,10 @@ from comedores.forms.actividad_espacio_pwa_form import ActividadEspacioPWAWebFor
 from core.models import Dia
 from pwa.models import ActividadEspacioPWA, CatalogoActividadPWA
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
-from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from rendicioncuentasmensual.services import (
+    RendicionCuentaMensualService,
+    RendicionProcesoService,
+)
 from tests.test_rendicioncuentasmensual_domain_rules import (
     scopes,
 )  # pylint: disable=unused-import
@@ -56,12 +59,19 @@ def test_subsanacion_conserva_observacion_hasta_nueva_revision(scopes, categoria
         next(archivo for archivo in archivos if archivo.pk == nuevo.pk).observaciones
         == "Debe incluir la firma"
     )
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_INICIAR_TERRITORIAL,
+        datos={},
+    )
     RendicionCuentaMensualService.actualizar_estado_documento_revision(
         documento=nuevo,
         estado=DocumentacionAdjunta.ESTADO_VALIDADO,
     )
     nuevo.refresh_from_db()
-    assert nuevo.observaciones is None
+    assert nuevo.observaciones == "Debe incluir la firma"
+    assert nuevo.revision_estado == DocumentacionAdjunta.ESTADO_VALIDADO
+    assert nuevo.revision_observaciones is None
 
 
 @pytest.mark.django_db

@@ -1,8 +1,9 @@
 {% extends "admin/index.html" %}
 {% load unfold %}
 {% comment %}
-    Índice del admin con Unfold (#2789). Los admins que sirve otro backend
-    (config/backends.json) se listan acá y en el sidebar ("Otros servicios").
+    Índice del admin con Unfold (#2789): métricas de las apps de este proceso
+    (core.admin_dashboard) y accesos a los admins que sirve otro backend
+    (config/backends.json), que también están en el sidebar.
 {% endcomment %}
 {% block content %}
     {% if backend_admin_links %}
@@ -18,5 +19,6 @@
     {% endcomponent %}
 </div>
 {% endif %}
+{% include "admin/sisoc/secciones_dashboard.html" %}
 {{ block.super }}
 {% endblock content %}

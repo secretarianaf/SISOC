@@ -12,6 +12,8 @@ from django.contrib.auth.decorators import user_passes_test
 from django.urls import URLPattern, reverse_lazy
 from unfold.sites import UnfoldAdminSite
 
+from core.admin_dashboard import secciones_de_app
+
 
 def puede_usar_admin(user) -> bool:
     """Única regla de acceso al admin, a ``admin/doc/`` y a sus accesos.
@@ -37,6 +39,15 @@ class SisocAdminSite(UnfoldAdminSite):
 
     def has_permission(self, request):
         return puede_usar_admin(request.user)
+
+    def app_index(self, request, app_label, extra_context=None):
+        # Cada vertical muestra sus métricas en su índice (/admin/<app>/), que
+        # sirve su propio runtime (#2789, Fase 3).
+        extra_context = {
+            **(extra_context or {}),
+            "sisoc_secciones": secciones_de_app(app_label),
+        }
+        return super().app_index(request, app_label, extra_context)
 
 
 def admindocs_urlpatterns() -> list[URLPattern]:

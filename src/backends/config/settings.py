@@ -796,6 +796,7 @@ UNFOLD = {
     "SITE_URL": "/",
     "SHOW_VIEW_ON_SITE": False,
     "ENVIRONMENT": "core.admin_navigation.badge_entorno",
+    "DASHBOARD_CALLBACK": "core.admin_dashboard.dashboard_callback",
     "ENVIRONMENT_TITLE_PREFIX": "core.admin_navigation.prefijo_titulo_entorno",
     "SIDEBAR": {
         "show_search": True,

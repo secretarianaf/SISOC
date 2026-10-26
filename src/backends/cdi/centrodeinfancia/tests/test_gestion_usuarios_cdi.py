@@ -47,11 +47,19 @@ def centro():
     )
 
 
-def _referente(centro, username, *, responsable=False, estado=Estado.ACTIVO):
+def _referente(
+    centro, username, *, responsable=False, estado=Estado.ACTIVO, dni="", email=None
+):
     user = User.objects.create_user(
-        username=username, email=f"{username}@example.com", password="test1234"
+        username=username,
+        email=email or f"{username}@example.com",
+        password="test1234",
     )
     Profile.objects.get_or_create(user=user)
+    if dni:
+        # Por ``user.profile``: así no queda una copia vieja del perfil cacheada.
+        user.profile.dni = dni
+        user.profile.save(update_fields=["dni"])
     user.groups.add(Group.objects.get(name=UserGroups.CDI_REFERENTE_CENTRO))
     user.user_permissions.add(Permission.objects.get(codename="view_centrodeinfancia"))
     acceso = AccesoCDI.objects.create(
@@ -268,6 +276,14 @@ def _request(user):
     return request
 
 
+FICHA_ANA = {
+    "nombre_referente": "Ana",
+    "apellido_referente": "Gómez",
+    "email_referente": "ana@example.com",
+    "dni_referente": "30123456",
+}
+
+
 def test_cambio_de_persona_crea_nuevo_responsable_y_conserva_al_anterior(
     centro, settings
 ):
@@ -280,12 +296,7 @@ def test_cambio_de_persona_crea_nuevo_responsable_y_conserva_al_anterior(
     centro.dni_referente = "28456789"
     centro.save()
 
-    actualizar_referente_cdi(
-        _request(anterior),
-        centro,
-        dni_anterior="30123456",
-        email_anterior="ana@example.com",
-    )
+    actualizar_referente_cdi(_request(anterior), centro, anterior=FICHA_ANA)
 
     nuevo = AccesoCDI.objects.get(user__email="juan@example.com")
     assert nuevo.es_responsable is True
@@ -297,19 +308,119 @@ def test_cambio_de_persona_crea_nuevo_responsable_y_conserva_al_anterior(
     assert anterior.email == email_anterior
 
 
+def test_nuevo_referente_con_el_mismo_email_institucional_tiene_cuenta_propia(
+    centro, settings
+):
+    settings.DOMINIO = "http://testserver"
+    anterior, acceso_anterior = _referente(
+        centro, "ana", responsable=True, dni="30123456", email="cdi@example.com"
+    )
+    anterior.profile.must_change_password = True
+    anterior.profile.save()
+    centro.email_referente = "cdi@example.com"
+    centro.nombre_referente = "Roxana"
+    centro.apellido_referente = "Salinas"
+    centro.dni_referente = "28456789"
+    centro.save()
+
+    actualizar_referente_cdi(
+        _request(anterior),
+        centro,
+        anterior={**FICHA_ANA, "email_referente": "cdi@example.com"},
+    )
+
+    nuevo = AccesoCDI.objects.get(centro=centro, es_responsable=True).user
+    assert nuevo != anterior
+    assert (nuevo.first_name, nuevo.last_name) == ("Roxana", "Salinas")
+    assert nuevo.profile.dni == "28456789"
+    # El usuario es el DNI, no el email compartido.
+    assert nuevo.username == "28456789"
+    # El anterior queda como histórico: con su cuenta, sus datos y su acceso.
+    anterior.refresh_from_db()
+    acceso_anterior.refresh_from_db()
+    assert anterior.email == "cdi@example.com"
+    assert acceso_anterior.estado == Estado.ACTIVO
+
+
+def test_cuenta_de_otro_programa_con_usuario_dni_es_la_misma_persona(centro):
+    # Las cuentas de PNUD usan el DNI como usuario y pueden no tener DNI en el
+    # perfil: no se le crea al referente una segunda cuenta "30123456-2".
+    pnud = User.objects.create_user("30123456", "pnud@example.com", "test1234")
+    otro, _ = _referente(centro, "luis", responsable=True, dni="28456789")
+
+    actualizar_referente_cdi(
+        _request(otro),
+        centro,
+        anterior={
+            "nombre_referente": "Luis",
+            "apellido_referente": "Pérez",
+            "email_referente": "ana@example.com",
+            "dni_referente": "28456789",
+        },
+    )
+
+    assert AccesoCDI.objects.get(centro=centro, es_responsable=True).user == pnud
+    assert not User.objects.filter(username="30123456-2").exists()
+
+
+def test_responsable_de_otra_persona_se_corrige_sin_tocar_su_cuenta(centro, settings):
+    # Caso de producción: un usuario de otro programa con el email institucional
+    # quedó como responsable. Al guardar la ficha, el referente pasa a tener su
+    # propia cuenta y a la ajena no se le cambia el email.
+    settings.DOMINIO = "http://testserver"
+    ajena, acceso_ajeno = _referente(centro, "5686746", responsable=True, dni="5686746")
+    ajena.profile.must_change_password = True
+    ajena.profile.save()
+    centro.email_referente = "ana.nueva@example.com"
+    centro.save()
+
+    actualizar_referente_cdi(_request(ajena), centro, anterior=FICHA_ANA)
+
+    responsable = AccesoCDI.objects.get(centro=centro, es_responsable=True)
+    assert responsable.user != ajena
+    assert responsable.user.profile.dni == "30123456"
+    ajena.refresh_from_db()
+    acceso_ajeno.refresh_from_db()
+    assert ajena.email == "5686746@example.com"
+    assert acceso_ajeno.estado == Estado.ACTIVO
+
+
+def test_referente_que_vuelve_recupera_su_cuenta_con_el_email_nuevo(centro):
+    actual, _ = _referente(centro, "luis", responsable=True, dni="28456789")
+    vuelve, acceso = _referente(centro, "ana", dni="30123456")
+    vuelve.profile.must_change_password = True
+    vuelve.profile.save(update_fields=["must_change_password"])
+    centro.email_referente = "ana.nueva@example.com"
+    centro.save()
+
+    actualizar_referente_cdi(
+        _request(actual),
+        centro,
+        anterior={
+            "nombre_referente": "Luis",
+            "apellido_referente": "Pérez",
+            "email_referente": "ana.nueva@example.com",
+            "dni_referente": "28456789",
+        },
+    )
+
+    acceso.refresh_from_db()
+    vuelve.refresh_from_db()
+    assert acceso.es_responsable is True
+    assert vuelve.email == "ana.nueva@example.com"
+    assert User.objects.count() == 2
+
+
 def test_misma_persona_con_otro_email_sincroniza_su_cuenta(centro):
-    responsable, acceso = _referente(centro, "ana", responsable=True)
+    responsable, acceso = _referente(
+        centro, "ana", responsable=True, dni="30123456", email="ana@example.com"
+    )
     responsable.profile.must_change_password = True
     responsable.profile.save()
     centro.email_referente = "ana.nueva@example.com"
     centro.save()
 
-    actualizar_referente_cdi(
-        _request(responsable),
-        centro,
-        dni_anterior="30123456",
-        email_anterior=responsable.email,
-    )
+    actualizar_referente_cdi(_request(responsable), centro, anterior=FICHA_ANA)
 
     responsable.refresh_from_db()
     assert responsable.email == "ana.nueva@example.com"
@@ -318,21 +429,54 @@ def test_misma_persona_con_otro_email_sincroniza_su_cuenta(centro):
     assert acceso.es_responsable is True
 
 
+def test_corregir_el_nombre_no_reemplaza_la_cuenta_sin_dni(centro):
+    # Las cuentas creadas antes de identificar por DNI no lo tienen en el perfil:
+    # corregir un error de tipeo en la ficha no debe crearle otra cuenta.
+    responsable, acceso = _referente(centro, "ana.gomez", responsable=True)
+    responsable.first_name, responsable.last_name = "Ana", "Gomes"
+    responsable.save(update_fields=["first_name", "last_name"])
+
+    actualizar_referente_cdi(
+        _request(responsable),
+        centro,
+        anterior={**FICHA_ANA, "apellido_referente": "Gomes"},
+    )
+
+    acceso.refresh_from_db()
+    assert acceso.es_responsable is True
+    assert User.objects.count() == 1
+
+
+def test_sin_dni_corregir_el_apellido_es_la_misma_persona(centro):
+    centro.dni_referente = ""
+    centro.save()
+    responsable, acceso = _referente(centro, "ana.gomez", responsable=True)
+    responsable.first_name, responsable.last_name = "Ana", "Gomes"
+    responsable.save(update_fields=["first_name", "last_name"])
+
+    actualizar_referente_cdi(
+        _request(responsable),
+        centro,
+        anterior={**FICHA_ANA, "dni_referente": "", "apellido_referente": "Gomes"},
+    )
+
+    acceso.refresh_from_db()
+    assert acceso.es_responsable is True
+    assert User.objects.count() == 1
+
+
 def test_cambio_a_un_referente_existente_lo_reactiva_como_responsable(centro):
     anterior, _ = _referente(centro, "ana", responsable=True)
-    existente, acceso_existente = _referente(centro, "luis", estado=Estado.BAJA)
+    existente, acceso_existente = _referente(
+        centro, "luis", estado=Estado.BAJA, dni="28456789"
+    )
     centro.nombre_referente = "Luis"
     centro.apellido_referente = "Pérez"
     centro.email_referente = existente.email
     centro.dni_referente = "28456789"
     centro.save()
 
-    actualizar_referente_cdi(
-        _request(anterior),
-        centro,
-        dni_anterior="30123456",
-        email_anterior="ana@example.com",
-    )
+    actualizar_referente_cdi(_request(anterior), centro, anterior=FICHA_ANA)
 
     acceso_existente.refresh_from_db()
     assert (acceso_existente.estado, acceso_existente.es_responsable) == (
@@ -420,14 +564,9 @@ def test_generar_primer_referente_lo_asigna_como_responsable(client, centro, set
 
 @pytest.mark.parametrize("estado", [Estado.ACTIVO, Estado.BAJA])
 def test_guardar_ficha_recupera_referente_sin_responsable(centro, estado):
-    referente, acceso = _referente(centro, "ana", estado=estado)
+    referente, acceso = _referente(centro, "ana", estado=estado, dni="30123456")
     admin = User.objects.create_superuser("admin-recuperar", "", "test1234")
-    actualizar_referente_cdi(
-        _request(admin),
-        centro,
-        dni_anterior=centro.dni_referente,
-        email_anterior=centro.email_referente,
-    )
+    actualizar_referente_cdi(_request(admin), centro, anterior=FICHA_ANA)
     acceso.refresh_from_db()
     assert acceso.es_responsable is True
     assert acceso.estado == Estado.ACTIVO
@@ -439,18 +578,15 @@ def test_guardar_ficha_recupera_referente_sin_responsable(centro, estado):
 def test_recuperar_responsable_con_otro_email_conserva_su_cuenta(
     centro, cuenta_temporal
 ):
-    referente, acceso = _referente(centro, "ana")
+    referente, acceso = _referente(
+        centro, "ana", dni="30123456", email="ana@example.com"
+    )
     referente.profile.must_change_password = cuenta_temporal
     referente.profile.save(update_fields=["must_change_password"])
     admin = User.objects.create_superuser("admin-recuperar-email", "", "test1234")
     centro.email_referente = "ana.nueva@example.com"
     centro.save()
-    actualizar_referente_cdi(
-        _request(admin),
-        centro,
-        dni_anterior=centro.dni_referente,
-        email_anterior="ana@example.com",
-    )
+    actualizar_referente_cdi(_request(admin), centro, anterior=FICHA_ANA)
     referente.refresh_from_db()
     acceso.refresh_from_db()
     assert acceso.es_responsable is True

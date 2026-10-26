@@ -8435,6 +8435,56 @@
   "regex": "^admin/expedientespagos/expedientepago/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "gestion_organizaciones_convenioproyecto_add",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/convenioproyecto/add/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_convenioproyecto_change",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/convenioproyecto/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_convenioproyecto_changelist",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/convenioproyecto/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_convenioproyecto_delete",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/convenioproyecto/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_convenioproyecto_history",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/convenioproyecto/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_datosregionorganizacion_add",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/add/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_datosregionorganizacion_change",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_datosregionorganizacion_changelist",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_datosregionorganizacion_delete",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_datosregionorganizacion_history",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "gestion_organizaciones_firmante_add",
   "namespace": "admin",
   "regex": "^admin/gestion_organizaciones/firmante/add/\\Z"
@@ -8458,6 +8508,106 @@
   "name": "gestion_organizaciones_firmante_history",
   "namespace": "admin",
   "regex": "^admin/gestion_organizaciones/firmante/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_lineaproyecto_add",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/lineaproyecto/add/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_lineaproyecto_change",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/lineaproyecto/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_lineaproyecto_changelist",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/lineaproyecto/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_lineaproyecto_delete",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/lineaproyecto/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_lineaproyecto_history",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/lineaproyecto/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_programaorganizacion_add",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/programaorganizacion/add/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_programaorganizacion_change",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/programaorganizacion/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_programaorganizacion_changelist",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/programaorganizacion/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_programaorganizacion_delete",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/programaorganizacion/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_programaorganizacion_history",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/programaorganizacion/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_regionabordaje_add",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/regionabordaje/add/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_regionabordaje_change",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/regionabordaje/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_regionabordaje_changelist",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/regionabordaje/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_regionabordaje_delete",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/regionabordaje/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_regionabordaje_history",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/regionabordaje/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_subzonaabordaje_add",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/subzonaabordaje/add/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_subzonaabordaje_change",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/subzonaabordaje/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_subzonaabordaje_changelist",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/subzonaabordaje/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_subzonaabordaje_delete",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/subzonaabordaje/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_subzonaabordaje_history",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/subzonaabordaje/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "historial_historial_add",
@@ -8895,6 +9045,31 @@
   "regex": "^admin/organizaciones/proyectoorganizacion/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "organizaciones_regionabordajecomunitario_add",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/add/\\Z"
+ },
+ {
+  "name": "organizaciones_regionabordajecomunitario_change",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "organizaciones_regionabordajecomunitario_changelist",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/\\Z"
+ },
+ {
+  "name": "organizaciones_regionabordajecomunitario_delete",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "organizaciones_regionabordajecomunitario_history",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "organizaciones_rolfirmante_add",
   "namespace": "admin",
   "regex": "^admin/organizaciones/rolfirmante/add/\\Z"
@@ -8933,6 +9108,31 @@
   "name": "organizaciones_rolfirmante_process_import",
   "namespace": "admin",
   "regex": "^admin/organizaciones/rolfirmante/process_import/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_add",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/add/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_change",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_changelist",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_delete",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_history",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "organizaciones_tipoorganizacion_add",

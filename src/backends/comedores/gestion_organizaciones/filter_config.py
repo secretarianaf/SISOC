@@ -14,6 +14,8 @@ from core.services.advanced_filters import AdvancedFilterEngine
 
 # Mapea el nombre de campo expuesto en filtros -> lookup real en Django ORM
 FIELD_MAP: Dict[str, str] = {
+    "region": "region_abordaje__nombre",
+    "subzona": "subzona_abordaje__nombre",
     # Texto simples
     "nombre": "nombre",
     "sigla": "sigla",
@@ -41,6 +43,8 @@ FIELD_MAP: Dict[str, str] = {
 }
 
 FIELD_TYPES: Dict[str, str] = {
+    "region": "choice",
+    "subzona": "choice",
     **{
         k: "text"
         for k in [
@@ -89,6 +93,8 @@ BOOL_OPS = ["eq", "ne"]
 DATE_OPS = ["eq", "ne", "gt", "lt", "gte", "lte", "empty"]
 
 FILTER_FIELDS = [
+    {"name": "region", "label": "Región", "type": "choice"},
+    {"name": "subzona", "label": "Subzona", "type": "choice"},
     {"name": "nombre", "label": "Nombre", "type": "text"},
     {"name": "sigla", "label": "Sigla", "type": "text"},
     {"name": "cuit", "label": "CUIT", "type": "number"},
@@ -130,7 +136,7 @@ ORGANIZACION_ADVANCED_FILTER = AdvancedFilterEngine(
 )
 
 DEFAULT_FIELD = "nombre"
-FILTERS_UI_CONFIG_CACHE_KEY = "organizaciones:filters_ui_config:v1"
+FILTERS_UI_CONFIG_CACHE_KEY = "organizaciones:filters_ui_config:v4"
 FILTERS_UI_CONFIG_CACHE_TTL = 60 * 15
 
 
@@ -141,10 +147,18 @@ def get_filters_ui_config() -> Dict[str, Any]:
     if cached_config is not None:
         return deepcopy(cached_config)
 
-    fields = [dict(field) for field in FILTER_FIELDS]
+    fields = sorted(
+        (dict(field) for field in FILTER_FIELDS),
+        key=lambda field: field["label"].casefold(),
+    )
 
     try:
-        from organizaciones.models import SubtipoEntidad, TipoEntidad
+        from organizaciones.models import (
+            SubtipoEntidad,
+            TipoEntidad,
+            RegionAbordajeComunitario,
+            SubzonaAbordajeComunitario,
+        )
 
         def build_choices(queryset):
             return [
@@ -156,6 +170,8 @@ def get_filters_ui_config() -> Dict[str, Any]:
             ]
 
         choices_by_field = {
+            "region": build_choices(RegionAbordajeComunitario.objects),
+            "subzona": build_choices(SubzonaAbordajeComunitario.objects),
             "tipo_entidad": build_choices(TipoEntidad.objects),
             "subtipo_entidad": build_choices(
                 SubtipoEntidad.objects.filter(activo=True)

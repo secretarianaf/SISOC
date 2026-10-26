@@ -509,6 +509,8 @@ def test_mensaje_de_rendicion_se_oculta_si_el_usuario_no_tiene_permiso_mobile_re
         periodo_inicio=timezone.now().date(),
         periodo_fin=timezone.now().date(),
         estado=RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_EN_CURSO,
     )
     documento = DocumentacionAdjunta.objects.create(
         nombre="comprobante.pdf",
@@ -527,11 +529,29 @@ def test_mensaje_de_rendicion_se_oculta_si_el_usuario_no_tiene_permiso_mobile_re
         actor=creador,
     )
 
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_FINALIZAR_TERRITORIAL,
+        datos={},
+        actor=creador,
+    )
+    mensajes_creador = _auth_client_for_user(creador).get(
+        f"/api/pwa/espacios/{espacio_1.id}/mensajes/"
+    )
+    assert mensajes_creador.status_code == 200
+    mensajes_rendicion = [
+        item
+        for item in mensajes_creador.data["results"]
+        if item.get("accion", {}).get("rendicion_id") == rendicion.id
+    ]
+    assert len(mensajes_rendicion) == 1
+    assert "documento a subsanar" in mensajes_rendicion[0]["titulo"]
+
     response = client.get(f"/api/pwa/espacios/{espacio_2.id}/mensajes/")
 
     assert response.status_code == 200
     titulos = [item["titulo"] for item in response.data["results"]]
-    assert "Rendición 88: documento a subsanar" not in titulos
+    assert mensajes_rendicion[0]["titulo"] not in titulos
 
 
 @pytest.mark.django_db
@@ -570,6 +590,8 @@ def test_mensaje_de_rendicion_se_oculta_si_el_usuario_no_esta_en_el_scope_de_la_
         periodo_inicio=timezone.now().date(),
         periodo_fin=timezone.now().date(),
         estado=RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_EN_CURSO,
     )
     documento = DocumentacionAdjunta.objects.create(
         nombre="comprobante.pdf",
@@ -588,11 +610,29 @@ def test_mensaje_de_rendicion_se_oculta_si_el_usuario_no_esta_en_el_scope_de_la_
         actor=creador,
     )
 
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_FINALIZAR_TERRITORIAL,
+        datos={},
+        actor=creador,
+    )
+    mensajes_creador = _auth_client_for_user(creador).get(
+        f"/api/pwa/espacios/{espacio_1.id}/mensajes/"
+    )
+    assert mensajes_creador.status_code == 200
+    mensajes_rendicion = [
+        item
+        for item in mensajes_creador.data["results"]
+        if item.get("accion", {}).get("rendicion_id") == rendicion.id
+    ]
+    assert len(mensajes_rendicion) == 1
+    assert "documento a subsanar" in mensajes_rendicion[0]["titulo"]
+
     response = client.get(f"/api/pwa/espacios/{espacio_2.id}/mensajes/")
 
     assert response.status_code == 200
     titulos = [item["titulo"] for item in response.data["results"]]
-    assert "Rendición 99: documento a subsanar" not in titulos
+    assert mensajes_rendicion[0]["titulo"] not in titulos
 
 
 @pytest.mark.django_db

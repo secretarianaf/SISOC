@@ -62,14 +62,24 @@ def is_prestacion_alimentaria_conformidad_program(comedor) -> bool:
     return normalized == "alimentar comunidad" or "abordaje comunitario" in normalized
 
 
-def is_abordaje_comunitario_linea_secos_program(comedor) -> bool:
-    normalized = _get_programa_nombre_normalizado(comedor)
+def es_programa_linea_secos(programa) -> bool:
+    """Indica si el programa es Abordaje Comunitario - Línea Secos."""
+    normalized = _normalize_programa(str(getattr(programa, "nombre", "") or ""))
     return "abordaje comunitario" in normalized and "linea secos" in normalized
 
 
-def is_abordaje_comunitario_linea_tradicional_program(comedor) -> bool:
-    normalized = _get_programa_nombre_normalizado(comedor)
+def es_programa_linea_tradicional(programa) -> bool:
+    """Indica si el programa es Abordaje Comunitario - Línea Tradicional."""
+    normalized = _normalize_programa(str(getattr(programa, "nombre", "") or ""))
     return "abordaje comunitario" in normalized and "linea tradicional" in normalized
+
+
+def is_abordaje_comunitario_linea_secos_program(comedor) -> bool:
+    return es_programa_linea_secos(getattr(comedor, "programa", None))
+
+
+def is_abordaje_comunitario_linea_tradicional_program(comedor) -> bool:
+    return es_programa_linea_tradicional(getattr(comedor, "programa", None))
 
 
 def is_abordaje_comunitario_relevamientos_header_program(comedor) -> bool:

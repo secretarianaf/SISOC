@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from core.admin_base import SisocModelAdmin
 from core.admin_import_export import BaseImportExportAdmin
 from organizaciones.models import (
     ArchivoOrganizacion,
@@ -14,12 +15,12 @@ from organizaciones.models import (
 
 # Organizacion y sus documentos manejan soft delete, archivos y firmantes con
 # reglas propias: quedan sin import/export por ahora.
-admin.site.register(Organizacion)
-admin.site.register(ProyectoOrganizacion)
-admin.site.register(DocumentacionOrganizacion)
-admin.site.register(ArchivoOrganizacion)
-admin.site.register(RegionAbordajeComunitario)
-admin.site.register(SubzonaAbordajeComunitario)
+admin.site.register(Organizacion, SisocModelAdmin)
+admin.site.register(ProyectoOrganizacion, SisocModelAdmin)
+admin.site.register(DocumentacionOrganizacion, SisocModelAdmin)
+admin.site.register(ArchivoOrganizacion, SisocModelAdmin)
+admin.site.register(RegionAbordajeComunitario, SisocModelAdmin)
+admin.site.register(SubzonaAbordajeComunitario, SisocModelAdmin)
 
 
 @admin.register(TipoOrganizacion)

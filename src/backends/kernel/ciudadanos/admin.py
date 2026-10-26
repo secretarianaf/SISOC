@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from core.admin_base import SisocModelAdmin
 from ciudadanos.models import (
     Ciudadano,
     CiudadanosImportJob,
@@ -12,7 +13,7 @@ from ciudadanos.models import (
 
 
 @admin.register(Ciudadano)
-class CiudadanoAdmin(admin.ModelAdmin):
+class CiudadanoAdmin(SisocModelAdmin):
     list_display = ("apellido", "nombre", "tipo_documento", "documento", "activo")
     search_fields = ("apellido", "nombre", "documento")
     list_filter = ("activo", "tipo_documento", "sexo")
@@ -29,7 +30,7 @@ class CiudadanoAdmin(admin.ModelAdmin):
 
 
 @admin.register(GrupoFamiliar)
-class GrupoFamiliarAdmin(admin.ModelAdmin):
+class GrupoFamiliarAdmin(SisocModelAdmin):
     list_display = ("ciudadano_1", "ciudadano_2", "vinculo", "conviven")
     search_fields = (
         "ciudadano_1__apellido",
@@ -42,7 +43,7 @@ class GrupoFamiliarAdmin(admin.ModelAdmin):
 
 
 @admin.register(ProgramaTransferencia)
-class ProgramaTransferenciaAdmin(admin.ModelAdmin):
+class ProgramaTransferenciaAdmin(SisocModelAdmin):
     list_display = (
         "ciudadano",
         "tipo",
@@ -58,7 +59,7 @@ class ProgramaTransferenciaAdmin(admin.ModelAdmin):
 
 
 @admin.register(HistorialTransferencia)
-class HistorialTransferenciaAdmin(admin.ModelAdmin):
+class HistorialTransferenciaAdmin(SisocModelAdmin):
     list_display = (
         "ciudadano",
         "mes",
@@ -75,7 +76,7 @@ class HistorialTransferenciaAdmin(admin.ModelAdmin):
 
 
 @admin.register(Interaccion)
-class InteraccionAdmin(admin.ModelAdmin):
+class InteraccionAdmin(SisocModelAdmin):
     list_display = ("ciudadano", "tipo", "fecha", "responsable", "estado")
     search_fields = ("ciudadano__apellido", "ciudadano__nombre", "tipo")
     list_filter = ("estado", "fecha")
@@ -84,7 +85,7 @@ class InteraccionAdmin(admin.ModelAdmin):
 
 
 @admin.register(CiudadanosImportJob)
-class CiudadanosImportJobAdmin(admin.ModelAdmin):
+class CiudadanosImportJobAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "requested_by",
@@ -130,7 +131,7 @@ class CiudadanosImportJobAdmin(admin.ModelAdmin):
 
 
 @admin.register(CiudadanosImportJobRow)
-class CiudadanosImportJobRowAdmin(admin.ModelAdmin):
+class CiudadanosImportJobRowAdmin(SisocModelAdmin):
     list_display = ("job", "fila", "documento_raw", "status", "processed_at")
     list_filter = ("status",)
     search_fields = ("documento_raw", "dni", "cuil")

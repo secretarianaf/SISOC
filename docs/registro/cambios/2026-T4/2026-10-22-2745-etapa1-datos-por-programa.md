@@ -12,7 +12,7 @@ la decisión `docs/registro/decisiones/2026-10-20-2745-legajo-organizacion-por-p
   `DatosRegionOrganizacion` y `ConvenioProyecto`, con FKs `PROTECT` y
   validaciones en `clean()` (línea Secos/Tradicional y del programa de la
   organización si tiene programas; subzona de la región; Imprevistos solo en
-  Línea Tradicional).
+  Línea Tradicional, controlado desde el convenio y desde la línea).
 - Migraciones en `src/backends/comedores/gestion_organizaciones/migrations/`:
   `0002_datos_por_programa` (solo crea tablas), `0003_catalogo_region_subzona`
   (5 regiones y 28 subzonas del Anexo A) y
@@ -37,7 +37,8 @@ la decisión `docs/registro/decisiones/2026-10-20-2745-legajo-organizacion-por-p
   tablas y agregan filas en ellas; no modifican ni borran datos existentes;
   las de datos son idempotentes y su reversa es `noop`. La carga inicial no
   dispara auditoría (usa modelos históricos) y deja en el log de `django` la
-  cantidad de programas y líneas creados y los IDs de proyectos sin línea.
+  cantidad de programas y líneas creados y los IDs de proyectos sin línea,
+  en tandas de 200 por línea de log.
 - No se modifica `Comedor.programa`, `Comedor.proyecto` ni
   `comedores.ComedorDatosConvenioPnud` (datos de convenio del comedor, distintos
   del convenio por proyecto de la organización; definición 27 del plan).

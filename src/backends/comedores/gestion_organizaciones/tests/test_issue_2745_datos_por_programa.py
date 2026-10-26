@@ -6,12 +6,13 @@ Plan: docs/plans/2026-T4/2026-10-20-2745-legajo-organizacion-por-programa.md.
 import importlib
 from datetime import date
 from decimal import Decimal
+from functools import lru_cache
 from types import SimpleNamespace
 
 import pytest
-from django.apps import apps as django_apps
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.db.migrations.loader import MigrationLoader
 from django.db.models import ProtectedError
 
 from comedores.models import Comedor, Programas
@@ -37,6 +38,28 @@ catalogo = importlib.import_module(
 carga_inicial = importlib.import_module(
     "gestion_organizaciones.migrations.0004_carga_inicial_programas_lineas"
 )
+
+
+@lru_cache(maxsize=None)
+def _apps_de(migracion):
+    """Modelos históricos que recibe el RunPython de ``migracion``.
+
+    Prueba la migración contra el estado en que corre, no contra los modelos
+    actuales: si un modelo cambia después, el test lo detecta.
+    """
+    loader = MigrationLoader(None, ignore_no_migrations=True)
+    return loader.project_state(
+        ("gestion_organizaciones", migracion), at_end=False
+    ).apps
+
+
+def _correr_catalogo():
+    catalogo.cargar_catalogo(_apps_de("0003_catalogo_region_subzona"), None)
+
+
+def _correr_carga_inicial():
+    carga_inicial.carga_inicial(_apps_de("0004_carga_inicial_programas_lineas"), None)
+
 
 NOMBRE_ALCO = "Alimentar comunidad"
 NOMBRE_SECOS = "Abordaje comunitario - Línea Secos"
@@ -212,13 +235,34 @@ def test_imprevistos_solo_en_linea_tradicional(programas):
     _convenio(secos).clean()
 
 
+@pytest.mark.django_db
+def test_linea_no_pasa_a_secos_si_el_convenio_tiene_imprevistos(programas):
+    organizacion = Organizacion.objects.create(nombre="Org cambio de línea")
+    proyecto = ProyectoOrganizacion.objects.create(
+        organizacion=organizacion, codigo="AC-C"
+    )
+    linea = LineaProyecto.objects.create(
+        proyecto=proyecto, programa=programas.tradicional
+    )
+    convenio = _convenio(proyecto, imprevistos=Decimal("1000"))
+    convenio.save()
+
+    linea.programa = programas.secos
+    with pytest.raises(ValidationError):
+        linea.clean()
+
+    convenio.imprevistos = None
+    convenio.save()
+    linea.clean()
+
+
 # --- Migración del catálogo --------------------------------------------------
 
 
 @pytest.mark.django_db
 def test_catalogo_carga_5_regiones_y_28_subzonas_y_es_idempotente():
-    catalogo.cargar_catalogo(django_apps, None)
-    catalogo.cargar_catalogo(django_apps, None)
+    _correr_catalogo()
+    _correr_catalogo()
 
     assert RegionAbordaje.objects.count() == 5
     assert SubzonaAbordaje.objects.count() == 28
@@ -235,7 +279,7 @@ def test_catalogo_no_modifica_subzonas_existentes():
     region = RegionAbordaje.objects.create(nombre="NOA")
     SubzonaAbordaje.objects.create(region=region, nombre="SUBZONA AGREGADA A MANO")
 
-    catalogo.cargar_catalogo(django_apps, None)
+    _correr_catalogo()
 
     assert SubzonaAbordaje.objects.filter(nombre="SUBZONA AGREGADA A MANO").exists()
     assert SubzonaAbordaje.objects.count() == 29
@@ -330,7 +374,7 @@ def escenario(programas):
 
 @pytest.mark.django_db
 def test_carga_inicial_programas_incluye_bajas_y_otros_programas(escenario):
-    carga_inicial.carga_inicial(django_apps, None)
+    _correr_carga_inicial()
 
     programas = escenario.programas
     asignados = set(
@@ -358,7 +402,7 @@ def test_carga_inicial_programas_solo_por_comedor_dado_de_baja(programas):
     )
     comedor.delete()
 
-    carga_inicial.carga_inicial(django_apps, None)
+    _correr_carga_inicial()
 
     assert ProgramaOrganizacion.objects.filter(
         organizacion=organizacion, programa=programas.tradicional
@@ -367,7 +411,7 @@ def test_carga_inicial_programas_solo_por_comedor_dado_de_baja(programas):
 
 @pytest.mark.django_db
 def test_carga_inicial_asigna_linea_solo_sin_ambiguedad(escenario):
-    carga_inicial.carga_inicial(django_apps, None)
+    _correr_carga_inicial()
 
     lineas = dict(LineaProyecto.objects.values_list("proyecto_id", "programa_id"))
     assert lineas[escenario.p_secos.pk] == escenario.programas.secos.pk
@@ -382,14 +426,26 @@ def test_carga_inicial_asigna_linea_solo_sin_ambiguedad(escenario):
 def test_carga_inicial_no_modifica_datos_existentes_y_es_idempotente(escenario):
     antes = _snapshot()
 
-    carga_inicial.carga_inicial(django_apps, None)
+    _correr_carga_inicial()
     programas_tras_primera = ProgramaOrganizacion.objects.count()
     lineas_tras_primera = LineaProyecto.objects.count()
-    carga_inicial.carga_inicial(django_apps, None)
+    _correr_carga_inicial()
 
     assert _snapshot() == antes
     assert ProgramaOrganizacion.objects.count() == programas_tras_primera
     assert LineaProyecto.objects.count() == lineas_tras_primera
+
+
+def test_log_de_proyectos_sin_linea_va_en_tandas_sin_perder_ids(mocker):
+    mocker.patch.object(carga_inicial, "IDS_POR_LINEA_DE_LOG", 2)
+    logger = mocker.patch.object(carga_inicial, "logger")
+
+    carga_inicial._loguear_ids(  # pylint: disable=protected-access
+        "ambigüedad", [1, 2, 3, 4, 5]
+    )
+
+    tandas = [llamada.args[2:] for llamada in logger.warning.call_args_list]
+    assert tandas == [(1, 2, 5, [1, 2]), (3, 4, 5, [3, 4]), (5, 5, 5, [5])]
 
 
 # --- Auditoría -----------------------------------------------------------------

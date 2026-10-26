@@ -9045,6 +9045,31 @@
   "regex": "^admin/organizaciones/proyectoorganizacion/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "organizaciones_regionabordajecomunitario_add",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/add/\\Z"
+ },
+ {
+  "name": "organizaciones_regionabordajecomunitario_change",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "organizaciones_regionabordajecomunitario_changelist",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/\\Z"
+ },
+ {
+  "name": "organizaciones_regionabordajecomunitario_delete",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "organizaciones_regionabordajecomunitario_history",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "organizaciones_rolfirmante_add",
   "namespace": "admin",
   "regex": "^admin/organizaciones/rolfirmante/add/\\Z"
@@ -9083,6 +9108,31 @@
   "name": "organizaciones_rolfirmante_process_import",
   "namespace": "admin",
   "regex": "^admin/organizaciones/rolfirmante/process_import/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_add",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/add/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_change",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_changelist",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_delete",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_history",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "organizaciones_tipoorganizacion_add",

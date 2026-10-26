@@ -1,10 +1,11 @@
 from django.contrib import admin
 
+from core.admin_base import SisocModelAdmin
 from dispositivos.models import Dispositivo
 
 
 @admin.register(Dispositivo)
-class DispositivoAdmin(admin.ModelAdmin):
+class DispositivoAdmin(SisocModelAdmin):
     list_display = (
         "nombre_institucion",
         "tipo_dispositivo",

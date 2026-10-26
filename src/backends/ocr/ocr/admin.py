@@ -1,9 +1,10 @@
 from django.contrib import admin
 
+from core.admin_base import SisocModelAdmin, SisocTabularInline
 from ocr.models import OCRJob, OCRJobDocument
 
 
-class OCRJobDocumentInline(admin.TabularInline):
+class OCRJobDocumentInline(SisocTabularInline):
     model = OCRJobDocument
     extra = 0
     readonly_fields = (
@@ -26,7 +27,7 @@ class OCRJobDocumentInline(admin.TabularInline):
 
 
 @admin.register(OCRJob)
-class OCRJobAdmin(admin.ModelAdmin):
+class OCRJobAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "requested_by",
@@ -54,7 +55,7 @@ class OCRJobAdmin(admin.ModelAdmin):
 
 
 @admin.register(OCRJobDocument)
-class OCRJobDocumentAdmin(admin.ModelAdmin):
+class OCRJobDocumentAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "job",

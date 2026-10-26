@@ -8,6 +8,7 @@ son de sólo lectura: el acta es inmutable y su historial es evidencia.
 from django.contrib import admin
 from import_export import resources
 
+from core.admin_base import SisocModelAdmin
 from core.admin_import_export import BaseImportExportAdmin
 from inspecciones.models import (
     Acta,
@@ -48,7 +49,7 @@ class EscuelaAdmin(BaseImportExportAdmin):
 
 
 @admin.register(AsignacionEscuela)
-class AsignacionEscuelaAdmin(admin.ModelAdmin):
+class AsignacionEscuelaAdmin(SisocModelAdmin):
     list_display = ("fecha", "escuela", "inspector")
     list_filter = ("fecha",)
     search_fields = ("escuela__nombre", "escuela__cue", "inspector__username")
@@ -56,7 +57,7 @@ class AsignacionEscuelaAdmin(admin.ModelAdmin):
     raw_id_fields = ("inspector",)
 
 
-class SoloLecturaAdmin(admin.ModelAdmin):
+class SoloLecturaAdmin(SisocModelAdmin):
     def has_add_permission(self, request):
         return False
 

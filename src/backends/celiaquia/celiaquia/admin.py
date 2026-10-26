@@ -1,4 +1,5 @@
 from django.contrib import admin
+from core.admin_base import SisocModelAdmin, SisocTabularInline
 from .models import (
     EstadoExpediente,
     EstadoLegajo,
@@ -15,31 +16,31 @@ from .models import (
 
 
 @admin.register(EstadoExpediente)
-class EstadoExpedienteAdmin(admin.ModelAdmin):
+class EstadoExpedienteAdmin(SisocModelAdmin):
     list_display = ("nombre",)
     search_fields = ("nombre",)
 
 
 @admin.register(EstadoLegajo)
-class EstadoLegajoAdmin(admin.ModelAdmin):
+class EstadoLegajoAdmin(SisocModelAdmin):
     list_display = ("nombre",)
     search_fields = ("nombre",)
 
 
 @admin.register(Organismo)
-class OrganismoAdmin(admin.ModelAdmin):
+class OrganismoAdmin(SisocModelAdmin):
     list_display = ("nombre",)
     search_fields = ("nombre",)
 
 
 @admin.register(TipoCruce)
-class TipoCruceAdmin(admin.ModelAdmin):
+class TipoCruceAdmin(SisocModelAdmin):
     list_display = ("nombre",)
     search_fields = ("nombre",)
 
 
 @admin.register(Expediente)
-class ExpedienteAdmin(admin.ModelAdmin):
+class ExpedienteAdmin(SisocModelAdmin):
     list_display = ("usuario_provincia", "estado", "fecha_creacion")
     list_filter = ("estado", "fecha_creacion")
     search_fields = ("usuario_provincia",)
@@ -47,7 +48,7 @@ class ExpedienteAdmin(admin.ModelAdmin):
 
 
 @admin.register(ExpedienteCiudadano)
-class ExpedienteCiudadanoAdmin(admin.ModelAdmin):
+class ExpedienteCiudadanoAdmin(SisocModelAdmin):
     list_display = ("ciudadano", "expediente", "estado", "rol", "creado_en")
     list_filter = ("estado", "rol", "revision_tecnico", "resultado_sintys")
     search_fields = ("ciudadano__documento", "ciudadano__nombre", "ciudadano__apellido")
@@ -60,14 +61,14 @@ class ExpedienteCiudadanoAdmin(admin.ModelAdmin):
 
 
 @admin.register(AsignacionTecnico)
-class AsignacionTecnicoAdmin(admin.ModelAdmin):
+class AsignacionTecnicoAdmin(SisocModelAdmin):
     list_display = ("expediente", "tecnico", "fecha_asignacion")
     list_filter = ("fecha_asignacion",)
     search_fields = ("expediente__id", "tecnico__username")
 
 
 @admin.register(ExpedienteEstadoHistorial)
-class ExpedienteEstadoHistorialAdmin(admin.ModelAdmin):
+class ExpedienteEstadoHistorialAdmin(SisocModelAdmin):
     list_display = (
         "expediente",
         "estado_anterior",
@@ -79,7 +80,7 @@ class ExpedienteEstadoHistorialAdmin(admin.ModelAdmin):
 
 
 @admin.register(HistorialComentarios)
-class HistorialComentariosAdmin(admin.ModelAdmin):
+class HistorialComentariosAdmin(SisocModelAdmin):
     list_display = (
         "legajo",
         "tipo_comentario",
@@ -100,21 +101,21 @@ class HistorialComentariosAdmin(admin.ModelAdmin):
 
 
 @admin.register(TipoDocumento)
-class TipoDocumentoAdmin(admin.ModelAdmin):
+class TipoDocumentoAdmin(SisocModelAdmin):
     list_display = ("nombre", "requerido", "orden", "activo")
     list_filter = ("requerido", "activo")
     search_fields = ("nombre", "descripcion")
     ordering = ("orden", "nombre")
 
 
-class DocumentoLegajoInline(admin.TabularInline):
+class DocumentoLegajoInline(SisocTabularInline):
     model = DocumentoLegajo
     extra = 0
     readonly_fields = ("fecha_carga",)
 
 
 @admin.register(DocumentoLegajo)
-class DocumentoLegajoAdmin(admin.ModelAdmin):
+class DocumentoLegajoAdmin(SisocModelAdmin):
     list_display = ("legajo", "tipo_documento", "fecha_carga", "usuario_carga")
     list_filter = ("tipo_documento", "fecha_carga")
     search_fields = ("legajo__ciudadano__documento", "tipo_documento__nombre")

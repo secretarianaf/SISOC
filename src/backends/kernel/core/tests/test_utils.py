@@ -17,7 +17,7 @@ def _ts(*args):
 def test_daily_file_handler_creates_group_writable_log_path(tmp_path):
     previous_umask = os.umask(0o022)
     try:
-        with patch("core.utils.time.time", return_value=_ts(2026, 7, 14)):
+        with patch("core.utils.time_module.time", return_value=_ts(2026, 7, 14)):
             handler = DailyFileHandler(tmp_path / "critical.log")
     finally:
         os.umask(previous_umask)
@@ -33,7 +33,7 @@ def test_daily_file_handler_creates_group_writable_log_path(tmp_path):
 def test_daily_file_handler_cambia_de_carpeta_cuando_cambia_el_dia(tmp_path):
     # Issue #2750: la fecha se fijaba al arrancar el proceso y los errores de
     # hoy terminaban en la carpeta del día de arranque.
-    with patch("core.utils.time.time", return_value=_ts(2026, 10, 15)):
+    with patch("core.utils.time_module.time", return_value=_ts(2026, 10, 15)):
         handler = DailyFileHandler(tmp_path / "error.log")
     for msg, dia in (("del 15", 15), ("del 21", 21)):
         handler.handle(

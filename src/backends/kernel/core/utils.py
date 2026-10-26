@@ -3,8 +3,8 @@
 import logging
 import json
 import stat
-import time
-from datetime import datetime
+import time as time_module
+from datetime import datetime, time, timedelta
 from pathlib import Path
 
 from django.utils import timezone
@@ -29,7 +29,7 @@ class DailyFileHandler(logging.FileHandler):
         """
 
         self._base_filename = Path(filename)
-        self._current_date = self._date_for(time.time())
+        self._current_date = self._date_for(time_module.time())
         daily_filename = self._prepare_daily_filename(self._current_date)
         super().__init__(daily_filename, mode, encoding, delay)
         if daily_filename.exists():
@@ -134,6 +134,19 @@ def format_fecha_django(fecha_visita):
 
     fecha_formateada = datetime.strptime(fecha_visita, "%d/%m/%Y %H:%M")
     return timezone.make_aware(fecha_formateada, timezone.get_default_timezone())
+
+
+def rango_del_dia_local(fecha):
+    """Inicio y fin (exclusivo) de ``fecha`` en la zona horaria local.
+
+    Usar en vez de ``campo__date`` sobre un ``DateTimeField``: con ``USE_TZ`` ese
+    lookup necesita las tablas de zonas horarias de MySQL, que en PRD no están, y
+    sin ellas filtra todo a vacío sin dar error (#2750).
+    """
+
+    inicio = timezone.make_aware(datetime.combine(fecha, time.min))
+    fin = timezone.make_aware(datetime.combine(fecha + timedelta(days=1), time.min))
+    return inicio, fin
 
 
 def format_serializer_errors(serializer):

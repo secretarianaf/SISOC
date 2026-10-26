@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from core.admin_base import SisocModelAdmin, SisocTabularInline
 from .models import (
     CumplimientoRonda,
     Encuesta,
@@ -49,13 +50,13 @@ class ProteccionAprobacionMixin:
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
-class OpcionPreguntaInline(ProteccionAprobacionMixin, admin.TabularInline):
+class OpcionPreguntaInline(ProteccionAprobacionMixin, SisocTabularInline):
     ruta_estado = "encuesta__estado"
     model = OpcionPregunta
     extra = 1
 
 
-class PreguntaInline(ProteccionAprobacionMixin, admin.TabularInline):
+class PreguntaInline(ProteccionAprobacionMixin, SisocTabularInline):
     model = Pregunta
     extra = 1
     fk_name = "encuesta"
@@ -63,7 +64,7 @@ class PreguntaInline(ProteccionAprobacionMixin, admin.TabularInline):
 
 
 @admin.register(Encuesta)
-class EncuestaAdmin(ProteccionAprobacionMixin, admin.ModelAdmin):
+class EncuestaAdmin(ProteccionAprobacionMixin, SisocModelAdmin):
     list_display = (
         "titulo",
         "version",
@@ -88,7 +89,7 @@ class EncuestaAdmin(ProteccionAprobacionMixin, admin.ModelAdmin):
 
 
 @admin.register(Pregunta)
-class PreguntaAdmin(ProteccionAprobacionMixin, admin.ModelAdmin):
+class PreguntaAdmin(ProteccionAprobacionMixin, SisocModelAdmin):
     ruta_estado = "encuesta__estado"
     list_display = ("texto", "encuesta", "tipo", "obligatoria", "orden")
     list_filter = ("tipo", "obligatoria")
@@ -97,14 +98,14 @@ class PreguntaAdmin(ProteccionAprobacionMixin, admin.ModelAdmin):
 
 
 @admin.register(SegmentacionEncuesta)
-class SegmentacionEncuestaAdmin(ProteccionAprobacionMixin, admin.ModelAdmin):
+class SegmentacionEncuestaAdmin(ProteccionAprobacionMixin, SisocModelAdmin):
     ruta_estado = "encuesta__estado"
     list_display = ("encuesta", "tipo")
     list_filter = ("tipo",)
 
 
 @admin.register(SegmentacionDestinatario)
-class SegmentacionDestinatarioAdmin(ProteccionAprobacionMixin, admin.ModelAdmin):
+class SegmentacionDestinatarioAdmin(ProteccionAprobacionMixin, SisocModelAdmin):
     ruta_estado = "segmentacion__encuesta__estado"
     list_display = ("segmentacion", "tipo_documento", "numero_documento")
     list_filter = ("tipo_documento",)
@@ -112,7 +113,7 @@ class SegmentacionDestinatarioAdmin(ProteccionAprobacionMixin, admin.ModelAdmin)
 
 
 @admin.register(RondaEncuesta)
-class RondaEncuestaAdmin(admin.ModelAdmin):
+class RondaEncuestaAdmin(SisocModelAdmin):
     list_display = (
         "encuesta",
         "numero_ronda",
@@ -125,21 +126,21 @@ class RondaEncuestaAdmin(admin.ModelAdmin):
 
 
 @admin.register(RespuestaRonda)
-class RespuestaRondaAdmin(admin.ModelAdmin):
+class RespuestaRondaAdmin(SisocModelAdmin):
     list_display = ("ronda", "usuario", "completa", "fecha_respuesta")
     list_filter = ("completa",)
 
 
 @admin.register(CumplimientoRonda)
-class CumplimientoRondaAdmin(admin.ModelAdmin):
+class CumplimientoRondaAdmin(SisocModelAdmin):
     list_display = ("ronda", "usuario")
 
 
 @admin.register(RespuestaPregunta)
-class RespuestaPreguntaAdmin(admin.ModelAdmin):
+class RespuestaPreguntaAdmin(SisocModelAdmin):
     list_display = ("respuesta_ronda", "pregunta")
 
 
 @admin.register(RecordatorioUsuario)
-class RecordatorioUsuarioAdmin(admin.ModelAdmin):
+class RecordatorioUsuarioAdmin(SisocModelAdmin):
     list_display = ("ronda", "usuario", "fecha_proximo_aviso")

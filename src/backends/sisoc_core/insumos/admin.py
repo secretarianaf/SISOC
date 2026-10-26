@@ -1,17 +1,18 @@
 from django.contrib import admin
 
+from core.admin_base import SisocModelAdmin
 from .models import Insumo, InsumoCategoria
 
 
 @admin.register(InsumoCategoria)
-class InsumoCategoriaAdmin(admin.ModelAdmin):
+class InsumoCategoriaAdmin(SisocModelAdmin):
     list_display = ("nombre", "programa", "orden", "activo", "fecha_creacion")
     list_filter = ("programa", "activo")
     search_fields = ("nombre",)
 
 
 @admin.register(Insumo)
-class InsumoAdmin(admin.ModelAdmin):
+class InsumoAdmin(SisocModelAdmin):
     list_display = (
         "titulo",
         "categoria",

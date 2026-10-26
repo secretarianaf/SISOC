@@ -77,9 +77,10 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         {
             "codigo": CATEGORIA_FORMULARIO_I,
             "label": "Formulario I - Certificación de Cuenta Bancaria",
+            "description": "Adjuntar sólo si hubo cambios en los datos bancarios",
             "required": False,
             "multiple": True,
-            "order": 1,
+            "order": 13,
         },
         {
             "codigo": CATEGORIA_FORMULARIO_II,
@@ -151,14 +152,14 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "label": "Facturas y Tickets SIPH",
             "required": False,
             "multiple": True,
-            "order": 12,
+            "order": 11,
         },
         {
             "codigo": CATEGORIA_PLANILLA_SEGUROS,
             "label": "Planilla de Seguros II",
             "required": False,
             "multiple": True,
-            "order": 11,
+            "order": 12,
             "lineas": (LINEA_TRADICIONAL,),
         },
         {
@@ -166,7 +167,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "label": "Documentación Adicional",
             "required": False,
             "multiple": True,
-            "order": 13,
+            "order": 14,
         },
     )
 
@@ -205,7 +206,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             {
                 "codigo": CATEGORIA_FORMULARIO_V_ALIMENTARIO,
                 "label": "Formulario V - Certificación de Prestaciones Alimentarias",
-                "filename": "FORM.V.MS.-.CERTIF.PRESTAC.ALIM.1.xlsx",
+                "filename": "FORM_V_CERTIF_ALIM.xlsx",
                 "order": 6,
             },
             {
@@ -255,7 +256,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             {
                 "codigo": CATEGORIA_FORMULARIO_V_ALIMENTARIO,
                 "label": "Formulario V - Certificación de Prestaciones Alimentarias",
-                "filename": "FORM.V.CERTIF.ALIM.1.xlsx",
+                "filename": "FORM_V_CERTIF_ALIM.xlsx",
                 "order": 6,
             },
             {
@@ -297,6 +298,11 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         null=True,
         verbose_name="Observaciones",
     )
+    revision_estado = models.CharField(
+        max_length=20, choices=ESTADO_CHOICES, blank=True, null=True
+    )
+    revision_observaciones = models.TextField(blank=True, null=True)
+    revision_etapa = models.CharField(max_length=30, blank=True, null=True)
     archivo = models.FileField(
         upload_to="rendicioncuentasmensualdocumentos_adjuntos/",
         verbose_name="Archivo",
@@ -403,7 +409,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         }
         return [
             {**item, "modelo": modelos.get(item["codigo"])}
-            for item in cls.CATEGORIAS_CONFIG
+            for item in sorted(cls.CATEGORIAS_CONFIG, key=lambda item: item["order"])
             if not item.get("lineas")
             or linea in item["lineas"]
             or item["codigo"] in incluir_codigos

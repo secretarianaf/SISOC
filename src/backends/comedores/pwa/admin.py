@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.core.exceptions import ValidationError
 from unfold.contrib.filters.admin import (
-    AutocompleteSelectFilter,
+    FieldTextFilter,
     RangeDateTimeFilter,
 )
 
@@ -62,7 +62,7 @@ class AuditoriaOperacionPWAAdmin(SoloLecturaAdminMixin, SisocModelAdmin):
         "accion",
         "entidad",
         ("fecha_evento", RangeDateTimeFilter),
-        ("comedor", AutocompleteSelectFilter),
+        ("comedor__nombre", FieldTextFilter),
     )
     search_fields = ("entidad", "entidad_id", "user__username", "comedor__nombre")
     readonly_fields = (
@@ -93,14 +93,14 @@ class LecturaMensajePWAAdmin(SisocModelAdmin):
     list_filter = (
         "visto",
         ("fecha_visto", RangeDateTimeFilter),
-        ("comedor", AutocompleteSelectFilter),
+        ("comedor__nombre", FieldTextFilter),
     )
     search_fields = (
         "comunicado__titulo",
         "comedor__nombre",
         "user__username",
     )
-    autocomplete_fields = ("comunicado", "comedor", "user")
+    raw_id_fields = ("comunicado", "comedor", "user")
     readonly_fields = ("fecha_creacion", "fecha_actualizacion")
 
 
@@ -116,7 +116,7 @@ class PushSubscriptionPWAAdmin(SisocModelAdmin):
     list_select_related = ("user",)
     list_filter = ("activo", ("fecha_baja", RangeDateTimeFilter))
     search_fields = ("user__username", "endpoint", "user_agent")
-    autocomplete_fields = ("user",)
+    raw_id_fields = ("user",)
     readonly_fields = (
         "fecha_creacion",
         "fecha_actualizacion",
@@ -157,7 +157,7 @@ class ColaboradorEspacioPWAAdmin(OperacionesAdminMixin, SisocModelAdmin):
     list_filter = (
         "activo",
         ("fecha_creacion", RangeDateTimeFilter),
-        ("comedor", AutocompleteSelectFilter),
+        ("comedor__nombre", FieldTextFilter),
     )
     search_fields = (
         "nombre",
@@ -167,7 +167,7 @@ class ColaboradorEspacioPWAAdmin(OperacionesAdminMixin, SisocModelAdmin):
         "telefono",
         "rol_funcion",
     )
-    autocomplete_fields = ("comedor",)
+    raw_id_fields = ("comedor",)
     readonly_fields = (
         "fecha_creacion",
         "fecha_actualizacion",
@@ -222,7 +222,7 @@ class ActividadEspacioPWAAdmin(OperacionesAdminMixin, SisocModelAdmin):
         "dia_actividad",
         "catalogo_actividad__categoria",
         ("fecha_alta", RangeDateTimeFilter),
-        ("comedor", AutocompleteSelectFilter),
+        ("comedor__nombre", FieldTextFilter),
     )
     search_fields = (
         "comedor__nombre",
@@ -230,7 +230,7 @@ class ActividadEspacioPWAAdmin(OperacionesAdminMixin, SisocModelAdmin):
         "catalogo_actividad__actividad",
         "responsable_actividad",
     )
-    autocomplete_fields = ("comedor", "catalogo_actividad")
+    raw_id_fields = ("comedor", "catalogo_actividad")
     readonly_fields = (
         "fecha_alta",
         "fecha_actualizacion",
@@ -257,7 +257,7 @@ class InscriptoActividadEspacioPWAAdmin(SisocModelAdmin):
     list_filter = (
         "activo",
         ("fecha_alta", RangeDateTimeFilter),
-        ("actividad_espacio__comedor", AutocompleteSelectFilter),
+        ("actividad_espacio__comedor__nombre", FieldTextFilter),
     )
     search_fields = (
         "actividad_espacio__comedor__nombre",
@@ -339,8 +339,7 @@ class RegistroAsistenciaNominaPWAAdmin(SisocModelAdmin):
         "nomina__ciudadano__documento",
         "tomado_por__username",
     )
-    raw_id_fields = ("nomina",)
-    autocomplete_fields = ("tomado_por",)
+    raw_id_fields = ("nomina", "tomado_por")
     readonly_fields = (
         "fecha_toma_asistencia",
         "metadata",
@@ -399,7 +398,7 @@ class AccesoComedorPWAAdmin(SisocModelAdmin):
         "tipo_asociacion",
         "activo",
         ("fecha_creacion", RangeDateTimeFilter),
-        ("comedor", AutocompleteSelectFilter),
+        ("comedor__nombre", FieldTextFilter),
     )
     search_fields = (
         "user__username",
@@ -407,8 +406,7 @@ class AccesoComedorPWAAdmin(SisocModelAdmin):
         "comedor__nombre",
         "organizacion__nombre",
     )
-    autocomplete_fields = ("user", "comedor", "creado_por")
-    raw_id_fields = ("organizacion",)
+    raw_id_fields = ("organizacion", "user", "comedor", "creado_por")
     readonly_fields = ("fecha_creacion", "fecha_baja", "fecha_actualizacion")
 
 
@@ -430,8 +428,7 @@ class AccesoOrganizacionPWAAdmin(SisocModelAdmin):
         "organizacion__nombre",
         "organizacion__cuit",
     )
-    autocomplete_fields = ("user", "creado_por")
-    raw_id_fields = ("organizacion",)
+    raw_id_fields = ("organizacion", "user", "creado_por")
     readonly_fields = ("fecha_creacion", "fecha_baja", "fecha_actualizacion")
 
 
@@ -459,5 +456,5 @@ class CoordinadorEquipoTecnicoPWAAdmin(OperacionesAdminMixin, SisocModelAdmin):
     list_select_related = ("user",)
     list_filter = ("activo", ("fecha_creacion", RangeDateTimeFilter))
     search_fields = ("user__username", "user__email")
-    autocomplete_fields = ("user", "duplas", "comedores_adicionales")
+    raw_id_fields = ("user", "duplas", "comedores_adicionales")
     readonly_fields = ("fecha_creacion", "fecha_actualizacion")

@@ -135,7 +135,7 @@ class AdmisionAdmin(OperacionesAdminMixin, SisocModelAdmin):
         "enviado_acompaniamiento",
         ("creado", RangeDateFilter),
     )
-    autocomplete_fields = ("comedor",)
+    raw_id_fields = ("comedor",)
     operaciones = (
         Operacion(
             slug="enviar_legales",

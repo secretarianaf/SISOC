@@ -96,8 +96,7 @@ class ParticipanteActividadAdmin(OperacionesAdminMixin, SisocModelAdmin):
         ("fecha_registro", RangeDateTimeFilter),
         "actividad_centro__centro",
     )
-    autocomplete_fields = ("ciudadano",)
-    raw_id_fields = ("actividad_centro",)
+    raw_id_fields = ("actividad_centro", "ciudadano")
     operaciones = (
         Operacion(
             slug="dar_de_baja",

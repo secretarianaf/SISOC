@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.core.exceptions import ValidationError
 from unfold.contrib.filters.admin import (
-    AutocompleteSelectFilter,
+    FieldTextFilter,
     ChoicesDropdownFilter,
     RangeDateTimeFilter,
     RelatedDropdownFilter,
@@ -231,12 +231,7 @@ class ExpedienteCiudadanoAdmin(OperacionesAdminMixin, SisocModelAdmin):
         "=expediente__id",
         "expediente__numero_expediente",
     )
-    autocomplete_fields = (
-        "deleted_by",
-        "expediente",
-        "ciudadano",
-        "subsanacion_usuario",
-    )
+    raw_id_fields = ("deleted_by", "expediente", "ciudadano", "subsanacion_usuario")
     operaciones = (
         Operacion(
             slug="aprobar",
@@ -315,7 +310,7 @@ class ExpedienteEstadoHistorialAdmin(SoloLecturaAdminMixin, SisocModelAdmin):
         "usuario",
     )
     list_filter = (
-        ("expediente", AutocompleteSelectFilter),
+        ("expediente__numero_expediente", FieldTextFilter),
         ("estado_nuevo", RelatedDropdownFilter),
         ("fecha", RangeDateTimeFilter),
     )

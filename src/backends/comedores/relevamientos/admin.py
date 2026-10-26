@@ -156,7 +156,6 @@ class RelevamientoAdmin(OperacionesAdminMixin, SisocModelAdmin):
         ("fecha_visita", RangeDateTimeFilter),
         ("fecha_creacion", RangeDateTimeFilter),
     )
-    autocomplete_fields = ("comedor",)
     raw_id_fields = (
         "territorial_user",
         "responsable_relevamiento",
@@ -170,6 +169,7 @@ class RelevamientoAdmin(OperacionesAdminMixin, SisocModelAdmin):
         "anexo",
         "excepcion",
         "punto_entregas",
+        "comedor",
     )
     operaciones = (
         Operacion(

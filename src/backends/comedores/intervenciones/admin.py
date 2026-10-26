@@ -1,5 +1,5 @@
 from django.contrib import admin
-from unfold.contrib.filters.admin import AutocompleteSelectFilter, RangeDateTimeFilter
+from unfold.contrib.filters.admin import FieldTextFilter, RangeDateTimeFilter
 
 from core.admin_base import SisocModelAdmin
 from intervenciones.models.intervenciones import Intervencion
@@ -23,8 +23,7 @@ class IntervencionAdmin(SisocModelAdmin):
         "tipo_intervencion",
         "tiene_documentacion",
         ("fecha", RangeDateTimeFilter),
-        ("comedor", AutocompleteSelectFilter),
+        ("comedor__nombre", FieldTextFilter),
     )
     search_fields = ("comedor__nombre", "observaciones")
-    autocomplete_fields = ("comedor",)
-    raw_id_fields = ("admision",)
+    raw_id_fields = ("admision", "comedor")

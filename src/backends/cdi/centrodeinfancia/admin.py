@@ -112,7 +112,7 @@ class NominaCentroInfanciaAdmin(SisocModelAdmin):
         "ciudadano__apellido",
         "ciudadano__nombre",
     )
-    autocomplete_fields = ("centro", "ciudadano")
+    raw_id_fields = ("centro", "ciudadano")
 
 
 @admin.register(AsistenciaNominaCentroInfancia)
@@ -135,8 +135,7 @@ class TrabajadorAdmin(SisocModelAdmin):
     list_select_related = ("centro",)
     list_filter = ("rol",)
     search_fields = ("dni", "centro__nombre", "apellido", "nombre", "telefono")
-    autocomplete_fields = ("centro",)
-    raw_id_fields = ("usuario",)
+    raw_id_fields = ("usuario", "centro")
 
 
 @admin.register(IntervencionCentroInfancia)
@@ -255,8 +254,7 @@ class AccesoCDIAdmin(OperacionesAdminMixin, SisocModelAdmin):
         ("fecha_creacion", RangeDateTimeFilter),
     )
     search_fields = ("user__username", "user__email", "centro__nombre")
-    raw_id_fields = ("user", "creado_por")
-    autocomplete_fields = ("centro",)
+    raw_id_fields = ("user", "creado_por", "centro")
     # ``activo`` se deriva de ``estado`` al guardar; ``estado`` y su motivo solo
     # cambian por las operaciones.
     readonly_fields = ("activo", "motivo_estado", "fecha_creacion", "fecha_baja")

@@ -11,4 +11,4 @@ class DuplaAdmin(SisocModelAdmin):
     list_select_related = ("abogado", "coordinador")
     list_filter = ("estado", ("fecha", RangeDateTimeFilter))
     search_fields = ("nombre", "abogado__username", "coordinador__username")
-    autocomplete_fields = ("tecnico", "abogado", "coordinador", "coordinadores")
+    raw_id_fields = ("tecnico", "abogado", "coordinador", "coordinadores")

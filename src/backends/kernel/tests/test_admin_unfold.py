@@ -251,3 +251,51 @@ def test_todos_los_listados_del_admin_cargan(auth_client):
             fallidos.append((url, status))
 
     assert not fallidos
+
+
+def _apps_de_verticales():
+    return {app for spec in load_backends_registry().values() for app in spec["apps"]}
+
+
+def test_admins_de_verticales_no_usan_autocomplete():
+    # En deploy /admin/autocomplete/ lo sirve el core, que no instala los
+    # modelos de los verticales: ahí el autocomplete responde 403. Se usa
+    # raw_id_fields (su popup abre el admin del dueño, que sí está ruteado).
+    from unfold.contrib.filters.admin import (  # pylint: disable=import-outside-toplevel
+        AutocompleteSelectFilter,
+        AutocompleteSelectMultipleFilter,
+    )
+
+    verticales = _apps_de_verticales()
+    con_autocomplete = []
+    for (
+        model,
+        model_admin,
+    ) in admin.site._registry.items():  # pylint: disable=protected-access
+        if model._meta.app_config.name not in verticales:
+            continue
+        admins = [
+            model_admin,
+            *(inline(model, admin.site) for inline in model_admin.inlines),
+        ]
+        for un_admin in admins:
+            filtros = (
+                [
+                    filtro[1]
+                    for filtro in un_admin.list_filter
+                    if isinstance(filtro, (tuple, list))
+                ]
+                if hasattr(un_admin, "list_filter")
+                else []
+            )
+            if un_admin.autocomplete_fields or any(
+                issubclass(
+                    filtro, (AutocompleteSelectFilter, AutocompleteSelectMultipleFilter)
+                )
+                for filtro in filtros
+            ):
+                con_autocomplete.append(
+                    f"{model._meta.label}: {type(un_admin).__name__}"
+                )
+
+    assert not con_autocomplete

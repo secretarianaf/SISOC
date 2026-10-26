@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from unfold.contrib.filters.admin import (
-    AutocompleteSelectFilter,
+    FieldTextFilter,
     RangeDateFilter,
     RangeDateTimeFilter,
     RelatedDropdownFilter,
@@ -233,7 +233,9 @@ class ComedorAdmin(OperacionesAdminMixin, SisocModelAdmin):
     ]
     search_fields = ["nombre", "codigo_de_proyecto", "organizacion__nombre"]
     readonly_fields = ["fecha_validado", "mes_ejecucion"]
-    autocomplete_fields = [
+    raw_id_fields = (
+        "organizacion",
+        "proyecto",
         "provincia",
         "municipio",
         "localidad",
@@ -242,8 +244,7 @@ class ComedorAdmin(OperacionesAdminMixin, SisocModelAdmin):
         "responsable_tarjeta_localidad",
         "dupla",
         "referente",
-    ]
-    raw_id_fields = ["organizacion", "proyecto"]
+    )
 
 
 @admin.register(HistorialValidacion)
@@ -291,7 +292,7 @@ class ObservacionAdmin(SisocModelAdmin):
     list_select_related = ["comedor"]
     list_filter = [("fecha_visita", RangeDateTimeFilter)]
     search_fields = ["comedor__nombre", "observador", "observacion"]
-    autocomplete_fields = ["comedor"]
+    raw_id_fields = ("comedor",)
 
 
 # --- Operaciones de Nómina --------------------------------------------------
@@ -329,8 +330,7 @@ class NominaAdmin(OperacionesAdminMixin, SisocModelAdmin):
         "comedor__nombre",
         "admision__comedor__nombre",
     ]
-    autocomplete_fields = ["ciudadano", "comedor"]
-    raw_id_fields = ["admision"]
+    raw_id_fields = ("admision", "ciudadano", "comedor")
 
 
 @admin.register(Referente)
@@ -344,8 +344,7 @@ class ImagenComedorAdmin(SisocModelAdmin):
     list_display = ["id", "comedor", "imagen"]
     list_select_related = ["comedor"]
     search_fields = ["comedor__nombre"]
-    autocomplete_fields = ["comedor"]
-    raw_id_fields = ["relevamiento", "seguimiento", "subido_por"]
+    raw_id_fields = ("relevamiento", "seguimiento", "subido_por", "comedor")
 
 
 @admin.register(TipoDeComedor)
@@ -421,7 +420,7 @@ class ColaboradorEspacioAdmin(OperacionesAdminMixin, SisocModelAdmin):
         "genero",
         ("fecha_alta", RangeDateFilter),
         ("fecha_baja", RangeDateFilter),
-        ("comedor", AutocompleteSelectFilter),
+        ("comedor__nombre", FieldTextFilter),
     )
     search_fields = (
         "ciudadano__apellido",

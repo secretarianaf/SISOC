@@ -1,6 +1,6 @@
 from django.contrib import admin
 from unfold.contrib.filters.admin import (
-    AutocompleteSelectFilter,
+    FieldTextFilter,
     RangeDateFilter,
     RangeDateTimeFilter,
 )
@@ -28,7 +28,7 @@ class ExpedientePagoAdmin(SisocModelAdmin):
         ("fecha_pago_al_banco", RangeDateFilter),
         ("fecha_acreditacion", RangeDateFilter),
         ("fecha_creacion", RangeDateTimeFilter),
-        ("comedor", AutocompleteSelectFilter),
+        ("comedor__nombre", FieldTextFilter),
     )
     search_fields = (
         "expediente_pago",
@@ -36,4 +36,4 @@ class ExpedientePagoAdmin(SisocModelAdmin):
         "numero_orden_pago",
         "comedor__nombre",
     )
-    autocomplete_fields = ("comedor",)
+    raw_id_fields = ("comedor",)

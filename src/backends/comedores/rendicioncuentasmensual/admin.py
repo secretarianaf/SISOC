@@ -66,12 +66,12 @@ class RendicionCuentaMensualAdmin(SisocModelAdmin):
         ("periodo_inicio", RangeDateFilter),
         ("fecha_creacion", RangeDateTimeFilter),
     )
-    autocomplete_fields = ("comedor",)
     raw_id_fields = (
         "proyecto",
         "rendicion_origen_acta",
         "usuario_creador",
         "usuario_ultima_modificacion",
+        "comedor",
     )
 
 

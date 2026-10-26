@@ -16,7 +16,7 @@ class RendicionCuentasFinalAdmin(SisocModelAdmin):
     list_select_related = ("comedor",)
     search_fields = ("=id", "comedor__nombre", "comedor__codigo_de_proyecto")
     list_filter = ("fisicamente_presentada",)
-    autocomplete_fields = ("comedor",)
+    raw_id_fields = ("comedor",)
 
 
 @admin.register(EstadoDocumentoRendicionFinal)

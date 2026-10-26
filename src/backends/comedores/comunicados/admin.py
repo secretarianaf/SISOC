@@ -68,12 +68,12 @@ class ComunicadoAdmin(OperacionesAdminMixin, SisocModelAdmin):
     ]
     search_fields = ["titulo", "cuerpo"]
     readonly_fields = ["fecha_creacion", "fecha_publicacion"]
-    autocomplete_fields = [
+    raw_id_fields = (
+        "organizaciones",
         "usuario_creador",
         "usuario_ultima_modificacion",
         "comedores",
-    ]
-    raw_id_fields = ["organizaciones"]
+    )
     inlines = [ComunicadoAdjuntoInline]
 
 
@@ -83,7 +83,7 @@ class ComunicadoAdjuntoAdmin(SisocModelAdmin):
     list_select_related = ["comunicado"]
     list_filter = [("fecha_subida", RangeDateTimeFilter)]
     search_fields = ["nombre_original", "comunicado__titulo"]
-    autocomplete_fields = ["comunicado"]
+    raw_id_fields = ("comunicado",)
 
 
 def reanudar_mailing_job(job, _usuario, _datos):

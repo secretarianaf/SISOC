@@ -8,6 +8,8 @@ from organizaciones.models import (
     ProyectoOrganizacion,
     RolFirmante,
     TipoOrganizacion,
+    RegionAbordajeComunitario,
+    SubzonaAbordajeComunitario,
 )
 
 # Organizacion y sus documentos manejan soft delete, archivos y firmantes con
@@ -16,6 +18,8 @@ admin.site.register(Organizacion)
 admin.site.register(ProyectoOrganizacion)
 admin.site.register(DocumentacionOrganizacion)
 admin.site.register(ArchivoOrganizacion)
+admin.site.register(RegionAbordajeComunitario)
+admin.site.register(SubzonaAbordajeComunitario)
 
 
 @admin.register(TipoOrganizacion)

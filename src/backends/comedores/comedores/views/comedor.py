@@ -35,6 +35,7 @@ from comedores.forms.comedor_form import (
     ResponsableTarjetaComedorForm,
 )
 from comedores.forms.convenio_pnud_form import ComedorDatosConvenioPnudForm
+from comedores.territoriales_pnud import territoriales_proyecto_comedor
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.models import (
     Comedor,
@@ -1588,6 +1589,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     self.object
                 ),
                 "datos_convenio_pnud": datos_convenio_pnud,
+                "territoriales_por_proyecto": (
+                    territoriales_proyecto_comedor(self.object)
+                    if usa_convenio_pnud
+                    else []
+                ),
                 "prestaciones_aprobadas_source": (
                     datos_convenio_pnud if usa_convenio_pnud else informe_tecnico
                 ),
@@ -1674,6 +1680,9 @@ class ComedorDatosConvenioPnudUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["comedor"] = self.comedor
+        context["territoriales_por_proyecto"] = territoriales_proyecto_comedor(
+            self.comedor
+        )
         context["es_linea_secos"] = is_abordaje_comunitario_linea_secos_program(
             self.comedor
         )

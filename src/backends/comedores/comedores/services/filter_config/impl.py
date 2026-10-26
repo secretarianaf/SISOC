@@ -188,7 +188,7 @@ FILTER_FIELDS = [
 ]
 
 DEFAULT_FIELD = "nombre"
-FILTERS_UI_CONFIG_CACHE_KEY = "comedores:filters_ui_config:v5"
+FILTERS_UI_CONFIG_CACHE_KEY = "comedores:filters_ui_config:v6"
 FILTERS_UI_CONFIG_CACHE_TTL = 60 * 15
 
 
@@ -199,7 +199,10 @@ def get_filters_ui_config() -> Dict[str, Any]:
     if cached_config is not None:
         return deepcopy(cached_config)
 
-    fields = [dict(field) for field in FILTER_FIELDS]
+    fields = sorted(
+        (dict(field) for field in FILTER_FIELDS),
+        key=lambda field: field["label"].casefold(),
+    )
 
     from comedores.models import Comedor
 

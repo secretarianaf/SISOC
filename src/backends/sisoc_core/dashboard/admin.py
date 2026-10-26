@@ -10,6 +10,7 @@ from .models import Dashboard, Tablero
 class DashboardAdmin(SisocModelAdmin):
     list_display = ("llave", "cantidad")
     list_filter = ("llave",)
+    search_fields = ("llave",)
 
 
 class TableroAdminForm(forms.ModelForm):

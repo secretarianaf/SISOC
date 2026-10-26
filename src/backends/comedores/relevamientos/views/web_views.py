@@ -89,7 +89,9 @@ class RelevamientoCreateView(LoginRequiredMixin, CreateView):
 
 def _opciones_del_popup(comedor_pk):
     """Opciones del popup de alta y de "Agregar seguimiento" del comedor."""
-    comedor = Comedor.objects.select_related("programa").get(pk=comedor_pk)
+    comedor = get_object_or_404(
+        Comedor.objects.select_related("programa"), pk=comedor_pk
+    )
     return opciones_alta(comedor), opciones_seguimiento_pac(comedor)
 
 
@@ -122,13 +124,16 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["comedor"] = Comedor.objects.values(
-            "id",
-            "nombre",
-            "provincia__nombre",
-            "localidad__nombre",
-            "municipio__nombre",
-        ).get(pk=self.kwargs["comedor_pk"])
+        context["comedor"] = get_object_or_404(
+            Comedor.objects.values(
+                "id",
+                "nombre",
+                "provincia__nombre",
+                "localidad__nombre",
+                "municipio__nombre",
+            ),
+            pk=self.kwargs["comedor_pk"],
+        )
         # Opciones del popup según el programa del comedor (H1): PAC o PNUD.
         context["opciones_alta"], context["opciones_seguimiento"] = _opciones_del_popup(
             self.kwargs["comedor_pk"]
@@ -331,7 +336,7 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         # Optimización: Retornar objeto completo con todas las relaciones optimizadas
-        return (
+        return get_object_or_404(
             Relevamiento.objects.select_related(
                 "comedor",
                 "comedor__referente",
@@ -367,8 +372,7 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
                 "funcionamiento__modalidad_prestacion",
                 "responsable_relevamiento",
                 "excepcion",
-            )
-            .prefetch_related(
+            ).prefetch_related(
                 "espacio__cocina__abastecimiento_combustible",
                 "recursos__recursos_donaciones_particulares",
                 "recursos__recursos_estado_nacional",
@@ -376,8 +380,8 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
                 "recursos__recursos_estado_municipal",
                 "recursos__recursos_otros",
                 "punto_entregas__frecuencia_recepcion_mercaderias",
-            )
-            .get(pk=self.kwargs["pk"])
+            ),
+            pk=self.kwargs["pk"],
         )
 
 
@@ -396,6 +400,11 @@ class RelevamientoPdfView(RelevamientoDetailView):
     """
 
     template_name = "relevamiento_pdf.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["es_pdf"] = True
+        return context
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()

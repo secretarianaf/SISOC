@@ -63,13 +63,9 @@ def test_excel_carga_cinco_regiones_y_28_subzonas_sin_duplicar_san_juan():
 
 
 @pytest.mark.django_db
-def test_provisorios_se_desactivan_sin_perder_asignaciones():
-    region, _ = RegionAbordajeComunitario.objects.update_or_create(
-        nombre="Región 1", defaults={"activo": True}
-    )
-    zona, _ = SubzonaAbordajeComunitario.objects.update_or_create(
-        nombre="Zona 1", defaults={"activo": True}
-    )
+def test_opciones_inactivas_se_conservan_en_asignaciones_existentes():
+    region = RegionAbordajeComunitario.objects.create(nombre="Región dada de baja")
+    zona = SubzonaAbordajeComunitario.objects.create(nombre="Zona dada de baja")
     provincia = Provincia.objects.create(nombre="Provincia de prueba")
     organizacion = Organizacion.objects.create(
         nombre="Legado",
@@ -78,12 +74,12 @@ def test_provisorios_se_desactivan_sin_perder_asignaciones():
         region_abordaje=region,
         subzona_abordaje=zona,
     )
+    RegionAbordajeComunitario.objects.filter(pk=region.pk).update(activo=False)
+    SubzonaAbordajeComunitario.objects.filter(pk=zona.pk).update(activo=False)
     _cargar()
     organizacion.refresh_from_db()
     assert organizacion.region_abordaje_id == region.pk
     assert organizacion.subzona_abordaje_id == zona.pk
-    assert not organizacion.region_abordaje.activo
-    assert not organizacion.subzona_abordaje.activo
     form = OrganizacionForm(
         data={
             "nombre": "Legado",

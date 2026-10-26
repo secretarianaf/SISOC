@@ -46,14 +46,10 @@ def cargar_catalogo_excel(apps, schema_editor):
             subzonas.update_or_create(
                 nombre=zona, defaults={"region_id": region.pk, "activo": True}
             )
-    # No inferir correspondencias entre nombres provisorios y el catálogo real.
-    # Conservar las filas y FK existentes, sin ofrecerlas en nuevas asignaciones.
-    regiones.filter(nombre__in=("Región 1", "Región 2")).update(activo=False)
-    subzonas.filter(nombre__in=("Zona 1", "Zona 2")).update(activo=False)
 
 
 class Migration(migrations.Migration):
-    dependencies = [("organizaciones", "0025_issue_2642_catalogos_provisorios")]
+    dependencies = [("organizaciones", "0024_issue_2642_abordaje_comunitario")]
 
     operations = [
         migrations.AddField(

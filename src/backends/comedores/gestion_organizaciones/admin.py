@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from core.admin_base import SisocModelAdmin
 from gestion_organizaciones.models import (
     ConvenioProyecto,
     DatosRegionOrganizacion,
@@ -10,11 +11,11 @@ from gestion_organizaciones.models import (
     SubzonaAbordaje,
 )
 
-admin.site.register(Firmante)
+admin.site.register(Firmante, SisocModelAdmin)
 
 
 @admin.register(ProgramaOrganizacion)
-class ProgramaOrganizacionAdmin(admin.ModelAdmin):
+class ProgramaOrganizacionAdmin(SisocModelAdmin):
     list_display = ("organizacion", "programa", "fecha_creacion")
     list_filter = ("programa",)
     search_fields = ("organizacion__nombre", "organizacion__cuit")
@@ -22,7 +23,7 @@ class ProgramaOrganizacionAdmin(admin.ModelAdmin):
 
 
 @admin.register(LineaProyecto)
-class LineaProyectoAdmin(admin.ModelAdmin):
+class LineaProyectoAdmin(SisocModelAdmin):
     list_display = ("proyecto", "programa")
     list_filter = ("programa",)
     search_fields = ("proyecto__codigo", "proyecto__organizacion__nombre")
@@ -30,20 +31,20 @@ class LineaProyectoAdmin(admin.ModelAdmin):
 
 
 @admin.register(RegionAbordaje)
-class RegionAbordajeAdmin(admin.ModelAdmin):
+class RegionAbordajeAdmin(SisocModelAdmin):
     list_display = ("nombre",)
     search_fields = ("nombre",)
 
 
 @admin.register(SubzonaAbordaje)
-class SubzonaAbordajeAdmin(admin.ModelAdmin):
+class SubzonaAbordajeAdmin(SisocModelAdmin):
     list_display = ("nombre", "region")
     list_filter = ("region",)
     search_fields = ("nombre",)
 
 
 @admin.register(DatosRegionOrganizacion)
-class DatosRegionOrganizacionAdmin(admin.ModelAdmin):
+class DatosRegionOrganizacionAdmin(SisocModelAdmin):
     list_display = ("organizacion", "region", "subzona")
     list_filter = ("region",)
     search_fields = ("organizacion__nombre",)
@@ -51,7 +52,7 @@ class DatosRegionOrganizacionAdmin(admin.ModelAdmin):
 
 
 @admin.register(ConvenioProyecto)
-class ConvenioProyectoAdmin(admin.ModelAdmin):
+class ConvenioProyectoAdmin(SisocModelAdmin):
     list_display = ("proyecto", "numero", "fecha", "meses", "monto_total")
     search_fields = ("numero", "proyecto__codigo", "proyecto__organizacion__nombre")
     raw_id_fields = ("proyecto",)

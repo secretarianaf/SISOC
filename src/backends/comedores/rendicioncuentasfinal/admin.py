@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from core.admin_base import SisocModelAdmin
 from rendicioncuentasfinal.models import (
     DocumentoRendicionFinal,
     EstadoDocumentoRendicionFinal,
@@ -8,7 +9,7 @@ from rendicioncuentasfinal.models import (
 )
 
 
-admin.site.register(RendicionCuentasFinal)
-admin.site.register(EstadoDocumentoRendicionFinal)
-admin.site.register(TipoDocumentoRendicionFinal)
-admin.site.register(DocumentoRendicionFinal)
+admin.site.register(RendicionCuentasFinal, SisocModelAdmin)
+admin.site.register(EstadoDocumentoRendicionFinal, SisocModelAdmin)
+admin.site.register(TipoDocumentoRendicionFinal, SisocModelAdmin)
+admin.site.register(DocumentoRendicionFinal, SisocModelAdmin)

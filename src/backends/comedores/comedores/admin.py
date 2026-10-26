@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from core.admin_base import SisocModelAdmin
 from core.models import MontoPrestacionPrograma
 from core.resources import MontoPrestacionProgramaResource
 
@@ -22,7 +23,7 @@ from comedores.models import (
 
 
 @admin.register(Comedor)
-class ComedorAdmin(admin.ModelAdmin):
+class ComedorAdmin(SisocModelAdmin):
     list_display = [
         "nombre",
         "estado_validacion",
@@ -40,17 +41,17 @@ class ComedorAdmin(admin.ModelAdmin):
 
 
 @admin.register(HistorialValidacion)
-class HistorialValidacionAdmin(admin.ModelAdmin):
+class HistorialValidacionAdmin(SisocModelAdmin):
     list_display = ["comedor", "estado_validacion", "usuario", "fecha_validacion"]
     list_filter = ["estado_validacion", "fecha_validacion"]
     search_fields = ["comedor__nombre", "usuario__username", "comentario"]
     readonly_fields = ["fecha_validacion"]
 
 
-admin.site.register(Observacion)
-admin.site.register(Nomina)
-admin.site.register(Referente)
-admin.site.register(ImagenComedor)
+admin.site.register(Observacion, SisocModelAdmin)
+admin.site.register(Nomina, SisocModelAdmin)
+admin.site.register(Referente, SisocModelAdmin)
+admin.site.register(ImagenComedor, SisocModelAdmin)
 
 
 @admin.register(TipoDeComedor)
@@ -76,7 +77,7 @@ class ValorComidaAdmin(BaseExportAdmin):
 
 
 @admin.register(ComedorDatosConvenioPnud)
-class ComedorDatosConvenioPnudAdmin(admin.ModelAdmin):
+class ComedorDatosConvenioPnudAdmin(SisocModelAdmin):
     list_display = (
         "comedor",
         "nro_convenio",
@@ -91,7 +92,7 @@ class ComedorDatosConvenioPnudAdmin(admin.ModelAdmin):
 
 
 @admin.register(ColaboradorEspacio)
-class ColaboradorEspacioAdmin(admin.ModelAdmin):
+class ColaboradorEspacioAdmin(SisocModelAdmin):
     list_display = ("ciudadano", "comedor", "genero", "fecha_alta", "fecha_baja")
     list_filter = ("genero",)
     search_fields = (
@@ -105,7 +106,7 @@ class ColaboradorEspacioAdmin(admin.ModelAdmin):
 
 
 @admin.register(NominaDerivacion)
-class NominaDerivacionAdmin(admin.ModelAdmin):
+class NominaDerivacionAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "nomina_origen",
@@ -139,7 +140,7 @@ class NominaDerivacionAdmin(admin.ModelAdmin):
 
 
 @admin.register(CapacitacionComedorCertificado)
-class CapacitacionComedorCertificadoAdmin(admin.ModelAdmin):
+class CapacitacionComedorCertificadoAdmin(SisocModelAdmin):
     list_display = (
         "comedor",
         "capacitacion",

@@ -1,14 +1,15 @@
 from django.contrib import admin
+from core.admin_base import SisocModelAdmin, SisocTabularInline
 from .models import Comunicado, ComunicadoAdjunto
 
 
-class ComunicadoAdjuntoInline(admin.TabularInline):
+class ComunicadoAdjuntoInline(SisocTabularInline):
     model = ComunicadoAdjunto
     extra = 1
 
 
 @admin.register(Comunicado)
-class ComunicadoAdmin(admin.ModelAdmin):
+class ComunicadoAdmin(SisocModelAdmin):
     list_display = [
         "titulo",
         "estado",
@@ -23,7 +24,7 @@ class ComunicadoAdmin(admin.ModelAdmin):
 
 
 @admin.register(ComunicadoAdjunto)
-class ComunicadoAdjuntoAdmin(admin.ModelAdmin):
+class ComunicadoAdjuntoAdmin(SisocModelAdmin):
     list_display = ["nombre_original", "comunicado", "fecha_subida"]
     list_filter = ["fecha_subida"]
     search_fields = ["nombre_original", "comunicado__titulo"]

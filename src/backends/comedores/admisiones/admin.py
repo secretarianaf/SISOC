@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from core.admin_base import SisocModelAdmin
 from core.admin_import_export import BaseExportAdmin
 from admisiones.models.admisiones import (
     EstadoAdmision,
@@ -38,16 +39,16 @@ class TipoConvenioAdmin(BaseExportAdmin):
     search_fields = ("nombre",)
 
 
-admin.site.register(Admision)
-admin.site.register(Documentacion)
-admin.site.register(ArchivoAdmision)
-admin.site.register(InformeTecnico)
-admin.site.register(InformeTecnicoPDF)
-admin.site.register(AdmisionHistorial)
-admin.site.register(FormularioProyectoDisposicion)
-admin.site.register(Providencia)
-admin.site.register(FormularioProyectoDeConvenio)
-admin.site.register(DocumentosExpediente)
+admin.site.register(Admision, SisocModelAdmin)
+admin.site.register(Documentacion, SisocModelAdmin)
+admin.site.register(ArchivoAdmision, SisocModelAdmin)
+admin.site.register(InformeTecnico, SisocModelAdmin)
+admin.site.register(InformeTecnicoPDF, SisocModelAdmin)
+admin.site.register(AdmisionHistorial, SisocModelAdmin)
+admin.site.register(FormularioProyectoDisposicion, SisocModelAdmin)
+admin.site.register(Providencia, SisocModelAdmin)
+admin.site.register(FormularioProyectoDeConvenio, SisocModelAdmin)
+admin.site.register(DocumentosExpediente, SisocModelAdmin)
 
 
 @admin.register(PlantillaInformeTecnico)

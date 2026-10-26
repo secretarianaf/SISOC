@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from core.admin_base import SisocModelAdmin
 from pwa.models import (
     ActividadEspacioPWA,
     AuditoriaOperacionPWA,
@@ -15,7 +16,7 @@ from pwa.models import (
 
 
 @admin.register(AuditoriaOperacionPWA)
-class AuditoriaOperacionPWAAdmin(admin.ModelAdmin):
+class AuditoriaOperacionPWAAdmin(SisocModelAdmin):
     list_display = (
         "fecha_evento",
         "accion",
@@ -40,7 +41,7 @@ class AuditoriaOperacionPWAAdmin(admin.ModelAdmin):
 
 
 @admin.register(LecturaMensajePWA)
-class LecturaMensajePWAAdmin(admin.ModelAdmin):
+class LecturaMensajePWAAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "comunicado",
@@ -60,7 +61,7 @@ class LecturaMensajePWAAdmin(admin.ModelAdmin):
 
 
 @admin.register(PushSubscriptionPWA)
-class PushSubscriptionPWAAdmin(admin.ModelAdmin):
+class PushSubscriptionPWAAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "user",
@@ -78,7 +79,7 @@ class PushSubscriptionPWAAdmin(admin.ModelAdmin):
 
 
 @admin.register(ColaboradorEspacioPWA)
-class ColaboradorEspacioPWAAdmin(admin.ModelAdmin):
+class ColaboradorEspacioPWAAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "comedor",
@@ -110,7 +111,7 @@ class ColaboradorEspacioPWAAdmin(admin.ModelAdmin):
 
 
 @admin.register(CatalogoActividadPWA)
-class CatalogoActividadPWAAdmin(admin.ModelAdmin):
+class CatalogoActividadPWAAdmin(SisocModelAdmin):
     list_display = ("id", "categoria", "actividad", "activo")
     list_filter = ("categoria", "activo")
     search_fields = ("categoria", "actividad")
@@ -118,7 +119,7 @@ class CatalogoActividadPWAAdmin(admin.ModelAdmin):
 
 
 @admin.register(ActividadEspacioPWA)
-class ActividadEspacioPWAAdmin(admin.ModelAdmin):
+class ActividadEspacioPWAAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "comedor",
@@ -149,7 +150,7 @@ class ActividadEspacioPWAAdmin(admin.ModelAdmin):
 
 
 @admin.register(InscriptoActividadEspacioPWA)
-class InscriptoActividadEspacioPWAAdmin(admin.ModelAdmin):
+class InscriptoActividadEspacioPWAAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "actividad_espacio",
@@ -174,7 +175,7 @@ class InscriptoActividadEspacioPWAAdmin(admin.ModelAdmin):
 
 
 @admin.register(NominaEspacioPWA)
-class NominaEspacioPWAAdmin(admin.ModelAdmin):
+class NominaEspacioPWAAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "nomina",
@@ -213,7 +214,7 @@ class NominaEspacioPWAAdmin(admin.ModelAdmin):
 
 
 @admin.register(RegistroAsistenciaNominaPWA)
-class RegistroAsistenciaNominaPWAAdmin(admin.ModelAdmin):
+class RegistroAsistenciaNominaPWAAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "nomina",
@@ -236,7 +237,7 @@ class RegistroAsistenciaNominaPWAAdmin(admin.ModelAdmin):
 
 
 @admin.register(AuditAccesoComedorPWA)
-class AuditAccesoComedorPWAAdmin(admin.ModelAdmin):
+class AuditAccesoComedorPWAAdmin(SisocModelAdmin):
     list_display = (
         "fecha_evento",
         "accion",

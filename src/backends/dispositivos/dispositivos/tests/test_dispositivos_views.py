@@ -26,6 +26,7 @@ def user_con_permisos(db):
             "change_dispositivo",
             "delete_dispositivo",
             "view_dispositivo",
+            "ver_mapa_dispositivo",
         ],
     )
     user.user_permissions.add(*perms)
@@ -203,6 +204,8 @@ def test_listado_oculta_acciones_sin_permisos_de_mutacion(client, provincia_muni
     assert "Agregar dispositivo" not in contenido
     assert 'title="Editar"' not in contenido
     assert 'title="Eliminar"' not in contenido
+    assert "Mapa de dispositivos" not in contenido
+    assert "Ver en mapa" not in contenido
 
 
 @pytest.mark.django_db
@@ -451,6 +454,7 @@ DISPOSITIVOS_PERMISOS = [
     "change_dispositivo",
     "delete_dispositivo",
     "view_dispositivo",
+    "ver_mapa_dispositivo",
 ]
 
 
@@ -794,6 +798,30 @@ def test_mapa_requiere_permiso(client):
     user = User.objects.create_user(username="mapa-sin-permiso")
     client.force_login(user)
     assert client.get(url).status_code == 403
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "codenames",
+    [["view_dispositivo"], ["ver_mapa_dispositivo"]],
+)
+def test_mapa_y_ubicacion_requieren_ambos_permisos(
+    client, provincia_municipio, codenames
+):
+    provincia, municipio = provincia_municipio
+    device = _crear_dispositivo(provincia, municipio, indice=1)
+    user = User.objects.create_user(username="mapa-permiso-parcial")
+    user.user_permissions.add(
+        *Permission.objects.filter(
+            content_type__app_label="dispositivos", codename__in=codenames
+        )
+    )
+    client.force_login(user)
+    assert client.get(reverse("dispositivos_mapa")).status_code == 403
+    assert (
+        client.get(reverse("dispositivos_ubicacion", args=[device.pk])).status_code
+        == 403
+    )
 
 
 @pytest.mark.django_db

@@ -1,8 +1,8 @@
 # Plan: legajo de Organización desdoblado por programa (#2745)
 
-Estado: aprobado funcionalmente por el área usuaria el 20/10/2026; pendiente
-de revisión técnica en el PR de documentación. Sin implementar. Issue:
-#2745. La implementación se hará en PRs posteriores, uno por etapa.
+Estado: aprobado funcionalmente por el área usuaria el 20/10/2026 y
+técnicamente en el PR #2746 (21/10/2026). En implementación por etapas, un PR
+por etapa. Issue: #2745.
 
 Las definiciones funcionales de la sección 1.2 son del área usuaria y se
 acordaron sobre mockups del 19 y 20/10/2026 (variante "B v3"). La ubicación
@@ -117,6 +117,11 @@ Comunitario:
 26. Ninguna información existente puede perderse: ni borrarse, ni
     modificarse sin rastro, ni quedar oculta en el legajo sin un lugar donde
     verse. Aplica a todo el desarrollo (sección 2.1).
+27. Los Datos de Convenio de la organización (por proyecto,
+    `ConvenioProyecto`) son un dato distinto de los datos de convenio del
+    comedor (`comedores.ComedorDatosConvenioPnud`), aunque compartan nombres
+    de campos. Conviven: el de la organización se carga a mano y el del
+    comedor sigue igual, en el legajo del comedor (confirmado el 22/10/2026).
 
 ### 1.3 Cambios de datos
 
@@ -202,6 +207,16 @@ Nombres propuestos (se confirman en la decisión técnica):
   (definición 24).
 - El acceso al legajo ya se filtra por dupla
   (`_filtrar_organizaciones_por_dupla`); este plan no lo cambia.
+- `comedores.ComedorDatosConvenioPnud` guarda datos de convenio por comedor
+  (número, montos, prestaciones aprobadas). No se lee ni se modifica en este
+  plan (definición 27).
+- La baja de una organización (`OrganizacionDeleteView`, soft delete en
+  cascada) borra físicamente sus `ProyectoOrganizacion`, que no tienen borrado
+  lógico, y hoy termina en error no manejado (`ProtectedError`) cuando algún
+  proyecto lo usa un comedor (`Comedor.proyecto` es `PROTECT`). Con
+  `LineaProyecto` y `ConvenioProyecto` (`PROTECT`) el bloqueo se extiende a
+  proyectos con línea o convenio. Es un comportamiento previo; se resuelve en
+  la Etapa 3, paso 7.
 - Firmante registra auditoría en
   `src/backends/comedores/gestion_organizaciones/audit_signals.py`.
 
@@ -367,7 +382,8 @@ Paquete nuevo `services` dentro de
 `src/backends/comedores/gestion_organizaciones/` (hoy la app no lo tiene).
 Funciones propuestas:
 
-0. En `src/backends/comedores/comedores/utils.py`: variantes que reciban un
+0. (Adelantado a la Etapa 1, porque las validaciones de los modelos lo
+   necesitan.) En `src/backends/comedores/comedores/utils.py`: variantes que reciban un
    programa (por ejemplo `es_programa_linea_secos(programa)` y
    `es_programa_linea_tradicional(programa)`), con el patrón de
    `permite_codigo_de_proyecto(programa)`; las funciones actuales que reciben
@@ -430,7 +446,19 @@ Archivos: `forms.py`, `views.py`, `urls.py` y templates de
    bloquear el guardado.
 6. Regenerar el registro de URLs:
    `DJANGO_SETTINGS_MODULE=config.settings_all python manage.py generar_registro_urls`.
-7. Tests de formularios y vistas: alta y edición con y sin Abordaje,
+7. Baja de organización (`OrganizacionDeleteView`; definición 26 y riesgo
+   asociado, decidido el 22/10/2026 tratarlo en esta etapa):
+   - capturar `ProtectedError` y mostrar un mensaje claro que diga qué
+     impide la baja (comedores, líneas o convenios asociados), en lugar del
+     error actual;
+   - evitar que la baja lógica borre físicamente los `ProyectoOrganizacion`
+     (hoy no tienen borrado lógico): la baja no debe eliminar proyectos, líneas
+     ni convenios. La forma (excluirlos de la cascada o bloquear la baja con
+     mensaje si tiene proyectos) se define al implementar, sin modificar el
+     kernel salvo revisión de arquitectura;
+   - tests: baja de organización con proyecto usado por comedor, con línea,
+     con convenio y sin nada asociado; en ningún caso se pierde un registro.
+8. Tests de formularios y vistas: alta y edición con y sin Abordaje,
    subzona de otra región, proyecto sin línea, firmante con programa ajeno,
    alta de firmante en una organización sin programas, convenio con y sin
    Imprevistos, advertencia de suma, usuario sin permiso.
@@ -516,7 +544,10 @@ Esta etapa solo verifica el resultado.
 1. Antes y después de desplegar la Etapa 1 en homologación, contar:
    organizaciones, comedores, firmantes, proyectos, rendiciones y documentos
    (deben ser iguales: nada se borró); organizaciones con comedores sin
-   `ProgramaOrganizacion` (debe ser cero); proyectos activos sin
+   `ProgramaOrganizacion` (debe ser cero **en el momento del despliegue**: la
+   migración corre una sola vez, y las organizaciones que reciban comedores
+   después quedan sin programas hasta que se carguen a mano; la definición 22
+   evita que eso bloquee altas); proyectos activos sin
    `LineaProyecto` (deben coincidir con los ambiguos del log); rendiciones
    cuya línea no está entre los programas de su organización (deben verse
    en el bloque de otras líneas).
@@ -547,6 +578,8 @@ Hecho cuando: los conteos dan lo esperado en homologación y producción.
 | Legajo vacío para organizaciones sin programas | La carga inicial cubre todas las que tienen comedores; aviso para las que no tienen |
 | Pérdida de información (borrado, cambio sin rastro u ocultamiento) | Sección 2.1 en cada PR: migraciones aditivas, reversa `noop`, `PROTECT`, auditoría, bloques de registros sin programa y test de no pérdida |
 | Proyectos existentes sin línea | La carga asigna la línea de sus comedores; los ambiguos quedan sin línea, en el log y con aviso en el legajo |
+| Baja de organización con proyectos usados por comedores, con línea o con convenio: error no manejado; y proyectos borrados físicamente al dar de baja (comportamiento previo) | Se resuelve en la Etapa 3, paso 7 (decidido el 22/10/2026): mensaje claro en lugar del error y la baja no borra proyectos, líneas ni convenios. Mientras tanto, `PROTECT` evita que se pierdan línea y convenio |
+| Confundir el convenio de la organización con el del comedor | Definición 27: son datos distintos y conviven; nombres y textos de pantalla deben aclarar de cuál se trata |
 | Programas distintos de los tres o IDs mal identificados | Etapa 1 paso 0: listar programas por entorno antes de la carga; opción propia en el legajo |
 | Rendiciones sin proyecto o con línea distinta a la del proyecto | Manda la línea de la rendición (definición 23); tests de ambos casos |
 | Escritura de montos de convenio con un permiso de lectura | Riesgo aceptado (definición 24); revisar si cambia la política de permisos |

@@ -108,9 +108,11 @@ class DispositivoListView(LoginRequiredMixin, ListView):
         context["seccion_filtros_favoritos"] = SeccionesFiltrosFavoritos.DISPOSITIVOS
         query = self.request.GET.copy()
         query.pop("page", None)
-        context["map_url"] = reverse("dispositivos_mapa")
-        if query:
-            context["map_url"] += "?" + query.urlencode()
+        context["map_url"] = None
+        if self.request.user.has_perm("dispositivos.ver_mapa_dispositivo"):
+            context["map_url"] = reverse("dispositivos_mapa")
+            if query:
+                context["map_url"] += "?" + query.urlencode()
         context["titulo"] = "Buscar Dispositivos"
         return context
 

@@ -109,7 +109,10 @@ def test_locate_address_timeout(monkeypatch):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("route", ["comedor_crear", "centrodeinfancia_crear"])
+@pytest.mark.parametrize(
+    "route",
+    ["comedor_crear", "centrodeinfancia_crear", "centro_create", "ciudadanos_crear"],
+)
 def test_formularios_incluyen_editor_y_busqueda_compartida(
     client, django_user_model, route
 ):
@@ -125,3 +128,5 @@ def test_formularios_incluyen_editor_y_busqueda_compartida(
     assert b'data-generic-search="true"' in response.content
     assert b'data-always-visible="true"' in response.content
     assert reverse("address_preview").encode() in response.content
+    if route == "centro_create":
+        assert b"centro_form.js?v=2778-2" in response.content

@@ -48,7 +48,7 @@ preparado en HML sin activacion. DataCalle y Gestionar ya estan clonados en
 sisoc-deploy. El permiso sudo temporal fue retirado y su revocacion verificada.
 Los servidores todavia conservan el include inicial de Espacios; este cambio
 versionado no equivale a un despliegue. Ver evidencia inicial en
-[registro operativo](../registro/cambios/2026-09-08-coordinacion-pwa-privadas.md).
+[registro operativo](../registro/cambios/2026-T3/2026-09-08-coordinacion-pwa-privadas.md).
 
 ## Primera activacion de Inspecciones (2026-10-14)
 

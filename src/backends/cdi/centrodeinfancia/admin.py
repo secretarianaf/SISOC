@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from core.admin_base import SisocModelAdmin
 from centrodeinfancia.forms import NominaCentroInfanciaAdminForm
 from centrodeinfancia.models import (
     AccesoCDI,
@@ -20,7 +21,7 @@ from centrodeinfancia.models import (
 
 
 @admin.register(CentroDeInfancia)
-class CentroDeInfanciaAdmin(admin.ModelAdmin):
+class CentroDeInfanciaAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "nombre",
@@ -39,7 +40,7 @@ class CentroDeInfanciaAdmin(admin.ModelAdmin):
 
 
 @admin.register(DepartamentoIpi)
-class DepartamentoIpiAdmin(admin.ModelAdmin):
+class DepartamentoIpiAdmin(SisocModelAdmin):
     list_display = (
         "codigo_departamento",
         "nombre",
@@ -52,7 +53,7 @@ class DepartamentoIpiAdmin(admin.ModelAdmin):
 
 
 @admin.register(NominaCentroInfancia)
-class NominaCentroInfanciaAdmin(admin.ModelAdmin):
+class NominaCentroInfanciaAdmin(SisocModelAdmin):
     form = NominaCentroInfanciaAdminForm
     list_display = ("id", "centro", "ciudadano", "estado", "fecha")
     list_filter = ("estado",)
@@ -60,7 +61,7 @@ class NominaCentroInfanciaAdmin(admin.ModelAdmin):
 
 
 @admin.register(AsistenciaNominaCentroInfancia)
-class AsistenciaNominaCentroInfanciaAdmin(admin.ModelAdmin):
+class AsistenciaNominaCentroInfanciaAdmin(SisocModelAdmin):
     list_display = ("id", "nomina", "fecha", "presente", "registrado_por")
     list_filter = ("fecha", "presente")
     search_fields = (
@@ -72,28 +73,28 @@ class AsistenciaNominaCentroInfanciaAdmin(admin.ModelAdmin):
 
 
 @admin.register(Trabajador)
-class TrabajadorAdmin(admin.ModelAdmin):
+class TrabajadorAdmin(SisocModelAdmin):
     list_display = ("id", "centro", "apellido", "nombre", "rol", "telefono")
     list_filter = ("rol",)
     search_fields = ("centro__nombre", "apellido", "nombre", "telefono")
 
 
 @admin.register(IntervencionCentroInfancia)
-class IntervencionCentroInfanciaAdmin(admin.ModelAdmin):
+class IntervencionCentroInfanciaAdmin(SisocModelAdmin):
     list_display = ("id", "centro", "tipo_intervencion", "fecha")
     list_filter = ("tipo_intervencion", "destinatario")
     search_fields = ("centro__nombre", "observaciones")
 
 
 @admin.register(ObservacionCentroInfancia)
-class ObservacionCentroInfanciaAdmin(admin.ModelAdmin):
+class ObservacionCentroInfanciaAdmin(SisocModelAdmin):
     list_display = ("id", "centro", "observador", "fecha_visita")
     list_filter = ("fecha_visita",)
     search_fields = ("centro__nombre", "observador", "observacion")
 
 
 @admin.register(FormularioCDI)
-class FormularioCDIAdmin(admin.ModelAdmin):
+class FormularioCDIAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "centro",
@@ -106,7 +107,7 @@ class FormularioCDIAdmin(admin.ModelAdmin):
 
 
 @admin.register(FormularioCDIRoomDistribution)
-class FormularioCDIRoomDistributionAdmin(admin.ModelAdmin):
+class FormularioCDIRoomDistributionAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "formulario",
@@ -118,19 +119,19 @@ class FormularioCDIRoomDistributionAdmin(admin.ModelAdmin):
 
 
 @admin.register(FormularioCDIWaitlistByAgeGroup)
-class FormularioCDIWaitlistByAgeGroupAdmin(admin.ModelAdmin):
+class FormularioCDIWaitlistByAgeGroupAdmin(SisocModelAdmin):
     list_display = ("id", "formulario", "grupo_etario", "cantidad_demanda_insatisfecha")
     list_filter = ("grupo_etario",)
 
 
 @admin.register(FormularioCDIArticulationFrequency)
-class FormularioCDIArticulationFrequencyAdmin(admin.ModelAdmin):
+class FormularioCDIArticulationFrequencyAdmin(SisocModelAdmin):
     list_display = ("id", "formulario", "tipo_institucion", "frecuencia")
     list_filter = ("frecuencia",)
 
 
 @admin.register(NominaCentroInfanciaDerivacion)
-class NominaCentroInfanciaDerivacionAdmin(admin.ModelAdmin):
+class NominaCentroInfanciaDerivacionAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "nomina_origen",
@@ -164,7 +165,7 @@ class NominaCentroInfanciaDerivacionAdmin(admin.ModelAdmin):
 
 
 @admin.register(AccesoCDI)
-class AccesoCDIAdmin(admin.ModelAdmin):
+class AccesoCDIAdmin(SisocModelAdmin):
     list_display = ("user", "centro", "estado", "es_responsable", "fecha_creacion")
     list_filter = ("estado", "es_responsable")
     search_fields = ("user__username", "user__email", "centro__nombre")
@@ -174,6 +175,6 @@ class AccesoCDIAdmin(admin.ModelAdmin):
 
 
 @admin.register(OfertaServicio)
-class OfertaServicioAdmin(admin.ModelAdmin):
+class OfertaServicioAdmin(SisocModelAdmin):
     list_display = ("codigo", "orden")
     search_fields = ("codigo",)

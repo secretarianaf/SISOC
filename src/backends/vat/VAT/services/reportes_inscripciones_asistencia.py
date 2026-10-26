@@ -230,9 +230,13 @@ def _sumar_sesiones(queryset, grouping_fields, rows, resumen) -> None:
     comisiones distintas de cada grupo.
     """
     comisiones_por_grupo: dict[tuple, dict[str, set]] = {}
-    for par in queryset.values(
-        *grouping_fields, "comision_curso_id", "comision_id"
-    ).distinct():
+    # ``order_by()`` saca el ``Meta.ordering`` de Inscripcion: con ``distinct()``
+    # sumaría ``fecha_inscripcion`` al SELECT y devolvería una fila por inscripción.
+    for par in (
+        queryset.values(*grouping_fields, "comision_curso_id", "comision_id")
+        .order_by()
+        .distinct()
+    ):
         grupo = comisiones_por_grupo.setdefault(
             tuple(par[campo] for campo in grouping_fields),
             {"comision_curso_id": set(), "comision_id": set()},

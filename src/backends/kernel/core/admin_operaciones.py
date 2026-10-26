@@ -49,7 +49,6 @@ from unfold.widgets import (
     UnfoldAdminTextareaWidget,
 )
 
-from audittrail.context import audit_context
 
 logger = logging.getLogger("django")
 
@@ -137,62 +136,60 @@ def _mensaje_error(exc: Exception) -> str:
     return str(exc) or exc.__class__.__name__
 
 
+def _datos_auditoria(operacion: Operacion, datos: dict, lote: str) -> dict:
+    """``additional_data`` del LogEntry de una operación."""
+    return {
+        "origen": "admin",
+        "operacion": operacion.slug,
+        "titulo": operacion.titulo,
+        "motivo": datos.get("motivo", ""),
+        "datos": {
+            clave: str(valor) for clave, valor in datos.items() if clave != "motivo"
+        },
+        # Origen y lote de AuditEntryMeta: el signal de audittrail los lee de
+        # acá, así core no importa audittrail (contrato de .importlinter).
+        "audittrail_source": f"admin:{operacion.slug}",
+        "audittrail_batch_key": f"admin-{operacion.slug}-{lote}",
+    }
+
+
 def ejecutar_operacion(*, operacion: Operacion, objetos, usuario, datos: dict):
     """Ejecuta la operación objeto por objeto; un error no frena al resto.
 
     Devuelve ``(ok, errores)`` donde ``errores`` es ``[(objeto, mensaje)]``.
     """
-    motivo = datos.get("motivo", "")
     lote = uuid.uuid4().hex
     ok, errores = [], []
-    with audit_context(
-        actor=usuario,
-        source=f"admin:{operacion.slug}",
-        batch_key=f"admin-{operacion.slug}-{lote}",
-        extra={"motivo": motivo} if motivo else None,
-    ):
-        for obj in objetos:
-            antes = _valor_estado(obj, operacion.campo_estado)
-            try:
-                with transaction.atomic():
-                    resultado = operacion.ejecutar(obj, usuario, datos)
-                    if resultado is False:
-                        raise ValidationError(SERVICE_SIN_CAMBIOS)
-                    obj.refresh_from_db()
-                    despues = _valor_estado(obj, operacion.campo_estado)
-                    LogEntry.objects.log_create(
-                        obj,
-                        force_log=True,
-                        action=LogEntry.Action.UPDATE,
-                        actor=usuario,
-                        changes=(
-                            {operacion.campo_estado: [antes, despues]}
-                            if operacion.campo_estado and antes != despues
-                            else None
-                        ),
-                        additional_data={
-                            "origen": "admin",
-                            "operacion": operacion.slug,
-                            "titulo": operacion.titulo,
-                            "motivo": motivo,
-                            "datos": {
-                                clave: str(valor)
-                                for clave, valor in datos.items()
-                                if clave != "motivo"
-                            },
-                        },
-                    )
-            except (ValidationError, ValueError, PermissionDenied) as exc:
-                errores.append((obj, _mensaje_error(exc)))
-            except Exception as exc:  # pylint: disable=broad-exception-caught
-                # Un error inesperado en un registro no corta el lote: queda en
-                # el log con traceback y se informa en pantalla.
-                logger.exception(
-                    "Operación de admin %s falló para %r", operacion.slug, obj
+    for obj in objetos:
+        antes = _valor_estado(obj, operacion.campo_estado)
+        try:
+            with transaction.atomic():
+                if operacion.ejecutar(obj, usuario, datos) is False:
+                    raise ValidationError(SERVICE_SIN_CAMBIOS)
+                obj.refresh_from_db()
+                despues = _valor_estado(obj, operacion.campo_estado)
+                # LogEntry explícito: vale aunque auditlog no trackee el modelo.
+                LogEntry.objects.log_create(
+                    obj,
+                    force_log=True,
+                    action=LogEntry.Action.UPDATE,
+                    actor=usuario,
+                    changes=(
+                        {operacion.campo_estado: [antes, despues]}
+                        if operacion.campo_estado and antes != despues
+                        else None
+                    ),
+                    additional_data=_datos_auditoria(operacion, datos, lote),
                 )
-                errores.append((obj, f"Error inesperado: {_mensaje_error(exc)}"))
-            else:
-                ok.append(obj)
+        except (ValidationError, ValueError, PermissionDenied) as exc:
+            errores.append((obj, _mensaje_error(exc)))
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            # Un error inesperado en un registro no corta el lote: queda en
+            # el log con traceback y se informa en pantalla.
+            logger.exception("Operación de admin %s falló para %r", operacion.slug, obj)
+            errores.append((obj, f"Error inesperado: {_mensaje_error(exc)}"))
+        else:
+            ok.append(obj)
     return ok, errores
 
 

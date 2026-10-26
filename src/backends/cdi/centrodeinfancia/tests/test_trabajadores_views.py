@@ -12,7 +12,7 @@ from centrodeinfancia.models import (
 )
 from centrodeinfancia.tests.test_trabajador_form import datos_validos
 from core.constants import UserGroups
-from core.models import Nacionalidad, Provincia
+from core.models import Nacionalidad, Provincia, Sexo
 from users.models import Profile
 
 
@@ -238,6 +238,44 @@ def test_trabajador_renaper_normaliza_id_de_nacionalidad_al_catalogo_central(
     form = response.context["form"]
     assert form.initial["nacionalidad_trabajador"] == "Argentina"
     assert ("Argentina", "Argentina") in form.fields["nacionalidad_trabajador"].choices
+
+
+@pytest.mark.django_db
+def test_trabajador_renaper_traduce_id_de_sexo_y_lo_bloquea(client, monkeypatch):
+    # RENAPER devuelve el sexo como id del catálogo central (no "Femenino").
+    user = _crear_usuario("super-trabajador-renaper-sexo", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI RENAPER sexo")
+    sexo = Sexo.objects.create(sexo="Femenino")
+    url = reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk})
+    monkeypatch.setattr(
+        "centrodeinfancia.views.obtener_datos_ciudadano_desde_renaper",
+        lambda _dni: {
+            "success": True,
+            "data": {
+                "nombre": "Juana",
+                "apellido": "Pérez",
+                "dni": "30123456",
+                "sexo": sexo.pk,
+            },
+            "datos_api": {},
+        },
+    )
+
+    response = client.get(f"{url}?query=30123456")
+
+    form = response.context["form"]
+    assert form.initial["sexo_registral"] == "mujer"
+    assert form.fields["sexo_registral"].disabled is True
+
+    data = datos_validos_trabajador(sexo_registral="varon")
+    data["renaper_prefill_token"] = response.context["renaper_prefill_token"]
+    response = client.post(url, data=data)
+
+    assert response.status_code == 302
+    trabajador = Trabajador.objects.get(centro=centro)
+    assert trabajador.sexo_registral == "mujer"
+    assert "sexo_registral" in trabajador.campos_verificados_renaper
 
 
 @pytest.mark.django_db

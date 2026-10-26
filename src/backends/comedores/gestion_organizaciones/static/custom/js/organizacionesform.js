@@ -105,7 +105,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // SISTEMA DE PROGRESO Y SECCIONES COLAPSABLES
     // ============================================
 
-    const sections = ["basic", "contacto", "ubicacion", "vigencia"];
+    const sections = ["basic", "contacto", "ubicacion", "vigencia", "abordaje"];
     const completedLabel = document.getElementById("completedSections");
     const progressBar = document.getElementById("progressBarFill");
 

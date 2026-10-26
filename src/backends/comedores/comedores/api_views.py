@@ -163,6 +163,7 @@ class ComedorDetailViewSet(
                     "id": proyecto.id,
                     "codigo": proyecto.codigo,
                     "nombre": proyecto.nombre,
+                    "linea_programatica": inferir_linea_programatica(None, proyecto),
                 }
             )
         return projects_by_organization
@@ -1493,9 +1494,13 @@ class ComedorDetailViewSet(
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                linea_programatica = DocumentacionAdjunta.normalizar_linea_programatica(
-                    serializer.validated_data.get("linea_programatica")
-                    or inferir_linea_programatica(comedor)
+                linea_programatica = (
+                    inferir_linea_programatica(comedor, proyecto)
+                    if proyecto
+                    else DocumentacionAdjunta.normalizar_linea_programatica(
+                        serializer.validated_data.get("linea_programatica")
+                        or inferir_linea_programatica(comedor)
+                    )
                 )
                 excluir_pk = None
                 numero_actual = None

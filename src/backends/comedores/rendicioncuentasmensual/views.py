@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import json
 import os
 import re
@@ -525,14 +526,19 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
                 return JsonResponse(
                     {
                         "success": True,
-                        "message": "Estado del documento actualizado correctamente.",
+                        "message": "Selección guardada. Se confirmará al finalizar la revisión.",
                         "documento": {
                             "id": documento.id,
                             "estado": documento.estado,
                             "estado_display": documento.get_estado_display(),
-                            "estado_visual": documento.get_estado_visual(),
-                            "estado_visual_display": documento.get_estado_visual_display(),
-                            "observaciones": documento.observaciones or "",
+                            "estado_visual": documento.revision_estado
+                            or documento.get_estado_visual(),
+                            "estado_visual_display": (
+                                documento.get_revision_estado_display()
+                                if documento.revision_estado
+                                else documento.get_estado_visual_display()
+                            ),
+                            "observaciones": documento.revision_observaciones or "",
                         },
                         "rendicion": {
                             "estado": rendicion.estado,
@@ -552,7 +558,9 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
                         },
                     }
                 )
-            messages.success(request, "Estado del documento actualizado correctamente.")
+            messages.success(
+                request, "Selección guardada. Se confirmará al finalizar la revisión."
+            )
 
         return HttpResponseRedirect(
             reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
@@ -565,7 +573,9 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
         )
         context["rendicion"] = rendicion
         context["documentacion_por_categoria"] = (
-            RendicionCuentaMensualService.obtener_documentacion_para_detalle(rendicion)
+            RendicionCuentaMensualService.obtener_documentacion_para_detalle(
+                rendicion, incluir_borradores=True
+            )
         )
         context["scope_proyecto"] = (
             RendicionCuentaMensualService.obtener_scope_proyecto(rendicion)

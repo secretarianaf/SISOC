@@ -13,6 +13,9 @@ from rendicioncuentasmensual.models import (
     DocumentacionAdjunta,
     RendicionCuentaMensual,
     SolicitudDocumentoFaltante,
+    acta_auditoria_upload_to,
+    documentacion_adjunta_upload_to,
+    documento_regularizacion_upload_to,
 )
 from rendicioncuentasmensual.services import (
     RendicionCuentaMensualService,
@@ -1125,3 +1128,37 @@ def test_reiniciar_revision_auditoria_preserva_documentos_validados(mocker):
     filter_mock.assert_not_called()
     assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
     assert rendicion.estado == RendicionCuentaMensual.ESTADO_REVISION
+
+
+@pytest.mark.parametrize(
+    ("upload_to", "carpeta"),
+    [
+        (
+            documentacion_adjunta_upload_to,
+            "rendicioncuentasmensualdocumentos_adjuntos/",
+        ),
+        (acta_auditoria_upload_to, "rendicioncuentasmensual/auditoria/actas/"),
+        (
+            documento_regularizacion_upload_to,
+            "rendicioncuentasmensual/auditoria/regularizaciones/",
+        ),
+    ],
+)
+def test_upload_to_deja_una_extension_y_entra_en_max_length(upload_to, carpeta):
+    nombre = upload_to(
+        None,
+        "FORM_1234567.V.CERTIFICACION_DE_PRESTACIONES_-_PRESTACION_ALIMENTARIA.pdf",
+    )
+
+    assert nombre.startswith(carpeta)
+    assert nombre.endswith(".pdf")
+    assert nombre[len(carpeta) :].count(".") == 1
+    # Queda lugar para el sufijo "_XXXXXXX" que agrega Storage si ya existe.
+    assert len(nombre) <= 100 - 8
+
+
+def test_upload_to_conserva_nombres_cortos():
+    assert (
+        documentacion_adjunta_upload_to(None, "extracto.pdf")
+        == "rendicioncuentasmensualdocumentos_adjuntos/extracto.pdf"
+    )

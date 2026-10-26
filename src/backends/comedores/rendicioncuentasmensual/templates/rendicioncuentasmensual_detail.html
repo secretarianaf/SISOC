@@ -516,39 +516,7 @@
                                                             {% endif %}
                                                         </td>
                                                         <td id="revision-cell-{{ subsanacion.id }}">
-                                                            {% if puede_revisar_documentos and subsanacion.es_documento_vigente %}
-                                                                <form id="revision-documento-{{ subsanacion.id }}" method="post">
-                                                                    {% csrf_token %}
-                                                                    <input type="hidden" name="documento_id" value="{{ subsanacion.id }}" />
-                                                                </form>
-                                                                <div class="d-flex align-items-center gap-2">
-                                                                    <select name="estado"
-                                                                            form="revision-documento-{{ subsanacion.id }}"
-                                                                            class="form-select form-select-sm js-documento-estado"
-                                                                            data-documento-id="{{ subsanacion.id }}"
-                                                                            required>
-                                                                        <option value="">Seleccionar accion</option>
-                                                                        <option value="validado">Validar</option>
-                                                                        <option value="subsanar">A subsanar</option>
-                                                                    </select>
-                                                                    <button type="submit"
-                                                                            form="revision-documento-{{ subsanacion.id }}"
-                                                                            id="guardar-revision-inline-{{ subsanacion.id }}"
-                                                                            class="btn btn-success btn-sm d-none js-guardar-revision-inline"
-                                                                            data-documento-id="{{ subsanacion.id }}"
-                                                                            title="Guardar revision"
-                                                                            aria-label="Guardar revision">
-                                                                        <span class="js-submit-idle">
-                                                                            <i class="fas fa-check"></i>
-                                                                        </span>
-                                                                        <span class="spinner-border spinner-border-sm d-none js-submit-spinner"
-                                                                              role="status"
-                                                                              aria-hidden="true"></span>
-                                                                    </button>
-                                                                </div>
-                                                            {% else %}
-                                                                <span class="text-muted">-</span>
-                                                            {% endif %}
+                                                            <span class="text-muted">-</span>
                                                         </td>
                                                         <td>{{ subsanacion.fecha_creacion|date:"d/m/Y H:i" }}</td>
                                                         <td>
@@ -570,44 +538,13 @@
                                                             </div>
                                                         </td>
                                                     </tr>
-                                                    {% if subsanacion.estado == 'presentado' or subsanacion.observaciones %}
+                                                    {% if subsanacion.observaciones %}
                                                         <tr id="observaciones-row-{{ subsanacion.id }}"
-                                                            class="documento-detail-row {% if subsanacion.estado == 'presentado' and not subsanacion.observaciones %}d-none{% endif %}">
+                                                            class="documento-detail-row">
                                                             <td colspan="5" class="text-start pt-0 pb-1 ps-4">
-                                                                {% if subsanacion.estado == 'presentado' %}
-                                                                    {% if subsanacion.observaciones %}
-                                                                        <div class="ps-3" id="observaciones-display-{{ subsanacion.id }}">
-                                                                            <strong>Observaciones:</strong> {{ subsanacion.observaciones }}
-                                                                        </div>
-                                                                    {% endif %}
-                                                                    <div class="d-flex align-items-start gap-2">
-                                                                        <textarea id="observaciones-{{ subsanacion.id }}"
-                                                                                  name="observaciones"
-                                                                                  form="revision-documento-{{ subsanacion.id }}"
-                                                                                  class="documento-observaciones-input form-control form-control-sm js-observaciones-input"
-                                                                                  data-documento-id="{{ subsanacion.id }}"
-                                                                                  rows="2"
-                                                                                  placeholder="Observaciones para subsanacion"></textarea>
-                                                                        <button type="submit"
-                                                                                form="revision-documento-{{ subsanacion.id }}"
-                                                                                id="guardar-revision-observaciones-{{ subsanacion.id }}"
-                                                                                class="btn btn-success btn-sm d-none js-guardar-revision-observaciones"
-                                                                                data-documento-id="{{ subsanacion.id }}"
-                                                                                title="Guardar revision"
-                                                                                aria-label="Guardar revision">
-                                                                            <span class="js-submit-idle">
-                                                                                <i class="fas fa-check"></i>
-                                                                            </span>
-                                                                            <span class="spinner-border spinner-border-sm d-none js-submit-spinner"
-                                                                                  role="status"
-                                                                                  aria-hidden="true"></span>
-                                                                        </button>
-                                                                    </div>
-                                                                {% else %}
-                                                                    <div class="ps-3" id="observaciones-display-{{ subsanacion.id }}">
-                                                                        <strong>Observaciones:</strong> {{ subsanacion.observaciones }}
-                                                                    </div>
-                                                                {% endif %}
+                                                                <div class="ps-3" id="observaciones-display-{{ subsanacion.id }}">
+                                                                    <strong>Observaciones:</strong> {{ subsanacion.observaciones }}
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     {% endif %}

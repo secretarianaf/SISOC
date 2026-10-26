@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from core.admin_base import SisocModelAdmin
 from ver_para_ser_libre.models import (
     CasoLaboratorioVPSL,
     ChecklistJornadaVPSL,
@@ -18,21 +19,21 @@ from ver_para_ser_libre.models import (
 
 
 @admin.register(ItinerarioVPSL)
-class ItinerarioVPSLAdmin(admin.ModelAdmin):
+class ItinerarioVPSLAdmin(SisocModelAdmin):
     list_display = ("codigo", "provincia", "fecha_inicio", "fecha_fin", "estado")
     list_filter = ("estado", "provincia")
     search_fields = ("codigo", "referente_nombre", "localidades_tentativas")
 
 
 @admin.register(JornadaVPSL)
-class JornadaVPSLAdmin(admin.ModelAdmin):
+class JornadaVPSLAdmin(SisocModelAdmin):
     list_display = ("itinerario", "fecha", "sede", "localidad", "estado")
     list_filter = ("estado", "fecha")
     search_fields = ("sede", "referente_nombre", "itinerario__codigo")
 
 
 @admin.register(VehiculoVPSL)
-class VehiculoVPSLAdmin(admin.ModelAdmin):
+class VehiculoVPSLAdmin(SisocModelAdmin):
     list_display = ("id", "nombre", "orden", "activo")
     list_editable = ("orden", "activo")
     list_filter = ("activo",)
@@ -45,13 +46,13 @@ class VehiculoVPSLAdmin(admin.ModelAdmin):
         return super().has_delete_permission(request, obj)
 
 
-admin.site.register(ChecklistJornadaVPSL)
-admin.site.register(RegistroNominalVPSL)
-admin.site.register(CasoLaboratorioVPSL)
-admin.site.register(CierreDiarioVPSL)
-admin.site.register(HistorialEstadoVPSL)
-admin.site.register(EvaluacionSedeItinerarioVPSL)
-admin.site.register(SedeVPSL)
-admin.site.register(HistorialChecklistSedeVPSL)
-admin.site.register(HistorialLaboratorioVPSL)
-admin.site.register(HistorialCierreDiarioVPSL)
+admin.site.register(ChecklistJornadaVPSL, SisocModelAdmin)
+admin.site.register(RegistroNominalVPSL, SisocModelAdmin)
+admin.site.register(CasoLaboratorioVPSL, SisocModelAdmin)
+admin.site.register(CierreDiarioVPSL, SisocModelAdmin)
+admin.site.register(HistorialEstadoVPSL, SisocModelAdmin)
+admin.site.register(EvaluacionSedeItinerarioVPSL, SisocModelAdmin)
+admin.site.register(SedeVPSL, SisocModelAdmin)
+admin.site.register(HistorialChecklistSedeVPSL, SisocModelAdmin)
+admin.site.register(HistorialLaboratorioVPSL, SisocModelAdmin)
+admin.site.register(HistorialCierreDiarioVPSL, SisocModelAdmin)

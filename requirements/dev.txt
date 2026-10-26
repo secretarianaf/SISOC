@@ -1,5 +1,5 @@
 # Dependencias de desarrollo (lint, format, debug, profiling local)
-black==24.8.0
+black==26.10.1
 debugpy==1.8.5
 djlint==1.34.2
 isort==5.13.2

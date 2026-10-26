@@ -429,6 +429,42 @@ def test_misma_persona_con_otro_email_sincroniza_su_cuenta(centro):
     assert acceso.es_responsable is True
 
 
+def test_corregir_el_nombre_no_reemplaza_la_cuenta_sin_dni(centro):
+    # Las cuentas creadas antes de identificar por DNI no lo tienen en el perfil:
+    # corregir un error de tipeo en la ficha no debe crearle otra cuenta.
+    responsable, acceso = _referente(centro, "ana.gomez", responsable=True)
+    responsable.first_name, responsable.last_name = "Ana", "Gomes"
+    responsable.save(update_fields=["first_name", "last_name"])
+
+    actualizar_referente_cdi(
+        _request(responsable),
+        centro,
+        anterior={**FICHA_ANA, "apellido_referente": "Gomes"},
+    )
+
+    acceso.refresh_from_db()
+    assert acceso.es_responsable is True
+    assert User.objects.count() == 1
+
+
+def test_sin_dni_corregir_el_apellido_es_la_misma_persona(centro):
+    centro.dni_referente = ""
+    centro.save()
+    responsable, acceso = _referente(centro, "ana.gomez", responsable=True)
+    responsable.first_name, responsable.last_name = "Ana", "Gomes"
+    responsable.save(update_fields=["first_name", "last_name"])
+
+    actualizar_referente_cdi(
+        _request(responsable),
+        centro,
+        anterior={**FICHA_ANA, "dni_referente": "", "apellido_referente": "Gomes"},
+    )
+
+    acceso.refresh_from_db()
+    assert acceso.es_responsable is True
+    assert User.objects.count() == 1
+
+
 def test_cambio_a_un_referente_existente_lo_reactiva_como_responsable(centro):
     anterior, _ = _referente(centro, "ana", responsable=True)
     existente, acceso_existente = _referente(

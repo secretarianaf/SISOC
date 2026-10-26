@@ -282,9 +282,11 @@ def _sincronizar_email_si_cuenta_temporal(request, user, email, tipo_usuario):
 
 
 def _cambio_persona_referente(anterior, centro):
-    """El referente es otra persona si cambió el DNI o, sin DNI, el nombre.
+    """El referente es otra persona si cambió el DNI o, sin DNI, nombre y apellido.
 
-    El email no cuenta: dos referentes pueden compartir el institucional.
+    Sin DNI, corregir solo el nombre o solo el apellido es la misma persona: si
+    no, arreglar un error de tipeo le crearía otra cuenta. El email no cuenta:
+    dos referentes pueden compartir el institucional.
     """
     dni_anterior = _dni_desde(
         anterior.get("dni_referente"), anterior.get("cuil_referente")
@@ -292,9 +294,32 @@ def _cambio_persona_referente(anterior, centro):
     dni_actual = _dni_referente(centro)
     if dni_anterior and dni_actual:
         return dni_anterior != dni_actual
-    return _normalizar_nombre(
-        anterior.get("nombre_referente"), anterior.get("apellido_referente")
-    ) != _nombre_referente(centro)
+    cambio_nombre = _normalizar_nombre(
+        anterior.get("nombre_referente")
+    ) != _normalizar_nombre(centro.nombre_referente)
+    cambio_apellido = _normalizar_nombre(
+        anterior.get("apellido_referente")
+    ) != _normalizar_nombre(centro.apellido_referente)
+    return cambio_nombre and cambio_apellido
+
+
+def _es_el_referente(user, centro, anterior, cambio_persona):
+    """La cuenta es la del referente de la ficha.
+
+    Una cuenta sin DNI (las creadas antes de identificar por DNI) que coincide
+    con el nombre previo también lo es si la persona no cambió: así corregir el
+    nombre en la ficha no la reemplaza por una cuenta nueva.
+    """
+    if _es_la_persona_del_referente(user, centro):
+        return True
+    return (
+        not cambio_persona
+        and not _dni_cuenta(user)
+        and _normalizar_nombre(user.first_name, user.last_name)
+        == _normalizar_nombre(
+            anterior.get("nombre_referente"), anterior.get("apellido_referente")
+        )
+    )
 
 
 def _acceso_responsable(centro):
@@ -323,21 +348,21 @@ def actualizar_referente_cdi(request, centro, *, anterior):
         return
     responsable = _acceso_responsable(centro)
     cambio_persona = _cambio_persona_referente(anterior, centro)
-    if (
-        cambio_persona
-        or responsable is None
-        or not _es_la_persona_del_referente(responsable.user, centro)
-    ):
+    es_el_referente = responsable is not None and _es_el_referente(
+        responsable.user, centro, anterior, cambio_persona
+    )
+    if cambio_persona or not es_el_referente:
         crear_referente_cdi_automaticamente(request, centro, reemplaza_responsable=True)
         responsable = _acceso_responsable(centro)
+        es_el_referente = responsable is not None and _es_la_persona_del_referente(
+            responsable.user, centro
+        )
     email_actual = (centro.email_referente or "").strip()
     email_anterior = (anterior.get("email_referente") or "").strip()
     # Un referente que vuelve recupera su cuenta, que puede tener un email viejo
     # aunque el de la ficha sea el mismo que el del referente saliente.
-    if (
-        responsable
-        and (cambio_persona or email_actual.lower() != email_anterior.lower())
-        and _es_la_persona_del_referente(responsable.user, centro)
+    if es_el_referente and (
+        cambio_persona or email_actual.lower() != email_anterior.lower()
     ):
         _sincronizar_email_si_cuenta_temporal(
             request, responsable.user, email_actual, "referente"

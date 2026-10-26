@@ -46,8 +46,13 @@ Rama `Fix_PedidoEzequiel`. Observaciones de CDI sobre los tickets 2657 y 2658.
    - Si no tiene cuenta, se crea una nueva con sus datos, DNI y CUIL, aunque el
      email ya lo use otra cuenta (el login es por usuario y el blanqueo de
      contraseña por email ya admite varias cuentas).
-   - Cambio de persona = otro DNI o, sin DNI, otro nombre. El nuevo queda como
-     responsable y el anterior conserva su cuenta, sus datos y su acceso.
+   - Cambio de persona = otro DNI o, sin DNI, otro nombre **y** otro apellido.
+     El nuevo queda como responsable y el anterior conserva su cuenta, sus
+     datos y su acceso. Corregir solo el nombre o solo el apellido (un error de
+     tipeo) no es otra persona.
+   - Las cuentas creadas antes de este cambio no tienen DNI en el perfil. Si el
+     responsable es una de ellas y coincide con el nombre que tenía la ficha,
+     sigue siendo el referente aunque se corrija el nombre.
    - Si el responsable no es la persona de la ficha, al guardarla se recupera
      o se crea la cuenta del referente. Así se corrigen casos como el del
      CDI 212.
@@ -79,4 +84,5 @@ Rama `Fix_PedidoEzequiel`. Observaciones de CDI sobre los tickets 2657 y 2658.
 - `test_automatic_user_provisioning.py` y `test_gestion_usuarios_cdi.py`: email
   de otra persona → cuenta propia; misma persona por DNI → se reutiliza; nuevo
   referente con el mismo email institucional; responsable ajeno corregido sin
-  tocar su cuenta.
+  tocar su cuenta; corregir el nombre no reemplaza al responsable (cuenta sin
+  DNI y ficha sin DNI).

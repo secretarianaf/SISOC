@@ -139,7 +139,8 @@ function initializeRenaperBloque(container) {
         tipo.addEventListener("change", function () {
             const modo = container.dataset.renaperModo;
             const teniaDni = !tipoAnterior || conDni.includes(tipoAnterior);
-            tipoAnterior = tipo.value;
+            // La opción vacía no cuenta: "Ninguna" → vacío → DNI vuelve a validar.
+            if (tipo.value) tipoAnterior = tipo.value;
             if (tipo.value && !conDni.includes(tipo.value)) delete container.dataset.manualPorRenaper;
             if (modo === "dni" && tipo.value && !conDni.includes(tipo.value)) {
                 pasarAManual(container);

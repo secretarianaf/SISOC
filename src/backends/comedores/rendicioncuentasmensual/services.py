@@ -1732,7 +1732,7 @@ class RendicionProcesoService:
 
     @staticmethod
     def _bloquear_revision_territorial(rendicion):
-        """Serializa el inicio, incluyendo proyectos con rendiciones históricas."""
+        """Serializa el inicio y valida estado y cupo del proyecto, con históricas."""
         proyecto = rendicion.proyecto
         comedor = rendicion.comedor
         organizacion_id = (
@@ -1748,6 +1748,14 @@ class RendicionProcesoService:
             Comedor.objects.select_for_update().get(pk=comedor.pk)
         RendicionCuentaMensual.objects.select_for_update().get(pk=rendicion.pk)
         rendicion.refresh_from_db()
+        RendicionProcesoService._validar_estado(
+            rendicion,
+            RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+            {
+                RendicionCuentaMensual.SUBESTADO_PENDIENTE,
+                RendicionCuentaMensual.SUBESTADO_SUBSANADO,
+            },
+        )
         codigo = (
             proyecto.codigo
             if proyecto
@@ -1765,16 +1773,24 @@ class RendicionProcesoService:
             )
         elif not proyecto and comedor:
             scope = Q(proyecto__isnull=True, comedor=comedor)
+        ocupa_cupo = Q(
+            subestado_proceso__in=[
+                RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
+                RendicionCuentaMensual.SUBESTADO_SUBSANADO,
+            ]
+        )
+        if rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_SUBSANADO:
+            # Una subsanada ya ocupa el cupo. Si convive con otras (datos previos
+            # a la regla), cede solo ante las más antiguas: así siempre hay una
+            # que puede reanudarse y el proyecto no queda bloqueado sin salida.
+            ocupa_cupo &= Q(pk__lt=rendicion.pk)
         conflicto = (
             RendicionCuentaMensual.objects.filter(
                 scope,
+                Q(subestado_proceso=RendicionCuentaMensual.SUBESTADO_EN_CURSO)
+                | ocupa_cupo,
                 deleted_at__isnull=True,
                 etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
-                subestado_proceso__in=[
-                    RendicionCuentaMensual.SUBESTADO_EN_CURSO,
-                    RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
-                    RendicionCuentaMensual.SUBESTADO_SUBSANADO,
-                ],
             )
             .exclude(pk=rendicion.pk)
             .order_by("pk")
@@ -1847,12 +1863,8 @@ class RendicionProcesoService:
         finalizada = RendicionCuentaMensual.SUBESTADO_FINALIZADA
 
         if accion == RendicionProcesoService.ACCION_INICIAR_TERRITORIAL:
+            # Valida el estado bajo bloqueo antes de evaluar el cupo del proyecto.
             RendicionProcesoService._bloquear_revision_territorial(rendicion)
-            RendicionProcesoService._validar_estado(
-                rendicion,
-                RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
-                {pendiente, subsanado},
-            )
             rendicion.subestado_proceso = en_curso
             rendicion.estado = RendicionCuentaMensual.ESTADO_REVISION
         elif accion == RendicionProcesoService.ACCION_FINALIZAR_TERRITORIAL:

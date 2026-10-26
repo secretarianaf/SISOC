@@ -112,6 +112,62 @@ def test_revision_territorial_subsanada_puede_reanudarse(scopes):
     assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
 
 
+@pytest.mark.django_db
+@pytest.mark.parametrize("subestado_otra", ["pendiente_correcciones", "subsanado"])
+def test_revision_territorial_legada_en_conflicto_reanuda_la_mas_antigua(
+    scopes, subestado_otra
+):
+    """Datos previos a la regla: dos rendiciones del proyecto ya ocupan el cupo."""
+    comedor, proyecto, _, _ = scopes
+    antigua = _crear_rendicion(comedor, proyecto)
+    nueva = _crear_rendicion(comedor, proyecto, numero=2)
+    for rendicion, subestado in (
+        (antigua, RendicionCuentaMensual.SUBESTADO_SUBSANADO),
+        (nueva, subestado_otra),
+    ):
+        rendicion.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+        rendicion.subestado_proceso = subestado
+        rendicion.save()
+
+    _iniciar_territorial(antigua)
+
+    antigua.refresh_from_db()
+    assert antigua.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+    if subestado_otra == RendicionCuentaMensual.SUBESTADO_SUBSANADO:
+        with pytest.raises(ValidationError, match="mismo proyecto"):
+            _iniciar_territorial(nueva)
+
+
+@pytest.mark.django_db
+def test_revision_territorial_subsanada_nueva_cede_ante_la_antigua(scopes):
+    comedor, proyecto, _, _ = scopes
+    antigua = _crear_rendicion(comedor, proyecto)
+    nueva = _crear_rendicion(comedor, proyecto, numero=2)
+    for rendicion in (antigua, nueva):
+        rendicion.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+        rendicion.subestado_proceso = RendicionCuentaMensual.SUBESTADO_SUBSANADO
+        rendicion.save()
+
+    with pytest.raises(ValidationError, match=f"#{antigua.pk} del mismo proyecto"):
+        _iniciar_territorial(nueva)
+
+
+@pytest.mark.django_db
+def test_revision_territorial_estado_invalido_informa_estado_y_no_cupo(scopes):
+    comedor, proyecto, _, _ = scopes
+    activa = _crear_rendicion(comedor, proyecto)
+    activa.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+    activa.subestado_proceso = RendicionCuentaMensual.SUBESTADO_EN_CURSO
+    activa.save()
+    en_auditoria = _crear_rendicion(comedor, proyecto, numero=2)
+    en_auditoria.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA
+    en_auditoria.subestado_proceso = RendicionCuentaMensual.SUBESTADO_PENDIENTE
+    en_auditoria.save()
+
+    with pytest.raises(ValidationError, match="no corresponde al estado actual"):
+        _iniciar_territorial(en_auditoria)
+
+
 @pytest.mark.parametrize(
     "linea", [DocumentacionAdjunta.LINEA_TRADICIONAL, DocumentacionAdjunta.LINEA_SECOS]
 )

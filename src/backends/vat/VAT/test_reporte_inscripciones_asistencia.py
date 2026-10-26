@@ -712,5 +712,10 @@ def test_reporte_suma_sesiones_por_comision_sin_juntarlas_con_asistencias():
         if "VAT_asistenciasesion" in q["sql"] and "VAT_sesioncomision" in q["sql"]
     ]
     # Las comisiones de cada grupo se piden sin el orden por defecto de
-    # Inscripcion: si no, el DISTINCT devuelve una fila por inscripción.
-    assert not [q for q in queries if "fecha_inscripcion" in q["sql"]]
+    # Inscripcion: si no, el DISTINCT devuelve una fila por inscripción. Es la
+    # única consulta del reporte sin COUNT.
+    assert not [
+        q
+        for q in queries
+        if "fecha_inscripcion" in q["sql"] and "COUNT(" not in q["sql"]
+    ]

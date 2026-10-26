@@ -1,8 +1,8 @@
 # 2026-10-20 - Datos por programa de la Organización en gestion_organizaciones (#2745)
 
 ## Estado
-- propuesta (aprobada funcionalmente por el área usuaria el 20/10/2026;
-  se revisa en el PR de documentación del issue #2745, antes de implementar)
+- aceptada (aprobada funcionalmente por el área usuaria el 20/10/2026 y
+  técnicamente en el PR #2746, mergeado el 21/10/2026)
 
 ## Contexto
 - El legajo de Organización debe desdoblarse por programa (Alimentar
@@ -37,8 +37,9 @@
 - No se modifican tablas existentes del kernel. `Territorial` sigue en
   `Organizacion.territoriales_abordaje_comunitario`.
 - El catálogo de Región (5) y Subzona (28) del Anexo A del plan se carga con
-  una migración de datos reversible, para que sea igual en todos los
-  entornos, y queda editable desde el admin.
+  una migración de datos idempotente con reversa `noop` (revertir no borra
+  datos, sección 2.1 del plan), para que sea igual en todos los entornos, y
+  queda editable desde el admin.
 - Para reconocer cada programa se agregan en `comedores/utils.py` variantes
   que reciben un `Programas` (patrón de `permite_codigo_de_proyecto`), porque
   `is_abordaje_comunitario_linea_secos_program` y
@@ -122,6 +123,14 @@ convenio responden a la revisión del PR #2746 (21/10/2026) y las eligió el
   alcance.
 - Riesgo aceptado: quien puede ver organizaciones puede cargar montos de
   convenio.
+- `ConvenioProyecto` (de la organización, por proyecto) y
+  `comedores.ComedorDatosConvenioPnud` (del comedor) son datos distintos y
+  conviven; este cambio no lee ni modifica el segundo (confirmado por el área
+  usuaria el 22/10/2026).
+- Con `PROTECT`, la baja de una organización cuyos proyectos tengan línea o
+  convenio falla en lugar de borrarlos. Hoy ya falla, sin mensaje, cuando un
+  proyecto lo usa un comedor; se resuelve en la Etapa 3 (paso 7 del plan):
+  mensaje claro y una baja que no borre proyectos, líneas ni convenios.
 
 ## Referencias
 - Issue: #2745. Revisión: PR #2746.

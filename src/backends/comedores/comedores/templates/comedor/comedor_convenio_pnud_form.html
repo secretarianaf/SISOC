@@ -1,5 +1,6 @@
 {% extends "includes/main.html" %}
 {% load crispy_forms_tags %}
+{% load static %}
 {% block title %}Datos del Convenio{% endblock %}
 {% block titulo-pagina %}Datos del Convenio{% endblock %}
 {% block content %}
@@ -32,10 +33,13 @@
                 </p>
             </div>
             <form method="post">
+                {% include 'comedor/_territoriales_proyecto.html' %}
                 {% csrf_token %}
                 <div class="row">
                     <div class="col-md-6">{{ form.monto_total_conveniado|as_crispy_field }}</div>
-                    <div class="col-md-6">{{ form.personas_declaradas_siph|as_crispy_field }}</div>
+                    {% if not es_linea_secos and not es_linea_tradicional %}
+                        <div class="col-md-6">{{ form.personas_declaradas_siph|as_crispy_field }}</div>
+                    {% endif %}
                     <div class="col-md-6">{{ form.nro_convenio|as_crispy_field }}</div>
                     <div class="col-md-6">{{ form.monto_convenio_prestaciones_alimentarias|as_crispy_field }}</div>
                     <div class="col-md-6">{{ form.monto_convenio_siph|as_crispy_field }}</div>
@@ -49,8 +53,20 @@
                         <div class="col-md-6">{{ form.prestaciones_financiadas_diarias_merienda_reforzada|as_crispy_field }}</div>
                         <div class="col-md-6">{{ form.prestaciones_financiadas_diarias_cena|as_crispy_field }}</div>
                     {% endif %}
-                    <div class="col-md-6">{{ form.personas_conveniadas|as_crispy_field }}</div>
-                    {% if not es_linea_tradicional %}<div class="col-md-6">{{ form.cantidad_modulos|as_crispy_field }}</div>{% endif %}
+                    <div class="col-12">
+                        <div class="row">
+                            <div class="col-md-6">{{ form.personas_conveniadas|as_crispy_field }}</div>
+                            {% if es_linea_tradicional %}
+                                <div class="col-md-6">{{ form.personas_declaradas_siph|as_crispy_field }}</div>
+                            {% endif %}
+                        </div>
+                        {% if not es_linea_tradicional %}
+                            <div class="row">
+                                <div class="col-md-6">{{ form.cantidad_modulos|as_crispy_field }}</div>
+                                {% if es_linea_secos %}<div class="col-md-6">{{ form.personas_declaradas_siph|as_crispy_field }}</div>{% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
                     {% if not es_linea_secos %}
                         <div class="col-12 mt-3">
                             <h6 class="fw-bold">Prestaciones por convenio</h6>
@@ -147,4 +163,7 @@
             </form>
         </div>
     </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/convenio_pnud.js' %}"></script>
 {% endblock %}

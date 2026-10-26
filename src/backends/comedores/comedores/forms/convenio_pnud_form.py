@@ -1,3 +1,6 @@
+import re
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+
 from django import forms
 
 from comedores.models import ComedorDatosConvenioPnud
@@ -30,7 +33,37 @@ PRESTACIONES_APROBADAS_FIELDS = [
 ]
 
 
+class MontoConvenioWidget(forms.TextInput):
+    def format_value(self, value):
+        if value in (None, ""):
+            return ""
+        if isinstance(value, str):
+            return value
+        try:
+            entero = Decimal(value).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+            return format(entero, ",.0f").replace(",", ".")
+        except (InvalidOperation, ValueError, TypeError):
+            return value
+
+
+class MontoConvenioField(forms.DecimalField):
+    def to_python(self, value):
+        if isinstance(value, str) and value.strip():
+            value = value.strip()
+            if not re.fullmatch(r"-?(?:[0-9]+|[0-9]{1,3}(?:\.[0-9]{3})+)", value):
+                raise forms.ValidationError(
+                    "Ingresá un monto sin decimales, por ejemplo 100.000.000."
+                )
+            value = value.replace(".", "")
+        return super().to_python(value)
+
+
 class ComedorDatosConvenioPnudForm(forms.ModelForm):
+    MONTOS_FIELDS = (
+        "monto_total_conveniado",
+        "monto_convenio_prestaciones_alimentarias",
+        "monto_convenio_siph",
+    )
     PRESTACIONES_DIARIAS_FIELDS = [
         "prestaciones_financiadas_diarias_desayuno",
         "prestaciones_financiadas_diarias_almuerzo",
@@ -41,6 +74,21 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
 
     def __init__(self, *args, comedor=None, **kwargs):
         super().__init__(*args, **kwargs)
+        for name in self.MONTOS_FIELDS:
+            original = self.fields[name]
+            self.fields[name] = MontoConvenioField(
+                label=original.label,
+                required=original.required,
+                max_digits=original.max_digits,
+                decimal_places=original.decimal_places,
+                widget=MontoConvenioWidget(
+                    attrs={
+                        "class": "form-control",
+                        "inputmode": "numeric",
+                        "data-monto-entero": "true",
+                    }
+                ),
+            )
         if is_abordaje_comunitario_linea_secos_program(comedor):
             for field_name in [
                 "prestaciones_financiadas_mensuales",
@@ -48,6 +96,7 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
                 *self.PRESTACIONES_DIARIAS_FIELDS,
             ]:
                 self.fields.pop(field_name, None)
+
         elif is_abordaje_comunitario_linea_tradicional_program(comedor):
             self.fields.pop("prestaciones_financiadas_mensuales", None)
             self.fields.pop("cantidad_modulos", None)
@@ -61,6 +110,18 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
                 ],
             ]:
                 self.fields.pop(field_name, None)
+
+    def clean(self):
+        cleaned = super().clean()
+        # Mostrar pesos enteros no debe borrar centavos históricos al guardar
+        # otro campo del convenio sin modificar su monto.
+        for name in self.MONTOS_FIELDS:
+            inicial = self.initial.get(name)
+            if name in cleaned and inicial is not None:
+                visible = self.fields[name].widget.format_value(inicial)
+                if cleaned[name] == self.fields[name].to_python(visible):
+                    cleaned[name] = inicial
+        return cleaned
 
     class Meta:
         model = ComedorDatosConvenioPnud

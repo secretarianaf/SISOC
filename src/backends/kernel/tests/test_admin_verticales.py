@@ -87,7 +87,9 @@ def test_indice_admin_muestra_el_vertical_solo_a_superusuarios(backend, app_labe
     spec = load_backends_registry()[backend]
     with override_settings(SISOC_BACKENDS={backend: spec}):
         urls = [link["url"] for link in admin_backends(request)["backend_admin_links"]]
-        assert urls == [f"/admin/{app_label}/"]
+        # Un backend puede exponer más de un admin (Dispositivos y Datacalle).
+        assert urls == [link["url"] for link in spec["admin_links"]]
+        assert f"/admin/{app_label}/" in urls
         request.user.is_superuser = False
         assert not admin_backends(request)["backend_admin_links"]
 

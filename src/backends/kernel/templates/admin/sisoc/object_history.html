@@ -1,0 +1,17 @@
+{% extends "admin/object_history.html" %}
+{% load unfold %}
+{% comment %}
+    Historial de un registro (#2789): el log del admin de Django más los
+    eventos de auditlog, que incluyen las operaciones de soporte con su motivo.
+{% endcomment %}
+{% block content %}
+    {% if auditlog_historial.rows %}
+        <div class="mb-8" id="historial-auditlog">
+            {% component "unfold/components/table.html" with table=auditlog_historial title="Auditoría (auditlog)" %}
+        {% endcomponent %}
+    </div>
+{% else %}
+    {% include "unfold/helpers/messages/info.html" with message="Este registro no tiene eventos de auditoría." %}
+{% endif %}
+{{ block.super }}
+{% endblock content %}

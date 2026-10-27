@@ -17,6 +17,13 @@ y `sisoc-qa`, en el grupo organizacional `Default` con SISOC seleccionado y
 repositorios publicos permitidos. El servicio de repositorio quedo detenido.
 Los demas datos de esta auditoria conservan su fecha original.
 
+Deploy SISOC verificado en el runner organizacional: run `40535874390`,
+SHA `ffba74b9c09f3b10ce5ac4191d46a0765d6b36bf`, `success` el 2026-10-27
+16:04:21 UTC. CSS Unfold 200, titulo del admin con `SISOC admin` y CSP de
+admin con `unsafe-eval`; el footer sigue en `v21.10.26` y no sirve como prueba
+de revision desplegada. Evidencia y criterio pendiente en
+`docs/registro/cambios/2026-T4/2026-10-27-runners-org-sisoc.md`.
+
 El usuario confirmo que los aliases terminados en `-old` son los entornos
 canonicos actuales. AWS queda fuera de alcance y se conserva solo como referencia
 de una migracion futura:

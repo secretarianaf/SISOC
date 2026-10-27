@@ -68,11 +68,34 @@ No basta con que este online o acepte jobs satelite.
 - Run posterior [40535874390](https://github.com/secretarianaf/SISOC/actions/runs/40535874390):
   generado por push a `development`, SHA
   `ffba74b9c09f3b10ce5ac4191d46a0765d6b36bf`; tomo `sisoc-qa-org` a las
-  15:56:24 UTC. Seguimiento y comprobaciones HTTP pendientes al redactar.
+  15:56:24 UTC y termino `success` a las 16:04:21 UTC: **7 min 57 s de job**.
+  Tras un corte de conectividad del cliente Windows (SSH timeout, error API,
+  curl `000`), el usuario restablecio la red y se consulto el resultado final.
+  SSH `git rev-parse HEAD` en el checkout QA devolvio el mismo SHA del run;
+  el log registra `QA health check: OK` a las 16:03:36 y 16:04:16 UTC.
 - Baseline HTTP anterior al deploy: estatico de Unfold `404`; titulo
-  `Identificarse | Administracion de sitio Django` (con tilde en la respuesta);
+  `Identificarse | Administración de sitio Django`;
   cabecera `Content-Security-Policy-Report-Only` sin `unsafe-eval` en
   `script-src`; footer `v21.10.26`.
+- Verificacion HTTP posterior al deploy, sin autenticacion:
+
+  | Criterio | Salida observada | Resultado |
+  | --- | --- | --- |
+  | `GET /static/unfold/css/styles.css` | `200` | cumple |
+  | Titulo de `/admin/login/` | `[QA] Identificarse \| SISOC admin` (HTTP 200) | cumple |
+  | CSP de `/admin/login/` | `Content-Security-Policy-Report-Only`, `script-src` incluye `'unsafe-eval'` | cumple; sigue en modo report-only |
+  | Footer de `/` | `v21.10.26` (HTTP 200) | no cumple el cambio de etiqueta solicitado |
+
+  El footer no identifica el commit desplegado. En
+  `src/backends/kernel/core/context_processors.py`, `footer_version` toma
+  `get_current_version` y cachea la etiqueta 300 segundos. En
+  `src/backends/kernel/core/views.py`, esa funcion obtiene la primera version
+  de `CHANGELOG.md` (local o fallback GitHub). El changelog del SHA desplegado
+  comienza con `Version SISOC 21.10.2026` (con tilde en el archivo).
+  La etiqueta observada es coherente con esa fuente y no invalida el SHA ni
+  los otros chequeos. No se inspecciono cual fuente uso el proceso en runtime.
+  No se modificaron la semantica del footer, el changelog ni releases para
+  forzar otra fecha: ese criterio queda explicitamente pendiente.
 - HML y PRD: API confirma `sisoc-homologacion-org` y `sisoc-produccion-org`
   online, con `[self-hosted, sisoc-homologacion]` y
   `[self-hosted, sisoc-produccion]`, respectivamente, en el mismo grupo.
@@ -80,7 +103,14 @@ No basta con que este online o acepte jobs satelite.
   `/home/sisoc-deploy/actions-runner-org-homologacion` y
   `/home/sisoc-deploy/actions-runner-org-produccion`.
 - `production` conserva la regla `required_reviewers`; no se aprobo.
-- Pendiente incorporar resultado final del deploy QA y validacion documental.
+- `git diff --check`: sin errores. Comprobacion documental ejecutada sobre los
+  seis Markdown tocados con
+  `python src/scripts/ci/check_docs_paths.py --existencia`: 85 documentos
+  vigentes, 0 referencias obsoletas o rotas. No se ejecutaron tests/build de
+  aplicacion porque el diff es exclusivamente documental.
+- PR documental [#2809](https://github.com/secretarianaf/SISOC/pull/2809), en
+  borrador hacia `development`, sin merge. El resultado de CI se informa en
+  el PR; no equivale a aceptacion humana ni a validacion de deploy HML/PRD.
 
 ## Riesgos y limites
 

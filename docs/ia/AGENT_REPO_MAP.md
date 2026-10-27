@@ -1081,7 +1081,7 @@ codigo, no se lee entero al inicio.
   inferida; no demuestra consumo HTTP ni servicios activos.
 - La etapa `source` de `docker/django/Dockerfile` ejecuta el generador con
   `--imagen` antes de quitar frontends y verticales. El arranque conserva esa
-  captura completa (`var/arquitectura/grafo-imagen.json`); no reconstruye un
+  captura completa (`/sisoc/var/arquitectura/grafo-imagen.json` dentro de la imagen); no reconstruye un
   mapa parcial desde el core aislado. `.dockerignore` excluye `var` para evitar
   capturas locales dentro de una nueva imagen.
 - `python src/scripts/arquitectura/generar_mapa.py --docs` actualiza el grafo
@@ -1210,3 +1210,31 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `src/backends/kernel/users/migrations/0060_profile_accesos_siis_web.py` y `src/backends/comedores/pwa/migrations/0026_inicializar_acceso_web.py`: schema kernel y backfill histórico core. Aplicar con migrador completo; no recalcular flags en runtime ni repetir backfill sobre habilitaciones administradas.
 - `src/backends/sisoc_core/tests/test_users_siis.py`: contrato, denegaciones, credenciales administrativas, duplicados, gate web y backfill.
 - `docs/registro/cambios/2026-T4/2026-10-06-auth-siis.md`: evidencia y riesgo de rollback a código que ignora el flag.
+
+## INET React v2
+
+- Mapa del CFP: `src/frontends/apps/inet/src/DetailPanels.tsx` usa Google Maps con el dato
+  `Domicilio mapa` de `src/backends/vat/VAT/services/inet_queries.py` (calle/altura o domicilio
+  de actividades). Requiere localidad y provincia; sin datos muestra un mensaje.
+
+- Preservación visual solicitada por el usuario (2026-10-06):
+  `src/frontends/apps/inet/AGENTS.md`. Releer la implementación vigente antes de
+  editar; conservar las mejoras locales de composición, estilos y ubicaciones.
+  Pantallas y reglas: `docs/implementaciones/inet_react.md`.
+
+- Entrada `/v2/inet/`, app `src/frontends/apps/inet`, servicio `front_inet` y
+  variable `FRONT_INET_ORIGIN`; acceso y comandos: `docs/operacion/inet_react.md`.
+- API interna `/api/inet/` en `src/backends/vat/VAT/api_inet_urls.py`, `api_inet_views.py` y
+  `api_inet_serializers.py`. Se enruta al backend VAT desde `src/backends/config/backends.json`.
+- Queries/formularios/workflows: `src/backends/vat/VAT/services/inet_{queries,forms,workflow}.py`.
+  Alta CFP, wizard comisión y asistencia comparten operaciones con legacy.
+- Contrato dedicado `config.urls_inet_v2`, `openapi.inet.yaml` e
+  `inet.generated.ts`; checks CI y `npm run api:check` incluyen INET.
+- Tests `src/backends/vat/tests/test_inet_api.py`, `apps/inet/src/App.test.tsx`,
+  `apps/inet/src/Fields.test.tsx`,
+  `e2e/inet.e2e.ts`. No modificar HasAPIKey de `/api/vat/` para habilitar React.
+- Formularios: permitir opcionales JSON nulos, describir ModelMultipleChoiceField
+  como multiselect y conservar `activo_present` del CFP legacy. Las consultas
+  de opciones remotas dependen solo de padres/territorio, no de todo el formulario.
+- Cambios funcionales, visuales y verificación:
+  `docs/registro/cambios/2026-T4/2026-10-26-inet-react.md`.

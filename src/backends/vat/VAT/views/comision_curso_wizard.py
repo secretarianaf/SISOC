@@ -8,7 +8,6 @@ Paso 3 - Confirmación + persistencia transaccional.
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from formtools.wizard.views import SessionWizardView
@@ -18,13 +17,9 @@ from VAT.forms import (
     ComisionCursoWizardStep2FormSet,
     ComisionCursoWizardStep3Form,
 )
-from VAT.models import (
-    ComisionCurso,
-    ComisionHorario,
-    Curso,
-)
+from VAT.models import ComisionCurso, Curso
 from VAT.services.access_scope import can_user_edit_centro
-from VAT.services.sesion_comision_service.impl import SesionComisionService
+from VAT.services.inet_workflow import crear_comision
 
 
 WIZARD_FORMS = [
@@ -142,31 +137,11 @@ class ComisionCursoWizardView(LoginRequiredMixin, SessionWizardView):
         info = form_dict["info"].cleaned_data
         horarios_formset = form_dict["horarios"]
 
-        with transaction.atomic():
-            comision = ComisionCurso.objects.create(
-                curso=self.curso,
-                ubicacion=info["ubicacion"],
-                cupo_total=info["cupo_total"],
-                acepta_lista_espera=info.get("acepta_lista_espera", False),
-                cupo_lista_espera=info.get("cupo_lista_espera"),
-                estado=info["estado"],
-                fecha_inicio=info["fecha_inicio"],
-                fecha_fin=info["fecha_fin"],
-                observaciones=info.get("observaciones") or "",
-            )
-            total_sesiones = 0
-            for horario_form in horarios_formset.forms:
-                data = horario_form.cleaned_data
-                if not data or data.get("DELETE"):
-                    continue
-                horario = ComisionHorario.objects.create(
-                    comision_curso=comision,
-                    dia_semana=data["dia_semana"],
-                    hora_desde=data["hora_desde"],
-                    hora_hasta=data["hora_hasta"],
-                    vigente=data["vigente"] == "1",
-                )
-                total_sesiones += SesionComisionService.generar_para_horario(horario)
+        comision, total_sesiones = crear_comision(
+            self.curso,
+            info,
+            [form.cleaned_data for form in horarios_formset.forms],
+        )
 
         messages.success(
             self.request,

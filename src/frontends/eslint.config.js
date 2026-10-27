@@ -19,6 +19,7 @@ export default tseslint.config(
       ".npm-cache/**",
       // Generados desde el contrato OpenAPI.
       "packages/api/src/generated.ts",
+      "packages/api/src/inet.generated.ts",
       "packages/api/src/openapi.d.ts",
     ],
   },

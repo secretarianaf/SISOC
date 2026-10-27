@@ -2,8 +2,8 @@ import hashlib
 import json
 import logging
 import math
+from urllib.parse import quote
 
-import requests
 from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Q
@@ -14,11 +14,15 @@ from users.territorial_scope import (
     is_territorial_user,
 )
 
+from core.services.geolocation import locate_address
+
 from .models import Dispositivo
 
 
 def get_dispositivos_queryset():
-    return Dispositivo.objects.select_related("provincia", "municipio").order_by(
+    return Dispositivo.objects.select_related(
+        "provincia", "municipio", "localidad"
+    ).order_by(
         "-created_at",
         "nombre_institucion",
     )
@@ -87,6 +91,8 @@ def _location_signature(device):
         device.provincia_id,
         device.provincia.nombre,
     ]
+    if device.localidad_id:
+        address.extend([device.localidad_id, device.localidad.nombre])
     return hashlib.sha256(json.dumps(address, ensure_ascii=False).encode()).hexdigest()
 
 
@@ -97,13 +103,19 @@ _PERSISTED_STATUSES = ("located", "ambiguous", "not_found")
 
 def get_saved_dispositivo_location(device):
     """Reutiliza el resultado guardado solo si corresponde a la dirección actual."""
+    if device.latitud is not None and device.longitud is not None:
+        return {
+            "status": "located",
+            "lat": float(device.latitud),
+            "lon": float(device.longitud),
+        }
     saved = device.ubicacion_georef
-    if not isinstance(saved, dict) or saved.get("signature") != _location_signature(
-        device
+    result = saved.get("result") if isinstance(saved, dict) else None
+    if (
+        not isinstance(result, dict)
+        or saved.get("signature") != _location_signature(device)
+        or result.get("status") not in _PERSISTED_STATUSES
     ):
-        return None
-    result = saved.get("result")
-    if not isinstance(result, dict) or result.get("status") not in _PERSISTED_STATUSES:
         return None
     if result["status"] != "located":
         return {"status": result["status"]}
@@ -131,6 +143,9 @@ def _save_dispositivo_location(device, signature, result):
         altura=device.altura,
         municipio_id=device.municipio_id,
         provincia_id=device.provincia_id,
+        localidad_id=device.localidad_id,
+        latitud__isnull=True,
+        longitud__isnull=True,
     ).update(ubicacion_georef=saved)
     if updated:
         device.ubicacion_georef = saved
@@ -155,43 +170,36 @@ def geolocate_dispositivo(device):
         "DISPOSITIVOS_GEOREF_URL",
         "https://apis.datos.gob.ar/georef/api/direcciones",
     )
-    try:
-        for territory in ("localidad", "departamento"):
-            response = requests.get(
-                endpoint,
-                params={
-                    "direccion": address,
-                    "provincia": device.provincia.nombre,
-                    territory: device.municipio.nombre,
-                    "max": 2,
-                },
-                timeout=8,
-                headers={"User-Agent": "SISOC-Dispositivos/1.0"},
-            )
-            response.raise_for_status()
-            payload = response.json()
-            matches = payload["direcciones"]
-            total = int(payload["total"])
-            if total == 0:
-                continue
-            result = {"status": "ambiguous"}
-            if total == 1 and len(matches) == 1:
-                location = matches[0]["ubicacion"]
-                lat, lon = float(location["lat"]), float(location["lon"])
-                if not (
-                    math.isfinite(lat)
-                    and math.isfinite(lon)
-                    and -90 <= lat <= 90
-                    and -180 <= lon <= 180
-                ):
-                    raise ValueError("Coordenadas inválidas")
-                result = {"status": "located", "lat": lat, "lon": lon}
-            break
-        else:
-            result = {"status": "not_found"}
-    except (requests.RequestException, ValueError, TypeError, KeyError, IndexError):
+    result = locate_address(
+        address=address,
+        province=device.provincia.nombre,
+        locality=device.localidad.nombre if device.localidad_id else "",
+        municipality=device.municipio.nombre,
+        endpoint=endpoint,
+    )
+    if result["status"] == "unavailable":
         logger.warning("Georef no disponible para dispositivo %s", device.pk)
-        return {"status": "unavailable"}
+        return result
     _save_dispositivo_location(device, signature, result)
     cache.set(key, result, timeout=86400 * (30 if result["status"] == "located" else 1))
     return result
+
+
+def get_dispositivo_map_query(device):
+    """Prioriza coordenadas explícitas, luego domicilio, sin consultar servicios."""
+    if device.latitud is not None and device.longitud is not None:
+        query = f"{device.latitud},{device.longitud}"
+    else:
+        query = ", ".join(
+            filter(
+                None,
+                [
+                    f"{device.calle} {device.altura}".strip(),
+                    str(device.localidad) if device.localidad_id else "",
+                    str(device.municipio),
+                    str(device.provincia),
+                    "Argentina",
+                ],
+            )
+        )
+    return quote(query)

@@ -1,12 +1,24 @@
 from django.contrib import admin
-from django.contrib.admin.forms import AdminAuthenticationForm
+from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
+from unfold.contrib.filters.admin import RangeDateTimeFilter
+from unfold.forms import (
+    AdminPasswordChangeForm,
+    AuthenticationForm,
+    UserChangeForm,
+    UserCreationForm,
+)
 
+from core.admin_base import SisocModelAdmin
 from users.models import Profile
 from users.profile_utils import get_profile_or_none
 
 
-class WebAdminAuthenticationForm(AdminAuthenticationForm):
+# AuthenticationForm de Unfold hereda de AdminAuthenticationForm: conserva el
+# chequeo de usuario activo y staff, y suma el acceso web.
+class WebAdminAuthenticationForm(AuthenticationForm):
     def confirm_login_allowed(self, user):
         super().confirm_login_allowed(user)
         if not getattr(get_profile_or_none(user), "acceso_web", False):
@@ -15,9 +27,33 @@ class WebAdminAuthenticationForm(AdminAuthenticationForm):
 
 admin.site.login_form = WebAdminAuthenticationForm
 
+# User y Group los registra django.contrib.auth con el admin clásico; se
+# re-registran con Unfold sin cambiar su comportamiento (#2789).
+admin.site.unregister(User)
+admin.site.unregister(Group)
+
+
+@admin.register(User)
+class UserAdmin(BaseUserAdmin, SisocModelAdmin):
+    form = UserChangeForm
+    add_form = UserCreationForm
+    change_password_form = AdminPasswordChangeForm
+    # search_fields de BaseUserAdmin (username, nombre, apellido, email): User
+    # es destino de autocomplete de todos los dominios.
+    list_filter = (
+        *BaseUserAdmin.list_filter,
+        ("last_login", RangeDateTimeFilter),
+        ("date_joined", RangeDateTimeFilter),
+    )
+
+
+@admin.register(Group)
+class GroupAdmin(BaseGroupAdmin, SisocModelAdmin):
+    pass
+
 
 @admin.register(Profile)
-class ProfileAdmin(admin.ModelAdmin):
+class ProfileAdmin(SisocModelAdmin):
     list_display = (
         "user",
         "source",
@@ -28,5 +64,6 @@ class ProfileAdmin(admin.ModelAdmin):
     )
     list_filter = ("must_change_password", "source", "acceso_web", "acceso_siis")
     search_fields = ("user__username", "user__email")
-    raw_id_fields = ("user",)
+    list_select_related = ("user",)
+    autocomplete_fields = ("user",)
     readonly_fields = ("fecha_creacion",)

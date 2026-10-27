@@ -104,19 +104,17 @@ print('C3_RUNTIME_OK')
 def test_indice_admin_filtra_links_y_no_los_duplica_en_composicion_local():
     request = RequestFactory().get("/admin/")
     request.user = SimpleNamespace(
+        is_authenticated=True,
         is_active=True,
         is_staff=True,
-        has_module_perms=lambda app: app == "pwa",
-        has_perm=lambda perm: perm == "core.view_montoprestacionprograma",
+        is_superuser=True,
     )
     spec = load_backends_registry()["comedores"]
     with override_settings(SISOC_BACKENDS={"comedores": spec}):
-        links = admin_backends(request)["backend_admin_links"]
-        assert [link["label"] for link in links] == [
-            "Espacios comunitarios",
-            "Montos de prestación",
-        ]
-        request.user.is_staff = False
+        # Issue #2789: el superusuario ve todos los accesos del backend.
+        assert admin_backends(request)["backend_admin_links"] == spec["admin_links"]
+        # Issue #2789: sin superusuario no hay accesos, aunque tenga permisos.
+        request.user.is_superuser = False
         assert admin_backends(request)["backend_admin_links"] == []
     with override_settings(SISOC_BACKENDS={}):
         assert admin_backends(request)["backend_admin_links"] == []

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from unfold.contrib.filters.admin import RelatedDropdownFilter
 
 from catalogo_intervenciones.models import (
     SubIntervencion,
@@ -25,8 +26,9 @@ class TipoIntervencionAdmin(BaseImportExportAdmin):
 class SubIntervencionAdmin(BaseImportExportAdmin):
     resource_classes = [SubIntervencionResource]
     list_display = ("id", "nombre", "tipo_intervencion")
-    list_filter = ("tipo_intervencion",)
-    search_fields = ("nombre",)
+    list_filter = (("tipo_intervencion", RelatedDropdownFilter),)
+    search_fields = ("nombre", "tipo_intervencion__nombre")
+    list_select_related = ("tipo_intervencion",)
 
 
 @admin.register(TipoDestinatario)

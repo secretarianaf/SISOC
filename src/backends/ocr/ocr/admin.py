@@ -1,9 +1,11 @@
 from django.contrib import admin
+from unfold.contrib.filters.admin import ChoicesDropdownFilter, RangeDateTimeFilter
 
+from core.admin_base import SisocModelAdmin, SisocTabularInline
 from ocr.models import OCRJob, OCRJobDocument
 
 
-class OCRJobDocumentInline(admin.TabularInline):
+class OCRJobDocumentInline(SisocTabularInline):
     model = OCRJobDocument
     extra = 0
     readonly_fields = (
@@ -26,7 +28,7 @@ class OCRJobDocumentInline(admin.TabularInline):
 
 
 @admin.register(OCRJob)
-class OCRJobAdmin(admin.ModelAdmin):
+class OCRJobAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "requested_by",
@@ -37,7 +39,15 @@ class OCRJobAdmin(admin.ModelAdmin):
         "requested_at",
         "finished_at",
     )
-    list_filter = ("status",)
+    # Sin operaciones: reanudar o reintentar un lote no tiene service propio
+    # (pendiente, issue #2789).
+    list_filter = (
+        ("status", ChoicesDropdownFilter),
+        ("requested_at", RangeDateTimeFilter),
+        ("finished_at", RangeDateTimeFilter),
+    )
+    list_select_related = ("requested_by",)
+    search_fields = ("=id", "requested_by__username", "last_error_message")
     readonly_fields = (
         "requested_by",
         "status",
@@ -54,7 +64,7 @@ class OCRJobAdmin(admin.ModelAdmin):
 
 
 @admin.register(OCRJobDocument)
-class OCRJobDocumentAdmin(admin.ModelAdmin):
+class OCRJobDocumentAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "job",
@@ -63,7 +73,12 @@ class OCRJobDocumentAdmin(admin.ModelAdmin):
         "page_count",
         "processed_at",
     )
-    list_filter = ("status",)
+    list_filter = (
+        ("status", ChoicesDropdownFilter),
+        ("processed_at", RangeDateTimeFilter),
+    )
+    list_select_related = ("job",)
+    search_fields = ("=id", "=job__id", "original_filename", "error_message")
     readonly_fields = (
         "job",
         "original_filename",

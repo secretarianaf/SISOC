@@ -84,7 +84,9 @@ document.addEventListener('DOMContentLoaded', function () {
         'div_id_municipio',  
         'div_id_localidad',  
         'div_id_calle',  
-        'div_id_numero',  
+        'div_id_numero',
+        'div_id_latitud',
+        'div_id_longitud',
         'div_id_domicilio_actividad',
         'div_id_telefono',
         'div_id_celular',
@@ -109,7 +111,9 @@ document.addEventListener('DOMContentLoaded', function () {
         'div_id_municipio',  
         'div_id_localidad',  
         'div_id_calle',  
-        'div_id_numero',  
+        'div_id_numero',
+        'div_id_latitud',
+        'div_id_longitud',
         'div_id_domicilio_actividad',
         'div_id_telefono',
         'div_id_celular',
@@ -133,6 +137,11 @@ document.addEventListener('DOMContentLoaded', function () {
         allFieldWrappers.forEach(div => {
             div.style.display = visibleFields.includes(div.id) ? 'block' : 'none';
         });
+        const editor = document.querySelector('[data-centro-location-editor]');
+        if (editor) {
+            editor.hidden = !['faro', 'adherido'].includes(tipoField.value);
+            if (!editor.hidden) window.dispatchEvent(new Event('resize'));
+        }
     }
 
     if (tipoField) {

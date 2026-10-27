@@ -397,6 +397,11 @@ def _form_schema_response(instance, kind, pk):
             "fields": fields,
             "kind": kind,
             "back": _form_back(kind, pk, instance),
+            "provincia_ubicacion": (
+                instance.itinerario.provincia.nombre
+                if kind in {"jornada-create", "jornada-edit"} and instance.itinerario
+                else ""
+            ),
             "instrucciones": (
                 getattr(instance.instance, "subsanacion_observaciones", "")
                 if kind == "itinerario-subsanar"

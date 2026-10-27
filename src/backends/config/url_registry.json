@@ -8775,11 +8775,6 @@
   "regex": "^admin/datacalle/relevamiento/(?P<object_id>.+)/operacion\\-cerrar/\\Z"
  },
  {
-  "name": "datacalle_relevamiento_operacion_marcar_en_curso",
-  "namespace": "admin",
-  "regex": "^admin/datacalle/relevamiento/(?P<object_id>.+)/operacion\\-marcar\\-en\\-curso/\\Z"
- },
- {
   "name": "dispositivos_dispositivo_add",
   "namespace": "admin",
   "regex": "^admin/dispositivos/dispositivo/add/\\Z"
@@ -10470,11 +10465,6 @@
   "regex": "^admin/pwa/colaboradorespaciopwa/(?P<object_id>.+)/history/\\Z"
  },
  {
-  "name": "pwa_colaboradorespaciopwa_operacion_baja",
-  "namespace": "admin",
-  "regex": "^admin/pwa/colaboradorespaciopwa/(?P<object_id>.+)/operacion\\-baja/\\Z"
- },
- {
   "name": "pwa_coordinadorequipotecnicopwa_add",
   "namespace": "admin",
   "regex": "^admin/pwa/coordinadorequipotecnicopwa/add/\\Z"
@@ -12093,11 +12083,6 @@
   "name": "ver_para_ser_libre_itinerariovpsl_operacion_aprobar",
   "namespace": "admin",
   "regex": "^admin/ver_para_ser_libre/itinerariovpsl/(?P<object_id>.+)/operacion\\-aprobar/\\Z"
- },
- {
-  "name": "ver_para_ser_libre_itinerariovpsl_operacion_cerrar",
-  "namespace": "admin",
-  "regex": "^admin/ver_para_ser_libre/itinerariovpsl/(?P<object_id>.+)/operacion\\-cerrar/\\Z"
  },
  {
   "name": "ver_para_ser_libre_itinerariovpsl_operacion_enviar_subsanacion",

@@ -9,7 +9,7 @@ from io import BytesIO
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Exists, Max, OuterRef, Q
+from django.db.models import Case, Exists, F, Max, OuterRef, Q, When
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from pypdf import PdfReader, PdfWriter
@@ -64,7 +64,17 @@ def _crear_lector_pdf_documento(documento, extension):
     return PdfReader(BytesIO(pdf_bytes))
 
 
-def inferir_linea_programatica(comedor):
+def inferir_linea_programatica(comedor, proyecto=None):
+    if proyecto is not None:
+        es_amba = any(
+            str(valor or "").strip().upper() == "AMBA"
+            for valor in (proyecto.codigo, proyecto.nombre)
+        )
+        return (
+            DocumentacionAdjunta.LINEA_SECOS
+            if es_amba
+            else DocumentacionAdjunta.LINEA_TRADICIONAL
+        )
     programa_id = getattr(comedor, "programa_id", None)
     # IDs de programa: 3 = Abordaje Comunitario SECOS, 4 = Abordaje Comunitario Tradicional
     if programa_id == 3:
@@ -861,11 +871,20 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         )
 
     @staticmethod
-    def obtener_documentacion_para_detalle(rendicion):
+    def obtener_documentacion_para_detalle(rendicion, *, incluir_borradores=False):
         documentos = list(
             RendicionCuentaMensualService._documentos_activos_queryset(rendicion)
         )
         for archivo in documentos:
+            if (
+                incluir_borradores
+                and rendicion.subestado_proceso
+                == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+                and archivo.revision_etapa == rendicion.etapa_proceso
+                and archivo.revision_estado
+            ):
+                archivo.estado = archivo.revision_estado
+                archivo.observaciones = archivo.revision_observaciones
             archivo.visualizacion_confirmada = archivo.visualizacion_confirmada_en(
                 rendicion.etapa_proceso
             )
@@ -1079,8 +1098,15 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         periodo_fin = data.get("periodo_fin")
         observaciones = (data.get("observaciones") or "").strip()
         nombre = (data.get("nombre") or "").strip()
-        linea_programatica = DocumentacionAdjunta.normalizar_linea_programatica(
-            data.get("linea_programatica") or inferir_linea_programatica(comedor)
+        # La línea del alta se deriva del proyecto, nunca de un selector enviado
+        # por el cliente. Para rendiciones legadas sin proyecto se conserva
+        # la inferencia por programa del espacio.
+        linea_programatica = (
+            inferir_linea_programatica(comedor, proyecto)
+            if proyecto
+            else DocumentacionAdjunta.normalizar_linea_programatica(
+                data.get("linea_programatica") or inferir_linea_programatica(comedor)
+            )
         )
 
         RendicionCuentaMensualService._validar_numero_y_periodo(
@@ -1286,15 +1312,16 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         ):
             raise ValidationError({"estado": "El estado seleccionado es inválido."})
 
-        if documento.estado != DocumentacionAdjunta.ESTADO_PRESENTADO:
-            raise ValidationError(
-                {"detail": ("Solo se pueden revisar documentos en estado Presentado.")}
+        rendicion = RendicionCuentaMensual.objects.select_for_update().get(
+            pk=documento.rendicion_cuenta_mensual_id
+        )
+        if (
+            rendicion.subestado_proceso != RendicionCuentaMensual.SUBESTADO_EN_CURSO
+            or rendicion.etapa_proceso
+            not in (
+                RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+                RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
             )
-
-        rendicion = documento.rendicion_cuenta_mensual
-        if not rendicion or rendicion.estado not in (
-            RendicionCuentaMensual.ESTADO_REVISION,
-            RendicionCuentaMensual.ESTADO_SUBSANAR,
         ):
             raise ValidationError(
                 {
@@ -1303,6 +1330,13 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
                     )
                 }
             )
+
+        if (
+            not RendicionCuentaMensualService._documentos_vigentes_queryset(rendicion)
+            .filter(pk=documento.pk)
+            .exists()
+        ):
+            raise ValidationError("Solo se pueden revisar documentos vigentes.")
 
         observaciones_limpias = (observaciones or "").strip()
         if estado == DocumentacionAdjunta.ESTADO_SUBSANAR and not observaciones_limpias:
@@ -1314,13 +1348,21 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
                 }
             )
 
-        documento.estado = estado
-        documento.observaciones = (
+        documento.revision_estado = estado
+        documento.revision_etapa = rendicion.etapa_proceso
+        documento.revision_observaciones = (
             observaciones_limpias or None
             if estado == DocumentacionAdjunta.ESTADO_SUBSANAR
             else None
         )
-        documento.save(update_fields=["estado", "observaciones", "ultima_modificacion"])
+        documento.save(
+            update_fields=[
+                "revision_estado",
+                "revision_etapa",
+                "revision_observaciones",
+                "ultima_modificacion",
+            ]
+        )
         RendicionCuentaMensualService._aplicar_usuario_ultima_modificacion(
             rendicion, actor
         )
@@ -1422,11 +1464,33 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
             return (
                 RendicionCuentaMensual.objects.filter(deleted_at__isnull=True)
                 .select_related(
-                    "comedor", "comedor__organizacion", "proyecto__organizacion"
+                    "comedor",
+                    "comedor__organizacion",
+                    "comedor__proyecto",
+                    "proyecto__organizacion",
                 )
                 .prefetch_related(
+                    "proyecto__territoriales",
+                    "comedor__proyecto__territoriales",
+                    "comedor__organizacion__proyectos__territoriales",
                     "proyecto__organizacion__territoriales_abordaje_comunitario",
                     "comedor__organizacion__territoriales_abordaje_comunitario",
+                )
+                .annotate(
+                    region_abordaje_id=Case(
+                        When(
+                            proyecto__isnull=False,
+                            then=F("proyecto__organizacion__region_abordaje_id"),
+                        ),
+                        default=F("comedor__organizacion__region_abordaje_id"),
+                    ),
+                    subzona_abordaje_id=Case(
+                        When(
+                            proyecto__isnull=False,
+                            then=F("proyecto__organizacion__subzona_abordaje_id"),
+                        ),
+                        default=F("comedor__organizacion__subzona_abordaje_id"),
+                    ),
                 )
                 .order_by("-ultima_modificacion", "-id")
             )
@@ -1450,23 +1514,66 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
                 user_id=user_id
             ).values("organizacion_id")
         )
-        return Q(proyecto__organizacion_id__in=organizacion_ids) | Q(
-            proyecto__isnull=True, comedor__organizacion_id__in=organizacion_ids
+        proyectos_ids = ProyectoOrganizacion.objects.filter(
+            territoriales__pk=user_id
+        ).values("pk")
+        historicas = (
+            RendicionCuentaMensual.objects.filter(proyecto__isnull=True)
+            .filter(
+                Exists(
+                    ProyectoOrganizacion.objects.filter(
+                        organizacion_id=OuterRef("comedor__organizacion_id"),
+                        codigo=OuterRef("comedor__codigo_de_proyecto"),
+                        territoriales__pk=user_id,
+                    )
+                )
+            )
+            .values("pk")
+        )
+        return (
+            Q(proyecto_id__in=proyectos_ids)
+            | Q(pk__in=historicas)
+            | Q(proyecto__organizacion_id__in=organizacion_ids)
+            | Q(proyecto__isnull=True, comedor__organizacion_id__in=organizacion_ids)
+            | Q(proyecto__isnull=True, comedor__proyecto_id__in=proyectos_ids)
         )
 
     @staticmethod
     def territoriales_asignados_display(rendicion):
         if rendicion.proyecto_id:
             organizacion = rendicion.proyecto.organizacion
+            por_proyecto = list(rendicion.proyecto.territoriales.all())
         elif rendicion.comedor_id:
             organizacion = rendicion.comedor.organizacion
+            proyecto = getattr(rendicion.comedor, "proyecto", None)
+            if proyecto is None:
+                proyecto = (
+                    next(
+                        (
+                            item
+                            for item in organizacion.proyectos.all()
+                            if item.codigo == rendicion.comedor.codigo_de_proyecto
+                        ),
+                        None,
+                    )
+                    if organizacion
+                    else None
+                )
+            por_proyecto = list(proyecto.territoriales.all()) if proyecto else []
         else:
             organizacion = None
+            por_proyecto = []
         if organizacion is None:
             return ""
         # ``.all()`` aprovecha el prefetch del listado; se ordena en memoria.
         territoriales = sorted(
-            organizacion.territoriales_abordaje_comunitario.all(),
+            {
+                user.pk: user
+                for user in [
+                    *organizacion.territoriales_abordaje_comunitario.all(),
+                    *por_proyecto,
+                ]
+            }.values(),
             key=lambda user: (user.last_name, user.first_name, user.username),
         )
         return ", ".join(etiqueta_territorial(user) for user in territoriales)
@@ -1498,7 +1605,14 @@ class RendicionesOrganizacionService:
     """Consultas de rendiciones mostradas dentro del legajo de Organización."""
 
     @staticmethod
-    def obtener_rendiciones(organizacion, codigo_proyecto=None):
+    def obtener_rendiciones(
+        organizacion, codigo_proyecto=None, linea_programatica=None
+    ):
+        """Rendiciones de la organización, con o sin proyecto.
+
+        ``linea_programatica`` filtra por la línea guardada en cada rendición
+        (#2745, definición 23); sin ese parámetro el resultado no cambia.
+        """
         queryset = (
             RendicionCuentaMensual.objects.filter(
                 deleted_at__isnull=True,
@@ -1526,6 +1640,8 @@ class RendicionesOrganizacionService:
                 | Q(comedor__codigo_de_proyecto=codigo)
                 | Q(proyecto__codigo=codigo)
             )
+        if linea_programatica:
+            queryset = queryset.filter(linea_programatica=linea_programatica)
         return queryset
 
     @staticmethod
@@ -1562,14 +1678,44 @@ class RendicionProcesoService:
 
     @staticmethod
     def _documentos_observados_al_finalizar(rendicion):
-        documentos = RendicionCuentaMensualService._documentos_vigentes_queryset(  # pylint: disable=protected-access
-            rendicion
+        documentos = list(
+            RendicionCuentaMensualService._documentos_vigentes_queryset(  # pylint: disable=protected-access
+                rendicion
+            )
         )
-        if documentos.filter(estado=DocumentacionAdjunta.ESTADO_PRESENTADO).exists():
+        for documento in documentos:
+            if (
+                documento.revision_etapa == rendicion.etapa_proceso
+                and documento.revision_estado
+            ):
+                documento.estado = documento.revision_estado
+                documento.observaciones = documento.revision_observaciones
+        if any(
+            documento.estado == DocumentacionAdjunta.ESTADO_PRESENTADO
+            for documento in documentos
+        ):
             raise ValidationError(
                 "No se puede finalizar la etapa mientras existan documentos sin revisar."
             )
-        return list(documentos.filter(estado=DocumentacionAdjunta.ESTADO_SUBSANAR))
+        for documento in documentos:
+            documento.revision_estado = None
+            documento.revision_etapa = None
+            documento.revision_observaciones = None
+            documento.save(
+                update_fields=[
+                    "estado",
+                    "observaciones",
+                    "revision_estado",
+                    "revision_etapa",
+                    "revision_observaciones",
+                    "ultima_modificacion",
+                ]
+            )
+        return [
+            documento
+            for documento in documentos
+            if documento.estado == DocumentacionAdjunta.ESTADO_SUBSANAR
+        ]
 
     @staticmethod
     def _enviar_documentos_a_subsanacion(rendicion, documentos, actor):
@@ -1594,6 +1740,80 @@ class RendicionProcesoService:
             )
 
     @staticmethod
+    def _bloquear_revision_territorial(rendicion):
+        """Serializa el inicio y valida estado y cupo del proyecto, con históricas."""
+        proyecto = rendicion.proyecto
+        comedor = rendicion.comedor
+        organizacion_id = (
+            proyecto.organizacion_id
+            if proyecto
+            else getattr(comedor, "organizacion_id", None)
+        )
+        # La organización es el ancla común entre la FK de proyecto y el
+        # código histórico. Bloquear solo la rendición permitiría dos inicios.
+        if organizacion_id:
+            Organizacion.objects.select_for_update().get(pk=organizacion_id)
+        elif comedor:
+            Comedor.objects.select_for_update().get(pk=comedor.pk)
+        RendicionCuentaMensual.objects.select_for_update().get(pk=rendicion.pk)
+        rendicion.refresh_from_db()
+        RendicionProcesoService._validar_estado(
+            rendicion,
+            RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+            {
+                RendicionCuentaMensual.SUBESTADO_PENDIENTE,
+                RendicionCuentaMensual.SUBESTADO_SUBSANADO,
+            },
+        )
+        codigo = (
+            proyecto.codigo
+            if proyecto
+            else getattr(comedor, "codigo_de_proyecto", "") or ""
+        ).strip()
+        scope = Q(proyecto=proyecto) if proyecto else Q(pk=rendicion.pk)
+        if codigo and organizacion_id:
+            scope = Q(
+                proyecto__organizacion_id=organizacion_id,
+                proyecto__codigo=codigo,
+            ) | Q(
+                proyecto__isnull=True,
+                comedor__organizacion_id=organizacion_id,
+                comedor__codigo_de_proyecto=codigo,
+            )
+        elif not proyecto and comedor:
+            scope = Q(proyecto__isnull=True, comedor=comedor)
+        ocupa_cupo = Q(
+            subestado_proceso__in=[
+                RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
+                RendicionCuentaMensual.SUBESTADO_SUBSANADO,
+            ]
+        )
+        if rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_SUBSANADO:
+            # Una subsanada ya ocupa el cupo. Si convive con otras (datos previos
+            # a la regla), cede solo ante las más antiguas: así siempre hay una
+            # que puede reanudarse y el proyecto no queda bloqueado sin salida.
+            ocupa_cupo &= Q(pk__lt=rendicion.pk)
+        conflicto = (
+            RendicionCuentaMensual.objects.filter(
+                scope,
+                Q(subestado_proceso=RendicionCuentaMensual.SUBESTADO_EN_CURSO)
+                | ocupa_cupo,
+                deleted_at__isnull=True,
+                etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+            )
+            .exclude(pk=rendicion.pk)
+            .order_by("pk")
+            .first()
+        )
+        if conflicto:
+            raise ValidationError(
+                f"No se puede iniciar la revisión territorial: la rendición "
+                f"#{conflicto.pk} del mismo proyecto está en revisión territorial "
+                "en curso, pendiente de correcciones o subsanada. "
+                "Debe pasar a Revisión para Carga pendiente para iniciar otra."
+            )
+
+    @staticmethod
     @transaction.atomic
     def ejecutar(
         *, rendicion, accion, datos, actor=None
@@ -1607,6 +1827,14 @@ class RendicionProcesoService:
             RendicionProcesoService.ACCION_INICIAR_REGULARIZACION,
             RendicionProcesoService.ACCION_FINALIZAR_REGULARIZACION,
         }
+        if accion in {
+            RendicionProcesoService.ACCION_FINALIZAR_TERRITORIAL,
+            RendicionProcesoService.ACCION_INICIAR_REVISION_AUDITORIA,
+            RendicionProcesoService.ACCION_FINALIZAR_REVISION_AUDITORIA,
+        }:
+            rendicion = RendicionCuentaMensual.objects.select_for_update().get(
+                pk=rendicion.pk
+            )
         if accion in acciones_auditoria:
             rendicion = RendicionCuentaMensual.objects.select_for_update().get(
                 pk=rendicion.pk
@@ -1644,11 +1872,8 @@ class RendicionProcesoService:
         finalizada = RendicionCuentaMensual.SUBESTADO_FINALIZADA
 
         if accion == RendicionProcesoService.ACCION_INICIAR_TERRITORIAL:
-            RendicionProcesoService._validar_estado(
-                rendicion,
-                RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
-                {pendiente, subsanado},
-            )
+            # Valida el estado bajo bloqueo antes de evaluar el cupo del proyecto.
+            RendicionProcesoService._bloquear_revision_territorial(rendicion)
             rendicion.subestado_proceso = en_curso
             rendicion.estado = RendicionCuentaMensual.ESTADO_REVISION
         elif accion == RendicionProcesoService.ACCION_FINALIZAR_TERRITORIAL:

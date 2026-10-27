@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Iterable, Mapping, MutableMapping, Optio
 from django.db.models import Q, QuerySet
 
 from .coercion import coerce_value
-from .lookups import resolve_lookup
+from .lookups import build_local_day_q, resolve_lookup, split_date_transform
 from .payload import extract_raw_filters, load_payload
 
 
@@ -152,9 +152,17 @@ class AdvancedFilterEngine:
         if allowed_ops is not None and op not in allowed_ops:
             return None
 
+        # ``campo__date`` sobre un DateTimeField se resuelve con rangos del día
+        # local para no depender de las tablas de zonas horarias de MySQL.
+        base_field, is_datetime = (
+            split_date_transform(mapped_field)
+            if field_type == "date"
+            else (mapped_field, False)
+        )
+
         if op == "empty":
             empty_mode = str(item.get("empty_mode") or "both").lower()
-            null_q = Q(**{f"{mapped_field}__isnull": True})
+            null_q = Q(**{f"{base_field}__isnull": True})
             if field_type == "text":
                 blank_q = Q(**{f"{mapped_field}__exact": ""})
                 if empty_mode == "null":
@@ -171,6 +179,9 @@ class AdvancedFilterEngine:
         ok, casted = self._coerce_value(field, value, field_type)
         if not ok:
             return None
+
+        if is_datetime:
+            return build_local_day_q(base_field, op, casted)
 
         lookup, negate = resolve_lookup(field_type, op, mapped_field)
         if not lookup:

@@ -8,7 +8,7 @@ weasyprint a partir de los mismos datos que muestra el detalle.
 
 import mimetypes
 from pathlib import Path
-from urllib.parse import unquote, urlsplit
+from urllib.parse import parse_qs, unquote, urlsplit
 
 from django.conf import settings
 from django.contrib.staticfiles import finders
@@ -35,6 +35,31 @@ def _ruta_estatico(relativa):
     return Path(encontrada) if encontrada else None
 
 
+IMAGEN_LOCAL = "local"
+IMAGEN_EXTERNA = "externa"
+IMAGEN_VACIA = "vacia"
+
+
+def tipo_imagen_pdf(url):
+    """Cómo mostrar en el PDF una imagen cargada desde la app o GESTIONAR.
+
+    ``RecursosLocalesURLFetcher`` no descarga de la red, así que una URL
+    externa (las de AppSheet) se muestra como enlace en vez de pedirla y dejar
+    un error en el log por cada una (#2750). Las de AppSheet con ``fileName``
+    vacío no apuntan a ningún archivo y se omiten.
+    """
+    texto = str(url or "").strip()
+    if not texto:
+        return IMAGEN_VACIA
+    partes = urlsplit(texto)
+    if partes.scheme not in ("http", "https"):
+        return IMAGEN_LOCAL
+    parametros = parse_qs(partes.query, keep_blank_values=True)
+    if "fileName" in parametros and not parametros["fileName"][0].strip():
+        return IMAGEN_VACIA
+    return IMAGEN_EXTERNA
+
+
 class RecursosLocalesURLFetcher:
     """Resuelve imágenes y estilos del PDF solo desde el disco de SISOC.
 
@@ -44,6 +69,11 @@ class RecursosLocalesURLFetcher:
     ``STATIC_URL`` y ``MEDIA_URL`` del propio host; el resto se rechaza y
     weasyprint lo omite del PDF.
     """
+
+    # weasyprint >= 69 lee este atributo de ``URLFetcher`` sin valor por
+    # defecto cuando el fetcher falla; sin él, un recurso rechazado tira
+    # AttributeError y corta el PDF en vez de omitir la imagen.
+    _fail_on_errors = False
 
     def __init__(self, base_url):
         self._host = urlsplit(base_url).netloc

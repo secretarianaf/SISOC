@@ -79,7 +79,8 @@
 - `docs/registro/cambios/2026-T4/2026-10-15-inspecciones-panel-backoffice.md`: panel del backoffice de Inspecciones escolares (catálogo con datos del padrón y marca "a revisar", importación en tres pasos con medición del padrón real, asignaciones por jornada, listado y detalle de actas, rutas y deploy).
 - `docs/registro/cambios/2026-T4/2026-10-14-inspecciones-anulacion-actas.md`: anulación de actas y marca de acta de prueba desde el backoffice de Inspecciones escolares (servicio, vistas, efecto en la API de la PWA).
 - `docs/registro/cambios/2026-T4/2026-10-15-inspecciones-tablero-en-vivo.md`: tablero en vivo de Inspecciones escolares (indicadores por consulta periódica, mapa de Argentina con Leaflet y teselas Argenmap del IGN, exportación CSV, CSP y rendimiento).
-- `docs/registro/cambios/2026-T4/2026-10-15-kernel-layout-claro-barra-lateral.md`: layout claro compartido del kernel (`includes/base_claro.html`) para Inicio e Inspecciones y barra lateral sin panel de usuario en todo SISOC.
+- `docs/registro/cambios/2026-T4/2026-10-15-kernel-layout-claro-barra-lateral.md`: layout claro compartido del kernel (`includes/base_claro.html`) para Inicio e Inspecciones y barra lateral sin panel de usuario en todo SISOC (Inicio y barra lateral revertidos por #2712).
+- `docs/registro/cambios/2026-T4/2026-10-23-2712-inicio-sidebar-como-resto-sisoc.md`: Inicio y la barra lateral vuelven a la vista del resto de SISOC; el layout claro queda solo para Inspecciones.
 - `docs/registro/decisiones/2026-10-14-inspecciones-escolares-backend.md`: vertical propio, permisos, cierre numerado transaccional e idempotencia de Inspecciones escolares.
 
 ### 5. Flujos y sincronizaciones

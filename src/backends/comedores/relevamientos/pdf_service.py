@@ -70,6 +70,11 @@ class RecursosLocalesURLFetcher:
     weasyprint lo omite del PDF.
     """
 
+    # weasyprint >= 69 lee este atributo de ``URLFetcher`` sin valor por
+    # defecto cuando el fetcher falla; sin él, un recurso rechazado tira
+    # AttributeError y corta el PDF en vez de omitir la imagen.
+    _fail_on_errors = False
+
     def __init__(self, base_url):
         self._host = urlsplit(base_url).netloc
 

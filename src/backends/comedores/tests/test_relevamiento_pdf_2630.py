@@ -207,6 +207,17 @@ def test_fetcher_rechaza_recursos_que_no_son_locales(url):
         fetcher.fetch(url)
 
 
+def test_generar_pdf_omite_imagen_externa_sin_cortar_el_pdf():
+    """El rechazo del fetcher pasa por weasyprint: la imagen se omite y el PDF sale."""
+    pdf = RelevamientoPdfService.generar_pdf(
+        '<html><body><img src="http://169.254.169.254/latest/meta-data/x.png">'
+        "<h1>Relevamiento</h1></body></html>",
+        base_url="http://testserver/",
+    )
+
+    assert pdf.startswith(b"%PDF")
+
+
 def test_generar_pdf_devuelve_bytes_de_pdf():
     pdf = RelevamientoPdfService.generar_pdf(
         "<html><body><h1>Relevamiento</h1></body></html>",

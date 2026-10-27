@@ -76,6 +76,15 @@ def reintentar_sync_relevamiento(relevamiento, _usuario, _datos):
 
 def reintentar_sync_primer_seguimiento(seguimiento, _usuario, _datos):
     _validar_reintento_gestionar(seguimiento)
+    # El alta del seguimiento referencia al relevamiento: el flujo original
+    # (primer_seguimiento_service) lo envía antes. Acá no se manda en cadena:
+    # se pide reintentar primero el relevamiento.
+    relevamiento = seguimiento.id_relevamiento
+    if relevamiento is not None and not relevamiento.sincronizado_gestionar:
+        raise ValidationError(
+            "El relevamiento no está sincronizado con GESTIONAR: reintentá "
+            f"primero el relevamiento {relevamiento.pk}."
+        )
     seguimiento_id = seguimiento.pk
     transaction.on_commit(
         lambda: AsyncSendPrimerSeguimientoToGestionar(seguimiento_id).start()
@@ -182,6 +191,9 @@ class RelevamientoAdmin(OperacionesAdminMixin, SisocModelAdmin):
             ejecutar=reintentar_sync_relevamiento,
             campo_estado="sincronizado_gestionar",
             icono="sync",
+            # Uno por vez: los relevamientos previos a la migración 0010 figuran
+            # sin sincronizar y cada reintento envía un "Add" a GESTIONAR.
+            en_lote=False,
         ),
     )
 
@@ -248,6 +260,7 @@ class PrimerSeguimientoAdmin(OperacionesAdminMixin, SisocModelAdmin):
             ejecutar=reintentar_sync_primer_seguimiento,
             campo_estado="sincronizado_gestionar",
             icono="sync",
+            en_lote=False,
         ),
     )
 

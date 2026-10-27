@@ -299,8 +299,9 @@ def _accion_por_objeto(operacion: Operacion):
 class OperacionesAdminMixin:
     """Publica ``operaciones`` como acciones de Unfold (fila, detalle y lote).
 
-    Va antes de ``SisocModelAdmin`` en las bases. Los campos de estado de las
-    operaciones quedan de solo lectura en el form: solo cambian por la acción.
+    Va antes de ``SisocModelAdmin`` en las bases. Al editar un registro, los
+    campos de estado de las operaciones quedan de solo lectura: solo cambian por
+    la acción. En el alta se cargan normalmente (pueden ser obligatorios).
     """
 
     operaciones: tuple[Operacion, ...] = ()
@@ -310,7 +311,8 @@ class OperacionesAdminMixin:
         if not cls.__dict__.get("operaciones"):
             return
         nombres = []
-        lote = list(cls.__dict__.get("actions") or ())
+        # Incluye las acciones heredadas para no pisar las de una clase padre.
+        lote = list(cls.actions or ())
         for operacion in cls.operaciones:
             setattr(cls, operacion.nombre_accion, _accion_por_objeto(operacion))
             nombres.append(operacion.nombre_accion)
@@ -322,6 +324,8 @@ class OperacionesAdminMixin:
 
     def get_readonly_fields(self, request, obj=None):
         campos = list(super().get_readonly_fields(request, obj))
+        if obj is None:
+            return campos
         for operacion in self.operaciones:
             if operacion.campo_estado and operacion.campo_estado not in campos:
                 campos.append(operacion.campo_estado)

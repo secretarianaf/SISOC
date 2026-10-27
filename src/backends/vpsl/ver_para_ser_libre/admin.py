@@ -1,13 +1,15 @@
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 from unfold.contrib.filters.admin import (
     ChoicesDropdownFilter,
     RangeDateFilter,
     RangeDateTimeFilter,
 )
 
-from core.admin_base import SisocModelAdmin
+from core.admin_base import SisocModelAdmin, SoloLecturaAdmin
 from core.admin_operaciones import Operacion, OperacionesAdminMixin
 from ver_para_ser_libre.models import (
+    EstadoJornada,
     CasoLaboratorioVPSL,
     ChecklistJornadaVPSL,
     CierreDiarioVPSL,
@@ -49,29 +51,25 @@ def enviar_itinerario_a_subsanacion(itinerario, usuario, datos):
     )
 
 
-def cerrar_itinerario(itinerario, usuario, _datos):
-    workflow.cerrar_itinerario(itinerario, usuario=usuario)
-
-
 def habilitar_jornada(jornada, usuario, _datos):
+    # El service devuelve sin error si ya estaba habilitada: se informa en vez
+    # de contarla como procesada.
+    if jornada.estado == EstadoJornada.HABILITADA:
+        raise ValidationError("La jornada ya estaba habilitada.")
     workflow.habilitar_jornada(jornada, usuario=usuario)
 
 
+JORNADA_YA_CERRADA = (
+    EstadoJornada.FINALIZADA,
+    EstadoJornada.CERRADA,
+    EstadoJornada.EN_POST_OPERATIVO,
+)
+
+
 def cerrar_jornada_definitivamente(jornada, usuario, _datos):
+    if jornada.estado in JORNADA_YA_CERRADA:
+        raise ValidationError("La jornada ya tiene el cierre definitivo.")
     workflow.cerrar_jornada_definitivamente(jornada, usuario=usuario)
-
-
-class SoloLecturaAdmin(SisocModelAdmin):
-    """Historiales: son evidencia del flujo, se consultan y no se editan."""
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 
 @admin.register(ItinerarioVPSL)
@@ -131,19 +129,6 @@ class ItinerarioVPSLAdmin(OperacionesAdminMixin, SisocModelAdmin):
             campo_estado="estado",
             motivo_obligatorio=True,
             icono="undo",
-        ),
-        Operacion(
-            slug="cerrar",
-            titulo="Cerrar itinerario",
-            descripcion=(
-                "Cierre final. Requiere todas las jornadas finalizadas y sin "
-                "casos de laboratorio pendientes."
-            ),
-            ejecutar=cerrar_itinerario,
-            campo_estado="estado",
-            motivo_obligatorio=True,
-            destructiva=True,
-            icono="lock",
         ),
     )
 

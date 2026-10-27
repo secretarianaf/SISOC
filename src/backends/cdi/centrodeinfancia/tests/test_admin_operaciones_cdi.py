@@ -39,7 +39,7 @@ def _acceso(centro, username, **campos):
 
 
 def _ejecutar(slug, acceso, usuario, motivo=""):
-    model_admin = admin.site._registry[AccesoCDI]  # pylint: disable=protected-access
+    model_admin = admin.site.get_model_admin(AccesoCDI)
     operacion = next(op for op in model_admin.operaciones if op.slug == slug)
     return ejecutar_operacion(
         operacion=operacion,
@@ -114,7 +114,7 @@ def test_reglas_del_service_se_informan_como_error(centro, superuser):
 
 
 def test_baja_es_destructiva_y_exige_motivo():
-    model_admin = admin.site._registry[AccesoCDI]  # pylint: disable=protected-access
+    model_admin = admin.site.get_model_admin(AccesoCDI)
     baja = next(op for op in model_admin.operaciones if op.slug == "dar_de_baja")
 
     assert baja.destructiva and baja.motivo_obligatorio

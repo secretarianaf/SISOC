@@ -192,8 +192,11 @@ def test_operaciones_se_publican_en_fila_detalle_y_lote(model_admin, superuser):
     assert "operacion_renombrar" in model_admin.actions_row
     assert "operacion_renombrar" in model_admin.actions_detail
     assert "operacion_renombrar_lote" in model_admin.get_actions(request)
-    # El campo de estado solo cambia por la operación.
-    assert "nacionalidad" in model_admin.get_readonly_fields(request)
+    # Al editar, el campo de estado solo cambia por la operación; en el alta
+    # se carga (puede ser obligatorio, p. ej. Voucher.cantidad_disponible).
+    obj = Nacionalidad.objects.create(nacionalidad="Boliviana")
+    assert "nacionalidad" in model_admin.get_readonly_fields(request, obj)
+    assert "nacionalidad" not in model_admin.get_readonly_fields(request)
 
 
 @pytest.mark.django_db

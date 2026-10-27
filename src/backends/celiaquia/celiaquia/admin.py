@@ -8,7 +8,7 @@ from unfold.contrib.filters.admin import (
     RelatedDropdownFilter,
 )
 
-from core.admin_base import SisocModelAdmin, SisocTabularInline
+from core.admin_base import SisocModelAdmin, SisocTabularInline, SoloLecturaAdminMixin
 from core.admin_operaciones import Operacion, OperacionesAdminMixin
 from celiaquia.services import registros_erroneos_service
 from celiaquia.services.cupo_service import (  # pylint: disable=no-name-in-module
@@ -124,19 +124,6 @@ def _campos_subsanacion():
             initial=TipoSubsanacion.OTROS,
         )
     }
-
-
-class SoloLecturaAdminMixin:
-    """Historiales y tablas que solo cambian por los services: se consultan."""
-
-    def has_add_permission(self, request, obj=None):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 
 @admin.register(EstadoExpediente)

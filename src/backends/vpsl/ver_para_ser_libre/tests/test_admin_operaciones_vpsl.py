@@ -13,6 +13,7 @@ from ver_para_ser_libre import admin as vpsl_admin
 from ver_para_ser_libre.models import (
     EstadoEvaluacionVPSL,
     EstadoItinerario,
+    EstadoJornada,
     HistorialEstadoVPSL,
     ItinerarioVPSL,
     JornadaVPSL,
@@ -28,7 +29,7 @@ pytestmark = pytest.mark.django_db
 
 
 def _operacion(model, slug):
-    model_admin = admin.site._registry[model]  # pylint: disable=protected-access
+    model_admin = admin.site.get_model_admin(model)
     return next(op for op in model_admin.operaciones if op.slug == slug)
 
 
@@ -57,7 +58,6 @@ def _auditado(obj, slug):
             "enviar_itinerario_a_subsanacion",
             {"observacion": "Pedido de soporte"},
         ),
-        ("cerrar", "cerrar_itinerario", {}),
     ],
 )
 def test_operaciones_de_itinerario_llaman_al_workflow(
@@ -148,9 +148,9 @@ def test_cambiar_estado_generico_no_se_expone():
     nombres = {
         op.ejecutar.__name__
         for model in (ItinerarioVPSL, JornadaVPSL)
-        for op in admin.site._registry[
+        for op in admin.site.get_model_admin(
             model
-        ].operaciones  # pylint: disable=protected-access
+        ).operaciones  # pylint: disable=protected-access
     }
 
     assert "cambiar_estado" not in nombres
@@ -159,9 +159,7 @@ def test_cambiar_estado_generico_no_se_expone():
 def test_historiales_son_de_solo_lectura(rf, superuser):
     request = rf.get("/admin/")
     request.user = superuser
-    model_admin = admin.site._registry[  # pylint: disable=protected-access
-        HistorialEstadoVPSL
-    ]
+    model_admin = admin.site.get_model_admin(HistorialEstadoVPSL)
 
     assert not model_admin.has_add_permission(request)
     assert not model_admin.has_change_permission(request)
@@ -223,3 +221,31 @@ def test_detalles_con_operaciones_cargan(auth_client):
     ):
         url = reverse(f"admin:ver_para_ser_libre_{nombre}_change", args=[obj.pk])
         assert auth_client.get(url).status_code == 200
+
+
+@pytest.mark.parametrize(
+    "slug, estado, mensaje",
+    [
+        ("habilitar", "HABILITADA", "La jornada ya estaba habilitada."),
+        (
+            "cerrar_definitivamente",
+            "FINALIZADA",
+            "La jornada ya tiene el cierre definitivo.",
+        ),
+    ],
+)
+def test_operacion_de_jornada_sin_cambio_es_error(
+    mocker, superuser, slug, estado, mensaje
+):
+    jornada = crear_jornada()
+    jornada.estado = getattr(EstadoJornada, estado)
+    jornada.save(update_fields=["estado"])
+    habilitar = mocker.patch.object(vpsl_admin.workflow, "habilitar_jornada")
+    cerrar = mocker.patch.object(vpsl_admin.workflow, "cerrar_jornada_definitivamente")
+
+    ok, errores = _ejecutar(JornadaVPSL, slug, jornada, superuser)
+
+    assert not ok
+    assert errores == [(jornada, mensaje)]
+    habilitar.assert_not_called()
+    cerrar.assert_not_called()

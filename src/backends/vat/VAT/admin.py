@@ -63,6 +63,8 @@ from .models import (
 def cambiar_estado_inscripcion(inscripcion, usuario, datos):
     # El service valida cupo, lista de espera y mueve el voucher; un ValueError
     # (estado inválido, cupo completo) queda como error de la fila.
+    if inscripcion.estado == datos["nuevo_estado"]:
+        raise ValidationError("La inscripción ya tiene ese estado.")
     InscripcionService.actualizar_estado_inscripcion(
         inscripcion=inscripcion,
         nuevo_estado=datos["nuevo_estado"],

@@ -7,7 +7,7 @@ from unfold.contrib.filters.admin import (
 )
 
 from acompanamientos.acompanamiento_service import AcompanamientoService
-from core.admin_base import SisocModelAdmin
+from core.admin_base import SisocModelAdmin, SoloLecturaAdmin
 from core.admin_import_export import BaseExportAdmin
 from core.admin_operaciones import Operacion, OperacionesAdminMixin
 from admisiones.services.admisiones_service.impl import AdmisionService
@@ -75,19 +75,6 @@ def marcar_documentacion_rectificada(admision, usuario, _datos):
             "Solo se rectifica documentación de admisiones en estado 'A Rectificar'."
         )
     return AdmisionService.marcar_como_documentacion_rectificada(admision, usuario)
-
-
-class SoloLecturaAdmin(SisocModelAdmin):
-    """Tablas de historial: se consultan, no se editan desde el admin."""
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 
 # EstadoAdmision y TipoConvenio se resuelven por nombre dentro de los servicios

@@ -7,6 +7,7 @@ sitio, agrupado por dominio. Los admins que corren en otro backend se listan en
 """
 
 from functools import lru_cache
+from pathlib import Path
 
 from django.apps import apps
 from django.conf import settings
@@ -66,6 +67,10 @@ def _dominio_por_modulo() -> dict[str, tuple[str, str]]:
     }
 
 
+def _directorio_kernel() -> Path:
+    return Path(apps.get_app_config("core").path).parent
+
+
 def dominio_de_app(app_label: str) -> tuple[str, str]:
     """Dominio del sidebar para una app instalada."""
     if app_label in APPS_AUDITORIA:
@@ -73,14 +78,15 @@ def dominio_de_app(app_label: str) -> tuple[str, str]:
     if app_label in APPS_NUCLEO:
         return NUCLEO
     try:
-        modulo = apps.get_app_config(app_label).name
+        app_config = apps.get_app_config(app_label)
     except LookupError:
         return OTROS
-    if modulo in _dominio_por_modulo():
-        return _dominio_por_modulo()[modulo]
-    es_kernel = (
-        modulo.startswith(("django.", "rest_framework"))
-        or (settings.BACKENDS_DIR / "kernel" / modulo.split(".")[0]).is_dir()
+    if app_config.name in _dominio_por_modulo():
+        return _dominio_por_modulo()[app_config.name]
+    # Ubicación resuelta por la app (verticales_independientes.md), no por
+    # BASE_DIR + nombre: las apps del kernel viven junto a ``core``.
+    es_kernel = app_config.name.startswith(("django.", "rest_framework")) or (
+        Path(app_config.path).parent == _directorio_kernel()
     )
     return KERNEL if es_kernel else OTROS
 
@@ -144,8 +150,8 @@ def badge_entorno(_request) -> list[str]:
     return [texto, variante]
 
 
-def prefijo_titulo_entorno(_request) -> str | None:
+def prefijo_titulo_entorno(request) -> str | None:
     """Prefijo del <title> para no confundir pestañas de QA/HML con PRD."""
     if settings.ENVIRONMENT == "prd":
         return None
-    return f"[{badge_entorno(_request)[0]}]"
+    return f"[{badge_entorno(request)[0]}]"

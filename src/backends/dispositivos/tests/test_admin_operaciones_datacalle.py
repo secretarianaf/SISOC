@@ -35,7 +35,7 @@ def _relevamiento(provincia, denominacion="Operativo invierno", **extra):
 
 
 def _operacion(slug):
-    model_admin = admin.site._registry[Relevamiento]  # pylint: disable=protected-access
+    model_admin = admin.site.get_model_admin(Relevamiento)
     return next(op for op in model_admin.operaciones if op.slug == slug)
 
 
@@ -52,30 +52,6 @@ def _auditado(obj, slug):
     return LogEntry.objects.filter(
         object_pk=str(obj.pk), additional_data__operacion=slug
     ).exists()
-
-
-def test_marcar_en_curso_llama_al_service(mocker, provincia, superuser):
-    relevamiento = _relevamiento(provincia)
-    servicio = mocker.patch.object(datacalle_admin, "marcar_en_curso")
-
-    ok, _ = _ejecutar("marcar_en_curso", relevamiento, superuser)
-
-    assert ok == [relevamiento]
-    servicio.assert_called_once_with(relevamiento)
-    assert _auditado(relevamiento, "marcar_en_curso")
-
-
-def test_marcar_en_curso_fuera_de_planificado_es_error(provincia, superuser):
-    relevamiento = _relevamiento(provincia, estado=Relevamiento.Estado.FINALIZADO)
-
-    ok, errores = _ejecutar("marcar_en_curso", relevamiento, superuser)
-
-    assert not ok
-    assert errores == [
-        (relevamiento, "Solo se marca en curso un relevamiento planificado.")
-    ]
-    relevamiento.refresh_from_db()
-    assert relevamiento.estado == Relevamiento.Estado.FINALIZADO
 
 
 def test_cerrar_llama_al_service(mocker, provincia, superuser):
@@ -125,7 +101,7 @@ def test_cerrar_por_url_del_admin(auth_client, provincia, superuser):
 def test_casos_son_de_solo_lectura(rf, superuser):
     request = rf.get("/admin/")
     request.user = superuser
-    model_admin = admin.site._registry[Encuesta]  # pylint: disable=protected-access
+    model_admin = admin.site.get_model_admin(Encuesta)
 
     assert not model_admin.has_add_permission(request)
     assert not model_admin.has_change_permission(request)

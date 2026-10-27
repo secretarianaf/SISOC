@@ -72,9 +72,7 @@ def _participante(actividad_centro, documento, estado="inscrito"):
 
 
 def _ejecutar(participante, usuario, motivo="Pedido del centro"):
-    model_admin = admin.site._registry[  # pylint: disable=protected-access
-        ParticipanteActividad
-    ]
+    model_admin = admin.site.get_model_admin(ParticipanteActividad)
     operacion = next(op for op in model_admin.operaciones if op.slug == "dar_de_baja")
     return ejecutar_operacion(
         operacion=operacion,
@@ -155,9 +153,7 @@ def test_dar_de_baja_por_url_del_admin(auth_client, actividad_centro):
 def test_historial_es_de_solo_lectura(rf, superuser):
     request = rf.get("/admin/")
     request.user = superuser
-    model_admin = admin.site._registry[  # pylint: disable=protected-access
-        ParticipanteActividadHistorial
-    ]
+    model_admin = admin.site.get_model_admin(ParticipanteActividadHistorial)
 
     assert not model_admin.has_add_permission(request)
     assert not model_admin.has_change_permission(request)

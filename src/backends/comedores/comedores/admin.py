@@ -10,7 +10,7 @@ from unfold.contrib.filters.admin import (
     RelatedDropdownFilter,
 )
 
-from core.admin_base import SisocModelAdmin
+from core.admin_base import SisocModelAdmin, SoloLecturaAdminMixin
 from core.admin_operaciones import Operacion, OperacionesAdminMixin
 from core.models import MontoPrestacionPrograma
 from core.resources import MontoPrestacionProgramaResource
@@ -40,19 +40,6 @@ from comedores.services.estado_manager import registrar_cambio_estado
 from comedores.services.validacion_service import ValidacionService
 from comedores.tasks import AsyncSendComedorToGestionar, build_comedor_payload
 from pwa.services.nomina_service import soft_delete_nomina_persona
-
-
-class SoloLecturaAdminMixin:
-    """Tablas de historial/log: se consultan, no se editan desde el admin."""
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 
 # --- Operaciones de Comedor -------------------------------------------------

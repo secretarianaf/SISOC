@@ -32,7 +32,7 @@ pytestmark = pytest.mark.django_db
 
 
 def _operacion(model, slug):
-    model_admin = admin.site._registry[model]  # pylint: disable=protected-access
+    model_admin = admin.site.get_model_admin(model)
     return next(op for op in model_admin.operaciones if op.slug == slug)
 
 
@@ -325,14 +325,13 @@ def test_aprobar_por_url_del_admin(auth_client, legajo, superuser):
     assert entrada.additional_data["motivo"] == "Revisado por soporte"
 
 
-def test_estados_quedan_de_solo_lectura_en_el_form(rf, superuser):
+def test_estados_quedan_de_solo_lectura_en_el_form(rf, superuser, mocker):
     request = rf.get("/admin/")
     request.user = superuser
-    model_admin = admin.site._registry[  # pylint: disable=protected-access
-        ExpedienteCiudadano
-    ]
+    model_admin = admin.site.get_model_admin(ExpedienteCiudadano)
 
-    campos = model_admin.get_readonly_fields(request)
+    # Al editar un legajo, los estados solo cambian por las operaciones.
+    campos = model_admin.get_readonly_fields(request, mocker.Mock())
 
     assert {"revision_tecnico", "estado_cupo", "es_titular_activo"} <= set(campos)
 

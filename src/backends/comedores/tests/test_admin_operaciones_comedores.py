@@ -31,7 +31,6 @@ from core.models import Dia, Municipio, Provincia
 from pwa.models import (
     ActividadEspacioPWA,
     CatalogoActividadPWA,
-    ColaboradorEspacioPWA,
     CoordinadorEquipoTecnicoPWA,
 )
 
@@ -39,7 +38,7 @@ MOTIVO = "Pedido de soporte 2789"
 
 
 def _operacion(model, slug):
-    model_admin = django_admin.site._registry[model]  # pylint: disable=protected-access
+    model_admin = django_admin.site.get_model_admin(model)
     return next(op for op in model_admin.operaciones if op.slug == slug)
 
 
@@ -406,26 +405,6 @@ def test_reanudar_mailing_real_solo_si_fallo(mailing_job, superuser):
 
 
 # --- PWA --------------------------------------------------------------------
-
-
-@pytest.mark.django_db
-def test_baja_de_colaborador_pwa_llama_al_service(mocker, comedor, superuser):
-    colaborador = ColaboradorEspacioPWA.objects.create(
-        comedor=comedor,
-        nombre="Ana",
-        apellido="Paz",
-        dni="30111222",
-        telefono="1111",
-        email="ana@example.com",
-        rol_funcion="Cocina",
-    )
-    baja = mocker.patch("pwa.admin.soft_delete_colaborador")
-
-    ok, _ = _ejecutar(ColaboradorEspacioPWA, "baja", colaborador, superuser)
-
-    assert ok == [colaborador]
-    baja.assert_called_once_with(colaborador=colaborador, actor=superuser)
-    assert _log_de(colaborador, "baja").exists()
 
 
 @pytest.mark.django_db

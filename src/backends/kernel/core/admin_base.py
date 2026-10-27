@@ -61,6 +61,23 @@ class SisocModelAdmin(ModelAdmin):
         return super().history_view(request, object_id, extra_context)
 
 
+class SoloLecturaAdminMixin:
+    """Historiales y tablas que solo cambian por sus services: se consultan."""
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class SoloLecturaAdmin(SoloLecturaAdminMixin, SisocModelAdmin):
+    """ModelAdmin de solo lectura."""
+
+
 class SisocTabularInline(TabularInline):
     """Inline tabular con estilo Unfold."""
 

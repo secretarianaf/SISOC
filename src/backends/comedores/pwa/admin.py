@@ -5,7 +5,7 @@ from unfold.contrib.filters.admin import (
     RangeDateTimeFilter,
 )
 
-from core.admin_base import SisocModelAdmin
+from core.admin_base import SisocModelAdmin, SoloLecturaAdminMixin
 from core.admin_operaciones import Operacion, OperacionesAdminMixin
 from pwa.models import (
     AccesoComedorPWA,
@@ -24,7 +24,6 @@ from pwa.models import (
 )
 from pwa.services.accesos import deactivate_coordinador_equipo_tecnico_pwa_access
 from pwa.services.actividades_service import soft_delete_actividad_espacio
-from pwa.services.colaboradores_service import soft_delete_colaborador
 
 # ``Nomina.__str__`` usa el ciudadano y el comedor (directo o de la admisión).
 NOMINA_RELACIONADAS = (
@@ -32,19 +31,6 @@ NOMINA_RELACIONADAS = (
     "nomina__comedor",
     "nomina__admision__comedor",
 )
-
-
-class SoloLecturaAdminMixin:
-    """Tablas de auditoría: se consultan, no se editan desde el admin."""
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 
 @admin.register(AuditoriaOperacionPWA)
@@ -124,23 +110,8 @@ class PushSubscriptionPWAAdmin(SisocModelAdmin):
     )
 
 
-def baja_colaborador_pwa(colaborador, usuario, _datos):
-    return soft_delete_colaborador(colaborador=colaborador, actor=usuario)
-
-
 @admin.register(ColaboradorEspacioPWA)
-class ColaboradorEspacioPWAAdmin(OperacionesAdminMixin, SisocModelAdmin):
-    operaciones = (
-        Operacion(
-            slug="baja",
-            titulo="Dar de baja colaborador PWA",
-            ejecutar=baja_colaborador_pwa,
-            campo_estado="activo",
-            motivo_obligatorio=True,
-            destructiva=True,
-            icono="person_remove",
-        ),
-    )
+class ColaboradorEspacioPWAAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "comedor",

@@ -47,7 +47,7 @@ def _persona(base, numero):
 def test_corridas_y_lotes_son_de_solo_lectura(rf, superuser, modelo):
     request = rf.get("/admin/")
     request.user = superuser
-    model_admin = admin.site._registry[modelo]  # pylint: disable=protected-access
+    model_admin = admin.site.get_model_admin(modelo)
 
     assert not model_admin.has_add_permission(request)
     assert not model_admin.has_change_permission(request)

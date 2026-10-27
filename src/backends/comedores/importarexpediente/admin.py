@@ -1,31 +1,13 @@
 from django.contrib import admin
 from unfold.contrib.filters.admin import RangeDateTimeFilter
 
-from core.admin_base import SisocModelAdmin
+from core.admin_base import SoloLecturaAdmin
 from importarexpediente.models import (
     ArchivosImportados,
     ErroresImportacion,
     ExitoImportacion,
     RegistroImportado,
 )
-
-
-class SoloLecturaAdmin(SisocModelAdmin):
-    """Registro de importaciones: se consulta, no se edita desde el admin.
-
-    Aplicar estados por lote no se ofrece como operación: recalcula el estado
-    de todos los comedores del programa (presentes y ausentes del lote), no
-    solo los del archivo, y repetirlo suma ausencias y cambios de estado.
-    """
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 
 @admin.register(ArchivosImportados)

@@ -9,6 +9,7 @@ operaciones que llaman a los services del backoffice (issue #2789).
 
 from django import forms
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 from import_export import resources
 from unfold.contrib.filters.admin import (
     ChoicesDropdownFilter,
@@ -16,7 +17,7 @@ from unfold.contrib.filters.admin import (
     RangeDateTimeFilter,
 )
 
-from core.admin_base import SisocModelAdmin
+from core.admin_base import SisocModelAdmin, SoloLecturaAdmin
 from core.admin_import_export import BaseImportExportAdmin
 from core.admin_operaciones import Operacion, OperacionesAdminMixin
 from inspecciones.models import (
@@ -39,7 +40,10 @@ def anular(acta, usuario, datos):
 
 
 def marcar_o_desmarcar_prueba(acta, usuario, datos):
-    marcar_prueba(acta, datos["es_prueba"] == "1", usuario)
+    es_prueba = datos["es_prueba"] == "1"
+    if acta.es_prueba == es_prueba:
+        raise ValidationError("El acta ya tiene esa marca.")
+    marcar_prueba(acta, es_prueba, usuario)
 
 
 def quitar(asignacion, usuario, _datos):
@@ -96,17 +100,6 @@ class AsignacionEscuelaAdmin(OperacionesAdminMixin, SisocModelAdmin):
             icono="person_remove",
         ),
     )
-
-
-class SoloLecturaAdmin(SisocModelAdmin):
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 
 @admin.register(Inspeccion)
@@ -178,7 +171,8 @@ class ActaAdmin(OperacionesAdminMixin, SoloLecturaAdmin):
         # pero las operaciones, que piden el permiso sin ``obj``, se habilitan.
         if obj is not None:
             return False
-        return super(SoloLecturaAdmin, self).has_change_permission(request)
+        # Saltea SoloLecturaAdminMixin: el permiso real del admin.
+        return SisocModelAdmin.has_change_permission(self, request)
 
 
 @admin.register(NotificacionPapel)

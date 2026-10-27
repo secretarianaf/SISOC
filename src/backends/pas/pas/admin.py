@@ -5,7 +5,7 @@ from unfold.contrib.filters.admin import (
     RangeDateTimeFilter,
 )
 
-from core.admin_base import SisocModelAdmin
+from core.admin_base import SisocModelAdmin, SoloLecturaAdmin
 from pas.models import (
     PasAviso,
     PasCircuitoMensual,
@@ -179,19 +179,6 @@ class PasExportacionTokensAdmin(SisocModelAdmin):
     list_select_related = ("usuario",)
     readonly_fields = ("fecha", "usuario", "cantidad")
     ordering = ("-fecha", "-id")
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-
-class SoloLecturaAdmin(SisocModelAdmin):
-    """Corridas y lotes de supervivencia: los escribe el worker, no el admin."""
 
     def has_add_permission(self, request):
         return False

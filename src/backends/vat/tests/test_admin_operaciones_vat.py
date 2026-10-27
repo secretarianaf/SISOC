@@ -105,7 +105,7 @@ def _voucher(programa, documento, **extra):
 
 
 def _operacion(model, slug):
-    model_admin = admin.site._registry[model]  # pylint: disable=protected-access
+    model_admin = admin.site.get_model_admin(model)
     return next(op for op in model_admin.operaciones if op.slug == slug)
 
 
@@ -340,3 +340,36 @@ def test_detalles_con_operaciones_cargan(auth_client, comision_curso, programa):
     for nombre, obj in (("voucher", voucher), ("inscripcion", inscripcion)):
         url = reverse(f"admin:VAT_{nombre}_change", args=[obj.pk])
         assert auth_client.get(url).status_code == 200
+
+
+def test_cambiar_estado_al_mismo_estado_es_error(mocker, comision_curso, superuser):
+    inscripcion = Inscripcion.objects.create(
+        ciudadano=_ciudadano(70000009), comision_curso=comision_curso
+    )
+    servicio = mocker.patch.object(
+        vat_admin.InscripcionService, "actualizar_estado_inscripcion"
+    )
+
+    ok, errores = _ejecutar(
+        Inscripcion,
+        "cambiar_estado",
+        inscripcion,
+        superuser,
+        nuevo_estado=inscripcion.estado,
+    )
+
+    assert not ok
+    assert errores == [(inscripcion, "La inscripción ya tiene ese estado.")]
+    servicio.assert_not_called()
+
+
+def test_alta_de_voucher_permite_cargar_la_cantidad(rf, superuser, programa):
+    # cantidad_disponible es obligatoria: en el alta no queda de solo lectura,
+    # solo al editar (ahí cambia por las operaciones).
+    request = rf.get("/admin/")
+    request.user = superuser
+    model_admin = admin.site.get_model_admin(Voucher)
+    voucher = _voucher(programa, 70000010)
+
+    assert "cantidad_disponible" not in model_admin.get_readonly_fields(request)
+    assert "cantidad_disponible" in model_admin.get_readonly_fields(request, voucher)

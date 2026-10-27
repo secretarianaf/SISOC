@@ -23,7 +23,7 @@ def _acta(client, cerrar, escuela_obj=None):
 
 
 def _operacion(model, slug):
-    model_admin = admin.site._registry[model]  # pylint: disable=protected-access
+    model_admin = admin.site.get_model_admin(model)
     return next(op for op in model_admin.operaciones if op.slug == slug)
 
 
@@ -58,6 +58,9 @@ def test_marcar_prueba_llama_al_service(
     mocker, api_a, cerrar, superuser, valor, esperado
 ):
     acta = _acta(api_a, cerrar)
+    # Parte de la marca contraria: sin cambio, la operación es un error.
+    Acta.objects.filter(pk=acta.pk).update(es_prueba=not esperado)
+    acta.refresh_from_db()
     servicio = mocker.patch.object(inspecciones_admin, "marcar_prueba")
 
     ok, _ = _ejecutar(Acta, "marcar_prueba", acta, superuser, es_prueba=valor)
@@ -147,7 +150,7 @@ def test_acta_sigue_de_solo_lectura_en_el_detalle(rf, api_a, cerrar, superuser):
     acta = _acta(api_a, cerrar)
     request = rf.get("/admin/")
     request.user = superuser
-    model_admin = admin.site._registry[Acta]  # pylint: disable=protected-access
+    model_admin = admin.site.get_model_admin(Acta)
 
     assert not model_admin.has_add_permission(request)
     assert not model_admin.has_delete_permission(request, acta)
@@ -201,3 +204,14 @@ def test_detalles_con_operaciones_cargan(auth_client, api_a, cerrar, asignada_a)
     for nombre, obj in (("acta", acta), ("asignacionescuela", asignada_a)):
         url = reverse(f"admin:inspecciones_{nombre}_change", args=[obj.pk])
         assert auth_client.get(url).status_code == 200
+
+
+def test_marcar_prueba_sin_cambio_es_error(mocker, api_a, cerrar, superuser):
+    acta = _acta(api_a, cerrar)
+    servicio = mocker.patch.object(inspecciones_admin, "marcar_prueba")
+
+    ok, errores = _ejecutar(Acta, "marcar_prueba", acta, superuser, es_prueba="0")
+
+    assert not ok
+    assert errores == [(acta, "El acta ya tiene esa marca.")]
+    servicio.assert_not_called()

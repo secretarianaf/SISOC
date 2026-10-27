@@ -24,7 +24,7 @@ pytestmark = pytest.mark.django_db
 
 
 def _operacion(model, slug):
-    model_admin = admin.site._registry[model]  # pylint: disable=protected-access
+    model_admin = admin.site.get_model_admin(model)
     return next(op for op in model_admin.operaciones if op.slug == slug)
 
 
@@ -321,8 +321,11 @@ def test_reintentar_sync_ya_sincronizado_o_sin_integracion_es_error(
 def test_reintentar_sync_primer_seguimiento_por_url(
     mocker, settings, auth_client, django_capture_on_commit_callbacks
 ):
+    relevamiento = _relevamiento()
+    relevamiento.sincronizado_gestionar = True
+    relevamiento.save(update_fields=["sincronizado_gestionar"])
     seguimiento = PrimerSeguimiento.objects.create(
-        id_relevamiento=_relevamiento(), estado=PrimerSeguimiento.ESTADO_COMPLETO
+        id_relevamiento=relevamiento, estado=PrimerSeguimiento.ESTADO_COMPLETO
     )
     settings.GESTIONAR_INTEGRATION_ENABLED = True
     tarea = mocker.patch.object(
@@ -431,3 +434,31 @@ def test_listados_y_busquedas_de_los_flujos_cargan(auth_client):
 
     assert len(modelos) > 40
     assert not fallas
+
+
+@pytest.mark.django_db
+def test_reintento_de_seguimiento_exige_relevamiento_sincronizado(
+    mocker, settings, superuser
+):
+    # El alta del seguimiento referencia al relevamiento en GESTIONAR: si el
+    # relevamiento no está sincronizado, se pide reintentarlo primero.
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=_relevamiento(), estado=PrimerSeguimiento.ESTADO_COMPLETO
+    )
+    settings.GESTIONAR_INTEGRATION_ENABLED = True
+    tarea = mocker.patch.object(
+        relevamientos_admin, "AsyncSendPrimerSeguimientoToGestionar"
+    )
+    operacion = next(
+        op
+        for op in admin.site.get_model_admin(PrimerSeguimiento).operaciones
+        if op.slug == "reintentar_sync_gestionar"
+    )
+
+    ok, errores = ejecutar_operacion(
+        operacion=operacion, objetos=[seguimiento], usuario=superuser, datos={}
+    )
+
+    assert not ok
+    assert "reintentá primero el relevamiento" in errores[0][1]
+    tarea.assert_not_called()

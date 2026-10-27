@@ -16,15 +16,7 @@ from unfold.contrib.filters.admin import (
 from core.admin_base import SisocModelAdmin
 from core.admin_operaciones import Operacion, OperacionesAdminMixin
 from datacalle.models import Encuesta, Relevamiento
-from datacalle.services import cerrar_relevamiento, marcar_en_curso
-
-
-def marcar_relevamiento_en_curso(relevamiento, _usuario, _datos):
-    # El service no hace nada fuera de ``planificado``: se avisa en vez de
-    # contar como procesado un registro que no cambió.
-    if relevamiento.estado != Relevamiento.Estado.PLANIFICADO:
-        raise ValidationError("Solo se marca en curso un relevamiento planificado.")
-    marcar_en_curso(relevamiento)
+from datacalle.services import cerrar_relevamiento
 
 
 def cerrar(relevamiento, usuario, _datos):
@@ -71,14 +63,6 @@ class RelevamientoAdmin(OperacionesAdminMixin, SisocModelAdmin):
     )
     readonly_fields = ("fecha_cierre", "created_at", "updated_at")
     operaciones = (
-        Operacion(
-            slug="marcar_en_curso",
-            titulo="Marcar en curso",
-            descripcion="Pasa un operativo planificado a en curso.",
-            ejecutar=marcar_relevamiento_en_curso,
-            campo_estado="estado",
-            icono="play_circle",
-        ),
         Operacion(
             slug="cerrar",
             titulo="Cerrar relevamiento",

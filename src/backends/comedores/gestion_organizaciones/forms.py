@@ -1,6 +1,8 @@
+import json
+
 from django import forms
-from django.db import transaction
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.db.models import Q
 from django.forms import inlineformset_factory
 from organizaciones.models import (
@@ -9,12 +11,26 @@ from organizaciones.models import (
     Aval,
     SubtipoEntidad,
 )
-from gestion_organizaciones.models import Firmante
+from gestion_organizaciones.models import (
+    ConvenioProyecto,
+    Firmante,
+    LineaProyecto,
+    ProgramaOrganizacion,
+)
+from gestion_organizaciones.services.programas import (
+    asociaciones_de_programa,
+    es_programa_abordaje,
+    ordenar_programas,
+    programas_de_organizacion,
+    programas_del_legajo,
+)
 from core.models import Municipio, Provincia, Localidad
+from comedores.models import Programas
 from comedores.territoriales_pnud import (
     etiqueta_territorial,
     usuarios_territoriales_pnud,
 )
+from comedores.utils import es_programa_linea_tradicional
 
 
 class TerritorialesMultipleChoiceField(forms.ModelMultipleChoiceField):
@@ -23,13 +39,23 @@ class TerritorialesMultipleChoiceField(forms.ModelMultipleChoiceField):
 
 
 class OrganizacionForm(forms.ModelForm):
+    # JSON con filas {"codigo", "linea"}; la línea es el id del programa de
+    # Abordaje (#2745). Lo arma el JS del formulario. Va antes que
+    # asignaciones_territoriales: su validación usa estos códigos.
+    proyectos_lineas = forms.CharField(
+        required=False,
+        label="Proyectos",
+        widget=forms.HiddenInput(),
+    )
+    # JSON con filas {"proyecto", "territorial"} (#2642).
     asignaciones_territoriales = forms.JSONField(
         required=False, widget=forms.HiddenInput()
     )
-    codigos_proyecto = forms.CharField(
+    programas = forms.ModelMultipleChoiceField(
+        queryset=Programas.objects.none(),
         required=False,
-        label="Códigos de Proyecto",
-        widget=forms.HiddenInput(),
+        label="Programas",
+        widget=forms.CheckboxSelectMultiple,
     )
     cuit = forms.RegexField(
         regex=r"^[0-9]{11}$",
@@ -95,6 +121,7 @@ class OrganizacionForm(forms.ModelForm):
                 Q(activo=True) | Q(pk=getattr(self.instance, f"{name}_id", None))
             )
         self._configurar_subzonas()
+        self._configurar_programas()
         if not self.is_bound and self.instance.pk:
             self.initial["asignaciones_territoriales"] = [
                 {"proyecto": proyecto.codigo, "territorial": usuario.pk}
@@ -104,11 +131,25 @@ class OrganizacionForm(forms.ModelForm):
                 for usuario in proyecto.territoriales.all()
             ]
         if not self.is_bound and self.instance.pk:
-            self.initial["codigos_proyecto"] = ", ".join(
-                self.instance.proyectos.filter(activo=True).values_list(
-                    "codigo", flat=True
-                )
+            self.initial["proyectos_lineas"] = json.dumps(
+                [
+                    {"codigo": fila["codigo"], "linea": fila["linea"]}
+                    for fila in self.proyectos_actuales()
+                ]
             )
+
+    def _configurar_programas(self):
+        # Los programas ya cargados siguen como opción aunque no sean de los
+        # tres del legajo (p. ej. PNUD): si no, guardar los quitaría.
+        self.programas_asignados = programas_de_organizacion(self.instance)
+        opciones = {programa.pk: programa for programa in programas_del_legajo()}
+        opciones.update(
+            {programa.pk: programa for programa in self.programas_asignados}
+        )
+        self.programas_opciones = ordenar_programas(opciones.values())
+        self.fields["programas"].queryset = Programas.objects.filter(pk__in=opciones)
+        if not self.is_bound:
+            self.initial["programas"] = [p.pk for p in self.programas_asignados]
 
     def _configurar_subzonas(self):
         region = (
@@ -125,6 +166,38 @@ class OrganizacionForm(forms.ModelForm):
         if region_id == self.instance.region_abordaje_id:
             permitidas |= Q(pk=self.instance.subzona_abordaje_id, region__isnull=True)
         field.queryset = field.queryset.filter(permitidas)
+
+    def proyectos_actuales(self):
+        """Proyectos activos con su línea y si tienen convenio cargado."""
+        if not self.instance.pk:
+            return []
+        return [
+            {
+                "id": proyecto.pk,
+                "codigo": proyecto.codigo,
+                "linea": getattr(getattr(proyecto, "linea", None), "programa_id", None),
+                "convenio": hasattr(proyecto, "convenio"),
+            }
+            for proyecto in self.instance.proyectos.filter(activo=True)
+            .select_related("linea", "convenio")
+            .order_by("codigo")
+        ]
+
+    def datos_formulario(self):
+        """Datos que usa el JS: programas de Abordaje, territoriales y proyectos."""
+        territoriales = self.fields["territoriales_abordaje_comunitario"].queryset
+        return {
+            "abordaje": [
+                {"id": programa.pk, "nombre": programa.nombre}
+                for programa in self.programas_opciones
+                if es_programa_abordaje(programa)
+            ],
+            "territoriales": [
+                {"id": usuario.pk, "nombre": etiqueta_territorial(usuario)}
+                for usuario in territoriales
+            ],
+            "proyectos": self.proyectos_actuales(),
+        }
 
     def _configurar_territoriales(self):
         # Los ya asignados siguen siendo opciones aunque hayan perdido el rol:
@@ -252,27 +325,52 @@ class OrganizacionForm(forms.ModelForm):
                 "Para asignar un nuevo Territorial debés seleccionar también su Código de Proyecto.",
             )
 
+        self._validar_programas_quitados(cleaned_data)
+        self._validar_lineas_proyecto(cleaned_data)
         return cleaned_data
 
-    def clean_codigos_proyecto(self):
-        codigos = {
-            codigo.strip()
-            for codigo in (self.cleaned_data.get("codigos_proyecto") or "").split(",")
-            if codigo.strip()
-        }
-        return sorted(codigos)
+    def clean_proyectos_lineas(self):
+        crudo = (self.cleaned_data.get("proyectos_lineas") or "").strip()
+        if not crudo:
+            return []
+        try:
+            filas = json.loads(crudo)
+        except ValueError as error:
+            raise forms.ValidationError(
+                "No se pudo leer la lista de proyectos."
+            ) from error
+        if not isinstance(filas, list):
+            raise forms.ValidationError("No se pudo leer la lista de proyectos.")
+
+        proyectos = {}
+        for fila in filas:
+            if not isinstance(fila, dict):
+                raise forms.ValidationError("No se pudo leer la lista de proyectos.")
+            codigo = str(fila.get("codigo") or "").strip()
+            if not codigo:
+                continue
+            if len(codigo) > 255:
+                raise forms.ValidationError(
+                    f"El código {codigo[:20]}… supera los 255 caracteres."
+                )
+            linea = fila.get("linea")
+            try:
+                linea = int(linea) if linea not in (None, "") else None
+            except (TypeError, ValueError) as error:
+                raise forms.ValidationError(
+                    f"La línea del proyecto {codigo} no es válida."
+                ) from error
+            proyectos[codigo] = {"codigo": codigo, "linea": linea}
+        return [proyectos[codigo] for codigo in sorted(proyectos)]
 
     def clean_asignaciones_territoriales(self):
         asignaciones = self.cleaned_data.get("asignaciones_territoriales") or []
         if not isinstance(asignaciones, list):
             raise forms.ValidationError("Las asignaciones deben ser una lista.")
-        codigos = [
-            codigo.strip()
-            for codigo in self.data.get(self.add_prefix("codigos_proyecto"), "").split(
-                ","
-            )
-            if codigo.strip()
-        ]
+        if "proyectos_lineas" not in self.cleaned_data:
+            # La lista de proyectos ya tiene su error; no se puede validar contra ella.
+            return []
+        codigos = {fila["codigo"] for fila in self.cleaned_data["proyectos_lineas"]}
         usuarios = self.fields["territoriales_abordaje_comunitario"].queryset
         permitidos = set(usuarios.values_list("pk", flat=True))
         resultado = []
@@ -297,10 +395,88 @@ class OrganizacionForm(forms.ModelForm):
                 vistos.add(par)
         return resultado
 
+    def _validar_programas_quitados(self, cleaned_data):
+        if "programas" not in cleaned_data:
+            return
+        elegidos = {programa.pk for programa in cleaned_data["programas"]}
+        for programa in self.programas_asignados:
+            if programa.pk in elegidos:
+                continue
+            asociaciones = asociaciones_de_programa(self.instance, programa)
+            if asociaciones:
+                detalle = ", ".join(
+                    f"{total} {clave}" for clave, total in asociaciones.items()
+                )
+                self.add_error(
+                    "programas",
+                    f"No se puede quitar {programa}: tiene {detalle} asociados.",
+                )
+
+    def _validar_lineas_proyecto(self, cleaned_data):
+        if "proyectos_lineas" not in cleaned_data or "programas" not in cleaned_data:
+            return
+        elegidos = list(cleaned_data["programas"])
+        lineas_elegidas = {p.pk: p for p in elegidos if es_programa_abordaje(p)}
+        lineas_validas = {
+            p.pk: p for p in Programas.objects.all() if es_programa_abordaje(p)
+        }
+        convenios = (
+            {
+                convenio.proyecto.codigo: convenio
+                for convenio in ConvenioProyecto.objects.filter(
+                    proyecto__organizacion=self.instance,
+                    imprevistos__isnull=False,
+                ).select_related("proyecto")
+            }
+            if self.instance.pk
+            else {}
+        )
+
+        for fila in cleaned_data["proyectos_lineas"]:
+            codigo, linea = fila["codigo"], fila["linea"]
+            if linea is not None and linea not in lineas_validas:
+                self.add_error(
+                    "proyectos_lineas",
+                    f"La línea del proyecto {codigo} debe ser Línea Secos o "
+                    "Línea Tradicional.",
+                )
+                continue
+            # Sin programas cargados no se exige la línea (definición 22).
+            if elegidos:
+                if not lineas_elegidas:
+                    self.add_error(
+                        "proyectos_lineas",
+                        f"El proyecto {codigo} necesita una línea de Abordaje "
+                        "Comunitario: elegí el programa o quitá el proyecto.",
+                    )
+                    continue
+                if linea is None:
+                    self.add_error(
+                        "proyectos_lineas", f"Elegí la línea del proyecto {codigo}."
+                    )
+                    continue
+                if linea not in lineas_elegidas:
+                    self.add_error(
+                        "proyectos_lineas",
+                        f"La línea del proyecto {codigo} no está entre los "
+                        "programas elegidos.",
+                    )
+                    continue
+            if (
+                codigo in convenios
+                and linea is not None
+                and not es_programa_linea_tradicional(lineas_validas[linea])
+            ):
+                self.add_error(
+                    "proyectos_lineas",
+                    f"El convenio del proyecto {codigo} tiene Imprevistos, que "
+                    "solo aplica a Línea Tradicional.",
+                )
+
     @transaction.atomic
     def save(self, commit=True):
         # El formulario nuevo no reescribe las asignaciones históricas sin
-        # proyecto. Los clientes antiguos siguen conservando su contrato.
+        # proyecto. Los clientes antiguos siguen conservando su contrato (#2642).
         nuevo_formato = self.add_prefix("asignaciones_territoriales") in self.data
         if nuevo_formato and self.instance.pk:
             self.cleaned_data["territoriales_abordaje_comunitario"] = (
@@ -308,32 +484,68 @@ class OrganizacionForm(forms.ModelForm):
             )
         organizacion = super().save(commit=commit)
         if commit:
-            codigos = self.cleaned_data.get("codigos_proyecto", [])
-            organizacion.proyectos.exclude(codigo__in=codigos).update(activo=False)
-            for codigo in codigos:
-                ProyectoOrganizacion.objects.update_or_create(
-                    organizacion=organizacion,
-                    codigo=codigo,
-                    defaults={"activo": True},
-                )
+            self._guardar_programas(organizacion)
+            self._guardar_proyectos(organizacion)
             if nuevo_formato:
-                asignaciones = self.cleaned_data["asignaciones_territoriales"]
-                for proyecto in organizacion.proyectos.all():
-                    proyecto.territoriales.set(
-                        [
-                            item["territorial"]
-                            for item in asignaciones
-                            if item["proyecto"] == proyecto.codigo
-                        ]
-                    )
-                # Al asociar explícitamente una persona a un proyecto deja de
-                # ser una asignación general. Las demás asignaciones legadas
-                # se conservan hasta que se elija su proyecto o se quiten.
-                organizacion.territoriales_abordaje_comunitario.remove(
-                    *{item["territorial"] for item in asignaciones},
-                    *self.cleaned_data.get("quitar_territoriales_sin_proyecto", []),
-                )
+                self._guardar_territoriales(organizacion)
         return organizacion
+
+    def _guardar_territoriales(self, organizacion):
+        asignaciones = self.cleaned_data["asignaciones_territoriales"]
+        for proyecto in organizacion.proyectos.all():
+            proyecto.territoriales.set(
+                [
+                    item["territorial"]
+                    for item in asignaciones
+                    if item["proyecto"] == proyecto.codigo
+                ]
+            )
+        # Al asociar explícitamente una persona a un proyecto deja de
+        # ser una asignación general. Las demás asignaciones legadas
+        # se conservan hasta que se elija su proyecto o se quiten.
+        organizacion.territoriales_abordaje_comunitario.remove(
+            *{item["territorial"] for item in asignaciones},
+            *self.cleaned_data.get("quitar_territoriales_sin_proyecto", []),
+        )
+
+    def _guardar_programas(self, organizacion):
+        if "programas" not in self.cleaned_data:
+            return
+        elegidos = {programa.pk for programa in self.cleaned_data["programas"]}
+        actuales = {
+            fila.programa_id: fila
+            for fila in ProgramaOrganizacion.objects.filter(organizacion=organizacion)
+        }
+        for programa_id in elegidos - set(actuales):
+            ProgramaOrganizacion.objects.create(
+                organizacion=organizacion, programa_id=programa_id
+            )
+        # Solo llega acá un programa sin datos asociados (_validar_programas_quitados);
+        # la baja queda en Historial.
+        for programa_id in set(actuales) - elegidos:
+            actuales[programa_id].delete()
+
+    def _guardar_proyectos(self, organizacion):
+        proyectos = self.cleaned_data.get("proyectos_lineas", [])
+        codigos = [fila["codigo"] for fila in proyectos]
+        # Los proyectos que se quitan se desactivan; su línea y convenio quedan.
+        organizacion.proyectos.exclude(codigo__in=codigos).update(activo=False)
+        for fila in proyectos:
+            proyecto, _ = ProyectoOrganizacion.objects.update_or_create(
+                organizacion=organizacion,
+                codigo=fila["codigo"],
+                defaults={"activo": True},
+            )
+            if fila["linea"] is None:
+                continue
+            linea = LineaProyecto.objects.filter(proyecto=proyecto).first()
+            if linea is None:
+                LineaProyecto.objects.create(
+                    proyecto=proyecto, programa_id=fila["linea"]
+                )
+            elif linea.programa_id != fila["linea"]:
+                linea.programa_id = fila["linea"]
+                linea.save()
 
     class Meta:
         model = Organizacion
@@ -351,6 +563,26 @@ class FirmanteForm(forms.ModelForm):
         model = Firmante
         fields = ["nombre", "rol", "cuit", "programa"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        organizacion = getattr(self.instance, "organizacion", None)
+        if organizacion is not None:
+            self.limitar_programas(organizacion)
+
+    def limitar_programas(self, organizacion):
+        """Ofrece solo los programas de la organización (#2745).
+
+        Sin programas cargados se ofrecen todos, como hasta ahora
+        (definición 22). El programa actual del firmante se conserva.
+        """
+        programas = programas_de_organizacion(organizacion)
+        if not programas:
+            return
+        ids = {programa.pk for programa in programas}
+        if self.instance.programa_id:
+            ids.add(self.instance.programa_id)
+        self.fields["programa"].queryset = Programas.objects.filter(pk__in=ids)
+
     def clean(self):
         cleaned_data = super().clean()
         rol = cleaned_data.get("rol")
@@ -358,6 +590,53 @@ class FirmanteForm(forms.ModelForm):
 
         if rol == "aval" and not cuit:
             self.add_error("cuit", "El CUIT es obligatorio para el rol Aval")
+
+
+class ConvenioProyectoForm(forms.ModelForm):
+    """Datos de Convenio de un proyecto. Imprevistos solo en Línea Tradicional."""
+
+    class Meta:
+        model = ConvenioProyecto
+        exclude = ["proyecto"]
+        widgets = {
+            "fecha": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"},
+                format="%Y-%m-%d",
+            ),
+        }
+
+    def __init__(self, *args, proyecto, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.instance.proyecto = proyecto
+        self.fields["fecha"].input_formats = ["%Y-%m-%d"]
+        linea = getattr(proyecto, "linea", None)
+        self.permite_imprevistos = bool(
+            linea and es_programa_linea_tradicional(linea.programa)
+        )
+        if not self.permite_imprevistos:
+            del self.fields["imprevistos"]
+        # Los montos se dibujan a mano (con el prefijo $), sin crispy.
+        for nombre in ["monto_total", *self.campos_monto()]:
+            self.fields[nombre].widget.attrs.update(
+                {"class": "form-control", "inputmode": "decimal", "min": "0"}
+            )
+
+    def campos_monto(self):
+        """Componentes del convenio presentes en el formulario, en orden."""
+        return [
+            nombre
+            for nombre in (
+                "componente_alimentario",
+                "componente_gastos_generales",
+                "componente_siph",
+                "componente_gasto_bancario",
+                "imprevistos",
+            )
+            if nombre in self.fields
+        ]
+
+    def componentes(self):
+        return [self[nombre] for nombre in self.campos_monto()]
 
 
 class AvalForm(forms.ModelForm):

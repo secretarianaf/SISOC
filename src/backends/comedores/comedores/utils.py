@@ -62,6 +62,12 @@ def is_prestacion_alimentaria_conformidad_program(comedor) -> bool:
     return normalized == "alimentar comunidad" or "abordaje comunitario" in normalized
 
 
+def es_programa_alimentar_comunidad(programa) -> bool:
+    """Indica si el programa es Alimentar Comunidad."""
+    nombre = str(getattr(programa, "nombre", "") or "")
+    return _normalize_programa(nombre) == "alimentar comunidad"
+
+
 def es_programa_linea_secos(programa) -> bool:
     """Indica si el programa es Abordaje Comunitario - Línea Secos."""
     normalized = _normalize_programa(str(getattr(programa, "nombre", "") or ""))

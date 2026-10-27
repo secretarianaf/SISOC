@@ -635,3 +635,87 @@ def test_reporte_no_depende_de_las_tablas_de_zonas_horarias():
     assert not [q for q in queries if "CONVERT_TZ" in q["sql"]]
     totales = {row["grupo"]: row["inscripciones_total"] for row in resultado["rows"]}
     assert totales == {"2026-04": 1, "2026-05": 1}
+
+
+@pytest.mark.django_db
+def test_reporte_suma_sesiones_por_comision_sin_juntarlas_con_asistencias():
+    # Issue #2750: contar sesiones y asistencias en la misma consulta multiplicaba
+    # las filas y el reporte daba 504. Las sesiones se suman por comisión.
+    provincia = Provincia.objects.create(nombre="Salta")
+    municipio = Municipio.objects.create(nombre="Capital", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    referente = User.objects.create_user(username="rep-504", password="test1234")
+    _grant_referente_role(referente)
+    centros = [
+        _centro_basico(
+            f"CFP 504 {n}", f"CFP-504-{n}", provincia, municipio, localidad, referente
+        )
+        for n in (1, 2)
+    ]
+    dia, _ = Dia.objects.get_or_create(nombre="Jueves")
+    # Centro 1: dos comisiones (3 + 2 sesiones). Centro 2: una comisión (1 sesión).
+    plan = [(centros[0], "A", 3), (centros[0], "B", 2), (centros[1], "C", 1)]
+    documento = 40333000
+    for centro, sufijo, cantidad_sesiones in plan:
+        comision = _build_comision_curso(
+            centro=centro,
+            localidad=localidad,
+            modalidad=modalidad,
+            suffix=f"504{sufijo}",
+        )
+        horario = ComisionHorario.objects.create(
+            comision_curso=comision,
+            dia_semana=dia,
+            hora_desde=time(9, 0),
+            hora_hasta=time(11, 0),
+            aula_espacio="Aula",
+            vigente=True,
+        )
+        for numero in range(cantidad_sesiones):
+            SesionComision.objects.create(
+                comision_curso=comision,
+                horario=horario,
+                numero_sesion=numero + 1,
+                fecha=date(2026, 4, 1 + numero),
+                estado="realizada" if numero == 0 else "programada",
+            )
+        # Dos inscripciones por comisión: las sesiones no se cuentan dos veces.
+        for _ in range(2):
+            documento += 1
+            Inscripcion.objects.create(
+                ciudadano=Ciudadano.objects.create(
+                    apellido="Sesiones",
+                    nombre=str(documento),
+                    tipo_documento=Ciudadano.DOCUMENTO_DNI,
+                    documento=documento,
+                ),
+                comision_curso=comision,
+                estado="inscripta",
+            )
+
+    with CaptureQueriesContext(connection) as queries:
+        resultado = build_reporte_inscripciones_asistencia(
+            referente, ReporteFiltros(group_by="centro")
+        )
+
+    por_centro = {
+        row["grupo"]: (row["sesiones_programadas"], row["sesiones_realizadas"])
+        for row in resultado["rows"]
+    }
+    assert por_centro == {"CFP 504 1": (3, 2), "CFP 504 2": (0, 1)}
+    assert resultado["resumen"]["sesiones_programadas"] == 3
+    assert resultado["resumen"]["sesiones_realizadas"] == 3
+    assert not [
+        q
+        for q in queries
+        if "VAT_asistenciasesion" in q["sql"] and "VAT_sesioncomision" in q["sql"]
+    ]
+    # Las comisiones de cada grupo se piden sin el orden por defecto de
+    # Inscripcion: si no, el DISTINCT devuelve una fila por inscripción. Es la
+    # única consulta del reporte sin COUNT.
+    assert not [
+        q
+        for q in queries
+        if "fecha_inscripcion" in q["sql"] and "COUNT(" not in q["sql"]
+    ]

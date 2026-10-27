@@ -2875,6 +2875,11 @@
   "regex": "^organizaciones/exportar\\Z"
  },
  {
+  "name": "organizacion_proyecto_convenio",
+  "namespace": "",
+  "regex": "^organizaciones/proyectos/(?P<proyecto_id>[0-9]+)/convenio/\\Z"
+ },
+ {
   "name": "organizacion_proyectos_ajax",
   "namespace": "",
   "regex": "^organizaciones/(?P<organizacion_id>[0-9]+)/proyectos/ajax/\\Z"

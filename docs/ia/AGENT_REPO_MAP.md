@@ -572,10 +572,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `src/backends/kernel/templates/includes/sidebar/`
 - `src/backends/kernel/templates/components/`
 - `src/backends/kernel/static/custom/js/sidebar.js`
-- layout claro (Inicio, Inspecciones): `includes/base_claro.html` +
-  `core.services.layout_claro.contexto_layout_claro`; el resto extiende
-  `includes/base.html` (oscuro). Ver
-  `docs/registro/cambios/2026-T4/2026-10-15-kernel-layout-claro-barra-lateral.md`.
+- layout claro (solo Inspecciones): `includes/base_claro.html` +
+  `core.services.layout_claro.contexto_layout_claro`; el resto, Inicio
+  incluido, extiende `includes/base.html` (oscuro). Ver
+  `docs/registro/cambios/2026-T4/2026-10-15-kernel-layout-claro-barra-lateral.md`
+  y `docs/registro/cambios/2026-T4/2026-10-23-2712-inicio-sidebar-como-resto-sisoc.md`.
 
 ### Si necesitas cambiar endpoints API
 
@@ -737,7 +738,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - etiquetas visibles ≠ valores persistidos: la etapa `revision_auditoria` se muestra como «Revisión para Carga». No cambiar valores internos para acomodar un label
 - asociación actual: `RendicionCuentaMensual.proyecto`; conservar fallback por `comedor.codigo_de_proyecto` para datos legados
 - listado y detalle del legajo: `src/backends/comedores/gestion_organizaciones/views.py` y templates `organizacion_*`
-- proyectos editables: `OrganizacionForm.codigos_proyecto` mantiene el contrato CSV mediante un campo oculto
+- proyectos editables: `OrganizacionForm.proyectos_lineas` recibe un JSON oculto con filas `{codigo, linea}` (línea = programa de Abordaje, #2745); `asignaciones_territoriales` (#2642, filas `{proyecto, territorial}`) se valida contra esos códigos. Región/subzona canónica: `Organizacion.region_abordaje`/`subzona_abordaje` (kernel); `DatosRegionOrganizacion` de `gestion_organizaciones` quedó sin uso en pantallas. Los datos por programa se resuelven en `src/backends/comedores/gestion_organizaciones/services/programas.py`
 - tests: `src/backends/comedores/tests/test_rendicioncuentasmensual_services_unit.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_domain_rules.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_visualizacion.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_acta_auditoria.py` y `src/backends/comedores/gestion_organizaciones/tests.py`
 - escenarios QA de permisos por etapa: `python manage.py seed_rendicion_stage_examples --comedor-id <id>` (solicita la contraseña de forma interactiva)
 - documentación canónica: `docs/flujos/rendiciones_mensuales_proyectos.md`

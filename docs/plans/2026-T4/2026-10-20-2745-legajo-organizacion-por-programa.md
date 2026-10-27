@@ -234,6 +234,8 @@ Nombres propuestos (se confirman en la decisión técnica):
 Reglas para todas las etapas (además de la sección 2.1):
 
 - Un PR por etapa contra `development` (la Etapa 1 se puede partir en dos).
+  Después de la Etapa 1 se agrupan (decidido el 23/10/2026): Etapas 2 y 3 en
+  un PR, y Etapas 4, 5 y 7 en otro. La Etapa 6 no lleva código.
   Commits en español con `<type>(<scope>): <subject>`.
 - Cada PR: tests del módulo, `black`, `pylint` de los archivos tocados,
   `djlint` si hay templates, e `import-linter` sin violaciones.
@@ -455,7 +457,10 @@ Archivos: `forms.py`, `views.py`, `urls.py` y templates de
      (hoy no tienen borrado lógico): la baja no debe eliminar proyectos, líneas
      ni convenios. La forma (excluirlos de la cascada o bloquear la baja con
      mensaje si tiene proyectos) se define al implementar, sin modificar el
-     kernel salvo revisión de arquitectura;
+     kernel salvo revisión de arquitectura. Implementado: la baja se bloquea
+     con un mensaje si la organización tiene proyectos (activos o no), con
+     el detalle de comedores, líneas, convenios y rendiciones; sin proyectos
+     la baja funciona como antes;
    - tests: baja de organización con proyecto usado por comedor, con línea,
      con convenio y sin nada asociado; en ningún caso se pierde un registro.
 8. Tests de formularios y vistas: alta y edición con y sin Abordaje,

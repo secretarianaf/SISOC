@@ -1605,7 +1605,14 @@ class RendicionesOrganizacionService:
     """Consultas de rendiciones mostradas dentro del legajo de Organización."""
 
     @staticmethod
-    def obtener_rendiciones(organizacion, codigo_proyecto=None):
+    def obtener_rendiciones(
+        organizacion, codigo_proyecto=None, linea_programatica=None
+    ):
+        """Rendiciones de la organización, con o sin proyecto.
+
+        ``linea_programatica`` filtra por la línea guardada en cada rendición
+        (#2745, definición 23); sin ese parámetro el resultado no cambia.
+        """
         queryset = (
             RendicionCuentaMensual.objects.filter(
                 deleted_at__isnull=True,
@@ -1633,6 +1640,8 @@ class RendicionesOrganizacionService:
                 | Q(comedor__codigo_de_proyecto=codigo)
                 | Q(proyecto__codigo=codigo)
             )
+        if linea_programatica:
+            queryset = queryset.filter(linea_programatica=linea_programatica)
         return queryset
 
     @staticmethod

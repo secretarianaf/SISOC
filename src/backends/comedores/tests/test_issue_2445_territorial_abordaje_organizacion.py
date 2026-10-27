@@ -113,7 +113,7 @@ def test_alta_guarda_territoriales_seleccionados(
 ):
     client.force_login(admin_user)
     payload = _payload("Org nueva", provincia)
-    payload["codigos_proyecto"] = "PROY-2642"
+    payload["proyectos_lineas"] = json.dumps([{"codigo": "PROY-2642"}])
     payload["asignaciones_territoriales"] = json.dumps(
         [
             {"proyecto": "PROY-2642", "territorial": user.pk}

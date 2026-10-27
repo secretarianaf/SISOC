@@ -1,5 +1,5 @@
 from django.urls import path
-from core.decorators import permissions_any_required
+from core.decorators import permissions_all_required, permissions_any_required
 from dispositivos.views import (
     DispositivoCreateView,
     DispositivoUpdateView,
@@ -10,20 +10,21 @@ from dispositivos.views import (
     DispositivoDetailView,
 )
 
+MAPA_PERMISSIONS = [
+    "dispositivos.view_dispositivo",
+    "dispositivos.ver_mapa_dispositivo",
+]
+
 
 urlpatterns = [
     path(
         "dispositivos/mapa/",
-        permissions_any_required(["dispositivos.view_dispositivo"])(
-            DispositivoMapView.as_view()
-        ),
+        permissions_all_required(MAPA_PERMISSIONS)(DispositivoMapView.as_view()),
         name="dispositivos_mapa",
     ),
     path(
         "dispositivos/<int:pk>/ubicacion/",
-        permissions_any_required(["dispositivos.view_dispositivo"])(
-            DispositivoLocationView.as_view()
-        ),
+        permissions_all_required(MAPA_PERMISSIONS)(DispositivoLocationView.as_view()),
         name="dispositivos_ubicacion",
     ),
     path(

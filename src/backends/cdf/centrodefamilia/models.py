@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex
 from django.utils import timezone
@@ -59,6 +60,20 @@ class Centro(SoftDeleteModelMixin, models.Model):
     )
     calle = models.CharField(max_length=255, blank=True, null=True)
     numero = models.PositiveIntegerField(blank=True, null=True)
+    latitud = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
+    )
+    longitud = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(-180), MaxValueValidator(180)],
+    )
     domicilio_actividad = models.CharField(
         max_length=255, verbose_name="Domicilio de actividades"
     )

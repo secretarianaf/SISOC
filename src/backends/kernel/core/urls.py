@@ -1,5 +1,7 @@
 from django.urls import path
 
+from core.location_views import AddressPreviewView
+
 from core.views import (
     changelog_view,
     mapa_arquitectura_datos,
@@ -24,6 +26,11 @@ from .trash_views import (
 
 
 urlpatterns = [
+    path(
+        "ajax/ubicacion/previsualizar/",
+        AddressPreviewView.as_view(),
+        name="address_preview",
+    ),
     path("inicio/", inicio_view, name="inicio"),
     path("novedades/", changelog_view, name="changelog"),
     path("arquitectura/", mapa_arquitectura_view, name="mapa_arquitectura"),

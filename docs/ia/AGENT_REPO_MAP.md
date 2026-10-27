@@ -68,6 +68,19 @@ decisiones del 2026-10-15 y 2026-10-16 en `docs/registro/decisiones/`.
   con coordenadas persistidas en `Dispositivo.ubicacion_georef`. Registro:
   `docs/registro/cambios/2026-T4/2026-10-13-dispositivos-mapa.md`.
 
+## Editor compartido de ubicación
+
+- `src/backends/kernel/templates/components/map_pin_editor.html` y estáticos
+  `custom/js/mapPinEditor.js`, `custom/css/mapPinEditor.css`: adaptador de campos
+  latitud/longitud del formulario con Leaflet. No guarda ni conoce modelos;
+  cada dueño conserva validación, permisos y persistencia. Tests Node en
+  `src/backends/kernel/tests/js/mapPinEditor.test.js`.
+- Consumidores: formularios de Dispositivos, Comedores, CDI, CDF, Ciudadanos y
+  VPSL. React VPSL usa `src/frontends/apps/vpsl/src/MapPinEditor.tsx` como adaptador
+  de campos y del ciclo de vida (`pin:init` / `pin:destroy`), sin otra biblioteca.
+- Inventario y verificaciones por etapa en
+  `docs/plans/2026-T4/2026-10-26-2778-pin-interactivo.md`.
+
 ## Como leer este documento
 
 Reglas entre servicios: `AGENTS.md` ("Verticales independientes") y la guía

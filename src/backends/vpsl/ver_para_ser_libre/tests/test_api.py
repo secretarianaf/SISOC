@@ -9,6 +9,7 @@ from core.models import Localidad, Municipio, Provincia
 from ver_para_ser_libre.models import EstadoItinerario, ItinerarioVPSL
 from ver_para_ser_libre.tests.test_workflow import (
     crear_itinerario,
+    crear_jornada,
     crear_sede,
     hacer_usuario_provincial,
 )
@@ -212,6 +213,7 @@ def test_crear_jornada_desde_formulario_react(client):
         reverse("vpsl_api_form", args=["jornada-create", itinerary.pk])
     )
     assert create_schema.status_code == 200
+    assert create_schema.json()["provincia_ubicacion"] == itinerary.provincia.nombre
     assert (
         next(
             field
@@ -253,3 +255,42 @@ def test_crear_jornada_desde_formulario_react(client):
         "ubicacion_url",
         "vehiculos",
     }
+
+
+def test_api_jornada_guarda_coordenadas_ajustadas_y_respeta_permiso(client):
+    jornada = crear_jornada()
+    admin = get_user_model().objects.create_superuser(username="api-pin-jornada")
+    client.force_login(admin)
+    url = reverse("vpsl_api_form", args=["jornada-edit", jornada.pk])
+    schema = client.get(url)
+    assert schema.status_code == 200
+    assert {field["name"] for field in schema.json()["fields"]} >= {
+        "latitud",
+        "longitud",
+    }
+    payload = {
+        "fecha": jornada.fecha.isoformat(),
+        "sede": jornada.sede,
+        "localidad": jornada.localidad_id,
+        "ubicacion_url": jornada.ubicacion_url,
+        "direccion": jornada.direccion,
+        "latitud": "-34.123456",
+        "longitud": "-58.123456",
+        "horario_inicio": "09:00",
+        "horario_fin": "18:00",
+    }
+    response = client.post(url, payload)
+    assert response.status_code == 200, response.content
+    jornada.refresh_from_db()
+    assert str(jornada.latitud) == "-34.123456"
+    assert str(jornada.longitud) == "-58.123456"
+    assert jornada.direccion == payload["direccion"]
+    detail = client.get(reverse("vpsl_api_jornada_detail", args=[jornada.pk]))
+    assert detail.json()["mapa_query"] == "-34.123456,-58.123456"
+    client.force_login(
+        get_user_model().objects.create_user(username="api-pin-sin-permiso")
+    )
+    response = client.post(url, {**payload, "latitud": "0", "longitud": "0"})
+    assert response.status_code == 403
+    jornada.refresh_from_db()
+    assert str(jornada.latitud) == "-34.123456"

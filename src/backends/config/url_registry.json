@@ -125,6 +125,11 @@
   "regex": "^ajax/actualizar\\-vigente\\-pwa/\\Z"
  },
  {
+  "name": "address_preview",
+  "namespace": "",
+  "regex": "^ajax/ubicacion/previsualizar/\\Z"
+ },
+ {
   "name": "adjuntar_documento_rendicion_cuenta_final",
   "namespace": "",
   "regex": "^rendicion_cuentas_final/documento/adjuntar/\\Z"
@@ -1833,6 +1838,11 @@
   "name": "dispositivos_mapa",
   "namespace": "",
   "regex": "^dispositivos/mapa/\\Z"
+ },
+ {
+  "name": "dispositivos_previsualizar_ubicacion",
+  "namespace": "",
+  "regex": "^dispositivos/ubicacion/previsualizar/\\Z"
  },
  {
   "name": "dispositivos_ubicacion",

@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static %}
+{% load static custom_filters %}
 {% block title %}{{ centro.nombre }}{% endblock %}
 {% block head %}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -185,7 +185,12 @@
                     </div>
                     <div class="cdf-card-body">
                         <div class="cdf-map mb-3" id="mapa-iframe">
-                            {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
+                            {% google_maps_query centro.latitud centro.longitud as center_map_query %}
+                            {% if center_map_query %}
+                                <iframe src="https://maps.google.com/maps?q={{ center_map_query }}&amp;output=embed"
+                                        title="Mapa del centro"
+                                        allowfullscreen></iframe>
+                            {% elif centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
                                 <iframe src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
                                         title="Mapa del centro"
                                         allowfullscreen></iframe>

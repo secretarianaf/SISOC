@@ -1,4 +1,5 @@
-import { Fragment, useCallback, useEffect, useState, type FormEvent, type ReactElement } from "react";
+import { MapPinEditor } from "./MapPinEditor";
+import { Fragment, useCallback, useEffect, useRef, useState, type FormEvent, type ReactElement } from "react";
 import { Alert, Autocomplete, Button, Card, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, IconButton, Link, MenuItem, Snackbar, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
@@ -89,6 +90,7 @@ function ageFromBirthDate(value: string) {
 
 export function WorkflowForm({ kind, id, navigate }: { kind: string; id: number; navigate: (path: string) => void }) {
   const isJornada = kind.startsWith("jornada");
+  const formRef = useRef<HTMLFormElement>(null);
   const isRegistro = kind.startsWith("registro");
   const [schema, setSchema] = useState<FormSchema | null>(null);
   const [values, setValues] = useState<Record<string, string | string[]>>({});
@@ -99,6 +101,7 @@ export function WorkflowForm({ kind, id, navigate }: { kind: string; id: number;
   const [verifying, setVerifying] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [province, setProvince] = useState("");
+  const [localitiesLoading, setLocalitiesLoading] = useState(false);
   const [location, setLocation] = useState<{ query: string; direccion: string } | null>(null);
   const [locationBusy, setLocationBusy] = useState(false);
   const applySchema = useCallback((data: FormSchema) => {
@@ -121,14 +124,28 @@ export function WorkflowForm({ kind, id, navigate }: { kind: string; id: number;
   }, [kind, id, applySchema]);
   useEffect(() => {
     if (!province || !kind.startsWith("sede")) return;
+    let active = true;
     get<FormSchema>(`/forms/${kind}/${id}/?provincia=${encodeURIComponent(province)}`)
-      .then((data) => setSchema(data))
-      .catch(setError);
+      .then((data) => {
+        if (!active) return;
+        const locality = data.fields.find((field) => field.name === "localidad");
+        setSchema((current) => current && locality ? {
+          ...current, fields: current.fields.map((field) => field.name === "localidad" ? locality : field),
+        } : current);
+      })
+      .catch((reason) => { if (active) setError(reason); })
+      .finally(() => { if (active) setLocalitiesLoading(false); });
+    return () => { active = false; };
   }, [kind, id, province]);
   function update(name: string, value: string | string[]) {
     setValues((current) => ({ ...current, [name]: value, ...(isRegistro && name === "resultado" && value === "no_requiere" ? { cantidad_lentes: "0", graduacion_izquierda: "", graduacion_derecha: "" } : {}) }));
     if (name === "ubicacion_url") setLocation(null);
-    if (name === "provincia" && kind.startsWith("sede")) setProvince(String(value));
+    if (name === "provincia" && kind.startsWith("sede")) {
+      setProvince(String(value));
+      setLocalitiesLoading(Boolean(value));
+      setValues((current) => ({ ...current, localidad: "" }));
+      setSchema((current) => current ? { ...current, fields: current.fields.map((field) => field.name === "localidad" ? { ...field, choices: [] } : field) } : current);
+    }
     if (name === "dni" || name === "referente_dni" || name === "sexo" || name === "referente_sexo") { setVerified(false); setRenaperMessage(""); }
   }
   async function verify() {
@@ -158,17 +175,21 @@ export function WorkflowForm({ kind, id, navigate }: { kind: string; id: number;
     finally { setVerifying(false); }
   }
   async function previewLocation() {
+    if (!String(values.ubicacion_url || "").trim()) {
+      formRef.current?.querySelector("[data-pin-editor]")?.dispatchEvent(new Event("pin:preview"));
+      return;
+    }
     setError(null);
     setLocationBusy(true);
     const data = new FormData();
     data.set("ubicacion_url", String(values.ubicacion_url || ""));
     try {
-      const result = await postForm<{ success: boolean; ubicacion_url: string; query: string; direccion: string }>("/ubicacion/", data);
+      const result = await postForm<{ success: boolean; ubicacion_url: string; query: string; direccion: string; latitud?: string; longitud?: string }>("/ubicacion/", data);
       setLocation({ query: result.query, direccion: result.direccion });
       setValues((current) => {
         const initialAddress = schema?.fields.find((field) => field.name === "direccion")?.value;
         const unchangedAddress = !String(current.direccion || "").trim() || String(current.direccion).trim() === String(initialAddress || "").trim();
-        return { ...current, ubicacion_url: result.ubicacion_url, direccion: unchangedAddress && result.direccion ? result.direccion : current.direccion };
+        return { ...current, latitud: result.latitud ?? current.latitud, longitud: result.longitud ?? current.longitud, ubicacion_url: result.ubicacion_url, direccion: unchangedAddress && result.direccion ? result.direccion : current.direccion };
       });
     } catch (reason) { setError(reason); }
     finally { setLocationBusy(false); }
@@ -236,6 +257,69 @@ export function WorkflowForm({ kind, id, navigate }: { kind: string; id: number;
       {field.type === "checkbox" && field.help && <small>{field.help}</small>}
     </label>;
   }
+  function workflowField(sourceField: FormField) {
+        const field = kind.startsWith("sede") && sourceField.name === "localidad"
+          ? { ...sourceField, disabled: !values.provincia || localitiesLoading,
+            help: !values.provincia ? "Elegí primero una provincia." : localitiesLoading ? "Cargando localidades…" : sourceField.choices.some(choice => choice.value) ? "Elegí una localidad de la provincia." : "No hay localidades disponibles para esta provincia." }
+          : isJornada && sourceField.name === "ubicacion_url" && values.latitud && values.longitud
+            ? { ...sourceField, required: false } : sourceField;
+        const isPhoneField = field.name === "referente_telefono" || field.name === "telefono";
+        const pairWithRenaper = isPhoneField && (kind.startsWith("registro") || kind.startsWith("jornada"));
+        const fieldLabel = field.type === "checkbox" ? <FormControlLabel
+          className="checkbox-row"
+          label={<span>{field.label}{field.help && <small>{field.help}</small>}</span>}
+          control={renderField(field, update, values[field.name] ?? field.value) as ReactElement}
+        /> : field.type === "select" ? <div>
+          {isJornada && field.name === "localidad" && <Typography component="label" htmlFor={field.name} className="external-field-label">{field.label}{field.required ? " *" : ""}</Typography>}
+          {renderField(field, update, values[field.name] ?? field.value, isJornada && field.name === "localidad", false, "", isJornada && field.name === "localidad")}
+        </div> : <label className={field.type === "textarea" || field.type === "multiselect" || (kind.startsWith("sede") && field.name === "domicilio") ? "wide" : ""} htmlFor={field.name}>
+          {field.label}{field.required ? " *" : ""}
+          {renderField(field, update, values[field.name] ?? field.value, isJornada && field.name === "localidad")}
+          {field.file_url && <Link href={field.file_url} target="_blank" rel="noreferrer">Ver archivo actual</Link>}
+        </label>;
+        return <Fragment key={field.name}>
+          {pairWithRenaper ? (
+            <div className={`wide field-with-action${isJornada ? " jornada-referente" : ""}`}>
+              {!isJornada && fieldLabel}
+              <div className="verify-action">
+                <Button type="button" variant="outlined" onClick={verify}>Consultar RENAPER</Button>
+                {renaperMessage && <span className="verification" role="status">{renaperMessage}</span>}
+              </div>
+              {isJornada && fieldLabel}
+            </div>
+          ) : fieldLabel}
+          {field.name === "longitud" && (isJornada || kind.startsWith("sede")) && <MapPinEditor
+            key={`${kind}-${id}-${schema?.back}`}
+            latitude={String(values.latitud || "")} longitude={String(values.longitud || "")}
+            address={kind.startsWith("sede") ? {
+              domicilio: String(values.domicilio || ""),
+              provincia: schema?.fields.find(item => item.name === "provincia")?.choices.find(choice => choice.value === values.provincia)?.label || "",
+              localidad: String(values.localidad || ""),
+            } : schema?.provincia_ubicacion ? {
+              domicilio: String(values.direccion || ""),
+              provincia: schema.provincia_ubicacion,
+              localidad: schema.fields.find(item => item.name === "localidad")?.choices.find(choice => choice.value === values.localidad)?.label || "",
+            } : undefined}
+            onChange={(latitud, longitud) => setValues(current => ({ ...current, latitud, longitud }))}
+          />}
+          {field.name === "direccion" && isJornada && <>
+            <div className="location-action">
+              <Button type="button" variant="outlined" disabled={locationBusy || (!values.ubicacion_url && !(String(values.direccion || "").trim() && values.localidad && schema?.provincia_ubicacion))} onClick={previewLocation}>{locationBusy ? "Buscando…" : "Verificar ubicación"}</Button>
+            </div>
+            {location?.query && <div className="wide location-preview">
+              <p role="status">Dirección encontrada: {location.direccion || "Coordenadas confirmadas"}</p>
+              <iframe className="location-map" title="Vista previa de la ubicación" loading="lazy" src={`https://www.google.com/maps?q=${encodeURIComponent(location.query)}&output=embed`} />
+            </div>}
+          </>}
+        </Fragment>;
+  }
+  const sedeSections = [
+    { title: "Datos de la sede", names: ["nombre", "cueanexo", "sector", "ambito"] },
+    { title: "Ubicación", names: ["domicilio", "provincia", "localidad", "departamento", "codigo_postal", "codigo_departamento", "codigo_localidad", "latitud", "longitud"] },
+    { title: "Contacto", names: ["telefono", "mail"] },
+  ];
+  const sedeFieldNames = sedeSections.flatMap(section => section.names);
+  const otherSedeFields = schema?.fields.filter(field => !sedeFieldNames.includes(field.name) && field.name !== "localidad_filtro") || [];
   const attentionFields = ["graduacion_izquierda", "graduacion_derecha", "resultado", "cantidad_lentes", "adjunto", "primera_vez_anteojos", "observaciones"];
   return <>
     <Button className="back" variant="text" startIcon={<ArrowBackIcon />} onClick={() => navigate(schema?.back || destination(kind, id))}>Volver</Button>
@@ -246,7 +330,7 @@ export function WorkflowForm({ kind, id, navigate }: { kind: string; id: number;
     </Snackbar>
     {!schema && !error && <p>Cargando formulario…</p>}
     {schema?.instrucciones && <Alert severity="info" sx={{ mb: 2 }}><strong>Correcciones solicitadas:</strong> {schema.instrucciones}</Alert>}
-    {schema && <Card component="section" className="card"><form className={`form-grid${isJornada ? " jornada-form" : ""}${isRegistro ? " registro-form" : ""}`} onSubmit={submit}>
+    {schema && <Card component="section" className="card"><form ref={formRef} className={`form-grid${isJornada ? " jornada-form" : ""}${isRegistro ? " registro-form" : ""}`} onSubmit={submit}>
       {isRegistro && <input type="hidden" name="renaper_estado" value={verified ? "validado" : ""} />}
       {isRegistro ? <>
         <section className="wide registro-section" aria-labelledby="registro-identificacion">
@@ -293,43 +377,19 @@ export function WorkflowForm({ kind, id, navigate }: { kind: string; id: number;
             {field.file_url && <Link href={field.file_url} target="_blank" rel="noreferrer">Ver archivo actual</Link>}
           </label>)}
         </fieldset>;
-      }) : schema.fields.filter((field) => field.name !== "localidad_filtro").map((field) => {
-        const isPhoneField = field.name === "referente_telefono" || field.name === "telefono";
-        const pairWithRenaper = isPhoneField && (kind.startsWith("registro") || kind.startsWith("jornada"));
-        const fieldLabel = field.type === "checkbox" ? <FormControlLabel
-          className="checkbox-row"
-          label={<span>{field.label}{field.help && <small>{field.help}</small>}</span>}
-          control={renderField(field, update, values[field.name] ?? field.value) as ReactElement}
-        /> : field.type === "select" ? <div>
-          {isJornada && field.name === "localidad" && <Typography component="label" htmlFor={field.name} className="external-field-label">{field.label}{field.required ? " *" : ""}</Typography>}
-          {renderField(field, update, values[field.name] ?? field.value, isJornada && field.name === "localidad", false, "", isJornada && field.name === "localidad")}
-        </div> : <label className={field.type === "textarea" || field.type === "multiselect" ? "wide" : ""} htmlFor={field.name}>
-          {field.label}{field.required ? " *" : ""}
-          {renderField(field, update, values[field.name] ?? field.value, isJornada && field.name === "localidad")}
-          {field.file_url && <Link href={field.file_url} target="_blank" rel="noreferrer">Ver archivo actual</Link>}
-        </label>;
-        return <Fragment key={field.name}>
-          {pairWithRenaper ? (
-            <div className={`wide field-with-action${isJornada ? " jornada-referente" : ""}`}>
-              {!isJornada && fieldLabel}
-              <div className="verify-action">
-                <Button type="button" variant="outlined" onClick={verify}>Consultar RENAPER</Button>
-                {renaperMessage && <span className="verification" role="status">{renaperMessage}</span>}
-              </div>
-              {isJornada && fieldLabel}
-            </div>
-          ) : fieldLabel}
-          {field.name === "direccion" && isJornada && <>
-            <div className="location-action">
-              <Button type="button" variant="outlined" disabled={locationBusy || !values.ubicacion_url} onClick={previewLocation}>{locationBusy ? "Buscando…" : "Verificar ubicación"}</Button>
-            </div>
-            {location?.query && <div className="wide location-preview">
-              <p role="status">Dirección encontrada: {location.direccion || "Coordenadas confirmadas"}</p>
-              <iframe className="location-map" title="Vista previa de la ubicación" loading="lazy" src={`https://www.google.com/maps?q=${encodeURIComponent(location.query)}&output=embed`} />
-            </div>}
-          </>}
-        </Fragment>;
-      })}
+      }) : kind.startsWith("sede") ? <>
+        {sedeSections.map(section => {
+          const fields = section.names.flatMap(name => schema.fields.filter(field => field.name === name));
+          return fields.length ? <section key={section.title} className="wide" aria-label={section.title}>
+            <Typography component="h2" variant="h6" sx={{ mb: 2 }}>{section.title}</Typography>
+            <div className="form-grid">{fields.map(workflowField)}</div>
+          </section> : null;
+        })}
+        {otherSedeFields.length > 0 && <section className="wide" aria-label="Información adicional">
+          <Typography component="h2" variant="h6" sx={{ mb: 2 }}>Información adicional</Typography>
+          <div className="form-grid">{otherSedeFields.map(workflowField)}</div>
+        </section>}
+      </> : schema.fields.filter(field => field.name !== "localidad_filtro").map(workflowField)}
       <div className="form-actions"><Button variant="outlined" size={isRegistro ? "small" : "large"} type="button" onClick={() => navigate(schema?.back || destination(kind, id))}>{isRegistro ? "Volver" : "Cancelar"}</Button><Button variant="contained" size={isRegistro ? "small" : "large"} disabled={saving || verifying} type="submit">{saving ? "Guardando…" : kind === "registro-create" ? "Guardar y continuar" : "Guardar"}</Button></div>
     </form></Card>}
   </>;

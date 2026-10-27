@@ -39,6 +39,24 @@ services:
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
     restart: unless-stopped
 
+  # Chequea las URLs a las 6, 12 y 18 (HEALTH_URLS_HORARIOS) con el usuario
+  # técnico sisoc-health-urls; el resultado se ve en /health/urls/.
+  health_urls_worker:
+    image: sisoc/core:${SISOC_RELEASE_SHA:-local}
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+      target: core
+    env_file:
+      - .env
+    environment:
+      TZ: America/Argentina/Buenos_Aires
+      DJANGO_SERVICE_ROLE: health_urls_worker
+    volumes:
+      - ./logs:/sisoc/logs
+    user: "${RUN_UID:-0}:${RUN_GID:-0}"
+    restart: unless-stopped
+
   mailing_worker:
     image: sisoc/backend-comedores:${SISOC_RELEASE_SHA:-local}
     build:

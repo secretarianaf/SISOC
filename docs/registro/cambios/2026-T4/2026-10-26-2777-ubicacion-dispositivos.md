@@ -18,6 +18,8 @@ vistas, templates y estáticos propios del vertical.
   geográficos (-90/90 y -180/180). El cero es una coordenada válida.
 - El mapa del legajo y la previsualización priorizan coordenadas explícitas;
   si faltan ambas usan domicilio, localidad (si existe), municipio y provincia.
+- El mapa del legajo solo se muestra con `dispositivos.ver_mapa_dispositivo`
+  (#2759); sin ese permiso la ficha conserva los datos de ubicación sin mapa.
 - La previsualización no persiste cambios. El guardado usa los permisos y alcance
   territorial existentes; el domicilio textual no se modifica por coordenadas.
 - El mapa general y su endpoint de ubicación priorizan las coordenadas cargadas,

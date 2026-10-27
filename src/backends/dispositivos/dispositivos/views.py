@@ -129,7 +129,8 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         dispositivo = self.object
-        context["mapa_query"] = get_dispositivo_map_query(dispositivo)
+        if self.request.user.has_perm("dispositivos.ver_mapa_dispositivo"):
+            context["mapa_query"] = get_dispositivo_map_query(dispositivo)
         context["breadcrumb_items"] = [
             {"text": "Dispositivos", "url": reverse("dispositivos_listar")},
             {"text": dispositivo.nombre_institucion},

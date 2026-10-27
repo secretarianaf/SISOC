@@ -1092,6 +1092,23 @@ def test_ficha_mapa_coordenadas_y_edicion(
 
 
 @pytest.mark.django_db
+def test_ficha_sin_permiso_de_mapa_no_muestra_mapa(client, provincia_municipio):
+    provincia, municipio = provincia_municipio
+    device = _crear_dispositivo(provincia, municipio, latitud="-34.9", longitud="-57.9")
+    user = User.objects.create_user(username="solo-ficha")
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="dispositivos", codename="view_dispositivo"
+        )
+    )
+    client.force_login(user)
+    response = client.get(reverse("dispositivos_detalle", args=[device.pk]))
+    assert response.status_code == 200
+    assert "mapa_query" not in response.context
+    assert b'id="dispositivo-mapa"' not in response.content
+
+
+@pytest.mark.django_db
 def test_edicion_coordenadas_requiere_permiso(client, provincia_municipio):
     provincia, municipio = provincia_municipio
     device = _crear_dispositivo(provincia, municipio, latitud="-34.9", longitud="-57.9")

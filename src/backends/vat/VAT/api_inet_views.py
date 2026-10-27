@@ -72,6 +72,13 @@ from ciudadanos.models import Ciudadano
 from iam.services import user_has_permission_code
 
 
+# Campos de los filtros de búsqueda: sus catálogos alcanzan con permiso de lectura.
+FILTER_FIELDS = {
+    "centros": {"provincia", "municipio", "localidad"},
+    "planes": {"sector"},
+}
+
+
 class InetSessionAuthentication(SessionAuthentication):
     """Sesión/CSRF de Django con 401 explícito si no hay sesión."""
 
@@ -314,6 +321,15 @@ class InetOptionsView(InetAPIView):
     def get(self, request, field, pk=None):
         self.check_read()
         item = self.get_item(pk) if pk else None
+        if field not in FILTER_FIELDS.get(self.resource, ()):
+            # Catálogos de alta/edición (p. ej. usuarios referentes): mismo
+            # permiso que el formulario, no alcanza con poder ver el recurso.
+            if item:
+                self.check_write(item)
+            elif not user_has_permission_code(
+                request.user, f"VAT.add_{RESOURCES[self.resource][1]}"
+            ):
+                raise PermissionDenied()
         form = build_form(
             self.resource, request.user, item=item, initial=request.query_params
         )
@@ -343,11 +359,7 @@ class InetFilterFormView(InetAPIView):
     def get(self, request):
         self.check_read()
         form = build_form(self.resource, request.user, initial=request.query_params)
-        names = (
-            {"provincia", "municipio", "localidad"}
-            if self.resource == "centros"
-            else {"sector"}
-        )
+        names = FILTER_FIELDS[self.resource]
         result = serialize_form(form)
         result["fields"] = [
             field for field in result["fields"] if field["name"] in names

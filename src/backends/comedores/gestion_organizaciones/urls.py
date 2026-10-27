@@ -8,6 +8,7 @@ from gestion_organizaciones.views import (
     OrganizacionDetailView,
     OrganizacionRendicionDetailView,
     OrganizacionDeleteView,
+    ConvenioProyectoView,
     FirmanteCreateView,
     AvalCreateView,
     AvalUpdateView,
@@ -156,6 +157,13 @@ urlpatterns = [
             FirmanteDeleteView.as_view()
         ),
         name="firmante_eliminar",
+    ),
+    path(
+        "organizaciones/proyectos/<int:proyecto_id>/convenio/",
+        permissions_any_required(["organizaciones.view_organizacion"])(
+            ConvenioProyectoView.as_view()
+        ),
+        name="organizacion_proyecto_convenio",
     ),
     path(
         "organizaciones/aval/crear/<int:organizacion_pk>",

@@ -118,6 +118,20 @@ class LineaProyecto(models.Model):
         proyecto = getattr(self, "proyecto", None)
         if proyecto is None:
             return
+        # Misma regla que ConvenioProyecto.clean, vista desde la línea: no se
+        # puede dejar en Secos un proyecto cuyo convenio ya tiene imprevistos.
+        if (
+            not es_programa_linea_tradicional(programa)
+            and ConvenioProyecto.objects.filter(
+                proyecto_id=proyecto.pk, imprevistos__isnull=False
+            ).exists()
+        ):
+            raise ValidationError(
+                {
+                    "programa": "El convenio del proyecto tiene imprevistos, "
+                    "que solo aplican a Línea Tradicional."
+                }
+            )
         programas_org = ProgramaOrganizacion.objects.filter(
             organizacion_id=proyecto.organizacion_id
         )

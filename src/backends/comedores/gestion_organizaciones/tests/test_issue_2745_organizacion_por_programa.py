@@ -28,7 +28,12 @@ from gestion_organizaciones.models import (
 )
 from gestion_organizaciones.services import programas as servicio
 from gestion_organizaciones.templatetags.organizaciones_tags import monto
-from organizaciones.models import Organizacion, ProyectoOrganizacion
+from organizaciones.models import (
+    Organizacion,
+    ProyectoOrganizacion,
+    RegionAbordajeComunitario,
+    SubzonaAbordajeComunitario,
+)
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from rendicioncuentasmensual.services import RendicionesOrganizacionService
 
@@ -50,13 +55,18 @@ def programas(db):
 
 @pytest.fixture
 def region(db):
-    norte = RegionAbordaje.objects.create(nombre="NORTE")
-    sur = RegionAbordaje.objects.create(nombre="SUR")
+    """Catálogo canónico de región/subzona: el del kernel (#2642)."""
+    norte = RegionAbordajeComunitario.objects.create(nombre="NORTE 2745")
+    sur = RegionAbordajeComunitario.objects.create(nombre="SUR 2745")
     return SimpleNamespace(
         norte=norte,
         sur=sur,
-        salta=SubzonaAbordaje.objects.create(region=norte, nombre="SALTA"),
-        chubut=SubzonaAbordaje.objects.create(region=sur, nombre="CHUBUT"),
+        salta=SubzonaAbordajeComunitario.objects.create(
+            region=norte, nombre="SALTA 2745"
+        ),
+        chubut=SubzonaAbordajeComunitario.objects.create(
+            region=sur, nombre="CHUBUT 2745"
+        ),
     )
 
 
@@ -299,8 +309,8 @@ def test_alta_con_programas_proyectos_y_region(programas, region, provincia):
             provincia,
             [programas.alco.pk, programas.secos.pk],
             [{"codigo": "S-1", "linea": programas.secos.pk}],
-            region=str(region.norte.pk),
-            subzona=str(region.salta.pk),
+            region_abordaje=str(region.norte.pk),
+            subzona_abordaje=str(region.salta.pk),
         )
     )
 
@@ -314,8 +324,13 @@ def test_alta_con_programas_proyectos_y_region(programas, region, provincia):
     proyecto = organizacion.proyectos.get()
     assert proyecto.codigo == "S-1"
     assert proyecto.linea.programa == programas.secos
-    datos = DatosRegionOrganizacion.objects.get(organizacion=organizacion)
-    assert (datos.region, datos.subzona) == (region.norte, region.salta)
+    assert (organizacion.region_abordaje, organizacion.subzona_abordaje) == (
+        region.norte,
+        region.salta,
+    )
+    # La región se guarda solo en la organización (#2642), no en la tabla
+    # de la etapa 1.
+    assert not DatosRegionOrganizacion.objects.exists()
 
 
 def test_sin_programas_el_proyecto_no_exige_linea(programas, provincia):
@@ -495,64 +510,140 @@ def test_no_pasa_a_secos_un_proyecto_con_imprevistos(programas, provincia):
     assert "Imprevistos" in form.errors["proyectos_lineas"][0]
 
 
+def test_formulario_tiene_una_sola_region(programas):
+    form = OrganizacionForm()
+
+    assert "region" not in form.fields
+    assert "subzona" not in form.fields
+    assert "region_abordaje" in form.fields
+    assert "subzona_abordaje" in form.fields
+
+
 def test_subzona_de_otra_region(programas, region, provincia):
     form = OrganizacionForm(
         data=_datos_form(
             provincia,
             [programas.secos.pk],
-            region=str(region.norte.pk),
-            subzona=str(region.chubut.pk),
+            region_abordaje=str(region.norte.pk),
+            subzona_abordaje=str(region.chubut.pk),
         )
     )
 
     assert not form.is_valid()
-    assert "no pertenece a la región" in form.errors["subzona"][0]
+    assert "subzona_abordaje" in form.errors
 
 
-def test_region_sin_subzona(programas, region, provincia):
-    form = OrganizacionForm(
-        data=_datos_form(provincia, [programas.secos.pk], region=str(region.norte.pk))
-    )
-
-    assert not form.is_valid()
-    assert "subzona" in form.errors
-
-
-def test_region_cargada_no_se_puede_vaciar(programas, region, provincia):
-    organizacion = _organizacion("Org región", programas.secos)
-    DatosRegionOrganizacion.objects.create(
-        organizacion=organizacion, region=region.norte, subzona=region.salta
-    )
-
-    form = OrganizacionForm(
-        data=_datos_form(provincia, [programas.secos.pk]), instance=organizacion
-    )
-
-    assert not form.is_valid()
-    assert "region" in form.errors
-
-
-def test_cambiar_region_y_subzona(programas, region, provincia):
+def test_cambiar_region_no_escribe_datos_de_etapa_1(programas, region, provincia):
     organizacion = _organizacion("Org región cambio", programas.secos)
-    DatosRegionOrganizacion.objects.create(
-        organizacion=organizacion, region=region.norte, subzona=region.salta
+    viejos = DatosRegionOrganizacion.objects.create(
+        organizacion=organizacion,
+        region=RegionAbordaje.objects.create(nombre="VIEJA"),
+        subzona=SubzonaAbordaje.objects.create(
+            region=RegionAbordaje.objects.get(nombre="VIEJA"), nombre="VIEJA"
+        ),
     )
 
     form = OrganizacionForm(
         data=_datos_form(
             provincia,
             [programas.secos.pk],
-            region=str(region.sur.pk),
-            subzona=str(region.chubut.pk),
+            region_abordaje=str(region.sur.pk),
+            subzona_abordaje=str(region.chubut.pk),
         ),
         instance=organizacion,
     )
     assert form.is_valid(), form.errors
     form.save()
 
-    datos = DatosRegionOrganizacion.objects.get(organizacion=organizacion)
-    assert (datos.region, datos.subzona) == (region.sur, region.chubut)
-    assert DatosRegionOrganizacion.objects.count() == 1
+    organizacion.refresh_from_db()
+    assert organizacion.region_abordaje == region.sur
+    assert organizacion.subzona_abordaje == region.chubut
+    viejos.refresh_from_db()
+    assert viejos.region.nombre == "VIEJA"
+
+
+# --- Etapa 3 + #2642: territoriales por proyecto --------------------------------
+
+
+@pytest.fixture
+def territorial(db):
+    user = User.objects.create_user(username="territorial-2745")
+    user.profile.rol = "TERRITORIAL PNUD"
+    user.profile.save()
+    return user
+
+
+def test_territoriales_se_asignan_a_proyectos_de_proyectos_lineas(
+    programas, provincia, territorial
+):
+    form = OrganizacionForm(
+        data=_datos_form(
+            provincia,
+            [programas.secos.pk],
+            [
+                {"codigo": "S-1", "linea": programas.secos.pk},
+                {"codigo": "S-2", "linea": programas.secos.pk},
+            ],
+            asignaciones_territoriales=json.dumps(
+                [{"proyecto": "S-1", "territorial": territorial.pk}]
+            ),
+        )
+    )
+
+    assert form.is_valid(), form.errors
+    organizacion = form.save()
+
+    s1 = organizacion.proyectos.get(codigo="S-1")
+    assert s1.linea.programa == programas.secos
+    assert list(s1.territoriales.all()) == [territorial]
+    assert not organizacion.proyectos.get(codigo="S-2").territoriales.exists()
+    assert not organizacion.territoriales_abordaje_comunitario.exists()
+
+
+def test_territorial_de_proyecto_que_no_esta_en_la_lista(
+    programas, provincia, territorial
+):
+    form = OrganizacionForm(
+        data=_datos_form(
+            provincia,
+            [programas.secos.pk],
+            [{"codigo": "S-1", "linea": programas.secos.pk}],
+            asignaciones_territoriales=json.dumps(
+                [{"proyecto": "OTRO", "territorial": territorial.pk}]
+            ),
+        )
+    )
+
+    assert not form.is_valid()
+    assert "asignaciones_territoriales" in form.errors
+
+
+def test_quitar_proyecto_quita_sus_territoriales(programas, provincia, territorial):
+    organizacion = _organizacion("Org territorial", programas.secos)
+    proyecto = _proyecto(organizacion, "S-1", programas.secos)
+    proyecto.territoriales.add(territorial)
+
+    form = OrganizacionForm(instance=organizacion)
+    assert form.initial["asignaciones_territoriales"] == [
+        {"proyecto": "S-1", "territorial": territorial.pk}
+    ]
+    assert {"id": territorial.pk, "nombre": "territorial-2745"} in (
+        form.datos_formulario()["territoriales"]
+    )
+
+    form = OrganizacionForm(
+        data=_datos_form(
+            provincia, [programas.secos.pk], [], asignaciones_territoriales="[]"
+        ),
+        instance=organizacion,
+    )
+    assert form.is_valid(), form.errors
+    form.save()
+
+    proyecto.refresh_from_db()
+    assert not proyecto.activo
+    assert not proyecto.territoriales.exists()
+    assert LineaProyecto.objects.filter(proyecto=proyecto).exists()
 
 
 # --- Etapa 3: firmante ----------------------------------------------------------
@@ -620,14 +711,20 @@ def _datos_convenio(**extra):
     return datos
 
 
-def test_convenio_secos_sin_imprevistos(client, usuario, programas):
+def test_convenio_secos_sin_imprevistos(client, usuario, programas, region):
     organizacion = _organizacion("Org conv secos", programas.secos)
+    organizacion.region_abordaje = region.norte
+    organizacion.subzona_abordaje = region.salta
+    organizacion.save()
     proyecto = _proyecto(organizacion, "S-1", programas.secos)
     client.force_login(usuario)
     url = reverse("organizacion_proyecto_convenio", kwargs={"proyecto_id": proyecto.pk})
 
     respuesta = client.get(url)
     assert respuesta.status_code == 200
+    # Muestra la región de la organización (#2642).
+    assert "NORTE 2745" in respuesta.content.decode()
+    assert "SALTA 2745" in respuesta.content.decode()
     assert "imprevistos" not in respuesta.context["form"].fields
 
     respuesta = client.post(url, _datos_convenio(imprevistos="99"))

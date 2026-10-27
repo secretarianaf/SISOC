@@ -1,9 +1,10 @@
-{% extends "includes/base_claro.html" %}
+{% extends "includes/main.html" %}
 {% load static custom_filters %}
-{% block head_claro %}
+{% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/inicio.css' %}" />
 {% endblock %}
-{% block contenido %}
+{% block breadcrumb %}{% endblock %}
+{% block content %}
     <div class="inicio-presentacion {% if not user.is_superuser and user|has_any_group:'CFP,CFPJuridicccion,CFPINET' %}inicio-presentacion--inet{% else %}inicio-presentacion--default{% endif %}">
         <div class="card-body d-flex align-items-center justify-content-center">
             {% if not user.is_superuser and user|has_any_group:'CFP,CFPJuridicccion,CFPINET' %}

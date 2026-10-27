@@ -1,5 +1,7 @@
 """Issue #2445: Territorial Asignado Abordaje Comunitario en el legajo de Organización."""
 
+import json
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import Client
@@ -110,15 +112,27 @@ def test_alta_guarda_territoriales_seleccionados(
     client, admin_user, provincia, territorial, responsable
 ):
     client.force_login(admin_user)
+    payload = _payload("Org nueva", provincia)
+    payload["proyectos_lineas"] = json.dumps([{"codigo": "PROY-2642"}])
+    payload["asignaciones_territoriales"] = json.dumps(
+        [
+            {"proyecto": "PROY-2642", "territorial": user.pk}
+            for user in (territorial, responsable)
+        ]
+    )
 
     response = client.post(
         reverse("organizacion_crear"),
-        _payload("Org nueva", provincia, [territorial, responsable]),
+        payload,
     )
 
     assert response.status_code == 302, response.content[:500]
     organizacion = Organizacion.objects.get(nombre="Org nueva")
-    assert set(getattr(organizacion, CAMPO).all()) == {territorial, responsable}
+    assert set(organizacion.proyectos.get(codigo="PROY-2642").territoriales.all()) == {
+        territorial,
+        responsable,
+    }
+    assert not getattr(organizacion, CAMPO).exists()
 
 
 def test_alta_sin_territoriales_es_valida(client, admin_user, provincia):
@@ -128,6 +142,19 @@ def test_alta_sin_territoriales_es_valida(client, admin_user, provincia):
 
     assert response.status_code == 302, response.content[:500]
     assert not getattr(Organizacion.objects.get(nombre="Org"), CAMPO).exists()
+
+
+def test_alta_rechaza_nuevo_territorial_sin_proyecto(
+    client, admin_user, provincia, territorial
+):
+    client.force_login(admin_user)
+    response = client.post(
+        reverse("organizacion_crear"),
+        _payload("Sin proyecto", provincia, [territorial]),
+    )
+    assert response.status_code == 200
+    assert "Código de Proyecto" in str(response.context["form"].non_field_errors())
+    assert not Organizacion.objects.filter(nombre="Sin proyecto").exists()
 
 
 def test_edicion_conserva_territorial_asignado_que_perdio_el_rol(

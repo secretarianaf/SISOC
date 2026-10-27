@@ -22,9 +22,19 @@ solo PR (agrupación decidida el 23/10/2026). El legajo
 - Edición de la organización
   (`src/backends/comedores/gestion_organizaciones/forms.py` y
   `templates/organizacion_form.html`): sección nueva "Programas" con los
-  programas, la lista de proyectos con su línea y Región/Subzona dependiente
-  (visible solo con un programa de Abordaje). Reemplaza el campo
-  `codigos_proyecto` por `proyectos_lineas`.
+  programas y una sola lista de proyectos: cada fila con código, línea y
+  territoriales asignados. Reemplaza el campo `codigos_proyecto` por
+  `proyectos_lineas`; `asignaciones_territoriales` (#2642) se valida contra
+  los códigos de `proyectos_lineas`.
+- Región y Subzona (decisión del 27/10/2026, al integrar con #2642): la
+  región canónica es la de la organización
+  (`Organizacion.region_abordaje`/`subzona_abordaje`, catálogo del kernel
+  `RegionAbordajeComunitario`/`SubzonaAbordajeComunitario`), editable solo en
+  la sección "Datos Abordaje Comunitario". Este PR no escribe
+  `DatosRegionOrganizacion`. Los modelos `RegionAbordaje`, `SubzonaAbordaje`
+  y `DatosRegionOrganizacion` de la Etapa 1 quedan sin uso en pantallas;
+  su baja (con migración y revisión de datos cargados) es un seguimiento
+  aparte.
 - Pantalla nueva Datos de Convenio por proyecto
   (`organizaciones/proyectos/<id>/convenio/`, vista `ConvenioProyectoView`,
   `templates/convenio_proyecto_form.html`), con el mismo permiso que
@@ -52,7 +62,12 @@ solo PR (agrupación decidida el 23/10/2026). El legajo
 - Quitar un proyecto lo desactiva, como hoy; su línea y su convenio se
   conservan.
 - No se puede pasar a Línea Secos un proyecto cuyo convenio tiene Imprevistos.
-- Una vez cargadas, Región y Subzona se pueden cambiar pero no dejar vacías.
+- Región y Subzona siguen las reglas de #2642: opcionales, la subzona tiene
+  que ser de la región elegida. La pantalla de convenio muestra la región de
+  la organización.
+- Territoriales: se asignan por proyecto en la lista de proyectos. Quitar un
+  proyecto quita sus territoriales; las asignaciones anteriores sin proyecto
+  se conservan hasta que se las quite, como en #2642.
 - Convenio: Imprevistos solo en Línea Tradicional. Si la suma de componentes
   no coincide con el monto total, se avisa en pantalla y al guardar, pero no
   se bloquea.
@@ -61,7 +76,7 @@ solo PR (agrupación decidida el 23/10/2026). El legajo
   Ahora no se puede dar de baja una organización que tenga proyectos: se
   muestra cuántos tiene y qué datos usan. Sin proyectos, la baja sigue igual.
 - Preservación de datos (sección 2.1 del plan): sin migraciones. Los
-  formularios no borran proyectos, líneas, convenios ni datos de región, y
+  formularios no borran proyectos, líneas ni convenios, y
   todos los cambios en esas tablas quedan en Historial.
 
 ## Verificación
@@ -87,3 +102,11 @@ Local, en contenedor Docker de un solo uso (SQLite en memoria):
 - `black`, `pylint` (10/10), `djlint --check`, `makemigrations --check` (sin
   cambios) y `lint-imports` (32 contratos): sin observaciones.
 - Las pantallas de edición y de convenio responden 200 con la base local.
+
+Integración con #2642 (27/10/2026): se ajustaron los tests de
+`test_issue_2745_organizacion_por_programa.py` (región única con el catálogo
+del kernel, territoriales por proyecto vía `proyectos_lineas`, convenio con
+la región de la organización) y los de `test_issue_2642.py` y
+`test_issue_2445_territorial_abordaje_organizacion.py`, que envían
+`proyectos_lineas` en lugar de `codigos_proyecto`. Validados en CI; sin
+verificación visual.

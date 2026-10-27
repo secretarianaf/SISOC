@@ -24,7 +24,10 @@ from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from iam.services import user_has_permission_code
 
-from gestion_organizaciones.filter_config import ORGANIZACION_ADVANCED_FILTER
+from gestion_organizaciones.filter_config import (
+    ORGANIZACION_ADVANCED_FILTER,
+    get_filters_ui_config,
+)
 from gestion_organizaciones.forms import (
     AvalForm,
     ConvenioProyectoForm,
@@ -33,7 +36,6 @@ from gestion_organizaciones.forms import (
 )
 from gestion_organizaciones.models import (
     ConvenioProyecto,
-    DatosRegionOrganizacion,
     Firmante,
 )
 from gestion_organizaciones.services.programas import (
@@ -426,6 +428,7 @@ class OrganizacionListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["query"] = self.request.GET.get("busqueda", "")
+        context["filters_config"] = get_filters_ui_config()
         context["puede_crear_organizacion"] = _puede_ver_todas_las_organizaciones(
             self.request.user
         )
@@ -1017,7 +1020,9 @@ class ConvenioProyectoView(LoginRequiredMixin, UpdateView):
         if not hasattr(self, "proyecto"):
             self.proyecto = get_object_or_404(
                 ProyectoOrganizacion.objects.select_related(
-                    "organizacion", "linea__programa"
+                    "organizacion__region_abordaje",
+                    "organizacion__subzona_abordaje",
+                    "linea__programa",
                 ),
                 pk=self.kwargs["proyecto_id"],
                 activo=True,
@@ -1057,13 +1062,6 @@ class ConvenioProyectoView(LoginRequiredMixin, UpdateView):
         context["organizacion"] = proyecto.organizacion
         context["linea"] = proyecto.linea.programa
         context["es_linea_tradicional"] = context["form"].permite_imprevistos
-        context["datos_region"] = (
-            DatosRegionOrganizacion.objects.filter(
-                organizacion_id=proyecto.organizacion_id
-            )
-            .select_related("region", "subzona")
-            .first()
-        )
         if self.object is not None:
             context["resumen_convenio"] = resumen_convenio(self.object)
         return context

@@ -28,6 +28,7 @@ from django.db import migrations
 logger = logging.getLogger("django")
 
 BATCH_SIZE = 1000
+IDS_POR_LINEA_DE_LOG = 200
 
 
 def _normalizar(nombre):
@@ -41,6 +42,20 @@ def _es_linea_abordaje(nombre):
     return "abordaje comunitario" in normalizado and (
         "linea secos" in normalizado or "linea tradicional" in normalizado
     )
+
+
+def _loguear_ids(motivo, ids):
+    """Informa todos los IDs en tandas, para que cada línea del log sea legible."""
+    for inicio in range(0, len(ids), IDS_POR_LINEA_DE_LOG):
+        tanda = ids[inicio : inicio + IDS_POR_LINEA_DE_LOG]
+        logger.warning(
+            "[#2745] Proyectos sin línea por %s (completar a mano), %s-%s de %s: %s",
+            motivo,
+            inicio + 1,
+            inicio + len(tanda),
+            len(ids),
+            tanda,
+        )
 
 
 def cargar_programas_organizacion(apps):
@@ -122,16 +137,8 @@ def carga_inicial(apps, schema_editor):
         len(ambiguos),
         len(sin_comedores),
     )
-    if ambiguos:
-        logger.warning(
-            "[#2745] Proyectos sin línea por ambigüedad (completar a mano): %s",
-            ambiguos,
-        )
-    if sin_comedores:
-        logger.warning(
-            "[#2745] Proyectos sin línea por no tener comedores (completar a mano): %s",
-            sin_comedores,
-        )
+    _loguear_ids("ambigüedad", ambiguos)
+    _loguear_ids("no tener comedores", sin_comedores)
 
 
 class Migration(migrations.Migration):

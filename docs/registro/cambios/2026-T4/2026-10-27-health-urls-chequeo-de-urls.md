@@ -10,7 +10,7 @@ y 18.
 
 Se implementó:
 
-- `src/backends/kernel/healthcheck/services.py`: toma las rutas de
+- `src/backends/kernel/core/services/health_urls.py`: toma las rutas de
   `src/backends/config/url_registry.json` (composición completa, verticales
   incluidas), filtra, hace un GET en proceso con la sesión del usuario técnico
   `sisoc-health-urls` (las rutas de verticales pasan por `core.backend_proxy`, como el tráfico

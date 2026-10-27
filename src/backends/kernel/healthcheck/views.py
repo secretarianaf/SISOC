@@ -2,7 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponse, JsonResponse
 from django.views import View
 
-from .services import leer_resultado
+from core.services.health_urls import leer_resultado
 
 
 def health_check(request):

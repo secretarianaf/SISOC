@@ -7,7 +7,7 @@ from datetime import datetime
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
-from healthcheck import services
+from core.services import health_urls as services
 
 logger = logging.getLogger("django")
 

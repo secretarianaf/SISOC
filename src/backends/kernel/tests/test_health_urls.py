@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 
 from core.management.commands.chequear_urls import Command
 from core.url_registry import recolectar, stub_urlpatterns
-from healthcheck import services
+from core.services import health_urls as services
 
 TZ = ZoneInfo("America/Argentina/Buenos_Aires")
 

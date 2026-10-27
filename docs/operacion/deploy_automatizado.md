@@ -121,7 +121,7 @@ job del SHA actual.
 
 ## Instalar runner por entorno
 
-Los runners deben registrarse en la organizacion `secretarianaf`: los cuatro
+Los runners deben registrarse en la organizacion `secretarianaf`: los
 repositorios despliegan en forma independiente y un runner registrado solo en
 `secretarianaf/SISOC` no puede ejecutar los workflows satelite.
 
@@ -132,6 +132,15 @@ En **Organization Settings -> Actions -> Runner groups**, configurar el grupo
 - `secretarianaf/Espacios-Comunitarios`
 - `secretarianaf/DataCalle`
 - `secretarianaf/Gestionar`
+- `secretarianaf/Inspecciones` (confirmado en el grupo el 2026-10-27)
+
+No quitar repositorios existentes al corregir el acceso de SISOC.
+SISOC es publico: ademas de seleccionarlo, el grupo debe permitir repositorios
+publicos (`allows_public_repositories: true`). Mantener `visibility: selected`;
+permitir publicos no equivale a abrir el grupo a todos los repositorios.
+Esta habilitacion requiere autorizacion explicita por su impacto de seguridad:
+no ejecutar codigo de PR/forks en los runners de deploy. Cualquier restriccion
+adicional por workflow debe preservar los deploys de los repos satelite.
 
 Ejecutar en el servidor de aplicacion de cada entorno con el usuario operativo
 del deploy, por ejemplo `sisoc-deploy`. Reemplazar `<TOKEN_REGISTRO>` por un
@@ -174,9 +183,29 @@ sudo ./svc.sh start
 sudo ./svc.sh status
 ```
 
-No detener ni desregistrar el runner anterior todavia. Primero verificar en
-GitHub que el runner organizacional esta `Idle`, despachar un job controlado del
-entorno y confirmar que tomo el nuevo nombre. Recien entonces ejecutar
+No detener ni desregistrar el runner anterior todavia. Antes, verificar:
+
+1. El grupo que contiene `sisoc-<entorno>-org` incluye explicitamente
+   `secretarianaf/SISOC` entre los repositorios seleccionados y, si es publico,
+   permite repositorios publicos. Si `restricted_to_workflows` esta activo,
+   confirmar que admite el workflow y la referencia de SISOC que se va a usar.
+2. El runner organizacional esta online/`Idle` y tiene los labels
+   `self-hosted` y `sisoc-<entorno>`.
+3. Un job de deploy **de SISOC**, no solo de un repo satelite, tomo el runner
+   `sisoc-<entorno>-org` y termino correctamente. Usar un deploy autorizado del
+   entorno; no disparar ni aprobar produccion solo para esta comprobacion.
+   Estar online o completar un deploy satelite no prueba acceso de SISOC.
+
+Comprobar grupo, repositorios y asignacion del job con `gh api`:
+
+```bash
+gh api orgs/secretarianaf/actions/runner-groups
+gh api orgs/secretarianaf/actions/runner-groups/<GID>/repositories
+gh api orgs/secretarianaf/actions/runner-groups/<GID>/runners
+gh api repos/secretarianaf/SISOC/actions/runs/<RUN_ID>/jobs
+```
+
+Recien entonces ejecutar
 `sudo ./svc.sh stop` y `sudo ./svc.sh uninstall` desde el directorio del runner
 de repositorio anterior; eliminar su registro en GitHub despues de comprobar
 que no hay jobs en curso. Esta secuencia deja rollback inmediato al servicio
@@ -259,8 +288,8 @@ despachan el deploy de forma explícita.
 
 - Solo `.github/workflows/deploy.yml` debe usar estos runners self-hosted.
 - No correr workflows de PR ni jobs que ejecuten codigo no confiable en los runners de deploy.
-- Registrar los runners a nivel organizacion y limitar el grupo a los cuatro
-  repositorios de SISOC. No habilitar acceso general a repositorios futuros.
+- Registrar los runners a nivel organizacion y limitar el grupo a los
+  repositorios autorizados arriba. No habilitar acceso general a repositorios futuros.
 - Mantener labels exclusivos por entorno. No agregar `self-hosted` sin el label
   `sisoc-qa`, `sisoc-homologacion` o `sisoc-produccion` en ningun workflow de
   deploy.

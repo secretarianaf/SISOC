@@ -32,7 +32,8 @@
   explícito (operación, motivo, estado antes/después). El origen y el lote
   (`audittrail_source` y `audittrail_batch_key` en `additional_data`) los toma el
   signal de `audittrail`, así `core` no importa `audittrail` (contrato
-  `core-no-domains` de `.importlinter`). El campo de estado queda de solo lectura.
+  `core-no-domains` de `.importlinter`). Al editar, el campo de estado queda de
+  solo lectura; en el alta se carga normalmente.
   Si no hay service, la operación no se implementa: se lista como pendiente.
 - **Auditoría explícita.** Se registra un `LogEntry` por operación con
   `force_log` en vez de sumar modelos a `audittrail/constants.py`, para no

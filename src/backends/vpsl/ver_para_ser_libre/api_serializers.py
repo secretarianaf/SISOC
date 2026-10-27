@@ -197,6 +197,7 @@ class FormFieldSerializer(ReadOnlySerializer):
 
 
 class FormSchemaSerializer(ReadOnlySerializer):
+    provincia_ubicacion = serializers.CharField(required=False, allow_blank=True)
     kind = serializers.CharField()
     fields = FormFieldSerializer(many=True)
     back = serializers.CharField(allow_blank=True)

@@ -1,0 +1,56 @@
+{% load unfold %}
+{% comment %}
+    Métricas del admin (core.admin_dashboard, #2789). Recibe sisoc_secciones:
+    datos agregados y cacheados por app; los gráficos usan el Chart.js de Unfold.
+{% endcomment %}
+{% for seccion in sisoc_secciones %}
+    <section class="mb-8 sisoc-dashboard-seccion">
+        <h2 class="font-semibold mb-4 text-font-important-light text-lg dark:text-font-important-dark">
+            {{ seccion.titulo }}
+        </h2>
+        {% if seccion.error %}
+            {% include "unfold/helpers/messages/warning.html" with message="No se pudieron calcular estas métricas. El detalle quedó en el log." %}
+        {% else %}
+            {% if seccion.kpis %}
+                <div class="grid grid-cols-1 gap-4 mb-4 lg:grid-cols-3">
+                    {% for kpi in seccion.kpis %}
+                        {% component "unfold/components/card.html" %}
+                        {% component "unfold/components/text.html" %}
+                        {{ kpi.titulo }}
+                    {% endcomponent %}
+                    {% component "unfold/components/title.html" with class=kpi.alerta|yesno:"text-red-600," %}
+                    {{ kpi.valor }}
+            {% endcomponent %}
+            {% if kpi.detalle %}
+                {% component "unfold/components/text.html" %}
+                {{ kpi.detalle }}
+            {% endcomponent %}
+        {% endif %}
+{% endcomponent %}
+{% endfor %}
+</div>
+{% endif %}
+{% if seccion.graficos %}
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {% for grafico in seccion.graficos %}
+            {% component "unfold/components/card.html" with title=grafico.titulo %}
+            {% if grafico.etiquetas %}
+                {% if grafico.tipo == "line" %}
+                    {% component "unfold/components/chart/line.html" with data=grafico.datos_json height=220 %}
+                {% endcomponent %}
+            {% else %}
+                {% component "unfold/components/chart/bar.html" with data=grafico.datos_json height=220 %}
+            {% endcomponent %}
+        {% endif %}
+{% else %}
+    {% component "unfold/components/text.html" %}
+    Sin datos todavía.
+{% endcomponent %}
+{% endif %}
+{% endcomponent %}
+{% endfor %}
+</div>
+{% endif %}
+{% endif %}
+</section>
+{% endfor %}

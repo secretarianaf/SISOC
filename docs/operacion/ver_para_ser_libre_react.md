@@ -25,6 +25,27 @@ React cubre itinerarios, evaluación y subsanación, jornadas con ubicación y v
 
 El backend reutiliza las reglas oficiales del PR #2566. La API transmite la excepción de graduación de registros históricos, conserva la localidad heredada de la sede y permite editar jornadas previas sin exigir retroactivamente ubicación. La previsualización de Maps actualiza la dirección automática y conserva una dirección editada manualmente.
 
+## Ajuste de ubicación
+
+Sedes y jornadas permiten editar latitud/longitud y arrastrar el pin, tanto en
+Django como en React. El formulario confirma la ubicación al guardar; Descartar
+ajuste recupera los valores que había al abrir el editor. El arrastre no modifica
+el domicilio escrito. La verificación de un enlace conserva su comportamiento
+anterior: puede completar una dirección automática si no fue editada a mano.
+
+En sedes, Buscar dirección usa el servicio público de previsualización del kernel
+con sesión/CSRF. Una coincidencia única completa coordenadas; una dirección
+ambigua no elige un punto arbitrario. En jornadas, Verificar ubicación interpreta
+el enlace existente y coloca el pin; también se pueden completar coordenadas sin
+un enlace, que el servidor convierte en una URL canónica segura al guardar.
+
+`MapPinEditor.tsx` adapta el editor compartido del kernel a React, comunica los
+campos al estado del formulario y libera el mapa al salir. Los assets comunes se
+sirven por `/static/` y la búsqueda por `/ajax/ubicacion/previsualizar/`; Vite
+reenvía ambos prefijos al Django local. No se agregan paquetes npm ni rutas de
+escritura alternativas. El transporte OpenAPI y sus tipos generados incluyen
+las coordenadas opcionales; los ModelForms mantienen la validación definitiva.
+
 ## Validación y límites
 
 - La equivalencia exacta de medidas y jerarquía con las pantallas VPSL del Figma *Nuevo DS SISOC* requiere acceso a esa fuente. Los controles remanentes usan el tema compartido y el contraste de bordes y texto se verifica por pruebas.
@@ -33,3 +54,16 @@ El backend reutiliza las reglas oficiales del PR #2566. La API transmite la exce
 - Maps, RENAPER y el almacenamiento de archivos requieren pruebas en homologación con las integraciones reales. El flujo de migración y despliegue debe verificarse con datos representativos antes de activar la URL para usuarios. La comparación exacta con Figma y la aceptación de cada rol requieren revisión humana. La corrida local de cierre registró 165 pruebas Python, 14 Vitest, 3 Playwright sobre Vite preview y Nginx, cero vulnerabilidades npm y build de imagen `prod` con smoke HTTP; ver `docs/registro/cambios/2026-T3/2026-09-29-vpsl-react-cierre-revision.md`.
 
 El despliegue actual construye `front_vpsl` antes de detener el stack, etiqueta su imagen con el SHA y falla si no compila. No requiere cambios en el NGINX del host.
+
+### Prueba directa con Vite en el host
+
+Si se prueba excepcionalmente desde el puerto de Vite, sus proxies deben
+conservar el encabezado Host del navegador (`changeOrigin: false`, valor
+predeterminado). Cambiarlo al host de Django produce un rechazo CSRF por origen
+en los POST de búsqueda y guardado. El flujo recomendado sigue siendo entrar
+por Django y usar Vite solo para los recursos y HMR. No desactivar CSRF para
+resolver este problema.
+
+En Jornadas, Verificar ubicación acepta una dirección escrita y una localidad
+sin necesidad de pegar un enlace. Usa la provincia del itinerario. Si hay un
+enlace o coordenadas en su campo, conserva la búsqueda desde ese dato.

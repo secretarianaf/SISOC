@@ -361,16 +361,17 @@ class _AutomaticReferenteProvisioningMixin:
         if object_pk:
             anterior = (
                 CentroDeInfancia.objects.filter(pk=object_pk)
-                .values("email_referente", "dni_referente")
+                .values(
+                    "nombre_referente",
+                    "apellido_referente",
+                    "email_referente",
+                    "dni_referente",
+                    "cuil_referente",
+                )
                 .first()
             ) or {}
         response = super().form_valid(form)
-        actualizar_referente_cdi(
-            self.request,
-            self.object,
-            dni_anterior=anterior.get("dni_referente"),
-            email_anterior=anterior.get("email_referente"),
-        )
+        actualizar_referente_cdi(self.request, self.object, anterior=anterior)
         return response
 
 
@@ -1154,6 +1155,13 @@ class TrabajadorCentroInfanciaCreateView(
         fecha_nacimiento = _parse_fecha_renaper(fecha_raw)
 
         sexo_raw = data.get("sexo") or datos_api.get("sexo") or ""
+        # RENAPER informa el sexo como id del catálogo central: sin traducirlo no
+        # se precargaba ni quedaba bloqueado.
+        if str(sexo_raw).isdigit():
+            sexo_raw = (
+                Sexo.objects.filter(pk=sexo_raw).values_list("sexo", flat=True).first()
+                or ""
+            )
         sexo = self._SEXO_RENAPER_MAP.get(sexo_raw, "")
 
         nacionalidad = data.get("nacionalidad")

@@ -1,8 +1,8 @@
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 
-from core.models import Municipio, Provincia
+from core.models import Localidad, Municipio, Provincia
 
 from .validators import DOCUMENTACION_FILE_VALIDATORS
 
@@ -75,6 +75,23 @@ class Dispositivo(models.Model):
     )
     provincia = models.ForeignKey(Provincia, on_delete=models.PROTECT)
     municipio = models.ForeignKey(Municipio, on_delete=models.PROTECT)
+    localidad = models.ForeignKey(
+        Localidad, on_delete=models.PROTECT, null=True, blank=True
+    )
+    latitud = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
+    )
+    longitud = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(-180), MaxValueValidator(180)],
+    )
     calle = models.CharField(max_length=255, blank=True)
     altura = models.CharField(max_length=50, blank=True)
     ubicacion_georef = models.JSONField(default=dict, blank=True, editable=False)
@@ -274,6 +291,13 @@ class Dispositivo(models.Model):
                 "El municipio no pertenece a la provincia seleccionada."
             )
 
+        if self.localidad_id and self.localidad.municipio_id != self.municipio_id:
+            errors["localidad"] = "La localidad no pertenece al municipio seleccionado."
+        if (self.latitud is None) != (self.longitud is None):
+            errors["latitud" if self.latitud is None else "longitud"] = (
+                "Complete latitud y longitud, o deje ambas vacías."
+            )
+
         if errors:
             raise ValidationError(errors)
 
@@ -281,3 +305,6 @@ class Dispositivo(models.Model):
         verbose_name = "Dispositivo"
         verbose_name_plural = "Dispositivos"
         ordering = ["-created_at", "nombre_institucion"]
+        permissions = [
+            ("ver_mapa_dispositivo", "Puede ver el mapa de dispositivos"),
+        ]

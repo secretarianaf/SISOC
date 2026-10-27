@@ -125,6 +125,11 @@
   "regex": "^ajax/actualizar\\-vigente\\-pwa/\\Z"
  },
  {
+  "name": "address_preview",
+  "namespace": "",
+  "regex": "^ajax/ubicacion/previsualizar/\\Z"
+ },
+ {
   "name": "adjuntar_documento_rendicion_cuenta_final",
   "namespace": "",
   "regex": "^rendicion_cuentas_final/documento/adjuntar/\\Z"
@@ -1850,6 +1855,11 @@
   "regex": "^dispositivos/mapa/\\Z"
  },
  {
+  "name": "dispositivos_previsualizar_ubicacion",
+  "namespace": "",
+  "regex": "^dispositivos/ubicacion/previsualizar/\\Z"
+ },
+ {
   "name": "dispositivos_ubicacion",
   "namespace": "",
   "regex": "^dispositivos/(?P<pk>[0-9]+)/ubicacion/\\Z"
@@ -2878,6 +2888,11 @@
   "name": "organizacion_exportar",
   "namespace": "",
   "regex": "^organizaciones/exportar\\Z"
+ },
+ {
+  "name": "organizacion_proyecto_convenio",
+  "namespace": "",
+  "regex": "^organizaciones/proyectos/(?P<proyecto_id>[0-9]+)/convenio/\\Z"
  },
  {
   "name": "organizacion_proyectos_ajax",
@@ -4850,6 +4865,31 @@
   "regex": "^ver\\-para\\-ser\\-libre/ubicacion/buscar/\\Z"
  },
  {
+  "name": "VAT_actacierrecomision_add",
+  "namespace": "admin",
+  "regex": "^admin/VAT/actacierrecomision/add/\\Z"
+ },
+ {
+  "name": "VAT_actacierrecomision_change",
+  "namespace": "admin",
+  "regex": "^admin/VAT/actacierrecomision/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "VAT_actacierrecomision_changelist",
+  "namespace": "admin",
+  "regex": "^admin/VAT/actacierrecomision/\\Z"
+ },
+ {
+  "name": "VAT_actacierrecomision_delete",
+  "namespace": "admin",
+  "regex": "^admin/VAT/actacierrecomision/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "VAT_actacierrecomision_history",
+  "namespace": "admin",
+  "regex": "^admin/VAT/actacierrecomision/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "VAT_asistenciasesion_add",
   "namespace": "admin",
   "regex": "^admin/VAT/asistenciasesion/add/\\Z"
@@ -4923,6 +4963,31 @@
   "name": "VAT_comision_history",
   "namespace": "admin",
   "regex": "^admin/VAT/comision/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "VAT_comisioncurso_add",
+  "namespace": "admin",
+  "regex": "^admin/VAT/comisioncurso/add/\\Z"
+ },
+ {
+  "name": "VAT_comisioncurso_change",
+  "namespace": "admin",
+  "regex": "^admin/VAT/comisioncurso/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "VAT_comisioncurso_changelist",
+  "namespace": "admin",
+  "regex": "^admin/VAT/comisioncurso/\\Z"
+ },
+ {
+  "name": "VAT_comisioncurso_delete",
+  "namespace": "admin",
+  "regex": "^admin/VAT/comisioncurso/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "VAT_comisioncurso_history",
+  "namespace": "admin",
+  "regex": "^admin/VAT/comisioncurso/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "VAT_comisionhorario_add",
@@ -5023,6 +5088,11 @@
   "name": "VAT_inscripcion_history",
   "namespace": "admin",
   "regex": "^admin/VAT/inscripcion/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "VAT_inscripcion_operacion_cambiar_estado",
+  "namespace": "admin",
+  "regex": "^admin/VAT/inscripcion/(?P<object_id>.+)/operacion\\-cambiar\\-estado/\\Z"
  },
  {
   "name": "VAT_inscripcionoferta_add",
@@ -5275,6 +5345,31 @@
   "regex": "^admin/VAT/sector/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "VAT_sesioncomision_add",
+  "namespace": "admin",
+  "regex": "^admin/VAT/sesioncomision/add/\\Z"
+ },
+ {
+  "name": "VAT_sesioncomision_change",
+  "namespace": "admin",
+  "regex": "^admin/VAT/sesioncomision/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "VAT_sesioncomision_changelist",
+  "namespace": "admin",
+  "regex": "^admin/VAT/sesioncomision/\\Z"
+ },
+ {
+  "name": "VAT_sesioncomision_delete",
+  "namespace": "admin",
+  "regex": "^admin/VAT/sesioncomision/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "VAT_sesioncomision_history",
+  "namespace": "admin",
+  "regex": "^admin/VAT/sesioncomision/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "VAT_solicitudinscripcionpublica_add",
   "namespace": "admin",
   "regex": "^admin/VAT/solicitudinscripcionpublica/add/\\Z"
@@ -5373,6 +5468,16 @@
   "name": "VAT_voucher_history",
   "namespace": "admin",
   "regex": "^admin/VAT/voucher/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "VAT_voucher_operacion_cancelar",
+  "namespace": "admin",
+  "regex": "^admin/VAT/voucher/(?P<object_id>.+)/operacion\\-cancelar/\\Z"
+ },
+ {
+  "name": "VAT_voucher_operacion_recargar",
+  "namespace": "admin",
+  "regex": "^admin/VAT/voucher/(?P<object_id>.+)/operacion\\-recargar/\\Z"
  },
  {
   "name": "VAT_voucherlog_add",
@@ -5600,6 +5705,21 @@
   "regex": "^admin/admisiones/admision/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "admisiones_admision_operacion_documentacion_rectificada",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/admision/(?P<object_id>.+)/operacion\\-documentacion\\-rectificada/\\Z"
+ },
+ {
+  "name": "admisiones_admision_operacion_enviar_acompaniamiento",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/admision/(?P<object_id>.+)/operacion\\-enviar\\-acompaniamiento/\\Z"
+ },
+ {
+  "name": "admisiones_admision_operacion_enviar_legales",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/admision/(?P<object_id>.+)/operacion\\-enviar\\-legales/\\Z"
+ },
+ {
   "name": "admisiones_admisionhistorial_add",
   "namespace": "admin",
   "regex": "^admin/admisiones/admisionhistorial/add/\\Z"
@@ -5778,6 +5898,31 @@
   "name": "admisiones_formularioproyectodisposicion_history",
   "namespace": "admin",
   "regex": "^admin/admisiones/formularioproyectodisposicion/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "admisiones_historialestadosadmision_add",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/historialestadosadmision/add/\\Z"
+ },
+ {
+  "name": "admisiones_historialestadosadmision_change",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/historialestadosadmision/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "admisiones_historialestadosadmision_changelist",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/historialestadosadmision/\\Z"
+ },
+ {
+  "name": "admisiones_historialestadosadmision_delete",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/historialestadosadmision/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "admisiones_historialestadosadmision_history",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/historialestadosadmision/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "admisiones_incidenciatemplateinformetecnico_add",
@@ -6067,7 +6212,7 @@
  {
   "name": "app_list",
   "namespace": "admin",
-  "regex": "^admin/(?P<app_label>auth|auditlog|authtoken|rest_framework_api_key|users|core|organizaciones|catalogo_intervenciones|ciudadanos|audittrail|dashboard|insumos|encuestas|dispositivos|ver_para_ser_libre|pas|VAT|celiaquia|centrodeinfancia|centrodefamilia|inspecciones|comedores|gestion_organizaciones|duplas|admisiones|intervenciones|historial|acompanamientos|expedientespagos|relevamientos|rendicioncuentasfinal|rendicioncuentasmensual|comunicados|pwa|ocr)/$"
+  "regex": "^admin/(?P<app_label>authtoken|rest_framework_api_key|auth|users|core|organizaciones|catalogo_intervenciones|ciudadanos|auditlog|audittrail|dashboard|insumos|encuestas|dispositivos|datacalle|ver_para_ser_libre|pas|VAT|celiaquia|centrodeinfancia|centrodefamilia|inspecciones|comedores|gestion_organizaciones|duplas|admisiones|intervenciones|historial|acompanamientos|expedientespagos|relevamientos|rendicioncuentasfinal|rendicioncuentasmensual|importarexpediente|comunicados|pwa|ocr)/$"
  },
  {
   "name": "auditlog_logentry_add",
@@ -6390,6 +6535,56 @@
   "regex": "^admin/celiaquia/asignaciontecnico/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "celiaquia_cupomovimiento_add",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/cupomovimiento/add/\\Z"
+ },
+ {
+  "name": "celiaquia_cupomovimiento_change",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/cupomovimiento/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "celiaquia_cupomovimiento_changelist",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/cupomovimiento/\\Z"
+ },
+ {
+  "name": "celiaquia_cupomovimiento_delete",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/cupomovimiento/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "celiaquia_cupomovimiento_history",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/cupomovimiento/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "celiaquia_cupotitular_add",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/cupotitular/add/\\Z"
+ },
+ {
+  "name": "celiaquia_cupotitular_change",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/cupotitular/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "celiaquia_cupotitular_changelist",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/cupotitular/\\Z"
+ },
+ {
+  "name": "celiaquia_cupotitular_delete",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/cupotitular/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "celiaquia_cupotitular_history",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/cupotitular/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "celiaquia_documentolegajo_add",
   "namespace": "admin",
   "regex": "^admin/celiaquia/documentolegajo/add/\\Z"
@@ -6490,6 +6685,11 @@
   "regex": "^admin/celiaquia/expediente/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "celiaquia_expediente_operacion_reprocesar_registros_erroneos",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/expediente/(?P<object_id>.+)/operacion\\-reprocesar\\-registros\\-erroneos/\\Z"
+ },
+ {
   "name": "celiaquia_expedienteciudadano_add",
   "namespace": "admin",
   "regex": "^admin/celiaquia/expedienteciudadano/add/\\Z"
@@ -6513,6 +6713,36 @@
   "name": "celiaquia_expedienteciudadano_history",
   "namespace": "admin",
   "regex": "^admin/celiaquia/expedienteciudadano/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "celiaquia_expedienteciudadano_operacion_aprobar",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/expedienteciudadano/(?P<object_id>.+)/operacion\\-aprobar/\\Z"
+ },
+ {
+  "name": "celiaquia_expedienteciudadano_operacion_liberar_cupo",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/expedienteciudadano/(?P<object_id>.+)/operacion\\-liberar\\-cupo/\\Z"
+ },
+ {
+  "name": "celiaquia_expedienteciudadano_operacion_reactivar_cupo",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/expedienteciudadano/(?P<object_id>.+)/operacion\\-reactivar\\-cupo/\\Z"
+ },
+ {
+  "name": "celiaquia_expedienteciudadano_operacion_rechazar",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/expedienteciudadano/(?P<object_id>.+)/operacion\\-rechazar/\\Z"
+ },
+ {
+  "name": "celiaquia_expedienteciudadano_operacion_subsanar",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/expedienteciudadano/(?P<object_id>.+)/operacion\\-subsanar/\\Z"
+ },
+ {
+  "name": "celiaquia_expedienteciudadano_operacion_suspender_cupo",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/expedienteciudadano/(?P<object_id>.+)/operacion\\-suspender\\-cupo/\\Z"
  },
  {
   "name": "celiaquia_expedienteestadohistorial_add",
@@ -6565,6 +6795,56 @@
   "regex": "^admin/celiaquia/historialcomentarios/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "celiaquia_historialcupo_add",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/historialcupo/add/\\Z"
+ },
+ {
+  "name": "celiaquia_historialcupo_change",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/historialcupo/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "celiaquia_historialcupo_changelist",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/historialcupo/\\Z"
+ },
+ {
+  "name": "celiaquia_historialcupo_delete",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/historialcupo/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "celiaquia_historialcupo_history",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/historialcupo/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "celiaquia_historialvalidaciontecnica_add",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/historialvalidaciontecnica/add/\\Z"
+ },
+ {
+  "name": "celiaquia_historialvalidaciontecnica_change",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/historialvalidaciontecnica/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "celiaquia_historialvalidaciontecnica_changelist",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/historialvalidaciontecnica/\\Z"
+ },
+ {
+  "name": "celiaquia_historialvalidaciontecnica_delete",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/historialvalidaciontecnica/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "celiaquia_historialvalidaciontecnica_history",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/historialvalidaciontecnica/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "celiaquia_organismo_add",
   "namespace": "admin",
   "regex": "^admin/celiaquia/organismo/add/\\Z"
@@ -6588,6 +6868,131 @@
   "name": "celiaquia_organismo_history",
   "namespace": "admin",
   "regex": "^admin/celiaquia/organismo/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "celiaquia_pagoexpediente_add",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/pagoexpediente/add/\\Z"
+ },
+ {
+  "name": "celiaquia_pagoexpediente_change",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/pagoexpediente/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "celiaquia_pagoexpediente_changelist",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/pagoexpediente/\\Z"
+ },
+ {
+  "name": "celiaquia_pagoexpediente_delete",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/pagoexpediente/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "celiaquia_pagoexpediente_history",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/pagoexpediente/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "celiaquia_pagonomina_add",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/pagonomina/add/\\Z"
+ },
+ {
+  "name": "celiaquia_pagonomina_change",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/pagonomina/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "celiaquia_pagonomina_changelist",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/pagonomina/\\Z"
+ },
+ {
+  "name": "celiaquia_pagonomina_delete",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/pagonomina/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "celiaquia_pagonomina_history",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/pagonomina/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "celiaquia_provinciacupo_add",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/provinciacupo/add/\\Z"
+ },
+ {
+  "name": "celiaquia_provinciacupo_change",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/provinciacupo/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "celiaquia_provinciacupo_changelist",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/provinciacupo/\\Z"
+ },
+ {
+  "name": "celiaquia_provinciacupo_delete",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/provinciacupo/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "celiaquia_provinciacupo_history",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/provinciacupo/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "celiaquia_registroerroneo_add",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/registroerroneo/add/\\Z"
+ },
+ {
+  "name": "celiaquia_registroerroneo_change",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/registroerroneo/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "celiaquia_registroerroneo_changelist",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/registroerroneo/\\Z"
+ },
+ {
+  "name": "celiaquia_registroerroneo_delete",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/registroerroneo/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "celiaquia_registroerroneo_history",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/registroerroneo/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "celiaquia_subsanacion_add",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/subsanacion/add/\\Z"
+ },
+ {
+  "name": "celiaquia_subsanacion_change",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/subsanacion/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "celiaquia_subsanacion_changelist",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/subsanacion/\\Z"
+ },
+ {
+  "name": "celiaquia_subsanacion_delete",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/subsanacion/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "celiaquia_subsanacion_history",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/subsanacion/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "celiaquia_tipocruce_add",
@@ -6638,6 +7043,31 @@
   "name": "celiaquia_tipodocumento_history",
   "namespace": "admin",
   "regex": "^admin/celiaquia/tipodocumento/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "celiaquia_validacionrenaper_add",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/validacionrenaper/add/\\Z"
+ },
+ {
+  "name": "celiaquia_validacionrenaper_change",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/validacionrenaper/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "celiaquia_validacionrenaper_changelist",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/validacionrenaper/\\Z"
+ },
+ {
+  "name": "celiaquia_validacionrenaper_delete",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/validacionrenaper/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "celiaquia_validacionrenaper_history",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/validacionrenaper/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "centrodefamilia_accesocdf_add",
@@ -6840,6 +7270,36 @@
   "regex": "^admin/centrodefamilia/participanteactividad/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "centrodefamilia_participanteactividad_operacion_dar_de_baja",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/participanteactividad/(?P<object_id>.+)/operacion\\-dar\\-de\\-baja/\\Z"
+ },
+ {
+  "name": "centrodefamilia_participanteactividadhistorial_add",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/participanteactividadhistorial/add/\\Z"
+ },
+ {
+  "name": "centrodefamilia_participanteactividadhistorial_change",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/participanteactividadhistorial/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "centrodefamilia_participanteactividadhistorial_changelist",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/participanteactividadhistorial/\\Z"
+ },
+ {
+  "name": "centrodefamilia_participanteactividadhistorial_delete",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/participanteactividadhistorial/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "centrodefamilia_participanteactividadhistorial_history",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/participanteactividadhistorial/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "centrodefamilia_responsable_add",
   "namespace": "admin",
   "regex": "^admin/centrodefamilia/responsable/add/\\Z"
@@ -6888,6 +7348,21 @@
   "name": "centrodeinfancia_accesocdi_history",
   "namespace": "admin",
   "regex": "^admin/centrodeinfancia/accesocdi/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_accesocdi_operacion_dar_de_baja",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/accesocdi/(?P<object_id>.+)/operacion\\-dar\\-de\\-baja/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_accesocdi_operacion_reactivar",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/accesocdi/(?P<object_id>.+)/operacion\\-reactivar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_accesocdi_operacion_suspender",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/accesocdi/(?P<object_id>.+)/operacion\\-suspender/\\Z"
  },
  {
   "name": "centrodeinfancia_asistencianominacentroinfancia_add",
@@ -7265,6 +7740,11 @@
   "regex": "^admin/ciudadanos/ciudadanosimportjob/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "ciudadanos_ciudadanosimportjob_operacion_reanudar",
+  "namespace": "admin",
+  "regex": "^admin/ciudadanos/ciudadanosimportjob/(?P<object_id>.+)/operacion\\-reanudar/\\Z"
+ },
+ {
   "name": "ciudadanos_ciudadanosimportjobrow_add",
   "namespace": "admin",
   "regex": "^admin/ciudadanos/ciudadanosimportjobrow/add/\\Z"
@@ -7440,6 +7920,11 @@
   "regex": "^admin/comedores/colaboradorespacio/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "comedores_colaboradorespacio_operacion_baja",
+  "namespace": "admin",
+  "regex": "^admin/comedores/colaboradorespacio/(?P<object_id>.+)/operacion\\-baja/\\Z"
+ },
+ {
   "name": "comedores_comedor_add",
   "namespace": "admin",
   "regex": "^admin/comedores/comedor/add/\\Z"
@@ -7465,6 +7950,26 @@
   "regex": "^admin/comedores/comedor/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "comedores_comedor_operacion_cambiar_estado",
+  "namespace": "admin",
+  "regex": "^admin/comedores/comedor/(?P<object_id>.+)/operacion\\-cambiar\\-estado/\\Z"
+ },
+ {
+  "name": "comedores_comedor_operacion_no_validar",
+  "namespace": "admin",
+  "regex": "^admin/comedores/comedor/(?P<object_id>.+)/operacion\\-no\\-validar/\\Z"
+ },
+ {
+  "name": "comedores_comedor_operacion_reenviar_gestionar",
+  "namespace": "admin",
+  "regex": "^admin/comedores/comedor/(?P<object_id>.+)/operacion\\-reenviar\\-gestionar/\\Z"
+ },
+ {
+  "name": "comedores_comedor_operacion_validar",
+  "namespace": "admin",
+  "regex": "^admin/comedores/comedor/(?P<object_id>.+)/operacion\\-validar/\\Z"
+ },
+ {
   "name": "comedores_comedordatosconveniopnud_add",
   "namespace": "admin",
   "regex": "^admin/comedores/comedordatosconveniopnud/add/\\Z"
@@ -7488,6 +7993,31 @@
   "name": "comedores_comedordatosconveniopnud_history",
   "namespace": "admin",
   "regex": "^admin/comedores/comedordatosconveniopnud/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "comedores_estadohistorial_add",
+  "namespace": "admin",
+  "regex": "^admin/comedores/estadohistorial/add/\\Z"
+ },
+ {
+  "name": "comedores_estadohistorial_change",
+  "namespace": "admin",
+  "regex": "^admin/comedores/estadohistorial/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "comedores_estadohistorial_changelist",
+  "namespace": "admin",
+  "regex": "^admin/comedores/estadohistorial/\\Z"
+ },
+ {
+  "name": "comedores_estadohistorial_delete",
+  "namespace": "admin",
+  "regex": "^admin/comedores/estadohistorial/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "comedores_estadohistorial_history",
+  "namespace": "admin",
+  "regex": "^admin/comedores/estadohistorial/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "comedores_historialvalidacion_add",
@@ -7563,6 +8093,11 @@
   "name": "comedores_nomina_history",
   "namespace": "admin",
   "regex": "^admin/comedores/nomina/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "comedores_nomina_operacion_baja",
+  "namespace": "admin",
+  "regex": "^admin/comedores/nomina/(?P<object_id>.+)/operacion\\-baja/\\Z"
  },
  {
   "name": "comedores_nominaderivacion_add",
@@ -7670,6 +8205,31 @@
   "regex": "^admin/comedores/referente/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "comedores_territorialsynclog_add",
+  "namespace": "admin",
+  "regex": "^admin/comedores/territorialsynclog/add/\\Z"
+ },
+ {
+  "name": "comedores_territorialsynclog_change",
+  "namespace": "admin",
+  "regex": "^admin/comedores/territorialsynclog/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "comedores_territorialsynclog_changelist",
+  "namespace": "admin",
+  "regex": "^admin/comedores/territorialsynclog/\\Z"
+ },
+ {
+  "name": "comedores_territorialsynclog_delete",
+  "namespace": "admin",
+  "regex": "^admin/comedores/territorialsynclog/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "comedores_territorialsynclog_history",
+  "namespace": "admin",
+  "regex": "^admin/comedores/territorialsynclog/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "comedores_tipodecomedor_add",
   "namespace": "admin",
   "regex": "^admin/comedores/tipodecomedor/add/\\Z"
@@ -7765,6 +8325,16 @@
   "regex": "^admin/comunicados/comunicado/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "comunicados_comunicado_operacion_archivar",
+  "namespace": "admin",
+  "regex": "^admin/comunicados/comunicado/(?P<object_id>.+)/operacion\\-archivar/\\Z"
+ },
+ {
+  "name": "comunicados_comunicado_operacion_publicar",
+  "namespace": "admin",
+  "regex": "^admin/comunicados/comunicado/(?P<object_id>.+)/operacion\\-publicar/\\Z"
+ },
+ {
   "name": "comunicados_comunicadoadjunto_add",
   "namespace": "admin",
   "regex": "^admin/comunicados/comunicadoadjunto/add/\\Z"
@@ -7788,6 +8358,36 @@
   "name": "comunicados_comunicadoadjunto_history",
   "namespace": "admin",
   "regex": "^admin/comunicados/comunicadoadjunto/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "comunicados_mailingjob_add",
+  "namespace": "admin",
+  "regex": "^admin/comunicados/mailingjob/add/\\Z"
+ },
+ {
+  "name": "comunicados_mailingjob_change",
+  "namespace": "admin",
+  "regex": "^admin/comunicados/mailingjob/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "comunicados_mailingjob_changelist",
+  "namespace": "admin",
+  "regex": "^admin/comunicados/mailingjob/\\Z"
+ },
+ {
+  "name": "comunicados_mailingjob_delete",
+  "namespace": "admin",
+  "regex": "^admin/comunicados/mailingjob/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "comunicados_mailingjob_history",
+  "namespace": "admin",
+  "regex": "^admin/comunicados/mailingjob/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "comunicados_mailingjob_operacion_reanudar",
+  "namespace": "admin",
+  "regex": "^admin/comunicados/mailingjob/(?P<object_id>.+)/operacion\\-reanudar/\\Z"
  },
  {
   "name": "core_dia_add",
@@ -8150,6 +8750,61 @@
   "regex": "^admin/dashboard/tablero/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "datacalle_encuesta_add",
+  "namespace": "admin",
+  "regex": "^admin/datacalle/encuesta/add/\\Z"
+ },
+ {
+  "name": "datacalle_encuesta_change",
+  "namespace": "admin",
+  "regex": "^admin/datacalle/encuesta/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "datacalle_encuesta_changelist",
+  "namespace": "admin",
+  "regex": "^admin/datacalle/encuesta/\\Z"
+ },
+ {
+  "name": "datacalle_encuesta_delete",
+  "namespace": "admin",
+  "regex": "^admin/datacalle/encuesta/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "datacalle_encuesta_history",
+  "namespace": "admin",
+  "regex": "^admin/datacalle/encuesta/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "datacalle_relevamiento_add",
+  "namespace": "admin",
+  "regex": "^admin/datacalle/relevamiento/add/\\Z"
+ },
+ {
+  "name": "datacalle_relevamiento_change",
+  "namespace": "admin",
+  "regex": "^admin/datacalle/relevamiento/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "datacalle_relevamiento_changelist",
+  "namespace": "admin",
+  "regex": "^admin/datacalle/relevamiento/\\Z"
+ },
+ {
+  "name": "datacalle_relevamiento_delete",
+  "namespace": "admin",
+  "regex": "^admin/datacalle/relevamiento/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "datacalle_relevamiento_history",
+  "namespace": "admin",
+  "regex": "^admin/datacalle/relevamiento/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "datacalle_relevamiento_operacion_cerrar",
+  "namespace": "admin",
+  "regex": "^admin/datacalle/relevamiento/(?P<object_id>.+)/operacion\\-cerrar/\\Z"
+ },
+ {
   "name": "dispositivos_dispositivo_add",
   "namespace": "admin",
   "regex": "^admin/dispositivos/dispositivo/add/\\Z"
@@ -8248,6 +8903,21 @@
   "name": "encuestas_encuesta_history",
   "namespace": "admin",
   "regex": "^admin/encuestas/encuesta/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "encuestas_encuesta_operacion_publicar",
+  "namespace": "admin",
+  "regex": "^admin/encuestas/encuesta/(?P<object_id>.+)/operacion\\-publicar/\\Z"
+ },
+ {
+  "name": "encuestas_encuesta_operacion_rechazar_publicacion",
+  "namespace": "admin",
+  "regex": "^admin/encuestas/encuesta/(?P<object_id>.+)/operacion\\-rechazar\\-publicacion/\\Z"
+ },
+ {
+  "name": "encuestas_encuesta_operacion_solicitar_publicacion",
+  "namespace": "admin",
+  "regex": "^admin/encuestas/encuesta/(?P<object_id>.+)/operacion\\-solicitar\\-publicacion/\\Z"
  },
  {
   "name": "encuestas_pregunta_add",
@@ -8375,6 +9045,11 @@
   "regex": "^admin/encuestas/rondaencuesta/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "encuestas_rondaencuesta_operacion_cerrar",
+  "namespace": "admin",
+  "regex": "^admin/encuestas/rondaencuesta/(?P<object_id>.+)/operacion\\-cerrar/\\Z"
+ },
+ {
   "name": "encuestas_segmentaciondestinatario_add",
   "namespace": "admin",
   "regex": "^admin/encuestas/segmentaciondestinatario/add/\\Z"
@@ -8450,6 +9125,56 @@
   "regex": "^admin/expedientespagos/expedientepago/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "gestion_organizaciones_convenioproyecto_add",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/convenioproyecto/add/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_convenioproyecto_change",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/convenioproyecto/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_convenioproyecto_changelist",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/convenioproyecto/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_convenioproyecto_delete",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/convenioproyecto/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_convenioproyecto_history",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/convenioproyecto/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_datosregionorganizacion_add",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/add/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_datosregionorganizacion_change",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_datosregionorganizacion_changelist",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_datosregionorganizacion_delete",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_datosregionorganizacion_history",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "gestion_organizaciones_firmante_add",
   "namespace": "admin",
   "regex": "^admin/gestion_organizaciones/firmante/add/\\Z"
@@ -8475,6 +9200,106 @@
   "regex": "^admin/gestion_organizaciones/firmante/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "gestion_organizaciones_lineaproyecto_add",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/lineaproyecto/add/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_lineaproyecto_change",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/lineaproyecto/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_lineaproyecto_changelist",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/lineaproyecto/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_lineaproyecto_delete",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/lineaproyecto/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_lineaproyecto_history",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/lineaproyecto/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_programaorganizacion_add",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/programaorganizacion/add/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_programaorganizacion_change",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/programaorganizacion/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_programaorganizacion_changelist",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/programaorganizacion/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_programaorganizacion_delete",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/programaorganizacion/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_programaorganizacion_history",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/programaorganizacion/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_regionabordaje_add",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/regionabordaje/add/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_regionabordaje_change",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/regionabordaje/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_regionabordaje_changelist",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/regionabordaje/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_regionabordaje_delete",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/regionabordaje/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_regionabordaje_history",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/regionabordaje/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_subzonaabordaje_add",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/subzonaabordaje/add/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_subzonaabordaje_change",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/subzonaabordaje/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_subzonaabordaje_changelist",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/subzonaabordaje/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_subzonaabordaje_delete",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/subzonaabordaje/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "gestion_organizaciones_subzonaabordaje_history",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/subzonaabordaje/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "historial_historial_add",
   "namespace": "admin",
   "regex": "^admin/historial/historial/add/\\Z"
@@ -8498,6 +9323,106 @@
   "name": "historial_historial_history",
   "namespace": "admin",
   "regex": "^admin/historial/historial/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "importarexpediente_archivosimportados_add",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/archivosimportados/add/\\Z"
+ },
+ {
+  "name": "importarexpediente_archivosimportados_change",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/archivosimportados/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "importarexpediente_archivosimportados_changelist",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/archivosimportados/\\Z"
+ },
+ {
+  "name": "importarexpediente_archivosimportados_delete",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/archivosimportados/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "importarexpediente_archivosimportados_history",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/archivosimportados/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "importarexpediente_erroresimportacion_add",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/erroresimportacion/add/\\Z"
+ },
+ {
+  "name": "importarexpediente_erroresimportacion_change",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/erroresimportacion/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "importarexpediente_erroresimportacion_changelist",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/erroresimportacion/\\Z"
+ },
+ {
+  "name": "importarexpediente_erroresimportacion_delete",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/erroresimportacion/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "importarexpediente_erroresimportacion_history",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/erroresimportacion/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "importarexpediente_exitoimportacion_add",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/exitoimportacion/add/\\Z"
+ },
+ {
+  "name": "importarexpediente_exitoimportacion_change",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/exitoimportacion/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "importarexpediente_exitoimportacion_changelist",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/exitoimportacion/\\Z"
+ },
+ {
+  "name": "importarexpediente_exitoimportacion_delete",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/exitoimportacion/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "importarexpediente_exitoimportacion_history",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/exitoimportacion/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "importarexpediente_registroimportado_add",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/registroimportado/add/\\Z"
+ },
+ {
+  "name": "importarexpediente_registroimportado_change",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/registroimportado/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "importarexpediente_registroimportado_changelist",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/registroimportado/\\Z"
+ },
+ {
+  "name": "importarexpediente_registroimportado_delete",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/registroimportado/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "importarexpediente_registroimportado_history",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/registroimportado/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "index",
@@ -8530,6 +9455,16 @@
   "regex": "^admin/inspecciones/acta/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "inspecciones_acta_operacion_anular",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/acta/(?P<object_id>.+)/operacion\\-anular/\\Z"
+ },
+ {
+  "name": "inspecciones_acta_operacion_marcar_prueba",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/acta/(?P<object_id>.+)/operacion\\-marcar\\-prueba/\\Z"
+ },
+ {
   "name": "inspecciones_asignacionescuela_add",
   "namespace": "admin",
   "regex": "^admin/inspecciones/asignacionescuela/add/\\Z"
@@ -8553,6 +9488,11 @@
   "name": "inspecciones_asignacionescuela_history",
   "namespace": "admin",
   "regex": "^admin/inspecciones/asignacionescuela/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "inspecciones_asignacionescuela_operacion_quitar",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/asignacionescuela/(?P<object_id>.+)/operacion\\-quitar/\\Z"
  },
  {
   "name": "inspecciones_escuela_add",
@@ -8910,6 +9850,31 @@
   "regex": "^admin/organizaciones/proyectoorganizacion/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "organizaciones_regionabordajecomunitario_add",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/add/\\Z"
+ },
+ {
+  "name": "organizaciones_regionabordajecomunitario_change",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "organizaciones_regionabordajecomunitario_changelist",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/\\Z"
+ },
+ {
+  "name": "organizaciones_regionabordajecomunitario_delete",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "organizaciones_regionabordajecomunitario_history",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "organizaciones_rolfirmante_add",
   "namespace": "admin",
   "regex": "^admin/organizaciones/rolfirmante/add/\\Z"
@@ -8948,6 +9913,31 @@
   "name": "organizaciones_rolfirmante_process_import",
   "namespace": "admin",
   "regex": "^admin/organizaciones/rolfirmante/process_import/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_add",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/add/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_change",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_changelist",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_delete",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "organizaciones_subzonaabordajecomunitario_history",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "organizaciones_tipoorganizacion_add",
@@ -9265,6 +10255,56 @@
   "regex": "^admin/pas/paspersona/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "pas_passupervivenciabatch_add",
+  "namespace": "admin",
+  "regex": "^admin/pas/passupervivenciabatch/add/\\Z"
+ },
+ {
+  "name": "pas_passupervivenciabatch_change",
+  "namespace": "admin",
+  "regex": "^admin/pas/passupervivenciabatch/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "pas_passupervivenciabatch_changelist",
+  "namespace": "admin",
+  "regex": "^admin/pas/passupervivenciabatch/\\Z"
+ },
+ {
+  "name": "pas_passupervivenciabatch_delete",
+  "namespace": "admin",
+  "regex": "^admin/pas/passupervivenciabatch/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "pas_passupervivenciabatch_history",
+  "namespace": "admin",
+  "regex": "^admin/pas/passupervivenciabatch/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "pas_passupervivenciarun_add",
+  "namespace": "admin",
+  "regex": "^admin/pas/passupervivenciarun/add/\\Z"
+ },
+ {
+  "name": "pas_passupervivenciarun_change",
+  "namespace": "admin",
+  "regex": "^admin/pas/passupervivenciarun/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "pas_passupervivenciarun_changelist",
+  "namespace": "admin",
+  "regex": "^admin/pas/passupervivenciarun/\\Z"
+ },
+ {
+  "name": "pas_passupervivenciarun_delete",
+  "namespace": "admin",
+  "regex": "^admin/pas/passupervivenciarun/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "pas_passupervivenciarun_history",
+  "namespace": "admin",
+  "regex": "^admin/pas/passupervivenciarun/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "password_change",
   "namespace": "admin",
   "regex": "^admin/password_change/\\Z"
@@ -9273,6 +10313,56 @@
   "name": "password_change_done",
   "namespace": "admin",
   "regex": "^admin/password_change/done/\\Z"
+ },
+ {
+  "name": "pwa_accesocomedorpwa_add",
+  "namespace": "admin",
+  "regex": "^admin/pwa/accesocomedorpwa/add/\\Z"
+ },
+ {
+  "name": "pwa_accesocomedorpwa_change",
+  "namespace": "admin",
+  "regex": "^admin/pwa/accesocomedorpwa/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "pwa_accesocomedorpwa_changelist",
+  "namespace": "admin",
+  "regex": "^admin/pwa/accesocomedorpwa/\\Z"
+ },
+ {
+  "name": "pwa_accesocomedorpwa_delete",
+  "namespace": "admin",
+  "regex": "^admin/pwa/accesocomedorpwa/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "pwa_accesocomedorpwa_history",
+  "namespace": "admin",
+  "regex": "^admin/pwa/accesocomedorpwa/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "pwa_accesoorganizacionpwa_add",
+  "namespace": "admin",
+  "regex": "^admin/pwa/accesoorganizacionpwa/add/\\Z"
+ },
+ {
+  "name": "pwa_accesoorganizacionpwa_change",
+  "namespace": "admin",
+  "regex": "^admin/pwa/accesoorganizacionpwa/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "pwa_accesoorganizacionpwa_changelist",
+  "namespace": "admin",
+  "regex": "^admin/pwa/accesoorganizacionpwa/\\Z"
+ },
+ {
+  "name": "pwa_accesoorganizacionpwa_delete",
+  "namespace": "admin",
+  "regex": "^admin/pwa/accesoorganizacionpwa/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "pwa_accesoorganizacionpwa_history",
+  "namespace": "admin",
+  "regex": "^admin/pwa/accesoorganizacionpwa/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "pwa_actividadespaciopwa_add",
@@ -9298,6 +10388,11 @@
   "name": "pwa_actividadespaciopwa_history",
   "namespace": "admin",
   "regex": "^admin/pwa/actividadespaciopwa/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "pwa_actividadespaciopwa_operacion_baja",
+  "namespace": "admin",
+  "regex": "^admin/pwa/actividadespaciopwa/(?P<object_id>.+)/operacion\\-baja/\\Z"
  },
  {
   "name": "pwa_auditaccesocomedorpwa_add",
@@ -9398,6 +10493,36 @@
   "name": "pwa_colaboradorespaciopwa_history",
   "namespace": "admin",
   "regex": "^admin/pwa/colaboradorespaciopwa/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "pwa_coordinadorequipotecnicopwa_add",
+  "namespace": "admin",
+  "regex": "^admin/pwa/coordinadorequipotecnicopwa/add/\\Z"
+ },
+ {
+  "name": "pwa_coordinadorequipotecnicopwa_change",
+  "namespace": "admin",
+  "regex": "^admin/pwa/coordinadorequipotecnicopwa/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "pwa_coordinadorequipotecnicopwa_changelist",
+  "namespace": "admin",
+  "regex": "^admin/pwa/coordinadorequipotecnicopwa/\\Z"
+ },
+ {
+  "name": "pwa_coordinadorequipotecnicopwa_delete",
+  "namespace": "admin",
+  "regex": "^admin/pwa/coordinadorequipotecnicopwa/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "pwa_coordinadorequipotecnicopwa_history",
+  "namespace": "admin",
+  "regex": "^admin/pwa/coordinadorequipotecnicopwa/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "pwa_coordinadorequipotecnicopwa_operacion_desactivar",
+  "namespace": "admin",
+  "regex": "^admin/pwa/coordinadorequipotecnicopwa/(?P<object_id>.+)/operacion\\-desactivar/\\Z"
  },
  {
   "name": "pwa_inscriptoactividadespaciopwa_add",
@@ -10050,6 +11175,11 @@
   "regex": "^admin/relevamientos/primerseguimiento/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "relevamientos_primerseguimiento_operacion_reintentar_sync_gestionar",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/primerseguimiento/(?P<object_id>.+)/operacion\\-reintentar\\-sync\\-gestionar/\\Z"
+ },
+ {
   "name": "relevamientos_recursosseguimiento_add",
   "namespace": "admin",
   "regex": "^admin/relevamientos/recursosseguimiento/add/\\Z"
@@ -10123,6 +11253,11 @@
   "name": "relevamientos_relevamiento_history",
   "namespace": "admin",
   "regex": "^admin/relevamientos/relevamiento/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "relevamientos_relevamiento_operacion_reintentar_sync_gestionar",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/relevamiento/(?P<object_id>.+)/operacion\\-reintentar\\-sync\\-gestionar/\\Z"
  },
  {
   "name": "relevamientos_rendicioncuentasseguimiento_add",
@@ -10525,6 +11660,41 @@
   "regex": "^admin/rendicioncuentasfinal/tipodocumentorendicionfinal/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "rendicioncuentasmensual_documentacionadjunta_add",
+  "namespace": "admin",
+  "regex": "^admin/rendicioncuentasmensual/documentacionadjunta/add/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_documentacionadjunta_change",
+  "namespace": "admin",
+  "regex": "^admin/rendicioncuentasmensual/documentacionadjunta/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_documentacionadjunta_changelist",
+  "namespace": "admin",
+  "regex": "^admin/rendicioncuentasmensual/documentacionadjunta/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_documentacionadjunta_delete",
+  "namespace": "admin",
+  "regex": "^admin/rendicioncuentasmensual/documentacionadjunta/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_documentacionadjunta_history",
+  "namespace": "admin",
+  "regex": "^admin/rendicioncuentasmensual/documentacionadjunta/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_documentacionadjunta_operacion_subsanar_documento",
+  "namespace": "admin",
+  "regex": "^admin/rendicioncuentasmensual/documentacionadjunta/(?P<object_id>.+)/operacion\\-subsanar\\-documento/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_documentacionadjunta_operacion_validar_documento",
+  "namespace": "admin",
+  "regex": "^admin/rendicioncuentasmensual/documentacionadjunta/(?P<object_id>.+)/operacion\\-validar\\-documento/\\Z"
+ },
+ {
   "name": "rendicioncuentasmensual_rendicioncuentamensual_add",
   "namespace": "admin",
   "regex": "^admin/rendicioncuentasmensual/rendicioncuentamensual/add/\\Z"
@@ -10575,6 +11745,66 @@
   "regex": "^admin/rest_framework_api_key/apikey/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "search",
+  "namespace": "admin",
+  "regex": "^admin/search/\\Z"
+ },
+ {
+  "name": "users_bulkcredentialsjob_add",
+  "namespace": "admin",
+  "regex": "^admin/users/bulkcredentialsjob/add/\\Z"
+ },
+ {
+  "name": "users_bulkcredentialsjob_change",
+  "namespace": "admin",
+  "regex": "^admin/users/bulkcredentialsjob/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "users_bulkcredentialsjob_changelist",
+  "namespace": "admin",
+  "regex": "^admin/users/bulkcredentialsjob/\\Z"
+ },
+ {
+  "name": "users_bulkcredentialsjob_delete",
+  "namespace": "admin",
+  "regex": "^admin/users/bulkcredentialsjob/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "users_bulkcredentialsjob_history",
+  "namespace": "admin",
+  "regex": "^admin/users/bulkcredentialsjob/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "users_bulkcredentialsjob_operacion_reanudar",
+  "namespace": "admin",
+  "regex": "^admin/users/bulkcredentialsjob/(?P<object_id>.+)/operacion\\-reanudar/\\Z"
+ },
+ {
+  "name": "users_bulkcredentialsjobrow_add",
+  "namespace": "admin",
+  "regex": "^admin/users/bulkcredentialsjobrow/add/\\Z"
+ },
+ {
+  "name": "users_bulkcredentialsjobrow_change",
+  "namespace": "admin",
+  "regex": "^admin/users/bulkcredentialsjobrow/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "users_bulkcredentialsjobrow_changelist",
+  "namespace": "admin",
+  "regex": "^admin/users/bulkcredentialsjobrow/\\Z"
+ },
+ {
+  "name": "users_bulkcredentialsjobrow_delete",
+  "namespace": "admin",
+  "regex": "^admin/users/bulkcredentialsjobrow/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "users_bulkcredentialsjobrow_history",
+  "namespace": "admin",
+  "regex": "^admin/users/bulkcredentialsjobrow/(?P<object_id>.+)/history/\\Z"
+ },
+ {
   "name": "users_profile_add",
   "namespace": "admin",
   "regex": "^admin/users/profile/add/\\Z"
@@ -10598,6 +11828,61 @@
   "name": "users_profile_history",
   "namespace": "admin",
   "regex": "^admin/users/profile/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "users_userimportjob_add",
+  "namespace": "admin",
+  "regex": "^admin/users/userimportjob/add/\\Z"
+ },
+ {
+  "name": "users_userimportjob_change",
+  "namespace": "admin",
+  "regex": "^admin/users/userimportjob/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "users_userimportjob_changelist",
+  "namespace": "admin",
+  "regex": "^admin/users/userimportjob/\\Z"
+ },
+ {
+  "name": "users_userimportjob_delete",
+  "namespace": "admin",
+  "regex": "^admin/users/userimportjob/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "users_userimportjob_history",
+  "namespace": "admin",
+  "regex": "^admin/users/userimportjob/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "users_userimportjob_operacion_reanudar",
+  "namespace": "admin",
+  "regex": "^admin/users/userimportjob/(?P<object_id>.+)/operacion\\-reanudar/\\Z"
+ },
+ {
+  "name": "users_userimportjobrow_add",
+  "namespace": "admin",
+  "regex": "^admin/users/userimportjobrow/add/\\Z"
+ },
+ {
+  "name": "users_userimportjobrow_change",
+  "namespace": "admin",
+  "regex": "^admin/users/userimportjobrow/(?P<object_id>.+)/change/\\Z"
+ },
+ {
+  "name": "users_userimportjobrow_changelist",
+  "namespace": "admin",
+  "regex": "^admin/users/userimportjobrow/\\Z"
+ },
+ {
+  "name": "users_userimportjobrow_delete",
+  "namespace": "admin",
+  "regex": "^admin/users/userimportjobrow/(?P<object_id>.+)/delete/\\Z"
+ },
+ {
+  "name": "users_userimportjobrow_history",
+  "namespace": "admin",
+  "regex": "^admin/users/userimportjobrow/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "ver_para_ser_libre_casolaboratoriovpsl_add",
@@ -10825,6 +12110,21 @@
   "regex": "^admin/ver_para_ser_libre/itinerariovpsl/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "ver_para_ser_libre_itinerariovpsl_operacion_aprobar",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/itinerariovpsl/(?P<object_id>.+)/operacion\\-aprobar/\\Z"
+ },
+ {
+  "name": "ver_para_ser_libre_itinerariovpsl_operacion_enviar_subsanacion",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/itinerariovpsl/(?P<object_id>.+)/operacion\\-enviar\\-subsanacion/\\Z"
+ },
+ {
+  "name": "ver_para_ser_libre_itinerariovpsl_operacion_rechazar",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/itinerariovpsl/(?P<object_id>.+)/operacion\\-rechazar/\\Z"
+ },
+ {
   "name": "ver_para_ser_libre_jornadavpsl_add",
   "namespace": "admin",
   "regex": "^admin/ver_para_ser_libre/jornadavpsl/add/\\Z"
@@ -10848,6 +12148,16 @@
   "name": "ver_para_ser_libre_jornadavpsl_history",
   "namespace": "admin",
   "regex": "^admin/ver_para_ser_libre/jornadavpsl/(?P<object_id>.+)/history/\\Z"
+ },
+ {
+  "name": "ver_para_ser_libre_jornadavpsl_operacion_cerrar_definitivamente",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/jornadavpsl/(?P<object_id>.+)/operacion\\-cerrar\\-definitivamente/\\Z"
+ },
+ {
+  "name": "ver_para_ser_libre_jornadavpsl_operacion_habilitar",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/jornadavpsl/(?P<object_id>.+)/operacion\\-habilitar/\\Z"
  },
  {
   "name": "ver_para_ser_libre_registronominalvpsl_add",

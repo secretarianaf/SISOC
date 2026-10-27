@@ -1,4 +1,5 @@
 from django.contrib import admin
+from unfold.contrib.filters.admin import RelatedDropdownFilter
 
 from core.admin_import_export import BaseExportAdmin, BaseImportExportAdmin
 from core.models import (
@@ -31,15 +32,18 @@ class ProvinciaAdmin(BaseExportAdmin):
 class MunicipioAdmin(BaseExportAdmin):
     resource_classes = [MunicipioResource]
     list_display = ("id", "nombre", "provincia")
-    list_filter = ("provincia",)
+    list_filter = (("provincia", RelatedDropdownFilter),)
     search_fields = ("nombre",)
+    list_select_related = ("provincia",)
 
 
 @admin.register(Localidad)
 class LocalidadAdmin(BaseExportAdmin):
     resource_classes = [LocalidadResource]
     list_display = ("id", "nombre", "municipio")
-    search_fields = ("nombre",)
+    list_filter = (("municipio__provincia", RelatedDropdownFilter),)
+    search_fields = ("nombre", "municipio__nombre")
+    list_select_related = ("municipio",)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "municipio":
@@ -57,21 +61,25 @@ class LocalidadAdmin(BaseExportAdmin):
 @admin.register(Sexo)
 class SexoAdmin(BaseExportAdmin):
     list_display = ("id", "sexo")
+    search_fields = ("sexo",)
 
 
 @admin.register(Mes)
 class MesAdmin(BaseExportAdmin):
     list_display = ("id", "nombre")
+    search_fields = ("nombre",)
 
 
 @admin.register(Dia)
 class DiaAdmin(BaseExportAdmin):
     list_display = ("id", "nombre")
+    search_fields = ("nombre",)
 
 
 @admin.register(Turno)
 class TurnoAdmin(BaseExportAdmin):
     list_display = ("id", "nombre")
+    search_fields = ("nombre",)
 
 
 # Los ids de Programa están referenciados desde settings (PROG_MILD, PROG_CDIF,

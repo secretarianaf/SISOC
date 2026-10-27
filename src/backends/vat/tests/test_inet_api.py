@@ -369,6 +369,25 @@ def test_options_are_paginated_and_cfp_parent_is_not_injectable(api, data):
     )
 
 
+def test_invalid_numeric_filter_is_400(api, data):
+    response = api.get("/api/inet/comisiones/", {"curso": "26-1912-14"})
+    assert response.status_code == 400
+    assert "curso" in response.data
+    response = api.get("/api/inet/comisiones/", {"curso": data["course"].pk})
+    assert response.status_code == 200
+    assert response.data["count"] == 1
+
+
+def test_form_catalogs_require_form_permission_but_filters_only_read(user, data):
+    grant(user, "view_centro")
+    client = APIClient()
+    client.force_login(user)
+    assert client.get("/api/inet/centros/options/provincia/").status_code == 200
+    assert client.get("/api/inet/centros/options/referentes/").status_code == 403
+    grant(user, "add_centro")
+    assert client.get("/api/inet/centros/options/referentes/").status_code == 200
+
+
 def test_center_creation_preserves_identifier_and_main_location(api, data, superuser):
     from VAT.tests import _build_centro_payload
 

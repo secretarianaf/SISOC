@@ -2,6 +2,7 @@
 
 from django.utils import timezone
 from django.db.models import Count, Q
+from rest_framework.exceptions import ValidationError
 
 from VAT import models
 from VAT.services.access_scope import (
@@ -214,8 +215,9 @@ def filter_resource_queryset(queryset, resource, params):
     for param, lookup in filters.items():
         value = params.get(param)
         if value:
+            # Mismo contrato que query_param_entero de la API VAT (#2765).
             if lookup.endswith("_id") and not str(value).isdigit():
-                return queryset.none()
+                raise ValidationError({param: ["Debe ser un número entero."]})
             queryset = queryset.filter(**{lookup: value})
     if resource in ("centros", "planes") and params.get("activo") in ("true", "false"):
         queryset = queryset.filter(activo=params["activo"] == "true")

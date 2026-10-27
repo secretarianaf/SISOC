@@ -26,6 +26,7 @@ def user_con_permisos(db):
             "change_dispositivo",
             "delete_dispositivo",
             "view_dispositivo",
+            "ver_mapa_dispositivo",
         ],
     )
     user.user_permissions.add(*perms)
@@ -156,6 +157,45 @@ def test_crud_dispositivo_con_permisos(client, user_con_permisos, provincia_muni
 
 
 @pytest.mark.django_db
+def test_eliminar_dispositivo_con_relevamientos_avisa_en_vez_de_500(
+    client, user_con_permisos, provincia_municipio
+):
+    # Issue #2750: el FK PROTECT de datacalle.Relevamiento daba ProtectedError (500).
+    import datetime  # pylint: disable=import-outside-toplevel
+
+    from datacalle.models import Relevamiento  # pylint: disable=import-outside-toplevel
+
+    provincia, municipio = provincia_municipio
+    dispositivo = _crear_dispositivo(provincia, municipio)
+    Relevamiento.objects.create(
+        denominacion="Operativo con dispositivo",
+        provincia=provincia,
+        fase=Relevamiento.Fase.ESPACIO_PUBLICO,
+        area_operativa="Plaza",
+        fecha_inicio=datetime.date(2026, 10, 13),
+        fecha_fin=datetime.date(2026, 10, 17),
+        dispositivo=dispositivo,
+    )
+    client.force_login(user_con_permisos)
+
+    response = client.post(
+        reverse("dispositivos_eliminar", kwargs={"pk": dispositivo.pk}), follow=True
+    )
+
+    assert response.redirect_chain[0] == (
+        reverse("dispositivos_detalle", kwargs={"pk": dispositivo.pk}),
+        302,
+    )
+    assert Dispositivo.objects.filter(pk=dispositivo.pk).exists()
+    mensajes = [str(m) for m in response.context["messages"]]
+    assert any(
+        "No se puede eliminar el dispositivo" in m
+        and str(Relevamiento._meta.verbose_name_plural) in m
+        for m in mensajes
+    )
+
+
+@pytest.mark.django_db
 def test_sin_permiso_view_dispositivo_devuelve_403(client, provincia_municipio):
     provincia, municipio = provincia_municipio
     user = User.objects.create_user(username="sin-permiso", password="test1234")
@@ -203,6 +243,8 @@ def test_listado_oculta_acciones_sin_permisos_de_mutacion(client, provincia_muni
     assert "Agregar dispositivo" not in contenido
     assert 'title="Editar"' not in contenido
     assert 'title="Eliminar"' not in contenido
+    assert "Mapa de dispositivos" not in contenido
+    assert "Ver en mapa" not in contenido
 
 
 @pytest.mark.django_db
@@ -451,6 +493,7 @@ DISPOSITIVOS_PERMISOS = [
     "change_dispositivo",
     "delete_dispositivo",
     "view_dispositivo",
+    "ver_mapa_dispositivo",
 ]
 
 
@@ -794,6 +837,30 @@ def test_mapa_requiere_permiso(client):
     user = User.objects.create_user(username="mapa-sin-permiso")
     client.force_login(user)
     assert client.get(url).status_code == 403
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "codenames",
+    [["view_dispositivo"], ["ver_mapa_dispositivo"]],
+)
+def test_mapa_y_ubicacion_requieren_ambos_permisos(
+    client, provincia_municipio, codenames
+):
+    provincia, municipio = provincia_municipio
+    device = _crear_dispositivo(provincia, municipio, indice=1)
+    user = User.objects.create_user(username="mapa-permiso-parcial")
+    user.user_permissions.add(
+        *Permission.objects.filter(
+            content_type__app_label="dispositivos", codename__in=codenames
+        )
+    )
+    client.force_login(user)
+    assert client.get(reverse("dispositivos_mapa")).status_code == 403
+    assert (
+        client.get(reverse("dispositivos_ubicacion", args=[device.pk])).status_code
+        == 403
+    )
 
 
 @pytest.mark.django_db

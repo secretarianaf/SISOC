@@ -8,7 +8,8 @@
       "dispositivos/",
       "datacalle/",
       "api/datacalle/",
-      "admin/dispositivos/"
+      "admin/dispositivos/",
+      "admin/datacalle/"
     ],
     "urlconf": "dispositivos_runtime.urls",
     "origin_env": "BACKEND_DISPOSITIVOS_ORIGIN",
@@ -26,6 +27,11 @@
         "label": "Dispositivos",
         "url": "/admin/dispositivos/",
         "app_label": "dispositivos"
+      },
+      {
+        "label": "Datacalle",
+        "url": "/admin/datacalle/",
+        "app_label": "datacalle"
       }
     ]
   },

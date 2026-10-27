@@ -533,10 +533,31 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `/mobile/login` y las descargas sensibles se limitan al solicitante o a un
   superusuario.
 
+### Si necesitas cambiar el Django admin (Unfold)
+
+- Solo superusuarios (staff + superusuario): `src/backends/kernel/core/admin_site.py`
+  (`SisocAdminSite`, instalado por `core.admin_apps.SisocAdminConfig`; también
+  envuelve `admin/doc/`).
+- Bases de todo `admin.py`: `src/backends/kernel/core/admin_base.py` (`SisocModelAdmin`,
+  inlines, historial con auditlog). No usar `admin.ModelAdmin` directo.
+- Cambios de estado: `src/backends/kernel/core/admin_operaciones.py` (`Operacion` +
+  `OperacionesAdminMixin`), siempre llamando a un service existente; deja
+  `auditlog.LogEntry` con motivo. Sin service, no hay acción.
+- Sidebar por dominio y badge de entorno: `src/backends/kernel/core/admin_navigation.py`;
+  config en el bloque `UNFOLD` de `src/backends/config/settings.py`.
+- Métricas: `<app>/admin_metricas.py` con `metricas()`, descubiertas por
+  `src/backends/kernel/core/admin_dashboard.py` (agregadas y en caché, por runtime).
+- Templates: `src/backends/kernel/templates/admin/` (`index.html`, `app_index.html`, `sisoc/`).
+- CSP: `'unsafe-eval'` solo en `/admin/` (`src/backends/config/middlewares/csp.py`).
+- Tests: `src/backends/kernel/tests/test_admin_unfold.py` (acceso, runtimes, listados),
+  `test_admin_operaciones.py`, `test_admin_dashboard.py`.
+- Decisión: `docs/registro/decisiones/2026-10-26-2789-admin-unfold-autoservicio.md`.
+
 ### Si necesitas cambiar el import/export Excel-CSV del Django admin
 
 - `src/backends/kernel/core/admin_import_export.py`: bases `BaseImportExportAdmin` (import +
-  export) y `BaseExportAdmin` (solo export), con formatos limitados a XLSX/CSV.
+  export) y `BaseExportAdmin` (solo export), con formatos limitados a XLSX/CSV,
+  sobre `SisocModelAdmin` y los forms de `unfold.contrib.import_export`.
 - `<app>/resources.py`: resources explicitos cuando hay que acotar campos o
   resolver relaciones por nombre (`core`, `intervenciones`).
 - `src/backends/config/settings.py`: bloque `IMPORT_EXPORT_*` (transacciones, preview

@@ -11,11 +11,11 @@ El detalle de qué modelo quedó en cada grupo vive en
 ``docs/registro/cambios/2026-07-27-import-export-admin.md``.
 """
 
-from django.contrib import admin
 from import_export.admin import ExportMixin, ImportExportModelAdmin
-from import_export.forms import ExportForm
 from import_export.formats import base_formats
+from unfold.contrib.import_export.forms import ExportForm, ImportForm
 
+from core.admin_base import SisocModelAdmin
 from core.services.csv_export import CSV_CONTENT_TYPE
 
 
@@ -30,11 +30,13 @@ class UTF8CSV(base_formats.CSV):
 FORMATOS_HABILITADOS = [base_formats.XLSX, UTF8CSV]
 
 
-class BaseImportExportAdmin(ImportExportModelAdmin):
+class BaseImportExportAdmin(SisocModelAdmin, ImportExportModelAdmin):
     """Admin con acciones de importación y exportación en XLSX/CSV."""
 
     # Mantiene el flujo previo a django-import-export 4.x: el usuario elige el
-    # formato, pero no una selección parcial de columnas.
+    # formato, pero no una selección parcial de columnas. Los forms de Unfold
+    # heredan de los de import-export y solo cambian los widgets.
+    import_form_class = ImportForm
     export_form_class = ExportForm
     to_encoding = "utf-8-sig"
     formats = FORMATOS_HABILITADOS
@@ -45,7 +47,8 @@ class BaseImportExportAdmin(ImportExportModelAdmin):
     export_formats = FORMATOS_HABILITADOS
 
 
-class BaseExportAdmin(ExportMixin, admin.ModelAdmin):
+# ExportMixin no hereda de ModelAdmin: tiene que ir antes en el MRO.
+class BaseExportAdmin(ExportMixin, SisocModelAdmin):
     """Admin que solo exporta: no habilita la carga de archivos."""
 
     export_form_class = ExportForm

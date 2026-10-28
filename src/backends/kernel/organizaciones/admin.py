@@ -88,7 +88,6 @@ class ArchivoOrganizacionAdmin(SisocModelAdmin):
     readonly_fields = ("creado", "modificado")
 
 
-
 @admin.register(TipoOrganizacion)
 class TipoOrganizacionAdmin(BaseImportExportAdmin):
     list_display = ("id", "nombre")

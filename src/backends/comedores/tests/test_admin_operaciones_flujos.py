@@ -177,13 +177,12 @@ def test_enviar_a_legales_por_url_con_el_service_real(auth_client):
 # --- Rendición de cuentas mensual -------------------------------------------
 
 
-def _documento_en_revision(etapa=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION):
+def _documento_en_revision(estado=RendicionCuentaMensual.ESTADO_REVISION):
     rendicion = RendicionCuentaMensual.objects.create(
         comedor=_comedor(),
         mes=1,
         anio=2026,
-        etapa_proceso=etapa,
-        subestado_proceso=RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+        estado=estado,
     )
     return DocumentacionAdjunta.objects.create(
         nombre="Formulario I",
@@ -251,15 +250,15 @@ def test_subsanar_documento_por_url_con_el_service_real(auth_client):
 
     assert response.status_code == 302
     documento.refresh_from_db()
-    assert documento.revision_estado == DocumentacionAdjunta.ESTADO_SUBSANAR
-    assert documento.revision_observaciones == "Falta la firma"
+    assert documento.estado == DocumentacionAdjunta.ESTADO_SUBSANAR
+    assert documento.observaciones == "Falta la firma"
     entrada = _log_de(documento, "subsanar_documento").get()
-    assert entrada.changes_dict == {"revision_estado": [None, "subsanar"]}
+    assert entrada.changes_dict == {"estado": ["presentado", "subsanar"]}
 
 
 def test_revision_fuera_de_etapa_la_rechaza_el_service(superuser):
     documento = _documento_en_revision(
-        etapa=RendicionCuentaMensual.ETAPA_CARGA_DOCUMENTACION
+        estado=RendicionCuentaMensual.ESTADO_ELABORACION
     )
 
     ok, errores = _ejecutar(
@@ -268,7 +267,7 @@ def test_revision_fuera_de_etapa_la_rechaza_el_service(superuser):
 
     assert not ok and len(errores) == 1
     documento.refresh_from_db()
-    assert documento.revision_estado is None
+    assert documento.estado == DocumentacionAdjunta.ESTADO_PRESENTADO
 
 
 # --- Relevamientos ----------------------------------------------------------

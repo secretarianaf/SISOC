@@ -1241,3 +1241,5 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 ## Permisos de runtime HML
 
 HML agrega `docker/compose/docker-compose.hml-runtime.yml` desde `deploy_refresh.sh` y prepara ACL mediante `src/scripts/operacion/provision_hml_runtime_permissions.py`. No asumir que root demuestra permisos correctos para usuarios de aplicación. Evidencia y límites: `docs/registro/cambios/2026-T4/2026-10-28-hml-runtime-permisos-adjuntos.md`.
+
+- HML runtime permissions: `deploy_refresh.sh` runs the private-backup/ACL provisioner before service interruption or migration and again afterward; an early failure preserves running services. QA/production are unchanged. Synthetic runtime/HTTP acceptance and rollback remain separate gates.

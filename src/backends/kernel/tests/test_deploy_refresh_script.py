@@ -111,6 +111,7 @@ def _run_deploy(
     backend_has_celery: bool = True,
     environment: str = "qa",
     create_celery_on_merge: bool = False,
+    fail_runtime_preflight: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     backend_checkout = _backend_checkout(tmp_path, include_celery=backend_has_celery)
     env_file = tmp_path / ".env"
@@ -119,10 +120,17 @@ def _run_deploy(
     fake_bin.mkdir()
     _fake_git(fake_bin)
     docker = fake_bin / "docker"
-    docker.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    docker.write_text(
+        "#!/usr/bin/env bash\n"
+        'if [[ "${FAIL_RUNTIME_PREFLIGHT:-0}" == 1 && "$*" == *"run --rm --no-deps runtime_permissions"* ]]; then exit 73; fi\n'
+        "exit 0\n",
+        encoding="utf-8",
+    )
     docker.chmod(0o755)
     env = os.environ.copy()
     env["ENV_FILE"] = str(env_file)
+    env["SISOC_DEPLOY_PHASE_FILE"] = str(tmp_path / "phase")
+    env["FAIL_RUNTIME_PREFLIGHT"] = "1" if fail_runtime_preflight else "0"
     env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
     args = [
         "bash",
@@ -302,7 +310,9 @@ CORE_COMPOSE_JSON = json.dumps(
 )
 
 
-def _run_selectivo(tmp_path, archivos, compose_json):
+def _run_selectivo(
+    tmp_path, archivos, compose_json, *, environment="qa", fail_runtime_preflight=False
+):
     """Deploy en dry-run con --diff-base: el plan sale de deploy_targets.py."""
     checkout = _backend_checkout(tmp_path)
     operacion = checkout / "src" / "scripts" / "operacion"
@@ -315,7 +325,7 @@ def _run_selectivo(tmp_path, archivos, compose_json):
     )
     (checkout / ".diff").write_text("\n".join(archivos) + "\n", encoding="utf-8")
     env_file = tmp_path / ".env"
-    env_file.write_text("ENVIRONMENT=qa\n", encoding="utf-8")
+    env_file.write_text(f"ENVIRONMENT={environment}\n", encoding="utf-8")
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
     _fake_git(fake_bin)
@@ -324,6 +334,7 @@ def _run_selectivo(tmp_path, archivos, compose_json):
     docker = fake_bin / "docker"
     docker.write_text(
         "#!/usr/bin/env bash\n"
+        'if [[ "${FAIL_RUNTIME_PREFLIGHT:-0}" == 1 && "$*" == *"run --rm --no-deps runtime_permissions"* ]]; then exit 73; fi\n'
         'if [[ "$*" == *"config --format json"* ]]; then\n'
         f'  cat "{compose_config}"\n'
         "fi\n"
@@ -333,12 +344,14 @@ def _run_selectivo(tmp_path, archivos, compose_json):
     docker.chmod(0o755)
     env = os.environ.copy()
     env["ENV_FILE"] = str(env_file)
+    env["SISOC_DEPLOY_PHASE_FILE"] = str(tmp_path / "phase")
+    env["FAIL_RUNTIME_PREFLIGHT"] = "1" if fail_runtime_preflight else "0"
     env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
     return subprocess.run(
         [
             "bash",
             str(operacion / "deploy_refresh.sh"),
-            "--dry-run",
+            *([] if fail_runtime_preflight else ["--dry-run"]),
             "--yes",
             "--allow-dirty",
             "--allow-branch-mismatch",
@@ -458,9 +471,33 @@ def test_hml_runtime_permissions_precede_application_start(tmp_path, environment
     assert "docker-compose.hml-runtime.yml" in result.stdout
     build = result.stdout.index("build runtime_permissions")
     down = result.stdout.index(" down ")
-    provision = result.stdout.index("run --rm --no-deps runtime_permissions")
+    preflight = result.stdout.index("run --rm --no-deps runtime_permissions")
+    provision = result.stdout.rindex("run --rm --no-deps runtime_permissions")
+    migration = result.stdout.index("run --rm migrator")
     startup = result.stdout.index(" up -d")
-    assert build < down < provision < startup
+    assert build < preflight < down < migration < provision < startup
+    assert result.stdout.count("run --rm --no-deps runtime_permissions") == 2
+
+
+@pytest.mark.parametrize("environment", ["homologacion", "hml", "staging"])
+def test_hml_preflight_failure_keeps_previous_services_running(tmp_path, environment):
+    checkout = _mobile_checkout(
+        tmp_path, "git@github.com:secretarianaf/Espacios-Comunitarios.git"
+    )
+    result = _run_deploy(
+        tmp_path,
+        checkout,
+        environment=environment,
+        dry_run=False,
+        fail_runtime_preflight=True,
+    )
+    assert result.returncode == 73, result.stdout + result.stderr
+    assert (tmp_path / "phase").read_text() == "precut"
+    assert "run --rm --no-deps runtime_permissions" in result.stdout
+    assert " down " not in result.stdout
+    assert "run --rm migrator" not in result.stdout
+    assert " up -d" not in result.stdout
+    assert "Deploy refresh finalizado" not in result.stdout
 
 
 @pytest.mark.parametrize("environment", ["qa", "prd"])
@@ -472,3 +509,52 @@ def test_other_environments_do_not_change_runtime_identity(tmp_path, environment
     assert result.returncode == 0, result.stdout + result.stderr
     assert "docker-compose.hml-runtime.yml" not in result.stdout
     assert "runtime_permissions" not in result.stdout
+
+
+@pytest.mark.parametrize("fail_preflight", [False, True])
+def test_hml_selective_preflight_precedes_migration(tmp_path, fail_preflight):
+    result = _run_selectivo(
+        tmp_path,
+        ["src/backends/sisoc_core/usuarios/views.py"],
+        CORE_COMPOSE_JSON,
+        environment="hml",
+        fail_runtime_preflight=fail_preflight,
+    )
+    assert result.returncode == (73 if fail_preflight else 0), (
+        result.stdout + result.stderr
+    )
+    preflight = result.stdout.index("run --rm --no-deps runtime_permissions")
+    assert " down " not in result.stdout
+    if fail_preflight:
+        assert (tmp_path / "phase").read_text() == "precut"
+        assert "run --rm migrator" not in result.stdout
+        assert " up -d" not in result.stdout
+    else:
+        migration = result.stdout.index("run --rm migrator")
+        provision = result.stdout.rindex("run --rm --no-deps runtime_permissions")
+        startup = result.stdout.index("up -d --no-deps django")
+        assert preflight < migration < provision < startup
+
+
+def test_hml_no_services_skips_permission_provisioning(tmp_path):
+    result = _run_selectivo(
+        tmp_path, ["docs/indice.md"], CORE_COMPOSE_JSON, environment="hml"
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "runtime_permissions" not in result.stdout
+    assert "run --rm migrator" not in result.stdout
+    assert " up -d" not in result.stdout
+
+
+@pytest.mark.parametrize("environment", ["hml", "qa", "prd"])
+def test_runtime_phase_is_reported_only_for_hml_mutation(tmp_path, environment):
+    checkout = _mobile_checkout(
+        tmp_path, "git@github.com:secretarianaf/Espacios-Comunitarios.git"
+    )
+    result = _run_deploy(tmp_path, checkout, environment=environment, dry_run=False)
+    assert result.returncode == 0, result.stdout + result.stderr
+    phase = tmp_path / "phase"
+    if environment == "hml":
+        assert phase.read_text() == "cut"
+    else:
+        assert not phase.exists()

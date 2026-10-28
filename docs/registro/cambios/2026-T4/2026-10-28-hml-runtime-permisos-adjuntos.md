@@ -30,3 +30,9 @@ Risk: item 2 (ACL e identidad de procesos), item 5 (despliegue HML).
 
 ## Adaptación a la base de publicación
 La rama nace de development59a8f797 y conserva sus cambios concurrentes. Se cubrió el nuevo health_urls_worker y se agregó un guard contra escritores omitidos. Verificador independiente y Compose efectivo confirman19procesos; la comparación QA/PRD conserva stdout, stderr y exitcode. La revisión nativa consumida corresponde al candidato anterior; la evaluación del candidato de publicación se informa por separado.
+
+## Preflight antes del corte
+
+El despliegue HML prepara ACL y backup privado antes de detener servicios o ejecutar migraciones, y repite el aprovisionamiento después del migrador. Un fallo temprano aborta sin ejecutar down, migrador ni arranque. El pase puede ajustar ACL mientras el servicio anterior sigue activo y conserva backup ante fallo parcial; no implementa rollback automático. QA y producción no seleccionan este comportamiento. Validación real en HML y gates adicionales del plan siguen pendientes.
+
+El wrapper `deploy_verified.sh` usa un archivo temporal privado de fase (`SISOC_DEPLOY_PHASE_FILE`, handshake interno, no opción pública). Si refresh falla en `precut`, restaura únicamente el checkout y no recrea el stack previo; en `cut`, fase desconocida o refresh antiguo conserva el rollback existente. El archivo se elimina al finalizar. Dry-run no escribe fase.

@@ -17,11 +17,13 @@ Estado: preparado para HML; propuesto para producción.
 Mantener una identidad de aplicación estable y no-root, con una lista explícita de excepciones para procesos efímeros de administración. Enumerar servicios que escriben, media, logs y estado persistente del scheduler. Verificar mapeos reales de UID/GID y montajes de lectura/escritura; conservar propietarios y acceso efectivo existente. No utilizar chmod777 ni chown recursivo como reparación general.
 
 ## 2. Preflight obligatorio antes de interrumpir servicios
-Estado: ampliación propuesta; no está completa en el candidato.
+Estado: primer pase de ACL y backup previo al corte implementado para HML; validación en servidor pendiente. El resto de los gates sigue propuesto.
 
 Validar configuración efectiva, identidad objetivo, rutas permitidas, montajes, espacio e inodos. Construir y comprobar disponibilidad del aprovisionador antes de detener el servicio anterior. Generar backup privado de ACL/modos/identidad de inodes y comprobar su destino de escritura.
 
-Ejecutar el aprovisionamiento idempotente antes del corte y volver a verificar después de cualquier migrador que pueda crear archivos con otra identidad. El candidato actual construye el aprovisionador antes del corte, pero en el flujo completo aplica ACL después de bajar el stack: mover o agregar el primer pase previo al corte requiere implementación y pruebas adicionales.
+El deploy HML construye el aprovisionador y ejecuta un primer pase idempotente antes de detener servicios o ejecutar el migrador, tanto en modo completo como selectivo. El helper crea y sincroniza un backup privado antes de modificar ACL; un fallo aborta el script. Se conserva el segundo pase después del migrador, porque puede crear archivos con otra identidad. Los rangos sin servicios no ejecutan aprovisionamiento.
+
+Este pase modifica ACL con los servicios anteriores activos; no es un chequeo de solo lectura. Ante fallo parcial conserva el backup y no detiene esos servicios; no revierte ACL automáticamente. No garantiza disponibilidad ante un fallo posterior al corte ni sustituye la prueba efectiva como UID de aplicación. Validaciones explícitas de capacidad de disco/inodos, configuración efectiva y prueba sintética completa continúan pendientes.
 
 Si falla el preflight, abortar manteniendo el servicio anterior; no elevar la aplicación a root para continuar.
 

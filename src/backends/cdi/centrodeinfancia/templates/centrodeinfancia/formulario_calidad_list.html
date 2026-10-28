@@ -5,9 +5,7 @@
 
 {% block content %}
     <div class="container-fluid">
-        <div class="d-flex justify-content-between mb-3">
-            <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
-               class="btn btn-outline-secondary">Volver al legajo</a>
+        <div class="d-flex justify-content-end mb-3">
             {% if puede_editar %}
                 <a href="{% url 'centrodeinfancia_calidad_cargar' centro.id %}"
                    class="btn btn-primary">

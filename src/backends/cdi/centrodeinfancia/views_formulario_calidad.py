@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, ListView
 
@@ -136,6 +137,9 @@ class FormularioCalidadListView(FormularioCalidadCentroMixin, ListView):
                 "centro": centro,
                 "puede_editar": puede_editar,
                 "borrador": obtener_borrador(centro) if puede_editar else None,
+                "volver_url": reverse(
+                    "centrodeinfancia_detalle", kwargs={"pk": centro.pk}
+                ),
             }
         )
         return context

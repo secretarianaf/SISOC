@@ -46,13 +46,13 @@
                     <div class="nav-item col-6 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Nombre del Comedor/Merendero
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.nombre | default_if_none:"Sin información" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-6 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿En qué año comenzó a funcionar?
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.comienzo | default_if_none:"Sin información" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.comienzo | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>
@@ -96,13 +96,13 @@
                     <div class="nav-item col-6 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Nombre y Apellido
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.referente.nombre | default_if_none:"Sin información" }} {{ relevamiento.comedor.referente.apellido | default_if_none:"Sin información" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.referente.nombre | default_if_none:"Sin información" }} {{ relevamiento.datos_comedor.referente.apellido | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-6 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             DNI de referente/responsable
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.referente.documento | default_if_none:"Sin información" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.referente.documento | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>
@@ -110,19 +110,19 @@
                     <div class="nav-item col-6 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Mail de referente/responsable
-                            <span class="username fw-bold fs-5"><a href="mailto:{{ relevamiento.comedor.referente.mail }}">{{ relevamiento.comedor.referente.mail | default_if_none:"Sin información" }}</a></span>
+                            <span class="username fw-bold fs-5"><a href="mailto:{{ relevamiento.datos_comedor.referente.mail }}">{{ relevamiento.datos_comedor.referente.mail | default_if_none:"Sin información" }}</a></span>
                         </div>
                     </div>
                     <div class="nav-item col-6 d-flex ">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Numero de referente/responsable
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.referente.celular | default_if_none:"Sin información" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.referente.celular | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-6 d-flex ">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Función
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.referente.funcion | default_if_none:"Sin información" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.referente.funcion | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>
@@ -145,61 +145,61 @@
                 <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Calle
-                        <span class="username fw-bold fs-5">{{ relevamiento.comedor.calle | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.calle | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Número
-                        <span class="username fw-bold fs-5">{{ relevamiento.comedor.numero | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.numero | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Entre calle 1
-                        <span class="username fw-bold fs-5">{{ relevamiento.comedor.entre_calle_1 | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.entre_calle_1 | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Entre calle 2
-                        <span class="username fw-bold fs-5">{{ relevamiento.comedor.entre_calle_2 | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.entre_calle_2 | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Provincia
-                        <span class="username fw-bold fs-5">{{ relevamiento.comedor.provincia.nombre | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.provincia | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Municipio
-                        <span class="username fw-bold fs-5">{{ relevamiento.comedor.municipio.nombre | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.municipio | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Localidad
-                        <span class="username fw-bold fs-5">{{ relevamiento.comedor.localida.nombre | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.localidad | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Partido
-                        <span class="username fw-bold fs-5">{{ relevamiento.comedor.partido | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.partido | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Barrio
-                        <span class="username fw-bold fs-5">{{ relevamiento.comedor.barrio | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.barrio | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Código postal
-                        <span class="username fw-bold fs-5">{{ relevamiento.comedor.codigo_postal | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.codigo_postal | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
             </div>
@@ -225,31 +225,31 @@
                 <div class="nav-item col d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Nombre completo
-                        <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.nombre | default_if_none:"Sin información" }}, {{ relevamiento.responsable_relevamiento.apellido | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.responsable.nombre | default_if_none:"Sin información" }}, {{ relevamiento.datos_comedor.responsable.apellido | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Mail
-                        <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.mail | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.responsable.mail | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Celular
-                        <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.celular | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.responsable.celular | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Documento
-                        <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.documento | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.responsable.documento | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-2 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Funcion
-                        <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.funcion | default_if_none:"Sin información" }}</span>
+                        <span class="username fw-bold fs-5">{{ relevamiento.datos_comedor.responsable.funcion | default_if_none:"Sin información" }}</span>
                     </div>
                 </div>
             </div>
@@ -792,7 +792,7 @@
                             <td>{{ prestacion.domingo_cena_actual | default_if_none:"Sin información" }}</td>
                             <td>{{ prestacion.domingo_cena_espera | default_if_none:"Sin información" }}</td>
                         </tr>
-                        {% if relevamiento.comedor.programa.nombre == "Abordaje comunitario - Línea Tradicional" %}
+                        {% if relevamiento.datos_comedor.programa == "Abordaje comunitario - Línea Tradicional" %}
                             <tr>
                                 <td>MERIENDA REFORZADA</td>
                                 <td>{{ prestacion.lunes_merienda_reforzada_actual | default_if_none:"Sin información" }}</td>

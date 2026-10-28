@@ -10,6 +10,7 @@ from django.utils.functional import cached_property
 
 from comedores.models import CategoriaComedor, Comedor, Referente, TipoDeComedor
 from core.soft_delete import SoftDeleteModelMixin
+from relevamientos.services import datos_comedor_snapshot as snapshot_service
 
 
 def _nullable_char(max_length=255, **kwargs):
@@ -1191,18 +1192,71 @@ class Relevamiento(
     punto_entregas = models.OneToOneField(
         to=PuntoEntregas, on_delete=models.PROTECT, blank=True, null=True
     )
+    datos_comedor_snapshot = models.JSONField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Datos generales del comedor al finalizar el relevamiento (#2797). "
+            "Evita que editar el comedor cambie relevamientos ya hechos."
+        ),
+    )
 
     def save(self, *args, **kwargs):
         self.validate_relevamientos_activos()
         self.set_referente_como_responsable()
+        self.congelar_datos_comedor()
+        self.__dict__.pop("datos_comedor", None)
 
         super().save(*args, **kwargs)
+
+    @property
+    def esta_finalizado(self):
+        return snapshot_service.esta_finalizado(self.estado)
+
+    @property
+    def datos_comedor_congelados(self):
+        return self.esta_finalizado and bool(self.datos_comedor_snapshot)
+
+    @cached_property
+    def datos_comedor(self):
+        """Datos del comedor para mostrar: el snapshot si existe, si no los vivos."""
+        if self.datos_comedor_snapshot:
+            return self.datos_comedor_snapshot
+        return snapshot_service.armar_snapshot(
+            self.comedor, self.responsable_relevamiento
+        )
+
+    def congelar_datos_comedor(self):
+        """Guarda el snapshot al finalizar, si todavía no lo tiene (#2797).
+
+        Se lee el comedor de la base: el PATCH de la app lo actualiza antes de
+        guardar el relevamiento y así se captura lo cargado en esta visita.
+        """
+        if not self.esta_finalizado or self.datos_comedor_snapshot:
+            return
+        if not self.comedor_id:
+            return
+        comedor = (
+            Comedor.objects.select_related(
+                "provincia", "municipio", "localidad", "programa", "referente"
+            )
+            .filter(pk=self.comedor_id)
+            .first()
+        )
+        if comedor is not None:
+            self.datos_comedor_snapshot = snapshot_service.armar_snapshot(
+                comedor, self.responsable_relevamiento
+            )
 
     def set_referente_como_responsable(self):
         """
         Si el responsable es el referente del comedor, sincronizar el campo
         ``responsable_relevamiento`` con el referente actual.
+
+        Un relevamiento finalizado con datos congelados no se toca (#2797).
         """
+        if self.datos_comedor_congelados:
+            return
         if self.responsable_es_referente and self.comedor and self.comedor.referente:
             self.responsable_relevamiento = self.comedor.referente
 

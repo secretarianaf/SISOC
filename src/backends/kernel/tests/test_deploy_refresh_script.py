@@ -40,6 +40,12 @@ def _backend_checkout(tmp_path: Path, *, include_celery: bool = True) -> Path:
     script.write_bytes(DEPLOY_SCRIPT.read_bytes().replace(b"\r\n", b"\n"))
     compose = checkout / "docker" / "compose"
     compose.mkdir(parents=True)
+    (compose / "docker-compose.produccion.yml").write_text(
+        "services: {}\n", encoding="utf-8"
+    )
+    (compose / "docker-compose.hml-runtime.yml").write_text(
+        "services: {}\n", encoding="utf-8"
+    )
     if include_celery:
         (compose / "docker-compose.celery.yml").write_text(
             "services: {}\n", encoding="utf-8"
@@ -103,11 +109,12 @@ def _run_deploy(
     origin_revision: str | None = None,
     backend_only: bool = False,
     backend_has_celery: bool = True,
+    environment: str = "qa",
     create_celery_on_merge: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     backend_checkout = _backend_checkout(tmp_path, include_celery=backend_has_celery)
     env_file = tmp_path / ".env"
-    env_file.write_text("ENVIRONMENT=qa\n", encoding="utf-8")
+    env_file.write_text(f"ENVIRONMENT={environment}\n", encoding="utf-8")
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
     _fake_git(fake_bin)
@@ -439,3 +446,29 @@ def test_worker_ocr_ausente_fuerza_fallback_completo(tmp_path):
     assert resultado.returncode == 0, resultado.stdout + resultado.stderr
     assert "No se pudieron resolver los servicios seleccionados" in resultado.stdout
     assert "up -d --no-deps" not in resultado.stdout
+
+
+@pytest.mark.parametrize("environment", ["homologacion", "hml", "staging"])
+def test_hml_runtime_permissions_precede_application_start(tmp_path, environment):
+    checkout = _mobile_checkout(
+        tmp_path, "git@github.com:secretarianaf/Espacios-Comunitarios.git"
+    )
+    result = _run_deploy(tmp_path, checkout, environment=environment)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "docker-compose.hml-runtime.yml" in result.stdout
+    build = result.stdout.index("build runtime_permissions")
+    down = result.stdout.index(" down ")
+    provision = result.stdout.index("run --rm --no-deps runtime_permissions")
+    startup = result.stdout.index(" up -d")
+    assert build < down < provision < startup
+
+
+@pytest.mark.parametrize("environment", ["qa", "prd"])
+def test_other_environments_do_not_change_runtime_identity(tmp_path, environment):
+    checkout = _mobile_checkout(
+        tmp_path, "git@github.com:secretarianaf/Espacios-Comunitarios.git"
+    )
+    result = _run_deploy(tmp_path, checkout, environment=environment)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "docker-compose.hml-runtime.yml" not in result.stdout
+    assert "runtime_permissions" not in result.stdout

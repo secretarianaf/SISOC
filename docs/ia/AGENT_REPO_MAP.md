@@ -1238,3 +1238,6 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
   de opciones remotas dependen solo de padres/territorio, no de todo el formulario.
 - Cambios funcionales, visuales y verificación:
   `docs/registro/cambios/2026-T4/2026-10-26-inet-react.md`.
+## Permisos de runtime HML
+
+HML agrega `docker/compose/docker-compose.hml-runtime.yml` desde `deploy_refresh.sh` y prepara ACL mediante `src/scripts/operacion/provision_hml_runtime_permissions.py`. No asumir que root demuestra permisos correctos para usuarios de aplicación. Evidencia y límites: `docs/registro/cambios/2026-T4/2026-10-28-hml-runtime-permisos-adjuntos.md`.

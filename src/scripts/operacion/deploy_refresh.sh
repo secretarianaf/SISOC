@@ -56,7 +56,8 @@ Mapeo por entorno:
   ENVIRONMENT=qa                    -> docker/compose/docker-compose.deploy.yml
   ENVIRONMENT=homologacion|hml|staging
                                   -> docker/compose/docker-compose.deploy.yml + docker/compose/docker-compose.produccion.yml
-                                     + SISOC-Mobile
+                                     + docker/compose/docker-compose.hml-runtime.yml + SISOC-Mobile
+  Solo HML: prepara ACL con backup privado antes del arranque; procesos UID10001:GID1016.
   ENVIRONMENT=prd|prod|production   -> docker/compose/docker-compose.deploy.yml + docker/compose/docker-compose.produccion.yml
 USAGE
 }
@@ -281,6 +282,9 @@ compose_for_environment() {
   esac
 
   COMPOSE_FILES+=("docker/compose/docker-compose.celery.yml")
+  case "$environment" in
+    homologacion|hml|staging) COMPOSE_FILES+=("docker/compose/docker-compose.hml-runtime.yml") ;;
+  esac
 }
 
 configure_compose_command() {
@@ -425,6 +429,15 @@ main() {
     fi
   fi
 
+  local -a runtime_setup=()
+  case "$ENVIRONMENT" in
+    homologacion|hml|staging)
+      runtime_setup=("${compose[@]}" --profile hml-runtime run --rm --no-deps runtime_permissions)
+      if [[ "$MODO" != ninguno ]]; then
+        run "${compose[@]}" --profile hml-runtime build runtime_permissions
+      fi
+      ;;
+  esac
   case "$MODO" in
     ninguno)
       log "Sin servicios que desplegar en este rango."
@@ -437,6 +450,7 @@ main() {
         run "${compose[@]}" --profile migrate build migrator
         run "${compose[@]}" --profile migrate run --rm migrator
       fi
+      if [[ "${#runtime_setup[@]}" -gt 0 ]]; then run "${runtime_setup[@]}"; fi
       run "${compose[@]}" up -d --no-deps "${servicios[@]}"
       ;;
     completo)
@@ -445,6 +459,7 @@ main() {
       run "${compose[@]}" --profile migrate build migrator
       run "${compose[@]}" "${DOWN_ARGS[@]}"
       run "${compose[@]}" --profile migrate run --rm migrator
+      if [[ "${#runtime_setup[@]}" -gt 0 ]]; then run "${runtime_setup[@]}"; fi
       run "${compose[@]}" up -d
       ;;
     *)

@@ -1,0 +1,29 @@
+# HML: identidad no-root y permisos persistentes de adjuntos
+
+## Alcance
+Implementación preparada en la rama `fix/hml-runtime-upload-permissions`, basada en la revisión HML `2478a213`. No aplicada todavía al servidor ni integrada upstream. Producción y QA no seleccionan el nuevo overlay.
+
+## Comportamiento previsto
+- Solo HML agrega `docker/compose/docker-compose.hml-runtime.yml`: 18 procesos de aplicación/worker/scheduler usan UID10001:GID1016, identidad exclusiva de aplicación y grupo de despliegue existente. Migrador, DB y frontends no cambian.
+- El deploy construye primero un aprovisionador efímero, sin red, usando el stage base ya existente. Luego prepara ACL antes de arrancar aplicaciones. El único proceso root nuevo es ese aprovisionador; no sirve tráfico.
+- `src/scripts/operacion/provision_hml_runtime_permissions.py` verifica por defecto, sin cambios. La aplicación explícita requiere root y backup privado nuevo.
+- ACL de lectura/escritura para archivos, escritura/recorrido para directorios y herencia para futuros adjuntos en media, logs y el volumen del scheduler. Conserva propietarios, contenido y acceso efectivo anterior de otros usuarios/grupos; al ampliar la máscara ACL puede cambiar la representación de bits de grupo en stat.
+- No sigue symlinks. Compara identidad de inode y ACL antes de modificar; falla ante cambios concurrentes. Los backups incluyen metadatos sensibles de rutas: quedan fuera de media en `.deploy/runtime-permissions/`, con modo0600 y sin nombres de documentos en stdout.
+- El script del aprovisionador se monta solo lectura desde el checkout validado; no se monta código de aplicación en los contenedores web.
+
+## Verificación
+- ACL: RED antes del helper y GREEN después; permisos heredados en directorios futuros, datos/propietarios conservados, idempotencia y no ampliación de usuarios previamente limitados por máscara.
+- Despliegue: RED de HML sin overlay; GREEN con aliases homologacion/hml/staging y orden de aprovisionamiento anterior al arranque.
+- Suite aislada Linux: 29 tests pasan, sin red, DB ni datos reales. Bash syntax y Black check correctos; Pylint E/F sin errores (no equivale a lint completo de CI).
+- Verificación independiente: 27 tests y probes de archivo existente, herencia, symlinks y backup correctos. Comparación diferencial QA/PRD: stdout, stderr y exit code iguales al baseline, normalizando solo rutas temporales.
+- Merge real de Docker Compose con perfiles y .env sintético: 18 procesos no-root en HML, migrador sin cambios y composición sin overlay para producción.
+- Revisión nativa: R1-001/R3-001 reproducidos y corregidos; validación dirigida aprobada y acknowledgement completado. Nuevas ACL default no agregan grants de grupo/otros; si el UID objetivo es dueño se ajusta su entrada owner, no solo una entrada nominada.
+- Plan preventivo por deploy: `docs/plans/2026-T4/2026-10-28-prevencion-permisos-adjuntos-hml-produccion.md`. Es propuesta; los gates previos al corte y rollback automático no están implementados.
+- Pendientes: integración upstream, aplicación HML y aceptación HTTP/humana.
+
+## Reversión y límites
+Antes de aplicar en HML se debe conservar configuración/identidad anterior y el backup ACL con inode, propietario, modo y atributos anteriores. La reversión restaura solo metadatos coincidentes con ese backup; no reemplaza documentos ni aplica chown recursivo. Ante fallo parcial se conserva el backup y se detiene el arranque, sin afirmar rollback automático.
+
+No se inspeccionó producción. Las ACL de HML no se replican allí automáticamente; compartir código no demuestra igualdad de identidades ni permisos. Ejecutar como root puede ocultar la misma desalineación. La permanencia en futuros deploys requiere incorporar estos archivos al repositorio; un parche remoto no integrado no lo demuestra.
+
+Risk: item 2 (ACL e identidad de procesos), item 5 (despliegue HML).

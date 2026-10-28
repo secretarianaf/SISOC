@@ -10,6 +10,8 @@ import sys
 import tempfile
 import unittest
 
+import yaml
+
 SCRIPT = (
     Path(__file__).resolve().parents[4]
     / "src/scripts/operacion/provision_hml_runtime_permissions.py"
@@ -165,6 +167,38 @@ class HmlPermissionTests(unittest.TestCase):
         self.assertEqual(self.child_write(self.root), 0)
         self.assertEqual((self.file.stat().st_mode >> 6) & 7, 6)
         self.assertEqual(self.run_cli().returncode, 0)
+
+
+class HmlComposePolicyTests(unittest.TestCase):
+    def test_every_persistent_writer_has_explicit_hml_identity(self):
+        root = SCRIPT.parents[3]
+        services = {}
+        for name in ("deploy", "produccion", "celery"):
+            path = root / f"docker/compose/docker-compose.{name}.yml"
+            for service, body in yaml.safe_load(path.read_text())["services"].items():
+                services[service] = {**services.get(service, {}), **body}
+        overlay = yaml.safe_load(
+            (root / "docker/compose/docker-compose.hml-runtime.yml").read_text()
+        )["services"]
+        writers = []
+        for service, body in services.items():
+            if service == "migrator":
+                continue
+            for volume in body.get("volumes", []):
+                if isinstance(volume, str):
+                    parts = volume.split(":")
+                    target = parts[1] if len(parts) > 1 else parts[0]
+                    read_only = len(parts) > 2 and "ro" in parts[2].split(",")
+                else:
+                    target = volume["target"]
+                    read_only = volume.get("read_only", False)
+                if target in ("/sisoc/media", "/sisoc/logs", "/beat") and not read_only:
+                    writers.append(service)
+                    break
+        self.assertTrue(writers)
+        for service in writers:
+            with self.subTest(service=service):
+                self.assertEqual(overlay.get(service, {}).get("user"), "10001:1016")
 
 
 if __name__ == "__main__":

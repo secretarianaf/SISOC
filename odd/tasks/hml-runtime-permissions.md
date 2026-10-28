@@ -1,6 +1,6 @@
 # HML: permisos persistentes de adjuntos sin root
 Objetivo: corregir únicamente HML; producción queda sin cambios. Base desplegada: 2478a213c773b4662cb6119c71c728ba1a629b0b.
-Rama: fix/hml-runtime-upload-permissions. Estrategia: single-pr, excepción de tamaño aprobada al autorizar una única PR; previsión inicial 380 líneas propias. Runner: pytest aislado en Linux, sin Django/DB.
+Rama: fix/hml-runtime-upload-permissions-pr. Estrategia: single-pr, excepción de tamaño aprobada al autorizar una única PR; previsión inicial 380 líneas propias. Runner: pytest aislado en Linux, sin Django/DB.
 
 ## Specs
 - S1. Pedido: "parece seguir pasando ese error en otros adjuntos, verifica que no se repita". Comprobar todos los destinos de media, no solamente los dos iniciales.
@@ -16,6 +16,8 @@ Rama: fix/hml-runtime-upload-permissions. Estrategia: single-pr, excepción de t
 - T3 | S1-S4 | verificación independiente (riesgo 2 y 5) | verificación local/nativa completa; HML pendiente | 29 tests y revisión cerrada, aceptación de runtime pendiente.
 
 - T4 | S5 | inline, documento de planificación | preparado | plan con fases, gates, aceptación, límites y autorización separada de producción.
+
+- T5 | S4 | inline, publicación autorizada | en preparación | PR única contra development, sin merge ni deploy.
 
 ## Log
 - L1. Usuario: "me reportan que en hml no se estan pudiendo subir archivos"; "error 400 y \"no se pudo guardar el archivo\"".
@@ -36,3 +38,5 @@ Rama: fix/hml-runtime-upload-permissions. Estrategia: single-pr, excepción de t
 - L13. No hay nuevo despliegue HML, cambios de ACL reales ampliados, acceso a producción, commit ni publicación. Para persistencia upstream falta autorización de publicación y estrategia de entrega para la unidad coherente de más de 400 líneas. Los documentos posteriores al cierre son registro/plan, sin nuevas modificaciones funcionales.
 
 - L14. Usuario: "autorizo" (publicar una única PR). Identidad GitHub verificada: juanikitro. Base origin/development actual59a8f797 incluye health_urls_worker y front_inet; se trasladará exclusivamente nuestro cambio a una rama nueva desde esa base, preservando ambos aportes. Se acepta la unidad coherente sobre400líneas, sin eliminar tests/docs ni usar excepcion-calidad. Merge y producción excluidos.
+
+- L15. Publicación preparada desde origin/development59a8f797. Se preservan front_inet/INET_IMAGE_TAG y se cubre health_urls_worker, nuevo escritor de logs. Guard genérico YAML detectó RED la omisión y pasó GREEN tras agregar identidad; suite30tests, Blackcheck, Bashsyntax y PylintE/F correctos. Verificación independiente de delta PASS y diferencial QA/PRD idéntico. Compose real confirma19escritores. Helper algorítmicamente idéntico a la corrección nativa previa; no atribuir su autoridad consumida al nuevo candidato. Snapshot original941fc59c0; traslado6299ddb4f; último ajuste en el commit de publicación.

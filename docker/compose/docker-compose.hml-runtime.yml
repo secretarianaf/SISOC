@@ -20,6 +20,7 @@ services:
   ocr_worker: {<<: *hml-runtime}
   bulk_credentials_worker: {<<: *hml-runtime}
   ciudadanos_import_worker: {<<: *hml-runtime}
+  health_urls_worker: {<<: *hml-runtime}
   mailing_worker: {<<: *hml-runtime}
   user_import_worker: {<<: *hml-runtime}
   celery_pas_worker: {<<: *hml-runtime}

@@ -9,7 +9,11 @@ from config.settings import *  # noqa: F401,F403  pylint: disable=wildcard-impor
 from config.settings import MIDDLEWARE, TEMPLATES
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    "unfold.apps.BasicAppConfig",
+    "unfold.contrib.filters",
+    "unfold.contrib.import_export",
+    "unfold.contrib.inlines",
+    "core.admin_apps.SisocAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",

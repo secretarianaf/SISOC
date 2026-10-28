@@ -41,7 +41,11 @@ class ContentSecurityPolicyMiddleware:
             script_src_tokens.append("'unsafe-inline'")
         else:
             script_src_tokens.append(f"'nonce-{request.csp_nonce}'")
-        if allow_unsafe_eval:
+        # El admin usa Django Unfold, cuyo Alpine.js evalúa expresiones con
+        # AsyncFunction (#2789). Aplica a todo /admin/, incluido el login, que
+        # no renderiza contenido cargado por usuarios; el resto del sitio sigue
+        # con la política global.
+        if allow_unsafe_eval or request.path.startswith("/admin/"):
             script_src_tokens.append("'unsafe-eval'")
         style_src_tokens = ["'self'"]
         if allow_unsafe_inline_scripts:

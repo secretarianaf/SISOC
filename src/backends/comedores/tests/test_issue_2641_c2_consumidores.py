@@ -178,11 +178,14 @@ def test_fragmentos_renderizan_datos_y_escapan_html(client):
 )
 def test_admin_del_dueno_es_real_y_conserva_permisos(client, nombre):
     path = reverse(f"admin:{nombre}_changelist")
-    assert resolve(path).func.__module__.startswith("django.contrib.admin")
-    # Ser staff no concede acceso al modelo.
+    # Vista real del admin (Django o Unfold, #2789), no el proxy al dueño.
+    assert resolve(path).func.__module__.startswith(("django.contrib.admin", "unfold."))
+    # Ser staff no alcanza: el admin es solo para superusuarios (#2789).
     user = User.objects.create_user(username="staff_sin_permiso", is_staff=True)
     client.force_login(user)
-    assert client.get(path).status_code == 403
+    response = client.get(path)
+    assert response.status_code == 302
+    assert response.url.startswith(reverse("admin:login"))
     user.is_superuser = True
     user.save(update_fields=["is_superuser"])
     assert client.get(path).status_code == 200

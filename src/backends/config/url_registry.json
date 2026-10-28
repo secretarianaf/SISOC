@@ -1,5 +1,75 @@
 [
  {
+  "name": "",
+  "namespace": "",
+  "regex": "^(?P<resto>actividades/.*)$"
+ },
+ {
+  "name": "",
+  "namespace": "",
+  "regex": "^(?P<resto>ajax/actividades/.*)$"
+ },
+ {
+  "name": "",
+  "namespace": "",
+  "regex": "^(?P<resto>beneficiarios/.*)$"
+ },
+ {
+  "name": "",
+  "namespace": "",
+  "regex": "^(?P<resto>centros/.*)$"
+ },
+ {
+  "name": "",
+  "namespace": "",
+  "regex": "^(?P<resto>informecabal/.*)$"
+ },
+ {
+  "name": "",
+  "namespace": "",
+  "regex": "^admin/pwa/auditoriasesionpwa/(?P<object_id>[0-9]+)/change/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "",
+  "regex": "^admin/pwa/auditoriasesionpwa/(?P<object_id>[0-9]+)/delete/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "",
+  "regex": "^admin/pwa/auditoriasesionpwa/(?P<object_id>[0-9]+)/history/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "",
+  "regex": "^admin/pwa/auditoriasesionpwa/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "",
+  "regex": "^admin/pwa/auditoriasesionpwa/add/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "",
+  "regex": "^ciudadanos/(?P<pk>[0-9]+)/contribucion/(?P<nombre>[^/]+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "",
+  "regex": "^interno/espacios/contexto/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "",
+  "regex": "^interno/espacios/login/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "",
+  "regex": "^interno/usuarios/operacion/\\Z"
+ },
+ {
   "name": "acta_complementaria_crear",
   "namespace": "",
   "regex": "^comedores/(?P<comedor_pk>[0-9]+)/acta\\-complementaria/crear\\Z"
@@ -2318,6 +2388,11 @@
   "name": "health_check",
   "namespace": "",
   "regex": "^health/\\Z"
+ },
+ {
+  "name": "health_urls",
+  "namespace": "",
+  "regex": "^health/urls/\\Z"
  },
  {
   "name": "importar_datos",
@@ -4863,6 +4938,1381 @@
   "name": "vpsl_ubicacion_buscar",
   "namespace": "",
   "regex": "^ver\\-para\\-ser\\-libre/ubicacion/buscar/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/(?P<url>.*)$"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/actacierrecomision/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/asistenciasesion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/centro/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/comision/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/comisioncurso/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/comisionhorario/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/curso/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/evaluacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/inscripcion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/inscripcionoferta/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/institucioncontacto/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/institucionidentificadorhist/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/institucionubicacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/modalidadcursada/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/modalidadinstitucional/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/ofertainstitucional/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/planversioncurricular/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/resultadoevaluacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/sector/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/sesioncomision/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/solicitudinscripcionpublica/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/subsector/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/tituloreferencia/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/voucher/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/voucherlog/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/voucherrecarga/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/VAT/voucheruso/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/acompanamientos/acompanamiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/acompanamientos/hitos/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/acompanamientos/hitosintervenciones/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/acompanamientos/informacionrelevante/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/acompanamientos/prestacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/admision/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/admisionhistorial/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/archivoadmision/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/documentacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/documentosexpediente/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/estadoadmision/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/formularioproyectodeconvenio/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/formularioproyectodisposicion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/historialestadosadmision/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/incidenciatemplateinformetecnico/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/incidenciatemplateinformetecnicocaso/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/informetecnico/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/informetecnicopdf/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/plantillainformetecnico/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/plantillainformetecnicopublicacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/plantillainformetecnicoversion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/providencia/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/tipoconvenio/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/admisiones/variabletemplateinformetecnico/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/auditlog/logentry/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/audittrail/auditoriasesionpwa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/auth/group/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/auth/user/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/authtoken/tokenproxy/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/subintervencion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipocontacto/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipodestinatario/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/catalogo_intervenciones/tipointervencion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/asignaciontecnico/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/cupomovimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/cupotitular/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/documentolegajo/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/estadoexpediente/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/estadolegajo/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/expediente/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/expedienteciudadano/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/expedienteestadohistorial/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/historialcomentarios/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/historialcupo/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/historialvalidaciontecnica/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/organismo/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/pagoexpediente/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/pagonomina/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/provinciacupo/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/registroerroneo/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/subsanacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/tipocruce/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/tipodocumento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/validacionrenaper/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/accesocdf/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/actividad/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/beneficiario/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/cabalarchivo/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/categoria/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/centro/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/informecabalregistro/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/participanteactividad/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/participanteactividadhistorial/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodefamilia/responsable/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/accesocdi/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/asistencianominacentroinfancia/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/centrodeinfancia/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/departamentoipi/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/formulariocdi/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/formulariocdiarticulationfrequency/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/formulariocdiroomdistribution/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/formulariocdiwaitlistbyagegroup/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/intervencioncentroinfancia/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/nominacentroinfancia/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/nominacentroinfanciaderivacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/observacioncentroinfancia/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/ofertaservicio/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/centrodeinfancia/trabajador/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ciudadanos/ciudadano/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ciudadanos/ciudadanosimportjob/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ciudadanos/ciudadanosimportjobrow/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ciudadanos/grupofamiliar/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ciudadanos/historialtransferencia/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ciudadanos/interaccion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ciudadanos/programatransferencia/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/capacitacioncomedorcertificado/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/colaboradorespacio/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/comedor/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/comedordatosconveniopnud/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/estadohistorial/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/historialvalidacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/imagencomedor/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/nomina/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/nominaderivacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/observacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/programas/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/referente/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/territorialsynclog/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/tipodecomedor/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comedores/valorcomida/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comunicados/comunicado/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comunicados/comunicadoadjunto/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/comunicados/mailingjob/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/core/dia/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/core/localidad/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/core/mes/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/core/montoprestacionprograma/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/core/municipio/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/core/nacionalidad/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/core/programa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/core/provincia/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/core/sexo/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/core/turno/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/dashboard/dashboard/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/dashboard/tablero/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/datacalle/encuesta/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/datacalle/relevamiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/dispositivos/dispositivo/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/duplas/dupla/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/encuestas/cumplimientoronda/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/encuestas/encuesta/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/encuestas/pregunta/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/encuestas/recordatoriousuario/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/encuestas/respuestapregunta/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/encuestas/respuestaronda/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/encuestas/rondaencuesta/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/encuestas/segmentaciondestinatario/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/encuestas/segmentacionencuesta/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/expedientespagos/expedientepago/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/convenioproyecto/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/firmante/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/lineaproyecto/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/programaorganizacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/regionabordaje/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/gestion_organizaciones/subzonaabordaje/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/historial/historial/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/archivosimportados/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/erroresimportacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/exitoimportacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/importarexpediente/registroimportado/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/acta/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/asignacionescuela/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/escuela/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/eventoinspeccion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/inspeccion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/inspecciones/notificacionpapel/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/insumos/insumo/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/insumos/insumocategoria/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/intervenciones/intervencion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ocr/ocrjob/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ocr/ocrjobdocument/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/archivoorganizacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/documentacionorganizacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/organizacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/proyectoorganizacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/regionabordajecomunitario/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/rolfirmante/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/subzonaabordajecomunitario/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/organizaciones/tipoorganizacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pas/pasaviso/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pas/pascircuitomensual/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pas/pascontrolrenaper/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pas/pasdeclaracionjurada/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pas/pasestado/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pas/pasexportaciontokens/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pas/pashistorialestado/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pas/pasincompatibilidad/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pas/pasinforme/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pas/pasinvitacionddjj/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pas/paspersona/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pas/passupervivenciabatch/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pas/passupervivenciarun/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pwa/accesocomedorpwa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pwa/accesoorganizacionpwa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pwa/actividadespaciopwa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pwa/auditaccesocomedorpwa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pwa/auditoriaoperacionpwa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pwa/catalogoactividadpwa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pwa/colaboradorespaciopwa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pwa/coordinadorequipotecnicopwa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pwa/inscriptoactividadespaciopwa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pwa/lecturamensajepwa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pwa/nominaespaciopwa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pwa/pushsubscriptionpwa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/pwa/registroasistencianominapwa/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/actividadesextrasseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/almacenamientoalimentosseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/asistenciatecnicaseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/cantidadcolaboradores/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/cierreseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/comprasseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/condicioneshigieneseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/excepcion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/frecuenciaalimentosseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/frecuenciacompraalimentosseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/frecuencialimpieza/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/frecuenciarecepcionrecursos/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/fuentecompras/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/fuenterecursos/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/funcionamientoseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/itemrecetaseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/menuseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/motivoexcepcion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/prestacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/prestacionseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/primerseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/recursosseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/registroasistenciaseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/relevamiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/rendicioncuentasseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/seguimientopnud/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/serviciosbasicosseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/tareascomedorseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/tarjetaseguimiento/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/tipoagua/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/tipocombustible/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/tipodesague/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/tipoespacio/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/tipogestionquejas/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/tipomodalidadprestacion/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/relevamientos/tiporecurso/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/rendicioncuentasfinal/documentorendicionfinal/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/rendicioncuentasfinal/estadodocumentorendicionfinal/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/rendicioncuentasfinal/rendicioncuentasfinal/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/rendicioncuentasfinal/tipodocumentorendicionfinal/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/rendicioncuentasmensual/documentacionadjunta/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/rendicioncuentasmensual/rendicioncuentamensual/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/rest_framework_api_key/apikey/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/users/bulkcredentialsjob/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/users/bulkcredentialsjobrow/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/users/profile/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/users/userimportjob/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/users/userimportjobrow/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/casolaboratoriovpsl/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/checklistjornadavpsl/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/cierrediariovpsl/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/evaluacionsedeitinerariovpsl/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/historialchecklistsedevpsl/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/historialcierrediariovpsl/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/historialestadovpsl/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/historiallaboratoriovpsl/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/itinerariovpsl/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/jornadavpsl/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/registronominalvpsl/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/sedevpsl/(?P<object_id>.+)/\\Z"
+ },
+ {
+  "name": "",
+  "namespace": "admin",
+  "regex": "^admin/ver_para_ser_libre/vehiculovpsl/(?P<object_id>.+)/\\Z"
  },
  {
   "name": "VAT_actacierrecomision_add",
@@ -12253,5 +13703,320 @@
   "name": "log_list",
   "namespace": "audittrail",
   "regex": "^auditoria/\\Z"
+ },
+ {
+  "name": "asistencia",
+  "namespace": "inet_api",
+  "regex": "^api/inet/sesiones/(?P<pk>[0-9]+)/asistencia/\\Z"
+ },
+ {
+  "name": "centros-delete-preview",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+ },
+ {
+  "name": "centros-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centros-edit-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/form/\\Z"
+ },
+ {
+  "name": "centros-edit-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "centros-filter-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/filter\\-form/\\Z"
+ },
+ {
+  "name": "centros-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/form/\\Z"
+ },
+ {
+  "name": "centros-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/\\Z"
+ },
+ {
+  "name": "centros-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "ciudadano-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ciudadano\\-form/\\Z"
+ },
+ {
+  "name": "ciudadanos",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/ciudadanos/\\Z"
+ },
+ {
+  "name": "comisiones-delete-preview",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+ },
+ {
+  "name": "comisiones-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comisiones-edit-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/form/\\Z"
+ },
+ {
+  "name": "comisiones-edit-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "comisiones-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/form/\\Z"
+ },
+ {
+  "name": "comisiones-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/\\Z"
+ },
+ {
+  "name": "comisiones-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "contactos-delete-preview",
+  "namespace": "inet_api",
+  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+ },
+ {
+  "name": "contactos-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "contactos-edit-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/form/\\Z"
+ },
+ {
+  "name": "contactos-edit-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "contactos-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/contactos/form/\\Z"
+ },
+ {
+  "name": "contactos-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/contactos/\\Z"
+ },
+ {
+  "name": "contactos-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/contactos/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "cursos-delete-preview",
+  "namespace": "inet_api",
+  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+ },
+ {
+  "name": "cursos-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "cursos-edit-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/form/\\Z"
+ },
+ {
+  "name": "cursos-edit-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "cursos-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/cursos/form/\\Z"
+ },
+ {
+  "name": "cursos-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/cursos/\\Z"
+ },
+ {
+  "name": "cursos-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/cursos/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "estado",
+  "namespace": "inet_api",
+  "regex": "^api/inet/inscripciones/(?P<pk>[0-9]+)/estado/\\Z"
+ },
+ {
+  "name": "horario-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horario\\-form/\\Z"
+ },
+ {
+  "name": "horarios",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/horarios/\\Z"
+ },
+ {
+  "name": "horarios-delete-preview",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+ },
+ {
+  "name": "horarios-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "horarios-edit-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/form/\\Z"
+ },
+ {
+  "name": "horarios-edit-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "horarios-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horarios/form/\\Z"
+ },
+ {
+  "name": "horarios-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horarios/\\Z"
+ },
+ {
+  "name": "horarios-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horarios/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "inscribir",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/inscribir/\\Z"
+ },
+ {
+  "name": "inscripciones-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/inscripciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "inscripciones-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/inscripciones/\\Z"
+ },
+ {
+  "name": "planes-delete-preview",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+ },
+ {
+  "name": "planes-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "planes-edit-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/form/\\Z"
+ },
+ {
+  "name": "planes-edit-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "planes-filter-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/filter\\-form/\\Z"
+ },
+ {
+  "name": "planes-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/form/\\Z"
+ },
+ {
+  "name": "planes-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/\\Z"
+ },
+ {
+  "name": "planes-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "sesiones-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/sesiones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "sesiones-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/sesiones/\\Z"
+ },
+ {
+  "name": "session",
+  "namespace": "inet_api",
+  "regex": "^api/inet/session/\\Z"
+ },
+ {
+  "name": "ubicaciones-delete-preview",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+ },
+ {
+  "name": "ubicaciones-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "ubicaciones-edit-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/form/\\Z"
+ },
+ {
+  "name": "ubicaciones-edit-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "ubicaciones-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ubicaciones/form/\\Z"
+ },
+ {
+  "name": "ubicaciones-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ubicaciones/\\Z"
+ },
+ {
+  "name": "ubicaciones-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ubicaciones/options/(?P<field>[^/]+)/\\Z"
  }
 ]

@@ -390,6 +390,8 @@ export const getTheme = (mode: PaletteMode = 'light') => {
       MuiChip: {
         styleOverrides: {
           root: { ...typography.chip, borderRadius: radius.full },
+          // Ícono de quitar: action/active (MUI usa text/primary al 26%).
+          deleteIcon: ({ theme }) => ({ color: theme.palette.action.active, '&:hover': { color: theme.palette.text.primary } }),
           filled: ({ theme, ownerState }) => ownerState.color === 'default'
             ? { backgroundColor: theme.palette.action.selected, color: theme.palette.text.primary }
             : {},
@@ -419,6 +421,8 @@ export const getTheme = (mode: PaletteMode = 'light') => {
       // Paper: los paneles del sistema usan borde en vez de sombra.
       MuiPaper: {
         styleOverrides: {
+          // En oscuro MUI aclara el Paper elevado con un gradiente; Figma usa background/paper plano.
+          root: { backgroundImage: 'none' },
           outlined: ({ theme }) => ({
             borderRadius: radius.large,
             borderColor: theme.palette.divider,
@@ -434,8 +438,16 @@ export const getTheme = (mode: PaletteMode = 'light') => {
       },
       MuiTableCell: {
         styleOverrides: {
+          // MUI aclara el divider un 88% por defecto; Figma usa el token `divider` tal cual.
+          root: ({ theme }) => ({ borderBottom: `${border.thin}px solid ${theme.palette.divider}` }),
           head: ({ theme }) => ({ ...theme.typography.overline, lineHeight: 1.5, color: theme.palette.text.secondary, backgroundColor: 'transparent' }),
           body: ({ theme }) => ({ ...theme.typography.body2 }),
+        },
+      },
+      // Placeholder: text/secondary sólido (MUI lo atenúa al 42%).
+      MuiInputBase: {
+        styleOverrides: {
+          input: ({ theme }) => ({ '&::placeholder': { color: theme.palette.text.secondary, opacity: 1 } }),
         },
       },
       MuiOutlinedInput: {
@@ -537,10 +549,17 @@ export const getTheme = (mode: PaletteMode = 'light') => {
           root: ({ theme }) => ({
             borderRadius: radius.medium,
             padding: theme.spacing(0.75, 2),
-            '&.MuiAlert-standardError, &.MuiAlert-outlinedError': { color: theme.palette.error.text, '& .MuiAlert-icon': { color: theme.palette.error.text } },
-            '&.MuiAlert-standardWarning, &.MuiAlert-outlinedWarning': { color: theme.palette.warning.text, '& .MuiAlert-icon': { color: theme.palette.warning.text } },
-            '&.MuiAlert-standardInfo, &.MuiAlert-outlinedInfo': { color: theme.palette.info.text, '& .MuiAlert-icon': { color: theme.palette.info.text } },
-            '&.MuiAlert-standardSuccess, &.MuiAlert-outlinedSuccess': { color: theme.palette.success.text, '& .MuiAlert-icon': { color: theme.palette.success.text } },
+            // Standard: fondo main al 8%, ícono en `.dark` y texto en `.text`, en ambos modos.
+            ...Object.fromEntries((['error', 'warning', 'info', 'success'] as const).flatMap((severity) => {
+              const name = severity.charAt(0).toUpperCase() + severity.slice(1);
+              const color = theme.palette[severity];
+              return [
+                [`&.MuiAlert-standard${name}`, { backgroundColor: alpha(color.main, 0.08), color: color.text, '& .MuiAlert-icon': { color: color.dark } }],
+                [`&.MuiAlert-outlined${name}`, { color: color.text, '& .MuiAlert-icon': { color: color.dark } }],
+              ];
+            })),
+            // Filled (Snackbar): el botón de cierre usa action/active.
+            '&.MuiAlert-filled .MuiAlert-action .MuiIconButton-root': { color: theme.palette.action.active },
             '&.MuiAlert-filledError': { backgroundColor: theme.palette.error.main, color: theme.palette.error.contrastText, fontWeight: 400 },
             '&.MuiAlert-filledWarning': { backgroundColor: theme.palette.warning.main, color: theme.palette.warning.contrastText, fontWeight: 400 },
             '&.MuiAlert-filledInfo': { backgroundColor: theme.palette.info.main, color: theme.palette.info.contrastText, fontWeight: 400 },

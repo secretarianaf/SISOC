@@ -1,8 +1,19 @@
 services:
+  frontend_tools:
+    image: node:22.14.0
+    profiles: [tools]
+    working_dir: /app/src/frontends
+    volumes:
+      - ./src/frontends:/app/src/frontends
+      - ./src/scripts/frontends:/app/src/scripts/frontends:ro
+      - front_inet_node_modules:/app/src/frontends/node_modules
+    command: ["npm", "run", "typecheck"]
+
   django:
     environment:
       FRONT_VPSL_ORIGIN: http://front_vpsl:5173
-      FRONTEND_V2_HMR_ORIGINS: http://localhost:5173,ws://localhost:5173
+      FRONT_INET_ORIGIN: http://front_inet:5173
+      FRONTEND_V2_HMR_ORIGINS: http://localhost:5173,ws://localhost:5173,http://localhost:5175,ws://localhost:5175
   front_vpsl:
     build:
       target: dev
@@ -14,5 +25,17 @@ services:
     ports:
       - "127.0.0.1:5173:5173"
 
+  front_inet:
+    build:
+      target: dev
+    command: ["sh", "-c", "npm ci && npm run dev -w @sisoc/inet -- --host 0.0.0.0"]
+    volumes:
+      - ./src/frontends:/app/src/frontends
+      - ./src/scripts/frontends:/app/src/scripts/frontends:ro
+      - front_inet_node_modules:/app/src/frontends/node_modules
+    ports:
+      - "127.0.0.1:5175:5173"
+
 volumes:
   front_vpsl_node_modules:
+  front_inet_node_modules:

@@ -24,6 +24,7 @@
   - Base comun: `docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml up -d --build`
   - Produccion con worker extra: `docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml -f docker/compose/docker-compose.produccion.yml up -d --build`
 - En produccion, `docker/compose/docker-compose.produccion.yml` agrega `bulk_credentials_worker` con `DJANGO_SERVICE_ROLE=bulk_credentials_worker` para que el worker quede levantado junto con la aplicacion web.
+- En HML/PRD, `docker/compose/docker-compose.produccion.yml` agrega `health_urls_worker` (imagen del core, `DJANGO_SERVICE_ROLE=health_urls_worker`): chequea las URLs sin parametros en `HEALTH_URLS_HORARIOS` (por defecto 06:00, 12:00 y 18:00) con el usuario técnico `sisoc-health-urls` (superusuario sin contraseña utilizable que crea el propio chequeo; desactivarlo apaga el chequeo) y deja el resultado en `logs/health_urls.json`, que se ve en `/health/urls/` (solo superusuarios). Si una corrida falla, el error queda en ese mismo JSON. A mano: `python manage.py chequear_urls`.
 - En los deploys versionados no se levanta `mysql` dentro de Compose; la base se resuelve por variables `DATABASE_*` definidas en el `.env` del host.
 
 ## Actualizacion operativa desde Git

@@ -4,7 +4,8 @@ El core y cada backend (src/backends/config/backends.json) corren con su propio 
 pero sus templates y vistas hacen ``reverse()`` de nombres del otro: el menú
 del core enlaza ``dispositivos_listar`` y el layout de un backend enlaza
 ``inicio``. ``src/backends/config/url_registry.json`` guarda, para la composición completa
-(``config.settings_all``), el patrón de cada nombre. Cada servicio agrega con
+(``config.settings_all``), el patrón de cada nombre y también de las rutas sin
+nombre (``"name": ""``), que usa el chequeo de ``/health/urls/``. Cada servicio agrega con
 ``stub_urlpatterns`` los nombres que no define: sirven para ``reverse()`` y,
 si alguien los pidiera directo a ese proceso, responden 404. El tráfico real
 llega al dueño por el proxy del core (``core.backend_proxy``).
@@ -30,7 +31,7 @@ def _regex(pattern):
 
 
 def recolectar(patterns, prefijo="", namespace=()):
-    """``[{"name", "namespace", "regex"}]`` de todos los nombres del URLconf."""
+    """``[{"name", "namespace", "regex"}]`` de todas las rutas del URLconf."""
     entradas = []
     for entry in patterns:
         if isinstance(entry, URLResolver):
@@ -40,17 +41,18 @@ def recolectar(patterns, prefijo="", namespace=()):
             entradas += recolectar(
                 entry.url_patterns, prefijo + _regex(entry.pattern), ns
             )
-        elif isinstance(entry, URLPattern) and entry.name:
+        elif isinstance(entry, URLPattern):
             entradas.append(
                 {
-                    "name": entry.name,
+                    "name": entry.name or "",
                     "namespace": ":".join(namespace),
                     "regex": "^" + prefijo + _regex(entry.pattern),
                 }
             )
     vistos, unicas = set(), []
     for entrada in entradas:
-        clave = (entrada["namespace"], entrada["name"])
+        # Las rutas sin nombre se distinguen por su patrón.
+        clave = (entrada["namespace"], entrada["name"] or entrada["regex"])
         if clave not in vistos:
             vistos.add(clave)
             unicas.append(entrada)
@@ -59,7 +61,8 @@ def recolectar(patterns, prefijo="", namespace=()):
 
 def generar(urlconf_patterns):
     return sorted(
-        recolectar(urlconf_patterns), key=lambda e: (e["namespace"], e["name"])
+        recolectar(urlconf_patterns),
+        key=lambda e: (e["namespace"], e["name"], e["regex"]),
     )
 
 
@@ -77,7 +80,7 @@ def _no_servida_aca(request, *args, **kwargs):
 
 def stub_urlpatterns(locales, path=REGISTRY_PATH):
     """Patrones solo-``reverse()`` para los nombres que ``locales`` no define."""
-    locales_recolectados = recolectar(locales)
+    locales_recolectados = [e for e in recolectar(locales) if e["name"]]
     definidos = {(e["namespace"], e["name"]) for e in locales_recolectados}
     # Un namespace que ya existe acá no se duplica (urls.W005): sus nombres
     # ajenos, como el admin de modelos de otro backend, no se enlazan.
@@ -85,7 +88,8 @@ def stub_urlpatterns(locales, path=REGISTRY_PATH):
     faltantes = [
         e
         for e in cargar(path)
-        if (e["namespace"], e["name"]) not in definidos
+        if e["name"]
+        and (e["namespace"], e["name"]) not in definidos
         and (not e["namespace"] or e["namespace"] not in namespaces_locales)
     ]
     raiz, por_namespace = [], {}

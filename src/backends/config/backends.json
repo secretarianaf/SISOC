@@ -94,6 +94,7 @@
     "url_prefixes": [
       "vat/",
       "api/vat/",
+      "api/inet/",
       "api/schema/VAT/",
       "api/docs/VAT/",
       "api/redoc/VAT/",

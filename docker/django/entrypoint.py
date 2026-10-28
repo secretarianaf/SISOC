@@ -17,6 +17,7 @@ SERVICE_ROLE_MAILING_WORKER = "mailing_worker"
 SERVICE_ROLE_USER_IMPORT_WORKER = "user_import_worker"
 SERVICE_ROLE_OCR_WORKER = "ocr_worker"
 SERVICE_ROLE_ENCUESTAS_WORKER = "encuestas_worker"
+SERVICE_ROLE_HEALTH_URLS_WORKER = "health_urls_worker"
 # Prepara la DB de la composición completa (config.settings_all) y termina.
 SERVICE_ROLE_MIGRATOR = "migrator"
 
@@ -245,6 +246,21 @@ def run_encuestas_worker():
     )
 
 
+def run_health_urls_worker():
+    """Chequea las URLs del sistema (/health/urls/) en horarios fijos."""
+    logger.info("[worker] Iniciando worker de chequeo de URLs...")
+    run_command(
+        [
+            "python",
+            "manage.py",
+            "chequear_urls",
+            "--horarios",
+            os.getenv("HEALTH_URLS_HORARIOS", "06:00,12:00,18:00"),
+        ],
+        stage="health_urls_worker",
+    )
+
+
 def main():
     wait_for_mysql()
     service_role = os.getenv("DJANGO_SERVICE_ROLE", SERVICE_ROLE_WEB).strip().lower()
@@ -265,6 +281,9 @@ def main():
         return
     if service_role == SERVICE_ROLE_ENCUESTAS_WORKER:
         run_encuestas_worker()
+        return
+    if service_role == SERVICE_ROLE_HEALTH_URLS_WORKER:
+        run_health_urls_worker()
         return
     if service_role == SERVICE_ROLE_MIGRATOR:
         preparar_db()

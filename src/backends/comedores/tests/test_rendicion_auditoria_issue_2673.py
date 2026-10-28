@@ -1,3 +1,4 @@
+import re
 from datetime import date
 from importlib import import_module
 from types import SimpleNamespace
@@ -10,6 +11,9 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth.models import Permission
+from django.template import Context
+from django.template.loader import get_template
+from django.template.loader_tags import BlockNode
 
 from comedores.models import Comedor
 from organizaciones.models import Organizacion, ProyectoOrganizacion
@@ -57,19 +61,111 @@ def crear_rendicion(proyecto, **kwargs):
 @pytest.mark.django_db
 def test_guarda_validacion_sin_acta_y_sin_montos(proyecto, superuser):
     rendicion = crear_rendicion(proyecto)
-    form = AuditoriaForm({"validada": "True"}, rendicion=rendicion)
+    form = AuditoriaForm(
+        {"validada": "True", "genera_acta_auditoria": "False"}, rendicion=rendicion
+    )
     assert form.is_valid(), form.errors
     AuditoriaService.guardar(
         rendicion=rendicion, datos=form.cleaned_data, actor=superuser
     )
     rendicion.refresh_from_db()
     assert rendicion.validada is True
-    assert rendicion.genera_acta_auditoria is None
-    assert rendicion.fecha_gestion_auditoria is None
+    assert rendicion.genera_acta_auditoria is False
+    assert rendicion.fecha_gestion_auditoria is not None
     assert rendicion.subestado_proceso == "en_curso"
     assert rendicion.fecha_auditada is None
     assert rendicion.monto_rendido is None
-    assert AuditoriaService.disponibles().filter(pk=rendicion.pk).exists()
+    assert not AuditoriaService.disponibles().filter(pk=rendicion.pk).exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("decision", [None, "", "desconocido"])
+def test_rechaza_validacion_sin_decision_de_acta(proyecto, superuser, decision):
+    rendicion = crear_rendicion(proyecto)
+    datos = {"validada": True}
+    if decision is not None:
+        datos["genera_acta_auditoria"] = decision
+    with pytest.raises(ValidationError, match="genera_acta_auditoria"):
+        AuditoriaService.guardar(rendicion=rendicion, datos=datos, actor=superuser)
+    rendicion.refresh_from_db()
+    assert rendicion.validada is None
+    assert rendicion.fecha_gestion_auditoria is None
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("decision", [None, False, True])
+def test_decision_acta_solo_si_no_y_no_por_defecto(proyecto, decision):
+    rendicion = crear_rendicion(proyecto, genera_acta_auditoria=decision)
+    form = AuditoriaForm(
+        rendicion=rendicion, initial={"genera_acta_auditoria": decision}
+    )
+    assert list(form.fields["genera_acta_auditoria"].choices) == [
+        (False, "No"),
+        (True, "Sí"),
+    ]
+    assert form["genera_acta_auditoria"].value() is (
+        False if decision is None else decision
+    )
+    assert form.fields["genera_acta_auditoria"].required
+
+
+@pytest.mark.parametrize("validada,acta", [(None, None), (True, False), (True, True)])
+@pytest.mark.parametrize(
+    "plantilla", ["organizacion_detail.html", "organizacion_rendicion_detail.html"]
+)
+def test_legajo_refleja_validacion_y_acta_sin_inferir_desde_etapa(
+    plantilla, validada, acta
+):
+    rendicion = RendicionCuentaMensual(
+        id=1,
+        mes=9,
+        anio=2026,
+        validada=validada,
+        genera_acta_auditoria=acta,
+        etapa_proceso="regularizacion",
+        fecha_carga_auditoria=timezone.now(),
+    )
+    template = get_template(plantilla).template
+    contenido = next(
+        bloque
+        for bloque in template.nodelist.get_nodes_by_type(BlockNode)
+        if bloque.name == "content"
+    )
+    contexto = Context(
+        {
+            "organizacion": Organizacion(id=1, nombre="Organización sintética"),
+            "rendicion": rendicion,
+            "rendiciones_presentadas": [rendicion],
+        }
+    )
+    with contexto.bind_template(template):
+        html = contenido.render(contexto)
+    assert "Cargada para Auditoría" not in html
+    if plantilla == "organizacion_detail.html":
+        tabla_rendiciones = html.split("<th>Validación</th>", 1)[1]
+        celdas = re.findall(r"<td[^>]*>\s*(.*?)\s*</td>", tabla_rendiciones, re.DOTALL)
+        assert celdas[5] == ("✔" if validada else "-")
+        assert celdas[6] == ("✔" if acta else "-")
+    else:
+        assert re.search(
+            r"Validación</small><strong>\s*" + ("Sí" if validada else "No"), html
+        )
+        assert re.search(
+            r"Auditada</small><strong>\s*" + ("Sí" if acta else "No"), html
+        )
+
+
+@pytest.mark.parametrize("decision", [None, False, True])
+@pytest.mark.parametrize("etapa", ["auditoria", "regularizacion"])
+@pytest.mark.parametrize("con_fecha", [False, True])
+def test_auditada_refleja_solo_decision_de_generar_acta(decision, etapa, con_fecha):
+    rendicion = RendicionCuentaMensual(
+        genera_acta_auditoria=decision,
+        etapa_proceso=etapa,
+        subestado_proceso="finalizada",
+        fecha_auditada=timezone.now() if con_fecha else None,
+    )
+    assert rendicion.auditada is (decision is True)
 
 
 def crear_sin_acta(proyecto, **kwargs):
@@ -405,14 +501,9 @@ def test_no_permite_guardar_sin_confirmar_validacion(proyecto, superuser, valor)
 
 @pytest.mark.django_db
 def test_reingreso_exige_decision_y_no_permite_desvalidar(auth_client, proyecto):
-    base = crear_rendicion(proyecto)
+    base = crear_rendicion(proyecto, validada=True, subestado_proceso="en_curso")
     url = reverse("rendicioncuentasmensual_auditoria", kwargs={"pk": base.pk})
     detalle = reverse("rendicioncuentasmensual_detail", kwargs={"pk": base.pk})
-    respuesta = auth_client.post(url, {"validada": "on"})
-    assert respuesta.status_code == 302
-    assert respuesta.url == detalle
-    base.refresh_from_db()
-    assert base.subestado_proceso == "en_curso"
     respuesta = auth_client.get(url)
     form = respuesta.context["form"]
     assert form.ya_validada

@@ -64,8 +64,8 @@
                         <small class="text-muted d-block">Fecha de Validación Auditoría</small><strong>{{ rendicion.fecha_validacion_auditoria|date:"d/m/Y H:i"|default:"-" }}</strong>
                     </div>
                     <div class="col-md-4">
-                        <small class="text-muted d-block">Cargada para Auditoría</small><strong>
-                            {% if rendicion.cargada_para_auditoria %}
+                        <small class="text-muted d-block">Validación</small><strong>
+                            {% if rendicion.validada %}
                                 Sí
                             {% else %}
                                 No
@@ -73,7 +73,7 @@
                         </strong>
                     </div>
                     <div class="col-md-4">
-                        <small class="text-muted d-block">Fecha de Cargada para Auditoría</small><strong>{{ rendicion.fecha_carga_auditoria|date:"d/m/Y H:i"|default:"-" }}</strong>
+                        <small class="text-muted d-block">Fecha de Validación</small><strong>{{ rendicion.fecha_carga_auditoria|date:"d/m/Y H:i"|default:"-" }}</strong>
                     </div>
                     <div class="col-md-4">
                         <small class="text-muted d-block">PDF Rendición</small>

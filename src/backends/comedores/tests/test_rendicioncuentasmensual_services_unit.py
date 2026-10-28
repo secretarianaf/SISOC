@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import pytest
 from pypdf import PdfReader, PdfWriter
 from pypdf.errors import PdfReadError, PdfStreamError
+from PIL import Image
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -28,6 +29,20 @@ def _pdf_bytes():
     writer.write(buffer)
     buffer.seek(0)
     return buffer.getvalue()
+
+
+@pytest.mark.parametrize("extension", [".jfif", ".jpg", ".jpeg"])
+def test_consolidado_incluye_imagen_jfif(extension):
+    contenido = BytesIO()
+    Image.new("RGB", (30, 20), "red").save(contenido, format="JPEG")
+    documento = SimpleNamespace(
+        archivo=SimpleUploadedFile("comprobante" + extension, contenido.getvalue()),
+        nombre="Comprobante sintético",
+    )
+    lector = rendicion_services._crear_lector_pdf_documento(documento, extension)
+    assert len(lector.pages) == 1
+    assert len(lector.pages[0].images) == 1
+    assert lector.pages[0].images[0].image.size == (30, 20)
 
 
 def test_crear_rendicion_cuenta_mensual_success(mocker):

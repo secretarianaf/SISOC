@@ -723,18 +723,7 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
 
     @property
     def auditada(self):
-        return (
-            self.fecha_auditada is not None
-            or (
-                self.etapa_proceso == self.ETAPA_AUDITORIA
-                and self.subestado_proceso
-                in {
-                    self.SUBESTADO_FINALIZADA,
-                    self.SUBESTADO_FINALIZADA_CON_OBSERVACIONES,
-                }
-            )
-            or self.etapa_proceso == self.ETAPA_REGULARIZACION
-        )
+        return self.genera_acta_auditoria is True
 
     @property
     def regularizada(self):

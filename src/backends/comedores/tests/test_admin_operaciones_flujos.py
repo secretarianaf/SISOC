@@ -257,9 +257,7 @@ def test_subsanar_documento_por_url_con_el_service_real(auth_client):
 
 
 def test_revision_fuera_de_etapa_la_rechaza_el_service(superuser):
-    documento = _documento_en_revision(
-        estado=RendicionCuentaMensual.ESTADO_ELABORACION
-    )
+    documento = _documento_en_revision(estado=RendicionCuentaMensual.ESTADO_ELABORACION)
 
     ok, errores = _ejecutar(
         DocumentacionAdjunta, "validar_documento", documento, superuser

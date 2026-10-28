@@ -24,6 +24,7 @@ from core.soft_delete.registry import (
     iter_soft_delete_models,
 )
 from core.soft_delete.view_helpers import SuperAdminRequiredMixin
+from core.utils import rango_del_dia_local
 
 
 def _model_key(model):
@@ -79,10 +80,11 @@ def _apply_deleted_by_filter(queryset, deleted_by_query: str):
 
 
 def _apply_deleted_date_range_filter(queryset, deleted_from=None, deleted_to=None):
+    # Rangos del día local en vez de ``__date`` (ver ``rango_del_dia_local``).
     if deleted_from:
-        queryset = queryset.filter(deleted_at__date__gte=deleted_from)
+        queryset = queryset.filter(deleted_at__gte=rango_del_dia_local(deleted_from)[0])
     if deleted_to:
-        queryset = queryset.filter(deleted_at__date__lte=deleted_to)
+        queryset = queryset.filter(deleted_at__lt=rango_del_dia_local(deleted_to)[1])
     return queryset
 
 

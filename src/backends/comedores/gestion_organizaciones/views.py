@@ -4,7 +4,7 @@ from pathlib import Path
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q, Count
+from django.db.models import Q, Count, ProtectedError
 from django.forms import ValidationError
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
@@ -28,8 +28,21 @@ from gestion_organizaciones.filter_config import (
     ORGANIZACION_ADVANCED_FILTER,
     get_filters_ui_config,
 )
-from gestion_organizaciones.forms import OrganizacionForm, FirmanteForm, AvalForm
-from gestion_organizaciones.models import Firmante
+from gestion_organizaciones.forms import (
+    AvalForm,
+    ConvenioProyectoForm,
+    FirmanteForm,
+    OrganizacionForm,
+)
+from gestion_organizaciones.models import (
+    ConvenioProyecto,
+    Firmante,
+)
+from gestion_organizaciones.services.programas import (
+    motivo_que_impide_baja,
+    resumen_convenio,
+)
+from gestion_organizaciones.templatetags.organizaciones_tags import monto
 from organizaciones.models import (
     ArchivoOrganizacion,
     DocumentacionOrganizacion,
@@ -505,6 +518,8 @@ class FirmanteCreateView(LoginRequiredMixin, CreateView):
                 organizacion = None
 
         form.fields["rol"].queryset = self.get_allowed_roles_queryset(organizacion)
+        if organizacion is not None:
+            form.limitar_programas(organizacion)
         return form
 
     def form_valid(self, form):
@@ -993,6 +1008,82 @@ class OrganizacionRendicionDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
+class ConvenioProyectoView(LoginRequiredMixin, UpdateView):
+    """Alta y edición de los Datos de Convenio de un proyecto (#2745)."""
+
+    model = ConvenioProyecto
+    form_class = ConvenioProyectoForm
+    template_name = "convenio_proyecto_form.html"
+    context_object_name = "convenio"
+
+    def get_proyecto(self):
+        if not hasattr(self, "proyecto"):
+            self.proyecto = get_object_or_404(
+                ProyectoOrganizacion.objects.select_related(
+                    "organizacion__region_abordaje",
+                    "organizacion__subzona_abordaje",
+                    "linea__programa",
+                ),
+                pk=self.kwargs["proyecto_id"],
+                activo=True,
+            )
+        return self.proyecto
+
+    def _sin_linea(self):
+        proyecto = self.get_proyecto()
+        if getattr(proyecto, "linea", None) is not None:
+            return None
+        messages.error(
+            self.request,
+            f"Asigná una línea al proyecto {proyecto.codigo} antes de cargar el convenio.",
+        )
+        return HttpResponseRedirect(
+            reverse("organizacion_editar", kwargs={"pk": proyecto.organizacion_id})
+        )
+
+    def get(self, request, *args, **kwargs):
+        return self._sin_linea() or super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self._sin_linea() or super().post(request, *args, **kwargs)
+
+    def get_object(self, queryset=None):
+        return ConvenioProyecto.objects.filter(proyecto=self.get_proyecto()).first()
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["proyecto"] = self.get_proyecto()
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        proyecto = self.get_proyecto()
+        context["proyecto"] = proyecto
+        context["organizacion"] = proyecto.organizacion
+        context["linea"] = proyecto.linea.programa
+        context["es_linea_tradicional"] = context["form"].permite_imprevistos
+        if self.object is not None:
+            context["resumen_convenio"] = resumen_convenio(self.object)
+        return context
+
+    def form_valid(self, form):
+        self.object = form.save()
+        resumen = resumen_convenio(self.object)
+        messages.success(self.request, "Datos de convenio guardados.")
+        if not resumen["coincide"]:
+            messages.warning(
+                self.request,
+                f"La suma de los componentes ({monto(resumen['suma'])}) no coincide "
+                f"con el monto total ({monto(resumen['total'])}).",
+            )
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse(
+            "organizacion_editar", kwargs={"pk": self.get_proyecto().organizacion_id}
+        )
+
+
 @login_required
 def historial_documento_organizacion(request, organizacion_id, documentacion_id):
     organizacion = get_object_or_404(
@@ -1304,6 +1395,12 @@ class OrganizacionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, Dele
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+        # Los proyectos no tienen baja lógica: la cascada los borraría junto
+        # con su línea y convenio (#2745, plan Etapa 3 paso 7).
+        motivo = motivo_que_impide_baja(self.object)
+        if motivo:
+            messages.error(request, motivo)
+            return self.render_to_response(self.get_context_data(object=self.object))
         try:
             if hasattr(self.object, "restore") and hasattr(self.object, "deleted_at"):
                 self.object.delete(
@@ -1323,6 +1420,13 @@ class OrganizacionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, Dele
             return HttpResponseRedirect(self.success_url)
         except ValidationError as e:
             messages.error(request, e.message)
+            return self.render_to_response(self.get_context_data(object=self.object))
+        except ProtectedError:
+            messages.error(
+                request,
+                "No se puede dar de baja la organización porque tiene datos "
+                "asociados que no se pueden borrar.",
+            )
             return self.render_to_response(self.get_context_data(object=self.object))
 
 

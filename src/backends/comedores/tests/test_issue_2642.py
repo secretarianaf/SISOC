@@ -128,7 +128,9 @@ def test_asignacion_territorial_se_guarda_por_proyecto_y_conserva_legado(scopes)
         "nombre": organizacion.nombre,
         "provincia": str(provincia.pk),
         "sin_vencimiento": "on",
-        "codigos_proyecto": f"{proyecto.codigo}, {otro_proyecto.codigo}",
+        "proyectos_lineas": json.dumps(
+            [{"codigo": proyecto.codigo}, {"codigo": otro_proyecto.codigo}]
+        ),
         "asignaciones_territoriales": json.dumps(
             [{"proyecto": proyecto.codigo, "territorial": usuario.pk}]
         ),
@@ -174,7 +176,7 @@ def test_asignacion_general_legada_puede_quitarse_sin_proyecto(scopes):
         "nombre": organizacion.nombre,
         "provincia": str(provincia.pk),
         "sin_vencimiento": "on",
-        "codigos_proyecto": proyecto.codigo,
+        "proyectos_lineas": json.dumps([{"codigo": proyecto.codigo}]),
         "asignaciones_territoriales": "[]",
         "quitar_territoriales_sin_proyecto": [str(legado.pk)],
     }

@@ -62,6 +62,22 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  front_inet:
+    image: ${INET_IMAGE_TAG:-sisoc/front-inet:local}
+    build:
+      context: .
+      dockerfile: docker/frontends/Dockerfile
+      target: prod
+      args:
+        APP: inet
+        VITE_SENTRY_DSN: ${SENTRY_DSN:-}
+        VITE_SENTRY_ENVIRONMENT: ${ENVIRONMENT:-dev}
+        VITE_RELEASE_SHA: ${VITE_RELEASE_SHA:-local}
+    depends_on:
+      django:
+        condition: service_healthy
+    restart: unless-stopped
+
   # Front v2 de Celiaquia. Sin puerto publicado: solo lo alcanza Django por la
   # red de compose (FRONTEND_V2_UPSTREAMS en src/backends/config/settings.py).
   front_celiaquia:

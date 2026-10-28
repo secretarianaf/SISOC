@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from typing import Optional
 
+from django.db.models import Q
+
+from core.utils import rango_del_dia_local
+
+DATE_TRANSFORM = "__date"
+
 
 def resolve_lookup(
     field_type: str, op: str, mapped_field: str
@@ -62,3 +68,30 @@ def resolve_lookup(
             negate = True
 
     return lookup, negate
+
+
+def split_date_transform(mapped_field: str) -> tuple[str, bool]:
+    """Separa ``campo__date`` en ``campo`` e indica si traía la transformación."""
+
+    if mapped_field.endswith(DATE_TRANSFORM):
+        return mapped_field[: -len(DATE_TRANSFORM)], True
+    return mapped_field, False
+
+
+def build_local_day_q(base_field: str, op: str, fecha) -> Optional[Q]:
+    """Compara un ``DateTimeField`` contra un día local con rangos explícitos.
+
+    Reemplaza ``campo__date__<op>``, que depende de las tablas de zonas
+    horarias de MySQL (ver ``core.utils.rango_del_dia_local``).
+    """
+
+    inicio, fin = rango_del_dia_local(fecha)
+    del_dia = Q(**{f"{base_field}__gte": inicio, f"{base_field}__lt": fin})
+    return {
+        "eq": del_dia,
+        "ne": ~del_dia,
+        "gt": Q(**{f"{base_field}__gte": fin}),
+        "lt": Q(**{f"{base_field}__lt": inicio}),
+        "gte": Q(**{f"{base_field}__gte": inicio}),
+        "lte": Q(**{f"{base_field}__lt": fin}),
+    }.get(op)

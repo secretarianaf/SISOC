@@ -1,4 +1,16 @@
+from django import forms
 from django.contrib import admin
+from django.core.exceptions import ValidationError
+from unfold.contrib.filters.admin import (
+    ChoicesDropdownFilter,
+    RangeDateFilter,
+    RangeDateTimeFilter,
+)
+
+from core.admin_base import SisocModelAdmin, SisocTabularInline
+from core.admin_operaciones import Operacion, OperacionesAdminMixin
+from VAT.services.inscripcion_service import InscripcionService
+from VAT.services.voucher_service.impl import VoucherService
 from .models import (
     Centro,
     ModalidadInstitucional,
@@ -17,10 +29,12 @@ from .models import (
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
     Curso,
+    ComisionCurso,
     # Fase 4
     OfertaInstitucional,
     Comision,
     ComisionHorario,
+    SesionComision,
     # Fase 5
     Inscripcion,
     SolicitudInscripcionPublica,
@@ -29,14 +43,106 @@ from .models import (
     # Fase 7
     Evaluacion,
     ResultadoEvaluacion,
+    ActaCierreComision,
+)
+
+
+# FKs a tablas grandes con ``raw_id_fields`` y no ``autocomplete_fields``: el
+# autocomplete pide ``/admin/autocomplete/``, que atiende el core y no conoce
+# los modelos de VAT cuando cada backend corre en su runtime.
+
+
+# ============================================================================
+# OPERACIONES DE SOPORTE (issue #2789)
+# ============================================================================
+# Cada adaptador llama al service que usa la pantalla equivalente del
+# backoffice (views/curso.py, views/oferta_institucional.py, views/voucher.py)
+# con el superusuario del admin como actor.
+
+
+def cambiar_estado_inscripcion(inscripcion, usuario, datos):
+    # El service valida cupo, lista de espera y mueve el voucher; un ValueError
+    # (estado inválido, cupo completo) queda como error de la fila.
+    if inscripcion.estado == datos["nuevo_estado"]:
+        raise ValidationError("La inscripción ya tiene ese estado.")
+    InscripcionService.actualizar_estado_inscripcion(
+        inscripcion=inscripcion,
+        nuevo_estado=datos["nuevo_estado"],
+        usuario=usuario,
+    )
+
+
+def cancelar_voucher(voucher, usuario, _datos):
+    if not VoucherService.cancelar_voucher(voucher=voucher, usuario=usuario):
+        raise ValidationError("El voucher ya estaba cancelado.")
+
+
+def recargar_voucher(voucher, usuario, datos):
+    # ``motivo`` del service es el tipo de recarga (VoucherRecarga.MOTIVO_CHOICES);
+    # el motivo libre del form queda en la auditoría de la operación.
+    ok, mensaje = VoucherService.recargar_voucher(
+        voucher=voucher,
+        cantidad=datos["cantidad"],
+        motivo=datos["tipo_recarga"],
+        usuario=usuario,
+    )
+    if not ok:
+        raise ValidationError(mensaje)
+
+
+OPERACION_CAMBIAR_ESTADO_INSCRIPCION = Operacion(
+    slug="cambiar_estado",
+    titulo="Cambiar estado de la inscripción",
+    descripcion=(
+        "Usa la misma regla que el backoffice: controla cupo y lista de espera "
+        "y debita o reintegra el voucher cuando corresponde."
+    ),
+    ejecutar=cambiar_estado_inscripcion,
+    campo_estado="estado",
+    campos=lambda: {
+        "nuevo_estado": forms.ChoiceField(
+            label="Nuevo estado", choices=Inscripcion.ESTADO_INSCRIPCION_CHOICES
+        )
+    },
+    icono="swap_horiz",
+)
+
+OPERACION_CANCELAR_VOUCHER = Operacion(
+    slug="cancelar",
+    titulo="Cancelar voucher",
+    descripcion="Irreversible: un voucher cancelado no se puede recargar ni usar.",
+    ejecutar=cancelar_voucher,
+    campo_estado="estado",
+    motivo_obligatorio=True,
+    destructiva=True,
+    icono="block",
+)
+
+OPERACION_RECARGAR_VOUCHER = Operacion(
+    slug="recargar",
+    titulo="Recargar voucher",
+    descripcion="Suma créditos al saldo disponible y reactiva el voucher agotado o vencido.",
+    ejecutar=recargar_voucher,
+    campo_estado="cantidad_disponible",
+    motivo_obligatorio=True,
+    campos=lambda: {
+        "cantidad": forms.IntegerField(label="Créditos a sumar", min_value=1),
+        "tipo_recarga": forms.ChoiceField(
+            label="Tipo de recarga",
+            choices=VoucherRecarga.MOTIVO_CHOICES,
+            initial="manual",
+        ),
+    },
+    en_lote=False,
+    icono="add_card",
 )
 
 
 @admin.register(Centro)
-class CentroAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "tipo_gestion", "activo")
+class CentroAdmin(SisocModelAdmin):
+    list_display = ("nombre", "codigo", "tipo_gestion", "activo")
     list_filter = ("activo", "tipo_gestion")
-    search_fields = ("nombre",)
+    search_fields = ("nombre", "codigo")
     fieldsets = (
         (
             "Información General",
@@ -76,36 +182,38 @@ class CentroAdmin(admin.ModelAdmin):
 
 
 @admin.register(ModalidadInstitucional)
-class ModalidadInstitucionalAdmin(admin.ModelAdmin):
+class ModalidadInstitucionalAdmin(SisocModelAdmin):
     list_display = ("nombre", "activo", "fecha_creacion")
-    list_filter = ("activo", "fecha_creacion")
+    list_filter = ("activo", ("fecha_creacion", RangeDateTimeFilter))
     search_fields = ("nombre",)
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
 
 
 @admin.register(Sector)
-class SectorAdmin(admin.ModelAdmin):
+class SectorAdmin(SisocModelAdmin):
     list_display = ("nombre",)
     search_fields = ("nombre",)
     inlines = []
 
 
-class SubsectorInline(admin.TabularInline):
+class SubsectorInline(SisocTabularInline):
     model = Subsector
     extra = 1
 
 
 @admin.register(Subsector)
-class SubsectorAdmin(admin.ModelAdmin):
+class SubsectorAdmin(SisocModelAdmin):
     list_display = ("nombre", "sector")
     list_filter = ("sector",)
+    list_select_related = ("sector",)
     search_fields = ("nombre",)
 
 
 @admin.register(TituloReferencia)
-class TituloReferenciaAdmin(admin.ModelAdmin):
+class TituloReferenciaAdmin(SisocModelAdmin):
     list_display = ("nombre", "plan_estudio", "activo")
     list_filter = ("plan_estudio", "activo")
+    list_select_related = ("plan_estudio",)
     search_fields = (
         "nombre",
         "codigo_referencia",
@@ -123,14 +231,14 @@ class TituloReferenciaAdmin(admin.ModelAdmin):
 
 
 @admin.register(ModalidadCursada)
-class ModalidadCursadaAdmin(admin.ModelAdmin):
+class ModalidadCursadaAdmin(SisocModelAdmin):
     list_display = ("nombre", "activo")
     list_filter = ("activo",)
     search_fields = ("nombre",)
 
 
 @admin.register(PlanVersionCurricular)
-class PlanVersionCurricularAdmin(admin.ModelAdmin):
+class PlanVersionCurricularAdmin(SisocModelAdmin):
     list_display = (
         "sector",
         "subsector",
@@ -138,6 +246,7 @@ class PlanVersionCurricularAdmin(admin.ModelAdmin):
         "activo",
     )
     list_filter = ("sector", "subsector", "modalidad_cursada", "activo")
+    list_select_related = ("sector", "subsector__sector", "modalidad_cursada")
     search_fields = ("sector__nombre", "subsector__nombre", "normativa")
     fieldsets = (
         (
@@ -157,10 +266,15 @@ class PlanVersionCurricularAdmin(admin.ModelAdmin):
 
 
 @admin.register(InscripcionOferta)
-class InscripcionOfertaAdmin(admin.ModelAdmin):
+class InscripcionOfertaAdmin(SisocModelAdmin):
     list_display = ("ciudadano", "oferta", "estado", "fecha_inscripcion")
-    list_filter = ("estado", "fecha_inscripcion")
-    search_fields = ("ciudadano__nombre", "ciudadano__apellido")
+    list_filter = (
+        ("estado", ChoicesDropdownFilter),
+        ("fecha_inscripcion", RangeDateTimeFilter),
+    )
+    list_select_related = ("ciudadano", "oferta")
+    search_fields = ("ciudadano__documento", "ciudadano__nombre", "ciudadano__apellido")
+    raw_id_fields = ("ciudadano",)
     readonly_fields = ("fecha_inscripcion", "fecha_modificacion", "inscrito_por")
     fieldsets = (
         ("Información", {"fields": ("oferta", "ciudadano", "estado")}),
@@ -175,7 +289,7 @@ class InscripcionOfertaAdmin(admin.ModelAdmin):
 
 
 @admin.register(Curso)
-class CursoAdmin(admin.ModelAdmin):
+class CursoAdmin(SisocModelAdmin):
     list_display = (
         "nombre",
         "centro",
@@ -185,12 +299,43 @@ class CursoAdmin(admin.ModelAdmin):
         "prioritario",
     )
     list_filter = ("estado", "centro", "usa_voucher", "inscripcion_libre")
-    search_fields = ("nombre", "centro__nombre")
+    list_select_related = ("centro",)
+    search_fields = ("=id", "nombre", "centro__nombre")
+    readonly_fields = ("fecha_creacion", "fecha_modificacion")
+
+
+@admin.register(ComisionCurso)
+class ComisionCursoAdmin(SisocModelAdmin):
+    # Sin operaciones: activar, suspender o cerrar una comisión de curso no
+    # tiene un service con regla de transición (pendiente, issue #2789).
+    list_display = (
+        "codigo_comision",
+        "nombre",
+        "curso",
+        "estado",
+        "cupo_total",
+        "fecha_inicio",
+        "fecha_fin",
+    )
+    list_filter = (
+        ("estado", ChoicesDropdownFilter),
+        ("fecha_inicio", RangeDateFilter),
+        ("fecha_fin", RangeDateFilter),
+    )
+    list_select_related = ("curso__centro",)
+    search_fields = (
+        "=id",
+        "codigo_comision",
+        "nombre",
+        "curso__nombre",
+        "curso__centro__nombre",
+    )
+    raw_id_fields = ("curso", "ubicacion")
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
 
 
 @admin.register(SolicitudInscripcionPublica)
-class SolicitudInscripcionPublicaAdmin(admin.ModelAdmin):
+class SolicitudInscripcionPublicaAdmin(SisocModelAdmin):
     list_display = (
         "id",
         "comision_curso",
@@ -199,12 +344,20 @@ class SolicitudInscripcionPublicaAdmin(admin.ModelAdmin):
         "origen_canal",
         "fecha_creacion",
     )
-    list_filter = ("estado", "origen_canal", "comision_curso__curso__centro")
+    list_filter = (
+        ("estado", ChoicesDropdownFilter),
+        "origen_canal",
+        "comision_curso__curso__centro",
+        ("fecha_creacion", RangeDateTimeFilter),
+    )
+    list_select_related = ("comision_curso", "ciudadano")
     search_fields = (
+        "=id",
         "comision_curso__codigo_comision",
         "ciudadano__documento",
         "ciudadano__apellido",
     )
+    raw_id_fields = ("ciudadano", "comision_curso")
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
 
 
@@ -213,14 +366,14 @@ class SolicitudInscripcionPublicaAdmin(admin.ModelAdmin):
 # ============================================================================
 
 
-class VoucherRecargaInline(admin.TabularInline):
+class VoucherRecargaInline(SisocTabularInline):
     model = VoucherRecarga
     extra = 0
     readonly_fields = ("fecha_recarga",)
     fields = ("cantidad", "motivo", "autorizado_por", "fecha_recarga")
 
 
-class VoucherUsoInline(admin.TabularInline):
+class VoucherUsoInline(SisocTabularInline):
     model = VoucherUso
     extra = 0
     readonly_fields = ("fecha_uso",)
@@ -228,8 +381,9 @@ class VoucherUsoInline(admin.TabularInline):
 
 
 @admin.register(Voucher)
-class VoucherAdmin(admin.ModelAdmin):
+class VoucherAdmin(OperacionesAdminMixin, SisocModelAdmin):
     list_display = (
+        "id",
         "ciudadano",
         "cantidad_disponible",
         "cantidad_usada",
@@ -237,10 +391,23 @@ class VoucherAdmin(admin.ModelAdmin):
         "estado",
         "fecha_vencimiento",
     )
-    list_filter = ("estado", "programa", "fecha_vencimiento", "fecha_asignacion")
-    search_fields = ("ciudadano__nombre", "ciudadano__apellido", "ciudadano__documento")
+    list_filter = (
+        ("estado", ChoicesDropdownFilter),
+        "programa",
+        ("fecha_vencimiento", RangeDateFilter),
+        ("fecha_asignacion", RangeDateFilter),
+    )
+    list_select_related = ("ciudadano",)
+    search_fields = (
+        "=id",
+        "ciudadano__documento",
+        "ciudadano__nombre",
+        "ciudadano__apellido",
+    )
+    raw_id_fields = ("ciudadano",)
     readonly_fields = ("fecha_asignacion", "fecha_creacion", "fecha_modificacion")
     inlines = [VoucherRecargaInline, VoucherUsoInline]
+    operaciones = (OPERACION_RECARGAR_VOUCHER, OPERACION_CANCELAR_VOUCHER)
     fieldsets = (
         (
             "Información General",
@@ -282,10 +449,12 @@ class VoucherAdmin(admin.ModelAdmin):
 
 
 @admin.register(VoucherRecarga)
-class VoucherRecargaAdmin(admin.ModelAdmin):
+class VoucherRecargaAdmin(SisocModelAdmin):
     list_display = ("voucher", "cantidad", "motivo", "fecha_recarga", "autorizado_por")
-    list_filter = ("motivo", "fecha_recarga")
+    list_filter = ("motivo", ("fecha_recarga", RangeDateTimeFilter))
+    list_select_related = ("voucher__ciudadano", "autorizado_por")
     search_fields = (
+        "voucher__ciudadano__documento",
         "voucher__ciudadano__nombre",
         "voucher__ciudadano__apellido",
     )
@@ -298,10 +467,16 @@ class VoucherRecargaAdmin(admin.ModelAdmin):
 
 
 @admin.register(VoucherUso)
-class VoucherUsoAdmin(admin.ModelAdmin):
+class VoucherUsoAdmin(SisocModelAdmin):
     list_display = ("voucher", "inscripcion_oferta", "cantidad_usada", "fecha_uso")
-    list_filter = ("fecha_uso",)
+    list_filter = (("fecha_uso", RangeDateTimeFilter),)
+    list_select_related = (
+        "voucher__ciudadano",
+        "inscripcion_oferta__ciudadano",
+        "inscripcion_oferta__oferta",
+    )
     search_fields = (
+        "voucher__ciudadano__documento",
         "voucher__ciudadano__nombre",
         "voucher__ciudadano__apellido",
     )
@@ -316,7 +491,7 @@ class VoucherUsoAdmin(admin.ModelAdmin):
 
 
 @admin.register(VoucherLog)
-class VoucherLogAdmin(admin.ModelAdmin):
+class VoucherLogAdmin(SisocModelAdmin):
     list_display = (
         "voucher",
         "tipo_evento",
@@ -324,8 +499,10 @@ class VoucherLogAdmin(admin.ModelAdmin):
         "fecha_evento",
         "usuario",
     )
-    list_filter = ("tipo_evento", "fecha_evento")
+    list_filter = ("tipo_evento", ("fecha_evento", RangeDateTimeFilter))
+    list_select_related = ("voucher__ciudadano", "usuario")
     search_fields = (
+        "voucher__ciudadano__documento",
         "voucher__ciudadano__nombre",
         "voucher__ciudadano__apellido",
     )
@@ -371,7 +548,7 @@ class VoucherLogAdmin(admin.ModelAdmin):
 
 
 @admin.register(InstitucionContacto)
-class InstitucionContactoAdmin(admin.ModelAdmin):
+class InstitucionContactoAdmin(SisocModelAdmin):
     list_display = (
         "centro",
         "tipo",
@@ -380,13 +557,14 @@ class InstitucionContactoAdmin(admin.ModelAdmin):
         "vigencia_desde",
         "vigencia_hasta",
     )
-    list_filter = ("tipo", "es_principal", "vigencia_desde")
+    list_filter = ("tipo", "es_principal", ("vigencia_desde", RangeDateFilter))
+    list_select_related = ("centro",)
     search_fields = ("centro__nombre", "valor")
     readonly_fields = ("vigencia_desde", "fecha_creacion", "fecha_modificacion")
 
 
 @admin.register(InstitucionIdentificadorHist)
-class InstitucionIdentificadorHistAdmin(admin.ModelAdmin):
+class InstitucionIdentificadorHistAdmin(SisocModelAdmin):
     list_display = (
         "centro",
         "tipo_identificador",
@@ -395,14 +573,16 @@ class InstitucionIdentificadorHistAdmin(admin.ModelAdmin):
         "es_actual",
     )
     list_filter = ("tipo_identificador", "rol_institucional", "es_actual")
+    list_select_related = ("centro",)
     search_fields = ("centro__nombre", "valor_identificador")
     readonly_fields = ("vigencia_desde", "fecha_creacion", "fecha_modificacion")
 
 
 @admin.register(InstitucionUbicacion)
-class InstitucionUbicacionAdmin(admin.ModelAdmin):
+class InstitucionUbicacionAdmin(SisocModelAdmin):
     list_display = ("centro", "localidad", "rol_ubicacion", "es_principal", "domicilio")
     list_filter = ("rol_ubicacion", "es_principal")
+    list_select_related = ("centro", "localidad")
     search_fields = ("centro__nombre", "localidad__nombre", "domicilio")
     readonly_fields = ("vigencia_desde", "fecha_creacion", "fecha_modificacion")
 
@@ -412,14 +592,14 @@ class InstitucionUbicacionAdmin(admin.ModelAdmin):
 # ============================================================================
 
 
-class ComisionInline(admin.TabularInline):
+class ComisionInline(SisocTabularInline):
     model = Comision
     extra = 0
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
 
 
 @admin.register(OfertaInstitucional)
-class OfertaInstitucionalAdmin(admin.ModelAdmin):
+class OfertaInstitucionalAdmin(SisocModelAdmin):
     list_display = (
         "centro",
         "plan_curricular",
@@ -428,7 +608,8 @@ class OfertaInstitucionalAdmin(admin.ModelAdmin):
         "usa_voucher",
     )
     list_filter = ("estado", "centro", "ciclo_lectivo", "usa_voucher")
-    search_fields = ("centro__nombre", "plan_curricular__titulos__nombre")
+    list_select_related = ("centro", "plan_curricular")
+    search_fields = ("=id", "centro__nombre", "plan_curricular__titulos__nombre")
     inlines = [ComisionInline]
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
     fieldsets = (
@@ -448,14 +629,14 @@ class OfertaInstitucionalAdmin(admin.ModelAdmin):
     )
 
 
-class ComisionHorarioInline(admin.TabularInline):
+class ComisionHorarioInline(SisocTabularInline):
     model = ComisionHorario
     extra = 0
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
 
 
 @admin.register(Comision)
-class ComisionAdmin(admin.ModelAdmin):
+class ComisionAdmin(SisocModelAdmin):
     list_display = (
         "codigo_comision",
         "nombre",
@@ -464,8 +645,9 @@ class ComisionAdmin(admin.ModelAdmin):
         "estado",
         "fecha_inicio",
     )
-    list_filter = ("estado", "oferta__centro", "fecha_inicio")
-    search_fields = ("codigo_comision", "nombre", "oferta__centro__nombre")
+    list_filter = ("estado", "oferta__centro", ("fecha_inicio", RangeDateFilter))
+    list_select_related = ("oferta__centro", "oferta__plan_curricular")
+    search_fields = ("=id", "codigo_comision", "nombre", "oferta__centro__nombre")
     inlines = [ComisionHorarioInline]
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
     fieldsets = (
@@ -486,9 +668,10 @@ class ComisionAdmin(admin.ModelAdmin):
 
 
 @admin.register(ComisionHorario)
-class ComisionHorarioAdmin(admin.ModelAdmin):
+class ComisionHorarioAdmin(SisocModelAdmin):
     list_display = (
         "comision",
+        "comision_curso",
         "dia_semana",
         "hora_desde",
         "hora_hasta",
@@ -496,8 +679,36 @@ class ComisionHorarioAdmin(admin.ModelAdmin):
         "vigente",
     )
     list_filter = ("vigente", "dia_semana")
-    search_fields = ("comision__codigo_comision", "aula_espacio")
+    list_select_related = ("comision", "comision_curso", "dia_semana")
+    search_fields = (
+        "comision__codigo_comision",
+        "comision_curso__codigo_comision",
+        "aula_espacio",
+    )
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
+
+
+@admin.register(SesionComision)
+class SesionComisionAdmin(SisocModelAdmin):
+    # Sin operaciones: realizar o cancelar una sesión no tiene un service con
+    # regla de transición (pendiente, issue #2789).
+    list_display = (
+        "id",
+        "numero_sesion",
+        "fecha",
+        "comision",
+        "comision_curso",
+        "estado",
+    )
+    list_filter = (("estado", ChoicesDropdownFilter), ("fecha", RangeDateFilter))
+    list_select_related = ("comision", "comision_curso")
+    search_fields = (
+        "=id",
+        "comision__codigo_comision",
+        "comision_curso__codigo_comision",
+    )
+    raw_id_fields = ("comision", "comision_curso", "horario")
+    readonly_fields = ("fecha_creacion",)
 
 
 # ============================================================================
@@ -506,22 +717,39 @@ class ComisionHorarioAdmin(admin.ModelAdmin):
 
 
 @admin.register(Inscripcion)
-class InscripcionAdmin(admin.ModelAdmin):
-    list_display = ("ciudadano", "comision", "estado", "fecha_inscripcion", "programa")
-    list_filter = (
+class InscripcionAdmin(OperacionesAdminMixin, SisocModelAdmin):
+    list_display = (
+        "id",
+        "ciudadano",
+        "comision",
+        "comision_curso",
         "estado",
-        "comision__oferta__centro",
         "fecha_inscripcion",
         "programa",
     )
+    list_filter = (
+        ("estado", ChoicesDropdownFilter),
+        "comision__oferta__centro",
+        ("fecha_inscripcion", RangeDateTimeFilter),
+        "programa",
+    )
+    list_select_related = ("ciudadano", "comision", "comision_curso", "programa")
     search_fields = (
+        "=id",
+        "ciudadano__documento",
         "ciudadano__nombre",
         "ciudadano__apellido",
         "comision__codigo_comision",
+        "comision_curso__codigo_comision",
     )
+    raw_id_fields = ("ciudadano", "comision", "comision_curso")
     readonly_fields = ("fecha_inscripcion", "fecha_creacion", "fecha_modificacion")
+    operaciones = (OPERACION_CAMBIAR_ESTADO_INSCRIPCION,)
     fieldsets = (
-        ("Información", {"fields": ("ciudadano", "comision", "programa")}),
+        (
+            "Información",
+            {"fields": ("ciudadano", "comision", "comision_curso", "programa")},
+        ),
         (
             "Estado",
             {"fields": ("estado", "origen_canal", "fecha_validacion_presencial")},
@@ -547,7 +775,7 @@ class InscripcionAdmin(admin.ModelAdmin):
 
 
 @admin.register(AsistenciaSesion)
-class AsistenciaSesionAdmin(admin.ModelAdmin):
+class AsistenciaSesionAdmin(SisocModelAdmin):
     list_display = (
         "sesion",
         "inscripcion",
@@ -555,11 +783,25 @@ class AsistenciaSesionAdmin(admin.ModelAdmin):
         "registrado_por",
         "fecha_registro",
     )
-    list_filter = ("presente", "sesion__comision", "fecha_registro")
+    list_filter = (
+        "presente",
+        "sesion__comision",
+        ("fecha_registro", RangeDateTimeFilter),
+    )
+    list_select_related = (
+        "sesion__comision",
+        "sesion__comision_curso",
+        "inscripcion__ciudadano",
+        "inscripcion__comision",
+        "inscripcion__comision_curso",
+        "registrado_por",
+    )
     search_fields = (
+        "inscripcion__ciudadano__documento",
         "inscripcion__ciudadano__nombre",
         "inscripcion__ciudadano__apellido",
         "sesion__comision__codigo_comision",
+        "sesion__comision_curso__codigo_comision",
     )
     readonly_fields = ("fecha_registro",)
 
@@ -569,7 +811,7 @@ class AsistenciaSesionAdmin(admin.ModelAdmin):
 # ============================================================================
 
 
-class ResultadoEvaluacionInline(admin.TabularInline):
+class ResultadoEvaluacionInline(SisocTabularInline):
     model = ResultadoEvaluacion
     extra = 0
     readonly_fields = ("fecha_registro", "fecha_creacion", "fecha_modificacion")
@@ -577,9 +819,15 @@ class ResultadoEvaluacionInline(admin.TabularInline):
 
 
 @admin.register(Evaluacion)
-class EvaluacionAdmin(admin.ModelAdmin):
+class EvaluacionAdmin(SisocModelAdmin):
     list_display = ("comision", "nombre", "tipo", "fecha", "es_final", "ponderacion")
-    list_filter = ("tipo", "es_final", "comision__oferta__centro")
+    list_filter = (
+        "tipo",
+        "es_final",
+        "comision__oferta__centro",
+        ("fecha", RangeDateFilter),
+    )
+    list_select_related = ("comision",)
     search_fields = ("nombre", "comision__codigo_comision")
     inlines = [ResultadoEvaluacionInline]
     readonly_fields = ("fecha_creacion", "fecha_modificacion")
@@ -600,7 +848,7 @@ class EvaluacionAdmin(admin.ModelAdmin):
 
 
 @admin.register(ResultadoEvaluacion)
-class ResultadoEvaluacionAdmin(admin.ModelAdmin):
+class ResultadoEvaluacionAdmin(SisocModelAdmin):
     list_display = (
         "inscripcion",
         "evaluacion",
@@ -609,10 +857,23 @@ class ResultadoEvaluacionAdmin(admin.ModelAdmin):
         "fecha_registro",
         "registrado_por",
     )
-    list_filter = ("aprobo", "evaluacion__tipo", "fecha_registro")
+    list_filter = (
+        "aprobo",
+        "evaluacion__tipo",
+        ("fecha_registro", RangeDateTimeFilter),
+    )
+    list_select_related = (
+        "inscripcion__ciudadano",
+        "inscripcion__comision",
+        "inscripcion__comision_curso",
+        "evaluacion__comision",
+        "registrado_por",
+    )
     search_fields = (
-        "inscripcion__persona__nombre",
-        "inscripcion__persona__apellido",
+        # Inscripcion no tiene ``persona``: el inscripto es ``ciudadano``.
+        "inscripcion__ciudadano__documento",
+        "inscripcion__ciudadano__nombre",
+        "inscripcion__ciudadano__apellido",
         "evaluacion__nombre",
     )
     readonly_fields = ("fecha_registro", "fecha_creacion", "fecha_modificacion")
@@ -632,3 +893,32 @@ class ResultadoEvaluacionAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+
+@admin.register(ActaCierreComision)
+class ActaCierreComisionAdmin(SisocModelAdmin):
+    # Sin operaciones: el acta se carga desde la pantalla de cierre de la
+    # comisión (resultados_comision_service), que necesita el form completo.
+    list_display = (
+        "numero_acta",
+        "comision_curso",
+        "profesor",
+        "fecha_fin",
+        "registrado_por",
+        "fecha_creacion",
+    )
+    list_filter = (
+        ("fecha_fin", RangeDateFilter),
+        ("fecha_creacion", RangeDateTimeFilter),
+    )
+    list_select_related = ("comision_curso", "profesor", "registrado_por")
+    search_fields = (
+        "=id",
+        "numero_acta",
+        "comision_curso__codigo_comision",
+        "comision_curso__nombre",
+        "profesor__documento",
+        "profesor__apellido",
+    )
+    raw_id_fields = ("comision_curso", "profesor", "registrado_por")
+    readonly_fields = ("fecha_creacion", "fecha_modificacion")

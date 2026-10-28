@@ -126,11 +126,11 @@ _spec.loader.exec_module(deploy_targets)
         (["src/scripts/github/release_orchestrator.js"], ("ninguno", [], False)),
         (
             ["docker/frontends/Dockerfile", "docker/frontends/nginx.conf.template"],
-            ("selectivo", ["front_celiaquia", "front_vpsl"], False),
+            ("selectivo", ["front_celiaquia", "front_inet", "front_vpsl"], False),
         ),
         (
             ["src/scripts/frontends/verificar-contrato.mjs"],
-            ("selectivo", ["front_celiaquia", "front_vpsl"], False),
+            ("selectivo", ["front_celiaquia", "front_inet", "front_vpsl"], False),
         ),
     ],
 )

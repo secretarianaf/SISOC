@@ -68,6 +68,19 @@ decisiones del 2026-10-15 y 2026-10-16 en `docs/registro/decisiones/`.
   con coordenadas persistidas en `Dispositivo.ubicacion_georef`. Registro:
   `docs/registro/cambios/2026-T4/2026-10-13-dispositivos-mapa.md`.
 
+## Editor compartido de ubicación
+
+- `src/backends/kernel/templates/components/map_pin_editor.html` y estáticos
+  `custom/js/mapPinEditor.js`, `custom/css/mapPinEditor.css`: adaptador de campos
+  latitud/longitud del formulario con Leaflet. No guarda ni conoce modelos;
+  cada dueño conserva validación, permisos y persistencia. Tests Node en
+  `src/backends/kernel/tests/js/mapPinEditor.test.js`.
+- Consumidores: formularios de Dispositivos, Comedores, CDI, CDF, Ciudadanos y
+  VPSL. React VPSL usa `src/frontends/apps/vpsl/src/MapPinEditor.tsx` como adaptador
+  de campos y del ciclo de vida (`pin:init` / `pin:destroy`), sin otra biblioteca.
+- Inventario y verificaciones por etapa en
+  `docs/plans/2026-T4/2026-10-26-2778-pin-interactivo.md`.
+
 ## Como leer este documento
 
 Reglas entre servicios: `AGENTS.md` ("Verticales independientes") y la guía
@@ -533,10 +546,31 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `/mobile/login` y las descargas sensibles se limitan al solicitante o a un
   superusuario.
 
+### Si necesitas cambiar el Django admin (Unfold)
+
+- Solo superusuarios (staff + superusuario): `src/backends/kernel/core/admin_site.py`
+  (`SisocAdminSite`, instalado por `core.admin_apps.SisocAdminConfig`; también
+  envuelve `admin/doc/`).
+- Bases de todo `admin.py`: `src/backends/kernel/core/admin_base.py` (`SisocModelAdmin`,
+  inlines, historial con auditlog). No usar `admin.ModelAdmin` directo.
+- Cambios de estado: `src/backends/kernel/core/admin_operaciones.py` (`Operacion` +
+  `OperacionesAdminMixin`), siempre llamando a un service existente; deja
+  `auditlog.LogEntry` con motivo. Sin service, no hay acción.
+- Sidebar por dominio y badge de entorno: `src/backends/kernel/core/admin_navigation.py`;
+  config en el bloque `UNFOLD` de `src/backends/config/settings.py`.
+- Métricas: `<app>/admin_metricas.py` con `metricas()`, descubiertas por
+  `src/backends/kernel/core/admin_dashboard.py` (agregadas y en caché, por runtime).
+- Templates: `src/backends/kernel/templates/admin/` (`index.html`, `app_index.html`, `sisoc/`).
+- CSP: `'unsafe-eval'` solo en `/admin/` (`src/backends/config/middlewares/csp.py`).
+- Tests: `src/backends/kernel/tests/test_admin_unfold.py` (acceso, runtimes, listados),
+  `test_admin_operaciones.py`, `test_admin_dashboard.py`.
+- Decisión: `docs/registro/decisiones/2026-10-26-2789-admin-unfold-autoservicio.md`.
+
 ### Si necesitas cambiar el import/export Excel-CSV del Django admin
 
 - `src/backends/kernel/core/admin_import_export.py`: bases `BaseImportExportAdmin` (import +
-  export) y `BaseExportAdmin` (solo export), con formatos limitados a XLSX/CSV.
+  export) y `BaseExportAdmin` (solo export), con formatos limitados a XLSX/CSV,
+  sobre `SisocModelAdmin` y los forms de `unfold.contrib.import_export`.
 - `<app>/resources.py`: resources explicitos cuando hay que acotar campos o
   resolver relaciones por nombre (`core`, `intervenciones`).
 - `src/backends/config/settings.py`: bloque `IMPORT_EXPORT_*` (transacciones, preview
@@ -559,10 +593,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `src/backends/kernel/templates/includes/sidebar/`
 - `src/backends/kernel/templates/components/`
 - `src/backends/kernel/static/custom/js/sidebar.js`
-- layout claro (Inicio, Inspecciones): `includes/base_claro.html` +
-  `core.services.layout_claro.contexto_layout_claro`; el resto extiende
-  `includes/base.html` (oscuro). Ver
-  `docs/registro/cambios/2026-T4/2026-10-15-kernel-layout-claro-barra-lateral.md`.
+- layout claro (solo Inspecciones): `includes/base_claro.html` +
+  `core.services.layout_claro.contexto_layout_claro`; el resto, Inicio
+  incluido, extiende `includes/base.html` (oscuro). Ver
+  `docs/registro/cambios/2026-T4/2026-10-15-kernel-layout-claro-barra-lateral.md`
+  y `docs/registro/cambios/2026-T4/2026-10-23-2712-inicio-sidebar-como-resto-sisoc.md`.
 
 ### Si necesitas cambiar endpoints API
 
@@ -724,7 +759,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - etiquetas visibles ≠ valores persistidos: la etapa `revision_auditoria` se muestra como «Revisión para Carga». No cambiar valores internos para acomodar un label
 - asociación actual: `RendicionCuentaMensual.proyecto`; conservar fallback por `comedor.codigo_de_proyecto` para datos legados
 - listado y detalle del legajo: `src/backends/comedores/gestion_organizaciones/views.py` y templates `organizacion_*`
-- proyectos editables: `OrganizacionForm.codigos_proyecto` mantiene el contrato CSV mediante un campo oculto
+- proyectos editables: `OrganizacionForm.proyectos_lineas` recibe un JSON oculto con filas `{codigo, linea}` (línea = programa de Abordaje, #2745); `asignaciones_territoriales` (#2642, filas `{proyecto, territorial}`) se valida contra esos códigos. Región/subzona canónica: `Organizacion.region_abordaje`/`subzona_abordaje` (kernel); `DatosRegionOrganizacion` de `gestion_organizaciones` quedó sin uso en pantallas. Los datos por programa se resuelven en `src/backends/comedores/gestion_organizaciones/services/programas.py`
 - tests: `src/backends/comedores/tests/test_rendicioncuentasmensual_services_unit.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_domain_rules.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_visualizacion.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_acta_auditoria.py` y `src/backends/comedores/gestion_organizaciones/tests.py`
 - escenarios QA de permisos por etapa: `python manage.py seed_rendicion_stage_examples --comedor-id <id>` (solicita la contraseña de forma interactiva)
 - documentación canónica: `docs/flujos/rendiciones_mensuales_proyectos.md`
@@ -1046,7 +1081,7 @@ codigo, no se lee entero al inicio.
   inferida; no demuestra consumo HTTP ni servicios activos.
 - La etapa `source` de `docker/django/Dockerfile` ejecuta el generador con
   `--imagen` antes de quitar frontends y verticales. El arranque conserva esa
-  captura completa (`var/arquitectura/grafo-imagen.json`); no reconstruye un
+  captura completa (`/sisoc/var/arquitectura/grafo-imagen.json` dentro de la imagen); no reconstruye un
   mapa parcial desde el core aislado. `.dockerignore` excluye `var` para evitar
   capturas locales dentro de una nueva imagen.
 - `python src/scripts/arquitectura/generar_mapa.py --docs` actualiza el grafo
@@ -1175,3 +1210,31 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `src/backends/kernel/users/migrations/0060_profile_accesos_siis_web.py` y `src/backends/comedores/pwa/migrations/0026_inicializar_acceso_web.py`: schema kernel y backfill histórico core. Aplicar con migrador completo; no recalcular flags en runtime ni repetir backfill sobre habilitaciones administradas.
 - `src/backends/sisoc_core/tests/test_users_siis.py`: contrato, denegaciones, credenciales administrativas, duplicados, gate web y backfill.
 - `docs/registro/cambios/2026-T4/2026-10-06-auth-siis.md`: evidencia y riesgo de rollback a código que ignora el flag.
+
+## INET React v2
+
+- Mapa del CFP: `src/frontends/apps/inet/src/DetailPanels.tsx` usa Google Maps con el dato
+  `Domicilio mapa` de `src/backends/vat/VAT/services/inet_queries.py` (calle/altura o domicilio
+  de actividades). Requiere localidad y provincia; sin datos muestra un mensaje.
+
+- Preservación visual solicitada por el usuario (2026-10-06):
+  `src/frontends/apps/inet/AGENTS.md`. Releer la implementación vigente antes de
+  editar; conservar las mejoras locales de composición, estilos y ubicaciones.
+  Pantallas y reglas: `docs/implementaciones/inet_react.md`.
+
+- Entrada `/v2/inet/`, app `src/frontends/apps/inet`, servicio `front_inet` y
+  variable `FRONT_INET_ORIGIN`; acceso y comandos: `docs/operacion/inet_react.md`.
+- API interna `/api/inet/` en `src/backends/vat/VAT/api_inet_urls.py`, `api_inet_views.py` y
+  `api_inet_serializers.py`. Se enruta al backend VAT desde `src/backends/config/backends.json`.
+- Queries/formularios/workflows: `src/backends/vat/VAT/services/inet_{queries,forms,workflow}.py`.
+  Alta CFP, wizard comisión y asistencia comparten operaciones con legacy.
+- Contrato dedicado `config.urls_inet_v2`, `openapi.inet.yaml` e
+  `inet.generated.ts`; checks CI y `npm run api:check` incluyen INET.
+- Tests `src/backends/vat/tests/test_inet_api.py`, `apps/inet/src/App.test.tsx`,
+  `apps/inet/src/Fields.test.tsx`,
+  `e2e/inet.e2e.ts`. No modificar HasAPIKey de `/api/vat/` para habilitar React.
+- Formularios: permitir opcionales JSON nulos, describir ModelMultipleChoiceField
+  como multiselect y conservar `activo_present` del CFP legacy. Las consultas
+  de opciones remotas dependen solo de padres/territorio, no de todo el formulario.
+- Cambios funcionales, visuales y verificación:
+  `docs/registro/cambios/2026-T4/2026-10-26-inet-react.md`.

@@ -101,16 +101,18 @@ print('OCR_RUNTIME_OK')
     assert "OCR_RUNTIME_OK" in result.stdout
 
 
-def test_admin_ocr_remoto_solo_con_permiso_de_modulo():
+def test_admin_ocr_remoto_solo_para_superusuarios():
     request = RequestFactory().get("/admin/")
     request.user = SimpleNamespace(
+        is_authenticated=True,
         is_active=True,
         is_staff=True,
-        has_module_perms=lambda app: app == "ocr",
+        is_superuser=True,
     )
     with override_settings(SISOC_BACKENDS={"ocr": load_backends_registry()["ocr"]}):
         assert admin_backends(request)["backend_admin_links"] == [
             {"label": "OCR", "url": "/admin/ocr/", "app_label": "ocr"}
         ]
-        request.user.has_module_perms = lambda app: False
+        # Issue #2789: el permiso del módulo ya no alcanza sin superusuario.
+        request.user.is_superuser = False
         assert not admin_backends(request)["backend_admin_links"]

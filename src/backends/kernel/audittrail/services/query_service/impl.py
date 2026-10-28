@@ -14,6 +14,7 @@ from django.http import Http404
 from auditlog.models import LogEntry
 from audittrail.constants import get_tracked_models, is_tracked_model
 from audittrail.forms import MAX_EXPORT_RANGE_DAYS
+from core.utils import rango_del_dia_local
 
 
 GROUPING_WINDOW_SECONDS = 2
@@ -406,7 +407,8 @@ def apply_filters(qs, cleaned_data: dict):
 
     start_date = data.get("start_date")
     if start_date:
-        qs = qs.filter(timestamp__date__gte=start_date)
+        # Rango del día local en vez de ``__date`` (ver ``rango_del_dia_local``).
+        qs = qs.filter(timestamp__gte=rango_del_dia_local(start_date)[0])
 
     end_date = data.get("end_date")
     if end_date:

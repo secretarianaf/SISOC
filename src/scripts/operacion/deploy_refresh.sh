@@ -380,6 +380,7 @@ main() {
   deployed_revision="$(git -C "$ROOT_DIR" rev-parse HEAD)" \
     || fail "No pude resolver la revision a desplegar."
   export VPSL_IMAGE_TAG="sisoc/front-vpsl:$deployed_revision"
+  export INET_IMAGE_TAG="sisoc/front-inet:$deployed_revision"
   export VITE_RELEASE_SHA="$deployed_revision"
   # Tag de las imágenes con código (core, backends, migrador): una por SHA.
   export SISOC_RELEASE_SHA="$deployed_revision"

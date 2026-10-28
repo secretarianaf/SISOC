@@ -168,6 +168,40 @@ class HmlPermissionTests(unittest.TestCase):
         self.assertEqual((self.file.stat().st_mode >> 6) & 7, 6)
         self.assertEqual(self.run_cli().returncode, 0)
 
+    def test_concurrent_mode_change_is_rejected(self):
+        code = (
+            "import os\nimport runpy\nimport sys\n"
+            "script, root, backup, document = sys.argv[1:]\n"
+            "real_fsync = os.fsync\n"
+            "def change_mode_after_planning(fd):\n"
+            "    real_fsync(fd)\n"
+            "    os.chmod(document, 0o600)\n"
+            "os.fsync = change_mode_after_planning\n"
+            "sys.argv = [script, '--root', root, '--apply', '--backup', backup]\n"
+            "runpy.run_path(script, run_name='__main__')\n"
+        )
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                "-c",
+                code,
+                str(SCRIPT),
+                str(self.root),
+                str(self.backup),
+                str(self.file),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertEqual(json.loads(result.stdout)["error"], "RuntimeError")
+        self.assertEqual(self.file.stat().st_mode & 0o777, 0o600)
+        self.assertNotIn(KEY, os.listxattr(self.file))
+        self.assertEqual(self.file.read_bytes(), b"unchanged synthetic document")
+        self.assertTrue(self.backup.exists())
+
 
 class HmlComposePolicyTests(unittest.TestCase):
     def test_every_persistent_writer_has_explicit_hml_identity(self):

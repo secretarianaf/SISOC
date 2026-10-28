@@ -158,11 +158,18 @@ def main():
             if change is None:
                 continue
             info = os.fstat(fd)
-            if (info.st_dev, info.st_ino, info.st_uid, info.st_gid) != (
+            if (
+                info.st_dev,
+                info.st_ino,
+                info.st_uid,
+                info.st_gid,
+                stat.S_IMODE(info.st_mode),
+            ) != (
                 change["device"],
                 change["inode"],
                 change["uid"],
                 change["gid"],
+                change["mode"],
             ):
                 raise RuntimeError("Filesystem identity changed; backup retained")
             for key, original in change["before"].items():

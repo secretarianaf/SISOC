@@ -321,3 +321,25 @@ def test_api_key_can_patch_relevamiento_and_primer_seguimiento(header_name):
     seguimiento.refresh_from_db()
     assert relevamiento.estado == "Finalizado"
     assert seguimiento.estado == PrimerSeguimiento.ESTADO_COMPLETO
+
+
+@pytest.mark.django_db
+def test_reenvio_de_la_app_rearma_el_snapshot_del_relevamiento_finalizado():
+    # #2797: el snapshot congela los datos del comedor, pero un reenvío de la
+    # app ("Corregir y reenviar") trae los de esta visita y debe reemplazarlo.
+    provincia = Provincia.objects.create(nombre="Provincia reenvio")
+    comedor = Comedor.objects.create(nombre="Nombre viejo", provincia=provincia)
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="Finalizado")
+    assert relevamiento.datos_comedor_snapshot["nombre"] == "Nombre viejo"
+    Comedor.objects.filter(pk=comedor.pk).update(nombre="Nombre corregido")
+    client = _token_client(_make_territorial("territorial_reenvio", [provincia]))
+
+    response = client.patch(
+        "/api/relevamiento",
+        {"sisoc_id": relevamiento.id, "estado": "Finalizado"},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    relevamiento.refresh_from_db()
+    assert relevamiento.datos_comedor_snapshot["nombre"] == "Nombre corregido"

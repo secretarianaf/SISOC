@@ -47,20 +47,22 @@ enviado, queda inmutable y forma parte del historial del centro.
 - P59 → P60: la P60 se muestra si P59 ≠ 59.5 (el texto "pasa a 61 en cualquier
   otro caso" se toma como error de tipeo).
 - P101 sólo se exige si P100 = Sí, en línea con el pase condicional.
-- Los textos de "especificar" (P1, P13, P90) se exigen sólo cuando se elige la
-  opción correspondiente.
+- Los textos de "especificar" (P1, P13, P90, P101) se exigen sólo cuando se
+  elige la opción correspondiente.
+- P101 "Otros": la especificación no trae campo de texto; producto pidió
+  agregarlo. Columna `101_ACC_TIPO_OTRO_TEXT`, mismo criterio que
+  `90_FAM_COM_OTRO_TEXT`.
+- P85/P86 se condicionan a la P84 tal como dice la especificación (confirmado
+  por producto).
+- "Director/Coordinador": `Trabajador.Rol` no tiene Coordinador y no se agrega;
+  edita sólo Director (confirmado por producto).
 - En los enunciados se corrigió "qué/cómo" acentuado donde es conjunción o
   relativo ("altura que permite", "como mediador").
 
 ## Pendiente de producto
 
-- P85/P86 hablan de lactancia pero la especificación las condiciona a la P84
-  (alimentación complementaria). Se implementó tal cual; si dependen de la P83,
-  es un cambio de una línea en el schema.
 - P91: faltan los textos y la condición de `91_FAM_RECL_[CONOCIDO|ANONIMO|
   DERIVACION]`; esas tres columnas todavía no existen.
-- "Director/Coordinador": `Trabajador.Rol` no tiene Coordinador; hoy edita sólo
-  Director.
 
 ## Tests
 

@@ -105,6 +105,7 @@ def test_schema_columnas_respetan_la_matriz_sql():
     assert columnas["p17_esp_sup_lact"] == "17_ESP_SUP_LACT"
     assert columnas["p97_art_i_a_planif"] == "97_ART_i_a_PLANIF"
     assert columnas["p101_acc_tipo_pers_lsa"] == "101_ACC_TIPO_PERS_LSA"
+    assert columnas["p101_acc_tipo_otro_text"] == "101_ACC_TIPO_OTRO_TEXT"
     assert columnas["p103_incl_juegos_ext_adapt"] == "103_INCL_JUEGOS_EXT_ADAPT"
     assert columnas["centro"] == "0_CDI_ID"
     assert columnas["jurisdiccion"] == "0_Jurisdiccion_ID"
@@ -171,6 +172,24 @@ def test_completitud_detecta_faltantes_por_tipo():
     assert errores[22] == MENSAJE_FILAS_INCOMPLETAS
     assert errores[90] == MENSAJE_CHECKBOX
     assert 16 in errores
+
+
+def test_p101_otros_exige_especificar():
+    valores = _respuestas_completas()
+    valores.update(
+        p100_acc_elementos_existe=1,
+        p101_acc_tipo_otros=True,
+        p101_acc_tipo_otro_text="",
+    )
+    formulario = FormularioCalidadCDI(**valores)
+
+    assert errores_de_completitud(formulario)[101] == MENSAJE_ESPECIFICAR
+
+    formulario.p101_acc_tipo_otros = False
+    limpiar_respuestas_ocultas(formulario)
+
+    assert 101 not in errores_de_completitud(formulario)
+    assert formulario.p101_acc_tipo_otro_text is None
 
 
 @pytest.mark.django_db

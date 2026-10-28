@@ -1795,11 +1795,14 @@ SECCIONES = (
                         "PERS_LSA",
                         "Personal capacitado en lengua de señas argentina (LSA)",
                     ),
-                    ("OTROS", "Otros"),
+                    ("OTROS", "Otros (especificar)"),
                 ),
                 nota="Incluye rampas, señalización adaptada, ancho de pasillos y/o "
                 "puertas adecuados, etc.",
                 visible_si=_es("p100_acc_elementos_existe", 1),
+                # La especificación no trae este campo; se agregó a pedido de
+                # producto con el mismo criterio que 90_FAM_COM_OTRO_TEXT.
+                especificar=Especificar("ACC_TIPO_OTRO_TEXT", "OTROS"),
             ),
             _radio(
                 102,

@@ -33,7 +33,6 @@ from VAT.api_inet_serializers import (
 )
 from VAT.forms import ComisionCursoWizardHorarioForm, InscripcionForm
 from VAT.services.access_scope import (
-    get_user_provincia_id,
     is_vat_provincial,
     is_vat_sse,
 )
@@ -200,8 +199,6 @@ class InetCollectionView(InetAPIView):
                 validate_horarios(payload.get("horarios", [])),
             )
         else:
-            if self.resource == "planes":
-                form.instance.provincia_id = get_user_provincia_id(request.user)
             item = form.save()
             if self.resource == "contactos":
                 sync_responsable_principal(item.centro)

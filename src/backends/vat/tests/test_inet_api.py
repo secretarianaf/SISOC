@@ -341,6 +341,7 @@ def test_plans_forms_share_curricular_validation(api, data):
     response = api.get("/api/inet/planes/form/")
     assert response.status_code == 200
     assert {row["name"] for row in response.data["fields"]} >= {
+        "provincia",
         "nombre",
         "sector",
         "horas_reloj",
@@ -352,6 +353,44 @@ def test_plans_forms_share_curricular_validation(api, data):
     )
     assert response.status_code == 400
     assert PlanVersionCurricular.objects.count() == 1
+
+
+def test_plan_manual_api_conserva_provincia_seleccionada_y_aparece_en_cursos(api, data):
+    values = {
+        "nombre": "Plan manual con provincia",
+        "provincia": data["province"].pk,
+        "sector": data["sector"].pk,
+        "modalidad_cursada": data["mode"].pk,
+        "activo": True,
+    }
+    response = api.post("/api/inet/planes/", {"campos": values}, format="json")
+    assert response.status_code == 201, response.data
+    plan = PlanVersionCurricular.objects.get(pk=response.data["id"])
+    assert plan.provincia_id == data["province"].pk
+    response = api.get(
+        "/api/inet/cursos/options/plan_estudio/", {"centro": data["center"].pk}
+    )
+    assert response.status_code == 200
+    assert str(plan.pk) in {row["value"] for row in response.data["results"]}
+
+
+def test_plan_manual_api_rechaza_provincia_vacia(api, data):
+    response = api.post(
+        "/api/inet/planes/",
+        {
+            "campos": {
+                "nombre": "Plan sin provincia",
+                "sector": data["sector"].pk,
+                "modalidad_cursada": data["mode"].pk,
+            }
+        },
+        format="json",
+    )
+    assert response.status_code == 400
+    assert "provincia" in response.data
+    assert not PlanVersionCurricular.objects.filter(
+        nombre="Plan sin provincia"
+    ).exists()
 
 
 def test_options_are_paginated_and_cfp_parent_is_not_injectable(api, data):
@@ -461,6 +500,7 @@ def test_curricular_plan_create_edit_and_delete_preserve_legacy_rules(
     )
     values = {
         "nombre": "Plan industrial inicial",
+        "provincia": data["province"].pk,
         "sector": data["sector"].pk,
         "modalidad_cursada": data["mode"].pk,
         "normativa_tipo": "Resolución",

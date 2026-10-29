@@ -89,8 +89,9 @@ class AuditoriaForm(forms.Form):
     )
     genera_acta_auditoria = forms.TypedChoiceField(
         label="¿Se genera acta de auditoría?",
-        required=False,
-        choices=[("", "Seleccioná una opción"), (True, "Sí"), (False, "No")],
+        required=True,
+        choices=[(False, "No"), (True, "Sí")],
+        initial=False,
         coerce=_coerce_booleano_nullable,
         empty_value=None,
     )
@@ -120,7 +121,8 @@ class AuditoriaForm(forms.Form):
     def __init__(self, *args, rendicion, **kwargs):
         super().__init__(*args, **kwargs)
         self.ya_validada = rendicion.validada is True
-        self.fields["genera_acta_auditoria"].required = self.ya_validada
+        if self.initial.get("genera_acta_auditoria") is None:
+            self.initial["genera_acta_auditoria"] = False
         if self.ya_validada:
             self.initial["validada"] = True
             self.fields["validada"].disabled = True

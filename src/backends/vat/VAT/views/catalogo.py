@@ -31,7 +31,6 @@ from VAT.forms import (
     _split_normativa_value,
 )
 from VAT.services.access_scope import (
-    get_user_provincia_id,
     is_vat_provincial,
     is_vat_sse,
 )
@@ -509,9 +508,6 @@ class PlanVersionCurricularCreateView(
         return kwargs
 
     def form_valid(self, form):
-        provincia_id = get_user_provincia_id(self.request.user)
-        if provincia_id:
-            form.instance.provincia_id = provincia_id
         response = super().form_valid(form)
         messages.success(self.request, "Plan de estudio creado correctamente.")
         return response

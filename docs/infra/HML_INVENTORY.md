@@ -6,6 +6,15 @@ contenedores ni se modificaron la DB remota, TLS o configuraciones criticas.
 
 ## Alcance y fuente canonica
 
+Actualizacion de runners (2026-10-27): SSH confirma servicio organizacional
+activo y `Runner.Listener` vivo en
+`/home/sisoc-deploy/actions-runner-org-homologacion`. GitHub confirma
+`sisoc-homologacion-org` online, con labels `self-hosted` y
+`sisoc-homologacion`, en `Default`, con SISOC seleccionado y repositorios
+publicos permitidos. El proximo deploy de `homologacion` sera la primera prueba
+real de SISOC con este runner; no se disparo ningun deploy HML en esta revision.
+Los demas datos conservan la fecha de la auditoria original.
+
 El entorno canonico es `hml-old` (`10.80.5.47`). Los aliases AWS quedan fuera
 de alcance y se conservan solo como referencia de una posible migracion.
 
@@ -47,7 +56,8 @@ de alcance y se conservan solo como referencia de una posible migracion.
 | `nginx` | activo | habilitado | NGINX 1.18.0 |
 | `mysql` | inactivo | deshabilitado | Stage 1 aplicado; datadir y paquetes intactos hasta cerrar observacion |
 | `cron` | activo | habilitado | `sisoc-deploy` tiene una tarea semanal conservadora; root pendiente |
-| `actions.runner.dsocial118-SISOC.sisoc-homologacion` | activo | habilitado | Corre como `sisoc-deploy` |
+| `actions.runner.secretarianaf.sisoc-homologacion-org` | activo (2026-10-27) | no reverificado | Corre como `sisoc-deploy` desde `/home/sisoc-deploy/actions-runner-org-homologacion` |
+| `actions.runner.dsocial118-SISOC.sisoc-homologacion` | inactivo (dead, 2026-10-27) | no reverificado | Runner de repositorio anterior |
 | `apache2` | fallido | habilitado | No sirve la app observada; NGINX usa certificados bajo `/etc/apache2/certs` |
 | `sisoc.service` | fallido | habilitado | Apunta a `/opt/ssies/SISOC-Backoffice`, path inexistente |
 
@@ -231,7 +241,7 @@ detalle. No se instalaron ni actualizaron paquetes.
 ## Deploy actual inferido y confirmado
 
 1. Un push a `homologacion` dispara `.github/workflows/deploy.yml`.
-2. El job usa el runner self-hosted `sisoc-homologacion`.
+2. El job selecciona `[self-hosted, sisoc-homologacion]`; runner vigente `sisoc-homologacion-org`.
 3. GitHub Environment `homologacion` aporta `APP_ROOT`.
 4. `src/scripts/operacion/deploy_refresh.sh --yes` actualiza el checkout y reconstruye
    el stack backend.

@@ -4,7 +4,7 @@
 {% block title %}Acompañamiento Territorial - Comedor: {{ comedor.nombre }}{% endblock %}
 ;
 {% block titulo-pagina %}
-    {{ relevamiento.comedor.nombre }}
+    {{ relevamiento.datos_comedor.nombre }}
     <span class="ml-2 h5">| Acompañamiento Territorial</span>
     <span class="ml-2 h5">| {{ relevamiento.fecha_visita | default_if_none:"Sin información" }} |</span>
     <span class="ml-2 h5"
@@ -190,7 +190,7 @@
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h1 class="comedor-header-title">
-                    {{ relevamiento.comedor.nombre }}
+                    {{ relevamiento.datos_comedor.nombre }}
                     <span class="comedor-header-divider">|</span>
                 </h1>
             </div>

@@ -76,7 +76,7 @@ Guia vigente y cuatro checklists: `docs/desarrollo/verticales_independientes.md`
 - `src/scripts/ai/preflight.sh <tipo> [path]`: resumen corto del contexto.
 - `python src/scripts/ai/context_memory.py preflight --target <path>`: resuelve memoria reutilizable y detecta si quedo vieja.
 - `python src/scripts/ci/check_docs_paths.py --existencia <docs.md>`: rutas documentadas vigentes y existentes (CI lo corre sobre los Markdown del PR).
-- Skills del repo: la fuente esta en `.agents/skills/` y `.claude/skills/` es una copia generada (ver `docs/ia/SKILLS.md`). Actuales: `cambio-guiado`, `usuario-no-tecnico`, `registro-cambios`, `verticales-checklist`, `migracion-app-label`, `frontend-ui-ux`, `tema-verde-institucional`.
+- Skills del repo: la fuente esta en `.agents/skills/` y `.claude/skills/` es una copia generada (ver `docs/ia/SKILLS.md`). Actuales: `cambio-guiado`, `usuario-no-tecnico`, `registro-cambios`, `verticales-checklist`, `migracion-app-label`, `frontend-ui-ux`, `tema-verde-institucional`, `preparar-deploy`.
 
 ## Documentacion
 

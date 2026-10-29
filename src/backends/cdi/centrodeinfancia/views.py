@@ -73,6 +73,7 @@ from centrodeinfancia.forms import (
     TrabajadorCDIForm,
 )
 from centrodeinfancia.formulario_cdi_schema import CAMPOS_OPCIONES_MULTIPLES
+from centrodeinfancia.views_formulario_calidad import contexto_legajo_calidad
 from centrodeinfancia.filter_config import (
     CENTRODEINFANCIA_ADVANCED_FILTER,
     get_filters_ui_config,
@@ -818,6 +819,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         else:
             context["formularios_total"] = 0
             context["formularios_recent"] = []
+        context.update(contexto_legajo_calidad(self.request.user, self.object))
 
         if context["cdi_intervenciones_visible"]:
             intervencion_form = IntervencionCentroInfanciaForm(

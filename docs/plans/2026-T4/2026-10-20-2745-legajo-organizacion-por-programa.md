@@ -122,6 +122,31 @@ Comunitario:
     comedor (`comedores.ComedorDatosConvenioPnud`), aunque compartan nombres
     de campos. Conviven: el de la organización se carga a mano y el del
     comedor sigue igual, en el legajo del comedor (confirmado el 22/10/2026).
+28. Región, Subzona y territoriales: la fuente es lo que agregó el #2642
+    (mergeado en `development` en paralelo a este plan) y no los modelos de
+    región de la Etapa 1 (decidido el 26/10/2026). Región y Subzona son
+    `Organizacion.region_abordaje` y `subzona_abordaje` (catálogos del kernel,
+    mismo Excel del Anexo A), y los territoriales son las parejas
+    Proyecto–Territorial (`ProyectoOrganizacion.territoriales`) más las
+    asignaciones generales anteriores. Se editan en la sección "Datos Abordaje
+    Comunitario" del formulario de organización. `RegionAbordaje`,
+    `SubzonaAbordaje` y `DatosRegionOrganizacion` de la Etapa 1 se retiran
+    en el PR de las Etapas 2 y 3 (migración
+    `gestion_organizaciones/0005_region_desde_issue_2642`, decidido el
+    27/10/2026). Antes de borrarlas, la migración copia al #2642 las
+    regiones, subzonas y datos de cada organización, y se frena si tendría
+    que pisar un valor distinto. En el legajo, los territoriales se muestran
+    por proyecto (decidido el 27/10/2026). En la edición de la organización,
+    "Datos Abordaje Comunitario" aparece solo con un programa de Abordaje (o
+    con datos ya cargados) y reúne Región, Subzona y una fila por proyecto
+    con línea, territoriales y convenio; reemplaza el selector aparte
+    Proyecto–Territorial del #2642 (mockup validado el 27/10/2026).
+29. Línea de las rendiciones: el #2642 la deduce del proyecto (código o
+    nombre "AMBA" → Línea Secos; cualquier otro → Línea Tradicional). Según
+    el área usuaria, todo proyecto de Línea Secos es AMBA y viceversa
+    (confirmado el 27/10/2026), así que coincide con `LineaProyecto` y no se
+    cambia. El legajo agrupa las rendiciones por la línea guardada en cada
+    una.
 
 ### 1.3 Cambios de datos
 
@@ -282,11 +307,13 @@ descripción debe decir cómo.
 8. Firmantes y comedores sin programa, o con un programa que la organización
    no tiene cargado, se muestran en un bloque "Sin programa asignado" del
    legajo, visible en cualquier programa seleccionado.
-9. Si la organización tiene programas distintos de los tres (por ejemplo,
-   PNUD), cada uno tiene su propia opción en el selector y muestra sus
-   firmantes y comedores.
-10. Documentación: si la organización tiene documentos cargados pero no tiene
-    Alimentar Comunidad, la sección se muestra igual.
+9. Organizaciones con programas distintos de los tres (por ejemplo, PNUD):
+   según el área usuaria, el caso no existe (23/10/2026) y el legajo no le
+   da lugar. Se verifica antes del deploy con
+   `src/scripts/operacion/verificar_2745_casos_legajo.sql` (Etapa 6, paso 0).
+10. Documentación cargada en una organización sin Alimentar Comunidad: según
+    el área usuaria, el caso no existe (23/10/2026) y se verifica con el
+    mismo script. La documentación se muestra solo en Alimentar Comunidad.
 11. Proyectos sin línea: se listan en un aviso en las pestañas de Abordaje,
     con enlace a la edición de la organización.
 12. Rendiciones cuya línea no corresponde a ningún programa cargado de la
@@ -434,9 +461,11 @@ Archivos: `forms.py`, `views.py`, `urls.py` y templates de
    `LineaProyecto`. La línea solo ofrece los programas de Abordaje elegidos
    en el mismo formulario. Proyectos existentes sin línea: se muestran con la
    línea vacía y la exigen al volver a guardar.
-3. Datos de Región en el mismo formulario: Región y Subzona dependiente
-   (Subzona filtrada por Región), visibles solo si hay un programa de
-   Abordaje. Territorial sigue en su campo actual.
+3. Datos de Región: no se agregan campos; se usan Región, Subzona y
+   territoriales por proyecto del #2642 (definición 28). Al integrar con el
+   #2642 (PR #2775) los códigos y su línea quedaron en un solo campo,
+   `proyectos_lineas` (filas `{codigo, linea}`), contra el que se validan las
+   asignaciones territoriales.
 4. `FirmanteForm`: limitar `programa` a los programas de la organización. Si
    la organización no tiene programas, ofrecer todos, como hoy
    (definición 22).
@@ -521,23 +550,31 @@ Archivos: `OrganizacionDetailView` y template `organizacion_detail.html`
    "Sin programas asignados".
 5. Botones de editar de Proyectos y Región llevan a la edición de la
    organización (ancla a la sección); el de Convenio, a la pantalla nueva.
-6. Reglas de visibilidad de la sección 2.1 (puntos 8 a 12): bloque "Sin
-   programa asignado", opción propia para programas distintos de los tres,
-   Documentación visible si hay documentos aunque falte Alimentar, aviso de
-   proyectos sin línea y bloque "Rendiciones de otras líneas".
+6. Reglas de visibilidad de la sección 2.1 (puntos 8, 11 y 12): bloque "Sin
+   programa asignado", aviso de proyectos sin línea y bloque "Rendiciones de
+   otras líneas" (casos 1 a 4 del tablero "B v3 · Casos que faltaban" del
+   mockup). Los puntos 9 y 10 no se diseñan: se verifican antes del deploy
+   (Etapa 6, paso 0). Si igual apareciera un comedor o firmante de un
+   programa fuera de los tres, cae en "Sin programa asignado".
 7. Conservar estilos actuales (badges, botones, columnas de Documentación).
 8. Tests de vista: organización con uno, dos y tres programas; sin
    programas; parámetro de programa inválido; Documentación solo en
-   Alimentar y también con documentos sin Alimentar; Rendiciones filtradas
-   por la línea de la rendición, incluidas las sin proyecto y las de otras
-   líneas; firmante y comedor sin programa visibles; programa distinto de los
-   tres visible; aviso de proyectos sin línea; usuario sin permiso de
-   edición no ve los botones. Test de no pérdida: todo firmante, comedor,
-   documento, proyecto y rendición de la organización aparece en alguna
-   parte del legajo.
+   Alimentar; Rendiciones filtradas por la línea de la rendición, incluidas
+   las sin proyecto y las de otras líneas; firmante y comedor sin programa
+   visibles; aviso de proyectos sin línea; usuario sin permiso de edición no
+   ve los botones. Test de no pérdida: todo firmante, comedor, proyecto y
+   rendición de la organización aparece en alguna parte del legajo, y la
+   documentación aparece en Alimentar Comunidad.
 
 Hecho cuando: el legajo coincide con B v3 para todas las combinaciones de
 programas.
+
+Registro de las Etapas 4 y 5:
+`docs/registro/cambios/2026-T4/2026-10-27-2745-etapas4y5-comedor-y-legajo.md`.
+Además de los casos del punto 6, un proyecto con una línea que la
+organización no tiene se muestra en el aviso de proyectos sin línea, y una
+organización sin Secos ni Tradicional que tiene proyectos, región o
+rendiciones los ve debajo de Datos de la Organización.
 
 ### Etapa 6 — Verificación de datos en homologación
 
@@ -545,6 +582,13 @@ La carga inicial ya no es un paso manual: viaja con la Etapa 1 como migración
 de datos (definición 15) y las reglas no bloquean a organizaciones sin
 programas (definición 22), así que no hay un orden de despliegue que cuidar.
 Esta etapa solo verifica el resultado.
+
+0. Antes de desplegar en homologación y en producción, correr
+   `src/scripts/operacion/verificar_2745_casos_legajo.sql` (solo lectura):
+   organizaciones que recibirían un programa fuera de los tres y
+   organizaciones con documentos sin Alimentar Comunidad (sección 2.1,
+   puntos 9 y 10). Lo esperado es que no devuelva filas; si devuelve,
+   revisar con el área usuaria antes de desplegar.
 
 1. Antes y después de desplegar la Etapa 1 en homologación, contar:
    organizaciones, comedores, firmantes, proyectos, rendiciones y documentos

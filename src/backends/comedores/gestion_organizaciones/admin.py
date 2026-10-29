@@ -4,12 +4,9 @@ from unfold.contrib.filters.admin import RangeDateFilter
 from core.admin_base import SisocModelAdmin
 from gestion_organizaciones.models import (
     ConvenioProyecto,
-    DatosRegionOrganizacion,
     Firmante,
     LineaProyecto,
     ProgramaOrganizacion,
-    RegionAbordaje,
-    SubzonaAbordaje,
 )
 
 
@@ -38,29 +35,6 @@ class LineaProyectoAdmin(SisocModelAdmin):
     list_filter = ("programa",)
     search_fields = ("proyecto__codigo", "proyecto__organizacion__nombre")
     raw_id_fields = ("proyecto",)
-
-
-@admin.register(RegionAbordaje)
-class RegionAbordajeAdmin(SisocModelAdmin):
-    list_display = ("nombre",)
-    search_fields = ("nombre",)
-
-
-@admin.register(SubzonaAbordaje)
-class SubzonaAbordajeAdmin(SisocModelAdmin):
-    list_display = ("nombre", "region")
-    list_select_related = ("region",)
-    list_filter = ("region",)
-    search_fields = ("nombre",)
-
-
-@admin.register(DatosRegionOrganizacion)
-class DatosRegionOrganizacionAdmin(SisocModelAdmin):
-    list_display = ("organizacion", "region", "subzona")
-    list_select_related = ("organizacion", "region", "subzona")
-    list_filter = ("region",)
-    search_fields = ("organizacion__nombre",)
-    raw_id_fields = ("organizacion",)
 
 
 @admin.register(ConvenioProyecto)

@@ -197,7 +197,21 @@ class OrganizacionForm(forms.ModelForm):
                 for usuario in territoriales
             ],
             "proyectos": self.proyectos_actuales(),
+            "inactivos": self.lineas_de_proyectos_quitados(),
         }
+
+    def lineas_de_proyectos_quitados(self):
+        """Línea de cada proyecto quitado, por código.
+
+        Si se vuelve a agregar uno, el JS la propone: guardar no la pisa.
+        """
+        if not self.instance.pk:
+            return {}
+        return dict(
+            LineaProyecto.objects.filter(
+                proyecto__organizacion=self.instance, proyecto__activo=False
+            ).values_list("proyecto__codigo", "programa_id")
+        )
 
     def _configurar_territoriales(self):
         # Los ya asignados siguen siendo opciones aunque hayan perdido el rol:

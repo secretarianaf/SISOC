@@ -13,7 +13,10 @@ import datetime
 import io
 import json
 import re
+import runpy
+import sys
 import zipfile
+from pathlib import Path
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -548,3 +551,60 @@ def test_el_docx_no_trae_la_indicacion_del_area_en_los_comentarios_finales():
     assert "Incorporar en este apartado" not in texto
     assert "COMENTARIOS FINALES" in texto
     assert "Sin novedades." in texto
+
+
+SCRIPT_PLANTILLA = (
+    Path(__file__).resolve().parents[1]
+    / "relevamientos"
+    / "scripts"
+    / "armar_plantilla_siph.py"
+)
+
+
+PLANTILLA_SIPH = (
+    Path(__file__).resolve().parents[1]
+    / "relevamientos"
+    / "templates"
+    / "relevamientos"
+    / "docx"
+    / "seguimiento_siph.docx"
+)
+
+
+def _plantilla_con_indicacion(destino):
+    """Copia de la plantilla real con la indicación del área de vuelta en el 9."""
+    from docx import Document  # pylint: disable=import-outside-toplevel
+
+    doc = Document(str(PLANTILLA_SIPH))
+    titulo = next(p for p in doc.paragraphs if p.text.startswith("COMENTARIOS FINALES"))
+    titulo.add_run(" Incorporar en este apartado lo que surja de la visita.")
+    doc.save(str(destino))
+
+
+def test_el_script_quita_la_indicacion_de_una_plantilla_ya_generada(
+    tmp_path, monkeypatch
+):
+    plantilla = tmp_path / "plantilla.docx"
+    _plantilla_con_indicacion(plantilla)
+    monkeypatch.setattr(sys, "argv", ["armar", "--quitar-instruccion", str(plantilla)])
+
+    runpy.run_path(str(SCRIPT_PLANTILLA), run_name="__main__")
+
+    xml = zipfile.ZipFile(plantilla).read("word/document.xml").decode("utf-8")
+    texto = " ".join(re.sub(r"<[^>]+>", " ", xml).split())
+    assert "Incorporar en este apartado" not in texto
+    assert "COMENTARIOS FINALES" in texto
+    assert "{{ comentarios_finales }}" in texto
+
+
+def test_el_script_falla_si_la_plantilla_no_tiene_comentarios_finales(tmp_path):
+    plantilla = tmp_path / "plantilla.docx"
+    from docx import Document  # pylint: disable=import-outside-toplevel
+
+    doc = Document()
+    doc.add_paragraph("Incorporar en este apartado lo que surja de la visita.")
+    doc.save(str(plantilla))
+    script = runpy.run_path(str(SCRIPT_PLANTILLA))
+
+    with pytest.raises(SystemExit, match="COMENTARIOS FINALES"):
+        script["quitar_instruccion"](str(plantilla))

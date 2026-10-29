@@ -1,0 +1,46 @@
+{# Región y Subzona del #2642, comunes a Secos y Tradicional (#2745). Recibe: territoriales_sin_proyecto. #}
+{% load organizaciones_tags %}
+<div class="tabla-legajo card-region" style="position: relative">
+    {% if puede_gestionar_organizaciones %}
+        <a href="{% url 'organizacion_editar' organizacion.id %}#abordaje-card"
+           class="btn-edit-card"
+           aria-label="Editar datos de región">
+            <i class="fas fa-pen"></i>
+        </a>
+    {% endif %}
+    <h5 class="mb-1">Datos de Región</h5>
+    <span class="chip-legajo mb-3">Común a Línea Secos y Línea Tradicional</span>
+    {% if organizacion.region_abordaje_id or organizacion.subzona_abordaje_id %}
+        <div class="datos-card p-0 border-0 shadow-none mb-0">
+            <div class="info-row">
+                <strong>Región:</strong>
+                <span class="value">{{ organizacion.region_abordaje|default:"-" }}</span>
+            </div>
+            <div class="info-row">
+                <strong>Subzona:</strong>
+                <span class="value">{{ organizacion.subzona_abordaje|default:"-" }}</span>
+            </div>
+        </div>
+    {% else %}
+        <div class="bloque-vacio">
+            <span>Faltan Región y Subzona.</span>
+            <span class="nota-legajo">Se cargan en Editar organización › Datos Abordaje Comunitario.</span>
+            {% if puede_gestionar_organizaciones %}
+                <a href="{% url 'organizacion_editar' organizacion.id %}#abordaje-card"
+                   class="btn btn-success btn-sm">+ Completar región</a>
+            {% endif %}
+        </div>
+    {% endif %}
+    {% if territoriales_sin_proyecto %}
+        <h6 class="titulo-dorado mt-3 mb-1">Territoriales anteriores sin proyecto</h6>
+        <div>
+            {% for territorial in territoriales_sin_proyecto %}
+                <span class="badge-territorial">{{ territorial|etiqueta_territorial }}</span>
+            {% endfor %}
+        </div>
+        <p class="nota-legajo mt-2 mb-0">
+            Asignados a la organización antes de que los territoriales fueran por proyecto.
+            Se ven hasta que se asignen a un proyecto o se quiten en Editar organización.
+        </p>
+    {% endif %}
+</div>

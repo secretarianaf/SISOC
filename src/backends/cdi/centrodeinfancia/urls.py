@@ -42,6 +42,11 @@ from centrodeinfancia.views_formulario_cdi import (
     FormularioCDIListView,
     FormularioCDIUpdateView,
 )
+from centrodeinfancia.views_formulario_calidad import (
+    FormularioCalidadCargarView,
+    FormularioCalidadDetailView,
+    FormularioCalidadListView,
+)
 from centrodeinfancia.views_export import (
     CentroDeInfanciaExportView,
     NominaNinosPDFView,
@@ -365,5 +370,27 @@ urlpatterns = [
             FormularioCDIUpdateView.as_view()
         ),
         name="centrodeinfancia_formulario_editar",
+    ),
+    # Formulario de Calidad: el rol dentro del centro se valida en la vista.
+    path(
+        "centrodeinfancia/<int:pk>/calidad/",
+        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
+            FormularioCalidadListView.as_view()
+        ),
+        name="centrodeinfancia_calidad_listado",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/calidad/cargar/",
+        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
+            FormularioCalidadCargarView.as_view()
+        ),
+        name="centrodeinfancia_calidad_cargar",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/calidad/<int:form_pk>/",
+        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
+            FormularioCalidadDetailView.as_view()
+        ),
+        name="centrodeinfancia_calidad_detalle",
     ),
 ]

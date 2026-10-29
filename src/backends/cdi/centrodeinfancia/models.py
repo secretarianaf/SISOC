@@ -18,6 +18,7 @@ from centrodeinfancia.formulario_cdi_schema import (
     OPCIONES_DIAS_SEMANA,
 )
 import centrodeinfancia.models_cdi_relaciones as _models_cdi_relaciones
+import centrodeinfancia.models_formulario_calidad as _models_formulario_calidad
 
 FormularioCDIArticulationFrequency = (
     _models_cdi_relaciones.FormularioCDIArticulationFrequency
@@ -26,6 +27,7 @@ FormularioCDIRoomDistribution = _models_cdi_relaciones.FormularioCDIRoomDistribu
 FormularioCDIWaitlistByAgeGroup = _models_cdi_relaciones.FormularioCDIWaitlistByAgeGroup
 IntervencionCentroInfancia = _models_cdi_relaciones.IntervencionCentroInfancia
 ObservacionCentroInfancia = _models_cdi_relaciones.ObservacionCentroInfancia
+FormularioCalidadCDI = _models_formulario_calidad.FormularioCalidadCDI
 
 
 CUIT_VALIDATOR = RegexValidator(

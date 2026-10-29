@@ -11,8 +11,8 @@ Delivery: single PR (forecast under 400 authored lines); pytest in isolated offl
 
 ## Tasks
 
-- T1 | S1–S3 | inline: one understood payroll behavior, no writer trigger | verified | RED 8 failed / 1 passed; GREEN 25 passed; module suite 632 passed; commit pending.
-- T2 | S4 | inline: publication and external monitoring | pending | PR/CI/merge pending; agent does not merge or deploy.
+- T1 | S1–S3 | inline: one understood payroll behavior, no writer trigger | verified | RED 8 failed / 1 passed; GREEN 25 passed; module suite 632 passed; commit `7818b438cd2de8754c31add23d7ca46799b6ac92`.
+- T2 | S4 | inline: publication and external monitoring | monitoring | PR [2831](https://github.com/secretarianaf/SISOC/pull/2831), base homologacion; CI/merge pending; agent does not merge or deploy.
 
 ## Log
 
@@ -26,3 +26,4 @@ Delivery: single PR (forecast under 400 authored lines); pytest in isolated offl
 - L8: Implemented scoped responsible resolution and approval check, reused for export and availability. Existing alphabetical selection and responsible-only SIN_CRUCE retained. Regression cases cover every technical review state, outsider with/without another expediente, local responsible plus alphabetically earlier outsider, and real Sintys file presence/absence. S2 preserves existing behavior, so its tests are compatibility checks rather than fabricated RED.
 - L9: Full Celiaquia suite delegated as a bounded long-running action (not independent risk verification): 632 passed, 8 warnings, 127.68 seconds. Service coverage 95%; no source edits by runner. Black check passed. No app environment or real database configured in this clean worktree; browser/human acceptance is not established.
 - L10: Pylint initially could not infer the compatibility alias for FamiliaService. Import the same class from its implementation module, without changing the shared helper or suppressing diagnostics. Pylint now 10/10; documentation path check: 86 documents, zero broken/obsolete references. Native precommit assessment could not classify untracked documentation; assessment will use the committed range to avoid ambiguous inventory.
+- L11: Work-unit commit `7818b438cd2de8754c31add23d7ca46799b6ac92`, 314 authored changed lines. Native committed assessment: medium, review_due=false, under_budget; no additional review started. Parent spot check of final import: 25 tests passed. Published PR2831 against homologacion using the configured GitHub session; initial head has checks queued and merge status BLOCKED/MERGEABLE. No merge/deploy performed.

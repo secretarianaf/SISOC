@@ -31,7 +31,7 @@ from comedores.utils import (
 )
 from core.utils import format_fecha_django
 from relevamientos.models import SeguimientoPnud
-from relevamientos.pnud_formularios import campos_tabla
+from relevamientos.pnud_formularios import campos_tabla, opciones_exclusivas
 
 # Tope de las respuestas de un seguimiento PNUD (N22): los cinco formularios en
 # papel caben holgados; evita que un cliente guarde blobs (p.ej. firmas base64).
@@ -339,6 +339,18 @@ def _tablas_invalidas(datos, formulario):
     ]
 
 
+def _exclusivas_combinadas(datos, formulario):
+    """Campos de elección múltiple que combinan su opción exclusiva (p. ej.
+    "Ninguna") con otras opciones: {campo: opción}."""
+    return {
+        nombre: exclusiva
+        for nombre, exclusiva in opciones_exclusivas(formulario).items()
+        if isinstance(datos.get(nombre), list)
+        and exclusiva in datos[nombre]
+        and len(datos[nombre]) > 1
+    }
+
+
 class SeguimientosPnudTerritorialMixin:
     """Acciones PNUD del ``TerritorialComedorViewSet``.
 
@@ -362,6 +374,15 @@ class SeguimientosPnudTerritorialMixin:
         if tablas:
             return None, _error(
                 "Estos campos deben ser listas de filas: " + ", ".join(tablas) + "."
+            )
+        combinadas = _exclusivas_combinadas(datos, formulario)
+        if combinadas:
+            return None, _error(
+                "Estas respuestas no admiten otras opciones junto con la exclusiva: "
+                + ", ".join(
+                    f'{campo} ("{opcion}")' for campo, opcion in combinadas.items()
+                )
+                + "."
             )
         invalidas = _firmas_invalidas(datos, comedor, request)
         if invalidas:

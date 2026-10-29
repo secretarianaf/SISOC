@@ -62,6 +62,18 @@ def campos_tabla(formulario):
     ]
 
 
+def opciones_exclusivas(formulario):
+    """{campo: opción} de los campos de elección múltiple con una opción exclusiva
+    (p. ej. "Ninguna": no se puede combinar con otras)."""
+    definicion = definiciones().get(formulario) or {"sections": []}
+    return {
+        campo["name"]: campo["opcionExclusiva"]
+        for seccion in definicion["sections"]
+        for campo in seccion["fields"]
+        if campo.get("opcionExclusiva")
+    }
+
+
 def formatear_valor(campo, valor):  # pylint: disable=too-many-return-statements
     """Valor de una respuesta como texto legible según el tipo del campo."""
     if _vacio(valor):

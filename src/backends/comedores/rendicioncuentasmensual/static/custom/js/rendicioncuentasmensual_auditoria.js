@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById("auditoria-form");
     if (form) {
-        const yaValidada = form.dataset.validada === "true";
         const genera = form.querySelector("[name='genera_acta_auditoria']");
         const resultado = form.querySelector("[name='resultado']");
         const opciones = form.querySelectorAll("[name='rendiciones_incluidas']");
@@ -17,14 +16,11 @@ document.addEventListener("DOMContentLoaded", function () {
         };
         const actualizar = function () {
             const conActa = genera.value === "True";
-            const cerrar = yaValidada || genera.value === "True" || genera.value === "False";
             const conObservaciones = conActa && resultado.value === "finalizada_con_observaciones";
-            genera.required = yaValidada;
-            guardar.textContent = cerrar ? "Guardar y cerrar Auditoría" : "Guardar";
-            ayudaGuardar.textContent = cerrar
-                ? "Al guardar la decisión sobre el acta, la gestión de esta rendición se cierra."
-                : "Podés guardar la validación y decidir sobre el acta más adelante.";
-            iconoCierre.hidden = !cerrar;
+            genera.required = true;
+            guardar.textContent = "Guardar y cerrar Auditoría";
+            ayudaGuardar.textContent = "Al guardar la decisión sobre el acta, la gestión de esta rendición se cierra.";
+            iconoCierre.hidden = false;
             mostrar("campos-acta", conActa);
             mostrar("campos-observaciones", conObservaciones);
             resultado.required = conActa;

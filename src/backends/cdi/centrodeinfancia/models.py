@@ -975,6 +975,7 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         validators=[CUIT_VALIDATOR],
         verbose_name="CUIT",
     )
+    sin_cuil = models.BooleanField(default=False, verbose_name="No posee CUIL")
     pais_nacimiento = models.CharField(
         max_length=128,
         blank=True,
@@ -1557,6 +1558,9 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
     )
     responsable_legal_1_cuit = models.CharField(max_length=20, blank=True, null=True)
+    responsable_legal_1_sin_cuil = models.BooleanField(
+        default=False, verbose_name="No posee CUIL"
+    )
     responsable_legal_1_pais_nacimiento = models.CharField(
         max_length=100, blank=True, null=True
     )
@@ -1630,6 +1634,7 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
     )
     cuit_nino = models.CharField(max_length=20, blank=True, null=True)
+    sin_cuil_nino = models.BooleanField(default=False, verbose_name="No posee CUIL")
     pais_nacimiento = models.CharField(max_length=100, blank=True, null=True)
     edad_unidad = models.CharField(
         max_length=8,

@@ -1179,7 +1179,9 @@ class TrabajadorCentroInfanciaCreateView(
             or data.get("documento")
             or datos_api.get("nroDocumento"),
             "fecha_nacimiento": fecha_nacimiento,
-            "cuit": data.get("cuit") or datos_api.get("cuil") or "",
+            # Solo el CUIL ya validado: el crudo de RENAPER llega en "0" para
+            # muchos extranjeros y quedaba bloqueado sin poder guardarse.
+            "cuit": data.get("cuil_cuit") or "",
             "sexo_registral": sexo,
             # Solo una nacionalidad del catálogo: el país crudo de RENAPER
             # ("PARAGUAY") no es una opción válida y bloqueado no se puede corregir.

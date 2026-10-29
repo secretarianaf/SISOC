@@ -1,0 +1,45 @@
+# HML only: application processes are non-root; production never selects this file.
+x-hml-runtime: &hml-runtime
+  user: "10001:1016"
+  environment:
+    HOME: /tmp
+    USER: sisoc-app
+
+services:
+  django: {<<: *hml-runtime}
+  backend_dispositivos: {<<: *hml-runtime}
+  backend_comedores: {<<: *hml-runtime}
+  backend_ocr: {<<: *hml-runtime}
+  backend_vpsl: {<<: *hml-runtime}
+  backend_pas: {<<: *hml-runtime}
+  backend_vat: {<<: *hml-runtime}
+  backend_celiaquia: {<<: *hml-runtime}
+  backend_cdi: {<<: *hml-runtime}
+  backend_cdf: {<<: *hml-runtime}
+  backend_inspecciones: {<<: *hml-runtime}
+  ocr_worker: {<<: *hml-runtime}
+  bulk_credentials_worker: {<<: *hml-runtime}
+  ciudadanos_import_worker: {<<: *hml-runtime}
+  health_urls_worker: {<<: *hml-runtime}
+  mailing_worker: {<<: *hml-runtime}
+  user_import_worker: {<<: *hml-runtime}
+  celery_pas_worker: {<<: *hml-runtime}
+  celery_beat: {<<: *hml-runtime}
+
+  # Root is restricted to this short-lived, network-isolated provisioner.
+  runtime_permissions:
+    profiles: [hml-runtime]
+    image: sisoc/hml-runtime-permissions:${SISOC_RELEASE_SHA:-local}
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
+      target: base
+    user: "0:0"
+    network_mode: none
+    command: ["sh", "-c", "exec python -B /provision.py --apply --backup /backup/$$(date -u +%Y%m%dT%H%M%S-%N).json"]
+    volumes:
+      - ./src/scripts/operacion/provision_hml_runtime_permissions.py:/provision.py:ro
+      - ./media:/sisoc/media
+      - ./logs:/sisoc/logs
+      - pas_beat:/beat
+      - ./.deploy/runtime-permissions:/backup

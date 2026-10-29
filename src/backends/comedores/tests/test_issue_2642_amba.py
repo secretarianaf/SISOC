@@ -4,10 +4,24 @@ from datetime import date
 
 import pytest
 
+from comedores.models import Comedor, Programas
+from organizaciones.models import Organizacion, ProyectoOrganizacion
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
-from tests.test_rendicioncuentasmensual_domain_rules import (
-    scopes,
-)  # pylint: disable=unused-import
+
+
+@pytest.fixture
+def comedor_con_proyecto(db):  # pylint: disable=unused-argument
+    organizacion = Organizacion.objects.create(nombre="Organizacion AMBA")
+    proyecto = ProyectoOrganizacion.objects.create(
+        organizacion=organizacion,
+        codigo="PROY-1",
+    )
+    comedor = Comedor.objects.create(
+        nombre="Comedor AMBA",
+        organizacion=organizacion,
+        proyecto=proyecto,
+    )
+    return comedor, proyecto
 
 
 @pytest.mark.django_db
@@ -28,9 +42,9 @@ from tests.test_rendicioncuentasmensual_domain_rules import (
     ],
 )
 def test_alta_deriva_linea_del_proyecto_aunque_cliente_envie_otra(
-    scopes, codigo, nombre, linea
+    comedor_con_proyecto, codigo, nombre, linea
 ):
-    comedor, proyecto, _, _ = scopes
+    comedor, proyecto = comedor_con_proyecto
     proyecto.codigo, proyecto.nombre = codigo, nombre
     proyecto.save()
     rendicion = RendicionCuentaMensualService.crear_rendicion_mobile(
@@ -48,12 +62,35 @@ def test_alta_deriva_linea_del_proyecto_aunque_cliente_envie_otra(
 
 
 @pytest.mark.django_db
+def test_proyecto_no_amba_prevalece_sobre_programa_secos(comedor_con_proyecto):
+    """Con proyecto, el programa SECOS del comedor no define la línea."""
+    comedor, proyecto = comedor_con_proyecto
+    comedor.programa, _ = Programas.objects.get_or_create(
+        id=3, defaults={"nombre": "Abordaje Comunitario - Línea Secos"}
+    )
+    comedor.save()
+    rendicion = RendicionCuentaMensualService.crear_rendicion_mobile(
+        comedor=comedor,
+        data={
+            "convenio": "P01",
+            "numero_rendicion": 1,
+            "periodo_inicio": date(2026, 1, 1),
+            "periodo_fin": date(2026, 1, 31),
+            "linea_programatica": "secos",
+        },
+    )
+    assert rendicion.proyecto == proyecto
+    assert rendicion.linea_programatica == "tradicional"
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "codigo,linea", [("AMBA 1111", "secos"), ("XAMBA123", "tradicional")]
 )
-def test_api_informa_y_valida_linea_del_proyecto(scopes, monkeypatch, codigo, linea):
+def test_api_informa_y_valida_linea_del_proyecto(
+    comedor_con_proyecto, monkeypatch, codigo, linea
+):
     from comedores.api_views import ComedorDetailViewSet
-    from comedores.models import Programas
     from pwa.models import AccesoComedorPWA
     from tests.test_pwa_comedores_api import (
         _create_pwa_user,
@@ -61,7 +98,7 @@ def test_api_informa_y_valida_linea_del_proyecto(scopes, monkeypatch, codigo, li
         _token_client,
     )
 
-    comedor, proyecto, _, _ = scopes
+    comedor, proyecto = comedor_con_proyecto
     proyecto.codigo = codigo
     proyecto.save()
     comedor.programa, _ = Programas.objects.get_or_create(nombre="Abordaje Comunitario")

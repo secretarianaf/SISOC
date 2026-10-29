@@ -65,6 +65,27 @@
         actualizarEspecificar();
     }
 
+    // El primer botón submit del form es "Enviar" y el envío es irreversible:
+    // Enter dentro de un campo no debe disparar el envío implícito.
+    form.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && event.target.tagName === "INPUT") {
+            event.preventDefault();
+        }
+    });
+
+    // Evita un segundo POST por doble clic, que crearía otro envío inmutable.
+    let enviando = false;
+    form.addEventListener("submit", (event) => {
+        if (enviando) {
+            event.preventDefault();
+            return;
+        }
+        enviando = true;
+    });
+    window.addEventListener("pageshow", () => {
+        enviando = false;
+    });
+
     form.addEventListener("change", actualizar);
     actualizar();
 })();

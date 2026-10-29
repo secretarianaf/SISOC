@@ -30,6 +30,9 @@ enviado, queda inmutable y forma parte del historial del centro.
   pendientes. El envío completa jurisdicción, departamento, usuario y timestamp
   y ya no admite cambios ni borrado (`save`/`delete` lo impiden). Para corregir
   se carga un formulario nuevo. Un único borrador vigente por CDI.
+- Como el envío es irreversible, la pantalla no envía con Enter dentro de un
+  campo (el primer botón submit es "Enviar") e ignora un segundo submit por
+  doble clic. Es una defensa del lado del cliente; el servidor no deduplica.
 - Al guardar se vacían las respuestas que un pase condicional ocultó y los
   textos de "especificar" que ya no aplican.
 - Permisos: las vistas usan `view_centrodeinfancia` y el alcance territorial de

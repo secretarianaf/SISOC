@@ -72,6 +72,7 @@
 - `docs/implementaciones/pas.md`: contrato del padrón PAS, DDJJ e informes reproducibles.
 - `docs/implementaciones/encuestas.md`: ciclo funcional de encuestas, permisos, privacidad y operación de rondas.
 - `docs/implementaciones/celiaquia_comentarios_tecnicos.md`: comentarios técnicos, publicación a Provincia y vínculo con Subsanar/Rechazar.
+- `docs/implementaciones/celiaquia_nomina_aprobados.md`: elegibilidad de beneficiarios y responsables del mismo expediente para la nómina de aprobados.
 - `docs/implementaciones/inspecciones_escolares.md`: referencia del vertical Inspecciones escolares: roles, API de la PWA, backoffice, tablero y operación.
 - `docs/vat/`: guías funcionales, API, operación de vouchers y desarrollo del módulo VAT.
 - `docs/vat/manual_usuario.md`: operación de INET/VAT, incluido el Buscador por Ciudadano y su alcance de acceso.

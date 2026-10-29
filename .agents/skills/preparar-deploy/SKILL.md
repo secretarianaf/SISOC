@@ -57,8 +57,9 @@ Un PR por problema, en este orden:
 4. CI rojo en la punta de una rama: fix chico con test desde esa rama, PR a esa rama,
    y bajarlo a la otra con el sync correspondiente.
 
-Conflictos: conservar las dos intenciones. Lo que `main`/`homologacion` agregan en
-`users/` va a `kernel/users/` en `development` (los imports siguen siendo `users.*`).
+Conflictos: conservar las dos intenciones. Si una rama trae archivos en una ruta que
+la otra ya movió (por ejemplo, de la raíz a `src/backends/<dueño>/`), llevarlos a la
+ruta nueva y no resucitar la vieja.
 Correr los chequeos de `CLAUDE.md` sobre lo tocado.
 
 Mergear con `gh pr merge <n> --merge --auto` y seguir con `gh pr checks <n> --watch`

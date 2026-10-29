@@ -19,6 +19,13 @@ MOBILE_HTTPS_REMOTE="https://github.com/secretarianaf/Espacios-Comunitarios.git"
 EXPECTED_REVISION=""
 DIFF_BASE=""
 
+# Internal handshake with deploy_verified.sh; never infer phase from exit codes.
+record_runtime_phase() {
+  if [[ "$DRY_RUN" -eq 0 && -n "${SISOC_DEPLOY_PHASE_FILE:-}" ]]; then
+    printf '%s' "$1" > "$SISOC_DEPLOY_PHASE_FILE"
+  fi
+}
+
 usage() {
   cat <<'USAGE'
 Uso:
@@ -56,7 +63,8 @@ Mapeo por entorno:
   ENVIRONMENT=qa                    -> docker/compose/docker-compose.deploy.yml
   ENVIRONMENT=homologacion|hml|staging
                                   -> docker/compose/docker-compose.deploy.yml + docker/compose/docker-compose.produccion.yml
-                                     + SISOC-Mobile
+                                     + docker/compose/docker-compose.hml-runtime.yml + SISOC-Mobile
+  Solo HML: prepara ACL con backup privado antes del arranque; procesos UID10001:GID1016.
   ENVIRONMENT=prd|prod|production   -> docker/compose/docker-compose.deploy.yml + docker/compose/docker-compose.produccion.yml
 USAGE
 }
@@ -281,6 +289,9 @@ compose_for_environment() {
   esac
 
   COMPOSE_FILES+=("docker/compose/docker-compose.celery.yml")
+  case "$environment" in
+    homologacion|hml|staging) COMPOSE_FILES+=("docker/compose/docker-compose.hml-runtime.yml") ;;
+  esac
 }
 
 configure_compose_command() {
@@ -425,6 +436,19 @@ main() {
     fi
   fi
 
+  local -a runtime_setup=()
+  case "$ENVIRONMENT" in
+    homologacion|hml|staging)
+      runtime_setup=("${compose[@]}" --profile hml-runtime run --rm --no-deps runtime_permissions)
+      if [[ "$MODO" != ninguno ]]; then
+        record_runtime_phase precut
+        run "${compose[@]}" --profile hml-runtime build runtime_permissions
+        # Prepare private backup and ACLs while the previous services still run.
+        # Repeat after migrations, which may create files under another identity.
+        run "${runtime_setup[@]}"
+      fi
+      ;;
+  esac
   case "$MODO" in
     ninguno)
       log "Sin servicios que desplegar en este rango."
@@ -435,16 +459,21 @@ main() {
       run "${compose[@]}" build "${servicios[@]}"
       if [[ "$MIGRAR" -eq 1 ]]; then
         run "${compose[@]}" --profile migrate build migrator
+        if [[ "${#runtime_setup[@]}" -gt 0 ]]; then record_runtime_phase cut; fi
         run "${compose[@]}" --profile migrate run --rm migrator
       fi
+      if [[ "${#runtime_setup[@]}" -gt 0 ]]; then run "${runtime_setup[@]}"; fi
+      if [[ "${#runtime_setup[@]}" -gt 0 ]]; then record_runtime_phase cut; fi
       run "${compose[@]}" up -d --no-deps "${servicios[@]}"
       ;;
     completo)
       # Construir todo antes de detener los servicios anteriores.
       run "${compose[@]}" build
       run "${compose[@]}" --profile migrate build migrator
+      if [[ "${#runtime_setup[@]}" -gt 0 ]]; then record_runtime_phase cut; fi
       run "${compose[@]}" "${DOWN_ARGS[@]}"
       run "${compose[@]}" --profile migrate run --rm migrator
+      if [[ "${#runtime_setup[@]}" -gt 0 ]]; then run "${runtime_setup[@]}"; fi
       run "${compose[@]}" up -d
       ;;
     *)

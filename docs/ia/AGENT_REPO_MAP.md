@@ -5,6 +5,13 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 Es un mapa para ubicar código: el estado de cada PR, issue o corte (aprobaciones,
 conteos de pruebas, autorizaciones) vive en `docs/registro/`, no acá.
 
+## Celiaquía: nómina de aprobados
+
+La selección de filas y la disponibilidad de descarga comparten la regla en
+`src/backends/celiaquia/celiaquia/services/padron_final_service/impl.py`.
+Guía: `docs/implementaciones/celiaquia_nomina_aprobados.md`. El `MATCH` del
+dependiente acredita Sintys; no exigirlo al responsable puro (`SIN_CRUCE`).
+
 ## Comedores y Espacios comunitarios (#2641)
 
 Topología: `docs/desarrollo/arquitectura_servicios_2641.md` y

@@ -64,7 +64,17 @@ def _crear_lector_pdf_documento(documento, extension):
     return PdfReader(BytesIO(pdf_bytes))
 
 
-def inferir_linea_programatica(comedor):
+def inferir_linea_programatica(comedor, proyecto=None):
+    if proyecto is not None:
+        es_amba = any(
+            str(valor or "").strip().upper().startswith("AMBA")
+            for valor in (proyecto.codigo, proyecto.nombre)
+        )
+        return (
+            DocumentacionAdjunta.LINEA_SECOS
+            if es_amba
+            else DocumentacionAdjunta.LINEA_TRADICIONAL
+        )
     programa_id = getattr(comedor, "programa_id", None)
     # IDs de programa: 3 = Abordaje Comunitario SECOS, 4 = Abordaje Comunitario Tradicional
     if programa_id == 3:
@@ -1079,8 +1089,12 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         periodo_fin = data.get("periodo_fin")
         observaciones = (data.get("observaciones") or "").strip()
         nombre = (data.get("nombre") or "").strip()
-        linea_programatica = DocumentacionAdjunta.normalizar_linea_programatica(
-            data.get("linea_programatica") or inferir_linea_programatica(comedor)
+        linea_programatica = (
+            inferir_linea_programatica(comedor, proyecto)
+            if proyecto
+            else DocumentacionAdjunta.normalizar_linea_programatica(
+                data.get("linea_programatica") or inferir_linea_programatica(comedor)
+            )
         )
 
         RendicionCuentaMensualService._validar_numero_y_periodo(

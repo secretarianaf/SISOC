@@ -15,8 +15,8 @@ XAMBA111 usa Tradicional. La regla por prefijo incluye cualquier sufijo,
 alcance aceptado por el usuario. Sin proyecto se conserva la regla anterior.
 La API informa la línea en el catálogo y la deriva del proyecto al validar y
 crear; una línea contradictoria del cliente no reemplaza esa decisión.
-Las rendiciones históricas no se recalculan. Se coordina con el PR de la app
-sobre homologacion; los PR de development se mantienen para la otra rama.
+Las rendiciones históricas no se recalculan. Se coordina con el PR #19 de Espacios Comunitarios hacia development,
+destino indicado para la app. El PR #2816 del backend se mantiene para development.
 
 ## Verificación
 

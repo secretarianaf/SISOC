@@ -592,6 +592,37 @@ class TestValidacionesQA:
         form = self._form(centro, cuit_nino="20-44535030-4")
         assert form.is_valid(), form.errors
 
+    # Extranjeros con DNI que no tienen CUIL asignado.
+    @pytest.mark.parametrize(
+        "casilla,campo_cuit",
+        [
+            ("sin_cuil_nino", "cuit_nino"),
+            ("responsable_legal_1_sin_cuil", "responsable_legal_1_cuit"),
+        ],
+    )
+    def test_no_posee_cuil_permite_guardar_sin_cuit(self, centro, casilla, campo_cuit):
+        form = self._form(centro, **{campo_cuit: "", casilla: "on"})
+
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data[casilla] is True
+        assert not form.cleaned_data[campo_cuit]
+
+    @pytest.mark.parametrize(
+        "casilla", ["sin_cuil_nino", "responsable_legal_1_sin_cuil"]
+    )
+    def test_no_posee_cuil_con_cuit_cargado_es_contradictorio(self, centro, casilla):
+        form = self._form(centro, **{casilla: "on"})
+
+        assert not form.is_valid()
+        assert casilla in form.errors
+
+    def test_casilla_no_posee_cuil_no_usa_estilo_de_input(self, centro):
+        form = self._form(centro)
+
+        attrs = form.fields["sin_cuil_nino"].widget.attrs
+        assert attrs["class"] == "form-check-input"
+        assert attrs["data-sin-cuil-de"] == "id_cuit_nino"
+
     # TC_017/026/030/044: fechas no futuras
     @pytest.mark.parametrize(
         "campo",

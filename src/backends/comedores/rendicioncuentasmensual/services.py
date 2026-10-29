@@ -47,7 +47,7 @@ logger = logging.getLogger("django")
 def _crear_lector_pdf_documento(documento, extension):
     if extension == ".pdf":
         return leer_pdf_documento(documento.archivo)
-    if extension in {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}:
+    if extension in {".png", ".jpg", ".jpeg", ".jfif", ".bmp", ".gif", ".webp"}:
         pdf_bytes = generar_pdf_desde_imagen(documento.archivo, documento.nombre)
     elif extension in {".doc", ".docx", ".xls", ".xlsx"}:
         try:
@@ -67,7 +67,7 @@ def _crear_lector_pdf_documento(documento, extension):
 def inferir_linea_programatica(comedor, proyecto=None):
     if proyecto is not None:
         es_amba = any(
-            str(valor or "").strip().upper() == "AMBA"
+            str(valor or "").strip().upper().startswith("AMBA")
             for valor in (proyecto.codigo, proyecto.nombre)
         )
         return (

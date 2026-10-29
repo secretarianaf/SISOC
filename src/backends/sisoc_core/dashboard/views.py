@@ -5,6 +5,7 @@ from django.apps import apps
 
 from core.backend_proxy import backend_de_app, pedir_json_a_backend
 from dashboard.models import Dashboard, Tablero
+from dashboard.comedores_metrics import METRIC_KEYS, actualizar_metricas_comedores
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -13,9 +14,20 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        actualizadas = actualizar_metricas_comedores(self.request)
+
         # 1) Datos fijos
         dashboard_data = Dashboard.objects.all()
         context.update({item.llave: item.cantidad for item in dashboard_data})
+
+        context["metricas_comedores_desactualizadas"] = (
+            self.request.user.has_perm("dashboard.view_dashboard") and not actualizadas
+        )
+        context["metricas_comedores_disponibles"] = all(
+            key in context for key in METRIC_KEYS
+        )
+        for key in METRIC_KEYS:
+            context.setdefault(key, None)
 
         # 2) Indicadores dinámicos de Centro de Familia
         context.update(self.metricas_centro_familia())

@@ -78,3 +78,17 @@ def boton_volver(request):
         "volver_texto": "Volver",
         "volver_transitoria": _es_pantalla_transitoria(request),
     }
+
+
+def admin_backends(request):
+    """Accesos a admins de modelos ausentes del portal, sin importar sus apps."""
+    from core.admin_navigation import (  # pylint: disable=import-outside-toplevel
+        enlaces_admin_de_backends,
+    )
+
+    if request.path != "/admin/":
+        return {"backend_admin_links": []}
+    # Solo superusuarios entran al admin (#2789): ven todos los backends.
+    return {
+        "backend_admin_links": enlaces_admin_de_backends(getattr(request, "user", None))
+    }

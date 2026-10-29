@@ -2,13 +2,15 @@ from django import forms
 from django.contrib import admin
 from django.contrib.auth.models import Group
 
+from core.admin_base import SisocModelAdmin
 from .models import Dashboard, Tablero
 
 
 @admin.register(Dashboard)
-class DashboardAdmin(admin.ModelAdmin):
+class DashboardAdmin(SisocModelAdmin):
     list_display = ("llave", "cantidad")
     list_filter = ("llave",)
+    search_fields = ("llave",)
 
 
 class TableroAdminForm(forms.ModelForm):
@@ -58,7 +60,7 @@ class TableroAdminForm(forms.ModelForm):
 
 
 @admin.register(Tablero)
-class TableroAdmin(admin.ModelAdmin):
+class TableroAdmin(SisocModelAdmin):
     form = TableroAdminForm
     list_display = ("nombre", "grupo_menu", "slug", "activo", "orden")
     list_filter = ("activo", "grupo_menu")

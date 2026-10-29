@@ -14,6 +14,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import pytest
 from django.http import Http404
 from django.test import RequestFactory, override_settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from core.backend_proxy import _forward, backend_proxy_urlpatterns
 
@@ -86,6 +87,29 @@ def test_reenvia_metodo_path_query_y_body(backend):
     assert datos["method"] == "POST"
     assert datos["path"] == "/dispositivos/crear?x=1"
     assert datos["body_len"] > 0
+
+
+def test_upload_ocr_conserva_multipart_sesion_y_csrf(backend):
+    request = RequestFactory().post(
+        "/ocr/",
+        {
+            "archivos": SimpleUploadedFile("scan.png", b"synthetic-image"),
+            "csrfmiddlewaretoken": "synthetic-csrf",
+        },
+        HTTP_COOKIE="sessionid=synthetic-session; csrftoken=synthetic-csrf",
+        HTTP_X_CSRFTOKEN="synthetic-csrf",
+    )
+    original_length = int(request.META["CONTENT_LENGTH"])
+
+    response = _forward(request, backend, "ocr/")
+    data = json.loads(_contenido(response))
+
+    assert data["path"] == "/ocr/"
+    assert data["method"] == "POST"
+    assert data["body_len"] == original_length
+    assert data["headers"]["content-type"].startswith("multipart/form-data; boundary=")
+    assert data["headers"]["cookie"] == request.META["HTTP_COOKIE"]
+    assert data["headers"]["x-csrftoken"] == "synthetic-csrf"
 
 
 @pytest.mark.parametrize(

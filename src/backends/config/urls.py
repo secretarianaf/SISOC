@@ -7,11 +7,12 @@ from drf_spectacular.views import (
     SpectacularRedocView,
 )
 from config.urls_dev import dev_urlpatterns
+from core.admin_site import admindocs_urlpatterns
 from core.backend_proxy import backend_proxy_urlpatterns
 from core.legacy_redirects import redirecciones_legacy
 from core.url_registry import stub_urlpatterns
 from core.v2_frontend import frontend_v2
-from usuarios.views import (
+from usuarios.auth_views import (
     PasswordResetConfirmCustomView,
     SisocPasswordResetCompleteView,
     SisocPasswordResetDoneView,
@@ -20,6 +21,8 @@ from usuarios.views import (
 )
 
 urlpatterns = [
+    # Compatibilidad C1: esta auditoria pertenece al kernel, incluso bajo /admin/pwa/.
+    path("admin/pwa/auditoriasesionpwa/", include("audittrail.legacy_admin_urls")),
     # Verticales que corren en su propio backend (src/backends/config/backends.json).
     *backend_proxy_urlpatterns(),
     # SOLO compatibilidad: URLs de Centro de Familia anteriores a su prefijo
@@ -56,35 +59,20 @@ urlpatterns = [
         SisocPasswordResetCompleteView.as_view(),
         name="password_reset_complete",
     ),
-    path("admin/doc/", include("django.contrib.admindocs.urls")),
+    # Misma regla que el admin (#2789): solo superusuarios.
+    path("admin/doc/", include(admindocs_urlpatterns())),
     path("admin/", admin.site.urls),
     path("", include("usuarios.urls")),
     path("", include("django.contrib.auth.urls")),
     path("", include("core.urls")),
     path("", include("dashboard.urls")),
-    path("", include("comedores.urls")),
-    path("", include("gestion_organizaciones.urls")),
-    path("", include("duplas.urls")),
     path("", include("audittrail.urls")),
     path("", include("ciudadanos.urls")),
-    path("", include("admisiones.urls")),
     path("", include("healthcheck.urls")),
-    path("acompanamientos/", include("acompanamientos.urls")),
-    path("expedientespagos/", include("expedientespagos.urls")),
-    path("", include("rendicioncuentasfinal.urls")),
-    path("", include("relevamientos.urls")),
     path("", include("insumos.urls")),
-    path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
     # API URLs
     path("api/users/", include("usuarios.api_urls")),
-    path("api/comedores/", include("comedores.api_urls")),
-    path("api/territorial/", include("comedores.api_urls_territorial")),
-    path("api/comunicados/", include("comunicados.api_urls")),
     path("api/renaper/", include("core.api_urls")),
-    path("api/pwa/", include("pwa.api_urls")),
-    path("", include("importarexpediente.urls")),
-    path("", include("comunicados.urls")),
-    path("ocr/", include("ocr.urls")),
     path("", include("encuestas.urls")),
 ]
 

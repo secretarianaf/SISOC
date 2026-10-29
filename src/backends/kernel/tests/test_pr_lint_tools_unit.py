@@ -111,6 +111,21 @@ def test_list_changed_files_excluye_artefactos_generados(monkeypatch, capsys):
     assert emitidos == [Path("src/backends/kernel/templates/changelog.html")]
 
 
+def test_list_changed_files_markdown(monkeypatch, capsys):
+    """check_docs_paths verifica la existencia de rutas solo en los .md del PR."""
+
+    monkeypatch.setattr(
+        pr_lint_tools,
+        "get_changed_files",
+        lambda: [Path("AGENTS.md"), Path("docs/ia/TESTING.md"), Path("README.txt")],
+    )
+    monkeypatch.setattr(Path, "is_file", lambda self: True)
+
+    assert pr_lint_tools.list_changed_files("markdown") == 0
+    emitidos = [Path(item) for item in json.loads(capsys.readouterr().out)]
+    assert emitidos == [Path("AGENTS.md"), Path("docs/ia/TESTING.md")]
+
+
 @pytest.mark.skipif(
     shutil.which("git") is None,
     reason="requiere el ejecutable git para armar el historial",

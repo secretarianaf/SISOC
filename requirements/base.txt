@@ -25,6 +25,7 @@ django-crispy-forms==2.5
 django-formtools==2.6.1
 django-auditlog==3.2.1
 django-import-export==4.3.14
+django-unfold==0.91.0
 djangorestframework==3.16.1
 djangorestframework-api-key==3.1.0
 docutils==0.19
@@ -106,3 +107,11 @@ pytesseract==0.3.13
 pdf2image==1.17.0
 opencv-python-headless==4.10.0.84
 pyspellchecker==0.8.1
+
+# Apps y soporte de diagnostico referenciados por la configuracion compartida.
+autopep8==2.3.1
+django-debug-toolbar==5.2.0
+django-extensions==4.0
+django-silk==5.4.3
+gprof2dot==2024.6.6
+pycodestyle==2.12.0

@@ -52,6 +52,16 @@
                         <option value="{{ inspector_filtro.id }}" selected>{{ inspector_filtro.text }}</option>
                     {% endif %}
                 </select>
+                <label class="visually-hidden" for="filtro-escuela">Buscar por escuela</label>
+                <select id="filtro-escuela"
+                        name="escuela"
+                        data-insp-select2="{% url 'inspecciones_ajax_escuelas' %}"
+                        data-insp-min="3"
+                        data-insp-auto-submit
+                        data-placeholder="Buscar por escuela">
+                    <option value=""></option>
+                    {% if escuela_filtro %}<option value="{{ escuela_filtro.id }}" selected>{{ escuela_filtro.text }}</option>{% endif %}
+                </select>
                 <label class="visually-hidden" for="filtro-provincia">Provincia</label>
                 {% include "inspecciones/partials/select_provincia_filtro.html" %}
                 <label class="visually-hidden" for="filtro-estado">Estado</label>

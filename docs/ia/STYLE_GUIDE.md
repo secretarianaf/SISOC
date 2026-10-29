@@ -40,7 +40,7 @@ Ejemplos correctos:
 
 Ejemplos:
 - `/api/comunicados/comedor/{comedor_id}/`
-- `reverse(\"montoprestacion_detalle\", kwargs={\"pk\": pk})`
+- `reverse("montoprestacion_detalle", kwargs={"pk": pk})`
 
 ## Naming de hooks/components (solo si existe frontend JS/React en el cambio)
 
@@ -75,7 +75,7 @@ Si el archivo ya usa comentarios de bloques de imports, conservar el estilo loca
   - funciones, métodos, variables y argumentos: `snake_case`
   - clases: `PascalCase`
   - constantes: `UPPER_CASE`
-- Evitar nombres descartables salvo los ya aceptados por configuración (`i`, `j`, `k`, `pk`, `id`, `_`, `VAT`).
+- Evitar nombres descartables salvo los ya aceptados por configuración (`good-names` de `.pylintrc`: `i`, `j`, `k`, `ex`, `pk`, `id`, `_`, `VAT`).
 - Mantener imports agrupados por origen y evitar imports innecesarios o variables declaradas pero no usadas.
 - Cuando `pylint` marca una violación, primero buscar una corrección de código: simplificar funciones, extraer helpers, mover lógica al boundary correcto, hacer más explícito el flujo o renombrar símbolos ambiguos.
 - Evitar `# pylint: disable=...`, `# pylint: skip-file` y ampliaciones de ignore como salida por defecto. Si hay una falsa positiva o una restricción real del framework, usar la supresión más chica posible y dejar constancia en el cambio.
@@ -111,17 +111,7 @@ Priorizar type hints en:
 
 ## Errores y mensajes
 
-## Mensajes al usuario
-
-- En español.
-- Claros y accionables.
-- Evitar mensajes técnicos internos en respuestas UI/API.
-
-## Mensajes técnicos/logs
-
-- Incluir contexto suficiente para depurar.
-- No incluir secretos ni PII.
-- Usar placeholders o contexto estructurado cuando aplica.
+Mensajes al usuario y logs: `docs/ia/ERRORS_LOGGING.md`.
 
 ## Configuración y variables de entorno
 
@@ -131,23 +121,8 @@ Priorizar type hints en:
 
 ## Responsabilidades por tipo de archivo (Django/DRF)
 
-## Views (Django / DRF views)
-
-- Delgadas: orquestan request/response, permisos y delegan lógica.
-- No concentrar lógica de negocio compleja en views.
-- Validar entradas y devolver status codes coherentes.
-
-## Services
-
-- Lugar preferido para lógica de negocio reutilizable y reglas de orquestación.
-- Mantener interfaces claras y predecibles.
-- Evitar side effects implícitos no documentados.
-
-## Serializers (DRF)
-
-- Usar para shape/validación/serialización de datos API.
-- Mantener views de API delgadas.
-- Evitar lógica de negocio pesada que debería vivir en services.
+Views, services y serializers: `docs/ia/ARCHITECTURE.md` (capas y dónde va la
+lógica de negocio).
 
 ## Forms (Django)
 

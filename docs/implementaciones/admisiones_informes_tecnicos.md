@@ -64,8 +64,8 @@ no borrar templates ni valores ya persistidos.
 
 ## Referencias
 
-- `src/backends/sisoc_core/admisiones/forms/admisiones_forms.py`
-- `src/backends/sisoc_core/admisiones/services/docx_service/impl.py`
-- `src/backends/sisoc_core/admisiones/services/templates_informe_tecnico_service/impl.py`
+- `src/backends/comedores/admisiones/forms/admisiones_forms.py`
+- `src/backends/comedores/admisiones/services/docx_service/impl.py`
+- `src/backends/comedores/admisiones/services/templates_informe_tecnico_service/impl.py`
 - `docs/registro/cambios/2026-T3/2026-08-10-fixes-admisiones-pwa-rendiciones.md`
 - `docs/registro/cambios/2026-T3/2026-08-12-correcciones-issues-reabiertos.md`

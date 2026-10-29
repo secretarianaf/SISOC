@@ -1,0 +1,24 @@
+{% extends "admin/index.html" %}
+{% load unfold %}
+{% comment %}
+    Índice del admin con Unfold (#2789): métricas de las apps de este proceso
+    (core.admin_dashboard) y accesos a los admins que sirve otro backend
+    (config/backends.json), que también están en el sidebar.
+{% endcomment %}
+{% block content %}
+    {% if backend_admin_links %}
+        <div class="mb-8" id="backend-admin-links">
+            {% component "unfold/components/card.html" with title="Administración de otros servicios" %}
+            <div class="flex flex-row flex-wrap gap-4">
+                {% for link in backend_admin_links %}
+                    {% component "unfold/components/link.html" with href=link.url icon="open_in_new" %}
+                    {{ link.label }}
+                {% endcomponent %}
+    {% endfor %}
+    </div>
+{% endcomponent %}
+</div>
+{% endif %}
+{% include "admin/sisoc/secciones_dashboard.html" %}
+{{ block.super }}
+{% endblock content %}

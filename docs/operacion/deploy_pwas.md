@@ -48,13 +48,13 @@ preparado en HML sin activacion. DataCalle y Gestionar ya estan clonados en
 sisoc-deploy. El permiso sudo temporal fue retirado y su revocacion verificada.
 Los servidores todavia conservan el include inicial de Espacios; este cambio
 versionado no equivale a un despliegue. Ver evidencia inicial en
-[registro operativo](../registro/cambios/2026-09-08-coordinacion-pwa-privadas.md).
+[registro operativo](../registro/cambios/2026-T3/2026-09-08-coordinacion-pwa-privadas.md).
 
 ## Primera activacion de Inspecciones (2026-10-14)
 
 Inspecciones se despliega igual que DataCalle hoy: por el workflow propio de su
 repositorio (`secretarianaf/Inspecciones`, `.github/workflows/deploy.yml` y
-`scripts/operacion/deploy_frontend.sh`), no por el deploy de SISOC. Ese deploy
+`secretarianaf/Inspecciones:scripts/operacion/deploy_frontend.sh`), no por el deploy de SISOC. Ese deploy
 corre con `--without-mobile` en PRD y HML y no ejecuta `deploy_pwas.py`, asi que
 fusionar este cambio no depende del aprovisionamiento de la PWA. Su entrada en
 `pwas.json` sirve para que `render_pwa_nginx.py` genere el snippet con

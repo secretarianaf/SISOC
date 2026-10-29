@@ -78,3 +78,31 @@ def test_csp_report_only_y_strict_script_src(settings):
     assert "script-src 'self' 'nonce-" in script_src
     assert "https://lookerstudio.google.com" in frame_src
     assert "https://datastudio.google.com" in frame_src
+
+
+def _script_src(response):
+    csp = response["Content-Security-Policy"]
+    return next(
+        part.strip()
+        for part in csp.split(";")
+        if part.strip().startswith("script-src ")
+    )
+
+
+def test_csp_habilita_unsafe_eval_solo_en_el_admin(settings):
+    # Issue #2789: Unfold (Alpine.js) necesita 'unsafe-eval'; el resto del
+    # sitio conserva la política estricta.
+    settings.ENABLE_CSP = True
+    settings.CSP_REPORT_ONLY = False
+    settings.CSP_ALLOW_UNSAFE_INLINE_SCRIPTS = False
+    settings.CSP_ALLOW_UNSAFE_EVAL = False
+    middleware = ContentSecurityPolicyMiddleware(lambda request: HttpResponse("ok"))
+
+    admin = _script_src(middleware(RequestFactory().get("/admin/comedores/")))
+    sitio = _script_src(middleware(RequestFactory().get("/comedores/")))
+    prefijo_parecido = _script_src(middleware(RequestFactory().get("/administrar/")))
+
+    assert "'unsafe-eval'" in admin
+    assert "'unsafe-inline'" not in admin
+    assert "'unsafe-eval'" not in sitio
+    assert "'unsafe-eval'" not in prefijo_parecido

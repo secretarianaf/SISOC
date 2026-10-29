@@ -1,43 +1,23 @@
 from django.contrib import messages
-from django.contrib.auth import update_session_auth_hash
-from django.contrib.auth.forms import SetPasswordForm
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group, User
-from django.contrib.auth.views import (
-    INTERNAL_RESET_SESSION_TOKEN,
-    LoginView,
-    PasswordResetCompleteView,
-    PasswordResetConfirmView,
-    PasswordResetDoneView,
-    PasswordResetView,
-)
+
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Count
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
-from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import CreateView, DeleteView, FormView, ListView, UpdateView
 
 from core.services.column_preferences import build_columns_context
-from iam.services import get_effective_permission_codes
+from core.internal_services import reenviar_operacion_usuario
 
-from .forms import (
-    BackofficeAuthenticationForm,
-    BulkCredentialsUploadForm,
-    CustomUserChangeForm,
-    GroupForm,
-    MiCuentaForm,
-    UserCreationForm,
-    UsernameEmailPasswordResetForm,
-)
-from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
-from pwa.models import AccesoComedorPWA
-from users.profile_utils import needs_profile_confirmation
+from users.admin_operations import operacion_requiere_espacios
+from users.secciones_usuario import SECCIONES_COMEDORES, secciones_habilitadas
+from users.view_mixins import AdminRequiredMixin
 from users.services import BULK_CREDENTIALS_PERMISSION_CODE, UsuariosService
 from users.services_bulk_credentials import (
     generate_bulk_credentials_template,
@@ -45,6 +25,25 @@ from users.services_bulk_credentials import (
     get_bulk_credentials_send_type_contexts,
     get_bulk_credentials_template_filename,
 )
+
+from usuarios.auth_views import (
+    ConfirmacionDatosView,
+    FirstLoginPasswordChangeView,
+    MiCuentaView,
+    PasswordResetConfirmCustomView,
+    SisocPasswordResetCompleteView,
+    SisocPasswordResetDoneView,
+    SisocPasswordResetView,
+    UsuariosLoginView,
+)
+
+from .forms import (
+    BulkCredentialsUploadForm,
+    CustomUserChangeForm,
+    GroupForm,
+    UserCreationForm,
+)
+from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
 from .services_bulk_credentials_jobs import (
     can_resume_bulk_credentials_job,
     create_bulk_credentials_job,
@@ -53,53 +52,6 @@ from .services_bulk_credentials_jobs import (
     request_resume_bulk_credentials_job,
 )
 from .temporary_passwords import clear_temporary_password, get_temporary_password
-
-
-PWA_PERMISSION_LABELS = {
-    "rendicioncuentasmensual.manage_mobile_rendicion": "Gestionar rendiciones mobile",
-    "pwa.manage_colaboradores_pwa": "Gestionar colaboradores mobile",
-    "pwa.manage_usuarios_pwa": "Crear y gestionar usuarios mobile",
-    "pwa.manage_nomina_pwa": "Gestionar nomina mobile",
-    "pwa.manage_prestaciones_mensuales_pwa": "Gestionar prestaciones mensuales mobile",
-}
-
-
-def _get_pwa_permission_labels(user):
-    permission_codes = (
-        code
-        for code in get_effective_permission_codes(user)
-        if code.startswith("pwa.") or code.startswith("rendicioncuentasmensual.")
-    )
-    return [PWA_PERMISSION_LABELS.get(code, code) for code in sorted(permission_codes)]
-
-
-class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
-    required_permissions: tuple[str, ...] = tuple()
-    require_all_permissions = False
-
-    def get_required_permissions(self):
-        return tuple(self.required_permissions)
-
-    def test_func(self):
-        user = self.request.user
-        if not user.is_authenticated:
-            return False
-        if user.is_superuser:
-            return True
-
-        required_permissions = self.get_required_permissions()
-        if not required_permissions:
-            return False
-
-        if self.require_all_permissions:
-            return all(user.has_perm(code) for code in required_permissions)
-        return any(user.has_perm(code) for code in required_permissions)
-
-
-class UsuariosLoginView(LoginView):
-    template_name = "user/login.html"
-    authentication_form = BackofficeAuthenticationForm
-    redirect_authenticated_user = True
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -124,7 +76,39 @@ class UserListView(AdminRequiredMixin, ListView):
         return context
 
 
-class UserCreateView(AdminRequiredMixin, CreateView):
+class UserDomainOperationMixin:
+    """Conserva la entrada pública; dirige operaciones completas a su dueño."""
+
+    def get(self, request, *args, **kwargs):
+        if set(SECCIONES_COMEDORES).intersection(secciones_habilitadas(request.user)):
+            # Obtener el objeto antes de reenviar conserva el alcance en portal;
+            # el backend vuelve a comprobarlo, nunca confía en este filtro.
+            if kwargs.get("pk") is not None:
+                self.get_object()
+            response = reenviar_operacion_usuario(request, user_id=kwargs.get("pk"))
+            if response.status_code < 500:
+                return response
+            response.close()
+            messages.warning(
+                request,
+                "Espacios comunitarios no está disponible. "
+                "Podés realizar las operaciones independientes; sus accesos se conservan.",
+            )
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        # Conservar el body ANTES de leer multipart/POST, para reenviar la misma
+        # operación sin reconstruir campos, archivos, sesiones ni CSRF.
+        body = request.body
+        instance = self.get_object() if kwargs.get("pk") is not None else None
+        if operacion_requiere_espacios(request.POST, instance):
+            return reenviar_operacion_usuario(
+                request, user_id=kwargs.get("pk"), body=body
+            )
+        return super().post(request, *args, **kwargs)
+
+
+class UserCreateView(AdminRequiredMixin, UserDomainOperationMixin, CreateView):
     model = User
     form_class = UserCreationForm
     template_name = "user/user_form.html"
@@ -137,7 +121,11 @@ class UserCreateView(AdminRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
-        self.object = form.save()
+        try:
+            self.object = form.save()
+        except ValidationError as error:
+            form.add_error(None, error)
+            return self.form_invalid(form)
         generated_password = getattr(form, "generated_password", None)
         if generated_password:
             messages.success(
@@ -159,7 +147,7 @@ class UserCreateView(AdminRequiredMixin, CreateView):
         return super().get_success_url()
 
 
-class UserUpdateView(AdminRequiredMixin, UpdateView):
+class UserUpdateView(AdminRequiredMixin, UserDomainOperationMixin, UpdateView):
     model = User
     form_class = CustomUserChangeForm
     template_name = "user/user_form.html"
@@ -193,50 +181,14 @@ class UserUpdateView(AdminRequiredMixin, UpdateView):
             )
         context["temporary_password_plaintext"] = temporary_password_plaintext
         context["temporary_password_visible"] = bool(temporary_password_plaintext)
-        operator_accesses = (
-            AccesoComedorPWA.objects.filter(
-                user=self.object,
-                rol=AccesoComedorPWA.ROL_OPERADOR,
-                activo=True,
-            )
-            .select_related("comedor", "creado_por")
-            .order_by("comedor__nombre", "id")
-        )
-        operator_access_list = list(operator_accesses)
-        if operator_access_list:
-            context["pwa_operator_context"] = {
-                "accesses": operator_access_list,
-                "created_by": operator_access_list[0].creado_por,
-                "permission_labels": _get_pwa_permission_labels(self.object),
-            }
-        operadores = (
-            AccesoComedorPWA.objects.filter(
-                creado_por=self.object,
-                rol=AccesoComedorPWA.ROL_OPERADOR,
-            )
-            .select_related("user", "comedor")
-            .order_by("user__username", "comedor__nombre", "id")
-        )
-        created_users = {}
-        for acceso in operadores:
-            item = created_users.setdefault(
-                acceso.user_id,
-                {
-                    "user": acceso.user,
-                    "comedores": [],
-                    "activo": False,
-                    "permission_labels": _get_pwa_permission_labels(acceso.user),
-                },
-            )
-            item["comedores"].append(acceso.comedor)
-            item["activo"] = item["activo"] or (
-                acceso.activo and getattr(acceso.user, "is_active", False)
-            )
-        context["pwa_created_users"] = list(created_users.values())
         return context
 
     def form_valid(self, form):
-        response = super().form_valid(form)
+        try:
+            response = super().form_valid(form)
+        except ValidationError as error:
+            form.add_error(None, error)
+            return self.form_invalid(form)
         if form.cleaned_data.get("password"):
             clear_temporary_password(self.request.session, user_id=self.object.pk)
         return response
@@ -446,130 +398,6 @@ class GroupListView(AdminRequiredMixin, ListView):
         return context
 
 
-class FirstLoginPasswordChangeView(LoginRequiredMixin, FormView):
-    template_name = "user/force_password_change.html"
-    form_class = SetPasswordForm
-    success_url = reverse_lazy("inicio")
-
-    def dispatch(self, request, *args, **kwargs):
-        profile = getattr(request.user, "profile", None)
-        if not getattr(profile, "must_change_password", False):
-            return HttpResponseRedirect(self.success_url)
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["user"] = self.request.user
-        return kwargs
-
-    def form_valid(self, form):
-        user = form.save()
-        profile = getattr(user, "profile", None)
-        if profile:
-            profile.must_change_password = False
-            profile.password_changed_at = timezone.now()
-            profile.initial_password_expires_at = None
-            profile.password_reset_requested_at = None
-            profile.temporary_password_plaintext = None
-            profile.save(
-                update_fields=[
-                    "must_change_password",
-                    "password_changed_at",
-                    "initial_password_expires_at",
-                    "password_reset_requested_at",
-                    "temporary_password_plaintext",
-                ]
-            )
-        update_session_auth_hash(self.request, user)
-        messages.success(self.request, "Contraseña actualizada correctamente.")
-        return super().form_valid(form)
-
-
-class MiCuentaView(LoginRequiredMixin, UpdateView):
-    """Vista persistente para que el usuario edite sus propios datos."""
-
-    template_name = "user/mi_cuenta.html"
-    form_class = MiCuentaForm
-    success_url = reverse_lazy("mi_cuenta")
-
-    def get_object(self, queryset=None):
-        return self.request.user
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        messages.success(self.request, "Datos personales actualizados correctamente.")
-        return response
-
-
-class ConfirmacionDatosView(MiCuentaView):
-    """Confirmación obligatoria de datos personales en el primer ingreso.
-
-    Es una vista dedicada y no un modal embebido en el layout: el modal se
-    puede saltear navegando por URL, y el requisito es bloquear la navegación
-    hasta que el usuario guarde datos válidos. El bloqueo real lo hace
-    ``ProfileConfirmationMiddleware``; esta vista se presenta con estética de
-    modal y sin opción de cerrar.
-    """
-
-    template_name = "user/confirmar_datos.html"
-    success_url = reverse_lazy("inicio")
-
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated and not needs_profile_confirmation(
-            request.user
-        ):
-            return HttpResponseRedirect(str(self.success_url))
-        return super().dispatch(request, *args, **kwargs)
-
-
-class PasswordResetConfirmCustomView(PasswordResetConfirmView):
-    template_name = "user/password_reset_confirm.html"
-    success_url = reverse_lazy("password_reset_complete")
-
-    def dispatch(self, *args, **kwargs):
-        """Permite POST directo con token sin requerir paso intermedio set-password."""
-        request = args[0]
-        token = kwargs.get("token")
-        uidb64 = kwargs.get("uidb64")
-
-        if (
-            request.method == "POST"
-            and token
-            and token != self.reset_url_token
-            and uidb64
-        ):
-            self.user = self.get_user(uidb64)
-            if self.user and self.token_generator.check_token(self.user, token):
-                self.request.session[INTERNAL_RESET_SESSION_TOKEN] = token
-                self.validlink = True
-                return FormView.dispatch(self, *args, **kwargs)
-
-        return super().dispatch(*args, **kwargs)
-
-    def form_valid(self, form):
-        user = form.user
-        response = super().form_valid(form)
-
-        profile = getattr(user, "profile", None)
-        if profile:
-            profile.must_change_password = False
-            profile.password_changed_at = timezone.now()
-            profile.initial_password_expires_at = None
-            profile.password_reset_requested_at = None
-            profile.temporary_password_plaintext = None
-            profile.save(
-                update_fields=[
-                    "must_change_password",
-                    "password_changed_at",
-                    "initial_password_expires_at",
-                    "password_reset_requested_at",
-                    "temporary_password_plaintext",
-                ]
-            )
-
-        return response
-
-
 class GroupCreateView(AdminRequiredMixin, CreateView):
     model = Group
     form_class = GroupForm
@@ -608,17 +436,27 @@ class GroupUpdateView(AdminRequiredMixin, UpdateView):
         return context
 
 
-class SisocPasswordResetView(PasswordResetView):
-    form_class = UsernameEmailPasswordResetForm
-    template_name = "user/password_reset_form.html"
-    email_template_name = "user/password_reset_email.txt"
-    subject_template_name = "user/password_reset_subject.txt"
-    success_url = reverse_lazy("password_reset_done")
-
-
-class SisocPasswordResetDoneView(PasswordResetDoneView):
-    template_name = "user/password_reset_done.html"
-
-
-class SisocPasswordResetCompleteView(PasswordResetCompleteView):
-    template_name = "user/password_reset_complete.html"
+__all__ = [
+    "UserListView",
+    "UserDomainOperationMixin",
+    "UserCreateView",
+    "UserUpdateView",
+    "UserDeleteView",
+    "UserActiveView",
+    "BulkCredentialsTemplateView",
+    "BulkCredentialsUploadView",
+    "BulkCredentialsJobDetailView",
+    "BulkCredentialsJobResumeView",
+    "GroupListView",
+    "GroupCreateView",
+    "GroupUpdateView",
+    "AdminRequiredMixin",
+    "ConfirmacionDatosView",
+    "FirstLoginPasswordChangeView",
+    "MiCuentaView",
+    "PasswordResetConfirmCustomView",
+    "SisocPasswordResetCompleteView",
+    "SisocPasswordResetDoneView",
+    "SisocPasswordResetView",
+    "UsuariosLoginView",
+]

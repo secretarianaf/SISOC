@@ -24,8 +24,9 @@ MENORES = "Formulario de menores (14 a 17 años)"
 
 
 @pytest.mark.smoke
-def test_la_copia_local_esta_en_4_1_0_sin_claves_nuevas():
-    assert get_version() == "4.1.0"
+def test_la_copia_local_trae_el_formulario_de_menores_sin_claves_nuevas():
+    # 4.1.1 (#2724) solo cambia una opción de la 25: test_datacalle_instrumento_4_1_1.py.
+    assert get_version() == "4.1.1"
     diccionario = json.loads(
         (RUTA_INSTRUMENTO / "diccionario-respuestas.json").read_text(encoding="utf-8")
     )

@@ -1,0 +1,796 @@
+﻿from django.conf import settings
+from django.db import models
+
+from comedores.models import Comedor
+from core.soft_delete import SoftDeleteModelMixin
+
+
+class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
+    LINEA_TRADICIONAL = "tradicional"
+    LINEA_SECOS = "secos"
+
+    CATEGORIA_FORMULARIO_I = "formulario_i"
+    CATEGORIA_FORMULARIO_II = "formulario_ii"
+    CATEGORIA_FORMULARIO_III = "formulario_iii"
+    CATEGORIA_FORMULARIO_III_ALIMENTARIO = "formulario_iii_alimentario"
+    CATEGORIA_FORMULARIO_III_SIPH = "formulario_iii_siph"
+    CATEGORIA_FORMULARIO_IV = "formulario_iv"
+    CATEGORIA_FORMULARIO_V = "formulario_v"
+    CATEGORIA_FORMULARIO_V_ALIMENTARIO = "formulario_v_alimentario"
+    CATEGORIA_FORMULARIO_V_SIPH = "formulario_v_siph"
+    CATEGORIA_FORMULARIO_VI = "formulario_vi"
+    CATEGORIA_EXTRACTO_BANCARIO = "extracto_bancario"
+    CATEGORIA_COMPROBANTES_ALIMENTARIO = "comprobantes_alimentario"
+    CATEGORIA_COMPROBANTES_SIPH = "comprobantes_siph"
+    CATEGORIA_COMPROBANTES = CATEGORIA_COMPROBANTES_ALIMENTARIO
+    CATEGORIA_PLANILLA_SEGUROS = "planilla_seguros"
+    CATEGORIA_OTROS = "otros"
+    MODELO_FORMULARIO_I = CATEGORIA_FORMULARIO_I
+
+    ESTADO_PRESENTADO = "presentado"
+    ESTADO_SUBSANAR = "subsanar"
+    ESTADO_VALIDADO = "validado"
+
+    CATEGORIA_CHOICES = [
+        (CATEGORIA_FORMULARIO_I, "Formulario I - Certificación de Cuenta Bancaria"),
+        (CATEGORIA_FORMULARIO_II, "Formulario II - Resumen"),
+        (
+            CATEGORIA_FORMULARIO_III,
+            "Formulario III - Desagregado por Facturas Prestación Alimentaria",
+        ),
+        (
+            CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+            "Formulario III - Desagregado por Facturas Prestación Alimentaria",
+        ),
+        (
+            CATEGORIA_FORMULARIO_III_SIPH,
+            "Formulario III - Desagregado por Facturas SIPH",
+        ),
+        (CATEGORIA_FORMULARIO_IV, "Formulario IV - Recibo de Fondos"),
+        (
+            CATEGORIA_FORMULARIO_V,
+            "Formulario V - Certificación de Prestaciones Alimentarias",
+        ),
+        (
+            CATEGORIA_FORMULARIO_V_ALIMENTARIO,
+            "Formulario V - Certificación de Prestaciones Alimentarias",
+        ),
+        (CATEGORIA_FORMULARIO_V_SIPH, "Formulario V - Certificación de SIPH"),
+        (CATEGORIA_FORMULARIO_VI, "Formulario VI - Planilla de Pagos"),
+        (CATEGORIA_EXTRACTO_BANCARIO, "Extracto Bancario"),
+        (
+            CATEGORIA_COMPROBANTES_ALIMENTARIO,
+            "Facturas y Tickets Prestación Alimentaria",
+        ),
+        (CATEGORIA_COMPROBANTES_SIPH, "Facturas y Tickets SIPH"),
+        (CATEGORIA_PLANILLA_SEGUROS, "Planilla de Seguros II"),
+        (CATEGORIA_OTROS, "Documentación Adicional"),
+    ]
+
+    ESTADO_CHOICES = [
+        (ESTADO_PRESENTADO, "Presentado"),
+        (ESTADO_SUBSANAR, "A Subsanar"),
+        (ESTADO_VALIDADO, "Validado"),
+    ]
+
+    CATEGORIAS_CONFIG = (
+        {
+            "codigo": CATEGORIA_FORMULARIO_I,
+            "label": "Formulario I - Certificación de Cuenta Bancaria",
+            "required": False,
+            "multiple": True,
+            "order": 1,
+        },
+        {
+            "codigo": CATEGORIA_FORMULARIO_II,
+            "label": "Formulario II - Resumen",
+            "required": True,
+            "multiple": False,
+            "order": 2,
+        },
+        {
+            "codigo": CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+            "label": "Formulario III - Desagregado por Facturas Prestación Alimentaria",
+            "required": True,
+            "multiple": True,
+            "order": 3,
+        },
+        {
+            "codigo": CATEGORIA_FORMULARIO_III_SIPH,
+            "label": "Formulario III - Desagregado por Facturas SIPH",
+            "description": "Este documento es obligatorio si presentó actividades para este Convenio",
+            "required": False,
+            "multiple": True,
+            "order": 4,
+        },
+        {
+            "codigo": CATEGORIA_FORMULARIO_IV,
+            "label": "Formulario IV - Recibo de Fondos",
+            "required": False,
+            "multiple": False,
+            "order": 5,
+        },
+        {
+            "codigo": CATEGORIA_FORMULARIO_V_ALIMENTARIO,
+            "label": "Formulario V - Certificación de Prestaciones Alimentarias",
+            "required": True,
+            "multiple": True,
+            "order": 6,
+        },
+        {
+            "codigo": CATEGORIA_FORMULARIO_V_SIPH,
+            "label": "Formulario V - Certificación de SIPH",
+            "description": "Este documento es obligatorio si presentó actividades para este Convenio",
+            "required": False,
+            "multiple": True,
+            "order": 7,
+        },
+        {
+            "codigo": CATEGORIA_FORMULARIO_VI,
+            "label": "Formulario VI - Planilla de Pagos",
+            "required": False,
+            "multiple": True,
+            "order": 8,
+        },
+        {
+            "codigo": CATEGORIA_EXTRACTO_BANCARIO,
+            "label": "Extracto Bancario",
+            "required": True,
+            "multiple": True,
+            "order": 9,
+        },
+        {
+            "codigo": CATEGORIA_COMPROBANTES_ALIMENTARIO,
+            "label": "Facturas y Tickets Prestación Alimentaria",
+            "required": False,
+            "multiple": True,
+            "order": 10,
+        },
+        {
+            "codigo": CATEGORIA_COMPROBANTES_SIPH,
+            "label": "Facturas y Tickets SIPH",
+            "required": False,
+            "multiple": True,
+            "order": 12,
+        },
+        {
+            "codigo": CATEGORIA_PLANILLA_SEGUROS,
+            "label": "Planilla de Seguros II",
+            "required": False,
+            "multiple": True,
+            "order": 11,
+            "lineas": (LINEA_TRADICIONAL,),
+        },
+        {
+            "codigo": CATEGORIA_OTROS,
+            "label": "Documentación Adicional",
+            "required": False,
+            "multiple": True,
+            "order": 13,
+        },
+    )
+
+    MODELOS_POR_LINEA = {
+        LINEA_SECOS: (
+            {
+                "codigo": MODELO_FORMULARIO_I,
+                "label": "Formulario I - Certificación de Cuenta Bancaria",
+                "filename": "FORM.I.MS.-Certificacion.de.CUENTA.BANCARIA.2.xlsx",
+                "order": 1,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_II,
+                "label": "Formulario II - Resumen",
+                "filename": "FORM.II.MS.-RESUMEN.1.xlsx",
+                "order": 2,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+                "label": "Formulario III - Desagregado por Facturas Prestación Alimentaria",
+                "filename": "FORM.III.MS.-.DESAGREGADO.ALIM.1.xlsx",
+                "order": 3,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_III_SIPH,
+                "label": "Formulario III - Desagregado por Facturas SIPH",
+                "filename": "FORM.III.MS.-.DESAGREGADO.SIPH.1.xlsx",
+                "order": 4,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_IV,
+                "label": "Formulario IV - Recibo de Fondos",
+                "filename": "FORM.IV.MS.-.RECIBO.FONDOS.1.xlsx",
+                "order": 5,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_V_ALIMENTARIO,
+                "label": "Formulario V - Certificación de Prestaciones Alimentarias",
+                "filename": "FORM.V.MS.-.CERTIF.PRESTAC.ALIM.1.xlsx",
+                "order": 6,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_V_SIPH,
+                "label": "Formulario V - Certificación de SIPH",
+                "filename": "FORM.V.MS.-.CERTIF.SS.INT.PRO.HUM.1.xlsx",
+                "order": 7,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_VI,
+                "label": "Formulario VI - Planilla de Pagos",
+                "filename": "FORMULARIO.VI.-.CONTROL.PAGOS.3.xlsx",
+                "order": 8,
+            },
+        ),
+        LINEA_TRADICIONAL: (
+            {
+                "codigo": MODELO_FORMULARIO_I,
+                "label": "Formulario I - Certificación de Cuenta Bancaria",
+                "filename": "FORM.I.-Certificacion.de.CUENTA.BANCARIA.1.xlsx",
+                "order": 1,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_II,
+                "label": "Formulario II - Resumen",
+                "filename": "FORM.II.RMC.AF.1.xlsx",
+                "order": 2,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+                "label": "Formulario III - Desagregado por Facturas Prestación Alimentaria",
+                "filename": "FORM.III.RMC.ALIM.1.xlsx",
+                "order": 3,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_III_SIPH,
+                "label": "Formulario III - Desagregado por Facturas SIPH",
+                "filename": "FORM.III.RMC.SIPH.1.xlsx",
+                "order": 4,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_IV,
+                "label": "Formulario IV - Recibo de Fondos",
+                "filename": "FORM.IV.RMC.AF.xlsx",
+                "order": 5,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_V_ALIMENTARIO,
+                "label": "Formulario V - Certificación de Prestaciones Alimentarias",
+                "filename": "FORM.V.CERTIF.ALIM.1.xlsx",
+                "order": 6,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_V_SIPH,
+                "label": "Formulario V - Certificación de SIPH",
+                "filename": "FORM.V.CERTIF.SIPH.1.xlsx",
+                "order": 7,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_VI,
+                "label": "Formulario VI - Planilla de Pagos",
+                "filename": "FORM.VI.RMC.AF.1.xlsx",
+                "order": 8,
+            },
+            {
+                "codigo": CATEGORIA_PLANILLA_SEGUROS,
+                "label": "Planilla de Seguros II",
+                "filename": "Planilla.II.Seguros.Actualizacion.-.Tradicional.docx",
+                "order": 9,
+            },
+        ),
+    }
+
+    nombre = models.CharField(max_length=255, verbose_name="Nombre del Documento")
+    categoria = models.CharField(
+        max_length=40,
+        choices=CATEGORIA_CHOICES,
+        default=CATEGORIA_COMPROBANTES,
+        verbose_name="Categoría",
+    )
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default=ESTADO_PRESENTADO,
+        verbose_name="Estado del documento",
+    )
+    observaciones = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Observaciones",
+    )
+    archivo = models.FileField(
+        upload_to="rendicioncuentasmensualdocumentos_adjuntos/",
+        verbose_name="Archivo",
+    )
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de Creación",
+    )
+    ultima_modificacion = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Última Modificación",
+    )
+    rendicion_cuenta_mensual = models.ForeignKey(
+        "RendicionCuentaMensual",
+        on_delete=models.CASCADE,
+        related_name="archivos_adjuntos",
+        verbose_name="Rendición de Cuenta Mensual",
+        null=True,
+        blank=True,
+    )
+    documento_subsanado = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        related_name="subsanaciones",
+        verbose_name="Documento subsanado",
+        null=True,
+        blank=True,
+    )
+    # No usa choices porque las etapas se definen en el modelo siguiente.
+    visualizacion_etapa = models.CharField(
+        max_length=30,
+        blank=True,
+        null=True,
+        verbose_name="Etapa en que se confirmó la visualización",
+    )
+    visualizacion_usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="documentos_rendicion_visualizados",
+        blank=True,
+        null=True,
+        verbose_name="Confirmó la visualización",
+    )
+    visualizacion_fecha = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name="Fecha de confirmación de visualización",
+    )
+
+    class Meta:
+        verbose_name = "Documento Adjunto"
+        verbose_name_plural = "Documentos Adjuntos"
+
+    def get_estado_visual(self):
+        override = getattr(self, "estado_visual_override", None)
+        if override:
+            return override
+        return self.estado
+
+    def visualizacion_confirmada_en(self, etapa_proceso):
+        return bool(self.visualizacion_fecha) and (
+            self.visualizacion_etapa == etapa_proceso
+        )
+
+    def get_estado_visual_display(self):
+        override = getattr(self, "estado_visual_display_override", None)
+        if override:
+            return override
+        return self.get_estado_display()
+
+    @classmethod
+    def normalizar_linea_programatica(cls, linea_programatica):
+        if linea_programatica == cls.LINEA_SECOS:
+            return cls.LINEA_SECOS
+        return cls.LINEA_TRADICIONAL
+
+    @classmethod
+    def modelos_descargables(cls, linea_programatica=None):
+        linea = cls.normalizar_linea_programatica(linea_programatica)
+        return list(
+            cls.MODELOS_POR_LINEA.get(
+                linea, cls.MODELOS_POR_LINEA[cls.LINEA_TRADICIONAL]
+            )
+        )
+
+    @classmethod
+    def get_modelo_descarga(cls, linea_programatica, codigo):
+        return next(
+            (
+                item
+                for item in cls.modelos_descargables(linea_programatica)
+                if item["codigo"] == codigo
+            ),
+            None,
+        )
+
+    @classmethod
+    def categorias_mobile(cls, linea_programatica=None, incluir_codigos=()):
+        linea = cls.normalizar_linea_programatica(linea_programatica)
+        incluir_codigos = set(incluir_codigos)
+        modelos = {
+            item["codigo"]: item
+            for item in cls.modelos_descargables(linea_programatica)
+        }
+        return [
+            {**item, "modelo": modelos.get(item["codigo"])}
+            for item in cls.CATEGORIAS_CONFIG
+            if not item.get("lineas")
+            or linea in item["lineas"]
+            or item["codigo"] in incluir_codigos
+        ]
+
+    @classmethod
+    def categorias_obligatorias(cls, linea_programatica=None):
+        return {
+            item["codigo"]
+            for item in cls.categorias_mobile(linea_programatica)
+            if item["required"]
+        }
+
+    @classmethod
+    def categorias_multiples(cls, linea_programatica=None):
+        return {
+            item["codigo"]
+            for item in cls.categorias_mobile(linea_programatica)
+            if item["multiple"]
+        }
+
+    @classmethod
+    def get_categoria_config(cls, categoria, linea_programatica=None):
+        return next(
+            (
+                item
+                for item in cls.categorias_mobile(linea_programatica)
+                if item["codigo"] == categoria
+            ),
+            None,
+        )
+
+
+class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
+    LINEA_TRADICIONAL = DocumentacionAdjunta.LINEA_TRADICIONAL
+    LINEA_SECOS = DocumentacionAdjunta.LINEA_SECOS
+
+    ESTADO_ELABORACION = "elaboracion"
+    ESTADO_REVISION = "revision"
+    ESTADO_SUBSANAR = "subsanar"
+    ESTADO_FINALIZADA = "finalizada"
+
+    ESTADO_CHOICES = [
+        (ESTADO_ELABORACION, "Presentación en elaboración"),
+        (ESTADO_REVISION, "Presentación en revisión"),
+        (ESTADO_SUBSANAR, "Presentación a subsanar"),
+        (ESTADO_FINALIZADA, "Presentación finalizada"),
+    ]
+
+    ETAPA_CARGA_DOCUMENTACION = "carga_documentacion"
+    ETAPA_REVISION_DOCUMENTACION = "revision_documentacion"
+    ETAPA_REVISION_AUDITORIA = "revision_auditoria"
+    ETAPA_AUDITORIA = "auditoria"
+    ETAPA_REGULARIZACION = "regularizacion"
+
+    ETAPA_PROCESO_CHOICES = [
+        (ETAPA_CARGA_DOCUMENTACION, "Carga de documentación"),
+        (ETAPA_REVISION_DOCUMENTACION, "Revisión Territorial"),
+        (ETAPA_REVISION_AUDITORIA, "Revisión para Carga"),
+        (ETAPA_AUDITORIA, "Auditoría"),
+        (ETAPA_REGULARIZACION, "Regularización"),
+    ]
+
+    SUBESTADO_PENDIENTE = "pendiente"
+    SUBESTADO_EN_CURSO = "en_curso"
+    SUBESTADO_PENDIENTE_CORRECCIONES = "pendiente_correcciones"
+    SUBESTADO_SUBSANADO = "subsanado"
+    SUBESTADO_FINALIZADA = "finalizada"
+    SUBESTADO_FINALIZADA_CON_OBSERVACIONES = "finalizada_con_observaciones"
+
+    SUBESTADO_PROCESO_CHOICES = [
+        (SUBESTADO_PENDIENTE, "Pendiente"),
+        (SUBESTADO_EN_CURSO, "En curso"),
+        (SUBESTADO_PENDIENTE_CORRECCIONES, "Pendiente de correcciones"),
+        (SUBESTADO_SUBSANADO, "Subsanado"),
+        (SUBESTADO_FINALIZADA, "Finalizada"),
+        (
+            SUBESTADO_FINALIZADA_CON_OBSERVACIONES,
+            "Finalizada con observaciones",
+        ),
+    ]
+
+    LINEA_PROGRAMATICA_CHOICES = [
+        (LINEA_SECOS, "Abordaje Comunitario - Linea Secos"),
+        (LINEA_TRADICIONAL, "Abordaje Comunitario - Linea Tradicional"),
+    ]
+
+    MESES = [
+        (1, "Enero"),
+        (2, "Febrero"),
+        (3, "Marzo"),
+        (4, "Abril"),
+        (5, "Mayo"),
+        (6, "Junio"),
+        (7, "Julio"),
+        (8, "Agosto"),
+        (9, "Septiembre"),
+        (10, "Octubre"),
+        (11, "Noviembre"),
+        (12, "Diciembre"),
+    ]
+
+    comedor = models.ForeignKey(
+        Comedor,
+        on_delete=models.SET_NULL,
+        related_name="rendiciones_cuentas_mensuales",
+        null=True,
+        blank=True,
+    )
+    proyecto = models.ForeignKey(
+        "organizaciones.ProyectoOrganizacion",
+        on_delete=models.PROTECT,
+        related_name="rendiciones_cuentas_mensuales",
+        null=True,
+        blank=True,
+    )
+    mes = models.IntegerField(verbose_name="Mes", choices=MESES)
+    anio = models.IntegerField(verbose_name="Año")
+    convenio = models.CharField(
+        max_length=100,
+        verbose_name="Convenio",
+        blank=True,
+        null=True,
+    )
+    nombre = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name="Nombre de Rendición"
+    )
+    numero_rendicion = models.PositiveIntegerField(
+        verbose_name="Número de Rendición",
+        blank=True,
+        null=True,
+    )
+    periodo_inicio = models.DateField(
+        verbose_name="Período inicio",
+        blank=True,
+        null=True,
+    )
+    periodo_fin = models.DateField(
+        verbose_name="Período fin",
+        blank=True,
+        null=True,
+    )
+    linea_programatica = models.CharField(
+        max_length=20,
+        choices=LINEA_PROGRAMATICA_CHOICES,
+        default=LINEA_TRADICIONAL,
+        verbose_name="Linea Programatica",
+    )
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default=ESTADO_ELABORACION,
+        verbose_name="Estado de Rendición",
+    )
+    documento_adjunto = models.BooleanField(
+        default=False,
+        verbose_name="Documento Adjunto",
+    )
+    observaciones = models.TextField(
+        verbose_name="Observaciones",
+        blank=True,
+        null=True,
+    )
+    etapa_proceso = models.CharField(
+        max_length=30,
+        choices=ETAPA_PROCESO_CHOICES,
+        default=ETAPA_CARGA_DOCUMENTACION,
+        verbose_name="Etapa del proceso",
+    )
+    subestado_proceso = models.CharField(
+        max_length=35,
+        choices=SUBESTADO_PROCESO_CHOICES,
+        default=SUBESTADO_EN_CURSO,
+        verbose_name="Subestado del proceso",
+    )
+    monto_rendido = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        verbose_name="Monto rendido",
+    )
+    monto_observado = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        verbose_name="Monto observado",
+    )
+    validada = models.BooleanField(blank=True, null=True, verbose_name="¿Validada?")
+    genera_acta_auditoria = models.BooleanField(
+        blank=True,
+        null=True,
+        verbose_name="¿Se genera acta de auditoría?",
+    )
+    rendiciones_incluidas = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        blank=True,
+        related_name="incluida_en_actas",
+        verbose_name="Rendiciones incluidas en el acta",
+    )
+    rendicion_origen_acta = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="rendiciones_del_acta",
+        verbose_name="Rendición que originó el acta de auditoría",
+    )
+    fecha_validacion_territorial = models.DateTimeField(blank=True, null=True)
+    fecha_validacion_auditoria = models.DateTimeField(blank=True, null=True)
+    fecha_carga_auditoria = models.DateTimeField(blank=True, null=True)
+    fecha_auditada = models.DateTimeField(blank=True, null=True)
+    fecha_gestion_auditoria = models.DateTimeField(
+        blank=True, null=True, verbose_name="Fecha de cierre de gestión de auditoría"
+    )
+    acta_auditoria = models.FileField(
+        upload_to="rendicioncuentasmensual/auditoria/actas/",
+        blank=True,
+        null=True,
+        verbose_name="PDF Acta de Auditoría",
+    )
+    fecha_regularizacion = models.DateTimeField(blank=True, null=True)
+    documento_regularizacion = models.FileField(
+        upload_to="rendicioncuentasmensual/auditoria/regularizaciones/",
+        blank=True,
+        null=True,
+        verbose_name="PDF Regularización",
+    )
+    usuario_creador = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="rendiciones_cuentas_mensuales_creadas",
+        blank=True,
+        null=True,
+        verbose_name="Usuario creador",
+    )
+    usuario_ultima_modificacion = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="rendiciones_cuentas_mensuales_modificadas",
+        blank=True,
+        null=True,
+        verbose_name="Usuario última modificación",
+    )
+    ultima_modificacion = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Última Modificación",
+    )
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de Creación",
+    )
+
+    class Meta:
+        permissions = [
+            ("manage_mobile_rendicion", "Puede gestionar rendiciones mobile"),
+            ("edit_rendicion_data", "Puede editar datos de rendición"),
+            (
+                "manage_territorial_stage",
+                "Puede gestionar la etapa Revisión Territorial",
+            ),
+            (
+                "manage_auditoria_review_stage",
+                "Puede gestionar la etapa Revisión de Auditoría",
+            ),
+            ("manage_auditoria_stage", "Puede gestionar la etapa Auditoría"),
+            (
+                "manage_regularizacion_stage",
+                "Puede gestionar la etapa Regularización",
+            ),
+        ]
+        verbose_name = "Rendición de Cuenta Mensual"
+        verbose_name_plural = "Rendiciones de Cuenta Mensuales"
+
+    @property
+    def es_origen_acta(self):
+        # Sin origen registrado (Secos o actas legadas) la rendición se
+        # gestiona sola; solo las incorporadas a un acta ajena quedan afuera.
+        return self.pk is not None and self.rendicion_origen_acta_id in {
+            None,
+            self.pk,
+        }
+
+    @property
+    def validacion_territorial_finalizada(self):
+        return self.fecha_validacion_territorial is not None or self.etapa_proceso in {
+            self.ETAPA_REVISION_AUDITORIA,
+            self.ETAPA_AUDITORIA,
+            self.ETAPA_REGULARIZACION,
+        }
+
+    @property
+    def etapa_badge_class(self):
+        return {
+            self.ETAPA_CARGA_DOCUMENTACION: "etapa-carga",
+            self.ETAPA_REVISION_DOCUMENTACION: "etapa-territorial",
+            self.ETAPA_REVISION_AUDITORIA: "etapa-revision-auditoria",
+            self.ETAPA_AUDITORIA: "etapa-auditoria",
+            self.ETAPA_REGULARIZACION: "etapa-regularizacion",
+        }.get(self.etapa_proceso, "etapa-carga")
+
+    @property
+    def validacion_auditoria_finalizada(self):
+        return self.fecha_validacion_auditoria is not None or self.etapa_proceso in {
+            self.ETAPA_AUDITORIA,
+            self.ETAPA_REGULARIZACION,
+        }
+
+    @property
+    def cargada_para_auditoria(self):
+        return self.fecha_carga_auditoria is not None or self.etapa_proceso in {
+            self.ETAPA_AUDITORIA,
+            self.ETAPA_REGULARIZACION,
+        }
+
+    @property
+    def auditada(self):
+        # NULL means no acta decision was recorded (pre-0022 records or
+        # Linea Secos): fall back to the audit date.
+        if self.genera_acta_auditoria is None:
+            return self.fecha_auditada is not None
+        return self.genera_acta_auditoria
+
+    @property
+    def regularizada(self):
+        return self.fecha_regularizacion is not None or (
+            self.etapa_proceso == self.ETAPA_REGULARIZACION
+            and self.subestado_proceso == self.SUBESTADO_FINALIZADA
+        )
+
+    @property
+    def estado_proceso_display(self):
+        if (
+            self.etapa_proceso == self.ETAPA_AUDITORIA
+            and self.subestado_proceso == self.SUBESTADO_EN_CURSO
+            and self.validada is True
+            and self.fecha_gestion_auditoria
+            and self.genera_acta_auditoria is False
+        ):
+            return "Auditoría validada sin acta"
+        if (
+            self.etapa_proceso == self.ETAPA_AUDITORIA
+            and self.subestado_proceso == self.SUBESTADO_FINALIZADA
+        ):
+            return "Auditoría finalizada sin observaciones"
+        if (
+            self.etapa_proceso == self.ETAPA_AUDITORIA
+            and self.subestado_proceso == self.SUBESTADO_FINALIZADA_CON_OBSERVACIONES
+        ):
+            return "Auditoría finalizada con observaciones"
+        if self.regularizada:
+            return "Rendición regularizada tras Auditoría"
+        return f"{self.get_etapa_proceso_display()} {self.get_subestado_proceso_display().lower()}"
+
+    @property
+    def arvhios_adjuntos(self):  # compat legacy (typo histórico)
+        return getattr(self, "archivos_adjuntos")
+
+
+class SolicitudDocumentoFaltante(models.Model):
+    rendicion = models.ForeignKey(
+        RendicionCuentaMensual,
+        on_delete=models.CASCADE,
+        related_name="solicitudes_documentos_faltantes",
+    )
+    categoria = models.CharField(
+        max_length=40, choices=DocumentacionAdjunta.CATEGORIA_CHOICES
+    )
+    observaciones = models.TextField()
+    activa = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    usuario_creador = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    class Meta:
+        ordering = ("fecha_creacion", "id")
+
+    @property
+    def nombre(self):
+        return self.get_categoria_display()
+
+    @property
+    def rendicion_cuenta_mensual(self):
+        return self.rendicion
+
+    def get_estado_display(self):
+        return "Faltante solicitado"

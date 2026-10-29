@@ -1,0 +1,9 @@
+{% extends "admin/app_index.html" %}
+{% comment %}
+    Índice de una app (#2789): sus métricas arriba y la lista de modelos abajo.
+    En deploy cada vertical lo sirve su propio runtime.
+{% endcomment %}
+{% block content %}
+    {% include "admin/sisoc/secciones_dashboard.html" %}
+    {{ block.super }}
+{% endblock content %}

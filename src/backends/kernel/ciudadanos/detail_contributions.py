@@ -1,13 +1,9 @@
 """Registro de contextos aportados por dominios a Ciudadano 360.
 
-Hay dos tipos de contribución:
-
-- **De contexto**: devuelven variables que usa ``ciudadano_detail.html``. Son
-  las de apps que viven en el core (comedores, centrodefamilia, pwa).
-- **Renderizadas**: además declaran su template. El detalle las inserta ya
-  renderizadas (``contribuciones_html``), así funcionan igual si el dueño del
-  dato corre en otro backend (src/backends/config/backends.json, ``ciudadano_contributions``):
-  el core pide el fragmento al backend con la sesión del usuario.
+Las contribuciones renderizadas conservan consulta y templates en su dueño.
+El portal usa el mismo fragmento local o HTTP con la sesión original; una falla
+remota omite sólo esa contribución. C2 declara propiedad por app; el registro del
+backend Comedores y su runtime se incorporan en C3.
 """
 
 from __future__ import annotations
@@ -20,12 +16,19 @@ import requests
 from django.conf import settings
 from django.template.loader import render_to_string
 
-from core.backend_proxy import outbound_headers
+from core.backend_proxy import backend_de_app, outbound_headers
 
 ContribucionDetalleCiudadano = Callable[[Any, Any], dict[str, Any]]
 
 _CONTRIBUCIONES: dict[str, ContribucionDetalleCiudadano] = {}
 _PLANTILLAS: dict[str, str] = {}
+
+APPS_CONTRIBUCIONES = {
+    "comedores": "comedores",
+    "comedores_colaboraciones": "comedores",
+    "pwa": "pwa",
+    "pwa_badges": "pwa",
+}
 
 TIMEOUT_FRAGMENTO_SEGUNDOS = 4
 logger_modulo = logging.getLogger("django")
@@ -72,6 +75,9 @@ def renderizar_contribucion_local(nombre: str, request, ciudadano, logger) -> st
 
 
 def _backend_de_contribucion(nombre: str):
+    app_label = APPS_CONTRIBUCIONES.get(nombre)
+    if app_label is not None:
+        return backend_de_app(app_label)
     for spec in getattr(settings, "SISOC_BACKENDS", {}).values():
         if nombre in spec.get("ciudadano_contributions", ()):
             return spec

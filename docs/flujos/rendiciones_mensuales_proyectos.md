@@ -122,6 +122,9 @@ El archivo de acta y el Acta Complementaria siguen siendo opcionales.
 
 En el legajo de organizaciones, Validación refleja `validada` y Auditada refleja
 `genera_acta_auditoria`, sin inferirlos desde la carga documental o la etapa.
+Si no hay decisión registrada (históricas previas al acta o Línea Secos),
+Auditada usa `fecha_auditada`. La Fecha de Validación es la del cierre de la
+gestión y solo se muestra si la rendición está validada.
 La revisión previa se finaliza con «Finalizar revisión para Carga».
 El PDF consolidado convierte también imágenes JFIF usando el conversor de imágenes
 existente, como JPG y JPEG.

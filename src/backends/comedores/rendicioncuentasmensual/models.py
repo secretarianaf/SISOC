@@ -723,7 +723,11 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
 
     @property
     def auditada(self):
-        return self.genera_acta_auditoria is True
+        # NULL means no acta decision was recorded (pre-0022 records or
+        # Linea Secos): fall back to the audit date.
+        if self.genera_acta_auditoria is None:
+            return self.fecha_auditada is not None
+        return self.genera_acta_auditoria
 
     @property
     def regularizada(self):

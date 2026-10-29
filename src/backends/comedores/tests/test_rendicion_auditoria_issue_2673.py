@@ -153,19 +153,27 @@ def test_legajo_refleja_validacion_y_acta_sin_inferir_desde_etapa(
         assert re.search(
             r"Auditada</small><strong>\s*" + ("Sí" if acta else "No"), html
         )
+        fecha_validacion = re.search(
+            r"Fecha de Validación</small><strong>\s*(.*?)\s*</strong>", html
+        ).group(1)
+        assert (fecha_validacion == "-") is (not validada)
 
 
 @pytest.mark.parametrize("decision", [None, False, True])
 @pytest.mark.parametrize("etapa", ["auditoria", "regularizacion"])
 @pytest.mark.parametrize("con_fecha", [False, True])
-def test_auditada_refleja_solo_decision_de_generar_acta(decision, etapa, con_fecha):
+def test_auditada_refleja_decision_de_acta_o_fecha_si_no_hay_decision(
+    decision, etapa, con_fecha
+):
     rendicion = RendicionCuentaMensual(
         genera_acta_auditoria=decision,
         etapa_proceso=etapa,
         subestado_proceso="finalizada",
         fecha_auditada=timezone.now() if con_fecha else None,
     )
-    assert rendicion.auditada is (decision is True)
+    # Sin decision registrada (historicas o Linea Secos) vale la fecha de auditoria.
+    esperado = con_fecha if decision is None else decision
+    assert rendicion.auditada is esperado
 
 
 def crear_sin_acta(proyecto, **kwargs):

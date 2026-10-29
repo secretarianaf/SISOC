@@ -73,7 +73,13 @@
                         </strong>
                     </div>
                     <div class="col-md-4">
-                        <small class="text-muted d-block">Fecha de Validación</small><strong>{{ rendicion.fecha_carga_auditoria|date:"d/m/Y H:i"|default:"-" }}</strong>
+                        <small class="text-muted d-block">Fecha de Validación</small><strong>
+                            {% if rendicion.validada %}
+                                {{ rendicion.fecha_gestion_auditoria|default:rendicion.fecha_carga_auditoria|date:"d/m/Y H:i"|default:"-" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </strong>
                     </div>
                     <div class="col-md-4">
                         <small class="text-muted d-block">PDF Rendición</small>

@@ -32,7 +32,6 @@ from VAT.models import (
     ComisionCurso,
     Comision,
     InstitucionIdentificadorHist,
-    InstitucionUbicacion,
     PlanVersionCurricular,
 )
 from VAT.cache_utils import get_planes_centro_cache_version
@@ -55,6 +54,10 @@ from VAT.forms import (
     build_curso_queryset_for_centros,
     build_plan_estudio_queryset_for_centro,
     build_ubicacion_queryset_for_centros,
+)
+from VAT.services.inet_workflow import crear_centro, actualizar_centro
+from VAT.services.inet_workflow import (
+    sync_responsable_principal as _sync_responsable_principal,
 )
 from VAT.services.access_scope import (
     can_user_access_centro,
@@ -423,64 +426,6 @@ def _build_cursos_panel_context(request, centro):
     }
 
 
-def _build_responsable_principal_data(contacto):
-    nombre_completo = (contacto.nombre_contacto or "").strip()
-    correo = contacto.email_contacto or ""
-    telefono = contacto.telefono_contacto or ""
-    return {
-        "nombre_contacto": nombre_completo,
-        "rol_area": contacto.rol_area or "Responsable institucional",
-        "documento": contacto.documento or "",
-        "telefono_contacto": telefono,
-        "email_contacto": correo,
-        "tipo": "email" if correo else "telefono",
-        "valor": correo or telefono,
-        "es_principal": True,
-    }
-
-
-def _sync_responsable_principal(centro):
-    principal = (
-        centro.contactos_adicionales.filter(es_principal=True).order_by("id").first()
-    )
-    if principal is None:
-        principal = centro.contactos_adicionales.order_by("id").first()
-    if principal is None:
-        return None
-
-    defaults = _build_responsable_principal_data(principal)
-    for field_name, value in defaults.items():
-        setattr(principal, field_name, value)
-    principal.save(
-        update_fields=[
-            "nombre_contacto",
-            "rol_area",
-            "documento",
-            "telefono_contacto",
-            "email_contacto",
-            "tipo",
-            "valor",
-            "es_principal",
-        ]
-    )
-    centro.contactos_adicionales.exclude(pk=principal.pk).filter(
-        es_principal=True
-    ).update(es_principal=False)
-    centro.nombre_referente = principal.nombre_contacto or ""
-    centro.apellido_referente = ""
-    centro.telefono_referente = principal.telefono_contacto or ""
-    centro.correo_referente = principal.email_contacto or ""
-    centro.save(
-        update_fields=[
-            "nombre_referente",
-            "apellido_referente",
-            "telefono_referente",
-            "correo_referente",
-        ]
-    )
-    return principal
-
-
 def _submitted_contact_matches_existing(data, contacto_existente):
     submitted_es_principal = data.get("contactos-0-es_principal") in {
         "1",
@@ -731,28 +676,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         with transaction.atomic():
-            form.instance.activo = True
-            self.object = form.save()
-
-            contacto_formset.instance = self.object
-            contacto_formset.save()
-            _sync_responsable_principal(self.object)
-
-            InstitucionIdentificadorHist.objects.create(
-                centro=self.object,
-                tipo_identificador="cue",
-                valor_identificador=form.cleaned_data["codigo"],
-                rol_institucional="sede",
-                es_actual=True,
-            )
-
-            InstitucionUbicacion.objects.create(
-                centro=self.object,
-                localidad=form.cleaned_data["localidad"],
-                rol_ubicacion="sede_principal",
-                domicilio=form.cleaned_data["domicilio_actividad"],
-                es_principal=True,
-            )
+            self.object = crear_centro(form, contacto_formset)
 
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
@@ -893,48 +817,7 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form, contacto_formset):  # pylint: disable=arguments-differ
         with transaction.atomic():
-            centro = form.save(commit=False)
-            centro.save()
-            form.save_m2m()
-            self.object = centro
-
-            contacto_formset.instance = self.object
-            contacto_formset.save()
-            _sync_responsable_principal(self.object)
-
-            ubicacion_principal = (
-                self.object.ubicaciones.filter(rol_ubicacion="sede_principal")
-                .order_by("-es_principal", "-vigencia_desde", "-id")
-                .first()
-                or self.object.ubicaciones.order_by(
-                    "-es_principal", "-vigencia_desde", "-id"
-                ).first()
-            )
-            if ubicacion_principal is None:
-                ubicacion_principal = InstitucionUbicacion(
-                    centro=self.object,
-                    rol_ubicacion="sede_principal",
-                )
-            ubicacion_principal.localidad = form.cleaned_data["localidad"]
-            ubicacion_principal.domicilio = form.cleaned_data["domicilio_actividad"]
-            ubicacion_principal.es_principal = True
-            ubicacion_principal.save()
-
-            identificador_cue = (
-                self.object.identificadores_hist.filter(tipo_identificador="cue")
-                .order_by("-es_actual", "-vigencia_desde", "-id")
-                .first()
-            )
-            if identificador_cue is None:
-                identificador_cue = InstitucionIdentificadorHist(
-                    centro=self.object,
-                    tipo_identificador="cue",
-                )
-            identificador_cue.valor_identificador = form.cleaned_data["codigo"]
-            identificador_cue.rol_institucional = "sede"
-            identificador_cue.ubicacion = ubicacion_principal
-            identificador_cue.es_actual = True
-            identificador_cue.save()
+            self.object = actualizar_centro(form, contacto_formset)
 
         messages.success(self.request, "Centro actualizado correctamente.")
         return HttpResponseRedirect(self.get_success_url())

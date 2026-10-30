@@ -73,5 +73,9 @@ script: también la saca de `.claude/skills/`.
   IDs y content type (checklist 4 de la guía de verticales).
 - `tema-verde-institucional`: paleta y tema de Material UI del diseño verde
   institucional (claro y oscuro). Origen: adjunto de #2639.
+- `preparar-deploy`: deja `homologacion` y `development` sincronizadas y en
+  verde, y crea sin mergear los PRs `homologacion -> main` y
+  `development -> homologacion` con su contenido y operaciones pre y post merge.
+  Aplica `docs/operacion/deploy_automatizado.md`.
 - `frontend-ui-ux`: diseño e implementación de UI/UX en templates Django, CSS
   y JS. Convertida desde el antiguo `frontend-ui-ux.agent.md`.

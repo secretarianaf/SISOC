@@ -1,0 +1,167 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags organizaciones_tags %}
+{% block title %}Datos del Convenio{% endblock %}
+{% block titulo-pagina %}Datos del Convenio{% endblock %}
+{% block content %}
+    {# Estructura del convenio PNUD del comedor y estética de la card "Datos de Convenio" del mockup B v3 (#2745). #}
+    <style nonce="{{ request.csp_nonce }}">
+        .convenio-linea-secos { --convenio-color: #5CC8B5; }
+        .convenio-linea-tradicional { --convenio-color: #8FB8F5; }
+        .convenio-card { border: 2px solid var(--convenio-color); border-radius: 12px; overflow: hidden; }
+        .convenio-franja { background: var(--convenio-color); color: #1B2340; padding: 12px 20px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+        .convenio-franja-eyebrow { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+        .convenio-franja-linea { font-size: 20px; font-weight: 700; }
+        .convenio-codigo { display: inline-block; background: #0d6efd; color: #fff; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+        .convenio-dato { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(255, 255, 255, .08); }
+        .convenio-dato strong { opacity: .75; font-weight: 500; }
+        .convenio-subtitulo { color: #E7BA61; font-size: 15px; font-weight: 600; margin: 8px 0 12px; }
+        .convenio-resumen td, .convenio-resumen th { font-variant-numeric: tabular-nums; }
+        .convenio-aviso { background: #4A3A12; border: 1px solid #F2C14E; color: #FFE7A8; border-radius: 8px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; }
+        .convenio-ok { color: #7ee2a0; font-size: 14px; }
+        .convenio-nota { font-size: 13px; opacity: .75; }
+    </style>
+    <div class="card convenio-card {% if es_linea_tradicional %}convenio-linea-tradicional{% else %}convenio-linea-secos{% endif %}">
+        <div class="convenio-franja">
+            <span class="convenio-franja-eyebrow">Abordaje Comunitario</span>
+            <span class="convenio-franja-linea">{{ linea }}</span>
+        </div>
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h5 class="mb-0">
+                {% if convenio %}
+                    Editar datos del Convenio
+                {% else %}
+                    Cargar datos del Convenio
+                {% endif %}
+            </h5>
+            <span class="convenio-codigo">{{ proyecto.codigo }}</span>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="convenio-dato">
+                        <strong>Organización:</strong><span>{{ organizacion.nombre }}</span>
+                    </div>
+                    <div class="convenio-dato">
+                        <strong>CUIT:</strong><span>{{ organizacion.cuit|default:"Sin información" }}</span>
+                    </div>
+                    <div class="convenio-dato">
+                        <strong>Código del proyecto:</strong><span>{{ proyecto.codigo }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="convenio-dato">
+                        <strong>Línea:</strong><span>{{ linea }}</span>
+                    </div>
+                    <div class="convenio-dato">
+                        <strong>Región:</strong><span>{{ organizacion.region_abordaje|default:"Sin información" }}</span>
+                    </div>
+                    <div class="convenio-dato">
+                        <strong>Subzona:</strong><span>{{ organizacion.subzona_abordaje|default:"Sin información" }}</span>
+                    </div>
+                </div>
+            </div>
+            <form method="post" id="convenioProyectoForm" novalidate>
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                <h6 class="convenio-subtitulo">Datos generales</h6>
+                <div class="row">
+                    <div class="col-md-6">{{ form.numero|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.fecha|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.meses|as_crispy_field }}</div>
+                    <div class="col-md-6">{% include "organizaciones/partials/campo_monto.html" with campo=form.monto_total %}</div>
+                </div>
+                <h6 class="convenio-subtitulo">Componentes del convenio</h6>
+                <div class="row">
+                    {% for campo in form.componentes %}
+                        <div class="col-md-6">{% include "organizaciones/partials/campo_monto.html" with campo=campo %}</div>
+                    {% endfor %}
+                </div>
+                {% if not es_linea_tradicional %}
+                    <p class="convenio-nota mb-3">Imprevistos no aplica: es solo para Línea Tradicional.</p>
+                {% endif %}
+                <div class="table-responsive">
+                    <table class="table table-sm convenio-resumen mb-2">
+                        <tbody>
+                            <tr>
+                                <th>Suma de componentes</th>
+                                <td class="text-end" id="convenio-suma">{{ resumen_convenio.suma|monto|default:"$0" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Monto total del convenio</th>
+                                <td class="text-end" id="convenio-total">{{ resumen_convenio.total|monto|default:"$0" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Diferencia</th>
+                                <td class="text-end" id="convenio-diferencia">{{ resumen_convenio.diferencia|monto|default:"$0" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="convenio-suma-aviso"
+                     class="convenio-aviso{% if not resumen_convenio or resumen_convenio.coincide %} d-none{% endif %}"
+                     role="status">
+                    <i class="fas fa-exclamation-triangle mt-1" aria-hidden="true"></i>
+                    <span><strong>La suma de componentes no coincide con el monto total del convenio.</strong>
+                    Revisá los montos cargados. Se puede guardar igual.</span>
+                </div>
+                <p id="convenio-suma-ok"
+                   class="convenio-ok mb-0{% if not resumen_convenio or not resumen_convenio.coincide %} d-none{% endif %}">
+                    <i class="fas fa-check mr-1" aria-hidden="true"></i>
+                    La suma de componentes coincide con el monto total del convenio.
+                </p>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <a href="{% url 'organizacion_editar' organizacion.pk %}"
+                       class="btn btn-secondary ml-2">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+    (function () {
+        var form = document.getElementById("convenioProyectoForm");
+        var aviso = document.getElementById("convenio-suma-aviso");
+        var ok = document.getElementById("convenio-suma-ok");
+        var sumaEl = document.getElementById("convenio-suma");
+        var totalEl = document.getElementById("convenio-total");
+        var diferenciaEl = document.getElementById("convenio-diferencia");
+        var componentes = [
+            "componente_alimentario",
+            "componente_gastos_generales",
+            "componente_siph",
+            "componente_gasto_bancario",
+            "imprevistos"
+        ];
+
+        function valor(nombre) {
+            var input = form.elements[nombre];
+            if (!input || input.value === "") return 0;
+            var numero = Number(input.value);
+            return isNaN(numero) ? 0 : Math.round(numero * 100);
+        }
+
+        function formato(centavos) {
+            var signo = centavos < 0 ? "-" : "";
+            var abs = Math.abs(centavos);
+            var entero = Math.floor(abs / 100).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            var resto = abs % 100;
+            return signo + "$" + entero + (resto ? "," + String(resto).padStart(2, "0") : "");
+        }
+
+        function actualizar() {
+            var total = valor("monto_total");
+            var suma = componentes.reduce(function (acc, nombre) { return acc + valor(nombre); }, 0);
+            var completo = form.elements.monto_total && form.elements.monto_total.value !== "";
+            sumaEl.textContent = formato(suma);
+            totalEl.textContent = formato(total);
+            diferenciaEl.textContent = formato(total - suma);
+            aviso.classList.toggle("d-none", !completo || suma === total);
+            ok.classList.toggle("d-none", !completo || suma !== total);
+        }
+
+        form.addEventListener("input", actualizar);
+    })();
+    </script>
+{% endblock %}

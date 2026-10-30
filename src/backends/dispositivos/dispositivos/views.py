@@ -7,7 +7,7 @@ from django.views import View
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.db.models import ProtectedError, Q
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import (
@@ -28,12 +28,13 @@ from .dispositivos_filter_config import (
     TEXT_OPS as DISPOSITIVOS_TEXT_OPS,
     get_filters_ui_config,
 )
-from .forms import DispositivoForm
+from .forms import DispositivoForm, DispositivoUbicacionForm
 from .models import Dispositivo
 from .services import (
     apply_dispositivos_scope,
     delete_dispositivo,
     get_dispositivos_queryset,
+    get_dispositivo_map_query,
     get_saved_dispositivo_location,
     geolocate_dispositivo,
     save_dispositivo_from_form,
@@ -128,6 +129,8 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         dispositivo = self.object
+        if self.request.user.has_perm("dispositivos.ver_mapa_dispositivo"):
+            context["mapa_query"] = get_dispositivo_map_query(dispositivo)
         context["breadcrumb_items"] = [
             {"text": "Dispositivos", "url": reverse("dispositivos_listar")},
             {"text": dispositivo.nombre_institucion},
@@ -165,6 +168,16 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                         "label": "Municipio",
                         "value": _format_value(str(dispositivo.municipio)),
                     },
+                    {
+                        "label": "Localidad",
+                        "value": (
+                            str(dispositivo.localidad)
+                            if dispositivo.localidad_id
+                            else "-"
+                        ),
+                    },
+                    {"label": "Latitud", "value": _format_value(dispositivo.latitud)},
+                    {"label": "Longitud", "value": _format_value(dispositivo.longitud)},
                     {
                         "label": "Calle",
                         "value": _format_value(dispositivo.calle),
@@ -583,7 +596,20 @@ class DispositivoDeleteView(LoginRequiredMixin, DeleteView):
 
     def form_valid(self, form):
         self.object = self.get_object()
-        delete_dispositivo(self.object)
+        try:
+            delete_dispositivo(self.object)
+        except ProtectedError as exc:
+            asociados = sorted(
+                {str(obj._meta.verbose_name_plural) for obj in exc.protected_objects}
+            )
+            messages.error(
+                self.request,
+                "No se puede eliminar el dispositivo porque tiene registros "
+                f"asociados: {', '.join(asociados)}.",
+            )
+            return HttpResponseRedirect(
+                reverse("dispositivos_detalle", kwargs={"pk": self.object.pk})
+            )
         messages.success(self.request, "Dispositivo eliminado correctamente.")
         return HttpResponseRedirect(self.get_success_url())
 
@@ -697,5 +723,24 @@ class DispositivoLocationView(LoginRequiredMixin, View):
         response = JsonResponse(
             result, status=503 if result["status"] == "unavailable" else 200
         )
+        response["Cache-Control"] = "private, no-store"
+        return response
+
+
+class DispositivoLocationPreviewView(LoginRequiredMixin, View):
+    """Busca un domicilio autorizado en borrador, sin guardar el dispositivo."""
+
+    def post(self, request):
+        form = DispositivoUbicacionForm(request.POST, user=request.user)
+        if not form.is_valid():
+            response = JsonResponse(
+                {"status": "invalid", "errors": form.errors}, status=400
+            )
+        else:
+            device = Dispositivo(**form.cleaned_data)
+            result = geolocate_dispositivo(device)
+            response = JsonResponse(
+                result, status=503 if result["status"] == "unavailable" else 200
+            )
         response["Cache-Control"] = "private, no-store"
         return response

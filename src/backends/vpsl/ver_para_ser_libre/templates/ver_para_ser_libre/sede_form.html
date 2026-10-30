@@ -79,14 +79,12 @@
                                     </div>
                                 </div>
                                 <div class="vpsl-section-body">
-                                    <div class="vpsl-sede-map-toolbar">
-                                        <button type="button" id="vpsl-sede-map-search" class="btn btn-secondary">
-                                            <i class="bi bi-search"></i> Buscar ubicación en mapa
-                                        </button>
-                                        <p id="vpsl-sede-map-status" class="vpsl-field-note text-muted mb-0">
-                                            La búsqueda usa domicilio, localidad, provincia y los datos geográficos adicionales. Para reflejarla en las jornadas, guardá los datos de la sede; mover un pin dentro del mapa no cambia el registro.
-                                        </p>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">{{ form.latitud.as_field_group }}</div>
+                                        <div class="col-md-6">{{ form.longitud.as_field_group }}</div>
                                     </div>
+                                    {% url 'address_preview' as address_preview_url %}
+                                    {% include "components/map_pin_editor.html" with latitude_field="id_latitud" longitude_field="id_longitud" generic_search=True always_visible=True search_url=address_preview_url address_fields="id_domicilio,id_provincia,id_localidad" preview_frame="vpsl-sede-map" %}
                                     <iframe id="vpsl-sede-map"
                                             title="Mapa sede"
                                             class="vpsl-sede-map"
@@ -162,33 +160,20 @@
 {% block customJS %}
     <script nonce="{{ request.csp_nonce }}">
       document.addEventListener("DOMContentLoaded", function () {
-        const mapFrame = document.getElementById("vpsl-sede-map");
-        const searchButton = document.getElementById("vpsl-sede-map-search");
-        const statusElement = document.getElementById("vpsl-sede-map-status");
         const fields = {
-          domicilio: document.getElementById("id_domicilio"),
           localidad: document.getElementById("id_localidad"),
           provincia: document.getElementById("id_provincia"),
-          departamento: document.getElementById("id_departamento"),
-          codigoPostal: document.getElementById("id_codigo_postal"),
         };
-        const localitySelect = $(fields.localidad);
         const localityStatus = document.getElementById("vpsl-localidad-status");
 
         fields.localidad.disabled = !fields.provincia.value;
-        localitySelect.select2({
-          width: "100%",
-          placeholder: "Seleccioná una localidad",
-          allowClear: true,
-        });
-        if (fields.provincia.value) localityStatus.textContent = "Buscá y elegí una localidad de la provincia.";
+        if (fields.provincia.value) localityStatus.textContent = "Elegí una localidad de la provincia.";
 
         $(fields.provincia).on("change", async function () {
           const provinciaId = fields.provincia.value;
           localityStatus.classList.remove("text-danger");
           fields.localidad.replaceChildren(new Option("Seleccioná una localidad", ""));
-          localitySelect.val(null).trigger("change");
-          localitySelect.prop("disabled", true).trigger("change.select2");
+          fields.localidad.disabled = true;
           localityStatus.textContent = provinciaId ? "Cargando localidades..." : "Elegí primero una provincia.";
           if (!provinciaId) return;
           try {
@@ -200,9 +185,9 @@
             if (fields.provincia.value !== provinciaId) return;
             const nombres = [...new Set(localidades.map(item => item.nombre))].sort((a, b) => a.localeCompare(b, "es"));
             nombres.forEach(nombre => fields.localidad.add(new Option(nombre, nombre)));
-            localitySelect.prop("disabled", nombres.length === 0).trigger("change.select2");
+            fields.localidad.disabled = nombres.length === 0;
             localityStatus.textContent = nombres.length
-              ? "Buscá y elegí una localidad de la provincia."
+              ? "Elegí una localidad de la provincia."
               : "No hay localidades cargadas para esta provincia.";
           } catch (error) {
             if (fields.provincia.value === provinciaId) {
@@ -212,40 +197,7 @@
           }
         });
 
-        function valueOf(field) {
-          return field && field.value ? field.value.trim() : "";
-        }
 
-        function provinceName() {
-          if (!valueOf(fields.provincia)) return "";
-          return fields.provincia.selectedOptions[0].textContent.trim();
-        }
-
-        function buildLocationQuery() {
-          return [
-            valueOf(fields.domicilio),
-            valueOf(fields.localidad),
-            valueOf(fields.departamento),
-            provinceName(),
-            valueOf(fields.codigoPostal),
-            "Argentina",
-          ].filter(Boolean).join(", ");
-        }
-
-        function updateMap() {
-          const query = buildLocationQuery();
-          if (!valueOf(fields.domicilio) || !valueOf(fields.localidad) || !provinceName()) {
-            statusElement.textContent = "Completá domicilio, localidad y provincia para buscar en el mapa.";
-            statusElement.classList.add("text-danger");
-            return;
-          }
-          mapFrame.src = `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
-          statusElement.textContent = `Buscando en el mapa: ${query}`;
-          statusElement.classList.remove("text-danger");
-          statusElement.classList.add("text-muted");
-        }
-
-        searchButton.addEventListener("click", updateMap);
       });
     </script>
 {% endblock %}

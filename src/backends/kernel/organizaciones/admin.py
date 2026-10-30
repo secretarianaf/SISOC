@@ -15,6 +15,8 @@ from organizaciones.models import (
     ProyectoOrganizacion,
     RolFirmante,
     TipoOrganizacion,
+    RegionAbordajeComunitario,
+    SubzonaAbordajeComunitario,
 )
 
 # Organizacion y sus documentos manejan soft delete, archivos y firmantes con
@@ -30,6 +32,7 @@ class OrganizacionAdmin(SisocModelAdmin):
     list_filter = (
         ("provincia", RelatedDropdownFilter),
         ("tipo_entidad", RelatedDropdownFilter),
+        ("region_abordaje", RelatedDropdownFilter),
         "sin_vencimiento",
         ("fecha_vencimiento", RangeDateTimeFilter),
         ("fecha_creacion", RangeDateTimeFilter),
@@ -51,7 +54,7 @@ class ProyectoOrganizacionAdmin(SisocModelAdmin):
     search_fields = ("codigo", "nombre", "organizacion__nombre", "organizacion__cuit")
     list_filter = ("activo",)
     list_select_related = ("organizacion",)
-    autocomplete_fields = ("organizacion",)
+    autocomplete_fields = ("organizacion", "territoriales")
 
 
 @admin.register(DocumentacionOrganizacion)
@@ -86,6 +89,21 @@ class ArchivoOrganizacionAdmin(SisocModelAdmin):
     list_select_related = ("organizacion", "documentacion")
     autocomplete_fields = ("organizacion", "creado_por", "modificado_por", "deleted_by")
     readonly_fields = ("creado", "modificado")
+
+
+@admin.register(RegionAbordajeComunitario)
+class RegionAbordajeComunitarioAdmin(SisocModelAdmin):
+    list_display = ("id", "nombre", "activo")
+    search_fields = ("nombre",)
+    list_filter = ("activo",)
+
+
+@admin.register(SubzonaAbordajeComunitario)
+class SubzonaAbordajeComunitarioAdmin(SisocModelAdmin):
+    list_display = ("id", "nombre", "region", "activo")
+    search_fields = ("nombre",)
+    list_filter = ("activo", ("region", RelatedDropdownFilter))
+    list_select_related = ("region",)
 
 
 @admin.register(TipoOrganizacion)

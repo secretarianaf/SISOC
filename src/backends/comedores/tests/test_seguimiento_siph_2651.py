@@ -12,7 +12,11 @@ exportación al docx del área.
 import datetime
 import io
 import json
+import re
+import runpy
+import sys
 import zipfile
+from pathlib import Path
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -460,3 +464,147 @@ def test_la_firma_va_como_imagen_y_no_como_texto(settings, tmp_path):
     # La plantilla trae sus logos: la firma suma una imagen; una URL ajena, ninguna.
     assert len(medios(docx)) == len(medios(sin_firma)) + 1
     assert "firma registrada" not in docx.read("word/document.xml").decode("utf-8")
+
+
+# ------------------------------------------- "Ninguna" exclusiva (QA #2651)
+
+
+@pytest.mark.parametrize("campo", ["mejoras", "dificultades"])
+def test_ninguna_no_se_combina_con_otras_opciones_en_el_alta(campo):
+    comedor = _comedor(TRADICIONAL)
+    _, client = _territorial(f"ning_alta_{campo}", comedor.provincia)
+
+    def alta(uuid, valor):
+        return client.post(
+            _url(comedor),
+            {
+                "client_uuid": uuid,
+                "formulario": "siph",
+                "fecha_hora": "14/10/2026 15:30",
+                "datos": {**DATOS_SIPH, campo: valor},
+            },
+            format="json",
+        )
+
+    rechazada = alta(f"ning-{campo}-1", ["Ninguna", "Otras. Especificar:"])
+    sola = alta(f"ning-{campo}-2", ["Ninguna"])
+
+    assert rechazada.status_code == 400
+    assert campo in rechazada.data["detail"]
+    assert "Ninguna" in rechazada.data["detail"]
+    assert not SeguimientoPnud.objects.filter(client_uuid=f"ning-{campo}-1").exists()
+    assert sola.status_code == 201, sola.data
+    guardado = SeguimientoPnud.objects.get(client_uuid=f"ning-{campo}-2")
+    assert guardado.datos[campo] == ["Ninguna"]
+
+
+def test_ninguna_no_se_combina_con_otras_opciones_al_corregir():
+    comedor = _comedor(TRADICIONAL)
+    tecnico, client = _territorial("ning_put", comedor.provincia)
+    seguimiento = _siph(comedor, tecnico)
+
+    rechazada = client.patch(
+        _url(comedor, seguimiento.id),
+        {"datos": {**DATOS_SIPH, "mejoras": ["Ninguna", "Otras. Especificar:"]}},
+        format="json",
+    )
+    valida = client.patch(
+        _url(comedor, seguimiento.id),
+        {"datos": {**DATOS_SIPH, "mejoras": ["Ninguna"]}},
+        format="json",
+    )
+
+    assert rechazada.status_code == 400
+    assert "mejoras" in rechazada.data["detail"]
+    assert valida.status_code == 200, valida.data
+    seguimiento.refresh_from_db()
+    assert seguimiento.datos["mejoras"] == ["Ninguna"]
+
+
+def test_el_formulario_marca_ninguna_como_exclusiva_en_mejoras_y_dificultades():
+    from relevamientos.pnud_formularios import (  # pylint: disable=import-outside-toplevel
+        opciones_exclusivas,
+    )
+
+    assert opciones_exclusivas("siph") == {
+        "mejoras": "Ninguna",
+        "dificultades": "Ninguna",
+    }
+    assert opciones_exclusivas("no_existe") == {}
+
+
+# ---------------------------------- instrucción de comentarios finales (QA)
+
+
+def test_el_docx_no_trae_la_indicacion_del_area_en_los_comentarios_finales():
+    from relevamientos.siph_docx import (  # pylint: disable=import-outside-toplevel
+        docx_siph,
+    )
+
+    comedor = _comedor(TRADICIONAL)
+    tecnico, _ = _territorial("comentarios", comedor.provincia)
+    seguimiento = _siph(comedor, tecnico)
+
+    xml = zipfile.ZipFile(docx_siph(seguimiento)).read("word/document.xml")
+    texto = " ".join(re.sub(r"<[^>]+>", " ", xml.decode("utf-8")).split())
+
+    assert "Incorporar en este apartado" not in texto
+    assert "COMENTARIOS FINALES" in texto
+    assert "Sin novedades." in texto
+
+
+SCRIPT_PLANTILLA = (
+    Path(__file__).resolve().parents[1]
+    / "relevamientos"
+    / "scripts"
+    / "armar_plantilla_siph.py"
+)
+
+
+PLANTILLA_SIPH = (
+    Path(__file__).resolve().parents[1]
+    / "relevamientos"
+    / "templates"
+    / "relevamientos"
+    / "docx"
+    / "seguimiento_siph.docx"
+)
+
+
+def _plantilla_con_indicacion(destino):
+    """Copia de la plantilla real con la indicación del área de vuelta en el 9."""
+    from docx import Document  # pylint: disable=import-outside-toplevel
+
+    doc = Document(str(PLANTILLA_SIPH))
+    titulo = next(p for p in doc.paragraphs if p.text.startswith("COMENTARIOS FINALES"))
+    titulo.add_run(" Incorporar en este apartado lo que surja de la visita.")
+    doc.save(str(destino))
+
+
+def test_el_script_quita_la_indicacion_de_una_plantilla_ya_generada(
+    tmp_path, monkeypatch
+):
+    plantilla = tmp_path / "plantilla.docx"
+    _plantilla_con_indicacion(plantilla)
+    monkeypatch.setattr(sys, "argv", ["armar", "--quitar-instruccion", str(plantilla)])
+
+    runpy.run_path(str(SCRIPT_PLANTILLA), run_name="__main__")
+
+    xml = zipfile.ZipFile(plantilla).read("word/document.xml").decode("utf-8")
+    texto = " ".join(re.sub(r"<[^>]+>", " ", xml).split())
+    assert "Incorporar en este apartado" not in texto
+    assert "COMENTARIOS FINALES" in texto
+    assert "{{ comentarios_finales }}" in texto
+
+
+def test_el_script_falla_si_la_plantilla_no_tiene_comentarios_finales(tmp_path):
+    plantilla = tmp_path / "plantilla.docx"
+    from docx import Document  # pylint: disable=import-outside-toplevel
+
+    doc = Document()
+    doc.add_paragraph("Incorporar en este apartado lo que surja de la visita.")
+    doc.save(str(plantilla))
+    script = runpy.run_path(str(SCRIPT_PLANTILLA))
+
+    with pytest.raises(SystemExit, match="COMENTARIOS FINALES"):
+        script["quitar_instruccion"](str(plantilla))

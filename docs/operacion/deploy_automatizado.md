@@ -89,14 +89,19 @@ más abajo, nunca con un PAT personal ni con un merge directo.
 
 ## Promoción semanal `homologacion -> main`
 
-La tarea de Codex se ejecuta los miércoles a las 16:30 y no espera a que CI
-termine. Crea o reutiliza un PR final exacto `homologacion -> main` en draft, y
-un PR temporal `codex/predeploy-dev-main-AAAAMMDD -> homologacion` solo si hay
-saneamiento versionable. Ambos PRs incluyen metadata y evidencia para generar
-los artefactos spec-as-source desde el diff real.
+El PR final exacto `homologacion -> main` se prepara con la skill
+`preparar-deploy`: sincroniza `main`, `homologacion` y `development` con PRs de
+saneamiento y crea el PR final en draft con `release-preparation: pending`, que
+el orquestador reconoce pero no arma. El día del deploy se arma con
+`gh workflow run release-orchestrator.yml -f release_pr=<PR final>`.
 
-El PR temporal se arma con auto-merge nativo y GitHub lo integra cuando sus
-checks requeridos terminan. `.github/workflows/release-orchestrator.yml`
+El flujo con PR de preparación sigue soportado: un PR
+`codex/predeploy-dev-main-AAAAMMDD -> homologacion` con el marker
+`release-final-pr` arma el PR final apenas se mergea. Ambos PRs incluyen
+metadata y evidencia para generar los artefactos spec-as-source desde el diff
+real.
+
+Al armarse el PR final, `.github/workflows/release-orchestrator.yml`
 continúa por eventos: deja listo el PR final, crea el check pendiente
 `release_baseline` y habilita su auto-merge. Cuando los otros checks están
 verdes y `homologacion` contiene el `main` más reciente, crea el tag anotado
@@ -111,8 +116,8 @@ de PRs hacia `homologacion` lee el de `homologacion`: un cambio en el
 orquestador debe llegar a las dos ramas antes del pre-deploy siguiente.
 
 El body del PR final también fija el SHA de `homologacion` analizado. Un push
-posterior no se promueve por accidente: deja el PR bloqueado hasta que la tarea
-programada vuelva a analizar y actualizar el snapshot.
+posterior no se promueve por accidente: deja el PR bloqueado hasta que se vuelva
+a correr `preparar-deploy` y actualice el snapshot.
 
 El PR final no produce un deploy automático sin intervención: el job de
 `production` queda sujeto a Required reviewers del Environment. Si `main`
@@ -121,7 +126,7 @@ job del SHA actual.
 
 ## Instalar runner por entorno
 
-Los runners deben registrarse en la organizacion `secretarianaf`: los cuatro
+Los runners deben registrarse en la organizacion `secretarianaf`: los
 repositorios despliegan en forma independiente y un runner registrado solo en
 `secretarianaf/SISOC` no puede ejecutar los workflows satelite.
 
@@ -132,6 +137,15 @@ En **Organization Settings -> Actions -> Runner groups**, configurar el grupo
 - `secretarianaf/Espacios-Comunitarios`
 - `secretarianaf/DataCalle`
 - `secretarianaf/Gestionar`
+- `secretarianaf/Inspecciones` (confirmado en el grupo el 2026-10-27)
+
+No quitar repositorios existentes al corregir el acceso de SISOC.
+SISOC es publico: ademas de seleccionarlo, el grupo debe permitir repositorios
+publicos (`allows_public_repositories: true`). Mantener `visibility: selected`;
+permitir publicos no equivale a abrir el grupo a todos los repositorios.
+Esta habilitacion requiere autorizacion explicita por su impacto de seguridad:
+no ejecutar codigo de PR/forks en los runners de deploy. Cualquier restriccion
+adicional por workflow debe preservar los deploys de los repos satelite.
 
 Ejecutar en el servidor de aplicacion de cada entorno con el usuario operativo
 del deploy, por ejemplo `sisoc-deploy`. Reemplazar `<TOKEN_REGISTRO>` por un
@@ -174,9 +188,29 @@ sudo ./svc.sh start
 sudo ./svc.sh status
 ```
 
-No detener ni desregistrar el runner anterior todavia. Primero verificar en
-GitHub que el runner organizacional esta `Idle`, despachar un job controlado del
-entorno y confirmar que tomo el nuevo nombre. Recien entonces ejecutar
+No detener ni desregistrar el runner anterior todavia. Antes, verificar:
+
+1. El grupo que contiene `sisoc-<entorno>-org` incluye explicitamente
+   `secretarianaf/SISOC` entre los repositorios seleccionados y, si es publico,
+   permite repositorios publicos. Si `restricted_to_workflows` esta activo,
+   confirmar que admite el workflow y la referencia de SISOC que se va a usar.
+2. El runner organizacional esta online/`Idle` y tiene los labels
+   `self-hosted` y `sisoc-<entorno>`.
+3. Un job de deploy **de SISOC**, no solo de un repo satelite, tomo el runner
+   `sisoc-<entorno>-org` y termino correctamente. Usar un deploy autorizado del
+   entorno; no disparar ni aprobar produccion solo para esta comprobacion.
+   Estar online o completar un deploy satelite no prueba acceso de SISOC.
+
+Comprobar grupo, repositorios y asignacion del job con `gh api`:
+
+```bash
+gh api orgs/secretarianaf/actions/runner-groups
+gh api orgs/secretarianaf/actions/runner-groups/<GID>/repositories
+gh api orgs/secretarianaf/actions/runner-groups/<GID>/runners
+gh api repos/secretarianaf/SISOC/actions/runs/<RUN_ID>/jobs
+```
+
+Recien entonces ejecutar
 `sudo ./svc.sh stop` y `sudo ./svc.sh uninstall` desde el directorio del runner
 de repositorio anterior; eliminar su registro en GitHub despues de comprobar
 que no hay jobs en curso. Esta secuencia deja rollback inmediato al servicio
@@ -259,8 +293,8 @@ despachan el deploy de forma explícita.
 
 - Solo `.github/workflows/deploy.yml` debe usar estos runners self-hosted.
 - No correr workflows de PR ni jobs que ejecuten codigo no confiable en los runners de deploy.
-- Registrar los runners a nivel organizacion y limitar el grupo a los cuatro
-  repositorios de SISOC. No habilitar acceso general a repositorios futuros.
+- Registrar los runners a nivel organizacion y limitar el grupo a los
+  repositorios autorizados arriba. No habilitar acceso general a repositorios futuros.
 - Mantener labels exclusivos por entorno. No agregar `self-hosted` sin el label
   `sisoc-qa`, `sisoc-homologacion` o `sisoc-produccion` en ningun workflow de
   deploy.

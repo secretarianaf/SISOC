@@ -73,6 +73,7 @@ from centrodeinfancia.forms import (
     TrabajadorCDIForm,
 )
 from centrodeinfancia.formulario_cdi_schema import CAMPOS_OPCIONES_MULTIPLES
+from centrodeinfancia.views_formulario_calidad import contexto_legajo_calidad
 from centrodeinfancia.filter_config import (
     CENTRODEINFANCIA_ADVANCED_FILTER,
     get_filters_ui_config,
@@ -360,16 +361,17 @@ class _AutomaticReferenteProvisioningMixin:
         if object_pk:
             anterior = (
                 CentroDeInfancia.objects.filter(pk=object_pk)
-                .values("email_referente", "dni_referente")
+                .values(
+                    "nombre_referente",
+                    "apellido_referente",
+                    "email_referente",
+                    "dni_referente",
+                    "cuil_referente",
+                )
                 .first()
             ) or {}
         response = super().form_valid(form)
-        actualizar_referente_cdi(
-            self.request,
-            self.object,
-            dni_anterior=anterior.get("dni_referente"),
-            email_anterior=anterior.get("email_referente"),
-        )
+        actualizar_referente_cdi(self.request, self.object, anterior=anterior)
         return response
 
 
@@ -817,6 +819,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         else:
             context["formularios_total"] = 0
             context["formularios_recent"] = []
+        context.update(contexto_legajo_calidad(self.request.user, self.object))
 
         if context["cdi_intervenciones_visible"]:
             intervencion_form = IntervencionCentroInfanciaForm(
@@ -1152,6 +1155,13 @@ class TrabajadorCentroInfanciaCreateView(
         fecha_nacimiento = _parse_fecha_renaper(fecha_raw)
 
         sexo_raw = data.get("sexo") or datos_api.get("sexo") or ""
+        # RENAPER informa el sexo como id del catálogo central: sin traducirlo no
+        # se precargaba ni quedaba bloqueado.
+        if str(sexo_raw).isdigit():
+            sexo_raw = (
+                Sexo.objects.filter(pk=sexo_raw).values_list("sexo", flat=True).first()
+                or ""
+            )
         sexo = self._SEXO_RENAPER_MAP.get(sexo_raw, "")
 
         nacionalidad = data.get("nacionalidad")
@@ -1169,7 +1179,9 @@ class TrabajadorCentroInfanciaCreateView(
             or data.get("documento")
             or datos_api.get("nroDocumento"),
             "fecha_nacimiento": fecha_nacimiento,
-            "cuit": data.get("cuit") or datos_api.get("cuil") or "",
+            # Solo el CUIL ya validado: el crudo de RENAPER llega en "0" para
+            # muchos extranjeros y quedaba bloqueado sin poder guardarse.
+            "cuit": data.get("cuil_cuit") or "",
             "sexo_registral": sexo,
             # Solo una nacionalidad del catálogo: el país crudo de RENAPER
             # ("PARAGUAY") no es una opción válida y bloqueado no se puede corregir.

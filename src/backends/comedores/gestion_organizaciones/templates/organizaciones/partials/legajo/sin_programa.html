@@ -1,0 +1,25 @@
+{# Firmantes y comedores sin programa o con uno que la organización no tiene (#2745, caso 2). #}
+{# Sin programas cargados (caso 1) el bloque se muestra siempre, con el alta de firmantes, como el legajo anterior. #}
+{% if sin_programa.firmantes or sin_programa.comedores or not programa %}
+    <div class="tabla-legajo card-sin">
+        <h5 class="mb-1">
+            Sin programa asignado
+            <span class="chip-legajo ms-2">Visible en cualquier programa</span>
+        </h5>
+        <p class="nota-legajo mb-3">
+            Registros de la organización que no tienen programa, o cuyo programa no está cargado en la organización.
+            Editalos para asignarles uno.
+        </p>
+        {% if not programa %}
+            {% include "organizaciones/partials/legajo/firmantes.html" with firmantes=sin_programa.firmantes titulo="Firmantes" color="sin" mostrar_programa=True %}
+            {% include "organizaciones/partials/legajo/comedores.html" with comedores=sin_programa.comedores titulo="Comedores" color="sin" mostrar_programa=True mostrar_codigo=True %}
+        {% else %}
+            {% if sin_programa.firmantes %}
+                {% include "organizaciones/partials/legajo/firmantes.html" with firmantes=sin_programa.firmantes titulo="Firmantes" color="sin" mostrar_programa=True sin_alta=True %}
+            {% endif %}
+            {% if sin_programa.comedores %}
+                {% include "organizaciones/partials/legajo/comedores.html" with comedores=sin_programa.comedores titulo="Comedores" color="sin" mostrar_programa=True mostrar_codigo=True %}
+            {% endif %}
+        {% endif %}
+    </div>
+{% endif %}

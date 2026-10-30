@@ -13,7 +13,6 @@ from audittrail.api import (
 from core.soft_delete.signals import post_soft_delete
 from gestion_organizaciones.models import (
     ConvenioProyecto,
-    DatosRegionOrganizacion,
     Firmante,
     LineaProyecto,
     ProgramaOrganizacion,
@@ -78,7 +77,6 @@ def registrar_baja_firmante(sender, instance, **kwargs):
 _AUDITADOS = {
     ProgramaOrganizacion: ("Programa", ("programa",)),
     LineaProyecto: ("Línea de proyecto", ("programa",)),
-    DatosRegionOrganizacion: ("Datos de región", ("region", "subzona")),
     ConvenioProyecto: (
         "Convenio",
         (

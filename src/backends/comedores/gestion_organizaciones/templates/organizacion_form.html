@@ -35,7 +35,7 @@
                             Progreso del Formulario
                         </h4>
                         <span class="progress-stats">
-                            <span id="completedSections">0</span>/6 secciones completadas
+                            <span id="completedSections">0</span>/<span id="totalSections">6</span> secciones completadas
                         </span>
                     </div>
                     <div class="progress-bar-container">
@@ -229,7 +229,7 @@
                     </div>
                 </div>
 
-                <!-- Sección 5: Programas y proyectos (#2745) -->
+                <!-- Programas de la organización (#2745) -->
                 <div class="section-card" data-section="programas">
                     <div class="section-header" data-toggle-section="programas">
                         <div class="section-header-left">
@@ -238,7 +238,7 @@
                             </div>
                             <div class="section-title-group">
                                 <h3 class="section-title">Programas</h3>
-                                <p class="section-subtitle">Programas y proyectos con su línea y territoriales</p>
+                                <p class="section-subtitle">Programas en los que participa la organización</p>
                             </div>
                         </div>
                         <div class="section-status">
@@ -251,38 +251,19 @@
                         </div>
                     </div>
                     <div class="section-body collapse show" id="section-programas">
-                        <div class="form-group row">
-                            <div class="col-md-6">{{ form.programas|as_crispy_field }}</div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-12">
-                                {{ form.proyectos_lineas }}
-                                {{ form.asignaciones_territoriales }}
-                                <div class="border rounded p-3 w-100">
-                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
-                                        <label class="form-label fw-bold mb-0">Proyectos</label>
-                                        <button type="button"
-                                                class="btn btn-primary btn-sm"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalAgregarProyecto">
-                                            <i class="fas fa-plus me-1"></i> Agregar proyecto
-                                        </button>
-                                    </div>
-                                    <div id="proyectos-listado" class="list-group"></div>
-                                    <p id="proyectos-vacio" class="text-muted mb-0 py-2">No hay proyectos agregados.</p>
-                                    <p class="text-muted small mb-0 mt-2">
-                                        Cada proyecto pertenece a una línea de Abordaje Comunitario y puede tener territoriales asignados.
-                                        Quitar un proyecto lo desactiva: su línea y su convenio se conservan.
-                                    </p>
-                                    {% for error in form.proyectos_lineas.errors %}<div class="text-danger small mt-2">{{ error }}</div>{% endfor %}
-                                    {% for error in form.asignaciones_territoriales.errors %}<div class="text-danger small mt-2">{{ error }}</div>{% endfor %}
-                                </div>
-                            </div>
-                        </div>
+                        {{ form.programas|as_crispy_field }}
+                        <p class="text-muted small mb-0">
+                            "Datos Abordaje Comunitario" se habilita al elegir Línea Secos o Línea Tradicional.
+                        </p>
                     </div>
                 </div>
 
-                <div class="section-card" data-section="abordaje">
+                <!-- Región, subzona y proyectos con línea, territoriales y convenio (#2642, #2745).
+                     Se oculta si no hay programa de Abordaje ni datos cargados. -->
+                <div class="section-card"
+                     data-section="abordaje"
+                     id="abordaje-card"
+                     data-con-datos="{% if form.fields.quitar_territoriales_sin_proyecto.queryset or form.instance.region_abordaje_id or form.instance.subzona_abordaje_id %}1{% endif %}">
                     <div class="section-header"
                          data-toggle-section="abordaje"
                          role="button"
@@ -295,7 +276,7 @@
                             </div>
                             <div class="section-title-group">
                                 <h3 class="section-title">Datos Abordaje Comunitario</h3>
-                                <p class="section-subtitle">Región, subzona y asignaciones anteriores sin proyecto</p>
+                                <p class="section-subtitle">Región, subzona y proyectos con su línea y territoriales</p>
                             </div>
                         </div>
                         <div class="section-status">
@@ -310,11 +291,69 @@
                             <div class="col-md-6">{{ form.region_abordaje|as_crispy_field }}</div>
                             <div class="col-md-6">{{ form.subzona_abordaje|as_crispy_field }}</div>
                         </div>
+                        {{ form.proyectos_lineas }}
+                        {{ form.asignaciones_territoriales }}
                         {{ form.subzonas_abordaje|json_script:"subzonas-abordaje-json" }}
+                        {% for error in form.proyectos_lineas.errors %}
+                            <div class="alert alert-danger" role="alert">{{ error }}</div>
+                        {% endfor %}
+                        {% for error in form.asignaciones_territoriales.errors %}
+                            <div class="alert alert-danger" role="alert">{{ error }}</div>
+                        {% endfor %}
+                        <select id="territoriales-opciones"
+                                class="d-none"
+                                aria-hidden="true"
+                                tabindex="-1">
+                            {% for valor, etiqueta in form.fields.territoriales_abordaje_comunitario.choices %}
+                                <option value="{{ valor }}">{{ etiqueta }}</option>
+                            {% endfor %}
+                        </select>
+                        <label class="form-label fw-bold mb-2">Proyectos</label>
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-2">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Código de Proyecto</th>
+                                        <th scope="col">Línea</th>
+                                        <th scope="col">Territoriales</th>
+                                        <th scope="col">Convenio</th>
+                                        <th scope="col">
+                                            <span class="visually-hidden">Quitar</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="proyectos-listado" aria-live="polite">
+                                </tbody>
+                            </table>
+                        </div>
+                        <p id="proyectos-vacio" class="text-muted py-2">No hay proyectos agregados.</p>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-6">
+                                <label for="nuevo-codigo-proyecto" class="form-label">Nuevo código de proyecto</label>
+                                <input type="text"
+                                       id="nuevo-codigo-proyecto"
+                                       class="form-control"
+                                       maxlength="255"
+                                       autocomplete="off" />
+                            </div>
+                            <div class="col-md-3">
+                                <button type="button" class="btn btn-primary" id="agregarProyectoBtn">
+                                    <i class="fas fa-plus me-1"></i> Agregar proyecto
+                                </button>
+                            </div>
+                        </div>
+                        <div id="nuevo-codigo-proyecto-error"
+                             class="text-danger small mt-2 d-none"
+                             role="alert"></div>
+                        <p class="text-muted small mt-2 mb-0">
+                            Cada proyecto pertenece a una línea de Abordaje Comunitario.
+                            Quitar un proyecto lo desactiva: su línea y su convenio se conservan; sus territoriales se quitan.
+                        </p>
                         {% if form.fields.quitar_territoriales_sin_proyecto.queryset %}
                             <div class="mt-3">
+                                <p class="fw-bold mb-1">Territoriales anteriores sin proyecto</p>
                                 <p class="text-muted mb-1">
-                                    Hay asignaciones anteriores sin proyecto. Se conservan hasta que agregues su asociación al proyecto correspondiente o marques quitarlas.
+                                    Asignados a la organización antes de que los territoriales fueran por proyecto. Se conservan hasta que los agregues a un proyecto o marques quitarlos.
                                 </p>
                                 {{ form.quitar_territoriales_sin_proyecto|as_crispy_field }}
                             </div>
@@ -334,38 +373,6 @@
                     </div>
                 </div>
             </form>
-
-            <div class="modal fade"
-                 id="modalAgregarProyecto"
-                 tabindex="-1"
-                 aria-labelledby="modalAgregarProyectoLabel"
-                 aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalAgregarProyectoLabel">Agregar proyecto</h5>
-                            <button type="button"
-                                    class="btn-close"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Cerrar"></button>
-                        </div>
-                        <div class="modal-body">
-                            <label for="nuevo-codigo-proyecto" class="form-label">Código del proyecto</label>
-                            <input type="text"
-                                   id="nuevo-codigo-proyecto"
-                                   class="form-control"
-                                   maxlength="255"
-                                   autocomplete="off" />
-                            <div id="nuevo-codigo-proyecto-error"
-                                 class="text-danger small mt-2 d-none"></div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="button" class="btn btn-primary" id="agregarProyectoBtn">Agregar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Modal: confirmacion de cambio de Tipo de Entidad -->
             <div class="modal fade"
@@ -447,25 +454,57 @@
         var hiddenConfirmado = document.getElementById("id_cuil_duplicado_confirmado");
         var hiddenConfirmadoValor = document.getElementById("id_cuil_duplicado_confirmado_valor");
         var submitBtn = document.querySelector('#organizacionForm button[type="submit"]');
+        var debounceTimer = null;
+        var requestSeq = 0;
+        // Proyectos de Abordaje (#2745): cada fila tiene su línea, sus
+        // territoriales (#2642) y su convenio. Los campos ocultos mantienen
+        // el formato que recibe el servidor: proyectos_lineas ({codigo, linea})
+        // y asignaciones_territoriales ({proyecto, territorial}).
+        var abordajeCard = document.getElementById("abordaje-card");
+        var regionSelect = document.getElementById("id_region_abordaje");
+        var subzonaSelect = document.getElementById("id_subzona_abordaje");
         var proyectosInput = document.getElementById("id_proyectos_lineas");
+        var asignacionesInput = document.getElementById("id_asignaciones_territoriales");
+        var territorialesOpciones = document.getElementById("territoriales-opciones");
         var proyectosListado = document.getElementById("proyectos-listado");
         var proyectosVacio = document.getElementById("proyectos-vacio");
         var proyectoNuevoInput = document.getElementById("nuevo-codigo-proyecto");
         var proyectoNuevoError = document.getElementById("nuevo-codigo-proyecto-error");
         var agregarProyectoBtn = document.getElementById("agregarProyectoBtn");
-        var modalAgregarProyectoEl = document.getElementById("modalAgregarProyecto");
-        var datosForm = JSON.parse(document.getElementById("organizacion-form-datos").textContent);
         var programasInputs = document.querySelectorAll('input[name="programas"]');
-        var asignacionesInput = document.getElementById("id_asignaciones_territoriales");
-        var debounceTimer = null;
-        var requestSeq = 0;
+        var datosForm = JSON.parse(document.getElementById("organizacion-form-datos").textContent);
         var guardadosPorCodigo = {};
         datosForm.proyectos.forEach(function (proyecto) {
             guardadosPorCodigo[proyecto.codigo] = proyecto;
         });
-        var proyectos = [];
 
-        // Líneas de Abordaje tildadas en "Programas": son las opciones de línea.
+        function leerJson(input, vacio) {
+            try {
+                return JSON.parse(input.value || "") || vacio;
+            } catch (error) {
+                return vacio;
+            }
+        }
+        var filasIniciales = leerJson(proyectosInput, []);
+        if (!Array.isArray(filasIniciales)) filasIniciales = [];
+        var codigosVigentes = [];
+        var lineas = {};
+        filasIniciales.forEach(function (fila) {
+            var codigo = String((fila && fila.codigo) || "").trim();
+            if (!codigo || codigosVigentes.indexOf(codigo) !== -1) return;
+            codigosVigentes.push(codigo);
+            lineas[codigo] = fila.linea ? Number(fila.linea) : null;
+        });
+        var asignaciones = leerJson(asignacionesInput, []);
+        if (!Array.isArray(asignaciones)) asignaciones = [];
+        // Territoriales de un proyecto quitado en esta edición: vuelven si se
+        // lo agrega de nuevo antes de guardar.
+        var asignacionesQuitadas = {};
+
+        function proyectosActuales() {
+            return codigosVigentes.slice();
+        }
+
         function lineasElegidas() {
             var tildados = {};
             programasInputs.forEach(function (input) {
@@ -481,186 +520,192 @@
             return programa ? programa.nombre : "Línea " + id;
         }
 
-        function leerProyectos() {
-            try {
-                var filas = JSON.parse(proyectosInput.value || "[]");
-                return Array.isArray(filas) ? filas : [];
-            } catch (error) {
-                return [];
-            }
-        }
-
-        function guardarProyectos() {
-            proyectosInput.value = JSON.stringify(proyectos.map(function (fila) {
-                return { codigo: fila.codigo, linea: fila.linea };
-            }));
-            if (asignacionesInput) {
-                asignacionesInput.value = JSON.stringify(asignaciones);
-            }
-        }
-
-        // Territoriales por proyecto (#2642): filas {proyecto, territorial}.
-        var asignaciones = [];
-        if (asignacionesInput) {
-            try {
-                var valorAsignaciones = JSON.parse(asignacionesInput.value || "[]");
-                asignaciones = Array.isArray(valorAsignaciones) ? valorAsignaciones : [];
-            } catch (error) {
-                asignaciones = [];
-            }
-        }
-
         function nombreTerritorial(id) {
-            var usuario = datosForm.territoriales.find(function (t) { return t.id === id; });
-            return usuario ? usuario.nombre : "Territorial no disponible";
+            var opcion = Array.prototype.find.call(territorialesOpciones.options, function (o) {
+                return Number(o.value) === id;
+            });
+            return opcion ? opcion.textContent : "Territorial no disponible";
         }
 
-        function territorialesDe(fila) {
-            var contenedor = document.createElement("div");
-            contenedor.className = "w-100 d-flex flex-wrap align-items-center gap-2";
-            asignaciones.forEach(function (item, indice) {
-                if (item.proyecto !== fila.codigo) return;
-                var chip = document.createElement("span");
-                chip.className = "badge bg-secondary d-inline-flex align-items-center gap-1";
-                chip.appendChild(document.createTextNode(nombreTerritorial(item.territorial)));
-                var quitar = document.createElement("button");
-                quitar.type = "button";
-                quitar.className = "btn-close btn-close-white btn-sm";
-                quitar.setAttribute(
-                    "aria-label",
-                    "Quitar territorial " + nombreTerritorial(item.territorial) + " del proyecto " + fila.codigo
-                );
-                quitar.addEventListener("click", function () {
-                    asignaciones.splice(indice, 1);
-                    renderProyectos();
-                });
-                chip.appendChild(quitar);
-                contenedor.appendChild(chip);
-            });
-            if (!asignacionesInput) return contenedor;
-            var select = document.createElement("select");
-            select.className = "form-select form-select-sm w-auto";
-            select.setAttribute("aria-label", "Agregar territorial al proyecto " + fila.codigo);
-            var vacia = document.createElement("option");
-            vacia.value = "";
-            vacia.textContent = "Agregar territorial";
-            select.appendChild(vacia);
-            datosForm.territoriales.forEach(function (usuario) {
-                var asignado = asignaciones.some(function (item) {
-                    return item.proyecto === fila.codigo && item.territorial === usuario.id;
-                });
-                if (asignado) return;
-                var option = document.createElement("option");
-                option.value = usuario.id;
-                option.textContent = usuario.nombre;
-                select.appendChild(option);
-            });
-            select.addEventListener("change", function () {
-                if (!select.value) return;
-                asignaciones.push({ proyecto: fila.codigo, territorial: Number(select.value) });
-                renderProyectos();
-            });
-            contenedor.appendChild(select);
-            return contenedor;
+        // Sin programa de Abordaje la sección se oculta, salvo que tenga datos:
+        // nada cargado queda fuera de la vista.
+        function actualizarVisibilidadAbordaje() {
+            var visible = lineasElegidas().length > 0
+                || proyectosActuales().length > 0
+                || abordajeCard.dataset.conDatos === "1"
+                || Boolean(regionSelect && regionSelect.value)
+                || Boolean(subzonaSelect && subzonaSelect.value);
+            abordajeCard.classList.toggle("d-none", !visible);
+            document.dispatchEvent(new Event("organizacion:secciones"));
         }
 
-        function selectorLinea(fila) {
+        function selectorLinea(codigo) {
+            var elegidas = lineasElegidas();
+            var actual = lineas[codigo] || null;
+            if (elegidas.length === 1 && (!actual || actual === elegidas[0].id)) {
+                // Con una sola línea de Abordaje no se elige: se asigna sola.
+                lineas[codigo] = elegidas[0].id;
+                var fija = document.createElement("span");
+                fija.className = "badge text-bg-info";
+                fija.textContent = elegidas[0].nombre;
+                return fija;
+            }
             var select = document.createElement("select");
             select.className = "form-select form-select-sm";
-            select.setAttribute("aria-label", "Línea del proyecto " + fila.codigo);
-            var opciones = lineasElegidas().map(function (p) { return { id: p.id, nombre: p.nombre }; });
-            if (fila.linea && !opciones.some(function (o) { return o.id === fila.linea; })) {
-                opciones.push({ id: fila.linea, nombre: nombreLinea(fila.linea) });
+            select.setAttribute("aria-label", "Línea del proyecto " + codigo);
+            var opciones = elegidas.map(function (p) { return { id: p.id, nombre: p.nombre }; });
+            if (actual && !opciones.some(function (o) { return o.id === actual; })) {
+                opciones.push({ id: actual, nombre: nombreLinea(actual) });
             }
-            var vacia = document.createElement("option");
-            vacia.value = "";
-            vacia.textContent = "Sin línea";
-            select.appendChild(vacia);
+            select.add(new Option("Sin línea", ""));
             opciones.forEach(function (opcion) {
-                var option = document.createElement("option");
-                option.value = opcion.id;
-                option.textContent = opcion.nombre;
-                option.selected = opcion.id === fila.linea;
-                select.appendChild(option);
+                select.add(new Option(opcion.nombre, opcion.id, false, opcion.id === actual));
             });
             select.addEventListener("change", function () {
-                fila.linea = select.value ? Number(select.value) : null;
-                guardarProyectos();
-                renderProyectos();
+                lineas[codigo] = select.value ? Number(select.value) : null;
+                renderProyectos(proyectosActuales());
             });
             return select;
         }
 
-        function renderProyectos() {
-            guardarProyectos();
-            proyectosListado.innerHTML = "";
-            proyectosVacio.classList.toggle("d-none", proyectos.length > 0);
-            proyectos.forEach(function (fila, index) {
-                var item = document.createElement("div");
-                item.className = "list-group-item d-flex flex-wrap align-items-center gap-3";
-                var texto = document.createElement("span");
-                texto.className = "text-break fw-semibold flex-grow-1";
-                texto.appendChild(document.createTextNode(fila.codigo));
-                item.appendChild(texto);
-                var contenedorLinea = document.createElement("div");
-                contenedorLinea.appendChild(selectorLinea(fila));
-                item.appendChild(contenedorLinea);
-                var guardado = guardadosPorCodigo[fila.codigo];
-                // El convenio se carga sobre el proyecto ya guardado con su línea.
-                if (guardado && guardado.linea && guardado.linea === fila.linea) {
-                    var convenio = document.createElement("a");
-                    convenio.className = "btn btn-outline-primary btn-sm flex-shrink-0";
-                    convenio.href = convenioProyectoUrlBase.replace("/0/", "/" + guardado.id + "/");
-                    convenio.textContent = guardado.convenio ? "Editar convenio" : "Cargar convenio";
-                    item.appendChild(convenio);
-                }
-                var eliminar = document.createElement("button");
-                eliminar.type = "button";
-                eliminar.className = "btn btn-outline-danger btn-sm flex-shrink-0";
-                eliminar.setAttribute("aria-label", "Quitar proyecto " + fila.codigo);
-                eliminar.innerHTML = '<i class="fas fa-times"></i>';
-                eliminar.addEventListener("click", function () {
-                    proyectos.splice(index, 1);
-                    asignaciones = asignaciones.filter(function (asignacion) {
-                        return asignacion.proyecto !== fila.codigo;
+        function celdaTerritoriales(codigo) {
+            var celda = document.createElement("td");
+            var asignados = asignaciones.filter(function (item) { return item.proyecto === codigo; });
+            asignados.forEach(function (item) {
+                var nombre = nombreTerritorial(item.territorial);
+                var chip = document.createElement("span");
+                chip.className = "badge rounded-pill text-bg-primary d-inline-flex align-items-center gap-1 me-1 mb-1";
+                chip.appendChild(document.createTextNode(nombre));
+                var quitar = document.createElement("button");
+                quitar.type = "button";
+                quitar.className = "btn-close btn-close-white";
+                quitar.style.fontSize = "0.6rem";
+                quitar.setAttribute("aria-label", "Quitar a " + nombre + " del proyecto " + codigo);
+                quitar.addEventListener("click", function () {
+                    asignaciones = asignaciones.filter(function (otro) {
+                        return !(otro.proyecto === codigo && otro.territorial === item.territorial);
                     });
-                    renderProyectos();
+                    renderProyectos(proyectosActuales());
                 });
-                item.appendChild(eliminar);
-                item.appendChild(territorialesDe(fila));
-                proyectosListado.appendChild(item);
+                chip.appendChild(quitar);
+                celda.appendChild(chip);
             });
+            var agregar = document.createElement("select");
+            agregar.className = "form-select form-select-sm d-inline-block w-auto";
+            agregar.setAttribute("aria-label", "Agregar territorial al proyecto " + codigo);
+            agregar.add(new Option("+ Territorial", ""));
+            Array.prototype.forEach.call(territorialesOpciones.options, function (opcion) {
+                var id = Number(opcion.value);
+                if (id && !asignados.some(function (item) { return item.territorial === id; })) {
+                    agregar.add(new Option(opcion.textContent, opcion.value));
+                }
+            });
+            agregar.addEventListener("change", function () {
+                if (!agregar.value) return;
+                asignaciones.push({ proyecto: codigo, territorial: Number(agregar.value) });
+                renderProyectos(proyectosActuales());
+            });
+            celda.appendChild(agregar);
+            return celda;
         }
 
-        programasInputs.forEach(function (input) {
-            input.addEventListener("change", renderProyectos);
-        });
+        function celdaConvenio(codigo) {
+            var celda = document.createElement("td");
+            var guardado = guardadosPorCodigo[codigo];
+            // El convenio se carga sobre el proyecto ya guardado con su línea.
+            if (guardado && guardado.linea && guardado.linea === lineas[codigo]) {
+                var convenio = document.createElement("a");
+                convenio.className = "btn btn-outline-primary btn-sm";
+                convenio.href = convenioProyectoUrlBase.replace("/0/", "/" + guardado.id + "/");
+                convenio.textContent = guardado.convenio ? "Editar convenio" : "Cargar convenio";
+                celda.appendChild(convenio);
+            } else {
+                var aviso = document.createElement("span");
+                aviso.className = "text-muted small";
+                aviso.textContent = "Disponible al guardar con su línea";
+                celda.appendChild(aviso);
+            }
+            return celda;
+        }
 
-        if (proyectosInput && agregarProyectoBtn && modalAgregarProyectoEl) {
-            proyectos = leerProyectos();
-            renderProyectos();
-            var modalAgregarProyecto = bootstrap.Modal.getOrCreateInstance(modalAgregarProyectoEl);
+        function celdaQuitar(codigo) {
+            var celda = document.createElement("td");
+            celda.className = "text-end";
+            var quitar = document.createElement("button");
+            quitar.type = "button";
+            quitar.className = "btn btn-outline-danger btn-sm";
+            quitar.textContent = "Quitar";
+            quitar.setAttribute("aria-label", "Quitar proyecto " + codigo);
+            quitar.addEventListener("click", function () {
+                asignacionesQuitadas[codigo] = asignaciones.filter(function (item) {
+                    return item.proyecto === codigo;
+                });
+                asignaciones = asignaciones.filter(function (item) { return item.proyecto !== codigo; });
+                renderProyectos(proyectosActuales().filter(function (otro) { return otro !== codigo; }));
+            });
+            celda.appendChild(quitar);
+            return celda;
+        }
+
+        function renderProyectos(codigos) {
+            proyectosListado.innerHTML = "";
+            codigos.forEach(function (codigo) {
+                var fila = document.createElement("tr");
+                var celdaCodigo = document.createElement("td");
+                var badge = document.createElement("span");
+                badge.className = "badge rounded-pill text-bg-primary text-break";
+                badge.textContent = codigo;
+                celdaCodigo.appendChild(badge);
+                var celdaLinea = document.createElement("td");
+                celdaLinea.appendChild(selectorLinea(codigo));
+                fila.append(celdaCodigo, celdaLinea, celdaTerritoriales(codigo), celdaConvenio(codigo), celdaQuitar(codigo));
+                proyectosListado.appendChild(fila);
+            });
+            proyectosVacio.classList.toggle("d-none", codigos.length > 0);
+            codigosVigentes = codigos.slice();
+            proyectosInput.value = JSON.stringify(codigos.map(function (codigo) {
+                return { codigo: codigo, linea: lineas[codigo] || null };
+            }));
+            asignacionesInput.value = JSON.stringify(asignaciones.filter(function (item) {
+                return codigos.indexOf(item.proyecto) !== -1;
+            }));
+            actualizarVisibilidadAbordaje();
+        }
+
+        if (abordajeCard && proyectosInput && asignacionesInput && agregarProyectoBtn) {
+            renderProyectos(proyectosActuales());
             agregarProyectoBtn.addEventListener("click", function () {
                 var codigo = proyectoNuevoInput.value.trim();
+                var codigos = proyectosActuales();
                 proyectoNuevoError.classList.add("d-none");
                 if (!codigo) {
                     proyectoNuevoError.textContent = "Ingresá un código de proyecto.";
                     proyectoNuevoError.classList.remove("d-none");
                     return;
                 }
-                if (proyectos.some(function (fila) { return fila.codigo.toLowerCase() === codigo.toLowerCase(); })) {
+                if (codigo.indexOf(",") !== -1) {
+                    proyectoNuevoError.textContent = "El código no puede tener comas.";
+                    proyectoNuevoError.classList.remove("d-none");
+                    return;
+                }
+                if (codigos.some(function (actual) { return actual.toLowerCase() === codigo.toLowerCase(); })) {
                     proyectoNuevoError.textContent = "El proyecto ya fue agregado.";
                     proyectoNuevoError.classList.remove("d-none");
                     return;
                 }
-                var lineas = lineasElegidas();
-                proyectos.push({ codigo: codigo, linea: lineas.length === 1 ? lineas[0].id : null });
-                renderProyectos();
+                codigos.push(codigo);
+                // Un proyecto quitado en esta edición vuelve con sus
+                // territoriales; uno quitado en otra edición, con su línea.
+                if (asignacionesQuitadas[codigo]) {
+                    asignaciones = asignaciones.concat(asignacionesQuitadas[codigo]);
+                    delete asignacionesQuitadas[codigo];
+                }
+                var lineaGuardada = (datosForm.inactivos || {})[codigo];
+                if (lineaGuardada && !lineas[codigo]) {
+                    lineas[codigo] = lineaGuardada;
+                }
+                renderProyectos(codigos);
                 proyectoNuevoInput.value = "";
-                modalAgregarProyecto.hide();
-            });
-            modalAgregarProyectoEl.addEventListener("shown.bs.modal", function () {
-                proyectoNuevoError.classList.add("d-none");
                 proyectoNuevoInput.focus();
             });
             proyectoNuevoInput.addEventListener("keydown", function (event) {
@@ -668,6 +713,14 @@
                     event.preventDefault();
                     agregarProyectoBtn.click();
                 }
+            });
+            programasInputs.forEach(function (input) {
+                input.addEventListener("change", function () {
+                    renderProyectos(proyectosActuales());
+                });
+            });
+            [regionSelect, subzonaSelect].forEach(function (select) {
+                if (select) select.addEventListener("change", actualizarVisibilidadAbordaje);
             });
         }
 

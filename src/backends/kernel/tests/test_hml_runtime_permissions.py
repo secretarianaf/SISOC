@@ -168,19 +168,24 @@ class HmlPermissionTests(unittest.TestCase):
         self.assertEqual((self.file.stat().st_mode >> 6) & 7, 6)
         self.assertEqual(self.run_cli().returncode, 0)
 
-    def test_concurrent_mode_change_is_rejected(self):
+    def acl_entries(self, path):
+        raw = os.getxattr(path, KEY)
+        return [struct.unpack("<HHI", raw[i : i + 8]) for i in range(4, len(raw), 8)]
+
+    def run_with_change_after_planning(self, change):
+        """Run --apply and execute ``change`` after each backup is written."""
         code = (
             "import os\nimport runpy\nimport sys\n"
             "script, root, backup, document = sys.argv[1:]\n"
             "real_fsync = os.fsync\n"
-            "def change_mode_after_planning(fd):\n"
+            "def change_after_planning(fd):\n"
             "    real_fsync(fd)\n"
-            "    os.chmod(document, 0o600)\n"
-            "os.fsync = change_mode_after_planning\n"
+            f"{change}"
+            "os.fsync = change_after_planning\n"
             "sys.argv = [script, '--root', root, '--apply', '--backup', backup]\n"
             "runpy.run_path(script, run_name='__main__')\n"
         )
-        result = subprocess.run(
+        return subprocess.run(
             [
                 sys.executable,
                 "-B",
@@ -195,12 +200,64 @@ class HmlPermissionTests(unittest.TestCase):
             text=True,
             check=False,
         )
+
+    def test_hard_links_are_provisioned_once(self):
+        # Mode 0660 keeps the group bits equal to the new mask, so the second
+        # path of the same inode used to fail as a concurrent ACL change.
+        for mode in (0o660, 0o640):
+            with self.subTest(mode=oct(mode)):
+                other = self.root / f"other-{mode:o}"
+                other.mkdir(mode=0o755)
+                document = other / "document.txt"
+                document.write_bytes(b"synthetic")
+                document.chmod(mode)
+                os.link(document, other / "same-inode.txt")
+                backup = self.base / f"backup-{mode:o}.json"
+                result = self.run_cli("--apply", "--backup", str(backup))
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn((2, 6, UID), self.acl_entries(document))
+                self.assertEqual(document.read_bytes(), b"synthetic")
+                self.assertEqual(json.loads(self.run_cli().stdout)["pending"], 0)
+
+    def test_single_concurrent_change_replans_from_current_state(self):
+        result = self.run_with_change_after_planning(
+            "    if not getattr(os, 'changed', False):\n"
+            "        os.changed = True\n"
+            "        os.chmod(document, 0o600)\n"
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        output = json.loads(result.stdout)
+        self.assertEqual(output["attempts"], 2)
+        # The directory written in the first pass still counts as applied.
+        self.assertEqual(output["applied"], output["pending"])
+        entries = self.acl_entries(self.file)
+        self.assertIn((2, 6, UID), entries)
+        # The group permission from the concurrent chmod (none) is preserved.
+        self.assertIn((4, 0, 0xFFFFFFFF), entries)
+        self.assertEqual(self.file.read_bytes(), b"unchanged synthetic document")
+        self.assertTrue(self.backup.exists())
+        retry_backup = Path(f"{self.backup}.2")
+        self.assertTrue(retry_backup.exists())
+        self.assertEqual(retry_backup.stat().st_mode & 0o777, 0o600)
+
+    def test_concurrent_mode_change_is_rejected(self):
+        # A change that keeps happening exhausts the attempts without applying
+        # a stale plan.
+        result = self.run_with_change_after_planning(
+            "    current = os.stat(document).st_mode & 0o777\n"
+            "    os.chmod(document, 0o600 if current != 0o600 else 0o640)\n"
+        )
         self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
-        self.assertEqual(json.loads(result.stdout)["error"], "RuntimeError")
-        self.assertEqual(self.file.stat().st_mode & 0o777, 0o600)
+        output = json.loads(result.stdout)
+        self.assertEqual(output["error"], "RuntimeError")
+        self.assertEqual(
+            output["detail"], "Filesystem identity changed; backup retained"
+        )
+        self.assertNotIn(str(self.root), result.stdout)
         self.assertNotIn(KEY, os.listxattr(self.file))
         self.assertEqual(self.file.read_bytes(), b"unchanged synthetic document")
         self.assertTrue(self.backup.exists())
+        self.assertTrue(Path(f"{self.backup}.3").exists())
 
 
 class HmlComposePolicyTests(unittest.TestCase):

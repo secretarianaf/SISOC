@@ -196,7 +196,12 @@ class HmlPermissionTests(unittest.TestCase):
             check=False,
         )
         self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
-        self.assertEqual(json.loads(result.stdout)["error"], "RuntimeError")
+        output = json.loads(result.stdout)
+        self.assertEqual(output["error"], "RuntimeError")
+        self.assertEqual(
+            output["detail"], "Filesystem identity changed; backup retained"
+        )
+        self.assertNotIn(str(self.root), result.stdout)
         self.assertEqual(self.file.stat().st_mode & 0o777, 0o600)
         self.assertNotIn(KEY, os.listxattr(self.file))
         self.assertEqual(self.file.read_bytes(), b"unchanged synthetic document")

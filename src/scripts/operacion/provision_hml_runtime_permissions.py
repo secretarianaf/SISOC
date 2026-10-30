@@ -189,12 +189,15 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except (OSError, ValueError, RuntimeError) as error:
-        # Never emit document names from filesystem exceptions.
+        # Never emit document names from filesystem exceptions. ValueError and
+        # RuntimeError carry only the fixed messages raised in this script.
         print(
             json.dumps(
                 {
                     "error": type(error).__name__,
-                    "detail": getattr(error, "strerror", None),
+                    "detail": (
+                        error.strerror if isinstance(error, OSError) else str(error)
+                    ),
                 }
             )
         )

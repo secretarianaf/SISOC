@@ -10,6 +10,12 @@ import struct
 ACCESS = "system.posix_acl_access"
 DEFAULT = "system.posix_acl_default"
 UNDEFINED = 0xFFFFFFFF
+# Passes allowed when the filesystem changes between planning and applying.
+ATTEMPTS = 3
+
+
+class ConcurrentChange(RuntimeError):
+    """The filesystem changed after planning; a fresh plan may still succeed."""
 
 
 def read_acl(fd, key):
@@ -85,8 +91,14 @@ def walk(roots):
 
 def plan(roots, uid):
     changes = {}
+    seen = set()
     for root, path, fd in walk(roots):
         info = os.fstat(fd)
+        # Hard links share one inode and ACL: plan each inode once, or the
+        # second path would see the ACL applied through the first one.
+        if (info.st_dev, info.st_ino) in seen:
+            continue
+        seen.add((info.st_dev, info.st_ino))
         mode = stat.S_IMODE(info.st_mode)
         before = {ACCESS: read_acl(fd, ACCESS)}
         after = {
@@ -145,56 +157,83 @@ def main():
     ]
     changes = plan(roots, args.uid)
     pending = len(changes)
+    applied = []
+    attempts = 0
     if args.apply:
-        fd = os.open(
-            args.backup, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600
+        while True:
+            attempts += 1
+            backup = args.backup if attempts == 1 else f"{args.backup}.{attempts}"
+            try:
+                apply(roots, args.uid, changes, backup, applied)
+                break
+            except ConcurrentChange:
+                # Never retry a stale plan: plan again from the current state,
+                # with its own backup. A change that persists still fails.
+                if attempts == ATTEMPTS:
+                    raise
+                changes = plan(roots, args.uid)
+    # Count every inode written, including partial passes before a retry.
+    print(
+        json.dumps(
+            {"pending": pending, "applied": len(set(applied)), "attempts": attempts}
         )
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            json.dump({"roots": roots, "entries": list(changes.values())}, handle)
-            handle.flush()
-            os.fsync(handle.fileno())
-        for root, path, fd in walk(roots):
-            change = changes.get((root, path))
-            if change is None:
-                continue
-            info = os.fstat(fd)
-            if (
-                info.st_dev,
-                info.st_ino,
-                info.st_uid,
-                info.st_gid,
-                stat.S_IMODE(info.st_mode),
-            ) != (
-                change["device"],
-                change["inode"],
-                change["uid"],
-                change["gid"],
-                change["mode"],
-            ):
-                raise RuntimeError("Filesystem identity changed; backup retained")
-            for key, original in change["before"].items():
-                raw = read_acl(fd, key)
-                if raw != (None if original is None else bytes.fromhex(original)):
-                    raise RuntimeError("ACL changed concurrently; backup retained")
-            for key, desired in change["after"].items():
-                os.setxattr(fd, key, bytes.fromhex(desired))
-        remaining = len(plan(roots, args.uid))
-        if remaining:
-            raise RuntimeError("Permission provisioning incomplete; backup retained")
-    print(json.dumps({"pending": pending, "applied": pending if args.apply else 0}))
+    )
     return 0 if args.apply or pending == 0 else 1
+
+
+def apply(roots, uid, changes, backup, applied):
+    fd = os.open(backup, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        json.dump({"roots": roots, "entries": list(changes.values())}, handle)
+        handle.flush()
+        os.fsync(handle.fileno())
+    for root, path, fd in walk(roots):
+        change = changes.get((root, path))
+        if change is None:
+            continue
+        info = os.fstat(fd)
+        if (
+            info.st_dev,
+            info.st_ino,
+            info.st_uid,
+            info.st_gid,
+            stat.S_IMODE(info.st_mode),
+        ) != (
+            change["device"],
+            change["inode"],
+            change["uid"],
+            change["gid"],
+            change["mode"],
+        ):
+            raise ConcurrentChange("Filesystem identity changed; backup retained")
+        for key, original in change["before"].items():
+            raw = read_acl(fd, key)
+            if raw != (None if original is None else bytes.fromhex(original)):
+                raise ConcurrentChange("ACL changed concurrently; backup retained")
+        for key, desired in change["after"].items():
+            os.setxattr(fd, key, bytes.fromhex(desired))
+        applied.append((change["device"], change["inode"]))
+    if plan(roots, uid):
+        raise ConcurrentChange("Permission provisioning incomplete; backup retained")
 
 
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except (OSError, ValueError, RuntimeError) as error:
-        # Never emit document names from filesystem exceptions.
+        # Never emit document names from filesystem exceptions. ValueError and
+        # RuntimeError carry only the fixed messages raised in this script.
         print(
             json.dumps(
                 {
-                    "error": type(error).__name__,
-                    "detail": getattr(error, "strerror", None),
+                    "error": (
+                        "RuntimeError"
+                        if isinstance(error, RuntimeError)
+                        else type(error).__name__
+                    ),
+                    "detail": (
+                        error.strerror if isinstance(error, OSError) else str(error)
+                    ),
                 }
             )
         )

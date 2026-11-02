@@ -205,7 +205,7 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
         # #2630: si Gestionar subió su PDF oficial, la descarga es ese.
         context["pdf_oficial"] = pdf_oficial.documento_de(relevamiento=relevamiento)
         context["adjuntos"] = adjuntos_de(
-            ArchivoAdjunto.TIPO_RELEVAMIENTO, relevamiento.pk
+            ArchivoAdjunto.TIPO_RELEVAMIENTO, relevamiento.id
         )
 
         timeline_qs = (

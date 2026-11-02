@@ -146,12 +146,14 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                 rel.seguimientos.all(),
                 key=lambda seguimiento: seguimiento.numero_orden,
             )
+            estado_rel = RelevamientoService.estado_unificado(rel)
             items.append(
                 {
                     "id": rel.id,
                     "fecha": rel.fecha_visita,
-                    "estado": RelevamientoService.estado_para_mostrar(
-                        rel.estado, rel.estado_validacion
+                    "estado": estado_rel,
+                    "estado_badge": RelevamientoService.badge_estado_unificado(
+                        estado_rel
                     ),
                     "numero_if": rel.numero_if,
                     "is_child": False,
@@ -162,11 +164,15 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                 }
             )
             for seguimiento in seguimientos:
+                estado_seg = RelevamientoService.estado_unificado(seguimiento)
                 items.append(
                     {
                         "id": seguimiento.id,
                         "fecha": seguimiento.fecha_hora,
-                        "estado": seguimiento.estado,
+                        "estado": estado_seg,
+                        "estado_badge": RelevamientoService.badge_estado_unificado(
+                            estado_seg
+                        ),
                         "tipo": seguimiento.get_tipo_display(),
                         "numero_orden": seguimiento.numero_orden,
                         "origen": seguimiento.origen,
@@ -195,7 +201,9 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
     template_name = "relevamiento_detail.html"
     context_object_name = "relevamiento"
 
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
+    def get_context_data(  # pylint: disable=too-many-locals
+        self, **kwargs
+    ) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
 
         # Optimización: Usar self.object en lugar de nueva query
@@ -210,14 +218,11 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
         )
         timeline_items = []
         for idx, item in enumerate(timeline_qs):
-            estado = RelevamientoService.estado_para_mostrar(
-                item.estado, item.estado_validacion
-            )
-            is_finalizado = estado in RelevamientoService.ESTADOS_FINALIZADOS
+            estado = RelevamientoService.estado_unificado(item)
+            is_finalizado = estado == RelevamientoService.ESTADO_UNIFICADO_FINALIZADO
             is_pendiente = estado in {
-                "Pendiente",
-                "Visita pendiente",
-                RelevamientoService.ESTADO_PENDIENTE_VALIDACION,
+                RelevamientoService.ESTADO_UNIFICADO_PENDIENTE,
+                RelevamientoService.ESTADO_UNIFICADO_PENDIENTE_REVISION,
             }
             card_class = (
                 "active"
@@ -323,9 +328,7 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
         # Agregar los datos adicionales al contexto
         context["relevamiento_data"] = relevamiento_data
         context["relevamientos_timeline"] = timeline_items
-        context["estado_visible"] = RelevamientoService.estado_para_mostrar(
-            relevamiento.estado, relevamiento.estado_validacion
-        )
+        context["estado_visible"] = RelevamientoService.estado_unificado(relevamiento)
         # Todas las instancias del ciclo (primer, posteriores, virtuales, actas).
         context["seguimientos"] = sorted(
             relevamiento.seguimientos.all(),

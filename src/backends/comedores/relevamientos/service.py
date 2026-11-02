@@ -35,7 +35,10 @@ from relevamientos.models import (
     MotivoExcepcion,
     Prestacion,
     PuntoEntregas,
+    ActaComplementaria,
+    PrimerSeguimiento,
     Relevamiento,
+    SeguimientoPnud,
     TipoAccesoComedor,
     TipoAgua,
     TipoCombustible,
@@ -652,6 +655,90 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     ESTADOS_FINALIZADOS = ("Finalizado", "Finalizado/Excepciones")
     ESTADO_PENDIENTE_VALIDACION = "Pendiente de validación"
+
+    # Estados unificados de la app y de SISOC web (#2781). Son una etiqueta
+    # calculada: no se guardan ni reemplazan a ``estado`` / ``estado_validacion``.
+    ESTADO_UNIFICADO_PENDIENTE = "Pendiente"
+    ESTADO_UNIFICADO_EN_CURSO = "En curso"
+    ESTADO_UNIFICADO_PENDIENTE_REVISION = "Pendiente Revisión"
+    ESTADO_UNIFICADO_FINALIZADO = "Finalizado"
+    ESTADOS_UNIFICADOS = (
+        ESTADO_UNIFICADO_PENDIENTE,
+        ESTADO_UNIFICADO_EN_CURSO,
+        ESTADO_UNIFICADO_PENDIENTE_REVISION,
+        ESTADO_UNIFICADO_FINALIZADO,
+    )
+    BADGE_ESTADO_UNIFICADO = {
+        ESTADO_UNIFICADO_PENDIENTE: "bg-secondary",
+        ESTADO_UNIFICADO_EN_CURSO: "bg-info",
+        ESTADO_UNIFICADO_PENDIENTE_REVISION: "bg-warning text-dark",
+        ESTADO_UNIFICADO_FINALIZADO: "bg-success",
+    }
+    # Valores históricos de ``Relevamiento.estado`` que significan "enviado y
+    # esperando al coordinador" (en minúsculas, sin circuito de validación).
+    ESTADOS_RELEVAMIENTO_EN_REVISION = (
+        "pendiente de validación",
+        "pendiente validación",
+        "pendiente de revisión",
+        "pendiente revisión",
+        "pendiente de revision",
+        "pendiente revision",
+    )
+
+    @staticmethod
+    def estado_unificado(obj):
+        """Etiqueta única para Relevamiento, PrimerSeguimiento (todos los
+        tipos), SeguimientoPnud y ActaComplementaria (#2781).
+
+        Primero manda la validación del coordinador: ``Validado`` es
+        Finalizado, ``Pendiente validación coordinador`` es Pendiente Revisión
+        y ``A subsanar`` vuelve a En curso. Sin validación, se decide con el
+        estado propio de cada modelo (ver ``_estado_unificado_sin_validacion``).
+        """
+        validacion = getattr(obj, "estado_validacion", None)
+        if validacion == Relevamiento.ESTADO_VALIDACION_VALIDADO:
+            return RelevamientoService.ESTADO_UNIFICADO_FINALIZADO
+        if validacion == Relevamiento.ESTADO_VALIDACION_PENDIENTE:
+            return RelevamientoService.ESTADO_UNIFICADO_PENDIENTE_REVISION
+        if validacion == Relevamiento.ESTADO_VALIDACION_A_SUBSANAR:
+            return RelevamientoService.ESTADO_UNIFICADO_EN_CURSO
+        return RelevamientoService._estado_unificado_sin_validacion(obj)
+
+    @staticmethod
+    def _estado_unificado_sin_validacion(
+        obj,
+    ):  # pylint: disable=too-many-return-statements
+        servicio = RelevamientoService
+        if isinstance(obj, PrimerSeguimiento):
+            if obj.estado == PrimerSeguimiento.ESTADO_COMPLETO:
+                return servicio.ESTADO_UNIFICADO_FINALIZADO
+            if obj.estado in (None, "", PrimerSeguimiento.ESTADO_ASIGNADO):
+                return servicio.ESTADO_UNIFICADO_PENDIENTE
+            return servicio.ESTADO_UNIFICADO_EN_CURSO
+        if isinstance(obj, (SeguimientoPnud, ActaComplementaria)):
+            # Sin ``estado`` propio: vacío y sin contenido es recién asignado
+            # (Pendiente). Con contenido y sin validación, lo cargó la app y la
+            # migración 0021 lo trata como enviado (Pendiente Revisión); si lo
+            # cargó SISOC todavía no se envió (En curso).
+            if obj.sin_cargar:
+                return servicio.ESTADO_UNIFICADO_PENDIENTE
+            if obj.origen == obj.ORIGEN_APP:
+                return servicio.ESTADO_UNIFICADO_PENDIENTE_REVISION
+            return servicio.ESTADO_UNIFICADO_EN_CURSO
+        # Relevamiento (o algo con su forma: ``estado`` de texto libre).
+        estado = (getattr(obj, "estado", None) or "").strip()
+        if estado.lower() in ("", "pendiente", "visita pendiente", "asignado"):
+            return servicio.ESTADO_UNIFICADO_PENDIENTE
+        if estado in servicio.ESTADOS_FINALIZADOS:
+            return servicio.ESTADO_UNIFICADO_FINALIZADO
+        if estado.lower() in servicio.ESTADOS_RELEVAMIENTO_EN_REVISION:
+            return servicio.ESTADO_UNIFICADO_PENDIENTE_REVISION
+        return servicio.ESTADO_UNIFICADO_EN_CURSO
+
+    @staticmethod
+    def badge_estado_unificado(estado):
+        """Clase CSS del badge para una etiqueta de ``estado_unificado``."""
+        return RelevamientoService.BADGE_ESTADO_UNIFICADO.get(estado, "bg-secondary")
 
     @staticmethod
     def estado_para_mostrar(estado, estado_validacion):

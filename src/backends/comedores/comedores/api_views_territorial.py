@@ -51,6 +51,7 @@ from relevamientos.models import (
     Relevamiento,
     SeguimientoPnud,
 )
+from relevamientos.service import RelevamientoService
 from pwa.api_permissions import IsTerritorialComedorUser
 from pwa.services.accesos import (
     get_territorial_comedor_provincia_ids,
@@ -61,6 +62,9 @@ from pwa.services.accesos import (
 class TerritorialUltimoRelevamientoSerializer(NoSaveSerializer):
     id = serializers.IntegerField()
     estado = serializers.CharField(allow_null=True)
+    # Etiqueta unificada app/SISOC web (#2781): Pendiente, En curso, Pendiente
+    # Revisión o Finalizado. Se calcula; `estado` conserva el valor guardado.
+    estado_unificado = serializers.SerializerMethodField()
     fecha_visita = serializers.DateTimeField(allow_null=True)
     territorial_user = serializers.IntegerField(
         source="territorial_user_id", allow_null=True
@@ -73,6 +77,9 @@ class TerritorialUltimoRelevamientoSerializer(NoSaveSerializer):
     # De donde salio el registro: asignado por SISOC o autoactivado en la app.
     origen = serializers.CharField()
     asignado_desde_sisoc = serializers.BooleanField()
+
+    def get_estado_unificado(self, obj):
+        return RelevamientoService.estado_unificado(obj)
 
 
 class TerritorialComedorSerializer(
@@ -168,6 +175,9 @@ class TerritorialComedorSerializer(
                         "tipo": seguimiento.tipo,
                         "numero_orden": seguimiento.numero_orden,
                         "estado": seguimiento.estado,
+                        "estado_unificado": RelevamientoService.estado_unificado(
+                            seguimiento
+                        ),
                         "id_relevamiento": relevamiento.id,
                         "gestionar_id": seguimiento.gestionar_id,
                         "fecha": seguimiento.fecha_hora,
@@ -698,6 +708,7 @@ class TerritorialComedorViewSet(
             "tipo": seguimiento.tipo,
             "numero_orden": seguimiento.numero_orden,
             "estado": seguimiento.estado,
+            "estado_unificado": RelevamientoService.estado_unificado(seguimiento),
             "origen": seguimiento.origen,
             "asignado_desde_sisoc": seguimiento.asignado_desde_sisoc,
             "client_uuid": seguimiento.client_uuid,

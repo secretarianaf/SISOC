@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %};
-{% load static %}
+{% load static estado_unificado %}
 ;
 {% block title %}Acompañamiento Territorial - Comedor: {{ comedor.nombre }}{% endblock %}
 ;
@@ -51,9 +51,7 @@
                                                         {% endif %}
                                                     </div>
                                                     <div class="col-2 d-flex">
-                                                        <p {% if item.estado == "Pendiente" %} style="color: yellow;" {% elif item.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
-                                                            {{ item.estado|default:"Sin información" }}
-                                                        </p>
+                                                        <span class="badge align-self-start {{ item.estado_badge }}">{{ item.estado }}</span>
                                                     </div>
                                                     <div class="col-5">
                                                         {% if item.is_child %}
@@ -64,11 +62,6 @@
                                                                     <span class="badge bg-success">Sincronizado</span>
                                                                 {% else %}
                                                                     <span class="badge bg-secondary">No sincronizado</span>
-                                                                {% endif %}
-                                                                {% if item.estado == "Completo" %}
-                                                                    <span class="badge bg-success">Completado</span>
-                                                                {% else %}
-                                                                    <span class="badge bg-secondary">No completado</span>
                                                                 {% endif %}
                                                             </div>
                                                         {% else %}
@@ -179,9 +172,7 @@
                                                     <span class="badge bg-light text-dark" title="Cargada desde SISOC">SISOC</span>
                                                 {% endif %}
                                                 <span class="badge bg-info">{{ acta.prestaciones.all|length }} prestación{{ acta.prestaciones.all|length|pluralize:"es" }}</span>
-                                                {% if acta.estado_validacion %}
-                                                    <span class="badge {% if acta.estado_validacion == 'Validado' %}bg-success{% elif acta.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ acta.estado_validacion }}</span>
-                                                {% endif %}
+                                                <span class="badge {{ acta|badge_estado_unificado }}">{{ acta|estado_unificado }}</span>
                                             </div>
                                             <div class="col-2 d-flex justify-content-end">
                                                 {% if perms.relevamientos.change_actacomplementaria %}
@@ -230,12 +221,7 @@
                                                 <p class="mb-0">{{ seguimiento.tecnico|default:"Sin técnico" }}</p>
                                             </div>
                                             <div class="col-3 d-flex flex-wrap gap-1">
-                                                {% if seguimiento.estado_validacion %}
-                                                    <span class="badge {% if seguimiento.estado_validacion == 'Validado' %}bg-success{% elif seguimiento.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ seguimiento.estado_validacion }}</span>
-                                                {% elif seguimiento.asignado_desde_sisoc %}
-                                                    <span class="badge bg-secondary"
-                                                          title="Asignado desde SISOC, el territorial todavía no lo envió">Asignado</span>
-                                                {% endif %}
+                                                <span class="badge {{ seguimiento|badge_estado_unificado }}">{{ seguimiento|estado_unificado }}</span>
                                                 {% if seguimiento.origen == "app" %}<span class="badge bg-primary" title="Cargado desde la app">App</span>{% endif %}
                                             </div>
                                         </div>

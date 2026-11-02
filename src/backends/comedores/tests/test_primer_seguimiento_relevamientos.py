@@ -920,3 +920,101 @@ def test_eliminar_primer_seguimiento_borra_bloques_asociados(comedor, mocker):
     assert not PrestacionSeguimiento.objects.filter(
         seguimiento_id=seguimiento_id
     ).exists()
+
+
+def test_api_primer_seguimiento_persiste_ap_total(api_client, comedor):
+    """#2781: el cuadro 6.1 nuevo manda un AP unico y DE presencial/vianda."""
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+
+    response = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {
+            "sisoc_id": seguimiento.id,
+            "id_relevamiento": relevamiento.id,
+            "prestaciones_seguimientos": [
+                {
+                    "id_prestacion_seg": "prest-ap",
+                    "dias_prestacion": "Martes",
+                    "tipo_prestacion": "Desayuno",
+                    "ap_total": 12,
+                    "ap_presencial": None,
+                    "ap_vianda": None,
+                    "de_presencial": 3,
+                    "de_vianda": 4,
+                }
+            ],
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    prestacion = seguimiento.prestaciones.get(id_prestacion_seg="prest-ap")
+    assert prestacion.ap_total == 12
+    assert prestacion.ap_presencial is None
+    assert (prestacion.de_presencial, prestacion.de_vianda) == (3, 4)
+    assert prestacion.ap_total_efectivo == 12
+
+
+def test_ap_total_efectivo_suma_filas_viejas():
+    assert PrestacionSeguimiento(ap_presencial=10, ap_vianda=2).ap_total_efectivo == 12
+    assert PrestacionSeguimiento(ap_vianda=5).ap_total_efectivo == 5
+    assert PrestacionSeguimiento().ap_total_efectivo is None
+    assert PrestacionSeguimiento(ap_total=7, ap_presencial=1).ap_total_efectivo == 7
+
+
+def _detalle_con_prestacion(auth_client, comedor, tipo, **prestacion):
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_COMPLETO,
+        tipo=tipo,
+        numero_orden=1,
+    )
+    PrestacionSeguimiento.objects.create(
+        seguimiento=seguimiento,
+        id_prestacion_seg="prest-x",
+        dias_prestacion="Lunes",
+        tipo_prestacion="Almuerzo",
+        **prestacion,
+    )
+    url = reverse(
+        "primer_seguimiento_detalle",
+        kwargs={"comedor_pk": comedor.id, "relevamiento_pk": relevamiento.id},
+    )
+    return auth_client.get(url).content.decode("utf-8")
+
+
+def test_detalle_primer_seguimiento_muestra_ap_unico_con_suma_en_filas_viejas(
+    auth_client, comedor
+):
+    content = _detalle_con_prestacion(
+        auth_client,
+        comedor,
+        PrimerSeguimiento.TIPO_PRIMER,
+        ap_presencial=10,
+        ap_vianda=2,
+    )
+
+    assert "<th>AP</th>" in content
+    assert "AP presencial" not in content
+    assert "<td>12</td>" in content
+
+
+def test_detalle_seguimiento_posterior_mantiene_columnas_ap_viejas(
+    auth_client, comedor
+):
+    content = _detalle_con_prestacion(
+        auth_client,
+        comedor,
+        PrimerSeguimiento.TIPO_POSTERIOR,
+        ap_presencial=10,
+        ap_vianda=2,
+    )
+
+    assert "AP presencial" in content
+    assert "AP vianda" in content
+    assert "<th>AP</th>" not in content

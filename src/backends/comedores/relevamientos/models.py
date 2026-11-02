@@ -2042,12 +2042,23 @@ class PrestacionSeguimiento(models.Model):
     tipo_prestacion = _nullable_char()
     ap_presencial = _nullable_positive_int()
     ap_vianda = _nullable_positive_int()
+    # AP unico del cuadro 6.1 nuevo del Primer Seguimiento (SISOC#2781).
+    ap_total = _nullable_positive_int()
     de_presencial = _nullable_positive_int()
     de_vianda = _nullable_positive_int()
 
     class Meta:
         verbose_name = "Prestacion de primer seguimiento"
         verbose_name_plural = "Prestaciones de primer seguimiento"
+
+    @property
+    def ap_total_efectivo(self):
+        """AP del cuadro 6.1: ``ap_total`` o, en filas viejas, presencial + vianda."""
+        if self.ap_total is not None:
+            return self.ap_total
+        if self.ap_presencial is None and self.ap_vianda is None:
+            return None
+        return (self.ap_presencial or 0) + (self.ap_vianda or 0)
 
     def __str__(self):
         return (

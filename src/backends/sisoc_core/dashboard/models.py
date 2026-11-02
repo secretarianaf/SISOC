@@ -1,6 +1,7 @@
 import re
 from urllib.parse import urlparse, urlunparse
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 
@@ -15,6 +16,16 @@ LOOKER_STUDIO_HOSTS = {
     "datastudio.google.com",
     "lookerstudio.google.com",
 }
+# Ruta absoluta dentro de SISOC: empieza con "/" pero no con "//" ni "/\", que
+# el navegador interpreta como otro sitio, y no lleva espacios.
+RUTA_INTERNA_RE = re.compile(r"^/(?![/\\])[^\s\\]*$")
+
+
+def validar_ruta_interna(valor):
+    if valor and not RUTA_INTERNA_RE.match(valor):
+        raise ValidationError(
+            "Usá una ruta de SISOC que empiece con /, por ejemplo /celiaquia/tablero/."
+        )
 
 
 class Dashboard(models.Model):
@@ -65,6 +76,17 @@ class Tablero(models.Model):
         blank=True,
         help_text="URL embebida del tablero (Power BI u otra herramienta).",
     )
+    ruta_interna = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        validators=[validar_ruta_interna],
+        help_text=(
+            "Ruta de una pantalla de SISOC (por ejemplo /celiaquia/tablero/). "
+            "Si está cargada, el menú lleva a esa pantalla en lugar de embeber "
+            "la URL."
+        ),
+    )
     mensaje_construccion = models.TextField(
         blank=True,
         help_text="Mensaje a mostrar cuando el tablero no tiene URL.",
@@ -99,6 +121,8 @@ class Tablero(models.Model):
         return f"Tablero {self.nombre}"
 
     def get_absolute_url(self):
+        if self.ruta_interna:
+            return self.ruta_interna
         return reverse("dashboard_tablero", kwargs={"slug": self.slug})
 
     @staticmethod

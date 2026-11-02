@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.shortcuts import redirect
 from django.views.generic import DetailView, TemplateView
 
 from django.apps import apps
@@ -75,3 +76,10 @@ class TableroEmbedView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     def test_func(self):
         tablero = self.get_object()
         return tablero.usuario_puede_ver(self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        # Un tablero con pantalla propia en SISOC no se embebe: se va a esa pantalla.
+        tablero = self.get_object()
+        if tablero.ruta_interna:
+            return redirect(tablero.ruta_interna)
+        return super().get(request, *args, **kwargs)

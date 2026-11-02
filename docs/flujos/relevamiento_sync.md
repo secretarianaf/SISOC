@@ -117,6 +117,7 @@ Si no viene `documento` ni `sisoc_id`, cae al patron previo de busqueda por nomb
   tratadas como un segundo seguimiento rechazado.
 - Los choices no confirmados se guardan como `CharField`; las escalas usan validadores 1..4 o 1..11.
 - Las firmas recibidas desde GESTIONAR se guardan como URL/string, no como `FileField`.
+- Los documentos adjuntos (imagen o PDF) de cada formulario no pasan por este sync: la app los sube por `/api/territorial/comedores/{id}/adjuntos/` y se guardan en `ArchivoAdjunto` (ver `docs/registro/cambios/2026-T4/2026-11-02-2781-adjuntos-formularios.md`).
 
 ## Errores comunes y debug
 

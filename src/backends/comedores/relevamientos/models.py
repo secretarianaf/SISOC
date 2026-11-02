@@ -2303,3 +2303,65 @@ class PdfOficialGestionar(models.Model):
         if self.relevamiento_id:
             return f"PDF oficial del relevamiento {self.relevamiento_id}"
         return f"PDF oficial del seguimiento {self.seguimiento_id}"
+
+
+def ruta_archivo_adjunto(instance, filename):
+    """``adjuntos/<comedor>/<nombre>``: el nombre ya viene generado (uuid)."""
+    return f"adjuntos/{instance.comedor_id}/{filename}"
+
+
+class ArchivoAdjunto(models.Model):
+    """Documento (imagen o PDF) adjunto a un formulario de relevamiento (#2781).
+
+    Lo sube el territorial desde la pantalla final de cualquier formulario de la
+    app. Apunta al formulario con ``formulario_tipo`` + ``formulario_id`` (el id
+    SISOC de esa instancia) en lugar de cuatro FK opcionales: son cuatro
+    modelos distintos y la API los identifica justamente por ese par.
+    """
+
+    TIPO_RELEVAMIENTO = "relevamiento"
+    TIPO_SEGUIMIENTO = "seguimiento"
+    TIPO_SEGUIMIENTO_PNUD = "seguimiento_pnud"
+    TIPO_ACTA = "acta"
+    TIPO_CHOICES = [
+        (TIPO_RELEVAMIENTO, "Relevamiento"),
+        (TIPO_SEGUIMIENTO, "Seguimiento"),
+        (TIPO_SEGUIMIENTO_PNUD, "Seguimiento PNUD"),
+        (TIPO_ACTA, "Acta complementaria"),
+    ]
+
+    comedor = models.ForeignKey(
+        to=Comedor,
+        on_delete=models.CASCADE,
+        related_name="archivos_adjuntos",
+    )
+    formulario_tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    formulario_id = models.PositiveIntegerField()
+    archivo = models.FileField(upload_to=ruta_archivo_adjunto, max_length=255)
+    nombre_original = models.CharField(max_length=255)
+    tipo_mime = models.CharField(max_length=100)
+    tamano = models.PositiveIntegerField(help_text="Bytes.")
+    client_uuid = models.CharField(max_length=64, blank=True, null=True)
+    subido_por = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="archivos_adjuntos_subidos",
+    )
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Archivo adjunto"
+        verbose_name_plural = "Archivos adjuntos"
+        ordering = ["fecha_subida", "id"]
+        indexes = [models.Index(fields=["formulario_tipo", "formulario_id"])]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["comedor", "client_uuid"],
+                name="archivo_adjunto_client_uuid_por_comedor",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.nombre_original} ({self.formulario_tipo} {self.formulario_id})"

@@ -205,6 +205,11 @@
   "regex": "^rendicion_cuentas_final/documento/adjuntar/\\Z"
  },
  {
+  "name": "adjunto_descargar",
+  "namespace": "",
+  "regex": "^comedores/(?P<comedor_pk>[0-9]+)/adjuntos/(?P<pk>[0-9]+)/descargar\\Z"
+ },
+ {
   "name": "admision_detalle",
   "namespace": "",
   "regex": "^comedores/(?P<comedor_pk>[0-9]+)/admision/(?P<pk>[0-9]+)/detalle/\\Z"
@@ -603,6 +608,16 @@
   "name": "api-siis-user-create",
   "namespace": "",
   "regex": "^api/users/siis/\\Z"
+ },
+ {
+  "name": "api-territorial-comedor-adjunto-borrar",
+  "namespace": "",
+  "regex": "^api/territorial/comedores/(?P<pk>\\d+)/adjuntos/(?P<adjunto_id>[0-9]+)/$"
+ },
+ {
+  "name": "api-territorial-comedor-adjuntos",
+  "namespace": "",
+  "regex": "^api/territorial/comedores/(?P<pk>\\d+)/adjuntos/$"
  },
  {
   "name": "api-territorial-comedor-corregir-acta-complementaria",

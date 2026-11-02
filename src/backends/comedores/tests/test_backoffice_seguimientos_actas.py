@@ -5,6 +5,8 @@ de una instancia, revisión del coordinador sobre seguimientos y el ABM de
 actas complementarias extraordinarias.
 """
 
+import re
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
@@ -172,6 +174,24 @@ def test_editar_seguimiento_renderiza_todos_los_bloques(client, ciclo):
     for key in ("funcionamiento", "menu", "cierre", "acta_excepcion", "prestaciones"):
         assert f'id="bloque-{key}"' in contenido
     assert 'name="seg-estado"' in contenido
+
+
+@pytest.mark.django_db
+def test_editar_seguimiento_prestaciones_encabezados_alineados_con_celdas(
+    client, ciclo
+):
+    primer, _ = ciclo
+    _login(client, "change_primerseguimiento")
+
+    response = client.get(reverse("seguimiento_editar", kwargs=_kw(primer)))
+
+    contenido = response.content.decode()
+    bloque = contenido[contenido.index('id="bloque-prestaciones"') :]
+    tabla = bloque[: bloque.index("</table>")]
+    encabezados = re.findall(r"<th>(.*?)</th>", tabla)
+    primera_fila = tabla[tabla.index("<tbody>") :].split("</tr>")[0]
+    assert len(encabezados) == primera_fila.count("<td>")
+    assert encabezados.index("AP total") == encabezados.index("AP vianda") + 1
 
 
 @pytest.mark.django_db

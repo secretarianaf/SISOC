@@ -992,6 +992,7 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
             "tipo_prestacion",
             "ap_presencial",
             "ap_vianda",
+            "ap_total",
             "de_presencial",
             "de_vianda",
         )

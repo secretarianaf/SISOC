@@ -20,7 +20,7 @@ documentación supera el corte.
 - El detalle muestra "Generando el PDF…" y consulta
   `.../descargar-pdf/estado/` cada 3 s. Cuando la generación termina, navega a
   `.../descargar-pdf/`, que solo entrega el archivo guardado y nunca lo genera.
-- El modelo nuevo `RendicionPdfDescarga` (migración `0029`) guarda una solicitud
+- El modelo nuevo `RendicionPdfDescarga` (migración `0027`, sobre la `0026` de `main`) guarda una solicitud
   por rendición, con su estado, el archivo y una huella de los documentos
   validados (id, archivo y `ultima_modificacion`). Si la huella cambia, el PDF
   se regenera y el anterior se borra.
@@ -52,8 +52,7 @@ documentación supera el corte.
   `sisoc/backend-comedores`, `comedores_runtime.settings`, `-Q comedores` y
   `--concurrency=2`. Ese archivo forma parte del deploy de todos los entornos,
   y `deploy_targets` lo trata como servicio obligatorio, igual que Celery de PAS.
-- El worker se agrega a `extra_services` de comedores, al override no-root de
-  HML y a `healthcheck_prod.sh`.
+- El worker se agrega a `extra_services` de comedores y a `healthcheck_prod.sh`.
 - Beat sigue corriendo con la imagen de PAS y envía la purga por nombre, sin
   importar el código de comedores.
 
@@ -76,6 +75,15 @@ documentación supera el corte.
 - No se verificó en navegador: el worktree no tiene un stack completo con datos.
 
 ## Límites y pendientes
+
+- Es un hotfix basado en `main`. Al promover `main` a `development` coexisten
+  `0027_issue_2845_pdf_descarga` (de `main`) y `0027`/`0028` de `development`:
+  hay que agregar una migración de merge (`makemigrations --merge`). En
+  `development` también hay que sumar `celery_comedores_worker` a
+  `docker-compose.hml-runtime.yml`, que no existe en `main`.
+- En `main`, el JS del detalle redibujaba un link directo a la descarga al
+  validar el último documento por AJAX. Ahora recarga la página para que el
+  servidor muestre el botón asíncrono.
 
 - El deploy necesita levantar `celery_comedores_worker` en cada entorno. Sin
   ese worker, las solicitudes vencen a los 15 minutos y se informan como error.

@@ -15,6 +15,7 @@
     {% endif %}
     <span class="badge ml-2 {{ acta|badge_estado_unificado }}"
           title="Estado del acta{% if acta.estado_validacion %} (validación del coordinador: {{ acta.estado_validacion }}){% endif %}">{{ acta|estado_unificado }}</span>
+    {% if acta.estado_validacion == 'A subsanar' %}<span class="badge bg-danger ml-1">A subsanar</span>{% endif %}
 {% endblock titulo-pagina %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">

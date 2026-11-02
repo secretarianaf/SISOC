@@ -173,6 +173,7 @@
                                                 {% endif %}
                                                 <span class="badge bg-info">{{ acta.prestaciones.all|length }} prestación{{ acta.prestaciones.all|length|pluralize:"es" }}</span>
                                                 <span class="badge {{ acta|badge_estado_unificado }}">{{ acta|estado_unificado }}</span>
+                                                {% if acta.estado_validacion == 'A subsanar' %}<span class="badge bg-danger ml-1">A subsanar</span>{% endif %}
                                             </div>
                                             <div class="col-2 d-flex justify-content-end">
                                                 {% if perms.relevamientos.change_actacomplementaria %}
@@ -222,6 +223,7 @@
                                             </div>
                                             <div class="col-3 d-flex flex-wrap gap-1">
                                                 <span class="badge {{ seguimiento|badge_estado_unificado }}">{{ seguimiento|estado_unificado }}</span>
+                                                {% if seguimiento.estado_validacion == 'A subsanar' %}<span class="badge bg-danger ml-1">A subsanar</span>{% endif %}
                                                 {% if seguimiento.origen == "app" %}<span class="badge bg-primary" title="Cargado desde la app">App</span>{% endif %}
                                             </div>
                                         </div>

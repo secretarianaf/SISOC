@@ -73,6 +73,10 @@ def test_constantes_de_los_cuatro_estados():
         ("Visita pendiente", V_OK, FINALIZADO),
         # Estado desconocido y no vacío: empezado, no enviado
         ("En proceso", None, EN_CURSO),
+        # Comparación sin mayúsculas ni tildes
+        ("FINALIZADO", None, FINALIZADO),
+        ("finalizado/excepciones", None, FINALIZADO),
+        ("Pendiente de Validación", None, REVISION),
     ],
 )
 def test_mapeo_relevamiento(estado, validacion, esperado):
@@ -112,7 +116,7 @@ def test_mapeo_primer_seguimiento_todos_los_tipos(tipo, estado, validacion, espe
     [
         (None, {}, "sisoc", PENDIENTE),
         (None, {}, "app", PENDIENTE),
-        (None, {"campo": "x"}, "sisoc", EN_CURSO),
+        (None, {"campo": "x"}, "sisoc", FINALIZADO),
         (None, {"campo": "x"}, "app", REVISION),
         (V_PEND, {"campo": "x"}, "app", REVISION),
         (V_PEND, {}, "sisoc", REVISION),
@@ -134,7 +138,7 @@ def test_mapeo_seguimiento_pnud(validacion, datos, origen, esperado):
     [
         (None, False, "sisoc", PENDIENTE),
         (None, False, "app", PENDIENTE),
-        (None, True, "sisoc", EN_CURSO),
+        (None, True, "sisoc", FINALIZADO),
         (None, True, "app", REVISION),
         (V_PEND, True, "app", REVISION),
         (V_SUBS, True, "app", EN_CURSO),

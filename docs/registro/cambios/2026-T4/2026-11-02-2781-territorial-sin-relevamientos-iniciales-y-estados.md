@@ -36,7 +36,8 @@ Puntos 2 y 3 del issue #2781 (el lado de SISOC; el botón de la app va en otro P
     = En curso; `Completo` = Finalizado.
   - Seguimiento PNUD y acta complementaria (sin `estado`): sin contenido =
     Pendiente; con contenido y origen app = Pendiente Revisión (criterio de la
-    migración 0021); con contenido y origen SISOC = En curso.
+    migración 0021); con contenido y origen SISOC = Finalizado (lo cargó un
+    coordinador desde el backoffice y no tiene circuito de validación).
 - Web: badges en el listado del comedor, detalle de relevamiento (y su ciclo de
   seguimiento), seguimiento, PNUD y acta, con el filtro de template
   `estado_unificado` (`relevamientos/templatetags/estado_unificado.py`). El

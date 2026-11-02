@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 import json
+import unicodedata
 import logging
 from django.forms import ValidationError
 from django.shortcuts import get_object_or_404
@@ -649,6 +650,12 @@ def _log_error_create_or_update_responsable_y_referente(
     logger.info("payload", extra={"data": payload2})
 
 
+def _normalizar_estado(estado):
+    """Minúsculas, sin tildes ni espacios sobrantes (para comparar estados)."""
+    texto = unicodedata.normalize("NFKD", (estado or "").strip().lower())
+    return "".join(c for c in texto if not unicodedata.combining(c))
+
+
 # TODO: Refactorizar todo esto, pylint esta muriendo aca
 class RelevamientoService:  # pylint: disable=too-many-public-methods
     """Service layer for managing Relevamiento persistence and business rules."""
@@ -677,10 +684,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     # Valores históricos de ``Relevamiento.estado`` que significan "enviado y
     # esperando al coordinador" (en minúsculas, sin circuito de validación).
     ESTADOS_RELEVAMIENTO_EN_REVISION = (
-        "pendiente de validación",
-        "pendiente validación",
-        "pendiente de revisión",
-        "pendiente revisión",
+        "pendiente de validacion",
+        "pendiente validacion",
         "pendiente de revision",
         "pendiente revision",
     )
@@ -719,19 +724,20 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             # Sin ``estado`` propio: vacío y sin contenido es recién asignado
             # (Pendiente). Con contenido y sin validación, lo cargó la app y la
             # migración 0021 lo trata como enviado (Pendiente Revisión); si lo
-            # cargó SISOC todavía no se envió (En curso).
+            # cargó un coordinador desde el backoffice no hay circuito de
+            # validación (Finalizado).
             if obj.sin_cargar:
                 return servicio.ESTADO_UNIFICADO_PENDIENTE
             if obj.origen == obj.ORIGEN_APP:
                 return servicio.ESTADO_UNIFICADO_PENDIENTE_REVISION
-            return servicio.ESTADO_UNIFICADO_EN_CURSO
-        # Relevamiento (o algo con su forma: ``estado`` de texto libre).
-        estado = (getattr(obj, "estado", None) or "").strip()
-        if estado.lower() in ("", "pendiente", "visita pendiente", "asignado"):
-            return servicio.ESTADO_UNIFICADO_PENDIENTE
-        if estado in servicio.ESTADOS_FINALIZADOS:
             return servicio.ESTADO_UNIFICADO_FINALIZADO
-        if estado.lower() in servicio.ESTADOS_RELEVAMIENTO_EN_REVISION:
+        # Relevamiento (o algo con su forma: ``estado`` de texto libre).
+        estado = _normalizar_estado(getattr(obj, "estado", None))
+        if estado in ("", "pendiente", "visita pendiente", "asignado"):
+            return servicio.ESTADO_UNIFICADO_PENDIENTE
+        if estado in {_normalizar_estado(e) for e in servicio.ESTADOS_FINALIZADOS}:
+            return servicio.ESTADO_UNIFICADO_FINALIZADO
+        if estado in servicio.ESTADOS_RELEVAMIENTO_EN_REVISION:
             return servicio.ESTADO_UNIFICADO_PENDIENTE_REVISION
         return servicio.ESTADO_UNIFICADO_EN_CURSO
 

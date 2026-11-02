@@ -9,6 +9,7 @@
     <span class="ml-2 h5">| {{ relevamiento.fecha_visita | default_if_none:"Sin información" }} |</span>
     <span class="badge ml-2 {{ relevamiento|badge_estado_unificado }}"
           title="Estado de la visita{% if relevamiento.estado_validacion %} (validación del coordinador: {{ relevamiento.estado_validacion }}){% endif %}">{{ estado_visible }}</span>
+    {% if relevamiento.estado_validacion == 'A subsanar' %}<span class="badge bg-danger ml-1">A subsanar</span>{% endif %}
     {% if relevamiento.sincronizado_gestionar %}
         <span class="badge bg-success ml-2"
               title="El acompañamiento territorial se sincronizó con GESTIONAR">Sincronizado con GESTIONAR</span>
@@ -254,6 +255,7 @@
                                     <td>{{ seguimiento.fecha_hora|default_if_none:"Sin fecha" }}</td>
                                     <td>
                                         <span class="badge {{ seguimiento|badge_estado_unificado }}">{{ seguimiento|estado_unificado }}</span>
+                                        {% if seguimiento.estado_validacion == 'A subsanar' %}<span class="badge bg-danger ml-1">A subsanar</span>{% endif %}
                                     </td>
                                     <td>
                                         {% if seguimiento.estado_validacion %}

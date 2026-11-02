@@ -205,6 +205,11 @@
   "regex": "^rendicion_cuentas_final/documento/adjuntar/\\Z"
  },
  {
+  "name": "adjunto_descargar",
+  "namespace": "",
+  "regex": "^comedores/(?P<comedor_pk>[0-9]+)/adjuntos/(?P<pk>[0-9]+)/descargar\\Z"
+ },
+ {
   "name": "admision_detalle",
   "namespace": "",
   "regex": "^comedores/(?P<comedor_pk>[0-9]+)/admision/(?P<pk>[0-9]+)/detalle/\\Z"

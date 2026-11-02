@@ -610,6 +610,16 @@
   "regex": "^api/users/siis/\\Z"
  },
  {
+  "name": "api-territorial-comedor-adjunto-borrar",
+  "namespace": "",
+  "regex": "^api/territorial/comedores/(?P<pk>\\d+)/adjuntos/(?P<adjunto_id>[0-9]+)/$"
+ },
+ {
+  "name": "api-territorial-comedor-adjuntos",
+  "namespace": "",
+  "regex": "^api/territorial/comedores/(?P<pk>\\d+)/adjuntos/$"
+ },
+ {
   "name": "api-territorial-comedor-corregir-acta-complementaria",
   "namespace": "",
   "regex": "^api/territorial/comedores/(?P<pk>\\d+)/actas-complementarias/(?P<acta_id>[0-9]+)/$"

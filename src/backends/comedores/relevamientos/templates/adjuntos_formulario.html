@@ -12,11 +12,9 @@
                             {{ adjunto.nombre_original }}
                             <small class="text-muted ml-2">{{ adjunto.tamano|filesizeformat }} - {{ adjunto.fecha_subida|date:"d/m/Y H:i" }}</small>
                         </span>
-                        <a href="{{ adjunto.archivo.url }}"
+                        <a href="{% url 'adjunto_descargar' comedor_pk=adjunto.comedor_id pk=adjunto.pk %}"
                            class="btn btn-sm btn-outline-secondary"
-                           target="_blank"
-                           rel="noopener"
-                           download="{{ adjunto.nombre_original }}">Descargar</a>
+                           rel="noopener">Descargar</a>
                     </li>
                 {% endfor %}
             </ul>

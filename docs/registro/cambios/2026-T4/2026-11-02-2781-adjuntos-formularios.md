@@ -25,12 +25,21 @@ elección de modelo genérico (tipo + id) en lugar de cuatro FK la propuso el ag
 - `GET` con `?formulario_tipo=&formulario_id=` -> misma lista.
 - `DELETE /api/territorial/comedores/{id}/adjuntos/{adjunto_id}/` -> solo quien lo subió (403 si no),
   409 si el formulario ya está Validado, 404 si no existe; 200 con la lista.
-- Se aceptan JPG, JPEG, PNG, WEBP y PDF; el contenido se verifica (cabecera `%PDF`, imágenes con
-  Pillow) y el MIME guardado sale del contenido. Máximo 10 MB por archivo y 10 archivos por formulario.
+- Se aceptan JPG, PNG, WEBP y PDF, decididos solo por el contenido (cabecera `%PDF`, imágenes con
+  Pillow); el nombre y el Content-Type del cliente no cuentan (un JPEG `.jfif` o sin extensión se
+  guarda como `.jpg`). El MIME guardado sale del contenido. Máximo 10 MB por archivo y 10 archivos por formulario.
 - Permisos: los mismos que las fotos (`_comedor_accesible`: comedor asignado o de la zona del
   territorial). No se agregó ni cambió ningún permiso.
-- Archivos en `MEDIA_ROOT/adjuntos/<comedor>/<uuid>.<ext>`, servidos como el resto de `MEDIA`
-  (fotos y firmas): sin control de acceso propio, con nombre no adivinable.
+- `POST` sobre un formulario ya Validado responde 409 (igual que el `DELETE`); un `client_uuid` ya
+  usado en otro formulario responde 400. El listado filtra también por comedor.
+- Archivos en `MEDIA_ROOT/adjuntos/<comedor>/<uuid>.<ext>`. NO se descargan por `/media/`: el campo
+  `url` de la API y el botón del detalle web apuntan a la vista autenticada
+  `comedores/<comedor_pk>/adjuntos/<id>/descargar` (`relevamientos/views/adjuntos_views.py`), que exige
+  login y el permiso existente `relevamientos.view_relevamiento` y entrega el archivo como adjunto con
+  `X-Content-Type-Options: nosniff`. Sin permisos nuevos.
+- **Operaciones debe aplicar** el bloque `location ^~ /media/adjuntos/ { return 404; }` agregado en
+  `docs/operacion/nginx/sisoc-produccion.conf` (junto a los de DDJJ e Inspecciones): sin él, nginx
+  serviría los archivos por `/media/` sin autenticación.
 
 ## Riesgos
 

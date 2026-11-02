@@ -127,7 +127,9 @@ class SeguimientoPnudDetailView(LoginRequiredMixin, DetailView):
         )
         context["encabezado_formulario"] = titulos(self.object.formulario)
         context["adjuntos"] = adjuntos_de(
-            ArchivoAdjunto.TIPO_SEGUIMIENTO_PNUD, self.object.pk
+            self.object.comedor_id,
+            ArchivoAdjunto.TIPO_SEGUIMIENTO_PNUD,
+            self.object.pk,
         )
         return context
 
@@ -202,7 +204,9 @@ class ActaComplementariaDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context["comedor"] = self.object.comedor
         context["prestaciones"] = list(self.object.prestaciones.all())
-        context["adjuntos"] = adjuntos_de(ArchivoAdjunto.TIPO_ACTA, self.object.pk)
+        context["adjuntos"] = adjuntos_de(
+            self.object.comedor_id, ArchivoAdjunto.TIPO_ACTA, self.object.pk
+        )
         return context
 
 

@@ -34,11 +34,26 @@ class ArchivosAdjuntosTerritorialMixin:
     ``_leer_client_uuid``."""
 
     @staticmethod
-    def _lista_adjuntos(request, formulario_tipo, formulario_id, codigo=200):
-        adjuntos = adjuntos_service.adjuntos_de(formulario_tipo, formulario_id)
+    def _lista_adjuntos(request, comedor, formulario_tipo, formulario_id, codigo=200):
+        adjuntos = adjuntos_service.adjuntos_de(
+            comedor.id, formulario_tipo, formulario_id
+        )
         return Response(
             {"adjuntos": adjuntos_service.serializar(adjuntos, request)},
             status=codigo,
+        )
+
+    @staticmethod
+    def _validado(formulario):
+        return Response(
+            {
+                "detail": (
+                    "El registro está validado por el coordinador y sus "
+                    "archivos no admiten cambios."
+                ),
+                "estado_validacion": formulario.estado_validacion,
+            },
+            status=status.HTTP_409_CONFLICT,
         )
 
     @staticmethod
@@ -84,17 +99,25 @@ class ArchivosAdjuntosTerritorialMixin:
                 "El formulario no existe en este comedor.", status.HTTP_404_NOT_FOUND
             )
         if request.method == "GET":
-            return self._lista_adjuntos(request, tipo, formulario_id)
+            return self._lista_adjuntos(request, comedor, tipo, formulario_id)
 
         # Idempotencia offline: el reintento con el mismo client_uuid no duplica.
         client_uuid = self._leer_client_uuid(request)
-        if (
-            client_uuid
-            and ArchivoAdjunto.objects.filter(
-                comedor=comedor, client_uuid=client_uuid
-            ).exists()
-        ):
-            return self._lista_adjuntos(request, tipo, formulario_id)
+        previo = (
+            ArchivoAdjunto.objects.filter(comedor=comedor, client_uuid=client_uuid)
+            .only("formulario_tipo", "formulario_id")
+            .first()
+            if client_uuid
+            else None
+        )
+        if previo is not None:
+            if (previo.formulario_tipo, previo.formulario_id) != (tipo, formulario_id):
+                return _error(
+                    "El client_uuid ya se usó para un archivo de otro formulario."
+                )
+            return self._lista_adjuntos(request, comedor, tipo, formulario_id)
+        if adjuntos_service.formulario_validado(formulario):
+            return self._validado(formulario)
         archivo = request.FILES.get("archivo")
         if not archivo:
             return _error("Debe adjuntar un archivo en el campo 'archivo'.")
@@ -102,7 +125,7 @@ class ArchivosAdjuntosTerritorialMixin:
         if detalle:
             return _error(detalle)
         if (
-            adjuntos_service.adjuntos_de(tipo, formulario_id).count()
+            adjuntos_service.adjuntos_de(comedor.id, tipo, formulario_id).count()
             >= adjuntos_service.MAX_ADJUNTOS_POR_FORMULARIO
         ):
             return _error(
@@ -130,9 +153,9 @@ class ArchivosAdjuntosTerritorialMixin:
             # Carrera con otro reintento del mismo client_uuid: se descarta la
             # copia recién guardada y se devuelve lo que ya existe.
             adjunto.archivo.delete(save=False)
-            return self._lista_adjuntos(request, tipo, formulario_id)
+            return self._lista_adjuntos(request, comedor, tipo, formulario_id)
         return self._lista_adjuntos(
-            request, tipo, formulario_id, status.HTTP_201_CREATED
+            request, comedor, tipo, formulario_id, status.HTTP_201_CREATED
         )
 
     @action(
@@ -165,20 +188,11 @@ class ArchivosAdjuntosTerritorialMixin:
         formulario = adjuntos_service.formulario_de_comedor(
             comedor, adjunto.formulario_tipo, adjunto.formulario_id
         )
-        if formulario is not None and getattr(formulario, "esta_validado", False):
-            return Response(
-                {
-                    "detail": (
-                        "El registro está validado por el coordinador y sus "
-                        "archivos no admiten cambios."
-                    ),
-                    "estado_validacion": formulario.estado_validacion,
-                },
-                status=status.HTTP_409_CONFLICT,
-            )
+        if formulario is not None and adjuntos_service.formulario_validado(formulario):
+            return self._validado(formulario)
         tipo, formulario_id = adjunto.formulario_tipo, adjunto.formulario_id
         archivo = adjunto.archivo
         adjunto.delete()
         if archivo:
             archivo.delete(save=False)
-        return self._lista_adjuntos(request, tipo, formulario_id)
+        return self._lista_adjuntos(request, comedor, tipo, formulario_id)

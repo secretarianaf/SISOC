@@ -8,6 +8,7 @@ import io
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from PIL import Image
@@ -205,21 +206,51 @@ def test_reintento_con_el_mismo_client_uuid_es_idempotente(zona):
     assert ArchivoAdjunto.objects.count() == 1
 
 
-def test_rechaza_extension_no_permitida(zona):
+def test_rechaza_por_contenido_gif_svg_y_texto_aunque_el_nombre_sea_valido(zona):
+    comedor, user = zona
+    relevamiento = _formularios(comedor, user)["relevamiento"]
+    gif = _imagen("foto.png", "GIF", "image/png")
+
+    for archivo in (
+        gif,
+        SimpleUploadedFile("dibujo.png", b"<svg/>", content_type="image/png"),
+        SimpleUploadedFile("nota.pdf", b"hola", content_type="application/pdf"),
+        SimpleUploadedFile("virus.exe", b"MZ\x90\x00", content_type="x/y"),
+    ):
+        response = _subir(_api(user), comedor, "relevamiento", relevamiento.pk, archivo)
+        assert response.status_code == 400, archivo.name
+        assert "imagen" in response.json()["detail"]
+    assert not ArchivoAdjunto.objects.exists()
+
+
+@pytest.mark.parametrize("nombre", ["foto.jfif", "sinextension", "FOTO.JPE", "x.bin"])
+def test_el_tipo_se_decide_por_contenido_no_por_nombre(zona, nombre):
     comedor, user = zona
     relevamiento = _formularios(comedor, user)["relevamiento"]
 
-    for nombre in ("virus.exe", "nota.txt", "dibujo.svg", "foto.gif", "sinextension"):
-        response = _subir(
-            _api(user),
-            comedor,
-            "relevamiento",
-            relevamiento.pk,
-            SimpleUploadedFile(nombre, PDF, content_type="application/pdf"),
-        )
-        assert response.status_code == 400, nombre
-        assert "imagen" in response.json()["detail"]
-    assert not ArchivoAdjunto.objects.exists()
+    response = _subir(
+        _api(user),
+        comedor,
+        "relevamiento",
+        relevamiento.pk,
+        _imagen(nombre, "JPEG", "application/octet-stream"),
+    )
+
+    assert response.status_code == 201
+    adjunto = ArchivoAdjunto.objects.get()
+    assert adjunto.archivo.name.endswith(".jpg")
+    assert adjunto.tipo_mime == "image/jpeg"
+    assert adjunto.nombre_original == nombre
+
+
+def test_pdf_sin_extension_se_acepta_y_se_guarda_como_pdf(zona):
+    comedor, user = zona
+    acta = _formularios(comedor, user)["acta"]
+
+    response = _subir(_api(user), comedor, "acta", acta.pk, _pdf("scan"))
+
+    assert response.status_code == 201
+    assert ArchivoAdjunto.objects.get().archivo.name.endswith(".pdf")
 
 
 def test_rechaza_contenido_que_no_coincide_con_la_extension(zona):
@@ -409,6 +440,72 @@ def test_no_borra_si_el_formulario_esta_validado(zona):
     assert ArchivoAdjunto.objects.count() == 1
 
 
+def test_no_sube_si_el_formulario_esta_validado(zona):
+    comedor, user = zona
+    acta = _formularios(comedor, user)["acta"]
+    acta.estado_validacion = ActaComplementaria.ESTADO_VALIDACION_VALIDADO
+    acta.save(update_fields=["estado_validacion"])
+
+    response = _subir(_api(user), comedor, "acta", acta.pk, _pdf())
+
+    assert response.status_code == 409
+    assert response.json()["estado_validacion"] == "Validado"
+    assert not ArchivoAdjunto.objects.exists()
+
+
+def test_reintento_de_un_uuid_ya_subido_sigue_siendo_200_aunque_se_valide(zona):
+    comedor, user = zona
+    acta = _formularios(comedor, user)["acta"]
+    client = _api(user)
+    _subir(client, comedor, "acta", acta.pk, _pdf(), client_uuid="u-v")
+    acta.estado_validacion = ActaComplementaria.ESTADO_VALIDACION_VALIDADO
+    acta.save(update_fields=["estado_validacion"])
+
+    response = _subir(client, comedor, "acta", acta.pk, _pdf(), client_uuid="u-v")
+
+    assert response.status_code == 200
+
+
+def test_client_uuid_de_otro_formulario_es_400(zona):
+    comedor, user = zona
+    formularios = _formularios(comedor, user)
+    client = _api(user)
+    _subir(
+        client,
+        comedor,
+        "relevamiento",
+        formularios["relevamiento"].pk,
+        _pdf(),
+        client_uuid="u-x",
+    )
+
+    response = _subir(
+        client, comedor, "acta", formularios["acta"].pk, _pdf(), client_uuid="u-x"
+    )
+
+    assert response.status_code == 400
+    assert "otro formulario" in response.json()["detail"]
+    assert ArchivoAdjunto.objects.count() == 1
+
+
+def test_el_listado_filtra_tambien_por_comedor(zona):
+    comedor, user = zona
+    otro = Comedor.objects.create(nombre="Otro 3", provincia=comedor.provincia)
+    acta = _formularios(comedor, user)["acta"]
+    ArchivoAdjunto.objects.create(
+        comedor=otro,
+        formulario_tipo="acta",
+        formulario_id=acta.pk,
+        archivo="adjuntos/x/a.pdf",
+        nombre_original="a.pdf",
+        tipo_mime="application/pdf",
+        tamano=1,
+    )
+
+    assert not adjuntos_service.adjuntos_de(comedor.id, "acta", acta.pk).exists()
+    assert adjuntos_service.adjuntos_de(otro.id, "acta", acta.pk).count() == 1
+
+
 def test_no_borra_adjuntos_de_otro_comedor(zona):
     comedor, user = zona
     otro = Comedor.objects.create(nombre="Otro 2", provincia=comedor.provincia)
@@ -476,7 +573,11 @@ def test_el_detalle_web_lista_los_adjuntos_con_su_descarga(web, zona, tipo):
     assert response.status_code == 200
     assert "Archivos adjuntos" in html
     assert "constancia-2781.pdf" in html
-    assert adjunto.archivo.url in html
+    descarga = reverse(
+        "adjunto_descargar", kwargs={"comedor_pk": comedor.pk, "pk": adjunto.pk}
+    )
+    assert descarga in html
+    assert adjunto.archivo.url not in html
 
 
 def test_el_detalle_no_mezcla_adjuntos_de_otros_formularios(web, zona):
@@ -489,3 +590,72 @@ def test_el_detalle_no_mezcla_adjuntos_de_otros_formularios(web, zona):
     html = web.get(_urls_detalle(comedor, formularios)["relevamiento"]).content.decode()
 
     assert "solo-del-acta.pdf" not in html
+
+
+# ------------------------------------------------------- descarga autenticada
+
+
+def _adjunto_subido(zona, nombre="constancia.pdf"):
+    comedor, user = zona
+    acta = _formularios(comedor, user)["acta"]
+    response = _subir(_api(user), comedor, "acta", acta.pk, _pdf(nombre))
+    return comedor, ArchivoAdjunto.objects.get(), response
+
+
+def _url_descarga(comedor, adjunto):
+    return reverse(
+        "adjunto_descargar", kwargs={"comedor_pk": comedor.pk, "pk": adjunto.pk}
+    )
+
+
+def test_la_url_de_la_api_apunta_a_la_descarga_autenticada(zona):
+    comedor, adjunto, response = _adjunto_subido(zona)
+
+    url = response.json()["adjuntos"][0]["url"]
+
+    assert url == "http://testserver" + _url_descarga(comedor, adjunto)
+    assert "/media/" not in url
+
+
+def test_descarga_anonima_no_entrega_el_archivo(client, zona):
+    comedor, adjunto, _ = _adjunto_subido(zona)
+
+    response = client.get(_url_descarga(comedor, adjunto))
+
+    assert response.status_code in (302, 403)
+    assert b"%PDF" not in b"".join(getattr(response, "streaming_content", []))
+
+
+def test_descarga_sin_permiso_es_403(client, zona):
+    comedor, adjunto, _ = _adjunto_subido(zona)
+    sin_permiso = get_user_model().objects.create_user(username="sinperm", password="x")
+    client.force_login(sin_permiso)
+
+    assert client.get(_url_descarga(comedor, adjunto)).status_code == 403
+
+
+def test_descarga_con_permiso_es_attachment_con_nosniff(client, zona):
+    comedor, adjunto, _ = _adjunto_subido(zona, "constancia-2781.pdf")
+    lector = get_user_model().objects.create_user(username="lector", password="x")
+    lector.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="relevamientos", codename="view_relevamiento"
+        )
+    )
+    client.force_login(lector)
+
+    response = client.get(_url_descarga(comedor, adjunto))
+
+    assert response.status_code == 200
+    assert response["Content-Disposition"].startswith("attachment")
+    assert "constancia-2781.pdf" in response["Content-Disposition"]
+    assert response["X-Content-Type-Options"] == "nosniff"
+    assert response["Content-Type"] == "application/pdf"
+    assert b"".join(response.streaming_content) == PDF
+
+
+def test_descarga_con_comedor_equivocado_es_404(client, zona, web):
+    comedor, adjunto, _ = _adjunto_subido(zona)
+    otro = Comedor.objects.create(nombre="Otro 4", provincia=comedor.provincia)
+
+    assert web.get(_url_descarga(otro, adjunto)).status_code == 404

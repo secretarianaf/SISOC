@@ -205,7 +205,7 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
         # #2630: si Gestionar subió su PDF oficial, la descarga es ese.
         context["pdf_oficial"] = pdf_oficial.documento_de(relevamiento=relevamiento)
         context["adjuntos"] = adjuntos_de(
-            ArchivoAdjunto.TIPO_RELEVAMIENTO, relevamiento.id
+            relevamiento.comedor.id, ArchivoAdjunto.TIPO_RELEVAMIENTO, relevamiento.id
         )
 
         timeline_qs = (
@@ -588,7 +588,7 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
         # #2630: PDF oficial que subió Gestionar al enviar la instancia.
         context["pdf_oficial"] = pdf_oficial.documento_de(seguimiento=seguimiento)
         context["adjuntos"] = adjuntos_de(
-            ArchivoAdjunto.TIPO_SEGUIMIENTO, seguimiento.pk
+            context["comedor"].id, ArchivoAdjunto.TIPO_SEGUIMIENTO, seguimiento.pk
         )
         # Navegación entre las instancias del mismo ciclo.
         context["instancias"] = list(

@@ -6,6 +6,8 @@ Reglas compartidas entre la API territorial (alta/lista/baja) y el detalle web
 
 import uuid
 
+from django.urls import reverse
+
 from comedores.api_views_territorial_validaciones import extension_de_imagen
 from relevamientos.models import (
     ActaComplementaria,
@@ -17,7 +19,6 @@ from relevamientos.models import (
 
 MAX_ADJUNTOS_POR_FORMULARIO = 10
 MAX_ADJUNTO_BYTES = 10 * 1024 * 1024  # 10 MB
-EXTENSIONES_ADJUNTO = ("jpg", "jpeg", "png", "webp", "pdf")
 MIME_POR_EXTENSION = {
     "jpg": "image/jpeg",
     "png": "image/png",
@@ -43,33 +44,34 @@ def formulario_de_comedor(comedor, formulario_tipo, formulario_id):
     ).first()
 
 
-def adjuntos_de(formulario_tipo, formulario_id):
+def adjuntos_de(comedor_id, formulario_tipo, formulario_id):
+    """Adjuntos del formulario; filtra también por comedor (defensa en profundidad)."""
     return ArchivoAdjunto.objects.filter(
-        formulario_tipo=formulario_tipo, formulario_id=formulario_id
+        comedor_id=comedor_id,
+        formulario_tipo=formulario_tipo,
+        formulario_id=formulario_id,
     )
 
 
-def validar_archivo(archivo):  # pylint: disable=too-many-return-statements
-    """Devuelve ``(extension, tipo_mime, error)``; el contenido manda.
+def formulario_validado(formulario):
+    return bool(getattr(formulario, "esta_validado", False))
 
-    La extensión declarada filtra, pero se verifica el contenido real: un PDF
-    empieza con ``%PDF`` y las imágenes las abre Pillow (un SVG o un texto
-    renombrado a ``.png`` no pasan). La extensión y el MIME que se guardan salen
-    del contenido, no del nombre ni del ``Content-Type`` del cliente.
+
+def validar_archivo(archivo):  # pylint: disable=too-many-return-statements
+    """Devuelve ``(extension, tipo_mime, error)``; solo el contenido manda.
+
+    No se mira el nombre ni el ``Content-Type`` del cliente (un JPEG sin
+    extensión o con ``.jfif`` es válido): un PDF empieza con ``%PDF`` y las
+    imágenes las abre Pillow. GIF, SVG y todo lo demás se rechaza. La extensión y
+    el MIME que se guardan salen del contenido.
     """
-    nombre = (getattr(archivo, "name", "") or "").lower()
-    declarada = nombre.rsplit(".", 1)[-1] if "." in nombre else ""
-    if declarada not in EXTENSIONES_ADJUNTO:
-        return None, None, MENSAJE_FORMATO
     if archivo.size <= 0:
         return None, None, "El archivo está vacío."
     if archivo.size > MAX_ADJUNTO_BYTES:
         return None, None, "El archivo excede el tamaño máximo de 10 MB."
-    if declarada == "pdf":
-        cabecera = archivo.read(5)
-        archivo.seek(0)
-        if not cabecera.startswith(b"%PDF"):
-            return None, None, MENSAJE_FORMATO
+    cabecera = archivo.read(5)
+    archivo.seek(0)
+    if cabecera.startswith(b"%PDF"):
         return "pdf", MIME_POR_EXTENSION["pdf"], None
     real = extension_de_imagen(archivo)
     if real not in ("jpg", "png", "webp"):
@@ -83,8 +85,12 @@ def nombre_en_disco(extension):
 
 def serializar(adjuntos, request=None):
     def _url(adjunto):
-        url = adjunto.archivo.url if adjunto.archivo else None
-        return request.build_absolute_uri(url) if (url and request) else url
+        # Descarga autenticada: los adjuntos no se sirven por /media/.
+        ruta = reverse(
+            "adjunto_descargar",
+            kwargs={"comedor_pk": adjunto.comedor_id, "pk": adjunto.pk},
+        )
+        return request.build_absolute_uri(ruta) if request else ruta
 
     return [
         {

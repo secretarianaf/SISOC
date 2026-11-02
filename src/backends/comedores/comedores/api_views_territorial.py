@@ -30,6 +30,7 @@ from comedores.api_views_territorial_actas import (
     actas_payload,
 )
 from comedores.api_views_territorial_adjuntos import AdjuntosTerritorialMixin
+from comedores.api_views_territorial_archivos import ArchivosAdjuntosTerritorialMixin
 from comedores.api_views_territorial_pnud import (
     SeguimientosPnudTerritorialMixin,
     TerritorialComedorPnudFieldsMixin,
@@ -200,6 +201,7 @@ class TerritorialComedorViewSet(
     ActasComplementariasTerritorialMixin,
     SeguimientosPnudTerritorialMixin,
     AdjuntosTerritorialMixin,
+    ArchivosAdjuntosTerritorialMixin,
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -216,12 +218,14 @@ class TerritorialComedorViewSet(
     - ``POST /api/territorial/comedores/{id}/imagenes/`` -> subida de foto
       (multipart, campo ``imagen``); ``DELETE .../imagenes/{imagen_id}/`` la
       borra (ver ``AdjuntosTerritorialMixin``).
+    - ``GET/POST .../adjuntos/`` y ``DELETE .../adjuntos/{adjunto_id}/`` ->
+      documentos adjuntos a un formulario (ver ``ArchivosAdjuntosTerritorialMixin``).
     """
 
     serializer_class = TerritorialComedorSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsTerritorialComedorUser]
-    # DELETE solo lo atiende ``borrar_imagen``; el resto de las rutas responde 405.
+    # DELETE solo lo atienden ``borrar_imagen`` y ``borrar_adjunto``; el resto de las rutas responde 405.
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     # Un pk no numérico ("loc_abc", el id local de la app antes de sincronizar)
     # no rutea: 404 JSON en vez de un ValueError -> 500 en `filter(pk=...)`.

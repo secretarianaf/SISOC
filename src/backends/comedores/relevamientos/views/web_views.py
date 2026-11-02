@@ -25,6 +25,7 @@ from relevamientos.helpers import RelevamientoFormManager
 from relevamientos.models import (
     BLOQUES_SEGUIMIENTO,
     ActaComplementaria,
+    ArchivoAdjunto,
     PrimerSeguimiento,
     Relevamiento,
     SeguimientoPnud,
@@ -32,6 +33,7 @@ from relevamientos.models import (
 from relevamientos import pdf_oficial
 from relevamientos.pdf_service import RelevamientoPdfService
 from relevamientos.service import RelevamientoService
+from relevamientos.services.adjuntos import adjuntos_de
 from relevamientos.views.seguimiento_helpers import (
     aplicar_revision_coordinador,
     resolver_seguimiento,
@@ -210,6 +212,9 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
         relevamiento = self.object
         # #2630: si Gestionar subió su PDF oficial, la descarga es ese.
         context["pdf_oficial"] = pdf_oficial.documento_de(relevamiento=relevamiento)
+        context["adjuntos"] = adjuntos_de(
+            relevamiento.comedor.id, ArchivoAdjunto.TIPO_RELEVAMIENTO, relevamiento.id
+        )
 
         timeline_qs = (
             Relevamiento.objects.filter(comedor=relevamiento.comedor)
@@ -585,6 +590,9 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
         context["comedor"] = seguimiento.id_relevamiento.comedor
         # #2630: PDF oficial que subió Gestionar al enviar la instancia.
         context["pdf_oficial"] = pdf_oficial.documento_de(seguimiento=seguimiento)
+        context["adjuntos"] = adjuntos_de(
+            context["comedor"].id, ArchivoAdjunto.TIPO_SEGUIMIENTO, seguimiento.pk
+        )
         # Navegación entre las instancias del mismo ciclo.
         context["instancias"] = list(
             PrimerSeguimiento.objects.filter(

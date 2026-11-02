@@ -98,6 +98,14 @@ __all__ = [
 ]
 
 
+def _es_cuit_valido(valor):
+    try:
+        validate_cuit(str(valor or ""))
+    except ValidationError:
+        return False
+    return True
+
+
 class CamposRenaperFormMixin:
     """Bloquea los campos de identidad verificados por RENAPER.
 
@@ -122,7 +130,7 @@ class CamposRenaperFormMixin:
             campos_bloque = set(BLOQUES[bloque].values())
             if campos_bloque.intersection(valores_renaper):
                 campos = [campo for campo in campos if campo not in campos_bloque]
-        for campo, valor in valores_renaper.items():
+        for campo, valor in self._sin_cuit_invalido(valores_renaper).items():
             field = self.fields.get(campo)
             if not field:
                 continue
@@ -147,6 +155,19 @@ class CamposRenaperFormMixin:
         self.campos_bloque_renaper = {
             bloque: ",".join(BLOQUES[bloque].values())
             for bloque in self.BLOQUES_RENAPER
+        }
+
+    def _sin_cuit_invalido(self, valores_renaper):
+        """Descarta un CUIT inválido: bloqueado no se podría corregir ni guardar."""
+        campos_cuit = {
+            BLOQUES[bloque]["cuit"]
+            for bloque in self.BLOQUES_RENAPER
+            if "cuit" in BLOQUES[bloque]
+        }
+        return {
+            campo: valor
+            for campo, valor in valores_renaper.items()
+            if campo not in campos_cuit or _es_cuit_valido(valor)
         }
 
     @property
@@ -187,6 +208,39 @@ class CamposRenaperFormMixin:
 
     def es_campo_renaper(self, campo):
         return campo in self.campos_verificados_renaper
+
+
+class SinCuilFormMixin:
+    """Casilla "No posee CUIL" para un CUIT obligatorio.
+
+    Hay extranjeros con DNI sin CUIL asignado (y RENAPER no lo informa). El
+    CUIT deja de ser obligatorio solo si se marca la casilla, así queda
+    registrado que no falta por olvido. Si el CUIT vino de RENAPER, la persona
+    lo tiene y la casilla no se puede marcar.
+    """
+
+    CAMPOS_SIN_CUIL = {}  # casilla -> campo de CUIT
+
+    def _configurar_sin_cuil(self):
+        for casilla, campo_cuit in self.CAMPOS_SIN_CUIL.items():
+            field = self.fields[casilla]
+            field.widget.attrs.update(
+                {"class": "form-check-input", "data-sin-cuil-de": f"id_{campo_cuit}"}
+            )
+            if self.fields[campo_cuit].disabled:
+                field.disabled = True
+                self.initial[casilla] = False
+            elif self.is_bound and field.widget.value_from_datadict(
+                self.data, self.files, self.add_prefix(casilla)
+            ):
+                self.fields[campo_cuit].required = False
+
+    def _validar_sin_cuil(self, cleaned_data):
+        for casilla, campo_cuit in self.CAMPOS_SIN_CUIL.items():
+            if cleaned_data.get(casilla) and cleaned_data.get(campo_cuit):
+                self.add_error(
+                    casilla, "Si tiene CUIL, desmarque esta opción o borre el CUIT."
+                )
 
 
 class CentroDeInfanciaForm(CamposRenaperFormMixin, forms.ModelForm):
@@ -1382,8 +1436,15 @@ class NominaCentroInfanciaCreateForm(NominaCentroInfanciaBaseForm):
     pass
 
 
-class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
+class NominaCentroInfanciaDestinatariosForm(
+    SinCuilFormMixin, NominaCentroInfanciaBaseForm
+):
     """Formulario de página completa para el legajo 201 (Destinatarios CDI)."""
+
+    CAMPOS_SIN_CUIL = {
+        "sin_cuil_nino": "cuit_nino",
+        "responsable_legal_1_sin_cuil": "responsable_legal_1_cuit",
+    }
 
     EDAD_MAXIMA_RESPONSABLE = 120
     ALTURA_DOMICILIO_MAXIMA = 99999
@@ -1575,6 +1636,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
             "responsable_legal_1_fecha_nacimiento",
             "responsable_legal_1_tipo_documentacion",
             "responsable_legal_1_cuit",
+            "responsable_legal_1_sin_cuil",
             "responsable_legal_1_pais_nacimiento",
             "responsable_legal_1_nacionalidad",
             "responsable_legal_1_sexo_registral",
@@ -1593,6 +1655,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
             # Sección 7: Datos del niño/a (extendido)
             "tipo_documentacion",
             "cuit_nino",
+            "sin_cuil_nino",
             "pais_nacimiento",
             "edad_unidad",
             # Sección 8: Domicilio (extendido)
@@ -1819,6 +1882,9 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
             )
             self.fields[f"vacuna_{code}_fecha"] = fecha_field
 
+        # Al final: el bucle de CSS de arriba le pondría form-control a la casilla.
+        self._configurar_sin_cuil()
+
     def clean_grupo_pertenencia(self):
         valores = self.cleaned_data.get("grupo_pertenencia") or []
         if {"ninguno", "no_sabe"}.intersection(valores) and len(valores) > 1:
@@ -1972,6 +2038,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
 
         self._validar_campos_de_texto(cleaned_data)
         self._validar_documentos(cleaned_data)
+        self._validar_sin_cuil(cleaned_data)
         self._validar_telefonos(cleaned_data)
         self._validar_antropometria(cleaned_data)
         self._validar_fechas(cleaned_data)
@@ -2007,7 +2074,8 @@ _MULTISELECT_FIELDS_TRABAJADOR = (
 )
 
 
-class TrabajadorCDIForm(forms.ModelForm):
+class TrabajadorCDIForm(SinCuilFormMixin, forms.ModelForm):
+    CAMPOS_SIN_CUIL = {"sin_cuil": "cuit"}
     EDAD_MINIMA = 0
     EDAD_MAXIMA = 100
     DNI_MINIMO = 1_000_000
@@ -2106,6 +2174,7 @@ class TrabajadorCDIForm(forms.ModelForm):
             "dni",
             "sexo_registral",
             "cuit",
+            "sin_cuil",
             "pais_nacimiento",
             "nacionalidad_trabajador",
             "nivel_educativo",
@@ -2168,6 +2237,7 @@ class TrabajadorCDIForm(forms.ModelForm):
         self._aplicar_campo_cuit()
         self._aplicar_limites_fecha_nacimiento()
         self._bloquear_campos_renaper(campos_renaper)
+        self._configurar_sin_cuil()
 
         # CSS classes
         for fname, field in self.fields.items():
@@ -2264,7 +2334,9 @@ class TrabajadorCDIForm(forms.ModelForm):
             field.clean(valor)
         except ValidationError:
             return False
-        return True
+        # field.clean no mira el dígito verificador: un CUIT "0" quedaba
+        # bloqueado y clean_cuit lo rechazaba al guardar.
+        return field_name != "cuit" or _es_cuit_valido(valor)
 
     def _configurar_pais_nacionalidad(self):
         # Mismas listas que ya usa el legajo de Nómina, en vez de texto libre.
@@ -2376,6 +2448,11 @@ class TrabajadorCDIForm(forms.ModelForm):
             return validate_cuit(raw)
         except ValidationError as exc:
             raise forms.ValidationError(exc.messages) from exc
+
+    def clean(self):
+        cleaned_data = super().clean()
+        self._validar_sin_cuil(cleaned_data)
+        return cleaned_data
 
     def clean_fecha_nacimiento(self):
         fecha = self.cleaned_data.get("fecha_nacimiento")

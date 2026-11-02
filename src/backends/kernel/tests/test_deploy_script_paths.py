@@ -28,11 +28,12 @@ def _script(path, content):
     path.chmod(0o755)
 
 
+@pytest.mark.parametrize("fail_preflight", [False, True])
 @pytest.mark.parametrize("rollback_legacy", [False, True])
 @pytest.mark.parametrize("fail_health", [False, True])
 @pytest.mark.parametrize("cleanup_falla", [False, True])
 def test_wrapper_transicion_y_rollback(
-    tmp_path, rollback_legacy, fail_health, cleanup_falla
+    tmp_path, rollback_legacy, fail_health, cleanup_falla, fail_preflight
 ):
     checkout = tmp_path / "checkout"
     (checkout / ".git").mkdir(parents=True)
@@ -47,7 +48,12 @@ def test_wrapper_transicion_y_rollback(
     old_scripts = checkout / "scripts" if rollback_legacy else new_scripts
     refresh = 'printf "refresh:%s\\n" "$*" >> "$MOCK_LOG"\n'
     # El deploy_refresh.sh nuevo admite --diff-base; el de main lo rechaza.
-    _script(checkout / "pending_refresh.sh", "# --diff-base\n" + refresh)
+    pending = "# --diff-base\n" + refresh
+    if fail_preflight:
+        pending += 'printf precut > "$SISOC_DEPLOY_PHASE_FILE"\nexit 73\n'
+    else:
+        pending += 'if [[ -n "${SISOC_DEPLOY_PHASE_FILE:-}" ]]; then printf cut > "$SISOC_DEPLOY_PHASE_FILE"; fi\n'
+    _script(checkout / "pending_refresh.sh", pending)
     _script(
         old_scripts / "operacion/deploy_refresh.sh",
         (
@@ -151,6 +157,14 @@ exit 0
     calls = log.read_text(encoding="utf-8")
     assert calls.startswith(f"merge:{EXPECTED}\nrefresh:"), result.stderr
     assert "--skip-pull" in calls
+    if fail_preflight:
+        assert result.returncode == 73, result.stderr
+        assert f"reset:{PREVIOUS}" in calls
+        assert calls.count("refresh:") == 1
+        assert "docker:" not in calls
+        assert "Rollback verificado" not in result.stdout
+        assert (checkout / ".head").read_text(encoding="utf-8").strip() == PREVIOUS
+        return
     if fail_health:
         assert result.returncode != 0
         assert f"reset:{PREVIOUS}" in calls

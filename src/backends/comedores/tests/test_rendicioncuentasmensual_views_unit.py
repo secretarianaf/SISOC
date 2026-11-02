@@ -650,7 +650,7 @@ def test_detail_view_contexto_expone_documentacion_agrupada(mocker):
     assert contexto["documentacion_por_categoria"] == agrupada
     assert contexto["scope_proyecto"] == scope
     assert contexto["puede_revisar_documentos"] is False
-    agrupada_mock.assert_called_once_with(rendicion)
+    agrupada_mock.assert_called_once_with(rendicion, incluir_borradores=True)
     scope_mock.assert_called_once_with(rendicion)
 
 
@@ -718,6 +718,8 @@ def test_detail_view_post_ajax_actualiza_documento_y_devuelve_json(mocker):
     setattr(request, "_messages", mocker.Mock())
 
     documento = SimpleNamespace(
+        revision_estado=None,
+        revision_observaciones=None,
         id=9,
         estado="validado",
         observaciones=None,

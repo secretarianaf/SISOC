@@ -29,3 +29,11 @@ node_modules
 *.tar
 *.tar.gz
 *.zip
+
+# Artefactos locales y respaldo de la recuperación de INET.
+recuperacion-inet-20261026
+# Solo bajo src/frontends: kernel/static/dist (AdminLTE) va en la imagen.
+src/frontends/**/dist
+src/frontends/**/.vite
+src/frontends/**/test-results
+src/frontends/**/playwright-report

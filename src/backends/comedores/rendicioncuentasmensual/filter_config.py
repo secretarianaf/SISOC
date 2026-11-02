@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.db.models import Q
 
-from organizaciones.models import Organizacion
+from organizaciones.models import Organizacion, ProyectoOrganizacion
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from comedores.territoriales_pnud import (
     etiqueta_territorial,
@@ -15,6 +15,8 @@ from comedores.territoriales_pnud import (
 )
 
 FIELD_MAP: Dict[str, str] = {
+    "region": "region_abordaje_id",
+    "subzona": "subzona_abordaje_id",
     "codigo_proyecto": "comedor__codigo_de_proyecto",
     "comedor": "comedor__nombre",
     "organizacion": "comedor__organizacion__nombre",
@@ -33,6 +35,8 @@ FIELD_MAP: Dict[str, str] = {
 }
 
 FIELD_TYPES: Dict[str, str] = {
+    "region": "choice",
+    "subzona": "choice",
     "codigo_proyecto": "text",
     "comedor": "text",
     "organizacion": "text",
@@ -97,6 +101,8 @@ ETAPA_CHOICES = list(RendicionCuentaMensual.ETAPA_PROCESO_CHOICES)
 
 FILTER_FIELDS = [
     {"name": "codigo_proyecto", "label": "Proyecto", "type": "text"},
+    {"name": "region", "label": "Región", "type": "choice"},
+    {"name": "subzona", "label": "Subzona", "type": "choice"},
     {"name": "comedor", "label": "Espacio", "type": "text"},
     {"name": "organizacion", "label": "Organizacion", "type": "text"},
     {
@@ -154,7 +160,7 @@ FILTER_FIELDS = [
 ]
 
 DEFAULT_FIELD = "codigo_proyecto"
-FILTERS_UI_CONFIG_CACHE_KEY = "rendiciones:filters_ui_config:v5"
+FILTERS_UI_CONFIG_CACHE_KEY = "rendiciones:filters_ui_config:v6"
 FILTERS_UI_CONFIG_CACHE_TTL = 60 * 15
 
 
@@ -173,6 +179,11 @@ def _territoriales_choices():
                     "user_id"
                 )
             )
+            | Q(
+                pk__in=ProyectoOrganizacion.territoriales.through.objects.filter(
+                    proyectoorganizacion__organizacion__deleted_at__isnull=True
+                ).values("user_id")
+            )
         )
         .order_by("last_name", "first_name", "username")
     )
@@ -183,7 +194,21 @@ def _territoriales_choices():
 
 
 def _con_territoriales(config: Dict[str, Any]) -> Dict[str, Any]:
+    from organizaciones.models import (
+        RegionAbordajeComunitario,
+        SubzonaAbordajeComunitario,
+    )
+
+    catalogos = {
+        "region": RegionAbordajeComunitario,
+        "subzona": SubzonaAbordajeComunitario,
+    }
     for field in config["fields"]:
+        if field["name"] in catalogos:
+            field["choices"] = [
+                {"value": str(item.pk), "label": item.nombre}
+                for item in catalogos[field["name"]].objects.all()
+            ]
         if field["name"] == TERRITORIAL_ASIGNADO_FIELD:
             field["choices"] = _territoriales_choices()
     return config

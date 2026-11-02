@@ -7,6 +7,16 @@ NGINX, TLS ni datos de origen.
 
 ## Alcance y fuente canonica
 
+Actualizacion de runners (2026-10-27): SSH confirma servicio organizacional
+activo y `Runner.Listener` vivo en
+`/home/sisoc-deploy/actions-runner-org-produccion`. GitHub confirma
+`sisoc-produccion-org` online, con labels `self-hosted` y `sisoc-produccion`,
+en `Default`, con SISOC seleccionado y repositorios publicos permitidos.
+El proximo deploy de `main` sera la primera prueba real de SISOC con este
+runner y sigue requiriendo aprobacion del environment `production` (regla
+`required_reviewers` verificada). No se disparo ni aprobo produccion.
+Los demas datos conservan la fecha de la auditoria original.
+
 El entorno canonico es `prd-old` (`10.80.5.45`). Los aliases AWS quedan fuera de
 alcance y se conservan solo como referencia de una posible migracion.
 
@@ -46,7 +56,8 @@ alcance y se conservan solo como referencia de una posible migracion.
 | `nginx` | activo | habilitado | NGINX 1.18.0 |
 | `mysql` | activo | habilitado | instancia local heredada, no usada por Django observado |
 | `cron` | activo | habilitado | root tiene cuatro entradas sanitizadas |
-| runner `sisoc-produccion` | activo | habilitado | corre como `sisoc-deploy` |
+| `actions.runner.secretarianaf.sisoc-produccion-org` | activo (2026-10-27) | no reverificado | Corre como `sisoc-deploy` desde `/home/sisoc-deploy/actions-runner-org-produccion` |
+| `actions.runner.dsocial118-SISOC.sisoc-produccion` | inactivo (dead, 2026-10-27) | no reverificado | Runner de repositorio anterior |
 | `zabbix-agent` | activo | habilitado | monitoreo, asociado previsiblemente a 10050 |
 | `webmin` | activo | habilitado | administracion, asociado previsiblemente a 10000 |
 | `apache2` | fallido | habilitado | no sirve la app; NGINX usa paths de certificados bajo `/etc/apache2` |
@@ -251,7 +262,7 @@ artefacto frontend servido por NGINX.
 ## Deploy actual
 
 1. Un push a `main` dispara `.github/workflows/deploy.yml`.
-2. El job usa GitHub Environment `production` y runner `sisoc-produccion`.
+2. El job requiere aprobacion del GitHub Environment `production` y labels `[self-hosted, sisoc-produccion]`; runner vigente `sisoc-produccion-org`.
 3. `APP_ROOT` apunta al checkout ya provisionado; no usa `actions/checkout`.
 4. Ejecuta `src/scripts/operacion/deploy_refresh.sh --yes`.
 5. El script baja el stack, hace pull `--ff-only`, reconstruye y levanta.

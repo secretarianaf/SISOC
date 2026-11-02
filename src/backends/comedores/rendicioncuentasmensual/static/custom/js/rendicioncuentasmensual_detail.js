@@ -1,49 +1,11 @@
 document.addEventListener("DOMContentLoaded", function () {
     const feedback = document.getElementById("revision-feedback");
     const selectoresEstado = document.querySelectorAll(".js-documento-estado");
-    const statusBadge = document.getElementById("rendicion-estado-badge");
-    const downloadAction = document.getElementById("rendicion-download-action");
-    const downloadUrl = "./descargar-pdf/";
 
     const escapeHtml = function (value) {
         const container = document.createElement("div");
         container.textContent = value || "";
         return container.innerHTML;
-    };
-
-    const renderRendicionBadge = function (estado, label) {
-        if (!statusBadge) {
-            return;
-        }
-
-        statusBadge.textContent = label;
-        statusBadge.className = "badge-validacion";
-        if (estado === "finalizada") {
-            statusBadge.classList.add("validado");
-            return;
-        }
-        if (estado === "subsanar") {
-            statusBadge.classList.add("no-validado");
-            return;
-        }
-        statusBadge.classList.add("pendiente");
-    };
-
-    const renderDownloadAction = function (enabled, customUrl) {
-        if (!downloadAction) {
-            return;
-        }
-        if (!enabled) {
-            downloadAction.innerHTML = "";
-            return;
-        }
-
-        const href = customUrl || downloadUrl;
-        downloadAction.innerHTML =
-            '<a href="' +
-            href +
-            '" class="btn btn-sm btn-success">' +
-            '<i class="fas fa-file-pdf"></i> Generar descarga</a>';
     };
 
     const showFeedback = function (message, kind) {
@@ -53,55 +15,6 @@ document.addEventListener("DOMContentLoaded", function () {
         feedback.textContent = message;
         feedback.className = "alert mb-3";
         feedback.classList.add(kind === "error" ? "alert-danger" : "alert-success");
-    };
-
-    const renderEstadoBadge = function (estadoVisual, estadoLabelVisual) {
-        let badgeClass = "badge-validacion pendiente";
-        if (estadoVisual === "validado") {
-            badgeClass = "badge-validacion validado";
-        } else if (estadoVisual === "subsanar") {
-            badgeClass = "badge-validacion no-validado";
-        }
-
-        return (
-            '<span class="' + badgeClass + '">' + estadoLabelVisual + "</span>"
-        );
-    };
-
-    const bloquearRevisionCelda = function (documentoId) {
-        const revisionCell = document.getElementById("revision-cell-" + documentoId);
-        if (revisionCell) {
-            revisionCell.innerHTML = '<span class="text-muted">-</span>';
-        }
-    };
-
-    const actualizarObservaciones = function (documentoId, observaciones) {
-        const observacionesRow = document.getElementById(
-            "observaciones-row-" + documentoId
-        );
-        if (!observacionesRow) {
-            return;
-        }
-
-        if (!observaciones) {
-            observacionesRow.classList.add("d-none");
-            return;
-        }
-
-        observacionesRow.classList.remove("d-none");
-        const cell = observacionesRow.querySelector("td");
-        if (!cell) {
-            return;
-        }
-
-        cell.innerHTML =
-            '<div class="ps-3" id="observaciones-display-' + documentoId + '"></div>';
-        const display = document.getElementById("observaciones-display-" + documentoId);
-
-        if (display) {
-            display.innerHTML =
-                "<strong>Observaciones:</strong> " + escapeHtml(observaciones);
-        }
     };
 
     const setSubmitterLoading = function (submitter, isLoading) {
@@ -218,32 +131,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         return data;
                     });
                 })
-                .then(function (data) {
-                    showFeedback(data.message, "success");
-
-                    const estadoCell = document.getElementById(
-                        "estado-cell-" + documentoId
-                    );
-                    if (estadoCell) {
-                        estadoCell.innerHTML = renderEstadoBadge(
-                            data.documento.estado_visual,
-                            data.documento.estado_visual_display
-                        );
-                    }
-
-                    bloquearRevisionCelda(documentoId);
-                    actualizarObservaciones(
-                        documentoId,
-                        data.documento.observaciones
-                    );
-                    renderRendicionBadge(
-                        data.rendicion.estado,
-                        data.rendicion.estado_display
-                    );
-                    renderDownloadAction(
-                        data.rendicion.puede_descargar_pdf,
-                        data.rendicion.download_url
-                    );
+                .then(function () {
+                    // Recarga para mostrar la selección guardada (borrador) y
+                    // conservar el formulario editable hasta finalizar.
+                    window.location.reload();
                 })
                 .catch(function (error) {
                     showFeedback(error.message, "error");

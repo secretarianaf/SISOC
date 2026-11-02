@@ -1,0 +1,176 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Formulario de Calidad{% endblock %}
+{% block titulo-pagina %}Formulario de Calidad{% endblock %}
+
+{% block content %}
+    <div class="container-fluid calidad-form">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h3 class="mb-1">{{ centro.nombre }}</h3>
+                <p class="text-muted mb-2">
+                    Centro #{{ centro.id }} ({{ centro.codigo_cdi|default:"Sin código" }})
+                    {% if es_borrador_existente %}— continuando borrador guardado{% endif %}
+                </p>
+                <div class="alert alert-info mb-0">{{ cartel_inicial }}</div>
+            </div>
+        </div>
+
+        {% if errores %}
+            <div class="alert alert-danger">
+                Faltan completar preguntas obligatorias en las secciones marcadas:
+                {% for item in secciones %}
+                    {% if item.con_errores %}
+                        <a href="#seccion-{{ item.seccion.id }}" class="alert-link">{{ item.seccion.titulo }}</a>
+                        {% if not forloop.last %}·{% endif %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" novalidate id="formulario-calidad">
+            {% csrf_token %}
+            {% for item in secciones %}
+                <div class="card mb-3 {% if item.con_errores %}border-danger{% endif %}"
+                     id="seccion-{{ item.seccion.id }}">
+                    <div class="card-header {% if item.con_errores %}bg-danger{% else %}bg-primary{% endif %} text-white">
+                        <strong>{{ item.seccion.titulo }}</strong>
+                        {% if item.con_errores %}<span class="badge bg-light text-danger ms-2">Incompleta</span>{% endif %}
+                    </div>
+                    <div class="card-body">
+                        {% for p in item.preguntas %}
+                            {% with pregunta=p.pregunta %}
+                                {% if pregunta.subtitulo %}
+                                    <h5 class="text-primary border-bottom pb-1 mt-2 mb-3">{{ pregunta.subtitulo }}</h5>
+                                {% endif %}
+                                <div class="calidad-pregunta mb-4 p-2 rounded {% if p.error %}border border-danger{% endif %}"
+                                     data-numero="{{ pregunta.numero }}"
+                                     {% if pregunta.visible_si %}data-visible-campo="{{ pregunta.visible_si.campo }}" data-visible-valores="{{ pregunta.visible_si.valores|join:',' }}" data-visible-negar="{{ pregunta.visible_si.negar|yesno:'1,0' }}"{% endif %}>
+                                    <p class="fw-semibold mb-1">{{ pregunta.numero }}. {{ pregunta.texto }}</p>
+                                    {% if pregunta.nota %}<p class="text-muted small mb-2">{{ pregunta.nota }}</p>{% endif %}
+                                    {% if p.error %}<p class="text-danger small mb-2">{{ p.error }}</p>{% endif %}
+
+                                    {% if pregunta.tipo == "radio" %}
+                                        {% for radio in p.campo %}
+                                            <div class="form-check">
+                                                {{ radio.tag }}
+                                                <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                                            </div>
+                                        {% endfor %}
+                                    {% elif pregunta.tipo == "numero" %}
+                                        <div class="col-md-3">{{ p.campo }}</div>
+                                    {% elif pregunta.tipo == "checkbox" %}
+                                        {% for fila in p.filas %}
+                                            <div class="form-check">
+                                                {{ fila.campo }}
+                                                <label class="form-check-label" for="{{ fila.campo.id_for_label }}">{{ fila.etiqueta }}</label>
+                                            </div>
+                                        {% endfor %}
+                                    {% elif pregunta.tipo == "matriz_numerica" %}
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered align-middle mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sala</th>
+                                                        <th class="w-25">Superficie (m²)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for fila in p.filas %}
+                                                        <tr>
+                                                            <td>
+                                                                <label for="{{ fila.campo.id_for_label }}">{{ fila.etiqueta }}</label>
+                                                            </td>
+                                                            <td>{{ fila.campo }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% elif pregunta.tipo == "grilla" %}
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered align-middle mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th></th>
+                                                        {% for opcion in pregunta.opciones %}<th class="text-center small">{{ opcion }}</th>{% endfor %}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for fila in p.filas %}
+                                                        <tr>
+                                                            <td class="small">{{ fila.etiqueta }}</td>
+                                                            {% for radio in fila.campo %}
+                                                                <td class="text-center">
+                                                                    {{ radio.tag }}
+                                                                    <label class="visually-hidden" for="{{ radio.id_for_label }}">{{ fila.etiqueta }}: {{ radio.choice_label }}</label>
+                                                                </td>
+                                                            {% endfor %}
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% endif %}
+
+                                    {% if p.especificar %}
+                                        <div class="mt-2 col-md-6 calidad-especificar"
+                                             data-especificar-campo="{{ pregunta.campo_control_especificar }}"
+                                             data-especificar-valor="{{ pregunta.especificar.cuando }}">
+                                            <label class="form-label small" for="{{ p.especificar.id_for_label }}">{{ pregunta.especificar.etiqueta }}</label>
+                                            {{ p.especificar }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endwith %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+
+            <div class="card sticky-bottom mb-3 shadow">
+                <div class="card-body d-flex flex-wrap gap-2 justify-content-end">
+                    <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
+                       class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modal-guardar-calidad">Guardar</button>
+                    <button type="submit" name="accion" value="enviar" class="btn btn-primary">Enviar</button>
+                </div>
+            </div>
+
+            <div class="modal fade"
+                 id="modal-guardar-calidad"
+                 tabindex="-1"
+                 aria-labelledby="modal-guardar-calidad-titulo"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modal-guardar-calidad-titulo">Guardar formulario parcial</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            Usted está guardando un formulario parcial y puede completarlo luego. En caso quiera enviarlo, seleccione la opción “Enviar”.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
+                                    data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" name="accion" value="guardar" class="btn btn-primary">Aceptar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block customJS %}
+    <script src="{% static 'custom/js/formularioCalidad.js' %}"></script>
+{% endblock %}

@@ -171,6 +171,21 @@
 }
 
 /* --- Barra lateral: logo arriba, sin panel de usuario, ítem activo dorado */
+.insp-cuerpo .app-sidebar .user-info {
+    display: none;
+}
+
+.insp-cuerpo .sidebar-wrapper .sidebar-menu > .nav-item > .nav-link {
+    border-left: 3px solid transparent;
+    color: #d5dae6;
+}
+
+.insp-cuerpo .sidebar-wrapper .sidebar-menu > .nav-item > .nav-link.active:not(:hover) {
+    border-left-color: var(--insp-dorado);
+    background: var(--insp-azul-oscuro) !important;
+    color: #fff !important;
+}
+
 .insp-cuerpo .sidebar-brand {
     height: 64px !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);

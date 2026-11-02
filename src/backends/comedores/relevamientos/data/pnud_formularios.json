@@ -4506,6 +4506,7 @@
             "name": "mejoras",
             "label": "6. ¿Qué mejoras percibieron a partir de la implementación de los fondos SIPH? (Respuesta múltiple)",
             "type": "enumlist",
+            "opcionExclusiva": "Ninguna",
             "options": [
               {
                 "value": "Reconocimiento económico a talleristas",
@@ -4556,6 +4557,7 @@
             "name": "dificultades",
             "label": "7. ¿Qué dificultades surgieron desde la recepción de los fondos? (Respuesta múltiple)",
             "type": "enumlist",
+            "opcionExclusiva": "Ninguna",
             "options": [
               {
                 "value": "Problemas con la retribución/facturación de los talleristas",

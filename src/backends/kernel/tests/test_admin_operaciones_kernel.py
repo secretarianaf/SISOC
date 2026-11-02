@@ -181,6 +181,7 @@ def test_organizacion_se_busca_por_cuit_y_nombre(auth_client):
         "admin:organizaciones_organizacion_changelist",
         "admin:organizaciones_proyectoorganizacion_changelist",
         "admin:organizaciones_archivoorganizacion_changelist",
+        "admin:organizaciones_subzonaabordajecomunitario_changelist",
         "admin:core_localidad_changelist",
         "admin:core_municipio_changelist",
         "admin:users_profile_changelist",

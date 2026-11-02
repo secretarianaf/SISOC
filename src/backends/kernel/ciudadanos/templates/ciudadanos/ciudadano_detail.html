@@ -1,4 +1,5 @@
 {% extends "includes/main.html" %}
+{% load custom_filters %}
 
 {% block content %}
     <style>
@@ -519,8 +520,13 @@
                             <h5>Datos Personales</h5>
                             <div class="datos-card-content">
                                 <div style="display: flex; justify-content: center; align-items: center;">
-                                    {% if ciudadano.latitud and ciudadano.longitud %}
-                                        <div id="map" style="width: 450px; height: 450px; border-radius: 8px;"></div>
+                                    {% google_maps_query ciudadano.latitud ciudadano.longitud as citizen_map_query %}
+                                    {% if citizen_map_query %}
+                                        <iframe title="Ubicación del ciudadano"
+                                                width="100%"
+                                                height="450"
+                                                src="https://www.google.com/maps?q={{ citizen_map_query }}&amp;output=embed"
+                                                loading="lazy"></iframe>
                                     {% elif ciudadano.foto %}
                                         <img src="{{ ciudadano.foto.url }}"
                                              alt="Foto"
@@ -1781,15 +1787,11 @@
             </div>
         </div>
 
-
         {{ contribuciones_html.comedores_colaboraciones|safe }}
 
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    {% if google_maps_api_key %}
-        <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}"></script>
-    {% endif %}
     <script nonce="{{ request.csp_nonce }}">
 let mesActual = new Date().getMonth() + 1;
 let anioActual = new Date().getFullYear();
@@ -1882,31 +1884,6 @@ function actualizarGrafico() {
 
 document.addEventListener('DOMContentLoaded', function() {
     actualizarGrafico();
-
-    {% if ciudadano.latitud and ciudadano.longitud %}
-    const mapElement = document.getElementById('map');
-    if (mapElement) {
-        const map = new google.maps.Map(mapElement, {
-            zoom: 15,
-            center: {
-                lat: {{ ciudadano.latitud }},
-                lng: {{ ciudadano.longitud }}
-            },
-            mapTypeControl: false,
-            fullscreenControl: false,
-            streetViewControl: false
-        });
-
-        new google.maps.Marker({
-            position: {
-                lat: {{ ciudadano.latitud }},
-                lng: {{ ciudadano.longitud }}
-            },
-            map: map,
-            title: '{{ ciudadano.nombre }} {{ ciudadano.apellido }}'
-        });
-    }
-    {% endif %}
 });
     </script>
 {% endblock %}

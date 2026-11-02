@@ -1,5 +1,6 @@
 from django.urls import path
 from core.decorators import permissions_any_required
+from relevamientos.views.adjuntos_views import AdjuntoDescargarView
 from relevamientos.views.backoffice_views import (
     ActaComplementariaDetailView,
     SeguimientoPnudDetailView,
@@ -181,5 +182,12 @@ urlpatterns = [
             ActaComplementariaEliminarView.as_view()
         ),
         name="acta_complementaria_eliminar",
+    ),
+    path(
+        "comedores/<int:comedor_pk>/adjuntos/<int:pk>/descargar",
+        permissions_any_required(["relevamientos.view_relevamiento"])(
+            AdjuntoDescargarView.as_view()
+        ),
+        name="adjunto_descargar",
     ),
 ]

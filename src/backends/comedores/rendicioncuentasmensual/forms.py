@@ -68,6 +68,7 @@ class DocumentacionAdjuntaForm(forms.ModelForm):
     class Meta:
         model = DocumentacionAdjunta
         fields = "__all__"
+        exclude = ["revision_estado", "revision_etapa", "revision_observaciones"]
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "form-control"}),
             "archivo": forms.ClearableFileInput(attrs={"class": "form-control"}),

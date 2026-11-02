@@ -90,6 +90,21 @@ Son los títulos oficiales que puede dictar un CFP. Cada título pertenece a un 
 
 ### 1.4 Planes Curriculares
 
+**Alta manual y provincia:** en **INET → Catálogos → Planes curriculares → Crear
+plan**, la provincia es obligatoria y aparece antes del nombre. Los administradores
+con acceso nacional deben seleccionarla; los usuarios con una única provincia
+completa habilitada la ven preseleccionada y bloqueada. Quienes tengan varias
+provincias completas habilitadas eligen una de ellas. Sin una provincia completa
+habilitada ni acceso nacional, no se puede completar el alta y el formulario
+indica que se debe contactar a un administrador. Se mantienen los permisos de
+creación existentes.
+
+El plan activo queda disponible en **Nuevo curso** de los centros de esa provincia
+al volver a cargar la pantalla. Los planes inactivos o de otra provincia no se
+habilitan para nuevos cursos. Esta selección corresponde solo al alta: editar un
+plan conserva su provincia actual. Los planes antiguos sin provincia requieren
+una revisión separada; no se les asigna una provincia automáticamente.
+
 Un plan curricular es la versión específica de un título con su modalidad de cursada, horas y normativa.
 
 **Campos:**

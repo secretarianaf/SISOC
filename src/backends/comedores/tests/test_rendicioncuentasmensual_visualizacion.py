@@ -328,7 +328,9 @@ def test_falla_del_avance_revierte_reset_de_confirmaciones(django_user_model, mo
         visualizacion_usuario=usuario,
         visualizacion_fecha=fecha,
     )
-    mocker.patch.object(rendicion, "save", side_effect=RuntimeError("Falló el avance"))
+    mocker.patch.object(
+        RendicionCuentaMensual, "save", side_effect=RuntimeError("Falló el avance")
+    )
 
     with pytest.raises(RuntimeError, match="Falló el avance"):
         RendicionProcesoService.ejecutar(

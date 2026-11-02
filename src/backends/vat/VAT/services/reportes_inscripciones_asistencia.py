@@ -3,17 +3,33 @@ from __future__ import annotations
 import csv
 from io import BytesIO
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, time, timedelta
+from datetime import timezone as dt_timezone
 
 from django.core.cache import cache
-from django.db.models import Count, Q
+from django.db.models import (
+    Count,
+    DateField,
+    DateTimeField,
+    ExpressionWrapper,
+    F,
+    Q,
+)
 from django.db.models.functions import TruncMonth
 from django.http import HttpResponse
+from django.utils import timezone
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
 from ciudadanos.models import Ciudadano
-from VAT.models import Centro, Comision, ComisionCurso, Curso, Inscripcion
+from VAT.models import (
+    Centro,
+    Comision,
+    ComisionCurso,
+    Curso,
+    Inscripcion,
+    SesionComision,
+)
 from VAT.services.access_scope import filter_centros_queryset_for_user
 from VAT.services.tipo_alumno_service import (
     tiene_voucher_activo_subquery,
@@ -24,6 +40,11 @@ from core.services.csv_export import build_csv_response
 
 
 DATE_INPUT_FORMAT = "%Y-%m-%d"
+# El MySQL de PRD no tiene cargadas las tablas de zonas horarias: ``__date`` y
+# ``TruncMonth`` con la zona de Argentina devuelven NULL (#2750). Argentina no
+# tiene horario de verano desde 2009, así que el mes se calcula corriendo la
+# fecha a UTC-3 y truncando en UTC, sin ``CONVERT_TZ``.
+DESFASE_ARGENTINA = timedelta(hours=3)
 # Las opciones de los filtros dependen solo del alcance del usuario (no de los
 # filtros aplicados), por lo que se cachean para evitar ~8 queries pesadas en
 # cada carga del reporte. No hay invalidación explícita: un cambio de alcance o
@@ -64,6 +85,17 @@ def _parse_date(value: str):
         return None
 
 
+def _inicio_del_dia(fecha):
+    return timezone.make_aware(datetime.combine(fecha, time.min))
+
+
+def _mes_de_inscripcion():
+    fecha_local = ExpressionWrapper(
+        F("fecha_inscripcion") - DESFASE_ARGENTINA, output_field=DateTimeField()
+    )
+    return TruncMonth(fecha_local, output_field=DateField(), tzinfo=dt_timezone.utc)
+
+
 def _normalize_id(value: str) -> int | None:
     if not value:
         return None
@@ -89,10 +121,13 @@ def _apply_filters(queryset, filtros: ReporteFiltros):
     fecha_desde = _parse_date(filtros.fecha_desde)
     fecha_hasta = _parse_date(filtros.fecha_hasta)
 
+    # Rango explícito en vez de ``__date`` (ver DESFASE_ARGENTINA).
     if fecha_desde:
-        queryset = queryset.filter(fecha_inscripcion__date__gte=fecha_desde)
+        queryset = queryset.filter(fecha_inscripcion__gte=_inicio_del_dia(fecha_desde))
     if fecha_hasta:
-        queryset = queryset.filter(fecha_inscripcion__date__lte=fecha_hasta)
+        queryset = queryset.filter(
+            fecha_inscripcion__lt=_inicio_del_dia(fecha_hasta + timedelta(days=1))
+        )
 
     provincia_id = _normalize_id(filtros.provincia_id)
     municipio_id = _normalize_id(filtros.municipio_id)
@@ -168,27 +203,71 @@ def _row_annotations():
             filter=Q(asistencias__presente=False),
             distinct=True,
         ),
-        "sesiones_programadas": Count(
-            "comision_curso__sesiones__id",
-            filter=Q(comision_curso__sesiones__estado="programada"),
-            distinct=True,
-        )
-        + Count(
-            "comision__sesiones__id",
-            filter=Q(comision__sesiones__estado="programada"),
-            distinct=True,
-        ),
-        "sesiones_realizadas": Count(
-            "comision_curso__sesiones__id",
-            filter=Q(comision_curso__sesiones__estado="realizada"),
-            distinct=True,
-        )
-        + Count(
-            "comision__sesiones__id",
-            filter=Q(comision__sesiones__estado="realizada"),
-            distinct=True,
-        ),
     }
+
+
+def _sesiones_por_comision(campo: str, ids) -> dict[int, dict[str, int]]:
+    """Sesiones programadas y realizadas de cada comisión (``campo`` es el FK)."""
+    if not ids:
+        return {}
+    return {
+        fila[campo]: fila
+        for fila in SesionComision.objects.filter(**{f"{campo}__in": ids})
+        .values(campo)
+        .annotate(
+            programadas=Count("id", filter=Q(estado="programada")),
+            realizadas=Count("id", filter=Q(estado="realizada")),
+        )
+    }
+
+
+def _sumar_sesiones(queryset, grouping_fields, rows, resumen) -> None:
+    """Agrega ``sesiones_programadas`` y ``sesiones_realizadas`` a filas y resumen.
+
+    Contarlas en la misma consulta que las asistencias multiplicaba las filas
+    (inscripciones x asistencias x sesiones) y el reporte daba 504 (#2750). Las
+    sesiones son de la comisión, así que se cuentan por comisión y se suman las
+    comisiones distintas de cada grupo.
+    """
+    comisiones_por_grupo: dict[tuple, dict[str, set]] = {}
+    # ``order_by()`` saca el ``Meta.ordering`` de Inscripcion: con ``distinct()``
+    # sumaría ``fecha_inscripcion`` al SELECT y devolvería una fila por inscripción.
+    for par in (
+        queryset.values(*grouping_fields, "comision_curso_id", "comision_id")
+        .order_by()
+        .distinct()
+    ):
+        grupo = comisiones_por_grupo.setdefault(
+            tuple(par[campo] for campo in grouping_fields),
+            {"comision_curso_id": set(), "comision_id": set()},
+        )
+        for campo in ("comision_curso_id", "comision_id"):
+            if par[campo] is not None:
+                grupo[campo].add(par[campo])
+
+    todas = {"comision_curso_id": set(), "comision_id": set()}
+    for grupo in comisiones_por_grupo.values():
+        for campo, ids in grupo.items():
+            todas[campo] |= ids
+    sesiones = {
+        campo: _sesiones_por_comision(campo, ids) for campo, ids in todas.items()
+    }
+
+    def totales(comisiones):
+        resultado = {"sesiones_programadas": 0, "sesiones_realizadas": 0}
+        for campo, ids in comisiones.items():
+            for comision_id in ids:
+                fila = sesiones[campo].get(comision_id)
+                if fila:
+                    resultado["sesiones_programadas"] += fila["programadas"]
+                    resultado["sesiones_realizadas"] += fila["realizadas"]
+        return resultado
+
+    vacio = {"comision_curso_id": set(), "comision_id": set()}
+    for row in rows:
+        clave = tuple(row[campo] for campo in grouping_fields)
+        row.update(totales(comisiones_por_grupo.get(clave, vacio)))
+    resumen.update(totales(todas))
 
 
 def _group_fields(group_by: str):
@@ -239,7 +318,7 @@ def build_reporte_inscripciones_asistencia(user, filtros: ReporteFiltros):
 
     queryset = _apply_filters(base_inscripciones_queryset_for_user(user), filtros)
     if group_by == "mes":
-        queryset = queryset.annotate(mes_ref=TruncMonth("fecha_inscripcion"))
+        queryset = queryset.annotate(mes_ref=_mes_de_inscripcion())
 
     grouping_fields = _group_fields(group_by)
     rows = list(
@@ -249,6 +328,7 @@ def build_reporte_inscripciones_asistencia(user, filtros: ReporteFiltros):
     )
 
     resumen = queryset.aggregate(**_row_annotations())
+    _sumar_sesiones(queryset, grouping_fields, rows, resumen)
     resumen_presentes = resumen.get("presentes") or 0
     resumen_ausentes = resumen.get("ausentes") or 0
     resumen_total_asistencia = resumen_presentes + resumen_ausentes

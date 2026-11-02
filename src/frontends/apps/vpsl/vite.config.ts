@@ -41,6 +41,6 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     hmr: { host: "localhost", clientPort: 5173 },
-    proxy: { "/api/vpsl": "http://django:8000" },
+    proxy: { "/api/vpsl": "http://django:8000", "/ajax/ubicacion/": "http://django:8000", "/static/": "http://django:8000" },
   },
 });

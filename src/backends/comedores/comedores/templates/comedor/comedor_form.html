@@ -206,6 +206,8 @@
                                 </span>
                             </div>
                         </div>
+                        {% url 'address_preview' as address_preview_url %}
+                        {% include "components/map_pin_editor.html" with latitude_field="id_latitud" longitude_field="id_longitud" generic_search=True always_visible=True search_url=address_preview_url address_fields="id_calle,id_numero,id_provincia,id_municipio,id_localidad" %}
                     </div>
                 </div>
 

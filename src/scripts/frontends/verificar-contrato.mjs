@@ -17,36 +17,38 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const raiz = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../frontends");
-const schema = join(raiz, "packages/api/openapi.celiaquia.yaml");
-const versionado = join(raiz, "packages/api/src/openapi.d.ts");
+const contratos = [["openapi.celiaquia.yaml", "openapi.d.ts"], ["openapi.inet.yaml", "inet.generated.ts"]];
 
 const temporal = mkdtempSync(join(tmpdir(), "sisoc-contrato-"));
 const generado = join(temporal, "openapi.d.ts");
 
 try {
-  execFileSync(
-    process.execPath,
-    [join(raiz, "node_modules/openapi-typescript/bin/cli.js"), schema, "-o", generado],
-    { cwd: raiz, stdio: "pipe" },
-  );
-
-  // Git puede materializar el archivo con CRLF en Windows: no cambia el contrato.
-  const esperado = readFileSync(generado, "utf8").replace(/\r\n/g, "\n");
-  const actual = readFileSync(versionado, "utf8").replace(/\r\n/g, "\n");
-
-  if (esperado !== actual) {
-    console.error(
-      [
-        "Los tipos versionados no coinciden con packages/api/openapi.celiaquia.yaml.",
-        "",
-        "Regeneralos y commiteá el resultado:",
-        "  npm run api:types --prefix src/frontends",
-      ].join("\n"),
+  for (const [schemaName, typeName] of contratos) {
+    const schema = join(raiz, "packages/api", schemaName);
+    const versionado = join(raiz, "packages/api/src", typeName);
+    execFileSync(
+      process.execPath,
+      [join(raiz, "node_modules/openapi-typescript/bin/cli.js"), schema, "-o", generado],
+      { cwd: raiz, stdio: "pipe" },
     );
-    process.exit(1);
-  }
 
-  console.log("Contrato OK: los tipos coinciden con el schema.");
+    const esperado = readFileSync(generado, "utf8");
+    const actual = readFileSync(versionado, "utf8");
+
+    if (esperado.replace(/\r\n/g, "\n") !== actual.replace(/\r\n/g, "\n")) {
+      console.error(
+        [
+          `Los tipos versionados no coinciden con ${schemaName}.`,
+          "",
+          "Regeneralos y commiteá el resultado:",
+          `  npm run ${schemaName.includes("inet") ? "inet:types" : "api:types"} --prefix src/frontends`,
+        ].join("\n"),
+      );
+      process.exit(1);
+    }
+
+    console.log(`Contrato OK: ${schemaName}.`);
+  }
 } finally {
   rmSync(temporal, { recursive: true, force: true });
 }

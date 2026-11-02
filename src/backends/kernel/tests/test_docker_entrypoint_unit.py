@@ -42,6 +42,27 @@ def test_rol_ocr_ejecuta_comando_sin_migrar_ni_arrancar_web(mocker, monkeypatch)
     web.assert_not_called()
 
 
+def test_rol_health_urls_chequea_en_horarios_sin_migrar_ni_arrancar_web(
+    mocker, monkeypatch
+):
+    module = _load_entrypoint_module()
+    mocker.patch.object(module, "wait_for_mysql")
+    command = mocker.patch.object(module, "run_command")
+    prepare = mocker.patch.object(module, "preparar_db")
+    web = mocker.patch.object(module, "run_django_commands")
+    monkeypatch.setenv("DJANGO_SERVICE_ROLE", "health_urls_worker")
+    monkeypatch.setenv("HEALTH_URLS_HORARIOS", "07:00,19:00")
+
+    module.main()
+
+    command.assert_called_once_with(
+        ["python", "manage.py", "chequear_urls", "--horarios", "07:00,19:00"],
+        stage="health_urls_worker",
+    )
+    prepare.assert_not_called()
+    web.assert_not_called()
+
+
 def test_rol_importador_en_imagen_migrador_no_migra_ni_arranca_web(mocker, monkeypatch):
     module = _load_entrypoint_module()
     mocker.patch.object(module, "wait_for_mysql")

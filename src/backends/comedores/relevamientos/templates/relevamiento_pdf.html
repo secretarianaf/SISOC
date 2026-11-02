@@ -2,7 +2,7 @@
 <html lang="es">
     <head>
         <meta charset="UTF-8" />
-        <title>Relevamiento {{ relevamiento.id }} - {{ relevamiento.comedor.nombre }}</title>
+        <title>Relevamiento {{ relevamiento.id }} - {{ relevamiento.datos_comedor.nombre }}</title>
         <style>
             @page {
                 size: A4;
@@ -61,7 +61,7 @@
     <body>
         <div class="pdf-encabezado">
             <h1>Acompañamiento Territorial</h1>
-            <h2>{{ relevamiento.comedor.nombre }}</h2>
+            <h2>{{ relevamiento.datos_comedor.nombre }}</h2>
             <table>
                 <tr>
                     <td>

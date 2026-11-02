@@ -1,0 +1,16 @@
+{% load image_tags relevamiento_pdf %}
+{% comment %}
+    En el PDF, weasyprint no descarga imágenes externas (SSRF): se muestran como
+    enlace y las vacías se omiten (#2750). En pantalla se muestra la imagen.
+{% endcomment %}
+{% if es_pdf %}
+    {% with tipo=url|tipo_imagen_pdf %}
+        {% if tipo == "local" %}
+            {% optimized_image url alt css_class=css_class %}
+        {% elif tipo == "externa" %}
+            <a href="{{ url }}">{{ alt }} (ver imagen)</a>
+        {% endif %}
+    {% endwith %}
+{% else %}
+    {% optimized_image url alt css_class=css_class %}
+{% endif %}

@@ -10,6 +10,7 @@ from django.utils.functional import cached_property
 
 from comedores.models import CategoriaComedor, Comedor, Referente, TipoDeComedor
 from core.soft_delete import SoftDeleteModelMixin
+from relevamientos.services import datos_comedor_snapshot as snapshot_service
 
 
 def _nullable_char(max_length=255, **kwargs):
@@ -1006,7 +1007,7 @@ class Anexo(models.Model):
     cuales_otras_actividades = models.TextField(blank=True, null=True)
     veces_recibio_insumos_2024 = models.IntegerField(
         default=0,
-        verbose_name="¿Cuántas veces recibió estos insumos en el año 2024?",
+        verbose_name="¿Cuántas veces recibió estos insumos en el año anterior?",
         blank=True,
         null=True,
     )
@@ -1191,18 +1192,71 @@ class Relevamiento(
     punto_entregas = models.OneToOneField(
         to=PuntoEntregas, on_delete=models.PROTECT, blank=True, null=True
     )
+    datos_comedor_snapshot = models.JSONField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Datos generales del comedor al finalizar el relevamiento (#2797). "
+            "Evita que editar el comedor cambie relevamientos ya hechos."
+        ),
+    )
 
     def save(self, *args, **kwargs):
         self.validate_relevamientos_activos()
         self.set_referente_como_responsable()
+        self.congelar_datos_comedor()
+        self.__dict__.pop("datos_comedor", None)
 
         super().save(*args, **kwargs)
+
+    @property
+    def esta_finalizado(self):
+        return snapshot_service.esta_finalizado(self.estado)
+
+    @property
+    def datos_comedor_congelados(self):
+        return self.esta_finalizado and bool(self.datos_comedor_snapshot)
+
+    @cached_property
+    def datos_comedor(self):
+        """Datos del comedor para mostrar: el snapshot si existe, si no los vivos."""
+        if self.datos_comedor_snapshot:
+            return self.datos_comedor_snapshot
+        return snapshot_service.armar_snapshot(
+            self.comedor, self.responsable_relevamiento
+        )
+
+    def congelar_datos_comedor(self):
+        """Guarda el snapshot al finalizar, si todavía no lo tiene (#2797).
+
+        Se lee el comedor de la base: el PATCH de la app lo actualiza antes de
+        guardar el relevamiento y así se captura lo cargado en esta visita.
+        """
+        if not self.esta_finalizado or self.datos_comedor_snapshot:
+            return
+        if not self.comedor_id:
+            return
+        comedor = (
+            Comedor.objects.select_related(
+                "provincia", "municipio", "localidad", "programa", "referente"
+            )
+            .filter(pk=self.comedor_id)
+            .first()
+        )
+        if comedor is not None:
+            self.datos_comedor_snapshot = snapshot_service.armar_snapshot(
+                comedor, self.responsable_relevamiento
+            )
 
     def set_referente_como_responsable(self):
         """
         Si el responsable es el referente del comedor, sincronizar el campo
         ``responsable_relevamiento`` con el referente actual.
+
+        Un relevamiento finalizado con datos congelados no se toca (#2797).
         """
+        if self.datos_comedor_congelados:
+            return
         if self.responsable_es_referente and self.comedor and self.comedor.referente:
             self.responsable_relevamiento = self.comedor.referente
 
@@ -1620,6 +1674,19 @@ class ActividadesExtrasSeguimiento(models.Model):
     otro = _nullable_bool()
     otro_donde = _nullable_char()
     otro_frecuencia = _nullable_char()
+    # 8.1.16 (#2781): actividad con personas de pueblos indígenas u originarios.
+    pueblo_indigena = _nullable_bool(
+        verbose_name=(
+            "8.1.16 Actividades con personas que pertenecen o se reconocen "
+            "parte de un pueblo indígena u originario"
+        )
+    )
+    pueblo_indigena_donde = _nullable_char(
+        verbose_name="8.1.16 Pueblo indígena u originario: dónde"
+    )
+    pueblo_indigena_frecuencia = _nullable_char(
+        verbose_name="8.1.16 Pueblo indígena u originario: frecuencia"
+    )
 
     class Meta:
         verbose_name = "Actividades extras de primer seguimiento"
@@ -1796,7 +1863,7 @@ class PrimerSeguimiento(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.
     TIPO_ACTA_EXCEPCION = "acta_excepcion"
     TIPO_CHOICES = [
         (TIPO_PRIMER, "Primer seguimiento"),
-        (TIPO_POSTERIOR, "Seguimiento posterior"),
+        (TIPO_POSTERIOR, "Seguimiento Posterior"),
         (TIPO_VIRTUAL, "Seguimiento virtual"),
         (TIPO_ACTA_EXCEPCION, "Acta de excepción"),
     ]
@@ -1974,7 +2041,7 @@ class PrimerSeguimiento(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.
         verbose_name_plural = "Seguimientos de relevamiento"
 
     def __str__(self):
-        return f"Primer seguimiento #{self.pk or 'sin id'}"
+        return f"{self.get_tipo_display()} #{self.pk or 'sin id'}"
 
 
 class PrestacionSeguimiento(models.Model):
@@ -1988,12 +2055,23 @@ class PrestacionSeguimiento(models.Model):
     tipo_prestacion = _nullable_char()
     ap_presencial = _nullable_positive_int()
     ap_vianda = _nullable_positive_int()
+    # AP unico del cuadro 6.1 nuevo del Primer Seguimiento (SISOC#2781).
+    ap_total = _nullable_positive_int()
     de_presencial = _nullable_positive_int()
     de_vianda = _nullable_positive_int()
 
     class Meta:
         verbose_name = "Prestacion de primer seguimiento"
         verbose_name_plural = "Prestaciones de primer seguimiento"
+
+    @property
+    def ap_total_efectivo(self):
+        """AP del cuadro 6.1: ``ap_total`` o, en filas viejas, presencial + vianda."""
+        if self.ap_total is not None:
+            return self.ap_total
+        if self.ap_presencial is None and self.ap_vianda is None:
+            return None
+        return (self.ap_presencial or 0) + (self.ap_vianda or 0)
 
     def __str__(self):
         return (
@@ -2249,3 +2327,65 @@ class PdfOficialGestionar(models.Model):
         if self.relevamiento_id:
             return f"PDF oficial del relevamiento {self.relevamiento_id}"
         return f"PDF oficial del seguimiento {self.seguimiento_id}"
+
+
+def ruta_archivo_adjunto(instance, filename):
+    """``adjuntos/<comedor>/<nombre>``: el nombre ya viene generado (uuid)."""
+    return f"adjuntos/{instance.comedor_id}/{filename}"
+
+
+class ArchivoAdjunto(models.Model):
+    """Documento (imagen o PDF) adjunto a un formulario de relevamiento (#2781).
+
+    Lo sube el territorial desde la pantalla final de cualquier formulario de la
+    app. Apunta al formulario con ``formulario_tipo`` + ``formulario_id`` (el id
+    SISOC de esa instancia) en lugar de cuatro FK opcionales: son cuatro
+    modelos distintos y la API los identifica justamente por ese par.
+    """
+
+    TIPO_RELEVAMIENTO = "relevamiento"
+    TIPO_SEGUIMIENTO = "seguimiento"
+    TIPO_SEGUIMIENTO_PNUD = "seguimiento_pnud"
+    TIPO_ACTA = "acta"
+    TIPO_CHOICES = [
+        (TIPO_RELEVAMIENTO, "Relevamiento"),
+        (TIPO_SEGUIMIENTO, "Seguimiento"),
+        (TIPO_SEGUIMIENTO_PNUD, "Seguimiento PNUD"),
+        (TIPO_ACTA, "Acta complementaria"),
+    ]
+
+    comedor = models.ForeignKey(
+        to=Comedor,
+        on_delete=models.CASCADE,
+        related_name="archivos_adjuntos",
+    )
+    formulario_tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    formulario_id = models.PositiveIntegerField()
+    archivo = models.FileField(upload_to=ruta_archivo_adjunto, max_length=255)
+    nombre_original = models.CharField(max_length=255)
+    tipo_mime = models.CharField(max_length=100)
+    tamano = models.PositiveIntegerField(help_text="Bytes.")
+    client_uuid = models.CharField(max_length=64, blank=True, null=True)
+    subido_por = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="archivos_adjuntos_subidos",
+    )
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Archivo adjunto"
+        verbose_name_plural = "Archivos adjuntos"
+        ordering = ["fecha_subida", "id"]
+        indexes = [models.Index(fields=["formulario_tipo", "formulario_id"])]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["comedor", "client_uuid"],
+                name="archivo_adjunto_client_uuid_por_comedor",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.nombre_original} ({self.formulario_tipo} {self.formulario_id})"

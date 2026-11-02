@@ -6,10 +6,12 @@ import logging
 import unicodedata
 from typing import Any
 
+from django.core.exceptions import ValidationError
 from django.db import DatabaseError
 
 from core.integrations.renaper import APIClient
 from core.models import Sexo
+from core.validators import validate_cuit
 
 
 logger = logging.getLogger("django")
@@ -67,6 +69,22 @@ def _safe_int_renaper(value: object) -> int | None:
     return parsed_value or None
 
 
+def _cuil_renaper(value: object) -> int | None:
+    """CUIL informado por RENAPER, solo si es un CUIL válido.
+
+    A muchos extranjeros con DNI RENAPER les informa el CUIL en "0": se trata
+    como que no lo informó, igual que cualquier otro valor que no sea un CUIL.
+    """
+    cuil = _safe_int_renaper(value)
+    if cuil is None:
+        return None
+    try:
+        validate_cuit(str(cuil))
+    except ValidationError:
+        return None
+    return cuil
+
+
 def _mapear_datos_renaper(datos: dict[str, Any], dni: str, sexo: str) -> dict[str, Any]:
     sexo_texto = {"F": "Femenino", "M": "Masculino", "X": "X"}.get(sexo)
     sexo_pk = None
@@ -75,7 +93,7 @@ def _mapear_datos_renaper(datos: dict[str, Any], dni: str, sexo: str) -> dict[st
         sexo_pk = sexo_obj.pk if sexo_obj else None
 
     return {
-        "cuil": _safe_int_renaper(datos.get("cuil")),
+        "cuil": _cuil_renaper(datos.get("cuil")),
         "dni": int(dni),
         "apellido": datos.get("apellido", ""),
         "nombre": datos.get("nombres", ""),

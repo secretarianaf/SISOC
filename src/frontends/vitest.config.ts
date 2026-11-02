@@ -20,6 +20,7 @@ export default defineConfig({
         test: { name: "packages", include: ["packages/**/*.test.{ts,tsx}"] },
       },
       "apps/vpsl",
+      "apps/inet",
       "apps/celiaquia",
     ],
   },

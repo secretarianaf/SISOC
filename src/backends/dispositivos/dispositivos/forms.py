@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from core.models import Municipio, Provincia
+from core.models import Localidad, Municipio, Provincia
 
 from .models import Dispositivo
 from .services import get_dispositivos_geography_scope
@@ -418,6 +418,9 @@ class DispositivoForm(forms.ModelForm):
             "cuit_institucion",
             "provincia",
             "municipio",
+            "localidad",
+            "latitud",
+            "longitud",
             "calle",
             "altura",
             "telefono_prefijo",
@@ -571,6 +574,11 @@ class DispositivoForm(forms.ModelForm):
 
         if municipio:
             self.fields["municipio"].initial = municipio
+        self.fields["localidad"].queryset = (
+            Localidad.objects.filter(municipio=municipio).order_by("nombre")
+            if municipio
+            else Localidad.objects.none()
+        )
 
     def clean_cuit_institucion(self):
         cuit = "".join(
@@ -710,3 +718,15 @@ class DispositivoForm(forms.ModelForm):
             )
 
         return cleaned_data
+
+
+class DispositivoUbicacionForm(forms.Form):
+    """Valida solo el domicilio en borrador, con el mismo alcance que el alta."""
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        source = DispositivoForm(data=self.data, user=user)
+        self.fields = {
+            name: source.fields[name]
+            for name in ("provincia", "municipio", "localidad", "calle", "altura")
+        }

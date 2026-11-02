@@ -71,6 +71,20 @@ def _generar_username_unico(base: str) -> str:
         counter += 1
 
 
+def _username_para(
+    datos: DatosUsuarioDelegado, email: str, dni_si_email_en_uso: bool
+) -> str:
+    """Usuario desde el email o, si ese email ya es de otra cuenta, desde el DNI."""
+    dni = "".join(ch for ch in str(datos.dni or "") if ch.isdigit())
+    if (
+        dni_si_email_en_uso
+        and dni
+        and User.objects.filter(email__iexact=email).exists()
+    ):
+        return _generar_username_unico(dni)
+    return _generar_username_unico(_slug_base_desde_email(email))
+
+
 def _actor_puede_delegar_grupo(actor, grupo: Group) -> bool:
     if actor is None or not getattr(actor, "is_authenticated", False):
         return False
@@ -161,6 +175,7 @@ def generar_usuario_delegado(  # pylint: disable=too-many-arguments
     limite_check: Optional[Callable[[], bool]] = None,
     request=None,
     delegacion_autorizada: bool = False,
+    usuario_dni_si_email_en_uso: bool = False,
 ) -> dict:
     """Crea un usuario con grupo fijo, lo vincula a una entidad y envía credenciales.
 
@@ -175,6 +190,10 @@ def generar_usuario_delegado(  # pylint: disable=too-many-arguments
             propia y acotada (p. ej. el referente responsable de un CDI genera
             referentes solo para ese CDI). Evita habilitarle la delegación del
             grupo en general. Úsese solo después de esa verificación.
+        usuario_dni_si_email_en_uso: si otra cuenta ya usa el email, arma el
+            nombre de usuario con el DNI de ``datos`` (si lo tiene) en vez de
+            con el email. Para entidades cuyo email es institucional y lo
+            comparten varias personas.
 
     Returns:
         dict con `user`, `password` (temporal en claro) y `email_enviado`.
@@ -201,7 +220,7 @@ def generar_usuario_delegado(  # pylint: disable=too-many-arguments
         )
 
     email = _validar_email(datos)
-    username = _generar_username_unico(_slug_base_desde_email(email))
+    username = _username_para(datos, email, usuario_dni_si_email_en_uso)
 
     with transaction.atomic():
         user = User(

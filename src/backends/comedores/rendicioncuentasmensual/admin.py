@@ -12,9 +12,9 @@ from rendicioncuentasmensual.services import RendicionCuentaMensualService
 
 
 # Operaciones de soporte (issue #2789). Igual que la vista de revisión de
-# documentos: el service valida que la rendición esté en revisión o a subsanar,
-# que el documento esté presentado y que "subsanar" traiga observaciones (acá,
-# el motivo de la operación).
+# documentos: el service valida que la rendición esté en una etapa de revisión
+# en curso, que el documento sea vigente y que "subsanar" traiga observaciones
+# (acá, el motivo de la operación).
 
 
 def validar_documento(documento, usuario, _datos):
@@ -82,6 +82,7 @@ class DocumentacionAdjuntaAdmin(OperacionesAdminMixin, SisocModelAdmin):
         "nombre",
         "categoria",
         "estado",
+        "revision_estado",
         "rendicion_cuenta_mensual",
         "fecha_creacion",
     )
@@ -95,6 +96,7 @@ class DocumentacionAdjuntaAdmin(OperacionesAdminMixin, SisocModelAdmin):
     list_filter = (
         ("categoria", ChoicesDropdownFilter),
         "estado",
+        "revision_estado",
         ("fecha_creacion", RangeDateTimeFilter),
     )
     raw_id_fields = (
@@ -107,22 +109,22 @@ class DocumentacionAdjuntaAdmin(OperacionesAdminMixin, SisocModelAdmin):
             slug="validar_documento",
             titulo="Revisión: marcar documento validado",
             descripcion=(
-                "Marca como validado un documento presentado de una rendición "
-                "en revisión."
+                "Deja el documento como validado en la revisión en curso. Se "
+                "confirma al finalizar la etapa de revisión."
             ),
             ejecutar=validar_documento,
-            campo_estado="estado",
+            campo_estado="revision_estado",
             icono="check_circle",
         ),
         Operacion(
             slug="subsanar_documento",
             titulo="Revisión: enviar documento a subsanar",
             descripcion=(
-                "Envía a subsanar un documento presentado de una rendición en "
-                "revisión. El motivo se guarda como observación del documento."
+                "Deja el documento a subsanar en la revisión en curso. El motivo "
+                "se guarda como observación del documento."
             ),
             ejecutar=subsanar_documento,
-            campo_estado="estado",
+            campo_estado="revision_estado",
             motivo_obligatorio=True,
             icono="report",
         ),

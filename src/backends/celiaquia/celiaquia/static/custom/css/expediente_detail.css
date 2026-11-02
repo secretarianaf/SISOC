@@ -93,3 +93,14 @@
 
 .alerta-intermitente { animation: parpadeo 1.5s ease-in-out infinite; }
 
+
+/* Observaciones del comentario técnico: lista con scroll propio y texto que corta línea */
+.comentario-observacion-opciones {
+    max-height: 40vh;
+    overflow-y: auto;
+}
+
+.comentario-observacion-opciones .form-check-label {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}

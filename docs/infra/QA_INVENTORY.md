@@ -9,13 +9,28 @@ secretos.
 
 ## Alcance y nivel de certeza
 
+Actualizacion de runners (2026-10-27): el servicio vigente es
+`actions.runner.secretarianaf.sisoc-qa-org`, en
+`/home/sisoc-deploy/actions-runner-org-qa`. SSH confirma servicio activo y
+`Runner.Listener` vivo; GitHub confirma runner online, con labels `self-hosted`
+y `sisoc-qa`, en el grupo organizacional `Default` con SISOC seleccionado y
+repositorios publicos permitidos. El servicio de repositorio quedo detenido.
+Los demas datos de esta auditoria conservan su fecha original.
+
+Deploy SISOC verificado en el runner organizacional: run `40535874390`,
+SHA `ffba74b9c09f3b10ce5ac4191d46a0765d6b36bf`, `success` el 2026-10-27
+16:04:21 UTC. CSS Unfold 200, titulo del admin con `SISOC admin` y CSP de
+admin con `unsafe-eval`; el footer sigue en `v21.10.26` y no sirve como prueba
+de revision desplegada. Evidencia y criterio pendiente en
+`docs/registro/cambios/2026-T4/2026-10-27-runners-org-sisoc.md`.
+
 El usuario confirmo que los aliases terminados en `-old` son los entornos
 canonicos actuales. AWS queda fuera de alcance y se conserva solo como referencia
 de una migracion futura:
 
 | Huella | Estado de auditoria | Evidencia |
 | --- | --- | --- |
-| `qa-old` (`10.80.9.15`) | Canonico y auditado por SSH | Tiene el runner `sisoc-qa`, el checkout en `development` y la aplicacion respondiendo 200. |
+| `qa-old` (`10.80.9.15`) | Canonico y auditado por SSH | Runner vigente `sisoc-qa-org` (label `sisoc-qa`); checkout en `development`. |
 | `qa-site-aws` (`10.1.131.121`) | Fuera de alcance | Referencia de migracion; no auditar ni modificar en esta etapa. |
 | `qa-db-aws` (`10.1.130.88`) | Fuera de alcance | Referencia de migracion; no auditar ni modificar en esta etapa. |
 
@@ -48,7 +63,8 @@ cutover hacia AWS.
 | `nginx` | activo | habilitado | NGINX 1.18.0 |
 | MySQL server local | no instalado | no aplica | Stage 2 retiro unidad, paquetes y datadir; no hay rollback local |
 | `cron` | activo | habilitado | `sisoc-deploy` tiene una tarea semanal de mantenimiento Docker; cron de root no auditado |
-| `actions.runner.dsocial118-SISOC.sisoc-qa` | activo | habilitado | Corre como `sisoc-deploy` desde `/home/sisoc-deploy/actions-runner/` |
+| `actions.runner.secretarianaf.sisoc-qa-org` | activo (2026-10-27) | no reverificado | Runner de organizacion, como `sisoc-deploy`, desde `/home/sisoc-deploy/actions-runner-org-qa/` |
+| `actions.runner.dsocial118-SISOC.sisoc-qa` | inactivo (dead, 2026-10-27) | no reverificado | Runner de repositorio anterior; sin registros de runners de repo en GitHub |
 | `apache2` | fallido | habilitado | Apache esta instalado pero no sirve la app observada |
 
 Se observaron dos cgroups de contenedor. Los procesos son consistentes con los
@@ -89,7 +105,8 @@ reglas de red/ACL externas para evaluar la exposicion real.
 | `/home/admin-ssies/sisoc-comedores-test/BACKOFFICE/logs` | Logs Django por fecha/nivel | 3.7 MiB, 350 archivos |
 | `/var/log/nginx/` | Logs de NGINX | archivos `staging-sisoc-*` con rotacion |
 | `/etc/nginx/sites-available/staging.conf` | Virtual host observado | root:root, modo 644 |
-| `/home/sisoc-deploy/actions-runner/` | GitHub Actions runner | servicio systemd activo |
+| `/home/sisoc-deploy/actions-runner-org-qa/` | Runner de organizacion vigente | servicio systemd activo (2026-10-27) |
+| `/home/sisoc-deploy/actions-runner/` | Runner de repositorio anterior | servicio detenido; directorio no reinspeccionado |
 | `/home/sisoc-deploy/bin/` | Scripts operativos instalados | owner `sisoc-deploy`, scripts modo 750 |
 | `/home/sisoc-deploy/backups/infra/qa/` | Backups de configuracion fuera del repo | directorios 700, archivos 600 |
 | `/var/lib/mysql` | Datadir del clon MySQL local heredado | Eliminado en Stage 2 el 2026-07-21 |
@@ -241,7 +258,7 @@ Artefactos principales:
 
 Flujo actual confirmado por codigo y runner activo:
 
-1. push a `development` dispara el job `deploy-qa` en runner `sisoc-qa`;
+1. push a `development` dispara el job `deploy-qa`, con labels `[self-hosted, sisoc-qa]`, en runner `sisoc-qa-org`;
 2. GitHub Environment `qa` aporta `APP_ROOT`;
 3. el runner registra el commit previo;
 4. `deploy_refresh.sh` valida `.env`, entorno, branch y Compose;
@@ -322,7 +339,7 @@ hostnamectl
 id
 df -hT /
 df -ih /
-systemctl is-active docker nginx mysql cron actions.runner.dsocial118-SISOC.sisoc-qa
+systemctl is-active docker nginx mysql cron actions.runner.secretarianaf.sisoc-qa-org
 git -C /home/admin-ssies/sisoc-comedores-test/BACKOFFICE status --short --branch
 docker compose -f /home/admin-ssies/sisoc-comedores-test/BACKOFFICE/docker-compose.deploy.yml ps
 ss -lntup

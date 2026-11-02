@@ -5,6 +5,7 @@ from django.core.cache import cache
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import CreateView, UpdateView, DeleteView, TemplateView
 
@@ -13,6 +14,7 @@ from acompanamientos.acompanamiento_service import AcompanamientoService
 from comedores.services.comedor_service import ComedorService
 from core.security import safe_redirect
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from core.utils import rango_del_dia_local
 from catalogo_intervenciones.constants import PROGRAMA_ALIASES_COMEDORES
 from catalogo_intervenciones.models import (
     SubIntervencion,
@@ -83,6 +85,21 @@ def sub_estados_intervenciones_ajax(request):
     return JsonResponse(data, safe=False)
 
 
+def _filtrar_por_dia(intervenciones, fecha_texto):
+    """Filtra por el día local con un rango, sin ``__date``.
+
+    Ver ``core.utils.rango_del_dia_local``. Una fecha inválida no filtra.
+    """
+    try:
+        fecha = parse_date(fecha_texto) if fecha_texto else None
+    except ValueError:
+        fecha = None
+    if not fecha:
+        return intervenciones
+    inicio, fin = rango_del_dia_local(fecha)
+    return intervenciones.filter(fecha__gte=inicio, fecha__lt=fin)
+
+
 class IntervencionDetailView(LoginRequiredMixin, TemplateView):
     """Mostrar el detalle de intervenciones asociadas a un comedor."""
 
@@ -105,8 +122,7 @@ class IntervencionDetailView(LoginRequiredMixin, TemplateView):
         tipo_intervencion = self.request.GET.get("tipo_intervencion")
         destinatario = self.request.GET.get("destinatario")
 
-        if fecha:
-            intervenciones = intervenciones.filter(fecha__date=fecha)
+        intervenciones = _filtrar_por_dia(intervenciones, fecha)
         if tipo_intervencion:
             intervenciones = intervenciones.filter(
                 tipo_intervencion_id=tipo_intervencion

@@ -166,7 +166,33 @@ class ItinerarioVPSLForm(BootstrapModelForm):
         return cleaned_data
 
 
-class JornadaVPSLForm(BootstrapModelForm):
+class UbicacionVPSLForm(BootstrapModelForm):
+    latitud = forms.DecimalField(
+        max_digits=9, decimal_places=6, min_value=-90, max_value=90, required=False
+    )
+    longitud = forms.DecimalField(
+        max_digits=9, decimal_places=6, min_value=-180, max_value=180, required=False
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._coordenadas_enviadas = any(
+            name in self.data for name in ("latitud", "longitud")
+        )
+        if self.is_bound and self.instance.pk and not self._coordenadas_enviadas:
+            self.data = self.data.copy()
+            for name in ("latitud", "longitud"):
+                value = self.initial.get(name)
+                self.data[self.add_prefix(name)] = value if value is not None else ""
+
+    def clean(self):
+        data = super().clean()
+        if (data.get("latitud") is None) != (data.get("longitud") is None):
+            self.add_error(None, "Complete latitud y longitud, o deje ambas vacías.")
+        return data
+
+
+class JornadaVPSLForm(UbicacionVPSLForm):
     SEXO_CHOICES = (
         ("", "Seleccionar"),
         ("M", "Masculino"),
@@ -174,7 +200,7 @@ class JornadaVPSLForm(BootstrapModelForm):
         ("X", "X"),
     )
     ubicacion_url = forms.CharField(
-        required=True,
+        required=False,
         label="Enlace de Google Maps o coordenadas",
     )
     vehiculos = forms.ModelMultipleChoiceField(
@@ -197,6 +223,8 @@ class JornadaVPSLForm(BootstrapModelForm):
             "localidad",
             "ubicacion_url",
             "direccion",
+            "latitud",
+            "longitud",
             "vehiculos",
             "horario_inicio",
             "horario_fin",
@@ -260,6 +288,10 @@ class JornadaVPSLForm(BootstrapModelForm):
         self.fields["ubicacion_url"].required = es_alta or bool(
             self.instance.ubicacion_url
         )
+        if self._coordenadas_enviadas and all(
+            self.data.get(name) for name in ("latitud", "longitud")
+        ):
+            self.fields["ubicacion_url"].required = False
         self.fields["ubicacion_url"].widget.attrs[
             "placeholder"
         ] = "https://maps.app.goo.gl/..."
@@ -268,9 +300,10 @@ class JornadaVPSLForm(BootstrapModelForm):
             "o coordenadas como -34.603689, -58.381596."
         )
         self.fields["direccion"].label = "Dirección"
+        self.fields["direccion"].widget.attrs["data-name"] = "domicilio"
         self.fields["direccion"].required = False
         self.fields["direccion"].help_text = (
-            "Se completa desde el enlace cuando está disponible; puede corregirla."
+            "Complete calle y altura para buscar con la localidad, o use un enlace de Google Maps."
         )
         self.fields["referente_dni"].label = "DNI"
         self.fields["referente_sexo"].label = "Género referente"
@@ -286,6 +319,21 @@ class JornadaVPSLForm(BootstrapModelForm):
     def clean(self):
         cleaned_data = super().clean()
         location_url = cleaned_data.get("ubicacion_url")
+        manual = self._coordenadas_enviadas and all(
+            cleaned_data.get(name) is not None for name in ("latitud", "longitud")
+        )
+        if manual:
+            if not location_url or location_url != self.initial.get("ubicacion_url"):
+                try:
+                    location = resolve_google_maps_location(
+                        location_url
+                        or f'{cleaned_data["latitud"]},{cleaned_data["longitud"]}'
+                    )
+                except ValidationError as exc:
+                    self.add_error("ubicacion_url", exc)
+                else:
+                    cleaned_data["ubicacion_url"] = location.original_url
+            return cleaned_data
         if not location_url:
             return cleaned_data
         if (
@@ -305,8 +353,8 @@ class JornadaVPSLForm(BootstrapModelForm):
             return cleaned_data
         self.instance.ubicacion_url = location.original_url
         cleaned_data["ubicacion_url"] = location.original_url
-        self.instance.latitud = location.latitude
-        self.instance.longitud = location.longitude
+        cleaned_data["latitud"] = location.latitude
+        cleaned_data["longitud"] = location.longitude
         # Si el usuario no edito la direccion, se toma la del nuevo enlace para
         # no exportar coordenadas nuevas con la direccion anterior.
         direccion_sin_editar = cleaned_data.get("direccion") in (
@@ -491,7 +539,7 @@ class RegistroNominalVPSLForm(BootstrapModelForm):
         return cleaned_data
 
 
-class SedeVPSLForm(BootstrapModelForm):
+class SedeVPSLForm(UbicacionVPSLForm):
     class Meta:
         model = SedeVPSL
         fields = [
@@ -505,6 +553,8 @@ class SedeVPSLForm(BootstrapModelForm):
             "cueanexo",
             "nombre",
             "domicilio",
+            "latitud",
+            "longitud",
             "codigo_postal",
             "telefono",
             "mail",
@@ -527,7 +577,7 @@ class SedeCreateVPSLForm(SedeVPSLForm):
     localidad = forms.ChoiceField(
         label="Localidad",
         choices=(("", "Seleccioná una localidad"),),
-        widget=forms.Select(attrs={"class": "select2-localidad-vpsl"}),
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
     mail = forms.EmailField(
         label="Correo electrónico",
@@ -584,8 +634,12 @@ class SedeCreateVPSLForm(SedeVPSLForm):
         self.fields["telefono"].label = "Teléfono"
 
     def save(self, commit=True):
-        if self.instance.pk and set(self.changed_data).intersection(
-            {"domicilio", "localidad", "provincia", "departamento", "codigo_postal"}
+        if (
+            self.instance.pk
+            and not self._coordenadas_enviadas
+            and set(self.changed_data).intersection(
+                {"domicilio", "localidad", "provincia", "departamento", "codigo_postal"}
+            )
         ):
             self.instance.latitud = None
             self.instance.longitud = None

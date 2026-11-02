@@ -70,7 +70,7 @@ nombres de variables. No contiene valores `.env` ni la clave privada TLS.
 
 ```bash
 systemctl is-active docker containerd nginx mysql cron \
-  actions.runner.dsocial118-SISOC.sisoc-homologacion
+  actions.runner.secretarianaf.sisoc-homologacion-org
 docker ps
 curl --max-time 8 -kfsS https://hml-sisoc.secretarianaf.gob.ar/health/
 curl --max-time 8 -kfsS https://hml-sisoc.secretarianaf.gob.ar/mobile/

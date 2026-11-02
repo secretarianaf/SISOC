@@ -9,9 +9,13 @@ export default defineConfig({
     channel: process.env.PLAYWRIGHT_CHANNEL,
     headless: true,
   },
-  webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : {
+  webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : [{
     command: "npm exec -w @sisoc/vpsl -- vite preview --host 127.0.0.1 --port 4173",
     url: "http://127.0.0.1:4173/v2/vpsl/",
     reuseExistingServer: false,
-  },
+  }, {
+    command: "npm exec -w @sisoc/inet -- vite preview --host 127.0.0.1 --port 4175",
+    url: "http://127.0.0.1:4175/v2/inet/",
+    reuseExistingServer: false,
+  }],
 });

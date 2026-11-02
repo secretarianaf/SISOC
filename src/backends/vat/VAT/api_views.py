@@ -115,6 +115,21 @@ def normalizar_cue_consulta(cue: str | None) -> str:
     return cue_normalizado.zfill(9)
 
 
+def query_param_entero(request, nombre: str) -> str | None:
+    """Devuelve el filtro numérico del query string o responde 400 si no lo es.
+
+    Sin esto, un valor como ``26-1912-14`` llega al ORM y termina en 500.
+    """
+
+    valor = (request.query_params.get(nombre) or "").strip()
+    if not valor:
+        return None
+    # isascii: dígitos Unicode como "²" pasan isdigit() pero int() los rechaza.
+    if not (valor.isascii() and valor.isdigit()):
+        raise ValidationError({nombre: ["Debe ser un número entero."]})
+    return valor
+
+
 class SoftDeleteDestroyMixin:
     def perform_destroy(self, instance):
         if is_soft_deletable_instance(instance):
@@ -257,9 +272,9 @@ class CentroViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
         activo = self.request.query_params.get("activo")
         if activo is not None:
             queryset = queryset.filter(activo=activo.lower() == "true")
-        provincia_id = self.request.query_params.get("provincia_id")
-        municipio_id = self.request.query_params.get("municipio_id")
-        localidad_id = self.request.query_params.get("localidad_id")
+        provincia_id = query_param_entero(self.request, "provincia_id")
+        municipio_id = query_param_entero(self.request, "municipio_id")
+        localidad_id = query_param_entero(self.request, "localidad_id")
         if provincia_id:
             queryset = queryset.filter(provincia_id=provincia_id)
         if municipio_id:
@@ -323,7 +338,7 @@ class MunicipioViewSet(VATReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        provincia_id = self.request.query_params.get("provincia_id")
+        provincia_id = query_param_entero(self.request, "provincia_id")
         if provincia_id:
             queryset = queryset.filter(provincia_id=provincia_id)
         return queryset
@@ -340,8 +355,8 @@ class LocalidadViewSet(VATReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        municipio_id = self.request.query_params.get("municipio_id")
-        provincia_id = self.request.query_params.get("provincia_id")
+        municipio_id = query_param_entero(self.request, "municipio_id")
+        provincia_id = query_param_entero(self.request, "provincia_id")
         if municipio_id:
             queryset = queryset.filter(municipio_id=municipio_id)
         elif provincia_id:
@@ -378,7 +393,7 @@ class SubsectorViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        sector_id = self.request.query_params.get("sector_id")
+        sector_id = query_param_entero(self.request, "sector_id")
         if sector_id:
             queryset = queryset.filter(sector_id=sector_id)
         return queryset
@@ -394,8 +409,8 @@ class TituloReferenciaViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        sector_id = self.request.query_params.get("sector_id")
-        subsector_id = self.request.query_params.get("subsector_id")
+        sector_id = query_param_entero(self.request, "sector_id")
+        subsector_id = query_param_entero(self.request, "subsector_id")
         activo = self.request.query_params.get("activo")
         if sector_id:
             queryset = queryset.filter(plan_estudio__sector_id=sector_id)
@@ -430,10 +445,10 @@ class PlanVersionCurricularViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        sector_id = self.request.query_params.get("sector_id")
-        subsector_id = self.request.query_params.get("subsector_id")
-        titulo_referencia_id = self.request.query_params.get("titulo_referencia_id")
-        modalidad_cursada_id = self.request.query_params.get("modalidad_cursada_id")
+        sector_id = query_param_entero(self.request, "sector_id")
+        subsector_id = query_param_entero(self.request, "subsector_id")
+        titulo_referencia_id = query_param_entero(self.request, "titulo_referencia_id")
+        modalidad_cursada_id = query_param_entero(self.request, "modalidad_cursada_id")
         activo = self.request.query_params.get("activo")
         if sector_id:
             queryset = queryset.filter(sector_id=sector_id)
@@ -458,7 +473,7 @@ class InscripcionOfertaViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        oferta_id = self.request.query_params.get("oferta_id")
+        oferta_id = query_param_entero(self.request, "oferta_id")
         estado = self.request.query_params.get("estado")
         if oferta_id:
             queryset = queryset.filter(oferta_id=oferta_id)
@@ -498,9 +513,9 @@ class VoucherViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        ciudadano_id = self.request.query_params.get("ciudadano_id")
+        ciudadano_id = query_param_entero(self.request, "ciudadano_id")
         estado = self.request.query_params.get("estado")
-        programa_id = self.request.query_params.get("programa_id")
+        programa_id = query_param_entero(self.request, "programa_id")
 
         if ciudadano_id:
             queryset = queryset.filter(ciudadano_id=ciudadano_id)
@@ -528,7 +543,7 @@ class VoucherViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     @action(detail=False, methods=["get"])
     def por_ciudadano(self, request):
         """Get vouchers for a specific citizen."""
-        ciudadano_id = request.query_params.get("ciudadano_id")
+        ciudadano_id = query_param_entero(request, "ciudadano_id")
         if not ciudadano_id:
             return Response(
                 {"error": "ciudadano_id es requerido"},
@@ -550,7 +565,7 @@ class InstitucionContactoViewSet(VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        centro_id = self.request.query_params.get("centro_id")
+        centro_id = query_param_entero(self.request, "centro_id")
         tipo = self.request.query_params.get("tipo")
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
@@ -569,7 +584,7 @@ class InstitucionIdentificadorHistViewSet(VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        centro_id = self.request.query_params.get("centro_id")
+        centro_id = query_param_entero(self.request, "centro_id")
         tipo_identificador = self.request.query_params.get("tipo_identificador")
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
@@ -588,7 +603,7 @@ class InstitucionUbicacionViewSet(VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        centro_id = self.request.query_params.get("centro_id")
+        centro_id = query_param_entero(self.request, "centro_id")
         rol_ubicacion = self.request.query_params.get("rol_ubicacion")
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
@@ -662,11 +677,11 @@ class CursoViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     permission_classes = [HasAPIKey]
 
     def _apply_curso_filters(self, queryset):
-        centro_id = self.request.query_params.get("centro_id")
-        provincia_id = self.request.query_params.get("provincia_id")
-        municipio_id = self.request.query_params.get("municipio_id")
-        modalidad_id = self.request.query_params.get("modalidad_id")
-        programa_id = self.request.query_params.get("programa_id")
+        centro_id = query_param_entero(self.request, "centro_id")
+        provincia_id = query_param_entero(self.request, "provincia_id")
+        municipio_id = query_param_entero(self.request, "municipio_id")
+        modalidad_id = query_param_entero(self.request, "modalidad_id")
+        programa_id = query_param_entero(self.request, "programa_id")
         estado = self.request.query_params.get("estado")
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
@@ -973,10 +988,10 @@ class ComisionCursoViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        curso_id = self.request.query_params.get("curso_id")
-        centro_id = self.request.query_params.get("centro_id")
-        provincia_id = self.request.query_params.get("provincia_id")
-        municipio_id = self.request.query_params.get("municipio_id")
+        curso_id = query_param_entero(self.request, "curso_id")
+        centro_id = query_param_entero(self.request, "centro_id")
+        provincia_id = query_param_entero(self.request, "provincia_id")
+        municipio_id = query_param_entero(self.request, "municipio_id")
         estado = self.request.query_params.get("estado")
         if curso_id:
             queryset = queryset.filter(curso_id=curso_id)
@@ -1004,7 +1019,7 @@ class OfertaInstitucionalViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        centro_id = self.request.query_params.get("centro_id")
+        centro_id = query_param_entero(self.request, "centro_id")
         estado = self.request.query_params.get("estado")
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
@@ -1025,7 +1040,7 @@ class ComisionViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        oferta_id = self.request.query_params.get("oferta_id")
+        oferta_id = query_param_entero(self.request, "oferta_id")
         estado = self.request.query_params.get("estado")
         if oferta_id:
             queryset = queryset.filter(oferta_id=oferta_id)
@@ -1044,7 +1059,7 @@ class ComisionHorarioViewSet(VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        comision_id = self.request.query_params.get("comision_id")
+        comision_id = query_param_entero(self.request, "comision_id")
         if comision_id:
             queryset = queryset.filter(comision_id=comision_id)
         return queryset
@@ -1067,9 +1082,9 @@ class InscripcionViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        ciudadano_id = self.request.query_params.get("ciudadano_id")
-        comision_id = self.request.query_params.get("comision_id")
-        comision_curso_id = self.request.query_params.get("comision_curso_id")
+        ciudadano_id = query_param_entero(self.request, "ciudadano_id")
+        comision_id = query_param_entero(self.request, "comision_id")
+        comision_curso_id = query_param_entero(self.request, "comision_curso_id")
         estado = self.request.query_params.get("estado")
         if ciudadano_id:
             queryset = queryset.filter(ciudadano_id=ciudadano_id)
@@ -1144,7 +1159,7 @@ class EvaluacionViewSet(VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        comision_id = self.request.query_params.get("comision_id")
+        comision_id = query_param_entero(self.request, "comision_id")
         tipo = self.request.query_params.get("tipo")
         if comision_id:
             queryset = queryset.filter(comision_id=comision_id)
@@ -1161,7 +1176,7 @@ class ResultadoEvaluacionViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        evaluacion_id = self.request.query_params.get("evaluacion_id")
+        evaluacion_id = query_param_entero(self.request, "evaluacion_id")
         calificacion = self.request.query_params.get("calificacion")
         if evaluacion_id:
             queryset = queryset.filter(evaluacion_id=evaluacion_id)

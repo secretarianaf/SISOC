@@ -1,4 +1,4 @@
-﻿from django.contrib import messages
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -36,6 +36,7 @@ from VAT.models import (
     ProfesorCentro,
     ActaCierreComision,
 )
+from VAT.services.inet_workflow import guardar_asistencia
 from VAT.services.access_scope import (
     can_user_edit_centro,
     filter_centros_queryset_for_management,
@@ -1039,21 +1040,18 @@ class AsistenciaSesionCursoView(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         sesion = self.get_sesion(self.kwargs["sesion_pk"])
         inscripciones = self._inscripciones_activas(sesion.comision_curso)
-        for inscripcion in inscripciones:
-            presente = request.POST.get(f"presente_{inscripcion.pk}") == "1"
-            observaciones = request.POST.get(f"obs_{inscripcion.pk}", "").strip()
-            AsistenciaSesion.objects.update_or_create(
-                sesion=sesion,
-                inscripcion=inscripcion,
-                defaults={
-                    "presente": presente,
-                    "observaciones": observaciones or None,
-                    "registrado_por": request.user,
-                },
-            )
-        if sesion.estado == "programada":
-            sesion.estado = "realizada"
-            sesion.save(update_fields=["estado"])
+        guardar_asistencia(
+            sesion,
+            [
+                {
+                    "inscripcion_id": item.pk,
+                    "presente": request.POST.get(f"presente_{item.pk}") == "1",
+                    "observaciones": request.POST.get(f"obs_{item.pk}", "").strip(),
+                }
+                for item in inscripciones
+            ],
+            request.user,
+        )
         messages.success(request, "Asistencia registrada exitosamente.")
         return redirect("vat_comision_curso_detail", pk=sesion.comision_curso_id)
 

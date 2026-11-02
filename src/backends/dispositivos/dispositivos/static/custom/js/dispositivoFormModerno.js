@@ -425,6 +425,7 @@ function initializeMunicipioAjax() {
         fetch(`${loadMunicipiosUrl}?provincia_id=${encodeURIComponent(provinciaId)}`)
             .then((r) => r.json())
             .then((data) => {
+                if (provinciaSelect.value !== provinciaId) return;
                 data.forEach((m) => {
                     const opt = document.createElement("option");
                     opt.value = m.id;
@@ -432,7 +433,9 @@ function initializeMunicipioAjax() {
                     municipioSelect.appendChild(opt);
                 });
             })
-            .catch(resetMunicipios);
+            .catch(() => {
+                if (provinciaSelect.value === provinciaId) resetMunicipios();
+            });
     });
 }
 

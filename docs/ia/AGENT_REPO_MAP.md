@@ -75,6 +75,19 @@ decisiones del 2026-10-15 y 2026-10-16 en `docs/registro/decisiones/`.
   con coordenadas persistidas en `Dispositivo.ubicacion_georef`. Registro:
   `docs/registro/cambios/2026-T4/2026-10-13-dispositivos-mapa.md`.
 
+## Editor compartido de ubicación
+
+- `src/backends/kernel/templates/components/map_pin_editor.html` y estáticos
+  `custom/js/mapPinEditor.js`, `custom/css/mapPinEditor.css`: adaptador de campos
+  latitud/longitud del formulario con Leaflet. No guarda ni conoce modelos;
+  cada dueño conserva validación, permisos y persistencia. Tests Node en
+  `src/backends/kernel/tests/js/mapPinEditor.test.js`.
+- Consumidores: formularios de Dispositivos, Comedores, CDI, CDF, Ciudadanos y
+  VPSL. React VPSL usa `src/frontends/apps/vpsl/src/MapPinEditor.tsx` como adaptador
+  de campos y del ciclo de vida (`pin:init` / `pin:destroy`), sin otra biblioteca.
+- Inventario y verificaciones por etapa en
+  `docs/plans/2026-T4/2026-10-26-2778-pin-interactivo.md`.
+
 ## Como leer este documento
 
 Reglas entre servicios: `AGENTS.md` ("Verticales independientes") y la guía
@@ -587,10 +600,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `src/backends/kernel/templates/includes/sidebar/`
 - `src/backends/kernel/templates/components/`
 - `src/backends/kernel/static/custom/js/sidebar.js`
-- layout claro (Inicio, Inspecciones): `includes/base_claro.html` +
-  `core.services.layout_claro.contexto_layout_claro`; el resto extiende
-  `includes/base.html` (oscuro). Ver
-  `docs/registro/cambios/2026-T4/2026-10-15-kernel-layout-claro-barra-lateral.md`.
+- layout claro (solo Inspecciones): `includes/base_claro.html` +
+  `core.services.layout_claro.contexto_layout_claro`; el resto, Inicio
+  incluido, extiende `includes/base.html` (oscuro). Ver
+  `docs/registro/cambios/2026-T4/2026-10-15-kernel-layout-claro-barra-lateral.md`
+  y `docs/registro/cambios/2026-T4/2026-10-23-2712-inicio-sidebar-como-resto-sisoc.md`.
 
 ### Si necesitas cambiar endpoints API
 
@@ -737,7 +751,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar rendiciones mensuales u Organizaciones
 
+- Evolutivos #2642: catálogos Región/Subzona y M2M `ProyectoOrganizacion.territoriales` en kernel (`organizaciones.0024`); formulario y parejas opcionales en `gestion_organizaciones`. La migración `organizaciones.0026` carga el Excel recibido el 21/10 (cinco regiones y 28 subzonas con FK a región), conserva opciones inactivas ya asignadas y limita el selector/POST de Subzona a la Región elegida. El cupo territorial por proyecto cede ante subsanadas más antiguas para no bloquear datos previos a la regla. Borradores documentales (`revision_estado`, `revision_etapa`, `revision_observaciones`, migración `rendicioncuentasmensual.0027`) se confirman solo al finalizar la revisión, con bloqueo de rendición; no exponerlos en Mobile/PDF. `inferir_linea_programatica(comedor, proyecto)` decide AMBA por código o nombre y se usa en alta, validación previa y selector API de proyectos. Mobile requiere el cambio coordinado en `SISOC-EspaciosComunitarios`. Tests: `src/backends/comedores/tests/test_issue_2642.py`; incluye concurrencia real marcada `mysql_compat`. Montos de convenio: `src/backends/comedores/comedores/forms/convenio_pnud_form.py`.
 - estados, etapas, subsanaciones y alcance por proyecto: `src/backends/comedores/rendicioncuentasmensual/services.py`
+- #2642: el inicio Territorial valida un único cupo por proyecto, incluidos códigos históricos de la misma organización, y serializa la comprobación con un bloqueo de organización. Los catálogos se ordenan por `order`; Formulario I queda antes de Documentación Adicional. Organizaciones reutiliza `components/search_bar.html` en `filters_mode` y su configuración en `src/backends/comedores/gestion_organizaciones/filter_config.py`; sus filtros y los de Comedores se ordenan por etiqueta.
 - gestión conjunta de Auditoría (#2673): `src/backends/comedores/rendicioncuentasmensual/auditoria.py`, `RendicionAuditoriaView` y `rendicioncuentasmensual_auditoria.html`; entradas `rendicioncuentasmensual_auditoria_nueva` y `rendicioncuentasmensual_auditoria`. Requiere migraciones `0023_issue_2673_validada`, `0024_cierre_gestion_auditoria` y `0025_origen_acta_auditoria`. Con acta se bloquean/revalidan las rendiciones y se replican datos/documentos/vínculos. La regularización de auditorías con observaciones sigue en `RendicionProcesoService`, también si tienen acta o cierre, con permiso `manage_regularizacion_stage`, solo desde la base identificada por `rendicion_origen_acta` (migración `0025_origen_acta_auditoria`). La restricción se aplica en vista y servicio; las incorporadas reciben los cambios sin ofrecer acciones. La migración recupera grupos coherentes por el primer vínculo insertado por la base; sin origen (Secos o legadas inconsistentes) cada rendición regulariza sola, sin propagar. Solo Línea Tradicional admite incorporadas, de su misma línea; las observaciones generales no se vacían ni se replican sin resultado con observaciones. Cobertura vigente de validación en dos pasos, cierre, búsqueda, permisos, regularización y origen histórico: `src/backends/comedores/tests/test_rendicion_auditoria_issue_2673.py`.
 - cierre de gestión de Auditoría (2026-10-15): migración `0024_cierre_gestion_auditoria` y campo `fecha_gestion_auditoria` impiden reabrir gestiones cerradas con decisión Sí/No de acta. Guardar solo la validación conserva ese campo y la decisión de acta en NULL, permitiendo reingresar; al reingresar, validación inmutable y acta obligatoria. Las cerradas validadas sin acta permanecen elegibles para inclusión desde otra rendición. Con resultado con observaciones se permite iniciar/finalizar regularización; el cierre solo bloquea volver a gestionar la auditoría. El buscador usa `AuditoriaBusquedaForm` + `AuditoriaService.buscar`, filtro Proyecto por defecto y tabla paginada. «Acciones del proceso» depende de `mostrar_acciones_proceso`, que combina permisos y estado.
 - búsqueda y navegación de Auditoría: texto obligatorio, tabla inicialmente vacía y coincidencia parcial sin tildes españolas mediante `normalize_text` y expresiones SQL en el campo elegido. El selector de inclusión exige cierre previo sin acta. Los campos de validación, decisión, inclusión y origen no son editables desde el formulario general. Registro consolidado: `docs/registro/cambios/2026-T4/2026-10-14-auditoria-rendiciones-2673.md`. El formulario declara `volver_transitoria=True` y destino explícito; los enlaces del buscador indican `origen=busqueda` para conservar el regreso a resultados y filtros.
@@ -750,7 +766,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - etiquetas visibles ≠ valores persistidos: la etapa `revision_auditoria` se muestra como «Revisión para Carga». No cambiar valores internos para acomodar un label
 - asociación actual: `RendicionCuentaMensual.proyecto`; conservar fallback por `comedor.codigo_de_proyecto` para datos legados
 - listado y detalle del legajo: `src/backends/comedores/gestion_organizaciones/views.py` y templates `organizacion_*`
-- proyectos editables: `OrganizacionForm.codigos_proyecto` mantiene el contrato CSV mediante un campo oculto
+- proyectos editables: `OrganizacionForm.proyectos_lineas` recibe un JSON oculto con filas `{codigo, linea}` (línea = programa de Abordaje, #2745); `asignaciones_territoriales` (#2642, filas `{proyecto, territorial}`) se valida contra esos códigos. Región/subzona canónica: `Organizacion.region_abordaje`/`subzona_abordaje` (kernel); `DatosRegionOrganizacion` de `gestion_organizaciones` quedó sin uso en pantallas. Los datos por programa se resuelven en `src/backends/comedores/gestion_organizaciones/services/programas.py`
 - tests: `src/backends/comedores/tests/test_rendicioncuentasmensual_services_unit.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_domain_rules.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_visualizacion.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_acta_auditoria.py` y `src/backends/comedores/gestion_organizaciones/tests.py`
 - escenarios QA de permisos por etapa: `python manage.py seed_rendicion_stage_examples --comedor-id <id>` (solicita la contraseña de forma interactiva)
 - documentación canónica: `docs/flujos/rendiciones_mensuales_proyectos.md`
@@ -1072,7 +1088,7 @@ codigo, no se lee entero al inicio.
   inferida; no demuestra consumo HTTP ni servicios activos.
 - La etapa `source` de `docker/django/Dockerfile` ejecuta el generador con
   `--imagen` antes de quitar frontends y verticales. El arranque conserva esa
-  captura completa (`var/arquitectura/grafo-imagen.json`); no reconstruye un
+  captura completa (`/sisoc/var/arquitectura/grafo-imagen.json` dentro de la imagen); no reconstruye un
   mapa parcial desde el core aislado. `.dockerignore` excluye `var` para evitar
   capturas locales dentro de una nueva imagen.
 - `python src/scripts/arquitectura/generar_mapa.py --docs` actualiza el grafo
@@ -1201,3 +1217,36 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `src/backends/kernel/users/migrations/0060_profile_accesos_siis_web.py` y `src/backends/comedores/pwa/migrations/0026_inicializar_acceso_web.py`: schema kernel y backfill histórico core. Aplicar con migrador completo; no recalcular flags en runtime ni repetir backfill sobre habilitaciones administradas.
 - `src/backends/sisoc_core/tests/test_users_siis.py`: contrato, denegaciones, credenciales administrativas, duplicados, gate web y backfill.
 - `docs/registro/cambios/2026-T4/2026-10-06-auth-siis.md`: evidencia y riesgo de rollback a código que ignora el flag.
+
+## INET React v2
+
+- Mapa del CFP: `src/frontends/apps/inet/src/DetailPanels.tsx` usa Google Maps con el dato
+  `Domicilio mapa` de `src/backends/vat/VAT/services/inet_queries.py` (calle/altura o domicilio
+  de actividades). Requiere localidad y provincia; sin datos muestra un mensaje.
+
+- Preservación visual solicitada por el usuario (2026-10-06):
+  `src/frontends/apps/inet/AGENTS.md`. Releer la implementación vigente antes de
+  editar; conservar las mejoras locales de composición, estilos y ubicaciones.
+  Pantallas y reglas: `docs/implementaciones/inet_react.md`.
+
+- Entrada `/v2/inet/`, app `src/frontends/apps/inet`, servicio `front_inet` y
+  variable `FRONT_INET_ORIGIN`; acceso y comandos: `docs/operacion/inet_react.md`.
+- API interna `/api/inet/` en `src/backends/vat/VAT/api_inet_urls.py`, `api_inet_views.py` y
+  `api_inet_serializers.py`. Se enruta al backend VAT desde `src/backends/config/backends.json`.
+- Queries/formularios/workflows: `src/backends/vat/VAT/services/inet_{queries,forms,workflow}.py`.
+  Alta CFP, wizard comisión y asistencia comparten operaciones con legacy.
+- Contrato dedicado `config.urls_inet_v2`, `openapi.inet.yaml` e
+  `inet.generated.ts`; checks CI y `npm run api:check` incluyen INET.
+- Tests `src/backends/vat/tests/test_inet_api.py`, `apps/inet/src/App.test.tsx`,
+  `apps/inet/src/Fields.test.tsx`,
+  `e2e/inet.e2e.ts`. No modificar HasAPIKey de `/api/vat/` para habilitar React.
+- Formularios: permitir opcionales JSON nulos, describir ModelMultipleChoiceField
+  como multiselect y conservar `activo_present` del CFP legacy. Las consultas
+  de opciones remotas dependen solo de padres/territorio, no de todo el formulario.
+- Cambios funcionales, visuales y verificación:
+  `docs/registro/cambios/2026-T4/2026-10-26-inet-react.md`.
+## Permisos de runtime HML
+
+HML agrega `docker/compose/docker-compose.hml-runtime.yml` desde `deploy_refresh.sh` y prepara ACL mediante `src/scripts/operacion/provision_hml_runtime_permissions.py`. No asumir que root demuestra permisos correctos para usuarios de aplicación. Evidencia y límites: `docs/registro/cambios/2026-T4/2026-10-28-hml-runtime-permisos-adjuntos.md`.
+
+- HML runtime permissions: `deploy_refresh.sh` runs the private-backup/ACL provisioner before service interruption or migration and again afterward; an early failure preserves running services. QA/production are unchanged. Synthetic runtime/HTTP acceptance and rollback remain separate gates.

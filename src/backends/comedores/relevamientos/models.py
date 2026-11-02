@@ -1007,7 +1007,7 @@ class Anexo(models.Model):
     cuales_otras_actividades = models.TextField(blank=True, null=True)
     veces_recibio_insumos_2024 = models.IntegerField(
         default=0,
-        verbose_name="¿Cuántas veces recibió estos insumos en el año 2024?",
+        verbose_name="¿Cuántas veces recibió estos insumos en el año anterior?",
         blank=True,
         null=True,
     )
@@ -1674,6 +1674,19 @@ class ActividadesExtrasSeguimiento(models.Model):
     otro = _nullable_bool()
     otro_donde = _nullable_char()
     otro_frecuencia = _nullable_char()
+    # 8.1.16 (#2781): actividad con personas de pueblos indígenas u originarios.
+    pueblo_indigena = _nullable_bool(
+        verbose_name=(
+            "8.1.16 Actividades con personas que pertenecen o se reconocen "
+            "parte de un pueblo indígena u originario"
+        )
+    )
+    pueblo_indigena_donde = _nullable_char(
+        verbose_name="8.1.16 Pueblo indígena u originario: dónde"
+    )
+    pueblo_indigena_frecuencia = _nullable_char(
+        verbose_name="8.1.16 Pueblo indígena u originario: frecuencia"
+    )
 
     class Meta:
         verbose_name = "Actividades extras de primer seguimiento"
@@ -1850,7 +1863,7 @@ class PrimerSeguimiento(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.
     TIPO_ACTA_EXCEPCION = "acta_excepcion"
     TIPO_CHOICES = [
         (TIPO_PRIMER, "Primer seguimiento"),
-        (TIPO_POSTERIOR, "Seguimiento posterior"),
+        (TIPO_POSTERIOR, "Seguimiento Posterior"),
         (TIPO_VIRTUAL, "Seguimiento virtual"),
         (TIPO_ACTA_EXCEPCION, "Acta de excepción"),
     ]
@@ -2028,7 +2041,7 @@ class PrimerSeguimiento(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.
         verbose_name_plural = "Seguimientos de relevamiento"
 
     def __str__(self):
-        return f"Primer seguimiento #{self.pk or 'sin id'}"
+        return f"{self.get_tipo_display()} #{self.pk or 'sin id'}"
 
 
 class PrestacionSeguimiento(models.Model):

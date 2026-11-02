@@ -87,7 +87,7 @@ def test_detalle_por_pk_muestra_la_instancia_pedida(client, ciclo):
 
     assert response.status_code == 200
     contenido = response.content.decode()
-    assert "Seguimiento posterior #2" in contenido
+    assert "Seguimiento Posterior #2" in contenido
     # Badge de origen: esta instancia la cargo el territorial desde la app.
     assert "desde la app" in contenido
     # Navegacion entre las instancias del ciclo.
@@ -428,4 +428,4 @@ def test_listado_de_relevamientos_muestra_actas_e_instancias(client, comedor, ci
     # Cada instancia del ciclo linkea a su propio detalle.
     for seguimiento in ciclo:
         assert reverse("seguimiento_detalle", kwargs=_kw(seguimiento)) in contenido
-    assert "Seguimiento posterior #2" in contenido
+    assert "Seguimiento Posterior #2" in contenido

@@ -12,6 +12,7 @@ from django.urls import reverse
 
 from comedores.models import Comedor, Referente
 from relevamientos.models import (
+    ActividadesExtrasSeguimiento,
     CierreSeguimiento,
     FuncionamientoSeguimiento,
     PrestacionSeguimiento,
@@ -920,3 +921,134 @@ def test_eliminar_primer_seguimiento_borra_bloques_asociados(comedor, mocker):
     assert not PrestacionSeguimiento.objects.filter(
         seguimiento_id=seguimiento_id
     ).exists()
+
+
+def test_api_primer_seguimiento_persiste_actividad_pueblo_indigena(api_client, comedor):
+    """#2781 punto 8: la app manda el item 8.1.16 junto a las demas actividades."""
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+
+    response = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {
+            "sisoc_id": seguimiento.id,
+            "id_relevamiento": relevamiento.id,
+            "ayuda_tramites": True,
+            "pueblo_indigena": True,
+            "pueblo_indigena_donde": "En el SUM del comedor",
+            "pueblo_indigena_frecuencia": "Mensual",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    seguimiento.refresh_from_db()
+    actividades = seguimiento.actividades_extras
+    assert actividades.ayuda_tramites is True
+    assert actividades.pueblo_indigena is True
+    assert actividades.pueblo_indigena_donde == "En el SUM del comedor"
+    assert actividades.pueblo_indigena_frecuencia == "Mensual"
+
+
+def test_detalle_muestra_actividad_pueblo_indigena(auth_client, comedor):
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    actividades = ActividadesExtrasSeguimiento.objects.create(
+        pueblo_indigena=True,
+        pueblo_indigena_donde="Salon comunitario",
+        pueblo_indigena_frecuencia="Semanal",
+    )
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_COMPLETO,
+        actividades_extras=actividades,
+    )
+
+    response = auth_client.get(
+        reverse(
+            "seguimiento_detalle",
+            kwargs={
+                "comedor_pk": comedor.id,
+                "relevamiento_pk": relevamiento.id,
+                "pk": seguimiento.id,
+            },
+        )
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "8.1.16 actividades con personas que pertenecen o se reconocen" in content
+    assert "Salon comunitario" in content
+    assert "Semanal" in content
+
+
+def test_detalle_posterior_titula_seguimiento_posterior(auth_client, comedor):
+    """#2781 punto 9: el titulo sale del tipo de la instancia."""
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    posterior = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        tipo=PrimerSeguimiento.TIPO_POSTERIOR,
+        numero_orden=2,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+
+    response = auth_client.get(
+        reverse(
+            "seguimiento_detalle",
+            kwargs={
+                "comedor_pk": comedor.id,
+                "relevamiento_pk": relevamiento.id,
+                "pk": posterior.id,
+            },
+        )
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "Seguimiento Posterior #2" in content
+    assert "Primer seguimiento #" not in content
+    assert str(posterior) == f"Seguimiento Posterior #{posterior.pk}"
+    assert PrimerSeguimiento.TIPO_PRIMER != posterior.tipo
+    assert posterior.get_tipo_display() == "Seguimiento Posterior"
+
+
+def test_api_primer_seguimiento_pueblo_indigena_sobrevive_a_un_patch_posterior(
+    api_client, comedor
+):
+    """#2781: un reenvio sin las claves no pisa lo ya cargado (igual que ayuda_tramites)."""
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+    base = {"sisoc_id": seguimiento.id, "id_relevamiento": relevamiento.id}
+
+    primera = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {
+            **base,
+            "ayuda_tramites": True,
+            "ayuda_tramites_donde": "Oficina",
+            "pueblo_indigena": True,
+            "pueblo_indigena_donde": "Salon",
+            "pueblo_indigena_frecuencia": "Mensual",
+        },
+        format="json",
+    )
+    segunda = api_client.patch(
+        reverse("api_primer_seguimiento"), {**base, "estado": "Completo"}, format="json"
+    )
+
+    assert primera.status_code == 200
+    assert segunda.status_code == 200
+    # La respuesta expone el bloque por id, igual para las actividades viejas y la nueva.
+    assert segunda.data["actividades_extras"] == primera.data["actividades_extras"]
+    seguimiento.refresh_from_db()
+    actividades = seguimiento.actividades_extras
+    assert (actividades.ayuda_tramites_donde, actividades.pueblo_indigena_donde) == (
+        "Oficina",
+        "Salon",
+    )
+    assert actividades.pueblo_indigena_frecuencia == "Mensual"

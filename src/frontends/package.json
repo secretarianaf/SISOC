@@ -40,5 +40,9 @@
     "typescript-eslint": "8.70.1",
     "vite": "7.3.7",
     "vitest": "4.1.12"
+  },
+  "overrides": {
+    "follow-redirects": "1.16.2",
+    "minimatch": "^11.0.1"
   }
 }

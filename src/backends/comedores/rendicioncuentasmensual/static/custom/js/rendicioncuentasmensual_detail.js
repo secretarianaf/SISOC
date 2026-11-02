@@ -3,7 +3,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const selectoresEstado = document.querySelectorAll(".js-documento-estado");
     const statusBadge = document.getElementById("rendicion-estado-badge");
     const downloadAction = document.getElementById("rendicion-download-action");
-    const downloadUrl = "./descargar-pdf/";
 
     const escapeHtml = function (value) {
         const container = document.createElement("div");
@@ -29,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
         statusBadge.classList.add("pendiente");
     };
 
-    const renderDownloadAction = function (enabled, customUrl) {
+    const renderDownloadAction = function (enabled) {
         if (!downloadAction) {
             return;
         }
@@ -37,13 +36,10 @@ document.addEventListener("DOMContentLoaded", function () {
             downloadAction.innerHTML = "";
             return;
         }
-
-        const href = customUrl || downloadUrl;
-        downloadAction.innerHTML =
-            '<a href="' +
-            href +
-            '" class="btn btn-sm btn-success">' +
-            '<i class="fas fa-file-pdf"></i> Generar descarga</a>';
+        // La descarga es asíncrona (#2845): el formulario lo dibuja el servidor.
+        if (!downloadAction.querySelector(".js-pdf-descarga-form")) {
+            window.location.reload();
+        }
     };
 
     const showFeedback = function (message, kind) {
@@ -240,10 +236,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         data.rendicion.estado,
                         data.rendicion.estado_display
                     );
-                    renderDownloadAction(
-                        data.rendicion.puede_descargar_pdf,
-                        data.rendicion.download_url
-                    );
+                    renderDownloadAction(data.rendicion.puede_descargar_pdf);
                 })
                 .catch(function (error) {
                     showFeedback(error.message, "error");

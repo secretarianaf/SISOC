@@ -42,10 +42,7 @@
                         {% endif %}
                         <div id="rendicion-download-action">
                             {% if puede_descargar_pdf %}
-                                <a href="./descargar-pdf/" class="btn btn-sm btn-success">
-                                    <i class="fas fa-file-pdf"></i>
-                                    Generar descarga
-                                </a>
+                                {% include "components/pdf_descarga_action.html" with rendicion=rendicion %}
                             {% endif %}
                         </div>
                     </div>
@@ -618,5 +615,6 @@
             </div>
         </div>
     </div>
-    <script src="{% static 'custom/js/rendicioncuentasmensual_detail.js' %}?v=20260821-1"></script>
+    <script src="{% static 'custom/js/rendicioncuentasmensual_detail.js' %}?v=20261102-1"></script>
+    <script src="{% static 'custom/js/rendicioncuentasmensual_pdf_descarga.js' %}?v=20261102-1"></script>
 {% endblock %}

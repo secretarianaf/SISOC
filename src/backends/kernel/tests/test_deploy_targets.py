@@ -43,7 +43,12 @@ _spec.loader.exec_module(deploy_targets)
             ["src/backends/comedores/comedores/views/comedor.py"],
             (
                 "selectivo",
-                ["backend_comedores", "mailing_worker", "user_import_worker"],
+                [
+                    "backend_comedores",
+                    "celery_comedores_worker",
+                    "mailing_worker",
+                    "user_import_worker",
+                ],
                 True,
             ),
         ),
@@ -51,7 +56,12 @@ _spec.loader.exec_module(deploy_targets)
             ["src/backends/comedores/pwa/files/varios/PRESTACIONES.2.docx"],
             (
                 "selectivo",
-                ["backend_comedores", "mailing_worker", "user_import_worker"],
+                [
+                    "backend_comedores",
+                    "celery_comedores_worker",
+                    "mailing_worker",
+                    "user_import_worker",
+                ],
                 True,
             ),
         ),
@@ -217,6 +227,14 @@ def test_celery_de_pas_ausente_tampoco_se_considera_opcional():
         deploy_targets.servicios_presentes(
             {"services": {"backend_pas": {}}},
             ["backend_pas", "celery_pas_worker", "user_import_worker"],
+        )
+
+
+def test_celery_de_comedores_ausente_tampoco_se_considera_opcional():
+    with pytest.raises(ValueError, match="celery_comedores_worker"):
+        deploy_targets.servicios_presentes(
+            {"services": {"backend_comedores": {}}},
+            ["backend_comedores", "celery_comedores_worker", "mailing_worker"],
         )
 
 

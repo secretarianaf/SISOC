@@ -1012,3 +1012,43 @@ def test_detalle_posterior_titula_seguimiento_posterior(auth_client, comedor):
     assert str(posterior) == f"Seguimiento Posterior #{posterior.pk}"
     assert PrimerSeguimiento.TIPO_PRIMER != posterior.tipo
     assert posterior.get_tipo_display() == "Seguimiento Posterior"
+
+
+def test_api_primer_seguimiento_pueblo_indigena_sobrevive_a_un_patch_posterior(
+    api_client, comedor
+):
+    """#2781: un reenvio sin las claves no pisa lo ya cargado (igual que ayuda_tramites)."""
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+    base = {"sisoc_id": seguimiento.id, "id_relevamiento": relevamiento.id}
+
+    primera = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {
+            **base,
+            "ayuda_tramites": True,
+            "ayuda_tramites_donde": "Oficina",
+            "pueblo_indigena": True,
+            "pueblo_indigena_donde": "Salon",
+            "pueblo_indigena_frecuencia": "Mensual",
+        },
+        format="json",
+    )
+    segunda = api_client.patch(
+        reverse("api_primer_seguimiento"), {**base, "estado": "Completo"}, format="json"
+    )
+
+    assert primera.status_code == 200
+    assert segunda.status_code == 200
+    # La respuesta expone el bloque por id, igual para las actividades viejas y la nueva.
+    assert segunda.data["actividades_extras"] == primera.data["actividades_extras"]
+    seguimiento.refresh_from_db()
+    actividades = seguimiento.actividades_extras
+    assert (actividades.ayuda_tramites_donde, actividades.pueblo_indigena_donde) == (
+        "Oficina",
+        "Salon",
+    )
+    assert actividades.pueblo_indigena_frecuencia == "Mensual"

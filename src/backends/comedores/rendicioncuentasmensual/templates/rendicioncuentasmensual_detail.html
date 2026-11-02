@@ -42,22 +42,7 @@
                         {% endif %}
                         <div id="rendicion-download-action">
                             {% if puede_descargar_pdf %}
-                                <form class="d-inline js-pdf-descarga-form"
-                                      method="post"
-                                      action="{% url 'rendicioncuentasmensual_download_pdf_solicitar' rendicion.id %}"
-                                      data-estado-url="{% url 'rendicioncuentasmensual_download_pdf_estado' rendicion.id %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-success">
-                                        <span class="js-submit-idle"><i class="fas fa-file-pdf"></i> Generar descarga</span>
-                                        <span class="js-submit-spinner d-none">
-                                            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-                                            Generando PDF…
-                                        </span>
-                                    </button>
-                                </form>
-                                <div class="small mt-1 js-pdf-descarga-mensaje"
-                                     role="status"
-                                     aria-live="polite"></div>
+                                {% include "components/pdf_descarga_action.html" with rendicion=rendicion %}
                             {% endif %}
                         </div>
                     </div>

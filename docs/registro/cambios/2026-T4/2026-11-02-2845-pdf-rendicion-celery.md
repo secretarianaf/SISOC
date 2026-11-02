@@ -28,9 +28,17 @@ documentación supera el corte.
   de una solicitud más nueva. Una solicitud que lleva más de 15 minutos en curso
   se informa como error y puede reintentarse.
 - Si Redis no responde al encolar, la solicitud queda en error en lugar de
-  pendiente.
+  pendiente. El encolado usa una conexión propia sin reintentos
+  (`socket_connect_timeout` de 3 s): con el broker inalcanzable falla en unos
+  3 s, en vez de los ~20 s de los reintentos por defecto, que se acercaban al
+  corte de 25 s del proxy.
+- El botón es un parcial (`rendicioncuentasmensual/templates/components/pdf_descarga_action.html`)
+  usado en el detalle de la rendición y en el legajo de Organización
+  (`organizacion_rendicion_detail.html`, link "Descargar"). Antes, ese link
+  generaba el PDF en el momento.
 - Una purga diaria (beat, 03:30, cola `comedores`) borra los PDFs y las
-  solicitudes terminadas hace más de 7 días.
+  solicitudes terminadas hace más de 7 días. El borrado es condicional al token,
+  así que no elimina una solicitud que se reinició mientras corría la purga.
 - El PDF se guarda en `media/rendicioncuentasmensual_pdf_consolidado/` con un
   nombre que incluye el token. Se descarga solo por la vista con permisos
   (`_RENDICION_ACCESS_PERMS`), porque nginx sirve `/media/` sin autenticación.
@@ -61,6 +69,10 @@ documentación supera el corte.
   registra las dos tareas, recibe una tarea enviada desde el web y la ejecuta.
   En el entorno de PAS solo se descubren las tareas de PAS, sin errores de
   import.
+- Un verificador independiente confirmó S1 a S5 con 7 pruebas adicionales
+  (soft delete, documento nuevo validado, permisos, ausencia de rutas `/media/`
+  en las respuestas). También encontró un bloqueante, el link del legajo de
+  Organización, que se corrigió en el segundo commit.
 - No se verificó en navegador: el worktree no tiene un stack completo con datos.
 
 ## Límites y pendientes

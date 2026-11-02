@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const button = form.querySelector("button[type='submit']");
         const idle = form.querySelector(".js-submit-idle");
         const spinner = form.querySelector(".js-submit-spinner");
-        const mensaje = form.parentElement.querySelector(".js-pdf-descarga-mensaje");
+        const mensaje = form.querySelector(".js-pdf-descarga-mensaje");
         let inicio = 0;
 
         const setGenerando = function (generando) {

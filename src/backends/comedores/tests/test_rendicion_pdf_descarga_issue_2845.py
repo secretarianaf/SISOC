@@ -2,9 +2,15 @@
 
 from datetime import timedelta
 from io import BytesIO
+from types import SimpleNamespace
+from unittest import mock
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db.models.query import QuerySet
+from django.template import Context
+from django.template.loader import get_template
+from django.template.loader_tags import BlockNode
 from django.urls import reverse
 from django.utils import timezone
 from pypdf import PdfReader, PdfWriter
@@ -73,6 +79,8 @@ def test_solicitar_encola_en_cola_comedores_y_tarea_deja_pdf_listo(
         "rendicioncuentasmensual.tasks.generar_pdf_descarga",
         args=[solicitud.pk, solicitud.token],
         queue="comedores",
+        retry=False,
+        connection=mock.ANY,
     )
 
     servicio.generar_pdf_descarga(solicitud.pk, solicitud.token)
@@ -225,6 +233,70 @@ def test_purga_borra_pdfs_de_mas_de_siete_dias_y_conserva_recientes(
     assert not (media / vieja.archivo.name).exists()
     reciente = RendicionPdfDescarga.objects.get(rendicion=reciente_rendicion)
     assert (media / reciente.archivo.name).exists()
+
+
+def test_purga_no_borra_una_solicitud_reiniciada_mientras_purgaba(
+    media, send_task, mocker, django_capture_on_commit_callbacks
+):
+    rendicion, _ = _rendicion_finalizada()
+    solicitud = _solicitar(rendicion, django_capture_on_commit_callbacks)
+    servicio.generar_pdf_descarga(solicitud.pk, solicitud.token)
+    RendicionPdfDescarga.objects.filter(pk=solicitud.pk).update(
+        fecha_fin=timezone.now() - timedelta(days=8)
+    )
+    iterar_original = QuerySet.iterator
+
+    def leer_y_reiniciar(self, *args, **kwargs):
+        viejas = list(iterar_original(self, *args, **kwargs))
+        # Entre la lectura y el borrado, un usuario vuelve a pedir el PDF.
+        RendicionPdfDescarga.objects.filter(pk=solicitud.pk).update(
+            token="token-nuevo", estado=RendicionPdfDescarga.ESTADO_PENDIENTE
+        )
+        return iter(viejas)
+
+    mocker.patch.object(QuerySet, "iterator", leer_y_reiniciar)
+
+    assert servicio.purgar_pdfs_descarga() == 0
+
+    assert RendicionPdfDescarga.objects.filter(
+        pk=solicitud.pk, token="token-nuevo"
+    ).exists()
+
+
+def test_legajo_de_organizacion_usa_la_descarga_asincrona(mocker):
+    rendicion, _ = _rendicion_finalizada()
+    mocker.patch.object(
+        RendicionCuentaMensual,
+        "validacion_auditoria_finalizada",
+        new_callable=mocker.PropertyMock,
+        return_value=True,
+    )
+    # Solo el bloque de contenido: el layout base necesita un request completo.
+    plantilla = get_template("organizacion_rendicion_detail.html").template
+    bloque = next(
+        nodo
+        for nodo in plantilla.nodelist.get_nodes_by_type(BlockNode)
+        if nodo.name == "content"
+    )
+    contexto = Context(
+        {
+            "rendicion": rendicion,
+            "organizacion": SimpleNamespace(id=1, nombre="Org"),
+            "perms": {"rendicioncuentasmensual": {"view_rendicioncuentamensual": True}},
+        }
+    )
+    with contexto.bind_template(plantilla):
+        contenido = bloque.render(contexto)
+
+    assert "js-pdf-descarga-form" in contenido
+    assert (
+        reverse(
+            "rendicioncuentasmensual_download_pdf_solicitar",
+            kwargs={"pk": rendicion.pk},
+        )
+        in contenido
+    )
+    assert "rendicioncuentasmensual_pdf_descarga.js" in contenido
 
 
 def test_solicitar_view_rechaza_rendicion_no_finalizada(client, superuser, send_task):

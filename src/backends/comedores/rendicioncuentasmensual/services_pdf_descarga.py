@@ -28,6 +28,11 @@ PDF_DESCARGA_RETENCION = timedelta(days=7)
 # Una solicitud pendiente o en proceso más vieja que esto se considera perdida
 # (worker caído, mensaje descartado) y la próxima solicitud la reemplaza.
 PDF_DESCARGA_TIEMPO_MAXIMO = timedelta(minutes=15)
+PDF_DESCARGA_BROKER_OPCIONES = {
+    "max_retries": 0,
+    "socket_connect_timeout": 3,
+    "socket_timeout": 3,
+}
 
 MENSAJE_SIN_DOCUMENTOS = "La rendición no tiene documentación para descargar."
 MENSAJE_NO_FINALIZADA = (
@@ -98,9 +103,22 @@ def _encolar(solicitud_id, token):
     from config.celery import app  # pylint: disable=import-outside-toplevel
 
     try:
-        app.send_task(
-            PDF_DESCARGA_TAREA, args=[solicitud_id, token], queue=PDF_DESCARGA_COLA
-        )
+        # Conexión propia sin reintentos: con el broker inalcanzable, los
+        # reintentos por defecto demoran ~20 s el POST, cerca del timeout de
+        # 25 s del proxy del core. Así falla en unos 3 s.
+        with app.connection_for_write(
+            transport_options={
+                **app.conf.broker_transport_options,
+                **PDF_DESCARGA_BROKER_OPCIONES,
+            }
+        ) as conexion:
+            app.send_task(
+                PDF_DESCARGA_TAREA,
+                args=[solicitud_id, token],
+                queue=PDF_DESCARGA_COLA,
+                retry=False,
+                connection=conexion,
+            )
     except Exception:  # pylint: disable=broad-exception-caught
         # Sin broker la solicitud quedaría pendiente hasta vencer: se informa ya.
         logger.exception(
@@ -260,7 +278,10 @@ def purgar_pdfs_descarga(ahora=None):
     )
     borradas = 0
     for solicitud in viejas.iterator():
-        _borrar_archivo(solicitud.archivo.storage, solicitud.archivo.name)
-        solicitud.delete()
-        borradas += 1
+        # Borrado condicional: si una solicitud nueva reinició la fila entre la
+        # lectura y el borrado, se conserva (y su archivo ya no es este).
+        eliminadas, _ = viejas.filter(pk=solicitud.pk, token=solicitud.token).delete()
+        if eliminadas:
+            _borrar_archivo(solicitud.archivo.storage, solicitud.archivo.name)
+            borradas += 1
     return borradas

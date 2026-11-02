@@ -215,8 +215,11 @@ def obtener_pdf_vigente(rendicion):
 
 def generar_pdf_descarga(solicitud_id, token):
     """Cuerpo de la tarea Celery: genera y guarda el PDF de una solicitud."""
-    tomada = RendicionPdfDescarga.objects.filter(
-        pk=solicitud_id, token=token, estado=RendicionPdfDescarga.ESTADO_PENDIENTE
+    de_esta_solicitud = RendicionPdfDescarga.objects.filter(pk=solicitud_id).filter(
+        token=token
+    )
+    tomada = de_esta_solicitud.filter(
+        estado=RendicionPdfDescarga.ESTADO_PENDIENTE
     ).update(estado=RendicionPdfDescarga.ESTADO_PROCESANDO, fecha_inicio=timezone.now())
     if not tomada:
         return
@@ -224,9 +227,7 @@ def generar_pdf_descarga(solicitud_id, token):
     solicitud = RendicionPdfDescarga.objects.select_related("rendicion").get(
         pk=solicitud_id
     )
-    en_proceso = RendicionPdfDescarga.objects.filter(
-        pk=solicitud_id, token=token, estado=RendicionPdfDescarga.ESTADO_PROCESANDO
-    )
+    en_proceso = de_esta_solicitud.filter(estado=RendicionPdfDescarga.ESTADO_PROCESANDO)
     storage = solicitud.archivo.storage
     try:
         pdf = RendicionCuentaMensualService.generar_pdf_descarga_rendicion(

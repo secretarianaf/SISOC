@@ -3405,6 +3405,16 @@
   "regex": "^rendicioncuentasmensual/rendicioncuentasmensual/detalle/(?P<pk>[0-9]+)/descargar\\-pdf/\\Z"
  },
  {
+  "name": "rendicioncuentasmensual_download_pdf_estado",
+  "namespace": "",
+  "regex": "^rendicioncuentasmensual/rendicioncuentasmensual/detalle/(?P<pk>[0-9]+)/descargar\\-pdf/estado/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_download_pdf_solicitar",
+  "namespace": "",
+  "regex": "^rendicioncuentasmensual/rendicioncuentasmensual/detalle/(?P<pk>[0-9]+)/descargar\\-pdf/solicitar/\\Z"
+ },
+ {
   "name": "rendicioncuentasmensual_global_list",
   "namespace": "",
   "regex": "^rendicioncuentasmensual/rendicioncuentasmensual/listado/\\Z"

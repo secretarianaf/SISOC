@@ -36,6 +36,7 @@ from iam.services import user_has_permission_code
 from rendicioncuentasmensual.models import RendicionCuentaMensual, DocumentacionAdjunta
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from rendicioncuentasmensual.services import RendicionProcesoService
+from rendicioncuentasmensual import services_pdf_descarga
 from rendicioncuentasmensual.forms import (
     RendicionCuentaMensualForm,
     DocumentacionAdjuntaForm,
@@ -838,28 +839,82 @@ class RendicionCuentaMensualDownloadPdfView(LoginRequiredMixin, DetailView):
         return f"{proyecto}-{convenio}-RENDICION_{numero}-{mes_archivo}{anio}.pdf"
 
     def get(self, request, *args, **kwargs):
+        """Entrega el PDF ya generado; la generación la dispara la solicitud."""
         rendicion = RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual(
             self.kwargs.get("pk")
         )
+        detalle_url = reverse(
+            "rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk}
+        )
         try:
-            pdf_buffer = RendicionCuentaMensualService.generar_pdf_descarga_rendicion(
-                rendicion
-            )
+            solicitud = services_pdf_descarga.obtener_pdf_vigente(rendicion)
         except ValidationError as exc:
             messages.error(
                 request,
                 RendicionCuentaMensualDetailView.format_validation_error(exc),
             )
-            return HttpResponseRedirect(
-                reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
+            return HttpResponseRedirect(detalle_url)
+
+        if solicitud is None:
+            messages.info(
+                request,
+                "El PDF todavía no está listo. Usá «Generar descarga» y esperá "
+                "a que termine.",
             )
+            return HttpResponseRedirect(detalle_url)
 
         return FileResponse(
-            pdf_buffer,
+            solicitud.archivo.open("rb"),
             as_attachment=True,
             filename=self.construir_nombre_archivo(rendicion),
             content_type="application/pdf",
         )
+
+
+def _pdf_descarga_payload(rendicion, solicitud):
+    if solicitud is None:
+        return {"estado": "sin_solicitar", "mensaje": ""}
+    payload = {"estado": solicitud.estado, "mensaje": solicitud.error}
+    if solicitud.estado == solicitud.ESTADO_LISTO:
+        payload["url_descarga"] = reverse(
+            "rendicioncuentasmensual_download_pdf", kwargs={"pk": rendicion.pk}
+        )
+    return payload
+
+
+class RendicionPdfDescargaSolicitarView(LoginRequiredMixin, View):
+    """Encola la generación del PDF consolidado (o reutiliza la vigente)."""
+
+    def post(self, request, *args, **kwargs):
+        rendicion = RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual(
+            self.kwargs.get("pk")
+        )
+        try:
+            solicitud = services_pdf_descarga.solicitar_pdf_descarga(
+                rendicion, request.user
+            )
+        except ValidationError as exc:
+            return JsonResponse(
+                {
+                    "estado": "error",
+                    "mensaje": RendicionCuentaMensualDetailView.format_validation_error(
+                        exc
+                    ),
+                },
+                status=400,
+            )
+        return JsonResponse(_pdf_descarga_payload(rendicion, solicitud))
+
+
+class RendicionPdfDescargaEstadoView(LoginRequiredMixin, View):
+    """Estado de la generación del PDF consolidado, para el polling del detalle."""
+
+    def get(self, request, *args, **kwargs):
+        rendicion = RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual(
+            self.kwargs.get("pk")
+        )
+        solicitud = services_pdf_descarga.obtener_estado_pdf_descarga(rendicion)
+        return JsonResponse(_pdf_descarga_payload(rendicion, solicitud))
 
 
 class RendicionDocumentoVerView(LoginRequiredMixin, View):

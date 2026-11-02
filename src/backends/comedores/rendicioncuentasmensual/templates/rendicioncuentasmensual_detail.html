@@ -42,10 +42,22 @@
                         {% endif %}
                         <div id="rendicion-download-action">
                             {% if puede_descargar_pdf %}
-                                <a href="./descargar-pdf/" class="btn btn-sm btn-success">
-                                    <i class="fas fa-file-pdf"></i>
-                                    Generar descarga
-                                </a>
+                                <form class="d-inline js-pdf-descarga-form"
+                                      method="post"
+                                      action="{% url 'rendicioncuentasmensual_download_pdf_solicitar' rendicion.id %}"
+                                      data-estado-url="{% url 'rendicioncuentasmensual_download_pdf_estado' rendicion.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <span class="js-submit-idle"><i class="fas fa-file-pdf"></i> Generar descarga</span>
+                                        <span class="js-submit-spinner d-none">
+                                            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                                            Generando PDF…
+                                        </span>
+                                    </button>
+                                </form>
+                                <div class="small mt-1 js-pdf-descarga-mensaje"
+                                     role="status"
+                                     aria-live="polite"></div>
                             {% endif %}
                         </div>
                     </div>
@@ -619,4 +631,5 @@
         </div>
     </div>
     <script src="{% static 'custom/js/rendicioncuentasmensual_detail.js' %}?v=20260821-1"></script>
+    <script src="{% static 'custom/js/rendicioncuentasmensual_pdf_descarga.js' %}?v=20261102-1"></script>
 {% endblock %}

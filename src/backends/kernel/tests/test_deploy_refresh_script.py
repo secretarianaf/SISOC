@@ -389,14 +389,24 @@ def test_cambio_usuarios_actualiza_importador_con_imagen_compuesta(tmp_path):
 
 
 def test_comedores_en_qa_no_recrea_workers_que_solo_existen_en_prd(tmp_path):
-    config = {"services": {"django": {}, "backend_comedores": {}}}
+    # docker-compose.celery.yml entra en todos los entornos: su worker no es opcional.
+    config = {
+        "services": {
+            "django": {},
+            "backend_comedores": {},
+            "celery_comedores_worker": {},
+        }
+    }
     resultado = _run_selectivo(
         tmp_path,
         ["src/backends/comedores/comedores/views.py"],
         json.dumps(config),
     )
     assert resultado.returncode == 0, resultado.stdout + resultado.stderr
-    assert "up -d --no-deps backend_comedores\n" in resultado.stdout
+    assert (
+        "up -d --no-deps backend_comedores celery_comedores_worker\n"
+        in resultado.stdout
+    )
     assert "up -d --no-deps backend_comedores mailing_worker" not in resultado.stdout
 
 

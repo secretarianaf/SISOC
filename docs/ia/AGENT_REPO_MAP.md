@@ -124,7 +124,7 @@ Reglas entre servicios: `AGENTS.md` ("Verticales independientes") y la guía
 - Es un monorepo Django modularizado por apps de dominio, con backend renderizado por templates y APIs DRF convivientes. Corre como varios servicios desde el mismo codigo: core (proxy de entrada), un backend por vertical, migrador unico, workers y front v2 (ver `docs/operacion/backends_por_servicio.md`).
 - El stack principal es Python 3.11 + Django 5.2 LTS + MySQL 8 + Docker Compose.
 - La operacion local y CI estan pensadas en modo Docker-first.
-- El repo mezcla backoffice web tradicional, APIs internas/server-to-server, flujos asincronos simples (hilos y workers dedicados; Celery solo para PAS), y una capa PWA/API para ciertos casos de uso.
+- El repo mezcla backoffice web tradicional, APIs internas/server-to-server, flujos asincronos simples (hilos y workers dedicados; Celery para PAS y para el PDF de rendiciones de comedores), y una capa PWA/API para ciertos casos de uso.
 - La logica de negocio suele vivir en `services/` cuando la app la tiene, pero coexisten apps mas legacy con mas logica en `views.py`, `models.py` o `tasks.py`.
 - Hay un esfuerzo explicito de control arquitectonico incremental con `import-linter` (`.importlinter`) para evitar que el monolito siga acoplandose.
 - Los modulos nuevos se ubican en el dueño correspondiente y respetan los servicios ya separados; reglas y límites actuales en `docs/ia/MODULAR_BOUNDARIES.md`.

@@ -1,9 +1,12 @@
+import datetime
+
 import pytest
 from django.contrib.auth.models import Permission, User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from core.models import Localidad, Municipio, Provincia
+from datacalle.models import Relevamiento
 from dispositivos.forms import DispositivoForm
 from dispositivos.models import Dispositivo
 from users.models import Profile, ProfileTerritorialScope
@@ -154,6 +157,38 @@ def test_crud_dispositivo_con_permisos(client, user_con_permisos, provincia_muni
     response_delete = client.post(delete_url)
     assert response_delete.status_code == 302
     assert not Dispositivo.objects.filter(pk=dispositivo.pk).exists()
+
+
+@pytest.mark.django_db
+def test_eliminar_dispositivo_con_relevamientos_no_falla_y_lo_conserva(
+    client, user_con_permisos, provincia_municipio
+):
+    provincia, municipio = provincia_municipio
+    dispositivo = _crear_dispositivo(provincia, municipio)
+    Relevamiento.objects.create(
+        denominacion="Operativo invierno",
+        provincia=provincia,
+        fase=Relevamiento.Fase.ESPACIO_PUBLICO,
+        fecha_inicio=datetime.date(2026, 9, 15),
+        fecha_fin=datetime.date(2026, 9, 19),
+        dispositivo=dispositivo,
+    )
+    client.force_login(user_con_permisos)
+
+    response = client.post(
+        reverse("dispositivos_eliminar", kwargs={"pk": dispositivo.pk}),
+        follow=True,
+    )
+
+    assert response.redirect_chain == [
+        (reverse("dispositivos_detalle", kwargs={"pk": dispositivo.pk}), 302)
+    ]
+    assert Dispositivo.objects.filter(pk=dispositivo.pk).exists()
+    mensajes = [str(m) for m in response.context["messages"]]
+    assert mensajes == [
+        "No se puede eliminar el dispositivo porque tiene relevamientos "
+        "de Datacalle asociados."
+    ]
 
 
 @pytest.mark.django_db

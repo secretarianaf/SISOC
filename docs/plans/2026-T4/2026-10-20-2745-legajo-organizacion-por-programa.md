@@ -588,7 +588,9 @@ Esta etapa solo verifica el resultado.
    organizaciones que recibirían un programa fuera de los tres y
    organizaciones con documentos sin Alimentar Comunidad (sección 2.1,
    puntos 9 y 10). Lo esperado es que no devuelva filas; si devuelve,
-   revisar con el área usuaria antes de desplegar.
+   revisar con el área usuaria antes de desplegar. Su consulta 4 lista los
+   casos que frenarían la migración 0005 al retirar la región propia
+   (definición 28); también se espera sin filas.
 
 1. Antes y después de desplegar la Etapa 1 en homologación, contar:
    organizaciones, comedores, firmantes, proyectos, rendiciones y documentos

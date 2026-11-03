@@ -83,7 +83,10 @@ Pantallas según los mockups validados el 27/10/2026.
   `puede_gestionar_organizaciones` que el legajo anterior.
 - Verificación previa al deploy:
   `src/scripts/operacion/verificar_2745_casos_legajo.sql` (casos 5 y 6,
-  descartados por el área usuaria).
+  descartados por el área usuaria). La consulta 4 lista lo que frenaría la
+  migración 0005 (región o subzona que pisaría un dato distinto del #2642);
+  correrla antes de desplegar donde ya estén las tablas de región del #2745,
+  como homologación desde el release #2833.
 
 ## Verificación
 

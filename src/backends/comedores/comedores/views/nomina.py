@@ -28,7 +28,10 @@ from pwa.models import (
 from pwa.services.nomina_destinatarios_pdf_service import (
     get_latest_nomina_destinatarios_documents_by_period,
 )
-from pwa.services.nomina_service import sync_nomina_asistencia_actividades_web
+from pwa.services.nomina_service import (
+    resumen_cupo_nomina_alimentaria,
+    sync_nomina_asistencia_actividades_web,
+)
 from pwa.utils import parse_periodo_referencia
 
 MODO_CREACION_SIN_DNI = "sin_dni"
@@ -108,6 +111,17 @@ def _get_nomina_total_label(tab):
     if tab == "todas":
         return "Total personas"
     return "Asistentes"
+
+
+def _avisar_alta_existente_invalida(request, form_nomina_extra):
+    """Mensaje para el alta de un ciudadano existente cuando el form no valida.
+
+    Si el rechazo es por cupo alimentario completo no se agrega mensaje: el
+    template ya muestra un aviso fijo con el cupo y repetirlo lo duplicaba.
+    """
+    if form_nomina_extra.errors.get("asistencia_alimentaria"):
+        return
+    messages.error(request, "Datos inválidos para agregar ciudadano a la nómina.")
 
 
 def _get_nomina_creada(*, ciudadano_id, admision_id=None, comedor_id=None):
@@ -431,10 +445,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
             )
 
             if not (form_nomina_extra.is_valid() and form_datos_ciudadano.is_valid()):
-                messages.error(
-                    request,
-                    "Datos inválidos para agregar ciudadano a la nómina.",
-                )
+                _avisar_alta_existente_invalida(request, form_nomina_extra)
                 context = self.get_context_data(
                     form_nomina_extra=form_nomina_extra,
                     form_datos_ciudadano=form_datos_ciudadano,
@@ -514,7 +525,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 else:
                     messages.warning(request, msg)
             else:
-                messages.warning(request, "Errores en el formulario de ciudadano.")
+                messages.warning(request, "Revise los datos marcados en el formulario.")
 
             context = self.get_context_data(
                 form_ciudadano=(
@@ -761,6 +772,11 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 "renaper_precarga": renaper_precarga,
                 "mostrar_asistencia_pnud": is_pnud_comedor(comedor),
                 "actividades_pnud": _get_actividades_pnud_for_context(comedor),
+                "cupo_alimentario": (
+                    resumen_cupo_nomina_alimentaria(comedor_id=comedor.pk)
+                    if is_pnud_comedor(comedor)
+                    else None
+                ),
             }
         )
         return context
@@ -790,9 +806,7 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 request.POST, instance=_c, prefix="modal"
             )
             if not (form_nomina_extra.is_valid() and form_datos_ciudadano.is_valid()):
-                messages.error(
-                    request, "Datos inválidos para agregar ciudadano a la nómina."
-                )
+                _avisar_alta_existente_invalida(request, form_nomina_extra)
                 context = self.get_context_data(
                     form_nomina_extra=form_nomina_extra,
                     form_datos_ciudadano=form_datos_ciudadano,
@@ -868,7 +882,7 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 else:
                     messages.warning(request, msg)
             else:
-                messages.warning(request, "Errores en el formulario de ciudadano.")
+                messages.warning(request, "Revise los datos marcados en el formulario.")
 
             context = self.get_context_data(
                 form_ciudadano=(

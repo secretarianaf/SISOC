@@ -136,6 +136,9 @@ def test_legajo_refleja_validacion_y_acta_sin_inferir_desde_etapa(
             "organizacion": Organizacion(id=1, nombre="Organización sintética"),
             "rendicion": rendicion,
             "rendiciones_presentadas": [rendicion],
+            # Legajo por programa (#2745): sin programa de Abordaje las
+            # rendiciones van en este bloque.
+            "rendiciones_generales": [rendicion],
         }
     )
     with contexto.bind_template(template):
@@ -144,8 +147,9 @@ def test_legajo_refleja_validacion_y_acta_sin_inferir_desde_etapa(
     if plantilla == "organizacion_detail.html":
         tabla_rendiciones = html.split("<th>Validación</th>", 1)[1]
         celdas = re.findall(r"<td[^>]*>\s*(.*?)\s*</td>", tabla_rendiciones, re.DOTALL)
-        assert celdas[5] == ("✔" if validada else "-")
-        assert celdas[6] == ("✔" if acta else "-")
+        # Las dos primeras celdas son Línea y Proyecto (#2745).
+        assert celdas[7] == ("✔" if validada else "-")
+        assert celdas[8] == ("✔" if acta else "-")
     else:
         assert re.search(
             r"Validación</small><strong>\s*" + ("Sí" if validada else "No"), html

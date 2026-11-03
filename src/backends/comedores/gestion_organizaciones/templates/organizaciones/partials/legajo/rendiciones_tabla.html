@@ -1,0 +1,84 @@
+{# Tabla de rendiciones del legajo (#2745). Recibe: rendiciones y, opcional, mostrar_linea. #}
+<div class="table-responsive">
+    <table class="table table-sm align-middle">
+        <thead>
+            <tr>
+                {% if mostrar_linea %}
+                    <th>Línea</th>
+                    <th>Proyecto</th>
+                {% endif %}
+                <th>Conv.</th>
+                <th>N° de Rend.</th>
+                <th>Período</th>
+                <th>Validación Territorial</th>
+                <th>Revisión para Carga</th>
+                <th>Validación</th>
+                <th>Auditada</th>
+                <th>Detalle</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rendicion in rendiciones %}
+                <tr>
+                    {% if mostrar_linea %}
+                        <td>
+                            {% if rendicion.linea_programatica %}
+                                <span class="badge badge-linea-{{ rendicion.linea_programatica }}">{{ rendicion.get_linea_programatica_display }}</span>
+                            {% else %}
+                                <span class="badge badge-pendiente">Sin línea</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if rendicion.proyecto %}
+                                {{ rendicion.proyecto.codigo }}
+                            {% else %}
+                                {{ rendicion.comedor.codigo_de_proyecto|default:"-" }}
+                            {% endif %}
+                        </td>
+                    {% endif %}
+                    <td>{{ rendicion.convenio|default:"-" }}</td>
+                    <td>{{ rendicion.numero_rendicion|default:"-" }}</td>
+                    <td>
+                        {% if rendicion.periodo_inicio and rendicion.periodo_fin %}
+                            {{ rendicion.periodo_inicio|date:"d/m/Y" }} al {{ rendicion.periodo_fin|date:"d/m/Y" }}
+                        {% else %}
+                            {{ rendicion.get_mes_display }} {{ rendicion.anio }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if rendicion.validacion_territorial_finalizada %}
+                            ✔
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if rendicion.validacion_auditoria_finalizada %}
+                            ✔
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if rendicion.validada %}
+                            ✔
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if rendicion.auditada %}
+                            ✔
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a class="btn btn-sm btn-outline-light"
+                           href="{% url 'organizacion_rendicion_detalle' organizacion.id rendicion.id %}">Ver</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

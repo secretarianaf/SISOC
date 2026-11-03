@@ -50,6 +50,58 @@ Espacios Comunitarios y comprueba el fetch antes del downtime. Los repositorios
 PWA son privados. El acceso, contrato de build, registro de apps habilitadas,
 recuperacion y transicion de Nginx se detallan en [deploy PWA](deploy_pwas.md).
 
+## Preparación coordinada de SISOC y satélites
+
+`preparar-deploy` deja los PRs finales **de SISOC** sin mergear ni armar, pero
+**promueve, mergea y despliega automáticamente los satélites durante el pre-deploy**
+con el alcance autorizado. No espera al futuro release SISOC. SISOC sigue usando
+`--without-mobile`; cada satélite conserva workflow, CI y gates propios. Esta
+coordinación mediante la skill no agrega scripts ni cambia esos workflows.
+
+La solicitud de ejecutar satélites autoriza el plan acotado cuando están resueltos
+sus destinos, operaciones y cuenta/sesión; reutilizar autorización vigente sin
+pedir aprobación por cada paso. Si falta ese alcance, preguntar solo lo faltante.
+No equivale a acceso SSH, credenciales nuevas ni bypass de protecciones o gates
+humanos. Editar esta skill no ejecuta los despliegues que describe.
+
+En cada preparación leer `src/scripts/operacion/pwas.json` y
+[deploy PWA](deploy_pwas.md). Hoy incluye Espacios Comunitarios, DataCalle, Gestionar
+e Inspecciones; obtener la lista del archivo. Incluir deshabilitados con motivo,
+sin activarlos. Las lecturas y mutaciones requieren el alcance correspondiente.
+
+El expediente registra por componente y entorno:
+
+- ramas y SHA head/base, rango completo y PR; usar `development -> main` solo donde
+  el flujo vigente lo confirme, sin imponer ramas o inputs comunes;
+- CI del head, backend **efectivamente desplegado**, versión/contrato compatible y
+  fase transitoria segura. Si requiere un backend futuro o falta prueba, bloquear
+  el componente antes del merge; no confundir rama `main` con servicio desplegado;
+- PR mergeado y su SHA efectivo, mecanismo de deploy, run/job aplicable, conclusión
+  terminal y revisión efectivamente desplegada, separados de prueba funcional;
+- dependencias, permisos/gates, efectos descendentes automáticos y sus destinos
+  autorizados, recuperación compatible y resultados parciales.
+
+La skill reutiliza/crea el PR autorizado, espera CI, revalida head/base y mergea
+sin bypass; fija el head con `--match-head-commit` cuando usa `gh pr merge`. Esto no
+fija atómicamente la base: si avanza, revalidar el resultado. Si el merge dispara
+un deploy, seguir ese run sin dispatch duplicado; si requiere dispatch manual,
+verificar comando/inputs y SHA objetivo en ese repo antes de ejecutarlo una vez.
+Esperar el resultado en primer plano y comprobar job, entorno y SHA efectivos.
+Un PR en cola, run/job omitido, CI verde o HTTP 200 no demuestra deploy ni E2E.
+Las aprobaciones humanas pendientes se informan como bloqueo, no se automatizan.
+
+"Sin cambios verificado" requiere comparación y evidencia; omitir PR/redeploy
+innecesario. Desconocido, CI fallido, SHA distinto, timeout o deploy incompleto
+bloquea dependientes: informar qué cambió y qué sigue anterior. No hay atomicidad,
+retry ciego ni rollback automático de migraciones/datos. No desplazar por defecto
+un satélite incompatible hasta después de SISOC: requiere decisión/plan explícito.
+Para PWA distinguir bundle servido, cliente y service worker/caché sin borrar
+almacenamiento ni datos pendientes de sincronización.
+
+Las plantillas de la skill contienen la matriz y la secuencia operativa. La
+restricción de no mergear ni armar PRs finales y el ciclo semanal HML se conservan
+para SISOC; no describen los PRs satélite ya mergeados durante el pre-deploy.
+
 ## Inspeccion de talla legacy en produccion
 
 Con 0042 sin operación de base de datos y 0043 restaurando `talla` a texto, el

@@ -7,7 +7,7 @@ from django.views import View
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.db.models import ProtectedError, Q
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import (
@@ -583,7 +583,17 @@ class DispositivoDeleteView(LoginRequiredMixin, DeleteView):
 
     def form_valid(self, form):
         self.object = self.get_object()
-        delete_dispositivo(self.object)
+        try:
+            delete_dispositivo(self.object)
+        except ProtectedError:
+            messages.error(
+                self.request,
+                "No se puede eliminar el dispositivo porque tiene relevamientos "
+                "de Datacalle asociados.",
+            )
+            return HttpResponseRedirect(
+                reverse("dispositivos_detalle", kwargs={"pk": self.object.pk})
+            )
         messages.success(self.request, "Dispositivo eliminado correctamente.")
         return HttpResponseRedirect(self.get_success_url())
 

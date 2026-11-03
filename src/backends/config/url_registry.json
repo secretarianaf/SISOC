@@ -1225,6 +1225,11 @@
   "regex": "^api/celiaquia/tipos-documento/$"
  },
  {
+  "name": "celiaquia_tablero",
+  "namespace": "",
+  "regex": "^celiaquia/tablero/\\Z"
+ },
+ {
   "name": "centro_create",
   "namespace": "",
   "regex": "^centrodefamilia/centros/nuevo/\\Z"

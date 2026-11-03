@@ -546,6 +546,25 @@ class Comedor(SoftDeleteModelMixin, models.Model):
             return self.ultimo_estado.estado_general.estado_actividad.estado
         return self.ESTADO_GENERAL_DEFAULT
 
+    def get_etiqueta_estado_display(self) -> str:
+        """
+        Devuelve el texto de la etiqueta de estado del legajo (el subestado).
+
+        La carga inicial de estados del 17/11/2025 dejó comedores con la
+        combinación inválida Inactivo / En ejecución (#2835). En ese caso la
+        etiqueta muestra el estado general, sin tocar el historial registrado.
+        """
+        estado_general = (
+            self.ultimo_estado.estado_general if self.ultimo_estado else None
+        )
+        if not estado_general or not estado_general.estado_proceso:
+            return "Sin proceso"
+        subestado = estado_general.estado_proceso.estado
+        actividad = estado_general.estado_actividad.estado
+        if actividad == "Inactivo" and subestado == "En ejecución":
+            return actividad
+        return subestado
+
     def hard_delete(self, using=None, keep_parents=False):
         """
         Elimina el comedor junto con su historial de estados evitando errores de llaves protegidas.

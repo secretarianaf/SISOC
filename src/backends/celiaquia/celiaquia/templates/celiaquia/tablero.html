@@ -17,8 +17,7 @@
 {% endblock %}
 
 {% block content %}
-    <div class="cel-tablero"
-         data-url-expediente="{% url 'expediente_detail' 0 %}">
+    <div class="cel-tablero" data-url-expediente="{{ url_expediente }}">
         <div class="cel-encabezado">
             <div>
                 <p>

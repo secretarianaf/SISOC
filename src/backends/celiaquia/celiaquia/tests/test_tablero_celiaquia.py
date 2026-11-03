@@ -28,6 +28,7 @@ from celiaquia.services.tablero_service import construir_tablero
 from celiaquia.services.tablero_service.impl import (
     _tipo_de_error,
     _tramo,
+    clasificar_motivo_de_rechazo,
     titulares_por_edad_y_sexo,
 )
 
@@ -275,6 +276,38 @@ def test_tablero_usa_el_ultimo_motivo_de_rechazo(datos):
     assert construir_tablero()["rechazo"]["Salta"] == {"Tiene obra social": 1}
 
 
+@pytest.mark.parametrize(
+    "motivo, categorias",
+    [
+        ("Menor de 18 años sin adulto a cargo", ["Otro motivo"]),
+        ("Revisó María Ríos", ["Otro motivo"]),
+        ("Rebaja del puntaje", ["Otro motivo"]),
+        ("No presenta OS vigente", ["Tiene obra social"]),
+        ("Baja pedida por la provincia", ["Baja a pedido de la provincia"]),
+        (
+            "Sin diagnóstico. Tiene OS",
+            ["Diagnóstico no acreditado", "Tiene obra social"],
+        ),
+        ("", ["Sin motivo registrado"]),
+    ],
+)
+def test_clasifica_motivo_de_rechazo(motivo, categorias):
+    assert clasificar_motivo_de_rechazo(motivo) == categorias
+
+
+def test_tablero_cuenta_motivo_sin_categoria_como_otro(datos):
+    legajo = ExpedienteCiudadano.objects.get(
+        expediente=datos.exp1, revision_tecnico=RevisionTecnico.RECHAZADO
+    )
+    HistorialValidacionTecnica.objects.create(
+        legajo=legajo,
+        estado_nuevo=RevisionTecnico.RECHAZADO,
+        motivo="Menor de 18 años. Revisó María Ríos",
+    )
+
+    assert construir_tablero()["rechazo"]["Salta"] == {"Otro motivo": 1}
+
+
 def test_tablero_cuenta_subsanaciones_y_errores_de_importacion(datos):
     resultado = construir_tablero()
 
@@ -344,6 +377,28 @@ def test_tablero_con_permiso_muestra_datos_agregados_sin_datos_personales(
         "Salta",
         "Jujuy",
     ]
+
+
+def test_tablero_sin_permiso_de_expedientes_no_enlaza_al_expediente(client, db):
+    client.force_login(_usuario("solo_tablero"))
+
+    response = client.get(URL)
+
+    assert response.status_code == 200
+    assert reverse("expediente_detail", args=[0]) not in response.content.decode()
+
+
+def test_tablero_con_permiso_de_expedientes_enlaza_al_expediente(client, db):
+    usuario = _usuario("tablero_y_expedientes")
+    usuario.user_permissions.add(_permiso("view_expediente"))
+    client.force_login(usuario)
+
+    response = client.get(URL)
+
+    assert (
+        f'data-url-expediente="{reverse("expediente_detail", args=[0])}"'
+        in response.content.decode()
+    )
 
 
 def test_tablero_url_con_nombre():

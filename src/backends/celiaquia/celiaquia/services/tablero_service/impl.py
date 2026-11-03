@@ -92,8 +92,10 @@ SEXOS = {"Femenino": "F", "Masculino": "M"}
 
 # Motivos de rechazo: el motivo es texto libre (trae nombres), así que se
 # clasifica por palabras clave y el texto nunca sale del servidor. Un texto
-# puede mencionar más de un motivo: cuenta en cada uno.
+# puede mencionar más de un motivo: cuenta en cada uno. `\b` reconoce letras
+# con tilde y ñ, así "años" o "Ríos" no se leen como "OS".
 SIN_MOTIVO = "Sin motivo registrado"
+OTRO_MOTIVO = "Otro motivo"
 MOTIVOS_RECHAZO = (
     (
         "Diagnóstico no acreditado",
@@ -101,7 +103,7 @@ MOTIVOS_RECHAZO = (
     ),
     (
         "Tiene obra social",
-        re.compile(r"obra social|(^|[^a-z])os([^a-z]|$)|codem", re.I),
+        re.compile(r"obra social|\bos\b|codem", re.I),
     ),
     (
         "Documento de identidad (RENAPER / DNI)",
@@ -112,7 +114,7 @@ MOTIVOS_RECHAZO = (
         re.compile(r"otra provincia|otra pcia|vivir en la pcia", re.I),
     ),
     ("Falta vínculo o responsable", re.compile(r"v[ií]nculo|adulto responsable", re.I)),
-    ("Baja a pedido de la provincia", re.compile(r"(^|[^a-z])baja([^a-z]|$)", re.I)),
+    ("Baja a pedido de la provincia", re.compile(r"\bbaja\b", re.I)),
 )
 
 # Errores de la carga masiva: `mensaje_error` se vacía cuando el registro se
@@ -191,6 +193,15 @@ def titulares_por_edad_y_sexo(legajos, hoy=None):
     return dict(piramide)
 
 
+def clasificar_motivo_de_rechazo(motivo):
+    """Categorías que menciona el motivo; nunca vacío, para que toda rechazada
+    cuente en alguna barra."""
+    if not motivo:
+        return [SIN_MOTIVO]
+    categorias = [n for n, patron in MOTIVOS_RECHAZO if patron.search(motivo)]
+    return categorias or [OTRO_MOTIVO]
+
+
 def motivos_de_rechazo(legajos):
     """Por provincia: rechazadas que mencionan cada motivo (último motivo cargado)."""
     rechazados = dict(
@@ -212,13 +223,7 @@ def motivos_de_rechazo(legajos):
 
     motivos = defaultdict(lambda: defaultdict(int))
     for legajo_id, provincia in rechazados.items():
-        motivo = ultimo_motivo.get(legajo_id)
-        categorias = (
-            [nombre for nombre, patron in MOTIVOS_RECHAZO if patron.search(motivo)]
-            if motivo
-            else [SIN_MOTIVO]
-        )
-        for categoria in categorias:
+        for categoria in clasificar_motivo_de_rechazo(ultimo_motivo.get(legajo_id)):
             motivos[_nombre(provincia)][categoria] += 1
     return {provincia: dict(conteo) for provincia, conteo in motivos.items()}
 

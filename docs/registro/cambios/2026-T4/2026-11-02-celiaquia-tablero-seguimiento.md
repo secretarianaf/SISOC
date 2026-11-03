@@ -43,6 +43,12 @@ Reglas de los números (las mismas de `cupo_service`, `pago_service` y
 - Motivo de rechazo: el último `HistorialValidacionTecnica.motivo` con
   `estado_nuevo = RECHAZADO`, clasificado por palabras clave. El texto libre
   (trae nombres) no sale del servidor; una rechazada puede contar en dos motivos.
+  Las palabras clave cortas (`OS`, `baja`) se buscan como palabra completa, para
+  que "años" o un apellido como "Ríos" no cuenten como obra social. Un motivo
+  que no coincide con ninguna categoría cuenta en "Otro motivo": ninguna
+  rechazada queda fuera de las barras.
+- El enlace "Abrir en SISOC" del expediente filtrado solo aparece para quien
+  tiene `celiaquia.view_expediente`; sin ese permiso el detalle daría 403.
 
 Alcance: por ahora quien tiene el permiso ve todas las provincias. El service
 recibe `provincias_visibles` para sumar el alcance territorial cuando se defina.
@@ -51,8 +57,9 @@ Sin login o sin permiso: 403, igual que Cupos y el Reporter.
 ## Verificación
 
 - `pytest src/backends/celiaquia/celiaquia/tests/test_tablero_celiaquia.py`:
-  23 pasan (reglas de conteo, borrados lógicos, responsables, tramos de edad,
-  motivos múltiples y último motivo, subsanación, errores, expedientes,
+  33 pasan (reglas de conteo, borrados lógicos, responsables, tramos de edad,
+  motivos múltiples, último motivo y clasificación sin falsos
+  positivos ni rechazos perdidos, enlace al expediente según permiso, subsanación, errores, expedientes,
   `provincias_visibles`, 403 sin login y sin permiso, sin datos personales en
   la respuesta). Suite de `celiaquia` y `dashboard` con `DJANGO_DEBUG=False`:
   668 pasan.

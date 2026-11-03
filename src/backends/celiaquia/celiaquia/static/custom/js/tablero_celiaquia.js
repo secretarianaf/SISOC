@@ -510,10 +510,12 @@
         aviso.classList.toggle("cel-oculto", !det);
         if (det) {
             const e = det[0];
-            const url = URL_EXPEDIENTE.replace(/\/0\/$/, `/${e.id}/`);
+            const enlace = URL_EXPEDIENTE
+                ? `<a href="${esc(URL_EXPEDIENTE.replace(/\/0\/$/, `/${e.id}/`))}">Abrir en SISOC</a>`
+                : "";
             aviso.innerHTML = `<b>Expediente #${e.id}</b> (${esc(e.p)} · ${esc(EST[e.est] || e.est)} · creado hace ${fmt(e.d)} días): `
                 + `las tarjetas y el circuito muestran solo este expediente; el resto de los bloques sigue mostrando ${esc(state.prov || "todas las provincias")}.`
-                + `<a href="${esc(url)}">Abrir en SISOC</a><a href="#" id="cel-quitar-expediente">Quitar filtro</a>`;
+                + `${enlace}<a href="#" id="cel-quitar-expediente">Quitar filtro</a>`;
             document.getElementById("cel-quitar-expediente").addEventListener("click", (ev) => {
                 ev.preventDefault();
                 state.exp = "";

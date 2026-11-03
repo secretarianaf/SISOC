@@ -24,6 +24,9 @@ los mismos efectos que el flujo normal, sin SQL ni intervención de desarrollo.
 - **Permiso:** administradores y coordinadores de Celiaquía, igual que
   `CorregirEvaluacionView`.
 - **Efectos, en una transacción:**
+  - relee el legajo con `select_for_update` y valida su estado sobre esa
+    lectura: una doble ejecución (doble clic o dos operadores) falla con
+    "El legajo ya está en PENDIENTE." en vez de liberar cupo dos veces;
   - si el legajo ocupaba cupo (DENTRO) o estaba en lista de espera (FUERA),
     `CupoService.liberar_slot` lo deja NO_EVAL; con DENTRO descuenta
     `ProvinciaCupo.usados` y registra `HistorialCupo` y `CupoMovimiento` BAJA;

@@ -3,6 +3,7 @@
 from auditlog.models import LogEntry
 from django.contrib import admin
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
@@ -346,6 +347,67 @@ def test_volver_a_pendiente_sin_cupo_configurado_no_cambia_nada(
     assert not HistorialValidacionTecnica.objects.filter(
         legajo=legajo, estado_nuevo=RevisionTecnico.PENDIENTE
     ).exists()
+
+
+def test_volver_a_pendiente_relee_el_legajo_y_no_duplica(
+    expediente, provincia, superuser
+):
+    legajo = _titular(expediente, provincia, 30111999)
+    copia_vieja = ExpedienteCiudadano.objects.get(pk=legajo.pk)
+    _ejecutar(
+        ExpedienteCiudadano, "volver_a_pendiente", legajo, superuser, motivo="Error"
+    )
+
+    ok, errores = _ejecutar(
+        ExpedienteCiudadano,
+        "volver_a_pendiente",
+        copia_vieja,
+        superuser,
+        motivo="Error",
+    )
+
+    assert not ok
+    assert "El legajo ya está en PENDIENTE." in errores[0][1]
+    assert (
+        HistorialValidacionTecnica.objects.filter(
+            legajo_id=legajo.pk, estado_nuevo=RevisionTecnico.PENDIENTE
+        ).count()
+        == 1
+    )
+    assert (
+        CupoMovimiento.objects.filter(
+            legajo_id=legajo.pk, tipo=TipoMovimientoCupo.BAJA
+        ).count()
+        == 1
+    )
+    assert ProvinciaCupo.objects.get(provincia=provincia).usados == 0
+
+
+def test_volver_a_pendiente_exige_rol_admin_o_coordinador(legajo):
+    legajo.revision_tecnico = RevisionTecnico.APROBADO
+    legajo.save(update_fields=["revision_tecnico"])
+    sin_rol = User.objects.create_user("sin-rol-pendiente", is_staff=True)
+
+    ok, errores = _ejecutar(
+        ExpedienteCiudadano, "volver_a_pendiente", legajo, sin_rol, motivo="Error"
+    )
+
+    assert not ok
+    assert "Solo administradores y coordinadores" in errores[0][1]
+    legajo.refresh_from_db()
+    assert legajo.revision_tecnico == RevisionTecnico.APROBADO
+    assert not HistorialValidacionTecnica.objects.filter(legajo=legajo).exists()
+
+
+def test_volver_a_pendiente_rechaza_motivo_en_blanco(legajo, superuser):
+    legajo.revision_tecnico = RevisionTecnico.APROBADO
+    legajo.save(update_fields=["revision_tecnico"])
+
+    with pytest.raises(ValidationError, match="El motivo es obligatorio."):
+        celiaquia_admin.RevisionService.volver_a_pendiente(legajo, superuser, "   ")
+
+    legajo.refresh_from_db()
+    assert legajo.revision_tecnico == RevisionTecnico.APROBADO
 
 
 def test_volver_a_pendiente_exige_motivo_y_es_destructiva():

@@ -443,27 +443,30 @@ class RevisionService:
         if not motivo:
             raise ValidationError("El motivo es obligatorio.")
 
-        estado_anterior = legajo.revision_tecnico
-        if estado_anterior == RevisionTecnico.PENDIENTE:
-            raise ValidationError("El legajo ya está en PENDIENTE.")
-        if estado_anterior == RevisionTecnico.SUBSANAR:
-            raise ValidationError(
-                "El legajo tiene una subsanación abierta pedida a la provincia: "
-                "no se puede volver a PENDIENTE desde acá."
-            )
-        if estado_anterior not in ESTADOS_PARA_VOLVER_A_PENDIENTE:
-            raise ValidationError(
-                f"No se puede volver a PENDIENTE desde {estado_anterior}."
-            )
-        # Un legajo que ya entro en una nomina de pago tiene consecuencias
-        # fuera del legajo (pagos emitidos): eso no lo corrige soporte.
-        if legajo.pagos.exists():
-            raise ValidationError(
-                "El legajo ya figura en una nómina de pago: no se puede volver "
-                "a PENDIENTE."
-            )
-
         with transaction.atomic():
+            # Releer con bloqueo: dos ejecuciones simultaneas (o un doble clic)
+            # no deben liberar el cupo ni registrar el historial dos veces.
+            legajo = ExpedienteCiudadano.objects.select_for_update().get(pk=legajo.pk)
+            estado_anterior = legajo.revision_tecnico
+            if estado_anterior == RevisionTecnico.PENDIENTE:
+                raise ValidationError("El legajo ya está en PENDIENTE.")
+            if estado_anterior == RevisionTecnico.SUBSANAR:
+                raise ValidationError(
+                    "El legajo tiene una subsanación abierta pedida a la provincia: "
+                    "no se puede volver a PENDIENTE desde acá."
+                )
+            if estado_anterior not in ESTADOS_PARA_VOLVER_A_PENDIENTE:
+                raise ValidationError(
+                    f"No se puede volver a PENDIENTE desde {estado_anterior}."
+                )
+            # Un legajo que ya entro en una nomina de pago tiene consecuencias
+            # fuera del legajo (pagos emitidos): eso no lo corrige soporte.
+            if legajo.pagos.exists():
+                raise ValidationError(
+                    "El legajo ya figura en una nómina de pago: no se puede volver "
+                    "a PENDIENTE."
+                )
+
             cupo_liberado = False
             if legajo.estado_cupo != EstadoCupo.NO_EVAL or legajo.es_titular_activo:
                 try:

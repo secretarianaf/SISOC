@@ -250,6 +250,8 @@ def _clonar_preguntas(encuesta_origen: Encuesta, encuesta_destino: Encuesta) -> 
         nueva_pregunta = Pregunta.objects.create(
             encuesta=encuesta_destino,
             texto=pregunta.texto,
+            bloque=pregunta.bloque,
+            max_caracteres=pregunta.max_caracteres,
             tipo=pregunta.tipo,
             obligatoria=pregunta.obligatoria,
             orden=pregunta.orden,
@@ -328,6 +330,7 @@ def nueva_version(encuesta: Encuesta, *, usuario, **campos) -> Encuesta:
         "titulo": encuesta.titulo,
         "descripcion": encuesta.descripcion,
         "es_anonima": encuesta.es_anonima,
+        "disponible_pwa": encuesta.disponible_pwa,
         "es_obligatoria": encuesta.es_obligatoria,
         "es_opcional": encuesta.es_opcional,
         "intervalo_recordatorio_dias": encuesta.intervalo_recordatorio_dias,
@@ -491,6 +494,8 @@ def reemplazar_preguntas(encuesta: Encuesta, preguntas_raw_json: str) -> None:
         pregunta = Pregunta(
             encuesta=encuesta,
             texto=parsed.texto,
+            bloque=parsed.bloque,
+            max_caracteres=parsed.max_caracteres,
             tipo=parsed.tipo,
             obligatoria=parsed.obligatoria,
             orden=parsed.orden,
@@ -542,6 +547,8 @@ def serializar_preguntas(encuesta: Encuesta) -> list[dict]:
         item = {
             "orden": pregunta.orden,
             "texto": pregunta.texto,
+            "bloque": pregunta.bloque,
+            "max_caracteres": pregunta.max_caracteres,
             "tipo": pregunta.tipo,
             "obligatoria": pregunta.obligatoria,
             "opciones": [
@@ -572,8 +579,14 @@ def actualizar_segmentacion(  # pylint: disable=too-many-arguments
     destinatarios: Iterable[dict] | None = None,
     usuarios_ids=None,
     grupos_ids=None,
+    disponible_pwa=None,
 ) -> SegmentacionEncuesta:
     _validar_edicion(encuesta)
+    if disponible_pwa is not None:
+        if not isinstance(disponible_pwa, bool):
+            raise ValidationError("La disponibilidad en PWA debe ser sí o no.")
+        encuesta.disponible_pwa = disponible_pwa
+        encuesta.save(update_fields=["disponible_pwa", "fecha_ultima_modificacion"])
     segmentacion, _ = SegmentacionEncuesta.objects.get_or_create(
         encuesta=encuesta, defaults={"tipo": tipo}
     )
@@ -626,8 +639,9 @@ def actualizar_segmentacion(  # pylint: disable=too-many-arguments
         for tipo_doc, numero in a_crear
     )
     if a_borrar:
-        ids_a_borrar = [existentes[clave].pk for clave in a_borrar]
-        SegmentacionDestinatario.objects.filter(pk__in=ids_a_borrar).delete()
+        SegmentacionDestinatario.objects.filter(
+            pk__in=[existentes[clave].pk for clave in a_borrar]
+        ).delete()
 
     return segmentacion
 
@@ -898,6 +912,8 @@ def _pregunta_es_visible(pregunta: Pregunta, post_data, preguntas_por_orden) -> 
     referencia = preguntas_por_orden.get(pregunta.pregunta_condicion.orden)
     if referencia is None:
         return True
+    if not _pregunta_es_visible(referencia, post_data, preguntas_por_orden):
+        return False
 
     if referencia.tipo == TipoPregunta.OPCION_MULTIPLE:
         cumple = pregunta.valor_condicion in post_data.getlist(
@@ -974,6 +990,10 @@ def _asignar_valor_respuesta(
             raise ValidationError(f"La respuesta a '{pregunta.texto}' no es válida.")
         respuesta_pregunta.valor_texto = valor
     else:
+        if pregunta.max_caracteres and len(valor) > pregunta.max_caracteres:
+            raise ValidationError(
+                f"La respuesta a '{pregunta.texto}' admite hasta {pregunta.max_caracteres} caracteres."
+            )
         respuesta_pregunta.valor_texto = valor
     respuesta_pregunta.save()
 

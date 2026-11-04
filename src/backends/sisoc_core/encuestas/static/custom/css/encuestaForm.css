@@ -171,8 +171,26 @@
 }
 
 .encuesta-editor .pregunta-count {
-  color: var(--poncho-texto-placeholder);
-  font-size: 12.5px;
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(93, 211, 255, .12);
+  color: var(--poncho-blanco);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.encuesta-editor .preguntas-arrastre-ayuda {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.encuesta-editor .preguntas-arrastre-ayuda i {
+  flex-shrink: 0;
+  color: #5dd3ff;
+  font-size: 18px;
 }
 
 /* Botón "Agregar pregunta" - mismo estilo que btn-add-files de comunicados */
@@ -194,6 +212,10 @@
 }
 
 /* Cada pregunta como mini-panel propio */
+.encuesta-editor #preguntas-container {
+  overflow-anchor: none;
+}
+
 .encuesta-editor .pregunta-row {
   background: rgba(255, 255, 255, .035);
   border: 1px solid rgba(255, 255, 255, .2);
@@ -208,9 +230,87 @@
 
 .encuesta-editor .pregunta-head {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+}
+
+.encuesta-editor .pregunta-identificador {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.encuesta-editor .pregunta-arrastrar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 4px;
+  border: 0;
+  border-radius: var(--poncho-radio-base);
+  background: transparent;
+  color: inherit;
+  cursor: grab;
+}
+
+.encuesta-editor .pregunta-arrastrar:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.encuesta-editor .pregunta-arrastrar:active {
+  cursor: grabbing;
+}
+
+.encuesta-editor .pregunta-arrastrar:hover {
+  background: rgba(255, 255, 255, .12);
+}
+
+.encuesta-editor .pregunta-arrastrando {
+  opacity: .35;
+  border-style: dashed;
+}
+
+.encuesta-editor .pregunta-destino-antes,
+.encuesta-editor .pregunta-destino-despues {
+  position: relative;
+}
+
+/* Reserva el lugar entre tarjetas sin agregar una pregunta al formulario. */
+.encuesta-editor .pregunta-row.pregunta-destino-antes {
+  margin-top: 84px;
+}
+
+.encuesta-editor .pregunta-row.pregunta-destino-despues {
+  margin-bottom: 84px;
+}
+
+.encuesta-editor .pregunta-destino-antes::before,
+.encuesta-editor .pregunta-destino-despues::after {
+  content: "";
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  height: 56px;
+  box-sizing: border-box;
+  border: 1px dashed rgba(93, 211, 255, .85);
+  border-radius: var(--poncho-radio-base);
+  background:
+    linear-gradient(rgba(93, 211, 255, .55), rgba(93, 211, 255, .55)) 16px 15px / 34% 7px no-repeat,
+    linear-gradient(rgba(93, 211, 255, .3), rgba(93, 211, 255, .3)) 16px 32px / 62% 6px no-repeat,
+    rgba(93, 211, 255, .18);
+}
+
+.encuesta-editor .pregunta-destino-antes::before {
+  top: -70px;
+}
+
+.encuesta-editor .pregunta-destino-despues::after {
+  bottom: -70px;
 }
 
 .encuesta-editor .pregunta-numero {
@@ -226,16 +326,20 @@
   font-weight: 700;
 }
 
-.encuesta-editor .btn-quitar-pregunta:not(.poncho-btn) {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, .45);
-  color: var(--poncho-texto-placeholder);
+.encuesta-editor .btn-quitar-pregunta {
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  background: var(--poncho-rojo);
+  border: 1px solid var(--poncho-rojo);
+  color: var(--poncho-blanco);
 }
 
-.encuesta-editor .btn-quitar-pregunta:not(.poncho-btn):hover {
-  border-color: #e05656;
-  color: #e05656;
-  background: rgba(224, 86, 86, 0.12);
+.encuesta-editor .btn-quitar-pregunta:hover,
+.encuesta-editor .btn-quitar-pregunta:focus-visible {
+  background: var(--poncho-rojo);
+  border-color: var(--poncho-blanco);
+  color: var(--poncho-blanco);
 }
 
 .encuesta-editor .pregunta-grid {

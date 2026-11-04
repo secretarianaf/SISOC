@@ -2085,6 +2085,16 @@
   "regex": "^encuestas/(?P<pk>[0-9]+)/publicar/\\Z"
  },
  {
+  "name": "encuestas_pwa_listar",
+  "namespace": "",
+  "regex": "^api/encuestas/pwa/\\Z"
+ },
+ {
+  "name": "encuestas_pwa_responder",
+  "namespace": "",
+  "regex": "^api/encuestas/pwa/(?P<ronda_id>[0-9]+)/responder/\\Z"
+ },
+ {
   "name": "encuestas_rechazar",
   "namespace": "",
   "regex": "^encuestas/(?P<pk>[0-9]+)/rechazar/\\Z"

@@ -14,6 +14,11 @@ dependiente acredita Sintys; no exigirlo al responsable puro (`SIN_CRUCE`).
 
 ## Comedores y Espacios comunitarios (#2641)
 
+Encuestas móviles pertenecen a `src/backends/sisoc_core/encuestas/`:
+`api_views.py`, `api_permissions.py` y `services_pwa.py`, rutas públicas
+`/api/encuestas/pwa/`. Validan acceso con el contrato interno de Espacios,
+sin importar el vertical Comedores. Guía: `docs/implementaciones/encuestas.md`.
+
 Topología: `docs/desarrollo/arquitectura_servicios_2641.md` y
 `docs/diagramas/issue-2641-servicios.svg`. Estado y evidencia de cada corte
 (C0–C4): registros `issue-2641` en `docs/registro/cambios/2026-T4/` y

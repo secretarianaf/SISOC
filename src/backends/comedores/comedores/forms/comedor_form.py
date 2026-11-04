@@ -26,6 +26,11 @@ from core.validators import validate_unicode_email
 from users.services import UserPermissionService
 
 MAX_IMAGEN_COMEDOR_FILE_SIZE = 3 * 1024 * 1024
+MENSAJE_CUPO_ALIMENTARIO_WEB = (
+    "No se pudo agregar a la persona con Prestación alimentaria porque el "
+    "espacio ya completó el cupo de personas conveniadas. Puede agregarla "
+    "solo en Actividades, o dar de baja a otra persona para liberar un lugar."
+)
 
 
 class ReferenteForm(forms.ModelForm):
@@ -126,12 +131,38 @@ class NominaExtraForm(NominaForm):
             raise ValidationError(
                 "Debe seleccionar al menos Prestacion alimentaria o Actividades."
             )
-        if asistencia_actividades and not actividad_ids:
+        if (
+            asistencia_actividades
+            and not self.fields["actividad_ids"].queryset.exists()
+        ):
+            # Sin opciones, crispy no muestra el error de actividad_ids: se
+            # informa en el checkbox, que sí lo renderiza.
+            self.add_error(
+                "asistencia_actividades",
+                "El espacio no tiene actividades cargadas. Primero hay que dar "
+                "de alta una actividad para poder inscribir personas.",
+            )
+        elif asistencia_actividades and not actividad_ids:
             self.add_error(
                 "actividad_ids",
                 "Debe seleccionar al menos una actividad.",
             )
+        self._validar_tope_nomina_alimentaria(cleaned_data, asistencia_alimentaria)
         return cleaned_data
+
+    def _validar_tope_nomina_alimentaria(self, cleaned_data, asistencia_alimentaria):
+        """Misma regla de tope que el alta desde la PWA (issue #2844)."""
+        # Import diferido: pwa.services.nomina_service importa ComedorService,
+        # que a su vez importa este módulo de forms.
+        # pylint: disable-next=import-outside-toplevel
+        from pwa.services.nomina_service import tope_nomina_alimentaria_cubierto
+
+        if not asistencia_alimentaria:
+            return
+        if cleaned_data.get("estado") == Nomina.ESTADO_BAJA:
+            return
+        if tope_nomina_alimentaria_cubierto(comedor_id=self.comedor.pk):
+            self.add_error("asistencia_alimentaria", MENSAJE_CUPO_ALIMENTARIO_WEB)
 
 
 class CiudadanoFormParaNomina(forms.ModelForm):

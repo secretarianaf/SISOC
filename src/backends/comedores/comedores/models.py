@@ -366,6 +366,9 @@ class Comedor(SoftDeleteModelMixin, models.Model):
     )
 
     ESTADO_GENERAL_DEFAULT = "Sin definir"
+    ETIQUETA_ESTADO_DEFAULT = "Sin proceso"
+    ESTADO_ACTIVIDAD_INACTIVO = "Inactivo"
+    ESTADO_PROCESO_EN_EJECUCION = "En ejecución"
     ultimo_estado = models.ForeignKey(
         to=EstadoHistorial,
         on_delete=models.PROTECT,
@@ -558,10 +561,13 @@ class Comedor(SoftDeleteModelMixin, models.Model):
             self.ultimo_estado.estado_general if self.ultimo_estado else None
         )
         if not estado_general or not estado_general.estado_proceso:
-            return "Sin proceso"
+            return self.ETIQUETA_ESTADO_DEFAULT
         subestado = estado_general.estado_proceso.estado
         actividad = estado_general.estado_actividad.estado
-        if actividad == "Inactivo" and subestado == "En ejecución":
+        if (
+            actividad == self.ESTADO_ACTIVIDAD_INACTIVO
+            and subestado == self.ESTADO_PROCESO_EN_EJECUCION
+        ):
             return actividad
         return subestado
 

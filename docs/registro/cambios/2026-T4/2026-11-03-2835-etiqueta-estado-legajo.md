@@ -28,5 +28,7 @@ Rutas: `src/backends/comedores/comedores/models.py`,
 ## Verificación
 
 - `pytest src/backends/comedores/tests/test_issue_2835_etiqueta_estado.py`:
-  5 pasan (la combinación inválida, tres combinaciones válidas, sin estado).
+  6 pasan (la combinación inválida, tres combinaciones válidas, sin estado y
+  el render del legajo vía `comedor_detalle`, que fija que el template use el
+  método).
 - Tests del legajo y del servicio de comedores: 179 pasan.

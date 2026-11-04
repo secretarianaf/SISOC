@@ -162,7 +162,7 @@ def test_rechaza_respuestas_invalidas_sin_guardar_parciales(movil, ronda, error)
 
 
 @pytest.mark.django_db
-def test_exige_token_y_acceso_espacios(client, movil, monkeypatch):
+def test_exige_token_y_acceso_espacios(client, movil, monkeypatch, caplog):
     client.defaults.pop("HTTP_AUTHORIZATION")
     assert client.get(reverse("encuestas_pwa_listar")).status_code == 401
     _, user = movil
@@ -176,7 +176,9 @@ def test_exige_token_y_acceso_espacios(client, movil, monkeypatch):
         "encuestas.api_permissions.pedir_json_interno",
         lambda *a, **k: RespuestaInterna(503, None),
     )
-    assert client.get(reverse("encuestas_pwa_listar")).status_code == 503
+    with caplog.at_level("WARNING", logger="django"):
+        assert client.get(reverse("encuestas_pwa_listar")).status_code == 503
+    assert f"user_id={user.pk} status=503" in caplog.text
 
 
 @pytest.mark.django_db

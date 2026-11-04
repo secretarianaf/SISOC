@@ -1,9 +1,13 @@
 """Acceso móvil confirmado por el dueño de Espacios Comunitarios."""
 
+import logging
+
 from rest_framework.exceptions import APIException
 from rest_framework.permissions import BasePermission
 
 from core.internal_services import pedir_json_interno
+
+logger = logging.getLogger("django")
 
 
 class EspaciosNoDisponible(APIException):
@@ -27,5 +31,10 @@ class AccesoEspaciosComunitarios(BasePermission):
             or not isinstance(data.get("pwa"), dict)
             or not isinstance(data["pwa"].get("is_pwa_user"), bool)
         ):
+            logger.warning(
+                "Contexto de Espacios no disponible para encuestas PWA user_id=%s status=%s",
+                request.user.pk,
+                result.status,
+            )
             raise EspaciosNoDisponible()
         return data["pwa"]["is_pwa_user"]

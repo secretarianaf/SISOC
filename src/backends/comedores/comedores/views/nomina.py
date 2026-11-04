@@ -113,13 +113,26 @@ def _get_nomina_total_label(tab):
     return "Asistentes"
 
 
-def _avisar_alta_existente_invalida(request, form_nomina_extra):
+def _get_cupo_alimentario_for_context(comedor):
+    """Cupo de nómina alimentaria para el aviso fijo del alta (issue #2844)."""
+    if not is_pnud_comedor(comedor):
+        return None
+    return resumen_cupo_nomina_alimentaria(comedor_id=comedor.pk)
+
+
+def _avisar_alta_existente_invalida(request, form_nomina_extra, form_datos_ciudadano):
     """Mensaje para el alta de un ciudadano existente cuando el form no valida.
 
-    Si el rechazo es por cupo alimentario completo no se agrega mensaje: el
-    template ya muestra un aviso fijo con el cupo y repetirlo lo duplicaba.
+    Si el único rechazo es el cupo alimentario completo no se agrega mensaje:
+    el template ya muestra un aviso fijo con el cupo y repetirlo lo duplicaba.
+    Con cualquier otro error se mantiene el mensaje, porque el modal de alta
+    no muestra los errores de cada campo.
     """
-    if form_nomina_extra.errors.get("asistencia_alimentaria"):
+    solo_cupo = (
+        set(form_nomina_extra.errors) == {"asistencia_alimentaria"}
+        and not form_datos_ciudadano.errors
+    )
+    if solo_cupo:
         return
     messages.error(request, "Datos inválidos para agregar ciudadano a la nómina.")
 
@@ -390,6 +403,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 "renaper_precarga": renaper_precarga,
                 "mostrar_asistencia_pnud": is_pnud_comedor(admision.comedor),
                 "actividades_pnud": _get_actividades_pnud_for_context(admision.comedor),
+                "cupo_alimentario": _get_cupo_alimentario_for_context(admision.comedor),
             }
         )
         return context
@@ -445,7 +459,9 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
             )
 
             if not (form_nomina_extra.is_valid() and form_datos_ciudadano.is_valid()):
-                _avisar_alta_existente_invalida(request, form_nomina_extra)
+                _avisar_alta_existente_invalida(
+                    request, form_nomina_extra, form_datos_ciudadano
+                )
                 context = self.get_context_data(
                     form_nomina_extra=form_nomina_extra,
                     form_datos_ciudadano=form_datos_ciudadano,
@@ -772,11 +788,7 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 "renaper_precarga": renaper_precarga,
                 "mostrar_asistencia_pnud": is_pnud_comedor(comedor),
                 "actividades_pnud": _get_actividades_pnud_for_context(comedor),
-                "cupo_alimentario": (
-                    resumen_cupo_nomina_alimentaria(comedor_id=comedor.pk)
-                    if is_pnud_comedor(comedor)
-                    else None
-                ),
+                "cupo_alimentario": _get_cupo_alimentario_for_context(comedor),
             }
         )
         return context
@@ -806,7 +818,9 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 request.POST, instance=_c, prefix="modal"
             )
             if not (form_nomina_extra.is_valid() and form_datos_ciudadano.is_valid()):
-                _avisar_alta_existente_invalida(request, form_nomina_extra)
+                _avisar_alta_existente_invalida(
+                    request, form_nomina_extra, form_datos_ciudadano
+                )
                 context = self.get_context_data(
                     form_nomina_extra=form_nomina_extra,
                     form_datos_ciudadano=form_datos_ciudadano,

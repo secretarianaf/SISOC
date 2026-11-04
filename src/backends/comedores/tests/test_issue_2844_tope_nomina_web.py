@@ -10,6 +10,7 @@ import pytest
 from django.contrib.messages import get_messages
 from django.urls import reverse
 
+from admisiones.models.admisiones import Admision
 from ciudadanos.models import Ciudadano
 from comedores.forms.comedor_form import (
     MENSAJE_CUPO_ALIMENTARIO_WEB,
@@ -169,3 +170,53 @@ def test_la_vista_no_agrega_a_la_nomina_si_el_cupo_esta_completo(
     # El aviso fijo del cupo alcanza: no se duplica con un mensaje flotante.
     assert "Cupo de Prestación alimentaria completo" in response.content.decode()
     assert not list(get_messages(response.wsgi_request))
+
+
+def test_el_alta_por_admision_tambien_muestra_el_cupo(comedor_abordaje, admin_client):
+    """El alta con admisión aplica el mismo tope: sin el aviso fijo, el rechazo
+    de un ciudadano existente quedaba sin ningún mensaje visible."""
+    _llenar_nomina(comedor_abordaje, 2)
+    admision = Admision.objects.create(comedor=comedor_abordaje)
+    nuevo = _ciudadano(40000001)
+
+    response = admin_client.post(
+        reverse(
+            "nomina_crear",
+            kwargs={"pk": comedor_abordaje.pk, "admision_pk": admision.pk},
+        ),
+        {
+            "ciudadano_id": nuevo.pk,
+            "estado": Nomina.ESTADO_ACTIVO,
+            "asistencia_alimentaria": "on",
+        },
+    )
+
+    assert response.status_code == 200
+    assert not Nomina.objects.filter(ciudadano=nuevo).exists()
+    assert response.context["cupo_alimentario"]["completo"] is True
+    assert "Cupo de Prestación alimentaria completo" in response.content.decode()
+
+
+def test_con_cupo_completo_y_otro_error_se_mantiene_el_mensaje(
+    comedor_abordaje, admin_client
+):
+    """El modal no muestra errores por campo: si además del cupo hay otro
+    error, el mensaje genérico sigue siendo la única pista."""
+    _llenar_nomina(comedor_abordaje, 2)
+    nuevo = _ciudadano(40000002)
+
+    response = admin_client.post(
+        reverse("nomina_directa_crear", kwargs={"pk": comedor_abordaje.pk}),
+        {
+            "ciudadano_id": nuevo.pk,
+            "estado": Nomina.ESTADO_ACTIVO,
+            "asistencia_alimentaria": "on",
+            "asistencia_actividades": "on",
+        },
+    )
+
+    assert response.status_code == 200
+    assert not Nomina.objects.filter(ciudadano=nuevo).exists()
+    assert [str(m) for m in get_messages(response.wsgi_request)] == [
+        "Datos inválidos para agregar ciudadano a la nómina."
+    ]

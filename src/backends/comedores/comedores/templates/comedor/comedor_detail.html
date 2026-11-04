@@ -173,13 +173,7 @@
                             </button>
                         </li>
                         <li class="list-inline-item">
-                            <button class="btn btn-sm btn-success mb-2">
-                                {% if comedor.ultimo_estado and comedor.ultimo_estado.estado_general and comedor.ultimo_estado.estado_general.estado_proceso %}
-                                    {{ comedor.ultimo_estado.estado_general.estado_proceso.estado }}
-                                {% else %}
-                                    Sin proceso
-                                {% endif %}
-                            </button>
+                            <button class="btn btn-sm btn-success mb-2">{{ comedor.get_etiqueta_estado_display }}</button>
                         </li>
                         {% if comedor.es_caritas %}
                             <li class="list-inline-item">

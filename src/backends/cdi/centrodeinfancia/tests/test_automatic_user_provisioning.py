@@ -733,3 +733,101 @@ def test_email_trabajador_no_se_sincroniza_si_ya_modifico_cuenta(client):
         "ya modificó su cuenta" in str(message)
         for message in get_messages(response.wsgi_request)
     )
+
+
+# ── Cambio de referente con el documento del anterior ─────────────────────
+
+DNI_REFERENTE = "44535030"  # el del CUIL del payload (CUIT_VALIDO)
+CUIL_OTRA_PERSONA = "27334445556"
+
+
+def _centro_con_responsable(dni_referente):
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Cambio referente",
+        telefono="1122334455",
+        telefono_referente="1199887766",
+        nombre_referente="Lia",
+        apellido_referente="Paz",
+        email_referente="lia@example.com",
+        dni_referente=dni_referente,
+        cuil_referente="20445350304",
+    )
+    responsable = _usuario_temporal(
+        "lia-responsable", "lia@example.com", must_change_password=True
+    )
+    AccesoCDI.objects.create(user=responsable, centro=centro, es_responsable=True)
+    return centro, responsable
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "dni_anterior, dni_enviado, campos_con_error",
+    [
+        # Cambian nombre, apellido y email, pero dejan DNI y CUIL de Lia.
+        (DNI_REFERENTE, DNI_REFERENTE, {"dni_referente", "cuil_referente"}),
+        # Ficha sin DNI: solo queda el CUIL de Lia.
+        ("", "", {"cuil_referente"}),
+    ],
+)
+def test_otro_referente_con_el_documento_del_anterior_no_se_guarda(
+    client, dni_anterior, dni_enviado, campos_con_error
+):
+    client.force_login(_actor())
+    centro, responsable = _centro_con_responsable(dni_anterior)
+
+    response = _guardar_centro(
+        client,
+        centro,
+        nombre_referente="Johanna",
+        apellido_referente="Polo",
+        email_referente="johanna@example.com",
+        dni_referente=dni_enviado,
+    )
+
+    assert response.status_code == 200
+    assert set(response.context["form"].errors) == campos_con_error
+    centro.refresh_from_db()
+    responsable.refresh_from_db()
+    assert centro.nombre_referente == "Lia"
+    # La cuenta de Lia no recibe el email de la persona nueva.
+    assert responsable.email == "lia@example.com"
+    assert AccesoCDI.objects.get(centro=centro, es_responsable=True).user == responsable
+
+
+@pytest.mark.django_db
+def test_otro_referente_con_documento_nuevo_pasa_a_ser_responsable(client):
+    client.force_login(_actor())
+    centro, responsable = _centro_con_responsable(DNI_REFERENTE)
+
+    response = _guardar_centro(
+        client,
+        centro,
+        nombre_referente="Johanna",
+        apellido_referente="Polo",
+        email_referente="johanna@example.com",
+        dni_referente="33444555",
+        cuil_referente=CUIL_OTRA_PERSONA,
+    )
+
+    assert response.status_code == 302
+    nuevo = AccesoCDI.objects.get(centro=centro, es_responsable=True).user
+    assert nuevo != responsable
+    assert (nuevo.first_name, nuevo.last_name) == ("Johanna", "Polo")
+
+
+@pytest.mark.django_db
+def test_corregir_el_nombre_con_el_mismo_documento_se_guarda(client):
+    client.force_login(_actor())
+    centro, responsable = _centro_con_responsable(DNI_REFERENTE)
+
+    response = _guardar_centro(
+        client,
+        centro,
+        nombre_referente="Lía Belén",
+        apellido_referente="Paz",
+        email_referente="lia@example.com",
+        dni_referente=DNI_REFERENTE,
+    )
+
+    assert response.status_code == 302
+    assert AccesoCDI.objects.get(centro=centro, es_responsable=True).user == responsable

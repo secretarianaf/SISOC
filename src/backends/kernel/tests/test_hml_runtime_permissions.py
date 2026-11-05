@@ -290,6 +290,8 @@ class HmlComposePolicyTests(unittest.TestCase):
         for service in writers:
             with self.subTest(service=service):
                 self.assertEqual(overlay.get(service, {}).get("user"), "10001:1016")
+                self.assertEqual(overlay[service]["environment"]["HOME"], "/tmp")
+                self.assertEqual(overlay[service]["environment"]["USER"], "sisoc-app")
 
 
 if __name__ == "__main__":

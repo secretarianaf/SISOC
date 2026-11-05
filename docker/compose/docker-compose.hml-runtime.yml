@@ -24,6 +24,7 @@ services:
   mailing_worker: {<<: *hml-runtime}
   user_import_worker: {<<: *hml-runtime}
   celery_pas_worker: {<<: *hml-runtime}
+  celery_comedores_worker: {<<: *hml-runtime}
   celery_beat: {<<: *hml-runtime}
 
   # Root is restricted to this short-lived, network-isolated provisioner.

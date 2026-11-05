@@ -14,6 +14,8 @@ class WebSessionXViewMiddleware(XViewMiddleware):
             in {
                 "/api/web/session/",
                 "/api/web/login/",
+                "/api/web/account/",
+                "/api/web/account/confirm/",
                 "/api/web/password/first-change/",
                 "/api/web/insumos/",
                 "/api/web/insumos/options/",

@@ -4970,6 +4970,16 @@
   "regex": "^api/web/insumos/options/\\Z"
  },
  {
+  "name": "web_account",
+  "namespace": "",
+  "regex": "^api/web/account/\\Z"
+ },
+ {
+  "name": "web_account_confirm",
+  "namespace": "",
+  "regex": "^api/web/account/confirm/\\Z"
+ },
+ {
   "name": "web_login",
   "namespace": "",
   "regex": "^api/web/login/\\Z"

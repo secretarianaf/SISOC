@@ -43,3 +43,15 @@ def build_web_context(request):
         "capabilities": {"insumos": capabilities},
         "footer_version_label": footer_version(request)["footer_version_label"],
     }
+
+
+def build_legacy_presentation(request):
+    """Project the existing HTML frame without granting business access."""
+    context = build_web_context(request)
+    if context is None or context["user"] is None:
+        return None
+    return {
+        "user": context["user"],
+        "footer_version_label": context["footer_version_label"],
+        "legacy_frame_navigation": build_web_navigation(request),
+    }

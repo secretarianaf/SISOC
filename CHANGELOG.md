@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-11-05 -->
+# Versión SISOC 05.11.2026
+
+## Actualizaciones
+
+- [encuestas.] API token para encuestas móviles, deshabilitada por defecto. (PR #2879)
+<!-- AUTO-GENERATED RELEASE END: 2026-11-05 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-11-04 -->
 # Versión SISOC 04.11.2026
 

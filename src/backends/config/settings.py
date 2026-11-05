@@ -232,7 +232,7 @@ MIDDLEWARE = [
     "auditlog.middleware.AuditlogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "django.contrib.admindocs.middleware.XViewMiddleware",
+    "config.middlewares.admindocs.WebSessionXViewMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
     "config.middlewares.csp.ContentSecurityPolicyMiddleware",
     "config.middlewares.threadlocals.ThreadLocalMiddleware",

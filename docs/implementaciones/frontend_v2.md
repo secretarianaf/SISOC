@@ -24,6 +24,22 @@ PAS; al final, todos). Si una tarea necesita romper una regla, se discute en la
 - El rediseño solo se aplica en `/v2/`. No se tocan templates viejos para
   "parecerse" al diseño nuevo.
 
+### Contexto del piloto INS-A
+
+El core expone GET/HEAD `/api/web/session/` mediante sesión Django, no token PWA.
+Devuelve identidad mínima, requisitos web, menú, capacidades y footer; mientras
+haya un requisito pendiente, no devuelve navegación de negocio habilitada.
+Cada API de negocio debe reevaluar sus propios controles: las capacidades no
+autorizan acciones. Respuesta privada/no-store, sin guardar identidad en
+localStorage. La lectura inicializa CSRF; el token no viaja en el JSON.
+
+Fuentes: `src/backends/sisoc_core/usuarios/web_context.py` y `web_api_views.py`.
+Schema de serializers reales en `web_api_serializers.py`. Pruebas:
+`src/backends/sisoc_core/tests/test_web_session_api.py`. El piloto INS-A reproduce
+el diseño Django, no adopta por defecto un rediseño. Esta base backend no declara
+creada la app React ni acepta visuales. Detalle y compatibilidad HEAD:
+`docs/registro/cambios/2026-T4/2026-10-30-2798-contexto-sesion-web.md`.
+
 ## 2. Estructura en el monorepo
 
 ```text

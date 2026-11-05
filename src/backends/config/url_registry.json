@@ -4925,6 +4925,11 @@
   "regex": "^ver\\-para\\-ser\\-libre/ubicacion/buscar/\\Z"
  },
  {
+  "name": "web_session",
+  "namespace": "",
+  "regex": "^api/web/session/\\Z"
+ },
+ {
   "name": "",
   "namespace": "admin",
   "regex": "^admin/(?P<url>.*)$"

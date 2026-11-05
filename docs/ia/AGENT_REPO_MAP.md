@@ -23,6 +23,11 @@ decisiones del 2026-10-15 y 2026-10-16 en `docs/registro/decisiones/`.
   `src/backends/sisoc_core/usuarios/api_views.py`; DTOs y formularios compartidos en
   `src/backends/kernel/users/` (`credentials.py`, `account_forms.py`,
   `admin_forms.py`, `form_sections.py`, `identity_fields.py`). Las rutas públicas se conservan.
+- Contexto JSON por sesión: `src/backends/sisoc_core/usuarios/web_api_views.py`,
+  `src/backends/sisoc_core/usuarios/web_api_serializers.py` y
+  `src/backends/sisoc_core/usuarios/web_context.py`; entry `/api/web/session/`.
+  `config.middlewares.admindocs.WebSessionXViewMiddleware` conserva el HEAD del
+  endpoint sin modificar el tratamiento admindocs de otros paths/métodos.
 - ABM compuesto: `src/backends/comedores/pwa/user_forms.py`,
   `src/backends/comedores/pwa/user_admin_views.py` y contratos de login/contexto en
   `src/backends/comedores/pwa/identity_services.py`. Campos/efectos se clasifican en

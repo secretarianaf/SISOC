@@ -254,6 +254,49 @@ def get_tracked_model_definitions():
             model_getter=_model_getter("VAT.models.ActaCierreComision"),
             excluded_fields=("fecha_creacion", "fecha_modificacion"),
         ),
+        # Celiaquía: el expediente provincial, las decisiones sobre cada
+        # legajo, el cupo de cada provincia, el técnico asignado y los pagos.
+        TrackedModelDefinition(
+            label="Expediente Celiaquía",
+            model_getter=_model_getter("celiaquia.models.Expediente"),
+            excluded_fields=(
+                "fecha_creacion",
+                "fecha_modificacion",
+                "observaciones",
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Legajo Celiaquía",
+            model_getter=_model_getter("celiaquia.models.ExpedienteCiudadano"),
+            # Estar en el legajo ya es un dato de salud y el log es exportable
+            # y sobrevive al borrado: solo se registran las decisiones del
+            # circuito, sin los motivos en texto libre ni los archivos.
+            included_fields=(
+                "estado",
+                "rol",
+                "archivos_ok",
+                "revision_tecnico",
+                "resultado_sintys",
+                "cruce_ok",
+                "estado_cupo",
+                "es_titular_activo",
+                "estado_validacion_renaper",
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Cupo provincial Celiaquía",
+            model_getter=_model_getter("celiaquia.models.ProvinciaCupo"),
+        ),
+        TrackedModelDefinition(
+            label="Asignación de técnico Celiaquía",
+            model_getter=_model_getter("celiaquia.models.AsignacionTecnico"),
+            excluded_fields=("fecha_asignacion",),
+        ),
+        TrackedModelDefinition(
+            label="Pago Celiaquía",
+            model_getter=_model_getter("celiaquia.models.PagoExpediente"),
+            excluded_fields=("creado_en", "modificado_en"),
+        ),
     )
 
 

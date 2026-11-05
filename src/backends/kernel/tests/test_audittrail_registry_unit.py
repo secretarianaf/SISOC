@@ -99,3 +99,22 @@ def test_modelos_de_vat_en_el_allowlist_con_su_app_label():
         assert ("VAT", model_name) in allowlist
     assert "observaciones" in allowlist[("VAT", "inscripcion")].excluded_fields
     assert "observaciones" in allowlist[("VAT", "resultadoevaluacion")].excluded_fields
+
+
+def test_modelos_de_celiaquia_en_el_allowlist_con_su_app_label():
+    """Celiaquía corre en otro backend: el visor los filtra por clave estática."""
+    allowlist = constants.get_tracked_model_allowlist()
+
+    for model_name in (
+        "expediente",
+        "expedienteciudadano",
+        "provinciacupo",
+        "asignaciontecnico",
+        "pagoexpediente",
+    ):
+        assert ("celiaquia", model_name) in allowlist
+    # El legajo es dato de salud: allowlist, sin texto libre ni archivos.
+    campos_legajo = allowlist[("celiaquia", "expedienteciudadano")].included_fields
+    assert "revision_tecnico" in campos_legajo
+    for sensible in ("subsanacion_motivo", "observacion_cruce", "archivo1"):
+        assert sensible not in campos_legajo

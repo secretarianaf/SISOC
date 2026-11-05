@@ -316,8 +316,11 @@ def test_revision_exige_permiso(client, zona):
     assert acta.estado_validacion == PENDIENTE
 
 
-@pytest.mark.parametrize("estado, visible", [(PENDIENTE, True), (VALIDADO, False)])
-def test_detalle_muestra_revisar_y_estado(client, zona, estado, visible):
+@pytest.mark.parametrize(
+    "estado, visible, etiqueta",
+    [(PENDIENTE, True, "Pendiente Revisión"), (VALIDADO, False, "Finalizado")],
+)
+def test_detalle_muestra_revisar_y_estado(client, zona, estado, visible, etiqueta):
     comedor, tecnico = zona
     acta = _acta(
         comedor,
@@ -338,9 +341,11 @@ def test_detalle_muestra_revisar_y_estado(client, zona, estado, visible):
     ).content.decode()
 
     assert ('data-bs-target="#modalRevisionActa"' in html) is visible
+    # #2781: el badge muestra el estado unificado; la validación queda en el tooltip.
+    assert etiqueta in html
     assert estado in html
     assert "Nota del coordinador" in html
-    assert estado in listado
+    assert etiqueta in listado
 
 
 def test_acta_asignada_sin_cargar_no_se_revisa_hasta_que_la_completen(client, zona):

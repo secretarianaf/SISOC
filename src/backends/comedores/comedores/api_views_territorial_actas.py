@@ -24,6 +24,7 @@ from comedores.api_views_territorial_validaciones import (
 )
 from core.utils import format_fecha_django
 from relevamientos.models import ActaComplementaria, PrestacionActaComplementaria
+from relevamientos.service import RelevamientoService
 
 
 def _fecha_iso(valor):
@@ -48,6 +49,7 @@ def serialize_acta(acta, usuario_id=None, con_prestaciones=True):
         "asignado_desde_sisoc": acta.asignado_desde_sisoc,
         "client_uuid": acta.client_uuid,
         "estado_validacion": acta.estado_validacion,
+        "estado_unificado": RelevamientoService.estado_unificado(acta),
         "observaciones_coordinador": (
             acta.observaciones_coordinador
             if usuario_id is not None and acta.tecnico_id == usuario_id

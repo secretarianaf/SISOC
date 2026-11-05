@@ -24,3 +24,23 @@ Caso real que motivó la regla "parar y preguntar" de esta skill.
 
 El body de #2722 (release 2026-10-15) muestra los markers del orquestador y el
 resumen por módulo que reproduce `plantillas.md`.
+
+## Ejemplo de cobertura de satélites: SISOC #2730 / DataCalle #19
+
+SISOC #2730 sincroniza el instrumento 4.1.1; DataCalle #19 cambia la opción
+"Volver al trabajo" por "Programa Local / Provincial" y conserva el código
+retirado para los casos históricos. Promover solo el backend no actualiza el
+formulario del frontend.
+
+La preparación debe comparar ambas promociones y registrar su compatibilidad,
+CI, despliegue y prueba por separado. Consultar los SHA actuales: este ejemplo
+no fija un estado de ramas ni demuestra qué sirve hoy cada entorno. Si DataCalle
+no llegó al destino, comprobar primero que el backend actualmente desplegado
+soporte el instrumento requerido: SISOC en `main` no lo demuestra. Si es compatible
+y el alcance está autorizado, promover DataCalle según su flujo, mergear y observar
+su deploy durante el pre-deploy. Si depende de un backend futuro, bloquear antes
+del merge y pedir el plan necesario; no adelantar el release SISOC ni posponer
+silenciosamente el satélite hasta después. No afirmar que este ejemplo ejecutó
+un despliegue. Si falta prueba en vivo, conservar la limitación; no borrar datos
+locales de la PWA. El expediente incluye los demás satélites del inventario,
+aunque este cambio funcional no los mencione.

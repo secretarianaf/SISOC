@@ -23,6 +23,21 @@
                       enctype="multipart/form-data"
                       id="segmentacion-tipo-form">
                     {% csrf_token %}
+                    <input type="hidden" name="disponibilidad_pwa_presente" value="1" />
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input type="checkbox"
+                                   class="form-check-input"
+                                   id="disponible-pwa"
+                                   name="disponible_pwa"
+                                   aria-describedby="disponible-pwa-ayuda"
+                                   {% if encuesta.disponible_pwa %}checked{% endif %} />
+                            <label class="form-check-label" for="disponible-pwa">Disponible en la PWA de Espacios Comunitarios</label>
+                        </div>
+                        <p class="switch-help mt-2" id="disponible-pwa-ayuda">
+                            Al publicarse, también podrán responderla en la PWA los destinatarios seleccionados abajo que tengan acceso habilitado a Espacios Comunitarios.
+                        </p>
+                    </div>
                     <div class="radio-cards">
                         <label class="radio-card">
                             <input type="radio"

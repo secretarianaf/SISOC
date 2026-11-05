@@ -19,12 +19,9 @@ from core.models import Provincia
 from gestion_organizaciones.forms import FirmanteForm, OrganizacionForm
 from gestion_organizaciones.models import (
     ConvenioProyecto,
-    DatosRegionOrganizacion,
     Firmante,
     LineaProyecto,
     ProgramaOrganizacion,
-    RegionAbordaje,
-    SubzonaAbordaje,
 )
 from gestion_organizaciones.services import programas as servicio
 from gestion_organizaciones.templatetags.organizaciones_tags import monto
@@ -328,9 +325,6 @@ def test_alta_con_programas_proyectos_y_region(programas, region, provincia):
         region.norte,
         region.salta,
     )
-    # La región se guarda solo en la organización (#2642), no en la tabla
-    # de la etapa 1.
-    assert not DatosRegionOrganizacion.objects.exists()
 
 
 def test_sin_programas_el_proyecto_no_exige_linea(programas, provincia):
@@ -533,15 +527,11 @@ def test_subzona_de_otra_region(programas, region, provincia):
     assert "subzona_abordaje" in form.errors
 
 
-def test_cambiar_region_no_escribe_datos_de_etapa_1(programas, region, provincia):
+def test_cambiar_region(programas, region, provincia):
     organizacion = _organizacion("Org región cambio", programas.secos)
-    viejos = DatosRegionOrganizacion.objects.create(
-        organizacion=organizacion,
-        region=RegionAbordaje.objects.create(nombre="VIEJA"),
-        subzona=SubzonaAbordaje.objects.create(
-            region=RegionAbordaje.objects.get(nombre="VIEJA"), nombre="VIEJA"
-        ),
-    )
+    organizacion.region_abordaje = region.norte
+    organizacion.subzona_abordaje = region.salta
+    organizacion.save()
 
     form = OrganizacionForm(
         data=_datos_form(
@@ -558,8 +548,6 @@ def test_cambiar_region_no_escribe_datos_de_etapa_1(programas, region, provincia
     organizacion.refresh_from_db()
     assert organizacion.region_abordaje == region.sur
     assert organizacion.subzona_abordaje == region.chubut
-    viejos.refresh_from_db()
-    assert viejos.region.nombre == "VIEJA"
 
 
 # --- Etapa 3 + #2642: territoriales por proyecto --------------------------------
@@ -646,6 +634,44 @@ def test_quitar_proyecto_quita_sus_territoriales(programas, provincia, territori
     assert LineaProyecto.objects.filter(proyecto=proyecto).exists()
 
 
+def test_formulario_entrega_la_linea_de_proyectos_quitados(programas):
+    organizacion = _organizacion("Org reactivar", programas.tradicional)
+    _proyecto(organizacion, "T-9", programas.tradicional, activo=False)
+    _proyecto(organizacion, "T-1", programas.tradicional)
+
+    datos = OrganizacionForm(instance=organizacion).datos_formulario()
+
+    # Al volver a agregar T-9, el JS le propone la línea que tenía.
+    assert datos["inactivos"] == {"T-9": programas.tradicional.pk}
+    assert [fila["codigo"] for fila in datos["proyectos"]] == ["T-1"]
+
+
+@pytest.mark.django_db
+def test_edicion_carga_proyectos_y_territoriales_en_abordaje(client, programas):
+    usuario = User.objects.create_superuser(
+        username="admin2745form", password="x", email="admin2745@example.com"
+    )
+    client.force_login(usuario)
+    organizacion = _organizacion("Org pantalla", programas.secos)
+    _proyecto(organizacion, "S-1", programas.secos)
+
+    respuesta = client.get(reverse("organizacion_editar", args=[organizacion.pk]))
+
+    assert respuesta.status_code == 200
+    html = respuesta.content.decode()
+    abordaje = html[html.index('id="abordaje-card"') :]
+    # Proyectos, líneas y territoriales viven en "Datos Abordaje Comunitario";
+    # no hay un segundo selector de proyecto para los territoriales.
+    for campo in (
+        "id_proyectos_lineas",
+        "id_asignaciones_territoriales",
+        "territoriales-opciones",
+    ):
+        assert campo in abordaje
+    assert "asignacion-proyecto" not in html
+    assert "modalAgregarProyecto" not in html
+
+
 # --- Etapa 3: firmante ----------------------------------------------------------
 
 
@@ -729,6 +755,11 @@ def test_convenio_secos_sin_imprevistos(client, usuario, programas, region):
 
     respuesta = client.post(url, _datos_convenio(imprevistos="99"))
     assert respuesta.status_code == 302
+    # Al guardar vuelve al legajo, en la línea del proyecto.
+    assert respuesta.url == (
+        reverse("organizacion_detalle", kwargs={"pk": organizacion.pk})
+        + f"?programa={programas.secos.pk}"
+    )
     convenio = ConvenioProyecto.objects.get(proyecto=proyecto)
     assert convenio.imprevistos is None
     assert convenio.numero == "0001/2026"

@@ -76,6 +76,19 @@ Para `origin/main..origin/homologacion` y `origin/homologacion..origin/developme
 - Operaciones pre y post merge: recorrer "Detección de operaciones" de `plantillas.md`.
 - Agrupar por módulo y explicar cada ítem en una línea, para quien no lee código.
 
+## Secuencia explícita para otra promoción del mismo día
+
+La primera promoción mantiene `AAAA.MM.DD-stable`: omitir `release-sequence`
+equivale a 1. Solo con autorización explícita para otra promoción, agregar al
+body final `<!-- release-sequence: 2 -->` (entero positivo seguro, único). El tag
+será `AAAA.MM.DD-2-stable`, sobre el main previo de esa promoción. No mover el
+primer tag, inventar otra fecha ni elegir una secuencia automáticamente. Un
+marker presente inválido o duplicado rechaza el PR antes de armarlo.
+La secuencia forma parte de la identidad del baseline y se revalida con el
+head/base antes de aprobarlo. No habilita PRs directos a main ni salta checks,
+GitHub App o la aprobación humana de production. Sincronizar el ajuste desde
+HML a development antes del siguiente pre-deploy.
+
 ## 4. Crear los PRs (sin mergear)
 
 Bodies y títulos en `plantillas.md`. La fecha del release es el día planeado del

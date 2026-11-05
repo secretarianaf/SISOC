@@ -1,0 +1,23 @@
+{% if adjuntos %}
+    <div class="card mb-4" id="bloque-adjuntos">
+        <div class="card-header">
+            <h3 class="card-title font-weight-bold mr-3 pt-1">Archivos adjuntos</h3>
+        </div>
+        <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+                {% for adjunto in adjuntos %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="fas {% if adjunto.tipo_mime == 'application/pdf' %}fa-file-pdf{% else %}fa-file-image{% endif %} mr-2"></i>
+                            {{ adjunto.nombre_original }}
+                            <small class="text-muted ml-2">{{ adjunto.tamano|filesizeformat }} - {{ adjunto.fecha_subida|date:"d/m/Y H:i" }}</small>
+                        </span>
+                        <a href="{% url 'adjunto_descargar' comedor_pk=adjunto.comedor_id pk=adjunto.pk %}"
+                           class="btn btn-sm btn-outline-secondary"
+                           rel="noopener">Descargar</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endif %}

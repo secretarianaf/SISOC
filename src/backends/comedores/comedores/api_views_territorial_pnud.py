@@ -31,6 +31,7 @@ from comedores.utils import (
 )
 from core.utils import format_fecha_django
 from relevamientos.models import SeguimientoPnud
+from relevamientos.service import RelevamientoService
 from relevamientos.pnud_formularios import campos_tabla, opciones_exclusivas
 
 # Tope de las respuestas de un seguimiento PNUD (N22): los cinco formularios en
@@ -182,6 +183,7 @@ def serialize_seguimiento_pnud(seguimiento, propio=False):
         "tecnico": seguimiento.tecnico_id,
         "tecnico_nombre": _nombre_usuario(seguimiento.tecnico),
         "estado_validacion": seguimiento.estado_validacion,
+        "estado_unificado": RelevamientoService.estado_unificado(seguimiento),
         "observaciones_coordinador": (
             seguimiento.observaciones_coordinador if propio else None
         ),

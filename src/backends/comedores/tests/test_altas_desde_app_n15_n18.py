@@ -129,12 +129,17 @@ def test_zona_rechaza_no_territorial():
 
 
 # --------------------------------------------------------------------------- #
-# N18 (b) — alta de relevamiento
+# #2781 — el territorial ya no crea relevamientos iniciales
 # --------------------------------------------------------------------------- #
+
+DETALLE_403 = (
+    "Los relevamientos iniciales se asignan desde SISOC; "
+    "no se pueden crear desde la app."
+)
 
 
 @pytest.mark.django_db
-def test_crear_relevamiento_desde_la_app_queda_asignado_y_marcado():
+def test_crear_relevamiento_desde_la_app_devuelve_403_y_no_crea_nada():
     user, comedor, _ = _escenario("alta_rel")
 
     response = _token_client(user).post(
@@ -143,45 +148,34 @@ def test_crear_relevamiento_desde_la_app_queda_asignado_y_marcado():
         format="json",
     )
 
-    assert response.status_code == 201
-    relevamiento = Relevamiento.objects.get(pk=response.data["id"])
-    assert relevamiento.comedor_id == comedor.id
-    assert relevamiento.territorial_user_id == user.id
-    assert relevamiento.estado == "Visita pendiente"
-    assert relevamiento.origen == Relevamiento.ORIGEN_APP
-    assert relevamiento.asignado_desde_sisoc is False
-    assert relevamiento.fecha_visita is not None
+    assert response.status_code == 403
+    assert response.data["detail"] == DETALLE_403
+    assert not Relevamiento.all_objects.filter(comedor=comedor).exists()
 
 
 @pytest.mark.django_db
-def test_crear_relevamiento_es_idempotente_por_client_uuid():
-    user, comedor, _ = _escenario("alta_rel_idem")
-    client = _token_client(user)
-    payload = {"client_uuid": "uuid-rel-idem"}
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {"client_uuid": "uuid-rel-fecha", "fecha_visita": "2026-09-04"},
+    ],
+)
+def test_crear_relevamiento_siempre_403_sin_importar_el_payload(payload):
+    user, comedor, _ = _escenario("alta_rel_payload")
 
-    primera = client.post(_url_relevamientos(comedor), payload, format="json")
-    segunda = client.post(_url_relevamientos(comedor), payload, format="json")
+    response = _token_client(user).post(
+        _url_relevamientos(comedor), payload, format="json"
+    )
 
-    assert primera.status_code == 201
-    assert segunda.status_code == 200
-    assert segunda.data["id"] == primera.data["id"]
-    assert Relevamiento.objects.filter(comedor=comedor).count() == 1
-
-
-@pytest.mark.django_db
-def test_crear_relevamiento_sin_client_uuid_devuelve_400():
-    user, comedor, _ = _escenario("alta_rel_sin_uuid")
-
-    response = _token_client(user).post(_url_relevamientos(comedor), {}, format="json")
-
-    assert response.status_code == 400
-    assert not Relevamiento.objects.filter(comedor=comedor).exists()
+    assert response.status_code == 403
+    assert not Relevamiento.all_objects.filter(comedor=comedor).exists()
 
 
 @pytest.mark.django_db
-def test_crear_relevamiento_con_uno_activo_devuelve_409_con_el_id():
+def test_crear_relevamiento_con_uno_activo_tambien_devuelve_403():
     user, comedor, _ = _escenario("alta_rel_activo")
-    activo = Relevamiento.objects.create(comedor=comedor, estado="Visita pendiente")
+    Relevamiento.objects.create(comedor=comedor, estado="Visita pendiente")
 
     response = _token_client(user).post(
         _url_relevamientos(comedor),
@@ -189,10 +183,45 @@ def test_crear_relevamiento_con_uno_activo_devuelve_409_con_el_id():
         format="json",
     )
 
-    assert response.status_code == 409
-    # Devuelve el id del activo para que la app lo complete en vez de crear otro.
-    assert response.data["relevamiento_id"] == activo.id
+    assert response.status_code == 403
     assert Relevamiento.objects.filter(comedor=comedor).count() == 1
+
+
+@pytest.mark.django_db
+def test_reintento_de_un_alta_previa_devuelve_el_registro_existente():
+    """Apps viejas con el alta en la cola offline: si el uuid ya corresponde a
+    un relevamiento de ESTE comedor, se devuelve (200) en vez de trabar la cola."""
+    user, comedor, _ = _escenario("alta_rel_idem")
+    existente = Relevamiento.objects.create(
+        comedor=comedor,
+        estado="Visita pendiente",
+        origen=Relevamiento.ORIGEN_APP,
+        asignado_desde_sisoc=False,
+        client_uuid="uuid-rel-idem",
+    )
+
+    response = _token_client(user).post(
+        _url_relevamientos(comedor), {"client_uuid": "uuid-rel-idem"}, format="json"
+    )
+
+    assert response.status_code == 200
+    assert response.data["id"] == existente.id
+    assert Relevamiento.objects.filter(comedor=comedor).count() == 1
+
+
+@pytest.mark.django_db
+def test_uuid_de_otro_comedor_no_se_devuelve_y_da_403():
+    user, comedor, provincia = _escenario("alta_rel_otro")
+    otro = Comedor.objects.create(nombre="Otro comedor", provincia=provincia)
+    Relevamiento.objects.create(
+        comedor=otro, estado="Visita pendiente", client_uuid="uuid-rel-otro"
+    )
+
+    response = _token_client(user).post(
+        _url_relevamientos(comedor), {"client_uuid": "uuid-rel-otro"}, format="json"
+    )
+
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
@@ -214,17 +243,18 @@ def test_crear_relevamiento_fuera_de_zona_devuelve_404():
 
 
 @pytest.mark.django_db
-def test_crear_relevamiento_con_fecha_invalida_devuelve_400():
-    user, comedor, _ = _escenario("alta_rel_fecha")
-
-    response = _token_client(user).post(
-        _url_relevamientos(comedor),
-        {"client_uuid": "uuid-rel-fecha", "fecha_visita": "2026-09-04"},
-        format="json",
+def test_relevamiento_asignado_desde_sisoc_se_sigue_completando_desde_la_app():
+    user, comedor, _ = _escenario("alta_rel_asignado")
+    relevamiento = Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=user
     )
 
-    assert response.status_code == 400
-    assert not Relevamiento.objects.filter(comedor=comedor).exists()
+    response = _token_client(user).patch(
+        "/api/relevamiento", {"sisoc_id": relevamiento.id}, format="json"
+    )
+
+    assert response.status_code != 403
+    assert response.status_code != 404
 
 
 # --------------------------------------------------------------------------- #
@@ -447,18 +477,19 @@ def test_reintento_con_uuid_de_relevamiento_soft_deleted_no_da_500():
 
     Escenario real: la app crea, SISOC lo borra logicamente, la cola offline
     reintenta el mismo uuid. Antes: IntegrityError -> 500 en cada reintento.
+    Desde #2781 ya no se crea, pero el reintento sigue devolviendo el registro.
     """
     user, comedor, _ = _escenario("alta_rel_borrado")
     client = _token_client(user)
     payload = {"client_uuid": "uuid-rel-borrado"}
-
-    primera = client.post(_url_relevamientos(comedor), payload, format="json")
-    assert primera.status_code == 201
-    Relevamiento.objects.get(pk=primera.data["id"]).delete()  # soft-delete
+    primera = Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", client_uuid="uuid-rel-borrado"
+    )
+    primera.delete()  # soft-delete
 
     reintento = client.post(_url_relevamientos(comedor), payload, format="json")
 
     assert reintento.status_code == 200
-    assert reintento.data["id"] == primera.data["id"]
+    assert reintento.data["id"] == primera.id
     # No se creo un segundo registro con el mismo uuid.
     assert Relevamiento.all_objects.filter(client_uuid="uuid-rel-borrado").count() == 1

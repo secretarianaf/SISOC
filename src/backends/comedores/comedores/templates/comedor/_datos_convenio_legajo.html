@@ -1,87 +1,39 @@
-{% load custom_filters %}
 {% comment %}Cuadro "Datos del Convenio" del legajo de comedores PNUD / Abordaje Comunitario (#2843).{% endcomment %}
 {% include 'comedor/_territoriales_proyecto.html' %}
-<p class="mb-0 fs-7">
-    Organizaci&oacute;n solicitante: <strong>{{ comedor.organizacion|default_if_none:"Sin informaci&oacute;n" }}</strong>
-</p>
-<p class="mb-0 fs-7">
-    C&oacute;digo de Proyecto: <strong>{{ comedor.codigo_de_proyecto|default_if_none:"Sin informaci&oacute;n" }}</strong>
-</p>
-<p class="mb-0 fs-7">
-    N&uacute;mero de Convenio: <strong>{{ datos_convenio_pnud.nro_convenio|default_if_none:"Sin informaci&oacute;n" }}</strong>
-</p>
-<p class="mb-0 fs-7">
-    Estado General: <strong>{{ comedor.get_estado_general_display|default_if_none:"Sin informaci&oacute;n" }}</strong>
-</p>
-<p class="mb-0 fs-7">
-    Subestado: <strong>
-    {% if comedor.ultimo_estado and comedor.ultimo_estado.estado_general and comedor.ultimo_estado.estado_general.estado_proceso %}
-        {{ comedor.ultimo_estado.estado_general.estado_proceso.estado }}
-    {% else %}
-        Sin informaci&oacute;n
+<p class="text-uppercase small fw-bold opacity-75 border-bottom pb-1 mb-2">Convenio</p>
+<div class="row">
+    {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Organización solicitante" valor=comedor.organizacion columna="col-sm-6" only %}
+    {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Código de Proyecto" valor=comedor.codigo_de_proyecto columna="col-sm-6" only %}
+    {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Número de Convenio" valor=datos_convenio_pnud.nro_convenio columna="col-sm-6" only %}
+    {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Estado General" valor=comedor.get_estado_general_display columna="col-sm-6" only %}
+    {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Subestado" valor=comedor.ultimo_estado.estado_general.estado_proceso.estado columna="col-sm-6" only %}
+    {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Nombre del Espacio Comunitario" valor=comedor.nombre columna="col-sm-6" only %}
+    {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="ID Externo" valor=comedor.id_externo columna="col-sm-6" only %}
+    {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Domicilio Completo" valor=domicilio_completo_comedor columna="col-sm-6" only %}
+</div>
+<p class="text-uppercase small fw-bold opacity-75 border-bottom pb-1 mb-2 mt-3">Montos</p>
+<div class="row">
+    {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Monto total del Convenio por Espacio - Prestaciones Alimentarias" valor=datos_convenio_pnud.monto_convenio_prestaciones_alimentarias monto=True only %}
+    {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Monto total del Convenio por Espacio - Servicio Integral de Promoción Humana" valor=datos_convenio_pnud.monto_convenio_siph monto=True only %}
+</div>
+<p class="text-uppercase small fw-bold opacity-75 border-bottom pb-1 mb-2 mt-3">Prestaciones y personas</p>
+<div class="row">
+    {% if es_linea_tradicional %}
+        {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Prestaciones Financiadas Diarias - Desayuno" valor=datos_convenio_pnud.prestaciones_financiadas_diarias_desayuno columna="col-sm-6" only %}
+        {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Prestaciones Financiadas Diarias - Almuerzo" valor=datos_convenio_pnud.prestaciones_financiadas_diarias_almuerzo columna="col-sm-6" only %}
+        {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Prestaciones Financiadas Diarias - Merienda" valor=datos_convenio_pnud.prestaciones_financiadas_diarias_merienda columna="col-sm-6" only %}
+        {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Prestaciones Financiadas Diarias - Merienda Reforzada" valor=datos_convenio_pnud.prestaciones_financiadas_diarias_merienda_reforzada columna="col-sm-6" only %}
+        {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Prestaciones Financiadas Diarias - Cena" valor=datos_convenio_pnud.prestaciones_financiadas_diarias_cena columna="col-sm-6" only %}
+    {% elif not es_linea_secos %}
+        {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Prestaciones financiadas mensuales" valor=datos_convenio_pnud.prestaciones_financiadas_mensuales columna="col-sm-6" only %}
     {% endif %}
-</strong>
-</p>
-<p class="mb-0 fs-7">
-    Nombre del Espacio Comunitario: <strong>{{ comedor.nombre|default_if_none:"Sin informaci&oacute;n" }}</strong>
-</p>
-<p class="mb-0 fs-7">
-    ID Externo: <strong>{{ comedor.id_externo|default_if_none:"Sin informaci&oacute;n" }}</strong>
-</p>
-<p class="mb-0 fs-7">
-    Domicilio Completo: <strong>{{ domicilio_completo_comedor|default_if_none:"Sin informaci&oacute;n" }}</strong>
-</p>
-<p class="mb-0 fs-7">
-    Monto total del Convenio por Espacio - Prestaciones Alimentarias: <strong>
-    {% if datos_convenio_pnud.monto_convenio_prestaciones_alimentarias is not None %}
-        ${{ datos_convenio_pnud.monto_convenio_prestaciones_alimentarias|monto_sin_decimales }}
-    {% else %}
-        Sin informaci&oacute;n
+    {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Personas Conveniadas" valor=datos_convenio_pnud.personas_conveniadas columna="col-sm-6" only %}
+    {% if not es_linea_tradicional %}
+        {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Cantidad de Módulos Mensuales" valor=datos_convenio_pnud.cantidad_modulos columna="col-sm-6" only %}
     {% endif %}
-</strong>
-</p>
-<p class="mb-0 fs-7">
-    Monto total del Convenio por Espacio - Servicio Integral de Promoci&oacute;n Humana: <strong>
-    {% if datos_convenio_pnud.monto_convenio_siph is not None %}
-        ${{ datos_convenio_pnud.monto_convenio_siph|monto_sin_decimales }}
-    {% else %}
-        Sin informaci&oacute;n
-    {% endif %}
-</strong>
-</p>
-{% if es_linea_tradicional %}
-    <p class="mb-0 fs-7">
-        Prestaciones Financiadas Diarias - Desayuno: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_desayuno|default_if_none:"Sin informaci&oacute;n" }}</strong>
-    </p>
-    <p class="mb-0 fs-7">
-        Prestaciones Financiadas Diarias - Almuerzo: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_almuerzo|default_if_none:"Sin informaci&oacute;n" }}</strong>
-    </p>
-    <p class="mb-0 fs-7">
-        Prestaciones Financiadas Diarias - Merienda: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_merienda|default_if_none:"Sin informaci&oacute;n" }}</strong>
-    </p>
-    <p class="mb-0 fs-7">
-        Prestaciones Financiadas Diarias - Merienda Reforzada: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_merienda_reforzada|default_if_none:"Sin informaci&oacute;n" }}</strong>
-    </p>
-    <p class="mb-0 fs-7">
-        Prestaciones Financiadas Diarias - Cena: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_cena|default_if_none:"Sin informaci&oacute;n" }}</strong>
-    </p>
-{% elif not es_linea_secos %}
-    <p class="mb-0 fs-7">
-        Prestaciones financiadas mensuales: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_mensuales|default_if_none:"Sin informaci&oacute;n" }}</strong>
-    </p>
-{% endif %}
-<p class="mb-0 fs-7">
-    Personas Conveniadas: <strong>{{ datos_convenio_pnud.personas_conveniadas|default_if_none:"Sin informaci&oacute;n" }}</strong>
-</p>
-{% if not es_linea_tradicional %}
-    <p class="mb-0 fs-7">
-        Cantidad de M&oacute;dulos Mensuales: <strong>{{ datos_convenio_pnud.cantidad_modulos|default_if_none:"Sin informaci&oacute;n" }}</strong>
-    </p>
-{% endif %}
-<p class="mb-0 fs-7">
-    Total de personas declaradas en Servicio Integral de Promoci&oacute;n Humana: <strong>{{ datos_convenio_pnud.personas_declaradas_siph|default_if_none:"Sin informaci&oacute;n" }}</strong>
-</p>
-<div class="mt-3 d-flex justify-content-center">
+    {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Total de personas declaradas en Servicio Integral de Promoción Humana" valor=datos_convenio_pnud.personas_declaradas_siph columna="col-sm-6" only %}
+</div>
+<div class="mt-auto pt-3 d-flex justify-content-center">
     <a href="{% url 'comedor_convenio_pnud' comedor.id %}"
        class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Editar datos del Convenio</a>
 </div>

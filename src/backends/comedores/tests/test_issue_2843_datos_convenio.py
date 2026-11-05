@@ -168,6 +168,7 @@ def test_legajo_respeta_el_orden_y_formatea_montos(
         monto_total_conveniado=Decimal("999"),
         monto_convenio_prestaciones_alimentarias=Decimal("18889752.00"),
         personas_declaradas_siph=5,
+        personas_conveniadas=0,
     )
 
     html = render_to_string(
@@ -177,7 +178,7 @@ def test_legajo_respeta_el_orden_y_formatea_montos(
             "datos_convenio_pnud": datos,
             "es_linea_tradicional": es_tradicional,
             "es_linea_secos": es_secos,
-            "domicilio_completo_comedor": "Calle 123",
+            "domicilio_completo_comedor": "Sin información",
         },
     )
 
@@ -185,8 +186,36 @@ def test_legajo_respeta_el_orden_y_formatea_montos(
     _assert_en_orden(html, orden)
     assert "Monto total conveniado" not in html
     assert "$18.889.752" in html
-    # Monto sin cargar: no muestra un "$" suelto.
-    assert (
-        "Servicio Integral de Promoción Humana: <strong> Sin información </strong>"
-        in html
+    for grupo in ("Convenio", "Montos", "Prestaciones y personas"):
+        assert f">{grupo}</p>" in html
+    sin_dato = '<span class="d-block fst-italic opacity-50">Sin información</span>'
+    # Monto sin cargar: "Sin información" atenuado, sin un "$" suelto.
+    assert ("Servicio Integral de Promoción Humana</span> " + sin_dato) in html
+    # El domicilio ya llega como "Sin información": también se atenúa.
+    assert "Domicilio Completo</span> " + sin_dato in html
+    # Un cero es un dato cargado, no un vacío.
+    assert 'Personas Conveniadas</span> <span class="d-block fw-bold">0</span>' in html
+
+
+@pytest.mark.parametrize("programa", [TRADICIONAL, SECOS])
+def test_legajo_convenio_ocupa_la_columna_derecha(client, programa):
+    comedor = _comedor(programa)
+    usuario = get_user_model().objects.create_superuser(
+        username="legajo2843", email="legajo2843@example.com", password="x"
+    )
+    client.force_login(usuario)
+
+    respuesta = client.get(reverse("comedor_detalle", args=[comedor.pk]))
+
+    assert respuesta.status_code == 200
+    assert respuesta.context["convenio_ocupa_columna"] is True
+    html = respuesta.content.decode()
+    # Transacciones se apila debajo de Asistencia (columna izquierda), así que
+    # aparece antes que el cuadro del convenio y una sola vez.
+    assert html.count("Transacciones - Naci") == 1
+    assert html.index("Asistencia por rango etareo") < html.index(
+        "Transacciones - Naci"
+    )
+    assert html.index("Transacciones - Naci") < html.index(
+        '<h6 class="fw-bold my-1 text-center">Datos del Convenio</h6>'
     )

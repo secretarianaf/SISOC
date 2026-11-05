@@ -14,6 +14,8 @@ class WebSessionXViewMiddleware(XViewMiddleware):
             in {
                 "/api/web/session/",
                 "/api/web/login/",
+                "/api/web/groups/",
+                "/api/web/groups/create/",
                 "/api/web/account/",
                 "/api/web/account/confirm/",
                 "/api/web/password/first-change/",
@@ -27,6 +29,7 @@ class WebSessionXViewMiddleware(XViewMiddleware):
                 r"/api/web/insumos/(?:categorias/)?[0-9]+/(?:editar|eliminar)/",
                 request.path_info,
             )
+            or re.fullmatch(r"/api/web/groups/[0-9]+/edit/", request.path_info)
         ):
             return None
         return super().process_view(request, view_func, view_args, view_kwargs)

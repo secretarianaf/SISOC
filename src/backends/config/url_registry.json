@@ -4980,6 +4980,21 @@
   "regex": "^api/web/account/confirm/\\Z"
  },
  {
+  "name": "web_groups",
+  "namespace": "",
+  "regex": "^api/web/groups/\\Z"
+ },
+ {
+  "name": "web_group_create",
+  "namespace": "",
+  "regex": "^api/web/groups/create/\\Z"
+ },
+ {
+  "name": "web_group_edit",
+  "namespace": "",
+  "regex": "^api/web/groups/(?P<pk>[0-9]+)/edit/\\Z"
+ },
+ {
   "name": "web_login",
   "namespace": "",
   "regex": "^api/web/login/\\Z"

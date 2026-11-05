@@ -60,8 +60,32 @@ function parseReleasePreparation(body) {
   return Number.isInteger(value) && value > 0 ? value : null;
 }
 
-function stableTagName(releaseDate) {
-  return `${releaseDate.replaceAll("-", ".")}-stable`;
+function parseReleaseSequence(body) {
+  const text = body || "";
+  const starts = [...text.matchAll(/<!--\s*release-sequence\b/gi)];
+  if (starts.length === 0) {
+    return 1;
+  }
+  const matches = [...text.matchAll(/<!--\s*release-sequence\s*:\s*([1-9]\d*)\s*-->/gi)];
+  if (starts.length !== 1 || matches.length !== 1) {
+    return null;
+  }
+  const sequence = Number(matches[0][1]);
+  return Number.isSafeInteger(sequence) ? sequence : null;
+}
+
+function stableTagName(releaseDate, sequence = 1) {
+  if (!Number.isSafeInteger(sequence) || sequence < 1) {
+    throw new Error("La secuencia de release debe ser un entero positivo seguro.");
+  }
+  const suffix = sequence === 1 ? "" : `-${sequence}`;
+  return `${releaseDate.replaceAll("-", ".")}${suffix}-stable`;
+}
+
+function releaseTagName(body) {
+  const date = parseReleaseDate(body);
+  const sequence = parseReleaseSequence(body);
+  return date && sequence !== null ? stableTagName(date, sequence) : null;
 }
 
 function isReleaseSnapshotCurrent(pull) {
@@ -88,6 +112,7 @@ function isScheduledFinalPullRequest(pull, repositoryFullName) {
     isInternalPullRequest(pull, repositoryFullName) &&
     FINAL_RELEASE_MARKER.test(pull.body || "") &&
     parseReleaseDate(pull.body) !== null &&
+    parseReleaseSequence(pull.body) !== null &&
     parseReleaseHead(pull.body) !== null &&
     parseReleasePreparation(pull.body) !== null
   );
@@ -223,7 +248,11 @@ async function setFinalReleaseHead(github, owner, repo, pullNumber, headSha, cor
 }
 
 async function ensureBaselinePending(github, owner, repo, pull, core) {
-  const externalId = `release-baseline:${pull.number}:${pull.base.sha}:${pull.head.sha}`;
+  const tagName = releaseTagName(pull.body);
+  if (!tagName) {
+    throw new Error("El PR no tiene una identidad válida de baseline de release.");
+  }
+  const externalId = `release-baseline:${pull.number}:${pull.base.sha}:${pull.head.sha}:${tagName}`;
   const latest = newestCheckRuns(await getCheckRuns(github, owner, repo, pull.head.sha));
   const existing = latest.get(BASELINE_CHECK);
   if (
@@ -596,9 +625,10 @@ async function processReadyFinalPullRequests(github, owner, repo, core) {
       continue;
     }
 
+    const tagName = releaseTagName(pull.body);
     await ensureBaselinePending(github, owner, repo, pull, core);
     pull = await getPull(github, owner, repo, pull.number);
-    if (!isReleaseSnapshotCurrent(pull)) {
+    if (!isReleaseSnapshotCurrent(pull) || releaseTagName(pull.body) !== tagName) {
       await blockFinal(
         github,
         owner,
@@ -615,7 +645,6 @@ async function processReadyFinalPullRequests(github, owner, repo, core) {
       repo,
       branch: "main",
     });
-    const tagName = stableTagName(parseReleaseDate(pull.body));
     const stableTag = await ensureStableTag(
       github,
       owner,
@@ -636,6 +665,7 @@ async function processReadyFinalPullRequests(github, owner, repo, core) {
       || pullAtGate.base.sha !== mainBeforeMerge.data.commit.sha
       || pullAtGate.head.sha !== pull.head.sha
       || !isReleaseSnapshotCurrent(pullAtGate)
+      || releaseTagName(pullAtGate.body) !== tagName
     ) {
       if (stableTag.created) {
         await removeFreshStableTag(github, owner, repo, tagName);
@@ -653,27 +683,40 @@ async function processReadyFinalPullRequests(github, owner, repo, core) {
       pull.number,
     );
 
+    const mainAtApproval = await github.rest.repos.getBranch({ owner, repo, branch: "main" });
+    const pullAtApproval = await getPull(github, owner, repo, pull.number);
+    if (
+      mainAtApproval.data.commit.sha !== mainBeforeMerge.data.commit.sha
+      || pullAtApproval.base.sha !== mainBeforeMerge.data.commit.sha
+      || pullAtApproval.head.sha !== pull.head.sha
+      || !isReleaseSnapshotCurrent(pullAtApproval)
+      || releaseTagName(pullAtApproval.body) !== tagName
+    ) {
+      // El release ya publicado conserva su historial; no autoriza otra identidad.
+      core.info(`PR final #${pull.number}: identidad cambió durante la publicación del baseline.`);
+      continue;
+    }
+
     await concludeBaseline(
       github,
       owner,
       repo,
-      pullAtGate,
+      pullAtApproval,
       "success",
       "Baseline de rollback listo",
       `Tag: ${tagName}. Main previo: ${stableTag.target}. ${stableUrl}`,
       core,
     );
-    await enableAutoMerge(github, pullAtGate, core);
+    await enableAutoMerge(github, pullAtApproval, core);
     core.info(`PR final #${pull.number} listo para que GitHub complete el auto-merge.`);
   }
 }
 
 async function reportFinalMerge(github, owner, repo, pull, core) {
-  const releaseDate = parseReleaseDate(pull.body);
-  if (!releaseDate) {
+  const tagName = releaseTagName(pull.body);
+  if (!tagName) {
     return;
   }
-  const tagName = stableTagName(releaseDate);
   let stableUrl = `https://github.com/${owner}/${repo}/tree/${tagName}`;
   try {
     const release = await github.rest.repos.getReleaseByTag({
@@ -755,6 +798,7 @@ module.exports = {
   parseReleaseDate,
   parseReleaseHead,
   parseReleasePreparation,
+  parseReleaseSequence,
   requiredChecksState,
   run,
   stableTagName,

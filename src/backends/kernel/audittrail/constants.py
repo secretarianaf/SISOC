@@ -297,6 +297,72 @@ def get_tracked_model_definitions():
             model_getter=_model_getter("celiaquia.models.PagoExpediente"),
             excluded_fields=("creado_en", "modificado_en"),
         ),
+        # PAS: estado y datos de contacto de cada titular (mismo criterio que
+        # "Ciudadano"), el circuito mensual con SINTYS y las incompatibilidades
+        # detectadas. Los avisos (M2M) ya quedan en `PasHistorialEstado`.
+        TrackedModelDefinition(
+            label="Persona PAS",
+            model_getter=_model_getter("pas.models.PasPersona"),
+            excluded_fields=("fecha_creacion", "fecha_actualizacion"),
+        ),
+        TrackedModelDefinition(
+            label="Circuito mensual PAS",
+            model_getter=_model_getter("pas.models.PasCircuitoMensual"),
+        ),
+        TrackedModelDefinition(
+            label="Incompatibilidad PAS",
+            model_getter=_model_getter("pas.models.PasIncompatibilidad"),
+            excluded_fields=("fecha_deteccion",),
+        ),
+        # VPSL: el circuito del operativo (itinerario, sedes, jornadas, cierre)
+        # y el seguimiento de cada atención y su caso de laboratorio.
+        TrackedModelDefinition(
+            label="Itinerario VPSL",
+            model_getter=_model_getter("ver_para_ser_libre.models.ItinerarioVPSL"),
+            excluded_fields=("created_at", "updated_at"),
+        ),
+        TrackedModelDefinition(
+            label="Evaluación de sede VPSL",
+            model_getter=_model_getter(
+                "ver_para_ser_libre.models.EvaluacionSedeItinerarioVPSL"
+            ),
+            excluded_fields=("updated_at",),
+        ),
+        TrackedModelDefinition(
+            label="Sede VPSL",
+            model_getter=_model_getter("ver_para_ser_libre.models.SedeVPSL"),
+        ),
+        TrackedModelDefinition(
+            label="Jornada VPSL",
+            model_getter=_model_getter("ver_para_ser_libre.models.JornadaVPSL"),
+            # La respuesta cruda de RENAPER del referente no va al log.
+            excluded_fields=("created_at", "updated_at", "referente_datos_renaper"),
+        ),
+        TrackedModelDefinition(
+            label="Registro nominal VPSL",
+            model_getter=_model_getter("ver_para_ser_libre.models.RegistroNominalVPSL"),
+            # Atención oftalmológica de chicos y chicas: resultado, graduación,
+            # prescripción y datos personales son de salud y el log es
+            # exportable y sobrevive al borrado. Solo se registra el circuito
+            # administrativo del registro.
+            included_fields=(
+                "estado",
+                "numero_acta",
+                "numero_sobre",
+                "validado_renaper",
+                "no_verificar_renaper",
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Caso de laboratorio VPSL",
+            model_getter=_model_getter("ver_para_ser_libre.models.CasoLaboratorioVPSL"),
+            # `destinatario` e `incidencia` son texto libre sobre la persona.
+            excluded_fields=("updated_at", "destinatario", "incidencia"),
+        ),
+        TrackedModelDefinition(
+            label="Cierre diario VPSL",
+            model_getter=_model_getter("ver_para_ser_libre.models.CierreDiarioVPSL"),
+        ),
     )
 
 

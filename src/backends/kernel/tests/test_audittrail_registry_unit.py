@@ -118,3 +118,34 @@ def test_modelos_de_celiaquia_en_el_allowlist_con_su_app_label():
     assert "revision_tecnico" in campos_legajo
     for sensible in ("subsanacion_motivo", "observacion_cruce", "archivo1"):
         assert sensible not in campos_legajo
+
+
+def test_modelos_de_pas_en_el_allowlist_sin_la_invitacion_ddjj():
+    """PAS corre en otro backend; la invitación lleva un token secreto."""
+    allowlist = constants.get_tracked_model_allowlist()
+
+    for model_name in ("paspersona", "pascircuitomensual", "pasincompatibilidad"):
+        assert ("pas", model_name) in allowlist
+    assert ("pas", "pasinvitacionddjj") not in allowlist
+
+
+def test_modelos_de_vpsl_en_el_allowlist_sin_datos_de_salud():
+    """VPSL corre en otro backend; la atención solo registra su circuito."""
+    allowlist = constants.get_tracked_model_allowlist()
+
+    for model_name in (
+        "itinerariovpsl",
+        "evaluacionsedeitinerariovpsl",
+        "sedevpsl",
+        "jornadavpsl",
+        "registronominalvpsl",
+        "casolaboratoriovpsl",
+        "cierrediariovpsl",
+    ):
+        assert ("ver_para_ser_libre", model_name) in allowlist
+    campos_registro = allowlist[
+        ("ver_para_ser_libre", "registronominalvpsl")
+    ].included_fields
+    assert "estado" in campos_registro
+    for sensible in ("resultado", "prescripcion", "graduacion_derecha", "dni"):
+        assert sensible not in campos_registro

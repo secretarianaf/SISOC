@@ -816,14 +816,16 @@ def test_download_pdf_view_devuelve_archivo(mocker):
     setattr(request, "_messages", mocker.Mock())
 
     rendicion = SimpleNamespace(pk=7, id=7, numero_rendicion=12)
-    buffer = BytesIO(b"%PDF-1.4 test")
+    solicitud = SimpleNamespace(
+        archivo=SimpleNamespace(open=lambda mode: BytesIO(b"%PDF-1.4 test"))
+    )
     mocker.patch(
         "rendicioncuentasmensual.views.RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual",
         return_value=rendicion,
     )
-    pdf_mock = mocker.patch(
-        "rendicioncuentasmensual.views.RendicionCuentaMensualService.generar_pdf_descarga_rendicion",
-        return_value=buffer,
+    vigente_mock = mocker.patch(
+        "rendicioncuentasmensual.views.services_pdf_descarga.obtener_pdf_vigente",
+        return_value=solicitud,
     )
 
     view = module.RendicionCuentaMensualDownloadPdfView()
@@ -834,13 +836,15 @@ def test_download_pdf_view_devuelve_archivo(mocker):
 
     assert isinstance(response, FileResponse)
     assert 'filename="rendicion-12.pdf"' in response.headers["Content-Disposition"]
-    pdf_mock.assert_called_once_with(rendicion)
+    vigente_mock.assert_called_once_with(rendicion)
 
 
 @pytest.mark.django_db
 def test_download_pdf_view_no_falla_por_pdf_invalido(
-    settings, tmp_path, client, superuser
+    settings, tmp_path, client, superuser, mocker, django_capture_on_commit_callbacks
 ):
+    # La generación es asíncrona (#2845): se solicita, se corre la tarea y se descarga.
+    mocker.patch("config.celery.app.send_task")
     settings.MEDIA_ROOT = str(tmp_path)
     rendicion = module.RendicionCuentaMensual.objects.create(
         mes=6,
@@ -871,6 +875,21 @@ def test_download_pdf_view_no_falla_por_pdf_invalido(
     )
 
     client.force_login(superuser)
+    with django_capture_on_commit_callbacks(execute=True):
+        solicitud = client.post(
+            reverse(
+                "rendicioncuentasmensual_download_pdf_solicitar",
+                kwargs={"pk": rendicion.pk},
+            )
+        ).json()
+    assert solicitud["estado"] == "pendiente"
+    pdf_descarga = module.services_pdf_descarga.RendicionPdfDescarga.objects.get(
+        rendicion=rendicion
+    )
+    module.services_pdf_descarga.generar_pdf_descarga(
+        pdf_descarga.pk, pdf_descarga.token
+    )
+
     response = client.get(
         reverse("rendicioncuentasmensual_download_pdf", kwargs={"pk": rendicion.pk})
     )

@@ -1,4 +1,5 @@
 {% extends "includes/main.html" %}
+{% load static %}
 {% block title %}Detalle de Rendición{% endblock %}
 {% block content %}
     <div class="container-fluid py-4">
@@ -84,7 +85,7 @@
                     <div class="col-md-4">
                         <small class="text-muted d-block">PDF Rendición</small>
                         {% if perms.rendicioncuentasmensual.view_rendicioncuentamensual and rendicion.validacion_auditoria_finalizada %}
-                            <a href="{% url 'rendicioncuentasmensual_download_pdf' rendicion.id %}">Descargar</a>
+                            {% include "components/pdf_descarga_action.html" with rendicion=rendicion etiqueta="Descargar" clase_boton="btn btn-sm btn-outline-success" %}
                         {% else %}
                             <strong>-</strong>
                         {% endif %}
@@ -134,4 +135,5 @@
             </div>
         </div>
     </div>
+    <script src="{% static 'custom/js/rendicioncuentasmensual_pdf_descarga.js' %}?v=20261102-1"></script>
 {% endblock %}

@@ -14,6 +14,7 @@ class WebSessionXViewMiddleware(XViewMiddleware):
             in {
                 "/api/web/session/",
                 "/api/web/login/",
+                "/api/web/surveys/pending/",
                 "/api/web/groups/",
                 "/api/web/groups/create/",
                 "/api/web/account/",
@@ -30,6 +31,10 @@ class WebSessionXViewMiddleware(XViewMiddleware):
                 request.path_info,
             )
             or re.fullmatch(r"/api/web/groups/[0-9]+/edit/", request.path_info)
+            or re.fullmatch(
+                r"/api/web/surveys/[0-9]+/(?:answer|postpone|dismiss)/",
+                request.path_info,
+            )
         ):
             return None
         return super().process_view(request, view_func, view_args, view_kwargs)

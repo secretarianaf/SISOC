@@ -5005,6 +5005,26 @@
   "regex": "^api/web/password/first\\-change/\\Z"
  },
  {
+  "name": "web_survey_pending",
+  "namespace": "",
+  "regex": "^api/web/surveys/pending/\\Z"
+ },
+ {
+  "name": "web_survey_answer",
+  "namespace": "",
+  "regex": "^api/web/surveys/(?P<pk>[0-9]+)/answer/\\Z"
+ },
+ {
+  "name": "web_survey_postpone",
+  "namespace": "",
+  "regex": "^api/web/surveys/(?P<pk>[0-9]+)/postpone/\\Z"
+ },
+ {
+  "name": "web_survey_dismiss",
+  "namespace": "",
+  "regex": "^api/web/surveys/(?P<pk>[0-9]+)/dismiss/\\Z"
+ },
+ {
   "name": "web_session",
   "namespace": "",
   "regex": "^api/web/session/\\Z"

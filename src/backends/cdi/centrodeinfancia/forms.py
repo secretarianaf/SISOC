@@ -52,6 +52,9 @@ from centrodeinfancia.services import (
     MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO,
     tiene_nomina_cdi_vigente_en_otro_centro,
 )
+from centrodeinfancia.services_user_provisioning import (
+    documentos_del_referente_anterior,
+)
 from centrodeinfancia.services_renaper_bloques import (
     BLOQUE_REFERENTE,
     BLOQUES,
@@ -750,7 +753,27 @@ class CentroDeInfanciaForm(CamposRenaperFormMixin, forms.ModelForm):
                 }
         cleaned_data["horarios_funcionamiento_data"] = horarios
         self._validar_cdi_unico(cleaned_data)
+        self._validar_documento_del_nuevo_referente(cleaned_data)
         return cleaned_data
+
+    def _validar_documento_del_nuevo_referente(self, cleaned_data):
+        """Al cambiar de referente, el DNI y el CUIL tienen que ser los del nuevo."""
+        if not self.instance.pk:
+            return
+        campos = (
+            "nombre_referente",
+            "apellido_referente",
+            "dni_referente",
+            "cuil_referente",
+        )
+        anterior = {campo: getattr(self.instance, campo) for campo in campos}
+        etiquetas = {"dni_referente": "DNI", "cuil_referente": "CUIL"}
+        for campo in documentos_del_referente_anterior(anterior, cleaned_data):
+            self.add_error(
+                campo,
+                f"Es el {etiquetas[campo]} del referente anterior. Si cambió el "
+                f"referente, cargá el {etiquetas[campo]} de la persona nueva.",
+            )
 
     def save(self, commit=True):
         self.instance.campos_verificados_renaper = list(self.campos_verificados_renaper)

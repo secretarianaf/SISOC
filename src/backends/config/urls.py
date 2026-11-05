@@ -37,6 +37,8 @@ urlpatterns = [
             "beneficiarios/",
         ],
     ),
+    # Keep the Insumos preview entry guard ahead of the generic V2 login gate.
+    path("v2/sisoc/", include("insumos.preview_urls")),
     re_path(
         r"^v2/(?P<module>[a-z0-9_-]+)(?:/(?P<asset_path>.*))?$",
         frontend_v2,

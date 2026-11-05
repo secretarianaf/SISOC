@@ -87,6 +87,18 @@ def subsanar_legajo(legajo, usuario, datos):
     )
 
 
+def volver_a_pendiente(legajo, usuario, datos):
+    # Corrección explícita (issues #2758 y #2861): no relaja la regla de
+    # validar_transicion, que sigue tratando APROBADO/RECHAZADO como finales.
+    return RevisionService.volver_a_pendiente(legajo, usuario, datos.get("motivo", ""))
+
+
+def eliminar_legajo(legajo, usuario, _datos):
+    # Misma baja que el botón "Eliminar" del expediente (issues #2483 y #2488).
+    RevisionService.verificar_permiso(usuario, legajo.expediente, "ELIMINAR")
+    return RevisionService.eliminar(legajo, usuario)
+
+
 def _mover_cupo(movimiento, legajo, usuario, motivo):
     try:
         return movimiento(legajo=legajo, usuario=usuario, motivo=motivo)
@@ -243,6 +255,34 @@ class ExpedienteCiudadanoAdmin(OperacionesAdminMixin, SisocModelAdmin):
             motivo_obligatorio=True,
             campos=_campos_subsanacion,
             icono="edit_note",
+        ),
+        Operacion(
+            slug="volver_a_pendiente",
+            titulo="Volver a pendiente (corregir evaluación)",
+            descripcion=(
+                "Deja el legajo para evaluar de nuevo. Vale desde Aprobado, "
+                "Rechazado o Subsanado; si ocupaba cupo o estaba en lista de "
+                "espera, sale del cupo. No aplica a legajos en una nómina de pago."
+            ),
+            ejecutar=volver_a_pendiente,
+            campo_estado="revision_tecnico",
+            motivo_obligatorio=True,
+            destructiva=True,
+            en_lote=False,
+            icono="undo",
+        ),
+        Operacion(
+            slug="eliminar",
+            titulo="Eliminar legajo (baja lógica)",
+            descripcion=(
+                "Misma baja que el botón Eliminar del expediente: libera el cupo "
+                "y se puede restaurar desde la papelera. Si el legajo es "
+                "responsable de menores, revisá el expediente antes."
+            ),
+            ejecutar=eliminar_legajo,
+            motivo_obligatorio=True,
+            destructiva=True,
+            icono="delete",
         ),
         Operacion(
             slug="suspender_cupo",

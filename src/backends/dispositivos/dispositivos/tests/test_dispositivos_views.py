@@ -1,9 +1,12 @@
+import datetime
+
 import pytest
 from django.contrib.auth.models import Permission, User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from core.models import Localidad, Municipio, Provincia
+from datacalle.models import Relevamiento
 from dispositivos.forms import DispositivoForm
 from dispositivos.models import Dispositivo
 from users.models import Profile, ProfileTerritorialScope
@@ -161,10 +164,6 @@ def test_eliminar_dispositivo_con_relevamientos_avisa_en_vez_de_500(
     client, user_con_permisos, provincia_municipio
 ):
     # Issue #2750: el FK PROTECT de datacalle.Relevamiento daba ProtectedError (500).
-    import datetime  # pylint: disable=import-outside-toplevel
-
-    from datacalle.models import Relevamiento  # pylint: disable=import-outside-toplevel
-
     provincia, municipio = provincia_municipio
     dispositivo = _crear_dispositivo(provincia, municipio)
     Relevamiento.objects.create(

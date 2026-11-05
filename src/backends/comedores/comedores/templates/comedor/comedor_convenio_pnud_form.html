@@ -1,5 +1,4 @@
 {% extends "includes/main.html" %}
-{% load crispy_forms_tags %}
 {% load static %}
 {% block title %}Datos del Convenio{% endblock %}
 {% block titulo-pagina %}Datos del Convenio{% endblock %}
@@ -9,64 +8,35 @@
             <h5 class="mb-0">Cargar datos del Convenio</h5>
         </div>
         <div class="card-body">
-            <div class="mb-3">
-                <p class="mb-1">
-                    <strong>Organización solicitante:</strong> {{ prefill_data.organizacion_solicitante }}
-                </p>
-                <p class="mb-1">
-                    <strong>Código del proyecto:</strong> {{ prefill_data.codigo_proyecto }}
-                </p>
-                <p class="mb-1">
-                    <strong>Estado general:</strong> {{ prefill_data.estado_general }}
-                </p>
-                <p class="mb-1">
-                    <strong>Subestado:</strong> {{ prefill_data.subestado }}
-                </p>
-                <p class="mb-1">
-                    <strong>Nombre del espacio comunitario:</strong> {{ prefill_data.nombre_espacio }}
-                </p>
-                <p class="mb-1">
-                    <strong>ID externo:</strong> {{ prefill_data.id_externo }}
-                </p>
-                <p class="mb-1">
-                    <strong>Domicilio completo del espacio:</strong> {{ prefill_data.domicilio_completo }}
-                </p>
-            </div>
             <form method="post">
                 {% include 'comedor/_territoriales_proyecto.html' %}
                 {% csrf_token %}
+                {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+                {% include 'comedor/_convenio_pnud_fila.html' with etiqueta="Organización solicitante" valor=prefill_data.organizacion_solicitante only %}
+                {% include 'comedor/_convenio_pnud_fila.html' with etiqueta="Código de Proyecto" valor=prefill_data.codigo_proyecto only %}
+                {% include 'comedor/_convenio_pnud_fila.html' with campo=form.nro_convenio only %}
+                {% include 'comedor/_convenio_pnud_fila.html' with etiqueta="Estado General" valor=prefill_data.estado_general only %}
+                {% include 'comedor/_convenio_pnud_fila.html' with etiqueta="Subestado" valor=prefill_data.subestado only %}
+                {% include 'comedor/_convenio_pnud_fila.html' with etiqueta="Nombre del Espacio Comunitario" valor=prefill_data.nombre_espacio only %}
+                {% include 'comedor/_convenio_pnud_fila.html' with etiqueta="ID Externo" valor=prefill_data.id_externo only %}
+                {% include 'comedor/_convenio_pnud_fila.html' with etiqueta="Domicilio Completo" valor=prefill_data.domicilio_completo only %}
+                {% include 'comedor/_convenio_pnud_fila.html' with campo=form.monto_convenio_prestaciones_alimentarias monto=True only %}
+                {% include 'comedor/_convenio_pnud_fila.html' with campo=form.monto_convenio_siph monto=True only %}
+                {% if es_linea_tradicional %}
+                    {% include 'comedor/_convenio_pnud_fila.html' with campo=form.prestaciones_financiadas_diarias_desayuno only %}
+                    {% include 'comedor/_convenio_pnud_fila.html' with campo=form.prestaciones_financiadas_diarias_almuerzo only %}
+                    {% include 'comedor/_convenio_pnud_fila.html' with campo=form.prestaciones_financiadas_diarias_merienda only %}
+                    {% include 'comedor/_convenio_pnud_fila.html' with campo=form.prestaciones_financiadas_diarias_merienda_reforzada only %}
+                    {% include 'comedor/_convenio_pnud_fila.html' with campo=form.prestaciones_financiadas_diarias_cena only %}
+                {% elif not es_linea_secos %}
+                    {% include 'comedor/_convenio_pnud_fila.html' with campo=form.prestaciones_financiadas_mensuales only %}
+                {% endif %}
+                {% include 'comedor/_convenio_pnud_fila.html' with campo=form.personas_conveniadas only %}
+                {% if not es_linea_tradicional %}
+                    {% include 'comedor/_convenio_pnud_fila.html' with campo=form.cantidad_modulos only %}
+                {% endif %}
+                {% include 'comedor/_convenio_pnud_fila.html' with campo=form.personas_declaradas_siph only %}
                 <div class="row">
-                    <div class="col-md-6">{{ form.monto_total_conveniado|as_crispy_field }}</div>
-                    {% if not es_linea_secos and not es_linea_tradicional %}
-                        <div class="col-md-6">{{ form.personas_declaradas_siph|as_crispy_field }}</div>
-                    {% endif %}
-                    <div class="col-md-6">{{ form.nro_convenio|as_crispy_field }}</div>
-                    <div class="col-md-6">{{ form.monto_convenio_prestaciones_alimentarias|as_crispy_field }}</div>
-                    <div class="col-md-6">{{ form.monto_convenio_siph|as_crispy_field }}</div>
-                    {% if not es_linea_secos and not es_linea_tradicional %}
-                        <div class="col-md-6">{{ form.prestaciones_financiadas_mensuales|as_crispy_field }}</div>
-                    {% endif %}
-                    {% if es_linea_tradicional %}
-                        <div class="col-md-6">{{ form.prestaciones_financiadas_diarias_desayuno|as_crispy_field }}</div>
-                        <div class="col-md-6">{{ form.prestaciones_financiadas_diarias_almuerzo|as_crispy_field }}</div>
-                        <div class="col-md-6">{{ form.prestaciones_financiadas_diarias_merienda|as_crispy_field }}</div>
-                        <div class="col-md-6">{{ form.prestaciones_financiadas_diarias_merienda_reforzada|as_crispy_field }}</div>
-                        <div class="col-md-6">{{ form.prestaciones_financiadas_diarias_cena|as_crispy_field }}</div>
-                    {% endif %}
-                    <div class="col-12">
-                        <div class="row">
-                            <div class="col-md-6">{{ form.personas_conveniadas|as_crispy_field }}</div>
-                            {% if es_linea_tradicional %}
-                                <div class="col-md-6">{{ form.personas_declaradas_siph|as_crispy_field }}</div>
-                            {% endif %}
-                        </div>
-                        {% if not es_linea_tradicional %}
-                            <div class="row">
-                                <div class="col-md-6">{{ form.cantidad_modulos|as_crispy_field }}</div>
-                                {% if es_linea_secos %}<div class="col-md-6">{{ form.personas_declaradas_siph|as_crispy_field }}</div>{% endif %}
-                            </div>
-                        {% endif %}
-                    </div>
                     {% if not es_linea_secos %}
                         <div class="col-12 mt-3">
                             <h6 class="fw-bold">Prestaciones por convenio</h6>
@@ -159,7 +129,7 @@
                         </div>
                     {% endif %}
                 </div>
-                <button type="submit" class="btn btn-primary">Guardar</button>
+                <button type="submit" class="btn btn-primary mt-3">Guardar</button>
             </form>
         </div>
     </div>

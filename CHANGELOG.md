@@ -1,3 +1,12 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-11-04 -->
+# Versión SISOC 04.11.2026
+
+## Actualizaciones
+
+- [sin-area] fix(rendiciones): descarga consolidada de rendición asíncrona con Celery (#2845). (PR #2856)
+- [sin-area] fix(core,dispositivos): 500 en papelera y al eliminar dispositivo con relevamientos. (PR #2865)
+<!-- AUTO-GENERATED RELEASE END: 2026-11-04 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-10-21 -->
 # Versión SISOC 21.10.2026
 

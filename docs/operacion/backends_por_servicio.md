@@ -100,9 +100,10 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
 - **Métricas del dashboard de CDF.** Si `centrodefamilia` no está instalada en
   el core, el dashboard las pide a `/centrodefamilia/metricas-dashboard/`. Si
   el backend no responde, muestra las métricas en cero.
-- **Celery** solo lo usa PAS: el worker y el beat corren con la imagen y el
-  settings del backend de PAS. El deploy selectivo de PAS los recrea
-  (`extra_services`).
+- **Celery** lo usan PAS y comedores. Cada worker corre con la imagen y el
+  settings de su backend y escucha su cola (`pas`, `comedores`). El beat corre
+  con la imagen de PAS y envía por nombre las tareas de otros backends. El
+  deploy selectivo de cada backend recrea su worker (`extra_services`).
 
 ## Deploy
 

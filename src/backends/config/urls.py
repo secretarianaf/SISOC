@@ -71,6 +71,7 @@ urlpatterns = [
     path("", include("healthcheck.urls")),
     path("", include("insumos.urls")),
     # API URLs
+    path("api/web/insumos/", include("insumos.web_api_urls")),
     path("api/web/", include("usuarios.web_api_urls")),
     path("api/users/", include("usuarios.api_urls")),
     path("api/renaper/", include("core.api_urls")),

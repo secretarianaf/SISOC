@@ -549,6 +549,9 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
         "otro",
         "otro_donde",
         "otro_frecuencia",
+        "pueblo_indigena",
+        "pueblo_indigena_donde",
+        "pueblo_indigena_frecuencia",
     )
     TARJETA_FIELDS = (
         "id_tarjeta",
@@ -989,6 +992,7 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
             "tipo_prestacion",
             "ap_presencial",
             "ap_vianda",
+            "ap_total",
             "de_presencial",
             "de_vianda",
         )

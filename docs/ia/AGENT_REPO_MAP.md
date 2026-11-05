@@ -568,6 +568,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Cambios de estado: `src/backends/kernel/core/admin_operaciones.py` (`Operacion` +
   `OperacionesAdminMixin`), siempre llamando a un service existente; deja
   `auditlog.LogEntry` con motivo. Sin service, no hay acción.
+- Pedidos de soporte recurrentes (revertir estados, bajas de duplicados): resolverlos
+  como `Operacion` del admin del dominio, no con SQL. Ejemplo: Celiaquía
+  `volver_a_pendiente` y `eliminar` en `ExpedienteCiudadanoAdmin`
+  (`docs/registro/cambios/2026-T4/2026-11-03-admin-operaciones-soporte-celiaquia.md`).
 - Sidebar por dominio y badge de entorno: `src/backends/kernel/core/admin_navigation.py`;
   config en el bloque `UNFOLD` de `src/backends/config/settings.py`.
 - Métricas: `<app>/admin_metricas.py` con `metricas()`, descubiertas por

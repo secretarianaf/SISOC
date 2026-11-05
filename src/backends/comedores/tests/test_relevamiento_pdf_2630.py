@@ -96,7 +96,7 @@ def test_descarga_devuelve_un_pdf_adjunto(client):
     texto = " ".join(" ".join(pagina.extract_text() for pagina in lector.pages).split())
     for esperado in (
         "Comedor PDF 2630",
-        "Pendiente de validación",
+        "Pendiente Revisión",
         "Domicilio del Comedor/Merendero",
         "Observación del territorial para comprobar el documento",
     ):
@@ -163,7 +163,7 @@ def test_el_pdf_lleva_las_secciones_del_detalle(client, mocker):
     html = generar.call_args.args[0]
     assert "Comedor PDF 2630" in html
     assert f"Relevamiento N.º {relevamiento.id}" in html
-    assert "Pendiente de validación" in html
+    assert "Pendiente Revisión" in html
     assert "Domicilio del Comedor/Merendero" in html
     assert "Observación del territorial" in html
     # Ni formularios ni modales del detalle (los botones de colapsar de cada

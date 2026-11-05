@@ -8,12 +8,14 @@ Con "campo" muestra el input editable; sin "campo", "etiqueta" y "valor" de solo
         <label for="{{ campo.id_for_label }}" class="col-md-5 col-form-label">{{ campo.label }}</label>
         <div class="col-md-7">
             {% if monto %}
-                <div class="input-group">
+                <div class="input-group convenio-campo convenio-campo--monto">
                     <span class="input-group-text">$</span>
                     {{ campo }}
                 </div>
+            {% elif campo.field.widget.input_type == "number" %}
+                <div class="convenio-campo convenio-campo--cantidad">{{ campo }}</div>
             {% else %}
-                {{ campo }}
+                <div class="convenio-campo">{{ campo }}</div>
             {% endif %}
             {% for error in campo.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
         </div>

@@ -146,6 +146,10 @@ def test_vista_de_edicion_respeta_el_orden(client, programa, orden):
     assert "Monto total conveniado" not in html
     _assert_en_orden(html, orden)
     assert '<span class="input-group-text">$</span>' in html
+    # Mismo patrón visual que el alta de comedor: tarjetas de sección y botones fijos.
+    assert "custom/css/comedorFormModerno.css" in html
+    assert html.count('class="section-card"') == (4 if programa == TRADICIONAL else 3)
+    assert "Guardar convenio" in html
 
 
 @pytest.mark.parametrize(

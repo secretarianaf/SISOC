@@ -82,3 +82,20 @@ def test_la_clave_estatica_no_importa_el_modelo():
     )
 
     assert definicion.get_model_key() == ("datacalle", "relevamiento")
+
+
+def test_modelos_de_vat_en_el_allowlist_con_su_app_label():
+    """VAT corre en otro backend: el visor los filtra por clave estática."""
+    allowlist = constants.get_tracked_model_allowlist()
+
+    for model_name in (
+        "centro",
+        "inscripcion",
+        "voucherparametria",
+        "voucher",
+        "resultadoevaluacion",
+        "actacierrecomision",
+    ):
+        assert ("VAT", model_name) in allowlist
+    assert "observaciones" in allowlist[("VAT", "inscripcion")].excluded_fields
+    assert "observaciones" in allowlist[("VAT", "resultadoevaluacion")].excluded_fields

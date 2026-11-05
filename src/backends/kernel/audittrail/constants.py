@@ -211,6 +211,49 @@ def get_tracked_model_definitions():
                 "es_menor_de_edad",
             ),
         ),
+        # VAT: lo que define quién accede a formación y con qué resultado.
+        # Los `fecha_modificacion` (auto_now) se excluyen porque cambian en
+        # cada guardado y llenarían el log de ruido. Las `observaciones` de
+        # alumnos son texto libre sobre personas y el log es exportable y
+        # sobrevive al borrado: se audita el cambio de estado o nota, no la
+        # nota libre.
+        TrackedModelDefinition(
+            label="Centro VAT",
+            model_getter=_model_getter("VAT.models.Centro"),
+        ),
+        TrackedModelDefinition(
+            label="Inscripción VAT",
+            model_getter=_model_getter("VAT.models.Inscripcion"),
+            excluded_fields=(
+                "fecha_creacion",
+                "fecha_modificacion",
+                "observaciones",
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Parametría de voucher VAT",
+            model_getter=_model_getter("VAT.models.VoucherParametria"),
+            excluded_fields=("fecha_creacion",),
+        ),
+        TrackedModelDefinition(
+            label="Voucher VAT",
+            model_getter=_model_getter("VAT.models.Voucher"),
+            excluded_fields=("fecha_creacion", "fecha_modificacion"),
+        ),
+        TrackedModelDefinition(
+            label="Resultado de evaluación VAT",
+            model_getter=_model_getter("VAT.models.ResultadoEvaluacion"),
+            excluded_fields=(
+                "fecha_creacion",
+                "fecha_modificacion",
+                "observaciones",
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Acta de cierre VAT",
+            model_getter=_model_getter("VAT.models.ActaCierreComision"),
+            excluded_fields=("fecha_creacion", "fecha_modificacion"),
+        ),
     )
 
 

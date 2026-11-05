@@ -4925,6 +4925,26 @@
   "regex": "^ver\\-para\\-ser\\-libre/ubicacion/buscar/\\Z"
  },
  {
+  "name": "web_insumos_categorias_create",
+  "namespace": "",
+  "regex": "^api/web/insumos/categorias/crear/\\Z"
+ },
+ {
+  "name": "web_insumos_categorias_delete",
+  "namespace": "",
+  "regex": "^api/web/insumos/categorias/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "web_insumos_categorias_edit",
+  "namespace": "",
+  "regex": "^api/web/insumos/categorias/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "web_insumos_categorias_list",
+  "namespace": "",
+  "regex": "^api/web/insumos/categorias/\\Z"
+ },
+ {
   "name": "web_insumos_create",
   "namespace": "",
   "regex": "^api/web/insumos/crear/\\Z"

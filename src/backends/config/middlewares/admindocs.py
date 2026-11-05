@@ -16,9 +16,12 @@ class WebSessionXViewMiddleware(XViewMiddleware):
                 "/api/web/insumos/",
                 "/api/web/insumos/options/",
                 "/api/web/insumos/crear/",
+                "/api/web/insumos/categorias/",
+                "/api/web/insumos/categorias/crear/",
             }
             or re.fullmatch(
-                r"/api/web/insumos/[0-9]+/(?:editar|eliminar)/", request.path_info
+                r"/api/web/insumos/(?:categorias/)?[0-9]+/(?:editar|eliminar)/",
+                request.path_info,
             )
         ):
             return None

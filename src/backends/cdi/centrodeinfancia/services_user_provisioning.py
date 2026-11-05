@@ -318,13 +318,20 @@ def documentos_del_referente_anterior(anterior, actual):
     persona: el responsable no cambia y a la cuenta del anterior se le pasaría
     el email del nuevo. Devuelve esos campos para rechazar el guardado.
 
-    Completar el nombre de una ficha que no lo tenía no es cambiar de persona.
+    Completar el nombre de una ficha que no lo tenía no es cambiar de persona,
+    y sin un nombre nuevo válido (vacío o rechazado por el form) no se puede
+    saber si es otra persona.
     """
-    tenia_nombre = all(
-        _normalizar_nombre(anterior.get(campo))
-        for campo in ("nombre_referente", "apellido_referente")
-    )
-    if not tenia_nombre or not _cambiaron_nombre_y_apellido(anterior, actual):
+
+    def tiene_nombre(datos):
+        return all(
+            _normalizar_nombre(datos.get(campo))
+            for campo in ("nombre_referente", "apellido_referente")
+        )
+
+    if not (tiene_nombre(anterior) and tiene_nombre(actual)):
+        return []
+    if not _cambiaron_nombre_y_apellido(anterior, actual):
         return []
     return [
         campo

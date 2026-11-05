@@ -831,3 +831,22 @@ def test_corregir_el_nombre_con_el_mismo_documento_se_guarda(client):
 
     assert response.status_code == 302
     assert AccesoCDI.objects.get(centro=centro, es_responsable=True).user == responsable
+
+
+@pytest.mark.django_db
+def test_nombre_invalido_no_suma_error_de_documento_del_anterior(client):
+    client.force_login(_actor())
+    centro, _ = _centro_con_responsable(DNI_REFERENTE)
+
+    response = _guardar_centro(
+        client,
+        centro,
+        nombre_referente="J0hanna",
+        apellido_referente="Polo",
+        email_referente="johanna@example.com",
+        dni_referente=DNI_REFERENTE,
+    )
+
+    assert response.status_code == 200
+    # Solo el error propio del nombre: sin nombre válido no se sabe si es otra persona.
+    assert set(response.context["form"].errors) == {"nombre_referente"}

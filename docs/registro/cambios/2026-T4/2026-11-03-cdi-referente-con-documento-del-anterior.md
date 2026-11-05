@@ -42,6 +42,9 @@ Implementado:
   antes.
 - Completar nombre y apellido en una ficha que no los tenía no cuenta como
   cambio de persona.
+- Si el nombre o el apellido nuevos no pasan la validación del formulario (por
+  ejemplo, tienen números), solo se muestra ese error: sin un nombre válido no
+  se puede saber si es otra persona, y no se suma el error del documento.
 - El alta de CDI no cambia.
 - No hay migración ni cambios en datos existentes. Un CDI que ya tiene la ficha
   con el nombre del nuevo referente y el documento del anterior queda igual
@@ -59,4 +62,8 @@ Local, en el contenedor `django`:
   fallan igual sin este cambio (verificado con `git stash`).
 - `black` sin cambios y `pylint` 10.00/10 en los archivos tocados.
 
-Sin CI ni prueba manual en el navegador al momento de escribir este registro.
+Fix de revisión: un nombre nuevo inválido ya no suma un error engañoso en el DNI
+o el CUIL. Test `test_nombre_invalido_no_suma_error_de_documento_del_anterior`;
+los dos archivos de tests anteriores dan 121 passed.
+
+Sin prueba manual en el navegador al momento de escribir este registro.

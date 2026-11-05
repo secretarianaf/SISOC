@@ -62,6 +62,9 @@ class Encuesta(models.Model):
         verbose_name="Estado",
     )
     es_anonima = models.BooleanField(default=False, verbose_name="¿Es anónima?")
+    disponible_pwa = models.BooleanField(
+        default=False, verbose_name="Disponible en la PWA de Espacios Comunitarios"
+    )
     motivo_rechazo = models.TextField(
         blank=True,
         default="",
@@ -191,6 +194,12 @@ class Pregunta(models.Model):
         verbose_name="Encuesta",
     )
     texto = models.CharField(max_length=500, verbose_name="Texto")
+    bloque = models.CharField(
+        max_length=120, blank=True, default="", verbose_name="Bloque"
+    )
+    max_caracteres = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Máximo de caracteres"
+    )
     tipo = models.CharField(
         max_length=20,
         choices=TipoPregunta.choices,
@@ -241,6 +250,15 @@ class Pregunta(models.Model):
 
     def clean(self):
         super().clean()
+        if self.max_caracteres is not None and (
+            self.tipo not in {TipoPregunta.TEXTO_CORTO, TipoPregunta.TEXTO_LARGO}
+            or not 1 <= self.max_caracteres <= 10000
+        ):
+            raise ValidationError(
+                {
+                    "max_caracteres": "Indicá un límite de 1 a 10000 solo para preguntas de texto."
+                }
+            )
         if (
             self.pregunta_condicion_id
             and self.encuesta_id

@@ -155,6 +155,30 @@ def _tope_nomina_alimentaria_cubierto(
     )
 
 
+MENSAJE_TOPE_NOMINA_ALIMENTARIA = (
+    "El cupo de personas conveniadas para prestacion alimentaria "
+    "ya se encuentra completo."
+)
+
+
+def tope_nomina_alimentaria_cubierto(*, comedor_id: int) -> bool:
+    """Indica si la nómina alimentaria del espacio ya alcanzó su tope.
+
+    Es la misma regla que aplica el alta desde la PWA; la usa también el alta
+    de nómina desde SISOC web para que el tope no se supere por ninguna vía.
+    """
+    return _tope_nomina_alimentaria_cubierto(comedor_id=comedor_id)
+
+
+def resumen_cupo_nomina_alimentaria(*, comedor_id: int) -> dict | None:
+    """Tope y lugares ocupados de la nómina alimentaria, o None si no hay tope."""
+    tope = _get_tope_nomina_alimentaria(comedor_id)
+    if tope is None:
+        return None
+    ocupados = _count_nomina_alimentaria_activa(comedor_id=comedor_id)
+    return {"tope": tope, "ocupados": ocupados, "completo": ocupados >= tope}
+
+
 def _apply_tope_nomina_alimentaria_on_create(
     *,
     comedor_id: int,
@@ -167,14 +191,7 @@ def _apply_tope_nomina_alimentaria_on_create(
         return asistencia_alimentaria, asistencia_actividades
     if asistencia_actividades:
         return False, True
-    raise ValidationError(
-        {
-            "asistencia_alimentaria": (
-                "El cupo de personas conveniadas para prestacion alimentaria "
-                "ya se encuentra completo."
-            )
-        }
-    )
+    raise ValidationError({"asistencia_alimentaria": MENSAJE_TOPE_NOMINA_ALIMENTARIA})
 
 
 def _validate_tope_nomina_alimentaria_on_update(
@@ -191,14 +208,7 @@ def _validate_tope_nomina_alimentaria_on_update(
         exclude_nomina_id=nomina_id,
     ):
         return
-    raise ValidationError(
-        {
-            "asistencia_alimentaria": (
-                "El cupo de personas conveniadas para prestacion alimentaria "
-                "ya se encuentra completo."
-            )
-        }
-    )
+    raise ValidationError({"asistencia_alimentaria": MENSAJE_TOPE_NOMINA_ALIMENTARIA})
 
 
 def get_periodo_mensual_actual() -> date:

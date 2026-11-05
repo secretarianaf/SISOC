@@ -87,7 +87,7 @@ def get_tracked_model_definitions():
         TrackedModelDefinition(
             label="Comedor",
             model_getter=_model_getter("comedores.models.Comedor"),
-            excluded_fields=("fecha_creacion", "fecha_actualizacion"),
+            excluded_fields=("fecha_creacion",),
         ),
         TrackedModelDefinition(
             label="Centro de Infancia",
@@ -362,6 +362,242 @@ def get_tracked_model_definitions():
         TrackedModelDefinition(
             label="Cierre diario VPSL",
             model_getter=_model_getter("ver_para_ser_libre.models.CierreDiarioVPSL"),
+        ),
+        # Comedores - fondos: pagos, rendiciones mensuales y finales, y la
+        # revisión de cada documento. Son datos institucionales, no personales.
+        TrackedModelDefinition(
+            label="Expediente de pago",
+            model_getter=_model_getter("expedientespagos.models.ExpedientePago"),
+            excluded_fields=("fecha_creacion",),
+        ),
+        TrackedModelDefinition(
+            label="Rendición de cuentas mensual",
+            model_getter=_model_getter(
+                "rendicioncuentasmensual.models.RendicionCuentaMensual"
+            ),
+            # `usuario_ultima_modificacion` repite al actor del evento.
+            excluded_fields=(
+                "fecha_creacion",
+                "ultima_modificacion",
+                "usuario_ultima_modificacion",
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Documento de rendición mensual",
+            model_getter=_model_getter(
+                "rendicioncuentasmensual.models.DocumentacionAdjunta"
+            ),
+            # Las marcas de "visto" cambian con cada apertura: son ruido.
+            excluded_fields=(
+                "fecha_creacion",
+                "ultima_modificacion",
+                "visualizacion_etapa",
+                "visualizacion_usuario",
+                "visualizacion_fecha",
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Solicitud de documento faltante",
+            model_getter=_model_getter(
+                "rendicioncuentasmensual.models.SolicitudDocumentoFaltante"
+            ),
+            excluded_fields=("fecha_creacion",),
+        ),
+        TrackedModelDefinition(
+            label="Rendición de cuentas final",
+            model_getter=_model_getter(
+                "rendicioncuentasfinal.models.RendicionCuentasFinal"
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Documento de rendición final",
+            model_getter=_model_getter(
+                "rendicioncuentasfinal.models.DocumentoRendicionFinal"
+            ),
+            excluded_fields=("fecha_modificacion",),
+        ),
+        # Comedores - circuito de admisión y acompañamiento. `AdmisionHistorial`
+        # ya guarda algunos campos de la admisión, pero no se ve en el visor.
+        TrackedModelDefinition(
+            label="Admisión",
+            model_getter=_model_getter("admisiones.models.admisiones.Admision"),
+            # El snapshot es una copia JSON de la organización que se reescribe
+            # con `.update()`; `creado`/`modificado` cambian solos.
+            excluded_fields=("creado", "modificado", "datos_organizacion_snapshot"),
+        ),
+        TrackedModelDefinition(
+            label="Documento de admisión",
+            model_getter=_model_getter("admisiones.models.admisiones.ArchivoAdmision"),
+            excluded_fields=("creado", "modificado", "modificado_por"),
+        ),
+        TrackedModelDefinition(
+            label="Informe técnico de admisión",
+            model_getter=_model_getter("admisiones.models.admisiones.InformeTecnico"),
+            # El informe copia DNI y datos del representante y del responsable
+            # de la tarjeta: solo se registra su avance y lo que se convenia.
+            included_fields=(
+                "estado",
+                "estado_formulario",
+                "tipo",
+                "monto_total_conveniado",
+                "total_acreditaciones",
+                "plazo_ejecucion",
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Informe complementario de admisión",
+            model_getter=_model_getter(
+                "admisiones.models.admisiones.InformeComplementario"
+            ),
+            excluded_fields=("creado", "modificado"),
+        ),
+        TrackedModelDefinition(
+            label="Acompañamiento",
+            model_getter=_model_getter(
+                "acompanamientos.models.acompanamiento.Acompanamiento"
+            ),
+            excluded_fields=("fecha_creacion",),
+        ),
+        TrackedModelDefinition(
+            label="Información relevante de acompañamiento",
+            model_getter=_model_getter(
+                "acompanamientos.models.acompanamiento.InformacionRelevante"
+            ),
+            excluded_fields=("fecha_creacion",),
+        ),
+        TrackedModelDefinition(
+            label="Prestación de acompañamiento",
+            model_getter=_model_getter(
+                "acompanamientos.models.acompanamiento.Prestacion"
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Hitos de acompañamiento",
+            model_getter=_model_getter("acompanamientos.models.hitos.Hitos"),
+        ),
+        TrackedModelDefinition(
+            label="Dupla",
+            model_getter=_model_getter("duplas.models.Dupla"),
+            # Los técnicos son M2M: la lista única todavía no los registra.
+            excluded_fields=("fecha",),
+        ),
+        # Comedores - datos del convenio, certificaciones y valores.
+        TrackedModelDefinition(
+            label="Datos de convenio PNUD del comedor",
+            model_getter=_model_getter("comedores.models.ComedorDatosConvenioPnud"),
+            excluded_fields=("actualizado_en",),
+        ),
+        TrackedModelDefinition(
+            label="Certificado de capacitación del comedor",
+            model_getter=_model_getter(
+                "comedores.models.CapacitacionComedorCertificado"
+            ),
+            excluded_fields=("creado", "modificado"),
+        ),
+        TrackedModelDefinition(
+            label="Conformidad de prestación alimentaria",
+            model_getter=_model_getter(
+                "comedores.models.PrestacionAlimentariaConformidad"
+            ),
+            excluded_fields=("creado", "dni_certificador"),
+        ),
+        TrackedModelDefinition(
+            label="Valor de comida",
+            model_getter=_model_getter("comedores.models.ValorComida"),
+        ),
+        # Comedores - seguimientos y su validación por coordinación.
+        TrackedModelDefinition(
+            label="Primer seguimiento",
+            model_getter=_model_getter("relevamientos.models.PrimerSeguimiento"),
+        ),
+        TrackedModelDefinition(
+            label="Seguimiento PNUD",
+            model_getter=_model_getter("relevamientos.models.SeguimientoPnud"),
+            # `datos` es el formulario completo en JSON.
+            excluded_fields=("fecha_creacion", "fecha_actualizacion", "datos"),
+        ),
+        TrackedModelDefinition(
+            label="Acta complementaria",
+            model_getter=_model_getter("relevamientos.models.ActaComplementaria"),
+            excluded_fields=("fecha_creacion",),
+        ),
+        TrackedModelDefinition(
+            label="Comunicado",
+            model_getter=_model_getter("comunicados.models.Comunicado"),
+            excluded_fields=(
+                "fecha_creacion",
+                "fecha_ultima_modificacion",
+                "usuario_ultima_modificacion",
+            ),
+        ),
+        # Organizaciones: proyectos y documentación presentada.
+        TrackedModelDefinition(
+            label="Proyecto de organización",
+            model_getter=_model_getter("organizaciones.models.ProyectoOrganizacion"),
+        ),
+        TrackedModelDefinition(
+            label="Documento de organización",
+            model_getter=_model_getter("organizaciones.models.ArchivoOrganizacion"),
+            excluded_fields=("creado", "modificado", "modificado_por"),
+        ),
+        # Centros de Familia.
+        TrackedModelDefinition(
+            label="Centro de Familia",
+            model_getter=_model_getter("centrodefamilia.models.Centro"),
+        ),
+        TrackedModelDefinition(
+            label="Actividad de Centro de Familia",
+            model_getter=_model_getter("centrodefamilia.models.ActividadCentro"),
+        ),
+        TrackedModelDefinition(
+            label="Participante de actividad CDF",
+            model_getter=_model_getter("centrodefamilia.models.ParticipanteActividad"),
+            excluded_fields=("fecha_registro", "fecha_modificacion"),
+        ),
+        TrackedModelDefinition(
+            label="Dispositivo",
+            model_getter=_model_getter("dispositivos.models.Dispositivo"),
+            excluded_fields=("created_at", "updated_at"),
+        ),
+        # Configuración: programas, montos, catálogos, insumos y tableros.
+        TrackedModelDefinition(
+            label="Programa",
+            model_getter=_model_getter("core.models.Programa"),
+        ),
+        TrackedModelDefinition(
+            label="Monto de prestación por programa",
+            model_getter=_model_getter("core.models.MontoPrestacionPrograma"),
+            excluded_fields=("fecha_creacion", "fecha_modificacion"),
+        ),
+        TrackedModelDefinition(
+            label="Tipo de intervención",
+            model_getter=_model_getter(
+                "catalogo_intervenciones.models.TipoIntervencion"
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Subintervención",
+            model_getter=_model_getter(
+                "catalogo_intervenciones.models.SubIntervencion"
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Categoría de insumo",
+            model_getter=_model_getter("insumos.models.InsumoCategoria"),
+            excluded_fields=("fecha_creacion", "fecha_actualizacion"),
+        ),
+        TrackedModelDefinition(
+            label="Insumo",
+            model_getter=_model_getter("insumos.models.Insumo"),
+            excluded_fields=(
+                "fecha_creacion",
+                "fecha_actualizacion",
+                "usuario_actualizacion",
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Tablero",
+            model_getter=_model_getter("dashboard.models.Tablero"),
         ),
     )
 

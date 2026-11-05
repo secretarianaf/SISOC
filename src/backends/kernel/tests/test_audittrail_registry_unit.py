@@ -149,3 +149,45 @@ def test_modelos_de_vpsl_en_el_allowlist_sin_datos_de_salud():
     assert "estado" in campos_registro
     for sensible in ("resultado", "prescripcion", "graduacion_derecha", "dni"):
         assert sensible not in campos_registro
+
+
+def test_pagos_y_rendiciones_de_comedores_en_el_allowlist():
+    allowlist = constants.get_tracked_model_allowlist()
+
+    for clave in (
+        ("expedientespagos", "expedientepago"),
+        ("rendicioncuentasmensual", "rendicioncuentamensual"),
+        ("rendicioncuentasmensual", "documentacionadjunta"),
+        ("rendicioncuentasmensual", "solicituddocumentofaltante"),
+        ("rendicioncuentasfinal", "rendicioncuentasfinal"),
+        ("rendicioncuentasfinal", "documentorendicionfinal"),
+    ):
+        assert clave in allowlist
+    excluidos_documento = allowlist[
+        ("rendicioncuentasmensual", "documentacionadjunta")
+    ].excluded_fields
+    assert "visualizacion_fecha" in excluidos_documento
+
+
+def test_cada_definicion_apunta_a_un_modelo_y_campos_que_existen():
+    """Un error de tipeo en la lista dejaría un modelo sin auditar sin avisar."""
+    instaladas = [
+        d for d in constants.get_tracked_model_definitions() if d.is_installed()
+    ]
+    assert instaladas
+
+    for definicion in instaladas:
+        model = definicion.get_model()
+        assert definicion.get_model_key() == (
+            model._meta.app_label,
+            model._meta.model_name,
+        ), definicion.label
+        campos = definicion.excluded_fields + definicion.included_fields
+        for campo in campos:
+            model._meta.get_field(campo)  # FieldDoesNotExist si hay un error
+
+
+def test_etiquetas_del_visor_no_se_repiten():
+    etiquetas = [d.label for d in constants.get_tracked_model_definitions()]
+
+    assert len(etiquetas) == len(set(etiquetas))

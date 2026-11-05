@@ -30,22 +30,36 @@ def test_sisoc_sigue_en_oscuro_fuera_del_layout_claro(panel):
     assert "sidebar-brand" not in html
     assert "insp-cabecera" not in html
     assert re.search(r'<aside class="app-sidebar shadow"\s*>', html)
-    # La barra lateral ya no muestra el panel de usuario (va como en Inspecciones).
-    assert 'class="nav-item user-info' not in html
-    assert "user-panel" not in html
+    # Fuera de Inspecciones la barra lateral conserva el panel de usuario (#2712).
+    assert 'class="nav-item user-info' in html
+    assert "user-panel" in html
 
 
-def test_inicio_usa_el_marco_claro(panel):
+def test_inicio_usa_el_marco_del_resto_de_sisoc(panel):
+    """#2712: Inicio había quedado con el layout claro de Inspecciones."""
     html = panel.get(reverse("inicio")).content.decode()
 
-    assert 'data-bs-theme="light"' in html
-    assert "bg-body-tertiary insp-cuerpo" in html
-    assert '<header class="app-header insp-cabecera">' in html
-    assert '<strong aria-current="page">Inicio</strong>' in html
-    assert "sidebar-brand" in html
-    assert 'class="main-header"' not in html
+    assert 'data-bs-theme="dark"' in html
+    assert 'class="main-header"' in html
+    assert 'class="nav-item user-info' in html
+    assert "insp-cuerpo" not in html
+    assert "insp-cabecera" not in html
+    assert "layout_claro.css" not in html
+    assert "sidebar-brand" not in html
     assert "sisoc-volver" not in html
     assert "inicio-presentacion" in html
+
+
+def test_inspecciones_oculta_el_panel_de_usuario_de_la_barra_lateral():
+    css = (
+        Path(__file__)
+        .resolve()
+        .parents[2]
+        .joinpath("kernel", "static", "custom", "css", "layout_claro.css")
+        .read_text(encoding="utf-8")
+    )
+
+    assert ".insp-cuerpo .app-sidebar .user-info" in css
 
 
 def test_el_helper_de_layout_claro_vive_en_el_kernel():
@@ -83,6 +97,17 @@ def test_panel_sale_en_claro_con_la_cabecera_del_mockup(panel):
     assert '<a href="/inicio/">Inicio</a>' in html
     assert '<strong aria-current="page">Inspecciones escolares</strong>' in html
     assert 'aria-label="Cerrar sesión"' in html
+
+
+def test_panel_abre_legajos_y_marca_inspecciones_en_la_barra_lateral(panel):
+    html = panel.get(reverse("inspecciones_panel")).content.decode()
+
+    assert re.search(
+        r'<li class="nav-item nav-main-item menu-open"\s+style="order: 2"', html
+    )
+    assert re.search(
+        r'href="/inspecciones/"\s+class="nav-link nav-dot ms-2 active"', html
+    )
 
 
 def test_tablero_usa_el_mismo_layout(panel):

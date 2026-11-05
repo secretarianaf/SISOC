@@ -24,6 +24,8 @@ def test_config_expone_campos_con_mapeo_y_operadores():
     assert nombres <= set(FIELD_MAP)
     assert nombres <= set(FIELD_TYPES)
     assert config["defaultField"] == "nombre"
+    etiquetas = [field["label"] for field in config["fields"]]
+    assert etiquetas == sorted(etiquetas, key=str.casefold)
     for tipo in ("text", "number", "choice", "boolean", "date"):
         assert config["operators"][tipo]
 
@@ -89,6 +91,9 @@ def test_listado_de_organizaciones_acepta_filters(client):
     response = client.get(reverse("organizaciones"), {"filters": payload})
 
     assert response.status_code == 200
+    assert b'id="filters-form"' in response.content
+    assert b'id="filters-config-json"' in response.content
+    assert b'id="ajax-search-input"' not in response.content
     ids = [org.pk for org in response.context["organizaciones"]]
     assert ids == [buscada.pk]
 

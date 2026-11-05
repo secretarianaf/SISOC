@@ -175,9 +175,10 @@ def test_migracion_ejecuta_con_modelo_historico_e_incluye_bajas_logicas():
             "la suite SQLite lo desactiva."
         )
 
+    executor = MigrationExecutor(connection)
+    migraciones_iniciales = executor.loader.graph.leaf_nodes()
     test_failed = False
     try:
-        executor = MigrationExecutor(connection)
         executor.migrate(MIGRATION_BEFORE)
         apps_before = executor.loader.project_state(MIGRATION_BEFORE).apps
         rendicion_historica_model = apps_before.get_model(
@@ -229,7 +230,8 @@ def test_migracion_ejecuta_con_modelo_historico_e_incluye_bajas_logicas():
         raise
     finally:
         try:
-            MigrationExecutor(connection).migrate(MIGRATION_AFTER)
+            # Restaurar el esquema vigente para los tests que corren después.
+            MigrationExecutor(connection).migrate(migraciones_iniciales)
         except Exception:
             if not test_failed:
                 raise

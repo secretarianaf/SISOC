@@ -99,20 +99,36 @@
                         </div>
                         <div class="form-group row">
                             <div class="col-md-4">{{ form.cuit_institucion|as_crispy_field }}</div>
-                            <div class="col-md-2">{{ form.provincia|as_crispy_field }}</div>
-                            <div class="col-md-2">{{ form.municipio|as_crispy_field }}</div>
                         </div>
-                        <div class="form-group row">
-                            <div class="col-md-3">{{ form.calle|as_crispy_field }}</div>
-                            <div class="col-md-1">{{ form.altura|as_crispy_field }}</div>
-                            <div class="col-md-1">{{ form.telefono_prefijo|as_crispy_field }}</div>
-                            <div class="col-md-2">{{ form.telefono_numero|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.correo_electronico|as_crispy_field }}</div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-4">{{ form.responsable_nombre_completo|as_crispy_field }}</div>
-                            <div class="col-md-2">{{ form.responsable_dni|as_crispy_field }}</div>
-                        </div>
+                        <fieldset>
+                            <legend class="h5">Ubicación</legend>
+                            <div class="form-group row">
+                                <div class="col-md-8">{{ form.calle|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ form.altura|as_crispy_field }}</div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ form.municipio|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ form.localidad|as_crispy_field }}</div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-md-6">{{ form.latitud|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ form.longitud|as_crispy_field }}</div>
+                            </div>
+                            {% include "dispositivos/ubicacion_mapa.html" with editable=True %}
+                        </fieldset>
+                        <fieldset>
+                            <legend class="h5">Contacto y responsable</legend>
+                            <div class="form-group row">
+                                <div class="col-md-2">{{ form.telefono_prefijo|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ form.telefono_numero|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ form.correo_electronico|as_crispy_field }}</div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-md-8">{{ form.responsable_nombre_completo|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ form.responsable_dni|as_crispy_field }}</div>
+                            </div>
+                        </fieldset>
                     </div>
                 </div>
 
@@ -880,6 +896,7 @@
 {% endblock %}
 
 {% block customJS %}
-    <script nonce="{{ request.csp_nonce }}">var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";</script>
+    <script nonce="{{ request.csp_nonce }}">var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}"; var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";</script>
     <script src="{% static 'custom/js/dispositivoFormModerno.js' %}"></script>
+    <script src="{% static 'custom/js/dispositivoUbicacion.js' %}"></script>
 {% endblock %}

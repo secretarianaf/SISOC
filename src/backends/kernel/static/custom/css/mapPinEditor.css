@@ -1,0 +1,9 @@
+.map-pin-editor {
+    height: 360px;
+    width: 100%;
+    border-radius: 4px;
+    z-index: 0;
+}
+@media (max-width: 576px) {
+    .map-pin-editor { height: 280px; }
+}

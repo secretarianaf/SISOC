@@ -13,6 +13,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import (
     DatabaseError,
+    DataError,
     IntegrityError,
     OperationalError,
     close_old_connections,
@@ -39,6 +40,9 @@ DEFAULT_CIUDADANOS_IMPORT_JOB_STALE_SECONDS = 900
 DEFAULT_CIUDADANOS_IMPORT_RENAPER_SLEEP_SECONDS = 0.0
 DEFAULT_CIUDADANOS_IMPORT_RENAPER_PARALLELISM = 2
 DEFAULT_CIUDADANOS_IMPORT_JOB_SLICE_SECONDS = 1800
+# Errores de MySQL por un valor que no entra en la columna: son de la fila, no
+# del sistema (fuera de rango, truncado, fecha inválida, valor incorrecto, largo).
+MYSQL_ROW_DATA_ERROR_CODES = frozenset({1264, 1265, 1292, 1366, 1406})
 
 
 class LostImportLease(RuntimeError):
@@ -488,6 +492,29 @@ def _save_row_pending_after_systemic_error(
     return job
 
 
+def _is_row_data_error(exc: DatabaseError) -> bool:
+    if isinstance(exc, DataError):
+        return True
+    return (
+        isinstance(exc, OperationalError)
+        and bool(exc.args)
+        and exc.args[0] in MYSQL_ROW_DATA_ERROR_CODES
+    )
+
+
+def _row_data_error_result(exc: DatabaseError) -> dict[str, object]:
+    return {
+        "status": "failed",
+        "mensaje": (
+            "No se pudo guardar la fila: un dato no tiene el formato esperado. "
+            f"Detalle: {exc}"
+        ),
+        "error_type": "invalid_row_data",
+        "sexos_intentados": "",
+        "ciudadano": None,
+    }
+
+
 def _map_result_status(result_status: str) -> str:
     return {
         "created": CiudadanosImportJobRow.Status.CREATED,
@@ -660,6 +687,68 @@ def _iter_prepared_rows(  # pylint: disable=too-many-locals
             client.session.close()
 
 
+def _save_row_with_recovery(
+    *,
+    job: CiudadanosImportJob,
+    row_log: CiudadanosImportJobRow,
+    row,
+    result: dict[str, object],
+    next_row_index: int,
+) -> tuple[CiudadanosImportJob, dict[str, object]]:
+    """Guarda la fila y resuelve los errores de base que son propios de la fila."""
+    try:
+        job = _save_row_processed(
+            job=job,
+            row_log=row_log,
+            row=row,
+            result=result,
+            next_row_index=next_row_index,
+        )
+    except IntegrityError:
+        if result["status"] != "ready_to_create":
+            raise
+        existing = _get_existing_estandar_by_dni(row.dni)
+        if existing is None:
+            raise
+        # La transacción se revirtió, pero las instancias en memoria no.
+        row_log.refresh_from_db()
+        job.refresh_from_db()
+        result = {
+            **result,
+            "status": "existing",
+            "ciudadano": existing,
+            "mensaje": "Ya existe un ciudadano estandar para el DNI informado.",
+        }
+        job = _save_row_processed(
+            job=job,
+            row_log=row_log,
+            row=row,
+            result=result,
+            next_row_index=next_row_index,
+        )
+    except DatabaseError as exc:
+        if not _is_row_data_error(exc):
+            raise
+        logger.warning(
+            "Fila de lote de ciudadanos con datos invalidos. "
+            "job_id=%s fila=%s error=%s",
+            job.id,
+            row.fila,
+            exc,
+        )
+        row_log.refresh_from_db()
+        job.refresh_from_db()
+        result = _row_data_error_result(exc)
+        job = _save_row_processed(
+            job=job,
+            row_log=row_log,
+            row=row,
+            result=result,
+            next_row_index=next_row_index,
+        )
+    return job, result
+
+
 def process_ciudadanos_import_job(  # pylint: disable=too-many-locals,too-many-branches
     job: CiudadanosImportJob,
 ) -> CiudadanosImportJob:
@@ -731,36 +820,13 @@ def process_ciudadanos_import_job(  # pylint: disable=too-many-locals,too-many-b
                     result=result,
                 )
 
-            try:
-                job = _save_row_processed(
-                    job=job,
-                    row_log=row_log,
-                    row=row,
-                    result=result,
-                    next_row_index=row_index + 1,
-                )
-            except IntegrityError:
-                if result["status"] != "ready_to_create":
-                    raise
-                existing = _get_existing_estandar_by_dni(row.dni)
-                if existing is None:
-                    raise
-                # La transacción se revirtió, pero las instancias en memoria no.
-                row_log.refresh_from_db()
-                job.refresh_from_db()
-                result = {
-                    **result,
-                    "status": "existing",
-                    "ciudadano": existing,
-                    "mensaje": "Ya existe un ciudadano estandar para el DNI informado.",
-                }
-                job = _save_row_processed(
-                    job=job,
-                    row_log=row_log,
-                    row=row,
-                    result=result,
-                    next_row_index=row_index + 1,
-                )
+            job, result = _save_row_with_recovery(
+                job=job,
+                row_log=row_log,
+                row=row,
+                result=result,
+                next_row_index=row_index + 1,
+            )
             if (
                 result.get("contacted_renaper")
                 and renaper_sleep_seconds > 0
@@ -805,7 +871,36 @@ def process_next_ciudadanos_import_job() -> bool:
         process_ciudadanos_import_job(job)
     except LostImportLease:
         logger.info("Otro worker recuperó el lote de ciudadanos #%s.", job.pk)
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        logger.exception(
+            "Fallo inesperado procesando lote de ciudadanos. job_id=%s", job.pk
+        )
+        _fail_job_after_unexpected_error(job=job, exc=exc)
     return True
+
+
+def _fail_job_after_unexpected_error(*, job: CiudadanosImportJob, exc) -> None:
+    """Deja el lote fallido para reanudarlo a mano.
+
+    Si quedara en ``processing``, la recuperación de lotes colgados lo volvería
+    a encolar y reintentaría la misma fila para siempre.
+    """
+    detalle = str(exc).strip()
+    message = "El lote se detuvo por un error inesperado."
+    if detalle:
+        message = f"{message} Detalle: {detalle}"
+    try:
+        _record_job_level_failure(
+            job=job,
+            message=message,
+            error_type="unexpected_error",
+        )
+    except LostImportLease:
+        logger.info("Otro worker recuperó el lote de ciudadanos #%s.", job.pk)
+    except Exception:  # pylint: disable=broad-exception-caught
+        logger.exception(
+            "No se pudo marcar como fallido el lote de ciudadanos #%s.", job.pk
+        )
 
 
 def run_ciudadanos_import_jobs_worker(*, once: bool = False) -> None:

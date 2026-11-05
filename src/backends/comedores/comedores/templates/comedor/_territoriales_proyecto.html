@@ -1,0 +1,8 @@
+{% if territoriales_por_proyecto %}
+    <p class="fw-bold mb-1">Territoriales Asignados</p>
+    <ul class="list-unstyled">
+        {% for asignacion in territoriales_por_proyecto %}
+            <li>{{ asignacion.territorial }} — Código de Proyecto: {{ asignacion.codigo }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}

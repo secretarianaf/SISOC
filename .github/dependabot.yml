@@ -1,0 +1,28 @@
+# Solo security updates: open-pull-requests-limit 0 deja apagadas las
+# version updates. Los grupos separan parches/minors de majors para que un
+# salto mayor no bloquee los parches de seguridad (ver PR #2749).
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/requirements"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0
+    groups:
+      pip-dev-tools:
+        applies-to: security-updates
+        patterns:
+          - "black"
+          - "djlint"
+          - "isort"
+          - "pylint"
+          - "pytest*"
+      pip-parches:
+        applies-to: security-updates
+        update-types:
+          - "patch"
+          - "minor"
+      pip-mayores:
+        applies-to: security-updates
+        update-types:
+          - "major"

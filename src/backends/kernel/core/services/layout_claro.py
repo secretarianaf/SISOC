@@ -1,5 +1,5 @@
 """Contexto del layout claro (includes/base_claro.html): cabecera blanca con
-breadcrumb, iniciales y rol del usuario. Lo usan Inicio e Inspecciones escolares."""
+breadcrumb, iniciales y rol del usuario. Lo usa Inspecciones escolares."""
 
 
 def iniciales(nombre):

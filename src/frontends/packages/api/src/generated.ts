@@ -367,6 +367,7 @@ export interface components {
         };
         /** @description Contrato de salida: las escrituras usan los ModelForms compartidos. */
         FormSchema: {
+            provincia_ubicacion?: string;
             kind: string;
             fields: components["schemas"]["FormField"][];
             back: string;
@@ -467,8 +468,12 @@ export interface components {
             fecha: string;
             sede: string;
             localidad?: number | null;
-            ubicacion_url: string;
+            ubicacion_url?: string;
             direccion?: string;
+            /** Format: decimal */
+            latitud?: string | null;
+            /** Format: decimal */
+            longitud?: string | null;
             vehiculos?: number[];
             /** Format: time */
             horario_inicio?: string | null;
@@ -488,8 +493,12 @@ export interface components {
             fecha: string;
             sede: string;
             localidad?: number | null;
-            ubicacion_url: string;
+            ubicacion_url?: string;
             direccion?: string;
+            /** Format: decimal */
+            latitud?: string | null;
+            /** Format: decimal */
+            longitud?: string | null;
             vehiculos?: number[];
             /** Format: time */
             horario_inicio?: string | null;
@@ -671,6 +680,10 @@ export interface components {
             cueanexo?: string;
             nombre: string;
             domicilio: string;
+            /** Format: decimal */
+            latitud?: string | null;
+            /** Format: decimal */
+            longitud?: string | null;
             codigo_postal?: string;
             telefono?: string;
             mail?: string;
@@ -706,6 +719,10 @@ export interface components {
             cueanexo?: string;
             nombre: string;
             domicilio: string;
+            /** Format: decimal */
+            latitud?: string | null;
+            /** Format: decimal */
+            longitud?: string | null;
             codigo_postal?: string;
             telefono?: string;
             mail?: string;

@@ -30,6 +30,7 @@ from comedores.api_views_territorial_actas import (
     actas_payload,
 )
 from comedores.api_views_territorial_adjuntos import AdjuntosTerritorialMixin
+from comedores.api_views_territorial_archivos import ArchivosAdjuntosTerritorialMixin
 from comedores.api_views_territorial_pnud import (
     SeguimientosPnudTerritorialMixin,
     TerritorialComedorPnudFieldsMixin,
@@ -44,7 +45,6 @@ from comedores.models import (
     Comedor,
     ComedorPwaCreateOperation,
 )
-from core.utils import format_fecha_django
 from relevamientos.models import (
     ActaComplementaria,
     MotivoExcepcionSeguimiento,
@@ -52,6 +52,7 @@ from relevamientos.models import (
     Relevamiento,
     SeguimientoPnud,
 )
+from relevamientos.service import RelevamientoService
 from pwa.api_permissions import IsTerritorialComedorUser
 from pwa.services.accesos import (
     get_territorial_comedor_provincia_ids,
@@ -62,6 +63,9 @@ from pwa.services.accesos import (
 class TerritorialUltimoRelevamientoSerializer(NoSaveSerializer):
     id = serializers.IntegerField()
     estado = serializers.CharField(allow_null=True)
+    # Etiqueta unificada app/SISOC web (#2781): Pendiente, En curso, Pendiente
+    # Revisión o Finalizado. Se calcula; `estado` conserva el valor guardado.
+    estado_unificado = serializers.SerializerMethodField()
     fecha_visita = serializers.DateTimeField(allow_null=True)
     territorial_user = serializers.IntegerField(
         source="territorial_user_id", allow_null=True
@@ -74,6 +78,9 @@ class TerritorialUltimoRelevamientoSerializer(NoSaveSerializer):
     # De donde salio el registro: asignado por SISOC o autoactivado en la app.
     origen = serializers.CharField()
     asignado_desde_sisoc = serializers.BooleanField()
+
+    def get_estado_unificado(self, obj):
+        return RelevamientoService.estado_unificado(obj)
 
 
 class TerritorialComedorSerializer(
@@ -169,6 +176,9 @@ class TerritorialComedorSerializer(
                         "tipo": seguimiento.tipo,
                         "numero_orden": seguimiento.numero_orden,
                         "estado": seguimiento.estado,
+                        "estado_unificado": RelevamientoService.estado_unificado(
+                            seguimiento
+                        ),
                         "id_relevamiento": relevamiento.id,
                         "gestionar_id": seguimiento.gestionar_id,
                         "fecha": seguimiento.fecha_hora,
@@ -191,6 +201,7 @@ class TerritorialComedorViewSet(
     ActasComplementariasTerritorialMixin,
     SeguimientosPnudTerritorialMixin,
     AdjuntosTerritorialMixin,
+    ArchivosAdjuntosTerritorialMixin,
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -207,12 +218,14 @@ class TerritorialComedorViewSet(
     - ``POST /api/territorial/comedores/{id}/imagenes/`` -> subida de foto
       (multipart, campo ``imagen``); ``DELETE .../imagenes/{imagen_id}/`` la
       borra (ver ``AdjuntosTerritorialMixin``).
+    - ``GET/POST .../adjuntos/`` y ``DELETE .../adjuntos/{adjunto_id}/`` ->
+      documentos adjuntos a un formulario (ver ``ArchivosAdjuntosTerritorialMixin``).
     """
 
     serializer_class = TerritorialComedorSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsTerritorialComedorUser]
-    # DELETE solo lo atiende ``borrar_imagen``; el resto de las rutas responde 405.
+    # DELETE solo lo atienden ``borrar_imagen`` y ``borrar_adjunto``; el resto de las rutas responde 405.
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     # Un pk no numérico ("loc_abc", el id local de la app antes de sincronizar)
     # no rutea: 404 JSON en vez de un ValueError -> 500 en `filter(pk=...)`.
@@ -552,78 +565,39 @@ class TerritorialComedorViewSet(
         )
 
     @action(detail=True, methods=["post"], url_path="relevamientos")
-    def crear_relevamiento(  # pylint: disable=too-many-return-statements
-        self, request, pk=None
-    ):
-        """Autoactivacion de un relevamiento sobre un comedor de la zona."""
+    def crear_relevamiento(self, request, pk=None):
+        """Los relevamientos iniciales ya no se crean desde la app (#2781).
+
+        Los asigna SISOC; el territorial solo completa el asignado. Este
+        endpoint queda solo para que las versiones viejas de la app, que tienen
+        el alta en la cola offline, puedan vaciarla: si el ``client_uuid`` ya
+        corresponde a un relevamiento de este comedor (alta hecha antes del
+        cambio) se devuelve ese registro; cualquier alta nueva responde 403.
+        """
         comedor = self._comedor_de_mi_zona()
         if comedor is None:
             return self._fuera_de_zona()
 
         client_uuid = self._leer_client_uuid(request)
-        if not client_uuid:
-            return self._falta_client_uuid()
-
-        # Idempotencia: el mismo uuid devuelve el registro ya creado. Se busca con
-        # `all_objects` porque el indice UNIQUE de client_uuid incluye a los
-        # soft-deleted: si SISOC borro logicamente el relevamiento y la cola
-        # offline reintenta el mismo uuid, con `objects` no lo encontrariamos,
-        # el INSERT chocaria contra el UNIQUE y el reintento daria 500 para siempre.
-        existente = Relevamiento.all_objects.filter(client_uuid=client_uuid).first()
-        if existente is not None:
-            return Response(
-                self._serialize_relevamiento_creado(existente),
-                status=status.HTTP_200_OK,
-            )
-
-        # `validate_relevamientos_activos` no permite dos activos en el mismo
-        # comedor: en vez de un 500 opaco se devuelve el id del activo para que
-        # la app lo complete en lugar de crear otro.
-        activo = Relevamiento.objects.filter(
-            comedor=comedor, estado__in=["Pendiente", "Visita pendiente"]
-        ).first()
-        if activo is not None:
-            return Response(
-                {
-                    "detail": "El comedor ya tiene un relevamiento activo.",
-                    "relevamiento_id": activo.id,
-                },
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        relevamiento = Relevamiento(
-            comedor=comedor,
-            estado="Visita pendiente",
-            territorial_user=request.user,
-            origen=Relevamiento.ORIGEN_APP,
-            asignado_desde_sisoc=False,
-            client_uuid=client_uuid,
-        )
-        fecha_visita = leer_texto(request.data, "fecha_visita")
-        if fecha_visita:
-            try:
-                relevamiento.fecha_visita = format_fecha_django(fecha_visita)
-            except (ValueError, TypeError):
-                return self._fecha_invalida("fecha_visita")
-        try:
-            with transaction.atomic():
-                relevamiento.save()
-        except IntegrityError:
-            # Carrera con otro reintento del mismo uuid (o uuid de uno borrado).
-            existente = Relevamiento.all_objects.filter(client_uuid=client_uuid).first()
-            if existente is None:
-                # Otro UNIQUE (comedor + fecha_visita) con una alta simultánea.
-                return self._conflicto_concurrente(
-                    "El comedor ya tiene un relevamiento con esa fecha de visita."
+        if client_uuid:
+            # `all_objects`: el UNIQUE de client_uuid incluye a los soft-deleted.
+            existente = Relevamiento.all_objects.filter(
+                client_uuid=client_uuid, comedor=comedor
+            ).first()
+            if existente is not None:
+                return Response(
+                    self._serialize_relevamiento_creado(existente),
+                    status=status.HTTP_200_OK,
                 )
-            return Response(
-                self._serialize_relevamiento_creado(existente),
-                status=status.HTTP_200_OK,
-            )
 
         return Response(
-            self._serialize_relevamiento_creado(relevamiento),
-            status=status.HTTP_201_CREATED,
+            {
+                "detail": (
+                    "Los relevamientos iniciales se asignan desde SISOC; "
+                    "no se pueden crear desde la app."
+                )
+            },
+            status=status.HTTP_403_FORBIDDEN,
         )
 
     @staticmethod
@@ -632,6 +606,7 @@ class TerritorialComedorViewSet(
             "id": relevamiento.id,
             "comedor": relevamiento.comedor_id,
             "estado": relevamiento.estado,
+            "estado_unificado": RelevamientoService.estado_unificado(relevamiento),
             "fecha_visita": relevamiento.fecha_visita,
             "territorial_user": relevamiento.territorial_user_id,
             "origen": relevamiento.origen,
@@ -737,6 +712,7 @@ class TerritorialComedorViewSet(
             "tipo": seguimiento.tipo,
             "numero_orden": seguimiento.numero_orden,
             "estado": seguimiento.estado,
+            "estado_unificado": RelevamientoService.estado_unificado(seguimiento),
             "origen": seguimiento.origen,
             "asignado_desde_sisoc": seguimiento.asignado_desde_sisoc,
             "client_uuid": seguimiento.client_uuid,

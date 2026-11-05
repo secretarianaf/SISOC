@@ -11,13 +11,18 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.urls import reverse
+from django.utils.html import escape
 from PIL import Image
 from pypdf import PdfReader
 
 from comedores.models import Comedor
 from core.models import Provincia
 from relevamientos.models import Excepcion, Relevamiento
-from relevamientos.pdf_service import RecursosLocalesURLFetcher, RelevamientoPdfService
+from relevamientos.pdf_service import (
+    RecursosLocalesURLFetcher,
+    RelevamientoPdfService,
+    tipo_imagen_pdf,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -91,7 +96,7 @@ def test_descarga_devuelve_un_pdf_adjunto(client):
     texto = " ".join(" ".join(pagina.extract_text() for pagina in lector.pages).split())
     for esperado in (
         "Comedor PDF 2630",
-        "Pendiente de validación",
+        "Pendiente Revisión",
         "Domicilio del Comedor/Merendero",
         "Observación del territorial para comprobar el documento",
     ):
@@ -158,7 +163,7 @@ def test_el_pdf_lleva_las_secciones_del_detalle(client, mocker):
     html = generar.call_args.args[0]
     assert "Comedor PDF 2630" in html
     assert f"Relevamiento N.º {relevamiento.id}" in html
-    assert "Pendiente de validación" in html
+    assert "Pendiente Revisión" in html
     assert "Domicilio del Comedor/Merendero" in html
     assert "Observación del territorial" in html
     # Ni formularios ni modales del detalle (los botones de colapsar de cada
@@ -202,6 +207,17 @@ def test_fetcher_rechaza_recursos_que_no_son_locales(url):
         fetcher.fetch(url)
 
 
+def test_generar_pdf_omite_imagen_externa_sin_cortar_el_pdf():
+    """El rechazo del fetcher pasa por weasyprint: la imagen se omite y el PDF sale."""
+    pdf = RelevamientoPdfService.generar_pdf(
+        '<html><body><img src="http://169.254.169.254/latest/meta-data/x.png">'
+        "<h1>Relevamiento</h1></body></html>",
+        base_url="http://testserver/",
+    )
+
+    assert pdf.startswith(b"%PDF")
+
+
 def test_generar_pdf_devuelve_bytes_de_pdf():
     pdf = RelevamientoPdfService.generar_pdf(
         "<html><body><h1>Relevamiento</h1></body></html>",
@@ -209,3 +225,94 @@ def test_generar_pdf_devuelve_bytes_de_pdf():
     )
 
     assert pdf.startswith(b"%PDF")
+
+
+# Issue #2750: el fetcher rechaza las imágenes de AppSheet a propósito (SSRF) y
+# dejaba un error en el log por cada una; en el PDF van como enlace.
+FOTO_APPSHEET = (
+    "https://www.appsheet.com/template/gettablefileurl?appName=GesCom"
+    "&tableName=RelevamientoComedores&fileName=AdjuntosRelevaminto_Images%2Ffoto.jpg"
+)
+FOTO_APPSHEET_VACIA = (
+    "https://www.appsheet.com/template/gettablefileurl?appName=GesCom"
+    "&tableName=RelevamientoComedores&fileName="
+)
+
+
+@pytest.mark.parametrize(
+    ("url", "tipo"),
+    [
+        ("/media/foto.png", "local"),
+        ("media/foto.png", "local"),
+        (FOTO_APPSHEET, "externa"),
+        ("https://otro.example/foto.png", "externa"),
+        (FOTO_APPSHEET_VACIA, "vacia"),
+        ("", "vacia"),
+        (None, "vacia"),
+    ],
+)
+def test_tipo_imagen_pdf(url, tipo):
+    assert tipo_imagen_pdf(url) == tipo
+
+
+def test_pdf_muestra_imagenes_externas_como_enlace_y_omite_las_vacias(client, mocker):
+    _login(client)
+    excepcion = Excepcion.objects.create(
+        firma=FOTO_APPSHEET_VACIA, adjuntos=[FOTO_APPSHEET]
+    )
+    relevamiento = _relevamiento(
+        excepcion=excepcion, imagenes=[FOTO_APPSHEET, FOTO_APPSHEET_VACIA]
+    )
+    generar = mocker.patch(
+        "relevamientos.views.web_views.RelevamientoPdfService.generar_pdf",
+        return_value=b"%PDF-1.7 stub",
+    )
+
+    response = client.get(_url_pdf(relevamiento))
+
+    assert response.status_code == 200
+    html = generar.call_args.args[0]
+    enlace = escape(FOTO_APPSHEET)
+    assert f'<a href="{enlace}">Foto del relevamiento (ver imagen)</a>' in html
+    assert f'<a href="{enlace}">Adjunto del relevamiento (ver imagen)</a>' in html
+    assert f'src="{enlace}"' not in html
+    # Con comillas: la URL vacía es prefijo de la completa.
+    assert f'"{escape(FOTO_APPSHEET_VACIA)}"' not in html
+
+
+def test_detalle_en_pantalla_sigue_mostrando_imagenes_externas(client):
+    _login(client)
+    relevamiento = _relevamiento(imagenes=[FOTO_APPSHEET])
+
+    response = client.get(
+        reverse(
+            "relevamiento_detalle",
+            kwargs={"comedor_pk": relevamiento.comedor_id, "pk": relevamiento.id},
+        )
+    )
+
+    assert response.status_code == 200
+    assert f'src="{escape(FOTO_APPSHEET)}"' in response.content.decode()
+
+
+def test_detalle_de_relevamiento_inexistente_responde_404(client):
+    # Issue #2750: el .get() sin 404 respondía 500.
+    _login(client)
+    relevamiento = _relevamiento()
+
+    response = client.get(
+        reverse(
+            "relevamiento_detalle",
+            kwargs={"comedor_pk": relevamiento.comedor_id, "pk": relevamiento.id + 999},
+        )
+    )
+
+    assert response.status_code == 404
+
+
+def test_listado_de_relevamientos_de_comedor_inexistente_responde_404(client):
+    _login(client)
+
+    response = client.get(reverse("relevamientos", kwargs={"comedor_pk": 999999}))
+
+    assert response.status_code == 404

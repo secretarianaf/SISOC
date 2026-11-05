@@ -153,7 +153,10 @@ def test_firmante_create_roles_form_and_valid_paths(mocker):
     assert none_qs.called and all_qs.called
 
     # get_form should set queryset according to organization
-    form = SimpleNamespace(fields={"rol": SimpleNamespace(queryset=None)})
+    form = SimpleNamespace(
+        fields={"rol": SimpleNamespace(queryset=None)},
+        limitar_programas=mocker.Mock(),
+    )
     mocker.patch("django.views.generic.edit.ModelFormMixin.get_form", return_value=form)
     mocker.patch(
         "gestion_organizaciones.views.Organizacion.objects.select_related",
@@ -164,6 +167,7 @@ def test_firmante_create_roles_form_and_valid_paths(mocker):
     view.kwargs = {}
     out_form = view.get_form()
     assert out_form.fields["rol"].queryset == "roles"
+    form.limitar_programas.assert_called_once_with(org_pj)
 
     # form_valid: missing organizacion id
     bad_form = SimpleNamespace(
@@ -242,6 +246,9 @@ def test_organizacion_delete_post_success_and_validation_error(mocker):
     mocker.patch.object(view, "get_object", return_value=obj)
     mocker.patch.object(view, "render_to_response", return_value="rendered")
     mocker.patch.object(view, "get_context_data", return_value={})
+    mocker.patch(
+        "gestion_organizaciones.views.motivo_que_impide_baja", return_value=None
+    )
 
     ok = view.post(req)
     assert ok.status_code == 302

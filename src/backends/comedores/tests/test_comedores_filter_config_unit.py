@@ -18,6 +18,12 @@ def test_get_filters_ui_config_incluye_operadores_booleanos():
     )
 
 
+def test_campos_de_filtros_ordenados_por_etiqueta():
+    etiquetas = [field["label"] for field in get_filters_ui_config()["fields"]]
+
+    assert etiquetas == sorted(etiquetas, key=str.casefold)
+
+
 def test_config_estados_no_expone_actividad_y_ofrece_choices_legibles():
     config = get_filters_ui_config()
     fields = {field["name"]: field for field in config["fields"]}

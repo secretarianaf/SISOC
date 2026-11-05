@@ -107,3 +107,11 @@ export function initFrontendSentry(module: string): void {
     initialScope: { tags: { frontend: `v2-${module}` } },
   })).catch(() => { /* Reporting must not prevent the application from loading. */ });
 }
+
+/** Reporta un error capturado por la UI (no-op si Sentry no está configurado). */
+export function reportFrontendError(error: unknown, extra?: Record<string, unknown>): void {
+  if (!import.meta.env.VITE_SENTRY_DSN) return;
+  void import("@sentry/react").then((Sentry) => Sentry.captureException(error, { extra })).catch(() => undefined);
+}
+
+export * from "./inet";

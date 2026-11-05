@@ -92,6 +92,16 @@
                                             {{ form.localidad }}
                                             {% for error in form.localidad.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                                         </div>
+                                        <div class="col-md-6">{{ form.latitud.as_field_group }}</div>
+                                        <div class="col-md-6">{{ form.longitud.as_field_group }}</div>
+                                        <div class="col-12">
+                                            <input type="hidden"
+                                                   id="jornada-provincia"
+                                                   data-name="provincia"
+                                                   value="{{ itinerario.provincia.nombre }}" />
+                                            {% url 'address_preview' as address_preview_url %}
+                                            {% include "components/map_pin_editor.html" with latitude_field="id_latitud" longitude_field="id_longitud" generic_search=True always_visible=True preview_frame="ubicacion-mapa" search_url=address_preview_url address_fields="id_direccion,jornada-provincia,id_localidad" %}
+                                        </div>
                                         <div class="col-12">
                                             <div id="ubicacion-preview"
                                                  class="{% if not mapa_query %}d-none{% endif %}">
@@ -285,9 +295,24 @@
         const ubicacionFeedback = document.getElementById("ubicacion-feedback");
         const ubicacionPreview = document.getElementById("ubicacion-preview");
         const ubicacionMapa = document.getElementById("ubicacion-mapa");
+        const latitudInput = document.getElementById("id_latitud");
+        const longitudInput = document.getElementById("id_longitud");
+        const enlaceObligatorio = ubicacionUrl.required;
+        function actualizarRequerimientoEnlace() {
+          ubicacionUrl.required = enlaceObligatorio && !(latitudInput.value.trim() && longitudInput.value.trim());
+        }
+        [latitudInput, longitudInput].forEach(input => {
+          input.addEventListener("input", actualizarRequerimientoEnlace);
+          input.addEventListener("change", actualizarRequerimientoEnlace);
+        });
+        actualizarRequerimientoEnlace();
 
         if (buscarUbicacion) {
           buscarUbicacion.addEventListener("click", async function () {
+            if (!ubicacionUrl.value.trim()) {
+              form.querySelector("[data-pin-editor]").dispatchEvent(new Event("pin:preview"));
+              return;
+            }
             ubicacionFeedback.className = "form-text text-muted";
             ubicacionFeedback.textContent = "Buscando ubicación...";
             buscarUbicacion.disabled = true;
@@ -311,6 +336,11 @@
                 direccion.value = data.direccion;
               }
               ubicacionUrl.value = data.ubicacion_url;
+              for (const name of ["latitud", "longitud"]) {
+                const input = document.getElementById(`id_${name}`);
+                input.value = data[name] || "";
+                input.dispatchEvent(new Event("change", { bubbles: true }));
+              }
               ubicacionMapa.src = `https://www.google.com/maps?q=${encodeURIComponent(data.query)}&output=embed`;
               ubicacionPreview.classList.remove("d-none");
               ubicacionFeedback.className = "form-text text-success";

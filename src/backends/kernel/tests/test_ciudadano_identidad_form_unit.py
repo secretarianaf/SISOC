@@ -130,3 +130,31 @@ def test_no_validado_completo_es_valido():
         )
     )
     assert form.is_valid(), form.errors
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        {"latitud": "91", "longitud": "0"},
+        {"latitud": "0", "longitud": "181"},
+        {"latitud": "-34"},
+        {"longitud": "-58"},
+    ],
+)
+def test_coordenadas_deben_ser_par_valido(values):
+    assert not CiudadanoForm(data=_data(**values)).is_valid()
+
+
+@pytest.mark.django_db
+def test_coordenadas_se_guardan_sin_modificar_domicilio():
+    form = CiudadanoForm(
+        data=_data(
+            latitud="-34.123456", longitud="-58.123456", calle="Calle", altura="123"
+        )
+    )
+    assert form.is_valid(), form.errors
+    ciudadano = form.save()
+    ciudadano.refresh_from_db()
+    assert str(ciudadano.latitud) == "-34.123456"
+    assert str(ciudadano.longitud) == "-58.123456"
+    assert (ciudadano.calle, ciudadano.altura) == ("Calle", "123")

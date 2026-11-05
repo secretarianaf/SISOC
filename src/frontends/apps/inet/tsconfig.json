@@ -1,0 +1,5 @@
+{
+  "extends": "../../config/tsconfig.base.json",
+  "include": ["src", "../../packages/ui/src", "../../packages/api/src", "vite.config.ts"],
+  "compilerOptions": { "types": ["vite/client", "vitest/globals"] }
+}

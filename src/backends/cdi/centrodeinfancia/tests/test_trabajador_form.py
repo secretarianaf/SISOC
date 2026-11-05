@@ -352,6 +352,44 @@ def test_rechaza_cuit_invalido(catalogos, valor):
     assert "cuit" in form.errors
 
 
+@pytest.mark.django_db
+def test_cuit_vacio_sin_marcar_no_posee_cuil_es_obligatorio(catalogos):
+    form = TrabajadorCDIForm(data=datos_validos(cuit=""))
+
+    assert not form.is_valid()
+    assert form.errors["cuit"] == ["Este campo es obligatorio."]
+
+
+@pytest.mark.django_db
+def test_no_posee_cuil_permite_guardar_sin_cuit(catalogos, centro):
+    form = TrabajadorCDIForm(data=datos_validos(cuit="", sin_cuil="on"))
+
+    assert form.is_valid(), form.errors
+    trabajador = form.save(commit=False)
+    trabajador.centro = centro
+    trabajador.save()
+    trabajador.refresh_from_db()
+    assert trabajador.cuit is None
+    assert trabajador.sin_cuil is True
+
+
+@pytest.mark.django_db
+def test_no_posee_cuil_con_cuit_cargado_es_contradictorio(catalogos):
+    form = TrabajadorCDIForm(data=datos_validos(sin_cuil="on"))
+
+    assert not form.is_valid()
+    assert "sin_cuil" in form.errors
+
+
+@pytest.mark.django_db
+def test_cuit_0_de_renaper_no_queda_bloqueado(catalogos):
+    # field.clean acepta "0"; bloqueado, clean_cuit lo rechazaba sin poder corregirlo.
+    form = TrabajadorCDIForm(initial={"cuit": "0"}, campos_renaper=["cuit"])
+
+    assert form.fields["cuit"].disabled is False
+    assert form.campos_bloqueados_renaper == []
+
+
 # --- TC25 / TC26: país y nacionalidad son desplegables ------------------------
 
 

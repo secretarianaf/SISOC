@@ -425,6 +425,34 @@ def test_consultar_datos_renaper_clasifica_falla_de_base_de_datos(mocker):
     assert out["error_type"] == "database_unavailable"
 
 
+@pytest.mark.parametrize(
+    "cuil,esperado",
+    [
+        ("20000000019", 20000000019),
+        ("0", None),
+        ("00000000000", None),
+        ("20000000018", None),
+        ("123", None),
+    ],
+)
+def test_consultar_datos_renaper_solo_mapea_cuil_valido(mocker, cuil, esperado):
+    # A muchos extranjeros con DNI RENAPER les informa el CUIL en "0".
+    client = mocker.Mock()
+    client.consultar_ciudadano.return_value = {
+        "success": True,
+        "data": {"cuil": cuil, "apellido": "Persona", "nombres": "Prueba"},
+    }
+    mocker.patch(
+        "core.services.renaper.Sexo.objects.filter",
+        return_value=SimpleNamespace(first=lambda: None),
+    )
+
+    out = module.consultar_datos_renaper("95445413", "F", client=client)
+
+    assert out["data"]["cuil"] == esperado
+    assert out["datos_api"]["cuil"] == cuil
+
+
 def test_consultar_datos_renaper_ignora_placeholders_no_numericos(mocker):
     client = mocker.Mock()
     client.consultar_ciudadano.return_value = {

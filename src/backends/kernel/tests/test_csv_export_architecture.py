@@ -10,12 +10,15 @@ CSV_INPUT_VALIDATOR_PATH = Path("src/backends/sisoc_core/insumos/validators.py")
 LOCALIDADES_JS_EXPORT_PATH = Path(
     "src/backends/celiaquia/celiaquia/static/custom/js/localidades_modal.js"
 )
+INET_JS_EXPORT_PATH = Path("src/frontends/apps/inet/src/Search.tsx")
 VPSL_OPENAPI_PATH = Path("src/backends/vpsl/ver_para_ser_libre/api_views.py")
 GENERATED_API_TYPES_PATH = Path("src/frontends/packages/api/src/generated.ts")
 ALLOWED_CSV_MIME_PATHS = {
     CSV_POLICY_PATH,
     CSV_INPUT_VALIDATOR_PATH,
     LOCALIDADES_JS_EXPORT_PATH,
+    # Exportación del navegador, sin response HTTP; agrega el BOM (test abajo).
+    INET_JS_EXPORT_PATH,
     # Tipos generados desde OpenAPI: no construyen respuestas HTTP.
     GENERATED_API_TYPES_PATH,
 }
@@ -58,3 +61,9 @@ def test_exportador_javascript_existente_incluye_bom_utf8():
     assert r'const BOM = "\uFEFF";' in content
     assert "let csv = BOM +" in content
     assert CSV_MIME_LITERAL.search(content)
+
+
+def test_exportador_inet_incluye_bom_utf8():
+    content = (PROJECT_ROOT / INET_JS_EXPORT_PATH).read_text(encoding="utf-8")
+
+    assert 'new Blob(["\\uFEFF", csv]' in content

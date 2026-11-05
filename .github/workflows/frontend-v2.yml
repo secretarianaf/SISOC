@@ -67,3 +67,8 @@ jobs:
           docker compose run --no-deps --rm -T -e USE_SQLITE_FOR_TESTS=1 django \
             python manage.py spectacular --urlconf config.urls_frontend_v2 --file src/frontends/packages/api/openapi.celiaquia.yaml
           git diff --exit-code -- src/frontends/packages/api/openapi.celiaquia.yaml
+      - name: Verificar contrato Django de INET
+        run: |
+          docker compose run --no-deps --rm -T -e USE_SQLITE_FOR_TESTS=1 django \
+            python manage.py spectacular --urlconf config.urls_inet_v2 --file src/frontends/packages/api/openapi.inet.yaml --validate --fail-on-warn
+          git diff --exit-code -- src/frontends/packages/api/openapi.inet.yaml

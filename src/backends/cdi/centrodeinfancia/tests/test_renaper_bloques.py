@@ -349,6 +349,29 @@ def test_form_de_edicion_rapida_respeta_campos_bloqueados(centro):
     assert not form.fields["responsable_legal_1_telefono"].disabled
 
 
+def test_cuit_invalido_de_renaper_no_se_bloquea(centro):
+    # RENAPER informa "0" a muchos extranjeros: bloqueado no se podría corregir.
+    form = NominaCentroInfanciaDestinatariosForm(
+        centro=centro,
+        valores_renaper={**VALORES_RESPONSABLE_1, "responsable_legal_1_cuit": "0"},
+    )
+
+    assert not form.fields["responsable_legal_1_cuit"].disabled
+    assert "responsable_legal_1_cuit" not in form.campos_verificados_renaper
+    assert form.fields["responsable_legal_1_apellido"].disabled
+    assert not form.fields["responsable_legal_1_sin_cuil"].disabled
+
+
+def test_cuit_validado_por_renaper_no_admite_no_posee_cuil(centro):
+    form = NominaCentroInfanciaDestinatariosForm(
+        centro=centro, valores_renaper=VALORES_RESPONSABLE_1
+    )
+
+    assert form.fields["responsable_legal_1_cuit"].disabled
+    assert form.fields["responsable_legal_1_sin_cuil"].disabled
+    assert form.initial["responsable_legal_1_sin_cuil"] is False
+
+
 # ── Referente del CDI ────────────────────────────────────────────────────
 
 VALORES_REFERENTE = {

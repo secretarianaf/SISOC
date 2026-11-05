@@ -43,6 +43,12 @@ def get_cached_provincia_filter_choices():
 
 
 class CiudadanoForm(forms.ModelForm):
+    latitud = forms.DecimalField(
+        max_digits=9, decimal_places=6, min_value=-90, max_value=90, required=False
+    )
+    longitud = forms.DecimalField(
+        max_digits=9, decimal_places=6, min_value=-180, max_value=180, required=False
+    )
     fecha_nacimiento = forms.DateField(
         widget=forms.DateInput(attrs={"type": "date"}),
         required=False,
@@ -66,6 +72,8 @@ class CiudadanoForm(forms.ModelForm):
             "nacionalidad",
             "calle",
             "altura",
+            "latitud",
+            "longitud",
             "piso_departamento",
             "barrio",
             "provincia",
@@ -166,6 +174,8 @@ class CiudadanoForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
+        if (cleaned.get("latitud") is None) != (cleaned.get("longitud") is None):
+            self.add_error(None, "Complete latitud y longitud, o deje ambas vacías.")
         tipo = cleaned.get("tipo_registro_identidad", Ciudadano.TIPO_REGISTRO_ESTANDAR)
 
         if tipo == Ciudadano.TIPO_REGISTRO_ESTANDAR:

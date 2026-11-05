@@ -191,17 +191,8 @@ header.main-header {
     overflow-x: hidden !important;
 }
 
-/* Ítem activo como en el mockup de Inspecciones: línea dorada a la izquierda y fondo
-   más oscuro; el color dorado al pasar el mouse se mantiene más abajo. */
-.sidebar-wrapper .sidebar-menu > .nav-item > .nav-link {
-    border-left: 3px solid transparent;
-    color: #d5dae6;
-}
-
 .sidebar-wrapper .sidebar-menu > .nav-item > .nav-link.active:not(:hover) {
-    border-left-color: #e7ba61;
-    background: #1c2440 !important;
-    color: #fff !important;
+    color: #e7ba61;
 }
 
 

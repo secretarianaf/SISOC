@@ -790,6 +790,8 @@ components:
       type: object
       description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
       properties:
+        provincia_ubicacion:
+          type: string
         kind:
           type: string
         fields:
@@ -1049,6 +1051,16 @@ components:
           type: string
         direccion:
           type: string
+        latitud:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitud:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
         vehiculos:
           type: array
           items:
@@ -1072,7 +1084,6 @@ components:
       required:
       - fecha
       - sede
-      - ubicacion_url
     JornadaInput:
       type: object
       description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
@@ -1095,6 +1106,16 @@ components:
           type: string
         direccion:
           type: string
+        latitud:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitud:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
         vehiculos:
           type: array
           items:
@@ -1118,7 +1139,6 @@ components:
       required:
       - fecha
       - sede
-      - ubicacion_url
     Laboratorio:
       type: object
       description: 'Contrato de salida: las escrituras usan los ModelForms compartidos.'
@@ -1514,6 +1534,16 @@ components:
           type: string
         domicilio:
           type: string
+        latitud:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitud:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
         codigo_postal:
           type: string
         telefono:
@@ -1591,6 +1621,16 @@ components:
           type: string
         domicilio:
           type: string
+        latitud:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitud:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
         codigo_postal:
           type: string
         telefono:

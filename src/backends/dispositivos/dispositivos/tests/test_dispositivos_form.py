@@ -2,7 +2,7 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from core.models import Municipio, Provincia
+from core.models import Localidad, Municipio, Provincia
 from dispositivos.forms import DispositivoForm
 from dispositivos.models import Dispositivo
 
@@ -154,3 +154,76 @@ def test_modelo_rechaza_telefono_desdoblado_no_numerico(field_name):
         dispositivo.full_clean()
 
     assert field_name in exc_info.value.message_dict
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "coordinates",
+    [
+        {"latitud": "-91", "longitud": "0"},
+        {"latitud": "0", "longitud": "181"},
+        {"latitud": "-34.9"},
+        {"longitud": "-57.9"},
+        {"latitud": "NaN", "longitud": "0"},
+    ],
+)
+def test_form_rechaza_coordenadas_invalidas(coordinates):
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    form = DispositivoForm(data=_base_data(provincia, municipio, **coordinates))
+    assert not form.is_valid()
+    assert {"latitud", "longitud"} & form.errors.keys()
+
+
+@pytest.mark.django_db
+def test_form_guarda_localidad_coordenadas_y_conserva_domicilio():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Tolosa", municipio=municipio)
+    form = DispositivoForm(
+        data=_base_data(
+            provincia,
+            municipio,
+            localidad=localidad.pk,
+            latitud="-34.900001",
+            longitud="-57.900001",
+        )
+    )
+    assert form.is_valid(), form.errors
+    dispositivo = form.save()
+    dispositivo.refresh_from_db()
+    assert dispositivo.localidad == localidad
+    assert str(dispositivo.latitud) == "-34.900001"
+    assert str(dispositivo.longitud) == "-57.900001"
+    assert (dispositivo.calle, dispositivo.altura) == ("Calle 1", "123")
+    edit = DispositivoForm(instance=dispositivo)
+    assert localidad in edit.fields["localidad"].queryset
+
+
+@pytest.mark.django_db
+def test_form_rechaza_localidad_de_otro_municipio():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    otro = Municipio.objects.create(nombre="Otro", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Otra localidad", municipio=otro)
+    form = DispositivoForm(
+        data=_base_data(provincia, municipio, localidad=localidad.pk)
+    )
+    assert not form.is_valid()
+    assert "localidad" in form.errors
+
+
+@pytest.mark.django_db
+def test_modelo_rechaza_localidad_de_otro_municipio():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    otro = Municipio.objects.create(nombre="Otro", provincia=provincia)
+    data = _base_data(provincia, municipio)
+    data.update(
+        provincia=provincia,
+        municipio=municipio,
+        localidad=Localidad.objects.create(nombre="Otra", municipio=otro),
+    )
+    with pytest.raises(ValidationError) as error:
+        Dispositivo(**data).full_clean()
+    assert "localidad" in error.value.message_dict

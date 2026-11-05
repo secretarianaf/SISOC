@@ -277,6 +277,7 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "inicio"
 LOGOUT_REDIRECT_URL = "login"
 FRONTEND_V2_UPSTREAMS = {
+    "inet": os.getenv("FRONT_INET_ORIGIN", "http://front_inet:8080"),
     "vpsl": os.getenv("FRONT_VPSL_ORIGIN", "http://front_vpsl:8080"),
     "celiaquia": os.getenv("FRONT_CELIAQUIA_ORIGIN", "http://front_celiaquia:8080"),
 }

@@ -1220,10 +1220,10 @@ def test_sede_create_guarda_solo_datos_obligatorios_y_checklist_pendiente(client
     assert response.status_code == 200
     assert html.index("Campos obligatorios") < html.index('id="vpsl-sede-map"')
     assert html.index('id="vpsl-sede-map"') < html.index("Información adicional")
-    assert html.index('id="vpsl-sede-map-search"') < html.index('id="vpsl-sede-map"')
+    assert html.index("data-pin-start") < html.index('id="vpsl-sede-map"')
     assert html.index('id="id_provincia"') < html.index('id="id_localidad"')
-    assert 'id="id_latitud"' not in html
-    assert 'id="id_longitud"' not in html
+    assert 'id="id_latitud"' in html
+    assert 'id="id_longitud"' in html
     assert 'type="email"' in html
     assert '<textarea name="mail"' not in html
 
@@ -1334,7 +1334,7 @@ def test_sede_create_rechaza_localidad_de_otra_provincia(client):
     assert not SedeVPSL.objects.exists()
 
 
-def test_sede_update_conserva_coordenadas_historicas_sin_mostrarlas(client):
+def test_sede_update_conserva_coordenadas_historicas_y_permite_ajustarlas(client):
     user = get_user_model().objects.create_superuser(username="vpsl-sede-coordenadas")
     provincia = Provincia.objects.create(nombre="Ciudad Autónoma de Buenos Aires")
     Localidad.objects.create(
@@ -1352,8 +1352,8 @@ def test_sede_update_conserva_coordenadas_historicas_sin_mostrarlas(client):
     formulario = client.get(url)
     html = formulario.content.decode()
     assert formulario.status_code == 200
-    assert 'id="id_latitud"' not in html
-    assert 'id="id_longitud"' not in html
+    assert 'id="id_latitud"' in html
+    assert 'id="id_longitud"' in html
 
     response = client.post(
         url,
@@ -2664,3 +2664,107 @@ def test_registro_delete_es_logico_y_vuelve_a_la_jornada(client):
         pk=registro.pk,
         deleted_at__isnull=False,
     ).exists()
+
+
+@pytest.mark.parametrize("lat,lon", [("-34.100000", "-58.100000"), ("0", "0")])
+def test_jornada_ajuste_pin_preserva_domicilio(monkeypatch, lat, lon):
+    jornada = crear_jornada()
+    monkeypatch.setattr(
+        "ver_para_ser_libre.forms.resolve_google_maps_location",
+        lambda _: pytest.fail("No debe resolver el enlace guardado al mover el pin"),
+    )
+    form = JornadaVPSLForm(
+        data={
+            "fecha": jornada.fecha.isoformat(),
+            "sede": jornada.sede,
+            "localidad": jornada.localidad_id,
+            "ubicacion_url": jornada.ubicacion_url,
+            "direccion": jornada.direccion,
+            "latitud": lat,
+            "longitud": lon,
+            "horario_inicio": "09:00",
+            "horario_fin": "18:00",
+        },
+        instance=jornada,
+        itinerario=jornada.itinerario,
+    )
+    assert form.is_valid(), form.errors
+    form.save()
+    jornada.refresh_from_db()
+    assert jornada.latitud == Decimal(lat)
+    assert jornada.longitud == Decimal(lon)
+    assert jornada.direccion == "Calle 1 123"
+
+
+def test_jornada_pin_sin_enlace_y_par_incompleto():
+    jornada = crear_jornada()
+    data = {
+        "fecha": jornada.fecha.isoformat(),
+        "sede": jornada.sede,
+        "localidad": jornada.localidad_id,
+        "ubicacion_url": "",
+        "direccion": jornada.direccion,
+        "latitud": "-34.100000",
+        "longitud": "-58.100000",
+        "horario_inicio": "09:00",
+        "horario_fin": "18:00",
+    }
+    form = JornadaVPSLForm(data=data, instance=jornada, itinerario=jornada.itinerario)
+    assert form.is_valid(), form.errors
+    assert "-34.100000" in form.cleaned_data["ubicacion_url"]
+    invalid_url = JornadaVPSLForm(
+        data={**data, "ubicacion_url": "https://example.com/"},
+        instance=jornada,
+        itinerario=jornada.itinerario,
+    )
+    assert not invalid_url.is_valid()
+    assert "ubicacion_url" in invalid_url.errors
+    invalid = JornadaVPSLForm(
+        data={**data, "longitud": ""}, instance=jornada, itinerario=jornada.itinerario
+    )
+    assert not invalid.is_valid()
+
+
+def test_sede_guarda_pin_aunque_se_edite_domicilio():
+    from ver_para_ser_libre.forms import SedeUpdateVPSLForm
+
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    Localidad.objects.create(nombre="La Plata", municipio=municipio)
+    sede = crear_sede(
+        jurisdiccion=provincia.nombre,
+        localidad="La Plata",
+        latitud="-34.9",
+        longitud="-57.9",
+    )
+    form = SedeUpdateVPSLForm(
+        data={
+            "nombre": sede.nombre,
+            "domicilio": "Nueva calle 123",
+            "localidad": "La Plata",
+            "provincia": provincia.pk,
+            "telefono": sede.telefono,
+            "latitud": "-34.123456",
+            "longitud": "-58.123456",
+        },
+        instance=sede,
+    )
+    assert form.is_valid(), form.errors
+    form.save()
+    sede.refresh_from_db()
+    assert str(sede.latitud) == "-34.123456"
+    assert str(sede.longitud) == "-58.123456"
+    assert sede.domicilio == "Nueva calle 123"
+
+
+def test_sede_localidad_utiliza_mismo_control_que_provincia(client):
+    user = get_user_model().objects.create_superuser(username="vpsl-localidad-formato")
+    client.force_login(user)
+    response = client.get(reverse("vpsl_sede_create"))
+    assert response.status_code == 200
+    form = response.context["form"]
+    assert (
+        form.fields["localidad"].widget.attrs["class"]
+        == form.fields["provincia"].widget.attrs["class"]
+    )
+    assert b"localitySelect.select2" not in response.content

@@ -1667,15 +1667,27 @@ document.addEventListener('DOMContentLoaded', () => {
             { key: 'codigo_postal', label: 'Código Postal' }
           ];
 
-          campos.forEach(campo => {
+          // Se compara el valor normalizado y no el texto crudo: espacios de
+          // más, mayúsculas o tildes no son una diferencia real del dato y
+          // marcaban en amarillo filas que coinciden.
+          const normalizarComparable = (valor) => String(valor ?? '')
+            .normalize('NFD')
+            .replace(/\p{Diacritic}/gu, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLowerCase();
+          const claseCoincidencia = (campo) => {
             const valorProvincia = data.datos_provincia[campo.key] || '-';
             const valorRenaper = data.datos_renaper[campo.key] || '-';
+            const coincide = normalizarComparable(valorProvincia) === normalizarComparable(valorRenaper);
+            return coincide ? 'table-success' : 'table-warning';
+          };
 
-            const coincide = valorProvincia === valorRenaper;
-            const claseCoincidencia = coincide ? 'table-success' : 'table-warning';
+          campos.forEach(campo => {
+            const valorProvincia = data.datos_provincia[campo.key] || '-';
 
             const rowProvincia = document.createElement('tr');
-            rowProvincia.className = claseCoincidencia;
+            rowProvincia.className = claseCoincidencia(campo);
             rowProvincia.innerHTML = `
               <td><strong>${campo.label}</strong></td>
               <td>${escapeHtml(valorProvincia)}</td>
@@ -1688,14 +1700,10 @@ document.addEventListener('DOMContentLoaded', () => {
           datosRenaperTable.innerHTML = '';
 
           campos.forEach(campo => {
-            const valorProvincia = data.datos_provincia[campo.key] || '-';
             const valorRenaper = data.datos_renaper[campo.key] || '-';
 
-            const coincide = valorProvincia === valorRenaper;
-            const claseCoincidencia = coincide ? 'table-success' : 'table-warning';
-
             const rowRenaper = document.createElement('tr');
-            rowRenaper.className = claseCoincidencia;
+            rowRenaper.className = claseCoincidencia(campo);
             rowRenaper.innerHTML = `
               <td><strong>${campo.label}</strong></td>
               <td>${escapeHtml(valorRenaper)}</td>

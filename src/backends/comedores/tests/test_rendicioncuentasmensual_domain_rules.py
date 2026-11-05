@@ -1,4 +1,6 @@
 from datetime import date
+from io import BytesIO
+from zipfile import ZipFile
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -14,8 +16,217 @@ from rendicioncuentasmensual.models import (
 )
 from rendicioncuentasmensual.services import (
     RendicionCuentaMensualService,
+    RendicionProcesoService,
     periodo_fin_maximo,
 )
+
+
+def _iniciar_territorial(rendicion):
+    return RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_INICIAR_TERRITORIAL,
+        datos={},
+    )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "subestado", ["en_curso", "pendiente_correcciones", "subsanado"]
+)
+def test_revision_territorial_bloquea_otras_del_mismo_proyecto(scopes, subestado):
+    comedor, proyecto, _, _ = scopes
+    activa = _crear_rendicion(comedor, proyecto)
+    activa.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+    activa.subestado_proceso = subestado
+    activa.save()
+    pendiente = _crear_rendicion(comedor, proyecto, numero=2)
+    pendiente.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+    pendiente.subestado_proceso = RendicionCuentaMensual.SUBESTADO_PENDIENTE
+    pendiente.save()
+
+    with pytest.raises(ValidationError, match="mismo proyecto"):
+        _iniciar_territorial(pendiente)
+
+    pendiente.refresh_from_db()
+    assert pendiente.subestado_proceso == RendicionCuentaMensual.SUBESTADO_PENDIENTE
+
+
+@pytest.mark.django_db
+def test_revision_territorial_permite_otro_proyecto_y_libera_cupo(scopes):
+    comedor, proyecto, otro_comedor, otro_proyecto = scopes
+    activa = _crear_rendicion(comedor, proyecto)
+    otra = _crear_rendicion(otro_comedor, otro_proyecto)
+    siguiente = _crear_rendicion(comedor, proyecto, numero=2)
+    for rendicion in (activa, otra, siguiente):
+        rendicion.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+        rendicion.subestado_proceso = RendicionCuentaMensual.SUBESTADO_PENDIENTE
+        rendicion.save()
+
+    _iniciar_territorial(activa)
+    _iniciar_territorial(otra)
+    RendicionProcesoService.ejecutar(
+        rendicion=activa,
+        accion=RendicionProcesoService.ACCION_FINALIZAR_TERRITORIAL,
+        datos={},
+    )
+    _iniciar_territorial(siguiente)
+
+    activa.refresh_from_db()
+    siguiente.refresh_from_db()
+    assert activa.etapa_proceso == RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA
+    assert siguiente.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("legado_primero", [True, False])
+def test_revision_territorial_comparte_cupo_con_proyecto_historico(
+    scopes, legado_primero
+):
+    comedor, proyecto, _, _ = scopes
+    comedor.codigo_de_proyecto = proyecto.codigo
+    comedor.save()
+    actual = _crear_rendicion(comedor, proyecto)
+    legado = _crear_rendicion(comedor, None, numero=2)
+    for rendicion in (actual, legado):
+        rendicion.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+        rendicion.subestado_proceso = RendicionCuentaMensual.SUBESTADO_PENDIENTE
+        rendicion.save()
+    primera, segunda = (legado, actual) if legado_primero else (actual, legado)
+
+    _iniciar_territorial(primera)
+    with pytest.raises(ValidationError, match="mismo proyecto"):
+        _iniciar_territorial(segunda)
+
+
+@pytest.mark.django_db
+def test_revision_territorial_subsanada_puede_reanudarse(scopes):
+    comedor, proyecto, _, _ = scopes
+    rendicion = _crear_rendicion(comedor, proyecto)
+    rendicion.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+    rendicion.subestado_proceso = RendicionCuentaMensual.SUBESTADO_SUBSANADO
+    rendicion.save()
+
+    _iniciar_territorial(rendicion)
+
+    rendicion.refresh_from_db()
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("subestado_otra", ["pendiente_correcciones", "subsanado"])
+def test_revision_territorial_legada_en_conflicto_reanuda_la_mas_antigua(
+    scopes, subestado_otra
+):
+    """Datos previos a la regla: dos rendiciones del proyecto ya ocupan el cupo."""
+    comedor, proyecto, _, _ = scopes
+    antigua = _crear_rendicion(comedor, proyecto)
+    nueva = _crear_rendicion(comedor, proyecto, numero=2)
+    for rendicion, subestado in (
+        (antigua, RendicionCuentaMensual.SUBESTADO_SUBSANADO),
+        (nueva, subestado_otra),
+    ):
+        rendicion.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+        rendicion.subestado_proceso = subestado
+        rendicion.save()
+
+    _iniciar_territorial(antigua)
+
+    antigua.refresh_from_db()
+    assert antigua.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+    if subestado_otra == RendicionCuentaMensual.SUBESTADO_SUBSANADO:
+        with pytest.raises(ValidationError, match="mismo proyecto"):
+            _iniciar_territorial(nueva)
+
+
+@pytest.mark.django_db
+def test_revision_territorial_subsanada_nueva_cede_ante_la_antigua(scopes):
+    comedor, proyecto, _, _ = scopes
+    antigua = _crear_rendicion(comedor, proyecto)
+    nueva = _crear_rendicion(comedor, proyecto, numero=2)
+    for rendicion in (antigua, nueva):
+        rendicion.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+        rendicion.subestado_proceso = RendicionCuentaMensual.SUBESTADO_SUBSANADO
+        rendicion.save()
+
+    with pytest.raises(ValidationError, match=f"#{antigua.pk} del mismo proyecto"):
+        _iniciar_territorial(nueva)
+
+
+@pytest.mark.django_db
+def test_revision_territorial_estado_invalido_informa_estado_y_no_cupo(scopes):
+    comedor, proyecto, _, _ = scopes
+    activa = _crear_rendicion(comedor, proyecto)
+    activa.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+    activa.subestado_proceso = RendicionCuentaMensual.SUBESTADO_EN_CURSO
+    activa.save()
+    en_auditoria = _crear_rendicion(comedor, proyecto, numero=2)
+    en_auditoria.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA
+    en_auditoria.subestado_proceso = RendicionCuentaMensual.SUBESTADO_PENDIENTE
+    en_auditoria.save()
+
+    with pytest.raises(ValidationError, match="no corresponde al estado actual"):
+        _iniciar_territorial(en_auditoria)
+
+
+@pytest.mark.parametrize(
+    "linea", [DocumentacionAdjunta.LINEA_TRADICIONAL, DocumentacionAdjunta.LINEA_SECOS]
+)
+def test_formulario_bancario_al_final_del_catalogo(linea):
+    categorias = DocumentacionAdjunta.categorias_mobile(linea)
+    codigos = [categoria["codigo"] for categoria in categorias]
+
+    assert codigos[-2:] == [
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_I,
+        DocumentacionAdjunta.CATEGORIA_OTROS,
+    ]
+    assert categorias[-2]["description"] == (
+        "Adjuntar sólo si hubo cambios en los datos bancarios"
+    )
+    if linea == DocumentacionAdjunta.LINEA_TRADICIONAL:
+        assert codigos[-3] == DocumentacionAdjunta.CATEGORIA_PLANILLA_SEGUROS
+
+
+@pytest.mark.parametrize(
+    "linea", [DocumentacionAdjunta.LINEA_TRADICIONAL, DocumentacionAdjunta.LINEA_SECOS]
+)
+@pytest.mark.django_db
+def test_descarga_nuevo_modelo_formulario_v_alimentario(mocker, linea):
+    from comedores.api_views import ComedorDetailViewSet
+
+    view = ComedorDetailViewSet()
+    mocker.patch.object(view, "get_object")
+
+    response = view.descargar_modelo_rendicion(
+        request=None,
+        pk=1,
+        linea_programatica=linea,
+        modelo_codigo=DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_ALIMENTARIO,
+    )
+    try:
+        assert response.status_code == 200
+        assert 'filename="FORM_V_CERTIF_ALIM.xlsx"' in response["Content-Disposition"]
+        with ZipFile(BytesIO(b"".join(response.streaming_content))) as workbook:
+            assert workbook.testzip() is None
+            assert "xl/workbook.xml" in workbook.namelist()
+    finally:
+        response.close()
+
+
+@pytest.mark.django_db
+def test_revision_territorial_historica_sin_comedor_no_bloquea_otras(scopes):
+    comedor, proyecto, _, _ = scopes
+    huerfana = _crear_rendicion(None, None)
+    pendiente = _crear_rendicion(comedor, proyecto)
+    for rendicion in (huerfana, pendiente):
+        rendicion.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+        rendicion.subestado_proceso = RendicionCuentaMensual.SUBESTADO_PENDIENTE
+        rendicion.save()
+
+    _iniciar_territorial(huerfana)
+    _iniciar_territorial(pendiente)
+
+    pendiente.refresh_from_db()
+    assert pendiente.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
 
 
 @pytest.fixture

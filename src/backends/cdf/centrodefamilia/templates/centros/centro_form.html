@@ -7,12 +7,32 @@
 {% endblock %}
 {% block content %}
     {% include 'components/alert_message.html' with show_django_messages=True %}
-    {% include 'components/form_card.html' with title=page_title form=form cancel_url=cancel_url submit_text=submit_text %}
+    <div class="card card-body shadow">
+        <h2 class="text-center mb-4">{{ page_title }}</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+            {% for field in form %}
+                {{ field|as_crispy_field }}
+                {% if field.name == "longitud" %}
+                    {% url 'address_preview' as address_preview_url %}
+                    <div data-centro-location-editor
+                         {% if form.tipo.value != 'faro' and form.tipo.value != 'adherido' %}hidden{% endif %}>
+                        {% include "components/map_pin_editor.html" with latitude_field="id_latitud" longitude_field="id_longitud" generic_search=True always_visible=True search_url=address_preview_url address_fields="id_calle,id_numero,id_provincia,id_municipio,id_localidad" %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary">{{ submit_text|default:"Guardar" }}</button>
+                <a href="{{ cancel_url }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
 {% endblock %}
 {% block customJS %}
     <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
     </script>
-    <script src="{% static 'custom/js/centro_form.js' %}"></script>
+    <script src="{% static 'custom/js/centro_form.js' %}?v=2778-2"></script>
 {% endblock %}

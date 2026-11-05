@@ -14,6 +14,9 @@ from rendicioncuentasmensual.models import (
     DocumentacionAdjunta,
     RendicionCuentaMensual,
     SolicitudDocumentoFaltante,
+    acta_auditoria_upload_to,
+    documentacion_adjunta_upload_to,
+    documento_regularizacion_upload_to,
 )
 from rendicioncuentasmensual.services import (
     RendicionCuentaMensualService,
@@ -671,45 +674,39 @@ def test_obtener_scope_proyecto_sin_codigo_retorna_comedor_actual():
 def test_actualizar_estado_documento_revision_no_cierra_etapa_automaticamente(
     mocker,
 ):
-    actor = SimpleNamespace(id=10, is_authenticated=True)
-    rendicion = SimpleNamespace(
+    from django.contrib.auth import get_user_model
+
+    actor = get_user_model().objects.create_user(username="revisor2642")
+    rendicion = RendicionCuentaMensual.objects.create(
+        mes=1,
+        anio=2026,
         estado=RendicionCuentaMensual.ESTADO_REVISION,
-        usuario_ultima_modificacion=None,
-        save=mocker.Mock(),
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_EN_CURSO,
     )
-    documento = SimpleNamespace(
-        estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
-        observaciones=None,
+    documento = DocumentacionAdjunta.objects.create(
+        nombre="Documento",
+        archivo="test.pdf",
         rendicion_cuenta_mensual=rendicion,
-        save=mocker.Mock(),
-    )
-    sync_mock = mocker.patch.object(
-        RendicionCuentaMensualService,
-        "_sincronizar_estado_rendicion_por_documentos",
     )
     notify_mock = mocker.patch.object(
         RendicionCuentaMensualService,
         "_crear_notificacion_mobile_revision_documento",
     )
-
     resultado = RendicionCuentaMensualService.actualizar_estado_documento_revision(
         documento=documento,
         estado=DocumentacionAdjunta.ESTADO_VALIDADO,
         observaciones="No aplica",
         actor=actor,
     )
-
+    documento.refresh_from_db()
+    rendicion.refresh_from_db()
     assert resultado is documento
-    assert documento.estado == DocumentacionAdjunta.ESTADO_VALIDADO
-    assert documento.observaciones is None
-    assert rendicion.usuario_ultima_modificacion is actor
-    documento.save.assert_called_once_with(
-        update_fields=["estado", "observaciones", "ultima_modificacion"]
-    )
-    rendicion.save.assert_called_once_with(
-        update_fields=["usuario_ultima_modificacion", "ultima_modificacion"]
-    )
-    sync_mock.assert_not_called()
+    assert documento.estado == DocumentacionAdjunta.ESTADO_PRESENTADO
+    assert documento.revision_estado == DocumentacionAdjunta.ESTADO_VALIDADO
+    assert documento.revision_observaciones is None
+    assert rendicion.usuario_ultima_modificacion == actor
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
     notify_mock.assert_not_called()
 
 
@@ -842,9 +839,16 @@ def test_crear_notificacion_mobile_revision_documento_no_publica_si_finaliza(
 
 @pytest.mark.django_db
 def test_actualizar_estado_documento_revision_exige_observacion_para_subsanar():
-    rendicion = SimpleNamespace(estado=RendicionCuentaMensual.ESTADO_REVISION)
-    documento = SimpleNamespace(
-        estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
+    rendicion = RendicionCuentaMensual.objects.create(
+        mes=1,
+        anio=2026,
+        estado=RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+    )
+    documento = DocumentacionAdjunta.objects.create(
+        nombre="Documento",
+        archivo="test.pdf",
         rendicion_cuenta_mensual=rendicion,
     )
 
@@ -1041,6 +1045,11 @@ def test_iniciar_revision_auditoria_actualiza_documentos_con_ids_materializados(
         estado=RendicionCuentaMensual.ESTADO_FINALIZADA,
         save=mocker.Mock(),
     )
+    rendicion.pk = 2642
+    mocker.patch.object(
+        RendicionCuentaMensual.objects, "select_for_update"
+    ).return_value.get.return_value = rendicion
+
     queryset_vigentes = mocker.Mock()
     queryset_validados = queryset_vigentes.filter.return_value
     queryset_validados.values_list.return_value = [11, 12]
@@ -1114,6 +1123,11 @@ def test_reiniciar_revision_auditoria_preserva_documentos_validados(mocker):
         estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
         save=mocker.Mock(),
     )
+    rendicion.pk = 2642
+    mocker.patch.object(
+        RendicionCuentaMensual.objects, "select_for_update"
+    ).return_value.get.return_value = rendicion
+
     documentos_mock = mocker.patch.object(
         RendicionCuentaMensualService, "_documentos_vigentes_queryset"
     )
@@ -1129,3 +1143,37 @@ def test_reiniciar_revision_auditoria_preserva_documentos_validados(mocker):
     filter_mock.assert_not_called()
     assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
     assert rendicion.estado == RendicionCuentaMensual.ESTADO_REVISION
+
+
+@pytest.mark.parametrize(
+    ("upload_to", "carpeta"),
+    [
+        (
+            documentacion_adjunta_upload_to,
+            "rendicioncuentasmensualdocumentos_adjuntos/",
+        ),
+        (acta_auditoria_upload_to, "rendicioncuentasmensual/auditoria/actas/"),
+        (
+            documento_regularizacion_upload_to,
+            "rendicioncuentasmensual/auditoria/regularizaciones/",
+        ),
+    ],
+)
+def test_upload_to_deja_una_extension_y_entra_en_max_length(upload_to, carpeta):
+    nombre = upload_to(
+        None,
+        "FORM_1234567.V.CERTIFICACION_DE_PRESTACIONES_-_PRESTACION_ALIMENTARIA.pdf",
+    )
+
+    assert nombre.startswith(carpeta)
+    assert nombre.endswith(".pdf")
+    assert nombre[len(carpeta) :].count(".") == 1
+    # Queda lugar para el sufijo "_XXXXXXX" que agrega Storage si ya existe.
+    assert len(nombre) <= 100 - 8
+
+
+def test_upload_to_conserva_nombres_cortos():
+    assert (
+        documentacion_adjunta_upload_to(None, "extracto.pdf")
+        == "rendicioncuentasmensualdocumentos_adjuntos/extracto.pdf"
+    )

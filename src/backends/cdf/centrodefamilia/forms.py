@@ -44,6 +44,8 @@ class CentroForm(forms.ModelForm):
             "localidad",
             "calle",
             "numero",
+            "latitud",
+            "longitud",
             "domicilio_actividad",
             "telefono",
             "celular",
@@ -90,6 +92,10 @@ class CentroForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        if (cleaned_data.get("latitud") is None) != (
+            cleaned_data.get("longitud") is None
+        ):
+            self.add_error(None, "Complete latitud y longitud, o deje ambas vacías.")
         tipo = cleaned_data.get("tipo")
         faro_asociado = cleaned_data.get("faro_asociado")
 

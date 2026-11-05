@@ -13,6 +13,20 @@ coordinada cuando cambie este contrato.
 
 ## Revisión y subsanaciones
 
+- Validar/A Subsanar guarda una decisión provisional de la revisión en curso.
+  Se puede rectificar y persiste al volver al detalle. Solo Finalizar Revisión
+  Territorial/para Carga confirma los estados y observaciones de los documentos
+  vigentes; si falta revisar alguno, no confirma ninguno. Los consumidores
+  mobile y el PDF usan los estados confirmados, sin exponer borradores.
+- Solo una rendición por proyecto puede estar en Revisión Territorial en curso,
+  pendiente de correcciones o subsanada (#2642). Al iniciar la revisión se
+  comprueba ese cupo y se informa la rendición que lo ocupa. Pasar a Revisión
+  para Carga pendiente libera el cupo. La regla cruza la relación explícita de
+  proyecto con el código histórico dentro de la misma organización y excluye
+  bajas lógicas. Los inicios se serializan con un bloqueo de la organización
+  dentro de la transacción; sin organización se bloquea el comedor y, para
+  registros huérfanos, la propia rendición. Distintos proyectos pueden
+  permanecer en revisión al mismo tiempo.
 - Validar u observar documentos no cambia por sí solo el estado global: la
   etapa se resuelve al finalizar la revisión.
 - Territorial mantiene la rendición `En revisión` al derivarla a Auditoría.
@@ -185,6 +199,11 @@ ni modificar contratos de la PWA.
 
 ## Contrato de carga
 
+- La organización se obtiene del espacio de ingreso. La línea de nuevas
+  rendiciones con proyecto se calcula en servidor: código o nombre AMBA
+  (coincidencia exacta sin distinguir mayúsculas ni espacios externos) usa
+  Secos; los demás usan Tradicional. La validación previa aplica la misma
+  regla. Las cargas legadas sin proyecto conservan el contrato anterior.
 - Convenios admitidos: `P01`, `P02`, `P03`.
 - Números de rendición admitidos: `1` a `6`.
 - El número debe ser además **el siguiente de la secuencia** dentro del mismo
@@ -216,6 +235,12 @@ ni modificar contratos de la PWA.
   Web y API lo resuelven con `RendicionCuentaMensualService.obtener_categorias_visibles`,
   que además sigue mostrando las categorías desactivadas para la línea cuando la
   rendición ya tiene documentos históricos cargados en ellas.
+- Formulario I aparece al final, antes de Documentación Adicional y después
+  de Planilla de Seguros II cuando corresponde. Incluye la indicación
+  «Adjuntar sólo si hubo cambios en los datos bancarios». El catálogo se
+  devuelve ordenado por `order`, también para los consumidores mobile.
+- La descarga de Formulario V alimentario utiliza `FORM_V_CERTIF_ALIM.xlsx`
+  (adjunto del #2642) en ambas líneas; Formulario V SIPH conserva su modelo.
 
 ## Despliegue y validación
 

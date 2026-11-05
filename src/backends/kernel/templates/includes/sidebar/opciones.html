@@ -1,5 +1,33 @@
 {% load static custom_filters sidebar_tags %}
 {% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only cdi_local_sidebar_only=request.user|is_cdi_local_sidebar_only datacalle_sidebar_only=request.user|is_datacalle_sidebar_only %}
+    <!-- INFORMACIÓN DE USUARIO -->
+    <li class="nav-item user-info mb-2 mt-2">
+        <div class="user-panel d-flex align-items-center p-3">
+            <div class="user-avatar me-3">
+                <div class="avatar-circle d-flex align-items-center justify-content-center bg-primary text-white rounded-circle"
+                     style="width: 45px;
+                            height: 45px;
+                            font-size: 16px;
+                            font-weight: 600">
+                    {% comment %}
+                    Cuando agreguen los campos 'nombres' y 'apellido' al modelo User,
+                    reemplazar este bloque por:
+                    {% if request.user.nombres and request.user.apellido %}
+                        {{ request.user.nombres|first|upper }}{{ request.user.apellido|first|upper }}
+                    {% else %}
+                        {{ request.user.username|first|upper }}
+                    {% endif %}
+                    {% endcomment %}
+                    {{ request.user.username|first|upper }}
+                </div>
+            </div>
+            <div class="info flex-grow-1">
+                <p class="mb-1 text-white fw-bold">{{ request.user.get_full_name|default:request.user.username }}</p>
+                <p class="mb-0 text-white-50 small">{{ request.user.profile.rol|default:"-" }}</p>
+            </div>
+        </div>
+    </li>
+    <!-- INICIO -->
     <li class="nav-item nav-main-item" style="order: 1;">
         <a href="{% url 'inicio' %}"
            class="nav-link {% if 'inicio' in pagina_actual %}active{% endif %}">
@@ -243,7 +271,7 @@
         {% endwith %}
     {% endif %}
     <!-- MENÚ LEGAJOS -->
-    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ver-para-ser-libre' in pagina_actual or 'pas/' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual or 'dispositivos' in pagina_actual or 'datacalle' in pagina_actual %}menu-open{% endif %}"
+    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ver-para-ser-libre' in pagina_actual or 'pas/' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual or 'dispositivos' in pagina_actual or 'datacalle' in pagina_actual or 'inspecciones/' in pagina_actual %}menu-open{% endif %}"
         style="order: 2">
         <a href="#" class="nav-link">
             <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />

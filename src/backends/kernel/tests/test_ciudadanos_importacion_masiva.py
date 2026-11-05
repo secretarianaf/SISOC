@@ -11,6 +11,7 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
+from django.db import DataError, OperationalError
 from django.test import RequestFactory, override_settings
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.utils import timezone
@@ -32,6 +33,7 @@ from ciudadanos.services_importacion_masiva_jobs import (
     create_ciudadanos_import_job,
     mark_stale_ciudadanos_import_jobs_as_failed,
     process_ciudadanos_import_job,
+    process_next_ciudadanos_import_job,
     request_resume_ciudadanos_import_job,
     run_ciudadanos_import_jobs_worker,
 )
@@ -522,6 +524,100 @@ def test_process_ciudadanos_import_job_pauses_on_systemic_error_and_resumes(mock
     row.refresh_from_db()
     assert row.status == CiudadanosImportJobRow.Status.CREATED
     assert row.attempts == 2
+
+
+@pytest.mark.django_db
+@override_settings(CIUDADANOS_IMPORT_RENAPER_SLEEP_SECONDS=0)
+@pytest.mark.parametrize(
+    "error",
+    [
+        DataError(1264, "Out of range value for column 'codigo_postal' at row 1"),
+        OperationalError(1366, "Incorrect integer value: 'c 14' for column 'altura'"),
+    ],
+)
+def test_process_ciudadanos_import_job_fails_row_with_invalid_data_and_continues(
+    mocker, error
+):
+    # Issue #2750: un dato que no entra en la columna trababa el lote entero.
+    user = User.objects.create_user(username="ciudadanos_import_data_error")
+    job = create_ciudadanos_import_job(
+        uploaded_file=_build_excel_file(
+            [("30111221", "M"), ("30111222", "M"), ("30111223", "M")]
+        ),
+        requested_by=user,
+    )
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva.consultar_datos_renaper",
+        side_effect=lambda dni, *args, **kwargs: _renaper_success(dni=dni),
+    )
+    original_create = Ciudadano.objects.create
+
+    def create_falla_en_la_fila_del_medio(**data):
+        if str(data.get("documento")) == "30111222":
+            raise error
+        return original_create(**data)
+
+    mocker.patch.object(
+        Ciudadano.objects, "create", side_effect=create_falla_en_la_fila_del_medio
+    )
+
+    process_ciudadanos_import_job(job)
+    job.refresh_from_db()
+
+    assert job.status == CiudadanosImportJob.Status.COMPLETED_WITH_ERRORS
+    assert job.created_rows == 2
+    assert job.failed_rows == 1
+    assert job.pending_rows == 0
+    failed_row = job.rows.get(fila=3)
+    assert failed_row.status == CiudadanosImportJobRow.Status.FAILED
+    assert failed_row.error_type == "invalid_row_data"
+    assert str(error.args[1]) in failed_row.mensaje
+
+
+@pytest.mark.django_db
+@override_settings(CIUDADANOS_IMPORT_RENAPER_SLEEP_SECONDS=0)
+def test_process_ciudadanos_import_job_propagates_non_data_database_errors(mocker):
+    user = User.objects.create_user(username="ciudadanos_import_db_down")
+    job = create_ciudadanos_import_job(
+        uploaded_file=_build_excel_file([("30111222", "M")]), requested_by=user
+    )
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva.consultar_datos_renaper",
+        return_value=_renaper_success(dni="30111222"),
+    )
+    mocker.patch.object(
+        Ciudadano.objects,
+        "create",
+        side_effect=OperationalError(2006, "MySQL server has gone away"),
+    )
+
+    with pytest.raises(OperationalError):
+        process_ciudadanos_import_job(job)
+
+    assert job.rows.get(fila=2).status != CiudadanosImportJobRow.Status.FAILED
+
+
+@pytest.mark.django_db
+def test_process_next_job_marks_failed_after_unexpected_error(mocker):
+    # Si quedara en processing, la recuperación de colgados lo reencolaría y
+    # reintentaría la misma fila para siempre.
+    user = User.objects.create_user(username="ciudadanos_import_unexpected_job")
+    job = create_ciudadanos_import_job(
+        uploaded_file=_build_excel_file([("30111222", "M")]), requested_by=user
+    )
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva_jobs.process_ciudadanos_import_job",
+        side_effect=RuntimeError("fallo de prueba"),
+    )
+
+    assert process_next_ciudadanos_import_job() is True
+    job.refresh_from_db()
+
+    assert job.status == CiudadanosImportJob.Status.FAILED
+    assert job.last_error_type == "unexpected_error"
+    assert "fallo de prueba" in job.last_error_message
+    assert can_resume_ciudadanos_import_job(job) is True
+    assert mark_stale_ciudadanos_import_jobs_as_failed() == 0
 
 
 @pytest.mark.django_db

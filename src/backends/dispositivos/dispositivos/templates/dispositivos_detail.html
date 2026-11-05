@@ -152,6 +152,9 @@
 {% endblock %}
 
 {% block content %}
+    {% if perms.dispositivos.ver_mapa_dispositivo %}
+        {% include "dispositivos/ubicacion_mapa.html" %}
+    {% endif %}
 
     <!-- Header -->
     <div class="detail-page-header">

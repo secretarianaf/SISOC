@@ -34,3 +34,21 @@ def etiqueta_territorial(user):
         parte for parte in (user.last_name.strip(), user.first_name.strip()) if parte
     )
     return f"{nombre} ({user.username})" if nombre else user.username
+
+
+def territoriales_proyecto_comedor(comedor):
+    """Asignaciones del proyecto del espacio, incluida la referencia histórica."""
+    from organizaciones.models import ProyectoOrganizacion
+
+    scope = Q(pk=getattr(comedor, "proyecto_id", None))
+    if comedor.organizacion_id and comedor.codigo_de_proyecto:
+        scope |= Q(
+            organizacion_id=comedor.organizacion_id, codigo=comedor.codigo_de_proyecto
+        )
+    return [
+        {"codigo": proyecto.codigo, "territorial": etiqueta_territorial(usuario)}
+        for proyecto in ProyectoOrganizacion.objects.filter(scope).prefetch_related(
+            "territoriales"
+        )
+        for usuario in proyecto.territoriales.all()
+    ]

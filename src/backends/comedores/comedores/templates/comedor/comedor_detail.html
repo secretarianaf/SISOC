@@ -1244,6 +1244,7 @@
                         </div>
                         <div class="card-body">
                             {% if usa_convenio_pnud %}
+                                {% include 'comedor/_territoriales_proyecto.html' %}
                                 <p class="mb-0 fs-7">
                                     Organizaci&oacute;n solicitante: <strong>{{ comedor.organizacion|default_if_none:"Sin informaci&oacute;n" }}</strong>
                                 </p>
@@ -1251,7 +1252,7 @@
                                     C&oacute;digo del proyecto: <strong>{{ comedor.codigo_de_proyecto|default_if_none:"Sin informaci&oacute;n" }}</strong>
                                 </p>
                                 <p class="mb-0 fs-7">
-                                    Monto total conveniado: <strong>{{ datos_convenio_pnud.monto_total_conveniado|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                    Monto total conveniado: <strong>{{ datos_convenio_pnud.monto_total_conveniado|floatformat:"0g"|default:"Sin informaci&oacute;n" }}</strong>
                                 </p>
                                 <p class="mb-0 fs-7">
                                     Nro convenio: <strong>{{ datos_convenio_pnud.nro_convenio|default_if_none:"Sin informaci&oacute;n" }}</strong>
@@ -1278,10 +1279,10 @@
                                     Domicilio completo: <strong>{{ domicilio_completo_comedor|default_if_none:"Sin informaci&oacute;n" }}</strong>
                                 </p>
                                 <p class="mb-0 fs-7">
-                                    Monto total de convenio por Espacio - Prestaciones Alimentarias: <strong>{{ datos_convenio_pnud.monto_convenio_prestaciones_alimentarias|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                    Monto total de convenio por Espacio - Prestaciones Alimentarias: <strong>{{ datos_convenio_pnud.monto_convenio_prestaciones_alimentarias|floatformat:"0g"|default:"Sin informaci&oacute;n" }}</strong>
                                 </p>
                                 <p class="mb-0 fs-7">
-                                    Monto total de convenio por Espacio - Servicio Integral de Promoci&oacute;n Humana: <strong>{{ datos_convenio_pnud.monto_convenio_siph|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                    Monto total de convenio por Espacio - Servicio Integral de Promoci&oacute;n Humana: <strong>{{ datos_convenio_pnud.monto_convenio_siph|floatformat:"0g"|default:"Sin informaci&oacute;n" }}</strong>
                                 </p>
                                 {% if not es_linea_secos and not es_linea_tradicional %}
                                     <p class="mb-0 fs-7">

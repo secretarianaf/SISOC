@@ -5,6 +5,7 @@ from django.db.models import Q
 from core.constants import UserGroups
 from core.models import Provincia
 from iam.roles_cdi import GRUPOS_CDI_LOCALES  # noqa: F401  regla de kernel, reexportada
+from iam.roles_cdi import GRUPOS_SIMEPI
 from users.models import Profile
 from users.services_delegation import effective_delegatable_groups_qs
 from users.territorial_scope import (
@@ -425,3 +426,42 @@ def get_object_scoped_cdi_or_404(
         provincia_lookup=provincia_lookup,
     )
     return get_object_or_404(scoped_queryset, *args, **kwargs)
+
+
+# Formulario de Calidad (200_CalidadCDI). El centro ya llega acotado por
+# `aplicar_scope_centros_cdi`; acá sólo se decide por rol dentro del centro.
+
+
+def es_director_cdi(user, centro):
+    """Indica si el usuario es el trabajador Director vinculado al CDI."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    from centrodeinfancia.models import Trabajador  # noqa: PLC0415
+
+    return Trabajador.objects.filter(
+        centro=centro, usuario=user, rol=Trabajador.Rol.DIRECTOR
+    ).exists()
+
+
+def puede_editar_formulario_calidad(user, centro):
+    """Completa el formulario el referente del CDI o su Director."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if user.is_superuser:
+        return True
+    if es_auditor_simepi(user):
+        return False
+    return puede_ver_credenciales_cdi(user, centro) or es_director_cdi(user, centro)
+
+
+def puede_ver_formularios_calidad(user, centro):
+    """Ven los envíos todos los perfiles salvo los trabajadores no directores."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if puede_editar_formulario_calidad(user, centro):
+        return True
+    group_names = set(user.groups.values_list("name", flat=True))
+    solo_trabajador = UserGroups.CDI_TRABAJADOR in group_names and not (
+        group_names & (GRUPOS_SIMEPI | {UserGroups.CDI_REFERENTE_CENTRO})
+    )
+    return not solo_trabajador

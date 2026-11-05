@@ -1251,3 +1251,10 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 HML agrega `docker/compose/docker-compose.hml-runtime.yml` desde `deploy_refresh.sh` y prepara ACL mediante `src/scripts/operacion/provision_hml_runtime_permissions.py`. No asumir que root demuestra permisos correctos para usuarios de aplicación. Evidencia y límites: `docs/registro/cambios/2026-T4/2026-10-28-hml-runtime-permisos-adjuntos.md`.
 
 - HML runtime permissions: `deploy_refresh.sh` runs the private-backup/ACL provisioner before service interruption or migration and again afterward; an early failure preserves running services. QA/production are unchanged. Synthetic runtime/HTTP acceptance and rollback remain separate gates.
+
+### Encuestas: API PWA selectiva
+
+- `src/backends/sisoc_core/encuestas/api_views.py`, `api_permissions.py` y `services_pwa.py`: dos endpoints token para Espacios; verificación HTTP del dueño, segmentación y escritura transaccional reutilizando servicios web.
+- `src/backends/sisoc_core/encuestas/migrations/0008_disponibilidad_pwa.py`: esquema aditivo, disponibilidad deshabilitada por defecto; conservar bytes publicados en development.
+- `src/backends/sisoc_core/encuestas/tests/test_encuestas_pwa.py`: contratos móviles, permisos, atomicidad, anonimato y reintentos por usuario/ronda.
+- `docs/implementaciones/encuestas.md`: contrato, límites de replay y falta de worker productivo; registro compartido de URLs implica refresh completo, no solo core. No activar contenido ni agregar cron implícitamente.

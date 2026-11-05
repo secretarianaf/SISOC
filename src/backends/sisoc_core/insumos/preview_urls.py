@@ -14,6 +14,26 @@ def _preview(permission_code, asset_path=None):
 
 urlpatterns = [
     path(
+        "insumos/categorias/",
+        _preview("insumos.view_insumocategoria", "insumos/categorias/"),
+        name="insumos_categories_preview_list",
+    ),
+    path(
+        "insumos/categorias/crear",
+        _preview("insumos.add_insumocategoria", "insumos/categorias/crear"),
+        name="insumos_categories_preview_create",
+    ),
+    re_path(
+        r"^(?P<asset_path>insumos/categorias/[0-9]+/editar)$",
+        _preview("insumos.change_insumocategoria"),
+        name="insumos_categories_preview_edit",
+    ),
+    re_path(
+        r"^(?P<asset_path>insumos/categorias/[0-9]+/eliminar)$",
+        _preview("insumos.delete_insumocategoria"),
+        name="insumos_categories_preview_delete",
+    ),
+    path(
         "insumos",
         _preview("insumos.view_insumo", "insumos"),
         name="insumos_preview_list_no_slash",

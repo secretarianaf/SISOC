@@ -7,6 +7,10 @@ from django.urls import resolve
 
 
 PREVIEW_PATHS = (
+    "/v2/sisoc/insumos/categorias/",
+    "/v2/sisoc/insumos/categorias/crear",
+    "/v2/sisoc/insumos/categorias/17/editar",
+    "/v2/sisoc/insumos/categorias/17/eliminar",
     "/v2/sisoc/insumos",
     "/v2/sisoc/insumos/",
     "/v2/sisoc/insumos/crear",
@@ -66,6 +70,26 @@ def test_insumos_preview_preserves_authenticated_no_permission_403(
 @pytest.mark.parametrize(
     "path,codename,asset_path",
     [
+        (
+            "/v2/sisoc/insumos/categorias/",
+            "view_insumocategoria",
+            "insumos/categorias/",
+        ),
+        (
+            "/v2/sisoc/insumos/categorias/crear",
+            "add_insumocategoria",
+            "insumos/categorias/crear",
+        ),
+        (
+            "/v2/sisoc/insumos/categorias/17/editar",
+            "change_insumocategoria",
+            "insumos/categorias/17/editar",
+        ),
+        (
+            "/v2/sisoc/insumos/categorias/17/eliminar",
+            "delete_insumocategoria",
+            "insumos/categorias/17/eliminar",
+        ),
         ("/v2/sisoc/insumos", "view_insumo", "insumos"),
         ("/v2/sisoc/insumos/crear/", "add_insumo", "insumos/crear/"),
         ("/v2/sisoc/insumos/17/editar", "change_insumo", "insumos/17/editar"),
@@ -137,7 +161,6 @@ def test_insumos_preview_rejects_unsafe_methods_before_proxy(client, db):
     "path",
     [
         "/v2/sisoc/insumos/17/descargar",
-        "/v2/sisoc/insumos/categorias/",
         "/v2/sisoc/otro/",
     ],
 )
@@ -151,3 +174,55 @@ def test_existing_generic_v2_anonymous_entry_keeps_login_redirect(client):
 
     assert response.status_code == 302
     assert response["Location"].startswith("/login/?next=/v2/vpsl/")
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "request_case",
+    [
+        (
+            "/v2/sisoc/insumos/categorias/",
+            "view_insumocategoria",
+            "insumos/categorias/",
+        ),
+        (
+            "/v2/sisoc/insumos/categorias/crear",
+            "add_insumocategoria",
+            "insumos/categorias/crear",
+        ),
+        (
+            "/v2/sisoc/insumos/categorias/17/editar",
+            "change_insumocategoria",
+            "insumos/categorias/17/editar",
+        ),
+        (
+            "/v2/sisoc/insumos/categorias/17/eliminar",
+            "delete_insumocategoria",
+            "insumos/categorias/17/eliminar",
+        ),
+    ],
+)
+@pytest.mark.parametrize("actor_kind", ["anonymous", "denied", "allowed"])
+@override_settings(FRONTEND_V2_UPSTREAMS={"sisoc": "http://front-sisoc:8080"})
+def test_category_preview_head_permission_before_proxy(
+    client, no_permissions_user, upstream_response, request_case, actor_kind
+):
+    path, codename, asset_path = request_case
+    if actor_kind != "anonymous":
+        if actor_kind == "allowed":
+            permission = Permission.objects.get(
+                content_type__app_label="insumos", codename=codename
+            )
+            no_permissions_user.user_permissions.add(permission)
+        client.force_login(no_permissions_user)
+    with patch("core.v2_frontend.urlopen", return_value=upstream_response) as fetch:
+        response = client.head(path, REMOTE_ADDR="198.51.100.10")
+    assert response.status_code == (200 if actor_kind == "allowed" else 403)
+    assert response.content == b""
+    if actor_kind == "allowed":
+        fetch.assert_called_once()
+        assert fetch.call_args.args[0].full_url.endswith("/" + asset_path)
+        assert fetch.call_args.args[0].get_method() == "HEAD"
+        upstream_response.read.assert_not_called()
+    else:
+        fetch.assert_not_called()

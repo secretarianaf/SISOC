@@ -2,9 +2,20 @@
 
 from django.urls import path
 
-from insumos.web_api_views import InsumosWebListView, InsumosWebOptionsView
+from insumos.web_api_views import (
+    InsumosWebCreateView,
+    InsumosWebDeleteView,
+    InsumosWebEditView,
+    InsumosWebListView,
+    InsumosWebOptionsView,
+)
 
 urlpatterns = [
     path("", InsumosWebListView.as_view(), name="web_insumos_list"),
     path("options/", InsumosWebOptionsView.as_view(), name="web_insumos_options"),
+    path("crear/", InsumosWebCreateView.as_view(), name="web_insumos_create"),
+    path("<int:pk>/editar/", InsumosWebEditView.as_view(), name="web_insumos_edit"),
+    path(
+        "<int:pk>/eliminar/", InsumosWebDeleteView.as_view(), name="web_insumos_delete"
+    ),
 ]

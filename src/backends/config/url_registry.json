@@ -4925,6 +4925,21 @@
   "regex": "^ver\\-para\\-ser\\-libre/ubicacion/buscar/\\Z"
  },
  {
+  "name": "web_insumos_create",
+  "namespace": "",
+  "regex": "^api/web/insumos/crear/\\Z"
+ },
+ {
+  "name": "web_insumos_delete",
+  "namespace": "",
+  "regex": "^api/web/insumos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "web_insumos_edit",
+  "namespace": "",
+  "regex": "^api/web/insumos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
   "name": "web_insumos_list",
   "namespace": "",
   "regex": "^api/web/insumos/\\Z"

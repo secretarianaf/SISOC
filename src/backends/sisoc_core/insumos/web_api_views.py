@@ -1,4 +1,4 @@
-"""Session-only read APIs for INS-A; legacy routes remain unchanged."""
+"""Session-only read and form APIs for INS-A; legacy routes remain unchanged."""
 
 from django.utils.cache import patch_cache_control, patch_vary_headers
 from django.core.paginator import InvalidPage, Paginator
@@ -12,14 +12,32 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.exceptions import NotAuthenticated, NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usuarios.web_api_views import WebSessionSchema
 from usuarios.web_session import resolve_web_access
 from core.templatetags.custom_filters import has_perm_code
-from insumos.services import get_categorias_queryset, get_insumos_queryset
-from insumos.web_api_serializers import InsumoPageSerializer, InsumosOptionsSerializer
+from insumos.forms import InsumoForm
+from insumos.models import Insumo
+from insumos.services import (
+    delete_insumo,
+    get_categorias_queryset,
+    get_insumos_queryset,
+    save_insumo_from_form,
+)
+from insumos.web_api_serializers import (
+    InsumoCreateRequestSerializer,
+    InsumoDeleteConfirmationSerializer,
+    InsumoEditRequestSerializer,
+    InsumoFormErrorsSerializer,
+    InsumoFormSchema,
+    InsumoMutationSuccessSerializer,
+    InsumoPageSerializer,
+    InsumosWebErrorSerializer,
+    InsumosOptionsSerializer,
+)
 
 
 class WebPrerequisiteRequired(PermissionDenied):
@@ -140,3 +158,212 @@ class InsumosWebOptionsView(InsumosWebReadView):
                 }
             ).data
         )
+
+
+class InsumosWebMutationView(APIView):
+    """Private session transport with an action-specific permission guard."""
+
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+    renderer_classes = [JSONRenderer]
+    parser_classes = [MultiPartParser]
+    http_method_names = ["get", "head", "post", "options"]
+    schema = WebSessionSchema()
+    permission_code = None
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        access = resolve_web_access(request)
+        if access.state != "ready":
+            raise WebPrerequisiteRequired(access)
+        if not has_perm_code(request.user, self.permission_code):
+            raise PermissionDenied()
+
+    def get_authenticate_header(self, request):
+        return "Session"
+
+    def handle_exception(self, exc):
+        response = super().handle_exception(exc)
+        if isinstance(exc, NotAuthenticated):
+            response.data = {"detail": "Inicie sesión para continuar."}
+        elif isinstance(exc, WebPrerequisiteRequired):
+            response.data = {
+                "detail": str(exc.detail),
+                "state": exc.access.state,
+                "required_action_url": exc.access.required_action_url,
+            }
+        return response
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        patch_cache_control(response, private=True, no_store=True)
+        patch_vary_headers(response, ("Cookie",))
+        return response
+
+
+class InsumosWebCreateView(InsumosWebMutationView):
+    permission_code = "insumos.add_insumo"
+
+    @extend_schema(
+        responses={
+            200: InsumoFormSchema,
+            401: InsumosWebErrorSerializer,
+            403: InsumosWebErrorSerializer,
+        }
+    )
+    def get(self, request):
+        form = InsumoForm()
+        return Response(_form_metadata(form))
+
+    @extend_schema(
+        request=InsumoCreateRequestSerializer,
+        responses={
+            200: InsumoMutationSuccessSerializer,
+            400: InsumoFormErrorsSerializer,
+            401: InsumosWebErrorSerializer,
+            403: InsumosWebErrorSerializer,
+            415: InsumosWebErrorSerializer,
+        },
+    )
+    def post(self, request):
+        form = InsumoForm(request.data, request.FILES)
+        if not form.is_valid():
+            return Response({"errors": form.errors.get_json_data()}, status=400)
+        save_insumo_from_form(form, request.user)
+        return Response(
+            {
+                "ok": True,
+                "message": "Insumo creado correctamente.",
+                "redirect": reverse("insumos_listar"),
+            }
+        )
+
+
+class InsumosWebEditView(InsumosWebMutationView):
+    permission_code = "insumos.change_insumo"
+
+    def get_object(self, pk):
+        try:
+            return get_insumos_queryset().get(pk=pk)
+        except Insumo.DoesNotExist as exc:
+            raise NotFound() from exc
+
+    @extend_schema(
+        responses={
+            200: InsumoFormSchema,
+            401: InsumosWebErrorSerializer,
+            403: InsumosWebErrorSerializer,
+            404: InsumosWebErrorSerializer,
+        }
+    )
+    def get(self, request, pk):
+        instance = self.get_object(pk)
+        form = InsumoForm(instance=instance)
+        return Response(
+            _form_metadata(
+                form,
+                instance,
+                include_download=has_perm_code(request.user, "insumos.view_insumo"),
+            )
+        )
+
+    @extend_schema(
+        request=InsumoEditRequestSerializer,
+        responses={
+            200: InsumoMutationSuccessSerializer,
+            400: InsumoFormErrorsSerializer,
+            401: InsumosWebErrorSerializer,
+            403: InsumosWebErrorSerializer,
+            404: InsumosWebErrorSerializer,
+            415: InsumosWebErrorSerializer,
+        },
+    )
+    def post(self, request, pk):
+        instance = self.get_object(pk)
+        form = InsumoForm(request.data, request.FILES, instance=instance)
+        if not form.is_valid():
+            return Response({"errors": form.errors.get_json_data()}, status=400)
+        save_insumo_from_form(form, request.user, instance=instance)
+        return Response(
+            {
+                "ok": True,
+                "message": "Insumo actualizado correctamente.",
+                "redirect": reverse("insumos_listar"),
+            }
+        )
+
+
+class InsumosWebDeleteView(InsumosWebMutationView):
+    permission_code = "insumos.delete_insumo"
+
+    def get_object(self, pk):
+        try:
+            return get_insumos_queryset().get(pk=pk)
+        except Insumo.DoesNotExist as exc:
+            raise NotFound() from exc
+
+    @extend_schema(
+        responses={
+            200: InsumoDeleteConfirmationSerializer,
+            401: InsumosWebErrorSerializer,
+            403: InsumosWebErrorSerializer,
+            404: InsumosWebErrorSerializer,
+        }
+    )
+    def get(self, request, pk):
+        instance = self.get_object(pk)
+        return Response({"id": instance.pk, "titulo": instance.titulo})
+
+    @extend_schema(
+        request=None,
+        responses={
+            200: InsumoMutationSuccessSerializer,
+            401: InsumosWebErrorSerializer,
+            403: InsumosWebErrorSerializer,
+            404: InsumosWebErrorSerializer,
+        },
+    )
+    def post(self, request, pk):
+        instance = self.get_object(pk)
+        delete_insumo(instance)
+        return Response(
+            {
+                "ok": True,
+                "message": "Insumo eliminado correctamente.",
+                "redirect": reverse("insumos_listar"),
+            }
+        )
+
+
+def _form_metadata(form, instance=None, include_download=False):
+    initial = {}
+    for name in ("programa", "categoria", "titulo", "descripcion", "activo"):
+        value = form[name].value()
+        if name in ("programa", "categoria"):
+            value = "" if value in (None, "") else str(value)
+        elif name in ("titulo", "descripcion"):
+            value = value or ""
+        initial[name] = value
+    options = {}
+    for name in ("programa", "categoria"):
+        field = form.fields[name]
+        values = []
+        for value, label in field.choices:
+            option = {"value": str(value), "label": str(label)}
+            if name == "categoria" and str(value):
+                category = field.queryset.filter(pk=str(value)).first()
+                if category is not None:
+                    option["programa_id"] = str(category.programa_id)
+            values.append(option)
+        options[name] = values
+    current_file = None
+    if instance is not None and instance.archivo:
+        current_file = {
+            "name": instance.archivo.name.rsplit("/", 1)[-1],
+            "download_url": None,
+        }
+        if include_download:
+            current_file["download_url"] = reverse(
+                "insumos_descargar", args=[instance.pk]
+            )
+    return {"initial": initial, "options": options, "current_file": current_file}

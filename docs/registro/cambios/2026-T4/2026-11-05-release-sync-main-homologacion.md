@@ -53,6 +53,17 @@ ese resultado agregado como un fallo del despliegue productivo.
 
 ## Consideraciones operativas
 
+El primer CI del PR de sincronización detectó que `celery_comedores_worker`,
+incorporado desde main, no figuraba en el overlay de identidad HML. Se reprodujo
+el fallo con el test existente de escritores persistentes. Se agregó ese servicio
+al mismo anchor `hml-runtime` usado por los demás workers: usuario `10001:1016`,
+`HOME=/tmp` y `USER=sisoc-app`. El test comprueba también esas variables. No cambia
+la identidad de producción ni los permisos del filesystem; no ejecuta el
+aprovisionador ni modifica datos. RED confirmado con la misma prueba de política.
+Validación local: 10 tests Linux de permisos/ACL y 76 de deploy pasan; el
+verificador independiente confirmó RED en la base y 10 tests verdes en el
+candidato. CI del nuevo commit y aceptación operativa siguen pendientes.
+
 La unión vacía no elimina los riesgos de las migraciones funcionales ya presentes
 en el release. Antes de PRD se requiere backup verificado y estimación de duración,
 especialmente por el ALTER de ciudadanos. No se verificó backup ni se accedió a
@@ -63,4 +74,4 @@ inventario. Su lectura y ejecución quedan bloqueadas hasta resolver el alcance 
 autorización de los otros repositorios y comprobar compatibilidad con el backend
 efectivamente desplegado. No se declara listo el conjunto por tener CI verde.
 
-Risk: items 1, 3, 5 (grafo de migraciones, integración compartida y preparación de deploy).
+Risk: items 1, 2, 3, 5 (grafo de migraciones, identidad HML, integración compartida y preparación de deploy).

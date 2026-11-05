@@ -4970,6 +4970,11 @@
   "regex": "^api/web/insumos/options/\\Z"
  },
  {
+  "name": "web_login",
+  "namespace": "",
+  "regex": "^api/web/login/\\Z"
+ },
+ {
   "name": "web_session",
   "namespace": "",
   "regex": "^api/web/session/\\Z"

@@ -13,6 +13,7 @@ class WebSessionXViewMiddleware(XViewMiddleware):
             request.path_info
             in {
                 "/api/web/session/",
+                "/api/web/login/",
                 "/api/web/insumos/",
                 "/api/web/insumos/options/",
                 "/api/web/insumos/crear/",

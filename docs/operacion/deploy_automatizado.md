@@ -162,6 +162,18 @@ baseline y recién entonces completa `release_baseline`. El tag no se
 sobreescribe: si el nombre ya apunta a otro SHA, el workflow se bloquea para
 conservar un rollback inequívoco.
 
+Para una segunda promoción explícitamente autorizada del mismo día, agregar
+`<!-- release-sequence: 2 -->` al body final. La secuencia es un entero positivo
+seguro y único: omitirla equivale a 1 y conserva `AAAA.MM.DD-stable`; 2 usa
+`AAAA.MM.DD-2-stable` sobre el main previo de esa segunda promoción. No cambia
+la fecha ni se mueve el tag original. Repetir una secuencia solo es idempotente
+si el tag ya identifica el mismo baseline; otro SHA se rechaza. Valores
+presentes inválidos o duplicados no arman el PR. El check incluye la identidad
+del tag y la revalida junto con head/base antes de concluir éxito; creación,
+release y comentario final usan el mismo tag seleccionado. No existe selección
+automática del próximo número ni excepción para PRs directos a main. La App,
+los checks de CI, la ruleset y el Environment humano permanecen obligatorios.
+
 El workflow toma el script de `homologacion`. Los disparos `schedule` y
 `workflow_run` leen el YAML de la rama por defecto (`development`) y el cierre
 de PRs hacia `homologacion` lee el de `homologacion`: un cambio en el

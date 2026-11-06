@@ -170,6 +170,16 @@ Release AAAA-MM-DD. Snapshot `<sha homologacion>` sobre `main` `<sha main>`: N P
 - #N chore(sync): ...
 ```
 
+### Otra promoción autorizada del mismo día
+
+Conservar los cuatro markers iniciales. Solo en una promoción adicional
+explícitamente autorizada, agregar después `<!-- release-sequence: 2 -->`.
+Ausencia o 1 conserva `AAAA.MM.DD-stable`; 2 selecciona `AAAA.MM.DD-2-stable`.
+Actualizar la sección de rollback con ese mismo tag y el main previo actual.
+No sobrescribir tags existentes ni reutilizar un número con otro baseline.
+Valores inválidos, duplicados o cambios de secuencia durante el gate bloquean.
+Los comandos y los gates de HML→main y production no cambian.
+
 ## PR `development -> homologacion`
 
 ```bash

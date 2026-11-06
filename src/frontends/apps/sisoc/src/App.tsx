@@ -9,6 +9,7 @@ import InsumosToast from "./InsumosToast";
 import Login from "./Login";
 import Account from "./Account";
 import Groups from "./Groups";
+import PasswordChange from "./PasswordChange";
 import PendingSurvey from "./PendingSurvey";
 import RequiredPasswordChange, { type RequiredPasswordPresentation } from "./RequiredPasswordChange";
 import { safeInternalPath, validateInsumosStatus, type WebAccessState } from "./webAccess";
@@ -662,6 +663,13 @@ export default function App() {
   }
   if (window.location.pathname === "/mi-cuenta/confirmar/") {
     return <Account mode="confirm" renderFrame={confirmationFrame} />;
+  }
+  // The voluntary form and its done page keep the installed admin template frame.
+  if (window.location.pathname === "/password_change/") {
+    return <PasswordChange mode="form" />;
+  }
+  if (window.location.pathname === "/password_change/done/") {
+    return <PasswordChange mode="done" />;
   }
   return <BusinessApp />;
 }

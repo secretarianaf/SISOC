@@ -429,6 +429,12 @@ capacidades de negocio y conserva los enlaces originales del menú. Registro:
 `InsumosToastList`, que respeta su nivel en un único contenedor Toastr. Registro:
 `../registro/cambios/2026-T4/2026-11-04-2785-react-cuenta-confirmacion.md`.
 
+`/password_change/` y `/password_change/done/` montan `PasswordChange.tsx`,
+alimentado por `/api/web/password/change/`. Conserva el template instalado de
+Unfold, sin el marco SISOC, y el `PasswordChangeForm` estándar con contraseña
+anterior; el éxito navega solo a `/password_change/done/`. Registro:
+`../registro/cambios/2026-T4/2026-11-04-2785-react-cambio-voluntario.md`.
+
 `/grupos/`, `/grupos/crear/` y `/grupos/editar/<id>/` montan `Groups.tsx` en el
 mismo marco, con las migas de pan originales, alimentado por `/api/web/groups/`
 y sus rutas de alta y edición. El selector de permisos es propio de React y

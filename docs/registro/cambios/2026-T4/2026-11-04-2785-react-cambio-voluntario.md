@@ -51,6 +51,56 @@ fuente de solo lectura y SQLite sintética:
 No se ejecutaron la suite completa, CI, prueba en navegador ni aceptación
 humana; no hay UI React en este corte.
 
+## Unidad React separada (2026-11-06)
+
+Esta unidad agrega las pantallas React del cambio voluntario y su página de
+confirmación sobre la API ya incorporada. No modifica backend, rutas de
+producción, el Form ni dependencias.
+
+- `src/frontends/apps/sisoc/src/PasswordChange.tsx` tiene dos modos. En
+  `/password_change/` muestra el `PasswordChangeForm` estándar con
+  `old_password`, `new_password1` y `new_password2`, etiquetas, ayudas y textos
+  que entrega `/api/web/password/change/`; no usa el formulario del cambio
+  obligatorio. El POST es URL-encoded y solo navega al destino fijo
+  `/password_change/done/` que devuelve Django; la sesión la conserva el
+  framework. Los errores 400 limpian las contraseñas y muestran los errores del
+  Form; un 403 muestra el aviso de acceso y un resultado incierto bloquea el
+  reenvío y ofrece volver al formulario sin afirmar éxito. En
+  `/password_change/done/` reevalúa el mismo guard antes de mostrar «Su
+  contraseña ha sido cambiada.» y nunca envía POST.
+- Ambos modos reproducen el template instalado de Unfold con sus mismos
+  recursos: no usan el marco SISOC ni agregan contexto de tema. Los estilos
+  ajenos se suspenden mientras el componente está montado y se restauran al
+  desmontarlo.
+- `App.tsx` monta ambos modos en sus rutas públicas, que coinciden con las
+  entradas `IdentityVoluntaryPasswordEntry` e
+  `IdentityVoluntaryPasswordDoneEntry` de
+  `src/backends/sisoc_core/usuarios/identity_preview.py`.
+
+### Verificación de esta unidad React
+
+Sobre el árbol con grupos y encuestas React, en una copia aislada:
+`PasswordChange.test.tsx` falló por módulo ausente y las dos rutas nuevas de
+`App.test.tsx` fallaron antes de implementar. Después pasan las 176 pruebas
+frontend, TypeScript, ESLint y el build de Vite.
+
+Comparación visual en runtime sintético local, solo GET, dos cargas nuevas por
+lado, 1440x900 y 390x844: la confirmación con usuario listo, el acceso anónimo
+(redirige al login) y el usuario con cambio obligatorio pendiente (redirige a su
+pantalla) son idénticos en píxeles y geometría, salvo el estado de render del
+login ya conocido, que también varía entre dos cargas nativas. El formulario es
+idéntico en geometría; la única diferencia de píxeles es el anillo de foco del
+campo «Contraseña antigua». El template nativo depende del `autofocus` del
+navegador, que en este runtime enfocó el campo en una de ocho cargas nativas;
+React aplica el `autofocus` del Form en todas. Cuando la carga nativa enfoca el
+campo, la captura móvil es idéntica a la de React.
+
+Sin máscaras, errores de página, solicitudes bloqueadas ni POST; dominio
+sintético sin cambios. El cambio real no se ejecutó en el navegador; lo cubren
+las pruebas del componente y la verificación backend de arriba. No constituye
+aceptación humana, revisión nativa, CI ni despliegue. Riesgo técnico:
+contraseña y sesión, transporte público y respuestas asíncronas.
+
 Las secciones siguientes preservan una nota histórica del circuito completo,
 anterior a su cierre visual final. Sus resultados de UI, capturas y revisiones
 no son pruebas nuevas ni aceptación del corte backend actual.

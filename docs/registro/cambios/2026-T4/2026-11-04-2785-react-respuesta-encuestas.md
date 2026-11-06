@@ -38,6 +38,35 @@ Las secciones siguientes preservan el registro histórico del circuito completo.
 Sus pruebas de UI, capturas, correcciones y cierre visual no son evidencia nueva
 ni aceptación del corte backend actual.
 
+## Corte React actual
+
+Este corte agrega `PendingSurvey.tsx` y `PendingSurvey.test.tsx` en
+`src/frontends/apps/sisoc/src/`. `App.tsx` monta `/inicio/` en el marco
+heredado de identidad sin el botón «Volver» y con la fila de título vacía, como
+la plantilla original. El componente consume `/api/web/surveys/pending/`,
+dibuja la portada (variante general o INET) y el modal de la primera ronda
+pendiente con controles JSX propios; Bootstrap 5.3.2 y
+`encuestaPendienteModal.js` originales manejan visibilidad, condiciones y foco.
+Las acciones responder, posponer y descartar se envían URL-encoded a las rutas
+del corte backend y navegan al destino seguro que devuelve el servidor; un
+resultado incierto bloquea el reenvío. El marco solo suma la propiedad opcional
+para ocultar «Volver»; no cambia permisos ni la activación global.
+
+Verificación: pruebas del componente y de rutas en RED antes de implementar y
+GREEN después; suite completa de `apps/sisoc`, TypeScript, ESLint y build pasan.
+Comparación visual nativo/React solo con GET sobre datos sintéticos, escritorio
+1440x900 y móvil 390x844, dos cargas por lado: portada general e INET, ronda
+obligatoria (también con la pregunta condicional visible), opcional anónima y
+postergable. Portadas y ronda postergable quedan con cero píxeles diferentes.
+Los residuos restantes (36 a 94 píxeles) son antialiasing de glifos dentro del
+modal, con la misma secuencia de caracteres, rectángulo del modal y estilos, y
+una diferencia geométrica máxima por carácter de 0,015625 CSSpx, por debajo del
+umbral de un píxel. Se recapturaron el listado INS-A, Mi cuenta y el listado de
+grupos sin regresión. No se ejecutaron en navegador respuestas, postergaciones
+ni descartes ni sus avisos posteriores; los cubren las pruebas de componente y
+la evidencia previa del circuito. Sin aceptación humana, commit ni publicación
+de este corte.
+
 ## Registro histórico del circuito completo
 
 ## Alcance

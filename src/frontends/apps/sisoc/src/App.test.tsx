@@ -100,6 +100,7 @@ describe("SISOC web shell", () => {
     ["/password/first-change/", "web/password/first-change/"],
     ["/mi-cuenta/", "web/account/"],
     ["/mi-cuenta/confirmar/", "web/account/confirm/"],
+    ["/inicio/", "web/surveys/pending/"],
   ])("loads only its identity operation at %s", async (path, endpoint) => {
     webGet.mockReturnValue(new Promise(() => {}));
     setup(path);
@@ -503,6 +504,17 @@ describe("SISOC web shell", () => {
     webGet.mockResolvedValue({ status: 403, data: { detail: "Denegado" } });
     render(<App />);
     await waitFor(() => expect(webGet).toHaveBeenCalledWith(endpoint, expect.any(Object)));
+    expect(webGet.mock.calls.some(([url]) => url === "web/session/")).toBe(false);
+    webGet.mockReset();
+  });
+
+  it("renders the pending-survey home in the legacy frame without the back button", async () => {
+    window.history.replaceState(null, "", "/inicio/");
+    webGet.mockResolvedValue({ data: { presentation: { user: { username: "synthetic", display_name: "Ana", avatar_initial: "A", role_label: "-" }, footer_version_label: "Versiones", legacy_frame_navigation: [{ id: "inicio", label: "Inicio", href: "/inicio/", children: [] }] }, home_variant: "default", round: null, messages: [] } });
+    render(<App />);
+    await screen.findByRole("navigation", { name: "Navegación principal" });
+    expect(document.querySelector(".inicio-presentacion--default")).not.toBeNull();
+    expect(document.querySelector(".sisoc-volver")).toBeNull();
     expect(webGet.mock.calls.some(([url]) => url === "web/session/")).toBe(false);
     webGet.mockReset();
   });

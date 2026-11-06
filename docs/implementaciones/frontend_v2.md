@@ -437,3 +437,11 @@ y el refresco de íconos; funciona para quienes ya pueden crear o editar grupos
 sin depender de `/admin/jsi18n/`. Preferencias de columnas y CSV siguen en sus
 rutas nativas. Registro:
 `../registro/cambios/2026-T4/2026-11-04-2785-react-grupos.md`.
+
+`/inicio/` monta `PendingSurvey.tsx` en el mismo marco, sin botón «Volver»,
+con la portada original y el modal de la primera encuesta pendiente según
+`/api/web/surveys/pending/`. Responder, posponer y descartar usan las acciones
+URL-encoded de `/api/web/surveys/<id>/` y navegan al destino que devuelve el
+servidor; Bootstrap y el script condicional originales operan sobre los nodos
+React. Registro:
+`../registro/cambios/2026-T4/2026-11-04-2785-react-respuesta-encuestas.md`.

@@ -9,6 +9,7 @@ import InsumosToast from "./InsumosToast";
 import Login from "./Login";
 import Account from "./Account";
 import Groups from "./Groups";
+import PendingSurvey from "./PendingSurvey";
 import RequiredPasswordChange, { type RequiredPasswordPresentation } from "./RequiredPasswordChange";
 import { safeInternalPath, validateInsumosStatus, type WebAccessState } from "./webAccess";
 import "./shell.css";
@@ -304,6 +305,7 @@ function SisocShell({
   overlays,
   previewLinks = true,
   breadcrumb,
+  hideBack = false,
 }: {
   context: Pick<ReadyContext, "user" | "navigation" | "footer_version_label"> & {
     capabilities?: ReadyContext["capabilities"];
@@ -314,6 +316,7 @@ function SisocShell({
   overlays?: ReactNode;
   previewLinks?: boolean;
   breadcrumb?: ReactNode;
+  hideBack?: boolean;
 }) {
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -485,12 +488,12 @@ function SisocShell({
         <main className="app-main">
           <div className="app-content-header">
             <div className="container-fluid">
-          <div className="d-print-none">
+          {!hideBack && <div className="d-print-none">
                 <a className="btn btn-secondary btn-sm sisoc-volver" href="/inicio/">
                   <i className="fas fa-arrow-left" aria-hidden="true" />{" "}
                   <span>Volver</span>
                 </a>
-              </div>
+              </div>}
               <div className="row">
                 <div className="col-sm-9">
                   <h3 className="mb-0">{heading}</h3>
@@ -605,6 +608,7 @@ function legacyIdentityFrame(
   heading = pageTitle,
   overlays?: ReactNode,
   breadcrumb?: ReactNode,
+  hideBack = false,
 ) {
   return <SisocShell
     context={{ user: presentation.user, navigation: presentation.legacy_frame_navigation, footer_version_label: presentation.footer_version_label }}
@@ -613,6 +617,7 @@ function legacyIdentityFrame(
     heading={heading}
     overlays={overlays}
     breadcrumb={breadcrumb}
+    hideBack={hideBack}
     previewLinks={false}
   />;
 }
@@ -640,6 +645,11 @@ export default function App() {
       renderFrame={(content, presentation, title, breadcrumb) =>
         legacyIdentityFrame(content, presentation, mode === "list" ? title : "Grupos", title, undefined, breadcrumb)}
     />;
+  }
+  if (window.location.pathname === "/inicio/") {
+    // The source home has no back button and an empty heading row.
+    return <PendingSurvey renderFrame={(content, presentation, overlays) =>
+      legacyIdentityFrame(content, presentation, "", "", overlays, undefined, true)} />;
   }
   if (window.location.pathname === "/" || window.location.pathname === "/login/") {
     return <Login />;

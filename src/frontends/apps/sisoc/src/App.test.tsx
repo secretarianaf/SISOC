@@ -98,6 +98,8 @@ describe("SISOC web shell", () => {
     ["/", "web/login/"],
     ["/login/", "web/login/"],
     ["/password/first-change/", "web/password/first-change/"],
+    ["/mi-cuenta/", "web/account/"],
+    ["/mi-cuenta/confirmar/", "web/account/confirm/"],
   ])("loads only its identity operation at %s", async (path, endpoint) => {
     webGet.mockReturnValue(new Promise(() => {}));
     setup(path);

@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 
 // Existing Toastr defaults: 300 ms in, 5000 ms visible, 1000 ms out/extended.
 // The markup/CSS stay legacy; React owns the single operation and its timers.
-export default function InsumosToast({ message }: { message: string }) {
+type ToastMessage = { message: string; level?: "success" | "error" | "warning" | "info" };
+
+function OperationToast({ message, level = "success", standalone = true }: ToastMessage & { standalone?: boolean }) {
   const [phase, setPhase] = useState<"show" | "hiding" | "hidden">("show");
   const expiry = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const removal = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -20,11 +22,9 @@ export default function InsumosToast({ message }: { message: string }) {
     return () => { clearTimeout(expiry.current); clearTimeout(removal.current); };
   }, []);
   if (phase === "hidden") return null;
-  return (
-    <>
-      <div id="toast-container" className="toast-bottom-right">
+  const toast = (
         <div
-          className={`toast toast-success sisoc-operation-toast${phase === "hiding" ? " sisoc-toast-hiding" : ""}`}
+          className={`toast toast-${level} sisoc-operation-toast${phase === "hiding" ? " sisoc-toast-hiding" : ""}`}
           role="status"
           aria-live="polite"
           aria-atomic="true"
@@ -34,7 +34,17 @@ export default function InsumosToast({ message }: { message: string }) {
         >
           <div className="toast-message">{message}</div>
         </div>
-      </div>
-    </>
   );
+  return standalone ? <div id="toast-container" className="toast-bottom-right">{toast}</div> : toast;
+}
+
+export default function InsumosToast(props: ToastMessage) {
+  return <OperationToast {...props} />;
+}
+
+export function InsumosToastList({ messages }: { messages: ToastMessage[] }) {
+  if (!messages.length) return null;
+  return <div id="toast-container" className="toast-bottom-right">
+    {[...messages].reverse().map((message, index) => <OperationToast key={index} {...message} standalone={false} />)}
+  </div>;
 }

@@ -422,3 +422,9 @@ alimentado solo por el DTO de presentación de `/api/web/password/first-change/`
 (usuario, menú heredado y pie). No consulta `/api/web/session/`, no recibe
 capacidades de negocio y conserva los enlaces originales del menú. Registro:
 `../registro/cambios/2026-T4/2026-11-03-2785-react-cambio-obligatorio.md`.
+
+`/mi-cuenta/` y `/mi-cuenta/confirmar/` montan `Account.tsx` en el mismo marco
+(la confirmación como modal obligatorio sin cierre), con `/api/web/account/` y
+`/api/web/account/confirm/`. Los mensajes de Django se muestran con
+`InsumosToastList`, que respeta su nivel en un único contenedor Toastr. Registro:
+`../registro/cambios/2026-T4/2026-11-04-2785-react-cuenta-confirmacion.md`.

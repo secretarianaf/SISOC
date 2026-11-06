@@ -33,6 +33,57 @@ Sus pruebas de UI, correcciones, capturas y resultados no son evidencia nueva
 ni aceptación de este corte backend. Las referencias a demostraciones son
 históricas, sin afirmar que estén disponibles actualmente.
 
+## Unidad React separada (2026-11-06)
+
+Esta unidad agrega las pantallas React de cuenta propia y confirmación sobre las
+APIs ya incorporadas. No modifica backend, rutas de producción ni dependencias.
+
+- `src/frontends/apps/sisoc/src/Account.tsx` tiene dos modos. `/mi-cuenta/`
+  muestra el formulario dentro del marco heredado; al guardar vuelve a consultar
+  datos y avisos de la misma página, sin duplicar la notificación. En
+  `/mi-cuenta/confirmar/` el formulario vive en el modal obligatorio, sin cierre
+  ni ESC, y el éxito navega a `/inicio/`. Los POST son URL-encoded; los errores
+  400 reconstruyen el formulario con los datos enviados, un 403 muestra el aviso
+  de acceso y un resultado incierto bloquea el reenvío.
+- `InsumosToast.tsx` acepta el nivel del mensaje de Django (por defecto
+  `success`) y agrega `InsumosToastList`, un único contenedor Toastr para varios
+  avisos. INS-A e INS-B siguen usando el aviso individual sin cambios.
+- `shell.css` excluye el botón `data-mi-cuenta-submit` del anillo de foco del
+  marco para conservar el foco nativo de la página original.
+- `App.tsx` monta ambos modos con el marco heredado, alimentado solo por el DTO
+  de presentación.
+
+### Verificación de esta unidad React
+
+Sobre la unidad de cambio obligatorio, en una copia aislada: `Account.test.tsx`
+falló por módulo ausente, cuatro pruebas de nivel y lista de avisos y las dos
+rutas nuevas de `App.test.tsx` fallaron antes de implementar. Con el componente
+y antes del ajuste de `shell.css`, las dos pruebas de foco fallaron. Después
+pasan las 133 pruebas frontend, TypeScript, ESLint y el build de Vite.
+
+Comparación visual en runtime sintético local, solo GET, dos cargas nuevas por
+lado, 1440x900 y 390x844: cuenta con usuario listo y confirmación con usuario
+pendiente son idénticas en píxeles y geometría. Cambio obligatorio, login,
+INS-A e INS-B se repitieron con el CSS nuevo: capturas idénticas byte a byte a
+las de la unidad anterior. Al llegar con Tab a «Guardar datos» el contorno
+calculado es el nativo y la captura es idéntica en cuenta (ambos viewports) y en
+confirmación móvil.
+
+Advertencias previas del marco compartido, que también se reproducen en el
+listado de categorías de INS-B ya incorporado y no se corrigen aquí: el orden de
+tabulación del sidebar difiere del nativo (posición visual idéntica), y al
+enfocar con teclado el enlace de versión del pie la página nativa reduce su
+altura a 906 px mientras React conserva 1036 px. Por eso la captura de foco de
+confirmación en escritorio, cuyo recorrido pasa por ese enlace, no es idéntica.
+
+Sin máscaras, errores de página, solicitudes bloqueadas ni POST; dominio
+sintético sin cambios. El guardado real no se ejecutó en el navegador; lo cubren
+las pruebas del componente. Las suites backend relacionadas (entrada de
+identidad, login, cambio obligatorio y cuenta) pasan 136 pruebas en la imagen
+fijada sin red. No constituye aceptación humana, revisión nativa, CI ni
+despliegue. Riesgo técnico: guardado de datos personales, marco compartido y
+respuestas asíncronas.
+
 ## Registro histórico del circuito completo
 
 ## Alcance

@@ -7,6 +7,7 @@ import InsumosCategoriaForm from "./InsumosCategoriaForm";
 import InsumosCategoriasList from "./InsumosCategoriasList";
 import InsumosToast from "./InsumosToast";
 import Login from "./Login";
+import Account from "./Account";
 import RequiredPasswordChange, { type RequiredPasswordPresentation } from "./RequiredPasswordChange";
 import { safeInternalPath, validateInsumosStatus, type WebAccessState } from "./webAccess";
 import "./shell.css";
@@ -613,6 +614,14 @@ function requiredPasswordFrame(content: ReactNode, presentation: RequiredPasswor
   return legacyIdentityFrame(content, presentation, "Cambio obligatorio de contraseña", "Actualizar contraseña");
 }
 
+function accountFrame(content: ReactNode, presentation: RequiredPasswordPresentation, overlays?: ReactNode) {
+  return legacyIdentityFrame(content, presentation, "Mi cuenta", "Mi cuenta", overlays);
+}
+
+function confirmationFrame(content: ReactNode, presentation: RequiredPasswordPresentation, overlays?: ReactNode) {
+  return legacyIdentityFrame(content, presentation, "Confirma tus datos personales", "Confirma tus datos personales", overlays);
+}
+
 // Public identity paths own their API bootstrap; every other path keeps the business shell.
 export default function App() {
   if (window.location.pathname === "/" || window.location.pathname === "/login/") {
@@ -620,6 +629,12 @@ export default function App() {
   }
   if (window.location.pathname === "/password/first-change/") {
     return <RequiredPasswordChange renderFrame={requiredPasswordFrame} />;
+  }
+  if (window.location.pathname === "/mi-cuenta/") {
+    return <Account mode="account" renderFrame={accountFrame} />;
+  }
+  if (window.location.pathname === "/mi-cuenta/confirmar/") {
+    return <Account mode="confirm" renderFrame={confirmationFrame} />;
   }
   return <BusinessApp />;
 }

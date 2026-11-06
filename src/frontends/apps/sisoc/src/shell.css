@@ -27,7 +27,7 @@ body {
   font-weight: 600;
 }
 
-button:focus-visible,
+button:not([data-mi-cuenta-submit]):focus-visible,
 a:focus-visible {
   outline: 3px solid #e7ba61;
   outline-offset: 2px;

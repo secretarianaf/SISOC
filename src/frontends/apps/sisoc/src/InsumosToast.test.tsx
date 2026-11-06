@@ -4,12 +4,27 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import InsumosToast from "./InsumosToast";
+import InsumosToast, { InsumosToastList } from "./InsumosToast";
 
 const shellStyles = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "shell.css"), "utf8");
 
 
 afterEach(() => { cleanup(); vi.useRealTimers(); });
+
+it.each(["error", "warning", "info"] as const)("preserves the source %s notification level", (level) => {
+  render(<InsumosToast message="Aviso existente" level={level} />);
+  expect(screen.getByRole("status").classList.contains(`toast-${level}`)).toBe(true);
+});
+
+it("stacks consumed notices in one native container without changing the default success style", () => {
+  render(<InsumosToastList messages={[{ message: "Guardado" }, { message: "Aviso", level: "warning" }]} />);
+  expect(document.querySelectorAll("#toast-container")).toHaveLength(1);
+  const notices = screen.getAllByRole("status");
+  expect(notices).toHaveLength(2);
+  expect(notices[0].classList.contains("toast-warning")).toBe(true);
+  expect(notices[1].classList.contains("toast-success")).toBe(true);
+  expect(notices[0].parentElement).toBe(notices[1].parentElement);
+});
 
 it("loads native notification styles before the theme without reinserting them after it", () => {
   const html = entryHtml;

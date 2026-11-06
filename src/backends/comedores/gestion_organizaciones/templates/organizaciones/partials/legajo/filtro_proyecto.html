@@ -1,0 +1,25 @@
+{# Filtro de rendiciones por código de proyecto (#2745). Recibe: codigos_rendiciones, proyecto_rendiciones y, opcional, programa. #}
+{% if codigos_rendiciones|length > 1 %}
+    <form method="get" class="d-flex align-items-end gap-2">
+        {% if programa %}<input type="hidden" name="programa" value="{{ programa.pk }}" />{% endif %}
+        <input type="hidden" name="seccion" value="rendiciones" />
+        <div>
+            <label for="proyecto-rendiciones" class="form-label mb-1">Código de Proyecto</label>
+            <select id="proyecto-rendiciones"
+                    name="proyecto"
+                    class="form-select form-select-sm">
+                <option value="">Todos los proyectos</option>
+                {% for codigo in codigos_rendiciones %}
+                    <option value="{{ codigo }}"
+                            {% if codigo == proyecto_rendiciones %}selected{% endif %}>{{ codigo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-sm btn-outline-light">Filtrar</button>
+    </form>
+{% elif codigos_rendiciones %}
+    <div>
+        <small class="d-block text-white-50">Código de Proyecto</small>
+        <strong>{{ codigos_rendiciones.0 }}</strong>
+    </div>
+{% endif %}

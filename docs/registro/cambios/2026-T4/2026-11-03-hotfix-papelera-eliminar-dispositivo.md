@@ -45,3 +45,9 @@ En producción respondían 500:
   por backend o una consulta agregada; se sigue en #2864.
 - Un dispositivo con relevamientos sigue sin poder eliminarse; ahora lo informa con un
   mensaje en lugar de fallar.
+
+## Integración en `development`
+
+En `development`, la parte del dispositivo ya estaba resuelta por #2750, con un mensaje
+genérico que lista los registros asociados. El cherry-pick conserva esa versión y solo
+trae el fix de la papelera.

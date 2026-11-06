@@ -3,6 +3,8 @@ import { crearCliente, leerCookie } from "@sisoc/api";
 import InsumosAccessError from "./InsumosAccessError";
 import InsumosList from "./InsumosList";
 import InsumosForm from "./InsumosForm";
+import InsumosCategoriaForm from "./InsumosCategoriaForm";
+import InsumosCategoriasList from "./InsumosCategoriasList";
 import InsumosToast from "./InsumosToast";
 import { safeInternalPath, validateInsumosStatus, type WebAccessState } from "./webAccess";
 import "./shell.css";
@@ -156,6 +158,8 @@ function ShellIcon({ id }: { id: string }) {
   return null;
 }
 
+const CATEGORY_LIST_PATH = "/v2/sisoc/insumos/categorias/";
+
 function projectedHref(item: NavigationNode): string | null {
   if (item.id === "insumos_listar" && item.href === "/insumos/") {
     return "/v2/sisoc/insumos/";
@@ -293,16 +297,22 @@ function SisocShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pathname, setPathname] = useState(() => window.location.pathname);
   const [successMessage, setSuccessMessage] = useState("");
-  const formRoute = pathname.match(/^\/v2\/sisoc\/insumos\/(?:(crear)\/?|([0-9]+)\/(editar|eliminar)\/?)$/);
+  // Category routes keep the exact public slashes of the source circuit.
+  const categoryRoute = pathname.startsWith(CATEGORY_LIST_PATH);
+  const formRoute = categoryRoute
+    ? pathname.match(/^\/v2\/sisoc\/insumos\/categorias\/(?:(crear)|([0-9]+)\/(editar|eliminar))$/)
+    : pathname.match(/^\/v2\/sisoc\/insumos\/(?:(crear)\/?|([0-9]+)\/(editar|eliminar)\/?)$/);
   const action = formRoute?.[1] === "crear" ? "crear" : formRoute?.[3] as "editar" | "eliminar" | undefined;
   useEffect(() => {
     const previousTitle = document.title;
-    const title = action === "crear" ? "Nuevo insumo" : action === "editar" ? "Editar insumo" : action === "eliminar" ? "Eliminar insumo" : "Insumos";
+    const title = categoryRoute
+      ? action === "crear" ? "Nueva categoría" : action === "editar" ? "Editar categoría" : action === "eliminar" ? "Eliminar categoría" : "Categorías de insumos"
+      : action === "crear" ? "Nuevo insumo" : action === "editar" ? "Editar insumo" : action === "eliminar" ? "Eliminar insumo" : "Insumos";
     document.title = `SISOC - ${title}`;
     return () => { document.title = previousTitle; };
-  }, [action]);
+  }, [action, categoryRoute]);
   const returnToList = (message = "") => {
-    window.history.pushState({}, "", "/v2/sisoc/insumos/");
+    window.history.pushState({}, "", categoryRoute ? CATEGORY_LIST_PATH : "/v2/sisoc/insumos/");
     setPathname(window.location.pathname);
     setSuccessMessage(message);
   };
@@ -471,7 +481,10 @@ function SisocShell({
           <div className="app-content">
             <div className="container-fluid">
               {successMessage && <InsumosToast key={successMessage} message={successMessage} />}
-              {action ? <InsumosForm key={pathname} action={action} id={formRoute?.[2]} onComplete={returnToList} onCancel={() => returnToList()} /> : <InsumosList
+              {categoryRoute ? (action
+                ? <InsumosCategoriaForm key={pathname} action={action} id={formRoute?.[2]} onComplete={returnToList} onCancel={() => returnToList()} />
+                : <InsumosCategoriasList key={pathname} />
+              ) : action ? <InsumosForm key={pathname} action={action} id={formRoute?.[2]} onComplete={returnToList} onCancel={() => returnToList()} /> : <InsumosList
                 showManagement={context.capabilities.insumos.show_management}
                 showCategories={context.capabilities.insumos.show_categories}
               />}

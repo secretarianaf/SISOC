@@ -388,3 +388,20 @@ nombre base y conserva la descarga protegida. Estado histórico del piloto:
 La reconciliación local en Migracion-2 se sigue en
 `odd/tasks/react-global-2785.md`; sus verificaciones y aceptación se distinguen
 de las del origen. No se activaron rutas globales ni despliegues.
+
+### Continuación local INS-B: categorías en validación
+
+Las rutas locales `/v2/sisoc/insumos/categorias/`, `crear`, `<id>/editar` y
+`<id>/eliminar` consumen `/api/web/insumos/categorias/`. `App.tsx` las reconoce
+con los mismos slashes de las URLs públicas originales y monta
+`InsumosCategoriasList.tsx` o `InsumosCategoriaForm.tsx` dentro del mismo marco
+INS-A. Los permisos de cada operación se verifican tanto en la entrada HTML como
+en la API de sesión. Los POST son formularios URL-encoded; se reutilizan el Form
+y los servicios de Django. Guardar, eliminar y cancelar vuelven al listado de
+categorías con el aviso existente. No se agrega caché persistente: después de
+eliminar una categoría, volver al circuito de insumos consulta nuevamente datos
+y opciones. La paginación compartida vive en `insumosPagination.ts`. No se
+sustituyen las rutas públicas originales ni se habilita React globalmente.
+
+Estado de validación y límites:
+[registro INS-B](../registro/cambios/2026-T4/2026-11-03-2785-react-categorias-insumos.md).

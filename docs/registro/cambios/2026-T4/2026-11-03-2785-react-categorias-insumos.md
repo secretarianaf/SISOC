@@ -48,6 +48,59 @@ corregidos coinciden con GREEN; otros cuatro Python son equivalentes tras
 normalizar CRLF/LF, no idénticos byte a byte. La ejecución independiente usó
 el archivo Git sin modificarlo. Runner finalizado sin OOM, datos preservados.
 
+## Unidad React separada (2026-11-06)
+
+Esta unidad agrega solamente la interfaz React de categorías sobre la API ya
+incorporada. No modifica backend, rutas públicas, dependencias ni estilos.
+
+- `App.tsx` reconoce `/v2/sisoc/insumos/categorias/`, `crear`, `<id>/editar` y
+  `<id>/eliminar` sin cambiar sus slashes. Los títulos del documento coinciden
+  con las plantillas originales. Guardar, eliminar y cancelar vuelven a
+  `/v2/sisoc/insumos/categorias/`, equivalente local de `/insumos/categorias/`,
+  con el aviso Toastr existente.
+- `InsumosCategoriasList.tsx` y `InsumosCategoriaForm.tsx` reutilizan los
+  helpers de `webAccess.ts`, `InsumosAccessError` y la paginación existente,
+  extraída sin cambios a `insumosPagination.ts`. Los POST son URL-encoded y solo
+  se acepta la confirmación con retorno fijo `/insumos/categorias/`. Un
+  resultado incierto deshabilita el formulario y no se reintenta.
+- El listado y los formularios vuelven a consultar la API en cada montaje. No
+  hay caché persistente: tras la regla SET_NULL, INS-A obtiene opciones y datos
+  actuales al volver a abrirse.
+- Se conserva el alias exacto `/v2/sisoc/insumos` del marco INS-A y su prueba
+  de regresión.
+
+### Verificación de esta unidad React
+
+Sobre HEAD más esta unidad, en una copia aislada: las pruebas nuevas de rutas,
+títulos, retorno con aviso y cancelación fallaron antes de implementar (seis
+casos de `App.test.tsx` y dos archivos de componentes sin módulo). Después
+pasan las 86 pruebas frontend, TypeScript, ESLint y el build de Vite; el CSS
+generado es idéntico al de INS-A.
+
+La comparación visual usó el runtime sintético local, solo GET, con dos cargas
+nuevas por lado, en 1440x900 y 390x844: listado (perfil de gestión y perfil
+limitado), alta, edición y confirmación de eliminación, además del listado y el
+alias de INS-A. En móvil, alta, edición, eliminación e INS-A son idénticas en
+píxeles. Las diferencias restantes se clasificaron así:
+
+- Flecha del sidebar en escritorio (76-80 píxeles): desaparece al cancelar las
+  animaciones en ambos lados; es el mismo estado de render ya clasificado para
+  INS-A, no geometría. Con animaciones canceladas, el alta de escritorio queda
+  idéntica.
+- Cifra del texto «Se encontraron N resultados» en el listado (56 píxeles):
+  mismos caracteres y desplazamiento máximo de 0,015625 CSSpx, menor a un píxel
+  y aprobado por la regla S2 existente.
+- Menú móvil fuera de pantalla: «Comunicados» queda 45 px más abajo porque
+  React mantiene abierto el submenú Insumos. No es visible y queda cubierto por
+  la exclusión explícita del menú móvil.
+
+No se usaron máscaras ni se ampliaron tolerancias. El dominio sintético quedó
+sin cambios, sin errores de página, solicitudes bloqueadas ni POST. El recorrido
+con mutación real y aviso no se ejecutó en el navegador; lo cubren las pruebas
+de componentes y de aplicación. Esto no constituye aceptación humana, revisión
+nativa, CI ni despliegue. Riesgo técnico: contratos compartidos del marco
+(`App.tsx`), respuestas asíncronas y permisos por operación.
+
 ## Antecedente: circuito completo histórico
 
 El contenido siguiente documenta la implementación local anterior, incluidos

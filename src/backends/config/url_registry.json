@@ -5000,6 +5000,11 @@
   "regex": "^api/web/login/\\Z"
  },
  {
+  "name": "web_password_change",
+  "namespace": "",
+  "regex": "^api/web/password/change/\\Z"
+ },
+ {
   "name": "web_required_password",
   "namespace": "",
   "regex": "^api/web/password/first\\-change/\\Z"

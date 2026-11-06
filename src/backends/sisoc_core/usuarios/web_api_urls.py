@@ -17,6 +17,7 @@ from usuarios.web_groups import (
     WebGroupUpdateView,
 )
 from usuarios.web_login import WebLoginView
+from usuarios.web_password_change import WebPasswordChangeView
 from usuarios.web_required_password import RequiredPasswordChangeWebView
 
 urlpatterns = [
@@ -47,6 +48,11 @@ urlpatterns = [
     ),
     path("session/", WebSessionView.as_view(), name="web_session"),
     path("login/", WebLoginView.as_view(), name="web_login"),
+    path(
+        "password/change/",
+        WebPasswordChangeView.as_view(),
+        name="web_password_change",
+    ),
     path(
         "password/first-change/",
         RequiredPasswordChangeWebView.as_view(),

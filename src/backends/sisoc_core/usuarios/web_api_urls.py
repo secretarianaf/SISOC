@@ -18,6 +18,10 @@ from usuarios.web_groups import (
 )
 from usuarios.web_login import WebLoginView
 from usuarios.web_password_change import WebPasswordChangeView
+from usuarios.web_password_reset import (
+    WebPasswordResetConfirmView,
+    WebPasswordResetView,
+)
 from usuarios.web_required_password import RequiredPasswordChangeWebView
 
 urlpatterns = [
@@ -52,6 +56,16 @@ urlpatterns = [
         "password/change/",
         WebPasswordChangeView.as_view(),
         name="web_password_change",
+    ),
+    path(
+        "password/reset/",
+        WebPasswordResetView.as_view(),
+        name="web_password_reset",
+    ),
+    path(
+        "password/reset/<uidb64>/",
+        WebPasswordResetConfirmView.as_view(),
+        name="web_password_reset_confirm",
     ),
     path(
         "password/first-change/",

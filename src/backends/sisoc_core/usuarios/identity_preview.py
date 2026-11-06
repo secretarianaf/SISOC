@@ -22,6 +22,10 @@ from usuarios.auth_views import (
     ConfirmacionDatosView,
     FirstLoginPasswordChangeView,
     MiCuentaView,
+    PasswordResetConfirmCustomView,
+    SisocPasswordResetCompleteView,
+    SisocPasswordResetDoneView,
+    SisocPasswordResetView,
     UsuariosLoginView,
 )
 
@@ -73,6 +77,36 @@ class IdentityVoluntaryPasswordEntry(_IdentityEntry, PasswordChangeView):
 
 class IdentityVoluntaryPasswordDoneEntry(_IdentityEntry, PasswordChangeDoneView):
     """Source completion entry without an additional mutation."""
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class IdentityPasswordResetEntry(_IdentityEntry, SisocPasswordResetView):
+    """Public recovery request; POST keeps the source form and mail send."""
+
+
+class IdentityPasswordResetDoneEntry(_IdentityEntry, SisocPasswordResetDoneView):
+    """Single source done page, whether or not an account matched."""
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class IdentityPasswordResetConfirmEntry(_IdentityEntry, PasswordResetConfirmCustomView):
+    """Keep the source token-to-session redirect before serving the fixed index.
+
+    A valid URL token is exchanged and redirected to ``set-password`` by the
+    source dispatch, so the index is only served without a token in the path or
+    for an invalid link. POST keeps the source form, including direct posts.
+    """
+
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.method in ("GET", "HEAD"):
+            return self.get(self.request)
+        return super().render_to_response(context, **response_kwargs)
+
+
+class IdentityPasswordResetCompleteEntry(
+    _IdentityEntry, SisocPasswordResetCompleteView
+):
+    """Source completion page without an automatic login."""
 
 
 @method_decorator(login_required, name="dispatch")
@@ -207,6 +241,26 @@ def identity_preview_patterns(build_directory):
         path(
             "password_change/done/",
             IdentityVoluntaryPasswordDoneEntry.as_view(index_bytes=index_bytes),
+        ),
+        path(
+            "password_reset/",
+            IdentityPasswordResetEntry.as_view(index_bytes=index_bytes),
+        ),
+        path(
+            "password_reset/done/",
+            IdentityPasswordResetDoneEntry.as_view(index_bytes=index_bytes),
+        ),
+        path(
+            "reset/<uidb64>/<token>/",
+            IdentityPasswordResetConfirmEntry.as_view(index_bytes=index_bytes),
+        ),
+        path(
+            "password/reset/confirm/<uidb64>/<token>/",
+            IdentityPasswordResetConfirmEntry.as_view(index_bytes=index_bytes),
+        ),
+        path(
+            "reset/done/",
+            IdentityPasswordResetCompleteEntry.as_view(index_bytes=index_bytes),
         ),
         path(
             "static/sisoc-identity/<path:asset_path>",

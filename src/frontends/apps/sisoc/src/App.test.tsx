@@ -565,3 +565,24 @@ describe("SISOC web shell", () => {
     webGet.mockReset();
   });
 });
+
+describe("Password recovery routes", () => {
+  it.each([
+    ["/password_reset/", ["web/password/reset/"], "Recuperar contraseña"],
+    ["/password_reset/done/", ["web/password/reset/"], "Solicitud recibida"],
+    ["/reset/done/", ["web/password/reset/"], "Contraseña actualizada"],
+    ["/reset/MQ/set-password/", ["web/password/reset/", "web/password/reset/MQ/"], "Restablecer contraseña"],
+    ["/password/reset/confirm/MQ/set-password/", ["web/password/reset/", "web/password/reset/MQ/"], "Restablecer contraseña"],
+    ["/reset/MQ/synthetic-reset-token/", ["web/password/reset/"], "Restablecer contraseña"],
+    ["/password/reset/confirm/MQ/synthetic-reset-token/", ["web/password/reset/"], "Restablecer contraseña"],
+  ])("renders %s without the business shell or the URL token", async (path, endpoints, heading) => {
+    webGet.mockReturnValue(new Promise(() => {}));
+    setup(path);
+    expect(document.querySelector(".password-reset-content h5")!.textContent).toBe(heading);
+    await waitFor(() => expect(webGet).toHaveBeenCalledTimes(endpoints.length));
+    expect(webGet.mock.calls.map(([url]) => url).sort()).toEqual(endpoints);
+    expect(JSON.stringify(webGet.mock.calls)).not.toContain("synthetic-reset-token");
+    expect(document.querySelector(".app-sidebar")).toBeNull();
+    expect(window.location.pathname).toBe(path);
+  });
+});

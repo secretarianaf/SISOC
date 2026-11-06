@@ -315,3 +315,90 @@ def test_internal_head_matches_source_baseline(client, settings, tmp_path, path)
     assert preview.content == source.content == b""
     assert ("X-View" in preview) == ("X-View" in source)
     assert not Session.objects.exists()
+
+
+@pytest.mark.django_db
+def test_recovery_entries_keep_source_exchange_without_exposing_token(
+    client, identity_preview
+):
+    from django.contrib.auth.tokens import default_token_generator
+    from django.contrib.auth.views import INTERNAL_RESET_SESSION_TOKEN
+    from django.utils.encoding import force_bytes
+    from django.utils.http import urlsafe_base64_encode
+
+    asset_path, _ = identity_preview
+    user = _web_user("recovery-preview")
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    before = _domain_fingerprint()
+    for path in ("/password_reset/", "/password_reset/done/", "/reset/done/"):
+        response = client.get(path, {"private": "do-not-forward"})
+        assert response.status_code == 200
+        _assert_private_html(response, asset_path)
+        assert b"do-not-forward" not in response.content
+        head = client.head(path, REMOTE_ADDR=PUBLIC_IP)
+        assert head.status_code == 200
+        assert head.content == b""
+    assert "csrftoken" in client.get("/password_reset/").cookies
+    for prefix in ("/reset/", "/password/reset/confirm/"):
+        invalid = client.get(f"{prefix}{uid}/not-a-token/")
+        assert invalid.status_code == 200
+        _assert_private_html(invalid, asset_path)
+        assert b"not-a-token" not in invalid.content
+        exchange = client.get(f"{prefix}{uid}/{token}/")
+        assert exchange.status_code == 302
+        assert exchange["Location"] == f"{prefix}{uid}/set-password/"
+        assert client.session[INTERNAL_RESET_SESSION_TOKEN] == token
+        entry = client.get(exchange["Location"])
+        assert entry.status_code == 200
+        _assert_private_html(entry, asset_path)
+        assert token.encode() not in entry.content
+        assert "csrftoken" in entry.cookies
+        head = client.head(exchange["Location"], REMOTE_ADDR=PUBLIC_IP)
+        assert head.status_code == 200
+        assert head.content == b""
+    assert _domain_fingerprint() == before
+
+
+@pytest.mark.django_db
+def test_recovery_entries_keep_source_html_posts(client, identity_preview):
+    from django.core import mail
+
+    asset_path, _ = identity_preview
+    user = _web_user("recovery-post-preview")
+    user.email = "recovery-post@example.invalid"
+    user.set_password("Synthetic-Old-7781!")
+    user.save()
+    invalid = client.post("/password_reset/", {"username": "", "email": "x"})
+    assert invalid.status_code == 200
+    assert asset_path.encode() not in invalid.content
+    assert "username" in invalid.context["form"].errors
+    sent = client.post(
+        "/password_reset/", {"username": user.username, "email": user.email}
+    )
+    assert sent.status_code == 302 and sent["Location"] == "/password_reset/done/"
+    assert len(mail.outbox) == 1
+    link = next(line for line in mail.outbox[0].body.splitlines() if "/reset/" in line)
+    exchange = client.get(link.strip().split("testserver", 1)[1])
+    assert exchange.status_code == 302
+    mismatch = client.post(
+        exchange["Location"],
+        {"new_password1": "Synthetic-New-4410!", "new_password2": "other"},
+    )
+    assert mismatch.status_code == 200
+    assert asset_path.encode() not in mismatch.content
+    user.refresh_from_db()
+    assert user.check_password("Synthetic-Old-7781!")
+    done = client.post(
+        exchange["Location"],
+        {
+            "new_password1": "Synthetic-New-4410!",
+            "new_password2": "Synthetic-New-4410!",
+        },
+    )
+    assert done.status_code == 302 and done["Location"] == "/reset/done/"
+    user.refresh_from_db()
+    assert user.check_password("Synthetic-New-4410!")
+    stale = client.get(exchange["Location"])
+    assert stale.status_code == 200
+    _assert_private_html(stale, asset_path)

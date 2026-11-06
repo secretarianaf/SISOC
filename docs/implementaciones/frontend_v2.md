@@ -444,6 +444,17 @@ Unfold, sin el marco SISOC, y el `PasswordChangeForm` estándar con contraseña
 anterior; el éxito navega solo a `/password_change/done/`. Registro:
 `../registro/cambios/2026-T4/2026-11-04-2785-react-cambio-voluntario.md`.
 
+`/password_reset/`, `/password_reset/done/`, `/reset/done/` y las rutas de
+confirmación `/reset/<uidb64>/<token>/` y su alias
+`/password/reset/confirm/<uidb64>/<token>/` montan `PasswordReset.tsx` con el
+marco de `user/password_reset_base.html`, sin el shell SISOC. La solicitud usa
+`/api/web/password/reset/` y siempre navega a `/password_reset/done/`, coincida
+o no la cuenta. El canje del token por la sesión sigue en la vista Django
+original, que redirige a `set-password` antes de servir la UI: React nunca envía
+el token y consulta `/api/web/password/reset/<uidb64>/`, que valida solo el
+token de sesión en cada GET y POST. Registro:
+`../registro/cambios/2026-T4/2026-11-06-2785-react-recuperacion-contrasena.md`.
+
 `/grupos/`, `/grupos/crear/` y `/grupos/editar/<id>/` montan `Groups.tsx` en el
 mismo marco, con las migas de pan originales, alimentado por `/api/web/groups/`
 y sus rutas de alta y edición. El selector de permisos es propio de React y

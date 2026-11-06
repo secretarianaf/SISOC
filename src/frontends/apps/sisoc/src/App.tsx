@@ -10,6 +10,7 @@ import Login from "./Login";
 import Account from "./Account";
 import Groups from "./Groups";
 import PasswordChange from "./PasswordChange";
+import PasswordReset from "./PasswordReset";
 import PendingSurvey from "./PendingSurvey";
 import RequiredPasswordChange, { type RequiredPasswordPresentation } from "./RequiredPasswordChange";
 import { safeInternalPath, validateInsumosStatus, type WebAccessState } from "./webAccess";
@@ -695,5 +696,11 @@ export default function App() {
   if (window.location.pathname === "/password_change/done/") {
     return <PasswordChange mode="done" />;
   }
+  // Recovery keeps the source token exchange server-side; only `set-password` carries a uid.
+  const recovery = window.location.pathname.match(/^\/(?:reset|password\/reset\/confirm)\/([^/]+)\/([^/]+)\/$/);
+  if (window.location.pathname === "/password_reset/") return <PasswordReset mode="request" />;
+  if (window.location.pathname === "/password_reset/done/") return <PasswordReset mode="done" />;
+  if (window.location.pathname === "/reset/done/") return <PasswordReset mode="complete" />;
+  if (recovery) return <PasswordReset mode="confirm" uidb64={recovery[2] === "set-password" ? recovery[1] : null} />;
   return <BusinessApp />;
 }

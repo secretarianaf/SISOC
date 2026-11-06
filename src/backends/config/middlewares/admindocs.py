@@ -5,6 +5,14 @@ import re
 from django.contrib.admindocs.middleware import XViewMiddleware
 
 
+_OWNED_PATTERNS = (
+    r"/api/web/insumos/(?:categorias/)?[0-9]+/(?:editar|eliminar)/",
+    r"/api/web/groups/[0-9]+/edit/",
+    r"/api/web/surveys/[0-9]+/(?:answer|postpone|dismiss)/",
+    r"/api/web/password/reset/[^/]+/",
+)
+
+
 class WebSessionXViewMiddleware(XViewMiddleware):
     """Preserve upstream behavior outside the explicitly owned new API paths."""
 
@@ -21,20 +29,15 @@ class WebSessionXViewMiddleware(XViewMiddleware):
                 "/api/web/account/confirm/",
                 "/api/web/password/first-change/",
                 "/api/web/password/change/",
+                "/api/web/password/reset/",
                 "/api/web/insumos/",
                 "/api/web/insumos/options/",
                 "/api/web/insumos/crear/",
                 "/api/web/insumos/categorias/",
                 "/api/web/insumos/categorias/crear/",
             }
-            or re.fullmatch(
-                r"/api/web/insumos/(?:categorias/)?[0-9]+/(?:editar|eliminar)/",
-                request.path_info,
-            )
-            or re.fullmatch(r"/api/web/groups/[0-9]+/edit/", request.path_info)
-            or re.fullmatch(
-                r"/api/web/surveys/[0-9]+/(?:answer|postpone|dismiss)/",
-                request.path_info,
+            or any(
+                re.fullmatch(pattern, request.path_info) for pattern in _OWNED_PATTERNS
             )
         ):
             return None

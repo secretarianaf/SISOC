@@ -5055,6 +5055,16 @@
   "regex": "^api/web/password/change/\\Z"
  },
  {
+  "name": "web_password_reset",
+  "namespace": "",
+  "regex": "^api/web/password/reset/\\Z"
+ },
+ {
+  "name": "web_password_reset_confirm",
+  "namespace": "",
+  "regex": "^api/web/password/reset/(?P<uidb64>[^/]+)/\\Z"
+ },
+ {
   "name": "web_required_password",
   "namespace": "",
   "regex": "^api/web/password/first\\-change/\\Z"

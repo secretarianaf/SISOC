@@ -272,7 +272,7 @@ describe("SISOC web shell", () => {
       sidebar.textContent?.indexOf("Inicio") ?? -1,
     );
     expect(screen.getByRole("link", { name: "Mi cuenta" }).closest("li")?.className).toContain("order-0");
-    expect(screen.getByRole("link", { name: "Inicio" }).closest("li")?.className).toContain("order-1");
+    expect(screen.getByRole("link", { name: "Inicio" }).closest("li")?.style.order).toBe("1");
     expect(screen.getByRole("link", { name: "Insumos" }).className).toContain("nav-dot");
     expect(screen.getByRole("main").className).toContain("app-main");
     expect(screen.getByRole("contentinfo").className).toContain("app-footer");
@@ -305,6 +305,41 @@ describe("SISOC web shell", () => {
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     fireEvent.keyDown(toggle, { key: " " });
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("keeps the legacy sidebar tab order while CSS order preserves the visual order", async () => {
+    const top = (id: string, label: string, href: string | null = null) => ({ id, label, href, children: [] });
+    webGet.mockResolvedValueOnce({ data: { ...readyContext, navigation: [
+      top("inicio", "Inicio", "/inicio/"), top("legajos", "Legajos"), top("tableros", "Tableros"),
+      top("administracion-sistema", "Administración del sistema"), top("configuracion-comedores", "Configuración de Comedores"),
+      top("ocr_upload", "OCR", "/ocr/"), top("comunicados", "Comunicados"), top("mi_cuenta", "Mi cuenta", "/mi-cuenta/"),
+    ] } });
+    setup();
+    await screen.findByRole("link", { name: "Inicio" });
+    const items = [...document.querySelectorAll<HTMLLIElement>(".sidebar-menu > li.nav-item:not(.user-info)")];
+    expect(items.map((item) => item.textContent)).toEqual([
+      "Inicio", "Comunicados", "Administración del sistema", "Configuración de Comedores", "OCR", "Tableros", "Legajos", "Mi cuenta",
+    ]);
+    expect(items.map((item) => item.style.order)).toEqual(["1", "7", "4", "5", "6", "3", "2", ""]);
+    expect(items.some((item) => item.classList.contains("order-1"))).toBe(false);
+  });
+
+  it("links the footer version to the legacy changelog route", async () => {
+    webGet.mockResolvedValueOnce({ data: readyContext });
+    setup();
+    const version = await screen.findByRole("link", { name: "Versión local de prueba" });
+    expect(version.getAttribute("href")).toBe("/novedades/");
+  });
+
+  it("keeps the server menu order when a top-level item has no legacy position", async () => {
+    webGet.mockResolvedValueOnce({ data: { ...readyContext, navigation: [
+      readyContext.navigation[0], { id: "nuevo", label: "Nuevo", href: "/nuevo/", children: [] }, ...readyContext.navigation.slice(1),
+    ] } });
+    setup();
+    await screen.findByRole("link", { name: "Nuevo" });
+    const items = [...document.querySelectorAll<HTMLLIElement>(".sidebar-menu > li.nav-main-item")];
+    expect(items.map((item) => item.textContent)).toEqual(["Inicio", "Nuevo", "Legajos", "Comunicados", "Configuración de ComedoresInsumos"]);
+    expect(items.every((item) => item.classList.contains("order-1") && item.style.order === "")).toBe(true);
   });
 
   it("preserves the legacy separator and spacing before the account link", async () => {

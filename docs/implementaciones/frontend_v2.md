@@ -429,6 +429,11 @@ capacidades de negocio y conserva los enlaces originales del menú. Registro:
 `InsumosToastList`, que respeta su nivel en un único contenedor Toastr. Registro:
 `../registro/cambios/2026-T4/2026-11-04-2785-react-cuenta-confirmacion.md`.
 
+El marco escribe los ítems principales del sidebar en el orden del template
+original y les aplica el mismo `order` en línea, para que Tab recorra el menú
+igual que la página nativa sin mover su posición visual. Registro:
+`../registro/cambios/2026-T4/2026-11-06-2785-paridad-teclado-shell.md`.
+
 `/password_change/` y `/password_change/done/` montan `PasswordChange.tsx`,
 alimentado por `/api/web/password/change/`. Conserva el template instalado de
 Unfold, sin el marco SISOC, y el `PasswordChangeForm` estándar con contraseña

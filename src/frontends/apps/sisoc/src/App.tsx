@@ -166,6 +166,25 @@ function ShellIcon({ id }: { id: string }) {
 
 const CATEGORY_LIST_PATH = "/v2/sisoc/insumos/categorias/";
 
+// The legacy sidebar template places top-level items in this DOM (Tab) order and
+// sets each visual position with an inline CSS order; the API lists them visually.
+const LEGACY_SIDEBAR_ORDER: Record<string, number> = {
+  inicio: 1,
+  comunicados: 7,
+  "administracion-sistema": 4,
+  "configuracion-comedores": 5,
+  ocr_upload: 6,
+  tableros: 3,
+  legajos: 2,
+};
+const LEGACY_SIDEBAR_DOM = Object.keys(LEGACY_SIDEBAR_ORDER);
+
+// Unknown top-level items keep the server order instead of guessing a position.
+function legacySidebarMenu(menu: NavigationNode[]): NavigationNode[] | null {
+  if (!menu.every((item) => item.id in LEGACY_SIDEBAR_ORDER)) return null;
+  return [...menu].sort((a, b) => LEGACY_SIDEBAR_DOM.indexOf(a.id) - LEGACY_SIDEBAR_DOM.indexOf(b.id));
+}
+
 // Identity frames render the legacy menu with its original public links.
 function projectedHref(item: NavigationNode, previewLinks = true): string | null {
   if (previewLinks && item.id === "insumos_listar" && item.href === "/insumos/") {
@@ -191,6 +210,7 @@ function NavigationItem({
   onNavigate,
   isNested = false,
   previewLinks = true,
+  legacyOrder,
 }: {
   item: NavigationNode;
   pathname: string;
@@ -198,11 +218,14 @@ function NavigationItem({
   onNavigate: () => void;
   isNested?: boolean;
   previewLinks?: boolean;
+  legacyOrder?: number;
 }) {
   const controlId = useId();
   const [overrides, setOverrides] = useState<Record<string, boolean>>({});
   const isAccountItem = item.id === "mi_cuenta";
   const separatorClass = item.id === "comunicados" ? " sisoc-nav-comunicados" : "";
+  const orderClass = legacyOrder === undefined ? " order-1" : "";
+  const orderStyle = legacyOrder === undefined ? undefined : { order: legacyOrder };
   const localHref = projectedHref(item, previewLinks);
   const active = localHref !== null && (
     localHref === pathname ||
@@ -220,9 +243,10 @@ function NavigationItem({
   if (item.href !== null) {
     return (
       <li
-        className={`nav-item${isNested || isAccountItem ? "" : " nav-main-item order-1"}${
+        className={`nav-item${isNested || isAccountItem ? "" : ` nav-main-item${orderClass}`}${
           isAccountItem ? " order-0 border-top pt-2" : ""
         }${separatorClass}`}
+        style={isNested || isAccountItem ? undefined : orderStyle}
       >
         <a
           className={`nav-link${isNested ? " nav-dot ms-2" : ""}${active ? " active" : ""}`}
@@ -238,7 +262,7 @@ function NavigationItem({
   }
 
   return (
-    <li className={`nav-item nav-main-item order-1${expanded ? " menu-open" : ""}${separatorClass}`}>
+    <li className={`nav-item nav-main-item${orderClass}${expanded ? " menu-open" : ""}${separatorClass}`} style={orderStyle}>
       <a
         className="nav-link"
         href="#"
@@ -350,7 +374,9 @@ function SisocShell({
     return () => window.removeEventListener("popstate", sync);
   }, []);
   const account = context.navigation.find((item) => item.id === "mi_cuenta");
-  const menu = context.navigation.filter((item) => item.id !== "mi_cuenta");
+  const serverMenu = context.navigation.filter((item) => item.id !== "mi_cuenta");
+  const legacyMenu = legacySidebarMenu(serverMenu);
+  const menu = legacyMenu ?? serverMenu;
   const brandClassName = `brand-link align-items-center${
     isMobile && !mobileOpen ? " d-none" : " d-flex"
   }`;
@@ -470,6 +496,7 @@ function SisocShell({
                   isMobile={isMobile}
                   onNavigate={closeOnNavigate}
                   previewLinks={previewLinks}
+                  legacyOrder={legacyMenu ? LEGACY_SIDEBAR_ORDER[item.id] : undefined}
                 />
               ))}
                 {account && (
@@ -531,7 +558,7 @@ function SisocShell({
             />
             <a
               className="footer-secondary-link"
-              href="/changelog/"
+              href="/novedades/"
               aria-label={context.footer_version_label}
             >
               <i className="bi bi-clock-fill" aria-hidden="true" />

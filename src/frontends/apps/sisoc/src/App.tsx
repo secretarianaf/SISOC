@@ -8,6 +8,7 @@ import InsumosCategoriasList from "./InsumosCategoriasList";
 import InsumosToast from "./InsumosToast";
 import Login from "./Login";
 import Account from "./Account";
+import Groups from "./Groups";
 import RequiredPasswordChange, { type RequiredPasswordPresentation } from "./RequiredPasswordChange";
 import { safeInternalPath, validateInsumosStatus, type WebAccessState } from "./webAccess";
 import "./shell.css";
@@ -302,6 +303,7 @@ function SisocShell({
   heading,
   overlays,
   previewLinks = true,
+  breadcrumb,
 }: {
   context: Pick<ReadyContext, "user" | "navigation" | "footer_version_label"> & {
     capabilities?: ReadyContext["capabilities"];
@@ -311,10 +313,13 @@ function SisocShell({
   heading?: string;
   overlays?: ReactNode;
   previewLinks?: boolean;
+  breadcrumb?: ReactNode;
 }) {
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pathname, setPathname] = useState(() => window.location.pathname);
+  // Native groups-list markup does not mark its Administration branch active.
+  const navigationPath = !previewLinks && pathname === "/grupos/" ? "" : pathname;
   const [successMessage, setSuccessMessage] = useState("");
   // Category routes keep the exact public slashes of the source circuit.
   const categoryRoute = pathname.startsWith(CATEGORY_LIST_PATH);
@@ -457,7 +462,7 @@ function SisocShell({
                 <NavigationItem
                   key={item.id}
                   item={item}
-                  pathname={pathname}
+                  pathname={navigationPath}
                   isMobile={isMobile}
                   onNavigate={closeOnNavigate}
                   previewLinks={previewLinks}
@@ -466,7 +471,7 @@ function SisocShell({
                 {account && (
                   <NavigationItem
                     item={account}
-                    pathname={pathname}
+                    pathname={navigationPath}
                     isMobile={isMobile}
                     onNavigate={closeOnNavigate}
                     previewLinks={previewLinks}
@@ -491,7 +496,7 @@ function SisocShell({
                   <h3 className="mb-0">{heading}</h3>
                 </div>
                 <div className="col-sm-3">
-                  <ol className="breadcrumb float-sm-end" />
+                  <ol className="breadcrumb float-sm-end">{breadcrumb}</ol>
                 </div>
               </div>
             </div>
@@ -599,6 +604,7 @@ function legacyIdentityFrame(
   pageTitle: string,
   heading = pageTitle,
   overlays?: ReactNode,
+  breadcrumb?: ReactNode,
 ) {
   return <SisocShell
     context={{ user: presentation.user, navigation: presentation.legacy_frame_navigation, footer_version_label: presentation.footer_version_label }}
@@ -606,6 +612,7 @@ function legacyIdentityFrame(
     pageTitle={pageTitle}
     heading={heading}
     overlays={overlays}
+    breadcrumb={breadcrumb}
     previewLinks={false}
   />;
 }
@@ -624,6 +631,16 @@ function confirmationFrame(content: ReactNode, presentation: RequiredPasswordPre
 
 // Public identity paths own their API bootstrap; every other path keeps the business shell.
 export default function App() {
+  const groupEdit = window.location.pathname.match(/^\/grupos\/editar\/([0-9]+)\/$/);
+  if (window.location.pathname === "/grupos/" || window.location.pathname === "/grupos/crear/" || groupEdit) {
+    const mode = groupEdit ? "edit" : window.location.pathname === "/grupos/crear/" ? "create" : "list";
+    return <Groups
+      mode={mode}
+      id={groupEdit?.[1]}
+      renderFrame={(content, presentation, title, breadcrumb) =>
+        legacyIdentityFrame(content, presentation, mode === "list" ? title : "Grupos", title, undefined, breadcrumb)}
+    />;
+  }
   if (window.location.pathname === "/" || window.location.pathname === "/login/") {
     return <Login />;
   }

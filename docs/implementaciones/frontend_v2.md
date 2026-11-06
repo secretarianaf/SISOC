@@ -428,3 +428,12 @@ capacidades de negocio y conserva los enlaces originales del menú. Registro:
 `/api/web/account/confirm/`. Los mensajes de Django se muestran con
 `InsumosToastList`, que respeta su nivel en un único contenedor Toastr. Registro:
 `../registro/cambios/2026-T4/2026-11-04-2785-react-cuenta-confirmacion.md`.
+
+`/grupos/`, `/grupos/crear/` y `/grupos/editar/<id>/` montan `Groups.tsx` en el
+mismo marco, con las migas de pan originales, alimentado por `/api/web/groups/`
+y sus rutas de alta y edición. El selector de permisos es propio de React y
+reproduce el comportamiento del widget original, incluido el orden de catálogo
+y el refresco de íconos; funciona para quienes ya pueden crear o editar grupos
+sin depender de `/admin/jsi18n/`. Preferencias de columnas y CSV siguen en sus
+rutas nativas. Registro:
+`../registro/cambios/2026-T4/2026-11-04-2785-react-grupos.md`.

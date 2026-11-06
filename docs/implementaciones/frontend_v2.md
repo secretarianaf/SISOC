@@ -405,3 +405,14 @@ sustituyen las rutas públicas originales ni se habilita React globalmente.
 
 Estado de validación y límites:
 [registro INS-B](../registro/cambios/2026-T4/2026-11-03-2785-react-categorias-insumos.md).
+
+### Identidad local: entradas React sin montar
+
+`identity_preview_patterns` (`src/backends/sisoc_core/usuarios/identity_preview.py`)
+sirve el build de `apps/sisoc` en las rutas públicas de identidad solo dentro de
+un URLconf sintético local; producción sigue usando los templates. `App.tsx`
+elige la pantalla por ruta: `/` y `/login/` montan `Login.tsx`, que consume
+`/api/web/login/` y conserva el logout nativo por POST. Las demás rutas usan el
+marco de Insumos, que acepta contenido y títulos opcionales para pantallas de
+identidad sin cambiar su salida actual. Registro:
+`../registro/cambios/2026-T4/2026-11-03-2785-react-login-logout.md`.

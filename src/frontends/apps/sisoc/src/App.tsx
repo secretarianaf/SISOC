@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { crearCliente, leerCookie } from "@sisoc/api";
 import InsumosAccessError from "./InsumosAccessError";
 import InsumosList from "./InsumosList";
@@ -6,6 +6,7 @@ import InsumosForm from "./InsumosForm";
 import InsumosCategoriaForm from "./InsumosCategoriaForm";
 import InsumosCategoriasList from "./InsumosCategoriasList";
 import InsumosToast from "./InsumosToast";
+import Login from "./Login";
 import { safeInternalPath, validateInsumosStatus, type WebAccessState } from "./webAccess";
 import "./shell.css";
 
@@ -160,20 +161,21 @@ function ShellIcon({ id }: { id: string }) {
 
 const CATEGORY_LIST_PATH = "/v2/sisoc/insumos/categorias/";
 
-function projectedHref(item: NavigationNode): string | null {
-  if (item.id === "insumos_listar" && item.href === "/insumos/") {
+// Identity frames render the legacy menu with its original public links.
+function projectedHref(item: NavigationNode, previewLinks = true): string | null {
+  if (previewLinks && item.id === "insumos_listar" && item.href === "/insumos/") {
     return "/v2/sisoc/insumos/";
   }
   return internalPath(item.href);
 }
 
-function containsActivePath(item: NavigationNode, pathname: string): boolean {
+function containsActivePath(item: NavigationNode, pathname: string, previewLinks = true): boolean {
   return (
-    projectedHref(item) === pathname ||
-    (item.id === "insumos_listar" &&
+    projectedHref(item, previewLinks) === pathname ||
+    (previewLinks && item.id === "insumos_listar" &&
       (pathname === "/v2/sisoc/insumos" ||
         pathname.startsWith("/v2/sisoc/insumos/"))) ||
-    item.children.some((child) => containsActivePath(child, pathname))
+    item.children.some((child) => containsActivePath(child, pathname, previewLinks))
   );
 }
 
@@ -183,26 +185,28 @@ function NavigationItem({
   isMobile,
   onNavigate,
   isNested = false,
+  previewLinks = true,
 }: {
   item: NavigationNode;
   pathname: string;
   isMobile: boolean;
   onNavigate: () => void;
   isNested?: boolean;
+  previewLinks?: boolean;
 }) {
   const controlId = useId();
   const [overrides, setOverrides] = useState<Record<string, boolean>>({});
   const isAccountItem = item.id === "mi_cuenta";
   const separatorClass = item.id === "comunicados" ? " sisoc-nav-comunicados" : "";
-  const localHref = projectedHref(item);
+  const localHref = projectedHref(item, previewLinks);
   const active = localHref !== null && (
     localHref === pathname ||
-    (item.id === "insumos_listar" &&
+    (previewLinks && item.id === "insumos_listar" &&
       (pathname === "/v2/sisoc/insumos" ||
         pathname.startsWith("/v2/sisoc/insumos/")))
   );
   const descendantActive = item.children.some((child) =>
-    containsActivePath(child, pathname),
+    containsActivePath(child, pathname, previewLinks),
   );
   const expanded = overrides[item.id] ?? descendantActive;
   const toggleExpanded = () =>
@@ -263,6 +267,7 @@ function NavigationItem({
             isMobile={isMobile}
             onNavigate={onNavigate}
             isNested
+            previewLinks={previewLinks}
           />
         ))}
       </ul>
@@ -290,8 +295,20 @@ function ErrorMessage() {
 
 function SisocShell({
   context,
+  content,
+  pageTitle,
+  heading,
+  overlays,
+  previewLinks = true,
 }: {
-  context: ReadyContext;
+  context: Pick<ReadyContext, "user" | "navigation" | "footer_version_label"> & {
+    capabilities?: ReadyContext["capabilities"];
+  };
+  content?: ReactNode;
+  pageTitle?: string;
+  heading?: string;
+  overlays?: ReactNode;
+  previewLinks?: boolean;
 }) {
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -308,9 +325,9 @@ function SisocShell({
     const title = categoryRoute
       ? action === "crear" ? "Nueva categoría" : action === "editar" ? "Editar categoría" : action === "eliminar" ? "Eliminar categoría" : "Categorías de insumos"
       : action === "crear" ? "Nuevo insumo" : action === "editar" ? "Editar insumo" : action === "eliminar" ? "Eliminar insumo" : "Insumos";
-    document.title = `SISOC - ${title}`;
+    document.title = `SISOC - ${pageTitle ?? title}`;
     return () => { document.title = previousTitle; };
-  }, [action, categoryRoute]);
+  }, [action, categoryRoute, pageTitle]);
   const returnToList = (message = "") => {
     window.history.pushState({}, "", categoryRoute ? CATEGORY_LIST_PATH : "/v2/sisoc/insumos/");
     setPathname(window.location.pathname);
@@ -441,6 +458,7 @@ function SisocShell({
                   pathname={pathname}
                   isMobile={isMobile}
                   onNavigate={closeOnNavigate}
+                  previewLinks={previewLinks}
                 />
               ))}
                 {account && (
@@ -449,6 +467,7 @@ function SisocShell({
                     pathname={pathname}
                     isMobile={isMobile}
                     onNavigate={closeOnNavigate}
+                    previewLinks={previewLinks}
                   />
                 )}
             </ul>
@@ -467,7 +486,7 @@ function SisocShell({
               </div>
               <div className="row">
                 <div className="col-sm-9">
-                  <h3 className="mb-0" />
+                  <h3 className="mb-0">{heading}</h3>
                 </div>
                 <div className="col-sm-3">
                   <ol className="breadcrumb float-sm-end" />
@@ -481,13 +500,13 @@ function SisocShell({
           <div className="app-content">
             <div className="container-fluid">
               {successMessage && <InsumosToast key={successMessage} message={successMessage} />}
-              {categoryRoute ? (action
+              {content ?? (categoryRoute ? (action
                 ? <InsumosCategoriaForm key={pathname} action={action} id={formRoute?.[2]} onComplete={returnToList} onCancel={() => returnToList()} />
                 : <InsumosCategoriasList key={pathname} />
               ) : action ? <InsumosForm key={pathname} action={action} id={formRoute?.[2]} onComplete={returnToList} onCancel={() => returnToList()} /> : <InsumosList
-                showManagement={context.capabilities.insumos.show_management}
-                showCategories={context.capabilities.insumos.show_categories}
-              />}
+                showManagement={context.capabilities?.insumos.show_management ?? false}
+                showCategories={context.capabilities?.insumos.show_categories ?? false}
+              />)}
             </div>
           </div>
         </main>
@@ -509,12 +528,13 @@ function SisocShell({
             </a>
           </div>
         </footer>
+        {overlays}
       </div>
     </>
   );
 }
 
-export default function App() {
+function BusinessApp() {
   const [state, setState] = useState<LoadState>({ status: "loading" });
 
   useEffect(() => {
@@ -568,4 +588,12 @@ export default function App() {
   if (state.status === "error") return <ErrorMessage />;
   if (state.status === "prerequisite") return <AccessMessage context={state.context} />;
   return <SisocShell context={state.context} />;
+}
+
+// Public identity paths own their API bootstrap; every other path keeps the business shell.
+export default function App() {
+  if (window.location.pathname === "/" || window.location.pathname === "/login/") {
+    return <Login />;
+  }
+  return <BusinessApp />;
 }

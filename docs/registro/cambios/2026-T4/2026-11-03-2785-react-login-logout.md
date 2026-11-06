@@ -29,6 +29,50 @@ Los blobs corregidos coinciden con GREEN; el archivo Git conserva sus bytes
 CRLF y es equivalente tras normalización, no idéntico a los blobs LF.
 Estas pruebas no acreditan paridad visual, aceptación humana, CI ni despliegue.
 
+## Unidad React separada (2026-11-06)
+
+Esta unidad agrega la pantalla React de acceso sobre la API ya incorporada. No
+modifica backend, rutas de producción, dependencias ni estilos compartidos.
+
+- `src/frontends/apps/sisoc/src/Login.tsx` reproduce el template de login: los
+  mismos campos, textos, enlace de recuperación y el formulario nativo de salida
+  (POST `/logout/` con CSRF). Envía el formulario URL-encoded a
+  `/api/web/login/`, reenvía `next` y navega solo al destino que validó
+  `LoginView`. Ante errores conserva el usuario, borra la contraseña y devuelve
+  el foco a `id_username`; un resultado incierto o un 403 no se reintentan.
+- `src/frontends/apps/sisoc/src/App.tsx` monta `Login` en `/` y `/login/` sin
+  consultar el contexto de negocio. El resto de las rutas sigue en el marco de
+  Insumos. El marco acepta ahora contenido, título, encabezado, capas y enlaces
+  heredados opcionales para las pantallas de identidad siguientes; sin esos
+  valores renderiza exactamente lo mismo que antes. Se conserva el alias
+  `/v2/sisoc/insumos` y su prueba.
+- La entrada React solo existe en el URLconf sintético que invoca
+  `identity_preview_patterns`; producción sigue sirviendo el template.
+
+### Verificación de esta unidad React
+
+Sobre HEAD más esta unidad, en una copia aislada: las 13 pruebas de
+`Login.test.tsx` fallaron por módulo ausente y las dos rutas nuevas de
+`App.test.tsx` fallaron antes de implementar. Después pasan las 101 pruebas
+frontend, TypeScript, ESLint y el build de Vite; el CSS generado es idéntico al
+de INS-B.
+
+Comparación visual en runtime sintético local, solo GET, dos cargas nuevas por
+lado, 1440x900 y 390x844, nativo contra la entrada React: `/` y `/login/`
+anónimos, listado INS-A y listado de categorías INS-B. En móvil el login es
+idéntico en píxeles. En escritorio quedan 26 píxeles dentro del SVG de
+Presidencia y el borde de la contraseña, con geometría idéntica: el propio
+template nativo alterna entre los dos mismos estados de raster en cargas
+sucesivas y cada carga React coincide con uno de ellos. Las capturas React de
+INS-B y de INS-A móvil son idénticas byte a byte a las aceptadas antes de este
+cambio; INS-A escritorio solo difiere en la flecha del sidebar, que desaparece
+al cancelar animaciones. El menú móvil fuera de pantalla conserva la diferencia
+ya excluida. Sin máscaras, errores de página, solicitudes bloqueadas ni POST;
+dominio sintético sin cambios. No se ejecutó el envío real en el navegador; lo
+cubren las pruebas del componente. No constituye aceptación humana, revisión
+nativa, CI ni despliegue. Riesgo técnico: autenticación/CSRF, marco compartido
+y respuestas asíncronas.
+
 ## Registro histórico del circuito completo
 
 ## Alcance

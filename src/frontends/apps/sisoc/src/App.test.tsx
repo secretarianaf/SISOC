@@ -94,6 +94,17 @@ describe("SISOC web shell", () => {
     expect(window.location.pathname).toBe(path);
   });
 
+  it.each([
+    ["/", "web/login/"],
+    ["/login/", "web/login/"],
+  ])("loads only its identity operation at %s", async (path, endpoint) => {
+    webGet.mockReturnValue(new Promise(() => {}));
+    setup(path);
+    await waitFor(() => expect(webGet.mock.calls.some(([url]) => String(url).startsWith(endpoint))).toBe(true));
+    expect(webGet.mock.calls.some(([url]) => url === "web/session/")).toBe(false);
+    expect(webGet.mock.calls.some(([url]) => String(url).startsWith("web/insumos/"))).toBe(false);
+  });
+
   it("keeps the native separating space after the permission warning icon", async () => {
     webGet.mockResolvedValueOnce({ status: 403, data: { detail: "Forbidden" } });
     setup();

@@ -2655,6 +2655,26 @@
   "regex": "^insumos/categorias/\\Z"
  },
  {
+  "name": "insumos_categories_preview_create",
+  "namespace": "",
+  "regex": "^v2/sisoc/insumos/categorias/crear\\Z"
+ },
+ {
+  "name": "insumos_categories_preview_delete",
+  "namespace": "",
+  "regex": "^v2/sisoc/(?P<asset_path>insumos/categorias/[0-9]+/eliminar)$"
+ },
+ {
+  "name": "insumos_categories_preview_edit",
+  "namespace": "",
+  "regex": "^v2/sisoc/(?P<asset_path>insumos/categorias/[0-9]+/editar)$"
+ },
+ {
+  "name": "insumos_categories_preview_list",
+  "namespace": "",
+  "regex": "^v2/sisoc/insumos/categorias/\\Z"
+ },
+ {
   "name": "insumos_crear",
   "namespace": "",
   "regex": "^insumos/crear\\Z"
@@ -2678,6 +2698,36 @@
   "name": "insumos_listar",
   "namespace": "",
   "regex": "^insumos/\\Z"
+ },
+ {
+  "name": "insumos_preview_create",
+  "namespace": "",
+  "regex": "^v2/sisoc/insumos/crear/\\Z"
+ },
+ {
+  "name": "insumos_preview_create_no_slash",
+  "namespace": "",
+  "regex": "^v2/sisoc/insumos/crear\\Z"
+ },
+ {
+  "name": "insumos_preview_delete",
+  "namespace": "",
+  "regex": "^v2/sisoc/(?P<asset_path>insumos/[0-9]+/eliminar/?)$"
+ },
+ {
+  "name": "insumos_preview_edit",
+  "namespace": "",
+  "regex": "^v2/sisoc/(?P<asset_path>insumos/[0-9]+/editar/?)$"
+ },
+ {
+  "name": "insumos_preview_list",
+  "namespace": "",
+  "regex": "^v2/sisoc/insumos/\\Z"
+ },
+ {
+  "name": "insumos_preview_list_no_slash",
+  "namespace": "",
+  "regex": "^v2/sisoc/insumos\\Z"
  },
  {
   "name": "intervencion_detalle",
@@ -4925,6 +4975,31 @@
   "regex": "^ver\\-para\\-ser\\-libre/ubicacion/buscar/\\Z"
  },
  {
+  "name": "web_account",
+  "namespace": "",
+  "regex": "^api/web/account/\\Z"
+ },
+ {
+  "name": "web_account_confirm",
+  "namespace": "",
+  "regex": "^api/web/account/confirm/\\Z"
+ },
+ {
+  "name": "web_group_create",
+  "namespace": "",
+  "regex": "^api/web/groups/create/\\Z"
+ },
+ {
+  "name": "web_group_edit",
+  "namespace": "",
+  "regex": "^api/web/groups/(?P<pk>[0-9]+)/edit/\\Z"
+ },
+ {
+  "name": "web_groups",
+  "namespace": "",
+  "regex": "^api/web/groups/\\Z"
+ },
+ {
   "name": "web_insumos_categorias_create",
   "namespace": "",
   "regex": "^api/web/insumos/categorias/crear/\\Z"
@@ -4970,31 +5045,6 @@
   "regex": "^api/web/insumos/options/\\Z"
  },
  {
-  "name": "web_account",
-  "namespace": "",
-  "regex": "^api/web/account/\\Z"
- },
- {
-  "name": "web_account_confirm",
-  "namespace": "",
-  "regex": "^api/web/account/confirm/\\Z"
- },
- {
-  "name": "web_groups",
-  "namespace": "",
-  "regex": "^api/web/groups/\\Z"
- },
- {
-  "name": "web_group_create",
-  "namespace": "",
-  "regex": "^api/web/groups/create/\\Z"
- },
- {
-  "name": "web_group_edit",
-  "namespace": "",
-  "regex": "^api/web/groups/(?P<pk>[0-9]+)/edit/\\Z"
- },
- {
   "name": "web_login",
   "namespace": "",
   "regex": "^api/web/login/\\Z"
@@ -5010,9 +5060,9 @@
   "regex": "^api/web/password/first\\-change/\\Z"
  },
  {
-  "name": "web_survey_pending",
+  "name": "web_session",
   "namespace": "",
-  "regex": "^api/web/surveys/pending/\\Z"
+  "regex": "^api/web/session/\\Z"
  },
  {
   "name": "web_survey_answer",
@@ -5020,19 +5070,19 @@
   "regex": "^api/web/surveys/(?P<pk>[0-9]+)/answer/\\Z"
  },
  {
-  "name": "web_survey_postpone",
-  "namespace": "",
-  "regex": "^api/web/surveys/(?P<pk>[0-9]+)/postpone/\\Z"
- },
- {
   "name": "web_survey_dismiss",
   "namespace": "",
   "regex": "^api/web/surveys/(?P<pk>[0-9]+)/dismiss/\\Z"
  },
  {
-  "name": "web_session",
+  "name": "web_survey_pending",
   "namespace": "",
-  "regex": "^api/web/session/\\Z"
+  "regex": "^api/web/surveys/pending/\\Z"
+ },
+ {
+  "name": "web_survey_postpone",
+  "namespace": "",
+  "regex": "^api/web/surveys/(?P<pk>[0-9]+)/postpone/\\Z"
  },
  {
   "name": "",

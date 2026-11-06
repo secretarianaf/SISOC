@@ -392,7 +392,7 @@ de las del origen. No se activaron rutas globales ni despliegues.
 ### Continuación local INS-B: categorías en validación
 
 Las rutas locales `/v2/sisoc/insumos/categorias/`, `crear`, `<id>/editar` y
-`<id>/eliminar` consumen `/api/web/insumos/categorias/`. `App.tsx` las reconoce
+`<id>/eliminar` consumen `/api/web/insumos/categorias/`. `routes/categorias.tsx` las reconoce
 con los mismos slashes de las URLs públicas originales y monta
 `InsumosCategoriasList.tsx` o `InsumosCategoriaForm.tsx` dentro del mismo marco
 INS-A. Los permisos de cada operación se verifican tanto en la entrada HTML como
@@ -410,8 +410,8 @@ Estado de validación y límites:
 
 `identity_preview_patterns` (`src/backends/sisoc_core/usuarios/identity_preview.py`)
 sirve el build de `apps/sisoc` en las rutas públicas de identidad solo dentro de
-un URLconf sintético local; producción sigue usando los templates. `App.tsx`
-elige la pantalla por ruta: `/` y `/login/` montan `Login.tsx`, que consume
+un URLconf sintético local; producción sigue usando los templates. El registro
+`routes/index.ts` elige la pantalla por ruta: `/` y `/login/` montan `Login.tsx`, que consume
 `/api/web/login/` y conserva el logout nativo por POST. Las demás rutas usan el
 marco de Insumos, que acepta contenido y títulos opcionales para pantallas de
 identidad sin cambiar su salida actual. Registro:
@@ -471,6 +471,34 @@ URL-encoded de `/api/web/surveys/<id>/` y navegan al destino que devuelve el
 servidor; Bootstrap y el script condicional originales operan sobre los nodos
 React. Registro:
 `../registro/cambios/2026-T4/2026-11-04-2785-react-respuesta-encuestas.md`.
+
+### Agregar una pantalla React en `apps/sisoc`
+
+`App.tsx` no conoce pantallas: recorre `ROUTES` de
+`src/frontends/apps/sisoc/src/routes/index.ts` y monta la primera ruta cuyo
+`match(pathname)` devuelve parámetros (`null` significa «no es mía»). Cada
+unidad vive en su propio módulo de `src/frontends/apps/sisoc/src/routes/`
+(`login.tsx`, `account.tsx`, `groups.tsx`, `passwordReset.tsx`, etc.) con su
+prueba al lado. El último registro es `businessRoute`: atiende cualquier otra
+ruta, carga `/api/web/session/` y monta el marco de negocio, que a su vez elige
+entre `SHELL_ROUTES` (`categorias.tsx` antes que `insumos.tsx`, que acepta toda
+ruta y muestra el listado). El marco (`routes/SisocShell.tsx`) y los marcos de
+identidad (`identityFrames.tsx`) se reutilizan; no se copian.
+
+Para agregar una pantalla:
+
+1. Crear `routes/<unidad>.tsx` que exporte un `RouteDefinition` con `name`,
+   `match` (rutas exactas, con los mismos slashes que la URL pública) y
+   `render`. Si usa el marco SISOC, pasar uno de los marcos de
+   `identityFrames.tsx` o agregar ahí uno nuevo.
+2. Crear `routes/<unidad>.test.tsx`: renderiza `App` en la ruta, con
+   `routes/testFixtures.ts`, y verifica transporte, título y contenido.
+3. Registrarla en `ROUTES` de `routes/index.ts`, antes de `businessRoute`, y
+   agregar sus rutas a la tabla de `routes/index.test.ts`.
+
+No hace falta editar `App.tsx` ni `App.test.tsx`; este último cubre solo el
+marco y el arranque de sesión. Registro:
+`../registro/cambios/2026-T4/2026-11-06-2785-rutas-por-modulo.md`.
 
 ### DDJJ pública PAS: entrada React sin montar
 

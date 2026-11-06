@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import App from "./App";
+import { readyContext, setViewport } from "./routes/testFixtures";
 
 const { webGet, webPost } = vi.hoisted(() => ({ webGet: vi.fn(), webPost: vi.fn() }));
 vi.mock("@sisoc/api", () => ({
@@ -9,50 +10,6 @@ vi.mock("@sisoc/api", () => ({
   mensajeDeError: vi.fn(() => "Error de prueba"),
   SinPermiso: class SinPermiso extends Error {},
 }));
-
-const readyContext = {
-  user: {
-    username: "prueba.insumos",
-    display_name: "Prueba Insumos Gestión",
-    avatar_initial: "P",
-    role_label: "Prueba local",
-  },
-  access: { state: "ready", required_action_url: null },
-  navigation: [
-    { id: "inicio", label: "Inicio", href: "/inicio/", children: [] },
-    { id: "legajos", label: "Legajos", href: null, children: [] },
-    { id: "comunicados", label: "Comunicados", href: "/comunicados/", children: [] },
-    {
-      id: "configuracion-comedores",
-      label: "Configuración de Comedores",
-      href: null,
-      children: [
-        { id: "insumos_listar", label: "Insumos", href: "/insumos/", children: [] },
-      ],
-    },
-    { id: "mi_cuenta", label: "Mi cuenta", href: "/mi-cuenta/", children: [] },
-  ],
-  capabilities: {
-    insumos: { can_view: true, show_management: true, show_categories: false },
-  },
-  footer_version_label: "Versión local de prueba",
-};
-
-function setViewport(isMobile: boolean) {
-  vi.stubGlobal(
-    "matchMedia",
-    vi.fn((query: string) => ({
-      matches: isMobile && query.includes("max-width"),
-      media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-      onchange: null,
-    })),
-  );
-}
 
 function setup(path = "/v2/sisoc/insumos/") {
   window.history.replaceState({}, "", path);
@@ -111,19 +68,6 @@ describe("SISOC web shell", () => {
     expect(webGet.mock.calls.some(([url]) => String(url).startsWith("web/insumos/"))).toBe(false);
   });
 
-  it("renders the restricted presentation frame without business capability or session fetch", async () => {
-    webGet.mockResolvedValue({ data: {
-      access: { state: "password_change_required", required_action_url: "/password/first-change/" },
-      fields: ["new_password1", "new_password2"].map((name) => ({ name, label: name, help_text: "", required: true })),
-      presentation: { user: readyContext.user, footer_version_label: readyContext.footer_version_label, legacy_frame_navigation: readyContext.navigation },
-    } });
-    setup("/password/first-change/");
-    await screen.findByRole("heading", { name: "Actualizar contraseña" });
-    fireEvent.click(screen.getByRole("button", { name: "Configuración de Comedores" }));
-    expect(screen.getByRole("link", { name: "Insumos" }).getAttribute("href")).toBe("/insumos/");
-    expect(webGet.mock.calls.every(([url]) => url === "web/password/first-change/")).toBe(true);
-    expect(document.title).toBe("SISOC - Cambio obligatorio de contraseña");
-  });
 
   it("keeps the native separating space after the permission warning icon", async () => {
     webGet.mockResolvedValueOnce({ status: 403, data: { detail: "Forbidden" } });
@@ -132,107 +76,10 @@ describe("SISOC web shell", () => {
     expect(heading.querySelector("i")?.nextSibling?.textContent?.startsWith(" ")).toBe(true);
   });
 
-  it.each(["session", "form", "list"])("restores the outer title after unmounting a %s denial", async (kind) => {
-    document.title = "Outer title";
-    webGet.mockImplementation((url: string) => url === "web/session/" && kind !== "session"
-      ? Promise.resolve({ data: readyContext })
-      : Promise.resolve({ status: 403, data: { detail: "Forbidden" } }));
-    const view = setup(kind === "list" ? "/v2/sisoc/insumos/" : "/v2/sisoc/insumos/crear/");
-    await screen.findByRole("heading", { name: "¡Ups! Algo salió mal." });
-    await waitFor(() => expect(document.title).toBe("SISOC - Error 403"));
-    view.unmount();
-    expect(document.title).toBe("Outer title");
-  });
 
-  it.each([
-    ["/v2/sisoc/insumos/crear/", "SISOC - Nuevo insumo"],
-    ["/v2/sisoc/insumos/9/editar/", "SISOC - Editar insumo"],
-    ["/v2/sisoc/insumos/9/eliminar/", "SISOC - Eliminar insumo"],
-    ["/v2/sisoc/insumos/", "SISOC - Insumos"],
-  ])("matches the legacy document title at %s", async (path, title) => {
-    webGet.mockImplementation((url: string) => Promise.resolve({ data:
-      url === "web/session/" ? readyContext :
-      url.endsWith("eliminar/") ? { id: 9, titulo: "Manual de prueba" } :
-      url.endsWith("crear/") || url.endsWith("editar/") ? { initial: { programa: "", categoria: "", titulo: "", descripcion: "", activo: true }, options: { programa: [], categoria: [] }, current_file: null } :
-      url === "web/insumos/options/" ? { categories: [] } :
-      { count: 0, page: 1, page_size: 20, pages: 1, filters: { busqueda: "", categoria: "" }, results: [] },
-    }));
-    setup(path);
-    await screen.findByRole("navigation", { name: "Navegación principal" });
-    await waitFor(() => expect(document.title).toBe(title));
-  });
 
-  it("opens the React create route, keeps legacy active ancestry and returns with feedback", async () => {
-    webGet.mockImplementation((url: string) => Promise.resolve({ data:
-      url === "web/session/" ? readyContext :
-      url === "web/insumos/crear/" ? { initial: { programa: "", categoria: "", titulo: "", descripcion: "", activo: true }, options: { programa: [], categoria: [] }, current_file: null } :
-      url === "web/insumos/options/" ? { categories: [] } :
-      { count: 0, page: 1, page_size: 20, pages: 1, filters: { busqueda: "", categoria: "" }, results: [] },
-    }));
-    webPost.mockResolvedValueOnce({ data: { ok: true, message: "Insumo creado correctamente.", redirect: "/insumos/" } });
-    setup("/v2/sisoc/insumos/crear/");
-    await screen.findByRole("heading", { name: "Nuevo insumo" });
-    expect(document.title).toBe("SISOC - Nuevo insumo");
-    expect(screen.getByRole("link", { name: "Insumos" }).className).toContain("active");
-    expect(screen.getByRole("button", { name: "Configuración de Comedores" }).getAttribute("aria-expanded")).toBe("true");
-    fireEvent.submit(screen.getByRole("button", { name: "Guardar insumo" }).closest("form")!);
-    expect(await screen.findByText("Insumo creado correctamente.")).toBeDefined();
-    expect(window.location.pathname).toBe("/v2/sisoc/insumos/");
-    expect(await screen.findByRole("heading", { name: "Buscar insumos" })).toBeDefined();
-    expect(document.title).toBe("SISOC - Insumos");
-    webGet.mockReset();
-  });
-  it.each([
-    ["/v2/sisoc/insumos/categorias/", "SISOC - Categorías de insumos", "web/insumos/categorias/"],
-    ["/v2/sisoc/insumos/categorias/crear", "SISOC - Nueva categoría", "web/insumos/categorias/crear/"],
-    ["/v2/sisoc/insumos/categorias/4/editar", "SISOC - Editar categoría", "web/insumos/categorias/4/editar/"],
-    ["/v2/sisoc/insumos/categorias/4/eliminar", "SISOC - Eliminar categoría", "web/insumos/categorias/4/eliminar/"],
-  ])("routes the category circuit %s to its own title and transport", async (path, title, endpoint) => {
-    webGet.mockImplementation((url: string) => Promise.resolve({ data:
-      url === "web/session/" ? readyContext :
-      url.endsWith("eliminar/") ? { id: 4, nombre: "Manuales" } :
-      url.endsWith("crear/") || url.endsWith("editar/") ? { initial: { programa: "", nombre: "", descripcion: "", orden: "0", activo: true }, options: { programa: [] } } :
-      { count: 0, page: 1, page_size: 20, pages: 1, capabilities: { can_add: true, can_change: true, can_delete: true }, results: [] },
-    }));
-    setup(path);
-    await screen.findByRole("navigation", { name: "Navegación principal" });
-    await waitFor(() => expect(document.title).toBe(title));
-    await waitFor(() => expect(webGet).toHaveBeenCalledWith(endpoint, expect.any(Object)));
-    expect(webGet.mock.calls.some(([url]) => String(url).startsWith("web/insumos/options/"))).toBe(false);
-    expect(window.location.pathname).toBe(path);
-  });
 
-  it("returns category creation to its own refreshed list and feedback", async () => {
-    webGet.mockImplementation((url: string) => Promise.resolve({ data:
-      url === "web/session/" ? readyContext :
-      url === "web/insumos/categorias/crear/" ? { initial: { programa: "", nombre: "", descripcion: "", orden: "0", activo: true }, options: { programa: [] } } :
-      { count: 0, page: 1, page_size: 20, pages: 1, capabilities: { can_add: true, can_change: false, can_delete: false }, results: [] },
-    }));
-    webPost.mockResolvedValueOnce({ data: { ok: true, message: "Categoría creada correctamente.", redirect: "/insumos/categorias/" } });
-    setup("/v2/sisoc/insumos/categorias/crear");
-    await screen.findByRole("heading", { name: "Nueva categoría" });
-    fireEvent.submit(screen.getByRole("button", { name: "Guardar categoría" }).closest("form")!);
-    expect(await screen.findByText("Categoría creada correctamente.")).toBeDefined();
-    expect(window.location.pathname).toBe("/v2/sisoc/insumos/categorias/");
-    expect(await screen.findByRole("heading", { name: "Categorías de insumos" })).toBeDefined();
-    expect(webGet).toHaveBeenCalledWith("web/insumos/categorias/", expect.anything());
-    expect(document.title).toBe("SISOC - Categorías de insumos");
-    webGet.mockReset();
-  });
 
-  it("cancels a category deletion back to the category list without posting", async () => {
-    webGet.mockImplementation((url: string) => Promise.resolve({ data:
-      url === "web/session/" ? readyContext :
-      url === "web/insumos/categorias/4/eliminar/" ? { id: 4, nombre: "Manuales" } :
-      { count: 0, page: 1, page_size: 20, pages: 1, capabilities: { can_add: false, can_change: false, can_delete: false }, results: [] },
-    }));
-    setup("/v2/sisoc/insumos/categorias/4/eliminar");
-    fireEvent.click(await screen.findByRole("link", { name: "Cancelar" }));
-    expect(window.location.pathname).toBe("/v2/sisoc/insumos/categorias/");
-    expect(await screen.findByRole("heading", { name: "Categorías de insumos" })).toBeDefined();
-    expect(webPost).not.toHaveBeenCalled();
-    webGet.mockReset();
-  });
   it("waits for the cookie-authenticated context before rendering private navigation", async () => {
     let resolveContext!: (response: { data: typeof readyContext }) => void;
     webGet.mockReturnValueOnce(
@@ -530,59 +377,6 @@ describe("SISOC web shell", () => {
     expect(document.body.classList.contains("sidebar-collapse")).toBe(false);
   });
 
-  it("keeps the native groups-list Administration tree closed and shows its breadcrumb", async () => {
-    window.history.replaceState(null, "", "/grupos/");
-    webGet.mockResolvedValue({ data: { presentation: { user: { username: "synthetic", display_name: "Ana", avatar_initial: "A", role_label: "-" }, footer_version_label: "Versiones", legacy_frame_navigation: [{ id: "administracion-sistema", label: "Administración del sistema", href: null, children: [{ id: "grupos", label: "Grupos", href: "/grupos/", children: [] }] }] }, query: "", messages: [], can_export: false, items: [], columns: { list_key: "grupos_list", endpoint: "/ajax/columnas-preferencias/", active: ["name"], defaults: ["name"], available: [{ key: "name", title: "Nombre", active: true, required: false, default: true }] } } });
-    render(<App />);
-    const control = await screen.findByRole("button", { name: "Administración del sistema" });
-    expect(control.getAttribute("aria-expanded")).toBe("false");
-    expect(document.querySelector('.breadcrumb a[href="/grupos/"]')?.textContent).toBe("Grupos");
-    expect(document.querySelector(".sisoc-volver")).not.toBeNull();
-    webGet.mockReset();
-  });
 
-  it.each([
-    ["/grupos/", "web/groups/"],
-    ["/grupos/crear/", "web/groups/create/"],
-    ["/grupos/editar/7/", "web/groups/7/edit/"],
-  ])("routes the group circuit %s to its own guarded transport", async (path, endpoint) => {
-    window.history.replaceState(null, "", path);
-    webGet.mockResolvedValue({ status: 403, data: { detail: "Denegado" } });
-    render(<App />);
-    await waitFor(() => expect(webGet).toHaveBeenCalledWith(endpoint, expect.any(Object)));
-    expect(webGet.mock.calls.some(([url]) => url === "web/session/")).toBe(false);
-    webGet.mockReset();
-  });
 
-  it("renders the pending-survey home in the legacy frame without the back button", async () => {
-    window.history.replaceState(null, "", "/inicio/");
-    webGet.mockResolvedValue({ data: { presentation: { user: { username: "synthetic", display_name: "Ana", avatar_initial: "A", role_label: "-" }, footer_version_label: "Versiones", legacy_frame_navigation: [{ id: "inicio", label: "Inicio", href: "/inicio/", children: [] }] }, home_variant: "default", round: null, messages: [] } });
-    render(<App />);
-    await screen.findByRole("navigation", { name: "Navegación principal" });
-    expect(document.querySelector(".inicio-presentacion--default")).not.toBeNull();
-    expect(document.querySelector(".sisoc-volver")).toBeNull();
-    expect(webGet.mock.calls.some(([url]) => url === "web/session/")).toBe(false);
-    webGet.mockReset();
-  });
-});
-
-describe("Password recovery routes", () => {
-  it.each([
-    ["/password_reset/", ["web/password/reset/"], "Recuperar contraseña"],
-    ["/password_reset/done/", ["web/password/reset/"], "Solicitud recibida"],
-    ["/reset/done/", ["web/password/reset/"], "Contraseña actualizada"],
-    ["/reset/MQ/set-password/", ["web/password/reset/", "web/password/reset/MQ/"], "Restablecer contraseña"],
-    ["/password/reset/confirm/MQ/set-password/", ["web/password/reset/", "web/password/reset/MQ/"], "Restablecer contraseña"],
-    ["/reset/MQ/synthetic-reset-token/", ["web/password/reset/"], "Restablecer contraseña"],
-    ["/password/reset/confirm/MQ/synthetic-reset-token/", ["web/password/reset/"], "Restablecer contraseña"],
-  ])("renders %s without the business shell or the URL token", async (path, endpoints, heading) => {
-    webGet.mockReturnValue(new Promise(() => {}));
-    setup(path);
-    expect(document.querySelector(".password-reset-content h5")!.textContent).toBe(heading);
-    await waitFor(() => expect(webGet).toHaveBeenCalledTimes(endpoints.length));
-    expect(webGet.mock.calls.map(([url]) => url).sort()).toEqual(endpoints);
-    expect(JSON.stringify(webGet.mock.calls)).not.toContain("synthetic-reset-token");
-    expect(document.querySelector(".app-sidebar")).toBeNull();
-    expect(window.location.pathname).toBe(path);
-  });
 });

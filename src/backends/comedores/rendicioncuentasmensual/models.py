@@ -837,3 +837,58 @@ class SolicitudDocumentoFaltante(models.Model):
 
     def get_estado_display(self):
         return "Faltante solicitado"
+
+
+class RendicionPdfDescarga(models.Model):
+    """PDF consolidado de una rendición, generado en segundo plano por Celery.
+
+    Hay uno por rendición y se reutiliza mientras la huella de sus documentos
+    validados no cambie. ``token`` identifica cada solicitud: una tarea vieja no
+    puede pisar el resultado de una solicitud más nueva.
+    """
+
+    ESTADO_PENDIENTE = "pendiente"
+    ESTADO_PROCESANDO = "procesando"
+    ESTADO_LISTO = "listo"
+    ESTADO_ERROR = "error"
+    ESTADO_CHOICES = [
+        (ESTADO_PENDIENTE, "Pendiente"),
+        (ESTADO_PROCESANDO, "Procesando"),
+        (ESTADO_LISTO, "Listo"),
+        (ESTADO_ERROR, "Error"),
+    ]
+
+    rendicion = models.OneToOneField(
+        RendicionCuentaMensual,
+        on_delete=models.CASCADE,
+        related_name="pdf_descarga",
+    )
+    estado = models.CharField(
+        max_length=20, choices=ESTADO_CHOICES, default=ESTADO_PENDIENTE
+    )
+    token = models.CharField(max_length=32, blank=True)
+    huella = models.CharField(max_length=64, blank=True)
+    archivo = models.FileField(
+        upload_to="rendicioncuentasmensual_pdf_consolidado/",
+        max_length=255,
+        blank=True,
+    )
+    error = models.TextField(blank=True)
+    solicitado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    fecha_solicitud = models.DateTimeField(null=True, blank=True)
+    fecha_inicio = models.DateTimeField(null=True, blank=True)
+    fecha_fin = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "PDF consolidado de rendición"
+        verbose_name_plural = "PDFs consolidados de rendiciones"
+        indexes = [models.Index(fields=["estado", "fecha_fin"])]
+
+    def __str__(self):
+        return f"PDF rendición {self.rendicion_id} ({self.estado})"

@@ -304,6 +304,7 @@
     "service": "backend_comedores",
     "migrate_service": "migrator",
     "extra_services": [
+      "celery_comedores_worker",
       "mailing_worker",
       "user_import_worker"
     ],

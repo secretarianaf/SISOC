@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-11-11 -->
+# Versión SISOC 11.11.2026
+
+## Actualizaciones
+
+- [sin-area] fix(infra): montar static_root en health_urls_worker. (PR #2884)
+<!-- AUTO-GENERATED RELEASE END: 2026-11-11 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-11-05 -->
 # Versión SISOC 05.11.2026
 

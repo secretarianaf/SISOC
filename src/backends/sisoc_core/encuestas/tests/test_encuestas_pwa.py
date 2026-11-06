@@ -328,3 +328,102 @@ def test_configuracion_de_presentacion_valida_en_modelo(movil, ronda, campo, val
     setattr(pregunta, campo, valor)
     with pytest.raises(ValidationError):
         pregunta.full_clean()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "method,path",
+    [("get", "/api/encuestas/pwa/"), ("post", "/api/encuestas/pwa/1/responder/")],
+)
+def test_api_pwa_requires_authentication(client, method, path):
+    assert getattr(client, method)(path).status_code == 401
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("estado", ["deshabilitada", "cerrada", "vencida"])
+def test_api_no_acepta_rondas_no_disponibles(movil, ronda, estado):
+    from datetime import timedelta
+    from django.utils import timezone
+
+    client, _ = movil
+    if estado == "deshabilitada":
+        ronda.encuesta.disponible_pwa = False
+        ronda.encuesta.save()
+    elif estado == "cerrada":
+        ronda.estado = "cerrada"
+        ronda.save()
+    else:
+        ronda.fecha_cierre_programada = timezone.now() - timedelta(seconds=1)
+        ronda.save()
+    assert client.get(reverse("encuestas_pwa_listar")).json() == []
+    response = client.post(
+        reverse("encuestas_pwa_responder", args=[ronda.pk]),
+        payload(ronda),
+        content_type="application/json",
+    )
+    assert response.status_code == 404
+    assert not RespuestaRonda.objects.exists()
+    assert not CumplimientoRonda.objects.exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "contexto", [None, {}, {"pwa": {}}, {"pwa": {"is_pwa_user": "true"}}]
+)
+def test_api_falla_cerrada_con_contexto_invalido(movil, monkeypatch, contexto):
+    client, _ = movil
+    monkeypatch.setattr(
+        "encuestas.api_permissions.pedir_json_interno",
+        lambda *a, **k: RespuestaInterna(200, contexto),
+    )
+    assert client.get(reverse("encuestas_pwa_listar")).status_code == 503
+
+
+@pytest.mark.django_db
+def test_api_no_acepta_token_de_usuario_inactivo(movil):
+    client, user = movil
+    user.is_active = False
+    user.save()
+    assert client.get(reverse("encuestas_pwa_listar")).status_code == 401
+
+
+@pytest.mark.django_db
+def test_reintento_con_otro_uuid_no_duplica_contenido(movil, ronda):
+    client, _ = movil
+    url = reverse("encuestas_pwa_responder", args=[ronda.pk])
+    assert client.post(url, payload(ronda), content_type="application/json").json() == {
+        "respondida": True,
+        "ya_registrada": False,
+    }
+    assert client.post(url, payload(ronda), content_type="application/json").json() == {
+        "respondida": True,
+        "ya_registrada": True,
+    }
+    assert RespuestaRonda.objects.count() == 1
+    assert CumplimientoRonda.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_uuid_invalido_no_guarda_y_disponibilidad_es_opt_in(movil, ronda):
+    client, _ = movil
+    assert (
+        crear_encuesta(
+            usuario=movil[1],
+            titulo="Sin activar",
+            es_opcional=True,
+            duracion_ronda_dias=7,
+        ).disponible_pwa
+        is False
+    )
+    body = payload(ronda)
+    body["response_id"] = "invalido"
+    assert (
+        client.post(
+            reverse("encuestas_pwa_responder", args=[ronda.pk]),
+            body,
+            content_type="application/json",
+        ).status_code
+        == 400
+    )
+    assert not RespuestaRonda.objects.exists()
+    assert not CumplimientoRonda.objects.exists()

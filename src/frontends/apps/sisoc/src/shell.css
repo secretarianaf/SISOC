@@ -1,0 +1,103 @@
+:root {
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.user-info .avatar-circle {
+  width: 45px;
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #e7ba61;
+  outline-offset: 2px;
+}
+
+.sisoc-message {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background: #3e5a7e;
+  color: #fff;
+  font-family: Montserrat, system-ui, sans-serif;
+}
+
+.sisoc-message-card {
+  width: min(100%, 560px);
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  background: #232d4f;
+}
+
+.sisoc-message-card h1 {
+  margin: 0 0 12px;
+  font-size: 24px;
+}
+
+.sisoc-message-card p {
+  line-height: 1.5;
+}
+
+.sisoc-action-link {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: #198754;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar {
+    transition: none;
+  }
+}
+
+/* Match the explicit Comunicados separator in the legacy sidebar template. */
+.app-sidebar .nav-main-item.sisoc-nav-comunicados {
+  border-bottom: 1px solid var(--sidebar-border-color);
+}
+
+#toast-container > .sisoc-operation-toast {
+  display: block;
+  animation: sisoc-toast-in 300ms;
+}
+
+#toast-container > .sisoc-toast-hiding {
+  animation: sisoc-toast-out 1000ms forwards;
+}
+
+@keyframes sisoc-toast-in {
+  from { opacity: 0; }
+}
+
+@keyframes sisoc-toast-out {
+  to { opacity: 0; }
+}

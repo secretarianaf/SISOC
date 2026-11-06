@@ -1,7 +1,8 @@
 # Front v2 (React) — reglas para migrar módulos
 
 Estado: **vigente como regla; base implementada**. `src/frontends/` existe, con
-`packages/ui`, `packages/api`, `apps/vpsl` y `apps/celiaquia`. El router `/v2/`
+`packages/ui`, `packages/api`, `apps/vpsl`, `apps/celiaquia` y el shell local
+`apps/sisoc`. El router `/v2/`
 vive en `src/backends/kernel/core/v2_frontend.py`, con los destinos en
 `settings.FRONTEND_V2_UPSTREAMS`.
 
@@ -36,9 +37,24 @@ localStorage. La lectura inicializa CSRF; el token no viaja en el JSON.
 Fuentes: `src/backends/sisoc_core/usuarios/web_context.py` y `web_api_views.py`.
 Schema de serializers reales en `web_api_serializers.py`. Pruebas:
 `src/backends/sisoc_core/tests/test_web_session_api.py`. El piloto INS-A reproduce
-el diseño Django, no adopta por defecto un rediseño. Esta base backend no declara
-creada la app React ni acepta visuales. Detalle y compatibilidad HEAD:
+el diseño Django, no adopta por defecto un rediseño. El shell React local
+`apps/sisoc` implementa el circuito INS-A, pero no se agrega a
+`FRONTEND_V2_UPSTREAMS`. La entrada de preview conserva los controles de acceso
+antes del router V2 y no activa un destino público. Renderiza el
+marco privado solo cuando `access.state` es `ready`; errores o payloads
+desconocidos ocultan identidad, menú y contenido privado. Las capacidades del
+contexto no sustituyen la autorización de cada API de negocio. Detalle y
+compatibilidad HEAD:
 `docs/registro/cambios/2026-T4/2026-10-30-2798-contexto-sesion-web.md`.
+
+Vite sirve la app local bajo `/v2/sisoc/` y usa proxies a loopback para API,
+static y rutas legacy fuera de ese namespace y de los recursos internos de
+Vite. El proxy legacy preserva Host/origen para los controles normales de
+sesión y CSRF; esta configuración no altera el backend ni sus rutas globales.
+No persiste identidad en el navegador ni activa configuración global de
+módulos. La evidencia visual y la aceptación del worktree original no certifican
+automáticamente su integración en otro checkout: se verifican los seams y las
+URLs afectadas antes de afirmar paridad o habilitar una ruta de usuario.
 
 ## 2. Estructura en el monorepo
 
@@ -354,3 +370,21 @@ Abiertos:
   viejos.
 - ~~`front_celiaquia` en el compose de deploy~~: está en
   `docker/compose/docker-compose.deploy.yml`, con el mismo esquema que `front_vpsl`.
+
+
+### Continuación local INS-A: formularios en validación
+
+El piloto sisoc monta alta, edición y confirmación de eliminación en React bajo
+/v2/sisoc/insumos/, usando los metadatos y POST multipart de la API web existente.
+La sesión, CSRF y los permisos por operación siguen siendo responsabilidad de
+Django. El proxy local de /api/web preserva Host mediante changeOrigin=false;
+no se deben ampliar orígenes confiables para ocultar una reescritura del proxy.
+
+El listado carga su CSS específica solo mientras está montado. Las mutaciones
+de resultado incierto no se reintentan automáticamente; los avisos son locales
+a la operación, en memoria y con apariencia Toastr. El archivo actual muestra su
+nombre base y conserva la descarga protegida. Estado histórico del piloto:
+[registro INS-A](../registro/cambios/2026-T4/2026-10-30-2785-listado-react-insumos.md).
+La reconciliación local en Migracion-2 se sigue en
+`odd/tasks/react-global-2785.md`; sus verificaciones y aceptación se distinguen
+de las del origen. No se activaron rutas globales ni despliegues.

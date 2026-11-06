@@ -1,0 +1,558 @@
+import { useEffect, useId, useState } from "react";
+import { crearCliente, leerCookie } from "@sisoc/api";
+import InsumosAccessError from "./InsumosAccessError";
+import InsumosList from "./InsumosList";
+import InsumosForm from "./InsumosForm";
+import InsumosToast from "./InsumosToast";
+import { safeInternalPath, validateInsumosStatus, type WebAccessState } from "./webAccess";
+import "./shell.css";
+
+type AccessState = WebAccessState;
+
+type NavigationNode = {
+  id: string;
+  label: string;
+  href: string | null;
+  children: NavigationNode[];
+};
+
+type WebSessionContext = {
+  user: {
+    username: string;
+    display_name: string;
+    avatar_initial: string;
+    role_label: string;
+  } | null;
+  access: { state: AccessState; required_action_url: string | null };
+  navigation: NavigationNode[];
+  capabilities: {
+    insumos: {
+      can_view: boolean;
+      show_management: boolean;
+      show_categories: boolean;
+    };
+  };
+  footer_version_label: string;
+};
+
+type ReadyContext = WebSessionContext & {
+  user: NonNullable<WebSessionContext["user"]>;
+};
+
+type LoadState =
+  | { status: "loading" }
+  | { status: "ready"; context: ReadyContext }
+  | { status: "prerequisite"; context: WebSessionContext }
+  | { status: "forbidden" }
+  | { status: "error" };
+
+const webClient = crearCliente("/api");
+const ACCESS_STATES = new Set<AccessState>([
+  "ready",
+  "web_access_denied",
+  "password_change_required",
+  "profile_confirmation_required",
+  "mandatory_survey_required",
+]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object";
+}
+
+function internalPath(value: unknown): string | null {
+  return safeInternalPath(value);
+}
+
+function isNavigationNode(value: unknown): value is NavigationNode {
+  if (!value || typeof value !== "object") return false;
+  const node = value as Record<string, unknown>;
+  return (
+    typeof node.id === "string" &&
+    typeof node.label === "string" &&
+    (node.href === null || internalPath(node.href) !== null) &&
+    Array.isArray(node.children) &&
+    node.children.every(isNavigationNode)
+  );
+}
+
+function isWebSessionContext(value: unknown): value is WebSessionContext {
+  if (!value || typeof value !== "object") return false;
+  const context = value as Record<string, unknown>;
+  const access = context.access as Record<string, unknown> | null;
+  const user = context.user as Record<string, unknown> | null;
+  const capabilities = context.capabilities as Record<string, unknown> | null;
+  const insumos = capabilities?.insumos as Record<string, unknown> | null;
+  if (
+    !access ||
+    !ACCESS_STATES.has(access.state as AccessState) ||
+    (access.required_action_url !== null &&
+      internalPath(access.required_action_url) === null) ||
+    !Array.isArray(context.navigation) ||
+    !context.navigation.every(isNavigationNode) ||
+    typeof context.footer_version_label !== "string" ||
+    !insumos ||
+    typeof insumos.can_view !== "boolean" ||
+    typeof insumos.show_management !== "boolean" ||
+    typeof insumos.show_categories !== "boolean"
+  ) {
+    return false;
+  }
+  return (
+    user === null ||
+    (typeof user.username === "string" &&
+      typeof user.display_name === "string" &&
+      typeof user.avatar_initial === "string" &&
+      typeof user.role_label === "string")
+  );
+}
+
+function isCompleteReadyContext(
+  context: WebSessionContext,
+): context is ReadyContext {
+  const requiredItems = new Set(context.navigation.map((item) => item.id));
+  return (
+    context.access.state === "ready" &&
+    context.user !== null &&
+    ["inicio", "legajos", "mi_cuenta"].every((id) => requiredItems.has(id))
+  );
+}
+
+function useIsMobile(): boolean {
+  const query = "(max-width: 991.98px)";
+  const [isMobile, setIsMobile] = useState(
+    () => window.matchMedia?.(query).matches ?? false,
+  );
+  useEffect(() => {
+    const media = window.matchMedia?.(query);
+    if (!media) return undefined;
+    const update = () => setIsMobile(media.matches);
+    media.addEventListener?.("change", update);
+    return () => media.removeEventListener?.("change", update);
+  }, []);
+  return isMobile;
+}
+
+function loginPath(): string {
+  const next = window.location.pathname + window.location.search;
+  return `/login/?next=${encodeURIComponent(next)}`;
+}
+
+function ShellIcon({ id }: { id: string }) {
+  const localIcons: Record<string, string> = {
+    inicio: "/static/custom/img/iconos_sidebar/inicio.svg",
+    legajos: "/static/custom/img/iconos_sidebar/legajos.svg",
+    "configuracion-comedores": "/static/custom/img/iconos_sidebar/legajos.svg",
+    tableros: "/static/custom/img/iconos_sidebar/tableros.svg",
+    "administracion-sistema": "/static/custom/img/iconos_sidebar/administracion.svg",
+  };
+  const iconClasses: Record<string, string> = {
+    comunicados: "bi bi-newspaper",
+    mi_cuenta: "fas fa-user-circle",
+  };
+  const src = localIcons[id];
+  if (src) return <img src={src} alt="" />;
+  const iconClass = iconClasses[id];
+  if (iconClass) return <i className={`nav-icon ${iconClass}`} aria-hidden="true" />;
+  return null;
+}
+
+function projectedHref(item: NavigationNode): string | null {
+  if (item.id === "insumos_listar" && item.href === "/insumos/") {
+    return "/v2/sisoc/insumos/";
+  }
+  return internalPath(item.href);
+}
+
+function containsActivePath(item: NavigationNode, pathname: string): boolean {
+  return (
+    projectedHref(item) === pathname ||
+    (item.id === "insumos_listar" &&
+      (pathname === "/v2/sisoc/insumos" ||
+        pathname.startsWith("/v2/sisoc/insumos/"))) ||
+    item.children.some((child) => containsActivePath(child, pathname))
+  );
+}
+
+function NavigationItem({
+  item,
+  pathname,
+  isMobile,
+  onNavigate,
+  isNested = false,
+}: {
+  item: NavigationNode;
+  pathname: string;
+  isMobile: boolean;
+  onNavigate: () => void;
+  isNested?: boolean;
+}) {
+  const controlId = useId();
+  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
+  const isAccountItem = item.id === "mi_cuenta";
+  const separatorClass = item.id === "comunicados" ? " sisoc-nav-comunicados" : "";
+  const localHref = projectedHref(item);
+  const active = localHref !== null && (
+    localHref === pathname ||
+    (item.id === "insumos_listar" &&
+      (pathname === "/v2/sisoc/insumos" ||
+        pathname.startsWith("/v2/sisoc/insumos/")))
+  );
+  const descendantActive = item.children.some((child) =>
+    containsActivePath(child, pathname),
+  );
+  const expanded = overrides[item.id] ?? descendantActive;
+  const toggleExpanded = () =>
+    setOverrides((current) => ({ ...current, [item.id]: !expanded }));
+
+  if (item.href !== null) {
+    return (
+      <li
+        className={`nav-item${isNested || isAccountItem ? "" : " nav-main-item order-1"}${
+          isAccountItem ? " order-0 border-top pt-2" : ""
+        }${separatorClass}`}
+      >
+        <a
+          className={`nav-link${isNested ? " nav-dot ms-2" : ""}${active ? " active" : ""}`}
+          href={localHref ?? "/"}
+          aria-current={active ? "page" : undefined}
+          onClick={onNavigate}
+        >
+          <ShellIcon id={item.id} />
+          <p>{item.label}</p>
+        </a>
+      </li>
+    );
+  }
+
+  return (
+    <li className={`nav-item nav-main-item order-1${expanded ? " menu-open" : ""}${separatorClass}`}>
+      <a
+        className="nav-link"
+        href="#"
+        role="button"
+        aria-expanded={expanded}
+        aria-controls={controlId}
+        onClick={(event) => {
+          event.preventDefault();
+          toggleExpanded();
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          toggleExpanded();
+        }}
+      >
+        <ShellIcon id={item.id} />
+        <p>{item.label}</p>
+        <i className="nav-arrow bi bi-chevron-right" aria-hidden="true" />
+      </a>
+      <ul
+        className="nav nav-treeview"
+        id={controlId}
+        hidden={!expanded}
+      >
+        {item.children.map((child) => (
+          <NavigationItem
+            key={child.id}
+            item={child}
+            pathname={pathname}
+            isMobile={isMobile}
+            onNavigate={onNavigate}
+            isNested
+          />
+        ))}
+      </ul>
+    </li>
+  );
+}
+
+function AccessMessage({ context }: { context: WebSessionContext }) {
+  return <InsumosAccessError prerequisite={context.access} />;
+}
+
+function ErrorMessage() {
+  return (
+    <main className="sisoc-message" role="main">
+      <section className="sisoc-message-card" role="alert">
+        <h1>No se pudo verificar tu sesión</h1>
+        <p>Volvé a ingresar para continuar en SISOC.</p>
+        <a className="sisoc-action-link" href={loginPath()}>
+          Iniciar sesión
+        </a>
+      </section>
+    </main>
+  );
+}
+
+function SisocShell({
+  context,
+}: {
+  context: ReadyContext;
+}) {
+  const isMobile = useIsMobile();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [pathname, setPathname] = useState(() => window.location.pathname);
+  const [successMessage, setSuccessMessage] = useState("");
+  const formRoute = pathname.match(/^\/v2\/sisoc\/insumos\/(?:(crear)\/?|([0-9]+)\/(editar|eliminar)\/?)$/);
+  const action = formRoute?.[1] === "crear" ? "crear" : formRoute?.[3] as "editar" | "eliminar" | undefined;
+  useEffect(() => {
+    const previousTitle = document.title;
+    const title = action === "crear" ? "Nuevo insumo" : action === "editar" ? "Editar insumo" : action === "eliminar" ? "Eliminar insumo" : "Insumos";
+    document.title = `SISOC - ${title}`;
+    return () => { document.title = previousTitle; };
+  }, [action]);
+  const returnToList = (message = "") => {
+    window.history.pushState({}, "", "/v2/sisoc/insumos/");
+    setPathname(window.location.pathname);
+    setSuccessMessage(message);
+  };
+  useEffect(() => {
+    const sync = () => { setPathname(window.location.pathname); setSuccessMessage(""); };
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, []);
+  const account = context.navigation.find((item) => item.id === "mi_cuenta");
+  const menu = context.navigation.filter((item) => item.id !== "mi_cuenta");
+  const brandClassName = `brand-link align-items-center${
+    isMobile && !mobileOpen ? " d-none" : " d-flex"
+  }`;
+  const closeOnNavigate = () => {
+    if (isMobile) setMobileOpen(false);
+  };
+
+  useEffect(() => {
+    if (!isMobile || !mobileOpen) return undefined;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [isMobile, mobileOpen]);
+
+  useEffect(() => {
+    const hadCollapsedSidebar = document.body.classList.contains("sidebar-collapse");
+    document.body.classList.toggle("sidebar-open", isMobile && mobileOpen);
+    document.body.classList.toggle("sidebar-collapse", isMobile && !mobileOpen);
+    return () => {
+      document.body.classList.remove("sidebar-open");
+      document.body.classList.toggle("sidebar-collapse", hadCollapsedSidebar);
+    };
+  }, [isMobile, mobileOpen]);
+
+  return (
+    <>
+      <header className="main-header">
+        <nav className="navbar d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <div className="d-flex align-items-center gap-2">
+            <button
+              className="btn btn-link d-inline-flex d-lg-none p-0 text-white"
+              type="button"
+              data-lte-toggle="sidebar"
+              aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-controls="sisoc-navigation"
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen((open) => !open)}
+            >
+              <i className="bi bi-list fs-2" aria-hidden="true" />
+            </button>
+            <a className={brandClassName} href="/inicio/" aria-label="Inicio de SISOC">
+              <span className="brand-text fw-light">
+                <img className="brand-image" src="/static/custom/img/logoBlanco.png" alt="SISOC" />
+              </span>
+            </a>
+          </div>
+        <ul className="nav-links mb-0 d-flex align-items-center flex-wrap">
+          <li className="nav-item circle-btn">
+            <form className="d-inline" method="post" action="/logout/">
+              <input
+                type="hidden"
+                name="csrfmiddlewaretoken"
+                value={leerCookie("csrftoken") ?? ""}
+              />
+              <button className="nav-link nav-link-rounded border-0 bg-transparent" type="submit" aria-label="Cerrar sesión">
+                <img src="/static/custom/img/iconos_navbar/exit.svg" alt="Salir" />
+              </button>
+            </form>
+          </li>
+        </ul>
+        </nav>
+      </header>
+
+      <div className="app-wrapper">
+        {isMobile && mobileOpen && (
+          <div
+            className="sidebar-overlay"
+            role="button"
+            tabIndex={0}
+            aria-label="Cerrar menú"
+            onClick={() => setMobileOpen(false)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              setMobileOpen(false);
+            }}
+          />
+        )}
+        <aside
+          className="app-sidebar shadow"
+          id="sisoc-navigation"
+          aria-label="Menú lateral"
+          aria-hidden={isMobile && !mobileOpen}
+          data-open={mobileOpen}
+        >
+          <div className="sidebar-wrapper">
+            <nav aria-label="Navegación principal">
+              <ul
+                className="nav sidebar-menu flex-column"
+                data-lte-toggle="treeview"
+                role="menu"
+                data-accordion="false"
+              >
+                <li className="nav-item user-info mb-2 mt-2 order-first">
+                  <div className="user-panel d-flex align-items-center p-3 sisoc-user-panel">
+                    <div className="user-avatar me-3">
+                      <div
+                        className="avatar-circle d-flex align-items-center justify-content-center bg-primary text-white rounded-circle"
+                        aria-label="Inicial de usuario"
+                      >
+                        {context.user.avatar_initial}
+                      </div>
+                    </div>
+                    <div className="info flex-grow-1">
+                      <p className="mb-1 text-white fw-bold">{context.user.display_name}</p>
+                      <p className="mb-0 text-white-50 small">{context.user.role_label}</p>
+                    </div>
+                  </div>
+                </li>
+              {menu.map((item) => (
+                <NavigationItem
+                  key={item.id}
+                  item={item}
+                  pathname={pathname}
+                  isMobile={isMobile}
+                  onNavigate={closeOnNavigate}
+                />
+              ))}
+                {account && (
+                  <NavigationItem
+                    item={account}
+                    pathname={pathname}
+                    isMobile={isMobile}
+                    onNavigate={closeOnNavigate}
+                  />
+                )}
+            </ul>
+          </nav>
+          </div>
+        </aside>
+
+        <main className="app-main">
+          <div className="app-content-header">
+            <div className="container-fluid">
+          <div className="d-print-none">
+                <a className="btn btn-secondary btn-sm sisoc-volver" href="/inicio/">
+                  <i className="fas fa-arrow-left" aria-hidden="true" />{" "}
+                  <span>Volver</span>
+                </a>
+              </div>
+              <div className="row">
+                <div className="col-sm-9">
+                  <h3 className="mb-0" />
+                </div>
+                <div className="col-sm-3">
+                  <ol className="breadcrumb float-sm-end" />
+                </div>
+              </div>
+            </div>
+            <div className="container-fluid">
+              <div className="row" />
+            </div>
+          </div>
+          <div className="app-content">
+            <div className="container-fluid">
+              {successMessage && <InsumosToast key={successMessage} message={successMessage} />}
+              {action ? <InsumosForm key={pathname} action={action} id={formRoute?.[2]} onComplete={returnToList} onCancel={() => returnToList()} /> : <InsumosList
+                showManagement={context.capabilities.insumos.show_management}
+                showCategories={context.capabilities.insumos.show_categories}
+              />}
+            </div>
+          </div>
+        </main>
+
+        <footer className="app-footer">
+          <div className="footer-content">
+            <img
+              className="footer-logo img-fluid sisoc-footer-logo"
+              src="/static/custom/img/Presidencia_footer.svg"
+              alt="Presidencia Logo"
+            />
+            <a
+              className="footer-secondary-link"
+              href="/changelog/"
+              aria-label={context.footer_version_label}
+            >
+              <i className="bi bi-clock-fill" aria-hidden="true" />
+              <span>{context.footer_version_label}</span>
+            </a>
+          </div>
+        </footer>
+      </div>
+    </>
+  );
+}
+
+export default function App() {
+  const [state, setState] = useState<LoadState>({ status: "loading" });
+
+  useEffect(() => {
+    let mounted = true;
+    const controller = new AbortController();
+    webClient
+      .get<WebSessionContext>("web/session/", {
+        signal: controller.signal,
+        validateStatus: validateInsumosStatus,
+      })
+      .then(({ data, status }) => {
+        if (!mounted) return;
+        if (status === 403) {
+          if (isWebSessionContext(data) && data.access.state !== "ready") {
+            setState({ status: "prerequisite", context: data });
+          } else {
+            setState({ status: "forbidden" });
+          }
+        } else if (!isWebSessionContext(data)) {
+          setState({ status: "error" });
+        } else if (data.access.state !== "ready") {
+          setState({ status: "prerequisite", context: data });
+        } else if (isCompleteReadyContext(data)) {
+          setState({ status: "ready", context: data });
+        } else {
+          setState({ status: "error" });
+        }
+      })
+      .catch((error: unknown) => {
+        if (!mounted) return;
+        const status =
+          isRecord(error) && isRecord(error.response) && typeof error.response.status === "number"
+            ? error.response.status
+            : undefined;
+        setState({ status: status === 403 ? "forbidden" : "error" });
+      });
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  if (state.status === "loading") {
+    return (
+      <main className="sisoc-message" role="status">
+        Cargando SISOC…
+      </main>
+    );
+  }
+  if (state.status === "forbidden") return <InsumosAccessError />;
+  if (state.status === "error") return <ErrorMessage />;
+  if (state.status === "prerequisite") return <AccessMessage context={state.context} />;
+  return <SisocShell context={state.context} />;
+}

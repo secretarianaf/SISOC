@@ -143,6 +143,8 @@ Reglas entre servicios: `AGENTS.md` ("Verticales independientes") y la guía
 - Registro nominal React: `src/frontends/apps/vpsl/src/Workflow.tsx` replica las secciones y reglas condicionales de `registro_form.html`; el schema de `api_workflow.py` incluye `renaper_estado` oculto y `graduacion_opcional` desde el ModelForm oficial para registros históricos. Crear usa Guardar y continuar y recarga el schema para el siguiente número de acta. La compatibilidad con PR #2566 se verifica en `src/backends/vpsl/ver_para_ser_libre/tests/test_api_compatibilidad.py` y `src/frontends/apps/vpsl/src/Workflow.test.tsx`; los límites de promoción están en `docs/operacion/ver_para_ser_libre_react.md`.
 - El tema visual de Front v2 usa `getTheme(mode)` de `src/frontends/packages/ui/src/theme.ts`, con correcciones de contraste AA; las reglas de componentes y UX vigentes están en `docs/implementaciones/frontend_v2.md`.
 
+- Piloto React local de Insumos (#2785): `src/frontends/apps/sisoc/` consume el contexto de sesión de `src/backends/sisoc_core/usuarios/web_api_views.py` y la lectura de `src/backends/sisoc_core/insumos/web_api_views.py`. Los recursos públicos de referencia se verifican con `src/scripts/frontends/insumos_visual_assets.py`. El piloto local no activa un módulo en el router público de Django. Estado y límites de la integración en este worktree en `odd/tasks/react-global-2785.md` y `docs/implementaciones/frontend_v2.md`; la evidencia original de INS-A permanece en el worktree de origen.
+
 ### Inferencias utiles
 
 - No parece ser un repositorio "nuevo" ni estrictamente homogenizado: conviven zonas modernas, refactors en curso y zonas legacy con patrones distintos.

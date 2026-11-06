@@ -416,3 +416,9 @@ elige la pantalla por ruta: `/` y `/login/` montan `Login.tsx`, que consume
 marco de Insumos, que acepta contenido y títulos opcionales para pantallas de
 identidad sin cambiar su salida actual. Registro:
 `../registro/cambios/2026-T4/2026-11-03-2785-react-login-logout.md`.
+
+`/password/first-change/` monta `RequiredPasswordChange.tsx` dentro de ese marco,
+alimentado solo por el DTO de presentación de `/api/web/password/first-change/`
+(usuario, menú heredado y pie). No consulta `/api/web/session/`, no recibe
+capacidades de negocio y conserva los enlaces originales del menú. Registro:
+`../registro/cambios/2026-T4/2026-11-03-2785-react-cambio-obligatorio.md`.

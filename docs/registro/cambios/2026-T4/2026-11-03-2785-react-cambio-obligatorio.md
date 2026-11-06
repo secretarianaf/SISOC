@@ -32,6 +32,41 @@ Las secciones siguientes preservan el registro histórico del circuito completo.
 Sus pruebas de UI, capturas y resultados no son evidencia nueva ni aceptación del
 corte backend actual.
 
+## Unidad React separada (2026-11-06)
+
+Esta unidad agrega la pantalla React del cambio obligatorio sobre la API ya
+incorporada. No modifica backend, rutas de producción, dependencias ni estilos.
+
+- `src/frontends/apps/sisoc/src/RequiredPasswordChange.tsx` muestra los dos
+  campos de `SetPasswordForm` con sus etiquetas y ayudas (la lista de ayuda se
+  renderiza como texto, nunca como HTML ejecutable). Envía URL-encoded a
+  `/api/web/password/first-change/`; con éxito navega a `/inicio/`, donde el
+  backend ya dejó el aviso «Contraseña actualizada correctamente.». Si el cambio
+  ya no es requerido, sigue la misma redirección sin enviar nada. Errores 400
+  vuelven a mostrar el formulario con las contraseñas vacías; un 403 muestra el
+  aviso de acceso existente y un resultado incierto bloquea el reenvío.
+- `App.tsx` monta la pantalla en `/password/first-change/` dentro del marco
+  heredado, construido solo con el DTO de presentación (usuario, menú y pie):
+  sin capacidades de negocio ni consulta a `/api/web/session/`, y con los
+  enlaces originales del menú en lugar de los de vista previa.
+
+### Verificación de esta unidad React
+
+Sobre la unidad de login, en una copia aislada: `RequiredPasswordChange.test.tsx`
+falló por módulo ausente y las dos pruebas nuevas de `App.test.tsx` (ruta y
+marco restringido) fallaron antes de implementar. Después pasan las 113 pruebas
+frontend, TypeScript, ESLint y el build de Vite; CSS idéntico al de INS-B.
+
+Comparación visual en runtime sintético local, solo GET, dos cargas nuevas por
+lado, 1440x900 y 390x844, con un usuario sintético que debe cambiar la
+contraseña: nativo y React son idénticos en píxeles y geometría en ambos
+viewports. Los listados INS-A e INS-B produjeron capturas idénticas byte a byte
+a las de la unidad anterior. Sin máscaras, errores de página, solicitudes
+bloqueadas ni POST; dominio sintético sin cambios. El guardado real no se
+ejecutó en el navegador; lo cubren las pruebas del componente. No constituye
+aceptación humana, revisión nativa, CI ni despliegue. Riesgo técnico: sesión,
+marco compartido y respuestas asíncronas.
+
 ## Registro histórico del circuito completo
 
 ## Alcance

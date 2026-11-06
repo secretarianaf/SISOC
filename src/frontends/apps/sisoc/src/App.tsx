@@ -7,6 +7,7 @@ import InsumosCategoriaForm from "./InsumosCategoriaForm";
 import InsumosCategoriasList from "./InsumosCategoriasList";
 import InsumosToast from "./InsumosToast";
 import Login from "./Login";
+import RequiredPasswordChange, { type RequiredPasswordPresentation } from "./RequiredPasswordChange";
 import { safeInternalPath, validateInsumosStatus, type WebAccessState } from "./webAccess";
 import "./shell.css";
 
@@ -590,10 +591,35 @@ function BusinessApp() {
   return <SisocShell context={state.context} />;
 }
 
+// Identity pages reuse the legacy frame from their own presentation DTO, never business capabilities.
+function legacyIdentityFrame(
+  content: ReactNode,
+  presentation: RequiredPasswordPresentation,
+  pageTitle: string,
+  heading = pageTitle,
+  overlays?: ReactNode,
+) {
+  return <SisocShell
+    context={{ user: presentation.user, navigation: presentation.legacy_frame_navigation, footer_version_label: presentation.footer_version_label }}
+    content={content}
+    pageTitle={pageTitle}
+    heading={heading}
+    overlays={overlays}
+    previewLinks={false}
+  />;
+}
+
+function requiredPasswordFrame(content: ReactNode, presentation: RequiredPasswordPresentation) {
+  return legacyIdentityFrame(content, presentation, "Cambio obligatorio de contraseña", "Actualizar contraseña");
+}
+
 // Public identity paths own their API bootstrap; every other path keeps the business shell.
 export default function App() {
   if (window.location.pathname === "/" || window.location.pathname === "/login/") {
     return <Login />;
+  }
+  if (window.location.pathname === "/password/first-change/") {
+    return <RequiredPasswordChange renderFrame={requiredPasswordFrame} />;
   }
   return <BusinessApp />;
 }

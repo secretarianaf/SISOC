@@ -97,12 +97,27 @@ describe("SISOC web shell", () => {
   it.each([
     ["/", "web/login/"],
     ["/login/", "web/login/"],
+    ["/password/first-change/", "web/password/first-change/"],
   ])("loads only its identity operation at %s", async (path, endpoint) => {
     webGet.mockReturnValue(new Promise(() => {}));
     setup(path);
     await waitFor(() => expect(webGet.mock.calls.some(([url]) => String(url).startsWith(endpoint))).toBe(true));
     expect(webGet.mock.calls.some(([url]) => url === "web/session/")).toBe(false);
     expect(webGet.mock.calls.some(([url]) => String(url).startsWith("web/insumos/"))).toBe(false);
+  });
+
+  it("renders the restricted presentation frame without business capability or session fetch", async () => {
+    webGet.mockResolvedValue({ data: {
+      access: { state: "password_change_required", required_action_url: "/password/first-change/" },
+      fields: ["new_password1", "new_password2"].map((name) => ({ name, label: name, help_text: "", required: true })),
+      presentation: { user: readyContext.user, footer_version_label: readyContext.footer_version_label, legacy_frame_navigation: readyContext.navigation },
+    } });
+    setup("/password/first-change/");
+    await screen.findByRole("heading", { name: "Actualizar contraseña" });
+    fireEvent.click(screen.getByRole("button", { name: "Configuración de Comedores" }));
+    expect(screen.getByRole("link", { name: "Insumos" }).getAttribute("href")).toBe("/insumos/");
+    expect(webGet.mock.calls.every(([url]) => url === "web/password/first-change/")).toBe(true);
+    expect(document.title).toBe("SISOC - Cambio obligatorio de contraseña");
   });
 
   it("keeps the native separating space after the permission warning icon", async () => {

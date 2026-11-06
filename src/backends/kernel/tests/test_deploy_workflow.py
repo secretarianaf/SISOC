@@ -157,3 +157,16 @@ def test_dispatch_no_expone_reparacion_mutante_de_talla():
     )[0]
     assert "inspect-cdi-talla-blockers" in dispatch_inputs
     assert "repair-confirmed-cdi-talla-blockers-as-null" not in dispatch_inputs
+
+
+def test_health_urls_worker_lee_el_manifest_de_estaticos():
+    # Renderiza templates con ManifestStaticFilesStorage: sin static_root, todo
+    # {% static %} lanza ValueError y el chequeo no pasa de inicio (500).
+    compose = (
+        REPO_ROOT / "docker" / "compose" / "docker-compose.produccion.yml"
+    ).read_text(encoding="utf-8")
+    worker = compose.split("  health_urls_worker:\n", maxsplit=1)[1].split(
+        "\n\n", maxsplit=1
+    )[0]
+
+    assert "- ./static_root:/sisoc/static_root:ro" in worker

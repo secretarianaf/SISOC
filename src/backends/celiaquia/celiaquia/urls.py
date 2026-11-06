@@ -54,6 +54,7 @@ from celiaquia.views.cupo import (
     CupoSuspenderLegajoView,
 )
 from celiaquia.views.padron_final_export import ExpedientePadronFinalExportView
+from celiaquia.views.tablero import TableroCeliaquiaView
 from celiaquia.views.comentarios import (
     LegajoComentarioCreateView,
     LegajoComentarioListView,
@@ -231,6 +232,13 @@ urlpatterns = [
             CupoDashboardView.as_view()
         ),
         name="cupo_dashboard",
+    ),
+    path(
+        "tablero/",
+        permissions_any_required(["celiaquia.view_tablero_celiaquia"])(
+            TableroCeliaquiaView.as_view()
+        ),
+        name="celiaquia_tablero",
     ),
     path(
         "cupos/provincia/<int:provincia_id>/",

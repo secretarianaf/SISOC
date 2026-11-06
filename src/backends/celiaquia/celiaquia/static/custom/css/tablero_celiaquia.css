@@ -1,0 +1,459 @@
+/* Tablero de seguimiento de Celiaquía (layout estándar de SISOC, oscuro).
+   Todo queda bajo .cel-tablero para no tocar otras pantallas. */
+.cel-tablero {
+    --cel-tarjeta: #232d4f;
+    --cel-cabecera: #1c2440;
+    --cel-borde: rgba(255, 255, 255, 0.08);
+    --cel-control: rgba(255, 255, 255, 0.25);
+    --cel-texto: #ffffff;
+    --cel-gris: #d5dae6;
+    --cel-gris-claro: #aab4c8;
+    --cel-grilla: rgba(255, 255, 255, 0.08);
+    --cel-teal: #3b8681;
+    --cel-teal-claro: #8fd0c9;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    color: var(--cel-texto);
+}
+
+.cel-tablero .cel-encabezado {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.cel-tablero .cel-encabezado p {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: var(--cel-gris-claro);
+}
+
+.cel-tablero .cel-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.cel-tablero .cel-chip {
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: var(--cel-tarjeta);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--cel-gris);
+}
+
+.cel-tablero .cel-chip-alcance {
+    background: rgba(59, 134, 129, 0.25);
+    border-color: rgba(59, 134, 129, 0.6);
+    color: var(--cel-teal-claro);
+    font-weight: 500;
+}
+
+.cel-tablero .cel-filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 240px;
+}
+
+.cel-tablero .cel-filtro label {
+    font-size: 12px;
+    color: var(--cel-gris);
+}
+
+.cel-tablero .cel-filtro .form-select {
+    height: 34px;
+    font-size: 13px;
+    background-color: var(--cel-tarjeta);
+    color: var(--cel-texto);
+    border-color: var(--cel-control);
+}
+
+/* Tarjetas con cuadrícula 10 x 10 */
+.cel-tablero .cel-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.cel-tablero .cel-kpi {
+    background: var(--cel-tarjeta);
+    border: 1px solid var(--cel-borde);
+    border-radius: 6px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cel-tablero .cel-kpi-cabeza {
+    font-size: 24px;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.cel-tablero .cel-kpi-cabeza b {
+    font-weight: 700;
+}
+
+.cel-tablero .cel-kpi-cabeza span {
+    font-weight: 300;
+    color: var(--cel-gris);
+    margin-left: 6px;
+}
+
+.cel-tablero .cel-kpi-fila {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    margin: 12px 0;
+}
+
+.cel-tablero .cel-waffle {
+    display: block;
+    flex-shrink: 0;
+}
+
+.cel-tablero .cel-ley {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    min-width: 0;
+    height: 147px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-size: 12.5px;
+}
+
+.cel-tablero .cel-ley li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--cel-grilla);
+}
+
+.cel-tablero .cel-ley li:last-child {
+    border-bottom: 0;
+}
+
+.cel-tablero .cel-ley i {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.cel-tablero .cel-ley span {
+    flex: 1;
+    color: var(--cel-gris);
+    white-space: nowrap;
+}
+
+.cel-tablero .cel-ley b {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.cel-tablero .cel-ley em {
+    font-style: normal;
+    color: var(--cel-gris-claro);
+    min-width: 34px;
+    text-align: right;
+    margin-left: 4px;
+}
+
+.cel-tablero .cel-kpi-pie {
+    margin-top: auto;
+    font-size: 11.5px;
+    color: var(--cel-gris-claro);
+}
+
+/* Secciones con gráfico */
+.cel-tablero .cel-seccion {
+    background: var(--cel-tarjeta);
+    border: 1px solid var(--cel-borde);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cel-tablero .cel-seccion-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--cel-cabecera);
+    border-bottom: 1px solid var(--cel-borde);
+    border-radius: 6px 6px 0 0;
+}
+
+.cel-tablero .cel-seccion-cabecera h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--cel-texto);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.cel-tablero .cel-nota {
+    font-size: 12px;
+    color: var(--cel-gris-claro);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: 6px;
+}
+
+.cel-tablero .cel-seccion-cuerpo {
+    padding: 14px;
+}
+
+.cel-tablero .cel-leyenda {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--cel-gris);
+    margin-bottom: 8px;
+}
+
+.cel-tablero .cel-leyenda i {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    margin-right: 5px;
+    vertical-align: -1px;
+}
+
+.cel-tablero .cel-lienzo {
+    position: relative;
+    width: 100%;
+}
+
+.cel-tablero .cel-perdidas {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    font-size: 12.5px;
+    color: var(--cel-gris);
+}
+
+.cel-tablero .cel-perdidas li {
+    padding: 6px 0;
+    border-top: 1px solid var(--cel-grilla);
+}
+
+.cel-tablero .cel-perdidas strong {
+    color: var(--cel-texto);
+    font-weight: 500;
+}
+
+.cel-tablero .cel-vacio {
+    font-size: 13px;
+    color: var(--cel-gris-claro);
+    padding: 24px 0;
+    text-align: center;
+}
+
+/* Filtros de provincia y expediente */
+.cel-tablero .cel-filtros {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.cel-tablero .cel-filtro small {
+    font-size: 11.5px;
+    color: var(--cel-gris-claro);
+}
+
+.cel-tablero .cel-aviso-exp {
+    font-size: 12.5px;
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: rgba(59, 134, 129, 0.25);
+    border: 1px solid rgba(59, 134, 129, 0.6);
+    color: var(--cel-teal-claro);
+}
+
+.cel-tablero .cel-aviso-exp a {
+    margin-left: 8px;
+    color: var(--cel-teal-claro);
+}
+
+/* Grilla de dos columnas */
+.cel-tablero .cel-grilla-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    align-items: stretch;
+}
+
+.cel-tablero .cel-btn-tabla {
+    border: 1px solid var(--cel-control);
+    background: transparent;
+    color: var(--cel-gris);
+    font-size: 12px;
+    border-radius: 4px;
+    padding: 2px 10px;
+    flex-shrink: 0;
+}
+
+.cel-tablero .cel-btn-tabla:hover {
+    border-color: var(--cel-teal);
+    color: var(--cel-teal-claro);
+}
+
+.cel-tablero .cel-nota-pie {
+    font-size: 11.5px;
+    color: var(--cel-gris-claro);
+    margin: 8px 0 0;
+}
+
+.cel-tablero .cel-oculto {
+    display: none !important;
+}
+
+/* Tabla de datos (botón "Tabla" de cada gráfico y ranking de expedientes) */
+.cel-tablero .cel-tabla {
+    width: 100%;
+    font-size: 12.5px;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+    color: var(--cel-texto);
+}
+
+.cel-tablero .cel-tabla th,
+.cel-tablero .cel-tabla td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--cel-grilla);
+    text-align: right;
+}
+
+.cel-tablero .cel-tabla th:first-child,
+.cel-tablero .cel-tabla td:first-child {
+    text-align: left;
+}
+
+.cel-tablero .cel-tabla th {
+    color: var(--cel-gris);
+    font-weight: 500;
+}
+
+.cel-tablero .cel-tabla-scroll {
+    overflow-x: auto;
+}
+
+/* Paso entre etapas: tabla con color por valor */
+.cel-tablero .cel-calor {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 3px;
+    font-size: 12.5px;
+}
+
+.cel-tablero .cel-calor th {
+    font-weight: 400;
+    color: var(--cel-gris);
+    text-align: center;
+    padding: 4px;
+}
+
+.cel-tablero .cel-calor th:first-child,
+.cel-tablero .cel-calor td:first-child {
+    text-align: left;
+    color: var(--cel-gris);
+    white-space: nowrap;
+}
+
+.cel-tablero .cel-calor td.v {
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: 3px;
+    font-weight: 500;
+}
+
+/* Ranking de expedientes */
+.cel-tablero .cel-exp-tabla td,
+.cel-tablero .cel-exp-tabla th {
+    vertical-align: middle;
+}
+
+.cel-tablero .cel-exp-tabla tbody tr {
+    cursor: pointer;
+}
+
+.cel-tablero .cel-exp-tabla tbody tr:hover td {
+    background: rgba(59, 134, 129, 0.08);
+}
+
+.cel-tablero .cel-exp-tabla tr.sel td {
+    background: rgba(59, 134, 129, 0.16);
+}
+
+.cel-tablero .cel-exp-id b {
+    font-weight: 500;
+}
+
+.cel-tablero .cel-exp-id small {
+    display: block;
+    font-size: 11px;
+    color: var(--cel-gris-claro);
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cel-tablero .cel-mix {
+    display: flex;
+    height: 12px;
+    min-width: 140px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: #2f3d61;
+}
+
+.cel-tablero .cel-mix i {
+    display: block;
+    height: 100%;
+}
+
+.cel-tablero .cel-exp-pie {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.cel-tablero .cel-exp-pie .cel-nota-pie {
+    margin: 0;
+}
+
+@media (max-width: 1199px) {
+    .cel-tablero .cel-kpis {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 991px) {
+    .cel-tablero .cel-grilla-2 {
+        grid-template-columns: 1fr;
+    }
+}

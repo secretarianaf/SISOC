@@ -94,12 +94,90 @@ solicitante, fecha y consecuencias de aprobar o rechazar; en móvil aparece deba
 del contenido. Se mantiene la autorización y el envío POST con CSRF.
 
 El botón «Agregar pregunta» permanece al pie del listado, a la derecha.
+El editor permite reordenar preguntas desde el ícono de arrastre junto al
+número. Al arrastrar se ve la tarjeta completa, se atenúa su lugar de origen
+y se marca el destino. El mismo ícono admite las flechas del teclado al
+enfocarlo. Para intercalar una pregunta se usa «Agregar pregunta» y luego
+se arrastra a la posición deseada. El botón «Quitar» es rojo y compacto;
+pide confirmación en un modal con «Cancelar» y «Quitar pregunta» antes de
+retirar una pregunta. Cancelar o cerrar el modal conserva todo su
+contenido. Si hay preguntas dependientes, advierte que quedarán siempre
+visibles al quitar la referencia. La eliminación se persiste al guardar.
+Al reordenar se mueve únicamente la tarjeta elegida y se conserva la
+posición de scroll. Las tarjetas se acomodan con una animación breve,
+desactivada si el usuario tiene preferencia por movimiento reducido.
+El mensaje de posición y recordatorio de guardar aparece en un toast de
+3 segundos abajo a la derecha, sin ocupar espacio entre las preguntas.
+Durante el arrastre, acercarse a los 100 px superiores o inferiores de la
+pantalla activa desplazamiento automático continuo, más rápido cuanto más
+cerca está el puntero del borde. Se detiene al alejarse, soltar, cancelar
+o salir de la ventana, permitiendo mover varias posiciones sin soltar.
+El orden se conserva al guardar y reabrir. Las opciones, puntajes,
+obligatoriedad y condiciones permanecen ligados a la misma pregunta.
+Una pregunta condicional debe seguir después de su referencia: el editor
+rechaza un movimiento que invierta esa dependencia y muestra el motivo.
 Crear/editar, segmentación y el modal de respuesta comparten tokens y botones
 Poncho. El modal agrupa preguntas, resalta opciones seleccionadas e informa la
 modalidad y el anonimato. Conserva preguntas condicionales y dispone de scroll
 interno y adaptación a pantallas pequeñas.
 
-## Permisos y privacidad
+## Publicación en la PWA de Espacios Comunitarios
+
+- Segmentación ofrece **Disponible en la PWA de Espacios Comunitarios**,
+  desactivada por defecto. No sustituye la segmentación ni la aprobación:
+  solo se ofrecen rondas abiertas y vigentes de encuestas publicadas,
+  habilitadas para PWA, a usuarios destinatarios con acceso móvil activo.
+- La opción se guarda con el botón «Guardar» de Segmentación, junto con el
+  tipo y los destinatarios; no aparece en Crear/editar. Se puede cambiar con
+  una ronda abierta, igual que la segmentación, pero no durante la aprobación.
+  Un error de segmentación revierte también el cambio de disponibilidad. Los
+  formularios anteriores que no envían ese control conservan su valor.
+- La pantalla de revisión informa si la encuesta se habilitará en la PWA.
+  Nuevas versiones conservan la opción, pero nacen en borrador. Importar JSON
+  no activa automáticamente este canal; requiere habilitarlo en destino.
+- Cada pregunta puede definir un **Bloque** opcional (hasta 120 caracteres)
+  y, para texto, un **Máximo de caracteres** de 1 a 10000. Están en el
+  desplegable «Presentación en la PWA». Se conservan al reordenar, clonar y
+  exportar/importar preguntas; sin valores se mantiene el comportamiento previo.
+- `GET /api/encuestas/pwa/` devuelve configuración y estado de cumplimiento
+  por ronda. `POST /api/encuestas/pwa/<ronda_id>/responder/` recibe
+  `response_id` (UUID) y `respuestas`, un objeto por ID de pregunta. En opción
+  múltiple, los valores son listas; en los otros tipos son valores simples.
+  No se acepta la identidad del respondiente desde el cuerpo: sale del token.
+- Ambas rutas usan Token DRF y comprueban el acceso mediante el contrato
+  existente `/interno/espacios/contexto/`, a través de
+  `core.internal_services.pedir_json_interno`. Sin acceso: 403; si no puede
+  confirmarse el contexto del dueño: 503. No se importan modelos de `pwa`
+  desde Encuestas. La API pertenece al core, fuera del prefijo remoto `/api/pwa/`.
+- Guardar reutiliza `registrar_respuesta`: validación de tipos, opciones,
+  obligatoriedad y condiciones, rollback de parciales y separación entre
+  respuesta anónima y cumplimiento. Una pregunta cuya referencia está oculta
+  también queda oculta, incluso si usa «distinto de».
+- La clave de idempotencia de negocio es **usuario y ronda**. Se bloquea la
+  ronda durante el envío y un reintento ya cumplido devuelve 200 sin crear
+  otra respuesta. El UUID del cliente identifica la cola móvil; no se guarda
+  un enlace adicional entre identidad y contenido anónimo. Se conserva la
+  recurrencia existente: una nueva ronda puede volver a responderse.
+- El frontend vive en el repositorio satélite **Espacios-Comunitarios**.
+  Muestra invitación en el Hub de Espacios y acceso en Ajustes → Tu opinión;
+  una pregunta por pantalla, progreso por bloques, avance a los 350 ms para
+  opciones simples, navegación anterior y todos los tipos de preguntas de SISOC.
+  Con teclado, las flechas seleccionan sin avanzar; espacio/Enter confirma.
+- Configuración, borrador y envío pendiente se guardan en IndexedDB separados
+  por usuario. La outbox existente suma pendientes y sincroniza al reconectar.
+  Errores conservan las respuestas y permiten corregir o reintentar. El toast
+  informa cuando se sincroniza un envío que estaba pendiente.
+- La PWA puede retomar offline una sesión de Espacios previamente validada y
+  sin cambio de contraseña pendiente. Al reconectar revalida con el servidor;
+  cada envío sigue requiriendo token, acceso activo y segmentación. No hay login
+  nuevo sin red. El service worker permite reabrir la app y excluye estas APIs
+  del caché HTTP común: se usa únicamente el caché local separado por usuario.
+
+Despliegue coordinado: aplicar `0008_disponibilidad_pwa` en el migrador,
+actualizar el core (API) y luego publicar la PWA. La migración no activa
+encuestas existentes. Reiniciar el worker de encuestas con el código actualizado.
+
+## Permisos y privacidad del módulo
 
 `Gestor de Encuestas` administra encuestas, preguntas, segmentación y rondas.
 `Encuestas Resultados` accede al listado y al permiso específico
@@ -175,6 +253,10 @@ y de los descartes almacenados.
   La migración `0005_motivo_rechazo` agrega los datos del último rechazo.
 
 ## API móvil selectiva de Espacios (2026-11-05)
+
+Esta sección describe la entrega selectiva desplegada en PRD el 2026-11-05.
+En development la activación ya existe en Segmentación (ver «Publicación en la
+PWA de Espacios Comunitarios»); las restricciones de abajo aplican a ese corte.
 
 El core publica `GET /api/encuestas/pwa/` (lista sin paginación) y
 `POST /api/encuestas/pwa/<ronda_id>/responder/`. Ambos requieren TokenAuthentication

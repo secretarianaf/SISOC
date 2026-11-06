@@ -3,6 +3,7 @@ from uuid import uuid4
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import Permission
 from django.urls import reverse
 from rest_framework.authtoken.models import Token
 
@@ -189,6 +190,44 @@ def test_nueva_version_conserva_publicacion_y_presentacion(movil, ronda):
     assert nueva.disponible_pwa is True
     assert nueva.estado == EstadoEncuesta.BORRADOR
     assert serializar_preguntas(nueva) == serializar_preguntas(ronda.encuesta)
+
+
+@pytest.mark.django_db
+def test_opcion_pwa_se_configura_en_segmentacion(movil):
+    client, user = movil
+    user.user_permissions.add(
+        *Permission.objects.filter(
+            content_type__app_label="encuestas",
+            codename__in=["add_encuesta", "change_encuesta"],
+        )
+    )
+    client.force_login(user)
+    response = client.post(
+        reverse("encuestas_crear"),
+        {
+            "titulo": "Desde formulario",
+            "modalidad": "opcional",
+            "duracion_ronda_dias": 7,
+            "disponible_pwa": "on",
+            "preguntas_json": "[]",
+        },
+    )
+    assert response.status_code == 302
+    encuesta = user.encuestas_creadas.get()
+    assert encuesta.disponible_pwa is False
+    response = client.get(reverse("encuestas_segmentacion", args=[encuesta.pk]))
+    assert b'name="disponible_pwa"' in response.content
+    response = client.post(
+        reverse("encuestas_segmentacion_tipo", args=[encuesta.pk]),
+        {
+            "tipo": TipoSegmentacion.TODOS_LOS_USUARIOS,
+            "disponibilidad_pwa_presente": "1",
+            "disponible_pwa": "on",
+        },
+    )
+    assert response.status_code == 302
+    encuesta.refresh_from_db()
+    assert encuesta.disponible_pwa is True
 
 
 @pytest.mark.parametrize("limite", [0, -1, True, 10001])

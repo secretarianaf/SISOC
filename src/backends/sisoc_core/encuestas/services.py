@@ -579,8 +579,14 @@ def actualizar_segmentacion(  # pylint: disable=too-many-arguments
     destinatarios: Iterable[dict] | None = None,
     usuarios_ids=None,
     grupos_ids=None,
+    disponible_pwa=None,
 ) -> SegmentacionEncuesta:
     _validar_edicion(encuesta)
+    if disponible_pwa is not None:
+        if not isinstance(disponible_pwa, bool):
+            raise ValidationError("La disponibilidad en PWA debe ser sí o no.")
+        encuesta.disponible_pwa = disponible_pwa
+        encuesta.save(update_fields=["disponible_pwa", "fecha_ultima_modificacion"])
     segmentacion, _ = SegmentacionEncuesta.objects.get_or_create(
         encuesta=encuesta, defaults={"tipo": tipo}
     )
@@ -633,8 +639,9 @@ def actualizar_segmentacion(  # pylint: disable=too-many-arguments
         for tipo_doc, numero in a_crear
     )
     if a_borrar:
-        ids_a_borrar = [existentes[clave].pk for clave in a_borrar]
-        SegmentacionDestinatario.objects.filter(pk__in=ids_a_borrar).delete()
+        SegmentacionDestinatario.objects.filter(
+            pk__in=[existentes[clave].pk for clave in a_borrar]
+        ).delete()
 
     return segmentacion
 

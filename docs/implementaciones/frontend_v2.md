@@ -471,3 +471,20 @@ URL-encoded de `/api/web/surveys/<id>/` y navegan al destino que devuelve el
 servidor; Bootstrap y el script condicional originales operan sobre los nodos
 React. Registro:
 `../registro/cambios/2026-T4/2026-11-04-2785-react-respuesta-encuestas.md`.
+
+### DDJJ pública PAS: entrada React sin montar
+
+`apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la
+presentación del formulario público de declaración jurada y su confirmación.
+Usa la hoja `custom/css/pas_ddjj.css` y la marca de PAS, no el marco SISOC ni
+un tema MUI. `ddjj_preview_patterns`
+(`src/backends/pas/pas/ddjj_preview.py`) la sirve en la URL canónica
+`/pas/ddjj/formulario/<token>` y en `/pas/ddjj/confirmacion` solo dentro de un
+URLconf local; las invitaciones inexistentes o no disponibles y los POST siguen
+con la vista nativa. Los datos y el envío usan
+`/pas/ddjj/formulario/<token>/datos` y `/enviar`, fuera de `/api/` para que la
+sesión web restringida se bloquee igual que en el HTML (política P1), con CSRF
+también para visitantes anónimos. El envío no se reintenta: ante un resultado
+distinto de éxito o error de validación se vuelve por GET a la URL canónica.
+Registro:
+`../registro/cambios/2026-T4/2026-11-06-2806-react-ddjj-publica.md`.

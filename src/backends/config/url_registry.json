@@ -3120,6 +3120,16 @@
   "regex": "^pas/ddjj/formulario/(?P<token>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\\Z"
  },
  {
+  "name": "pas_ddjj_formulario_datos",
+  "namespace": "",
+  "regex": "^pas/ddjj/formulario/(?P<token>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/datos\\Z"
+ },
+ {
+  "name": "pas_ddjj_formulario_enviar",
+  "namespace": "",
+  "regex": "^pas/ddjj/formulario/(?P<token>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/enviar\\Z"
+ },
+ {
   "name": "pas_ddjj_media_privado",
   "namespace": "",
   "regex": "^media/pas/ddjj/(?P<path>.+)\\Z"

@@ -431,7 +431,11 @@ capacidades de negocio y conserva los enlaces originales del menú. Registro:
 
 El marco escribe los ítems principales del sidebar en el orden del template
 original y les aplica el mismo `order` en línea, para que Tab recorra el menú
-igual que la página nativa sin mover su posición visual. Registro:
+igual que la página nativa sin mover su posición visual. No define estilos de
+foco propios: botones y enlaces usan los contornos de las hojas originales. El
+logo móvil sigue siendo enfocable como en el template, «Volver» apunta a `/`
+(destino por defecto del botón original) y el enlace de versión, también en el
+login, apunta a `/novedades/`. Registro:
 `../registro/cambios/2026-T4/2026-11-06-2785-paridad-teclado-shell.md`.
 
 `/password_change/` y `/password_change/done/` montan `PasswordChange.tsx`,

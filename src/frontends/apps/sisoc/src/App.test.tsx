@@ -378,6 +378,14 @@ describe("SISOC web shell", () => {
     expect(back.textContent).toBe(" Volver");
   });
 
+  it("points the back link to the native default destination", async () => {
+    webGet.mockResolvedValueOnce({ data: readyContext });
+    setup();
+
+    const back = await screen.findByRole("link", { name: "Volver" });
+    expect(back.getAttribute("href")).toBe("/");
+  });
+
   it("withholds the private shell until legacy web prerequisites are complete", async () => {
     webGet.mockResolvedValueOnce({
       data: {
@@ -504,14 +512,15 @@ describe("SISOC web shell", () => {
 
     const toggle = await screen.findByRole("button", { name: "Abrir menú" });
     expect(toggle.className).toContain("d-lg-none");
-    const brand = document.querySelector(".main-header .brand-image")?.closest(".brand-link");
-    expect(brand?.className).toContain("d-none");
+    const brand = document.querySelector<HTMLAnchorElement>(".main-header .brand-image")?.closest<HTMLAnchorElement>(".brand-link");
+    expect(brand?.className).toBe("brand-link d-flex align-items-center");
+    brand?.focus();
+    expect(document.activeElement).toBe(brand);
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     expect(document.body.classList.contains("sidebar-collapse")).toBe(true);
     fireEvent.click(toggle);
     await waitFor(() => expect(toggle.getAttribute("aria-expanded")).toBe("true"));
-    expect(brand?.className).toContain("d-flex");
-    expect(brand?.className).not.toContain("d-none");
+    expect(brand?.className).toBe("brand-link d-flex align-items-center");
     expect(document.body.classList.contains("sidebar-open")).toBe(true);
     expect(document.body.classList.contains("sidebar-collapse")).toBe(false);
     fireEvent.keyDown(document, { key: "Escape" });

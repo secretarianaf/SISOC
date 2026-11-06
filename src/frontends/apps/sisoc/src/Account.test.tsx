@@ -18,20 +18,24 @@ const submit = () => fireEvent.submit(document.querySelector("form")!);
 
 describe("ID-D account and required confirmation", () => {
 
-  it.each(["account", "confirm"] as const)("preserves native submit focus without changing other shell buttons (%s)", async mode => {
+  it.each(["account", "confirm"] as const)("leaves submit and shell control focus to the native stylesheets (%s)", async mode => {
     get.mockResolvedValue({ data: metadata });
-    const focusSelector = shellStyles.match(/([^{}]*:focus-visible[^{}]*)\{/)![1].trim().replaceAll(":focus-visible", "");
-    const other = document.createElement("button"); document.body.append(other);
+    const focusSelectors = [...shellStyles.matchAll(/([^{}]*):focus(?:-visible|-within)?[^{}]*\{/g)]
+      .flatMap(([rule]) => rule.replace(/\{$/, "").split(","))
+      .map(selector => selector.trim().replace(/:focus(-visible|-within)?/g, ""));
+    const link = document.createElement("a"); link.href = "/inicio/"; link.className = "brand-link d-flex align-items-center";
+    const other = document.createElement("button"); other.className = "nav-link nav-link-rounded border-0 bg-transparent";
+    document.body.append(link, other);
     try {
       render(<Account mode={mode} />);
       const button = await screen.findByRole<HTMLButtonElement>("button", { name: "Guardar datos" });
       await waitFor(() => expect(button.disabled).toBe(false));
-      button.focus();
-      expect(document.activeElement).toBe(button);
-      expect(button.matches(focusSelector)).toBe(false);
-      other.focus();
-      expect(other.matches(focusSelector)).toBe(true);
-    } finally { other.remove(); }
+      for (const control of [button, other, link]) {
+        control.focus();
+        expect(document.activeElement).toBe(control);
+        expect(focusSelectors.filter(selector => control.matches(selector))).toEqual([]);
+      }
+    } finally { link.remove(); other.remove(); }
   });
 
   it("restores required modal scroll after invalid data like the native document reload", async () => {

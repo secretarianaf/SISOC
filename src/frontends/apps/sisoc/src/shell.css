@@ -27,12 +27,6 @@ body {
   font-weight: 600;
 }
 
-button:not([data-mi-cuenta-submit]):focus-visible,
-a:focus-visible {
-  outline: 3px solid #e7ba61;
-  outline-offset: 2px;
-}
-
 .sisoc-message {
   display: grid;
   min-height: 100vh;

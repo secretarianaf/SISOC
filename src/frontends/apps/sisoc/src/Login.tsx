@@ -171,6 +171,6 @@ function LoginPage({ navigate }: { navigate: (destination: string) => void }) {
       </div></div></div>
       <div className="col-md-7 d-none d-md-block"><img src="/static/custom/img/loginPresentacion.svg" alt="logoPresentacion" className="img-fluid" /></div>
     </div></div></div></div></div>
-    <footer className="app-footer"><div className="footer-content"><img src="/static/custom/img/Presidencia_footer.svg" alt="Presidencia Logo" className="footer-logo img-fluid" /><a href="/changelog/" className="footer-secondary-link" aria-label={footer}><i className="bi bi-clock-fill" /><span>{footer}</span></a></div></footer>
+    <footer className="app-footer"><div className="footer-content"><img src="/static/custom/img/Presidencia_footer.svg" alt="Presidencia Logo" className="footer-logo img-fluid" /><a href="/novedades/" className="footer-secondary-link" aria-label={footer}><i className="bi bi-clock-fill" /><span>{footer}</span></a></div></footer>
   </>;
 }

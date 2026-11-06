@@ -54,6 +54,13 @@ describe("ID-A standalone public login", () => {
     expect(screen.getByRole("button", { name: "Cerrar sesión" }).closest("form")?.getAttribute("action")).toBe("/logout/");
   });
 
+  it("links the footer version to the native changelog route", async () => {
+    get.mockResolvedValue({ data: metadata });
+    render(<Login navigate={vi.fn()} />);
+    await screen.findByRole("button", { name: "Ingresar" });
+    expect(screen.getByRole("link", { name: "Versiones" }).getAttribute("href")).toBe("/novedades/");
+  });
+
   it("normalizes only username, forwards next and navigates to the server-validated result", async () => {
     get.mockResolvedValue({ data: metadata });
     post.mockResolvedValue({ data: { ok: true, redirect: "/insumos/" } });

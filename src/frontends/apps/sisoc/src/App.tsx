@@ -377,9 +377,6 @@ function SisocShell({
   const serverMenu = context.navigation.filter((item) => item.id !== "mi_cuenta");
   const legacyMenu = legacySidebarMenu(serverMenu);
   const menu = legacyMenu ?? serverMenu;
-  const brandClassName = `brand-link align-items-center${
-    isMobile && !mobileOpen ? " d-none" : " d-flex"
-  }`;
   const closeOnNavigate = () => {
     if (isMobile) setMobileOpen(false);
   };
@@ -419,7 +416,7 @@ function SisocShell({
             >
               <i className="bi bi-list fs-2" aria-hidden="true" />
             </button>
-            <a className={brandClassName} href="/inicio/" aria-label="Inicio de SISOC">
+            <a className="brand-link d-flex align-items-center" href="/inicio/" aria-label="Inicio de SISOC">
               <span className="brand-text fw-light">
                 <img className="brand-image" src="/static/custom/img/logoBlanco.png" alt="SISOC" />
               </span>
@@ -517,7 +514,7 @@ function SisocShell({
           <div className="app-content-header">
             <div className="container-fluid">
           {!hideBack && <div className="d-print-none">
-                <a className="btn btn-secondary btn-sm sisoc-volver" href="/inicio/">
+                <a className="btn btn-secondary btn-sm sisoc-volver" href="/">
                   <i className="fas fa-arrow-left" aria-hidden="true" />{" "}
                   <span>Volver</span>
                 </a>

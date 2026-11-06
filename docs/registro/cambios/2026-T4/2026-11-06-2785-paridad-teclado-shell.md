@@ -1,11 +1,17 @@
-# Cambio: orden de tabulación del sidebar y enlace de versión en el marco React (#2785)
+# Cambio: paridad de teclado y foco del marco React (#2785)
 
 ## Alcance
 
-Corrección del marco compartido de React (`SisocShell` en
-`src/frontends/apps/sisoc/src/App.tsx`) detectada en el recorrido con teclado
-de INS-A, INS-B, cuenta y grupos. No modifica backend, el DTO de navegación,
-estilos, rutas de producción ni dependencias.
+Correcciones del marco compartido de React (`SisocShell` en
+`src/frontends/apps/sisoc/src/App.tsx`), de su hoja
+`src/frontends/apps/sisoc/src/shell.css` y del login
+(`src/frontends/apps/sisoc/src/Login.tsx`) detectadas en el recorrido con
+teclado de INS-A, INS-B, login, cuenta, grupos y cambio de contraseña. Se
+hicieron en dos partes: la primera ordena el sidebar y corrige el enlace de
+versión del marco; la segunda devuelve el foco a los estilos nativos, hace
+enfocable el logo móvil y corrige el enlace de versión del login y el destino
+de «Volver». No modifica backend, el DTO de navegación, rutas de producción ni
+dependencias.
 
 ## Diagnóstico
 
@@ -59,16 +65,91 @@ INS-B, cuenta y listado de grupos (con usuario editor y con superusuario):
   byte a byte en los diez casos; las diferencias con la página original son
   las ya clasificadas (flecha A, glifos B, menú móvil exento C y el ícono de OCR).
 
-Diferencias de teclado previas que siguen abiertas y no se corrigen aquí:
+Las diferencias de teclado que quedaron abiertas en esta primera parte se
+corrigen en la segunda, descrita a continuación.
 
-- La regla de `src/frontends/apps/sisoc/src/shell.css` que dibuja un contorno
-  dorado de 3 px en botones y enlaces con foco difiere del contorno nativo
-  (por ejemplo «Cerrar sesión», «Buscar», «Resetear» y el logo). Quitarla
-  requiere cambiar la prueba de `Account.test.tsx` que la fija.
-- En móvil, el logo del encabezado es enfocable en la página original y no en
-  React.
-- El enlace de versión de `Login.tsx` también apunta a `/changelog/`.
-- «Volver» apunta a `/inicio/` en React y a `/` en la página original.
+## Segunda parte: foco nativo, logo móvil, login y «Volver»
+
+### Diagnóstico
+
+- Contorno de foco. `shell.css` dibujaba un contorno dorado de 3 px con
+  separación de 2 px en todo botón o enlace con `:focus-visible`, salvo el
+  botón de guardar de Mi cuenta (excepción del registro
+  `2026-11-04-2785-react-cuenta-confirmacion.md`). La página original no
+  define esa regla: el logo, «Resetear», «Agregar», «Exportar búsqueda» y el
+  enlace de versión muestran el contorno automático de 1 px del navegador;
+  «Cerrar sesión» y «Abrir menu» no muestran contorno; «Buscar» muestra el
+  contorno sólido blanco de 2 px de sus estilos. Todos esos valores vienen de
+  las hojas compartidas, que React ya carga.
+- Logo móvil. El template `src/backends/kernel/templates/includes/header.html`
+  escribe el logo como `brand-link d-flex align-items-center` en todos los
+  tamaños. En 390 px queda con ancho 0, invisible pero enfocable entre «Abrir
+  menu» y «Cerrar sesión». React le agregaba `d-none` con el menú móvil
+  cerrado y lo sacaba del recorrido con Tab.
+- Enlace de versión del login. `Login.tsx` apuntaba a `/changelog/` (404); la
+  ruta `changelog` del pie original se publica como `/novedades/`.
+- «Volver». `src/backends/kernel/templates/components/back_button.html` usa
+  `volver_url` con `/` por defecto. Ninguna de las vistas originales de las
+  pantallas React (insumos, categorías, mi cuenta, grupos, cambio de
+  contraseña) define `volver_url`, así que el destino es `/`. React apuntaba a
+  `/inicio/`.
+
+### Comportamiento
+
+- `shell.css` ya no define reglas de foco: botones y enlaces del marco, del
+  login y de Mi cuenta usan los estilos de foco originales. El atributo
+  `data-mi-cuenta-submit` sigue en el botón, pero ya no lo usa ninguna regla.
+- El logo del encabezado usa siempre las clases del template original y es
+  enfocable en móvil igual que en la página original.
+- El enlace de versión del login apunta a `/novedades/`.
+- «Volver» apunta a `/`. React no reproduce el historial de
+  `src/backends/kernel/static/custom/js/volver.js`, que en la página original
+  reemplaza ese destino con la pantalla anterior de la sesión; sin historial,
+  ambos quedan en `/`.
+
+### Verificación
+
+Copia aislada sobre la primera parte. Cinco pruebas fallaron antes de
+implementar: el foco nativo del botón de guardar y de otros controles del marco
+(en cuenta y en confirmación), el destino de «Volver», el logo móvil enfocable
+y el enlace de versión del login. La prueba previa que fijaba la excepción del
+botón de Mi cuenta se reemplazó por una que exige que ninguna regla de foco de
+`shell.css` alcance a ese botón ni a otros controles del marco. Después pasan
+las 181 pruebas frontend, TypeScript, ESLint y el build de Vite.
+
+Runtime sintético local, solo GET, 1440x900 y 390x844, comparando la página
+original con React antes y después de esta parte, en INS-A, categorías de
+INS-B, login, cuenta, listado de grupos y cambio de contraseña, con 16 Tab:
+
+- Donde ambos enfocan el mismo control, el contorno calculado coincide en
+  todos los pasos (antes difería en el logo, «Cerrar sesión», «Abrir menú»,
+  «Buscar», «Resetear», «Agregar», «Exportar búsqueda» y el enlace de versión).
+  Las capturas con foco del listado de grupos y de cuenta en móvil pasan a ser
+  idénticas a la página original en los 17 pasos.
+- En móvil, el logo es la segunda parada, con el mismo rectángulo de ancho 0
+  y el mismo contorno.
+- «Volver» y el enlace de versión del login tienen el mismo destino que la
+  página original.
+- Capturas sin foco: las de React antes y después de esta parte son idénticas
+  byte a byte en los 32 pares de los ocho casos (incluido el superusuario de
+  grupos y la confirmación de cambio de contraseña).
+
+Diferencias que siguen y no se corrigen aquí:
+
+- En móvil, el submenú activo de Insumos queda oculto en línea dentro del
+  menú cerrado en la página original y visible en React, así que React tiene
+  una parada de Tab invisible más dentro del menú móvil. Es la diferencia del
+  menú móvil ya exenta.
+- En `/password_change/`, React enfoca la contraseña anterior al cargar; en la
+  página original el autofoco depende del tiempo de carga y en esta corrida no
+  ocurrió, así que el recorrido queda corrido un paso.
+- El ajuste de altura de `sidebar.js` al desplazarse, descrito arriba.
+- Nombres accesibles: el logo de React se anuncia «Inicio de SISOC» y en la
+  página original toma el texto alternativo «SISOC»; los enlaces de las
+  pantallas en vista previa apuntan a `/v2/sisoc/...`. No cambian la
+  presentación.
+- Variaciones de render ya clasificadas: flecha A, glifos B y el logo de
+  Presidencia del login, que alterna en la propia página original.
 
 No hubo POST, errores de página ni solicitudes bloqueadas; dominio sintético
 sin cambios. No constituye aceptación humana, revisión nativa, CI ni

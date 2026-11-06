@@ -101,6 +101,18 @@ Reutilizar o crear el PR autorizado, comprobar CI y head fijado, mergear sin byp
 y seguir su deploy en primer plano. Un fallo detiene dependientes y deja resultado
 parcial; no repetir dispatch ni inventar rollback. Conservar los gates humanos.
 
+## Secuencia explícita para otra promoción del mismo día
+
+La primera promoción mantiene `AAAA.MM.DD-stable`: omitir `release-sequence`
+equivale a 1. Solo con autorización explícita para otra promoción, agregar al
+body final `<!-- release-sequence: 2 -->` (entero positivo seguro, único). El tag
+será `AAAA.MM.DD-2-stable`, sobre el main previo de esa promoción. No mover el
+primer tag, inventar otra fecha ni elegir una secuencia automáticamente. Un
+marker presente inválido o duplicado rechaza el PR antes de armarlo.
+La secuencia forma parte de la identidad del baseline y se revalida con el
+head/base antes de aprobarlo. No habilita PRs directos a main ni salta checks,
+GitHub App o la aprobación humana de production.
+
 ## 5. Crear los PRs finales de SISOC (sin mergear)
 
 Bodies y títulos en `plantillas.md`. La fecha del release es el día planeado del

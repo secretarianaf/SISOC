@@ -251,3 +251,42 @@ y de los descartes almacenados.
   asignar **Administrador de Encuestas** a los revisores. No se elevan automáticamente
   los permisos de los gestores actuales.
   La migración `0005_motivo_rechazo` agrega los datos del último rechazo.
+
+## API móvil selectiva de Espacios (2026-11-05)
+
+Esta sección describe la entrega selectiva desplegada en PRD el 2026-11-05.
+En development la activación ya existe en Segmentación (ver «Publicación en la
+PWA de Espacios Comunitarios»); las restricciones de abajo aplican a ese corte.
+
+El core publica `GET /api/encuestas/pwa/` (lista sin paginación) y
+`POST /api/encuestas/pwa/<ronda_id>/responder/`. Ambos requieren TokenAuthentication
+y acceso móvil confirmado por el servicio dueño de Espacios mediante el helper
+HTTP interno existente; no importan módulos Python de otro backend. Contexto
+indisponible o inválido falla cerrado con 503; usuario sin acceso recibe 403.
+
+Solo se ofrecen encuestas publicadas, disponibles en PWA, segmentadas para el
+usuario y con ronda abierta no vencida. La migración aditiva
+`0008_disponibilidad_pwa` conserva el archivo ya publicado en development y agrega
+`disponible_pwa=False`, `Pregunta.bloque` y `Pregunta.max_caracteres` opcional.
+No se habilitan encuestas existentes ni se entrega aquí una interfaz de activación.
+
+El envío acepta `{response_id: UUID, respuestas: {pregunta_id: valor}}`. La identidad
+proviene del token, nunca de un campo del cliente. El UUID se valida pero no se
+persiste como ledger: el bloqueo de ronda y CumplimientoRonda deduplican por
+usuario/ronda. Los reintentos válidos devuelven `ya_registrada: true`; no se promete
+replay luego del cierre o vencimiento (404). Las respuestas inválidas no dejan
+contenido ni cumplimiento parcial. La respuesta anónima no referencia al usuario;
+el cumplimiento separado sí permite saber que ya respondió, no qué respondió.
+
+Se reutiliza registrar_respuesta para web y móvil, incluyendo límites de texto y
+visibilidad recursiva: un descendiente de una pregunta oculta no se vuelve obligatorio.
+Las versiones nuevas conservan metadatos y disponibilidad, pero nacen en borrador.
+No se cambian editor, segmentación web, permisos de grupos ni contenido operativo.
+
+Despliegue: migración normal del core y regeneración del registro de URLs (solo dos
+entradas nuevas). El selector vigente interpreta el registro compartido como refresh
+completo de backends. La composición productiva no define `encuestas_worker`;
+este cambio no agrega worker/cron ni garantiza la operación automática de rondas.
+No retirar columnas con datos para un rollback de código: conservar el esquema
+aditivo y coordinar una reversión compatible. Ver el registro de cambio para pruebas
+y límites de evidencia de esta entrega.

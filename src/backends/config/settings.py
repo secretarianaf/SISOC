@@ -225,6 +225,9 @@ MIDDLEWARE = [
     "users.middleware_admin_body.UserAdminBodyMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # G1 v1: drops the client gate header; a vertical runtime verifies it
+    # before any view or CSRF reads the body (core.web_gate).
+    "core.web_gate.WebGateMiddleware",
     "users.middleware.FirstLoginPasswordChangeMiddleware",
     "users.middleware.ProfileConfirmationMiddleware",
     "encuestas.middleware.EncuestaObligatoriaMiddleware",
@@ -293,6 +296,10 @@ SISOC_BACKENDS = {
     }
     for name, spec in load_backends_registry().items()
 }
+# Core web prerequisites (web access, password, profile, survey) the G1 gate
+# evaluates before /api/web/<vertical>/ (core.web_gate). Dotted path: the
+# kernel never imports the core.
+SISOC_WEB_ACCESS_POLICY = "usuarios.web_session.resolve_web_access"
 FRONTEND_V2_HMR_ORIGINS = (
     [
         origin.strip()

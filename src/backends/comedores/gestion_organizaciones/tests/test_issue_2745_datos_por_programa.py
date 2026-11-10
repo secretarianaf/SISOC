@@ -1,9 +1,10 @@
-"""Etapa 1 del #2745: modelos, catálogo, carga inicial y auditoría.
+"""Etapa 1 del #2745: modelos, carga inicial, región y auditoría.
 
 Plan: docs/plans/2026-T4/2026-10-20-2745-legajo-organizacion-por-programa.md.
 """
 
 import importlib
+from contextlib import contextmanager
 from datetime import date
 from decimal import Decimal
 from functools import lru_cache
@@ -11,7 +12,7 @@ from types import SimpleNamespace
 
 import pytest
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
 from django.db.migrations.loader import MigrationLoader
 from django.db.models import ProtectedError
 
@@ -24,16 +25,18 @@ from comedores.utils import (
 )
 from gestion_organizaciones.models import (
     ConvenioProyecto,
-    DatosRegionOrganizacion,
     LineaProyecto,
     ProgramaOrganizacion,
-    RegionAbordaje,
-    SubzonaAbordaje,
 )
-from organizaciones.models import Organizacion, ProyectoOrganizacion
+from organizaciones.models import (
+    Organizacion,
+    ProyectoOrganizacion,
+    RegionAbordajeComunitario,
+    SubzonaAbordajeComunitario,
+)
 
-catalogo = importlib.import_module(
-    "gestion_organizaciones.migrations.0003_catalogo_region_subzona"
+retiro_region = importlib.import_module(
+    "gestion_organizaciones.migrations.0005_region_desde_issue_2642"
 )
 carga_inicial = importlib.import_module(
     "gestion_organizaciones.migrations.0004_carga_inicial_programas_lineas"
@@ -51,10 +54,6 @@ def _apps_de(migracion):
     return loader.project_state(
         ("gestion_organizaciones", migracion), at_end=False
     ).apps
-
-
-def _correr_catalogo():
-    catalogo.cargar_catalogo(_apps_de("0003_catalogo_region_subzona"), None)
 
 
 def _correr_carga_inicial():
@@ -155,33 +154,6 @@ def test_no_se_borra_en_cascada_un_programa_con_organizaciones(programas):
 
 
 @pytest.mark.django_db
-def test_no_se_borra_en_cascada_una_region_con_subzonas():
-    region = RegionAbordaje.objects.create(nombre="REGION TEST")
-    SubzonaAbordaje.objects.create(region=region, nombre="SUBZONA TEST")
-
-    with pytest.raises(ProtectedError):
-        region.delete()
-
-
-@pytest.mark.django_db
-def test_subzona_debe_pertenecer_a_la_region():
-    norte = RegionAbordaje.objects.create(nombre="NORTE")
-    sur = RegionAbordaje.objects.create(nombre="SUR")
-    subzona_sur = SubzonaAbordaje.objects.create(region=sur, nombre="ZONA SUR")
-    organizacion = Organizacion.objects.create(nombre="Org región")
-
-    datos = DatosRegionOrganizacion(
-        organizacion=organizacion, region=norte, subzona=subzona_sur
-    )
-    with pytest.raises(ValidationError) as error:
-        datos.clean()
-    assert "subzona" in error.value.message_dict
-
-    datos.region = sur
-    datos.clean()
-
-
-@pytest.mark.django_db
 def test_linea_de_proyecto_solo_acepta_secos_o_tradicional(programas):
     organizacion = Organizacion.objects.create(nombre="Org línea")
     proyecto = ProyectoOrganizacion.objects.create(
@@ -256,33 +228,108 @@ def test_linea_no_pasa_a_secos_si_el_convenio_tiene_imprevistos(programas):
     linea.clean()
 
 
-# --- Migración del catálogo --------------------------------------------------
+# --- Migración 0005: región del #2642 ----------------------------------------
 
 
-@pytest.mark.django_db
-def test_catalogo_carga_5_regiones_y_28_subzonas_y_es_idempotente():
-    _correr_catalogo()
-    _correr_catalogo()
+@contextmanager
+def _tablas_region_propia():
+    """Recrea las tablas de la Etapa 1, que la 0005 borra, para probar la copia."""
+    apps = _apps_de("0005_region_desde_issue_2642")
+    modelos = [
+        apps.get_model("gestion_organizaciones", nombre)
+        for nombre in ("RegionAbordaje", "SubzonaAbordaje", "DatosRegionOrganizacion")
+    ]
+    with connection.schema_editor() as editor:
+        for modelo in modelos:
+            editor.create_model(modelo)
+    try:
+        yield SimpleNamespace(
+            apps=apps, region=modelos[0], subzona=modelos[1], datos=modelos[2]
+        )
+    finally:
+        with connection.schema_editor() as editor:
+            for modelo in reversed(modelos):
+                editor.delete_model(modelo)
 
-    assert RegionAbordaje.objects.count() == 5
-    assert SubzonaAbordaje.objects.count() == 28
-    assert (
-        SubzonaAbordaje.objects.filter(
-            region__nombre="CUYO PATAGONIA BAI", nombre="SAN JUAN"
-        ).count()
-        == 1
+
+def _correr_retiro_region(apps):
+    retiro_region.copiar_region_al_2642(apps, SimpleNamespace(connection=connection))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_retiro_region_copia_catalogo_y_datos_al_2642_incluidas_bajas():
+    noa = RegionAbordajeComunitario.objects.create(nombre="NOA")
+    salta = SubzonaAbordajeComunitario.objects.create(nombre="SALTA", region=noa)
+    con_datos = Organizacion.objects.create(nombre="Org con región")
+    dada_de_baja = Organizacion.objects.create(nombre="Org dada de baja")
+    dada_de_baja.delete()
+    ya_cargada = Organizacion.objects.create(
+        nombre="Org ya cargada", region_abordaje=noa, subzona_abordaje=salta
     )
 
+    with _tablas_region_propia() as propia:
+        noa_propia = propia.region.objects.create(nombre="NOA")
+        nueva = propia.region.objects.create(nombre="REGION AGREGADA A MANO")
+        salta_propia = propia.subzona.objects.create(region=noa_propia, nombre="SALTA")
+        zona_nueva = propia.subzona.objects.create(region=nueva, nombre="ZONA NUEVA")
+        # Sin organizaciones: no se copia al catálogo del kernel.
+        sin_uso = propia.region.objects.create(nombre="REGION SIN USO")
+        propia.subzona.objects.create(region=sin_uso, nombre="ZONA SIN USO")
+        propia.subzona.objects.create(region=noa_propia, nombre="ORAN SIN USO")
+        propia.datos.objects.create(
+            organizacion_id=con_datos.pk, region=nueva, subzona=zona_nueva
+        )
+        propia.datos.objects.create(
+            organizacion_id=dada_de_baja.pk, region=noa_propia, subzona=salta_propia
+        )
+        propia.datos.objects.create(
+            organizacion_id=ya_cargada.pk, region=noa_propia, subzona=salta_propia
+        )
 
-@pytest.mark.django_db
-def test_catalogo_no_modifica_subzonas_existentes():
-    region = RegionAbordaje.objects.create(nombre="NOA")
-    SubzonaAbordaje.objects.create(region=region, nombre="SUBZONA AGREGADA A MANO")
+        _correr_retiro_region(propia.apps)
 
-    _correr_catalogo()
+    zona_kernel = SubzonaAbordajeComunitario.objects.get(nombre="ZONA NUEVA")
+    assert zona_kernel.region.nombre == "REGION AGREGADA A MANO"
+    assert RegionAbordajeComunitario.objects.count() == 2
+    assert not SubzonaAbordajeComunitario.objects.filter(
+        nombre__in=["ZONA SIN USO", "ORAN SIN USO"]
+    ).exists()
+    con_datos.refresh_from_db()
+    assert (con_datos.region_abordaje, con_datos.subzona_abordaje) == (
+        zona_kernel.region,
+        zona_kernel,
+    )
+    baja = Organizacion._base_manager.get(pk=dada_de_baja.pk)
+    assert (baja.region_abordaje, baja.subzona_abordaje) == (noa, salta)
+    ya_cargada.refresh_from_db()
+    assert (ya_cargada.region_abordaje, ya_cargada.subzona_abordaje) == (noa, salta)
 
-    assert SubzonaAbordaje.objects.filter(nombre="SUBZONA AGREGADA A MANO").exists()
-    assert SubzonaAbordaje.objects.count() == 29
+
+@pytest.mark.django_db(transaction=True)
+def test_retiro_region_se_frena_si_pisaria_un_dato_distinto():
+    centro = RegionAbordajeComunitario.objects.create(nombre="CENTRO")
+    noa = RegionAbordajeComunitario.objects.create(nombre="NOA")
+    SubzonaAbordajeComunitario.objects.create(nombre="SALTA", region=centro)
+    organizacion = Organizacion.objects.create(
+        nombre="Org con otra región", region_abordaje=centro
+    )
+
+    with _tablas_region_propia() as propia:
+        noa_propia = propia.region.objects.create(nombre="NOA")
+        salta_propia = propia.subzona.objects.create(region=noa_propia, nombre="SALTA")
+        propia.datos.objects.create(
+            organizacion_id=organizacion.pk, region=noa_propia, subzona=salta_propia
+        )
+
+        with pytest.raises(retiro_region.RegionNoCopiable) as error:
+            _correr_retiro_region(propia.apps)
+
+    assert "SALTA" in str(error.value)
+    assert "Org con otra región" in str(error.value)
+    organizacion.refresh_from_db()
+    assert organizacion.region_abordaje == centro
+    assert organizacion.subzona_abordaje is None
+    assert noa.subzonas.count() == 0
 
 
 # --- Migración de carga inicial ----------------------------------------------

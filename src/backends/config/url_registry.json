@@ -205,6 +205,11 @@
   "regex": "^rendicion_cuentas_final/documento/adjuntar/\\Z"
  },
  {
+  "name": "adjunto_descargar",
+  "namespace": "",
+  "regex": "^comedores/(?P<comedor_pk>[0-9]+)/adjuntos/(?P<pk>[0-9]+)/descargar\\Z"
+ },
+ {
   "name": "admision_detalle",
   "namespace": "",
   "regex": "^comedores/(?P<comedor_pk>[0-9]+)/admision/(?P<pk>[0-9]+)/detalle/\\Z"
@@ -603,6 +608,16 @@
   "name": "api-siis-user-create",
   "namespace": "",
   "regex": "^api/users/siis/\\Z"
+ },
+ {
+  "name": "api-territorial-comedor-adjunto-borrar",
+  "namespace": "",
+  "regex": "^api/territorial/comedores/(?P<pk>\\d+)/adjuntos/(?P<adjunto_id>[0-9]+)/$"
+ },
+ {
+  "name": "api-territorial-comedor-adjuntos",
+  "namespace": "",
+  "regex": "^api/territorial/comedores/(?P<pk>\\d+)/adjuntos/$"
  },
  {
   "name": "api-territorial-comedor-corregir-acta-complementaria",
@@ -1225,6 +1240,11 @@
   "regex": "^api/celiaquia/tipos-documento/$"
  },
  {
+  "name": "celiaquia_tablero",
+  "namespace": "",
+  "regex": "^celiaquia/tablero/\\Z"
+ },
+ {
   "name": "centro_create",
   "namespace": "",
   "regex": "^centrodefamilia/centros/nuevo/\\Z"
@@ -1268,6 +1288,21 @@
   "name": "centrodeinfancia_ajax_load_departamentos_ipi",
   "namespace": "",
   "regex": "^centrodeinfancia/ajax/load\\-departamentos\\-ipi/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_calidad_cargar",
+  "namespace": "",
+  "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/calidad/cargar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_calidad_detalle",
+  "namespace": "",
+  "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/calidad/(?P<form_pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_calidad_listado",
+  "namespace": "",
+  "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/calidad/\\Z"
  },
  {
   "name": "centrodeinfancia_crear",
@@ -2063,6 +2098,16 @@
   "name": "encuestas_publicar",
   "namespace": "",
   "regex": "^encuestas/(?P<pk>[0-9]+)/publicar/\\Z"
+ },
+ {
+  "name": "encuestas_pwa_listar",
+  "namespace": "",
+  "regex": "^api/encuestas/pwa/\\Z"
+ },
+ {
+  "name": "encuestas_pwa_responder",
+  "namespace": "",
+  "regex": "^api/encuestas/pwa/(?P<ronda_id>[0-9]+)/responder/\\Z"
  },
  {
   "name": "encuestas_rechazar",
@@ -3553,6 +3598,16 @@
   "name": "rendicioncuentasmensual_download_pdf",
   "namespace": "",
   "regex": "^rendicioncuentasmensual/rendicioncuentasmensual/detalle/(?P<pk>[0-9]+)/descargar\\-pdf/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_download_pdf_estado",
+  "namespace": "",
+  "regex": "^rendicioncuentasmensual/rendicioncuentasmensual/detalle/(?P<pk>[0-9]+)/descargar\\-pdf/estado/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_download_pdf_solicitar",
+  "namespace": "",
+  "regex": "^rendicioncuentasmensual/rendicioncuentasmensual/detalle/(?P<pk>[0-9]+)/descargar\\-pdf/solicitar/\\Z"
  },
  {
   "name": "rendicioncuentasmensual_global_list",
@@ -5927,11 +5982,6 @@
  {
   "name": "",
   "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/(?P<object_id>.+)/\\Z"
- },
- {
-  "name": "",
-  "namespace": "admin",
   "regex": "^admin/gestion_organizaciones/firmante/(?P<object_id>.+)/\\Z"
  },
  {
@@ -5943,16 +5993,6 @@
   "name": "",
   "namespace": "admin",
   "regex": "^admin/gestion_organizaciones/programaorganizacion/(?P<object_id>.+)/\\Z"
- },
- {
-  "name": "",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/regionabordaje/(?P<object_id>.+)/\\Z"
- },
- {
-  "name": "",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/subzonaabordaje/(?P<object_id>.+)/\\Z"
  },
  {
   "name": "",
@@ -8365,6 +8405,11 @@
   "regex": "^admin/celiaquia/expedienteciudadano/(?P<object_id>.+)/operacion\\-aprobar/\\Z"
  },
  {
+  "name": "celiaquia_expedienteciudadano_operacion_eliminar",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/expedienteciudadano/(?P<object_id>.+)/operacion\\-eliminar/\\Z"
+ },
+ {
   "name": "celiaquia_expedienteciudadano_operacion_liberar_cupo",
   "namespace": "admin",
   "regex": "^admin/celiaquia/expedienteciudadano/(?P<object_id>.+)/operacion\\-liberar\\-cupo/\\Z"
@@ -8388,6 +8433,11 @@
   "name": "celiaquia_expedienteciudadano_operacion_suspender_cupo",
   "namespace": "admin",
   "regex": "^admin/celiaquia/expedienteciudadano/(?P<object_id>.+)/operacion\\-suspender\\-cupo/\\Z"
+ },
+ {
+  "name": "celiaquia_expedienteciudadano_operacion_volver_a_pendiente",
+  "namespace": "admin",
+  "regex": "^admin/celiaquia/expedienteciudadano/(?P<object_id>.+)/operacion\\-volver\\-a\\-pendiente/\\Z"
  },
  {
   "name": "celiaquia_expedienteestadohistorial_add",
@@ -10795,31 +10845,6 @@
   "regex": "^admin/gestion_organizaciones/convenioproyecto/(?P<object_id>.+)/history/\\Z"
  },
  {
-  "name": "gestion_organizaciones_datosregionorganizacion_add",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/add/\\Z"
- },
- {
-  "name": "gestion_organizaciones_datosregionorganizacion_change",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/(?P<object_id>.+)/change/\\Z"
- },
- {
-  "name": "gestion_organizaciones_datosregionorganizacion_changelist",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/\\Z"
- },
- {
-  "name": "gestion_organizaciones_datosregionorganizacion_delete",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/(?P<object_id>.+)/delete/\\Z"
- },
- {
-  "name": "gestion_organizaciones_datosregionorganizacion_history",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/datosregionorganizacion/(?P<object_id>.+)/history/\\Z"
- },
- {
   "name": "gestion_organizaciones_firmante_add",
   "namespace": "admin",
   "regex": "^admin/gestion_organizaciones/firmante/add/\\Z"
@@ -10893,56 +10918,6 @@
   "name": "gestion_organizaciones_programaorganizacion_history",
   "namespace": "admin",
   "regex": "^admin/gestion_organizaciones/programaorganizacion/(?P<object_id>.+)/history/\\Z"
- },
- {
-  "name": "gestion_organizaciones_regionabordaje_add",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/regionabordaje/add/\\Z"
- },
- {
-  "name": "gestion_organizaciones_regionabordaje_change",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/regionabordaje/(?P<object_id>.+)/change/\\Z"
- },
- {
-  "name": "gestion_organizaciones_regionabordaje_changelist",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/regionabordaje/\\Z"
- },
- {
-  "name": "gestion_organizaciones_regionabordaje_delete",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/regionabordaje/(?P<object_id>.+)/delete/\\Z"
- },
- {
-  "name": "gestion_organizaciones_regionabordaje_history",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/regionabordaje/(?P<object_id>.+)/history/\\Z"
- },
- {
-  "name": "gestion_organizaciones_subzonaabordaje_add",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/subzonaabordaje/add/\\Z"
- },
- {
-  "name": "gestion_organizaciones_subzonaabordaje_change",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/subzonaabordaje/(?P<object_id>.+)/change/\\Z"
- },
- {
-  "name": "gestion_organizaciones_subzonaabordaje_changelist",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/subzonaabordaje/\\Z"
- },
- {
-  "name": "gestion_organizaciones_subzonaabordaje_delete",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/subzonaabordaje/(?P<object_id>.+)/delete/\\Z"
- },
- {
-  "name": "gestion_organizaciones_subzonaabordaje_history",
-  "namespace": "admin",
-  "regex": "^admin/gestion_organizaciones/subzonaabordaje/(?P<object_id>.+)/history/\\Z"
  },
  {
   "name": "historial_historial_add",
@@ -13898,5 +13873,320 @@
   "name": "log_list",
   "namespace": "audittrail",
   "regex": "^auditoria/\\Z"
+ },
+ {
+  "name": "asistencia",
+  "namespace": "inet_api",
+  "regex": "^api/inet/sesiones/(?P<pk>[0-9]+)/asistencia/\\Z"
+ },
+ {
+  "name": "centros-delete-preview",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+ },
+ {
+  "name": "centros-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centros-edit-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/form/\\Z"
+ },
+ {
+  "name": "centros-edit-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "centros-filter-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/filter\\-form/\\Z"
+ },
+ {
+  "name": "centros-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/form/\\Z"
+ },
+ {
+  "name": "centros-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/\\Z"
+ },
+ {
+  "name": "centros-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/centros/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "ciudadano-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ciudadano\\-form/\\Z"
+ },
+ {
+  "name": "ciudadanos",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/ciudadanos/\\Z"
+ },
+ {
+  "name": "comisiones-delete-preview",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+ },
+ {
+  "name": "comisiones-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comisiones-edit-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/form/\\Z"
+ },
+ {
+  "name": "comisiones-edit-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "comisiones-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/form/\\Z"
+ },
+ {
+  "name": "comisiones-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/\\Z"
+ },
+ {
+  "name": "comisiones-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "contactos-delete-preview",
+  "namespace": "inet_api",
+  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+ },
+ {
+  "name": "contactos-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "contactos-edit-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/form/\\Z"
+ },
+ {
+  "name": "contactos-edit-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "contactos-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/contactos/form/\\Z"
+ },
+ {
+  "name": "contactos-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/contactos/\\Z"
+ },
+ {
+  "name": "contactos-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/contactos/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "cursos-delete-preview",
+  "namespace": "inet_api",
+  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+ },
+ {
+  "name": "cursos-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "cursos-edit-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/form/\\Z"
+ },
+ {
+  "name": "cursos-edit-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "cursos-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/cursos/form/\\Z"
+ },
+ {
+  "name": "cursos-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/cursos/\\Z"
+ },
+ {
+  "name": "cursos-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/cursos/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "estado",
+  "namespace": "inet_api",
+  "regex": "^api/inet/inscripciones/(?P<pk>[0-9]+)/estado/\\Z"
+ },
+ {
+  "name": "horario-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horario\\-form/\\Z"
+ },
+ {
+  "name": "horarios",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/horarios/\\Z"
+ },
+ {
+  "name": "horarios-delete-preview",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+ },
+ {
+  "name": "horarios-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "horarios-edit-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/form/\\Z"
+ },
+ {
+  "name": "horarios-edit-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "horarios-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horarios/form/\\Z"
+ },
+ {
+  "name": "horarios-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horarios/\\Z"
+ },
+ {
+  "name": "horarios-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/horarios/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "inscribir",
+  "namespace": "inet_api",
+  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/inscribir/\\Z"
+ },
+ {
+  "name": "inscripciones-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/inscripciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "inscripciones-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/inscripciones/\\Z"
+ },
+ {
+  "name": "planes-delete-preview",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+ },
+ {
+  "name": "planes-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "planes-edit-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/form/\\Z"
+ },
+ {
+  "name": "planes-edit-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "planes-filter-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/filter\\-form/\\Z"
+ },
+ {
+  "name": "planes-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/form/\\Z"
+ },
+ {
+  "name": "planes-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/\\Z"
+ },
+ {
+  "name": "planes-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/planes/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "sesiones-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/sesiones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "sesiones-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/sesiones/\\Z"
+ },
+ {
+  "name": "session",
+  "namespace": "inet_api",
+  "regex": "^api/inet/session/\\Z"
+ },
+ {
+  "name": "ubicaciones-delete-preview",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+ },
+ {
+  "name": "ubicaciones-detail",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "ubicaciones-edit-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/form/\\Z"
+ },
+ {
+  "name": "ubicaciones-edit-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "ubicaciones-form",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ubicaciones/form/\\Z"
+ },
+ {
+  "name": "ubicaciones-list",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ubicaciones/\\Z"
+ },
+ {
+  "name": "ubicaciones-options",
+  "namespace": "inet_api",
+  "regex": "^api/inet/ubicaciones/options/(?P<field>[^/]+)/\\Z"
  }
 ]

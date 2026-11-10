@@ -36,7 +36,7 @@ TIPOS_SEGUIMIENTO_POPUP = {
 }
 MENSAJES_ALTA_SEGUIMIENTO = {
     PrimerSeguimiento.TIPO_PRIMER: "Primer seguimiento creado correctamente.",
-    PrimerSeguimiento.TIPO_POSTERIOR: "Seguimiento posterior creado correctamente.",
+    PrimerSeguimiento.TIPO_POSTERIOR: "Seguimiento Posterior creado correctamente.",
     PrimerSeguimiento.TIPO_VIRTUAL: "Seguimiento virtual creado correctamente.",
 }
 

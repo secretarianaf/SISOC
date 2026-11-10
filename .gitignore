@@ -446,3 +446,5 @@ src/frontends/playwright-report/
 .npm-cache/
 .vite/
 *.local
+# Local AI runtime state
+.atl/

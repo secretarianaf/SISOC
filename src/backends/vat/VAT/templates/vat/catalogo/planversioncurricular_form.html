@@ -38,6 +38,7 @@
                 </div>
                 <div class="vp-section">
                     <div class="row">
+                        {% if form.provincia %}<div class="col-md-12 vp-field">{{ form.provincia|as_crispy_field }}</div>{% endif %}
                         <div class="col-md-12 vp-field">{{ form.nombre|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.sector|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.subsector|as_crispy_field }}</div>

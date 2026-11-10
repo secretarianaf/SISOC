@@ -40,7 +40,7 @@ function initialMode(): "light" | "dark" {
   }
 }
 
-export function V2Layout({ children, modules, username, sectionLabel = "Módulos" }: { children: ReactNode; modules: V2Module[]; username?: string; sectionLabel?: string }) {
+export function V2Layout({ children, modules, username, sectionLabel = "Módulos", sidebarWidth = 240, navigation, sidebarFooter }: { children: ReactNode; modules: V2Module[]; username?: string; sectionLabel?: string; sidebarWidth?: number; navigation?: (close: () => void) => ReactNode; sidebarFooter?: ReactNode }) {
   const [mode, setMode] = useState<"light" | "dark">(initialMode);
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountAnchor, setAccountAnchor] = useState<HTMLElement | null>(null);
@@ -114,10 +114,10 @@ export function V2Layout({ children, modules, username, sectionLabel = "Módulos
       variant={smallScreen ? "temporary" : "permanent"}
       open={smallScreen ? menuOpen : true}
       onClose={() => setMenuOpen(false)}
-      sx={{ width: smallScreen ? 0 : 240, flexShrink: 0, "& .MuiDrawer-paper": { width: 240, boxSizing: "border-box", pt: smallScreen ? 1 : "82px", display: "flex" } }}
+      sx={{ width: smallScreen ? 0 : sidebarWidth, flexShrink: 0, "& .MuiDrawer-paper": { width: sidebarWidth, boxSizing: "border-box", pt: smallScreen ? 1 : "82px", display: "flex" } }}
     >
       <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", px: 1 }}>
-        <Typography variant="overline" sx={{ color: "nav.textMuted", px: 2 }}>{sectionLabel}</Typography>
+        {navigation ? navigation(() => setMenuOpen(false)) : <><Typography variant="overline" sx={{ color: "nav.textMuted", px: 2 }}>{sectionLabel}</Typography>
         <List aria-label={sectionLabel}>
           {modules.map((item) => <ListItemButton
             key={item.href}
@@ -134,16 +134,16 @@ export function V2Layout({ children, modules, username, sectionLabel = "Módulos
             }}
             selected={item.active}
           ><ListItemIcon sx={{ minWidth: 0, mr: 1.5, "& svg": { fontSize: (value) => value.iconSize.small } }}>{item.icon ?? <AppsIcon />}</ListItemIcon><ListItemText primary={item.label} /></ListItemButton>)}
-        </List>
+        </List></>}
       </Box>
       <Box sx={{ p: 1, borderTop: (value) => `${value.border.thin}px solid ${value.palette.nav.divider}` }}>
-        <ListItemButton component="a" href="/">
+        {sidebarFooter || <ListItemButton component="a" href="/">
           <HomeOutlinedIcon sx={{ mr: 1, fontSize: (value) => value.iconSize.small }} />
           <ListItemText primary="Volver a SISOC" />
-        </ListItemButton>
+        </ListItemButton>}
       </Box>
     </Drawer>
-    <Box component="div" sx={{ ml: smallScreen ? 0 : "240px", pt: "82px", minHeight: "100vh", bgcolor: "background.default", display: "flex", flexDirection: "column" }}>
+    <Box component="div" sx={{ ml: smallScreen ? 0 : `${sidebarWidth}px`, pt: "82px", minHeight: "100vh", bgcolor: "background.default", display: "flex", flexDirection: "column" }}>
       <Box sx={{ flex: 1 }}>{children}</Box>
       <Box component="footer" sx={{ minHeight: 120, py: 3, display: "flex", justifyContent: "center", alignItems: "center", bgcolor: "nav.surface", borderTop: (value) => `${value.border.accent}px solid ${value.palette.secondary.main}` }}>
         <Box component="img" src="/static/custom/img/Presidencia_footer.svg" alt="Ministerio de Capital Humano" sx={{ width: 189, height: 72, objectFit: "contain" }} />

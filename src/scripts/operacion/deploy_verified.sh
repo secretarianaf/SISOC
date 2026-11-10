@@ -175,7 +175,17 @@ cleanup_old_images() {
 rollback_on_exit() {
   local failed_status=$?
   trap - EXIT
+  local refresh_phase
+  refresh_phase="$(cat "$deploy_phase_file" 2>/dev/null || true)"
+  rm -f -- "$deploy_phase_file"
   if [[ "$failed_status" -eq 0 || "$deployment_started" -eq 0 ]]; then
+    exit "$failed_status"
+  fi
+
+  if [[ "$refresh_phase" == precut ]]; then
+    echo "::warning::Fallo previo al corte; se restaura el checkout sin recrear servicios."
+    git -C "$ROOT_DIR" reset --hard "$previous_revision" \
+      || echo "::error::No se pudo restaurar el checkout anterior."
     exit "$failed_status"
   fi
 
@@ -214,6 +224,7 @@ rollback_on_exit() {
   echo "::warning::Rollback verificado en $previous_revision. Las migraciones de base de datos no se revierten automaticamente: ver docs/operacion/rollback_release_modularizacion.md."
   exit "$failed_status"
 }
+deploy_phase_file="$(mktemp)"
 trap rollback_on_exit EXIT
 
 echo "Commit previo al deploy para rollback: $previous_revision"
@@ -227,7 +238,7 @@ fi
 # usa las mismas (el migrador, entre ellas).
 export SISOC_RELEASE_SHA="$EXPECTED_REVISION"
 deploy_args=(--yes --skip-pull --expected-revision "$EXPECTED_REVISION" --without-mobile --diff-base "$previous_revision")
-SISOC_ROOT_DIR="$ROOT_DIR" bash "$ROOT_DIR/src/scripts/operacion/deploy_refresh.sh" "${deploy_args[@]}"
+SISOC_DEPLOY_PHASE_FILE="$deploy_phase_file" SISOC_ROOT_DIR="$ROOT_DIR" bash "$ROOT_DIR/src/scripts/operacion/deploy_refresh.sh" "${deploy_args[@]}"
 verify_stack
 deployed_revision="$(git -C "$ROOT_DIR" rev-parse HEAD)"
 [[ "$deployed_revision" == "$EXPECTED_REVISION" ]] \
@@ -252,4 +263,5 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   } >> "$GITHUB_STEP_SUMMARY"
 fi
 
+rm -f -- "$deploy_phase_file"
 trap - EXIT

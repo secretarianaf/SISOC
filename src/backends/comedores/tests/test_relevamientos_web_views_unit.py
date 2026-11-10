@@ -238,6 +238,7 @@ def test_list_view_construye_items_solo_padre_sin_seguimiento(mocker):
             "id": 11,
             "fecha": "2026-01-01",
             "estado": "Pendiente",
+            "estado_badge": "bg-secondary",
             "numero_if": "IF-11",
             "is_child": False,
             "parent_id": None,
@@ -279,7 +280,7 @@ def test_list_view_construye_items_padre_seguido_de_hijo(mocker):
     assert items[1]["is_child"] is True
     assert items[1]["parent_id"] == 42
     assert items[1]["fecha"] == "2026-02-02"
-    assert items[1]["estado"] == "Asignado"
+    assert items[1]["estado"] == "Pendiente"
     assert items[1]["numero_orden"] == 1
     assert items[1]["tipo"] == "Primer seguimiento"
     assert items[1]["numero_if"] is None
@@ -403,7 +404,7 @@ def test_detail_view_get_context_data_sin_relaciones_retorna_none(mocker):
 
     assert context["relevamiento_data"]["gas"] is None
     assert context["relevamiento_data"]["Entregas"] is None
-    assert context["relevamientos_timeline"][0]["estado"] == "Sin información"
+    assert context["relevamientos_timeline"][0]["estado"] == "Pendiente"
 
 
 def test_detail_view_get_context_data_limita_timeline_y_agrega_datos(mocker):

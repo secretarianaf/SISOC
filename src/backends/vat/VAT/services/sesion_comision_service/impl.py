@@ -35,7 +35,7 @@ class SesionComisionService:
         return {"comision": comision}
 
     @staticmethod
-    def generar_para_horario(horario):
+    def generar_para_horario(horario, *, fechas_excluidas=None):
         """
         Genera todas las sesiones para un ComisionHorario nuevo.
         Retorna la cantidad de sesiones creadas.
@@ -51,14 +51,14 @@ class SesionComisionService:
             return 0
 
         sesiones = SesionComisionService._construir(
-            comision, horario, weekday, fechas_excluidas=set()
+            comision, horario, weekday, fechas_excluidas=fechas_excluidas or set()
         )
         SesionComision.objects.bulk_create(sesiones, ignore_conflicts=True)
         SesionComisionService._renumerar(comision)
         return len(sesiones)
 
     @staticmethod
-    def regenerar_para_horario(horario):
+    def regenerar_para_horario(horario, *, fechas_excluidas=None):
         """
         En actualización de un horario: elimina las sesiones programadas de ese
         horario y regenera. Las sesiones realizadas/canceladas se preservan.
@@ -83,6 +83,8 @@ class SesionComisionService:
             .values_list("fecha", flat=True)
         )
 
+        fechas_preservadas.update(fechas_excluidas or set())
+
         # Eliminar solo las programadas
         SesionComision.objects.filter(horario=horario, estado="programada").delete()
 
@@ -95,14 +97,16 @@ class SesionComisionService:
         return len(sesiones)
 
     @staticmethod
-    def regenerar_para_comision(comision):
+    def regenerar_para_comision(comision, *, fechas_excluidas=None):
         """
         Regenera todas las sesiones de una comisión cuando cambian las fechas.
         Itera sobre todos sus ComisionHorario activos.
         """
         total = 0
         for horario in comision.horarios.filter(vigente=True):
-            total += SesionComisionService.regenerar_para_horario(horario)
+            total += SesionComisionService.regenerar_para_horario(
+                horario, fechas_excluidas=fechas_excluidas
+            )
         return total
 
     @staticmethod

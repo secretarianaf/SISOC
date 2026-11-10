@@ -12,8 +12,8 @@ services:
       retries: 5
 
   celery_pas_worker:
-    # Celery solo lo usa PAS: worker y beat corren con la imagen y el settings
-    # del backend de PAS (src/backends/config/backends.json).
+    # Worker de PAS: imagen y settings del backend de PAS
+    # (src/backends/config/backends.json).
     image: sisoc/backend-pas:${SISOC_RELEASE_SHA:-local}
     build:
       context: .
@@ -38,9 +38,37 @@ services:
       redis:
         condition: service_healthy
 
+  celery_comedores_worker:
+    # Tareas del backend de comedores (PDF consolidado de rendiciones, #2845):
+    # imagen y settings de comedores, cola propia para no competir con PAS.
+    image: sisoc/backend-comedores:${SISOC_RELEASE_SHA:-local}
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
+      target: backend
+      args:
+        BACKEND: comedores
+    env_file: [.env]
+    environment:
+      TZ: America/Argentina/Buenos_Aires
+      CELERY_BROKER_URL: redis://redis:6379/0
+      DJANGO_SETTINGS_MODULE: comedores_runtime.settings
+    volumes: ["./media:/sisoc/media", "./logs:/sisoc/logs"]
+    command: [celery, -A, config.celery:app, worker, -Q, comedores, --concurrency=2, --loglevel=INFO, --hostname=comedores@%h]
+    restart: unless-stopped
+    stop_grace_period: 6m
+    healthcheck:
+      test: [CMD-SHELL, 'celery -A config.celery:app inspect ping --destination "comedores@$$HOSTNAME" --timeout 10']
+      interval: 60s
+      timeout: 20s
+      retries: 3
+    depends_on:
+      redis:
+        condition: service_healthy
+
   celery_beat:
-    # Celery solo lo usa PAS: worker y beat corren con la imagen y el settings
-    # del backend de PAS (src/backends/config/backends.json).
+    # Beat corre con la imagen de PAS; las tareas periódicas de otros backends
+    # se envían por nombre a su cola (src/backends/config/celery.py).
     image: sisoc/backend-pas:${SISOC_RELEASE_SHA:-local}
     build:
       context: .

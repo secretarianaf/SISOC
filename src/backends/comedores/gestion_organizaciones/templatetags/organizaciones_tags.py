@@ -2,6 +2,8 @@ from decimal import Decimal, InvalidOperation
 
 from django import template
 
+from comedores.territoriales_pnud import etiqueta_territorial as _etiqueta_territorial
+
 register = template.Library()
 
 
@@ -20,3 +22,9 @@ def monto(valor):
     if centavos == "00":
         return f"{signo}${miles}"
     return f"{signo}${miles},{centavos}"
+
+
+@register.filter
+def etiqueta_territorial(usuario):
+    """Nombre del territorial como en la edición: ``Apellido, Nombre (usuario)``."""
+    return _etiqueta_territorial(usuario)

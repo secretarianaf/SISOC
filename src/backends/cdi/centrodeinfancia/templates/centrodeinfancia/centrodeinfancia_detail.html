@@ -647,6 +647,71 @@
             </div>
         {% endif %}
 
+        <!-- 5b) FORMULARIO DE CALIDAD -->
+        {% if calidad_puede_ver %}
+            <div class="cdf-card">
+                <div class="cdf-card-head">
+                    <i class="bi bi-clipboard-check"></i>
+                    <span>Formulario de Calidad</span>
+                    <div class="cdf-head-tools">
+                        <a href="{% url 'centrodeinfancia_calidad_listado' centro.id %}"
+                           class="cdf-btn">Ver historial</a>
+                        {% if calidad_puede_editar %}
+                            <a href="{% url 'centrodeinfancia_calidad_cargar' centro.id %}"
+                               class="cdf-btn cdf-btn--primary">
+                                {% if calidad_borrador %}
+                                    Continuar borrador
+                                {% else %}
+                                    Nuevo formulario
+                                {% endif %}
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="cdf-card-body pb-2">
+                    <small class="text-muted">
+                        Últimos envíos ({{ calidad_total }} en total).
+                        {% if calidad_borrador %}
+                            Hay un borrador sin enviar, guardado el {{ calidad_borrador.modificado|date:"d/m/Y H:i" }}.
+                        {% endif %}
+                    </small>
+                </div>
+                <div class="cdf-tbl-scroll">
+                    <table class="cdf-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha de envío</th>
+                                <th>Enviado por</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for formulario in calidad_recientes %}
+                                <tr>
+                                    <td>{{ formulario.id }}</td>
+                                    <td>{{ formulario.fecha_envio|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ formulario.enviado_por.get_full_name|default:formulario.enviado_por.username|default:"-" }}</td>
+                                    <td>
+                                        <div class="cdf-actions">
+                                            <a href="{% url 'centrodeinfancia_calidad_detalle' centro.id formulario.id %}"
+                                               class="cdf-btn cdf-btn--primary">Ver</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center cdf-td-muted py-3">
+                                        Todavía no hay formularios de calidad enviados para este centro.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
         <!-- 6) SEGUIMIENTO: INTERVENCIONES / OBSERVACIONES -->
         {% if cdi_intervenciones_visible %}
             <div class="cdf-card">

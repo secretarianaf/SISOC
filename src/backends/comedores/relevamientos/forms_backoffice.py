@@ -81,6 +81,7 @@ PrestacionSeguimientoFormSet = inlineformset_factory(
         "tipo_prestacion",
         "ap_presencial",
         "ap_vianda",
+        "ap_total",
         "de_presencial",
         "de_vianda",
     ),

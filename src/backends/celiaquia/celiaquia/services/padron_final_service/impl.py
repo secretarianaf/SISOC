@@ -74,17 +74,11 @@ class PadronFinalService:
         Returns:
             bytes: Contenido del archivo Excel
         """
-        from celiaquia.services.familia_service import FamiliaService
-
-        legajos = list(PadronFinalService._legajos_aprobados(expediente))
-        responsables_por_hijo = FamiliaService.obtener_responsables_por_hijo(
-            [legajo.ciudadano_id for legajo in legajos]
-        )
-
         rows = []
         sin_documento = []
-        for legajo in legajos:
-            responsables = responsables_por_hijo.get(legajo.ciudadano_id, [])
+        for legajo, responsables in PadronFinalService._legajos_con_responsables(
+            expediente
+        ):
             if len(responsables) > 1:
                 logger.warning(
                     "padron_final.responsable_ambiguo",
@@ -153,13 +147,43 @@ class PadronFinalService:
         ]
 
     @staticmethod
-    def hay_aprobados(expediente) -> bool:
-        """True si el expediente tiene al menos un legajo para el padron."""
-        qs = PadronFinalService._legajos_aprobados_qs(expediente)
-        return any(
-            not ExpedienteCiudadano.es_rol_responsable_puro(rol)
-            for rol in qs.values_list("rol", flat=True)
+    def _legajos_con_responsables(expediente):
+        """Aplica la aprobacion del responsable dentro del expediente.
+
+        El MATCH pertenece al beneficiario: el cruce no marca MATCH al
+        responsable puro. Los vinculos externos se ignoran antes de elegir
+        al primer responsable, conservando el orden del servicio familiar.
+        """
+        from celiaquia.services.familia_service.impl import FamiliaService
+
+        legajos = PadronFinalService._legajos_aprobados(expediente)
+        if not legajos:
+            return
+        revisiones = dict(
+            ExpedienteCiudadano.objects.filter(expediente=expediente).values_list(
+                "ciudadano_id", "revision_tecnico"
+            )
         )
+        responsables_por_hijo = FamiliaService.obtener_responsables_por_hijo(
+            [legajo.ciudadano_id for legajo in legajos]
+        )
+        for legajo in legajos:
+            responsables = [
+                responsable
+                for responsable in responsables_por_hijo.get(legajo.ciudadano_id, [])
+                if responsable.pk in revisiones
+            ]
+            if (
+                responsables
+                and revisiones[responsables[0].pk] != RevisionTecnico.APROBADO
+            ):
+                continue
+            yield legajo, responsables
+
+    @staticmethod
+    def hay_aprobados(expediente) -> bool:
+        """True si hay filas exportables, incluida la regla del responsable."""
+        return any(PadronFinalService._legajos_con_responsables(expediente))
 
     @staticmethod
     def _texto(value) -> str:

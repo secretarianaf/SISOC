@@ -7,6 +7,7 @@ from django.urls import reverse
 from encuestas.tests.helpers import publicar_para_test as publicar
 
 from encuestas.models import (
+    EstadoEncuesta,
     Pregunta,
     SegmentacionDestinatario,
     TipoDocumento,
@@ -167,6 +168,119 @@ def test_vista_segmentacion_muestra_destinatarios_actuales(
 
     assert response.status_code == 200
     assert b"30111222" in response.content
+
+
+@pytest.mark.django_db
+def test_segmentacion_guarda_y_desmarca_pwa(client, user_gestor, encuesta):
+    client.force_login(user_gestor)
+    url = reverse("encuestas_segmentacion_tipo", args=[encuesta.pk])
+    datos = {
+        "tipo": TipoSegmentacion.LISTADO_USUARIOS,
+        "disponibilidad_pwa_presente": "1",
+        "disponible_pwa": "on",
+    }
+    assert client.post(url, datos).status_code == 302
+    encuesta.refresh_from_db()
+    assert encuesta.disponible_pwa is True
+    # Los destinatarios siguen siendo una selección independiente del canal.
+    assert encuesta.segmentacion.tipo == TipoSegmentacion.LISTADO_USUARIOS
+    datos.pop("disponible_pwa")
+    assert client.post(url, datos).status_code == 302
+    encuesta.refresh_from_db()
+    assert encuesta.disponible_pwa is False
+
+
+@pytest.mark.django_db
+def test_formulario_anterior_no_desactiva_pwa(client, user_gestor, encuesta):
+    actualizar_segmentacion(
+        encuesta, tipo=TipoSegmentacion.TODOS_LOS_USUARIOS, disponible_pwa=True
+    )
+    client.force_login(user_gestor)
+    client.post(
+        reverse("encuestas_segmentacion_tipo", args=[encuesta.pk]),
+        {"tipo": TipoSegmentacion.LISTADO_USUARIOS},
+    )
+    encuesta.refresh_from_db()
+    assert encuesta.disponible_pwa is True
+    assert encuesta.segmentacion.tipo == TipoSegmentacion.LISTADO_USUARIOS
+    response = client.get(reverse("encuestas_editar", args=[encuesta.pk]))
+    assert b'name="disponible_pwa"' not in response.content
+    response = client.post(
+        reverse("encuestas_editar", args=[encuesta.pk]),
+        {
+            "titulo": "Título corregido",
+            "modalidad": "obligatoria",
+            "duracion_ronda_dias": 7,
+            "preguntas_json": "[]",
+        },
+    )
+    assert response.status_code == 302
+    encuesta.refresh_from_db()
+    assert encuesta.disponible_pwa is True
+
+
+@pytest.mark.django_db
+def test_error_segmentacion_no_guarda_canal_pwa(client, user_gestor, encuesta):
+    client.force_login(user_gestor)
+    client.post(
+        reverse("encuestas_segmentacion_tipo", args=[encuesta.pk]),
+        {
+            "tipo": "invalido",
+            "disponibilidad_pwa_presente": "1",
+            "disponible_pwa": "on",
+        },
+    )
+    encuesta.refresh_from_db()
+    assert encuesta.disponible_pwa is False
+
+
+@pytest.mark.django_db
+def test_canal_pwa_respeta_permiso_y_bloqueo_por_aprobacion(
+    client, user_sin_permiso, user_gestor, encuesta
+):
+    url = reverse("encuestas_segmentacion_tipo", args=[encuesta.pk])
+    datos = {
+        "tipo": TipoSegmentacion.TODOS_LOS_USUARIOS,
+        "disponibilidad_pwa_presente": "1",
+        "disponible_pwa": "on",
+    }
+    client.force_login(user_sin_permiso)
+    assert client.post(url, datos).status_code == 403
+    encuesta.estado = EstadoEncuesta.PENDIENTE_APROBACION
+    encuesta.save()
+    client.force_login(user_gestor)
+    assert client.post(url, datos).status_code == 302
+    encuesta.refresh_from_db()
+    assert encuesta.disponible_pwa is False
+
+
+@pytest.mark.django_db
+def test_disponibilidad_pwa_puede_cambiar_con_ronda_abierta(encuesta, usuario_creador):
+    Pregunta.objects.create(
+        encuesta=encuesta, texto="¿Todo bien?", tipo=TipoPregunta.SI_NO
+    )
+    actualizar_segmentacion(
+        encuesta,
+        tipo=TipoSegmentacion.LISTADO_DOCUMENTOS,
+        destinatarios=[{"tipo_documento": "dni", "numero_documento": "00000000"}],
+    )
+    publicar(encuesta, usuario=usuario_creador)
+    actualizar_segmentacion(
+        encuesta, tipo=TipoSegmentacion.LISTADO_DOCUMENTOS, disponible_pwa=True
+    )
+    encuesta.refresh_from_db()
+    assert encuesta.disponible_pwa is True
+    assert encuesta.segmentacion.destinatarios.count() == 1
+
+
+@pytest.mark.django_db
+def test_disponibilidad_pwa_rechaza_valor_que_no_es_booleano(encuesta):
+    with pytest.raises(ValidationError):
+        actualizar_segmentacion(
+            encuesta, tipo=TipoSegmentacion.TODOS_LOS_USUARIOS, disponible_pwa="on"
+        )
+    encuesta.refresh_from_db()
+    assert encuesta.disponible_pwa is False
 
 
 @pytest.mark.django_db

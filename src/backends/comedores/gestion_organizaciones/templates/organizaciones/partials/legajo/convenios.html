@@ -1,0 +1,110 @@
+{# Datos de Convenio por proyecto de la línea (#2745). Recibe: convenios, programa, color, es_linea_tradicional. #}
+{% load organizaciones_tags %}
+<div class="tabla-legajo card-programa card-{{ color }}">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+        <h5 class="mb-0">Datos de Convenio · {{ programa.nombre }}</h5>
+        <span class="chip-legajo">Solo proyectos de esta línea</span>
+    </div>
+    <p class="nota-legajo mb-3">Un convenio por cada proyecto de la línea.</p>
+    {% for fila in convenios %}
+        <details class="convenio-paquete">
+            <summary>
+                <span class="badge rounded-pill bg-primary px-3 py-2">{{ fila.proyecto.codigo }}</span>
+                {% if fila.convenio %}
+                    <span class="ms-2">Convenio {{ fila.convenio.numero }}</span>
+                    {% if fila.resumen.coincide %}
+                        <span class="badge-status vigente ms-auto">Cargado</span>
+                    {% else %}
+                        <span class="badge-status por-vencer ms-auto">Revisar montos</span>
+                    {% endif %}
+                {% else %}
+                    <span class="badge badge-pendiente ms-auto">Sin cargar</span>
+                {% endif %}
+            </summary>
+            <div class="convenio-cuerpo">
+                {% if fila.convenio %}
+                    {% with convenio=fila.convenio %}
+                        <div class="convenio-generales">
+                            <div>
+                                <span class="etiqueta">N° de convenio</span><strong>{{ convenio.numero }}</strong>
+                            </div>
+                            <div>
+                                <span class="etiqueta">Fecha</span><strong>{{ convenio.fecha|date:"d/m/Y" }}</strong>
+                            </div>
+                            <div>
+                                <span class="etiqueta">Meses</span><strong>{{ convenio.meses }}</strong>
+                            </div>
+                            <div>
+                                <span class="etiqueta">Monto total</span><strong>{{ convenio.monto_total|monto }}</strong>
+                            </div>
+                        </div>
+                        <h6 class="titulo-dorado mt-3 mb-1">Componentes del convenio</h6>
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Componente</th>
+                                    <th class="text-end">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Componente alimentario</td>
+                                    <td class="text-end">{{ convenio.componente_alimentario|monto }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Componente gastos generales</td>
+                                    <td class="text-end">{{ convenio.componente_gastos_generales|monto }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Componente SIPH</td>
+                                    <td class="text-end">{{ convenio.componente_siph|monto }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Componente gasto bancario</td>
+                                    <td class="text-end">{{ convenio.componente_gasto_bancario|monto }}</td>
+                                </tr>
+                                {% if es_linea_tradicional %}
+                                    <tr>
+                                        <td>Imprevistos</td>
+                                        <td class="text-end">{{ convenio.imprevistos|monto|default:"-" }}</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th>Suma de componentes</th>
+                                    <th class="text-end">{{ fila.resumen.suma|monto }}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        {% if fila.resumen.coincide %}
+                            <p class="texto-ok mt-2 mb-0">✔ La suma de componentes coincide con el monto total del convenio.</p>
+                        {% else %}
+                            <div class="aviso-legajo mt-2" role="status">
+                                <strong>La suma de componentes no coincide con el monto total del convenio.</strong>
+                                Suma: {{ fila.resumen.suma|monto }} · Monto total: {{ fila.resumen.total|monto }} · Diferencia: {{ fila.resumen.diferencia|monto }}.
+                            </div>
+                        {% endif %}
+                        {% if not es_linea_tradicional %}
+                            <p class="nota-legajo mt-2 mb-0">Imprevistos no aplica: es solo para Línea Tradicional.</p>
+                        {% endif %}
+                    {% endwith %}
+                {% else %}
+                    <p class="texto-vacio mb-0">El proyecto todavía no tiene convenio cargado.</p>
+                {% endif %}
+                {% if puede_gestionar_organizaciones %}
+                    <a href="{% url 'organizacion_proyecto_convenio' fila.proyecto.pk %}"
+                       class="btn btn-success btn-sm mt-3">
+                        {% if fila.convenio %}
+                            Editar convenio
+                        {% else %}
+                            Cargar convenio
+                        {% endif %}
+                    </a>
+                {% endif %}
+            </div>
+        </details>
+    {% empty %}
+        <p class="texto-vacio mb-0">No hay proyectos en esta línea.</p>
+    {% endfor %}
+</div>

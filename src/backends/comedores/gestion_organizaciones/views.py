@@ -34,12 +34,11 @@ from gestion_organizaciones.forms import (
     FirmanteForm,
     OrganizacionForm,
 )
-from gestion_organizaciones.models import (
-    ConvenioProyecto,
-    Firmante,
-)
+from gestion_organizaciones.models import ConvenioProyecto, Firmante
+from gestion_organizaciones.services.legajo import datos_legajo
 from gestion_organizaciones.services.programas import (
     motivo_que_impide_baja,
+    programas_de_organizacion,
     resumen_convenio,
 )
 from gestion_organizaciones.templatetags.organizaciones_tags import monto
@@ -53,8 +52,6 @@ from organizaciones.models import (
     RolFirmante,
 )
 from rendicioncuentasmensual.models import RendicionCuentaMensual
-from rendicioncuentasmensual.services import RendicionesOrganizacionService
-from comedores.territoriales_pnud import etiqueta_territorial
 
 MAX_DOCUMENTO_ORGANIZACION_FILE_SIZE = 20 * 1024 * 1024
 DOCUMENTO_ORGANIZACION_FORMATOS_VALIDOS = "PDF, JPG, PNG, Excel o Word"
@@ -833,20 +830,10 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["firmantes"] = self.object.firmantes.select_related("rol", "programa")
+        # Legajo por programa (#2745): firmantes, comedores, proyectos, región,
+        # convenios y rendiciones del programa elegido.
+        context.update(datos_legajo(self.object, self.request.GET))
         context["avales_data"] = self.object.avales.all()
-
-        # Obtener comedores asociados a la organización
-        comedores = self.object.comedor_set.select_related(
-            "tipocomedor",
-            "provincia",
-            "municipio",
-            "localidad",
-            "referente",
-            "programa",
-        ).all()
-        context["comedores"] = comedores
-        context["comedores_count"] = comedores.count()
 
         context["table_headers"] = [
             {"title": "Nombre"},
@@ -931,31 +918,6 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
         context["puede_gestionar_organizaciones"] = _puede_ver_todas_las_organizaciones(
             self.request.user
         )
-
-        proyectos = RendicionesOrganizacionService.obtener_proyectos(self.object)
-        context["proyectos_organizacion"] = list(
-            self.object.proyectos.filter(activo=True)
-            .order_by("codigo")
-            .values_list("codigo", flat=True)
-        )
-        context["territoriales_organizacion"] = [
-            etiqueta_territorial(user)
-            for user in self.object.territoriales_abordaje_comunitario.order_by(
-                "last_name", "first_name", "username"
-            )
-        ]
-        proyecto_solicitado = (self.request.GET.get("proyecto") or "").strip()
-        proyecto_seleccionado = (
-            proyecto_solicitado if proyecto_solicitado in proyectos else ""
-        )
-        context["proyectos_rendiciones"] = proyectos
-        context["proyecto_rendiciones_seleccionado"] = proyecto_seleccionado
-        context["rendiciones_presentadas"] = (
-            RendicionesOrganizacionService.obtener_rendiciones(
-                self.object, proyecto_seleccionado
-            )
-        )
-        context["rendiciones_tab_activo"] = "proyecto" in self.request.GET
 
         return context
 
@@ -1079,9 +1041,12 @@ class ConvenioProyectoView(LoginRequiredMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse(
-            "organizacion_editar", kwargs={"pk": self.get_proyecto().organizacion_id}
+        # Vuelve al legajo, en la línea del proyecto, donde se ve el convenio.
+        proyecto = self.get_proyecto()
+        legajo = reverse(
+            "organizacion_detalle", kwargs={"pk": proyecto.organizacion_id}
         )
+        return f"{legajo}?programa={proyecto.linea.programa_id}"
 
 
 @login_required
@@ -1546,5 +1511,26 @@ def proyectos_organizacion_ajax(request, organizacion_id):
     proyectos = ProyectoOrganizacion.objects.filter(
         organizacion=organizacion,
         activo=True,
-    ).values("id", "codigo", "nombre")
-    return JsonResponse({"proyectos": list(proyectos)})
+    )
+    # Filtro opcional por programa (#2745): solo los proyectos de esa línea.
+    programa_id = (request.GET.get("programa") or "").strip()
+    if programa_id.isdigit():
+        proyectos = proyectos.filter(linea__programa_id=int(programa_id))
+    return JsonResponse(
+        {
+            "proyectos": [
+                {
+                    "id": proyecto["id"],
+                    "codigo": proyecto["codigo"],
+                    "nombre": proyecto["nombre"],
+                    "linea": proyecto["linea__programa_id"],
+                }
+                for proyecto in proyectos.values(
+                    "id", "codigo", "nombre", "linea__programa_id"
+                )
+            ],
+            "programas": [
+                programa.pk for programa in programas_de_organizacion(organizacion)
+            ],
+        }
+    )

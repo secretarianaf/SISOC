@@ -1,23 +1,18 @@
 {% extends "includes/main.html" %};
-{% load static custom_filters image_tags %}
+{% load static custom_filters image_tags estado_unificado %}
 ;
 {% block title %}Acompañamiento Territorial - Comedor: {{ comedor.nombre }}{% endblock %}
 ;
 {% block titulo-pagina %}
-    {{ relevamiento.comedor.nombre }}
+    {{ relevamiento.datos_comedor.nombre }}
     <span class="ml-2 h5">| Acompañamiento Territorial</span>
     <span class="ml-2 h5">| {{ relevamiento.fecha_visita | default_if_none:"Sin información" }} |</span>
-    <span class="ml-2 h5"
-          {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
-        {{ estado_visible | default_if_none:"Sin información" }}
-    </span>
+    <span class="badge ml-2 {{ relevamiento|badge_estado_unificado }}"
+          title="Estado de la visita{% if relevamiento.estado_validacion %} (validación del coordinador: {{ relevamiento.estado_validacion }}){% endif %}">{{ estado_visible }}</span>
+    {% if relevamiento.estado_validacion == 'A subsanar' %}<span class="badge bg-danger ml-1">A subsanar</span>{% endif %}
     {% if relevamiento.sincronizado_gestionar %}
         <span class="badge bg-success ml-2"
               title="El acompañamiento territorial se sincronizó con GESTIONAR">Sincronizado con GESTIONAR</span>
-    {% endif %}
-    {% if relevamiento.estado_validacion %}
-        <span class="badge ml-2 {% if relevamiento.estado_validacion == 'Validado' %}bg-success{% elif relevamiento.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}"
-              title="Estado de validación del coordinador">{{ relevamiento.estado_validacion }}</span>
     {% endif %}
     {% if relevamiento.origen == "app" %}
         <span class="badge bg-primary ml-2"
@@ -190,7 +185,7 @@
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h1 class="comedor-header-title">
-                    {{ relevamiento.comedor.nombre }}
+                    {{ relevamiento.datos_comedor.nombre }}
                     <span class="comedor-header-divider">|</span>
                 </h1>
             </div>
@@ -259,15 +254,12 @@
                                     <td>{{ seguimiento.get_tipo_display }}</td>
                                     <td>{{ seguimiento.fecha_hora|default_if_none:"Sin fecha" }}</td>
                                     <td>
-                                        {% if seguimiento.estado == "Completo" %}
-                                            <span class="badge bg-success">Completado</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">{{ seguimiento.estado|default:"No completado" }}</span>
-                                        {% endif %}
+                                        <span class="badge {{ seguimiento|badge_estado_unificado }}">{{ seguimiento|estado_unificado }}</span>
+                                        {% if seguimiento.estado_validacion == 'A subsanar' %}<span class="badge bg-danger ml-1">A subsanar</span>{% endif %}
                                     </td>
                                     <td>
                                         {% if seguimiento.estado_validacion %}
-                                            <span class="badge {% if seguimiento.estado_validacion == 'Validado' %}bg-success{% elif seguimiento.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ seguimiento.estado_validacion }}</span>
+                                            {{ seguimiento.estado_validacion }}
                                         {% else %}
                                             <span class="text-muted">-</span>
                                         {% endif %}
@@ -349,4 +341,5 @@
             {% endfor %}
         {% endif %}
     {% endif %}
+    {% include "adjuntos_formulario.html" %}
 {% endblock %}

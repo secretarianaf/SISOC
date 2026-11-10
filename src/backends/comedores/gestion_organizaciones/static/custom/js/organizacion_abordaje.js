@@ -14,8 +14,8 @@ document.addEventListener("DOMContentLoaded", function () {
             subzona.dispatchEvent(new Event("change", { bubbles: true }));
         });
     }
-    // Los territoriales por proyecto se cargan en la lista de proyectos de la
-    // sección "Programas" (organizacion_form.html, #2745).
+    // Los territoriales por proyecto se cargan en cada fila de Proyectos
+    // (organizacion_form.html, #2745).
     const header = document.querySelector('[data-toggle-section="abordaje"]');
     const section = document.getElementById("section-abordaje");
     if (!header || !section) return;

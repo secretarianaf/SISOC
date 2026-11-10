@@ -474,6 +474,9 @@ def buscar_cuil_beneficiario(request, cuil):
             )
 
         datos_api = resultado.get("datos_api", {})
+        # El CUIL crudo de RENAPER llega en "0" para muchos extranjeros: se usa el
+        # ya validado y, si no hay, el del padrón con el que se buscó.
+        cuil_renaper = (resultado.get("data") or {}).get("cuil")
 
         if "renaper_cache" not in request.session:
             request.session["renaper_cache"] = {}
@@ -498,7 +501,7 @@ def buscar_cuil_beneficiario(request, cuil):
             "genero": genero,
             "fecha_nacimiento": datos_api.get("fechaNacimiento", ""),
             "domicilio": " ".join(domicilio_parts),
-            "cuil": datos_api.get("cuil", cuil),
+            "cuil": str(cuil_renaper) if cuil_renaper else cuil,
             "dni": dni,
             "calle": datos_api.get("calle", ""),
             "altura": datos_api.get("numero"),

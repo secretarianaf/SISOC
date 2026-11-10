@@ -262,7 +262,7 @@ class AnexoForm(forms.ModelForm):
     insumos_organizacion = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
-        label="Durante el año 2024, ¿recibió insumos por parte de la organización?",
+        label="Durante el año anterior, ¿recibió insumos por parte de la organización?",
     )
     servicio_internet = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,

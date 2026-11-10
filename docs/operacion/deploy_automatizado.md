@@ -50,6 +50,58 @@ Espacios Comunitarios y comprueba el fetch antes del downtime. Los repositorios
 PWA son privados. El acceso, contrato de build, registro de apps habilitadas,
 recuperacion y transicion de Nginx se detallan en [deploy PWA](deploy_pwas.md).
 
+## Preparación coordinada de SISOC y satélites
+
+`preparar-deploy` deja los PRs finales **de SISOC** sin mergear ni armar, pero
+**promueve, mergea y despliega automáticamente los satélites durante el pre-deploy**
+con el alcance autorizado. No espera al futuro release SISOC. SISOC sigue usando
+`--without-mobile`; cada satélite conserva workflow, CI y gates propios. Esta
+coordinación mediante la skill no agrega scripts ni cambia esos workflows.
+
+La solicitud de ejecutar satélites autoriza el plan acotado cuando están resueltos
+sus destinos, operaciones y cuenta/sesión; reutilizar autorización vigente sin
+pedir aprobación por cada paso. Si falta ese alcance, preguntar solo lo faltante.
+No equivale a acceso SSH, credenciales nuevas ni bypass de protecciones o gates
+humanos. Editar esta skill no ejecuta los despliegues que describe.
+
+En cada preparación leer `src/scripts/operacion/pwas.json` y
+[deploy PWA](deploy_pwas.md). Hoy incluye Espacios Comunitarios, DataCalle, Gestionar
+e Inspecciones; obtener la lista del archivo. Incluir deshabilitados con motivo,
+sin activarlos. Las lecturas y mutaciones requieren el alcance correspondiente.
+
+El expediente registra por componente y entorno:
+
+- ramas y SHA head/base, rango completo y PR; usar `development -> main` solo donde
+  el flujo vigente lo confirme, sin imponer ramas o inputs comunes;
+- CI del head, backend **efectivamente desplegado**, versión/contrato compatible y
+  fase transitoria segura. Si requiere un backend futuro o falta prueba, bloquear
+  el componente antes del merge; no confundir rama `main` con servicio desplegado;
+- PR mergeado y su SHA efectivo, mecanismo de deploy, run/job aplicable, conclusión
+  terminal y revisión efectivamente desplegada, separados de prueba funcional;
+- dependencias, permisos/gates, efectos descendentes automáticos y sus destinos
+  autorizados, recuperación compatible y resultados parciales.
+
+La skill reutiliza/crea el PR autorizado, espera CI, revalida head/base y mergea
+sin bypass; fija el head con `--match-head-commit` cuando usa `gh pr merge`. Esto no
+fija atómicamente la base: si avanza, revalidar el resultado. Si el merge dispara
+un deploy, seguir ese run sin dispatch duplicado; si requiere dispatch manual,
+verificar comando/inputs y SHA objetivo en ese repo antes de ejecutarlo una vez.
+Esperar el resultado en primer plano y comprobar job, entorno y SHA efectivos.
+Un PR en cola, run/job omitido, CI verde o HTTP 200 no demuestra deploy ni E2E.
+Las aprobaciones humanas pendientes se informan como bloqueo, no se automatizan.
+
+"Sin cambios verificado" requiere comparación y evidencia; omitir PR/redeploy
+innecesario. Desconocido, CI fallido, SHA distinto, timeout o deploy incompleto
+bloquea dependientes: informar qué cambió y qué sigue anterior. No hay atomicidad,
+retry ciego ni rollback automático de migraciones/datos. No desplazar por defecto
+un satélite incompatible hasta después de SISOC: requiere decisión/plan explícito.
+Para PWA distinguir bundle servido, cliente y service worker/caché sin borrar
+almacenamiento ni datos pendientes de sincronización.
+
+Las plantillas de la skill contienen la matriz y la secuencia operativa. La
+restricción de no mergear ni armar PRs finales y el ciclo semanal HML se conservan
+para SISOC; no describen los PRs satélite ya mergeados durante el pre-deploy.
+
 ## Inspeccion de talla legacy en produccion
 
 Con 0042 sin operación de base de datos y 0043 restaurando `talla` a texto, el
@@ -89,14 +141,19 @@ más abajo, nunca con un PAT personal ni con un merge directo.
 
 ## Promoción semanal `homologacion -> main`
 
-La tarea de Codex se ejecuta los miércoles a las 16:30 y no espera a que CI
-termine. Crea o reutiliza un PR final exacto `homologacion -> main` en draft, y
-un PR temporal `codex/predeploy-dev-main-AAAAMMDD -> homologacion` solo si hay
-saneamiento versionable. Ambos PRs incluyen metadata y evidencia para generar
-los artefactos spec-as-source desde el diff real.
+El PR final exacto `homologacion -> main` se prepara con la skill
+`preparar-deploy`: sincroniza `main`, `homologacion` y `development` con PRs de
+saneamiento y crea el PR final en draft con `release-preparation: pending`, que
+el orquestador reconoce pero no arma. El día del deploy se arma con
+`gh workflow run release-orchestrator.yml -f release_pr=<PR final>`.
 
-El PR temporal se arma con auto-merge nativo y GitHub lo integra cuando sus
-checks requeridos terminan. `.github/workflows/release-orchestrator.yml`
+El flujo con PR de preparación sigue soportado: un PR
+`codex/predeploy-dev-main-AAAAMMDD -> homologacion` con el marker
+`release-final-pr` arma el PR final apenas se mergea. Ambos PRs incluyen
+metadata y evidencia para generar los artefactos spec-as-source desde el diff
+real.
+
+Al armarse el PR final, `.github/workflows/release-orchestrator.yml`
 continúa por eventos: deja listo el PR final, crea el check pendiente
 `release_baseline` y habilita su auto-merge. Cuando los otros checks están
 verdes y `homologacion` contiene el `main` más reciente, crea el tag anotado
@@ -105,14 +162,26 @@ baseline y recién entonces completa `release_baseline`. El tag no se
 sobreescribe: si el nombre ya apunta a otro SHA, el workflow se bloquea para
 conservar un rollback inequívoco.
 
+Para una segunda promoción explícitamente autorizada del mismo día, agregar
+`<!-- release-sequence: 2 -->` al body final. La secuencia es un entero positivo
+seguro y único: omitirla equivale a 1 y conserva `AAAA.MM.DD-stable`; 2 usa
+`AAAA.MM.DD-2-stable` sobre el main previo de esa segunda promoción. No cambia
+la fecha ni se mueve el tag original. Repetir una secuencia solo es idempotente
+si el tag ya identifica el mismo baseline; otro SHA se rechaza. Valores
+presentes inválidos o duplicados no arman el PR. El check incluye la identidad
+del tag y la revalida junto con head/base antes de concluir éxito; creación,
+release y comentario final usan el mismo tag seleccionado. No existe selección
+automática del próximo número ni excepción para PRs directos a main. La App,
+los checks de CI, la ruleset y el Environment humano permanecen obligatorios.
+
 El workflow toma el script de `homologacion`. Los disparos `schedule` y
 `workflow_run` leen el YAML de la rama por defecto (`development`) y el cierre
 de PRs hacia `homologacion` lee el de `homologacion`: un cambio en el
 orquestador debe llegar a las dos ramas antes del pre-deploy siguiente.
 
 El body del PR final también fija el SHA de `homologacion` analizado. Un push
-posterior no se promueve por accidente: deja el PR bloqueado hasta que la tarea
-programada vuelva a analizar y actualizar el snapshot.
+posterior no se promueve por accidente: deja el PR bloqueado hasta que se vuelva
+a correr `preparar-deploy` y actualice el snapshot.
 
 El PR final no produce un deploy automático sin intervención: el job de
 `production` queda sujeto a Required reviewers del Environment. Si `main`

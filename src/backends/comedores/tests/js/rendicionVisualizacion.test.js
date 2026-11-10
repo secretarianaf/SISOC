@@ -99,6 +99,38 @@ test('la revisión muestra la observación anterior sin abrir el editor', () => 
     assert.equal(visibility.get('editor:d-none'), true);
 });
 
+test('guardar una revisión recarga el borrador sin bloquear el selector', async () => {
+    const view = visor();
+    let submit;
+    let request;
+    const form = { addEventListener(event, callback) { if (event === 'submit') submit = callback; } };
+    const selector = { value: 'validado', dataset: { documentoId: '1' }, addEventListener() {} };
+    const elements = { 'revision-documento-1': form };
+    view.document.getElementById = (id) => elements[id] || null;
+    view.document.querySelectorAll = (query) => query === '.js-documento-estado' ? [selector] : [];
+    const source = fs.readFileSync(path.join(__dirname, '../../rendicioncuentasmensual/static/custom/js/rendicioncuentasmensual_detail.js'), 'utf8');
+    vm.runInNewContext(source, {
+        document: view.document,
+        window: { location: { href: '/rendicion/1/', reload() { request.reloaded = true; } }, addEventListener() {} },
+        Element: view.Element,
+        FormData: class extends Map { constructor() { super(); } },
+        fetch(url, options) {
+            request = { url, options, reloaded: false };
+            return Promise.resolve({ ok: true, json: async () => ({ message: 'Guardado' }) });
+        },
+    });
+    view.handlers.DOMContentLoaded();
+    let prevented = false;
+    submit({ preventDefault() { prevented = true; } });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(prevented, true);
+    assert.equal(request.url, '/rendicion/1/');
+    assert.equal(request.options.method, 'POST');
+    assert.equal(request.options.body.get('estado'), 'validado');
+    assert.equal(request.reloaded, true);
+    assert.notEqual(selector.disabled, true);
+});
+
 test('categoría filtra actividades y conserva la selección al editar', () => {
     const callbacks = {};
     const category = { value: 'Salud', addEventListener(event, callback) { callbacks[event] = callback; } };

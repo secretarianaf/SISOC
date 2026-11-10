@@ -235,25 +235,10 @@
                             </div>
                         </div>
                         <p class="text-muted">
-                            <i id="auditoria-cierre-icono"
-                               class="fas fa-lock"
-                               aria-hidden="true"
-                               {% if not form.ya_validada %}hidden{% endif %}></i>
-                            <span id="auditoria-guardar-ayuda">
-                                {% if form.ya_validada %}
-                                    Al guardar la decisión sobre el acta, la gestión de esta rendición se cierra.
-                                {% else %}
-                                    Podés guardar la validación y decidir sobre el acta más adelante.
-                                {% endif %}
-                            </span>
+                            <i id="auditoria-cierre-icono" class="fas fa-lock" aria-hidden="true"></i>
+                            <span id="auditoria-guardar-ayuda">Al guardar la decisión sobre el acta, la gestión de esta rendición se cierra.</span>
                         </p>
-                        <button type="submit" class="btn btn-success" id="auditoria-guardar">
-                            {% if form.ya_validada %}
-                                Guardar y cerrar Auditoría
-                            {% else %}
-                                Guardar
-                            {% endif %}
-                        </button>
+                        <button type="submit" class="btn btn-success" id="auditoria-guardar">Guardar y cerrar Auditoría</button>
                         <a class="btn btn-secondary"
                            href="{{ volver_url }}"
                            data-sisoc-volver

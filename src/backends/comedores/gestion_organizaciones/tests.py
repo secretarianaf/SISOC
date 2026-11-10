@@ -71,7 +71,17 @@ class ProyectosOrganizacionAjaxTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json(),
-            {"proyectos": [{"id": proyecto.id, "codigo": "P-1961", "nombre": None}]},
+            {
+                "proyectos": [
+                    {
+                        "id": proyecto.id,
+                        "codigo": "P-1961",
+                        "nombre": None,
+                        "linea": None,
+                    }
+                ],
+                "programas": [],
+            },
         )
 
 
@@ -150,12 +160,17 @@ class OrganizacionDetailViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+        # Sin programas cargados en la organización (#2745), todos sus
+        # comedores se ven en "Sin programa asignado", con su programa.
         self.assertContains(response, "<th>Programa</th>", html=True)
+        html = response.content.decode()
+        bloque = html[html.index("Sin programa asignado") :]
         for programa in programas:
-            self.assertContains(response, programa.nombre)
+            self.assertIn(programa.nombre, bloque)
+        self.assertIn("Comedor histórico sin programa", bloque)
         self.assertRegex(
-            response.content.decode(),
-            r"(?s)Comedor histórico sin programa.*?<td>Comunitario</td>\s*<td>-</td>",
+            bloque,
+            r"(?s)Comedor histórico sin programa.*?<td>Comunitario</td>.*?<td>-</td>",
         )
 
 
@@ -205,7 +220,7 @@ class OrganizacionRendicionesPresentadasTests(TestCase):
         self.assertContains(response, "Rendiciones Presentadas")
         self.assertContains(response, "CONV-01")
         self.assertContains(response, "CONV-02")
-        self.assertEqual(response.context["proyectos_rendiciones"], ["P01", "P02"])
+        self.assertEqual(response.context["codigos_rendiciones"], ["P01", "P02"])
         self.assertNotContains(response, "<th>Monto auditado</th>", html=True)
         self.assertNotContains(
             response, "Observación de auditoría que no debe mostrarse en el legajo"
@@ -221,7 +236,7 @@ class OrganizacionRendicionesPresentadasTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "CONV-01")
         self.assertNotContains(response, "CONV-02")
-        self.assertTrue(response.context["rendiciones_tab_activo"])
+        self.assertEqual(response.context["seccion"], "rendiciones")
 
     def test_detalle_muestra_datos_y_enlace_a_rendicion(self):
         response = self.client.get(

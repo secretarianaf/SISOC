@@ -316,6 +316,85 @@ def test_trabajador_renaper_con_pais_fuera_del_catalogo_deja_nacionalidad_editab
 
 
 @pytest.mark.django_db
+def test_trabajador_extranjero_con_cuil_0_en_renaper_se_guarda_sin_cuil(
+    client, monkeypatch
+):
+    # RENAPER informa el CUIL en "0" para muchos extranjeros (DNI 9x.xxx.xxx): se
+    # precargaba "0" bloqueado y el alta no se podía guardar.
+    user = _crear_usuario("super-trabajador-renaper-sin-cuil", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI RENAPER sin CUIL")
+    url = reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk})
+    monkeypatch.setattr(
+        "centrodeinfancia.views.obtener_datos_ciudadano_desde_renaper",
+        lambda _dni: {
+            "success": True,
+            "data": {
+                "nombre": "Juana",
+                "apellido": "Pérez",
+                "dni": "95445413",
+                "cuil_cuit": None,
+            },
+            "datos_api": {"cuil": "0"},
+        },
+    )
+
+    response = client.get(f"{url}?query=95445413")
+
+    form = response.context["form"]
+    assert form.initial["cuit"] == ""
+    assert form.fields["cuit"].disabled is False
+    assert form.fields["sin_cuil"].disabled is False
+
+    data = datos_validos_trabajador(cuit="", sin_cuil="on")
+    data["renaper_prefill_token"] = response.context["renaper_prefill_token"]
+    response = client.post(url, data=data)
+
+    assert response.status_code == 302
+    trabajador = Trabajador.objects.get(centro=centro)
+    assert trabajador.dni == 95445413
+    assert trabajador.cuit is None
+    assert trabajador.sin_cuil is True
+    assert "cuit" not in trabajador.campos_verificados_renaper
+
+
+@pytest.mark.django_db
+def test_trabajador_con_cuil_de_renaper_no_permite_marcar_sin_cuil(client, monkeypatch):
+    user = _crear_usuario("super-trabajador-renaper-con-cuil", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI RENAPER con CUIL")
+    url = reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk})
+    monkeypatch.setattr(
+        "centrodeinfancia.views.obtener_datos_ciudadano_desde_renaper",
+        lambda _dni: {
+            "success": True,
+            "data": {
+                "nombre": "Juana",
+                "apellido": "Pérez",
+                "dni": "30123456",
+                "cuil_cuit": "27301234568",
+            },
+            "datos_api": {"cuil": "27301234568"},
+        },
+    )
+
+    response = client.get(f"{url}?query=30123456")
+
+    form = response.context["form"]
+    assert form.fields["cuit"].disabled is True
+    assert form.fields["sin_cuil"].disabled is True
+
+    data = datos_validos_trabajador(cuit="", sin_cuil="on")
+    data["renaper_prefill_token"] = response.context["renaper_prefill_token"]
+    response = client.post(url, data=data)
+
+    assert response.status_code == 302
+    trabajador = Trabajador.objects.get(centro=centro)
+    assert trabajador.cuit == "27301234568"
+    assert trabajador.sin_cuil is False
+
+
+@pytest.mark.django_db
 def test_trabajador_con_nacionalidad_bloqueada_invalida_se_puede_corregir(client):
     # Registros guardados antes del arreglo: "PARAGUAY" quedó como verificado.
     user = _crear_usuario("super-trabajador-nacionalidad-trabada", superuser=True)

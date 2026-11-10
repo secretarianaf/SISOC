@@ -99,6 +99,46 @@ def _padron_docs_y_estados(expediente):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize("responsable_en_sintys", [False, True])
+def test_nomina_dependiente_exige_responsable_en_archivo_sintys(responsable_en_sintys):
+    provincia = Provincia.objects.create(nombre="Provincia Sintys")
+    ProvinciaCupo.objects.create(provincia=provincia, total_asignado=2, usados=0)
+    usuario = User.objects.create_user("cruce-responsable", password="test")
+    expediente = Expediente.objects.create(
+        usuario_provincia=usuario,
+        estado=EstadoExpediente.objects.create(nombre="ASIGNADO"),
+    )
+    estado = EstadoLegajo.objects.create(nombre="VALIDO")
+    responsable = _ciudadano("EMA", provincia, date(1980, 1, 1))
+    hijo = _ciudadano("FEDE", provincia, date(2016, 1, 1))
+    legajo_responsable = _legajo(expediente, estado, responsable, R)
+    legajo_hijo = _legajo(expediente, estado, hijo, B)
+    GrupoFamiliar.objects.create(
+        ciudadano_1=responsable,
+        ciudadano_2=hijo,
+        vinculo=GrupoFamiliar.RELACION_PADRE,
+        cuidador_principal=True,
+    )
+    # El hijo figura siempre: su propio documento no reemplaza al responsable.
+    documentos = [[str(hijo.documento)]]
+    if responsable_en_sintys:
+        documentos.append([str(responsable.documento)])
+    archivo = ContentFile(_excel(["documento"], documentos), name="sintys.xlsx")
+    CruceService.procesar_cruce_por_cuit(expediente, archivo, usuario)
+
+    legajo_hijo.refresh_from_db()
+    legajo_responsable.refresh_from_db()
+    assert legajo_hijo.resultado_sintys == (
+        ResultadoSintys.MATCH if responsable_en_sintys else ResultadoSintys.NO_MATCH
+    )
+    assert legajo_responsable.resultado_sintys == ResultadoSintys.SIN_CRUCE
+    assert set(_padron_docs_y_estados(expediente)) == (
+        {str(hijo.documento)} if responsable_en_sintys else set()
+    )
+    assert PadronFinalService.hay_aprobados(expediente) is responsable_en_sintys
+
+
+@pytest.mark.django_db
 def test_flujo_completo_celiaquia(settings, tmp_path):
     settings.MEDIA_ROOT = tmp_path
     prov = Provincia.objects.create(nombre="Testlandia")

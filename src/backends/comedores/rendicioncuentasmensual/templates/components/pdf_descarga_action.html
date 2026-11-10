@@ -1,0 +1,22 @@
+{% comment %}
+    Botón de descarga consolidada (issue #2845): el PDF se genera en segundo plano.
+    Requiere rendicioncuentasmensual_pdf_descarga.js en la página. Recibe `rendicion` y,
+    opcionalmente, `etiqueta` y `clase_boton`.
+{% endcomment %}
+<form class="d-inline js-pdf-descarga-form"
+      method="post"
+      action="{% url 'rendicioncuentasmensual_download_pdf_solicitar' rendicion.id %}"
+      data-estado-url="{% url 'rendicioncuentasmensual_download_pdf_estado' rendicion.id %}">
+    {% csrf_token %}
+    <button type="submit"
+            class="{{ clase_boton|default:'btn btn-sm btn-success' }}">
+        <span class="js-submit-idle"><i class="fas fa-file-pdf"></i> {{ etiqueta|default:"Generar descarga" }}</span>
+        <span class="js-submit-spinner d-none">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Generando PDF…
+        </span>
+    </button>
+    <div class="small mt-1 js-pdf-descarga-mensaje"
+         role="status"
+         aria-live="polite"></div>
+</form>

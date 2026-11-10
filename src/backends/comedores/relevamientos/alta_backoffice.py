@@ -39,7 +39,7 @@ PREFIJO_PNUD = "pnud_"
 OPCION_INICIAL = (TIPO_RELEVAMIENTO_INICIAL, "Acompañamiento territorial inicial")
 OPCIONES_SEGUIMIENTO_PAC = (
     ("primer_seguimiento", "Primer seguimiento"),
-    ("seguimiento_posterior", "Seguimiento posterior"),
+    ("seguimiento_posterior", "Seguimiento Posterior"),
     ("seguimiento_virtual", "Seguimiento virtual"),
 )
 TIPO_ACTA_COMPLEMENTARIA = "acta_complementaria"

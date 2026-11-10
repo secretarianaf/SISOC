@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static image_tags %}
+{% load static image_tags estado_unificado %}
 {% block title %}
     {{ seguimiento.get_tipo_display }} - Comedor: {{ comedor.nombre }}
 {% endblock title %}
@@ -9,15 +9,9 @@
     <span class="ml-2 h5">|
         {{ seguimiento.fecha_hora | default_if_none:"Sin información" }} |
     </span>
-    {% if seguimiento.estado == "Completo" %}
-        <span class="badge bg-success ml-2">Completado</span>
-    {% else %}
-        <span class="badge bg-secondary ml-2">No completado</span>
-    {% endif %}
-    {% if seguimiento.estado_validacion %}
-        <span class="badge ml-2 {% if seguimiento.estado_validacion == 'Validado' %}bg-success{% elif seguimiento.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}"
-              title="Estado de validación del coordinador">{{ seguimiento.estado_validacion }}</span>
-    {% endif %}
+    <span class="badge ml-2 {{ seguimiento|badge_estado_unificado }}"
+          title="Estado del seguimiento{% if seguimiento.estado_validacion %} (validación del coordinador: {{ seguimiento.estado_validacion }}){% endif %}">{{ seguimiento|estado_unificado }}</span>
+    {% if seguimiento.estado_validacion == 'A subsanar' %}<span class="badge bg-danger ml-1">A subsanar</span>{% endif %}
     {% if seguimiento.origen == "app" %}
         <span class="badge bg-primary ml-2"
               title="Cargado por el territorial desde la app">App</span>
@@ -217,8 +211,12 @@
                             <tr>
                                 <th>Días</th>
                                 <th>Tipo</th>
-                                <th>AP presencial</th>
-                                <th>AP vianda</th>
+                                {% if es_primer %}
+                                    <th>AP</th>
+                                {% else %}
+                                    <th>AP presencial</th>
+                                    <th>AP vianda</th>
+                                {% endif %}
                                 <th>DE presencial</th>
                                 <th>DE vianda</th>
                             </tr>
@@ -228,8 +226,12 @@
                                 <tr>
                                     <td>{{ prestacion.dias_prestacion | default_if_none:"-" }}</td>
                                     <td>{{ prestacion.tipo_prestacion | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.ap_presencial | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.ap_vianda | default_if_none:"-" }}</td>
+                                    {% if es_primer %}
+                                        <td>{{ prestacion.ap_total_efectivo | default_if_none:"-" }}</td>
+                                    {% else %}
+                                        <td>{{ prestacion.ap_presencial | default_if_none:"-" }}</td>
+                                        <td>{{ prestacion.ap_vianda | default_if_none:"-" }}</td>
+                                    {% endif %}
                                     <td>{{ prestacion.de_presencial | default_if_none:"-" }}</td>
                                     <td>{{ prestacion.de_vianda | default_if_none:"-" }}</td>
                                 </tr>
@@ -269,4 +271,5 @@
             </div>
         </div>
     {% endif %}
+    {% include "adjuntos_formulario.html" %}
 {% endblock content %}

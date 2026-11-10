@@ -36,7 +36,7 @@ validated_at = "2026-10-20"
 - Toda funcionalidad nueva incluye tests; bugfix con regresion cuando sea viable.
 - Coexisten Django views y DRF; no asumir un unico boundary.
 - Hay logging custom en `src/backends/config/settings.py` y `src/backends/kernel/core/utils.py`.
-- Celery solo para PAS; el resto usa hilos o workers propios.
+- Celery para PAS y para el PDF consolidado de rendiciones (cola `comedores`); el resto usa hilos o workers propios.
 
 ## Como validar rapido
 - `bash src/scripts/ai/preflight.sh general`

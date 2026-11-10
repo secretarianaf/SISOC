@@ -1,0 +1,2396 @@
+openapi: 3.0.3
+info:
+  title: SISOC API
+  version: 1.0.0
+  description: API de gestión de comedores, centros de familia y más
+paths:
+  /api/inet/centros/:
+    get:
+      operationId: inet_centros_get
+      tags:
+      - centros
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetPage'
+          description: ''
+    post:
+      operationId: inet_centros_post
+      tags:
+      - centros
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+  /api/inet/centros/{id}/:
+    get:
+      operationId: inet_centros_id_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - centros
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    put:
+      operationId: inet_centros_id_put
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - centros
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    delete:
+      operationId: inet_centros_id_delete
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - centros
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/inet/centros/{id}/delete-preview/:
+    get:
+      operationId: inet_centros_id_delete_preview_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - centros
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetDeletePreview'
+          description: ''
+  /api/inet/centros/{id}/form/:
+    get:
+      operationId: inet_centros_id_form_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - centros
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/centros/{id}/options/{field}/:
+    get:
+      operationId: inet_centros_id_options_field_get
+      parameters:
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - centros
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetOptionsPage'
+          description: ''
+  /api/inet/centros/filter-form/:
+    get:
+      operationId: inet_centros_filter_form_get
+      tags:
+      - centros
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/centros/form/:
+    get:
+      operationId: inet_centros_form_get
+      tags:
+      - centros
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/centros/options/{field}/:
+    get:
+      operationId: inet_centros_options_field_get
+      parameters:
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+      tags:
+      - centros
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetOptionsPage'
+          description: ''
+  /api/inet/ciudadano-form/:
+    get:
+      operationId: inet_ciudadano_form_get
+      tags:
+      - ciudadano-form
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/comisiones/:
+    get:
+      operationId: inet_comisiones_get
+      tags:
+      - comisiones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetPage'
+          description: ''
+    post:
+      operationId: inet_comisiones_post
+      tags:
+      - comisiones
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+  /api/inet/comisiones/{id}/:
+    get:
+      operationId: inet_comisiones_id_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - comisiones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    put:
+      operationId: inet_comisiones_id_put
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - comisiones
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    delete:
+      operationId: inet_comisiones_id_delete
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - comisiones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/inet/comisiones/{id}/ciudadanos/:
+    get:
+      operationId: inet_comisiones_id_ciudadanos_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - comisiones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetCiudadanoPage'
+          description: ''
+  /api/inet/comisiones/{id}/delete-preview/:
+    get:
+      operationId: inet_comisiones_id_delete_preview_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - comisiones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetDeletePreview'
+          description: ''
+  /api/inet/comisiones/{id}/form/:
+    get:
+      operationId: inet_comisiones_id_form_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - comisiones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/comisiones/{id}/horarios/:
+    get:
+      operationId: inet_comisiones_id_horarios_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - comisiones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InetHorario'
+          description: ''
+  /api/inet/comisiones/{id}/inscribir/:
+    post:
+      operationId: inet_comisiones_id_inscribir_post
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - comisiones
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetInscripcionInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetInscripcionInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetInscripcionInput'
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+  /api/inet/comisiones/{id}/options/{field}/:
+    get:
+      operationId: inet_comisiones_id_options_field_get
+      parameters:
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - comisiones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetOptionsPage'
+          description: ''
+  /api/inet/comisiones/form/:
+    get:
+      operationId: inet_comisiones_form_get
+      tags:
+      - comisiones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/comisiones/options/{field}/:
+    get:
+      operationId: inet_comisiones_options_field_get
+      parameters:
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+      tags:
+      - comisiones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetOptionsPage'
+          description: ''
+  /api/inet/contactos/:
+    get:
+      operationId: inet_contactos_get
+      tags:
+      - contactos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetPage'
+          description: ''
+    post:
+      operationId: inet_contactos_post
+      tags:
+      - contactos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+  /api/inet/contactos/{id}/:
+    get:
+      operationId: inet_contactos_id_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - contactos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    put:
+      operationId: inet_contactos_id_put
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - contactos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    delete:
+      operationId: inet_contactos_id_delete
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - contactos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/inet/contactos/{id}/delete-preview/:
+    get:
+      operationId: inet_contactos_id_delete_preview_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - contactos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetDeletePreview'
+          description: ''
+  /api/inet/contactos/{id}/form/:
+    get:
+      operationId: inet_contactos_id_form_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - contactos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/contactos/{id}/options/{field}/:
+    get:
+      operationId: inet_contactos_id_options_field_get
+      parameters:
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - contactos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetOptionsPage'
+          description: ''
+  /api/inet/contactos/form/:
+    get:
+      operationId: inet_contactos_form_get
+      tags:
+      - contactos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/contactos/options/{field}/:
+    get:
+      operationId: inet_contactos_options_field_get
+      parameters:
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+      tags:
+      - contactos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetOptionsPage'
+          description: ''
+  /api/inet/cursos/:
+    get:
+      operationId: inet_cursos_get
+      tags:
+      - cursos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetPage'
+          description: ''
+    post:
+      operationId: inet_cursos_post
+      tags:
+      - cursos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+  /api/inet/cursos/{id}/:
+    get:
+      operationId: inet_cursos_id_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - cursos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    put:
+      operationId: inet_cursos_id_put
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - cursos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    delete:
+      operationId: inet_cursos_id_delete
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - cursos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/inet/cursos/{id}/delete-preview/:
+    get:
+      operationId: inet_cursos_id_delete_preview_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - cursos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetDeletePreview'
+          description: ''
+  /api/inet/cursos/{id}/form/:
+    get:
+      operationId: inet_cursos_id_form_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - cursos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/cursos/{id}/options/{field}/:
+    get:
+      operationId: inet_cursos_id_options_field_get
+      parameters:
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - cursos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetOptionsPage'
+          description: ''
+  /api/inet/cursos/form/:
+    get:
+      operationId: inet_cursos_form_get
+      tags:
+      - cursos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/cursos/options/{field}/:
+    get:
+      operationId: inet_cursos_options_field_get
+      parameters:
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+      tags:
+      - cursos
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetOptionsPage'
+          description: ''
+  /api/inet/horario-form/:
+    get:
+      operationId: inet_horario_form_get
+      tags:
+      - horario-form
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/horarios/:
+    get:
+      operationId: inet_horarios_get
+      tags:
+      - horarios
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetPage'
+          description: ''
+    post:
+      operationId: inet_horarios_post
+      tags:
+      - horarios
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+  /api/inet/horarios/{id}/:
+    get:
+      operationId: inet_horarios_id_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - horarios
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    put:
+      operationId: inet_horarios_id_put
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - horarios
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    delete:
+      operationId: inet_horarios_id_delete
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - horarios
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/inet/horarios/{id}/delete-preview/:
+    get:
+      operationId: inet_horarios_id_delete_preview_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - horarios
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetDeletePreview'
+          description: ''
+  /api/inet/horarios/{id}/form/:
+    get:
+      operationId: inet_horarios_id_form_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - horarios
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/horarios/{id}/options/{field}/:
+    get:
+      operationId: inet_horarios_id_options_field_get
+      parameters:
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - horarios
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetOptionsPage'
+          description: ''
+  /api/inet/horarios/form/:
+    get:
+      operationId: inet_horarios_form_get
+      tags:
+      - horarios
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/horarios/options/{field}/:
+    get:
+      operationId: inet_horarios_options_field_get
+      parameters:
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+      tags:
+      - horarios
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetOptionsPage'
+          description: ''
+  /api/inet/inscripciones/:
+    get:
+      operationId: inet_inscripciones_get
+      tags:
+      - inscripciones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetPage'
+          description: ''
+    post:
+      operationId: inet_inscripciones_post
+      tags:
+      - inscripciones
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+  /api/inet/inscripciones/{id}/:
+    get:
+      operationId: inet_inscripciones_id_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inscripciones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    put:
+      operationId: inet_inscripciones_id_put
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inscripciones
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    delete:
+      operationId: inet_inscripciones_id_delete
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inscripciones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/inet/inscripciones/{id}/estado/:
+    get:
+      operationId: inet_inscripciones_id_estado_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inscripciones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+    post:
+      operationId: inet_inscripciones_id_estado_post
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inscripciones
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetEstadoInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetEstadoInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetEstadoInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+  /api/inet/planes/:
+    get:
+      operationId: inet_planes_get
+      tags:
+      - planes
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetPage'
+          description: ''
+    post:
+      operationId: inet_planes_post
+      tags:
+      - planes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+  /api/inet/planes/{id}/:
+    get:
+      operationId: inet_planes_id_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - planes
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    put:
+      operationId: inet_planes_id_put
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - planes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    delete:
+      operationId: inet_planes_id_delete
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - planes
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/inet/planes/{id}/delete-preview/:
+    get:
+      operationId: inet_planes_id_delete_preview_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - planes
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetDeletePreview'
+          description: ''
+  /api/inet/planes/{id}/form/:
+    get:
+      operationId: inet_planes_id_form_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - planes
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/planes/{id}/options/{field}/:
+    get:
+      operationId: inet_planes_id_options_field_get
+      parameters:
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - planes
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetOptionsPage'
+          description: ''
+  /api/inet/planes/filter-form/:
+    get:
+      operationId: inet_planes_filter_form_get
+      tags:
+      - planes
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/planes/form/:
+    get:
+      operationId: inet_planes_form_get
+      tags:
+      - planes
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/planes/options/{field}/:
+    get:
+      operationId: inet_planes_options_field_get
+      parameters:
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+      tags:
+      - planes
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetOptionsPage'
+          description: ''
+  /api/inet/sesiones/:
+    get:
+      operationId: inet_sesiones_get
+      tags:
+      - sesiones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetPage'
+          description: ''
+    post:
+      operationId: inet_sesiones_post
+      tags:
+      - sesiones
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+  /api/inet/sesiones/{id}/:
+    get:
+      operationId: inet_sesiones_id_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sesiones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    put:
+      operationId: inet_sesiones_id_put
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sesiones
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    delete:
+      operationId: inet_sesiones_id_delete
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sesiones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/inet/sesiones/{id}/asistencia/:
+    get:
+      operationId: inet_sesiones_id_asistencia_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sesiones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetAsistencia'
+          description: ''
+    put:
+      operationId: inet_sesiones_id_asistencia_put
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sesiones
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetAsistencia'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetAsistencia'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetAsistencia'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/inet/session/:
+    get:
+      operationId: inet_session_get
+      tags:
+      - session
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetSession'
+          description: ''
+  /api/inet/ubicaciones/:
+    get:
+      operationId: inet_ubicaciones_get
+      tags:
+      - ubicaciones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetPage'
+          description: ''
+    post:
+      operationId: inet_ubicaciones_post
+      tags:
+      - ubicaciones
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+  /api/inet/ubicaciones/{id}/:
+    get:
+      operationId: inet_ubicaciones_id_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ubicaciones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    put:
+      operationId: inet_ubicaciones_id_put
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ubicaciones
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InetFormInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetItem'
+          description: ''
+    delete:
+      operationId: inet_ubicaciones_id_delete
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ubicaciones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/inet/ubicaciones/{id}/delete-preview/:
+    get:
+      operationId: inet_ubicaciones_id_delete_preview_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ubicaciones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetDeletePreview'
+          description: ''
+  /api/inet/ubicaciones/{id}/form/:
+    get:
+      operationId: inet_ubicaciones_id_form_get
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ubicaciones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/ubicaciones/{id}/options/{field}/:
+    get:
+      operationId: inet_ubicaciones_id_options_field_get
+      parameters:
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ubicaciones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetOptionsPage'
+          description: ''
+  /api/inet/ubicaciones/form/:
+    get:
+      operationId: inet_ubicaciones_form_get
+      tags:
+      - ubicaciones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetForm'
+          description: ''
+  /api/inet/ubicaciones/options/{field}/:
+    get:
+      operationId: inet_ubicaciones_options_field_get
+      parameters:
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+      tags:
+      - ubicaciones
+      security:
+      - cookieAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InetOptionsPage'
+          description: ''
+components:
+  schemas:
+    InetAsistencia:
+      type: object
+      properties:
+        sesion_id:
+          type: integer
+          readOnly: true
+        fecha:
+          type: string
+          format: date
+          readOnly: true
+        filas:
+          type: array
+          items:
+            $ref: '#/components/schemas/InetAsistenciaRow'
+      required:
+      - fecha
+      - filas
+      - sesion_id
+    InetAsistenciaRow:
+      type: object
+      properties:
+        inscripcion_id:
+          type: integer
+        nombre:
+          type: string
+          readOnly: true
+        documento:
+          type: string
+          readOnly: true
+        presente:
+          type: boolean
+          nullable: true
+        observaciones:
+          type: string
+      required:
+      - documento
+      - inscripcion_id
+      - nombre
+      - presente
+    InetCiudadano:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        apellido:
+          type: string
+        documento:
+          type: string
+        fecha_nacimiento:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - apellido
+      - documento
+      - fecha_nacimiento
+      - id
+      - nombre
+    InetCiudadanoPage:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InetCiudadano'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    InetDeleteGroup:
+      type: object
+      properties:
+        modelo:
+          type: string
+        cantidad:
+          type: integer
+        modo:
+          type: string
+      required:
+      - cantidad
+      - modelo
+      - modo
+    InetDeletePreview:
+      type: object
+      properties:
+        total_afectados:
+          type: integer
+        total_baja_logica:
+          type: integer
+        total_borrado_fisico:
+          type: integer
+        desglose_por_modelo:
+          type: array
+          items:
+            $ref: '#/components/schemas/InetDeleteGroup'
+      required:
+      - desglose_por_modelo
+      - total_afectados
+      - total_baja_logica
+      - total_borrado_fisico
+    InetDetailField:
+      type: object
+      properties:
+        label:
+          type: string
+        value:
+          type: string
+      required:
+      - label
+      - value
+    InetEstadoInput:
+      type: object
+      properties:
+        estado:
+          type: string
+        observaciones:
+          type: string
+      required:
+      - estado
+    InetForm:
+      type: object
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/InetFormField'
+      required:
+      - fields
+    InetFormField:
+      type: object
+      properties:
+        name:
+          type: string
+        label:
+          type: string
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        required:
+          type: boolean
+        disabled:
+          type: boolean
+        help_text:
+          type: string
+        value: {}
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/InetOption'
+        remote_options:
+          type: boolean
+      required:
+      - disabled
+      - help_text
+      - kind
+      - label
+      - name
+      - options
+      - remote_options
+      - required
+      - value
+    InetFormInput:
+      type: object
+      properties:
+        campos:
+          type: object
+          additionalProperties:
+            nullable: true
+        horarios:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          maxItems: 7
+        contactos:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          maxItems: 20
+      required:
+      - campos
+    InetHorario:
+      type: object
+      properties:
+        id:
+          type: integer
+        dia:
+          type: string
+        hora_desde:
+          type: string
+          format: time
+        hora_hasta:
+          type: string
+          format: time
+        vigente:
+          type: boolean
+      required:
+      - dia
+      - hora_desde
+      - hora_hasta
+      - id
+      - vigente
+    InetInscripcionInput:
+      type: object
+      properties:
+        ciudadano_id:
+          type: integer
+        ciudadano:
+          type: object
+          additionalProperties:
+            nullable: true
+        observaciones:
+          type: string
+    InetItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        estado:
+          type: string
+        provincia:
+          type: string
+        localidad:
+          type: string
+        cue:
+          type: string
+        centro_id:
+          type: integer
+          nullable: true
+        curso_id:
+          type: integer
+          nullable: true
+        comision_id:
+          type: integer
+          nullable: true
+        fecha_inicio:
+          type: string
+          format: date
+          nullable: true
+        fecha_fin:
+          type: string
+          format: date
+          nullable: true
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/InetDetailField'
+        puede_gestionar:
+          type: boolean
+        puede_editar:
+          type: boolean
+        puede_eliminar:
+          type: boolean
+        comisiones_count:
+          type: integer
+        inscriptos_count:
+          type: integer
+        clases_count:
+          type: integer
+        clases_realizadas:
+          type: integer
+        asistencia_pct:
+          type: number
+          format: double
+          nullable: true
+        documento:
+          type: string
+        email:
+          type: string
+        telefono:
+          type: string
+        identidad_pendiente:
+          type: boolean
+      required:
+      - asistencia_pct
+      - centro_id
+      - clases_count
+      - clases_realizadas
+      - comision_id
+      - comisiones_count
+      - cue
+      - curso_id
+      - detalle
+      - documento
+      - email
+      - estado
+      - fecha_fin
+      - fecha_inicio
+      - id
+      - identidad_pendiente
+      - inscriptos_count
+      - localidad
+      - nombre
+      - provincia
+      - puede_editar
+      - puede_eliminar
+      - puede_gestionar
+      - telefono
+    InetOption:
+      type: object
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+      required:
+      - label
+      - value
+    InetOptionsPage:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InetOption'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    InetPage:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InetItem'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    InetSession:
+      type: object
+      properties:
+        username:
+          type: string
+        nombre:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        puede_ver_planes:
+          type: boolean
+      required:
+      - nombre
+      - permissions
+      - puede_ver_planes
+      - username
+    KindEnum:
+      enum:
+      - text
+      - textarea
+      - number
+      - date
+      - time
+      - email
+      - checkbox
+      - select
+      - multiselect
+      type: string
+      description: |-
+        * `text` - text
+        * `textarea` - textarea
+        * `number` - number
+        * `date` - date
+        * `time` - time
+        * `email` - email
+        * `checkbox` - checkbox
+        * `select` - select
+        * `multiselect` - multiselect
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: 'Usar formato: Api-Key TU_API_KEY'
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

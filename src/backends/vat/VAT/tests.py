@@ -34,6 +34,7 @@ from VAT.forms import (
     InstitucionContactoForm,
     InstitucionUbicacionForm,
     PlanVersionCurricularForm,
+    build_plan_estudio_queryset_for_centro,
 )
 from core.permissions.registry import LEGACY_ALIAS_TO_PERMISSION_CODES
 from VAT.views import centro as centro_views
@@ -3830,6 +3831,211 @@ def test_plan_curricular_list_superuser_puede_acceder(client):
 
 
 @pytest.fixture
+def vat_alta_plan_provincia(db):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_sf = Provincia.objects.create(nombre="Santa Fe")
+    provincia_mza = Provincia.objects.create(nombre="Mendoza")
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    user = User.objects.create_user(username="alta-plan-provincia")
+    Profile.objects.update_or_create(
+        user=user,
+        defaults={"es_usuario_provincial": True, "provincia": provincia_ba},
+    )
+    permiso = Permission.objects.get(
+        content_type=ContentType.objects.get_for_model(PlanVersionCurricular),
+        codename="add_planversioncurricular",
+    )
+    _grant_vat_provincial_access(user, permiso)
+    data = {
+        "nombre": "Plan manual provincial",
+        "provincia": str(provincia_ba.pk),
+        "sector": str(sector.pk),
+        "modalidad_cursada": str(modalidad.pk),
+        "activo": "on",
+    }
+    return user, provincia_ba, provincia_sf, provincia_mza, data
+
+
+@pytest.mark.django_db
+def test_alta_plan_nacional_exige_provincia_y_ordena_opciones(
+    client, vat_alta_plan_provincia
+):
+    user, provincia_ba, provincia_sf, provincia_mza, data = vat_alta_plan_provincia
+    user.is_superuser = True
+    user.save(update_fields=["is_superuser"])
+    client.force_login(user)
+    url = reverse("vat_planversioncurricular_create")
+    response = client.get(url)
+    field = response.context["form"].fields["provincia"]
+    assert list(field.queryset) == [provincia_ba, provincia_mza, provincia_sf]
+    assert not field.disabled
+    assert field.initial is None
+    assert 'id="id_provincia"' in response.content.decode()
+
+    response = client.post(url, {**data, "provincia": ""})
+    assert response.status_code == 200
+    assert "provincia" in response.context["form"].errors
+    assert response.context["form"]["nombre"].value() == data["nombre"]
+    assert not PlanVersionCurricular.objects.exists()
+
+
+@pytest.mark.django_db
+def test_alta_plan_sse_sin_perfil_provincial_puede_elegir_provincia(
+    client, vat_alta_plan_provincia
+):
+    user, _, provincia_sf, _, data = vat_alta_plan_provincia
+    user.profile.es_usuario_provincial = False
+    user.profile.provincia = None
+    user.profile.save(update_fields=["es_usuario_provincial", "provincia"])
+    permiso_sse, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_vat_sse",
+        defaults={"name": "VAT SSE"},
+    )
+    user.user_permissions.add(permiso_sse)
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_planversioncurricular_create"),
+        {**data, "provincia": provincia_sf.pk},
+    )
+    assert response.status_code == 302
+    assert PlanVersionCurricular.objects.get().provincia_id == provincia_sf.pk
+
+
+@pytest.mark.django_db
+def test_alta_plan_selector_no_otorga_permiso_de_creacion(
+    client, vat_alta_plan_provincia
+):
+    user, _, _, _, data = vat_alta_plan_provincia
+    user.user_permissions.remove(
+        Permission.objects.get(
+            content_type=ContentType.objects.get_for_model(PlanVersionCurricular),
+            codename="add_planversioncurricular",
+        )
+    )
+    client.force_login(user)
+    response = client.post(reverse("vat_planversioncurricular_create"), data)
+    assert response.status_code == 403
+    assert not PlanVersionCurricular.objects.exists()
+
+
+@pytest.mark.django_db
+def test_alta_plan_nacional_selecciona_provincia_sin_sobrescritura(
+    client, vat_alta_plan_provincia
+):
+    user, provincia_ba, provincia_sf, _, data = vat_alta_plan_provincia
+    user.is_superuser = True
+    user.save(update_fields=["is_superuser"])
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_planversioncurricular_create"),
+        {**data, "provincia": provincia_sf.pk},
+    )
+    assert response.status_code == 302
+    plan = PlanVersionCurricular.objects.get(nombre=data["nombre"])
+    assert plan.provincia_id == provincia_sf.pk
+    assert plan.titulo_referencia.nombre == data["nombre"]
+    assert plan in build_plan_estudio_queryset_for_centro(provincia_sf.pk)
+    assert plan not in build_plan_estudio_queryset_for_centro(provincia_ba.pk)
+    plan.activo = False
+    plan.save(update_fields=["activo"])
+    assert plan not in build_plan_estudio_queryset_for_centro(provincia_sf.pk)
+
+
+@pytest.mark.django_db
+def test_alta_plan_provincia_unica_bloqueada_ignora_manipulacion(
+    client, vat_alta_plan_provincia
+):
+    user, provincia_ba, provincia_sf, _, data = vat_alta_plan_provincia
+    form = PlanVersionCurricularForm(actor=user)
+    assert form.fields["provincia"].disabled
+    assert form["provincia"].value() == provincia_ba.pk
+    assert list(form.fields["provincia"].queryset) == [provincia_ba]
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_planversioncurricular_create"),
+        {**data, "provincia": provincia_sf.pk},
+    )
+    assert response.status_code == 302
+    assert PlanVersionCurricular.objects.get().provincia_id == provincia_ba.pk
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("seleccion", ["ba", "sf", "otra", "inexistente", "vacia"])
+def test_alta_plan_varias_provincias_valida_alcance(
+    client, vat_alta_plan_provincia, seleccion
+):
+    user, provincia_ba, provincia_sf, provincia_mza, data = vat_alta_plan_provincia
+    for provincia in (provincia_ba, provincia_sf):
+        ProfileTerritorialScope.objects.create(
+            profile=user.profile, provincia=provincia
+        )
+    opciones = {
+        "ba": provincia_ba.pk,
+        "sf": provincia_sf.pk,
+        "otra": provincia_mza.pk,
+        "inexistente": max(provincia_mza.pk, provincia_sf.pk, provincia_ba.pk) + 1000,
+        "vacia": "",
+    }
+    form = PlanVersionCurricularForm(actor=user)
+    assert list(form.fields["provincia"].queryset) == [provincia_ba, provincia_sf]
+    assert not form.fields["provincia"].disabled
+    assert form.fields["provincia"].initial is None
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_planversioncurricular_create"),
+        {**data, "provincia": opciones[seleccion]},
+    )
+    if seleccion in {"ba", "sf"}:
+        assert response.status_code == 302
+        assert PlanVersionCurricular.objects.get().provincia_id == opciones[seleccion]
+    else:
+        assert response.status_code == 200
+        assert "provincia" in response.context["form"].errors
+        assert not PlanVersionCurricular.objects.exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("alcance", ["sin_provincia", "municipal", "sin_actor"])
+def test_alta_plan_sin_provincia_completa_no_permite_guardar(
+    vat_alta_plan_provincia, alcance
+):
+    user, provincia_ba, _, _, data = vat_alta_plan_provincia
+    if alcance == "sin_provincia":
+        user.profile.provincia = None
+        user.profile.save(update_fields=["provincia"])
+    elif alcance == "municipal":
+        municipio = Municipio.objects.create(nombre="Municipio", provincia=provincia_ba)
+        ProfileTerritorialScope.objects.create(
+            profile=user.profile, provincia=provincia_ba, municipio=municipio
+        )
+    form = PlanVersionCurricularForm(
+        data=data, actor=None if alcance == "sin_actor" else user
+    )
+    assert not form.is_valid()
+    assert "provincia" in form.errors
+    assert "Contactá a un administrador" in form.fields["provincia"].help_text
+    assert not PlanVersionCurricular.objects.exists()
+
+
+@pytest.mark.django_db
+def test_editar_plan_conserva_provincia_ante_post_manipulado(vat_alta_plan_provincia):
+    user, provincia_ba, provincia_sf, _, data = vat_alta_plan_provincia
+    form = PlanVersionCurricularForm(data=data, actor=user)
+    assert form.is_valid(), form.errors
+    plan = form.save()
+    form = PlanVersionCurricularForm(
+        data={**data, "provincia": provincia_sf.pk}, instance=plan, actor=user
+    )
+    assert "provincia" not in form.fields
+    assert form.is_valid(), form.errors
+    form.save()
+    plan.refresh_from_db()
+    assert plan.provincia_id == provincia_ba.pk
+
+
+@pytest.fixture
 def vat_plan_estudio_base(db):
     sector = Sector.objects.create(nombre="Industria")
     subsector = Subsector.objects.create(sector=sector, nombre="Metalúrgica")
@@ -3915,6 +4121,7 @@ def test_plan_estudio_create_usuario_provincial_asigna_provincia(client):
         reverse("vat_planversioncurricular_create"),
         data={
             "nombre": "Plan Industrial Inicial",
+            "provincia": str(provincia_ba.id),
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
@@ -4010,6 +4217,7 @@ def test_plan_version_curricular_create_solo_guarda_normativa_estructurada(clien
         reverse("vat_planversioncurricular_create"),
         data={
             "nombre": "Plan con normativa estructurada",
+            "provincia": str(provincia_ba.id),
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),
@@ -4103,6 +4311,7 @@ def test_plan_version_curricular_create_no_mezcla_texto_libre_en_alta(client):
         reverse("vat_planversioncurricular_create"),
         data={
             "nombre": "Plan mixto",
+            "provincia": str(provincia_ba.id),
             "sector": str(sector.id),
             "subsector": "",
             "modalidad_cursada": str(modalidad.id),

@@ -1,0 +1,82 @@
+{# Comedores o espacios (#2745). Recibe: comedores, titulo, color y, opcional, mostrar_codigo y mostrar_programa. #}
+<div class="tabla-legajo card-programa card-{{ color|default:'otro' }}">
+    <h5 class="mb-3">
+        <span>{{ titulo }}</span>
+        <span class="badge badge-gold ms-2">{{ comedores|length }} Total</span>
+    </h5>
+    {% if comedores %}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Tipo</th>
+                        {% if mostrar_codigo %}<th>Código de Proyecto</th>{% endif %}
+                        {% if mostrar_programa %}<th>Programa</th>{% endif %}
+                        <th>Ubicación</th>
+                        <th>Dirección</th>
+                        <th>Referente</th>
+                        <th>¿Fue Validado?</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for comedor in comedores %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'comedor_detalle' comedor.id %}" class="enlace-dorado">{{ comedor.nombre }}</a>
+                                {% if comedor.es_caritas %}
+                                    <span class="badge ms-1 badge-caritas"><i class="fas fa-heart"></i> CARITAS</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ comedor.tipocomedor.nombre|default:'-' }}</td>
+                            {% if mostrar_codigo %}
+                                <td>
+                                    {% if comedor.proyecto %}
+                                        <span class="badge rounded-pill bg-primary px-3 py-2">{{ comedor.proyecto.codigo }}</span>
+                                    {% elif comedor.codigo_de_proyecto %}
+                                        <span class="badge rounded-pill bg-primary px-3 py-2">{{ comedor.codigo_de_proyecto }}</span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+                            {% if mostrar_programa %}<td>{{ comedor.programa.nombre|default:'-' }}</td>{% endif %}
+                            <td>
+                                <div class="small-ubicacion">{{ comedor.provincia.nombre|default:'-' }}</div>
+                                <div class="small-ubicacion-sub">
+                                    {{ comedor.municipio.nombre|default:'-' }} / {{ comedor.localidad.nombre|default:'-' }}
+                                </div>
+                            </td>
+                            <td>{{ comedor.calle|default:'-' }} {{ comedor.numero|default:'S/N' }}</td>
+                            <td>
+                                {% if comedor.referente %}
+                                    {{ comedor.referente.nombre }} {{ comedor.referente.apellido }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if comedor.estado_validacion == "Validado" %}
+                                    <span class="badge badge-ok"><i class="fas fa-check-circle"></i> Validado</span>
+                                {% elif comedor.estado_validacion == "No Validado" %}
+                                    <span class="badge badge-no"><i class="fas fa-times-circle"></i> No Validado</span>
+                                {% else %}
+                                    <span class="badge badge-pendiente"><i class="fas fa-clock"></i> Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'comedor_detalle' comedor.id %}"
+                                   class="btn btn-sm accion-ver">
+                                    <i class="fas fa-eye"></i> Ver
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="texto-vacio mb-0">No hay comedores asociados en este programa.</p>
+    {% endif %}
+</div>

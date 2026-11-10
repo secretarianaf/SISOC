@@ -146,7 +146,12 @@
                 </div>
                 <div class="panel-body">
                     <div class="preguntas-toolbar">
-                        <span class="pregunta-count"><b id="preguntas-cantidad">0</b> preguntas agregadas</span>
+                        <span class="pregunta-count">
+                            <b id="preguntas-cantidad">0</b> preguntas agregadas
+                            <span class="preguntas-arrastre-ayuda">
+                                - Modificá el orden de las preguntas arrastrando <i class="fas fa-grip-vertical" aria-hidden="true"></i>
+                            </span>
+                        </span>
                     </div>
                     <div id="preguntas-container"></div>
                     <p id="preguntas-vacio-msg" class="switch-help mb-0">Todavía no agregaste preguntas.</p>
@@ -174,9 +179,18 @@
         <template id="pregunta-row-template">
             <div class="pregunta-row">
                 <div class="pregunta-head">
-                    <span class="pregunta-numero">Pregunta</span>
-                    <button type="button"
-                            class="btn-quitar-pregunta poncho-btn poncho-btn--neutro">
+                    <div class="pregunta-identificador">
+                        <button type="button"
+                                class="pregunta-arrastrar"
+                                draggable="true"
+                                aria-label="Mover pregunta"
+                                aria-keyshortcuts="ArrowUp ArrowDown"
+                                title="Arrastrar para mover o usar las flechas del teclado">
+                            <i class="fas fa-grip-vertical" aria-hidden="true"></i>
+                        </button>
+                        <span class="pregunta-numero">Pregunta</span>
+                    </div>
+                    <button type="button" class="btn-quitar-pregunta poncho-btn">
                         <i class="fas fa-trash-alt"></i> Quitar
                     </button>
                 </div>
@@ -198,6 +212,22 @@
                         </div>
                     </div>
                 </div>
+                <details class="mb-2">
+                    <summary>Presentación en la PWA</summary>
+                    <div class="pregunta-grid">
+                        <div>
+                            <label>Bloque (opcional)</label>
+                            <input type="text" class="form-control pregunta-bloque" maxlength="120" />
+                        </div>
+                        <div class="pregunta-max-caracteres-wrap">
+                            <label>Máximo de caracteres (opcional)</label>
+                            <input type="number"
+                                   class="form-control pregunta-max-caracteres"
+                                   min="1"
+                                   max="10000" />
+                        </div>
+                    </div>
+                </details>
                 <div class="pregunta-opciones-wrap d-none">
                     <label>Opciones (una por línea, mínimo dos)</label>
                     <textarea class="form-control pregunta-opciones" rows="3"></textarea>
@@ -254,6 +284,37 @@
                 </div>
             </div>
         </template>
+
+        <div class="modal fade"
+             id="quitar-pregunta-modal"
+             tabindex="-1"
+             aria-labelledby="quitar-pregunta-titulo"
+             aria-describedby="quitar-pregunta-advertencia"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title fs-5" id="quitar-pregunta-titulo">Quitar pregunta</h2>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="quitar-pregunta-advertencia" class="mb-0"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button"
+                                id="cancelar-quitar-pregunta"
+                                class="poncho-btn poncho-btn--neutro"
+                                data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button"
+                                id="confirmar-quitar-pregunta"
+                                class="btn-quitar-pregunta poncho-btn">Quitar pregunta</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         {{ preguntas_json_inicial|json_script:"preguntas-iniciales" }}
     </div>

@@ -696,3 +696,39 @@ def test_buscar_cuil_beneficiario_ramas(rf, mocker):
     ok = service.buscar_cuil_beneficiario(request_ok, "23")
     assert b'"status": "possible"' in ok.content
     assert request_ok.session.modified is True
+
+
+@pytest.mark.parametrize(
+    "cuil_validado,esperado",
+    [(None, "27301234568"), (20301234567, "20301234567")],
+)
+def test_buscar_cuil_beneficiario_no_pisa_cuil_con_el_crudo_de_renaper(
+    rf, mocker, cuil_validado, esperado
+):
+    # RENAPER informa "0" a muchos extranjeros: se usa el CUIL ya validado y, si
+    # no hay, el del padrón con el que se buscó.
+    request = rf.get("/")
+    request.session = DummySession()
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.Beneficiario.objects.filter",
+        return_value=SimpleNamespace(exists=lambda: False),
+    )
+    padron = SimpleNamespace(
+        dni="95445413", genero="F", provincia_tabla="BA", municipio_tabla="LP"
+    )
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.PadronBeneficiarios.objects.filter",
+        return_value=SimpleNamespace(first=lambda: padron),
+    )
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.consultar_datos_renaper",
+        return_value={
+            "success": True,
+            "data": {"cuil": cuil_validado},
+            "datos_api": {"nombres": "Ana", "apellido": "Perez", "cuil": "0"},
+        },
+    )
+
+    response = service.buscar_cuil_beneficiario(request, "27301234568")
+
+    assert json.loads(response.content)["data"]["cuil"] == esperado

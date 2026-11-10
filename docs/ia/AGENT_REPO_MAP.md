@@ -5,7 +5,19 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 Es un mapa para ubicar código: el estado de cada PR, issue o corte (aprobaciones,
 conteos de pruebas, autorizaciones) vive en `docs/registro/`, no acá.
 
+## Celiaquía: nómina de aprobados
+
+La selección de filas y la disponibilidad de descarga comparten la regla en
+`src/backends/celiaquia/celiaquia/services/padron_final_service/impl.py`.
+Guía: `docs/implementaciones/celiaquia_nomina_aprobados.md`. El `MATCH` del
+dependiente acredita Sintys; no exigirlo al responsable puro (`SIN_CRUCE`).
+
 ## Comedores y Espacios comunitarios (#2641)
+
+Encuestas móviles pertenecen a `src/backends/sisoc_core/encuestas/`:
+`api_views.py`, `api_permissions.py` y `services_pwa.py`, rutas públicas
+`/api/encuestas/pwa/`. Validan acceso con el contrato interno de Espacios,
+sin importar el vertical Comedores. Guía: `docs/implementaciones/encuestas.md`.
 
 Topología: `docs/desarrollo/arquitectura_servicios_2641.md` y
 `docs/diagramas/issue-2641-servicios.svg`. Estado y evidencia de cada corte
@@ -135,7 +147,7 @@ Reglas entre servicios: `AGENTS.md` ("Verticales independientes") y la guía
 - Es un monorepo Django modularizado por apps de dominio, con backend renderizado por templates y APIs DRF convivientes. Corre como varios servicios desde el mismo codigo: core (proxy de entrada), un backend por vertical, migrador unico, workers y front v2 (ver `docs/operacion/backends_por_servicio.md`).
 - El stack principal es Python 3.11 + Django 5.2 LTS + MySQL 8 + Docker Compose.
 - La operacion local y CI estan pensadas en modo Docker-first.
-- El repo mezcla backoffice web tradicional, APIs internas/server-to-server, flujos asincronos simples (hilos y workers dedicados; Celery solo para PAS), y una capa PWA/API para ciertos casos de uso.
+- El repo mezcla backoffice web tradicional, APIs internas/server-to-server, flujos asincronos simples (hilos y workers dedicados; Celery para PAS y para el PDF de rendiciones de comedores), y una capa PWA/API para ciertos casos de uso.
 - La logica de negocio suele vivir en `services/` cuando la app la tiene, pero coexisten apps mas legacy con mas logica en `views.py`, `models.py` o `tasks.py`.
 - Hay un esfuerzo explicito de control arquitectonico incremental con `import-linter` (`.importlinter`) para evitar que el monolito siga acoplandose.
 - Los modulos nuevos se ubican en el dueño correspondiente y respetan los servicios ya separados; reglas y límites actuales en `docs/ia/MODULAR_BOUNDARIES.md`.
@@ -423,7 +435,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `src/backends/comedores/pwa/` | endpoints backend para experiencia PWA | `api_urls.py`, `api_views.py`, `services/`, `models.py` | Medio |
 | `src/backends/cdi/ticketera/` | corre en el backend de CDI; API server-to-server con kill-switch | `api_urls.py`, `api_views.py`, `api_serializers.py` | Medio |
 | `src/backends/comedores/comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
-| `src/backends/kernel/organizaciones/` + `src/backends/comedores/gestion_organizaciones/` | datos maestros en el kernel; pantallas, forms y `Firmante` en el core (`gestion_organizaciones`). Entidades/organizaciones vinculadas; edición modal de proyectos y detalle con rendiciones por relación directa o legado | `models.py`, `forms.py`, `views.py`, templates de organización | Alto |
+| `src/backends/kernel/organizaciones/` + `src/backends/comedores/gestion_organizaciones/` | datos maestros en el kernel; pantallas, forms y `Firmante` en el core (`gestion_organizaciones`). Entidades/organizaciones vinculadas; edición de proyectos con línea y territoriales; legajo por programa (#2745) armado en `services/legajo.py` con partials en `src/backends/comedores/gestion_organizaciones/templates/organizaciones/partials/legajo/`; rendiciones por relación directa o legado | `models.py`, `forms.py`, `views.py`, `services/`, templates de organización | Alto |
 | `src/backends/cdi/centrodeinfancia/` | backend propio (`/centrodeinfancia/`, `/simepi/`); dominio de centros de infancia, personal, asistencia y descargables provinciales | `models.py`, `services.py`, `services_nomina_ninos_pdf.py`, `views.py`, `tests/`, urls | Alto |
 | `src/backends/comedores/acompanamientos/` | seguimiento/acompanamientos | `views.py`, `acompanamiento_service.py`, `services/filter_config.py`, templates | Medio |
 | `src/backends/comedores/expedientespagos/` | expedientes de pagos | `models.py`, `views.py`, urls | Bajo |
@@ -563,6 +575,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Cambios de estado: `src/backends/kernel/core/admin_operaciones.py` (`Operacion` +
   `OperacionesAdminMixin`), siempre llamando a un service existente; deja
   `auditlog.LogEntry` con motivo. Sin service, no hay acción.
+- Pedidos de soporte recurrentes (revertir estados, bajas de duplicados): resolverlos
+  como `Operacion` del admin del dominio, no con SQL. Ejemplo: Celiaquía
+  `volver_a_pendiente` y `eliminar` en `ExpedienteCiudadanoAdmin`
+  (`docs/registro/cambios/2026-T4/2026-11-03-admin-operaciones-soporte-celiaquia.md`).
 - Sidebar por dominio y badge de entorno: `src/backends/kernel/core/admin_navigation.py`;
   config en el bloque `UNFOLD` de `src/backends/config/settings.py`.
 - Métricas: `<app>/admin_metricas.py` con `metricas()`, descubiertas por
@@ -751,6 +767,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar rendiciones mensuales u Organizaciones
 
+- Sincronización de ramas de release: `rendicioncuentasmensual.0029_merge_pdf_descarga_upload_to` une las migraciones publicadas de PDF asíncrono y adjuntos sin operaciones de datos. Regresión del grafo: `src/backends/comedores/tests/test_rendicion_release_migration_graph.py`. La revisión documental conserva el borrador editable y la recarga del servidor, compatible con la descarga asíncrona.
 - Evolutivos #2642: catálogos Región/Subzona y M2M `ProyectoOrganizacion.territoriales` en kernel (`organizaciones.0024`); formulario y parejas opcionales en `gestion_organizaciones`. La migración `organizaciones.0026` carga el Excel recibido el 21/10 (cinco regiones y 28 subzonas con FK a región), conserva opciones inactivas ya asignadas y limita el selector/POST de Subzona a la Región elegida. El cupo territorial por proyecto cede ante subsanadas más antiguas para no bloquear datos previos a la regla. Borradores documentales (`revision_estado`, `revision_etapa`, `revision_observaciones`, migración `rendicioncuentasmensual.0027`) se confirman solo al finalizar la revisión, con bloqueo de rendición; no exponerlos en Mobile/PDF. `inferir_linea_programatica(comedor, proyecto)` decide AMBA por código o nombre y se usa en alta, validación previa y selector API de proyectos. Mobile requiere el cambio coordinado en `SISOC-EspaciosComunitarios`. Tests: `src/backends/comedores/tests/test_issue_2642.py`; incluye concurrencia real marcada `mysql_compat`. Montos de convenio: `src/backends/comedores/comedores/forms/convenio_pnud_form.py`.
 - estados, etapas, subsanaciones y alcance por proyecto: `src/backends/comedores/rendicioncuentasmensual/services.py`
 - #2642: el inicio Territorial valida un único cupo por proyecto, incluidos códigos históricos de la misma organización, y serializa la comprobación con un bloqueo de organización. Los catálogos se ordenan por `order`; Formulario I queda antes de Documentación Adicional. Organizaciones reutiliza `components/search_bar.html` en `filters_mode` y su configuración en `src/backends/comedores/gestion_organizaciones/filter_config.py`; sus filtros y los de Comedores se ordenan por etiqueta.
@@ -766,7 +783,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - etiquetas visibles ≠ valores persistidos: la etapa `revision_auditoria` se muestra como «Revisión para Carga». No cambiar valores internos para acomodar un label
 - asociación actual: `RendicionCuentaMensual.proyecto`; conservar fallback por `comedor.codigo_de_proyecto` para datos legados
 - listado y detalle del legajo: `src/backends/comedores/gestion_organizaciones/views.py` y templates `organizacion_*`
-- proyectos editables: `OrganizacionForm.proyectos_lineas` recibe un JSON oculto con filas `{codigo, linea}` (línea = programa de Abordaje, #2745); `asignaciones_territoriales` (#2642, filas `{proyecto, territorial}`) se valida contra esos códigos. Región/subzona canónica: `Organizacion.region_abordaje`/`subzona_abordaje` (kernel); `DatosRegionOrganizacion` de `gestion_organizaciones` quedó sin uso en pantallas. Los datos por programa se resuelven en `src/backends/comedores/gestion_organizaciones/services/programas.py`
+- proyectos editables: `OrganizacionForm.proyectos_lineas` recibe un JSON oculto con filas `{codigo, linea}` (línea = programa de Abordaje, #2745); `asignaciones_territoriales` (#2642, filas `{proyecto, territorial}`) se valida contra esos códigos. Región/subzona canónica: `Organizacion.region_abordaje`/`subzona_abordaje` (kernel); las tablas de región propias de `gestion_organizaciones` se retiran en la migración 0005, que antes copia sus datos al kernel. Los datos por programa se resuelven en `src/backends/comedores/gestion_organizaciones/services/programas.py`
 - tests: `src/backends/comedores/tests/test_rendicioncuentasmensual_services_unit.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_domain_rules.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_visualizacion.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_acta_auditoria.py` y `src/backends/comedores/gestion_organizaciones/tests.py`
 - escenarios QA de permisos por etapa: `python manage.py seed_rendicion_stage_examples --comedor-id <id>` (solicita la contraseña de forma interactiva)
 - documentación canónica: `docs/flujos/rendiciones_mensuales_proyectos.md`
@@ -1088,7 +1105,7 @@ codigo, no se lee entero al inicio.
   inferida; no demuestra consumo HTTP ni servicios activos.
 - La etapa `source` de `docker/django/Dockerfile` ejecuta el generador con
   `--imagen` antes de quitar frontends y verticales. El arranque conserva esa
-  captura completa (`var/arquitectura/grafo-imagen.json`); no reconstruye un
+  captura completa (`/sisoc/var/arquitectura/grafo-imagen.json` dentro de la imagen); no reconstruye un
   mapa parcial desde el core aislado. `.dockerignore` excluye `var` para evitar
   capturas locales dentro de una nueva imagen.
 - `python src/scripts/arquitectura/generar_mapa.py --docs` actualiza el grafo
@@ -1217,3 +1234,49 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `src/backends/kernel/users/migrations/0060_profile_accesos_siis_web.py` y `src/backends/comedores/pwa/migrations/0026_inicializar_acceso_web.py`: schema kernel y backfill histórico core. Aplicar con migrador completo; no recalcular flags en runtime ni repetir backfill sobre habilitaciones administradas.
 - `src/backends/sisoc_core/tests/test_users_siis.py`: contrato, denegaciones, credenciales administrativas, duplicados, gate web y backfill.
 - `docs/registro/cambios/2026-T4/2026-10-06-auth-siis.md`: evidencia y riesgo de rollback a código que ignora el flag.
+
+## INET React v2
+
+- Mapa del CFP: `src/frontends/apps/inet/src/DetailPanels.tsx` usa Google Maps con el dato
+  `Domicilio mapa` de `src/backends/vat/VAT/services/inet_queries.py` (calle/altura o domicilio
+  de actividades). Requiere localidad y provincia; sin datos muestra un mensaje.
+
+- Preservación visual solicitada por el usuario (2026-10-06):
+  `src/frontends/apps/inet/AGENTS.md`. Releer la implementación vigente antes de
+  editar; conservar las mejoras locales de composición, estilos y ubicaciones.
+  Pantallas y reglas: `docs/implementaciones/inet_react.md`.
+
+- Entrada `/v2/inet/`, app `src/frontends/apps/inet`, servicio `front_inet` y
+  variable `FRONT_INET_ORIGIN`; acceso y comandos: `docs/operacion/inet_react.md`.
+- API interna `/api/inet/` en `src/backends/vat/VAT/api_inet_urls.py`, `api_inet_views.py` y
+  `api_inet_serializers.py`. Se enruta al backend VAT desde `src/backends/config/backends.json`.
+- Queries/formularios/workflows: `src/backends/vat/VAT/services/inet_{queries,forms,workflow}.py`.
+  Alta CFP, wizard comisión y asistencia comparten operaciones con legacy.
+- Contrato dedicado `config.urls_inet_v2`, `openapi.inet.yaml` e
+  `inet.generated.ts`; checks CI y `npm run api:check` incluyen INET.
+- Tests `src/backends/vat/tests/test_inet_api.py`, `apps/inet/src/App.test.tsx`,
+  `apps/inet/src/Fields.test.tsx`,
+  `e2e/inet.e2e.ts`. No modificar HasAPIKey de `/api/vat/` para habilitar React.
+- Formularios: permitir opcionales JSON nulos, describir ModelMultipleChoiceField
+  como multiselect y conservar `activo_present` del CFP legacy. Las consultas
+  de opciones remotas dependen solo de padres/territorio, no de todo el formulario.
+- Cambios funcionales, visuales y verificación:
+  `docs/registro/cambios/2026-T4/2026-10-26-inet-react.md`.
+## Permisos de runtime HML
+
+HML agrega `docker/compose/docker-compose.hml-runtime.yml` desde `deploy_refresh.sh` y prepara ACL mediante `src/scripts/operacion/provision_hml_runtime_permissions.py`. No asumir que root demuestra permisos correctos para usuarios de aplicación. Evidencia y límites: `docs/registro/cambios/2026-T4/2026-10-28-hml-runtime-permisos-adjuntos.md`.
+
+- HML runtime permissions: `deploy_refresh.sh` runs the private-backup/ACL provisioner before service interruption or migration and again afterward; an early failure preserves running services. QA/production are unchanged. Synthetic runtime/HTTP acceptance and rollback remain separate gates.
+
+### Encuestas: API PWA selectiva
+
+- `src/backends/sisoc_core/encuestas/api_views.py`, `api_permissions.py` y `services_pwa.py`: dos endpoints token para Espacios; verificación HTTP del dueño, segmentación y escritura transaccional reutilizando servicios web.
+- `src/backends/sisoc_core/encuestas/migrations/0008_disponibilidad_pwa.py`: esquema aditivo, disponibilidad deshabilitada por defecto; conservar bytes publicados en development.
+- `src/backends/sisoc_core/encuestas/tests/test_encuestas_pwa.py`: contratos móviles, permisos, atomicidad, anonimato y reintentos por usuario/ronda.
+- `docs/implementaciones/encuestas.md`: contrato, límites de replay y falta de worker productivo; registro compartido de URLs implica refresh completo, no solo core. No activar contenido ni agregar cron implícitamente.
+
+### Secuencia de release del mismo día
+
+- `src/scripts/github/release_orchestrator.js`: marker opcional `release-sequence`, defecto1; una segunda promoción autorizada usa un tag nuevo `AAAA.MM.DD-2-stable`. Nunca mover el primer tag ni aceptar PRs directos a main.
+- `src/scripts/github/release_orchestrator.test.js`: fixtures del API GitHub para colisiones, identidad de baseline, reintentos y cambios de head/base/secuencia durante el gate.
+- `.agents/skills/preparar-deploy/` es canónica; regenerar `.claude/skills/preparar-deploy/` con `src/scripts/ai/sync_skills.py`. Ver `docs/operacion/deploy_automatizado.md` para operación y aprobación humana sin cambios.

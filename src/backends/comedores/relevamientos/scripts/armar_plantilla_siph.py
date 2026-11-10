@@ -257,6 +257,25 @@ def _sin_comentarios(doc):
             doc.part.drop_rel(rid)
 
 
+def _sin_instruccion_comentarios(doc):
+    """Deja solo el título "COMENTARIOS FINALES" en el punto 9.
+
+    El área lo escribe en el mismo párrafo que su indicación ("Incorporar en
+    este apartado…"), que es para quien llena el formulario: en el PDF debe
+    salir solo la respuesta cargada (#2651, QA del 28/10). El título es la
+    primera corrida (en negrita); se descartan las demás.
+    """
+    for parrafo in doc.element.iter(qn("w:p")):
+        if not _texto(parrafo).startswith("COMENTARIOS FINALES"):
+            continue
+        corridas = parrafo.findall(qn("w:r"))
+        _reescribir(corridas[0], "COMENTARIOS FINALES")
+        for corrida in corridas[1:]:
+            parrafo.remove(corrida)
+        return
+    raise SystemExit("No se encontró el título COMENTARIOS FINALES")
+
+
 def _resumen(destino):
     with zipfile.ZipFile(destino) as plantilla:
         xml = plantilla.read("word/document.xml").decode("utf8")
@@ -266,6 +285,10 @@ def _resumen(destino):
     comentarios = [n for n in plantilla_nombres if "comment" in n.lower()]
     if comentarios or "comment" in xml.lower():
         raise SystemExit(f"La plantilla conserva comentarios: {comentarios}")
+    if "Incorporar en este apartado" in resto:
+        raise SystemExit(
+            "La plantilla conserva la indicación de los comentarios finales"
+        )
     for texto_de_trabajo in ("Gescom", "GESCOM", "precargado en la app", "Comentario"):
         if texto_de_trabajo in resto:
             raise SystemExit(
@@ -285,11 +308,31 @@ def main(origen, destino):
     _reemplazar_parrafos(doc)
     _reemplazar_tablas(doc)
     _sin_comentarios(doc)
+    _sin_instruccion_comentarios(doc)
     with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as con_fuentes:
         doc.save(con_fuentes.name)
         _sin_fuentes(con_fuentes.name, destino)
     _resumen(destino)
 
 
+def quitar_instruccion(plantilla):
+    """Aplica solo ``_sin_instruccion_comentarios`` a una plantilla ya generada.
+
+    ``main`` no es idempotente (vuelve a escribir las celdas), así que para
+    corregir la plantilla sin el docx original del área se usa este modo:
+
+        python -I .../armar_plantilla_siph.py --quitar-instruccion <plantilla.docx>
+    """
+    doc = Document(plantilla)
+    _sin_instruccion_comentarios(doc)
+    with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as nuevo:
+        doc.save(nuevo.name)
+    _sin_fuentes(nuevo.name, plantilla)
+    _resumen(plantilla)
+
+
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    if sys.argv[1] == "--quitar-instruccion":
+        quitar_instruccion(sys.argv[2])
+    else:
+        main(sys.argv[1], sys.argv[2])

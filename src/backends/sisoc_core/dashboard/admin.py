@@ -27,6 +27,7 @@ class TableroAdminForm(forms.ModelForm):
             "slug",
             "grupo_menu",
             "url",
+            "ruta_interna",
             "mensaje_construccion",
             "orden",
             "activo",

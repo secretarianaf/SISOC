@@ -19,12 +19,18 @@ from comedores.utils import is_pnud_comedor, permite_codigo_de_proyecto
 
 from core.models import Municipio, Provincia
 from core.models import Localidad
+from gestion_organizaciones.models import ProgramaOrganizacion
 from organizaciones.models import Organizacion, ProyectoOrganizacion
 from pwa.models import ActividadEspacioPWA
 from core.validators import validate_unicode_email
 from users.services import UserPermissionService
 
 MAX_IMAGEN_COMEDOR_FILE_SIZE = 3 * 1024 * 1024
+MENSAJE_CUPO_ALIMENTARIO_WEB = (
+    "No se pudo agregar a la persona con Prestación alimentaria porque el "
+    "espacio ya completó el cupo de personas conveniadas. Puede agregarla "
+    "solo en Actividades, o dar de baja a otra persona para liberar un lugar."
+)
 
 
 class ReferenteForm(forms.ModelForm):
@@ -125,12 +131,38 @@ class NominaExtraForm(NominaForm):
             raise ValidationError(
                 "Debe seleccionar al menos Prestacion alimentaria o Actividades."
             )
-        if asistencia_actividades and not actividad_ids:
+        if (
+            asistencia_actividades
+            and not self.fields["actividad_ids"].queryset.exists()
+        ):
+            # Sin opciones, crispy no muestra el error de actividad_ids: se
+            # informa en el checkbox, que sí lo renderiza.
+            self.add_error(
+                "asistencia_actividades",
+                "El espacio no tiene actividades cargadas. Primero hay que dar "
+                "de alta una actividad para poder inscribir personas.",
+            )
+        elif asistencia_actividades and not actividad_ids:
             self.add_error(
                 "actividad_ids",
                 "Debe seleccionar al menos una actividad.",
             )
+        self._validar_tope_nomina_alimentaria(cleaned_data, asistencia_alimentaria)
         return cleaned_data
+
+    def _validar_tope_nomina_alimentaria(self, cleaned_data, asistencia_alimentaria):
+        """Misma regla de tope que el alta desde la PWA (issue #2844)."""
+        # Import diferido: pwa.services.nomina_service importa ComedorService,
+        # que a su vez importa este módulo de forms.
+        # pylint: disable-next=import-outside-toplevel
+        from pwa.services.nomina_service import tope_nomina_alimentaria_cubierto
+
+        if not asistencia_alimentaria:
+            return
+        if cleaned_data.get("estado") == Nomina.ESTADO_BAJA:
+            return
+        if tope_nomina_alimentaria_cubierto(comedor_id=self.comedor.pk):
+            self.add_error("asistencia_alimentaria", MENSAJE_CUPO_ALIMENTARIO_WEB)
 
 
 class CiudadanoFormParaNomina(forms.ModelForm):
@@ -449,11 +481,81 @@ class ComedorForm(forms.ModelForm):
         else:
             self.fields["proyecto"].queryset = ProyectoOrganizacion.objects.none()
 
+        self._limitar_programas_a_organizacion(selected_organizacion_id)
+
         self.codigo_de_proyecto_programa_ids = ",".join(
             str(programa.pk)
             for programa in Programas.objects.only("id", "nombre")
             if permite_codigo_de_proyecto(programa)
         )
+
+    def _programas_de_organizacion(self, organizacion_id):
+        if not organizacion_id:
+            return set()
+        try:
+            organizacion_id = int(organizacion_id)
+        except (TypeError, ValueError):
+            return set()
+        return set(
+            ProgramaOrganizacion.objects.filter(
+                organizacion_id=organizacion_id
+            ).values_list("programa_id", flat=True)
+        )
+
+    def _limitar_programas_a_organizacion(self, organizacion_id):
+        """Solo los programas cargados en la organización (#2745).
+
+        Sin programas cargados se ofrecen todos (definición 22). El programa
+        actual del comedor se conserva como opción para no perderlo al editar.
+        """
+        # Al enviar no se restringe: clean() da el mensaje propio.
+        if self.is_bound:
+            return
+        programas = self._programas_de_organizacion(organizacion_id)
+        if not programas:
+            return
+        actual = getattr(self.instance, "programa_id", None)
+        if actual:
+            programas.add(actual)
+        self.fields["programa"].queryset = self.fields["programa"].queryset.filter(
+            pk__in=programas
+        )
+
+    def _validar_programa_y_linea(self, cleaned_data):
+        """Regla Comedor–Organización (#2745, Etapa 4).
+
+        Se aplica en el alta y cuando cambian organización, programa o
+        proyecto; editar otros campos de un comedor existente no se bloquea.
+        """
+        instancia_pk = getattr(getattr(self, "instance", None), "pk", None)
+        if instancia_pk and not {"organizacion", "programa", "proyecto"} & set(
+            self.changed_data
+        ):
+            return
+        organizacion = cleaned_data.get("organizacion")
+        programa = cleaned_data.get("programa")
+        programas = self._programas_de_organizacion(getattr(organizacion, "pk", None))
+        if not programas or programa is None:
+            return
+        if programa.pk not in programas:
+            self.add_error(
+                "programa", "La organización debe tener este programa cargado."
+            )
+            return
+        proyecto = cleaned_data.get("proyecto")
+        if proyecto is None or "proyecto" in self.errors:
+            return
+        linea = getattr(proyecto, "linea", None)
+        if linea is None:
+            self.add_error(
+                "proyecto",
+                "El proyecto no tiene línea asignada: asignala en la organización.",
+            )
+        elif linea.programa_id != programa.pk:
+            self.add_error(
+                "proyecto",
+                "El proyecto seleccionado pertenece a otra línea.",
+            )
 
     def _can_edit_estado_fields(self):
         user = self.current_user
@@ -683,6 +785,8 @@ class ComedorForm(forms.ModelForm):
             )
         else:
             cleaned_data["codigo_de_proyecto"] = proyecto.codigo
+
+        self._validar_programa_y_linea(cleaned_data)
 
         estado_actividad = cleaned_data.get("estado_general")
         estado_proceso = cleaned_data.get("subestado")

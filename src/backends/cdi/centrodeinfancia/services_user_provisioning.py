@@ -294,13 +294,51 @@ def _cambio_persona_referente(anterior, centro):
     dni_actual = _dni_referente(centro)
     if dni_anterior and dni_actual:
         return dni_anterior != dni_actual
-    cambio_nombre = _normalizar_nombre(
-        anterior.get("nombre_referente")
-    ) != _normalizar_nombre(centro.nombre_referente)
-    cambio_apellido = _normalizar_nombre(
-        anterior.get("apellido_referente")
-    ) != _normalizar_nombre(centro.apellido_referente)
-    return cambio_nombre and cambio_apellido
+    return _cambiaron_nombre_y_apellido(
+        anterior,
+        {
+            "nombre_referente": centro.nombre_referente,
+            "apellido_referente": centro.apellido_referente,
+        },
+    )
+
+
+def _cambiaron_nombre_y_apellido(anterior, actual):
+    return all(
+        _normalizar_nombre(anterior.get(campo)) != _normalizar_nombre(actual.get(campo))
+        for campo in ("nombre_referente", "apellido_referente")
+    )
+
+
+def documentos_del_referente_anterior(anterior, actual):
+    """Campos de documento que quedaron con el valor del referente anterior.
+
+    Si en la ficha cambian nombre y apellido (otra persona) pero el DNI o el
+    CUIL siguen siendo los anteriores, por el documento se la toma como la misma
+    persona: el responsable no cambia y a la cuenta del anterior se le pasaría
+    el email del nuevo. Devuelve esos campos para rechazar el guardado.
+
+    Completar el nombre de una ficha que no lo tenía no es cambiar de persona,
+    y sin un nombre nuevo válido (vacío o rechazado por el form) no se puede
+    saber si es otra persona.
+    """
+
+    def tiene_nombre(datos):
+        return all(
+            _normalizar_nombre(datos.get(campo))
+            for campo in ("nombre_referente", "apellido_referente")
+        )
+
+    if not (tiene_nombre(anterior) and tiene_nombre(actual)):
+        return []
+    if not _cambiaron_nombre_y_apellido(anterior, actual):
+        return []
+    return [
+        campo
+        for campo in ("dni_referente", "cuil_referente")
+        if solo_digitos(anterior.get(campo))
+        and solo_digitos(anterior.get(campo)) == solo_digitos(actual.get(campo))
+    ]
 
 
 def _es_el_referente(user, centro, anterior, cambio_persona):

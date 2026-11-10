@@ -150,6 +150,9 @@ class RelevamientoApiView(APIView):
                             {"non_field_errors": [str(clean_error)]}
                         ) from clean_error
                     relevamiento_serializer.is_valid(raise_exception=True)
+                    # Un reenvío de la app trae los datos de esta visita: el
+                    # snapshot se vuelve a armar al guardar (#2797).
+                    relevamiento.datos_comedor_snapshot = None
                     relevamiento_serializer.save()
                     relevamiento = relevamiento_serializer.instance
                     Relevamiento.objects.filter(pk=relevamiento.pk).update(

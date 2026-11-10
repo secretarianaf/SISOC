@@ -59,13 +59,21 @@ snapshot es una ayuda de interfaz, no una copia que reemplace los datos guardado
 - El coordinador puede dejar una instancia en **A subsanar** con observaciones o
   marcarla **Validado**. La aplicación sólo ofrece corregir y reenviar cuando
   el estado lo permite.
-- Un usuario territorial puede iniciar un relevamiento o seguimiento en un
-  comedor de su provincia aunque aún no tenga una asignación previa. La creación
-  exige `client_uuid`: repetirlo devuelve el registro existente, incluso si fue
-  dado de baja lógica, y evita duplicados por reintentos offline.
-- Si ya hay un relevamiento activo para el comedor, el alta responde conflicto
-  con su identificador para que la app continúe el trabajo existente en vez de
-  crear otro ciclo.
+- Un usuario territorial puede iniciar un seguimiento en un comedor de su
+  provincia aunque aún no tenga una asignación previa. La creación exige
+  `client_uuid`: repetirlo devuelve el registro existente y evita duplicados por
+  reintentos offline.
+- Los relevamientos iniciales **no** los crea el territorial (#2781): los asigna
+  SISOC y la app solo completa el asignado.
+  `POST /api/territorial/comedores/{id}/relevamientos/` responde 403 con un
+  mensaje claro. Única excepción: si el `client_uuid` ya corresponde a un
+  relevamiento de ese comedor (alta anterior al cambio, en la cola offline de
+  una app vieja) devuelve ese registro con 200 para que la cola se vacíe.
+- Estados unificados (#2781): SISOC web y la app muestran Pendiente, En curso,
+  Pendiente Revisión y Finalizado. Es una etiqueta calculada por
+  `RelevamientoService.estado_unificado` desde `estado` y `estado_validacion`
+  (no se guarda nada nuevo). La API territorial la expone como `estado_unificado`
+  en relevamientos, seguimientos, actas complementarias y seguimientos PNUD.
 - `origen` y `asignado_desde_sisoc` distinguen una asignación del backoffice de
   una autoactivación territorial. No son permisos ni sustituyen el alcance por
   provincia.
@@ -117,6 +125,7 @@ Si no viene `documento` ni `sisoc_id`, cae al patron previo de busqueda por nomb
   tratadas como un segundo seguimiento rechazado.
 - Los choices no confirmados se guardan como `CharField`; las escalas usan validadores 1..4 o 1..11.
 - Las firmas recibidas desde GESTIONAR se guardan como URL/string, no como `FileField`.
+- Los documentos adjuntos (imagen o PDF) de cada formulario no pasan por este sync: la app los sube por `/api/territorial/comedores/{id}/adjuntos/` y se guardan en `ArchivoAdjunto` (ver `docs/registro/cambios/2026-T4/2026-11-02-2781-adjuntos-formularios.md`).
 
 ## Errores comunes y debug
 

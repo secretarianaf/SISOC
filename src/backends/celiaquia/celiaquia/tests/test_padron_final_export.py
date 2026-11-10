@@ -290,6 +290,109 @@ def test_nomina_aprobados_incluye_datos_del_responsable():
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize("revision", list(RevisionTecnico))
+def test_nomina_exige_responsable_aprobado_en_el_mismo_expediente(client, revision):
+    owner = _user("prov-revision-responsable", coord=True)
+    expediente = _expediente(owner)
+    hijo = _crear_legajo(
+        expediente,
+        "30111222",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+    )
+    responsable = _crear_legajo(
+        expediente,
+        "20111333",
+        revision=revision,
+        sintys=ResultadoSintys.SIN_CRUCE,
+        rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+    )
+    # La aprobacion en otro expediente no reemplaza la del actual.
+    otro = Expediente.objects.create(
+        usuario_provincia=owner,
+        estado=expediente.estado,
+    )
+    ExpedienteCiudadano.objects.create(
+        expediente=otro,
+        ciudadano=responsable.ciudadano,
+        estado=responsable.estado,
+        revision_tecnico=RevisionTecnico.APROBADO,
+        rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+    )
+    GrupoFamiliar.objects.create(
+        ciudadano_1=responsable.ciudadano,
+        ciudadano_2=hijo.ciudadano,
+        vinculo=GrupoFamiliar.RELACION_PADRE,
+        cuidador_principal=True,
+    )
+    _, filas = _workbook_rows(PadronFinalService.generar_padron_final_excel(expediente))
+    aprobado = revision == RevisionTecnico.APROBADO
+    assert len(filas) == int(aprobado)
+    assert PadronFinalService.hay_aprobados(expediente) is aprobado
+    client.force_login(owner)
+    response = client.get(
+        reverse("expediente_padron_final_export", args=[expediente.pk])
+    )
+    assert response.status_code == (200 if aprobado else 404)
+    if aprobado:
+        assert _col("documento", filas[0]) == "30111222"
+        assert _col("CUIT_RESPONSABLE", filas[0]) == "20111333"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("otro_expediente", [False, True])
+@pytest.mark.parametrize("responsable_local", [False, True])
+def test_nomina_ignora_vinculos_de_responsables_ajenos(
+    otro_expediente, responsable_local
+):
+    owner = _user("prov-vinculo-externo")
+    expediente = _expediente(owner)
+    hijo = _crear_legajo(
+        expediente,
+        "30111222",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+    )
+    externo = _crear_ciudadano("20111333", apellido="AAA EXTERNO")
+    if otro_expediente:
+        otro = Expediente.objects.create(
+            usuario_provincia=owner, estado=expediente.estado
+        )
+        ExpedienteCiudadano.objects.create(
+            expediente=otro,
+            ciudadano=externo,
+            estado=hijo.estado,
+            revision_tecnico=RevisionTecnico.APROBADO,
+            rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+        )
+    responsables = [externo]
+    if responsable_local:
+        local = _crear_legajo(
+            expediente,
+            "20111444",
+            revision=RevisionTecnico.APROBADO,
+            sintys=ResultadoSintys.SIN_CRUCE,
+            apellido="ZZZ LOCAL",
+            rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+        )
+        responsables.append(local.ciudadano)
+    for responsable in responsables:
+        GrupoFamiliar.objects.create(
+            ciudadano_1=responsable,
+            ciudadano_2=hijo.ciudadano,
+            vinculo=GrupoFamiliar.RELACION_PADRE,
+            cuidador_principal=True,
+        )
+    _, filas = _workbook_rows(PadronFinalService.generar_padron_final_excel(expediente))
+    assert len(filas) == 1
+    assert _col("documento", filas[0]) == "30111222"
+    assert _col("CUIT_RESPONSABLE", filas[0]) == (
+        "20111444" if responsable_local else None
+    )
+    assert PadronFinalService.hay_aprobados(expediente) is True
+
+
+@pytest.mark.django_db
 def test_nomina_aprobados_responsable_ambiguo_usa_primero_alfabetico(mocker):
     owner = _user("prov-familia-ambigua")
     expediente = _expediente(owner)

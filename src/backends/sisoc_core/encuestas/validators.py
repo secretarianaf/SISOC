@@ -247,6 +247,8 @@ class ParsedPregunta:
     pondera: bool = False
     puntaje_si: int | None = None
     puntaje_no: int | None = None
+    bloque: str = ""
+    max_caracteres: int | None = None
 
 
 def _parse_condicion(item: dict, indice: int, orden: int) -> ParsedCondicion | None:
@@ -348,6 +350,19 @@ def _parse_una_pregunta(
         puntaje_si = _parse_puntaje(item.get("puntaje_si"), indice, "puntaje de 'Sí'")
         puntaje_no = _parse_puntaje(item.get("puntaje_no"), indice, "puntaje de 'No'")
 
+    bloque = item.get("bloque", "")
+    max_caracteres = item.get("max_caracteres")
+    if not isinstance(bloque, str) or len(bloque.strip()) > 120:
+        raise ValidationError(
+            f"Pregunta {indice}: el bloque admite hasta 120 caracteres."
+        )
+    if max_caracteres is not None and (
+        not isinstance(max_caracteres, int)
+        or isinstance(max_caracteres, bool)
+        or not 1 <= max_caracteres <= 10000
+        or tipo not in {"texto_corto", "texto_largo"}
+    ):
+        raise ValidationError(f"Pregunta {indice}: límite de caracteres inválido.")
     return ParsedPregunta(
         orden=orden,
         texto=texto,
@@ -358,6 +373,8 @@ def _parse_una_pregunta(
         pondera=pondera,
         puntaje_si=puntaje_si,
         puntaje_no=puntaje_no,
+        bloque=bloque.strip(),
+        max_caracteres=max_caracteres,
     )
 
 

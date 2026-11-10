@@ -25,6 +25,7 @@ from relevamientos.helpers import RelevamientoFormManager
 from relevamientos.models import (
     BLOQUES_SEGUIMIENTO,
     ActaComplementaria,
+    ArchivoAdjunto,
     PrimerSeguimiento,
     Relevamiento,
     SeguimientoPnud,
@@ -32,6 +33,7 @@ from relevamientos.models import (
 from relevamientos import pdf_oficial
 from relevamientos.pdf_service import RelevamientoPdfService
 from relevamientos.service import RelevamientoService
+from relevamientos.services.adjuntos import adjuntos_de
 from relevamientos.views.seguimiento_helpers import (
     aplicar_revision_coordinador,
     resolver_seguimiento,
@@ -146,12 +148,14 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                 rel.seguimientos.all(),
                 key=lambda seguimiento: seguimiento.numero_orden,
             )
+            estado_rel = RelevamientoService.estado_unificado(rel)
             items.append(
                 {
                     "id": rel.id,
                     "fecha": rel.fecha_visita,
-                    "estado": RelevamientoService.estado_para_mostrar(
-                        rel.estado, rel.estado_validacion
+                    "estado": estado_rel,
+                    "estado_badge": RelevamientoService.badge_estado_unificado(
+                        estado_rel
                     ),
                     "numero_if": rel.numero_if,
                     "is_child": False,
@@ -162,11 +166,15 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                 }
             )
             for seguimiento in seguimientos:
+                estado_seg = RelevamientoService.estado_unificado(seguimiento)
                 items.append(
                     {
                         "id": seguimiento.id,
                         "fecha": seguimiento.fecha_hora,
-                        "estado": seguimiento.estado,
+                        "estado": estado_seg,
+                        "estado_badge": RelevamientoService.badge_estado_unificado(
+                            estado_seg
+                        ),
                         "tipo": seguimiento.get_tipo_display(),
                         "numero_orden": seguimiento.numero_orden,
                         "origen": seguimiento.origen,
@@ -195,13 +203,18 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
     template_name = "relevamiento_detail.html"
     context_object_name = "relevamiento"
 
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
+    def get_context_data(  # pylint: disable=too-many-locals
+        self, **kwargs
+    ) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
 
         # Optimización: Usar self.object en lugar de nueva query
         relevamiento = self.object
         # #2630: si Gestionar subió su PDF oficial, la descarga es ese.
         context["pdf_oficial"] = pdf_oficial.documento_de(relevamiento=relevamiento)
+        context["adjuntos"] = adjuntos_de(
+            relevamiento.comedor.id, ArchivoAdjunto.TIPO_RELEVAMIENTO, relevamiento.id
+        )
 
         timeline_qs = (
             Relevamiento.objects.filter(comedor=relevamiento.comedor)
@@ -210,14 +223,11 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
         )
         timeline_items = []
         for idx, item in enumerate(timeline_qs):
-            estado = RelevamientoService.estado_para_mostrar(
-                item.estado, item.estado_validacion
-            )
-            is_finalizado = estado in RelevamientoService.ESTADOS_FINALIZADOS
+            estado = RelevamientoService.estado_unificado(item)
+            is_finalizado = estado == RelevamientoService.ESTADO_UNIFICADO_FINALIZADO
             is_pendiente = estado in {
-                "Pendiente",
-                "Visita pendiente",
-                RelevamientoService.ESTADO_PENDIENTE_VALIDACION,
+                RelevamientoService.ESTADO_UNIFICADO_PENDIENTE,
+                RelevamientoService.ESTADO_UNIFICADO_PENDIENTE_REVISION,
             }
             card_class = (
                 "active"
@@ -323,9 +333,7 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
         # Agregar los datos adicionales al contexto
         context["relevamiento_data"] = relevamiento_data
         context["relevamientos_timeline"] = timeline_items
-        context["estado_visible"] = RelevamientoService.estado_para_mostrar(
-            relevamiento.estado, relevamiento.estado_validacion
-        )
+        context["estado_visible"] = RelevamientoService.estado_unificado(relevamiento)
         # Todas las instancias del ciclo (primer, posteriores, virtuales, actas).
         context["seguimientos"] = sorted(
             relevamiento.seguimientos.all(),
@@ -582,6 +590,9 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
         context["comedor"] = seguimiento.id_relevamiento.comedor
         # #2630: PDF oficial que subió Gestionar al enviar la instancia.
         context["pdf_oficial"] = pdf_oficial.documento_de(seguimiento=seguimiento)
+        context["adjuntos"] = adjuntos_de(
+            context["comedor"].id, ArchivoAdjunto.TIPO_SEGUIMIENTO, seguimiento.pk
+        )
         # Navegación entre las instancias del mismo ciclo.
         context["instancias"] = list(
             PrimerSeguimiento.objects.filter(
@@ -603,6 +614,8 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
         context["bloques"] = bloques
 
         context["prestaciones"] = list(seguimiento.prestaciones.all())
+        # #2781: el cuadro 6.1 del primer seguimiento tiene AP unico.
+        context["es_primer"] = seguimiento.tipo == PrimerSeguimiento.TIPO_PRIMER
         menu = seguimiento.menu
         context["receta_items"] = (
             list(menu.receta_items.all()) if menu is not None else []

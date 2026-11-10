@@ -54,7 +54,7 @@ print_header "Recordatorios criticos del repo"
 echo "- Logica de negocio preferentemente en services/"
 echo "- Coexisten Django views y DRF"
 echo "- Logging custom en src/backends/config/settings.py + core/utils.py"
-echo "- Celery solo para PAS (docker/compose/docker-compose.celery.yml)"
+echo "- Celery para PAS y comedores, una cola por backend (docker/compose/docker-compose.celery.yml)"
 echo "- Crear worktrees de tarea fuera del repo principal"
 
 print_header "Comandos utiles"

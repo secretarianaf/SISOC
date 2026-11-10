@@ -18,6 +18,7 @@ CONTAINERS=(
   sisoc-user_import_worker-1
   sisoc-redis-1
   sisoc-celery_pas_worker-1
+  sisoc-celery_comedores_worker-1
   sisoc-celery_beat-1
   sisoc-mobile-frontend-1
 )

@@ -1,0 +1,66 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Formulario de Calidad #{{ formulario.id }}{% endblock %}
+{% block titulo-pagina %}Formulario de Calidad #{{ formulario.id }}{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between mb-3">
+            <a href="{% url 'centrodeinfancia_calidad_listado' centro.id %}"
+               class="btn btn-outline-secondary">Ver historial</a>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h3 class="mb-1">{{ centro.nombre }}</h3>
+                <p class="text-muted mb-1">
+                    Formulario #{{ formulario.id }} | Jurisdicción {{ formulario.jurisdiccion|default:"-" }} | Departamento {{ formulario.departamento|default:"-" }}
+                </p>
+                <p class="text-muted mb-0">
+                    Enviado el {{ formulario.fecha_envio|date:"d/m/Y H:i" }}
+                    {% if formulario.enviado_por %}
+                        por {{ formulario.enviado_por.get_full_name|default:formulario.enviado_por.username }}
+                    {% endif %}
+                    · Envío inmutable: para corregirlo, cargá un formulario nuevo.
+                </p>
+            </div>
+        </div>
+
+        {% for bloque in detalle %}
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <strong>{{ bloque.seccion.titulo }}</strong>
+                </div>
+                <div class="card-body">
+                    {% for item in bloque.items %}
+                        {% if item.pregunta.subtitulo %}
+                            <h6 class="text-primary border-bottom pb-1 mt-2">{{ item.pregunta.subtitulo }}</h6>
+                        {% endif %}
+                        <div class="mb-3">
+                            <div class="text-muted small">{{ item.pregunta.numero }}. {{ item.pregunta.texto }}</div>
+                            {% if item.filas %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered mb-0">
+                                        <tbody>
+                                            {% for fila in item.filas %}
+                                                <tr>
+                                                    <td class="small">{{ fila.etiqueta }}</td>
+                                                    <td>{{ fila.valor }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div>
+                                    {{ item.valor }}
+                                    {% if item.especificar %}— {{ item.especificar }}{% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

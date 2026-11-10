@@ -18,6 +18,59 @@ from encuestas.services import actualizar_segmentacion
 
 
 @pytest.mark.django_db
+def test_editar_guarda_orden_y_configuracion_al_reabrir(
+    client, user_gestor, encuesta_lista
+):
+    preguntas = [
+        {
+            "orden": 1,
+            "texto": "Nueva pregunta intercalada",
+            "tipo": "texto_corto",
+            "obligatoria": False,
+        },
+        {
+            "orden": 2,
+            "texto": "Actividad",
+            "tipo": "opcion_unica",
+            "obligatoria": True,
+            "pondera": True,
+            "opciones": [
+                {"texto": "Apoyo escolar", "puntaje": 5},
+                {"texto": "Otra", "puntaje": 2},
+            ],
+        },
+        {
+            "orden": 3,
+            "texto": "Detalle de otra actividad",
+            "tipo": "texto_largo",
+            "obligatoria": False,
+            "condicion": {"orden": 2, "operador": "igual", "valor": "Otra"},
+        },
+    ]
+    client.force_login(user_gestor)
+    url = reverse("encuestas_editar", args=[encuesta_lista.pk])
+    response = client.post(
+        url,
+        {
+            "titulo": encuesta_lista.titulo,
+            "modalidad": "obligatoria",
+            "duracion_ronda_dias": 7,
+            "preguntas_json": json.dumps(preguntas),
+        },
+    )
+    assert response.status_code == 302
+    response = client.get(url)
+    assert response.status_code == 200
+    guardadas = response.context["preguntas_json_inicial"]
+    assert [p["texto"] for p in guardadas] == [p["texto"] for p in preguntas]
+    assert [p["orden"] for p in guardadas] == [1, 2, 3]
+    assert guardadas[1]["opciones"] == preguntas[1]["opciones"]
+    assert guardadas[1]["pondera"] is True
+    assert guardadas[2]["obligatoria"] is False
+    assert guardadas[2]["condicion"] == preguntas[2]["condicion"]
+
+
+@pytest.mark.django_db
 def test_filtros_combinados_y_compatibilidad(client, user_gestor, encuesta_lista):
     client.force_login(user_gestor)
     for estado in EstadoEncuesta.values:

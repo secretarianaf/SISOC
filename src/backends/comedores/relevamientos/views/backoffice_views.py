@@ -21,10 +21,12 @@ from relevamientos.forms_backoffice import (
 )
 from relevamientos.models import (
     ActaComplementaria,
+    ArchivoAdjunto,
     PrimerSeguimiento,
     SeguimientoPnud,
 )
 from relevamientos.pnud_formularios import respuestas_por_seccion, titulos
+from relevamientos.services.adjuntos import adjuntos_de
 from relevamientos.siph_docx import pdf_siph
 from relevamientos.views.seguimiento_helpers import (
     aplicar_revision_coordinador,
@@ -124,6 +126,11 @@ class SeguimientoPnudDetailView(LoginRequiredMixin, DetailView):
             self.object.formulario, self.object.datos
         )
         context["encabezado_formulario"] = titulos(self.object.formulario)
+        context["adjuntos"] = adjuntos_de(
+            self.object.comedor_id,
+            ArchivoAdjunto.TIPO_SEGUIMIENTO_PNUD,
+            self.object.pk,
+        )
         return context
 
 
@@ -197,6 +204,9 @@ class ActaComplementariaDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context["comedor"] = self.object.comedor
         context["prestaciones"] = list(self.object.prestaciones.all())
+        context["adjuntos"] = adjuntos_de(
+            self.object.comedor_id, ArchivoAdjunto.TIPO_ACTA, self.object.pk
+        )
         return context
 
 

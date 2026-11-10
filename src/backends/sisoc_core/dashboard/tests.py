@@ -1,10 +1,13 @@
 from pathlib import Path
 
+import pytest
+from django.core.exceptions import ValidationError
 from django.db import connection
 from django.test import RequestFactory
 from django.test.utils import CaptureQueriesContext
 
 import dashboard
+from dashboard.admin import TableroAdminForm
 from dashboard.apps import DashboardConfig
 from dashboard.models import Tablero
 from dashboard.templatetags.dashboard_tags import tableros_para_sidebar
@@ -152,3 +155,107 @@ def test_tableros_para_sidebar_marca_activo_por_path(db, django_user_model):
     )
 
     assert items[0]["activo"] is True
+
+
+def test_tablero_con_ruta_interna_enlaza_a_la_pantalla_de_sisoc():
+    con_ruta = Tablero(
+        nombre="Celiaquía Seguimiento",
+        slug="celiaquia-seguimiento",
+        ruta_interna="/celiaquia/tablero/",
+    )
+    sin_ruta = Tablero(nombre="Aduana", slug="aduana")
+
+    assert con_ruta.get_absolute_url() == "/celiaquia/tablero/"
+    assert sin_ruta.get_absolute_url() == "/dashboard/aduana/"
+
+
+def test_tableros_para_sidebar_usa_ruta_interna_y_marca_activo(db, django_user_model):
+    admin = django_user_model.objects.create_superuser(
+        "admin_tab4", "admin_tab4@example.com", "x"
+    )
+    Tablero.objects.create(
+        nombre="Celiaquía Seguimiento",
+        slug="celiaquia-seguimiento",
+        ruta_interna="/celiaquia/tablero/",
+        orden=1,
+        activo=True,
+    )
+
+    items = tableros_para_sidebar(
+        {"request": _request_para(admin, "/celiaquia/tablero/")}
+    )
+
+    assert items[0]["url"] == "/celiaquia/tablero/"
+    assert items[0]["activo"] is True
+
+
+def test_dashboard_tablero_con_ruta_interna_redirige_a_la_pantalla(admin_client):
+    Tablero.objects.create(
+        nombre="Celiaquía Seguimiento",
+        slug="celiaquia-seguimiento",
+        ruta_interna="/celiaquia/tablero/",
+        activo=True,
+    )
+
+    response = admin_client.get("/dashboard/celiaquia-seguimiento/")
+
+    assert response.status_code == 302
+    assert response["Location"] == "/celiaquia/tablero/"
+
+
+def test_dashboard_tablero_con_ruta_interna_sin_permiso_no_redirige(
+    client, django_user_model
+):
+    usuario = django_user_model.objects.create_user("sin_permiso_tab", password="x")
+    Tablero.objects.create(
+        nombre="Celiaquía Seguimiento",
+        slug="celiaquia-seguimiento",
+        ruta_interna="/celiaquia/tablero/",
+        activo=True,
+        permisos=["dashboard.view_dashboard"],
+    )
+    client.force_login(usuario)
+
+    response = client.get("/dashboard/celiaquia-seguimiento/")
+
+    assert response.status_code == 403
+
+
+@pytest.mark.parametrize(
+    "ruta",
+    [
+        "https://otro-sitio.com/",
+        "//otro-sitio.com/",
+        "/\\otro-sitio.com",
+        "celiaquia/tablero/",
+        "/celiaquia/ tablero/",
+    ],
+)
+def test_ruta_interna_rechaza_rutas_externas_o_mal_formadas(ruta):
+    tablero = Tablero(nombre="X", slug="x", ruta_interna=ruta)
+
+    with pytest.raises(ValidationError) as error:
+        tablero.clean_fields()
+
+    assert "ruta_interna" in error.value.message_dict
+
+
+def test_ruta_interna_acepta_ruta_de_sisoc():
+    tablero = Tablero(nombre="X", slug="x", ruta_interna="/celiaquia/tablero/")
+
+    tablero.clean_fields()
+
+
+def test_admin_form_rechaza_ruta_interna_externa(db):
+    form = TableroAdminForm(
+        data={
+            "nombre": "X",
+            "slug": "x",
+            "ruta_interna": "https://otro-sitio.com/",
+            "orden": 0,
+            "activo": True,
+        }
+    )
+
+    assert form.is_valid() is False
+    assert "ruta_interna" in form.errors

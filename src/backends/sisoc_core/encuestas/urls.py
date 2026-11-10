@@ -1,6 +1,7 @@
 from django.urls import path
 
 from core.decorators import permissions_any_required
+from .api_views import EncuestasPWAView, ResponderEncuestaPWAView
 
 from .views import (
     DescartarRondaView,
@@ -26,6 +27,12 @@ from .views import (
 )
 
 urlpatterns = [
+    path("api/encuestas/pwa/", EncuestasPWAView.as_view(), name="encuestas_pwa_listar"),
+    path(
+        "api/encuestas/pwa/<int:ronda_id>/responder/",
+        ResponderEncuestaPWAView.as_view(),
+        name="encuestas_pwa_responder",
+    ),
     path(
         "encuestas/<int:pk>/revision/",
         permissions_any_required(

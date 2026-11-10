@@ -64,7 +64,7 @@ Evidencia: src/backends/config/settings.py; src/backends/config/urls.py; comedor
 - Static/media: en desarrollo los sirve Django (`staticfiles_urlpatterns` y `static`); en deploy, Nginx publica `static_root/` y `media/`. Evidencia: src/backends/config/urls.py:50-51; src/backends/config/settings.py:122-128.
 
 ## 4) Asincronía
-- Celery con Redis solo para PAS (`docker/compose/docker-compose.celery.yml`: `celery_pas_worker` y `celery_beat`). No hay Kafka.
+- Celery con Redis para PAS (cola `pas`) y comedores (cola `comedores`, PDF consolidado de rendiciones) en `docker/compose/docker-compose.celery.yml`: `celery_pas_worker`, `celery_comedores_worker` y `celery_beat`. No hay Kafka.
 - Workers elegidos por `DJANGO_SERVICE_ROLE` (`docker/django/entrypoint.py`): credenciales masivas, ciudadanos y encuestas usan core; mailing, Comedores; OCR, su backend; importación de usuarios, la imagen completa del migrador con rol de worker. DB/storage/migrador siguen compartidos. C3 y C4 describen código local: no acreditan deploy.
 - Hilos (`threading.Thread` + `ThreadPoolExecutor`) para llamadas HTTP a GESTIONAR en comedores/relevamientos. Evidencia: comedores/tasks.py:1-249; relevamientos/tasks.py:1-144.
 - Cron programados externos: purga auditlog y limpieza de logs (scripts/crontab). Evidencia: scripts/crontab:2-5; audittrail/management/commands/purge_auditlog.py:1-38; scripts/borrar_logs.py:1-43.

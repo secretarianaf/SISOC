@@ -163,6 +163,10 @@ class Expediente(SoftDeleteModelMixin, models.Model):
                 "view_reporte_provincias",
                 "Puede ver el Reporte por provincias de Celiaquía",
             ),
+            (
+                "view_tablero_celiaquia",
+                "Puede ver el Tablero de seguimiento de Celiaquía",
+            ),
         ]
 
     def __str__(self):

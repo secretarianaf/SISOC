@@ -49,9 +49,13 @@ def iter_soft_delete_models():
     """Yield registered soft-delete models that are currently available."""
     for key in SOFT_DELETE_MODEL_KEYS:
         app_label, model_name = key.split(".", 1)
-        model = apps.get_model(app_label, model_name)
-        if model is not None:
-            yield model
+        try:
+            model = apps.get_model(app_label, model_name)
+        except LookupError:
+            # Each deployed process installs only its own apps
+            # (config/backends.json), so most keys are absent in the core.
+            continue
+        yield model
 
 
 def get_soft_delete_model_choices():

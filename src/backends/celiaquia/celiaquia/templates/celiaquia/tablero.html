@@ -1,0 +1,210 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Celiaquía Seguimiento{% endblock %}
+
+{% block titulo-pagina %}Celiaquía Seguimiento{% endblock %}
+
+{% block breadcrumb %}
+    {# includes/main.html ya abre el <ol class="breadcrumb">: acá van solo los ítems #}
+    <li class="breadcrumb-item">Tableros</li>
+    <li class="breadcrumb-item active">Celiaquía Seguimiento</li>
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/tablero_celiaquia.css' %}" />
+{% endblock %}
+
+{% block content %}
+    <div class="cel-tablero" data-url-expediente="{{ url_expediente }}">
+        <div class="cel-encabezado">
+            <div>
+                <p>
+                    Seguimiento del programa: cuántos hay, dónde se traban y a quién llega. Solo beneficiarios; los responsables no se cuentan.
+                </p>
+                <div class="cel-chips">
+                    <span class="cel-chip cel-chip-alcance" id="cel-chip-alcance">Todas las provincias</span>
+                    <span class="cel-chip" id="cel-chip-casos"></span>
+                    <span class="cel-chip">Datos en vivo</span>
+                </div>
+            </div>
+            <div class="cel-filtros">
+                <div class="cel-filtro">
+                    <label for="cel-filtro-provincia">Provincia</label>
+                    <select id="cel-filtro-provincia" class="form-select"></select>
+                </div>
+                <div class="cel-filtro">
+                    <label for="cel-filtro-expediente">Expediente</label>
+                    <select id="cel-filtro-expediente" class="form-select"></select>
+                    <small>Por id de SISOC: el número cargado no identifica</small>
+                </div>
+            </div>
+        </div>
+        <p id="cel-aviso-expediente" class="cel-aviso-exp cel-oculto"></p>
+        <section class="cel-kpis" id="cel-kpis" aria-label="Cifras principales">
+        </section>
+        <div class="cel-grilla-2">
+            <section class="cel-seccion" data-id="cupo">
+                <div class="cel-seccion-cabecera">
+                    <h2>
+                        Cupo usado por provincia <span class="cel-nota">titulares sobre cupo asignado</span>
+                    </h2>
+                    <button class="cel-btn-tabla" type="button">Tabla</button>
+                </div>
+                <div class="cel-seccion-cuerpo">
+                    <div class="cel-chart">
+                        <div class="cel-leyenda" id="ley-cupo"></div>
+                        <div class="cel-lienzo">
+                            <canvas id="ch-cupo"></canvas>
+                        </div>
+                    </div>
+                    <div class="cel-tblwrap cel-oculto"></div>
+                </div>
+            </section>
+            <section class="cel-seccion" data-id="piramide">
+                <div class="cel-seccion-cabecera">
+                    <h2>
+                        Titulares por edad y género <span class="cel-nota">sin responsables</span>
+                    </h2>
+                    <button class="cel-btn-tabla" type="button">Tabla</button>
+                </div>
+                <div class="cel-seccion-cuerpo">
+                    <div class="cel-chart">
+                        <div class="cel-leyenda" id="ley-piramide"></div>
+                        <div class="cel-lienzo">
+                            <canvas id="ch-piramide"></canvas>
+                        </div>
+                    </div>
+                    <div class="cel-tblwrap cel-oculto"></div>
+                </div>
+            </section>
+        </div>
+        <div class="cel-grilla-2">
+            <section class="cel-seccion" data-id="embudo">
+                <div class="cel-seccion-cabecera">
+                    <h2>
+                        Circuito del beneficiario <span class="cel-nota">siguen y se quedan en cada paso</span>
+                    </h2>
+                    <button class="cel-btn-tabla" type="button">Tabla</button>
+                </div>
+                <div class="cel-seccion-cuerpo">
+                    <div class="cel-chart">
+                        <div class="cel-leyenda" id="ley-embudo"></div>
+                        <div class="cel-lienzo">
+                            <canvas id="ch-embudo"></canvas>
+                        </div>
+                        <ul class="cel-perdidas" id="cel-perdidas">
+                        </ul>
+                    </div>
+                    <div class="cel-tblwrap cel-oculto"></div>
+                </div>
+            </section>
+            <section class="cel-seccion" data-id="conversion">
+                <div class="cel-seccion-cabecera">
+                    <h2>
+                        Paso entre etapas <span class="cel-nota">% que pasa a la siguiente</span>
+                    </h2>
+                    <button class="cel-btn-tabla" type="button">Tabla</button>
+                </div>
+                <div class="cel-seccion-cuerpo">
+                    <div class="cel-chart" id="ch-conversion"></div>
+                    <div class="cel-tblwrap cel-oculto"></div>
+                </div>
+            </section>
+        </div>
+        <section class="cel-seccion" data-id="expedientes">
+            <div class="cel-seccion-cabecera">
+                <h2>
+                    Expedientes con más casos por resolver <span class="cel-nota">pendientes de revisar + a subsanar · click en una fila para filtrar</span>
+                </h2>
+            </div>
+            <div class="cel-seccion-cuerpo">
+                <div class="cel-leyenda" id="ley-expedientes"></div>
+                <div class="cel-tabla-scroll">
+                    <table class="cel-tabla cel-exp-tabla" id="tbl-expedientes">
+                    </table>
+                </div>
+                <div class="cel-exp-pie">
+                    <p class="cel-nota-pie" id="cel-nota-expedientes"></p>
+                    <button class="cel-btn-tabla" type="button" id="cel-expedientes-todos">Ver todos</button>
+                </div>
+            </div>
+        </section>
+        <div class="cel-grilla-2">
+            <section class="cel-seccion" data-id="revision">
+                <div class="cel-seccion-cabecera">
+                    <h2>Estado de la revisión técnica por provincia</h2>
+                    <button class="cel-btn-tabla" type="button">Tabla</button>
+                </div>
+                <div class="cel-seccion-cuerpo">
+                    <div class="cel-chart">
+                        <div class="cel-leyenda" id="ley-revision"></div>
+                        <div class="cel-lienzo">
+                            <canvas id="ch-revision"></canvas>
+                        </div>
+                    </div>
+                    <div class="cel-tblwrap cel-oculto"></div>
+                </div>
+            </section>
+            <section class="cel-seccion" data-id="errores">
+                <div class="cel-seccion-cabecera">
+                    <h2>
+                        Errores al importar el Excel <span class="cel-nota">filas que no se pudieron cargar</span>
+                    </h2>
+                    <button class="cel-btn-tabla" type="button">Tabla</button>
+                </div>
+                <div class="cel-seccion-cuerpo">
+                    <div class="cel-chart">
+                        <div class="cel-lienzo">
+                            <canvas id="ch-errores"></canvas>
+                        </div>
+                    </div>
+                    <div class="cel-tblwrap cel-oculto"></div>
+                    <p class="cel-nota-pie" id="cel-nota-errores"></p>
+                </div>
+            </section>
+        </div>
+        <div class="cel-grilla-2">
+            <section class="cel-seccion" data-id="rechazo">
+                <div class="cel-seccion-cabecera">
+                    <h2>
+                        Motivos de rechazo <span class="cel-nota">rechazadas que mencionan cada motivo</span>
+                    </h2>
+                    <button class="cel-btn-tabla" type="button">Tabla</button>
+                </div>
+                <div class="cel-seccion-cuerpo">
+                    <div class="cel-chart">
+                        <div class="cel-lienzo">
+                            <canvas id="ch-rechazo"></canvas>
+                        </div>
+                    </div>
+                    <div class="cel-tblwrap cel-oculto"></div>
+                    <p class="cel-nota-pie" id="cel-nota-rechazo"></p>
+                </div>
+            </section>
+            <section class="cel-seccion" data-id="subsanacion">
+                <div class="cel-seccion-cabecera">
+                    <h2>
+                        Motivos de subsanación <span class="cel-nota">observaciones por tipo</span>
+                    </h2>
+                    <button class="cel-btn-tabla" type="button">Tabla</button>
+                </div>
+                <div class="cel-seccion-cuerpo">
+                    <div class="cel-chart">
+                        <div class="cel-lienzo">
+                            <canvas id="ch-subsanacion"></canvas>
+                        </div>
+                    </div>
+                    <div class="cel-tblwrap cel-oculto"></div>
+                    <p class="cel-nota-pie" id="cel-nota-subsanacion"></p>
+                </div>
+            </section>
+        </div>
+    </div>
+    {{ tablero_datos|json_script:"cel-tablero-datos" }}
+{% endblock %}
+
+{% block customJS %}
+    <script src="{% static 'custom/js/tablero_celiaquia.js' %}"></script>
+{% endblock %}

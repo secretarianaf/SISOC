@@ -115,13 +115,11 @@ una validación inexistente. En los paneles `NULL` y `False` se muestran como
 respuesta negativa. Una vez persistida como verdadera, la validación se muestra
 como «Sí» y no se puede modificar, tampoco mediante POST.
 
-El primer ingreso permite guardar solo el check, sin decidir sobre el acta:
-queda `validada=True`, `genera_acta_auditoria=NULL`, subestado `en_curso` y
-`fecha_gestion_auditoria=NULL`. Se vuelve al detalle base y se puede reingresar.
-Al reingresar validada, la decisión de acta Sí/No es obligatoria. Si se elige
-Sí/No ya en el primer ingreso, también se puede validar y cerrar en un solo paso.
-El botón dice «Guardar» cuando se guarda solo la validación y «Guardar y cerrar
-Auditoría» cuando se toma la decisión de acta o la validación ya estaba guardada.
+Desde el primer ingreso se exige confirmar Validada y decidir si se genera acta.
+El selector ofrece únicamente No y Sí, con No por defecto cuando no hay decisión
+previa. No se permite guardar una decisión vacía, tampoco mediante POST directo.
+Los registros históricos validados sin decisión pueden completarse con esta regla.
+El botón dice «Guardar y cerrar Auditoría».
 
 Guardar una decisión explícita Sí/No registra `fecha_gestion_auditoria` y
 cierra la gestión individual: no puede reabrirse desde el detalle, el buscador
@@ -130,11 +128,20 @@ compatibilidad y muestra «Auditoría validada sin acta». Continúa siendo
 elegible como rendición adicional de un acta posterior, sin volver a editarla.
 Esa etiqueta exige validación afirmativa, decisión No, gestión cerrada y
 subestado `en_curso`; no reemplaza el resultado de auditorías ya finalizadas.
-Guardar solo la validación no habilita su inclusión en otra acta: antes debe
-cerrarse con decisión No.
+Los registros históricos con solo la validación no habilitan su inclusión en otra
+acta: antes deben cerrarse con decisión No.
 Para generar acta, la rendición actual debe estar validada y se exige resultado;
 las observaciones son obligatorias únicamente para un resultado con observaciones.
 El archivo de acta y el Acta Complementaria siguen siendo opcionales.
+
+En el legajo de organizaciones, Validación refleja `validada` y Auditada refleja
+`genera_acta_auditoria`, sin inferirlos desde la carga documental o la etapa.
+Si no hay decisión registrada (históricas previas al acta o Línea Secos),
+Auditada usa `fecha_auditada`. La Fecha de Validación es la del cierre de la
+gestión y solo se muestra si la rendición está validada.
+La revisión previa se finaliza con «Finalizar revisión para Carga».
+El PDF consolidado convierte también imágenes JFIF usando el conversor de imágenes
+existente, como JPG y JPEG.
 
 La rendición actual se incluye automáticamente y aparece marcada y bloqueada
 en la lista de inclusión. Las otras opciones son casillas sin buscador. El selector adicional ofrece

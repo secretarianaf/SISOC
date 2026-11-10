@@ -563,6 +563,11 @@ class SegmentacionTipoUpdateView(LoginRequiredMixin, View):
                 tipo=request.POST.get("tipo", ""),
                 archivo=request.FILES.get("archivo_listado"),
                 grupos_ids=request.POST.getlist("grupos"),
+                disponible_pwa=(
+                    request.POST.get("disponible_pwa") == "on"
+                    if request.POST.get("disponibilidad_pwa_presente") == "1"
+                    else None
+                ),
             )
         except ValidationError as exc:
             messages.error(request, _mensaje_error(exc))

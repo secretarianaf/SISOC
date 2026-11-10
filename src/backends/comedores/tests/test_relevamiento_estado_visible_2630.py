@@ -84,7 +84,8 @@ def test_listado_del_comedor_muestra_pendiente_de_validacion(mocker):
 
     context = view.get_context_data()
 
-    assert context["relevamientos_items"][0]["estado"] == "Pendiente de validación"
+    # #2781: la etiqueta de la lista es la unificada.
+    assert context["relevamientos_items"][0]["estado"] == "Pendiente Revisión"
 
 
 def _mock_detail_view(mocker, timeline):
@@ -135,11 +136,11 @@ def test_detalle_muestra_pendiente_de_validacion_en_titulo_y_timeline(mocker):
 
     context = view.get_context_data()
 
-    assert context["estado_visible"] == "Pendiente de validación"
+    assert context["estado_visible"] == "Pendiente Revisión"
     estados = {item["id"]: item for item in context["relevamientos_timeline"]}
     assert estados[8867]["estado"] == "Finalizado"
     assert estados[8867]["status_class"] == "finalizado"
-    assert estados[8868]["estado"] == "Pendiente de validación"
+    assert estados[8868]["estado"] == "Pendiente Revisión"
     # Mientras espera al coordinador no se pinta como finalizado.
     assert estados[8868]["status_class"] == "pendiente"
 
@@ -147,7 +148,7 @@ def test_detalle_muestra_pendiente_de_validacion_en_titulo_y_timeline(mocker):
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     "estado_validacion,esperado",
-    [(PENDIENTE, "Pendiente de validación"), (None, "Finalizado")],
+    [(PENDIENTE, "Pendiente Revisión"), (None, "Finalizado")],
 )
 def test_pantallas_renderizan_el_estado_visible(client, estado_validacion, esperado):
     user = get_user_model().objects.create_user(
@@ -178,7 +179,7 @@ def test_pantallas_renderizan_el_estado_visible(client, estado_validacion, esper
     assert detalle.status_code == 200
     assert listado.status_code == 200
     # El título de la página, no la línea de tiempo (que también lo muestra).
-    titulo = re.compile(r'<span class="ml-2 h5"[^>]*>\s*' + re.escape(esperado))
+    titulo = re.compile(r'<span class="badge ml-2 [^"]*"[^>]*>' + re.escape(esperado))
     assert titulo.search(detalle.content.decode())
     assert esperado in listado.content.decode()
     if estado_validacion == PENDIENTE:

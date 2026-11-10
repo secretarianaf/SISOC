@@ -21,6 +21,7 @@ from django.utils import timezone
 
 from celiaquia.comentarios_tecnicos import TipoDocumentoComentario
 from celiaquia.models import (
+    EstadoCupo,
     Expediente,
     ExpedienteCiudadano,
     HistorialValidacionTecnica,
@@ -33,7 +34,10 @@ from celiaquia.models import (
 from celiaquia.permissions import can_delete_legajo
 from celiaquia.scope import is_admin, is_coordinador, is_provincial, is_tecnico
 from celiaquia.services.comentarios_tecnicos_service import ComentariosTecnicosService
-from celiaquia.services.cupo_service import CupoService
+from celiaquia.services.cupo_service import (  # pylint: disable=no-name-in-module
+    CupoNoConfigurado,
+    CupoService,
+)
 from celiaquia.services.subsanacion_service import SubsanacionService
 from celiaquia.services.validacion_edad_service import ValidacionEdadService
 from celiaquia.validators import validar_archivos_complementarios
@@ -62,6 +66,15 @@ TRANSICIONES_PERMITIDAS = {
     RevisionTecnico.PENDIENTE: {"APROBAR", "RECHAZAR", "SUBSANAR"},
     RevisionTecnico.SUBSANADO: {"APROBAR", "RECHAZAR", "SUBSANAR"},
 }
+
+#: Desde donde soporte puede devolver un legajo a PENDIENTE (issues #2758 y
+#: #2861). SUBSANAR queda afuera: tiene una subsanacion abierta pedida a la
+#: provincia y que hacer con ella es una decision de producto.
+ESTADOS_PARA_VOLVER_A_PENDIENTE = (
+    RevisionTecnico.APROBADO,
+    RevisionTecnico.RECHAZADO,
+    RevisionTecnico.SUBSANADO,
+)
 
 
 class RevisionService:
@@ -411,6 +424,86 @@ class RevisionService:
         }
 
     @staticmethod
+    def volver_a_pendiente(legajo: ExpedienteCiudadano, usuario, motivo: str) -> dict:
+        """Deja el legajo para evaluar de nuevo (correccion de soporte).
+
+        No pasa por `validar_transicion`: esa regla sigue diciendo que un legajo
+        aprobado o rechazado es final. Esto es una correccion explicita, con
+        motivo, reservada a administradores y coordinadores (los mismos que
+        `CorregirEvaluacionView`). Si el legajo ocupaba cupo o estaba en lista
+        de espera, sale del cupo por `CupoService.liberar_slot`, como en la
+        correccion de evaluacion final.
+        """
+
+        if not (is_admin(usuario) or is_coordinador(usuario)):
+            raise PermissionDenied(
+                "Solo administradores y coordinadores pueden corregir evaluaciones."
+            )
+        motivo = (motivo or "").strip()
+        if not motivo:
+            raise ValidationError("El motivo es obligatorio.")
+
+        with transaction.atomic():
+            # Releer con bloqueo: dos ejecuciones simultaneas (o un doble clic)
+            # no deben liberar el cupo ni registrar el historial dos veces.
+            legajo = ExpedienteCiudadano.objects.select_for_update().get(pk=legajo.pk)
+            estado_anterior = legajo.revision_tecnico
+            if estado_anterior == RevisionTecnico.PENDIENTE:
+                raise ValidationError("El legajo ya está en PENDIENTE.")
+            if estado_anterior == RevisionTecnico.SUBSANAR:
+                raise ValidationError(
+                    "El legajo tiene una subsanación abierta pedida a la provincia: "
+                    "no se puede volver a PENDIENTE desde acá."
+                )
+            if estado_anterior not in ESTADOS_PARA_VOLVER_A_PENDIENTE:
+                raise ValidationError(
+                    f"No se puede volver a PENDIENTE desde {estado_anterior}."
+                )
+            # Un legajo que ya entro en una nomina de pago tiene consecuencias
+            # fuera del legajo (pagos emitidos): eso no lo corrige soporte.
+            if legajo.pagos.exists():
+                raise ValidationError(
+                    "El legajo ya figura en una nómina de pago: no se puede volver "
+                    "a PENDIENTE."
+                )
+
+            cupo_liberado = False
+            if legajo.estado_cupo != EstadoCupo.NO_EVAL or legajo.es_titular_activo:
+                try:
+                    cupo_liberado = CupoService.liberar_slot(
+                        legajo=legajo,
+                        usuario=usuario,
+                        motivo=f"Vuelta a PENDIENTE desde {estado_anterior}",
+                    )
+                except CupoNoConfigurado as exc:
+                    # Sin liberar el cupo el legajo quedaria PENDIENTE y DENTRO.
+                    raise ValidationError(str(exc)) from exc
+
+            legajo.revision_tecnico = RevisionTecnico.PENDIENTE
+            legajo.save(update_fields=["revision_tecnico", "modificado_en"])
+            HistorialValidacionTecnica.objects.create(
+                legajo=legajo,
+                estado_anterior=estado_anterior,
+                estado_nuevo=RevisionTecnico.PENDIENTE,
+                usuario=usuario,
+                motivo=f"Vuelta a PENDIENTE por soporte. {motivo}"[:500],
+            )
+
+        logger.info(
+            "Legajo %s vuelto a PENDIENTE desde %s por user=%s (cupo_liberado=%s).",
+            legajo.pk,
+            estado_anterior,
+            getattr(usuario, "id", None),
+            cupo_liberado,
+        )
+        return {
+            "success": True,
+            "estado": RevisionTecnico.PENDIENTE,
+            "estado_anterior": estado_anterior,
+            "cupo_liberado": cupo_liberado,
+        }
+
+    @staticmethod
     def preview_eliminacion(legajo: ExpedienteCiudadano) -> dict | None:
         """Que se lleva puesto la baja en cascada, antes de confirmarla."""
 
@@ -494,6 +587,7 @@ class RevisionService:
 
 __all__ = [
     "ACCIONES_REVISION",
+    "ESTADOS_PARA_VOLVER_A_PENDIENTE",
     "MAPA_TIPO_DOCUMENTO_A_SUBSANACION",
     "TRANSICIONES_PERMITIDAS",
     "RevisionService",

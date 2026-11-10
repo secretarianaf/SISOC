@@ -12,9 +12,10 @@ from django.utils.text import slugify
 from django.utils import timezone
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Sexo
-from core.models import Localidad, Municipio, Programa
+from core.models import Localidad, Municipio, Programa, Provincia
 from iam.services import user_has_permission_code
-from VAT.services.access_scope import es_operador_cfp
+from users.territorial_scope import get_full_province_scope_ids
+from VAT.services.access_scope import es_operador_cfp, is_vat_sse
 from VAT.models import (
     Centro,
     ModalidadInstitucional,
@@ -1350,6 +1351,22 @@ class ModalidadCursadaForm(forms.ModelForm):
 
 
 class PlanVersionCurricularForm(forms.ModelForm):
+    provincia = forms.ModelChoiceField(
+        queryset=Provincia.objects.none(),
+        label="Provincia",
+        empty_label="Seleccionar provincia…",
+        widget=forms.Select(attrs=_select2_attrs(placeholder="Seleccionar provincia…")),
+        help_text=(
+            "El plan estará disponible para crear cursos en centros de esta "
+            "provincia mientras esté activo."
+        ),
+        error_messages={
+            "required": "Seleccioná una provincia para crear el plan curricular.",
+            "invalid_choice": (
+                "Seleccioná una provincia válida y autorizada para tu usuario."
+            ),
+        },
+    )
     nombre = forms.CharField(
         label="Nombre",
         max_length=200,
@@ -1441,6 +1458,7 @@ class PlanVersionCurricularForm(forms.ModelForm):
     class Meta:
         model = PlanVersionCurricular
         fields = [
+            "provincia",
             "nombre",
             "sector",
             "subsector",
@@ -1454,6 +1472,7 @@ class PlanVersionCurricularForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
+        self._configurar_provincia(actor)
         sector_id = None
         self.normativa_texto_actual = ""
 
@@ -1493,6 +1512,27 @@ class PlanVersionCurricularForm(forms.ModelForm):
         if _is_inet_provincia_actor(actor) and self.instance and self.instance.pk:
             _lock_fields_readonly(self, ["sector"])
             _hide_and_lock_fields(self, ["subsector", "modalidad_cursada", "activo"])
+
+    def _configurar_provincia(self, actor):
+        if self.instance.pk:
+            # La provincia de planes existentes se conserva, incluso si es nula.
+            self.fields.pop("provincia")
+            return
+
+        provincia_field = self.fields["provincia"]
+        provincias = Provincia.objects.order_by("nombre")
+        if not is_vat_sse(actor):
+            provincia_ids = get_full_province_scope_ids(actor)
+            provincias = provincias.filter(pk__in=provincia_ids)
+            if len(provincia_ids) == 1:
+                provincia_field.initial = provincia_ids[0]
+                provincia_field.disabled = True
+            elif not provincia_ids:
+                provincia_field.help_text = (
+                    "Tu usuario no tiene una provincia habilitada para crear "
+                    "planes. Contactá a un administrador."
+                )
+        provincia_field.queryset = provincias
 
     def clean_nombre(self):
         return _clean_non_empty_text(self.cleaned_data.get("nombre"), "El nombre")

@@ -431,6 +431,7 @@ jobs:
                   src/backends/comedores/tests/js/informeTecnicoCambiosSinGuardar.test.js
                   src/backends/comedores/tests/js/rendicionVisualizacion.test.js
                   src/backends/sisoc_core/tests/js/user_mobile_access.test.js
+                  src/backends/sisoc_core/encuestas/tests/js/encuestaPreguntasBuilder.test.js
 
             - name: Validate required CI checks
               uses: actions/github-script@v8

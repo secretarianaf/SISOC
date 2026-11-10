@@ -84,7 +84,11 @@
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Sexo registral" value=nomina.get_sexo_display %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Tipo de documentación" value=nomina.get_tipo_documentacion_display %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="DNI" value=nomina.dni %}
-                {% include "centrodeinfancia/_nomina_campo.html" with label="CUIT" value=nomina.cuit_nino %}
+                {% if nomina.sin_cuil_nino %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="CUIT" value="No posee CUIL" %}
+                {% else %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="CUIT" value=nomina.cuit_nino %}
+                {% endif %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="País de nacimiento" value=nomina.pais_nacimiento %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Nacionalidad" value=nomina.nacionalidad %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Sala" value=nomina.sala %}
@@ -118,7 +122,11 @@
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Fecha de nacimiento" value=nomina.responsable_legal_1_fecha_nacimiento %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Tipo doc." value=nomina.get_responsable_legal_1_tipo_documentacion_display %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="DNI" value=nomina.responsable_legal_1_dni %}
-                {% include "centrodeinfancia/_nomina_campo.html" with label="CUIT" value=nomina.responsable_legal_1_cuit %}
+                {% if nomina.responsable_legal_1_sin_cuil %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="CUIT" value="No posee CUIL" %}
+                {% else %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="CUIT" value=nomina.responsable_legal_1_cuit %}
+                {% endif %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Teléfono" value=nomina.responsable_legal_1_telefono %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="País de nacimiento" value=nomina.responsable_legal_1_pais_nacimiento %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Nacionalidad" value=nomina.responsable_legal_1_nacionalidad %}

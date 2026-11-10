@@ -26,6 +26,9 @@ _spec.loader.exec_module(deploy_targets)
             ("selectivo", ["backend_dispositivos", "user_import_worker"], True),
         ),
         (["src/frontends/apps/vpsl/src/App.tsx"], ("selectivo", ["front_vpsl"], False)),
+        # Una app sin servicio front_<x> en el compose de deploy no despliega nada:
+        # se sirve desde una entrada del backend, no desde su propio contenedor.
+        (["src/frontends/apps/sisoc/src/App.tsx"], ("ninguno", [], False)),
         (
             ["src/backends/pas/pas/tasks.py"],
             (

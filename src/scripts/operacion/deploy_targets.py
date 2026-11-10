@@ -73,10 +73,19 @@ def _backends() -> dict:
 
 
 def _fronts() -> list[str]:
-    apps = ROOT / "src" / "frontends" / "apps"
-    if not apps.is_dir():
+    """Servicios ``front_<x>`` declarados en el compose de deploy.
+
+    Una app de ``src/frontends/apps/`` sin servicio propio (por ejemplo, la que se
+    sirve desde una entrada del backend) no tiene contenedor que recrear.
+    """
+    compose = ROOT / "docker" / "compose" / "docker-compose.deploy.yml"
+    if not compose.is_file():
         return []
-    return sorted(f"front_{p.name}" for p in apps.iterdir() if p.is_dir())
+    servicios = set()
+    for linea in compose.read_text(encoding="utf-8").splitlines():
+        if linea.startswith("  front_") and linea.rstrip().endswith(":"):
+            servicios.add(linea.strip()[:-1])
+    return sorted(servicios)
 
 
 def planificar(archivos: list[str]) -> tuple[str, list[str], bool]:
@@ -107,7 +116,7 @@ def planificar(archivos: list[str]) -> tuple[str, list[str], bool]:
             continue
         if partes[:2] == ["src", "frontends"]:
             if len(partes) > 4 and partes[2] == "apps":
-                servicios.add(f"front_{partes[3]}")
+                servicios.update({f"front_{partes[3]}"} & set(_fronts()))
             elif len(partes) > 2 and partes[2] in ("e2e",):
                 continue
             else:

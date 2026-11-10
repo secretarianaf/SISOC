@@ -1,6 +1,7 @@
 import { accountRoute } from "./account";
 import { businessRoute } from "./business";
 import { categoriasRoute } from "./categorias";
+import { cdiObservacionesRoute } from "./cdiObservaciones";
 import { cdiReportesRoute } from "./cdiReportes";
 import { groupsRoute } from "./groups";
 import { inicioRoute } from "./inicio";
@@ -39,6 +40,7 @@ export const ROUTES: RouteDefinition[] = [
   bulkCredentialsRoute,
   inspeccionesActasRoute,
   cdiReportesRoute,
+  cdiObservacionesRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

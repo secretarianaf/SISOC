@@ -20,6 +20,12 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
+from centrodeinfancia.views import (
+    ObservacionCentroInfanciaCreateView,
+    ObservacionCentroInfanciaDeleteView,
+    ObservacionCentroInfanciaDetailView,
+    ObservacionCentroInfanciaUpdateView,
+)
 from centrodeinfancia.views_reportes import ReportesCDIView
 from core.decorators import permissions_any_required
 
@@ -47,6 +53,48 @@ class ReportesEntry(ReportesCDIView):
 
     def get(self, request, *args, **kwargs):
         return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ObservacionCrearEntry(ObservacionCentroInfanciaCreateView):
+    """Native guards and the scoped centre (404), then the index; POST stays native."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = None
+        self.get_context_data()
+        return index_response(request, self.index_bytes)
+
+
+def _object_entry_get(view, request, *args, **kwargs):
+    """GET resolves the scoped observation (404) like the native view, then the index."""
+    view.object = view.get_object()
+    return index_response(request, view.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ObservacionDetalleEntry(ObservacionCentroInfanciaDetailView):
+    """Detail entry; the native view only answers GET/HEAD."""
+
+    index_bytes = b""
+    get = _object_entry_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ObservacionEditarEntry(ObservacionCentroInfanciaUpdateView):
+    """Edit entry; POST stays the native form (with the CDI-A3 veto)."""
+
+    index_bytes = b""
+    get = _object_entry_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ObservacionEliminarEntry(ObservacionCentroInfanciaDeleteView):
+    """Delete confirmation entry; POST stays the native soft delete."""
+
+    index_bytes = b""
+    get = _object_entry_get
 
 
 class ReactAssetView(View):
@@ -115,6 +163,38 @@ def cdi_preview_patterns(build_directory):
         path(
             "centrodeinfancia/reportes/",
             _entry(ReportesEntry, "auth.role_reportes_cdi", index_bytes),
+        ),
+        path(
+            "centrodeinfancia/<int:pk>/observacion/crear/",
+            _entry(
+                ObservacionCrearEntry,
+                "centrodeinfancia.add_intervencioncentroinfancia",
+                index_bytes,
+            ),
+        ),
+        path(
+            "centrodeinfancia/observacion/<int:pk>/",
+            _entry(
+                ObservacionDetalleEntry,
+                "centrodeinfancia.view_centrodeinfancia",
+                index_bytes,
+            ),
+        ),
+        path(
+            "centrodeinfancia/observacion/<int:pk>/editar/",
+            _entry(
+                ObservacionEditarEntry,
+                "centrodeinfancia.change_intervencioncentroinfancia",
+                index_bytes,
+            ),
+        ),
+        path(
+            "centrodeinfancia/observacion/<int:pk>/eliminar/",
+            _entry(
+                ObservacionEliminarEntry,
+                "centrodeinfancia.delete_intervencioncentroinfancia",
+                index_bytes,
+            ),
         ),
         path(
             "centrodeinfancia/react/<path:asset_path>",

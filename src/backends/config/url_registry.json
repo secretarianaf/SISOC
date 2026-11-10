@@ -1505,6 +1505,26 @@
   "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/usuarios/(?P<acceso_id>[0-9]+)/estado/\\Z"
  },
  {
+  "name": "centrodeinfancia_web_observacion_crear",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/observaciones/crear/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_observacion_detalle",
+  "namespace": "",
+  "regex": "^api/web/cdi/observaciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_observacion_editar",
+  "namespace": "",
+  "regex": "^api/web/cdi/observaciones/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_observacion_eliminar",
+  "namespace": "",
+  "regex": "^api/web/cdi/observaciones/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
   "name": "centrodeinfancia_web_reportes",
   "namespace": "",
   "regex": "^api/web/cdi/reportes/\\Z"

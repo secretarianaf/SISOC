@@ -550,10 +550,13 @@ vertical, dibuja `SisocShell` y agrega el botón «Consultas» de la cabecera.
 
 - `/centrodeinfancia/reportes/` (`routes/cdiReportes.tsx`): resumen y selectores;
   el XLSX es la descarga nativa.
+- Observaciones (`routes/cdiObservaciones.tsx`): alta, ficha, edición y baja
+  sobre las vistas nativas, con el veto de auditoría CDI-A3 también en el HTML.
 
 Pendiente del marco compartido: el submenú de tercer nivel del menú lateral.
-Registro:
-`../registro/cambios/2026-T4/2026-11-10-2785-react-cdi-reportes.md`.
+Registros:
+`../registro/cambios/2026-T4/2026-11-10-2785-react-cdi-reportes.md` y
+`../registro/cambios/2026-T4/2026-11-10-2785-react-cdi-observaciones.md`.
 
 ### DDJJ pública PAS: entrada React sin montar
 

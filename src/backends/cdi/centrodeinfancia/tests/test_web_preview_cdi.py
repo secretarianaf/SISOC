@@ -6,6 +6,7 @@ import pytest
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.test import Client, override_settings
+from django.urls import reverse
 
 from centrodeinfancia.web_preview import cdi_preview_patterns
 from config.urls_all import urlpatterns as monolith_patterns
@@ -107,3 +108,83 @@ def test_production_urlconf_keeps_the_native_page(reportes):
 
     assert respuesta.status_code == 200
     assert "centrodeinfancia/reportes.html" in [t.name for t in respuesta.templates]
+
+
+# --- Observations (CDI07) -------------------------------------------------------
+
+OPERACIONES = (
+    "view_centrodeinfancia",
+    "add_intervencioncentroinfancia",
+    "change_intervencioncentroinfancia",
+    "delete_intervencioncentroinfancia",
+)
+
+
+@pytest.fixture(name="observacion")
+def observacion_fixture():
+    from centrodeinfancia.models import CentroDeInfancia, ObservacionCentroInfancia
+
+    centro = CentroDeInfancia.objects.create(nombre="CDI Preview")
+    return ObservacionCentroInfancia.objects.create(centro=centro, observacion="Texto.")
+
+
+@pytest.fixture(name="operador")
+def operador_fixture():
+    user = User.objects.create_user("preview-operador", first_name="Ana")
+    for codename in OPERACIONES:
+        user.user_permissions.add(
+            Permission.objects.get(
+                content_type__app_label="centrodeinfancia", codename=codename
+            )
+        )
+    return _cliente(user)
+
+
+def _rutas(observacion):
+    return [
+        f"/centrodeinfancia/{observacion.centro_id}/observacion/crear/",
+        f"/centrodeinfancia/observacion/{observacion.pk}/",
+        f"/centrodeinfancia/observacion/{observacion.pk}/editar/",
+        f"/centrodeinfancia/observacion/{observacion.pk}/eliminar/",
+    ]
+
+
+@pytest.mark.usefixtures("preview")
+def test_observation_entries_return_the_index_after_the_native_checks(
+    operador, observacion
+):
+    for ruta in _rutas(observacion):
+        respuesta = operador.get(ruta)
+        assert respuesta.status_code == 200, ruta
+        assert b"/centrodeinfancia/react/assets/app-1.js" in respuesta.content, ruta
+        assert "no-store" in respuesta["Cache-Control"], ruta
+
+    for ruta in (
+        "/centrodeinfancia/999999/observacion/crear/",
+        "/centrodeinfancia/observacion/999999/",
+        "/centrodeinfancia/observacion/999999/editar/",
+        "/centrodeinfancia/observacion/999999/eliminar/",
+    ):
+        assert operador.get(ruta).status_code == 404, ruta
+    sin_permiso = _cliente(User.objects.create_user("preview-sin-obs"))
+    for ruta in _rutas(observacion):
+        assert sin_permiso.get(ruta).status_code == 403, ruta
+
+
+@pytest.mark.usefixtures("preview")
+def test_observation_entries_keep_the_native_posts(operador, observacion):
+    from centrodeinfancia.models import ObservacionCentroInfancia
+
+    ficha = reverse("centrodeinfancia_detalle", args=[observacion.centro_id])
+    crear, _detalle, editar, eliminar = _rutas(observacion)
+
+    alta = operador.post(crear, {"observacion": "Nueva", "next": ficha})
+    edicion = operador.post(editar, {"observacion": "Editada"})
+    baja = operador.post(eliminar)
+
+    assert alta.status_code == 302 and alta["Location"] == ficha
+    assert ObservacionCentroInfancia.objects.filter(observacion="Nueva").exists()
+    assert edicion.status_code == 302
+    assert baja.status_code == 302 and baja["Location"] == ficha
+    assert ObservacionCentroInfancia.all_objects.get(pk=observacion.pk).deleted_at
+    assert operador.post(_detalle).status_code == 405

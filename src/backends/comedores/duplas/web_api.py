@@ -11,13 +11,15 @@ rule applies unchanged: ``auth.role_admin`` through the same check as
 Each endpoint runs the native view itself (``setup()``, queryset, filters,
 column preferences, pagination and context), so it cannot drift from the
 HTML page; this module only projects that context to JSON. The CSV export
-stays the native GET ``/equipo-tecnico/exportar/``. Read-only: GET only.
+stays the native GET ``/equipo-tecnico/exportar/``. List and detail are
+read-only (GET); create, edit and soft delete run the native ``post()``.
 """
 
+from django import forms
 from django.contrib import messages
 from django.http import Http404
 from django.template.defaultfilters import date as date_filter
-from django.template.defaultfilters import urlencode
+from django.template.defaultfilters import upper, urlencode
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.authentication import SessionAuthentication
@@ -32,7 +34,13 @@ from core.decorators import _has_any_permissions
 from core.pagination import build_compact_page_range
 from core.templatetags.custom_filters import has_any_perm, safe_getattr
 from core.web_gate import WebGatePermission
-from duplas.views import DuplaDetailView, DuplaListView
+from duplas.views import (
+    DuplaCreateView,
+    DuplaDeleteView,
+    DuplaDetailView,
+    DuplaListView,
+    DuplaUpdateView,
+)
 
 ADMIN_PERMISSIONS = ["auth.role_admin"]
 # ``search_bar.html`` default ``export_permissions``; the URL itself also
@@ -221,3 +229,147 @@ class DuplaDetailWebView(DuplasWebView):
                 "messages": pending_messages(request),
             }
         )
+
+
+# --- DU01.02: create, edit and soft delete ----------------------------------
+# GET returns what the native form or confirmation renders; POST runs the
+# native view's own ``post()`` (ModelForm, signals, soft delete and messages).
+# A redirect becomes ``{"ok": true, "redirect": ...}``; an invalid form the
+# same payload with its errors (400), consuming the messages it rendered.
+
+
+def _choice_value(value):
+    return "" if value is None else str(getattr(value, "value", value))
+
+
+def _bound(form, name):
+    value = form[name].value()
+    if isinstance(form.fields[name], forms.ModelMultipleChoiceField):
+        return [_choice_value(item) for item in value or []]
+    if isinstance(value, (list, tuple)):
+        return [_choice_value(item) for item in value]
+    return _choice_value(value)
+
+
+def _field(form, name):
+    field = form.fields[name]
+    payload = {
+        "label": str(form[name].label),
+        "required": field.required,
+        "help_text": str(field.help_text or ""),
+        "value": _bound(form, name),
+    }
+    if name == "nombre":
+        payload["max_length"] = field.max_length
+    else:
+        payload["choices"] = [
+            {"value": _choice_value(value), "label": str(label)}
+            for value, label in field.choices
+        ]
+    return payload
+
+
+def _form_payload(form, dupla, request):
+    return {
+        "title": "Editar Equipo técnico",
+        "fields": {
+            name: _field(form, name)
+            for name in ("nombre", "estado", "tecnico", "abogado")
+        },
+        "errors": {
+            name: [
+                {"message": str(error["message"]), "code": error["code"] or ""}
+                for error in errors
+            ]
+            for name, errors in form.errors.get_json_data().items()
+        },
+        "coordinador": (
+            _nombre(dupla.coordinador) if dupla and dupla.coordinador else None
+        ),
+        "urls": {"cancel": reverse("dupla_list")},
+        "messages": pending_messages(request),
+    }
+
+
+class _DuplaFormWebView(DuplasWebView):
+    http_method_names = ["get", "post"]
+    view_class = None
+
+    def _view(self, request, pk=None):
+        kwargs = {} if pk is None else {"pk": pk}
+        return native_view(self.view_class, request, **kwargs)
+
+    def _object(self, vista):
+        # ``CreateView.post`` sets it; the native override does not, so an
+        # invalid native create crashes rendering (500). See the change record.
+        vista.object = None
+        return vista.object
+
+    def get(self, request, pk=None):
+        vista = self._view(request, pk)
+        dupla = self._object(vista)
+        return Response(_form_payload(vista.get_form(), dupla, request))
+
+    def post(self, request, pk=None):
+        vista = self._view(request, pk)
+        dupla = self._object(vista)
+        respuesta = vista.post(request._request)  # pylint: disable=protected-access
+        if respuesta.status_code == 302:
+            return Response({"ok": True, "redirect": respuesta["Location"]})
+        form = respuesta.context_data["form"]
+        return Response(_form_payload(form, dupla, request), status=400)
+
+
+class DuplaCreateWebView(_DuplaFormWebView):
+    """``/api/web/comedores/duplas/crear/``: ``DuplaCreateView`` as JSON."""
+
+    view_class = DuplaCreateView
+
+
+class DuplaUpdateWebView(_DuplaFormWebView):
+    """``/api/web/comedores/duplas/<pk>/editar/``: ``DuplaUpdateView`` as JSON."""
+
+    view_class = DuplaUpdateView
+
+    def _object(self, vista):
+        try:
+            vista.object = vista.get_object()
+        except Http404 as exc:
+            raise NotFound() from exc
+        return vista.object
+
+
+class DuplaDeleteWebView(DuplasWebView):
+    """``/api/web/comedores/duplas/<pk>/eliminar/``: confirmation and soft delete."""
+
+    http_method_names = ["get", "post"]
+
+    def _view(self, request, pk):
+        vista = native_view(DuplaDeleteView, request, pk=pk)
+        try:
+            vista.object = vista.get_object()
+        except Http404 as exc:
+            raise NotFound() from exc
+        return vista
+
+    def get(self, request, pk):
+        vista = self._view(request, pk)
+        context = vista.get_context_data()
+        dupla = context["object"]
+        return Response(
+            {
+                "id": dupla.pk,
+                "object_name": upper(dupla.nombre),
+                "title": "Dar de baja Equipo técnico",
+                "confirm_text": "Dar de baja Equipo técnico",
+                "cancel_text": context["cancel_text"],
+                "cascade_preview": context.get("cascade_preview"),
+                "urls": {"cancel": reverse("dupla_list")},
+                "messages": pending_messages(request),
+            }
+        )
+
+    def post(self, request, pk):
+        vista = self._view(request, pk)
+        respuesta = vista.post(request._request)  # pylint: disable=protected-access
+        return Response({"ok": True, "redirect": respuesta["Location"]})

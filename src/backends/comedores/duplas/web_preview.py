@@ -25,7 +25,13 @@ from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from core.decorators import permissions_any_required
-from duplas.views import DuplaDetailView, DuplaListView
+from duplas.views import (
+    DuplaCreateView,
+    DuplaDeleteView,
+    DuplaDetailView,
+    DuplaListView,
+    DuplaUpdateView,
+)
 
 BUILD_ASSETS = "/v2/sisoc/assets/"
 PUBLIC_ASSETS = "/equipo-tecnico/react/assets/"
@@ -59,6 +65,38 @@ class ListEntry(DuplaListView):
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class DetailEntry(DuplaDetailView):
+    """Native guards and object lookup (404), then the frozen React index."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return _index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CreateEntry(DuplaCreateView):
+    """Native guards, then the frozen React index (the form posts to the web API)."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return _index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class UpdateEntry(DuplaUpdateView):
+    """Native guards and object lookup (404), then the frozen React index."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return _index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class DeleteEntry(DuplaDeleteView):
     """Native guards and object lookup (404), then the frozen React index."""
 
     index_bytes = b""
@@ -140,8 +178,20 @@ def duplas_preview_patterns(build_directory):
             _guarded(ListEntry.as_view(index_bytes=index_bytes)),
         ),
         path(
+            "equipo-tecnico/crear/",
+            _guarded(CreateEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "equipo-tecnico/<int:pk>/editar/",
+            _guarded(UpdateEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
             "equipo-tecnico/<int:pk>/",
             _guarded(DetailEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "equipo-tecnico/<int:pk>/eliminar/",
+            _guarded(DeleteEntry.as_view(index_bytes=index_bytes)),
         ),
         path(
             "equipo-tecnico/react/<path:asset_path>",

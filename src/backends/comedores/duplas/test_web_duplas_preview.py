@@ -71,7 +71,13 @@ def _outcome(client, urlconf, method, url, params=None):
 def test_admin_gets_the_frozen_index_with_rewritten_assets(
     admin_client, preview_urls, dupla
 ):
-    for url in ("/equipo-tecnico/", f"/equipo-tecnico/{dupla.pk}/"):
+    for url in (
+        "/equipo-tecnico/",
+        f"/equipo-tecnico/{dupla.pk}/",
+        "/equipo-tecnico/crear/",
+        f"/equipo-tecnico/{dupla.pk}/editar/",
+        f"/equipo-tecnico/{dupla.pk}/eliminar/",
+    ):
         with override_settings(ROOT_URLCONF=preview_urls):
             respuesta = admin_client.get(
                 url, {"page": "1"} if url.endswith("o/") else {}
@@ -103,6 +109,12 @@ def test_native_guards_decide_exactly_as_the_native_pages(
         (sin_rol, "get", f"/equipo-tecnico/{dupla.pk}/", None),
         (admin_client, "get", "/equipo-tecnico/", {"page": "9"}),
         (admin_client, "get", "/equipo-tecnico/999999/", None),
+        (anonimo, "get", "/equipo-tecnico/crear/", None),
+        (sin_rol, "get", "/equipo-tecnico/crear/", None),
+        (sin_rol, "get", f"/equipo-tecnico/{dupla.pk}/editar/", None),
+        (sin_rol, "get", f"/equipo-tecnico/{dupla.pk}/eliminar/", None),
+        (admin_client, "get", "/equipo-tecnico/999999/editar/", None),
+        (admin_client, "get", "/equipo-tecnico/999999/eliminar/", None),
     ]
     for client, method, url, params in casos:
         native = _outcome(client, "config.urls_all", method, url, params)

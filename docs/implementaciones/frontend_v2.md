@@ -583,8 +583,16 @@ Segunda aplicación del patrón, ahora con el marco nativo `includes/main.html`
   en todas las páginas del prefijo, como la plantilla nativa: para eso el marco
   legado acepta `activePath` (opcional; sin él no cambia nada).
 
-Registro:
-`../registro/cambios/2026-T4/2026-11-10-2785-react-duplas-listado.md`.
+- Alta, edición y baja (`routes/duplasFormRoute.tsx`, `routes/duplasForm.tsx`):
+  el POST va a la API, que corre el `post()` de la vista nativa (ModelForm,
+  señales del coordinador, baja lógica en cascada y mensajes) y responde
+  `{"ok": true, "redirect": ...}` o el formulario con errores (400). El
+  selector de técnicos reproduce Select2 4.1 múltiple
+  (`routes/duplasSelect2.tsx`).
+
+Registros:
+`../registro/cambios/2026-T4/2026-11-10-2785-react-duplas-listado.md` y
+`../registro/cambios/2026-T4/2026-11-10-2785-react-duplas-abm.md`.
 
 ### DDJJ pública PAS: entrada React sin montar
 

@@ -2070,9 +2070,24 @@
   "regex": "^equipo\\-tecnico/\\Z"
  },
  {
+  "name": "dupla_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/duplas/crear/\\Z"
+ },
+ {
   "name": "dupla_web_detalle",
   "namespace": "",
   "regex": "^api/web/comedores/duplas/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "dupla_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/duplas/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "dupla_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/duplas/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
   "name": "dupla_web_list",

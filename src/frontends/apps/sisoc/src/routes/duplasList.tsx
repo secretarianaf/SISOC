@@ -433,4 +433,3 @@ export default function DuplasList() {
     content: <DuplasListContent data={data} />,
   }));
 }
-

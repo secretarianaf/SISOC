@@ -4,6 +4,7 @@ import { categoriasRoute } from "./categorias";
 import { cdiObservacionesRoute } from "./cdiObservaciones";
 import { cdiReportesRoute } from "./cdiReportes";
 import { duplasRoute } from "./duplas";
+import { duplasFormRoute } from "./duplasFormRoute";
 import { groupsRoute } from "./groups";
 import { inicioRoute } from "./inicio";
 import { insumosRoute } from "./insumos";
@@ -43,6 +44,7 @@ export const ROUTES: RouteDefinition[] = [
   cdiReportesRoute,
   cdiObservacionesRoute,
   duplasRoute,
+  duplasFormRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

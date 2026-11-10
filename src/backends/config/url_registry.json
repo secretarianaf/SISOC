@@ -1710,6 +1710,31 @@
   "regex": "^comedores/intervencion/editar/(?P<pk>[0-9]+)/(?P<pk2>[0-9]+)\\Z"
  },
  {
+  "name": "comedores_web_montos",
+  "namespace": "",
+  "regex": "^api/web/comedores/montos/\\Z"
+ },
+ {
+  "name": "comedores_web_montos_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/montos/crear/\\Z"
+ },
+ {
+  "name": "comedores_web_montos_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/montos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comedores_web_montos_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/montos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "comedores_web_montos_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/montos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
   "name": "comunicados",
   "namespace": "",
   "regex": "^comunicados/\\Z"

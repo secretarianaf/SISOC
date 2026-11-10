@@ -8,4 +8,5 @@ from django.urls import include, path
 
 urlpatterns = [
     path("duplas/", include("duplas.web_api_urls")),
+    path("", include("comedores.web_api_montos_urls")),
 ]

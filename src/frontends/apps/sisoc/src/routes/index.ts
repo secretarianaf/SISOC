@@ -10,6 +10,7 @@ import { inicioRoute } from "./inicio";
 import { insumosRoute } from "./insumos";
 import { inspeccionesActasRoute } from "./inspeccionesActas";
 import { loginRoute } from "./login";
+import { montosRoute } from "./montos";
 import { passwordChangeRoute } from "./passwordChange";
 import { passwordResetRoute } from "./passwordReset";
 import { requiredPasswordRoute } from "./requiredPassword";
@@ -45,6 +46,7 @@ export const ROUTES: RouteDefinition[] = [
   cdiObservacionesRoute,
   duplasRoute,
   duplasFormRoute,
+  montosRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

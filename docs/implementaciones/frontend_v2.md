@@ -593,6 +593,29 @@ Segunda aplicación del patrón, ahora con el marco nativo `includes/main.html`
 Registros:
 `../registro/cambios/2026-T4/2026-11-10-2785-react-duplas-listado.md` y
 `../registro/cambios/2026-T4/2026-11-10-2785-react-duplas-abm.md`.
+### Comedores sobre G1: catálogos con el marco oscuro
+
+ABM de montos por programa (`/montoprestacion/`, CO05) con escritura a
+través de G1. Sigue el patrón del listado de actas, con dos diferencias:
+
+1. La API (`src/backends/comedores/comedores/web_api_montos.py`) ejecuta la
+   vista nativa también para escribir: `form_valid` guarda, registra el
+   historial y deja el mensaje; la API devuelve `{"ok": true, "redirect": ...}`
+   o el formulario ligado con 400. Los valores se pasan por el motor de
+   plantillas, así el texto es el mismo que en el HTML.
+2. Las pantallas que extienden `includes/main.html` usan
+   `routes/MainFrame.tsx`: carga `/api/web/session/` y el endpoint del
+   vertical, agrega `hitos.css` y la clase `app-loaded` del `body`, y le pasa a
+   `SisocShell` el `activePath` cuando el menú nativo marca la entrada por un
+   fragmento de la ruta (`'montoprestacion' in pagina_actual`).
+
+Las rutas de `src/backends/comedores/comedores_runtime/web_api_urls.py` se suman como una inclusión
+por pantalla. La entrada sin montar es
+`src/backends/comedores/comedores/web_preview_catalogos.py`, con assets en
+`/comedores/react/assets/`.
+
+Registro:
+`../registro/cambios/2026-T4/2026-11-10-2785-react-montos.md`.
 
 ### DDJJ pública PAS: entrada React sin montar
 

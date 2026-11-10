@@ -16,6 +16,7 @@ _OWNED_PATTERNS = (
     r"/api/web/cdi/(?:reportes/|centros/[0-9]+/observaciones/crear/"
     r"|observaciones/[0-9]+/(?:editar/|eliminar/)?)",
     r"/api/web/comedores/duplas/(?:crear/|[0-9]+/(?:(?:editar|eliminar)/)?)?",
+    r"/api/web/comedores/montos/(?:crear/|[0-9]+/(?:editar/|eliminar/)?)?",
 )
 
 

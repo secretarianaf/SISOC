@@ -103,6 +103,19 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
 - **Celery** solo lo usa PAS: el worker y el beat corren con la imagen y el
   settings del backend de PAS. El deploy selectivo de PAS los recrea
   (`extra_services`).
+- **APIs web remotas (G1 v1).** Las APIs web nuevas de un vertical viven bajo
+  `/api/web/<vertical>/`. El core valida la sesión y los permisos, firma cada
+  pedido reenviado con `X-SISOC-Web-Gate` y el runtime lo verifica antes de
+  leer el cuerpo (`src/backends/kernel/core/web_gate.py`). La firma vale 60 s
+  y el proxy usa 60 s de timeout de lectura solo en esas rutas; las rutas
+  existentes conservan su timeout. Decisión:
+  `docs/registro/decisiones/2026-11-06-2808-protocolo-g1-v1.md`.
+- **Timeout de Gunicorn.** Para que la ventana de 60 s se cumpla, el core corre
+  Gunicorn con `--timeout` 75 s (`GUNICORN_TIMEOUT`) y los runtimes con 65 s
+  (`BACKEND_RUNTIME_TIMEOUT`, en `docker/compose/docker-compose.deploy.yml`).
+  Aplica a todas las rutas de esos procesos: un pedido colgado ocupa un worker
+  hasta ese tiempo. Para volver al valor anterior basta con fijar ambas
+  variables en `30`.
 
 ## Deploy
 

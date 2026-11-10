@@ -46,7 +46,7 @@ services:
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SETTINGS_MODULE: dispositivos_runtime.settings
-    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_DISPOSITIVOS_WORKERS:-2}", "--log-level", "info"]
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_DISPOSITIVOS_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
       - ./media:/sisoc/media
       # Los estáticos los recolecta el core; el backend solo lee el manifest.
@@ -74,7 +74,7 @@ services:
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SETTINGS_MODULE: comedores_runtime.settings
-    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_COMEDORES_WORKERS:-2}", "--log-level", "info"]
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_COMEDORES_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
       - ./media:/sisoc/media
       - ./static_root:/sisoc/static_root:ro
@@ -101,7 +101,7 @@ services:
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SETTINGS_MODULE: ocr_runtime.settings
-    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_OCR_WORKERS:-2}", "--log-level", "info"]
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_OCR_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
       - ./media:/sisoc/media
       - ./static_root:/sisoc/static_root:ro
@@ -128,7 +128,7 @@ services:
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SETTINGS_MODULE: vpsl_runtime.settings
-    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_VPSL_WORKERS:-2}", "--log-level", "info"]
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_VPSL_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
       - ./media:/sisoc/media
       - ./static_root:/sisoc/static_root:ro
@@ -155,7 +155,7 @@ services:
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SETTINGS_MODULE: pas_runtime.settings
-    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_PAS_WORKERS:-2}", "--log-level", "info"]
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_PAS_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
       - ./media:/sisoc/media
       - ./static_root:/sisoc/static_root:ro
@@ -182,7 +182,7 @@ services:
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SETTINGS_MODULE: vat_runtime.settings
-    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_VAT_WORKERS:-2}", "--log-level", "info"]
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_VAT_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
       - ./media:/sisoc/media
       - ./static_root:/sisoc/static_root:ro
@@ -209,7 +209,7 @@ services:
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SETTINGS_MODULE: celiaquia_runtime.settings
-    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_CELIAQUIA_WORKERS:-2}", "--log-level", "info"]
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_CELIAQUIA_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
       - ./media:/sisoc/media
       - ./static_root:/sisoc/static_root:ro
@@ -236,7 +236,7 @@ services:
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SETTINGS_MODULE: cdi_runtime.settings
-    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_CDI_WORKERS:-2}", "--log-level", "info"]
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_CDI_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
       - ./media:/sisoc/media
       - ./static_root:/sisoc/static_root:ro
@@ -263,7 +263,7 @@ services:
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SETTINGS_MODULE: cdf_runtime.settings
-    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_CDF_WORKERS:-2}", "--log-level", "info"]
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_CDF_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
       - ./media:/sisoc/media
       - ./static_root:/sisoc/static_root:ro
@@ -293,7 +293,7 @@ services:
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SETTINGS_MODULE: inspecciones_runtime.settings
-    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_INSPECCIONES_WORKERS:-4}", "--log-level", "info"]
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_INSPECCIONES_WORKERS:-4}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
       - ./media:/sisoc/media
       - ./static_root:/sisoc/static_root:ro

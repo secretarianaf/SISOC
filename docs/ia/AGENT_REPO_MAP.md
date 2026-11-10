@@ -1248,13 +1248,15 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 
 - Entrada `/v2/inet/`, app `src/frontends/apps/inet`, servicio `front_inet` y
   variable `FRONT_INET_ORIGIN`; acceso y comandos: `docs/operacion/inet_react.md`.
-- API interna `/api/inet/` en `src/backends/vat/VAT/api_inet_urls.py`, `api_inet_views.py` y
-  `api_inet_serializers.py`. Se enruta al backend VAT desde `src/backends/config/backends.json`.
+- API web de sesión `/api/web/vat/` (G1 v1, `core.web_gate`) en `src/backends/vat/VAT/web_api_urls.py`,
+  `api_inet_views.py` y `api_inet_serializers.py`. Se enruta al backend VAT desde
+  `src/backends/config/backends.json`; no hay alias `/api/inet/`.
 - Queries/formularios/workflows: `src/backends/vat/VAT/services/inet_{queries,forms,workflow}.py`.
   Alta CFP, wizard comisión y asistencia comparten operaciones con legacy.
 - Contrato dedicado `config.urls_inet_v2`, `openapi.inet.yaml` e
   `inet.generated.ts`; checks CI y `npm run api:check` incluyen INET.
-- Tests `src/backends/vat/tests/test_inet_api.py`, `apps/inet/src/App.test.tsx`,
+- Tests `src/backends/vat/tests/test_inet_api.py`, `src/backends/vat/tests/test_vat_web_api.py`,
+  `packages/api/src/inet.test.ts`, `apps/inet/src/App.test.tsx`,
   `apps/inet/src/Fields.test.tsx`,
   `e2e/inet.e2e.ts`. No modificar HasAPIKey de `/api/vat/` para habilitar React.
 - Formularios: permitir opcionales JSON nulos, describir ModelMultipleChoiceField

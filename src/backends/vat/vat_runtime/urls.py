@@ -10,7 +10,8 @@ from config.views import VatSpectacularAPIView
 backend_urlpatterns = [
     path("", include("VAT.urls")),
     path("api/vat/", include("VAT.api_urls")),
-    path("api/inet/", include("VAT.api_inet_urls")),
+    # API web G1 v1 del frontend INET (core.web_gate).
+    path("api/web/vat/", include("VAT.web_api_urls")),
     # Schema y docs OpenAPI de la API de VAT (antes en src/backends/config/urls.py).
     path("api/schema/VAT/", VatSpectacularAPIView.as_view(), name="schema-vat"),
     path(

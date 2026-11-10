@@ -1,11 +1,14 @@
-"""Rutas internas same-origin de INET React."""
+"""Rutas same-origin del frontend INET bajo ``/api/web/vat/`` (G1 v1).
+
+Ver ``docs/plans/2026-T4/2026-11-10-2785-vat-api-web-m2.md``.
+"""
 
 from django.urls import path
 from VAT import api_inet_views as views
 from VAT.services.inet_forms import FORM_CLASSES
 from VAT.services.inet_queries import RESOURCES
 
-app_name = "inet_api"
+app_name = "vat_web_api"
 urlpatterns = [
     path("session/", views.InetSessionView.as_view(), name="session"),
     path("horario-form/", views.InetHorarioFormView.as_view(), name="horario-form"),

@@ -13886,317 +13886,317 @@
  },
  {
   "name": "asistencia",
-  "namespace": "inet_api",
-  "regex": "^api/inet/sesiones/(?P<pk>[0-9]+)/asistencia/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/sesiones/(?P<pk>[0-9]+)/asistencia/\\Z"
  },
  {
   "name": "centros-delete-preview",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
  },
  {
   "name": "centros-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "centros-edit-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/(?P<pk>[0-9]+)/form/\\Z"
  },
  {
   "name": "centros-edit-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "centros-filter-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/filter\\-form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/filter\\-form/\\Z"
  },
  {
   "name": "centros-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/form/\\Z"
  },
  {
   "name": "centros-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/\\Z"
  },
  {
   "name": "centros-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "ciudadano-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ciudadano\\-form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ciudadano\\-form/\\Z"
  },
  {
   "name": "ciudadanos",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/ciudadanos/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/ciudadanos/\\Z"
  },
  {
   "name": "comisiones-delete-preview",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
  },
  {
   "name": "comisiones-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "comisiones-edit-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/form/\\Z"
  },
  {
   "name": "comisiones-edit-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "comisiones-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/form/\\Z"
  },
  {
   "name": "comisiones-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/\\Z"
  },
  {
   "name": "comisiones-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "contactos-delete-preview",
-  "namespace": "inet_api",
-  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/contactos/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
  },
  {
   "name": "contactos-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/contactos/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "contactos-edit-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/contactos/(?P<pk>[0-9]+)/form/\\Z"
  },
  {
   "name": "contactos-edit-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/contactos/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "contactos-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/contactos/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/contactos/form/\\Z"
  },
  {
   "name": "contactos-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/contactos/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/contactos/\\Z"
  },
  {
   "name": "contactos-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/contactos/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/contactos/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "cursos-delete-preview",
-  "namespace": "inet_api",
-  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
  },
  {
   "name": "cursos-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "cursos-edit-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/(?P<pk>[0-9]+)/form/\\Z"
  },
  {
   "name": "cursos-edit-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "cursos-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/cursos/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/form/\\Z"
  },
  {
   "name": "cursos-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/cursos/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/\\Z"
  },
  {
   "name": "cursos-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/cursos/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "estado",
-  "namespace": "inet_api",
-  "regex": "^api/inet/inscripciones/(?P<pk>[0-9]+)/estado/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones/(?P<pk>[0-9]+)/estado/\\Z"
  },
  {
   "name": "horario-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horario\\-form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horario\\-form/\\Z"
  },
  {
   "name": "horarios",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/horarios/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/horarios/\\Z"
  },
  {
   "name": "horarios-delete-preview",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horarios/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
  },
  {
   "name": "horarios-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horarios/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "horarios-edit-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horarios/(?P<pk>[0-9]+)/form/\\Z"
  },
  {
   "name": "horarios-edit-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horarios/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "horarios-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horarios/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horarios/form/\\Z"
  },
  {
   "name": "horarios-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horarios/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horarios/\\Z"
  },
  {
   "name": "horarios-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horarios/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horarios/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "inscribir",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/inscribir/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/inscribir/\\Z"
  },
  {
   "name": "inscripciones-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/inscripciones/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "inscripciones-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/inscripciones/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones/\\Z"
  },
  {
   "name": "planes-delete-preview",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
  },
  {
   "name": "planes-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "planes-edit-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/(?P<pk>[0-9]+)/form/\\Z"
  },
  {
   "name": "planes-edit-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "planes-filter-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/filter\\-form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/filter\\-form/\\Z"
  },
  {
   "name": "planes-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/form/\\Z"
  },
  {
   "name": "planes-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/\\Z"
  },
  {
   "name": "planes-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "sesiones-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/sesiones/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/sesiones/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "sesiones-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/sesiones/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/sesiones/\\Z"
  },
  {
   "name": "session",
-  "namespace": "inet_api",
-  "regex": "^api/inet/session/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/session/\\Z"
  },
  {
   "name": "ubicaciones-delete-preview",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ubicaciones/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
  },
  {
   "name": "ubicaciones-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ubicaciones/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "ubicaciones-edit-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ubicaciones/(?P<pk>[0-9]+)/form/\\Z"
  },
  {
   "name": "ubicaciones-edit-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ubicaciones/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "ubicaciones-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ubicaciones/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ubicaciones/form/\\Z"
  },
  {
   "name": "ubicaciones-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ubicaciones/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ubicaciones/\\Z"
  },
  {
   "name": "ubicaciones-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ubicaciones/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ubicaciones/options/(?P<field>[^/]+)/\\Z"
  }
 ]

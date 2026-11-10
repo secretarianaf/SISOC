@@ -11,7 +11,7 @@ async function prepare(page: Page) {
     const response = await route.fetch();
     await route.fulfill({ response, headers: { ...response.headers(), "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'self' https://www.google.com https://maps.google.com" } });
   });
-  await page.route("**/api/inet/**", route => {
+  await page.route("**/api/web/vat/**", route => {
     const path = new URL(route.request().url()).pathname;
     if (path.endsWith("session/")) return route.fulfill({ json: { username: "operador", nombre: "Operador de prueba", permissions: ["view_centro", "add_centro", "view_curso", "view_comisioncurso"], puede_ver_planes: true } });
     if (path.endsWith("filter-form/")) return route.fulfill({ json: { fields: [] } });
@@ -31,7 +31,9 @@ test("INET: navegación, CSP, tema y formulario con CSRF", async ({ page }) => {
   await page.getByLabel("Denominación").fill("Prueba");
   const request = page.waitForRequest(request => request.method() === "POST");
   await page.getByRole("button", { name: "Guardar", exact: true }).click();
-  expect((await request).headers()["x-csrftoken"]).toBe("inet-test-csrf");
+  const sent = await request;
+  expect(new URL(sent.url()).pathname).toBe("/api/web/vat/centros/");
+  expect(sent.headers()["x-csrftoken"]).toBe("inet-test-csrf");
   await expect(page.getByText("La denominación no es válida.", { exact: true }).first()).toBeVisible();
   await page.getByRole("button", { name: "Cancelar", exact: true }).click();
   await page.screenshot({ path: "test-results/inet-claro.png", fullPage: true });

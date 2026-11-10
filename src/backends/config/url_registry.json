@@ -1505,6 +1505,11 @@
   "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/usuarios/(?P<acceso_id>[0-9]+)/estado/\\Z"
  },
  {
+  "name": "centrodeinfancia_web_reportes",
+  "namespace": "",
+  "regex": "^api/web/cdi/reportes/\\Z"
+ },
+ {
   "name": "centros_ajax",
   "namespace": "",
   "regex": "^centrodefamilia/centros/ajax/\\Z"

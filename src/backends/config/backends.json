@@ -160,6 +160,7 @@
       "centrodeinfancia/",
       "simepi/",
       "api/ticketera/",
+      "api/web/cdi/",
       "admin/centrodeinfancia/"
     ],
     "urlconf": "cdi_runtime.urls",

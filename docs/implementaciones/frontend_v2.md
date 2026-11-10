@@ -538,6 +538,23 @@ las siguientes:
 Registro:
 `../registro/cambios/2026-T4/2026-11-10-2785-react-inspecciones-actas.md`.
 
+### Vertical remoto CDI: reportes
+
+Pantallas del backend CDI sobre G1, con el mismo patrón que Inspecciones pero
+en el marco oscuro (`includes/main.html`). `src/backends/cdi/cdi_runtime/web_api_urls.py`
+agrupa las rutas `/api/web/cdi/` del backend y `cdi_preview_patterns`
+(`src/backends/cdi/centrodeinfancia/web_preview.py`) monta las entradas en un
+URLconf local con el mismo `permissions_any_required` de `src/backends/cdi/centrodeinfancia/urls.py`.
+En el front, `routes/cdiFrame.tsx` carga `/api/web/session/` y la API del
+vertical, dibuja `SisocShell` y agrega el botón «Consultas» de la cabecera.
+
+- `/centrodeinfancia/reportes/` (`routes/cdiReportes.tsx`): resumen y selectores;
+  el XLSX es la descarga nativa.
+
+Pendiente del marco compartido: el submenú de tercer nivel del menú lateral.
+Registro:
+`../registro/cambios/2026-T4/2026-11-10-2785-react-cdi-reportes.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

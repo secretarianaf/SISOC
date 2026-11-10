@@ -553,7 +553,12 @@ vertical, dibuja `SisocShell` y agrega el botón «Consultas» de la cabecera.
 - Observaciones (`routes/cdiObservaciones.tsx`): alta, ficha, edición y baja
   sobre las vistas nativas, con el veto de auditoría CDI-A3 también en el HTML.
 
-Pendiente del marco compartido: el submenú de tercer nivel del menú lateral.
+El menú lateral de `SisocShell` y `ClaroFrame` dibuja los grupos anidados con el
+marcado de cada nivel del template y los abre y resalta con las mismas
+condiciones `'<fragmento>' in pagina_actual`, de modo que las subpáginas mantienen
+la rama abierta; `headerItems` recibe el botón «Consultas» y `activePath` permite
+evaluar las reglas sobre otra ruta. Registro:
+`../registro/cambios/2026-T4/2026-11-10-2785-shell-menu-tercer-nivel.md`.
 Registros:
 `../registro/cambios/2026-T4/2026-11-10-2785-react-cdi-reportes.md` y
 `../registro/cambios/2026-T4/2026-11-10-2785-react-cdi-observaciones.md`.

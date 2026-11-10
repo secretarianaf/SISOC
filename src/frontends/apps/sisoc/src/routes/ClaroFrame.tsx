@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { leerCookie } from "@sisoc/api";
 import { safeInternalPath } from "../webAccess";
+import { nativeActive, nativeGroupOpen, nestedNavMarkup } from "./SisocShell";
 import type { NavigationNode } from "./types";
 
 /**
@@ -69,7 +70,7 @@ const ICON_IMAGES: Record<string, string> = {
   tableros: "/static/custom/img/iconos_sidebar/tableros.svg",
   "administracion-sistema": "/static/custom/img/iconos_sidebar/administracion.svg",
 };
-const ICON_CLASSES: Record<string, string> = { comunicados: "bi bi-newspaper", mi_cuenta: "fas fa-user-circle" };
+const ICON_CLASSES: Record<string, string> = { comunicados: "bi bi-newspaper", mi_cuenta: "fas fa-user-circle", ocr_upload: "bi bi-file-text" };
 
 function Icon({ id }: { id: string }) {
   if (ICON_IMAGES[id]) return <img src={ICON_IMAGES[id]} alt="" />;
@@ -88,31 +89,36 @@ function hasActive(item: NavigationNode, pathname: string): boolean {
 }
 
 // AdminLTE hides open treeviews (inline `display: none`) while the mobile sidebar is collapsed.
-function SidebarItem({ item, pathname, nested = false, hideTree = false }: { item: NavigationNode; pathname: string; nested?: boolean; hideTree?: boolean }) {
-  const [open, setOpen] = useState(() => hasActive(item, pathname));
+// Nested entries follow the markup and route rules of `opciones.html`, shared with SisocShell.
+function SidebarItem({ item, pathname, depth = 1, parentId, hideTree = false }: { item: NavigationNode; pathname: string; depth?: number; parentId?: string; hideTree?: boolean }) {
+  const [open, setOpen] = useState(() => nativeGroupOpen(item.id, pathname) ?? hasActive(item, pathname));
+  const nested = depth > 1 ? nestedNavMarkup(item, depth, parentId) : null;
   const order = SIDEBAR_ORDER[item.id];
   const style: CSSProperties | undefined = nested || order === undefined ? undefined
     : item.id === "comunicados" ? { order, borderBottom: "1px solid var(--sidebar-border-color)" } : { order };
-  const liClass = nested ? "nav-item" : "nav-item nav-main-item";
+  const liClass = nested ? nested.item : "nav-item nav-main-item";
+  const icon = nested ? nested.icon && <i className={`nav-icon ${nested.icon}`} /> : <Icon id={item.id} />;
   if (item.href !== null) {
+    const nativeLink = item.id === "mi_cuenta" ? undefined : nativeActive(item, pathname);
     return (
       <li className={liClass} style={style}>
-        <a href={safeInternalPath(item.href) ?? "/"} className={`nav-link${nested ? " nav-dot ms-2" : ""}${isActive(item.href, pathname) ? " active" : ""}`}>
-          {!nested && <Icon id={item.id} />}
+        <a href={safeInternalPath(item.href) ?? "/"} className={`${nested ? nested.link : "nav-link"}${nativeLink ?? isActive(item.href, pathname) ? " active" : ""}`}>
+          {icon}
           <p>{item.label}</p>
         </a>
       </li>
     );
   }
+  const active = depth <= 2 && nativeActive(item, pathname) === true;
   return (
     <li className={`${liClass}${open ? " menu-open" : ""}`} style={style}>
-      <a href="#" className="nav-link" aria-expanded={open} onClick={(event) => { event.preventDefault(); setOpen(!open); }}>
-        {!nested && <Icon id={item.id} />}
+      <a href="#" className={`${nested ? nested.link : "nav-link"}${active ? " active" : ""}`} aria-expanded={open} onClick={(event) => { event.preventDefault(); setOpen(!open); }}>
+        {icon}
         <p>{item.label}</p>
         <i className="nav-arrow bi bi-chevron-right" />
       </a>
       <ul className="nav nav-treeview" style={hideTree && open ? { display: "none" } : undefined}>
-        {item.children.map((child) => <SidebarItem key={`${child.id}:${child.label}`} item={child} pathname={pathname} nested hideTree={hideTree} />)}
+        {item.children.map((child) => <SidebarItem key={`${child.id}:${child.label}`} item={child} pathname={pathname} depth={depth + 1} parentId={item.id} hideTree={hideTree} />)}
       </ul>
     </li>
   );

@@ -1,6 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- shared loader and frame of the CDI route modules. */
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
 import { crearCliente } from "@sisoc/api";
 import InsumosAccessError from "../InsumosAccessError";
 import { InsumosToastList } from "../InsumosToast";
@@ -85,33 +84,24 @@ export function Breadcrumb({ items }: { items: Crumb[] }) {
 
 export const CONSULTAS_URL = "https://consultas.capitalhumano.gob.ar/canales/sisoc-cdi";
 
-/**
- * `includes/header.html` adds a "Consultas" button before the logout item on
- * every `centrodeinfancia` route, and AdminLTE marks the body `app-loaded`.
- * The shared shell has no header slot, so this mounts the item as the first
- * child of its header list while the CDI page is shown.
- */
-function CdiHeaderExtras() {
-  const [slot] = useState(() => {
-    const item = document.createElement("li");
-    item.className = "nav-item";
-    return item;
-  });
+/** `includes/header.html` adds a "Consultas" item before the logout item on every `centrodeinfancia` route. */
+const CDI_HEADER_ITEMS = (
+  <li className="nav-item">
+    <a className="btn btn-outline-light btn-sm text-nowrap" href={CONSULTAS_URL} target="_blank" rel="noopener noreferrer" aria-label="Consultas (se abre en una nueva pestaña)">Consultas</a>
+  </li>
+);
+
+/** AdminLTE marks the body `app-loaded` once its scripts run; undone on unmount. */
+function AppLoadedBody() {
   useLayoutEffect(() => {
-    const list = document.querySelector("header.main-header ul.nav-links");
     const body = document.body;
     const hadLoaded = body.classList.contains("app-loaded");
     body.classList.add("app-loaded");
-    list?.insertBefore(slot, list.firstChild);
     return () => {
-      slot.remove();
       if (!hadLoaded) body.classList.remove("app-loaded");
     };
-  }, [slot]);
-  return createPortal(
-    <a className="btn btn-outline-light btn-sm text-nowrap" href={CONSULTAS_URL} target="_blank" rel="noopener noreferrer" aria-label="Consultas (se abre en una nueva pestaña)">Consultas</a>,
-    slot,
-  );
+  }, []);
+  return null;
 }
 
 export function renderCdi<T extends { messages: CdiMessage[] }>(
@@ -130,7 +120,8 @@ export function renderCdi<T extends { messages: CdiMessage[] }>(
       heading={heading}
       breadcrumb={breadcrumb}
       previewLinks={false}
-      content={<>{HITOS_STYLESHEET}<CdiHeaderExtras /><InsumosToastList messages={state.data.messages} />{content}</>}
+      headerItems={CDI_HEADER_ITEMS}
+      content={<>{HITOS_STYLESHEET}<AppLoadedBody /><InsumosToastList messages={state.data.messages} />{content}</>}
     />
   );
 }

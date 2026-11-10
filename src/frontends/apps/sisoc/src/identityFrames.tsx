@@ -12,6 +12,8 @@ export function legacyIdentityFrame(
   breadcrumb?: ReactNode,
   hideBack = false,
   backHref = "/",
+  /** Path the native menu rules evaluate instead of the URL (see `SisocShell`). */
+  activePath?: string,
 ) {
   return <SisocShell
     context={{ user: presentation.user, navigation: presentation.legacy_frame_navigation, footer_version_label: presentation.footer_version_label }}
@@ -23,6 +25,7 @@ export function legacyIdentityFrame(
     hideBack={hideBack}
     backHref={backHref}
     previewLinks={false}
+    activePath={activePath}
   />;
 }
 

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- the native sidebar rules are shared with ClaroFrame. */
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { leerCookie } from "@sisoc/api";
 import InsumosToast from "../InsumosToast";
@@ -34,6 +35,7 @@ function ShellIcon({ id }: { id: string }) {
   const iconClasses: Record<string, string> = {
     comunicados: "bi bi-newspaper",
     mi_cuenta: "fas fa-user-circle",
+    ocr_upload: "bi bi-file-text",
   };
   const src = localIcons[id];
   if (src) return <img src={src} alt="" />;
@@ -61,6 +63,131 @@ function legacySidebarMenu(menu: NavigationNode[]): NavigationNode[] | null {
   return [...menu].sort((a, b) => LEGACY_SIDEBAR_DOM.indexOf(a.id) - LEGACY_SIDEBAR_DOM.indexOf(b.id));
 }
 
+// `includes/sidebar/opciones.html` opens branches and highlights entries when its
+// route (`pagina_actual`) contains these markers, so subpages (crear/editar) keep
+// their entry marked; the DTO only carries the tree.
+type RouteRule = (route: string) => boolean;
+const anyOf = (...markers: string[]): RouteRule => (route) => markers.some((marker) => route.includes(marker));
+const never: RouteRule = () => false;
+const NATIVE_GROUP_RULES: Record<string, { open: RouteRule; active?: RouteRule }> = {
+  comunicados: { open: anyOf("comunicados"), active: anyOf("comunicados") },
+  "administracion-sistema": { open: never },
+  "configuracion-comedores": {
+    open: anyOf("dupla", "equipo-tecnico", "montoprestacion", "cursos-app-mobile", "actividades-pnud", "insumos", "configuracion/templates"),
+  },
+  tableros: { open: anyOf("dashboard") },
+  legajos: {
+    open: anyOf("comedores", "admisiones", "acompanamiento", "rendicion_cuentas", "organizaciones", "centrodeinfancia",
+      "ver-para-ser-libre", "pas/", "ciudadanos", "centros", "celiaquia", "expediente", "dispositivos", "datacalle", "inspecciones/"),
+  },
+  "historia-social-digital": { open: anyOf("ciudadanos"), active: anyOf("ciudadanos") },
+  comedores: {
+    open: anyOf("comedores", "admisiones", "acompanamiento", "rendicion_cuentas", "importarexpediente"),
+    active: anyOf("comedores", "importarexpediente"),
+  },
+  "admision-comedores": { open: anyOf("admisiones") },
+  organizaciones: { open: anyOf("organizaciones", "rendicioncuentasmensual"), active: anyOf("organizaciones", "rendicioncuentasmensual") },
+  "centro-de-infancia": { open: anyOf("centrodeinfancia"), active: anyOf("centrodeinfancia") },
+  "ver-para-ser-libres": { open: anyOf("ver-para-ser-libre"), active: anyOf("ver-para-ser-libre") },
+  pas: { open: anyOf("pas/"), active: anyOf("pas/") },
+  "situacion-de-calle": { open: anyOf("dispositivos", "datacalle"), active: anyOf("dispositivos", "datacalle") },
+  "centro-de-familia": { open: anyOf("centros"), active: anyOf("centros") },
+  inet: { open: anyOf("vat/"), active: anyOf("vat/") },
+  "inet-catalogos": { open: anyOf("vat/modalidades-institucionales/", "vat/catalogos/") },
+  "gestor-templates": { open: anyOf("configuracion/templates"), active: anyOf("configuracion/templates") },
+  celiaquia: { open: never, active: never },
+};
+const NATIVE_LINK_RULES: Record<string, RouteRule> = {
+  inicio: anyOf("inicio"),
+  comunicados: (route) => route === "/comunicados/",
+  comunicados_gestion: anyOf("comunicados/gestion"),
+  usuarios: anyOf("usuarios", "password"),
+  grupos: anyOf("grupos"),
+  programa_listar: anyOf("programas/"),
+  "audittrail:log_list": anyOf("auditoria/"),
+  encuestas_listar: anyOf("encuestas"),
+  papelera_list: anyOf("papelera/"),
+  vat_voucher_parametria_list: anyOf("vat/vouchers/"),
+  dupla_list: anyOf("dupla", "equipo-tecnico"),
+  montoprestacion_listar: anyOf("montoprestacion"),
+  cursos_app_mobile_list: anyOf("cursos-app-mobile"),
+  actividades_pnud_list: anyOf("actividades-pnud"),
+  insumos_listar: anyOf("insumos"),
+  ocr_upload: anyOf("ocr/"),
+  ciudadanos: anyOf("ciudadanos/listar"),
+  ciudadanos_cola_revision: anyOf("ciudadanos/revision"),
+  ciudadanos_importacion_masiva: anyOf("ciudadanos/importacion-masiva"),
+  comedores: anyOf("comedores/listar"),
+  admisiones_tecnicos_listar: anyOf("admisiones/tecnicos", "admisiones_tecnicos"),
+  admisiones_legales_listar: anyOf("admisiones/legales", "admisiones_legales"),
+  lista_comedores_acompanamiento: anyOf("acompanamiento"),
+  importarexpedientes_list: anyOf("importarexpediente/listar"),
+  organizaciones: anyOf("organizaciones/listar"),
+  rendicioncuentasmensual_global_list: anyOf("rendicioncuentasmensual"),
+  centrodeinfancia: anyOf("centrodeinfancia/listar"),
+  centrodeinfancia_reportes: anyOf("centrodeinfancia/reportes"),
+  vpsl_itinerario_list: anyOf("ver-para-ser-libre/"),
+  vpsl_sede_list: anyOf("ver-para-ser-libre/sedes"),
+  pas_persona_listar: anyOf("pas/listar"),
+  pas_panel_control: anyOf("pas/panel-control"),
+  pas_informe_listar: anyOf("pas/informes"),
+  inspecciones_panel: anyOf("inspecciones/"),
+  dispositivos_listar: anyOf("dispositivos/"),
+  datacalle_relevamientos_listar: anyOf("datacalle/"),
+  centro_list: anyOf("centros/"),
+  beneficiarios_crear: anyOf("beneficiarios/nuevo"),
+  beneficiarios_list: anyOf("beneficiarios/beneficiarios"),
+  responsables_list: anyOf("beneficiarios/responsables"),
+  vat_centro_list: anyOf("vat/centros/"),
+  vat_reporte_inscripciones_asistencias: anyOf("vat/reportes/inscripciones-asistencias/"),
+  vat_buscador_ciudadano: anyOf("vat/buscador-ciudadano/"),
+  vat_modalidadcursada_list: anyOf("vat/catalogos/modalidades-cursado/"),
+  vat_planversioncurricular_list: anyOf("vat/catalogos/planes-curriculares/"),
+  gestor_templates_listar: (route) =>
+    route.includes("configuracion/templates") && !route.includes("incidencias") && !route.includes("variables"),
+  gestor_templates_variables_listar: anyOf("configuracion/templates/variables"),
+  gestor_templates_incidencias_listar: anyOf("configuracion/templates/incidencias"),
+  expediente_list: never,
+  cupo_dashboard: never,
+  reporter_provincias: never,
+};
+// The native Celiaquía branch uses plain `ms-2` leaves with their own icons.
+const CELIAQUIA_LEAF_ICONS: Record<string, string> = {
+  expediente_list: "fas fa-folder-open",
+  cupo_dashboard: "fas fa-chart-bar",
+  reporter_provincias: "fas fa-chart-pie",
+};
+
+// Second-level entries carry no icon in the template, except this one.
+const SECOND_LEVEL_ICONS: Record<string, string> = { vat_voucher_parametria_list: "bi bi-ticket-perforated" };
+
+/** Native open state of a group, or `undefined` when the template has no route rule for it. */
+export function nativeGroupOpen(id: string, pathname: string): boolean | undefined {
+  return NATIVE_GROUP_RULES[id]?.open(pathname);
+}
+
+/** Native `active` class of a nested link or group anchor, or `undefined` without a rule. */
+export function nativeActive(item: NavigationNode, pathname: string): boolean | undefined {
+  if (item.href !== null) return NATIVE_LINK_RULES[item.id]?.(pathname);
+  const rules = NATIVE_GROUP_RULES[item.id];
+  return rules && (rules.active ?? never)(pathname);
+}
+
+/**
+ * Markup of a nested sidebar entry (depth 2 and deeper) in `opciones.html`:
+ * second-level entries are `nav-dot ms-2`, third-level links `ms-4` with a return
+ * arrow, third-level groups an `ms-4` item, and fourth-level links `nav-dot ms-4`.
+ */
+export function nestedNavMarkup(item: NavigationNode, depth: number, parentId?: string): { item: string; link: string; icon: string | null } {
+  if (parentId === "celiaquia" && item.href !== null) {
+    return { item: "nav-item", link: "nav-link ms-2", icon: CELIAQUIA_LEAF_ICONS[item.id] ?? null };
+  }
+  if (depth <= 2) return { item: "nav-item", link: "nav-link nav-dot ms-2", icon: SECOND_LEVEL_ICONS[item.id] ?? null };
+  if (depth === 3 && item.href === null) return { item: "nav-item ms-4", link: "nav-link", icon: "bi bi-arrow-return-right" };
+  if (depth === 3) return { item: "nav-item", link: "nav-link ms-4", icon: "bi bi-arrow-return-right" };
+  return { item: "nav-item", link: "nav-link nav-dot ms-4", icon: null };
+}
+
 // Identity frames render the legacy menu with its original public links.
 function projectedHref(item: NavigationNode, previewLinks = true): string | null {
   if (previewLinks && item.id === "insumos_listar" && item.href === "/insumos/") {
@@ -84,7 +211,8 @@ function NavigationItem({
   pathname,
   isMobile,
   onNavigate,
-  isNested = false,
+  depth = 1,
+  parentId,
   previewLinks = true,
   legacyOrder,
 }: {
@@ -92,27 +220,33 @@ function NavigationItem({
   pathname: string;
   isMobile: boolean;
   onNavigate: () => void;
-  isNested?: boolean;
+  depth?: number;
+  parentId?: string;
   previewLinks?: boolean;
   legacyOrder?: number;
 }) {
   const controlId = useId();
   const [overrides, setOverrides] = useState<Record<string, boolean>>({});
+  const isNested = depth > 1;
   const isAccountItem = item.id === "mi_cuenta";
   const separatorClass = item.id === "comunicados" ? " sisoc-nav-comunicados" : "";
   const orderClass = legacyOrder === undefined ? " order-1" : "";
   const orderStyle = legacyOrder === undefined ? undefined : { order: legacyOrder };
+  const nested = isNested ? nestedNavMarkup(item, depth, parentId) : null;
   const localHref = projectedHref(item, previewLinks);
-  const active = localHref !== null && (
+  const exactActive = localHref !== null && (
     localHref === pathname ||
     (previewLinks && item.id === "insumos_listar" &&
       (pathname === "/v2/sisoc/insumos" ||
         pathname.startsWith("/v2/sisoc/insumos/")))
   );
+  // Route rules describe native pages; the /v2/ preview keeps exact matching.
+  const nativeRules = !previewLinks;
+  const active = (nativeRules ? nativeActive(item, pathname) : undefined) ?? exactActive;
   const descendantActive = item.children.some((child) =>
     containsActivePath(child, pathname, previewLinks),
   );
-  const expanded = overrides[item.id] ?? descendantActive;
+  const expanded = overrides[item.id] ?? (nativeRules ? nativeGroupOpen(item.id, pathname) : undefined) ?? descendantActive;
   const toggleExpanded = () =>
     setOverrides((current) => ({ ...current, [item.id]: !expanded }));
 
@@ -125,22 +259,26 @@ function NavigationItem({
         style={isNested || isAccountItem ? undefined : orderStyle}
       >
         <a
-          className={`nav-link${isNested ? " nav-dot ms-2" : ""}${active ? " active" : ""}`}
+          className={`${nested ? nested.link : "nav-link"}${active ? " active" : ""}`}
           href={localHref ?? "/"}
           aria-current={active ? "page" : undefined}
           onClick={onNavigate}
         >
-          <ShellIcon id={item.id} />
+          {nested ? nested.icon && <i className={`nav-icon ${nested.icon}`} aria-hidden="true" /> : <ShellIcon id={item.id} />}
           <p>{item.label}</p>
         </a>
       </li>
     );
   }
 
+  const groupActive = nativeRules && depth <= 2 && nativeActive(item, pathname) === true;
   return (
-    <li className={`nav-item nav-main-item${orderClass}${expanded ? " menu-open" : ""}${separatorClass}`} style={orderStyle}>
+    <li
+      className={`${nested ? nested.item : `nav-item nav-main-item${orderClass}`}${expanded ? " menu-open" : ""}${nested ? "" : separatorClass}`}
+      style={nested ? undefined : orderStyle}
+    >
       <a
-        className="nav-link"
+        className={`${nested ? nested.link : "nav-link"}${groupActive ? " active" : ""}`}
         href="#"
         role="button"
         aria-expanded={expanded}
@@ -155,7 +293,7 @@ function NavigationItem({
           toggleExpanded();
         }}
       >
-        <ShellIcon id={item.id} />
+        {nested ? nested.icon && <i className={`nav-icon ${nested.icon}`} aria-hidden="true" /> : <ShellIcon id={item.id} />}
         <p>{item.label}</p>
         <i className="nav-arrow bi bi-chevron-right" aria-hidden="true" />
       </a>
@@ -171,7 +309,8 @@ function NavigationItem({
             pathname={pathname}
             isMobile={isMobile}
             onNavigate={onNavigate}
-            isNested
+            depth={depth + 1}
+            parentId={item.id}
             previewLinks={previewLinks}
           />
         ))}
@@ -203,6 +342,8 @@ export default function SisocShell({
   hideBack = false,
   backHref = "/",
   routes = [],
+  headerItems,
+  activePath,
 }: {
   context: Pick<ReadyContext, "user" | "navigation" | "footer_version_label"> & {
     capabilities?: ReadyContext["capabilities"];
@@ -218,12 +359,16 @@ export default function SisocShell({
   backHref?: string;
   /** In-shell pages used when no explicit `content` is given (business shell only). */
   routes?: readonly ShellRouteDefinition[];
+  /** Page-specific `nav-item`s that `includes/header.html` places before the logout item. */
+  headerItems?: ReactNode;
+  /** Path the menu rules evaluate instead of the current one (a page that marks its list entry). */
+  activePath?: string;
 }) {
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pathname, setPathname] = useState(() => window.location.pathname);
   // Native groups-list markup does not mark its Administration branch active.
-  const navigationPath = !previewLinks && pathname === "/grupos/" ? "" : pathname;
+  const navigationPath = activePath ?? (!previewLinks && pathname === "/grupos/" ? "" : pathname);
   const [successMessage, setSuccessMessage] = useState("");
   const shellRoute = resolveShellRoute(routes, pathname);
   const routeTitle = shellRoute?.route.title(shellRoute.params);
@@ -292,6 +437,7 @@ export default function SisocShell({
             </a>
           </div>
         <ul className="nav-links mb-0 d-flex align-items-center flex-wrap">
+          {headerItems}
           <li className="nav-item circle-btn">
             <form className="d-inline" method="post" action="/logout/">
               <input

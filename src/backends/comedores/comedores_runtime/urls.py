@@ -21,6 +21,8 @@ backend_urlpatterns = [
     path("api/territorial/", include("comedores.api_urls_territorial")),
     path("api/comunicados/", include("comunicados.api_urls")),
     path("api/pwa/", include("pwa.api_urls")),
+    # API web de las pantallas React (G1 v1, comedores_runtime.web_api_urls).
+    path("api/web/comedores/", include("comedores_runtime.web_api_urls")),
     path("", include("importarexpediente.urls")),
     path("", include("comunicados.urls")),
 ]

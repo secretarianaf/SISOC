@@ -15,6 +15,7 @@ _OWNED_PATTERNS = (
     r"/api/web/inspecciones/(?:actas|inspectores)/",
     r"/api/web/cdi/(?:reportes/|centros/[0-9]+/observaciones/crear/"
     r"|observaciones/[0-9]+/(?:editar/|eliminar/)?)",
+    r"/api/web/comedores/duplas/(?:[0-9]+/)?",
 )
 
 

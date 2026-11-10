@@ -562,6 +562,29 @@ evaluar las reglas sobre otra ruta. Registro:
 Registros:
 `../registro/cambios/2026-T4/2026-11-10-2785-react-cdi-reportes.md` y
 `../registro/cambios/2026-T4/2026-11-10-2785-react-cdi-observaciones.md`.
+### Vertical remoto sobre G1: Duplas (equipo técnico) de Comedores
+
+Segunda aplicación del patrón, ahora con el marco nativo `includes/main.html`
+(`legacyIdentityFrame` sobre `routes/SisocShell.tsx`):
+
+- Comedores publica `/api/web/comedores/` en `backends.json`. Cada app del
+  backend suma su `include` en
+  `src/backends/comedores/comedores_runtime/web_api_urls.py`, montado en
+  `src/backends/comedores/comedores_runtime/urls.py`.
+- `src/backends/comedores/duplas/web_api.py` corre la vista nativa
+  (`DuplaListView`, `DuplaDetailView`) y proyecta su contexto: filtros
+  combinables, preferencias de columnas (`duplas_list`), paginación y mensajes.
+  La regla nativa (`auth.role_admin`, con el bypass de superusuario) va
+  después de `WebGatePermission`. El CSV sigue siendo el GET nativo
+  `/equipo-tecnico/exportar/`.
+- `duplas_preview_patterns` (`src/backends/comedores/duplas/web_preview.py`)
+  aplica la misma guarda de URL y sirve los assets bajo `/equipo-tecnico/react/`.
+- Ruta `routes/duplas.tsx` (listado y ficha). El menú marca «Equipos Técnicos»
+  en todas las páginas del prefijo, como la plantilla nativa: para eso el marco
+  legado acepta `activePath` (opcional; sin él no cambia nada).
+
+Registro:
+`../registro/cambios/2026-T4/2026-11-10-2785-react-duplas-listado.md`.
 
 ### DDJJ pública PAS: entrada React sin montar
 

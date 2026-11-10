@@ -2070,6 +2070,16 @@
   "regex": "^equipo\\-tecnico/\\Z"
  },
  {
+  "name": "dupla_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/duplas/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "dupla_web_list",
+  "namespace": "",
+  "regex": "^api/web/comedores/duplas/\\Z"
+ },
+ {
   "name": "eliminar_archivo",
   "namespace": "",
   "regex": "^rendicioncuentasmensual/eliminar\\-archivo/(?P<archivo_id>[0-9]+)/\\Z"

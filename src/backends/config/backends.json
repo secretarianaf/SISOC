@@ -275,6 +275,7 @@
       "api/territorial/",
       "api/comunicados/",
       "api/pwa/",
+      "api/web/comedores/",
       "api/relevamiento",
       "ajax/load-organizaciones/",
       "ajax/actualizar-estado/",

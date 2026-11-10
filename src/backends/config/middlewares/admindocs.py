@@ -11,6 +11,7 @@ _OWNED_PATTERNS = (
     r"/api/web/surveys/[0-9]+/(?:answer|postpone|dismiss)/",
     r"/api/web/password/reset/[^/]+/",
     r"/api/web/users/import/jobs/[0-9]+/(?:resume/)?",
+    r"/api/web/users/bulk-credentials/jobs/[0-9]+/(?:resume/)?",
 )
 
 
@@ -32,6 +33,7 @@ class WebSessionXViewMiddleware(XViewMiddleware):
                 "/api/web/password/change/",
                 "/api/web/password/reset/",
                 "/api/web/users/import/",
+                "/api/web/users/bulk-credentials/",
                 "/api/web/insumos/",
                 "/api/web/insumos/options/",
                 "/api/web/insumos/crear/",

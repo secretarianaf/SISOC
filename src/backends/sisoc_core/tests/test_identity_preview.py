@@ -443,3 +443,58 @@ def test_user_import_preview_keeps_native_guard_lookup_and_enqueue_post(
     assert asset_path.encode() not in response.content
     assert "Este campo es requerido." in response.content.decode()
     assert UserImportJob.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_bulk_credentials_preview_keeps_native_guard_lookup_and_enqueue_post(
+    client, identity_preview, settings, tmp_path
+):
+    from django.contrib.contenttypes.models import ContentType
+    from users.models import BulkCredentialsJob
+
+    settings.MEDIA_ROOT = tmp_path / "media"
+    asset_path, _ = identity_preview
+    bulk, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_enviar_credenciales_masivas",
+        defaults={"name": "Enviar credenciales masivas"},
+    )
+    owner = _web_user("bulk-preview-owner")
+    job = BulkCredentialsJob.objects.create(
+        requested_by=owner, original_filename="credenciales.xlsx", send_type="standard"
+    )
+    detail = f"/usuarios/credenciales-masivas/lotes/{job.pk}/"
+    change = Permission.objects.get(
+        content_type__app_label="auth", codename="change_user"
+    )
+    for denied in ([], [change], [bulk]):
+        user = _web_user(
+            f"bulk-preview-denied-{len(denied)}-{denied[0].codename if denied else ''}"
+        )
+        user.user_permissions.set(denied)
+        client.force_login(user)
+        for path in ("/usuarios/credenciales-masivas/", detail):
+            assert client.get(path).status_code == 403
+            assert client.head(path, REMOTE_ADDR=PUBLIC_IP).status_code == 403
+    user = _web_user("bulk-preview")
+    user.user_permissions.set([change, bulk])
+    client.force_login(user)
+    before = list(BulkCredentialsJob.objects.order_by("pk").values())
+    for path in ("/usuarios/credenciales-masivas/", detail):
+        response = client.get(path, {"page": "do-not-forward"})
+        assert response.status_code == 200
+        _assert_private_html(response, asset_path)
+        assert b"do-not-forward" not in response.content
+        assert "csrftoken" in response.cookies
+        head = client.head(path, REMOTE_ADDR=PUBLIC_IP)
+        assert head.status_code == 200
+        assert head.content == b""
+    assert list(BulkCredentialsJob.objects.order_by("pk").values()) == before
+    assert client.get("/usuarios/credenciales-masivas/lotes/999999/").status_code == 404
+    response = client.post(
+        "/usuarios/credenciales-masivas/", {"tipo_envio": "standard"}
+    )
+    assert response.status_code == 200
+    assert asset_path.encode() not in response.content
+    assert "Este campo es requerido." in response.content.decode()
+    assert BulkCredentialsJob.objects.count() == 1

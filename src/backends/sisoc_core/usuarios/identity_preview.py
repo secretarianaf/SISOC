@@ -15,9 +15,17 @@ from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from core.views import inicio_view
-from core.decorators import permissions_any_required
+from core.decorators import permissions_all_required, permissions_any_required
+from users.services import BULK_CREDENTIALS_PERMISSION_CODE
+from usuarios.services_bulk_credentials_jobs import get_bulk_credentials_job_or_404
 from usuarios.services_user_import_jobs import get_user_import_job_or_404
-from usuarios.views import GroupCreateView, GroupListView, GroupUpdateView
+from usuarios.views import (
+    BulkCredentialsJobDetailView,
+    BulkCredentialsUploadView,
+    GroupCreateView,
+    GroupListView,
+    GroupUpdateView,
+)
 from usuarios.views_user_import import UserImportJobCreateView, UserImportJobDetailView
 
 from usuarios.auth_views import (
@@ -155,6 +163,20 @@ class UserImportJobEntry(_IdentityEntry, UserImportJobDetailView):
         return super().get(request, *args, **kwargs)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class BulkCredentialsEntry(_IdentityEntry, BulkCredentialsUploadView):
+    """Local upload GET; POST remains the native enqueue."""
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class BulkCredentialsJobEntry(_IdentityEntry, BulkCredentialsJobDetailView):
+    """Resolve the native job (404) before serving the local React detail."""
+
+    def get(self, request, *args, **kwargs):
+        get_bulk_credentials_job_or_404(job_id=kwargs["pk"])
+        return super().get(request, *args, **kwargs)
+
+
 class IdentityAssetView(View):
     """Serve only frozen build assets; no request data reaches a static upstream."""
 
@@ -249,6 +271,18 @@ def identity_preview_patterns(build_directory):
             permissions_any_required(["auth.add_user"])(
                 UserImportJobEntry.as_view(index_bytes=index_bytes)
             ),
+        ),
+        path(
+            "usuarios/credenciales-masivas/",
+            permissions_all_required(
+                ["auth.change_user", BULK_CREDENTIALS_PERMISSION_CODE]
+            )(BulkCredentialsEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "usuarios/credenciales-masivas/lotes/<int:pk>/",
+            permissions_all_required(
+                ["auth.change_user", BULK_CREDENTIALS_PERMISSION_CODE]
+            )(BulkCredentialsJobEntry.as_view(index_bytes=index_bytes)),
         ),
         path("", IdentityLoginEntry.as_view(index_bytes=index_bytes)),
         path("login/", IdentityLoginEntry.as_view(index_bytes=index_bytes)),

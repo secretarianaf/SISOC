@@ -480,6 +480,13 @@ lote y la reanudación es un único POST. Plantilla y CSV siguen en sus rutas
 nativas y ningún DTO incluye contraseñas. Registro:
 `../registro/cambios/2026-T4/2026-11-06-2785-react-importacion-usuarios.md`.
 
+`/usuarios/credenciales-masivas/` y `/usuarios/credenciales-masivas/lotes/<id>/`
+montan `routes/bulkCredentials.tsx`, que reutiliza el transporte y los controles
+de la importación, alimentado por `/api/web/users/bulk-credentials/`. Las vistas
+API heredan de las nativas, que siguen siendo las únicas que escriben; la
+plantilla se descarga con el envío GET nativo del formulario. Registro:
+`../registro/cambios/2026-T4/2026-11-06-2785-react-credenciales-masivas.md`.
+
 ### Agregar una pantalla React en `apps/sisoc`
 
 `App.tsx` no conoce pantallas: recorre `ROUTES` de

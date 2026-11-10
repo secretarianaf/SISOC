@@ -42,6 +42,7 @@ urlpatterns = [
         name="web_survey_dismiss",
     ),
     path("users/import/", include("usuarios.web_user_import_urls")),
+    path("users/bulk-credentials/", include("usuarios.web_bulk_credentials_urls")),
     path("groups/", WebGroupListView.as_view(), name="web_groups"),
     path("groups/create/", WebGroupCreateView.as_view(), name="web_group_create"),
     path("groups/<int:pk>/edit/", WebGroupUpdateView.as_view(), name="web_group_edit"),

@@ -4995,6 +4995,21 @@
   "regex": "^api/web/account/confirm/\\Z"
  },
  {
+  "name": "web_bulk_credentials",
+  "namespace": "",
+  "regex": "^api/web/users/bulk\\-credentials/\\Z"
+ },
+ {
+  "name": "web_bulk_credentials_job",
+  "namespace": "",
+  "regex": "^api/web/users/bulk\\-credentials/jobs/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_bulk_credentials_job_resume",
+  "namespace": "",
+  "regex": "^api/web/users/bulk\\-credentials/jobs/(?P<pk>[0-9]+)/resume/\\Z"
+ },
+ {
   "name": "web_group_create",
   "namespace": "",
   "regex": "^api/web/groups/create/\\Z"

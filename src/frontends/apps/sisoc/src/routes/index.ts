@@ -8,6 +8,7 @@ import { loginRoute } from "./login";
 import { passwordChangeRoute } from "./passwordChange";
 import { passwordResetRoute } from "./passwordReset";
 import { requiredPasswordRoute } from "./requiredPassword";
+import { bulkCredentialsRoute } from "./bulkCredentials";
 import { userImportRoute } from "./userImport";
 import type { RouteDefinition, ShellRouteDefinition } from "./types";
 
@@ -33,6 +34,7 @@ export const ROUTES: RouteDefinition[] = [
   passwordChangeRoute,
   passwordResetRoute,
   userImportRoute,
+  bulkCredentialsRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

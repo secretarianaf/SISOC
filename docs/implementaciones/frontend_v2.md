@@ -595,8 +595,8 @@ Registros:
 `../registro/cambios/2026-T4/2026-11-10-2785-react-duplas-abm.md`.
 ### Comedores sobre G1: catálogos con el marco oscuro
 
-ABM de montos por programa (`/montoprestacion/`, CO05) con escritura a
-través de G1. Sigue el patrón del listado de actas, con dos diferencias:
+ABM de montos por programa (`/montoprestacion/`, CO05) y catálogo PNUD, con
+escritura a través de G1. Sigue el patrón del listado de actas, con dos diferencias:
 
 1. La API (`src/backends/comedores/comedores/web_api_montos.py`) ejecuta la
    vista nativa también para escribir: `form_valid` guarda, registra el
@@ -614,8 +614,13 @@ por pantalla. La entrada sin montar es
 `src/backends/comedores/comedores/web_preview_catalogos.py`, con assets en
 `/comedores/react/assets/`.
 
-Registro:
-`../registro/cambios/2026-T4/2026-11-10-2785-react-montos.md`.
+El catálogo global de actividades PNUD (CO04.02,
+`src/backends/comedores/comedores/web_api_pnud.py`) usa el mismo marco y la
+regla del mixin nativo (`ActividadPnudPermissionMixin`).
+
+Registros:
+`../registro/cambios/2026-T4/2026-11-10-2785-react-montos.md` y
+`../registro/cambios/2026-T4/2026-11-10-2785-react-actividades-pnud.md`.
 
 ### DDJJ pública PAS: entrada React sin montar
 

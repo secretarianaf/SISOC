@@ -1710,6 +1710,26 @@
   "regex": "^comedores/intervencion/editar/(?P<pk>[0-9]+)/(?P<pk2>[0-9]+)\\Z"
  },
  {
+  "name": "comedores_web_actividades_pnud",
+  "namespace": "",
+  "regex": "^api/web/comedores/actividades\\-pnud/\\Z"
+ },
+ {
+  "name": "comedores_web_actividades_pnud_baja",
+  "namespace": "",
+  "regex": "^api/web/comedores/actividades\\-pnud/(?P<pk>[0-9]+)/baja/\\Z"
+ },
+ {
+  "name": "comedores_web_actividades_pnud_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/actividades\\-pnud/crear/\\Z"
+ },
+ {
+  "name": "comedores_web_actividades_pnud_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/actividades\\-pnud/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
   "name": "comedores_web_montos",
   "namespace": "",
   "regex": "^api/web/comedores/montos/\\Z"

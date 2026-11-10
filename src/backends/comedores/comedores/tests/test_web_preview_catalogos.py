@@ -115,3 +115,37 @@ def test_production_urlconf_keeps_the_native_pages(gestor, monto):
 
     assert respuesta.status_code == 200
     assert "monto_prestacion_list.html" in [t.name for t in respuesta.templates]
+
+
+PNUD = "/comedores/configuracion/actividades-pnud/"
+
+
+@pytest.mark.usefixtures("preview")
+def test_pnud_pages_get_the_index_only_after_the_native_guards(gestor):
+    from pwa.models import (
+        CatalogoActividadPWA,
+    )  # pylint: disable=import-outside-toplevel
+
+    actividad = CatalogoActividadPWA.objects.create(categoria="C", actividad="A")
+    urls = [
+        PNUD,
+        f"{PNUD}crear/",
+        f"{PNUD}{actividad.pk}/editar/",
+        f"{PNUD}{actividad.pk}/baja/",
+    ]
+    for url in urls:
+        respuesta = gestor.get(url)
+        assert respuesta.status_code == 200, url
+        assert '/comedores/react/assets/app-1.js"' in respuesta.content.decode()
+    viewer = get_user_model().objects.create_user("ve_pnud")
+    viewer.user_permissions.add(
+        Permission.objects.get(codename="view_catalogoactividadpwa")
+    )
+    client = Client()
+    client.force_login(viewer)
+    assert client.get(PNUD).status_code == 200
+    for url in urls[1:]:
+        assert client.get(url).status_code == 403, url
+    assert gestor.get(PNUD, {"page": "9"}).status_code == 404
+    assert gestor.get(f"{PNUD}999999/baja/").status_code == 404
+    assert Client().get(PNUD).status_code == 403

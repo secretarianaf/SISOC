@@ -23,6 +23,14 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from core.decorators import permissions_any_required
 from comedores.montos_urls import GRUPOS_MONTO_PRESTACION
+from comedores.views.actividades_pnud import (
+    MANAGE_PERMISSION,
+    VIEW_PERMISSION,
+    ActividadPnudCreateView,
+    ActividadPnudDeactivateView,
+    ActividadPnudListView,
+    ActividadPnudUpdateView,
+)
 from comedores.views.montos_prestacion import (
     MontoPrestacionProgramaCreateView,
     MontoPrestacionProgramaDeleteView,
@@ -91,6 +99,34 @@ class MontoDetailEntry(_ObjectEntry, MontoPrestacionProgramaDetailView):
     pass
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ActividadesListEntry(ActividadPnudListView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        self.paginate_queryset(self.object_list, self.get_paginate_by(self.object_list))
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ActividadCreateEntry(ActividadPnudCreateView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ActividadUpdateEntry(_ObjectEntry, ActividadPnudUpdateView):
+    pass
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ActividadDeactivateEntry(_ObjectEntry, ActividadPnudDeactivateView):
+    pass
+
+
 class ReactAssetView(View):
     """Serve only frozen build assets; no request data reaches a static upstream."""
 
@@ -147,6 +183,24 @@ def _montos_patterns(index_bytes):
     ]
 
 
+# Same decorator lists as ``comedores/urls.py`` in front of the native mixins.
+_PNUD_LECTURA = ["auth.role_admin", VIEW_PERMISSION, MANAGE_PERMISSION]
+_PNUD_GESTION = ["auth.role_admin", MANAGE_PERMISSION]
+
+
+def _pnud_patterns(index_bytes):
+    def entry(vista, codigos):
+        return permissions_any_required(codigos)(vista.as_view(index_bytes=index_bytes))
+
+    base = "comedores/configuracion/actividades-pnud/"
+    return [
+        path(base, entry(ActividadesListEntry, _PNUD_LECTURA)),
+        path(f"{base}crear/", entry(ActividadCreateEntry, _PNUD_GESTION)),
+        path(f"{base}<int:pk>/editar/", entry(ActividadUpdateEntry, _PNUD_GESTION)),
+        path(f"{base}<int:pk>/baja/", entry(ActividadDeactivateEntry, _PNUD_GESTION)),
+    ]
+
+
 def catalogos_preview_patterns(build_directory):
     """Freeze an explicit local ``apps/sisoc`` build for a disposable preview URLconf.
 
@@ -164,6 +218,7 @@ def catalogos_preview_patterns(build_directory):
     )
     return [
         *_montos_patterns(index_bytes),
+        *_pnud_patterns(index_bytes),
         path(
             "comedores/react/<path:asset_path>",
             ReactAssetView.as_view(assets=_frozen_assets(root)),

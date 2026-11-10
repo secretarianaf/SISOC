@@ -17,6 +17,7 @@ _OWNED_PATTERNS = (
     r"|observaciones/[0-9]+/(?:editar/|eliminar/)?)",
     r"/api/web/comedores/duplas/(?:crear/|[0-9]+/(?:(?:editar|eliminar)/)?)?",
     r"/api/web/comedores/montos/(?:crear/|[0-9]+/(?:editar/|eliminar/)?)?",
+    r"/api/web/comedores/actividades-pnud/(?:crear/|[0-9]+/(?:editar|baja)/)?",
 )
 
 

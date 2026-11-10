@@ -1,4 +1,5 @@
 import { accountRoute } from "./account";
+import { actividadesPnudRoute } from "./actividadesPnud";
 import { businessRoute } from "./business";
 import { categoriasRoute } from "./categorias";
 import { cdiObservacionesRoute } from "./cdiObservaciones";
@@ -47,6 +48,7 @@ export const ROUTES: RouteDefinition[] = [
   duplasRoute,
   duplasFormRoute,
   montosRoute,
+  actividadesPnudRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

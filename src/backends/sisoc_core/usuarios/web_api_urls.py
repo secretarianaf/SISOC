@@ -1,6 +1,6 @@
 """Session-authenticated web routes owned by the core."""
 
-from django.urls import path
+from django.urls import include, path
 
 from encuestas.web_answer import (
     WebAnswerSurveyView,
@@ -41,6 +41,7 @@ urlpatterns = [
         WebDismissSurveyView.as_view(),
         name="web_survey_dismiss",
     ),
+    path("users/import/", include("usuarios.web_user_import_urls")),
     path("groups/", WebGroupListView.as_view(), name="web_groups"),
     path("groups/create/", WebGroupCreateView.as_view(), name="web_group_create"),
     path("groups/<int:pk>/edit/", WebGroupUpdateView.as_view(), name="web_group_edit"),

@@ -16,7 +16,9 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from core.views import inicio_view
 from core.decorators import permissions_any_required
+from usuarios.services_user_import_jobs import get_user_import_job_or_404
 from usuarios.views import GroupCreateView, GroupListView, GroupUpdateView
+from usuarios.views_user_import import UserImportJobCreateView, UserImportJobDetailView
 
 from usuarios.auth_views import (
     ConfirmacionDatosView,
@@ -139,6 +141,20 @@ class GroupUpdateEntry(_IdentityEntry, GroupUpdateView):
         return super().get(request, *args, **kwargs)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class UserImportEntry(_IdentityEntry, UserImportJobCreateView):
+    """Local upload GET; POST remains the native enqueue."""
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class UserImportJobEntry(_IdentityEntry, UserImportJobDetailView):
+    """Resolve the native job (404) before serving the local React detail."""
+
+    def get(self, request, *args, **kwargs):
+        get_user_import_job_or_404(job_id=kwargs["pk"])
+        return super().get(request, *args, **kwargs)
+
+
 class IdentityAssetView(View):
     """Serve only frozen build assets; no request data reaches a static upstream."""
 
@@ -220,6 +236,18 @@ def identity_preview_patterns(build_directory):
             "grupos/editar/<int:pk>/",
             permissions_any_required(["auth.change_group"])(
                 GroupUpdateEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "usuarios/importar/",
+            permissions_any_required(["auth.add_user"])(
+                UserImportEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "usuarios/importar/lotes/<int:pk>/",
+            permissions_any_required(["auth.add_user"])(
+                UserImportJobEntry.as_view(index_bytes=index_bytes)
             ),
         ),
         path("", IdentityLoginEntry.as_view(index_bytes=index_bytes)),

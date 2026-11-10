@@ -46,3 +46,8 @@ export function groupsFrame(mode: "list" | "create" | "edit") {
   return (content: ReactNode, presentation: RequiredPasswordPresentation, title: string, breadcrumb?: ReactNode) =>
     legacyIdentityFrame(content, presentation, mode === "list" ? title : "Grupos", title, undefined, breadcrumb);
 }
+
+// User job pages (import, bulk credentials) title the document by their heading.
+export function userJobsFrame(content: ReactNode, presentation: RequiredPasswordPresentation, title: string, breadcrumb: ReactNode) {
+  return legacyIdentityFrame(content, presentation, title, title, undefined, breadcrumb);
+}

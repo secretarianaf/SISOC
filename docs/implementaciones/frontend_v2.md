@@ -472,6 +472,14 @@ servidor; Bootstrap y el script condicional originales operan sobre los nodos
 React. Registro:
 `../registro/cambios/2026-T4/2026-11-04-2785-react-respuesta-encuestas.md`.
 
+`/usuarios/importar/` y `/usuarios/importar/lotes/<id>/` montan
+`routes/userImport.tsx` en el mismo marco, alimentado por
+`/api/web/users/import/` y sus rutas de lote. Importar solo encola el lote con
+el Form y el servicio existentes; leer el estado nunca inicia ni reintenta el
+lote y la reanudación es un único POST. Plantilla y CSV siguen en sus rutas
+nativas y ningún DTO incluye contraseñas. Registro:
+`../registro/cambios/2026-T4/2026-11-06-2785-react-importacion-usuarios.md`.
+
 ### Agregar una pantalla React en `apps/sisoc`
 
 `App.tsx` no conoce pantallas: recorre `ROUTES` de

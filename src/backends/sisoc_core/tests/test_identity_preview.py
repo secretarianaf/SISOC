@@ -402,3 +402,44 @@ def test_recovery_entries_keep_source_html_posts(client, identity_preview):
     stale = client.get(exchange["Location"])
     assert stale.status_code == 200
     _assert_private_html(stale, asset_path)
+
+
+@pytest.mark.django_db
+def test_user_import_preview_keeps_native_guard_lookup_and_enqueue_post(
+    client, identity_preview, settings, tmp_path
+):
+    from users.models import UserImportJob
+
+    settings.MEDIA_ROOT = tmp_path / "media"
+    asset_path, _ = identity_preview
+    owner = _web_user("import-preview-owner")
+    job = UserImportJob.objects.create(
+        requested_by=owner, original_filename="usuarios.xlsx"
+    )
+    detail = f"/usuarios/importar/lotes/{job.pk}/"
+    client.force_login(_web_user("import-preview-denied"))
+    for path in ("/usuarios/importar/", detail):
+        assert client.get(path).status_code == 403
+        assert client.head(path, REMOTE_ADDR=PUBLIC_IP).status_code == 403
+    user = _web_user("import-preview")
+    user.user_permissions.set(
+        Permission.objects.filter(content_type__app_label="auth", codename="add_user")
+    )
+    client.force_login(user)
+    before = list(UserImportJob.objects.order_by("pk").values())
+    for path in ("/usuarios/importar/", detail):
+        response = client.get(path, {"estado": "do-not-forward"})
+        assert response.status_code == 200
+        _assert_private_html(response, asset_path)
+        assert b"do-not-forward" not in response.content
+        assert "csrftoken" in response.cookies
+        head = client.head(path, REMOTE_ADDR=PUBLIC_IP)
+        assert head.status_code == 200
+        assert head.content == b""
+    assert list(UserImportJob.objects.order_by("pk").values()) == before
+    assert client.get("/usuarios/importar/lotes/999999/").status_code == 404
+    response = client.post("/usuarios/importar/", {})
+    assert response.status_code == 200
+    assert asset_path.encode() not in response.content
+    assert "Este campo es requerido." in response.content.decode()
+    assert UserImportJob.objects.count() == 1

@@ -5105,6 +5105,21 @@
   "regex": "^api/web/surveys/(?P<pk>[0-9]+)/postpone/\\Z"
  },
  {
+  "name": "web_user_import",
+  "namespace": "",
+  "regex": "^api/web/users/import/\\Z"
+ },
+ {
+  "name": "web_user_import_job",
+  "namespace": "",
+  "regex": "^api/web/users/import/jobs/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_user_import_job_resume",
+  "namespace": "",
+  "regex": "^api/web/users/import/jobs/(?P<pk>[0-9]+)/resume/\\Z"
+ },
+ {
   "name": "",
   "namespace": "admin",
   "regex": "^admin/(?P<url>.*)$"

@@ -12,6 +12,7 @@ _OWNED_PATTERNS = (
     r"/api/web/password/reset/[^/]+/",
     r"/api/web/users/import/jobs/[0-9]+/(?:resume/)?",
     r"/api/web/users/bulk-credentials/jobs/[0-9]+/(?:resume/)?",
+    r"/api/web/inspecciones/(?:actas|inspectores)/",
 )
 
 

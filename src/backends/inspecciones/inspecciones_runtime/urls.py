@@ -8,6 +8,8 @@ from config.backend_urls import urlpatterns_de_backend
 backend_urlpatterns = [
     path("inspecciones/", include("inspecciones.urls")),
     path("api/inspecciones/", include("inspecciones.api_urls")),
+    # API web de las pantallas React (G1 v1, inspecciones.web_api).
+    path("api/web/inspecciones/", include("inspecciones.web_api_urls")),
 ]
 
 # El admin queda fuera de backend_urlpatterns: settings_all ya lo monta completo.

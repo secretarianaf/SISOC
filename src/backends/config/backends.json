@@ -219,6 +219,7 @@
     "url_prefixes": [
       "inspecciones/",
       "api/inspecciones/",
+      "api/web/inspecciones/",
       "admin/inspecciones/"
     ],
     "urlconf": "inspecciones_runtime.urls",

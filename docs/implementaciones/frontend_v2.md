@@ -515,6 +515,29 @@ No hace falta editar `App.tsx` ni `App.test.tsx`; este último cubre solo el
 marco y el arranque de sesión. Registro:
 `../registro/cambios/2026-T4/2026-11-06-2785-rutas-por-modulo.md`.
 
+### Vertical remoto sobre G1: listado de actas de Inspecciones
+
+Primera pantalla de un vertical servido por su propio runtime. El patrón para
+las siguientes:
+
+1. API web en el vertical, bajo `/api/web/<vertical>/` (prefijo en
+   `url_prefixes` de `src/backends/config/backends.json`), con
+   `WebGatePermission` antes de la regla de permiso del dueño. Conviene armar el
+   contexto con la vista HTML existente para no duplicar filtros. Agregar las
+   rutas al patrón de `src/backends/config/middlewares/admindocs.py` y regenerar
+   `url_registry.json`.
+2. Entrada sin montar en el vertical: hereda la vista nativa (guardas, 403, 404)
+   y sirve el `index.html` con assets bajo el prefijo propio. Ejemplo:
+   `actas_preview_patterns` en
+   `src/backends/inspecciones/inspecciones/web_preview.py`.
+3. Ruta en `apps/sisoc/src/routes/` con la URL nativa: el menú, el usuario y el
+   pie vienen de `/api/web/session/` (core) y los datos de la API del vertical.
+   Inspecciones usa el layout claro (`routes/ClaroFrame.tsx`), no el marco
+   oscuro, y su selector remoto J2 (`routes/InspSelect2.tsx`).
+
+Registro:
+`../registro/cambios/2026-T4/2026-11-10-2785-react-inspecciones-actas.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

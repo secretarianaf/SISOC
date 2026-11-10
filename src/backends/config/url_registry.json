@@ -2680,6 +2680,16 @@
   "regex": "^inspecciones/tablero/exportar\\.csv\\Z"
  },
  {
+  "name": "inspecciones_web_actas",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/actas/\\Z"
+ },
+ {
+  "name": "inspecciones_web_inspectores",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/inspectores/\\Z"
+ },
+ {
   "name": "insumos_categorias_crear",
   "namespace": "",
   "regex": "^insumos/categorias/crear\\Z"

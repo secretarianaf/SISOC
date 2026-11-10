@@ -13,7 +13,7 @@ Para desarrollar y revisar cambios, usar `docs/desarrollo/verticales_independien
 | `celiaquia` | celiaquia | `/celiaquia/`, `/reporter-provincias/`, `/api/celiaquia/`, `/admin/celiaquia/` |
 | `cdi` | centrodeinfancia, ticketera | `/centrodeinfancia/`, `/simepi/`, `/api/ticketera/`, `/admin/centrodeinfancia/` |
 | `cdf` | centrodefamilia | `/centrodefamilia/`, `/api/centrodefamilia/`, `/admin/centrodefamilia/` |
-| `inspecciones` | inspecciones (inspecciones escolares, PWA Sisoc Inspecciones) | `/inspecciones/`, `/api/inspecciones/`, `/admin/inspecciones/` |
+| `inspecciones` | inspecciones (inspecciones escolares, PWA Sisoc Inspecciones) | `/inspecciones/`, `/api/inspecciones/`, `/api/web/inspecciones/`, `/admin/inspecciones/` |
 | `comedores` (C3 validado localmente) | cluster de catorce apps, Espacios comunitarios (`pwa`), mailing | rutas históricas de comedores/admisiones/organizaciones/rendiciones, Montos, AJAX y APIs; prefijos exactos en el registro |
 | `ocr` (C4 validado localmente) | OCR, lotes/documentos y worker existente | `/ocr/`, `/admin/ocr/` |
 

@@ -4,6 +4,7 @@ import { categoriasRoute } from "./categorias";
 import { groupsRoute } from "./groups";
 import { inicioRoute } from "./inicio";
 import { insumosRoute } from "./insumos";
+import { inspeccionesActasRoute } from "./inspeccionesActas";
 import { loginRoute } from "./login";
 import { passwordChangeRoute } from "./passwordChange";
 import { passwordResetRoute } from "./passwordReset";
@@ -35,6 +36,7 @@ export const ROUTES: RouteDefinition[] = [
   passwordResetRoute,
   userImportRoute,
   bulkCredentialsRoute,
+  inspeccionesActasRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

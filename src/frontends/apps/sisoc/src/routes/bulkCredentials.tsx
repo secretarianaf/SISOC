@@ -161,6 +161,7 @@ function BulkJob({ id }: { id: string }) {
   const [state, setState] = useWebResource(`web/users/bulk-credentials/jobs/${id}/${window.location.search}`, detailValid);
   return renderLoad(state, "Cargando lote…", data => ({
     title: "Detalle de lote de credenciales",
+    backHref: "/usuarios/credenciales-masivas/", // native volver_url: reverse("usuarios_credenciales_masivas")
     breadcrumb: jobsBreadcrumb(<><li className="breadcrumb-item"><a href={data.upload_url}>Credenciales masivas</a></li><li className="breadcrumb-item active">{`Lote #${data.job.id}`}</li></>),
     content: <BulkJobContent data={data} forbidden={d => setState({ status: "forbidden", prerequisite: prerequisiteFromForbidden(d) })} />,
   }));

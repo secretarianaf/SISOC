@@ -154,3 +154,55 @@ Diferencias que siguen y no se corrigen aquí:
 No hubo POST, errores de página ni solicitudes bloqueadas; dominio sintético
 sin cambios. No constituye aceptación humana, revisión nativa, CI ni
 despliegue. Riesgo técnico: marco compartido por todas las pantallas React.
+
+## Tercera parte: destino de «Volver» por pantalla
+
+### Diagnóstico
+
+El marco compartido (`src/frontends/apps/sisoc/src/routes/SisocShell.tsx`)
+fijaba «Volver» en `/` para todas las pantallas. Algunas vistas originales
+definen `volver_url` y el botón apunta a ese destino. En las pantallas ya
+migradas solo lo hacen los detalles de lote de usuarios:
+
+| Pantalla | `volver_url` original | Destino en React |
+| --- | --- | --- |
+| Insumos (listado, alta, edición, baja) | no define (`/`) | `/` |
+| Categorías de insumos | no define (`/`) | `/` |
+| Login y recuperación de contraseña | sin botón | sin botón |
+| Cambio de contraseña voluntario y su confirmación | sin botón | sin botón |
+| Cambio obligatorio de contraseña | no define (`/`) | `/` |
+| Mi cuenta y confirmación de datos | no define (`/`) | `/` |
+| Grupos (listado, alta, edición) | no define (`/`) | `/` |
+| Inicio y encuestas | sin botón | sin botón |
+| Importación de usuarios (formulario) | no define (`/`) | `/` |
+| Detalle de lote de importación | `usuarios_importar` | `/usuarios/importar/` |
+| Credenciales masivas (formulario) | no define (`/`) | `/` |
+| Detalle de lote de credenciales | `usuarios_credenciales_masivas` | `/usuarios/credenciales-masivas/` |
+
+Las vistas originales de los detalles son `BulkCredentialsJobDetailView` en
+`src/backends/sisoc_core/usuarios/views.py` y la vista de detalle de
+`src/backends/sisoc_core/usuarios/views_user_import.py`.
+
+### Comportamiento
+
+`SisocShell` y los constructores de marco de
+`src/frontends/apps/sisoc/src/identityFrames.tsx` aceptan un destino opcional
+para «Volver», con `/` por defecto. Solo los detalles de lote de importación y
+de credenciales lo fijan, con el mismo destino que la vista original. El resto
+de las pantallas no cambia. Sigue sin reproducirse el historial de
+`src/backends/kernel/static/custom/js/volver.js`.
+
+### Verificación
+
+Copia aislada sobre el árbol con las unidades de importación y credenciales.
+Las pruebas del destino de «Volver» en los dos detalles fallaron antes de
+implementar; las de los formularios fijan el destino `/` sin cambios. Después
+pasan las pruebas frontend, TypeScript, ESLint y el build de Vite; el CSS
+generado es idéntico byte a byte.
+
+Runtime sintético local, 1440x900 y 390x844, en 48 casos de las pantallas de
+la tabla: el destino de «Volver» de React coincide con el de la página
+original en todos (incluida la ausencia de botón), y las capturas de React
+antes y después del cambio son idénticas byte a byte. No hubo errores de
+página ni solicitudes bloqueadas. No constituye aceptación humana, CI ni
+despliegue.

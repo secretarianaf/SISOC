@@ -201,6 +201,7 @@ export default function SisocShell({
   previewLinks = true,
   breadcrumb,
   hideBack = false,
+  backHref = "/",
   routes = [],
 }: {
   context: Pick<ReadyContext, "user" | "navigation" | "footer_version_label"> & {
@@ -213,6 +214,8 @@ export default function SisocShell({
   previewLinks?: boolean;
   breadcrumb?: ReactNode;
   hideBack?: boolean;
+  /** Native `volver_url` of the page; the legacy back button defaults to `/`. */
+  backHref?: string;
   /** In-shell pages used when no explicit `content` is given (business shell only). */
   routes?: readonly ShellRouteDefinition[];
 }) {
@@ -380,7 +383,7 @@ export default function SisocShell({
           <div className="app-content-header">
             <div className="container-fluid">
           {!hideBack && <div className="d-print-none">
-                <a className="btn btn-secondary btn-sm sisoc-volver" href="/">
+                <a className="btn btn-secondary btn-sm sisoc-volver" href={backHref}>
                   <i className="fas fa-arrow-left" aria-hidden="true" />{" "}
                   <span>Volver</span>
                 </a>

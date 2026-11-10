@@ -11,6 +11,7 @@ export function legacyIdentityFrame(
   overlays?: ReactNode,
   breadcrumb?: ReactNode,
   hideBack = false,
+  backHref = "/",
 ) {
   return <SisocShell
     context={{ user: presentation.user, navigation: presentation.legacy_frame_navigation, footer_version_label: presentation.footer_version_label }}
@@ -20,6 +21,7 @@ export function legacyIdentityFrame(
     overlays={overlays}
     breadcrumb={breadcrumb}
     hideBack={hideBack}
+    backHref={backHref}
     previewLinks={false}
   />;
 }
@@ -47,7 +49,8 @@ export function groupsFrame(mode: "list" | "create" | "edit") {
     legacyIdentityFrame(content, presentation, mode === "list" ? title : "Grupos", title, undefined, breadcrumb);
 }
 
-// User job pages (import, bulk credentials) title the document by their heading.
-export function userJobsFrame(content: ReactNode, presentation: RequiredPasswordPresentation, title: string, breadcrumb: ReactNode) {
-  return legacyIdentityFrame(content, presentation, title, title, undefined, breadcrumb);
+// User job pages (import, bulk credentials) title the document by their heading;
+// job details go back to their native `volver_url` instead of `/`.
+export function userJobsFrame(content: ReactNode, presentation: RequiredPasswordPresentation, title: string, breadcrumb: ReactNode, backHref?: string) {
+  return legacyIdentityFrame(content, presentation, title, title, undefined, breadcrumb, false, backHref);
 }

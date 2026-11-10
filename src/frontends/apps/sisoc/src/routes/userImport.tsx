@@ -47,13 +47,13 @@ export function useWebResource<T>(endpoint: string, valid: (v: unknown) => v is 
   return [state, setState] as const;
 }
 
-export function renderLoad<T extends { presentation: RequiredPasswordPresentation }>(state: LoadState<T>, loading: string, render: (data: T) => { content: ReactNode; title: string; breadcrumb: ReactNode }) {
+export function renderLoad<T extends { presentation: RequiredPasswordPresentation }>(state: LoadState<T>, loading: string, render: (data: T) => { content: ReactNode; title: string; breadcrumb: ReactNode; backHref?: string }) {
   if (state.status === "loading") return <main role="status">{loading}</main>;
   if (state.status === "error") return <main role="alert">No se pudo cargar el lote.</main>;
   if (state.status === "forbidden") return <InsumosAccessError prerequisite={state.prerequisite} />;
   if (state.status !== "ready") return null;
-  const { content, title, breadcrumb } = render(state.data);
-  return userJobsFrame(content, state.data.presentation, title, breadcrumb);
+  const { content, title, breadcrumb, backHref } = render(state.data);
+  return userJobsFrame(content, state.data.presentation, title, breadcrumb, backHref);
 }
 
 /** POST once; an unconfirmed outcome is reported, never resubmitted. */
@@ -257,6 +257,7 @@ function ImportJob({ id }: { id: string }) {
   const [state, setState] = useWebResource(`web/users/import/jobs/${id}/${window.location.search}`, detailValid);
   return renderLoad(state, "Cargando lote…", data => ({
     title: "Detalle de lote de importacion",
+    backHref: "/usuarios/importar/", // native volver_url: reverse("usuarios_importar")
     breadcrumb: jobsBreadcrumb(<><li className="breadcrumb-item"><a href={data.upload_url}>Gestor masivo</a></li><li className="breadcrumb-item active">{`Lote #${data.job.id}`}</li></>),
     content: <ImportJobContent data={data} forbidden={d => setState({ status: "forbidden", prerequisite: prerequisiteFromForbidden(d) })} />,
   }));

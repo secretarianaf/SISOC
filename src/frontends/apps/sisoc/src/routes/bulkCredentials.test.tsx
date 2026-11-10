@@ -83,6 +83,11 @@ describe("bulk credentials form", () => {
     expect(webPost).not.toHaveBeenCalled();
   });
 
+  it("keeps the default Volver destination on the form, like the native page", async () => {
+    await openForm();
+    expect(document.querySelector(".sisoc-volver")?.getAttribute("href")).toBe("/");
+  });
+
   it("shows the native empty-history notice", async () => {
     await openForm(formData({ recent_jobs: [] }));
     expect(screen.getByText("Todavia no hay lotes creados para credenciales masivas.")).toBeTruthy();
@@ -152,6 +157,11 @@ describe("bulk credentials job detail", () => {
     expect(webGet).toHaveBeenCalledWith("web/users/bulk-credentials/jobs/9/?page=2", expect.any(Object));
     expect(webPost).not.toHaveBeenCalled();
     expect(document.title).toBe("SISOC - Detalle de lote de credenciales");
+  });
+
+  it("goes back to the native volver_url of the job detail", async () => {
+    await openDetail();
+    expect(document.querySelector(".sisoc-volver")?.getAttribute("href")).toBe("/usuarios/credenciales-masivas/");
   });
 
   it("renders native counters, checkpoints, rows, pagination and actions", async () => {

@@ -63,6 +63,11 @@ describe("user import form", () => {
     expect(document.querySelector('link[rel="stylesheet"][href="/static/custom/css/hitos.css"]')).not.toBeNull();
   });
 
+  it("keeps the default Volver destination on the form, like the native page", async () => {
+    await openForm();
+    expect(document.querySelector(".sisoc-volver")?.getAttribute("href")).toBe("/");
+  });
+
   it("shows the native empty-history notice", async () => {
     await openForm(formData({ recent_jobs: [] }));
     expect(screen.getByText("Todavia no hay lotes de importacion creados.")).toBeTruthy();
@@ -141,6 +146,11 @@ describe("user import job detail", () => {
     expect(webGet).toHaveBeenCalledWith("web/users/import/jobs/9/?estado=failed&page=2", expect.any(Object));
     expect(webPost).not.toHaveBeenCalled();
     expect(document.title).toBe("SISOC - Detalle de lote de importacion");
+  });
+
+  it("goes back to the native volver_url of the job detail", async () => {
+    await openDetail();
+    expect(document.querySelector(".sisoc-volver")?.getAttribute("href")).toBe("/usuarios/importar/");
   });
 
   it("renders native counters, rows, filters, pagination and actions", async () => {

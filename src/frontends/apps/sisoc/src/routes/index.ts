@@ -13,6 +13,7 @@ import { inspeccionesActaDetalleRoute } from "./inspeccionesActaDetalle";
 import { inspeccionesActasRoute } from "./inspeccionesActas";
 import { loginRoute } from "./login";
 import { montosRoute } from "./montos";
+import { pasRoute } from "./pas";
 import { passwordChangeRoute } from "./passwordChange";
 import { passwordResetRoute } from "./passwordReset";
 import { requiredPasswordRoute } from "./requiredPassword";
@@ -51,6 +52,7 @@ export const ROUTES: RouteDefinition[] = [
   duplasFormRoute,
   montosRoute,
   actividadesPnudRoute,
+  pasRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

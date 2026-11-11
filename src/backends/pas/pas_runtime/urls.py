@@ -7,6 +7,8 @@ from config.backend_urls import urlpatterns_de_backend
 
 backend_urlpatterns = [
     path("", include("pas.urls")),
+    # API web de las pantallas React (G1 v1, pas_runtime.web_api_urls).
+    path("api/web/pas/", include("pas_runtime.web_api_urls")),
 ]
 
 # El admin queda fuera de backend_urlpatterns: settings_all ya lo monta completo.

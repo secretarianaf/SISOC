@@ -646,3 +646,18 @@ también para visitantes anónimos. El envío no se reintenta: ante un resultado
 distinto de éxito o error de validación se vuelve por GET a la URL canónica.
 Registro:
 `../registro/cambios/2026-T4/2026-11-06-2806-react-ddjj-publica.md`.
+
+### PAS back office sobre G1: buscador, panel y áreas
+
+Las pantallas autenticadas de PAS van en `apps/sisoc` (marco oscuro con
+`routes/MainFrame.tsx`), no en `apps/pas`. `routes/pas.tsx` toma las URLs
+nativas `/pas/listar`, `/pas/panel-control[/<pk>]`, `/pas/<pk>`, `/pas/formacion`,
+`/pas/mesa-ayuda` y `/pas/liquidacion`; los datos salen de `/api/web/pas/`
+(`src/backends/pas/pas/web_api_views.py`, agregado en
+`src/backends/pas/pas_runtime/web_api_urls.py`), que corre la vista nativa y
+proyecta su contexto. `routes/pasFrame.tsx` reproduce el bloque `app-header`
+de PAS con un portal y espera a que `pas.css` aplique antes del scroll
+incremental y del salto a `#ddjj-panel`. La entrada sin montar es
+`src/backends/pas/pas/web_preview_backoffice.py`, con assets en
+`/pas/react/assets/`. Registro:
+`../registro/cambios/2026-T4/2026-11-10-2806-react-pas-backoffice.md`.

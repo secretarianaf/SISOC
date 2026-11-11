@@ -67,6 +67,7 @@
     "url_prefixes": [
       "pas/",
       "media/pas/",
+      "api/web/pas/",
       "admin/pas/"
     ],
     "urlconf": "pas_runtime.urls",

@@ -3400,6 +3400,41 @@
   "regex": "^pas/ddjj/tokens/exportar\\Z"
  },
  {
+  "name": "pas_web_area_formacion",
+  "namespace": "",
+  "regex": "^api/web/pas/areas/formacion/\\Z"
+ },
+ {
+  "name": "pas_web_area_liquidacion",
+  "namespace": "",
+  "regex": "^api/web/pas/areas/liquidacion/\\Z"
+ },
+ {
+  "name": "pas_web_area_mesa_ayuda",
+  "namespace": "",
+  "regex": "^api/web/pas/areas/mesa\\-ayuda/\\Z"
+ },
+ {
+  "name": "pas_web_formacion_personas",
+  "namespace": "",
+  "regex": "^api/web/pas/formacion/personas/\\Z"
+ },
+ {
+  "name": "pas_web_panel",
+  "namespace": "",
+  "regex": "^api/web/pas/panel/\\Z"
+ },
+ {
+  "name": "pas_web_panel_persona",
+  "namespace": "",
+  "regex": "^api/web/pas/panel/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "pas_web_personas",
+  "namespace": "",
+  "regex": "^api/web/pas/personas/\\Z"
+ },
+ {
   "name": "password_change",
   "namespace": "",
   "regex": "^password_change/\\Z"

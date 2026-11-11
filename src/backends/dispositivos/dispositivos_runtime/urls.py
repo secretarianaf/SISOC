@@ -9,6 +9,8 @@ backend_urlpatterns = [
     path("", include("dispositivos.urls")),
     path("", include("datacalle.urls")),
     path("api/datacalle/", include("datacalle.api_urls")),
+    # API web de las pantallas React (G1 v1, dispositivos_runtime.web_api_urls).
+    path("api/web/dispositivos/", include("dispositivos_runtime.web_api_urls")),
 ]
 
 # El admin queda fuera de backend_urlpatterns: settings_all ya lo monta completo.

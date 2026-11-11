@@ -624,6 +624,22 @@ que corre el `post()` nativo (mensajes y baja lógica en cascada incluidos). Reg
 `../registro/cambios/2026-T4/2026-11-10-2805-react-cdf-centros-consulta.md` y
 `../registro/cambios/2026-T4/2026-11-10-2805-react-cdf-centros-gestion.md`.
 
+### Vertical remoto Dispositivos: listado, legajo y mapa
+
+El backend `dispositivos` publica `/api/web/dispositivos/`
+(`src/backends/dispositivos/dispositivos_runtime/web_api_urls.py`, montado en
+`src/backends/dispositivos/dispositivos_runtime/urls.py`). La raíz del prefijo queda libre
+(el core la reserva para el nombre del vertical), así que el listado vive en `listado/`.
+`src/backends/dispositivos/dispositivos/web_api.py` corre `DispositivoListView`,
+`DispositivoDetailView` y `DispositivoMapView` y proyecta su contexto; las secciones del
+legajo salen de `build_detalle_secciones` (`src/backends/dispositivos/dispositivos/views.py`),
+la misma función que usa el HTML. `dispositivos_preview_patterns`
+(`src/backends/dispositivos/dispositivos/web_preview.py`) monta las entradas con las guardas
+nativas y assets en `/dispositivos/react/assets/`. En el front, `routes/dispositivos.tsx`
+(listado y legajo) y `routes/dispositivosMapa.tsx` (Leaflet por CDN con el mismo SRI y la
+consulta de ubicación en serie). Registro:
+`../registro/cambios/2026-T4/2026-11-11-2785-react-dispositivos-consulta.md`.
+
 ### Comedores sobre G1: catálogos con el marco oscuro
 
 ABM de montos por programa (`/montoprestacion/`, CO05) y catálogo PNUD, con

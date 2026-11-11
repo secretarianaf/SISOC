@@ -8,6 +8,7 @@
       "dispositivos/",
       "datacalle/",
       "api/datacalle/",
+      "api/web/dispositivos/",
       "admin/dispositivos/",
       "admin/datacalle/"
     ],

@@ -5345,6 +5345,31 @@
   "regex": "^api/web/cdf/centros/(?P<pk>[0-9]+)/usuarios/\\Z"
  },
  {
+  "name": "web_dispositivos_detail",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_dispositivos_list",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/listado/\\Z"
+ },
+ {
+  "name": "web_dispositivos_mapa",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/mapa/\\Z"
+ },
+ {
+  "name": "web_dispositivos_options",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/options/\\Z"
+ },
+ {
+  "name": "web_dispositivos_ubicacion",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/(?P<pk>[0-9]+)/ubicacion/\\Z"
+ },
+ {
   "name": "web_group_create",
   "namespace": "",
   "regex": "^api/web/groups/create/\\Z"

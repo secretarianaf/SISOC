@@ -32,6 +32,7 @@ class TrackedModelDefinition:
     optional_excluded_fields: tuple[str, ...] = ()
     # Si se informa, solo se auditan estos campos (allowlist en vez de denylist).
     included_fields: tuple[str, ...] = ()
+    redact_object_repr: bool = False
 
     def get_model(self):
         return self.model_getter()
@@ -267,6 +268,7 @@ def get_tracked_model_definitions():
         ),
         TrackedModelDefinition(
             label="Legajo Celiaquía",
+            redact_object_repr=True,
             model_getter=_model_getter("celiaquia.models.ExpedienteCiudadano"),
             # Estar en el legajo ya es un dato de salud y el log es exportable
             # y sobrevive al borrado: solo se registran las decisiones del
@@ -340,6 +342,7 @@ def get_tracked_model_definitions():
         ),
         TrackedModelDefinition(
             label="Registro nominal VPSL",
+            redact_object_repr=True,
             model_getter=_model_getter("ver_para_ser_libre.models.RegistroNominalVPSL"),
             # Atención oftalmológica de chicos y chicas: resultado, graduación,
             # prescripción y datos personales son de salud y el log es
@@ -355,6 +358,7 @@ def get_tracked_model_definitions():
         ),
         TrackedModelDefinition(
             label="Caso de laboratorio VPSL",
+            redact_object_repr=True,
             model_getter=_model_getter("ver_para_ser_libre.models.CasoLaboratorioVPSL"),
             # `destinatario` e `incidencia` son texto libre sobre la persona.
             excluded_fields=("updated_at", "destinatario", "incidencia"),

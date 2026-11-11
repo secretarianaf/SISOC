@@ -58,6 +58,9 @@ def test_revision_tecnica_del_legajo_queda_auditada_sin_texto_libre(expediente):
 
     entradas = LogEntry.objects.get_for_object(legajo)
     assert entradas.count() == 2  # alta + modificación
+    assert all(
+        entry.object_repr == f"Legajo Celiaquía #{legajo.pk}" for entry in entradas
+    )
     assert entradas.first().changes["revision_tecnico"] == ["PENDIENTE", "SUBSANAR"]
     # Ni texto libre, ni archivos, ni timestamps en ningún evento.
     for entrada in entradas:

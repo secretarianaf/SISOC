@@ -56,6 +56,10 @@ def test_registro_nominal_audita_el_circuito_sin_datos_de_salud():
 
     entradas = LogEntry.objects.get_for_object(registro)
     assert entradas.count() == 2  # alta + modificación
+    assert all(
+        entry.object_repr == f"Registro nominal VPSL #{registro.pk}"
+        for entry in entradas
+    )
     assert entradas.first().changes == {"estado": ["cargado", "validado"]}
     # El alta tampoco lleva datos personales ni de salud.
     alta = entradas.last().changes

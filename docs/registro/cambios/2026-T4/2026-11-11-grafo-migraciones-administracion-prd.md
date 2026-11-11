@@ -122,3 +122,12 @@ La primera construcción canónica no llegó a crear imágenes: el contexto Dock
 intentaba leer artefactos protegidos de `.deploy/pwa`. Se agrega `.deploy/` a
 `.dockerignore`, sin modificar permisos ni leer esos artefactos. Esta exclusión
 acompaña las ya existentes para logs, backups y datos de runtime.
+
+### Resultado del hotfix desplegado
+
+- PRD ejecuta la revisión inmutable `3e7e3b8d6830b6af0a02e19387bbb173212433ff`; se reconstruyeron core y migrador con el Dockerfile canónico, y se recreó únicamente core.
+- La entrada automática pasó detección sin cambios y plan vacío. El acceso incorrecto en core sale con código 2, guía útil y sin traceback. El prechequeo de creación de usuario pasó sin ejecutar su handler.
+- Core healthy, HTTP 200, cero reinicios y cero nuevos marcadores de error/traceback en la ventana posterior. Los demás contenedores conservaron sus IDs; el hash del historial de migraciones y el resultado de `manage.py check` no cambiaron.
+- Tests focalizados, suite adyacente, verificación independiente, Black y Pylint aprobados; cobertura focalizada 90%. CI de GitHub y suite Django completa no ejecutadas para esta intervención; no se afirma aceptación humana. Persiste W036, ajeno al hotfix.
+- Rollback exacto con el usuario autorizado: `bash "$HOME/sisoc-admin-hotfix.KRJiG3/rollback.sh"`. Restaura la imagen anterior de core y el checkout `main` original, sin migrar datos. No se aplicaron migraciones ni se crearon cuentas.
+- Código publicado en `hotfix/prd-management-graph`; integración a `main` pendiente, sin merge automático. Los commits documentales posteriores no cambian la revisión de las imágenes desplegadas.

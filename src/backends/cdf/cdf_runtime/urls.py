@@ -10,6 +10,8 @@ backend_urlpatterns = [
     # esas rutas acá (src/backends/config/urls.py, solo por compatibilidad).
     path("centrodefamilia/", include("centrodefamilia.urls")),
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
+    # API web de las pantallas React (G1 v1, cdf_runtime.web_api_urls).
+    path("api/web/cdf/", include("cdf_runtime.web_api_urls")),
 ]
 
 # El admin queda fuera de backend_urlpatterns: settings_all ya lo monta completo.

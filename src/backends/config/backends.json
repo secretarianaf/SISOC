@@ -187,6 +187,7 @@
     "url_prefixes": [
       "centrodefamilia/",
       "api/centrodefamilia/",
+      "api/web/cdf/",
       "admin/centrodefamilia/"
     ],
     "urlconf": "cdf_runtime.urls",

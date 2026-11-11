@@ -601,6 +601,17 @@ Segunda aplicación del patrón, ahora con el marco nativo `includes/main.html`
 Registros:
 `../registro/cambios/2026-T4/2026-11-10-2785-react-duplas-listado.md` y
 `../registro/cambios/2026-T4/2026-11-10-2785-react-duplas-abm.md`.
+### Vertical remoto CDF: centros
+
+Centro de Familia publica `/api/web/cdf/` (`src/backends/cdf/cdf_runtime/web_api_urls.py`,
+montado en `src/backends/cdf/cdf_runtime/urls.py`). `src/backends/cdf/centrodefamilia/web_api.py`
+corre `CentroListView` y `CentroDetailView` y proyecta su contexto (NoCount con
+`count: null`); el panel de credenciales CR1 es un pedido aparte. `cdf_preview_patterns`
+(`src/backends/cdf/centrodefamilia/web_preview.py`) monta las entradas con la misma
+guarda `view_centro` y assets en `/centrodefamilia/react/assets/`. En el front,
+`routes/cdfCentros.tsx` usa `routes/cdfFrame.tsx` y `routes/cdfFilters.tsx`. Registro:
+`../registro/cambios/2026-T4/2026-11-10-2805-react-cdf-centros-consulta.md`.
+
 ### Comedores sobre G1: catálogos con el marco oscuro
 
 ABM de montos por programa (`/montoprestacion/`, CO05) y catálogo PNUD, con

@@ -3430,6 +3430,11 @@
   "regex": "^api/web/pas/panel/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "pas_web_persona_cambiar_estado",
+  "namespace": "",
+  "regex": "^api/web/pas/personas/(?P<pk>[0-9]+)/cambiar\\-estado/\\Z"
+ },
+ {
   "name": "pas_web_personas",
   "namespace": "",
   "regex": "^api/web/pas/personas/\\Z"

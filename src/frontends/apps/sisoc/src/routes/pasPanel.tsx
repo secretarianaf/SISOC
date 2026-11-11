@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- panel module: its validators and frame helpers travel with the screen (PAS06.03 reuses them). */
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { internal, renderMain, text, useMainResource } from "./MainFrame";
+import { internal, text } from "./MainFrame";
 import {
   BuscadorButton, EmptyState, ModuleHeader, PAS_API, PAS_STYLESHEET, PasAppHeader, WorkflowNav,
   bool, formacionValid, integer, list, nullable, shape, stylesheetsReady, urlencode, workflowValid,
@@ -279,11 +279,12 @@ function Ficha({ data, persona }: { data: PanelData; persona: Persona }) {
   </section>;
 }
 
-export type PanelExtras = { actions?: (data: PanelData, persona: Persona) => ReactNode; overlays?: (data: PanelData, persona: Persona) => ReactNode; notices?: ReactNode };
+export type PanelExtras = { stylesheets?: ReactNode; actions?: (data: PanelData, persona: Persona) => ReactNode; overlays?: (data: PanelData, persona: Persona) => ReactNode; notices?: ReactNode };
 
 export function PanelContent({ data, extras = {} }: { data: PanelData; extras?: PanelExtras }) {
   const persona = data.persona;
   return <>
+    {extras.stylesheets}
     {PAS_STYLESHEET}
     {extras.notices}
     <PasAppHeader><div className="pas-top-actions">
@@ -317,13 +318,4 @@ export function PanelContent({ data, extras = {} }: { data: PanelData; extras?: 
 
 export function panelEndpoint(id?: string) {
   return `${PAS_API}panel/${id ? `${id}/` : ""}${window.location.search}`;
-}
-
-export default function PasPanelPage({ id }: { id?: string }) {
-  const [state] = useMainResource(panelEndpoint(id), panelValid);
-  return renderMain(state, "Cargando panel…", (data) => ({
-    title: "Panel de Control · PAS",
-    breadcrumb: null,
-    content: <PanelContent data={data} />,
-  }));
 }

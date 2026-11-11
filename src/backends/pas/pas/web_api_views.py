@@ -17,6 +17,7 @@ GET routes the screen links to.
 
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
+from django.shortcuts import get_object_or_404
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import BasePermission
@@ -27,6 +28,9 @@ from rest_framework.views import APIView
 from core.decorators import permissions_any_required
 from core.web_gate import WebGatePermission
 from iam.services import user_has_permission_code
+from pas.forms import PasCambioEstadoForm
+from pas.models import PasPersona
+from pas.services.persona_service import cambiar_estado
 from pas.services.formacion_service import (
     paginar_personas_formacion,
     preparar_personas_formacion,
@@ -39,6 +43,8 @@ from pas.views import (
 from pas import web_api_serializers as proyectar
 
 VIEW = "pas.view_paspersona"
+CHANGE = "pas.change_paspersona"
+ESTADO_ACTUALIZADO = "Estado PAS actualizado correctamente."
 
 
 def native_rule(codes):
@@ -186,8 +192,9 @@ class PasPersonaListWebView(PasWebView):
 
 
 def panel_payload(request, context):
-    """What ``pas/persona_detail.html`` prints."""
+    """What ``pas/persona_detail.html`` prints, with the state-change modal options."""
     persona = context["persona"]
+    form = context["cambio_estado_form"]
     return {
         "persona": proyectar.persona_panel(persona) if persona else None,
         "workflow": proyectar.workflow(context["pas_areas"]),
@@ -208,10 +215,14 @@ def panel_payload(request, context):
         "eventos_historial": [
             proyectar.evento(item) for item in context["eventos_historial"]
         ],
+        "cambio_estado": {
+            "estados": [
+                {"id": e.pk, "nombre": e.nombre} for e in form.fields["estado"].queryset
+            ],
+            "avisos_por_estado": context["avisos_por_estado"],
+        },
         "capabilities": {
-            "can_change": user_has_permission_code(
-                request.user, "pas.change_paspersona"
-            ),
+            "can_change": user_has_permission_code(request.user, CHANGE),
         },
     }
 
@@ -233,3 +244,45 @@ class PasPanelWebView(PasWebView):
             raise NotFound() from exc
         context = vista.get_context_data(object=vista.object)
         return Response(panel_payload(request, context))
+
+
+class PasCambioEstadoWebView(APIView):
+    """``POST /api/web/pas/personas/<pk>/cambiar-estado/`` (PAS06.03).
+
+    Same form and service as ``PasPersonaCambiarEstadoView``: a valid change
+    replaces state and notices and records the history in one transaction. The
+    native view turns each form error into a ``messages.error`` and redirects to
+    the panel; here they come back in the same order as ``messages`` (400) and
+    nothing is left in the session's message storage.
+    """
+
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [WebGatePermission, native_rule([CHANGE])]
+    renderer_classes = [JSONRenderer]
+    http_method_names = ["post"]
+
+    def post(self, request, pk):
+        persona = get_object_or_404(PasPersona, pk=pk)
+        form = PasCambioEstadoForm(request.POST)
+        if not form.is_valid():
+            return Response(
+                {
+                    "errors": form.errors.get_json_data(),
+                    "messages": [
+                        str(error)
+                        for errores in form.errors.values()
+                        for error in errores
+                    ],
+                },
+                status=400,
+            )
+        persona = cambiar_estado(persona, form, usuario=request.user)
+        return Response(
+            {
+                "message": ESTADO_ACTUALIZADO,
+                "persona": {
+                    "estado": proyectar.estado(persona.estado),
+                    "avisos": [proyectar.aviso(a) for a in persona.avisos.all()],
+                },
+            }
+        )

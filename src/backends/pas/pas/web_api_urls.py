@@ -4,6 +4,7 @@ from django.urls import path
 
 from pas.web_api_views import (
     PasAreaWebView,
+    PasCambioEstadoWebView,
     PasFormacionPersonasWebView,
     PasPanelWebView,
     PasPersonaListWebView,
@@ -33,4 +34,9 @@ urlpatterns = [
     path("personas/", PasPersonaListWebView.as_view(), name="pas_web_personas"),
     path("panel/", PasPanelWebView.as_view(), name="pas_web_panel"),
     path("panel/<int:pk>/", PasPanelWebView.as_view(), name="pas_web_panel_persona"),
+    path(
+        "personas/<int:pk>/cambiar-estado/",
+        PasCambioEstadoWebView.as_view(),
+        name="pas_web_persona_cambiar_estado",
+    ),
 ]

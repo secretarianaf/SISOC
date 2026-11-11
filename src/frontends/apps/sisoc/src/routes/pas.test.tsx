@@ -80,6 +80,7 @@ const panel = (extra: Record<string, unknown> = {}) => ({
     { tipo: "estado", fecha: "01/11/2026 10:00", fecha_iso: "2026-11-01T10:00:00-03:00", estado: "Activo", avisos: [], usuario: null },
   ],
   capabilities: { can_change: true },
+  cambio_estado: { estados: [{ id: 1, nombre: "Activo" }, { id: 2, nombre: "Baja" }], avisos_por_estado: { 1: [{ id: 11, text: "101 - Alta inicial" }] } },
   ...extra,
 });
 

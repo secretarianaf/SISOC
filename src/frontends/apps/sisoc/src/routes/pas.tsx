@@ -7,13 +7,14 @@ import {
   type Formacion, type WorkflowCard,
 } from "./pasFrame";
 import PasBuscadorPage from "./pasBuscador";
-import PasPanelPage from "./pasPanel";
+import PasPanelRoute from "./pasCambioEstado";
 import type { RouteDefinition } from "./types";
 
 /**
  * PAS back office (PAS05.01, PAS06.01) on the native URLs of `pas/urls.py`:
  * «Buscador PAS» (`pas/listar`), «Panel de Control» (`pas/panel-control[/<pk>]`,
- * `pas/<pk>`) and the areas «Formación FCH», «Mesa de Ayuda» and «Liquidación».
+ * `pas/<pk>`, with «Cambiar estado», PAS06.03) and the areas «Formación FCH»,
+ * «Mesa de Ayuda» and «Liquidación».
  * Native templates: `pas/persona_list.html`, `pas/persona_detail.html`, `pas/area.html`.
  */
 type Area = "formacion" | "mesa-ayuda" | "liquidacion";
@@ -268,7 +269,7 @@ export const pasRoute: RouteDefinition<Params> = {
   },
   render(params) {
     if (params.page === "listar") return <PasBuscadorPage />;
-    if (params.page === "panel") return <PasPanelPage id={params.id} />;
+    if (params.page === "panel") return <PasPanelRoute id={params.id} />;
     if (params.area === "formacion") return <FormacionRoute />;
     return <AreaPage area={params.area} />;
   },

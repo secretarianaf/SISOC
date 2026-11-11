@@ -659,5 +659,9 @@ proyecta su contexto. `routes/pasFrame.tsx` reproduce el bloque `app-header`
 de PAS con un portal y espera a que `pas.css` aplique antes del scroll
 incremental y del salto a `#ddjj-panel`. La entrada sin montar es
 `src/backends/pas/pas/web_preview_backoffice.py`, con assets en
-`/pas/react/assets/`. Registro:
-`../registro/cambios/2026-T4/2026-11-10-2806-react-pas-backoffice.md`.
+`/pas/react/assets/`. «Cambiar estado» (`routes/pasCambioEstado.tsx`) reproduce el
+modal de Bootstrap 5.3 y los Select2 de `pas.js` (`routes/pasSelect2.tsx`) y, como la
+vista nativa, termina siempre en `/pas/panel-control/<pk>` con el mensaje como
+toast. Registros:
+`../registro/cambios/2026-T4/2026-11-10-2806-react-pas-backoffice.md` y
+`../registro/cambios/2026-T4/2026-11-10-2806-react-pas-cambio-estado.md`.

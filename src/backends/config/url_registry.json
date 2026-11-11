@@ -2405,6 +2405,31 @@
   "regex": "^expedientespagos/expedientespagos/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
+  "name": "expedientespagos_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/expedientespagos/comedores/(?P<comedor_id>[0-9]+)/crear/\\Z"
+ },
+ {
+  "name": "expedientespagos_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/expedientespagos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "expedientespagos_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/expedientespagos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "expedientespagos_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/expedientespagos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "expedientespagos_web_list",
+  "namespace": "",
+  "regex": "^api/web/comedores/expedientespagos/comedores/(?P<comedor_id>[0-9]+)/\\Z"
+ },
+ {
   "name": "filtros_favoritos",
   "namespace": "",
   "regex": "^ajax/filtros\\-favoritos/\\Z"

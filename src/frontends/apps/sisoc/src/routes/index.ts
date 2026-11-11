@@ -9,6 +9,7 @@ import { cdiReportesRoute } from "./cdiReportes";
 import { cdfCentroFormRoute } from "./cdfCentroForm";
 import { cdfCentrosRoute } from "./cdfCentros";
 import { duplasRoute } from "./duplas";
+import { expedientesPagosRoute } from "./expedientesPagos";
 import { duplasFormRoute } from "./duplasFormRoute";
 import { groupsRoute } from "./groups";
 import { inicioRoute } from "./inicio";
@@ -63,6 +64,7 @@ export const ROUTES: RouteDefinition[] = [
   pasRoute,
   admisionesTemplatesRoute,
   acompanamientosRoute,
+  expedientesPagosRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

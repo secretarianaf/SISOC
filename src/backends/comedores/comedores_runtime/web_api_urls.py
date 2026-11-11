@@ -15,4 +15,5 @@ urlpatterns = [
         include("admisiones.web_api_templates_urls"),
     ),
     path("acompanamientos/", include("acompanamientos.web_api_urls")),
+    path("expedientespagos/", include("expedientespagos.web_api_urls")),
 ]

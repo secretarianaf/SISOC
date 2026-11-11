@@ -662,6 +662,13 @@ restaura hitos con `admision_id` explícito y lista blanca de los 23 hitos.
 Registros: `../registro/cambios/2026-T4/2026-11-10-2785-react-ad01-gestor-templates.md` y
 `../registro/cambios/2026-T4/2026-11-10-2785-react-ac01-acompanamientos.md`.
 
+Expedientes de pago de un comedor (EX01) usan el mismo marco:
+`src/backends/comedores/expedientespagos/web_api.py` ejecuta las vistas nativas
+de listado, ficha, alta, edición y baja lógica con el acceso actual (lectura con
+sesión, escritura con uno de los cuatro permisos de lectura) y nunca recalcula
+montos. Registro:
+`../registro/cambios/2026-T4/2026-11-11-2785-react-expedientes-pagos.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

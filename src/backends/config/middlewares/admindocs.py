@@ -27,6 +27,7 @@ _OWNED_PATTERNS = (
     r"/api/web/comedores/admisiones/plantillas-informe/"
     r"(?:variables/|incidencias/(?:[0-9]+/)?|[0-9]+/)?",
     r"/api/web/comedores/acompanamientos/(?:[0-9]+/(?:hitos/restaurar/)?)?",
+    r"/api/web/comedores/expedientespagos/(?:comedores/[0-9]+/(?:crear/)?|[0-9]+/(?:editar/|eliminar/)?)",
 )
 
 

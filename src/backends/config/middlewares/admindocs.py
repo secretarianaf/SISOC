@@ -35,6 +35,7 @@ _OWNED_PATTERNS = (
     r"/api/web/comedores/rendicioncuentasmensual/listado/",
     r"/api/web/dispositivos/datacalle/(?:opciones/(?:dispositivos|relevadores)/|relevamientos/"
     r"(?:formulario/|crear/|[0-9a-f-]{36}/(?:formulario/|editar/|cerrar/|eliminar/)?)?)",
+    r"/api/web/comedores/comunicados/(?:[0-9]+/)?",
 )
 
 

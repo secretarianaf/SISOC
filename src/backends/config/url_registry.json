@@ -1865,6 +1865,16 @@
   "regex": "^comunicados/ver/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "comunicados_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comunicados_web_listado",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/\\Z"
+ },
+ {
   "name": "confirmar_datos_personales",
   "namespace": "",
   "regex": "^mi\\-cuenta/confirmar/\\Z"

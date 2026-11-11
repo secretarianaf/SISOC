@@ -727,6 +727,13 @@ nativas conservan el prefijo duplicado `/rendicioncuentasmensual/rendicioncuenta
 Registro:
 `../registro/cambios/2026-T4/2026-11-11-2785-react-rendicion-mensual-listado.md`.
 
+Los comunicados publicados (CM03.01) usan el mismo marco:
+`src/backends/comedores/comunicados/web_api_views.py` ejecuta
+`ComunicadoListView` y `ComunicadoDetailView` (solo internos publicados y
+vigentes, detalle sin filtro para gestores) y no reutiliza la API PWA. La vista
+previa sirve el detalle en React solo a quien no gestiona. Registro:
+`../registro/cambios/2026-T4/2026-11-11-2785-react-comunicados-publicados.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

@@ -546,6 +546,15 @@ consume los mensajes y los muestra como toastr (`routes/inspeccionesToasts.tsx`)
 los archivos siguen siendo las URLs nativas. Registro:
 `../registro/cambios/2026-T4/2026-11-10-2785-react-inspecciones-acta-detalle.md`.
 
+La pestaña Escuelas (`/inspecciones/` y el formulario de escuela) agrega
+formularios en modal y en página: la API
+(`src/backends/inspecciones/inspecciones/web_api_escuelas.py`) corre el `post()`
+nativo y distingue el modal por `X-Requested-With`, como `panel.js`; un
+formulario inválido vuelve como datos con errores (400), no como HTML. El
+selector J2 (`routes/InspSelect2.tsx`) admite deshabilitado, vaciado dependiente y
+`dropdownParent` del modal. Registro:
+`../registro/cambios/2026-T4/2026-11-10-2785-react-inspecciones-escuelas.md`.
+
 ### Vertical remoto CDI: reportes
 
 Pantallas del backend CDI sobre G1, con el mismo patrón que Inspecciones pero

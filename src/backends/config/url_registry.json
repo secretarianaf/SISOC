@@ -2835,9 +2835,29 @@
   "regex": "^api/web/inspecciones/actas/\\Z"
  },
  {
+  "name": "inspecciones_web_escuela_editar",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/escuelas/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "inspecciones_web_escuela_nueva",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/escuelas/nueva/\\Z"
+ },
+ {
+  "name": "inspecciones_web_escuelas",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/escuelas/\\Z"
+ },
+ {
   "name": "inspecciones_web_inspectores",
   "namespace": "",
   "regex": "^api/web/inspecciones/inspectores/\\Z"
+ },
+ {
+  "name": "inspecciones_web_localidades",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/localidades/\\Z"
  },
  {
   "name": "insumos_categorias_crear",

@@ -8,6 +8,12 @@ from inspecciones.web_api_acta import (
     AnularActaWebView,
     MarcarPruebaWebView,
 )
+from inspecciones.web_api_escuelas import (
+    EscuelaEditarWebView,
+    EscuelaNuevaWebView,
+    EscuelasWebView,
+    LocalidadesWebView,
+)
 
 urlpatterns = [
     path("actas/", ActasWebView.as_view(), name="inspecciones_web_actas"),
@@ -25,6 +31,22 @@ urlpatterns = [
         "actas/<str:numero>/prueba/",
         MarcarPruebaWebView.as_view(),
         name="inspecciones_web_acta_prueba",
+    ),
+    path("escuelas/", EscuelasWebView.as_view(), name="inspecciones_web_escuelas"),
+    path(
+        "escuelas/nueva/",
+        EscuelaNuevaWebView.as_view(),
+        name="inspecciones_web_escuela_nueva",
+    ),
+    path(
+        "escuelas/<int:pk>/editar/",
+        EscuelaEditarWebView.as_view(),
+        name="inspecciones_web_escuela_editar",
+    ),
+    path(
+        "localidades/",
+        LocalidadesWebView.as_view(),
+        name="inspecciones_web_localidades",
     ),
     path(
         "inspectores/",

@@ -22,6 +22,11 @@ from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from inspecciones.views_actas import ActaDetalleView, ActasView
+from inspecciones.views_escuelas import (
+    EscuelaCrearView,
+    EscuelaEditarView,
+    EscuelasView,
+)
 
 BUILD_ASSETS = "/v2/sisoc/assets/"
 PUBLIC_ASSETS = "/inspecciones/react/assets/"
@@ -69,6 +74,44 @@ class ActaDetalleEntry(ActaDetalleView):
     def get(self, request, *args, **kwargs):
         self.get_acta()
         return _index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EscuelasEntry(EscuelasView):
+    """Native guards and the native 404 of an invalid page, then the frozen index."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        self.paginate_queryset(self.object_list, self.get_paginate_by(self.object_list))
+        return _index_response(request, self.index_bytes)
+
+
+def _escuela_form_entry(vista, request):
+    """GET of a school form page: native guards (and the edit 404), then the index."""
+    vista.get_form_kwargs()
+    return _index_response(request, vista.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EscuelaNuevaEntry(EscuelaCrearView):
+    """``/inspecciones/escuelas/nueva/`` as a page; its POST stays native."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return _escuela_form_entry(self, request)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EscuelaEditarEntry(EscuelaEditarView):
+    """``/inspecciones/escuelas/<pk>/editar/`` as a page; its POST stays native."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return _escuela_form_entry(self, request)
 
 
 class ReactAssetView(View):
@@ -132,6 +175,15 @@ def actas_preview_patterns(build_directory):
         path(
             "inspecciones/actas/<str:numero>/",
             ActaDetalleEntry.as_view(index_bytes=index_bytes),
+        ),
+        path("inspecciones/", EscuelasEntry.as_view(index_bytes=index_bytes)),
+        path(
+            "inspecciones/escuelas/nueva/",
+            EscuelaNuevaEntry.as_view(index_bytes=index_bytes),
+        ),
+        path(
+            "inspecciones/escuelas/<int:pk>/editar/",
+            EscuelaEditarEntry.as_view(index_bytes=index_bytes),
         ),
         path(
             "inspecciones/react/<path:asset_path>",

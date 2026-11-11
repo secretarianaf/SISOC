@@ -21,7 +21,7 @@ function isOption(value: unknown): value is InspOption {
     (option.detalle === undefined || typeof option.detalle === "string");
 }
 
-export default function InspSelect2({ id, name, placeholder, minimum, initial, search }: {
+export default function InspSelect2({ id, name, placeholder, minimum, initial, search, disabled = false, clearSignal = 0, width, dropdownParent, autoSubmit = true, describedBy, selectClass, required = false }: {
   id: string;
   name: string;
   placeholder: string;
@@ -29,6 +29,20 @@ export default function InspSelect2({ id, name, placeholder, minimum, initial, s
   initial: InspOption | null;
   /** Remote search; resolves `{results}` of the J2 endpoint. */
   search: (term: string, signal: AbortSignal) => Promise<unknown>;
+  /** Select2 `disabled`: not focusable, not submitted (`data-insp-limpia` with no origin value). */
+  disabled?: boolean;
+  /** Each change empties the selection without a change event (`.val(null).trigger("change.select2")`). */
+  clearSignal?: number;
+  /** Select2 `width: "100%"` inside a modal: inline width on the container. */
+  width?: string;
+  /** Select2 `dropdownParent`: the dropdown hangs from this element instead of `<body>`. */
+  dropdownParent?: () => HTMLElement | null;
+  /** The filter forms mark the select `data-insp-auto-submit`; the school form does not. */
+  autoSubmit?: boolean;
+  describedBy?: string;
+  /** Classes of the original `<select>`, kept by Select2 next to `select2-hidden-accessible`. */
+  selectClass?: string;
+  required?: boolean;
 }) {
   const [selected, setSelected] = useState<InspOption | null>(initial);
   const [open, setOpen] = useState(false);
@@ -41,13 +55,25 @@ export default function InspSelect2({ id, name, placeholder, minimum, initial, s
   const field = useRef<HTMLInputElement>(null);
   const hidden = useRef<HTMLSelectElement>(null);
   const changed = useRef(false);
+  const lastClear = useRef(clearSignal);
+
+  useEffect(() => {
+    if (lastClear.current === clearSignal) return;
+    lastClear.current = clearSignal;
+    setSelected(null);
+    setOpen(false);
+  }, [clearSignal]);
 
   useLayoutEffect(() => {
     if (!open || !container.current) return;
     const box = container.current.getBoundingClientRect();
-    setPosition({ top: box.bottom + window.scrollY, left: box.left + window.scrollX, width: box.width });
+    const parent = dropdownParent?.();
+    if (parent) {
+      const frame = parent.getBoundingClientRect();
+      setPosition({ top: box.bottom - frame.top + parent.scrollTop, left: box.left - frame.left + parent.scrollLeft, width: box.width });
+    } else setPosition({ top: box.bottom + window.scrollY, left: box.left + window.scrollX, width: box.width });
     field.current?.focus();
-  }, [open]);
+  }, [open, dropdownParent]);
 
   // Results are stored per term; the shown state derives from the current term.
   const results: Results = term.length < minimum ? { status: "short", options: [] }
@@ -88,7 +114,7 @@ export default function InspSelect2({ id, name, placeholder, minimum, initial, s
   const close = () => { setOpen(false); setTerm(""); selection.current?.focus(); };
   const choose = (option: InspOption | null) => { changed.current = true; setSelected(option); close(); };
   const keyOnSelection = (event: KeyboardEvent) => {
-    if (["Enter", " ", "ArrowDown", "ArrowUp"].includes(event.key)) { event.preventDefault(); setOpen(true); }
+    if (!disabled && ["Enter", " ", "ArrowDown", "ArrowUp"].includes(event.key)) { event.preventDefault(); setOpen(true); }
   };
   const keyOnSearch = (event: KeyboardEvent) => {
     const options = results.status === "ready" ? results.options : [];
@@ -105,14 +131,14 @@ export default function InspSelect2({ id, name, placeholder, minimum, initial, s
         : results.status === "error" ? "No se pudieron cargar los resultados" : "";
   return (
     <>
-      <select ref={hidden} id={id} name={name} tabIndex={-1} className="select2-hidden-accessible" aria-hidden="true" data-insp-auto-submit="" value={selected ? String(selected.id) : ""} onChange={() => undefined}>
+      <select ref={hidden} id={id} name={name} tabIndex={-1} className={`${selectClass ? `${selectClass} ` : ""}select2-hidden-accessible`} required={required || undefined} aria-hidden="true" data-insp-auto-submit={autoSubmit ? "" : undefined} aria-describedby={describedBy} disabled={disabled || undefined} value={selected ? String(selected.id) : ""} onChange={() => undefined}>
         <option value="" />
         {selected && <option value={selected.id}>{selected.text}</option>}
       </select>
-      <span ref={container} className={`select2 select2-container select2-container--default${open ? " select2-container--below select2-container--open select2-container--focus" : ""}`} dir="ltr">
+      <span ref={container} className={`select2 select2-container select2-container--default${disabled ? " select2-container--disabled" : ""}${open ? " select2-container--below select2-container--open select2-container--focus" : ""}`} dir="ltr" style={width ? { width } : undefined}>
         <span className="selection">
-          <span ref={selection} className="select2-selection select2-selection--single" role="combobox" aria-haspopup="true" aria-expanded={open} tabIndex={0} aria-disabled="false" aria-labelledby={renderedId} aria-owns={open ? resultsId : undefined}
-            onMouseDown={(event) => { if ((event.target as HTMLElement).closest(".select2-selection__clear")) return; event.preventDefault(); if (open) close(); else setOpen(true); }}
+          <span ref={selection} className="select2-selection select2-selection--single" role="combobox" aria-haspopup="true" aria-expanded={open} tabIndex={disabled ? -1 : 0} aria-disabled={disabled ? "true" : "false"} aria-labelledby={renderedId} aria-owns={open ? resultsId : undefined}
+            onMouseDown={(event) => { if ((event.target as HTMLElement).closest(".select2-selection__clear")) return; event.preventDefault(); if (disabled) return; if (open) close(); else setOpen(true); }}
             onKeyDown={keyOnSelection}>
             {selected && (
               <button type="button" className="select2-selection__clear" tabIndex={-1} title="Remove all items" aria-label="Remove all items" aria-describedby={renderedId}
@@ -149,7 +175,7 @@ export default function InspSelect2({ id, name, placeholder, minimum, initial, s
             </span>
           </span>
         </span>,
-        document.body,
+        dropdownParent?.() ?? document.body,
       )}
     </>
   );

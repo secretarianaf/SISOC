@@ -555,6 +555,11 @@ selector J2 (`routes/InspSelect2.tsx`) admite deshabilitado, vaciado dependiente
 `dropdownParent` del modal. Registro:
 `../registro/cambios/2026-T4/2026-11-10-2785-react-inspecciones-escuelas.md`.
 
+Seguimientos compartidos de la migración: el selector J2 deja el foco en la
+caja al abrir y responde al teclado como Select2 4.1 nativo (Enter/Espacio/Alt+↓
+abren; Escape/Tab/Alt+↑ cierran sin mover el foco). Registro:
+`../registro/cambios/2026-T4/2026-11-11-2785-inspselect2-foco-nativo.md`.
+
 ### Vertical remoto CDI: reportes
 
 Pantallas del backend CDI sobre G1, con el mismo patrón que Inspecciones pero

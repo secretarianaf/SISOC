@@ -109,7 +109,11 @@ describe("Inspecciones escuelas routes", () => {
     const formulario = document.querySelector("form.insp-filtros") as HTMLFormElement;
     const seen: Record<string, string>[] = [];
     formulario.requestSubmit = () => { seen.push(Object.fromEntries(new FormData(formulario) as unknown as Iterable<[string, string]>)); };
-    fireEvent.change(document.getElementById("filtro-provincia") as HTMLSelectElement, { target: { value: "" } });
+    // The auto-submit listener is attached in a passive effect: re-send until it listens.
+    await waitFor(() => {
+      fireEvent.change(document.getElementById("filtro-provincia") as HTMLSelectElement, { target: { value: "" } });
+      expect(seen.length).toBeGreaterThan(0);
+    });
     expect(seen).toEqual([{ q: "", provincia: "" }]);
     fireEvent.change(document.getElementById("filtro-provincia") as HTMLSelectElement, { target: { value: "2" } });
     expect(seen[1]).toEqual({ q: "", provincia: "2", localidad: "" });

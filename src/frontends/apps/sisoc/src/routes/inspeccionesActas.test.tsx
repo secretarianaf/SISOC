@@ -176,13 +176,14 @@ describe("Inspecciones actas route", () => {
     fireEvent.mouseDown(document.querySelector(".select2-selection")!);
     expect(screen.getByText("Escribí al menos 3 letras")).toBeDefined();
     const field = document.querySelector<HTMLInputElement>(".select2-search__field")!;
-    expect(document.activeElement).toBe(field);
     fireEvent.change(field, { target: { value: "An" } });
     expect(screen.getByText("Escribí al menos 3 letras")).toBeDefined();
     fireEvent.change(field, { target: { value: "Ana" } });
     expect(screen.getByText("Buscando…")).toBeDefined();
     await act(async () => { vi.advanceTimersByTime(260); });
     vi.useRealTimers();
+    // Native Select2 4.1 keeps focus on the selection box; the search field gets it on click.
+    expect(document.activeElement).toBe(screen.getByRole("combobox", { name: "Todos los inspectores" }));
     expect(webGet).toHaveBeenCalledWith("web/inspecciones/inspectores/?alcance=programa&q=Ana", expect.anything());
     const option = await within(document.getElementById("select2-filtro-inspector-results")!).findByRole("option");
     expect(option.textContent).toBe("Ana Pruebainspector.1 · DNI 30000000");
@@ -197,9 +198,16 @@ describe("Inspecciones actas route", () => {
     setup();
     await screen.findByRole("table");
     const form = document.querySelector<HTMLFormElement>("form.insp-filtros")!;
-    form.requestSubmit = vi.fn();
+    const requestSubmit = vi.fn();
+    form.requestSubmit = requestSubmit;
+    // The auto-submit listener is attached in a passive effect: wait until it listens.
+    await waitFor(() => {
+      fireEvent.change(document.getElementById("filtro-inspector")!);
+      expect(requestSubmit).toHaveBeenCalled();
+    });
+    requestSubmit.mockClear();
     fireEvent.mouseDown(screen.getByRole("button", { name: "Remove all items" }));
-    await waitFor(() => expect(form.requestSubmit).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(requestSubmit).toHaveBeenCalledTimes(1));
     expect((document.getElementById("filtro-inspector") as HTMLSelectElement).value).toBe("");
     expect(screen.getByText("Todos los inspectores").className).toBe("select2-selection__placeholder");
   });

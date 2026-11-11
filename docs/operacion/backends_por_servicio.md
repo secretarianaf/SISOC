@@ -135,6 +135,22 @@ nuevo:
   otros servicios ni cambiar dependencias para ejecutar estos comandos en
   `django`: su imagen excluye esos servicios deliberadamente.
 
+  **Entrada recomendada en el host:**
+
+  ```bash
+  python3 src/scripts/operacion/manage_deploy.py makemigrations --check --dry-run
+  python3 src/scripts/operacion/manage_deploy.py migrate --plan
+  ```
+
+  La herramienta obtiene la revisión y los archivos Compose del core activo,
+  selecciona su migrador completo y conserva argumentos, entrada interactiva y
+  salida de Django. Rechaza versiones `:local`, otros checkouts o un migrador
+  ausente; no construye ni descarga imágenes, inicia dependencias ni ejecuta
+  la preparación de DB. Los argumentos siguen teniendo sus efectos normales:
+  `migrate` sin `--plan` y `createsuperuser` requieren autorización para escribir.
+  Si se intenta leer el grafo parcial mediante `manage.py`, se sale con código
+  2 antes de acceder a la DB y se indica esta herramienta, sin traceback.
+
   Desde la raíz del checkout de deploy, seleccionar la misma versión que
   sirve tráfico. El ejemplo siguiente es para Bash en PRD y solo consulta
   estado; no aplica migraciones ni ejecuta el arranque del migrador. En otro

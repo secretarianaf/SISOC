@@ -80,7 +80,7 @@ No se afirma aceptación humana ni verificación funcional de pantallas.
 No hay RED/GREEN de código: el cambio es documental; la regresión operativa
 se comprueba con las consultas reales anteriores y la receta corregida.
 
-## Despliegue y rollback
+## Diagnóstico inicial y continuación
 
 No hace falta desplegar una nueva imagen para este hallazgo. Cambiar el grafo
 o instalar verticales en core ampliaría el alcance sin reparar una falla real.
@@ -91,3 +91,29 @@ Rollback de documentación: revertir únicamente esta corrección del runbook
 y este registro; no tocar contenedores, datos ni historial de migraciones.
 La publicación documental y sus checks son distintos del deploy histórico;
 no deben presentarse como una nueva release desplegada.
+
+## Prevención ejecutable solicitada posteriormente
+
+La corrección documental anterior no evitaba repetir el comando incorrecto.
+Se agrega `src/scripts/operacion/manage_deploy.py`: selecciona automáticamente
+la revisión inmutable del core activo y sus Compose efectivos, exige que exista
+el migrador de esa misma revisión y ejecuta los argumentos Django en él con
+`config.settings_all`, `--no-deps`, `--pull never` y `--entrypoint python`.
+No ejecuta la preparación de DB. La entrada interactiva y el código de salida
+se conservan; no se agregan dependencias, settings ni permisos.
+
+`manage.py` rechaza los comandos estándar que necesitan el grafo completo si
+recibe settings parciales o faltan los verticales en disco. Informa el comando
+correcto y termina con código 2 antes de inicializar Django. La ayuda y los
+comandos ajenos al grafo mantienen su comportamiento. No se altera ninguna
+dependencia de migración ni se desactiva su verificación.
+
+Regresión: `src/backends/kernel/tests/test_manage_deploy.py`, sin DB. RED:
+faltaba la herramienta y el comando parcial terminaba en traceback. GREEN:
+selección de imagen, preservación de argumentos y salida, rechazo sin ejecución
+ante imagen ausente/no versionada, ayuda sin Docker y rechazo de contexto
+parcial sin traceback. Los tests locales no sustituyen los probes reales de PRD.
+
+Esta continuación requiere desplegar la entrada administrativa y su guard;
+el diagnóstico inicial de no modificar el grafo sigue vigente. La revisión,
+comprobaciones posteriores y rollback se registran al completar el despliegue.

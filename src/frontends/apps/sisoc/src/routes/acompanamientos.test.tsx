@@ -89,6 +89,9 @@ describe("Acompañamientos route (AC01)", () => {
     fireEvent.change(campo, { target: { value: "estado" } });
     const valor = document.querySelector('[data-rol="valor-select"]') as HTMLSelectElement;
     expect(valor.hidden).toBe(false);
+    // `advanced_filters.js` fills the select with the choices only and starts on the first one.
+    expect([...valor.options].map((o) => o.value)).toEqual(["iniciada"]);
+    expect(valor.value).toBe("iniciada");
     fireEvent.change(valor, { target: { value: "iniciada" } });
     const form = document.getElementById("filters-form") as HTMLFormElement;
     form.addEventListener("submit", (e) => e.preventDefault());

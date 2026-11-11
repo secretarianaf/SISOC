@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- the unit surface is this route module; its screens and validators live here with the route. */
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Filters, filtersConfigValid, type Favorites, type FiltersConfig } from "./cdfFilters";
+import { Filters, Pagination, filtersConfigValid, type Favorites, type FiltersConfig } from "./listControls";
 import {
   client, csrfToken, integer, internal, messagesValid, navigation, nullableText, record, renderCdf, text, useCdfPage,
   type CdfMessage,
@@ -163,34 +163,14 @@ function CentrosTable({ data }: { data: CentrosListData }) {
               </tbody>
             </table>
             <div id="pagination-container">
-              <div className="mt-2">
-                {data.is_paginated && <ListPagination data={data} />}
-              </div>
+              {/* `components/pagination.html` with the NoCount range: no total line. */}
+              <Pagination paginated={data.is_paginated} number={data.page} previous={data.has_previous ? data.page - 1 : null} next={data.has_next ? data.page + 1 : null}
+                range={data.page_range} href={(n) => `?${data.query_prefix}page=${n}`} count={null} />
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
-}
-
-/** `components/pagination.html` with the NoCount range ("Volver"/"Continuar", no total). */
-function ListPagination({ data }: { data: CentrosListData }) {
-  const href = (n: number) => `?${data.query_prefix}page=${n}`;
-  return (
-    <ul className="pagination">
-      <li className={`page-item${data.has_previous ? "" : " disabled"}`}>
-        <a href={data.has_previous ? href(data.page - 1) : "#"} className="page-link">Volver</a>
-      </li>
-      {data.page_range.map((n, index) => (n === "..." ? (
-        <li key={`gap-${index}`} className="page-item disabled"><a href="#" className="page-link">...</a></li>
-      ) : (
-        <li key={n} className={`page-item ${data.page === n ? "active" : ""}`}><a href={href(n)} className="page-link">{n}</a></li>
-      )))}
-      <li className={`page-item${data.has_next ? "" : " disabled"}`}>
-        <a href={data.has_next ? href(data.page + 1) : "#"} className="page-link">Continuar</a>
-      </li>
-    </ul>
   );
 }
 

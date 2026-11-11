@@ -559,9 +559,13 @@ Seguimientos compartidos de la migración: el selector J2 deja el foco en la
 caja al abrir y responde al teclado como Select2 4.1 nativo (Enter/Espacio/Alt+↓
 abren; Escape/Tab/Alt+↑ cierran sin mover el foco), y `SisocShell` recibe
 `{% block app-header %}` como prop `appHeader` (botones de PAS, nombre del
-comedor en AC01) en lugar de portales. Registros:
-`../registro/cambios/2026-T4/2026-11-11-2785-inspselect2-foco-nativo.md` y
-`../registro/cambios/2026-T4/2026-11-11-2785-shell-app-header.md`.
+comedor en AC01) en lugar de portales. Los listados de Duplas, AC01 y CDF
+comparten la barra de filtros de `advanced_filters.js`, el modal de columnas,
+el encabezado con orden del servidor y la paginación en
+`routes/listControls.tsx`. Registros:
+`../registro/cambios/2026-T4/2026-11-11-2785-inspselect2-foco-nativo.md`,
+`../registro/cambios/2026-T4/2026-11-11-2785-shell-app-header.md` y
+`../registro/cambios/2026-T4/2026-11-11-2785-listados-compartidos.md`.
 
 ### Vertical remoto CDI: reportes
 
@@ -626,7 +630,7 @@ corre `CentroListView` y `CentroDetailView` y proyecta su contexto (NoCount con
 `count: null`); el panel de credenciales CR1 es un pedido aparte. `cdf_preview_patterns`
 (`src/backends/cdf/centrodefamilia/web_preview.py`) monta las entradas con la misma
 guarda `view_centro` y assets en `/centrodefamilia/react/assets/`. En el front,
-`routes/cdfCentros.tsx` usa `routes/cdfFrame.tsx` y `routes/cdfFilters.tsx`. Alta,
+`routes/cdfCentros.tsx` usa `routes/cdfFrame.tsx` y `routes/listControls.tsx`. Alta,
 edición y baja (`routes/cdfCentroForm.tsx`) envían a `src/backends/cdf/centrodefamilia/web_api_gestion.py`,
 que corre el `post()` nativo (mensajes y baja lógica en cascada incluidos). Registros:
 `../registro/cambios/2026-T4/2026-11-10-2805-react-cdf-centros-consulta.md` y

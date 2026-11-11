@@ -97,3 +97,26 @@ Local, en el contenedor `django`:
   cada línea: orden, campo quitado, validaciones, formato de montos y diseño.
 
 Pendiente: CI y aceptación del área.
+
+
+## Corrección de revisión: montos decimales pegados (2026-11-11)
+
+El filtrado del evento `input` quitaba la coma de `100,50` y el formateo posterior
+lo convertía en `10.050`. Eso evitaba el rechazo existente del formulario y podía
+guardar un monto distinto del ingresado. Se elimina únicamente esa transformación:
+los formatos inválidos se conservan para que `MontoConvenioField` los rechace.
+Los enteros válidos siguen recibiendo puntos de miles al perder el foco; las
+restricciones de los campos de cantidades no cambian.
+
+La regresión nueva en `src/backends/comedores/tests/js/convenioPnud.test.js` ejecuta
+el estático real siguiendo el patrón de VM/DOM del test de visualización de
+rendiciones. Falló antes de corregirlo (`10.050` en vez de `100,50`) y pasa después.
+También conserva la cobertura de enteros válidos y del pegado inválido en cantidades.
+Se suma a la lista existente de tests JavaScript del workflow de CI, sin cambiar
+permisos, secretos ni la política del gate.
+
+Verificación: tests JavaScript focalizados y suite del gate ejecutados localmente;
+se comprobó además el rechazo de `100,50` por la clase real de validación de Django
+en aislamiento, sin base de datos. Los tests completos de vistas/formularios y el
+recorrido real desktop/móvil/accesibilidad quedan pendientes: no está levantado
+el entorno local completo. No hubo deploy ni acceso a datos reales.

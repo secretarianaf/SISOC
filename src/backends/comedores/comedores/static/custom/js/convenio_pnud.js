@@ -1,12 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll("[data-monto-entero]").forEach(function (input) {
-        input.addEventListener("input", function () {
-            // Montos sin centavos: solo dígitos y los puntos de miles.
-            const limpio = input.value.replace(/[^0-9.]/g, "");
-            if (limpio !== input.value) {
-                input.value = limpio;
-            }
-        });
+        // Preserve invalid input so server validation can reject it without
+        // silently changing decimal amounts or malformed pasted values.
         input.addEventListener("blur", function () {
             const valor = input.value.trim();
             if (/^-?(?:[0-9]+|[0-9]{1,3}(?:\.[0-9]{3})+)$/.test(valor)) {

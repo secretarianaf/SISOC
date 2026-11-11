@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import App from "../App";
 import { findRoute } from "./index";
 import { readyContext, setViewport } from "./testFixtures";
@@ -60,13 +60,13 @@ describe("CDI reports route", () => {
     expect(webGet).toHaveBeenCalledWith("web/session/", expect.objectContaining({ signal: expect.any(AbortSignal) }));
     expect(webGet).toHaveBeenCalledWith("web/cdi/reportes/?provincia=2", expect.anything());
     expect(webGet).toHaveBeenCalledTimes(2);
-    expect(document.title).toBe("SISOC - Reportes de Centros de Desarrollo Infantil");
+    await waitFor(() => expect(document.title).toBe("SISOC - Reportes de Centros de Desarrollo Infantil"));
     expect((document.getElementById("provincia") as HTMLSelectElement).value).toBe("2");
     const consultas = screen.getByRole("link", { name: "Consultas (se abre en una nueva pestaña)" });
     expect(consultas.getAttribute("href")).toBe("https://consultas.capitalhumano.gob.ar/canales/sisoc-cdi");
     expect(consultas.getAttribute("target")).toBe("_blank");
     expect(consultas.closest("ul")?.firstElementChild).toBe(consultas.closest("li"));
-    expect(document.body.classList.contains("app-loaded")).toBe(true);
+    await waitFor(() => expect(document.body.classList.contains("app-loaded")).toBe(true));
   });
 
   it("renders the native selectors, download button and summary rows as given", async () => {
@@ -124,7 +124,7 @@ describe("CDI reports route", () => {
     serve({ detail: "No tiene permiso." }, 403);
     setup();
     expect(await screen.findByText("¡Ups! Algo salió mal.")).toBeDefined();
-    expect(document.title).toBe("SISOC - Error 403");
+    await waitFor(() => expect(document.title).toBe("SISOC - Error 403"));
     cleanup();
     serve(reportes(), 200, 403);
     setup();

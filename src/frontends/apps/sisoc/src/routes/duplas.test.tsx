@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import App from "../App";
 import { duplasNavigation } from "./duplasList";
 import { findRoute } from "./index";
@@ -101,9 +101,9 @@ describe("Duplas routes (DU01.01)", () => {
     await screen.findByRole("table", {}, { timeout: 5000 });
     expect(webGet).toHaveBeenCalledWith("web/session/", expect.objectContaining({ signal: expect.any(AbortSignal) }));
     expect(webGet).toHaveBeenCalledWith("web/comedores/duplas/?filters=%7B%7D&page=1", expect.anything());
-    expect(document.title).toBe("SISOC - Listado de Equipos técnicos");
+    await waitFor(() => expect(document.title).toBe("SISOC - Listado de Equipos técnicos"));
     expect(screen.getByRole("heading", { level: 3, name: "Equipo técnico" })).toBeDefined();
-    expect(document.body.className).toContain("app-loaded");
+    await waitFor(() => expect(document.body.className).toContain("app-loaded"));
     // The native sidebar opens its branch and marks the list for every page under the prefix.
     expect(document.querySelector('aside a[href="/equipo-tecnico/"]')?.className).toContain("active");
     const crumbs = document.querySelector("ol.breadcrumb.float-sm-right")!;
@@ -227,7 +227,7 @@ describe("Duplas routes (DU01.01)", () => {
     const { unmount } = setup("/equipo-tecnico/7/");
     expect(await screen.findByRole("heading", { name: "Información de la Dupla" })).toBeDefined();
     expect(webGet).toHaveBeenCalledWith("web/comedores/duplas/7/", expect.anything());
-    expect(document.title).toBe("SISOC - Dupla: Equipo Siete");
+    await waitFor(() => expect(document.title).toBe("SISOC - Dupla: Equipo Siete"));
     expect(screen.getByRole("heading", { level: 3, name: "Equipo Siete" })).toBeDefined();
     expect(screen.getByRole("link", { name: "Editar" }).getAttribute("href")).toBe("/equipo-tecnico/7/editar/");
     expect(screen.getByRole("link", { name: "Eliminar" }).className).toBe("btn btn-danger");

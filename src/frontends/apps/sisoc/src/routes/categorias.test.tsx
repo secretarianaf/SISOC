@@ -61,7 +61,7 @@ describe("Insumos categories shell route", () => {
     expect(window.location.pathname).toBe("/v2/sisoc/insumos/categorias/");
     expect(await screen.findByRole("heading", { name: "Categorías de insumos" })).toBeDefined();
     expect(webGet).toHaveBeenCalledWith("web/insumos/categorias/", expect.anything());
-    expect(document.title).toBe("SISOC - Categorías de insumos");
+    await waitFor(() => expect(document.title).toBe("SISOC - Categorías de insumos"));
     webGet.mockReset();
   });
   it("cancels a category deletion back to the category list without posting", async () => {

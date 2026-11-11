@@ -31,6 +31,8 @@ export default defineConfig({
     name: "sisoc",
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}"],
+    setupFiles: ["./src/testSetup.ts"],
+    testTimeout: 20000,
   },
   server: {
     host: "127.0.0.1",

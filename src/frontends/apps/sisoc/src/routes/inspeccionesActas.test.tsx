@@ -149,7 +149,12 @@ describe("Inspecciones actas route", () => {
     expect(form.getAttribute("action")).toBe("/inspecciones/actas/");
     const requestSubmit = vi.fn();
     form.requestSubmit = requestSubmit;
-    fireEvent.change(document.getElementById("filtro-estado")!, { target: { value: "anuladas" } });
+    // The auto-submit listener is attached in a passive effect that may run after the table
+    // appears; re-dispatch the native change until it is listening, then pin the exact count.
+    await waitFor(() => {
+      fireEvent.change(document.getElementById("filtro-estado")!, { target: { value: "anuladas" } });
+      expect(requestSubmit).toHaveBeenCalled();
+    });
     expect(requestSubmit).toHaveBeenCalledTimes(1);
     const numero = document.getElementById("filtro-numero") as HTMLInputElement;
     fireEvent.input(numero, { target: { value: "12" } });

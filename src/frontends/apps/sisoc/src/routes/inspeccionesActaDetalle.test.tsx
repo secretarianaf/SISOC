@@ -85,7 +85,7 @@ describe("Inspecciones acta detail route", () => {
     setup();
     expect(await screen.findByRole("heading", { level: 1, name: NUMERO })).toBeTruthy();
     expect(webGet.mock.calls.map(([url]) => url)).toEqual(["web/session/", `web/inspecciones/actas/${NUMERO}/`]);
-    expect(document.title).toBe("SISOC - Inspecciones escolares");
+    await waitFor(() => expect(document.title).toBe("SISOC - Inspecciones escolares"));
     expect(screen.getByText("EP N° 12 · Turno tarde · cierre oficial 09/11/2026 15:00")).toBeTruthy();
     expect(screen.getByText("Finalizada").className).toBe("insp-badge insp-badge-ok");
     expect(screen.getByText("Excepción de firma")).toBeTruthy();

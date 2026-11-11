@@ -72,7 +72,7 @@ describe("Actividades PNUD route", () => {
     setup(`${BASE}?estado=todas&q=cul`);
     await screen.findByText("Teatro");
     expect(webGet).toHaveBeenCalledWith("web/comedores/actividades-pnud/?estado=todas&q=cul", expect.anything());
-    expect(document.title).toBe("SISOC - Actividades PNUD");
+    await waitFor(() => expect(document.title).toBe("SISOC - Actividades PNUD"));
     expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("cul");
     expect(screen.getByRole("link", { name: "Todas" }).className).toBe("btn btn-primary");
     expect(screen.getByRole("link", { name: "Activas" }).getAttribute("href")).toBe(`${BASE}?estado=activa&q=cul`);
@@ -155,7 +155,7 @@ describe("Actividades PNUD route", () => {
     webPost.mockResolvedValue({ data: { ok: true, redirect: BASE }, status: 200 });
     setup(`${BASE}1/baja/`);
     await screen.findByText("Cultura - Teatro");
-    expect(document.title).toBe("SISOC - Dar de baja actividad PNUD");
+    await waitFor(() => expect(document.title).toBe("SISOC - Dar de baja actividad PNUD"));
     expect(screen.getByText(/Se marcará como inactiva la actividad/).textContent).toBe("Se marcará como inactiva la actividad Cultura - Teatro.");
     fireEvent.click(screen.getByRole("button", { name: "Dar de baja" }));
     await waitFor(() => expect(assign).toHaveBeenCalledWith(BASE));

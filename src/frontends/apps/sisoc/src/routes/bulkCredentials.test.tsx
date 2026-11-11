@@ -52,7 +52,7 @@ describe("bulk credentials form", () => {
     await openForm();
     expect(webGet).toHaveBeenCalledTimes(1);
     expect(webGet).toHaveBeenCalledWith("web/users/bulk-credentials/", expect.any(Object));
-    expect(document.title).toBe("SISOC - Credenciales masivas");
+    await waitFor(() => expect(document.title).toBe("SISOC - Credenciales masivas"));
     expect(screen.getByRole("heading", { level: 3, name: "Enviar credenciales masivas" })).toBeTruthy();
     expect(document.querySelector(".breadcrumb .breadcrumb-item.active")?.textContent).toBe("Credenciales masivas");
     const select = document.getElementById("id_tipo_envio") as HTMLSelectElement;
@@ -118,7 +118,7 @@ describe("bulk credentials form", () => {
     expect(document.getElementById("id_archivo")!.className).toBe("form-control is-invalid");
     expect((document.getElementById("id_tipo_envio") as HTMLSelectElement).value).toBe("inet");
     expect(assign).not.toHaveBeenCalled();
-    expect(document.activeElement).toBe(document.body);
+    await waitFor(() => expect(document.activeElement).toBe(document.body));
   });
 
   it("reports an unconfirmed upload and never resubmits it", async () => {

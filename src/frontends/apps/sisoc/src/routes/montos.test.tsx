@@ -86,8 +86,8 @@ describe("Montos de prestación route", () => {
     await screen.findByText("Abordaje Comunitario");
     expect(webGet).toHaveBeenCalledWith("web/session/", expect.anything());
     expect(webGet).toHaveBeenCalledWith("web/comedores/montos/?page=1", expect.anything());
-    expect(document.title).toBe("SISOC - Prestaciones");
-    expect(document.body.classList.contains("app-loaded")).toBe(true);
+    await waitFor(() => expect(document.title).toBe("SISOC - Prestaciones"));
+    await waitFor(() => expect(document.body.classList.contains("app-loaded")).toBe(true));
     const rows = screen.getAllByRole("row");
     expect(within(rows[1]).getAllByRole("cell").map((c) => c.textContent)).toEqual([
       "Alimentar Comunidad", "1025,50", "None", "0,00", "1234,75", "gestion.montos", "09/11/2026 12:00", "10/11/2026 11:00", "Ver Editar Eliminar",
@@ -114,7 +114,7 @@ describe("Montos de prestación route", () => {
     setup("/montoprestacion/3/detalle");
     await screen.findByText("Detalle de Monto de Prestación");
     expect(webGet).toHaveBeenCalledWith("web/comedores/montos/3/", expect.anything());
-    expect(document.title).toBe("SISOC - Monto de Prestación");
+    await waitFor(() => expect(document.title).toBe("SISOC - Monto de Prestación"));
     expect(screen.getByRole("row", { name: "Valor almuerzo None" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Monto de Prestaciones", current: "page" })).toBeTruthy();
   });
@@ -124,7 +124,7 @@ describe("Montos de prestación route", () => {
     webPost.mockResolvedValue({ data: { ok: true, redirect: LIST }, status: 200 });
     setup("/montoprestacion/crear");
     await screen.findByText("Datos de Monto de Prestación");
-    expect(document.title).toBe("SISOC - Monto Prestación");
+    await waitFor(() => expect(document.title).toBe("SISOC - Monto Prestación"));
     expect(screen.getByRole("heading", { level: 3, name: "Monto de Prestación" })).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Programa*"), { target: { value: "2" } });
     fireEvent.change(screen.getByLabelText("Valor desayuno"), { target: { value: "150.25" } });
@@ -174,7 +174,7 @@ describe("Montos de prestación route", () => {
     webPost.mockResolvedValue({ data: { ok: true, redirect: LIST }, status: 200 });
     setup("/montoprestacion/5/eliminar");
     await screen.findByText("ALIMENTAR COMUNIDAD");
-    expect(document.title).toBe("SISOC - Confirmar Eliminación");
+    await waitFor(() => expect(document.title).toBe("SISOC - Confirmar Eliminación"));
     expect(screen.getByText(/¿Desea eliminar este monto de prestación\? Esta acción no se puede deshacer\./).textContent)
       .toBe("¿Desea eliminar este monto de prestación? Esta acción no se puede deshacer. ALIMENTAR COMUNIDAD?");
     expect(screen.getByRole("link", { name: "Cancelar" }).getAttribute("href")).toBe(LIST);

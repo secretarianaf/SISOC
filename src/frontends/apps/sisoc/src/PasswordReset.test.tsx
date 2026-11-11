@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import PasswordReset from "./PasswordReset";
 
 const { get, post } = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
@@ -39,8 +39,8 @@ describe("Password recovery request", () => {
   it("renders the source crispy form, frame, title and footer from the real Form metadata", async () => {
     render(<PasswordReset mode="request" navigate={navigate} />);
     expect(await screen.findByLabelText(/Usuario/)).toBeDefined();
-    expect(document.title).toBe("Recuperar contraseña");
-    expect(document.body.className).toBe("password-reset-page");
+    await waitFor(() => expect(document.title).toBe("Recuperar contraseña"));
+    await waitFor(() => expect(document.body.className).toBe("password-reset-page"));
     expect(card().querySelector("h5")!.textContent).toBe("Recuperar contraseña");
     expect(card().querySelector("p.text-muted")!.textContent).toBe("Ingresá tu usuario y el correo registrado. Ambos deben coincidir con los datos de tu cuenta.");
     const username = input("username");

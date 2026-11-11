@@ -49,7 +49,7 @@ describe("user import form", () => {
     await openForm();
     expect(webGet).toHaveBeenCalledTimes(1);
     expect(webGet).toHaveBeenCalledWith("web/users/import/", expect.any(Object));
-    expect(document.title).toBe("SISOC - Gestor masivo de usuarios");
+    await waitFor(() => expect(document.title).toBe("SISOC - Gestor masivo de usuarios"));
     expect(document.querySelector(".breadcrumb .breadcrumb-item.active")?.textContent).toBe("Gestor masivo");
     const file = document.getElementById("id_archivo") as HTMLInputElement;
     expect(file.type).toBe("file");
@@ -105,7 +105,7 @@ describe("user import form", () => {
     expect(assign).not.toHaveBeenCalled();
     expect((submit as HTMLButtonElement).disabled).toBe(false);
     // Like the native page reload, keyboard navigation restarts at the top of the document.
-    expect(document.activeElement).toBe(document.body);
+    await waitFor(() => expect(document.activeElement).toBe(document.body));
     expect(document.body.hasAttribute("tabindex")).toBe(false);
   });
 

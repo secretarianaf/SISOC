@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import App from "../App";
 import { readyContext, setViewport } from "./testFixtures";
 
@@ -39,6 +39,6 @@ describe("Required password route", () => {
     fireEvent.click(screen.getByRole("button", { name: "Configuración de Comedores" }));
     expect(screen.getByRole("link", { name: "Insumos" }).getAttribute("href")).toBe("/insumos/");
     expect(webGet.mock.calls.every(([url]) => url === "web/password/first-change/")).toBe(true);
-    expect(document.title).toBe("SISOC - Cambio obligatorio de contraseña");
+    await waitFor(() => expect(document.title).toBe("SISOC - Cambio obligatorio de contraseña"));
   });
 });

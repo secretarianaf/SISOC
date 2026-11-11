@@ -66,14 +66,14 @@ describe("Insumos shell route", () => {
     webPost.mockResolvedValueOnce({ data: { ok: true, message: "Insumo creado correctamente.", redirect: "/insumos/" } });
     setup("/v2/sisoc/insumos/crear/");
     await screen.findByRole("heading", { name: "Nuevo insumo" });
-    expect(document.title).toBe("SISOC - Nuevo insumo");
+    await waitFor(() => expect(document.title).toBe("SISOC - Nuevo insumo"));
     expect(screen.getByRole("link", { name: "Insumos" }).className).toContain("active");
     expect(screen.getByRole("button", { name: "Configuración de Comedores" }).getAttribute("aria-expanded")).toBe("true");
     fireEvent.submit(screen.getByRole("button", { name: "Guardar insumo" }).closest("form")!);
     expect(await screen.findByText("Insumo creado correctamente.")).toBeDefined();
     expect(window.location.pathname).toBe("/v2/sisoc/insumos/");
     expect(await screen.findByRole("heading", { name: "Buscar insumos" })).toBeDefined();
-    expect(document.title).toBe("SISOC - Insumos");
+    await waitFor(() => expect(document.title).toBe("SISOC - Insumos"));
     webGet.mockReset();
   });
 });

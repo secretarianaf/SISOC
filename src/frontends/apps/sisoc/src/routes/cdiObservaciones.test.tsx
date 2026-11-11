@@ -66,7 +66,7 @@ describe("CDI observations route", () => {
     setup("/centrodeinfancia/4/observacion/crear/?next=/centrodeinfancia/detalle/4");
     const textarea = (await screen.findByLabelText(/Observación/)) as HTMLTextAreaElement;
     expect(webGet).toHaveBeenCalledWith("web/cdi/centros/4/observaciones/crear/?next=/centrodeinfancia/detalle/4", expect.anything());
-    expect(document.title).toBe("SISOC - Observación - Centro de Desarrollo Infantil");
+    await waitFor(() => expect(document.title).toBe("SISOC - Observación - Centro de Desarrollo Infantil"));
     expect(textarea.getAttribute("placeholder")).toBe("Describa la observación");
     expect(textarea.getAttribute("rows")).toBe("4");
     expect(textarea.className).toBe("form-control textarea");
@@ -155,7 +155,7 @@ describe("CDI observations route", () => {
     serve(detail);
     setup("/centrodeinfancia/observacion/9/");
     expect(await screen.findByRole("heading", { name: "Observación 9" })).toBeDefined();
-    expect(document.title).toBe("SISOC - Observación - CDI Sintético");
+    await waitFor(() => expect(document.title).toBe("SISOC - Observación - CDI Sintético"));
     expect(screen.getByRole("link", { name: "Editar" }).getAttribute("href")).toBe("/centrodeinfancia/observacion/9/editar/");
     expect(screen.getByRole("link", { name: "Eliminar" }).className).toBe("btn btn-danger");
     expect(screen.getByText("Observador:").parentElement?.textContent).toBe("Observador: Ana Operadora");

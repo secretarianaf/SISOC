@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import App from "../App";
 import { duplasFormNavigation } from "./duplasForm";
 import { findRoute } from "./index";
@@ -63,7 +63,7 @@ describe("Duplas form routes (DU01.02)", () => {
     setup("/equipo-tecnico/3/editar/");
     expect(await screen.findByRole("heading", { level: 2, name: "Editar Equipo técnico" }, { timeout: 5000 })).toBeDefined();
     expect(webGet).toHaveBeenCalledWith("web/comedores/duplas/3/editar/", expect.anything());
-    expect(document.title).toBe("SISOC - Editar Equipo técnico");
+    await waitFor(() => expect(document.title).toBe("SISOC - Editar Equipo técnico"));
     expect((document.getElementById("id_nombre") as HTMLInputElement).value).toBe("Equipo E");
     expect(document.querySelector("label[for=id_tecnico]")?.textContent).toBe("Tecnico*");
     expect([...document.querySelectorAll(".select2-selection__choice__display")].map((c) => c.textContent)).toEqual(["Ejemplo Bruno - tecnico.1"]);
@@ -151,7 +151,7 @@ describe("Duplas form routes (DU01.02)", () => {
     serve(borrar);
     setup("/equipo-tecnico/2/eliminar/");
     expect(await screen.findByRole("heading", { name: "Dar de baja Equipo técnico" }, { timeout: 5000 })).toBeDefined();
-    expect(document.title).toBe("SISOC - Borrar Equipo técnico");
+    await waitFor(() => expect(document.title).toBe("SISOC - Borrar Equipo técnico"));
     expect(screen.getByText("EQUIPO TÉCNICO 02").className).toBe("font-weight-bold");
     expect(screen.getByText("Bajas lógicas: 1")).toBeDefined();
     expect(screen.queryByText(/Borrados físicos/)).toBeNull();

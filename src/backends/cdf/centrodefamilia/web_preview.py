@@ -21,6 +21,13 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
+from centrodefamilia.views.beneficiarios import (
+    BeneficiariosCreateView,
+    BeneficiariosDetailView,
+    BeneficiariosListView,
+    ResponsableDetailView,
+    ResponsableListView,
+)
 from centrodefamilia.views.centro import (
     CentroCreateView,
     CentroDeleteView,
@@ -111,6 +118,55 @@ class CentroGenerarUsuarioEntry(GenerarUsuarioCDFView):
         return index_response(request, self.index_bytes)
 
 
+def _list_entry_get(view, request, *args, **kwargs):
+    """The native ``ListView`` pagination rule (invalid page 404), then the index."""
+    queryset = view.get_queryset()
+    view.paginate_queryset(queryset, view.get_paginate_by(queryset))
+    return index_response(request, view.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class BeneficiariosListEntry(BeneficiariosListView):
+    """Beneficiaries list entry (exact pages: a bad page answers 404)."""
+
+    index_bytes = b""
+    get = _list_entry_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ResponsablesListEntry(ResponsableListView):
+    """Responsables list entry (NoCount pages never 404)."""
+
+    index_bytes = b""
+    get = _list_entry_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class BeneficiarioDetailEntry(BeneficiariosDetailView):
+    """Beneficiary detail entry; missing or soft deleted answers 404."""
+
+    index_bytes = b""
+    get = _object_entry_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ResponsableDetailEntry(ResponsableDetailView):
+    """Responsable detail entry; missing or soft deleted answers 404."""
+
+    index_bytes = b""
+    get = _object_entry_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class PreinscripcionEntry(BeneficiariosCreateView):
+    """Preinscription entry; the native POST stays the native view."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return index_response(request, self.index_bytes)
+
+
 class ReactAssetView(View):
     """Serve only frozen build assets; no request data reaches a static upstream."""
 
@@ -194,6 +250,26 @@ def cdf_preview_patterns(build_directory):
         path(
             "centrodefamilia/centros/<int:pk>/generar-usuario/",
             _entry(CentroGenerarUsuarioEntry, index_bytes),
+        ),
+        path(
+            "centrodefamilia/beneficiarios/beneficiarios/",
+            _entry(BeneficiariosListEntry, index_bytes),
+        ),
+        path(
+            "centrodefamilia/beneficiarios/beneficiarios/<int:pk>/",
+            _entry(BeneficiarioDetailEntry, index_bytes),
+        ),
+        path(
+            "centrodefamilia/beneficiarios/nuevo/",
+            _entry(PreinscripcionEntry, index_bytes),
+        ),
+        path(
+            "centrodefamilia/beneficiarios/responsables/",
+            _entry(ResponsablesListEntry, index_bytes),
+        ),
+        path(
+            "centrodefamilia/beneficiarios/responsables/<int:pk>/",
+            _entry(ResponsableDetailEntry, index_bytes),
         ),
         path(
             "centrodefamilia/react/<path:asset_path>",

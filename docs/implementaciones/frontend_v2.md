@@ -643,8 +643,12 @@ Generar usuario referente (`routes/cdfCentroUsuario.tsx`) usa
 `src/backends/cdf/centrodefamilia/web_api_usuario.py`, que corre
 `GenerarUsuarioCDFView` (404 antes de la regla de delegación, territorio y cupo)
 y devuelve solo la proyección CR1; la contraseña temporal vive en la memoria del
-componente. Registro:
-`../registro/cambios/2026-T4/2026-11-11-2805-react-cdf-centros-usuario.md`.
+componente. Preinscripción, beneficiarios y responsables (`routes/cdfBeneficiarios.tsx`,
+con `routes/cdfDataTable.tsx`) usan `src/backends/cdf/centrodefamilia/web_api_beneficiarios.py`:
+las búsquedas RENAPER y el alta corren el servicio nativo sin encolar mensajes, y
+`exportar/disponible/` reemplaza el aviso del CSV vacío. Registros:
+`../registro/cambios/2026-T4/2026-11-11-2805-react-cdf-centros-usuario.md` y
+`../registro/cambios/2026-T4/2026-11-11-2805-react-cdf-beneficiarios.md`.
 
 ### Comedores sobre G1: catálogos con el marco oscuro
 

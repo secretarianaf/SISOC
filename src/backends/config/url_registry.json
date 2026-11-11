@@ -5310,6 +5310,31 @@
   "regex": "^api/web/users/bulk\\-credentials/jobs/(?P<pk>[0-9]+)/resume/\\Z"
  },
  {
+  "name": "web_cdf_beneficiarios_detail",
+  "namespace": "",
+  "regex": "^api/web/cdf/beneficiarios/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_cdf_beneficiarios_exportar_disponible",
+  "namespace": "",
+  "regex": "^api/web/cdf/beneficiarios/exportar/disponible/\\Z"
+ },
+ {
+  "name": "web_cdf_beneficiarios_list",
+  "namespace": "",
+  "regex": "^api/web/cdf/beneficiarios/\\Z"
+ },
+ {
+  "name": "web_cdf_buscar_cuil",
+  "namespace": "",
+  "regex": "^api/web/cdf/beneficiarios/buscar\\-cuil/\\Z"
+ },
+ {
+  "name": "web_cdf_buscar_responsable",
+  "namespace": "",
+  "regex": "^api/web/cdf/beneficiarios/buscar\\-responsable/\\Z"
+ },
+ {
   "name": "web_cdf_centros_crear",
   "namespace": "",
   "regex": "^api/web/cdf/centros/crear/\\Z"
@@ -5348,6 +5373,26 @@
   "name": "web_cdf_centros_usuarios",
   "namespace": "",
   "regex": "^api/web/cdf/centros/(?P<pk>[0-9]+)/usuarios/\\Z"
+ },
+ {
+  "name": "web_cdf_preinscripcion",
+  "namespace": "",
+  "regex": "^api/web/cdf/beneficiarios/preinscripcion/\\Z"
+ },
+ {
+  "name": "web_cdf_preinscripcion_options",
+  "namespace": "",
+  "regex": "^api/web/cdf/beneficiarios/preinscripcion/options/\\Z"
+ },
+ {
+  "name": "web_cdf_responsables_detail",
+  "namespace": "",
+  "regex": "^api/web/cdf/responsables/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_cdf_responsables_list",
+  "namespace": "",
+  "regex": "^api/web/cdf/responsables/\\Z"
  },
  {
   "name": "web_dispositivos_detail",

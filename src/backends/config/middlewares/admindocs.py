@@ -25,6 +25,8 @@ _OWNED_PATTERNS = (
     r"/api/web/cdf/centros/(?:[0-9]+/(?:usuarios/)?)?",
     r"/api/web/cdf/centros/(?:options/|crear/|[0-9]+/(?:editar|eliminar)/)",
     r"/api/web/cdf/centros/[0-9]+/generar-usuario/",
+    r"/api/web/cdf/(?:beneficiarios/(?:preinscripcion/(?:options/)?|buscar-cuil/"
+    r"|buscar-responsable/|exportar/disponible/|[0-9]+/)?|responsables/(?:[0-9]+/)?)",
     r"/api/web/comedores/admisiones/plantillas-informe/"
     r"(?:variables/|incidencias/(?:[0-9]+/)?|[0-9]+/)?",
     r"/api/web/comedores/acompanamientos/(?:[0-9]+/(?:hitos/restaurar/)?)?",

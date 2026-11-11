@@ -301,3 +301,31 @@ def test_reconsulta_fallida_o_distinta_deja_alta_manual(client, alta, caso):
     assert ciudadano.estado_validacion_renaper == Ciudadano.RENAPER_NO_CONSULTADO
     assert ciudadano.origen_dato == "manual"
     assert ciudadano.datos_renaper is None
+
+
+@pytest.mark.parametrize(
+    "url_name", ["centrodeinfancia_nomina_crear", "centrodeinfancia_trabajador_crear"]
+)
+def test_renaper_sin_respuesta_avisa_y_deja_cargar_a_mano(client, url_name):
+    """#2889: si RENAPER no responde, se avisa y se sigue con la carga manual."""
+    user = User.objects.create_superuser("renaper-caido", "", "test1234")
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI sin RENAPER")
+    url = reverse(url_name, kwargs={"pk": centro.pk})
+    with patch(
+        "centrodeinfancia.views.obtener_datos_ciudadano_desde_renaper",
+        return_value={
+            "success": False,
+            "message": "RENAPER no respondio a tiempo durante la consulta.",
+        },
+    ):
+        response = client.get(url, {"query": "30111222"})
+
+    assert response.status_code == 200
+    avisos = [str(m) for m in response.context["messages"]]
+    assert avisos == [
+        "RENAPER no respondio a tiempo durante la consulta. "
+        "Podés continuar con la carga manual."
+    ]
+    assert response.context["mostrar_formulario"] is True
+    assert response.context["form"].initial["dni"] == "30111222"

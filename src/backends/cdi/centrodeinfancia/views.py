@@ -1013,7 +1013,7 @@ class TrabajadorCentroInfanciaCreateView(
                 messages.info(self.request, renaper_result["message"])
             return [], self._build_initial_from_renaper(renaper_result)
         if renaper_result.get("message"):
-            messages.warning(self.request, renaper_result["message"])
+            messages.warning(self.request, _aviso_renaper_fallido(renaper_result))
         return [], None
 
     def _set_form_initial(  # pylint: disable=too-many-arguments
@@ -1352,6 +1352,14 @@ def load_departamentos_ipi(request):
         list(departamentos.order_by("nombre").values("id", "nombre", "decil_ipi")),
         safe=False,
     )
+
+
+AVISO_CARGA_MANUAL_RENAPER = "Podés continuar con la carga manual."
+
+
+def _aviso_renaper_fallido(renaper_result):
+    """Mensaje de RENAPER más la indicación de que la carga sigue a mano."""
+    return f"{renaper_result['message']} {AVISO_CARGA_MANUAL_RENAPER}"
 
 
 RENAPER_BLOQUE_LIMITE_CONSULTAS = 30
@@ -1891,7 +1899,9 @@ class NominaCentroInfanciaCreateView(
                     if mensaje:
                         messages.info(self.request, mensaje)
                 elif renaper_result.get("message"):
-                    messages.warning(self.request, renaper_result["message"])
+                    messages.warning(
+                        self.request, _aviso_renaper_fallido(renaper_result)
+                    )
 
         if not form:
             if selected_ciudadano:

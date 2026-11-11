@@ -483,3 +483,32 @@ def test_consultar_datos_renaper_ignora_placeholders_no_numericos(mocker):
     assert out["data"]["tipo_documento"] == "DNI"
     assert out["data"]["codigo_postal"] is None
     assert out["data"]["altura"] is None
+
+
+def test_api_client_recorta_el_timeout_al_tope_del_cliente(mocker, settings):
+    """#2889: con ``deadline``, ninguna request espera más que lo que queda."""
+    settings.RENAPER_REQUEST_TIMEOUT_SECONDS = 10
+    mocker.patch.object(client_module.time, "monotonic", return_value=100.0)
+    session = mocker.Mock()
+    session.post.return_value = _ResponseMock({"token": "token"})
+
+    client = client_module.APIClient(deadline=104.0)
+    client.session = session
+    client.get_token()
+
+    assert session.post.call_args.kwargs["timeout"] == 4.0
+
+
+def test_api_client_con_tope_vencido_usa_el_timeout_minimo(mocker, settings):
+    settings.RENAPER_REQUEST_TIMEOUT_SECONDS = 10
+    mocker.patch.object(client_module.time, "monotonic", return_value=200.0)
+
+    client = client_module.APIClient(deadline=150.0)
+
+    assert client._timeout() == client_module.MIN_TIMEOUT_SECONDS
+
+
+def test_api_client_sin_tope_conserva_el_timeout_configurado(settings):
+    settings.RENAPER_REQUEST_TIMEOUT_SECONDS = 7
+
+    assert client_module.APIClient()._timeout() == 7

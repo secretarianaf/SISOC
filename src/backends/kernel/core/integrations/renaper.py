@@ -18,6 +18,9 @@ from core.services.text_encoding import repair_utf8_mojibake_values
 
 logger = logging.getLogger("django")
 
+# Con el tope vencido, la request falla enseguida como timeout.
+MIN_TIMEOUT_SECONDS = 0.1
+
 
 class RenaperServiceError(RuntimeError):
     """Error tecnico clasificado de la integracion RENAPER."""
@@ -55,7 +58,14 @@ def _response_json_utf8(response: requests.Response) -> Any:
 class APIClient:
     """Encapsula autenticacion, transporte y errores de RENAPER."""
 
-    def __init__(self, *, reuse_token=False, request_interval=0, before_request=None):
+    def __init__(
+        self,
+        *,
+        reuse_token=False,
+        request_interval=0,
+        before_request=None,
+        deadline=None,
+    ):
         self.username = settings.RENAPER_API_USERNAME
         self.password = settings.RENAPER_API_PASSWORD
         self.session = requests.Session()
@@ -63,6 +73,16 @@ class APIClient:
         self.token = None
         self.request_interval = request_interval
         self.before_request = before_request
+        # ``time.monotonic()`` límite para todas las requests de este cliente.
+        self.deadline = deadline
+
+    def _timeout(self) -> float:
+        """Timeout por request, recortado al tiempo que le queda al cliente."""
+        timeout = settings.RENAPER_REQUEST_TIMEOUT_SECONDS
+        if self.deadline is None:
+            return timeout
+        restante = self.deadline - time.monotonic()
+        return max(min(timeout, restante), MIN_TIMEOUT_SECONDS)
 
     @property
     def login_url(self) -> str:
@@ -86,7 +106,7 @@ class APIClient:
             response = self.session.post(
                 self.login_url,
                 json={"username": self.username, "password": self.password},
-                timeout=settings.RENAPER_REQUEST_TIMEOUT_SECONDS,
+                timeout=self._timeout(),
             )
             response.raise_for_status()
         except requests.Timeout as exc:
@@ -148,7 +168,7 @@ class APIClient:
                 self.consulta_url,
                 headers={"Authorization": f"Bearer {token}"},
                 params={"dni": dni, "sexo": sexo.upper()},
-                timeout=settings.RENAPER_REQUEST_TIMEOUT_SECONDS,
+                timeout=self._timeout(),
             )
             response.raise_for_status()
         except (DatabaseError, ObjectDoesNotExist):

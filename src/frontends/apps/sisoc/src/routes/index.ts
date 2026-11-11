@@ -1,4 +1,5 @@
 import { accountRoute } from "./account";
+import { acompanamientosRoute } from "./acompanamientos";
 import { actividadesPnudRoute } from "./actividadesPnud";
 import { admisionesTemplatesRoute } from "./admisionesTemplates";
 import { businessRoute } from "./business";
@@ -59,6 +60,7 @@ export const ROUTES: RouteDefinition[] = [
   actividadesPnudRoute,
   pasRoute,
   admisionesTemplatesRoute,
+  acompanamientosRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

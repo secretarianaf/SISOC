@@ -70,6 +70,21 @@
   "regex": "^interno/usuarios/operacion/\\Z"
  },
  {
+  "name": "acompanamientos_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/acompanamientos/(?P<comedor_id>[0-9]+)/\\Z"
+ },
+ {
+  "name": "acompanamientos_web_list",
+  "namespace": "",
+  "regex": "^api/web/comedores/acompanamientos/\\Z"
+ },
+ {
+  "name": "acompanamientos_web_restaurar_hito",
+  "namespace": "",
+  "regex": "^api/web/comedores/acompanamientos/(?P<comedor_id>[0-9]+)/hitos/restaurar/\\Z"
+ },
+ {
   "name": "acta_complementaria_crear",
   "namespace": "",
   "regex": "^comedores/(?P<comedor_pk>[0-9]+)/acta\\-complementaria/crear\\Z"

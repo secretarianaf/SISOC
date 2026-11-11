@@ -28,6 +28,7 @@ from centrodefamilia.views.centro import (
     CentroListView,
     CentroUpdateView,
 )
+from centrodefamilia.views.generar_usuario import GenerarUsuarioCDFView
 from core.decorators import permissions_any_required
 
 BUILD_ASSETS = "/v2/sisoc/assets/"
@@ -98,6 +99,16 @@ class CentroDeleteEntry(CentroDeleteView):
 
     index_bytes = b""
     get = _object_entry_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CentroGenerarUsuarioEntry(GenerarUsuarioCDFView):
+    """User generation entry; the native 404 and generation rule run first."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return index_response(request, self.index_bytes)
 
 
 class ReactAssetView(View):
@@ -179,6 +190,10 @@ def cdf_preview_patterns(build_directory):
         path(
             "centrodefamilia/centros/<int:pk>/eliminar/",
             _entry(CentroDeleteEntry, index_bytes),
+        ),
+        path(
+            "centrodefamilia/centros/<int:pk>/generar-usuario/",
+            _entry(CentroGenerarUsuarioEntry, index_bytes),
         ),
         path(
             "centrodefamilia/react/<path:asset_path>",

@@ -639,6 +639,12 @@ nativas y assets en `/dispositivos/react/assets/`. En el front, `routes/disposit
 (listado y legajo) y `routes/dispositivosMapa.tsx` (Leaflet por CDN con el mismo SRI y la
 consulta de ubicación en serie). Registro:
 `../registro/cambios/2026-T4/2026-11-11-2785-react-dispositivos-consulta.md`.
+Generar usuario referente (`routes/cdfCentroUsuario.tsx`) usa
+`src/backends/cdf/centrodefamilia/web_api_usuario.py`, que corre
+`GenerarUsuarioCDFView` (404 antes de la regla de delegación, territorio y cupo)
+y devuelve solo la proyección CR1; la contraseña temporal vive en la memoria del
+componente. Registro:
+`../registro/cambios/2026-T4/2026-11-11-2805-react-cdf-centros-usuario.md`.
 
 ### Comedores sobre G1: catálogos con el marco oscuro
 

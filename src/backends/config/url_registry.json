@@ -5330,6 +5330,11 @@
   "regex": "^api/web/cdf/centros/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
+  "name": "web_cdf_centros_generar_usuario",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<pk>[0-9]+)/generar\\-usuario/\\Z"
+ },
+ {
   "name": "web_cdf_centros_list",
   "namespace": "",
   "regex": "^api/web/cdf/centros/\\Z"

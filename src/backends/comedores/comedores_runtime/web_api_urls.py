@@ -16,4 +16,5 @@ urlpatterns = [
     ),
     path("acompanamientos/", include("acompanamientos.web_api_urls")),
     path("expedientespagos/", include("expedientespagos.web_api_urls")),
+    path("rendicioncuentasmensual/", include("rendicioncuentasmensual.web_api_urls")),
 ]

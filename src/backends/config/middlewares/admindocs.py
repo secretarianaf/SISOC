@@ -32,6 +32,7 @@ _OWNED_PATTERNS = (
     r"/api/web/comedores/acompanamientos/(?:[0-9]+/(?:hitos/restaurar/)?)?",
     r"/api/web/comedores/expedientespagos/(?:comedores/[0-9]+/(?:crear/)?|[0-9]+/(?:editar/|eliminar/)?)",
     r"/api/web/dispositivos/(?:listado/|options/|mapa/|[0-9]+/(?:ubicacion/)?)",
+    r"/api/web/comedores/rendicioncuentasmensual/listado/",
 )
 
 

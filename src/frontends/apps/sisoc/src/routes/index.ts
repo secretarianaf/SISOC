@@ -13,6 +13,7 @@ import { dispositivosRoute } from "./dispositivos";
 import { cdfCentroUsuarioRoute } from "./cdfCentroUsuario";
 import { duplasRoute } from "./duplas";
 import { expedientesPagosRoute } from "./expedientesPagos";
+import { rendicionMensualRoute } from "./rendicionMensual";
 import { duplasFormRoute } from "./duplasFormRoute";
 import { groupsRoute } from "./groups";
 import { inicioRoute } from "./inicio";
@@ -71,6 +72,7 @@ export const ROUTES: RouteDefinition[] = [
   admisionesTemplatesRoute,
   acompanamientosRoute,
   expedientesPagosRoute,
+  rendicionMensualRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

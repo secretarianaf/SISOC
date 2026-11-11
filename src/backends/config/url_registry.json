@@ -3870,6 +3870,11 @@
   "regex": "^rendicioncuentasmensual/rendicioncuentasmensual/editar/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "rendicioncuentasmensual_web_listado",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/listado/\\Z"
+ },
+ {
   "name": "reporter_provincias",
   "namespace": "",
   "regex": "^reporter\\-provincias/\\Z"

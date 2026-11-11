@@ -707,6 +707,15 @@ sesión, escritura con uno de los cuatro permisos de lectura) y nunca recalcula
 montos. Registro:
 `../registro/cambios/2026-T4/2026-11-11-2785-react-expedientes-pagos.md`.
 
+El listado global de rendiciones mensuales (RM01.01, primera entrega) usa el
+mismo marco: `src/backends/comedores/rendicioncuentasmensual/web_api.py`
+ejecuta `RendicionCuentaMensualGlobalListView` (filtros por tipo, territorial y
+estado, columnas, paginación de 25) con los cinco permisos de hoy y arma cada
+celda con el include nativo; el CSV sigue siendo `listado/?export=csv`. Las URL
+nativas conservan el prefijo duplicado `/rendicioncuentasmensual/rendicioncuentasmensual/`.
+Registro:
+`../registro/cambios/2026-T4/2026-11-11-2785-react-rendicion-mensual-listado.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

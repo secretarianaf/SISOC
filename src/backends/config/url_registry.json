@@ -2480,6 +2480,31 @@
   "regex": "^comedores/configuracion/templates/(?P<plantilla_pk>[0-9]+)/versiones/(?P<version_pk>[0-9]+)/publicar/\\Z"
  },
  {
+  "name": "gestor_templates_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/plantillas\\-informe/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "gestor_templates_web_incidencia",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/plantillas\\-informe/incidencias/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "gestor_templates_web_incidencias",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/plantillas\\-informe/incidencias/\\Z"
+ },
+ {
+  "name": "gestor_templates_web_listar",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/plantillas\\-informe/\\Z"
+ },
+ {
+  "name": "gestor_templates_web_variables",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/plantillas\\-informe/variables/\\Z"
+ },
+ {
   "name": "grupo_crear",
   "namespace": "",
   "regex": "^grupos/crear/\\Z"

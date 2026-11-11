@@ -10,4 +10,8 @@ urlpatterns = [
     path("duplas/", include("duplas.web_api_urls")),
     path("", include("comedores.web_api_montos_urls")),
     path("", include("comedores.web_api_pnud_urls")),
+    path(
+        "admisiones/plantillas-informe/",
+        include("admisiones.web_api_templates_urls"),
+    ),
 ]

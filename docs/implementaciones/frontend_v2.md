@@ -644,6 +644,12 @@ Registros:
 `../registro/cambios/2026-T4/2026-11-10-2785-react-montos.md` y
 `../registro/cambios/2026-T4/2026-11-10-2785-react-actividades-pnud.md`.
 
+El gestor de templates (AD01) sigue el mismo marco:
+`src/backends/comedores/admisiones/web_api_templates.py` proyecta las vistas de
+consulta del gestor y sus acciones siguen siendo formularios POST a las URLs
+nativas (alta y editor de versión quedan en Django).
+Registro: `../registro/cambios/2026-T4/2026-11-10-2785-react-ad01-gestor-templates.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

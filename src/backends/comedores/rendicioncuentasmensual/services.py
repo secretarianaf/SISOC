@@ -1676,6 +1676,16 @@ class RendicionProcesoService:
     ACCION_INICIAR_REGULARIZACION = "iniciar_regularizacion"
     ACCION_FINALIZAR_REGULARIZACION = "finalizar_regularizacion"
 
+    ETAPAS_REVISION = (
+        RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
+    )
+    SUBESTADOS_CAMBIO_MANUAL = (
+        RendicionCuentaMensual.SUBESTADO_PENDIENTE,
+        RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+        RendicionCuentaMensual.SUBESTADO_SUBSANADO,
+    )
+
     @staticmethod
     def _documentos_observados_al_finalizar(rendicion):
         documentos = list(
@@ -1740,8 +1750,8 @@ class RendicionProcesoService:
             )
 
     @staticmethod
-    def _bloquear_revision_territorial(rendicion):
-        """Serializa el inicio y valida estado y cupo del proyecto, con históricas."""
+    def _bloquear_scope_territorial(rendicion):
+        """Bloquea el ancla del proyecto y la rendición, y la relee."""
         proyecto = rendicion.proyecto
         comedor = rendicion.comedor
         organizacion_id = (
@@ -1757,6 +1767,11 @@ class RendicionProcesoService:
             Comedor.objects.select_for_update().get(pk=comedor.pk)
         RendicionCuentaMensual.objects.select_for_update().get(pk=rendicion.pk)
         rendicion.refresh_from_db()
+
+    @staticmethod
+    def _bloquear_revision_territorial(rendicion):
+        """Serializa el inicio y valida estado y cupo del proyecto, con históricas."""
+        RendicionProcesoService._bloquear_scope_territorial(rendicion)
         RendicionProcesoService._validar_estado(
             rendicion,
             RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
@@ -1764,6 +1779,29 @@ class RendicionProcesoService:
                 RendicionCuentaMensual.SUBESTADO_PENDIENTE,
                 RendicionCuentaMensual.SUBESTADO_SUBSANADO,
             },
+        )
+        conflicto = RendicionProcesoService._conflicto_cupo_territorial(
+            rendicion,
+            cede_ante_antiguas=rendicion.subestado_proceso
+            == RendicionCuentaMensual.SUBESTADO_SUBSANADO,
+        )
+        if conflicto:
+            raise ValidationError(
+                f"No se puede iniciar la revisión territorial: la rendición "
+                f"#{conflicto.pk} del mismo proyecto está en revisión territorial "
+                "en curso, pendiente de correcciones o subsanada. "
+                "Debe pasar a Revisión para Carga pendiente para iniciar otra."
+            )
+
+    @staticmethod
+    def _conflicto_cupo_territorial(rendicion, *, cede_ante_antiguas=False):
+        """Otra rendición del proyecto que ocupa el cupo territorial, o ``None``."""
+        proyecto = rendicion.proyecto
+        comedor = rendicion.comedor
+        organizacion_id = (
+            proyecto.organizacion_id
+            if proyecto
+            else getattr(comedor, "organizacion_id", None)
         )
         codigo = (
             proyecto.codigo
@@ -1788,12 +1826,12 @@ class RendicionProcesoService:
                 RendicionCuentaMensual.SUBESTADO_SUBSANADO,
             ]
         )
-        if rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_SUBSANADO:
+        if cede_ante_antiguas:
             # Una subsanada ya ocupa el cupo. Si convive con otras (datos previos
             # a la regla), cede solo ante las más antiguas: así siempre hay una
             # que puede reanudarse y el proyecto no queda bloqueado sin salida.
             ocupa_cupo &= Q(pk__lt=rendicion.pk)
-        conflicto = (
+        return (
             RendicionCuentaMensual.objects.filter(
                 scope,
                 Q(subestado_proceso=RendicionCuentaMensual.SUBESTADO_EN_CURSO)
@@ -1805,13 +1843,98 @@ class RendicionProcesoService:
             .order_by("pk")
             .first()
         )
-        if conflicto:
+
+    @staticmethod
+    def estados_revision_disponibles(rendicion):
+        """Destinos del cambio manual: pares ``("etapa:subestado", etiqueta)``.
+
+        Solo aplica a Revisión Territorial y Revisión para Carga, y nunca ofrece
+        «Pendiente de correcciones»: ese estado nace de una interacción con la
+        PWA (issue #2728).
+        """
+        if rendicion.etapa_proceso not in RendicionProcesoService.ETAPAS_REVISION:
+            return []
+        etapas = dict(RendicionCuentaMensual.ETAPA_PROCESO_CHOICES)
+        subestados = dict(RendicionCuentaMensual.SUBESTADO_PROCESO_CHOICES)
+        actual = (rendicion.etapa_proceso, rendicion.subestado_proceso)
+        return [
+            (f"{etapa}:{subestado}", f"{etapas[etapa]} {subestados[subestado].lower()}")
+            for etapa in RendicionProcesoService.ETAPAS_REVISION
+            for subestado in RendicionProcesoService.SUBESTADOS_CAMBIO_MANUAL
+            if (etapa, subestado) != actual
+        ]
+
+    @staticmethod
+    @transaction.atomic
+    def cambiar_estado_revision(*, rendicion, etapa, subestado, actor=None):
+        """Cambio manual de estado del usuario revisor (issue #2728).
+
+        Mueve la rendición entre los estados de las dos etapas de revisión sin
+        tocar documentos ni solicitudes: la gestión posterior es la propia del
+        estado destino, con los permisos de esa etapa.
+        """
+        RendicionProcesoService._bloquear_scope_territorial(rendicion)
+        if rendicion.etapa_proceso not in RendicionProcesoService.ETAPAS_REVISION:
             raise ValidationError(
-                f"No se puede iniciar la revisión territorial: la rendición "
-                f"#{conflicto.pk} del mismo proyecto está en revisión territorial "
-                "en curso, pendiente de correcciones o subsanada. "
-                "Debe pasar a Revisión para Carga pendiente para iniciar otra."
+                "Solo se puede modificar el estado de rendiciones en Revisión "
+                "Territorial o Revisión para Carga."
             )
+        if (
+            etapa not in RendicionProcesoService.ETAPAS_REVISION
+            or subestado not in RendicionProcesoService.SUBESTADOS_CAMBIO_MANUAL
+        ):
+            raise ValidationError("El estado seleccionado no es válido.")
+        if (etapa, subestado) == (rendicion.etapa_proceso, rendicion.subestado_proceso):
+            raise ValidationError("La rendición ya se encuentra en ese estado.")
+
+        territorial = RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+        ocupan_cupo = {
+            RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+            RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
+            RendicionCuentaMensual.SUBESTADO_SUBSANADO,
+        }
+        ya_ocupa_cupo = (
+            rendicion.etapa_proceso == territorial
+            and rendicion.subestado_proceso in ocupan_cupo
+        )
+        if etapa == territorial and subestado in ocupan_cupo and not ya_ocupa_cupo:
+            conflicto = RendicionProcesoService._conflicto_cupo_territorial(rendicion)
+            if conflicto:
+                raise ValidationError(
+                    f"No se puede enviar a ese estado: la rendición "
+                    f"#{conflicto.pk} del mismo proyecto está en revisión "
+                    "territorial en curso, pendiente de correcciones o subsanada."
+                )
+
+        estado_previo = rendicion.estado_proceso_display
+        etapa_previa = rendicion.etapa_proceso
+        rendicion.etapa_proceso = etapa
+        rendicion.subestado_proceso = subestado
+        rendicion.estado = RendicionCuentaMensual.ESTADO_REVISION
+        if etapa == territorial:
+            rendicion.fecha_validacion_territorial = None
+        elif rendicion.fecha_validacion_territorial is None:
+            rendicion.fecha_validacion_territorial = timezone.now()
+        RendicionCuentaMensualService._aplicar_usuario_ultima_modificacion(  # pylint: disable=protected-access
+            rendicion, actor
+        )
+        if etapa != etapa_previa:
+            RendicionCuentaMensualService.resetear_visualizaciones_rendicion(rendicion)
+        rendicion.save()
+        # Ningún destino espera correcciones: el aviso mobile deja de aplicar.
+        RendicionCuentaMensualService._archivar_notificaciones_mobile_rendicion(  # pylint: disable=protected-access
+            rendicion
+        )
+        logger.info(
+            "Cambio manual de estado de rendición: %s -> %s",
+            estado_previo,
+            rendicion.estado_proceso_display,
+            extra={
+                "rendicion_id": rendicion.pk,
+                "usuario_id": getattr(actor, "pk", None),
+            },
+        )
+        return rendicion
 
     @staticmethod
     @transaction.atomic

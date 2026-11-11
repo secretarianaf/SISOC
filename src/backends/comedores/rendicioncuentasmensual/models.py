@@ -719,6 +719,10 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
                 "manage_regularizacion_stage",
                 "Puede gestionar la etapa Regularización",
             ),
+            (
+                "change_review_stage_state",
+                "Puede modificar el estado de rendiciones en revisión",
+            ),
         ]
         verbose_name = "Rendición de Cuenta Mensual"
         verbose_name_plural = "Rendiciones de Cuenta Mensuales"

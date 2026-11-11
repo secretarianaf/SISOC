@@ -286,6 +286,9 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
     )
     PERMISSION_AUDITORIA = "rendicioncuentasmensual.manage_auditoria_stage"
     PERMISSION_REGULARIZACION = "rendicioncuentasmensual.manage_regularizacion_stage"
+    PERMISSION_CAMBIAR_ESTADO_REVISION = (
+        "rendicioncuentasmensual.change_review_stage_state"
+    )
 
     @staticmethod
     def format_validation_error(error):
@@ -412,6 +415,27 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
                         }
                     )
                 messages.success(request, "Solicitud de documento faltante registrada.")
+            return HttpResponseRedirect(
+                reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
+            )
+        estado_revision = (request.POST.get("estado_revision") or "").strip()
+        if estado_revision:
+            if not user_has_permission_code(
+                request.user, self.PERMISSION_CAMBIAR_ESTADO_REVISION
+            ):
+                raise PermissionDenied
+            etapa, _, subestado = estado_revision.partition(":")
+            try:
+                RendicionProcesoService.cambiar_estado_revision(
+                    rendicion=rendicion,
+                    etapa=etapa,
+                    subestado=subestado,
+                    actor=request.user,
+                )
+            except ValidationError as exc:
+                messages.error(request, self.format_validation_error(exc))
+            else:
+                messages.success(request, "Estado de la rendición actualizado.")
             return HttpResponseRedirect(
                 reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
             )
@@ -642,8 +666,16 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
             RendicionCuentaMensual.SUBESTADO_SUBSANADO,
             RendicionCuentaMensual.SUBESTADO_EN_CURSO,
         }
+        context["estados_revision_disponibles"] = (
+            RendicionProcesoService.estados_revision_disponibles(rendicion)
+            if user_has_permission_code(
+                self.request.user, self.PERMISSION_CAMBIAR_ESTADO_REVISION
+            )
+            else []
+        )
         context["mostrar_acciones_proceso"] = any(
             [
+                bool(context["estados_revision_disponibles"]),
                 context["puede_gestionar_auditoria"],
                 context["puede_revision_territorial"]
                 and rendicion.etapa_proceso

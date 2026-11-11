@@ -72,6 +72,23 @@ El permiso de etapa habilita listado, detalle, descarga y acciones de esa
 etapa, pero no concede por sí solo edición de datos generales, creación o
 eliminación. La interfaz y los POST aplican la misma comprobación de permisos.
 
+### Usuario revisor de estados (#2728)
+
+El permiso `change_review_stage_state` habilita, en «Acciones del proceso» del
+detalle, un selector para modificar a mano el estado de una rendición que esté
+en Revisión Territorial o Revisión para Carga. Los destinos son Pendiente, En
+curso y Subsanado de cualquiera de esas dos etapas; nunca «Pendiente de
+correcciones», que solo nace de una revisión con observaciones y de la PWA. No
+aplica a Auditoría ni a Regularización, cuya lógica y permisos no cambian.
+
+El cambio no toca documentos ni solicitudes de faltantes: la rendición queda
+con las acciones propias del estado destino y la gestionan los usuarios con el
+permiso de esa etapa. Volver a Revisión Territorial borra la fecha de
+validación territorial y reinicia las confirmaciones de lectura; enviar a
+Territorial en curso o subsanado respeta el cupo de una rendición por proyecto.
+El permiso no se asigna a ningún grupo por defecto y no concede por sí solo
+acceso al listado ni al detalle: se suma a un permiso de acceso existente.
+
 `Revisión para Carga` es solamente la denominación visible de la etapa cuyo
 valor persistido sigue siendo `revision_auditoria` (issue #2377). La constante
 `ETAPA_REVISION_AUDITORIA`, los nombres de permisos y los `value` de los filtros

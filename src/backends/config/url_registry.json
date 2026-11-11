@@ -2775,6 +2775,21 @@
   "regex": "^inspecciones/tablero/exportar\\.csv\\Z"
  },
  {
+  "name": "inspecciones_web_acta_anular",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/actas/(?P<numero>[^/]+)/anular/\\Z"
+ },
+ {
+  "name": "inspecciones_web_acta_detalle",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/actas/(?P<numero>[^/]+)/\\Z"
+ },
+ {
+  "name": "inspecciones_web_acta_prueba",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/actas/(?P<numero>[^/]+)/prueba/\\Z"
+ },
+ {
   "name": "inspecciones_web_actas",
   "namespace": "",
   "regex": "^api/web/inspecciones/actas/\\Z"

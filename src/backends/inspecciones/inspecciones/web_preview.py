@@ -1,10 +1,11 @@
 """Explicit local React preview of the Actas tab; never mounted by a production URLconf.
 
-The entry keeps the native URL ``/inspecciones/actas/`` and the native view's
-dispatch: anonymous users go to the login, users without ``puede_gestionar``
-get the native 403 and an invalid page the native 404. Only then the GET
+The entries keep the native URLs (``/inspecciones/actas/`` and
+``/inspecciones/actas/<numero>/``) and the native views' dispatch: anonymous
+users go to the login, users without ``puede_gestionar`` get the native 403
+and an invalid page or a missing acta the native 404. Only then the GET
 returns the frozen React ``index.html``, which loads its data from
-``/api/web/inspecciones/actas/``. Assets stay under the backend's own prefix
+``/api/web/inspecciones/``. Assets stay under the backend's own prefix
 (``/inspecciones/react/``), so the core forwards them like any other route.
 """
 
@@ -20,7 +21,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from inspecciones.views_actas import ActasView
+from inspecciones.views_actas import ActaDetalleView, ActasView
 
 BUILD_ASSETS = "/v2/sisoc/assets/"
 PUBLIC_ASSETS = "/inspecciones/react/assets/"
@@ -45,6 +46,29 @@ class ActasEntry(ActasView):
         patch_cache_control(response, private=True, no_store=True)
         patch_vary_headers(response, ("Cookie",))
         return response
+
+
+def _index_response(request, index_bytes):
+    response = HttpResponse(
+        b"" if request.method == "HEAD" else index_bytes,
+        content_type="text/html; charset=utf-8",
+    )
+    response["Content-Length"] = str(len(index_bytes))
+    patch_cache_control(response, private=True, no_store=True)
+    patch_vary_headers(response, ("Cookie",))
+    return response
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ActaDetalleEntry(ActaDetalleView):
+    """Native guards and the native 404 of a missing acta, then the frozen index."""
+
+    http_method_names = ["get", "head"]
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.get_acta()
+        return _index_response(request, self.index_bytes)
 
 
 class ReactAssetView(View):
@@ -105,6 +129,10 @@ def actas_preview_patterns(build_directory):
     )
     return [
         path("inspecciones/actas/", ActasEntry.as_view(index_bytes=index_bytes)),
+        path(
+            "inspecciones/actas/<str:numero>/",
+            ActaDetalleEntry.as_view(index_bytes=index_bytes),
+        ),
         path(
             "inspecciones/react/<path:asset_path>",
             ReactAssetView.as_view(assets=_frozen_assets(root)),

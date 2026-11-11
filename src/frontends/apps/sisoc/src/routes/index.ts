@@ -9,6 +9,7 @@ import { duplasFormRoute } from "./duplasFormRoute";
 import { groupsRoute } from "./groups";
 import { inicioRoute } from "./inicio";
 import { insumosRoute } from "./insumos";
+import { inspeccionesActaDetalleRoute } from "./inspeccionesActaDetalle";
 import { inspeccionesActasRoute } from "./inspeccionesActas";
 import { loginRoute } from "./login";
 import { montosRoute } from "./montos";
@@ -43,6 +44,7 @@ export const ROUTES: RouteDefinition[] = [
   userImportRoute,
   bulkCredentialsRoute,
   inspeccionesActasRoute,
+  inspeccionesActaDetalleRoute,
   cdiReportesRoute,
   cdiObservacionesRoute,
   duplasRoute,

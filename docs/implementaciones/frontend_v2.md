@@ -538,6 +538,14 @@ las siguientes:
 Registro:
 `../registro/cambios/2026-T4/2026-11-10-2785-react-inspecciones-actas.md`.
 
+La ficha del acta (`/inspecciones/actas/<numero>/`) suma acciones: la API
+(`src/backends/inspecciones/inspecciones/web_api_acta.py`) devuelve los textos
+ya impresos como la plantilla y corre el `post()` nativo de anular y marcar
+prueba, que responde `{"ok": true, "redirect": ...}`. La página siguiente
+consume los mensajes y los muestra como toastr (`routes/inspeccionesToasts.tsx`);
+los archivos siguen siendo las URLs nativas. Registro:
+`../registro/cambios/2026-T4/2026-11-10-2785-react-inspecciones-acta-detalle.md`.
+
 ### Vertical remoto CDI: reportes
 
 Pantallas del backend CDI sobre G1, con el mismo patrón que Inspecciones pero

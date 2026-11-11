@@ -117,3 +117,8 @@ parcial sin traceback. Los tests locales no sustituyen los probes reales de PRD.
 Esta continuación requiere desplegar la entrada administrativa y su guard;
 el diagnóstico inicial de no modificar el grafo sigue vigente. La revisión,
 comprobaciones posteriores y rollback se registran al completar el despliegue.
+
+La primera construcción canónica no llegó a crear imágenes: el contexto Docker
+intentaba leer artefactos protegidos de `.deploy/pwa`. Se agrega `.deploy/` a
+`.dockerignore`, sin modificar permisos ni leer esos artefactos. Esta exclusión
+acompaña las ya existentes para logs, backups y datos de runtime.

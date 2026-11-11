@@ -6,7 +6,6 @@ from django.db import models
 from comedores.models import Comedor
 from core.soft_delete import SoftDeleteModelMixin
 
-
 # Margen para el sufijo "_XXXXXXX" que agrega Storage cuando el nombre ya existe.
 _MARGEN_SUFIJO_STORAGE = 8
 

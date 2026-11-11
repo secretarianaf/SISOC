@@ -5,7 +5,7 @@ import { InsumosToastList } from "../InsumosToast";
 import { prerequisiteFromForbidden } from "../webAccess";
 import { accepted, record, renderMain, text, useMainResource, webClient } from "./MainFrame";
 import { PAS_API, list, shape } from "./pasFrame";
-import { PanelContent, panelEndpoint, panelValid, type PanelData, type Persona } from "./pasPanel";
+import { PanelContent, PanelHeader, panelEndpoint, panelValid, type PanelData, type PanelExtras, type Persona } from "./pasPanel";
 import PasSelect2 from "./pasSelect2";
 
 /**
@@ -153,10 +153,8 @@ function Panel({ id, notices, onDone }: { id?: string; notices: Notice[]; onDone
   const [state, setState] = useMainResource(panelEndpoint(id), dataValid);
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
-  return renderMain(state, "Cargando panel…", (data) => ({
-    title: "Panel de Control · PAS",
-    breadcrumb: null,
-    content: <PanelContent data={data} extras={{
+  return renderMain(state, "Cargando panel…", (data) => {
+    const extras: PanelExtras = {
       // `includes/base.html` loads Select2 and its theme before the page's `pas.css`.
       stylesheets: <>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/css/select2.min.css" />
@@ -172,8 +170,9 @@ function Panel({ id, notices, onDone }: { id?: string; notices: Notice[]; onDone
           if (outcome.kind === "forbidden") setState({ status: "forbidden", prerequisite: prerequisiteFromForbidden(outcome.data) });
           else onDone(persona.id, outcome);
         }} />,
-    }} />,
-  }));
+    };
+    return { title: "Panel de Control · PAS", breadcrumb: null, appHeader: <PanelHeader data={data} extras={extras} />, content: <PanelContent data={data} extras={extras} /> };
+  });
 }
 
 /** The native view redirects to `pas/panel-control/<pk>` (without the list filters) after every POST. */

@@ -343,6 +343,7 @@ export default function SisocShell({
   backHref = "/",
   routes = [],
   headerItems,
+  appHeader,
   activePath,
 }: {
   context: Pick<ReadyContext, "user" | "navigation" | "footer_version_label"> & {
@@ -361,6 +362,8 @@ export default function SisocShell({
   routes?: readonly ShellRouteDefinition[];
   /** Page-specific `nav-item`s that `includes/header.html` places before the logout item. */
   headerItems?: ReactNode;
+  /** `{% block app-header %}` of `includes/main.html`: replaces its default empty row. */
+  appHeader?: ReactNode;
   /** Path the menu rules evaluate instead of the current one (a page that marks its list entry). */
   activePath?: string;
 }) {
@@ -544,7 +547,7 @@ export default function SisocShell({
               </div>
             </div>
             <div className="container-fluid">
-              <div className="row" />
+              {appHeader ?? <div className="row" />}
             </div>
           </div>
           <div className="app-content">

@@ -128,6 +128,8 @@ describe("Buscador PAS", () => {
     expect(webGet).toHaveBeenCalledWith("web/pas/personas/?q=Ap", expect.anything());
     await waitFor(() => expect(document.title).toBe("SISOC - Buscador PAS"));
     expect(within(appHeader()).getByRole("link", { name: "Informes" }).getAttribute("href")).toBe("/pas/informes");
+    // `{% block app-header %}` replaces the template's empty row instead of following it.
+    expect([...appHeader().children].map((c) => c.className)).toEqual(["pas-top-actions"]);
     expect(screen.getByRole("link", { name: "Importar titulares" }).getAttribute("title")).toBe("Importar titulares desde CSV");
     expect(screen.getByRole("link", { name: "Exportar tokens" }).getAttribute("href")).toBe("/pas/ddjj/tokens/exportar");
     const rows = screen.getAllByRole("row");

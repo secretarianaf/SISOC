@@ -101,7 +101,9 @@ describe("Acompañamientos route (AC01)", () => {
     setup(`${LISTA}1/detalle/`);
     await screen.findByText("Listado de Hitos");
     await waitFor(() => expect(document.title).toBe("SISOC - Acompañamiento"));
-    expect(document.querySelector(".app-content-header h2.mb-0")!.textContent).toBe("Comedor Norte");
+    const block = document.querySelector(".app-content-header > .container-fluid:last-child")!;
+    expect(block.innerHTML).toBe('<div class="row"><div class="col-12"><h2 class="mb-0">Comedor Norte</h2></div></div>');
+    expect(document.querySelector(".app-content span[hidden]")).toBeNull();
     expect(screen.getByRole("link", { name: /CONV-7/ }).className).toContain("btn-primary");
     expect(screen.getByText("Cerrada")).toBeTruthy();
     expect(document.getElementById("completados-count")!.textContent).toBe("1");

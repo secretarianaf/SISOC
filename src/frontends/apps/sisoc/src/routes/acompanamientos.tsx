@@ -1,6 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- the unit surface is this route module; its screens live here with the route. */
-import { useCallback, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { leerCookie } from "@sisoc/api";
 import { InsumosToastList } from "../InsumosToast";
 import { accepted, internal, record, renderMain, text, useMainResource, webClient } from "./MainFrame";
@@ -46,16 +45,6 @@ export function detailValid(v: unknown): v is DetailData {
     ["detalle", "intervenciones", "expedientes", "seguimiento", "comedor", "restaurar"].every((k) => internal(u[k])) &&
     (u.informe_complementario === null || internal(u.informe_complementario)) &&
     Array.isArray(v.messages) && v.messages.every((m) => record(m) && text(m.message) && LEVELS.includes(m.level as string));
-}
-
-/** `{% block app-header %}`: the shell keeps an empty header row; the ficha fills it like the template. */
-function AppHeader({ children }: { children: ReactNode }) {
-  const [row, setRow] = useState<Element | null>(null);
-  // The shell header is in the DOM once this probe mounts (same commit).
-  const probe = useCallback((el: HTMLElement | null) => {
-    if (el) setRow(document.querySelector(".app-content-header > .container-fluid:last-child > .row"));
-  }, []);
-  return row ? createPortal(children, row) : <span hidden ref={probe} />;
 }
 
 function Vacio({ titulo, texto }: { titulo: string; texto: string }) {
@@ -117,7 +106,6 @@ function Ficha({ data }: { data: DetailData }) {
   const info = data.informacion, p = data.prestaciones;
   return <>
     <link rel="stylesheet" href="/static/custom/css/hitos.css" />
-    <AppHeader><div className="col-12"><h2 className="mb-0">{data.comedor.nombre}</h2></div></AppHeader>
     <InsumosToastList messages={aviso && "text" in aviso ? [...data.messages, { message: aviso.text, level: "error" }] : data.messages} />
     {aviso && "uncertain" in aviso && <p role="alert">No se pudo confirmar el resultado. <a href={`${data.urls.detalle}${data.admision_id ? `?admision_id=${data.admision_id}` : ""}`}>Recargar la ficha</a></p>}
     <div className="row justify-content-between">
@@ -206,6 +194,8 @@ function DetailPage({ id }: { id: string }) {
       <li className="breadcrumb-item"><a href={data.urls.detalle} title="Ver Comedor">{data.comedor.nombre}</a></li>
       <li className="breadcrumb-item active">Acompañamiento</li>
     </ol>,
+    // `{% block app-header %}` of the template: the comedor name.
+    appHeader: <div className="row"><div className="col-12"><h2 className="mb-0">{data.comedor.nombre}</h2></div></div>,
     content: <Ficha data={data} />,
   }));
 }

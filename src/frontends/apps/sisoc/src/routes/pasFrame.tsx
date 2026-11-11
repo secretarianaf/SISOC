@@ -1,12 +1,12 @@
 /* eslint-disable react-refresh/only-export-components -- frame module: PAS shared markup and validators travel together. */
-import { useLayoutEffect, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import type { ReactNode } from "react";
 import { internal, record, text } from "./MainFrame";
 
 /**
  * Shared pieces of the PAS back-office templates that extend `includes/main.html`
- * with `pas.css`: the `app-header` block (`pas-top-actions`), the module header
- * and `pas/includes/workflow_nav.html`. Data comes from `/api/web/pas/`.
+ * with `pas.css`: the module header and `pas/includes/workflow_nav.html`. The
+ * `app-header` block (`pas-top-actions`) goes to the shell through `appHeader`.
+ * Data comes from `/api/web/pas/`.
  */
 export const PAS_API = "web/pas/";
 export const PAS_STYLESHEET = <link rel="stylesheet" href="/static/custom/css/pas.css" />;
@@ -43,16 +43,6 @@ export const shape = (v: unknown, fields: Record<string, (x: unknown) => boolean
 export type WorkflowCard = { key: string; number: string; title: string; subtitle: string; url: string; active: boolean; source_status: string };
 export const workflowValid = list((v: unknown): v is WorkflowCard =>
   shape(v, { key: text, number: text, title: text, subtitle: text, url: internal, active: bool, source_status: text }));
-
-/** `{% block app-header %}`: replaces the empty row of the content header. */
-export function PasAppHeader({ children }: { children: ReactNode }) {
-  const [target, setTarget] = useState<Element | null>(null);
-  useLayoutEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the portal target is a shell DOM node, known only once it is mounted.
-    setTarget(document.querySelector(".app-content-header > .container-fluid:last-child"));
-  }, []);
-  return target ? createPortal(children, target) : null;
-}
 
 export function BuscadorButton() {
   return <a href={BUSCADOR_URL} className="btn btn-light">

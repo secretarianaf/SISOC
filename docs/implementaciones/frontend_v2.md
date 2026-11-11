@@ -557,8 +557,11 @@ selector J2 (`routes/InspSelect2.tsx`) admite deshabilitado, vaciado dependiente
 
 Seguimientos compartidos de la migración: el selector J2 deja el foco en la
 caja al abrir y responde al teclado como Select2 4.1 nativo (Enter/Espacio/Alt+↓
-abren; Escape/Tab/Alt+↑ cierran sin mover el foco). Registro:
-`../registro/cambios/2026-T4/2026-11-11-2785-inspselect2-foco-nativo.md`.
+abren; Escape/Tab/Alt+↑ cierran sin mover el foco), y `SisocShell` recibe
+`{% block app-header %}` como prop `appHeader` (botones de PAS, nombre del
+comedor en AC01) en lugar de portales. Registros:
+`../registro/cambios/2026-T4/2026-11-11-2785-inspselect2-foco-nativo.md` y
+`../registro/cambios/2026-T4/2026-11-11-2785-shell-app-header.md`.
 
 ### Vertical remoto CDI: reportes
 

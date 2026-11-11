@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import { renderMain, text, useMainResource } from "./MainFrame";
-import { EYEBROW, PAS_API, PAS_STYLESHEET, PasAppHeader, SourceChip, bool, integer, list, nullable, shape } from "./pasFrame";
+import { EYEBROW, PAS_API, PAS_STYLESHEET, SourceChip, bool, integer, list, nullable, shape } from "./pasFrame";
 
 /**
  * «Buscador PAS» (`pas/listar`, `pas/persona_list.html`): GET search form,
@@ -125,13 +125,13 @@ export default function PasBuscadorPage() {
   return renderMain(state, "Cargando titulares…", (data) => ({
     title: "Buscador PAS",
     breadcrumb: null,
+    appHeader: <div className="pas-top-actions">
+      <a href="/pas/informes" className="btn btn-outline-light">
+        <i className="bi bi-file-earmark-bar-graph" aria-hidden="true" />{" "}Informes
+      </a>
+    </div>,
     content: <>
       {PAS_STYLESHEET}
-      <PasAppHeader><div className="pas-top-actions">
-        <a href="/pas/informes" className="btn btn-outline-light">
-          <i className="bi bi-file-earmark-bar-graph" aria-hidden="true" />{" "}Informes
-        </a>
-      </div></PasAppHeader>
       <Buscador data={data} />
     </>,
   }));

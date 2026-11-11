@@ -19,7 +19,8 @@ export type MainState<T> =
   | { status: "forbidden"; prerequisite: WebPrerequisite | null }
   | { status: "ready"; data: T; session: MainSession };
 /** `activePath`: the menu entry the native sidebar marks (it matches by path fragment). */
-export type MainPage = { title: string; heading?: string; breadcrumb: ReactNode; content: ReactNode; activePath?: string };
+/** `appHeader`: the page's `{% block app-header %}` (the shell's empty row otherwise). */
+export type MainPage = { title: string; heading?: string; breadcrumb: ReactNode; content: ReactNode; activePath?: string; appHeader?: ReactNode };
 
 export const webClient = crearCliente("/api");
 export const accepted = (status: number) => (status >= 200 && status < 300) || status === 403;
@@ -60,9 +61,9 @@ export function renderMain<T>(state: MainState<T>, loading: string, page: (data:
   if (state.status === "loading") return <main role="status">{loading}</main>;
   if (state.status === "error") return <main role="alert">No se pudo cargar la página.</main>;
   if (state.status === "forbidden") return <InsumosAccessError prerequisite={state.prerequisite} />;
-  const { title, heading = "", breadcrumb, content, activePath } = page(state.data);
+  const { title, heading = "", breadcrumb, content, activePath, appHeader } = page(state.data);
   return <>
-    <SisocShell context={state.session} content={<>{HITOS_STYLESHEET}{content}</>} pageTitle={title} heading={heading} breadcrumb={breadcrumb} previewLinks={false} activePath={activePath} />
+    <SisocShell context={state.session} content={<>{HITOS_STYLESHEET}{content}</>} pageTitle={title} heading={heading} breadcrumb={breadcrumb} previewLinks={false} activePath={activePath} appHeader={appHeader} />
     <AppLoaded />
   </>;
 }

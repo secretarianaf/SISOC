@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { internal, text } from "./MainFrame";
 import {
-  BuscadorButton, EmptyState, ModuleHeader, PAS_API, PAS_STYLESHEET, PasAppHeader, WorkflowNav,
+  BuscadorButton, EmptyState, ModuleHeader, PAS_API, PAS_STYLESHEET, WorkflowNav,
   bool, formacionValid, integer, list, nullable, shape, stylesheetsReady, urlencode, workflowValid,
   type Formacion, type WorkflowCard,
 } from "./pasFrame";
@@ -281,13 +281,10 @@ function Ficha({ data, persona }: { data: PanelData; persona: Persona }) {
 
 export type PanelExtras = { stylesheets?: ReactNode; actions?: (data: PanelData, persona: Persona) => ReactNode; overlays?: (data: PanelData, persona: Persona) => ReactNode; notices?: ReactNode };
 
-export function PanelContent({ data, extras = {} }: { data: PanelData; extras?: PanelExtras }) {
+/** `{% block app-header %}` of the panel, rendered by the shell (`appHeader`). */
+export function PanelHeader({ data, extras = {} }: { data: PanelData; extras?: PanelExtras }) {
   const persona = data.persona;
-  return <>
-    {extras.stylesheets}
-    {PAS_STYLESHEET}
-    {extras.notices}
-    <PasAppHeader><div className="pas-top-actions">
+  return <div className="pas-top-actions">
       <BuscadorButton />
       {persona && data.capabilities.can_change && <div className="d-flex gap-2">
         {extras.actions ? extras.actions(data, persona) : <button type="button" className="btn btn-warning" data-bs-toggle="modal" data-bs-target="#cambiarEstadoModal">
@@ -297,7 +294,15 @@ export function PanelContent({ data, extras = {} }: { data: PanelData; extras?: 
           <i className="bi bi-pencil" aria-hidden="true" />
         </a>
       </div>}
-    </div></PasAppHeader>
+  </div>;
+}
+
+export function PanelContent({ data, extras = {} }: { data: PanelData; extras?: PanelExtras }) {
+  const persona = data.persona;
+  return <>
+    {extras.stylesheets}
+    {PAS_STYLESHEET}
+    {extras.notices}
     <main className="pas-workspace">
       <ModuleHeader title="Panel de Control"
         subtitle={persona ? `${persona.apellidos}, ${persona.nombres} · DNI ${persona.dni}` : "Consulta integral de titulares PAS"}

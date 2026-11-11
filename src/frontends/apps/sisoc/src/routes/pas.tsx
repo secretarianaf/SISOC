@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { renderMain, text, useMainResource, webClient } from "./MainFrame";
 import {
-  BuscadorButton, EmptyState, ModuleHeader, PAS_API, PAS_STYLESHEET, PasAppHeader, SourceChip, WorkflowNav,
+  BuscadorButton, EmptyState, ModuleHeader, PAS_API, PAS_STYLESHEET, SourceChip, WorkflowNav,
   bool, formacionValid, integer, list, nullable, shape, stylesheetsReady, urlencode, workflowValid,
   type Formacion, type WorkflowCard,
 } from "./pasFrame";
@@ -223,9 +223,9 @@ function AreaPage({ area }: { area: Area }) {
   return renderMain(state, "Cargando área…", (data) => ({
     title: `${data.area.title} · PAS`,
     breadcrumb: null,
+    appHeader: <div className="pas-top-actions"><BuscadorButton /></div>,
     content: <>
       {PAS_STYLESHEET}
-      <PasAppHeader><div className="pas-top-actions"><BuscadorButton /></div></PasAppHeader>
       <main className="pas-workspace">
         <ModuleHeader title={data.area.title} aside={area === "formacion"
           ? <SourceChip>Fuente de formación pendiente</SourceChip>

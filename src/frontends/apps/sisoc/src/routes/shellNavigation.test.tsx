@@ -202,3 +202,18 @@ describe("SisocShell header items", () => {
     expect(list.children).toHaveLength(1);
   });
 });
+
+describe("SisocShell app-header block", () => {
+  const block = () => document.querySelector(".app-content-header > .container-fluid:last-child") as HTMLElement;
+
+  it("keeps the template default, one empty row, without an app header", () => {
+    renderShell("/inicio/");
+    expect(block().innerHTML).toBe('<div class="row"></div>');
+  });
+
+  it("replaces the default row with the given app header, as `{% block app-header %}` does", () => {
+    window.history.replaceState({}, "", "/inicio/");
+    render(<SisocShell context={{ ...readyContext, navigation }} previewLinks={false} content={<p>Contenido</p>} appHeader={<div className="pas-top-actions"><a href="/pas/listar">Buscador PAS</a></div>} />);
+    expect(block().innerHTML).toBe('<div class="pas-top-actions"><a href="/pas/listar">Buscador PAS</a></div>');
+  });
+});

@@ -96,7 +96,7 @@ describe("CDF centres route", () => {
     setup("/centrodefamilia/centros/?page=1");
     await screen.findByRole("heading", { name: "Buscar Centro" });
     expect(webGet).toHaveBeenCalledTimes(2);
-    expect(document.title).toBe("SISOC - Centros de Familia");
+    await waitFor(() => expect(document.title).toBe("SISOC - Centros de Familia"));
     expect(screen.getByRole("link", { name: "Centro de Familia" }).getAttribute("href")).toBe("/centrodefamilia/centros/");
     const rows = within(document.getElementById("centros-table-body") as HTMLElement).getAllByRole("row");
     expect(rows.map((r) => r.querySelector("td")?.textContent)).toEqual(["Beta", "alfa"]);
@@ -179,7 +179,7 @@ describe("CDF centres route", () => {
     serve({ "web/cdf/centros/7/": { data: ficha() } });
     setup("/centrodefamilia/centros/7/");
     await screen.findByRole("heading", { level: 1 });
-    expect(document.title).toBe("SISOC - centro siete");
+    await waitFor(() => expect(document.title).toBe("SISOC - centro siete"));
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Centro siete Adherido Activo");
     expect(screen.getByText("$150")).toBeTruthy();
     expect(screen.getByText("1 hombres · 0 mujeres")).toBeTruthy();

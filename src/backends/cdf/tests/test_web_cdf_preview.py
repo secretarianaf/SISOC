@@ -95,6 +95,9 @@ def test_entries_serve_the_frozen_index_with_rewritten_assets(
     for url, params in (
         ("/centrodefamilia/centros/", {"page": "9"}),
         (f"/centrodefamilia/centros/{centro.pk}/", {"page_act": "x"}),
+        ("/centrodefamilia/centros/nuevo/", {"faro": str(centro.pk)}),
+        (f"/centrodefamilia/centros/{centro.pk}/editar/", {}),
+        (f"/centrodefamilia/centros/{centro.pk}/eliminar/", {}),
     ):
         with override_settings(ROOT_URLCONF=preview_urls):
             respuesta = sse_client.get(url, params)
@@ -142,6 +145,13 @@ def test_native_guards_decide_exactly_as_the_native_pages(preview_urls, centro):
         (ref, "get", "/centrodefamilia/centros/999999/"),
         (ref, "post", "/centrodefamilia/centros/"),
         (ref, "post", f"/centrodefamilia/centros/{centro.pk}/"),
+        (anonimo, "get", "/centrodefamilia/centros/nuevo/"),
+        (sin_permiso, "get", "/centrodefamilia/centros/nuevo/"),
+        (ref, "get", f"/centrodefamilia/centros/{centro.pk}/editar/"),
+        (ref, "get", f"/centrodefamilia/centros/{centro.pk}/eliminar/"),
+        (ref, "post", f"/centrodefamilia/centros/{centro.pk}/eliminar/"),
+        (solo_permiso, "get", "/centrodefamilia/centros/999999/editar/"),
+        (sin_permiso, "post", f"/centrodefamilia/centros/{centro.pk}/eliminar/"),
     ]
     for client, method, url in casos:
         native = _outcome(client, "config.urls_all", method, url)

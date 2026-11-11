@@ -4,6 +4,7 @@ import { businessRoute } from "./business";
 import { categoriasRoute } from "./categorias";
 import { cdiObservacionesRoute } from "./cdiObservaciones";
 import { cdiReportesRoute } from "./cdiReportes";
+import { cdfCentroFormRoute } from "./cdfCentroForm";
 import { cdfCentrosRoute } from "./cdfCentros";
 import { duplasRoute } from "./duplas";
 import { duplasFormRoute } from "./duplasFormRoute";
@@ -50,6 +51,7 @@ export const ROUTES: RouteDefinition[] = [
   cdiReportesRoute,
   cdiObservacionesRoute,
   cdfCentrosRoute,
+  cdfCentroFormRoute,
   duplasRoute,
   duplasFormRoute,
   montosRoute,

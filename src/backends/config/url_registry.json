@@ -5225,14 +5225,34 @@
   "regex": "^api/web/users/bulk\\-credentials/jobs/(?P<pk>[0-9]+)/resume/\\Z"
  },
  {
+  "name": "web_cdf_centros_crear",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/crear/\\Z"
+ },
+ {
   "name": "web_cdf_centros_detail",
   "namespace": "",
   "regex": "^api/web/cdf/centros/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "web_cdf_centros_editar",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "web_cdf_centros_eliminar",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
   "name": "web_cdf_centros_list",
   "namespace": "",
   "regex": "^api/web/cdf/centros/\\Z"
+ },
+ {
+  "name": "web_cdf_centros_options",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/options/\\Z"
  },
  {
   "name": "web_cdf_centros_usuarios",

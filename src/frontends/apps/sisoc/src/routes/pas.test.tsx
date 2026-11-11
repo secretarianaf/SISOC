@@ -126,7 +126,7 @@ describe("Buscador PAS", () => {
     setup("/pas/listar?q=Ap");
     await screen.findByText("Apellido1, Nombre1");
     expect(webGet).toHaveBeenCalledWith("web/pas/personas/?q=Ap", expect.anything());
-    expect(document.title).toBe("SISOC - Buscador PAS");
+    await waitFor(() => expect(document.title).toBe("SISOC - Buscador PAS"));
     expect(within(appHeader()).getByRole("link", { name: "Informes" }).getAttribute("href")).toBe("/pas/informes");
     expect(screen.getByRole("link", { name: "Importar titulares" }).getAttribute("title")).toBe("Importar titulares desde CSV");
     expect(screen.getByRole("link", { name: "Exportar tokens" }).getAttribute("href")).toBe("/pas/ddjj/tokens/exportar");
@@ -174,7 +174,7 @@ describe("Panel de Control PAS", () => {
     setup("/pas/panel-control/2?q=Ap");
     await screen.findByText("Apellido2, Nombre2 · DNI 30000002");
     expect(webGet).toHaveBeenCalledWith("web/pas/panel/2/?q=Ap", expect.anything());
-    expect(document.title).toBe("SISOC - Panel de Control · PAS");
+    await waitFor(() => expect(document.title).toBe("SISOC - Panel de Control · PAS"));
     const header = within(appHeader());
     expect(header.getByRole("link", { name: "Buscador PAS" }).getAttribute("href")).toBe("/pas/listar");
     expect(header.getByRole("button", { name: "Cambiar estado" })).toBeTruthy();
@@ -271,7 +271,7 @@ describe("PAS areas", () => {
     setup("/pas/formacion?q=%20a/b%20&estado_formacion=sin-formacion");
     await screen.findByText("Semáforo de validación de formación");
     expect(webGet).toHaveBeenCalledWith("web/pas/areas/formacion/?q=%20a/b%20&estado_formacion=sin-formacion", expect.anything());
-    expect(document.title).toBe("SISOC - Formación FCH · PAS");
+    await waitFor(() => expect(document.title).toBe("SISOC - Formación FCH · PAS"));
     expect(within(appHeader()).getByRole("link", { name: "Buscador PAS" })).toBeTruthy();
     expect(screen.getByText("Fuente de formación pendiente")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Sin formación" }).className).toBe("is-active");
@@ -349,7 +349,7 @@ describe("PAS areas", () => {
     expect(webGet).toHaveBeenCalledWith("web/pas/areas/mesa-ayuda/", expect.anything());
     expect(screen.getByText("Integración pendiente")).toBeTruthy();
     expect(screen.getByText("La identificación, conversación, adjuntos y estados dependerán de la API de Mesa de Ayuda.")).toBeTruthy();
-    expect(document.title).toBe("SISOC - Mesa de Ayuda · PAS");
+    await waitFor(() => expect(document.title).toBe("SISOC - Mesa de Ayuda · PAS"));
     cleanup();
     serve(area("liquidacion", "Liquidación"));
     setup("/pas/liquidacion");

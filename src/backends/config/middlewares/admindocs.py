@@ -22,6 +22,7 @@ _OWNED_PATTERNS = (
     r"/api/web/pas/(?:areas/(?:formacion|mesa-ayuda|liquidacion)/|formacion/personas/"
     r"|personas/(?:[0-9]+/cambiar-estado/)?|panel/(?:[0-9]+/)?)",
     r"/api/web/cdf/centros/(?:[0-9]+/(?:usuarios/)?)?",
+    r"/api/web/cdf/centros/(?:options/|crear/|[0-9]+/(?:editar|eliminar)/)",
 )
 
 

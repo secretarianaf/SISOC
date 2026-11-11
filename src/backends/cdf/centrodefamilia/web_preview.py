@@ -21,7 +21,13 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from centrodefamilia.views.centro import CentroDetailView, CentroListView
+from centrodefamilia.views.centro import (
+    CentroCreateView,
+    CentroDeleteView,
+    CentroDetailView,
+    CentroListView,
+    CentroUpdateView,
+)
 from core.decorators import permissions_any_required
 
 BUILD_ASSETS = "/v2/sisoc/assets/"
@@ -60,6 +66,38 @@ class CentroDetailEntry(CentroDetailView):
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CentroCreateEntry(CentroCreateView):
+    """Create form entry; POST stays the native form."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return index_response(request, self.index_bytes)
+
+
+def _object_entry_get(view, request, *args, **kwargs):
+    """After the native ``dispatch`` rule (403/404), the GET serves the index."""
+    view.object = view.get_object()
+    return index_response(request, view.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CentroUpdateEntry(CentroUpdateView):
+    """Edit entry; the native referente/SSE rule runs first, POST stays native."""
+
+    index_bytes = b""
+    get = _object_entry_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CentroDeleteEntry(CentroDeleteView):
+    """Delete confirmation entry; POST stays the native soft delete."""
+
+    index_bytes = b""
+    get = _object_entry_get
 
 
 class ReactAssetView(View):
@@ -129,6 +167,18 @@ def cdf_preview_patterns(build_directory):
         path(
             "centrodefamilia/centros/<int:pk>/",
             _entry(CentroDetailEntry, index_bytes),
+        ),
+        path(
+            "centrodefamilia/centros/nuevo/",
+            _entry(CentroCreateEntry, index_bytes),
+        ),
+        path(
+            "centrodefamilia/centros/<int:pk>/editar/",
+            _entry(CentroUpdateEntry, index_bytes),
+        ),
+        path(
+            "centrodefamilia/centros/<int:pk>/eliminar/",
+            _entry(CentroDeleteEntry, index_bytes),
         ),
         path(
             "centrodefamilia/react/<path:asset_path>",

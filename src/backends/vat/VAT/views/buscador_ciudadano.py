@@ -1,4 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
+from django.views import View
 from django.views.generic import TemplateView
 
 from VAT.services.access_scope import is_vat_admin_visualizador, is_vat_sse
@@ -9,6 +11,8 @@ from VAT.services.buscador_ciudadano_service import (
     contar_inscripciones_visibles,
     export_trayectoria_to_csv,
     export_trayectoria_to_excel,
+    opciones_ciudadano,
+    opciones_inscripcion,
 )
 
 ESTADO_INICIAL = "inicial"
@@ -102,3 +106,19 @@ class BuscadorCiudadanoView(LoginRequiredMixin, TemplateView):
             }
         )
         return context
+
+
+class OpcionesCiudadanoView(LoginRequiredMixin, View):
+    """Opciones del select de ciudadano en los formularios de VAT."""
+
+    def get(self, request):
+        return JsonResponse({"results": opciones_ciudadano(request.GET.get("q"))})
+
+
+class OpcionesInscripcionView(LoginRequiredMixin, View):
+    """Opciones del select de inscripción en los resultados de evaluación."""
+
+    def get(self, request):
+        return JsonResponse(
+            {"results": opciones_inscripcion(request.user, request.GET.get("q"))}
+        )

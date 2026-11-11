@@ -27,6 +27,9 @@ from core.services.csv_export import build_csv_response, neutralize_csv_formula
 
 DOCUMENTO_LENGTHS = (7, 8)
 CUIL_LENGTH = 11
+MINIMO_DOCUMENTO_OPCIONES = 7
+MINIMO_PASAPORTE_OPCIONES = 6
+LIMITE_OPCIONES = 20
 
 ESTADO_LABELS = dict(Inscripcion.ESTADO_INSCRIPCION_CHOICES)
 RESULTADO_LABELS = dict(Inscripcion.RESULTADO_FINAL_CHOICES)
@@ -97,6 +100,70 @@ def buscar_ciudadanos(user, q: str):
         )
 
     return Ciudadano.objects.none()
+
+
+def opciones_ciudadano(q: str) -> list[dict]:
+    """Opciones de ``{id, text}`` para los selects de ciudadano de VAT.
+
+    Solo busca por documento o pasaporte, que tienen índice: buscar por nombre
+    con ``icontains`` recorrería todo el padrón en cada tecla.
+    """
+    texto = (q or "").strip()
+    if texto.isdigit():
+        return [
+            {"id": ciudadano.pk, "text": f"{ciudadano} ({ciudadano.documento})"}
+            for ciudadano in Ciudadano.buscar_por_documento(
+                texto, max_results=LIMITE_OPCIONES
+            )
+        ]
+
+    pasaporte = texto.upper().replace(" ", "")
+    if len(pasaporte) < MINIMO_PASAPORTE_OPCIONES:
+        return []
+    ciudadanos = (
+        Ciudadano.objects.filter(
+            tipo_documento=Ciudadano.DOCUMENTO_PASAPORTE,
+            documento_pasaporte__istartswith=pasaporte,
+        )
+        .only("id", "nombre", "apellido", "documento_pasaporte")
+        .order_by("documento_pasaporte")[:LIMITE_OPCIONES]
+    )
+    return [
+        {
+            "id": ciudadano.pk,
+            "text": f"{ciudadano} (Pasaporte {ciudadano.documento_pasaporte})",
+        }
+        for ciudadano in ciudadanos
+    ]
+
+
+def opciones_inscripcion(user, q: str) -> list[dict]:
+    """Inscripciones visibles para ``user`` de las personas con ese documento.
+
+    Resuelve primero los ciudadanos para que la consulta entre por su índice y
+    no recorra las inscripciones ordenadas por fecha.
+    """
+    texto = (q or "").strip()
+    if not texto.isdigit() or len(texto) < MINIMO_DOCUMENTO_OPCIONES:
+        return []
+    ciudadano_ids = [
+        ciudadano.pk
+        for ciudadano in Ciudadano.buscar_por_documento(
+            texto, max_results=LIMITE_OPCIONES
+        )
+    ]
+    if not ciudadano_ids:
+        return []
+    inscripciones = (
+        base_inscripciones_queryset_for_user(user)
+        .filter(ciudadano_id__in=ciudadano_ids)
+        .select_related("ciudadano")
+        .order_by("-fecha_inscripcion")[:LIMITE_OPCIONES]
+    )
+    return [
+        {"id": inscripcion.pk, "text": str(inscripcion)}
+        for inscripcion in inscripciones
+    ]
 
 
 def contar_inscripciones_visibles(user, ciudadanos) -> dict[int, int]:

@@ -4115,6 +4115,16 @@
   "regex": "^api/vat/web/titulos/$"
  },
  {
+  "name": "vat_ajax_buscar_ciudadanos",
+  "namespace": "",
+  "regex": "^vat/ajax/ciudadanos\\-buscar/\\Z"
+ },
+ {
+  "name": "vat_ajax_buscar_inscripciones",
+  "namespace": "",
+  "regex": "^vat/ajax/inscripciones\\-buscar/\\Z"
+ },
+ {
   "name": "vat_ajax_localidades_por_centro",
   "namespace": "",
   "regex": "^vat/ajax/localidades\\-por\\-centro/\\Z"

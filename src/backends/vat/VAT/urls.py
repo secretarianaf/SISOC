@@ -159,7 +159,11 @@ from VAT.views.evaluacion import (
     ResultadoEvaluacionDeleteView,
 )
 from VAT.views.reporte import ReporteInscriptosAsistenciasView
-from VAT.views.buscador_ciudadano import BuscadorCiudadanoView
+from VAT.views.buscador_ciudadano import (
+    BuscadorCiudadanoView,
+    OpcionesCiudadanoView,
+    OpcionesInscripcionView,
+)
 
 
 urlpatterns = [
@@ -762,6 +766,26 @@ urlpatterns = [
             municipios_por_centro
         ),
         name="vat_ajax_municipios_por_centro",
+    ),
+    path(
+        "vat/ajax/ciudadanos-buscar/",
+        permissions_any_required(
+            [
+                "VAT.add_inscripcion",
+                "VAT.change_inscripcion",
+                "VAT.add_inscripcionoferta",
+                "VAT.change_inscripcionoferta",
+                "VAT.add_voucher",
+            ]
+        )(OpcionesCiudadanoView.as_view()),
+        name="vat_ajax_buscar_ciudadanos",
+    ),
+    path(
+        "vat/ajax/inscripciones-buscar/",
+        permissions_any_required(
+            ["VAT.add_resultadoevaluacion", "VAT.change_resultadoevaluacion"]
+        )(OpcionesInscripcionView.as_view()),
+        name="vat_ajax_buscar_inscripciones",
     ),
     # Oferta Institucional
     path(

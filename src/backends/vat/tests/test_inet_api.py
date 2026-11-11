@@ -158,6 +158,65 @@ def test_lists_are_paginated_and_contract_is_serializable(api, data, resource):
     assert isinstance(response.json()["results"], list)
 
 
+def test_commission_counters_match_and_are_not_grouped(api, data, superuser):
+    """#2889: los contadores salen por subconsulta, sin cruzar ni agrupar."""
+    commission = data["commission"]
+    empty = ComisionCurso.objects.create(
+        curso=data["course"],
+        ubicacion=data["location"],
+        cupo_total=5,
+        fecha_inicio=commission.fecha_inicio,
+        fecha_fin=commission.fecha_fin,
+    )
+    for numero, estado in enumerate(
+        ("inscripta", "validada_presencial", "en_espera"), start=1
+    ):
+        citizen = Ciudadano.objects.create(
+            nombre="Persona",
+            apellido=f"Contador {numero}",
+            documento=99002000 + numero,
+            fecha_nacimiento=date(1990, 1, 1),
+        )
+        Inscripcion.objects.create(
+            ciudadano=citizen, comision_curso=commission, estado=estado
+        )
+    horario = ComisionHorario.objects.create(
+        comision_curso=commission,
+        dia_semana=data["day"],
+        hora_desde="09:00",
+        hora_hasta="12:00",
+        vigente=True,
+    )
+    for numero, estado in enumerate(("realizada", "realizada", "programada"), 1):
+        SesionComision.objects.create(
+            comision_curso=commission,
+            horario=horario,
+            numero_sesion=numero,
+            fecha=commission.fecha_inicio + timedelta(days=numero),
+            estado=estado,
+        )
+
+    response = api.get("/api/inet/comisiones/")
+
+    assert response.status_code == 200
+    counters = {
+        row["id"]: (
+            row["inscriptos_count"],
+            row["clases_count"],
+            row["clases_realizadas"],
+        )
+        for row in response.json()["results"]
+    }
+    assert counters[commission.pk] == (2, 3, 2)
+    assert counters[empty.pk] == (0, 0, 0)
+
+    from VAT.services.inet_queries import resource_queryset
+
+    sql = str(resource_queryset("comisiones", superuser).query)
+    assert 'GROUP BY "VAT_comisioncurso"."id"' not in sql
+    assert 'JOIN "VAT_sesioncomision"' not in sql
+
+
 def test_referente_cannot_read_or_write_another_center(user, data):
     from django.contrib.auth.models import Group
 

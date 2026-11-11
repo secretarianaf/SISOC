@@ -5400,6 +5400,56 @@
   "regex": "^api/web/cdf/responsables/\\Z"
  },
  {
+  "name": "web_datacalle_cerrar",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/cerrar/\\Z"
+ },
+ {
+  "name": "web_datacalle_crear",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/crear/\\Z"
+ },
+ {
+  "name": "web_datacalle_detalle",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/\\Z"
+ },
+ {
+  "name": "web_datacalle_editar",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/editar/\\Z"
+ },
+ {
+  "name": "web_datacalle_eliminar",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/eliminar/\\Z"
+ },
+ {
+  "name": "web_datacalle_formulario",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/formulario/\\Z"
+ },
+ {
+  "name": "web_datacalle_formulario_edicion",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/formulario/\\Z"
+ },
+ {
+  "name": "web_datacalle_opciones_dispositivos",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/opciones/dispositivos/\\Z"
+ },
+ {
+  "name": "web_datacalle_opciones_relevadores",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/opciones/relevadores/\\Z"
+ },
+ {
+  "name": "web_datacalle_relevamientos",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/\\Z"
+ },
+ {
   "name": "web_dispositivos_detail",
   "namespace": "",
   "regex": "^api/web/dispositivos/(?P<pk>[0-9]+)/\\Z"

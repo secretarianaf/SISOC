@@ -662,6 +662,17 @@ las búsquedas RENAPER y el alta corren el servicio nativo sin encolar mensajes,
 `../registro/cambios/2026-T4/2026-11-11-2805-react-cdf-centros-usuario.md` y
 `../registro/cambios/2026-T4/2026-11-11-2805-react-cdf-beneficiarios.md`.
 
+DataCalle (operativos del backoffice) comparte el runtime y el prefijo: sus rutas viven
+bajo `/api/web/dispositivos/datacalle/` (`src/backends/dispositivos/datacalle/web_api_urls.py`,
+incluido desde `src/backends/dispositivos/dispositivos_runtime/web_api_urls.py`). `src/backends/dispositivos/datacalle/web_api.py`
+corre las vistas nativas de listado, ficha, formulario, cierre y baja (alcance provincial
+de `apply_relevamientos_scope`, `RelevamientoForm` con `actor`, `cerrar_relevamiento`
+idempotente y `delete_relevamiento` con su cascada) y `datacalle_preview_patterns`
+(`src/backends/dispositivos/datacalle/web_preview.py`) monta las entradas con assets en
+`/datacalle/react/assets/`. En el front, `routes/datacalleRelevamientos.tsx`,
+`routes/datacalleRelevamientoForm.tsx` y `routes/datacalleSelect2.tsx`. Registro:
+`../registro/cambios/2026-T4/2026-11-11-2785-react-datacalle-operativos.md`.
+
 ### Comedores sobre G1: catálogos con el marco oscuro
 
 ABM de montos por programa (`/montoprestacion/`, CO05) y catálogo PNUD, con

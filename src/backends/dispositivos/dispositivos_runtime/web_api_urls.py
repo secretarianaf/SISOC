@@ -4,4 +4,5 @@ from django.urls import include, path
 
 urlpatterns = [
     path("", include("dispositivos.web_api_urls")),
+    path("datacalle/", include("datacalle.web_api_urls")),
 ]

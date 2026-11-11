@@ -82,3 +82,112 @@ def test_la_clave_estatica_no_importa_el_modelo():
     )
 
     assert definicion.get_model_key() == ("datacalle", "relevamiento")
+
+
+def test_modelos_de_vat_en_el_allowlist_con_su_app_label():
+    """VAT corre en otro backend: el visor los filtra por clave estática."""
+    allowlist = constants.get_tracked_model_allowlist()
+
+    for model_name in (
+        "centro",
+        "inscripcion",
+        "voucherparametria",
+        "voucher",
+        "resultadoevaluacion",
+        "actacierrecomision",
+    ):
+        assert ("VAT", model_name) in allowlist
+    assert "observaciones" in allowlist[("VAT", "inscripcion")].excluded_fields
+    assert "observaciones" in allowlist[("VAT", "resultadoevaluacion")].excluded_fields
+
+
+def test_modelos_de_celiaquia_en_el_allowlist_con_su_app_label():
+    """Celiaquía corre en otro backend: el visor los filtra por clave estática."""
+    allowlist = constants.get_tracked_model_allowlist()
+
+    for model_name in (
+        "expediente",
+        "expedienteciudadano",
+        "provinciacupo",
+        "asignaciontecnico",
+        "pagoexpediente",
+    ):
+        assert ("celiaquia", model_name) in allowlist
+    # El legajo es dato de salud: allowlist, sin texto libre ni archivos.
+    campos_legajo = allowlist[("celiaquia", "expedienteciudadano")].included_fields
+    assert "revision_tecnico" in campos_legajo
+    for sensible in ("subsanacion_motivo", "observacion_cruce", "archivo1"):
+        assert sensible not in campos_legajo
+
+
+def test_modelos_de_pas_en_el_allowlist_sin_la_invitacion_ddjj():
+    """PAS corre en otro backend; la invitación lleva un token secreto."""
+    allowlist = constants.get_tracked_model_allowlist()
+
+    for model_name in ("paspersona", "pascircuitomensual", "pasincompatibilidad"):
+        assert ("pas", model_name) in allowlist
+    assert ("pas", "pasinvitacionddjj") not in allowlist
+
+
+def test_modelos_de_vpsl_en_el_allowlist_sin_datos_de_salud():
+    """VPSL corre en otro backend; la atención solo registra su circuito."""
+    allowlist = constants.get_tracked_model_allowlist()
+
+    for model_name in (
+        "itinerariovpsl",
+        "evaluacionsedeitinerariovpsl",
+        "sedevpsl",
+        "jornadavpsl",
+        "registronominalvpsl",
+        "casolaboratoriovpsl",
+        "cierrediariovpsl",
+    ):
+        assert ("ver_para_ser_libre", model_name) in allowlist
+    campos_registro = allowlist[
+        ("ver_para_ser_libre", "registronominalvpsl")
+    ].included_fields
+    assert "estado" in campos_registro
+    for sensible in ("resultado", "prescripcion", "graduacion_derecha", "dni"):
+        assert sensible not in campos_registro
+
+
+def test_pagos_y_rendiciones_de_comedores_en_el_allowlist():
+    allowlist = constants.get_tracked_model_allowlist()
+
+    for clave in (
+        ("expedientespagos", "expedientepago"),
+        ("rendicioncuentasmensual", "rendicioncuentamensual"),
+        ("rendicioncuentasmensual", "documentacionadjunta"),
+        ("rendicioncuentasmensual", "solicituddocumentofaltante"),
+        ("rendicioncuentasfinal", "rendicioncuentasfinal"),
+        ("rendicioncuentasfinal", "documentorendicionfinal"),
+    ):
+        assert clave in allowlist
+    excluidos_documento = allowlist[
+        ("rendicioncuentasmensual", "documentacionadjunta")
+    ].excluded_fields
+    assert "visualizacion_fecha" in excluidos_documento
+
+
+def test_cada_definicion_apunta_a_un_modelo_y_campos_que_existen():
+    """Un error de tipeo en la lista dejaría un modelo sin auditar sin avisar."""
+    instaladas = [
+        d for d in constants.get_tracked_model_definitions() if d.is_installed()
+    ]
+    assert instaladas
+
+    for definicion in instaladas:
+        model = definicion.get_model()
+        assert definicion.get_model_key() == (
+            model._meta.app_label,
+            model._meta.model_name,
+        ), definicion.label
+        campos = definicion.excluded_fields + definicion.included_fields
+        for campo in campos:
+            model._meta.get_field(campo)  # FieldDoesNotExist si hay un error
+
+
+def test_etiquetas_del_visor_no_se_repiten():
+    etiquetas = [d.label for d in constants.get_tracked_model_definitions()]
+
+    assert len(etiquetas) == len(set(etiquetas))

@@ -161,7 +161,6 @@ from VAT.views.evaluacion import (
 from VAT.views.reporte import ReporteInscriptosAsistenciasView
 from VAT.views.buscador_ciudadano import BuscadorCiudadanoView
 
-
 urlpatterns = [
     path(
         "vat/reportes/inscripciones-asistencias/",

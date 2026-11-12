@@ -15,7 +15,6 @@ from django.db import DatabaseError
 from core.integrations.renaper_rate_limit import reserve_consulta_delay
 from core.services.text_encoding import repair_utf8_mojibake_values
 
-
 logger = logging.getLogger("django")
 
 # Con el tope vencido, la request falla enseguida como timeout.

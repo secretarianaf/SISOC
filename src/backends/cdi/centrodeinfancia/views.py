@@ -118,7 +118,6 @@ from centrodeinfancia.services_user_provisioning import (
 from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
 from catalogo_intervenciones.api import programa_aliases_cdi
 
-
 CDI_LIST_HEADERS = [
     {"title": "Nombre"},
     {"title": "Organización"},

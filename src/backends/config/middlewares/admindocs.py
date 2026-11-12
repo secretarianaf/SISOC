@@ -38,6 +38,7 @@ _OWNED_PATTERNS = (
     r"/api/web/comedores/admisiones/plantillas-informe/"
     r"(?:variables/|incidencias/(?:[0-9]+/)?|[0-9]+/(?:(?:publicar|archivar|destacado|eliminar)/)?)?",
     r"/api/web/comedores/admisiones/informes/[a-z]+/(?:admision/)?[0-9]+/(?:formulario/|guardar/)?",
+    r"/api/web/comedores/admisiones/(?:tecnicos|legales)/",
     r"/api/web/comedores/acompanamientos/(?:[0-9]+/(?:hitos/restaurar/)?)?",
     r"/api/web/comedores/expedientespagos/(?:comedores/[0-9]+/(?:crear/)?|[0-9]+/(?:editar/|eliminar/)?)",
     r"/api/web/dispositivos/(?:listado/|options/|mapa/|[0-9]+/(?:ubicacion/)?)",

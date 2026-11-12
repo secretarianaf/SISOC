@@ -149,7 +149,7 @@ describe("Relevamientos route", () => {
     setup(DETAIL);
     await screen.findByText("Ciclo de seguimiento");
     expect(webGet).toHaveBeenCalledWith("web/comedores/relevamientos/7/relevamiento/12/", expect.anything());
-    expect(screen.getAllByRole("heading", { level: 3 })[0].textContent).toBe("Comedor <Uno> | Acompañamiento Territorial | 04/03/2026 15:07 | Pendiente Sincronizado con GESTIONAR App");
+    await waitFor(() => expect(screen.getAllByRole("heading", { level: 3 })[0].textContent).toBe("Comedor <Uno> | Acompañamiento Territorial | 04/03/2026 15:07 | Pendiente Sincronizado con GESTIONAR App"));
     expect(screen.getByRole("link", { name: "Comedores" }).getAttribute("href")).toBe("/comedores/listar");
     expect(screen.getByRole("link", { name: "Comedor <Uno>" }).getAttribute("href")).toBe("/comedores/7");
     expect(["Inicio de Ejecución", "Final de Ejecución", "Plazo de Ejecución"].every((t) => screen.getByText(t).nextElementSibling?.textContent === "-")).toBe(true);
@@ -165,8 +165,8 @@ describe("Relevamientos route", () => {
     expect(screen.getByText("Comedor <Uno>", { selector: "span.username" }).className).toBe("username fw-bold fs-5");
     const body = screen.getByRole("heading", { level: 3, name: "Información" }).closest(".card")!.querySelector(".card-body") as HTMLElement;
     fireEvent.click(screen.getByRole("heading", { level: 3, name: "Información" }).closest(".card")!.querySelector("button.btn-tool") as HTMLElement);
-    expect(body.style.display).toBe("none");
-    expect(screen.getByRole("heading", { level: 3, name: "Información" }).closest(".card")!.querySelector("i")!.className).toContain("fa-plus");
+    await waitFor(() => expect(body.style.display).toBe("none"));
+    await waitFor(() => expect(screen.getByRole("heading", { level: 3, name: "Información" }).closest(".card")!.querySelector("i")!.className).toContain("fa-plus"));
   });
 
   it("shows the actions by capability and opens the review, assign and delete modals", async () => {

@@ -351,7 +351,7 @@ export default function SisocShell({
   };
   content?: ReactNode;
   pageTitle?: string;
-  heading?: string;
+  heading?: ReactNode;
   overlays?: ReactNode;
   previewLinks?: boolean;
   breadcrumb?: ReactNode;

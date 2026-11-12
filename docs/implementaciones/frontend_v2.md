@@ -785,6 +785,13 @@ Registros: `../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-informe
 `../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-informe-guardar.md` y
 `../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-informe-editor.md`.
 
+Circuito técnico/legal de admisiones (AD03.01, entrega de listados):
+`src/backends/comedores/admisiones/web_api_listas.py` ejecuta `AdmisionesTecnicosListView` y
+`AdmisionesLegalesListView` (alcance por actor, filtros, orden, columnas y paginación nativos) bajo
+`/api/web/comedores/admisiones/{tecnicos,legales}/`; el módulo React es `admisionesSeguimiento.tsx`
+y las filas siguen enlazando a las páginas nativas. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-seguimiento-listas.md`.
+
 Expedientes de pago de un comedor (EX01) usan el mismo marco:
 `src/backends/comedores/expedientespagos/web_api.py` ejecuta las vistas nativas
 de listado, ficha, alta, edición y baja lógica con el acceso actual (lectura con

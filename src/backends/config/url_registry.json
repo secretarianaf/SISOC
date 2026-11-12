@@ -265,6 +265,16 @@
   "regex": "^comedores/admisiones/tecnicos/listar\\Z"
  },
  {
+  "name": "admisiones_web_legales",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/legales/\\Z"
+ },
+ {
+  "name": "admisiones_web_tecnicos",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/tecnicos/\\Z"
+ },
+ {
   "name": "ajax_cargar_actividades",
   "namespace": "",
   "regex": "^centrodefamilia/ajax/actividades/\\Z"

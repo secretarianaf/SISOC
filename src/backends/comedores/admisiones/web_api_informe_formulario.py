@@ -106,6 +106,36 @@ def _publicacion(context):
     }
 
 
+def prepare_native_view(request, tipo, admision_id=None, pk=None):
+    """The native create or update view, set up as its ``dispatch`` would leave it."""
+    if admision_id is not None:
+        vista = _native(
+            InformeTecnicosCreateView, request, tipo=tipo, admision_id=admision_id
+        )
+        vista.object = None
+        vista.admision_obj, vista.tipo = InformeService.get_admision_y_tipo_from_kwargs(
+            vista.kwargs
+        )
+        if not vista.admision_obj:
+            raise NotFound()
+        tipo_informe = vista.tipo
+    else:
+        vista = _native(InformeTecnicosUpdateView, request, tipo=tipo, pk=pk)
+        try:
+            vista.object = vista.get_object()
+        except Http404 as exc:
+            raise NotFound() from exc
+        tipo_informe = vista.object.tipo
+    if tipo_informe not in vista.tipos_permitidos:
+        raise ParseError(NOT_AVAILABLE)
+    return vista
+
+
+def fields_payload(form):
+    """The effective fields of a (bound or unbound) native form."""
+    return [_field(form, name) for name in form.fields]
+
+
 class InformeFormularioWebView(APIView):
     """Effective form of the create and edit pages."""
 
@@ -115,26 +145,7 @@ class InformeFormularioWebView(APIView):
     http_method_names = ["get", "head"]
 
     def get(self, request, tipo, admision_id=None, pk=None):
-        if admision_id is not None:
-            vista = _native(
-                InformeTecnicosCreateView, request, tipo=tipo, admision_id=admision_id
-            )
-            vista.object = None
-            vista.admision_obj, vista.tipo = (
-                InformeService.get_admision_y_tipo_from_kwargs(vista.kwargs)
-            )
-            if not vista.admision_obj:
-                raise NotFound()
-        else:
-            vista = _native(InformeTecnicosUpdateView, request, tipo=tipo, pk=pk)
-            try:
-                vista.object = vista.get_object()
-            except Http404 as exc:
-                raise NotFound() from exc
-        if (vista.tipo if admision_id is not None else vista.object.tipo) not in (
-            vista.tipos_permitidos
-        ):
-            raise ParseError(NOT_AVAILABLE)
+        vista = prepare_native_view(request, tipo, admision_id, pk)
         form = vista.get_form()
         context = vista.get_context_data(form=form)
         informe = vista.object
@@ -147,7 +158,7 @@ class InformeFormularioWebView(APIView):
                 "comedor": context["admision"].comedor.nombre,
                 "permite_no_corresponde": form.permite_no_corresponde_fecha_vencimiento,
                 "require_full": form.require_full,
-                "fields": [_field(form, name) for name in form.fields],
+                "fields": fields_payload(form),
                 "antecedentes": _antecedentes(form),
                 "non_field_errors": list(form.non_field_errors()),
                 "campos_a_subsanar": context.get("campos_a_subsanar", []),

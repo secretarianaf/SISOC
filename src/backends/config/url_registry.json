@@ -2675,6 +2675,16 @@
   "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/formulario/\\Z"
  },
  {
+  "name": "informe_tecnico_web_guardar_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/admision/(?P<admision_id>[0-9]+)/guardar/\\Z"
+ },
+ {
+  "name": "informe_tecnico_web_guardar_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/guardar/\\Z"
+ },
+ {
   "name": "informecabal_archivo_centro_detail",
   "namespace": "",
   "regex": "^centrodefamilia/centros/(?P<centro_id>[0-9]+)/informecabal/(?P<pk>[0-9]+)/\\Z"

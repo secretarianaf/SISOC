@@ -6,6 +6,7 @@ Ver ``admisiones.web_api_informes``.
 from django.urls import path
 
 from admisiones.web_api_informe_formulario import InformeFormularioWebView
+from admisiones.web_api_informe_guardar import InformeGuardarWebView
 from admisiones.web_api_informes import InformeDetailWebView
 
 urlpatterns = [
@@ -13,6 +14,16 @@ urlpatterns = [
         "<str:tipo>/admision/<int:admision_id>/formulario/",
         InformeFormularioWebView.as_view(),
         name="informe_tecnico_web_formulario_crear",
+    ),
+    path(
+        "<str:tipo>/admision/<int:admision_id>/guardar/",
+        InformeGuardarWebView.as_view(),
+        name="informe_tecnico_web_guardar_crear",
+    ),
+    path(
+        "<str:tipo>/<int:pk>/guardar/",
+        InformeGuardarWebView.as_view(),
+        name="informe_tecnico_web_guardar_editar",
     ),
     path(
         "<str:tipo>/<int:pk>/formulario/",

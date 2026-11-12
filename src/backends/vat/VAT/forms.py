@@ -332,7 +332,7 @@ NORMATIVA_ANIO_CHOICES = [("", "Seleccionar año...")] + [
 ]
 
 NORMATIVA_STORAGE_SEPARATOR = " || "
-REFERENTE_GROUP_NAMES = ("CFP",)
+REFERENTE_GROUP_NAMES = ("CFP", "INET Asistencia")
 REVISOR_GROUP_NAMES = ("CFPRevisor",)
 ROLE_INET_PROVINCIA_PERMISSION = "auth.role_inet_provincia"
 
@@ -2727,7 +2727,14 @@ class CiudadanoInscripcionRapidaForm(forms.ModelForm):
             "fecha_nacimiento",
             "tipo_documento",
             "sexo",
+            "telefono",
+            "email",
         ]
+        labels = {"telefono": "Teléfono (opcional)", "email": "Mail (opcional)"}
+        widgets = {
+            "telefono": forms.TextInput(attrs={"class": "form-control", "type": "tel"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+        }
 
     def clean(self):
         cleaned_data = super().clean()

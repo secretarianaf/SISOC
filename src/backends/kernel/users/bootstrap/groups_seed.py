@@ -557,6 +557,15 @@ LISTADO_DEFINED_GROUPS = (
         ),
     ),
     BootstrapGroupSeed(
+        "INET Asistencia",
+        (
+            "auth.role_inet_asistencia",
+            "VAT.view_centro",
+            "VAT.view_curso",
+            "VAT.view_comisioncurso",
+        ),
+    ),
+    BootstrapGroupSeed(
         "INET Admin Visualizador",
         (
             # Marcador reconocido por VAT/services/access_scope.py: habilita

@@ -26,6 +26,7 @@ Quedan fuera de este cambio, y siguen abiertos en #2889: `/api/inet/comisiones/`
 
 - Los campos ya no muestran una lista: se escribe el DNI o el pasaporte y se elige entre hasta 20 resultados. Ciudadano pide al menos 6 caracteres e inscripción, al menos 7 dígitos del DNI.
 - La búsqueda de ciudadano no acepta nombres ni apellidos, porque un `icontains` recorrería todo el padrón. Por eso no se reutilizó `api_buscar_ciudadanos`, que además exige `ciudadanos.view_ciudadano`.
+- Los ciudadanos registrados sin DNI (`SIN_DNI`, sin documento ni pasaporte) no aparecen en estos buscadores; antes sí estaban en el `<select>`. El equipo funcional confirmó que en estos formularios alcanza con DNI y pasaporte, como en la inscripción rápida desde la comisión.
 - La búsqueda de inscripciones respeta el alcance territorial del usuario (`base_inscripciones_queryset_for_user`). Antes, el `<select>` mostraba todas. La validación del POST no cambia: acepta cualquier inscripción existente.
 - Las rutas nuevas exigen los permisos de VAT de los formularios que las usan.
 - Al editar, o al llegar con `?ciudadano=<id>`, la opción elegida se sigue mostrando.

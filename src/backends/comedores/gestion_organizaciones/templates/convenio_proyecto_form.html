@@ -111,7 +111,7 @@
                 </p>
                 <div class="mt-4">
                     <button type="submit" class="btn btn-primary">Guardar</button>
-                    <a href="{% url 'organizacion_editar' organizacion.pk %}"
+                    <a href="{% url 'organizacion_detalle' organizacion.pk %}?programa={{ linea.pk }}"
                        class="btn btn-secondary ml-2">Cancelar</a>
                 </div>
             </form>

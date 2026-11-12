@@ -1,27 +1,26 @@
 ---
 name: preparar-deploy
-description: >
-  Prepara el deploy a producción: deja homologacion y development sincronizadas y en verde
-  (creando y mergeando los PRs de saneamiento) y crea, sin mergear, los PRs homologacion -> main y
-  development -> homologacion con lo que entra y las operaciones pre y post merge. Usar al preparar
-  un release o deploy a PRD, o al invocar /preparar-deploy.
+description: "Preparar release SISOC sin mergear sus PRs finales; promover y desplegar automáticamente satélites durante el pre-deploy. Usar /preparar-deploy."
 ---
 
 # Preparar deploy
 
 Fuente: `docs/operacion/deploy_automatizado.md` (promoción descendente y promoción
-`homologacion -> main`) y `src/scripts/github/release_orchestrator.js`. Si algo
-difiere, vale el código.
+`homologacion -> main` y preparación coordinada de satélites),
+`docs/operacion/deploy_pwas.md` y `src/scripts/github/release_orchestrator.js`.
+Si algo difiere, vale el código.
 
-Ciclo: primero `homologacion -> main` (PRD) y después `development -> homologacion`
-(HML), donde lo nuevo queda una semana en prueba. Esta skill deja todo listo; **no
-despliega**.
+Ciclo de SISOC: primero `homologacion -> main` (PRD) y después
+`development -> homologacion` (HML), donde lo nuevo queda una semana en prueba.
+Los PRs finales de SISOC quedan sin mergear. **Durante el pre-deploy**, promover y
+desplegar automáticamente los satélites autorizados y compatibles con el backend
+ya desplegado; no esperar al futuro release de SISOC ni adelantarlo por esta skill.
 
 ## Reglas
 
-- Nunca mergear, armar ni habilitar auto-merge en los dos PRs de deploy. Nunca push
+- Nunca mergear, armar ni habilitar auto-merge en los dos PRs finales de SISOC. Nunca push
   directo, force push, rebase ni reset sobre `development`, `homologacion` o `main`.
-- Los PRs de sincronización se mergean siempre con merge commit (`--merge`), nunca
+- Los PRs de sincronización de SISOC se mergean siempre con merge commit (`--merge`), nunca
   squash ni rebase: sin ancestro común, el próximo sync vuelve a chocar.
 - Un PR de saneamiento solo sincroniza ramas o arregla lo que rompe CI. Si el arreglo
   cambia comportamiento o mete código funcional nuevo en `homologacion`, parar y preguntar.
@@ -35,7 +34,13 @@ despliega**.
 
 ## 1. Relevar el estado
 
-`git fetch origin` y mostrar una tabla antes de tocar nada:
+Incluir SISOC y **todas** las entradas de `src/scripts/operacion/pwas.json`,
+con su estado habilitado/deshabilitado. Aplicar la matriz y decisiones de
+"Expediente coordinado" en `plantillas.md`; no limitarse a los contratos que
+cambiaron en SISOC. Consultar otros repositorios solo con autorización vigente.
+Una lectura desconocida no equivale a "sin cambios".
+
+Para SISOC, `git fetch origin` y mostrar una tabla antes de tocar nada:
 
 - `git rev-list --left-right --count origin/main...origin/homologacion`: `homologacion`
   debe contener `main` (izquierda en 0); si no, el orquestador no promueve.
@@ -45,6 +50,13 @@ despliega**.
 - CI de la punta de cada rama: `gh run list --commit <sha> --json name,conclusion`.
 
 ## 2. Sanear (crear y mergear)
+
+Usar autorización vigente para la operación, destino y cuenta/sesión. La solicitud
+de ejecutar satélites durante el pre-deploy autoriza el plan acotado una vez resuelto
+ese alcance; no pedir aprobación redundante por cada acción. Preguntar solo si falta
+un dato de autorización. Esto no autoriza SSH, credenciales nuevas ni saltar gates.
+Los comandos de esta sección describen el saneamiento de SISOC; verificar el flujo
+propio de cada satélite antes del paso 4.
 
 Un PR por problema, en este orden:
 
@@ -76,6 +88,19 @@ Para `origin/main..origin/homologacion` y `origin/homologacion..origin/developme
 - Operaciones pre y post merge: recorrer "Detección de operaciones" de `plantillas.md`.
 - Agrupar por módulo y explicar cada ítem en una línea, para quien no lee código.
 
+## 4. Promover y desplegar satélites durante el pre-deploy
+
+Aplicar "Ejecución de satélites durante el pre-deploy" de `plantillas.md` a todas
+las entradas habilitadas del inventario. Verificar el backend **actualmente
+desplegado**, no su rama `main`, antes de mergear cualquier frontend. Promover
+`development -> main` cuando ese sea el flujo real verificado; no imponerlo a
+repositorios con otra política. Omitir sin cambios verificado y deshabilitados;
+lo desconocido bloquea, no se transforma en éxito.
+
+Reutilizar o crear el PR autorizado, comprobar CI y head fijado, mergear sin bypass
+y seguir su deploy en primer plano. Un fallo detiene dependientes y deja resultado
+parcial; no repetir dispatch ni inventar rollback. Conservar los gates humanos.
+
 ## Secuencia explícita para otra promoción del mismo día
 
 La primera promoción mantiene `AAAA.MM.DD-stable`: omitir `release-sequence`
@@ -86,10 +111,9 @@ primer tag, inventar otra fecha ni elegir una secuencia automáticamente. Un
 marker presente inválido o duplicado rechaza el PR antes de armarlo.
 La secuencia forma parte de la identidad del baseline y se revalida con el
 head/base antes de aprobarlo. No habilita PRs directos a main ni salta checks,
-GitHub App o la aprobación humana de production. Sincronizar el ajuste desde
-HML a development antes del siguiente pre-deploy.
+GitHub App o la aprobación humana de production.
 
-## 4. Crear los PRs (sin mergear)
+## 5. Crear los PRs finales de SISOC (sin mergear)
 
 Bodies y títulos en `plantillas.md`. La fecha del release es el día planeado del
 deploy (preguntar si no se sabe): define el tag `AAAA.MM.DD-stable`, que no puede
@@ -100,6 +124,10 @@ existir apuntando a otro SHA.
    Así el orquestador lo reconoce pero no lo arma ni le habilita auto-merge.
 2. `development -> homologacion`, sin auto-merge.
 
+Enlazar los PRs satélite ya mergeados, sus SHA y resultados de deploy del paso 4,
+o sus bloqueos. No aplicarles el estado draft de los PRs finales de SISOC.
+No declarar listo el conjunto con un componente pendiente o desconocido.
+
 Si ya hay un PR abierto para el mismo par, actualizar su body en lugar de duplicarlo.
 Verificar: `gh pr view <n> --json isDraft,autoMergeRequest` da draft y sin auto-merge.
 
@@ -107,4 +135,7 @@ Verificar: `gh pr view <n> --json isDraft,autoMergeRequest` da draft y sin auto-
 
 Tabla de estado antes y después, PRs de saneamiento mergeados, links a los dos PRs de
 deploy, operaciones pre/post, riesgos y los pasos del día del deploy de `plantillas.md`.
+Adjuntar el expediente de todos los componentes: SHA, promociones, compatibilidad,
+orden, validación, recuperación y bloqueos; separar satélites desplegados durante
+el pre-deploy de los PRs SISOC pendientes. No hay atomicidad entre repositorios.
 Lo que no se pudo verificar se dice; no se da por pasado.

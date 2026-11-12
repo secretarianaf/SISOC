@@ -1,0 +1,65 @@
+{# Firmantes (#2745). Recibe: firmantes, titulo, color y, opcional, mostrar_programa y sin_alta. #}
+<div class="tabla-legajo card-programa card-{{ color|default:'otro' }}">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">{{ titulo }}</h5>
+        {% if puede_gestionar_organizaciones and not sin_alta %}
+            <a href="{% url 'firmante_crear' organizacion.id %}"
+               class="btn btn-success btn-sm">
+                <i class="fas fa-plus"></i> Agregar Firmante
+            </a>
+        {% endif %}
+    </div>
+    {% if firmantes %}
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Rol</th>
+                    <th>CUIT</th>
+                    {% if mostrar_programa %}<th>Programa</th>{% endif %}
+                    {% if puede_gestionar_organizaciones %}<th class="text-end">Acciones</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for firmante in firmantes %}
+                    <tr>
+                        <td>{{ firmante.nombre }}</td>
+                        <td>
+                            {% if firmante.rol %}
+                                <span class="badge badge-gold">{{ firmante.rol.nombre }}</span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ firmante.cuit|default:'-' }}</td>
+                        {% if mostrar_programa %}
+                            <td>
+                                {% if firmante.programa %}
+                                    <span class="badge badge-gris">{{ firmante.programa.nombre }} (no cargado en la organización)</span>
+                                {% else %}
+                                    <span class="badge badge-pendiente">Sin programa</span>
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                        {% if puede_gestionar_organizaciones %}
+                            <td class="text-end">
+                                <a href="{% url 'firmante_editar' firmante.pk %}"
+                                   class="btn btn-sm accion-editar"
+                                   aria-label="Editar firmante {{ firmante.nombre }}">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'firmante_eliminar' firmante.pk %}"
+                                   class="btn btn-sm accion-eliminar"
+                                   aria-label="Eliminar firmante {{ firmante.nombre }}">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="texto-vacio mb-0">No hay firmantes registrados.</p>
+    {% endif %}
+</div>

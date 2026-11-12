@@ -1,0 +1,51 @@
+{# Proyectos con sus territoriales (#2745). Recibe: proyectos, titulo, color. #}
+{% load organizaciones_tags %}
+<div class="tabla-legajo card-programa card-{{ color|default:'otro' }}"
+     style="position: relative">
+    {% if puede_gestionar_organizaciones %}
+        <a href="{% url 'organizacion_editar' organizacion.id %}#abordaje-card"
+           class="btn-edit-card"
+           aria-label="Editar proyectos">
+            <i class="fas fa-pen"></i>
+        </a>
+    {% endif %}
+    <h5 class="mb-3">
+        {{ titulo }}
+        <span class="badge badge-gold ms-2">{{ proyectos|length }} Total</span>
+    </h5>
+    {% if proyectos %}
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Código de Proyecto</th>
+                        <th>Territoriales</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proyecto in proyectos %}
+                        <tr>
+                            <td>
+                                <span class="badge rounded-pill bg-primary px-3 py-2">{{ proyecto.codigo }}</span>
+                            </td>
+                            <td>
+                                {% for territorial in proyecto.territoriales.all %}
+                                    <span class="badge-territorial">{{ territorial|etiqueta_territorial }}</span>
+                                {% empty %}
+                                    <span class="badge badge-pendiente">Sin territorial</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                <span class="badge-status vigente"><i class="fas fa-check-circle"></i> Activo</span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="texto-vacio mb-0">No hay proyectos activos.</p>
+    {% endif %}
+    <p class="nota-legajo mt-2 mb-0">Cada proyecto pertenece a una sola línea y tiene sus propios territoriales.</p>
+</div>

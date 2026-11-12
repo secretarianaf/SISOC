@@ -160,9 +160,18 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Actualizar el progreso global
+    // Una sección oculta (Abordaje sin programa de Abordaje, #2745) no cuenta.
+    function visibleSections() {
+        return sections.filter((sectionId) => {
+            const card = document.querySelector(`[data-section="${sectionId}"]`);
+            return card && !card.classList.contains("d-none");
+        });
+    }
+
     function updateProgress() {
+        const visibles = visibleSections();
         let completed = 0;
-        sections.forEach((sectionId) => {
+        visibles.forEach((sectionId) => {
             if (updateSectionStatus(sectionId)) {
                 completed += 1;
             }
@@ -171,8 +180,12 @@ document.addEventListener("DOMContentLoaded", function () {
         if (completedLabel) {
             completedLabel.textContent = completed;
         }
+        const totalLabel = document.getElementById("totalSections");
+        if (totalLabel) {
+            totalLabel.textContent = visibles.length;
+        }
         if (progressBar) {
-            const percent = sections.length ? (completed / sections.length) * 100 : 0;
+            const percent = visibles.length ? (completed / visibles.length) * 100 : 0;
             progressBar.style.width = `${percent}%`;
         }
     }
@@ -187,6 +200,8 @@ document.addEventListener("DOMContentLoaded", function () {
             field.addEventListener("change", updateProgress);
         });
     });
+
+    document.addEventListener("organizacion:secciones", updateProgress);
 
     // Actualizar progreso inicial con un pequeño delay para asegurar que todo esté cargado
     setTimeout(() => {

@@ -546,6 +546,52 @@
             var programasPermitidos = codigoWrapper.dataset.programaIds
                 .split(",")
                 .filter(Boolean);
+            // Orden de carga (#2745): organización -> sus programas -> proyectos
+            // de la línea elegida. Sin programas cargados en la organización se
+            // ofrecen todos los programas y proyectos, como antes.
+            var opcionesPrograma = Array.prototype.map.call(programaInput.options, function (option) {
+                return { value: option.value, text: option.text };
+            });
+            var datosOrganizacion = { proyectos: [], programas: [] };
+            // El programa y el proyecto que ya tenía el comedor siguen como opción:
+            // editar otros datos no obliga a corregirlos (la regla se valida al guardar).
+            var programaInicial = programaInput.value;
+            var proyectoInicial = proyectoInput.value;
+
+            function renderProgramas() {
+                var actual = programaInput.value;
+                var permitidos = datosOrganizacion.programas.map(String);
+                programaInput.innerHTML = "";
+                opcionesPrograma.forEach(function (opcion) {
+                    if (opcion.value && permitidos.length && permitidos.indexOf(opcion.value) === -1 && opcion.value !== programaInicial) {
+                        return;
+                    }
+                    programaInput.add(new Option(opcion.text, opcion.value, false, opcion.value === actual));
+                });
+                $(programaInput).trigger("change.select2");
+            }
+
+            // Hasta que llegan los datos de la organización se deja la lista que
+            // armó el servidor: si el pedido falla o se guarda antes, el comedor
+            // conserva su proyecto.
+            var datosCargados = false;
+
+            function renderProyectos() {
+                if (!datosCargados) {
+                    return;
+                }
+                var selected = proyectoInput.value || proyectoInicial;
+                var aplicaLinea = datosOrganizacion.programas.length > 0;
+                proyectoInput.innerHTML = '<option value="">Seleccione un proyecto</option>';
+                datosOrganizacion.proyectos.forEach(function (proyecto) {
+                    var esInicial = String(proyecto.id) === proyectoInicial;
+                    if (aplicaLinea && !esInicial && String(proyecto.linea) !== programaInput.value) {
+                        return;
+                    }
+                    proyectoInput.add(new Option(proyecto.codigo, proyecto.id, false, String(proyecto.id) === selected));
+                });
+                $(proyectoInput).trigger("change.select2");
+            }
 
             function actualizarCodigoProyecto() {
                 var permitido = programasPermitidos.indexOf(programaInput.value) !== -1;
@@ -553,13 +599,20 @@
                 if (!permitido) {
                     proyectoInput.value = "";
                 }
+                renderProyectos();
             }
 
-            function actualizarProyectos() {
+            function actualizarProyectos(opcion) {
+                // Solo la carga inicial pasa true; jQuery pasa el evento.
+                var alAbrir = opcion === true;
                 var organizacionId = organizacionInput.value;
-                var selected = proyectoInput.value;
-                proyectoInput.innerHTML = '<option value="">Seleccione un proyecto</option>';
+                if (!alAbrir) {
+                    proyectoInput.innerHTML = '<option value="">Seleccione un proyecto</option>';
+                    datosOrganizacion = { proyectos: [], programas: [] };
+                    datosCargados = false;
+                }
                 if (!organizacionId) {
+                    renderProgramas();
                     return;
                 }
                 var url = codigoWrapper.dataset.proyectosUrl.replace("/0/", "/" + organizacionId + "/");
@@ -571,20 +624,27 @@
                         return response.json();
                     })
                     .then(function (data) {
-                        data.proyectos.forEach(function (proyecto) {
-                            var option = new Option(proyecto.codigo, proyecto.id, false, String(proyecto.id) === selected);
-                            proyectoInput.add(option);
-                        });
-                        $(proyectoInput).trigger("change.select2");
+                        datosOrganizacion = {
+                            proyectos: data.proyectos || [],
+                            programas: data.programas || []
+                        };
+                        datosCargados = true;
+                        renderProgramas();
+                        actualizarCodigoProyecto();
                     })
                     .catch(function () {
-                        proyectoInput.innerHTML = '<option value="">No fue posible cargar los proyectos</option>';
+                        if (!alAbrir) {
+                            proyectoInput.innerHTML = '<option value="">No fue posible cargar los proyectos</option>';
+                        }
                     });
             }
 
             $(programaInput).on("change", actualizarCodigoProyecto);
             $(organizacionInput).on("change", actualizarProyectos);
             actualizarCodigoProyecto();
+            if (organizacionInput.value) {
+                actualizarProyectos(true);
+            }
         }());
     </script>
 

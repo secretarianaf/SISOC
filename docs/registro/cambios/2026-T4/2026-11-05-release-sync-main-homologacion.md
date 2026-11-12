@@ -70,8 +70,36 @@ especialmente por el ALTER de ciudadanos. No se verificó backup ni se accedió 
 servidores, datos, variables reales o credenciales.
 
 Espacios Comunitarios, DataCalle, Gestionar e Inspecciones figuran habilitados en el
-inventario. Su lectura y ejecución quedan bloqueadas hasta resolver el alcance de
-autorización de los otros repositorios y comprobar compatibilidad con el backend
-efectivamente desplegado. No se declara listo el conjunto por tener CI verde.
+inventario. Inicialmente faltaba autorización para otros repositorios; el usuario
+la otorgó luego para la sesión actual de GitHub y sus flujos QA/HML/PRD, siempre
+con CI y compatibilidad comprobados. DataCalle no requiere cambios; Inspecciones
+no tiene diferencias de contenido, pero QA tiene un bloqueo de checkout.
+Gestionar y Espacios no se promueven a PRD: requieren backends todavía no
+desplegados. No se infiere un deploy posterior automático ni se declara listo el
+conjunto por tener CI verde.
+
+## Sincronización posterior hacia development
+
+La preparación continúa desde development hacia la revisión HML saneada del PR
+#2874. El único conflicto es documental: se conserva el registro completo de
+development, incluida su sección de integración previa del hotfix de papelera.
+No se resolvieron conflictos de código ni se agregaron nuevas migraciones en este
+paso. El grafo conserva la unión vacía 0029.
+
+El registro URL regenerado en una copia aislada contiene las mismas 2796
+entradas que el merge. La diferencia inicial de bytes era solo CRLF/LF; no se
+reescribe masivamente el archivo generado. `makemigrations --check --dry-run`
+con settings completo, 10 tests Linux de permisos/ACL y 143 tests de integración
+afectada pasan localmente y en la verificación independiente. Esta última confirmó
+también los blobs publicados de ambas ramas y el estado completo de 360 modelos.
+El CI remoto de este paso sigue pendiente; salud, deploy y aceptación humana son
+estados separados.
+
+El deploy HML del saneamiento #2874 terminó correctamente en la revisión
+`7ee9065e93d994d098bec6ee8f9047c150a9581f`; falló después su promoción automática
+a development por el conflicto documental. El run dejó advertencias de TLS,
+restricción condicional MySQL no soportada y contenedores huérfanos; no se
+ejecutaron reparaciones ni limpieza. La salud funcional informada por el workflow
+no certifica por sí sola el estado final de cada worker ni aceptación humana.
 
 Risk: items 1, 2, 3, 5 (grafo de migraciones, identidad HML, integración compartida y preparación de deploy).

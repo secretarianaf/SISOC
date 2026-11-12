@@ -14,6 +14,11 @@ dependiente acredita Sintys; no exigirlo al responsable puro (`SIN_CRUCE`).
 
 ## Comedores y Espacios comunitarios (#2641)
 
+Encuestas móviles pertenecen a `src/backends/sisoc_core/encuestas/`:
+`api_views.py`, `api_permissions.py` y `services_pwa.py`, rutas públicas
+`/api/encuestas/pwa/`. Validan acceso con el contrato interno de Espacios,
+sin importar el vertical Comedores. Guía: `docs/implementaciones/encuestas.md`.
+
 Topología: `docs/desarrollo/arquitectura_servicios_2641.md` y
 `docs/diagramas/issue-2641-servicios.svg`. Estado y evidencia de cada corte
 (C0–C4): registros `issue-2641` en `docs/registro/cambios/2026-T4/` y
@@ -424,7 +429,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `src/backends/comedores/pwa/` | endpoints backend para experiencia PWA | `api_urls.py`, `api_views.py`, `services/`, `models.py` | Medio |
 | `src/backends/cdi/ticketera/` | corre en el backend de CDI; API server-to-server con kill-switch | `api_urls.py`, `api_views.py`, `api_serializers.py` | Medio |
 | `src/backends/comedores/comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
-| `src/backends/kernel/organizaciones/` + `src/backends/comedores/gestion_organizaciones/` | datos maestros en el kernel; pantallas, forms y `Firmante` en el core (`gestion_organizaciones`). Entidades/organizaciones vinculadas; edición modal de proyectos y detalle con rendiciones por relación directa o legado | `models.py`, `forms.py`, `views.py`, templates de organización | Alto |
+| `src/backends/kernel/organizaciones/` + `src/backends/comedores/gestion_organizaciones/` | datos maestros en el kernel; pantallas, forms y `Firmante` en el core (`gestion_organizaciones`). Entidades/organizaciones vinculadas; edición de proyectos con línea y territoriales; legajo por programa (#2745) armado en `services/legajo.py` con partials en `src/backends/comedores/gestion_organizaciones/templates/organizaciones/partials/legajo/`; rendiciones por relación directa o legado | `models.py`, `forms.py`, `views.py`, `services/`, templates de organización | Alto |
 | `src/backends/cdi/centrodeinfancia/` | backend propio (`/centrodeinfancia/`, `/simepi/`); dominio de centros de infancia, personal, asistencia y descargables provinciales | `models.py`, `services.py`, `services_nomina_ninos_pdf.py`, `views.py`, `tests/`, urls | Alto |
 | `src/backends/comedores/acompanamientos/` | seguimiento/acompanamientos | `views.py`, `acompanamiento_service.py`, `services/filter_config.py`, templates | Medio |
 | `src/backends/comedores/expedientespagos/` | expedientes de pagos | `models.py`, `views.py`, urls | Bajo |
@@ -564,6 +569,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Cambios de estado: `src/backends/kernel/core/admin_operaciones.py` (`Operacion` +
   `OperacionesAdminMixin`), siempre llamando a un service existente; deja
   `auditlog.LogEntry` con motivo. Sin service, no hay acción.
+- Pedidos de soporte recurrentes (revertir estados, bajas de duplicados): resolverlos
+  como `Operacion` del admin del dominio, no con SQL. Ejemplo: Celiaquía
+  `volver_a_pendiente` y `eliminar` en `ExpedienteCiudadanoAdmin`
+  (`docs/registro/cambios/2026-T4/2026-11-03-admin-operaciones-soporte-celiaquia.md`).
 - Sidebar por dominio y badge de entorno: `src/backends/kernel/core/admin_navigation.py`;
   config en el bloque `UNFOLD` de `src/backends/config/settings.py`.
 - Métricas: `<app>/admin_metricas.py` con `metricas()`, descubiertas por
@@ -768,7 +777,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - etiquetas visibles ≠ valores persistidos: la etapa `revision_auditoria` se muestra como «Revisión para Carga». No cambiar valores internos para acomodar un label
 - asociación actual: `RendicionCuentaMensual.proyecto`; conservar fallback por `comedor.codigo_de_proyecto` para datos legados
 - listado y detalle del legajo: `src/backends/comedores/gestion_organizaciones/views.py` y templates `organizacion_*`
-- proyectos editables: `OrganizacionForm.proyectos_lineas` recibe un JSON oculto con filas `{codigo, linea}` (línea = programa de Abordaje, #2745); `asignaciones_territoriales` (#2642, filas `{proyecto, territorial}`) se valida contra esos códigos. Región/subzona canónica: `Organizacion.region_abordaje`/`subzona_abordaje` (kernel); `DatosRegionOrganizacion` de `gestion_organizaciones` quedó sin uso en pantallas. Los datos por programa se resuelven en `src/backends/comedores/gestion_organizaciones/services/programas.py`
+- proyectos editables: `OrganizacionForm.proyectos_lineas` recibe un JSON oculto con filas `{codigo, linea}` (línea = programa de Abordaje, #2745); `asignaciones_territoriales` (#2642, filas `{proyecto, territorial}`) se valida contra esos códigos. Región/subzona canónica: `Organizacion.region_abordaje`/`subzona_abordaje` (kernel); las tablas de región propias de `gestion_organizaciones` se retiran en la migración 0005, que antes copia sus datos al kernel. Los datos por programa se resuelven en `src/backends/comedores/gestion_organizaciones/services/programas.py`
 - tests: `src/backends/comedores/tests/test_rendicioncuentasmensual_services_unit.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_domain_rules.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_visualizacion.py`, `src/backends/comedores/tests/test_rendicioncuentasmensual_acta_auditoria.py` y `src/backends/comedores/gestion_organizaciones/tests.py`
 - escenarios QA de permisos por etapa: `python manage.py seed_rendicion_stage_examples --comedor-id <id>` (solicita la contraseña de forma interactiva)
 - documentación canónica: `docs/flujos/rendiciones_mensuales_proyectos.md`

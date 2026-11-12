@@ -905,6 +905,11 @@
   "regex": "^centrodefamilia/centros/(?P<pk>[0-9]+)/generar\\-usuario/\\Z"
  },
  {
+  "name": "cdf_web_ciudadano_aporte",
+  "namespace": "",
+  "regex": "^api/web/cdf/ciudadanos/(?P<pk>[0-9]+)/aportes/(?P<aporte>[^/]+)/\\Z"
+ },
+ {
   "name": "celiaquia-cupo-baja-legajo",
   "namespace": "",
   "regex": "^api/celiaquia/cupos/legajos/(?P<legajo_id>\\d+)/baja/$"
@@ -1258,6 +1263,11 @@
   "name": "celiaquia_tablero",
   "namespace": "",
   "regex": "^celiaquia/tablero/\\Z"
+ },
+ {
+  "name": "celiaquia_web_ciudadano_aporte",
+  "namespace": "",
+  "regex": "^api/web/celiaquia/ciudadanos/(?P<pk>[0-9]+)/aportes/(?P<aporte>[^/]+)/\\Z"
  },
  {
   "name": "centro_create",
@@ -1650,6 +1660,11 @@
   "regex": "^ciudadanos/ver/(?P<pk>[0-9]+)\\Z"
  },
  {
+  "name": "ciudadanos_web_ficha",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
   "name": "colaborador_espacio_crear",
   "namespace": "",
   "regex": "^comedores/(?P<pk>[0-9]+)/colaboradores/crear/\\Z"
@@ -1763,6 +1778,11 @@
   "name": "comedores_web_actividades_pnud_editar",
   "namespace": "",
   "regex": "^api/web/comedores/actividades\\-pnud/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "comedores_web_ciudadano_aporte",
+  "namespace": "",
+  "regex": "^api/web/comedores/ciudadanos/(?P<pk>[0-9]+)/aportes/(?P<aporte>[^/]+)/\\Z"
  },
  {
   "name": "comedores_web_montos",
@@ -14803,6 +14823,11 @@
   "name": "centros-options",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/centros/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "ciudadano-aporte",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ciudadanos/(?P<pk>[0-9]+)/aportes/(?P<aporte>[^/]+)/\\Z"
  },
  {
   "name": "ciudadano-form",

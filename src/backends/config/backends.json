@@ -132,6 +132,7 @@
       "celiaquia/",
       "reporter-provincias/",
       "api/celiaquia/",
+      "api/web/celiaquia/",
       "admin/celiaquia/"
     ],
     "urlconf": "celiaquia_runtime.urls",

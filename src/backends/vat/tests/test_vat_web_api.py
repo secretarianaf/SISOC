@@ -121,7 +121,7 @@ def _web_route_names():
 
 @pytest.mark.parametrize("name", _web_route_names())
 def test_every_inet_view_is_published_only_under_api_web_vat_behind_the_gate(name):
-    sample = {"pk": 7, "field": "provincia"}
+    sample = {"pk": 7, "field": "provincia", "aporte": "vat"}
     pattern = next(p for p in web_api_urls.urlpatterns if p.name == name)
     kwargs = {key: sample[key] for key in pattern.pattern.converters}
     web_path = reverse(f"vat_web_api:{name}", kwargs=kwargs)

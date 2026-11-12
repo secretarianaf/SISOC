@@ -2,7 +2,15 @@
 
 from django.urls import include, path
 
+from ciudadanos.web_aportes import AporteCiudadanoWebView
+
 urlpatterns = [
     path("", include("centrodefamilia.web_api_urls")),
     path("", include("centrodefamilia.web_api_beneficiarios_urls")),
+    # Aporte de Centro de Familia a Ciudadano 360 (C04).
+    path(
+        "ciudadanos/<int:pk>/aportes/<str:aporte>/",
+        AporteCiudadanoWebView.as_view(backend="cdf"),
+        name="cdf_web_ciudadano_aporte",
+    ),
 ]

@@ -6,6 +6,7 @@ import { admisionesInformeDetalleRoute } from "./admisionesInformeDetalle";
 import { admisionesInformeEditorRoute } from "./admisionesInformeEditor";
 import { businessRoute } from "./business";
 import { categoriasRoute } from "./categorias";
+import { ciudadano360Route } from "./ciudadano360";
 import { cdiCentrosRoute } from "./cdiCentros";
 import { cdiNominaRoute } from "./cdiNomina";
 import { cdiNominaListaRoute } from "./cdiNominaLista";
@@ -121,6 +122,7 @@ export const ROUTES: RouteDefinition[] = [
   relevamientosSeguimientosRoute,
   relevamientosActasRoute,
   relevamientosFormsRoute,
+  ciudadano360Route,
   businessRoute(SHELL_ROUTES),
 ];
 

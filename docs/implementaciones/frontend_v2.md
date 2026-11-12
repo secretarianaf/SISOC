@@ -850,6 +850,15 @@ nativo (`SeguimientoEditor`, `ActaComplementariaEditor`, las vistas de baja y
 del POST son los nativos; un formulario inválido responde 400 sin escribir nada. Registro:
 `../registro/cambios/2026-T4/2026-11-12-2785-react-relevamientos-formularios.md`.
 
+### Ciudadano 360: aportes de verticales (C04)
+
+La ficha React (`routes/ciudadano360.tsx`, solo vista previa local hasta que C05.01
+migre el resto) pide `GET /api/web/ciudadanos/<pk>/` y, con la lista `aportes` que
+arma el servidor, cada aporte a `/api/web/<backend>/ciudadanos/<pk>/aportes/<aporte>/`
+(vista genérica `ciudadanos.web_aportes`, proyector registrado por cada dueño). Las
+tarjetas viven en `routes/ciudadano360Aportes.tsx` y degradan solas a «No disponible»
+(C2). Ver `docs/registro/cambios/2026-T4/2026-11-12-2785-react-ciudadano360-aportes.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

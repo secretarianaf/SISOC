@@ -4,6 +4,7 @@ Ver ``docs/plans/2026-T4/2026-11-10-2785-vat-api-web-m2.md``.
 """
 
 from django.urls import path
+from ciudadanos.web_aportes import AporteCiudadanoWebView
 from VAT import api_inet_views as views
 from VAT.services.inet_forms import FORM_CLASSES
 from VAT.services.inet_queries import RESOURCES
@@ -88,3 +89,12 @@ for resource in RESOURCES:
                 name=f"{resource}-edit-options",
             ),
         ]
+
+# Aporte de VAT a Ciudadano 360 (C04).
+urlpatterns += [
+    path(
+        "ciudadanos/<int:pk>/aportes/<str:aporte>/",
+        AporteCiudadanoWebView.as_view(backend="vat"),
+        name="ciudadano-aporte",
+    ),
+]

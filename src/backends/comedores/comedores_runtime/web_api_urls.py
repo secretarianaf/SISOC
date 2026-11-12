@@ -6,6 +6,8 @@ Cada app del backend suma acá su propio ``include``; el prefijo se publica en
 
 from django.urls import include, path
 
+from ciudadanos.web_aportes import AporteCiudadanoWebView
+
 urlpatterns = [
     path("duplas/", include("duplas.web_api_urls")),
     path("", include("comedores.web_api_montos_urls")),
@@ -25,4 +27,10 @@ urlpatterns = [
     ),
     path("organizaciones/", include("gestion_organizaciones.web_api_urls")),
     path("relevamientos/", include("relevamientos.web_api_urls")),
+    # Aportes de Comedores y PWA a Ciudadano 360 (C04).
+    path(
+        "ciudadanos/<int:pk>/aportes/<str:aporte>/",
+        AporteCiudadanoWebView.as_view(backend="comedores"),
+        name="comedores_web_ciudadano_aporte",
+    ),
 ]

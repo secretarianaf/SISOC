@@ -188,3 +188,48 @@ def test_observation_entries_keep_the_native_posts(operador, observacion):
     assert baja.status_code == 302 and baja["Location"] == ficha
     assert ObservacionCentroInfancia.all_objects.get(pk=observacion.pk).deleted_at
     assert operador.post(_detalle).status_code == 405
+
+
+# --- Centres list (CDI09.01) and beneficiary detail (CDI04.01) ---------------------
+
+
+@pytest.fixture(name="ficha")
+def ficha_fixture():
+    from centrodeinfancia.models import CentroDeInfancia, NominaCentroInfancia
+    from ciudadanos.models import Ciudadano
+
+    centro = CentroDeInfancia.objects.create(nombre="CDI Lista")
+    ciudadano = Ciudadano.objects.create(apellido="Gomez", nombre="Luz", documento=3)
+    return NominaCentroInfancia.objects.create(
+        centro=centro, ciudadano=ciudadano, apellido="Gomez", nombre="Luz"
+    )
+
+
+@pytest.mark.usefixtures("preview")
+def test_list_and_detail_entries_return_the_index_after_the_native_checks(ficha):
+    user = User.objects.create_user("preview-lista")
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="centrodeinfancia", codename="view_centrodeinfancia"
+        )
+    )
+    client = _cliente(user)
+    detalle = f"/centrodeinfancia/{ficha.centro_id}/nomina/{ficha.pk}/ver/"
+
+    for ruta in ("/centrodeinfancia/listar", detalle):
+        respuesta = client.get(ruta)
+        assert respuesta.status_code == 200, ruta
+        assert b"/centrodeinfancia/react/assets/app-1.js" in respuesta.content, ruta
+        assert "no-store" in respuesta["Cache-Control"], ruta
+        assert client.head(ruta).content == b"", ruta
+    assert client.get("/centrodeinfancia/listar", {"page": "9"}).status_code == 404
+    assert (
+        client.get(
+            f"/centrodeinfancia/{ficha.centro_id}/nomina/999999/ver/"
+        ).status_code
+        == 404
+    )
+    sin_permiso = _cliente(User.objects.create_user("preview-lista-sin"))
+    for ruta in ("/centrodeinfancia/listar", detalle):
+        assert sin_permiso.get(ruta).status_code == 403, ruta
+        assert Client().get(ruta).status_code in (302, 401, 403), ruta

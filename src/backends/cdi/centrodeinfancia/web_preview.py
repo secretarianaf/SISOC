@@ -21,6 +21,8 @@ from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from centrodeinfancia.views import (
+    CentroDeInfanciaListView,
+    NominaCentroInfanciaDestinatariosDetailView,
     ObservacionCentroInfanciaCreateView,
     ObservacionCentroInfanciaDeleteView,
     ObservacionCentroInfanciaDetailView,
@@ -52,6 +54,30 @@ class ReportesEntry(ReportesCDIView):
     index_bytes = b""
 
     def get(self, request, *args, **kwargs):
+        return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CentrosListEntry(CentroDeInfanciaListView):
+    """Native guards, then the page check (an invalid ``page`` is 404), then the index."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        self.get_context_data()
+        return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class NominaDestinatarioEntry(NominaCentroInfanciaDestinatariosDetailView):
+    """Native guards and both scoped objects (404), then the index."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.get_context_data()
         return index_response(request, self.index_bytes)
 
 
@@ -163,6 +189,22 @@ def cdi_preview_patterns(build_directory):
         path(
             "centrodeinfancia/reportes/",
             _entry(ReportesEntry, "auth.role_reportes_cdi", index_bytes),
+        ),
+        path(
+            "centrodeinfancia/listar",
+            _entry(
+                CentrosListEntry,
+                "centrodeinfancia.view_centrodeinfancia",
+                index_bytes,
+            ),
+        ),
+        path(
+            "centrodeinfancia/<int:pk>/nomina/<int:nomina_id>/ver/",
+            _entry(
+                NominaDestinatarioEntry,
+                "centrodeinfancia.view_centrodeinfancia",
+                index_bytes,
+            ),
         ),
         path(
             "centrodeinfancia/<int:pk>/observacion/crear/",

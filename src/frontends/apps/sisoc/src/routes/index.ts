@@ -5,6 +5,8 @@ import { admisionesTemplatesRoute } from "./admisionesTemplates";
 import { admisionesInformeDetalleRoute } from "./admisionesInformeDetalle";
 import { businessRoute } from "./business";
 import { categoriasRoute } from "./categorias";
+import { cdiCentrosRoute } from "./cdiCentros";
+import { cdiNominaRoute } from "./cdiNomina";
 import { cdiObservacionesRoute } from "./cdiObservaciones";
 import { cdiReportesRoute } from "./cdiReportes";
 import { cdfBeneficiariosRoute } from "./cdfBeneficiarios";
@@ -79,6 +81,8 @@ export const ROUTES: RouteDefinition[] = [
   inspeccionesTableroRoute,
   cdiReportesRoute,
   cdiObservacionesRoute,
+  cdiCentrosRoute,
+  cdiNominaRoute,
   cdfCentrosRoute,
   cdfCentroFormRoute,
   dispositivosRoute,

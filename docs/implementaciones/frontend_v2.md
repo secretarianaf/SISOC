@@ -599,6 +599,12 @@ vertical, dibuja `SisocShell` y agrega el botón «Consultas» de la cabecera.
   el XLSX es la descarga nativa.
 - Observaciones (`routes/cdiObservaciones.tsx`): alta, ficha, edición y baja
   sobre las vistas nativas, con el veto de auditoría CDI-A3 también en el HTML.
+- `/centrodeinfancia/listar` (`routes/cdiCentros.tsx`, CDI09.01): listado de
+  centros con filtros, columnas, orden local y páginas de 10; el CSV y el PDF de
+  nómina de niños siguen siendo descargas nativas.
+- `/centrodeinfancia/<centro>/nomina/<nómina>/ver/` (`routes/cdiNomina.tsx`,
+  CDI04.01): ficha de un destinatario de la nómina; los valores salen del
+  backend con las mismas expresiones del template nativo.
 
 El menú lateral de `SisocShell` y `ClaroFrame` dibuja los grupos anidados con el
 marcado de cada nivel del template y los abre y resalta con las mismas
@@ -608,7 +614,9 @@ evaluar las reglas sobre otra ruta. Registro:
 `../registro/cambios/2026-T4/2026-11-10-2785-shell-menu-tercer-nivel.md`.
 Registros:
 `../registro/cambios/2026-T4/2026-11-10-2785-react-cdi-reportes.md` y
-`../registro/cambios/2026-T4/2026-11-10-2785-react-cdi-observaciones.md`.
+`../registro/cambios/2026-T4/2026-11-10-2785-react-cdi-observaciones.md`,
+`../registro/cambios/2026-T4/2026-11-12-2785-react-cdi-centros-listado.md` y
+`../registro/cambios/2026-T4/2026-11-12-2785-react-cdi-nomina-ficha.md`.
 ### Vertical remoto sobre G1: Duplas (equipo técnico) de Comedores
 
 Segunda aplicación del patrón, ahora con el marco nativo `includes/main.html`

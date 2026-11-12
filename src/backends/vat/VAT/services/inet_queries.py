@@ -17,7 +17,6 @@ from VAT.services.access_scope import (
 from iam.services import user_has_permission_code
 from users.territorial_scope import apply_full_province_scope
 
-
 RESOURCES = {
     "centros": (models.Centro, "centro"),
     "cursos": (models.Curso, "curso"),

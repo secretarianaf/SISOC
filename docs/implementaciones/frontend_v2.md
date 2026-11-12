@@ -872,6 +872,11 @@ y `routes/ciudadano360Ficha.tsx` (pestañas, Datos Personales, Grupo Familiar, g
 Chart.js, programas, interacciones y observaciones). Ver
 `docs/registro/cambios/2026-T4/2026-11-12-2785-react-ciudadano360-ficha.md`.
 
+La baja de un ciudadano (C05.03) es `routes/ciudadanoBaja.tsx` sobre
+`/api/web/ciudadanos/<pk>/baja/` (`ciudadanos.web_baja`, que corre la vista nativa de baja
+y proyecta su confirmación). Ver
+`docs/registro/cambios/2026-T4/2026-11-12-2785-react-ciudadano-baja.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

@@ -5,7 +5,8 @@ the login redirect of ``login_required``, users without
 ``ciudadanos.view_ciudadano`` the native 403 and a missing ciudadano the native 404.
 Only then a GET returns the frozen React ``index.html``, which loads the whole ficha from
 ``/api/web/ciudadanos/<pk>/`` and the aportes of the verticals; its actions keep pointing at the
-native pages (Editar, Dar de baja, Historial, Agregar familiar) and ``Marcar revisado`` posts to
+native pages (Editar, Historial, Agregar familiar) and ``Dar de baja`` to the React baja page
+(C05.03: ``ciudadanos/eliminar/<pk>``) and ``Marcar revisado`` posts to
 ``/api/web/ciudadanos/<pk>/marcar-revisado/``. Assets are served
 under ``/ciudadanos/react/``.
 """
@@ -23,7 +24,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from ciudadanos.views import CiudadanosDetailView
+from ciudadanos.views import CiudadanosDeleteView, CiudadanosDetailView
 
 BUILD_ASSETS = "/v2/sisoc/assets/"
 PUBLIC_ASSETS = "/ciudadanos/react/assets/"
@@ -44,6 +45,17 @@ def _index(request, index_bytes):
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class FichaEntry(CiudadanosDetailView):
     """Native login, permission and 404 first, then the frozen React index."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class BajaEntry(CiudadanosDeleteView):
+    """Native login, ``ciudadanos.delete_ciudadano`` and 404 first, then the frozen React index (C05.03)."""
 
     index_bytes = b""
 
@@ -112,6 +124,10 @@ def ciudadanos_preview_patterns(build_directory):
         path(
             "ciudadanos/ver/<int:pk>",
             login_required(FichaEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "ciudadanos/eliminar/<int:pk>",
+            login_required(BajaEntry.as_view(index_bytes=index_bytes)),
         ),
         path(
             "ciudadanos/react/<path:asset_path>",

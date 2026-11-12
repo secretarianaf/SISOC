@@ -1675,6 +1675,11 @@
   "regex": "^ciudadanos/ver/(?P<pk>[0-9]+)\\Z"
  },
  {
+  "name": "ciudadanos_web_baja",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/baja/\\Z"
+ },
+ {
   "name": "ciudadanos_web_ficha",
   "namespace": "",
   "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/\\Z"

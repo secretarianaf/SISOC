@@ -5,7 +5,8 @@ previsualización del motivo, y cómo Subsanar/Rechazar arman el motivo en backe
 y publican a la Provincia las observaciones con ``Sí``.
 """
 
-from datetime import date
+from datetime import date, datetime
+from datetime import timezone as dt_timezone
 
 import pytest
 from django.contrib.auth.models import Permission, User
@@ -191,6 +192,26 @@ def test_doble_envio_del_alta_estructurada_no_duplica(client, coordinador, legaj
         ).count()
         == 1
     )
+
+
+def test_listado_muestra_la_hora_argentina(client, coordinador, legajo):
+    """Issue #2892: la hora se mostraba en UTC (3 horas adelantada)."""
+    comentario = ComentariosTecnicosService.registrar(
+        legajo,
+        tipo_documento="RENAPER",
+        tiene_observaciones="si",
+        observacion_codigo=CODIGO_RENAPER,
+        usuario=coordinador,
+    )
+    HistorialComentarios.objects.filter(pk=comentario.pk).update(
+        fecha_creacion=datetime(2026, 11, 3, 15, 14, tzinfo=dt_timezone.utc)
+    )
+    client.force_login(coordinador)
+
+    response = client.get(_url_listar(legajo))
+
+    (item,) = [c for c in response.json()["comentarios"] if c["id"] == comentario.pk]
+    assert item["fecha"] == "03/11/2026 12:14"
 
 
 def test_alta_estructurada_invalida_devuelve_400(client, coordinador, legajo):

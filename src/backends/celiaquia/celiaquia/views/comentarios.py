@@ -37,6 +37,9 @@ def _safe_profile(user):
 
 ALLOWED_UPLOAD_TYPES = {"application/pdf", "image/jpeg", "image/png"}
 MAX_UPLOAD_MB = 5
+# Un doble clic en "Guardar Comentario" manda dos POST idénticos (issue #2892);
+# dentro de esta ventana el segundo devuelve el comentario ya creado.
+VENTANA_REENVIO_COMENTARIO_SEGUNDOS = 10
 
 #: Tipos de comentario que se listan en el panel del legajo.
 TIPOS_LISTABLES = [
@@ -181,6 +184,7 @@ class LegajoComentarioCreateView(View):
                 observacion_codigo=request.POST.get("observacion_codigo"),
                 observacion_libre=request.POST.get("observacion_libre", ""),
                 usuario=request.user,
+                ventana_reenvio_segundos=VENTANA_REENVIO_COMENTARIO_SEGUNDOS,
             )
         except ValidationError as exc:
             return JsonResponse(

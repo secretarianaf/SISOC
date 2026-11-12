@@ -170,6 +170,29 @@ def test_alta_estructurada_por_endpoint(client, coordinador, legajo):
     assert comentario.tipo_comentario == HistorialComentarios.TIPO_COMENTARIO_TECNICO
 
 
+def test_doble_envio_del_alta_estructurada_no_duplica(client, coordinador, legajo):
+    """Issue #2892: un doble clic en Guardar mandaba dos POST idénticos."""
+    client.force_login(coordinador)
+    data = {
+        "tipo_documento": "RENAPER",
+        "tiene_observaciones": "si",
+        "observacion_codigo": CODIGO_RENAPER,
+    }
+
+    primera = client.post(_url_crear(legajo), data=data)
+    segunda = client.post(_url_crear(legajo), data=data)
+
+    assert primera.status_code == segunda.status_code == 200
+    assert primera.json()["comentario"]["id"] == segunda.json()["comentario"]["id"]
+    assert (
+        HistorialComentarios.objects.filter(
+            legajo=legajo,
+            tipo_comentario=HistorialComentarios.TIPO_COMENTARIO_TECNICO,
+        ).count()
+        == 1
+    )
+
+
 def test_alta_estructurada_invalida_devuelve_400(client, coordinador, legajo):
     client.force_login(coordinador)
 

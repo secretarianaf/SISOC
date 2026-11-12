@@ -1,4 +1,4 @@
-"""Explicit local React preview of the technical-report detail page (AD02.01).
+"""Explicit local React preview of the technical-report pages (AD02.01).
 
 Never mounted by a production URLconf. The entry keeps the native URL, the
 native route decorator (``permissions_any_required``) and the native view's
@@ -22,7 +22,11 @@ from comedores.web_preview_catalogos import (
     _frozen_assets,
     _index,
 )
-from admisiones.views.web_views import InformeTecnicoDetailView
+from admisiones.views.web_views import (
+    InformeTecnicoDetailView,
+    InformeTecnicosCreateView,
+    InformeTecnicosUpdateView,
+)
 from admisiones.web_api_informes import INFORME_VIEW_PERMISSIONS
 
 
@@ -34,6 +38,26 @@ class InformeDetailEntry(InformeTecnicoDetailView):
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class InformeCreateEntry(InformeTecnicosCreateView):
+    """GET serves the index after the native ``dispatch``; the native POST stays."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class InformeUpdateEntry(InformeTecnicosUpdateView):
+    """GET serves the index after the native ``dispatch``; the native POST stays."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
         return _index(request, self.index_bytes)
 
 
@@ -49,7 +73,16 @@ def informes_preview_patterns(build_directory):
         .replace(BUILD_ASSETS, PUBLIC_ASSETS)
         .encode("utf-8")
     )
+
+    def entry(vista):
+        return permissions_any_required(INFORME_VIEW_PERMISSIONS)(
+            vista.as_view(index_bytes=index_bytes)
+        )
+
+    base = "comedores/admision/informe_tecnico/<str:tipo>/"
     return [
+        path(f"{base}<int:admision_id>/crear/", entry(InformeCreateEntry)),
+        path(f"{base}<int:pk>/editar/", entry(InformeUpdateEntry)),
         path(
             "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/ver/",
             permissions_any_required(INFORME_VIEW_PERMISSIONS)(

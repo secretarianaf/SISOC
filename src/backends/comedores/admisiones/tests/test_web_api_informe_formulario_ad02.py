@@ -14,13 +14,14 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.test import Client
+from django.urls import reverse
 
 from admisiones.forms.admisiones_forms import (
     InformeTecnicoBaseForm,
     InformeTecnicoJuridicoForm,
 )
-from admisiones.models.admisiones import Admision, InformeTecnico
 from admisiones.tests.test_web_api_informe_detalle_ad02 import _informe
+from admisiones.models.admisiones import Admision, InformeTecnico
 from comedores.models import Comedor
 
 API = "/api/web/comedores/admisiones/informes/"
@@ -214,3 +215,66 @@ def test_snapshots_of_the_native_effective_fields(comedor):
                     ),
                     encoding="utf-8",
                 )
+
+
+def test_schema_carries_what_the_editor_renders(web, comedor):
+    admision = _admision(comedor, tipo="incorporacion", es_ex_pnud="no")
+
+    datos = web.get(f"{API}base/admision/{admision.pk}/formulario/").json()
+
+    nativo = _native("base", admision)
+    assert {f["name"]: (f["id"], f["widget"]) for f in datos["fields"]} == {
+        n: (nativo[n].id_for_label, type(f.widget).__name__)
+        for n, f in nativo.fields.items()
+    }
+    provincia = next(
+        f for f in datos["fields"] if f["name"] == "provincia_organizacion"
+    )
+    assert provincia["attrs"]["data-geografia-provincia"] == "id_localidad_organizacion"
+    fecha = next(
+        f for f in datos["fields"] if f["name"] == "fecha_vencimiento_mandatos"
+    )
+    assert (fecha["kind"], fecha["attrs"]["class"]) == ("date", "form-control")
+    assert datos["urls"] == {
+        "volver": reverse("admisiones_tecnicos_editar", args=[admision.pk]),
+        "previsualizar": None,
+        "reportar_faltante": reverse(
+            "admisiones_reportar_configuracion_faltante_template", args=[admision.pk]
+        ),
+        "localidades": reverse("ajax_load_localidades"),
+    }
+    assert datos["estado_formulario"] == ""
+
+
+def test_notification_message_keeps_its_native_tag_and_is_consumed_once(comedor):
+    from unittest import mock
+
+    admision = _admision(comedor, tipo="incorporacion", es_ex_pnud="no")
+    informe = _informe(admision)
+    root = get_user_model().objects.create_superuser("super_notifica")
+    perfil = root.profile
+    perfil.acceso_web = True
+    perfil.must_change_password = False
+    perfil.needs_profile_confirmation = False
+    perfil.save()
+    web = Client()
+    web.force_login(root)
+
+    with mock.patch(
+        "admisiones.services.templates_informe_tecnico_service."
+        "PlantillaInformeTecnicoService.reportar_configuracion_faltante",
+        return_value=(object(), "Registrada para los referentes."),
+    ):
+        respuesta = web.post(
+            f"/comedores/admisiones/{admision.pk}/templates/reportar-faltante/",
+            {"informe_id": informe.pk},
+        )
+    assert respuesta.status_code == 302
+
+    url = f"{API}base/{informe.pk}/formulario/"
+    datos = web.get(url).json()
+    assert [(m["message"], m["level"]) for m in datos["messages"]] == [
+        ("Registrada para los referentes.", "success")
+    ]
+    assert "configuracion-template" in datos["messages"][0]["tags"]
+    assert web.get(url).json()["messages"] == []

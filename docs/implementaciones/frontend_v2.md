@@ -767,6 +767,11 @@ Detalle del informe técnico de admisión (AD02.01):
 `InformeTecnicoDetailView` con el acceso actual y las acciones (subir DOCX editado,
 revisar) siguen siendo POST a la URL nativa. Registro:
 `../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-informe-detalle.md`.
+El editor del informe (alta y edición) usa el mismo marco: `web_api_informe_formulario.py` proyecta el
+formulario efectivo y `web_api_informe_guardar.py` guarda borrador y finalización con el circuito nativo.
+Registros: `../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-informe-formulario.md`,
+`../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-informe-guardar.md` y
+`../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-informe-editor.md`.
 
 Expedientes de pago de un comedor (EX01) usan el mismo marco:
 `src/backends/comedores/expedientespagos/web_api.py` ejecuta las vistas nativas

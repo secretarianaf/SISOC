@@ -729,6 +729,16 @@ nativas conservan el prefijo duplicado `/rendicioncuentasmensual/rendicioncuenta
 Registro:
 `../registro/cambios/2026-T4/2026-11-11-2785-react-rendicion-mensual-listado.md`.
 
+La rendición de cuentas final (RF01.01 a RF01.03) usa el
+mismo marco: `src/backends/comedores/rendicioncuentasfinal/web_api.py` ejecuta
+`RendicionCuentasFinalDetailView` (conserva el `get_or_create` del GET) y
+`DocumentosRendicionCuentasFinalListView` con el alcance por área de
+`filter_documentos_por_area`, y las seis acciones (validar, subsanar, switch,
+adjuntar, crear y eliminar) repiten los efectos y mensajes nativos; exige
+`view_rendicioncuentasfinal`, el permiso de las pantallas nativas. Las rutas Django y `/media/rendicion_cuentas_final/` no
+cambian. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-rendicion-final-consulta.md`.
+
 Los comunicados publicados (CM03.01) usan el mismo marco:
 `src/backends/comedores/comunicados/web_api_views.py` ejecuta
 `ComunicadoListView` y `ComunicadoDetailView` (solo internos publicados y

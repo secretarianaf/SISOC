@@ -3865,6 +3865,46 @@
   "regex": "^rendicion_cuentas_final/listar/\\Z"
  },
  {
+  "name": "rendicioncuentasfinal_web_adjuntar",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/documentos/adjuntar/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/(?P<rendicion_id>[0-9]+)/crear/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/comedor/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_documentos",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/documentos/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/documentos/(?P<documento_id>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_subsanar",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/documentos/(?P<documento_id>[0-9]+)/subsanar/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_switch",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/(?P<rendicion_id>[0-9]+)/fisicamente_presentada/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_validar",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/documentos/(?P<documento_id>[0-9]+)/validar/\\Z"
+ },
+ {
   "name": "rendicioncuentasmensual_auditoria",
   "namespace": "",
   "regex": "^rendicioncuentasmensual/rendicioncuentasmensual/auditoria/(?P<pk>[0-9]+)/\\Z"

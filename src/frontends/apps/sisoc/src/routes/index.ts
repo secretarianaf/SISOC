@@ -15,6 +15,7 @@ import { dispositivosRoute } from "./dispositivos";
 import { cdfCentroUsuarioRoute } from "./cdfCentroUsuario";
 import { duplasRoute } from "./duplas";
 import { expedientesPagosRoute } from "./expedientesPagos";
+import { rendicionFinalRoute } from "./rendicionFinal";
 import { rendicionMensualRoute } from "./rendicionMensual";
 import { comunicadosRoute } from "./comunicados";
 import { duplasFormRoute } from "./duplasFormRoute";
@@ -83,6 +84,7 @@ export const ROUTES: RouteDefinition[] = [
   acompanamientosRoute,
   expedientesPagosRoute,
   rendicionMensualRoute,
+  rendicionFinalRoute,
   comunicadosRoute,
   ocrRoute,
   businessRoute(SHELL_ROUTES),

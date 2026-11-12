@@ -15,6 +15,8 @@ _OWNED_PATTERNS = (
     r"/api/web/inspecciones/(?:actas|inspectores)/",
     r"/api/web/inspecciones/actas/[^/]+/(?:anular/|prueba/)?",
     r"/api/web/inspecciones/(?:localidades/|escuelas/(?:nueva/|[0-9]+/editar/)?)",
+    r"/api/web/inspecciones/(?:escuelas/buscar/|asignaciones/(?:nueva/|verificar/|[0-9]+/quitar/)?)",
+    r"/api/web/inspecciones/tablero/(?:datos/|exportar\.csv|descargar-actas/)?",
     r"/api/web/cdi/(?:reportes/|centros/[0-9]+/observaciones/crear/"
     r"|observaciones/[0-9]+/(?:editar/|eliminar/)?)",
     r"/api/web/comedores/duplas/(?:crear/|[0-9]+/(?:(?:editar|eliminar)/)?)?",

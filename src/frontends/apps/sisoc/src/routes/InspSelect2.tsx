@@ -28,7 +28,7 @@ function isOption(value: unknown): value is InspOption {
     (option.detalle === undefined || typeof option.detalle === "string");
 }
 
-export default function InspSelect2({ id, name, placeholder, minimum, initial, search, disabled = false, clearSignal = 0, width, dropdownParent, autoSubmit = true, describedBy, selectClass, required = false }: {
+export default function InspSelect2({ id, name, placeholder, minimum, initial, search, disabled = false, clearSignal = 0, width, dropdownParent, autoSubmit = true, describedBy, selectClass, required = false, verifica = false }: {
   id: string;
   name: string;
   placeholder: string;
@@ -50,6 +50,8 @@ export default function InspSelect2({ id, name, placeholder, minimum, initial, s
   /** Classes of the original `<select>`, kept by Select2 next to `select2-hidden-accessible`. */
   selectClass?: string;
   required?: boolean;
+  /** The assignment form marks its selects `data-insp-verifica` (the «otra visita» notice listens to them). */
+  verifica?: boolean;
 }) {
   const [selected, setSelected] = useState<InspOption | null>(initial);
   const [open, setOpen] = useState(false);
@@ -151,7 +153,7 @@ export default function InspSelect2({ id, name, placeholder, minimum, initial, s
         : results.status === "error" ? "No se pudieron cargar los resultados" : "";
   return (
     <>
-      <select ref={hidden} id={id} name={name} tabIndex={-1} className={`${selectClass ? `${selectClass} ` : ""}select2-hidden-accessible`} required={required || undefined} aria-hidden="true" data-insp-auto-submit={autoSubmit ? "" : undefined} aria-describedby={describedBy} disabled={disabled || undefined} value={selected ? String(selected.id) : ""} onChange={() => undefined}>
+      <select ref={hidden} id={id} name={name} tabIndex={-1} className={`${selectClass ? `${selectClass} ` : ""}select2-hidden-accessible`} required={required || undefined} aria-hidden="true" data-insp-auto-submit={autoSubmit ? "" : undefined} data-insp-verifica={verifica ? "" : undefined} aria-describedby={describedBy} disabled={disabled || undefined} value={selected ? String(selected.id) : ""} onChange={() => undefined}>
         <option value="" />
         {selected && <option value={selected.id}>{selected.text}</option>}
       </select>

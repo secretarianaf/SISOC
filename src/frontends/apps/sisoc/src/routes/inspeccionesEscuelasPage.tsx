@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { leerCookie } from "@sisoc/api";
 import InsumosAccessError from "../InsumosAccessError";
-import { prerequisiteFromForbidden, safeInternalPath, type WebPrerequisite } from "../webAccess";
-import ClaroFrame, { type ClaroLayout, type ClaroUser } from "./ClaroFrame";
+import ClaroFrame, { type ClaroLayout } from "./ClaroFrame";
 import InspSelect2, { type InspOption } from "./InspSelect2";
 import EscuelaForm from "./inspeccionesEscuelaForm";
 import {
@@ -11,8 +10,8 @@ import {
 } from "./inspeccionesEscuelasApi";
 import { escuelasNavigation } from "./inspeccionesEscuelasNavigation";
 import { useBootstrapModal } from "./inspeccionesModal";
+import { submitForm, useScreen, type Loaded } from "./inspeccionesScreen";
 import InspToasts, { type InspMessage } from "./inspeccionesToasts";
-import type { NavigationNode } from "./types";
 
 /**
  * Escuelas tab of the Inspecciones panel (`inspecciones/escuelas.html`, IN05)
@@ -26,7 +25,7 @@ type Row = {
   localidad: { vinculada: boolean; texto: string; distrito: string; aviso: string };
   domicilio: string; cp: string; telefono: string; mail: string; mail_invalido: boolean; form_url: string;
 };
-type Page = {
+export type Page = {
   number: number; count: number; start_index: number; end_index: number; has_other_pages: boolean;
   previous: number | null; next: number | null; range: (number | "…")[]; query_without_page: string;
 };
@@ -37,21 +36,12 @@ export type EscuelasData = {
   a_revisar: { activo: boolean; contador: number; url: string };
   results: Row[]; page: Page; urls: { nueva: string; importar: string }; editar_url: string | null; messages: InspMessage[];
 };
-type Session = { user: ClaroUser; navigation: NavigationNode[]; footer_version_label: string };
 
 const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object";
 const text = (v: unknown): v is string => typeof v === "string";
-const accepted = (status: number) => (status >= 200 && status < 300) || status === 403;
 const PANEL = "/inspecciones/";
+const accepted = (status: number) => (status >= 200 && status < 300) || status === 403;
 
-function nodeValid(n: unknown): n is NavigationNode {
-  return record(n) && text(n.id) && text(n.label) && (n.href === null || safeInternalPath(n.href) !== null) &&
-    Array.isArray(n.children) && n.children.every(nodeValid);
-}
-function sessionValid(v: unknown): v is Session {
-  return record(v) && record(v.user) && ["display_name", "avatar_initial", "role_label"].every((k) => text((v.user as Record<string, unknown>)[k])) &&
-    Array.isArray(v.navigation) && v.navigation.every(nodeValid) && text(v.footer_version_label);
-}
 function rowValid(r: unknown): r is Row {
   return record(r) && Number.isSafeInteger(r.id) && ["cueanexo", "nombre", "provincia", "domicilio", "cp", "telefono", "mail"].every((k) => text(r[k])) &&
     typeof r.mail_invalido === "boolean" && apiUrlValid(r.form_url) && record(r.localidad) && typeof r.localidad.vinculada === "boolean" &&
@@ -68,10 +58,6 @@ function escuelasValid(v: unknown): v is EscuelasData {
     ["number", "count", "start_index", "end_index"].every((k) => Number.isSafeInteger(p[k])) && typeof p.has_other_pages === "boolean" &&
     Array.isArray(p.range) && text(p.query_without_page) &&
     apiUrlValid(v.urls.nueva) && internal(v.urls.importar) && (v.editar_url === null || apiUrlValid(v.editar_url)) && messagesValid(v.messages);
-}
-
-function submitForm(form: HTMLFormElement) {
-  if (form.requestSubmit) form.requestSubmit(); else form.submit();
 }
 
 function Encabezado({ totales, tabs }: { totales: Totales; tabs: EscuelasData["tabs"] }) {
@@ -183,7 +169,7 @@ function EscuelaRow({ row, openForm }: { row: Row; openForm: (url: string) => vo
   );
 }
 
-function Pagination({ page }: { page: Page }) {
+export function Pagination({ page }: { page: Page }) {
   if (!page.has_other_pages) return null;
   const href = (n: number) => `?${page.query_without_page}page=${n}`;
   return (
@@ -199,7 +185,7 @@ function Pagination({ page }: { page: Page }) {
   );
 }
 
-function InspModal({ id, labelledBy, dialogClass, modalRef, close, children }: {
+export function InspModal({ id, labelledBy, dialogClass, modalRef, close, children }: {
   id: string; labelledBy: string; dialogClass: string; modalRef: RefObject<HTMLDivElement | null>; close: () => void; children: ReactNode;
 }) {
   return (
@@ -223,8 +209,18 @@ const PASOS = (
   </ol>
 );
 
+const ESCUELAS_HELP = (
+  <p className="small text-muted">
+            {"Columnas del padrón oficial: "}<strong>Jurisdicción</strong>{", "}<strong>Localidad</strong>{", "}
+            <strong>Cueanexo</strong>{" y "}<strong>Nombre</strong>
+            {" (obligatorias), Domicilio, C. P., Teléfono y Mail. Del Excel se lee sólo la primera hoja y el encabezado puede estar después de filas de título. El Cueanexo lleva 9 dígitos: dejá la columna como texto para conservar los ceros iniciales. Una escuela que ya está en el catálogo se actualiza; nada se borra. Antes de guardar vas a ver qué se importa y qué queda a revisar."}
+  </p>
+);
+
 /** `partials/modal_importar.html` for escuelas: the native multipart POST (IN01). */
-function ImportModal({ action, trigger, close }: { action: string; trigger: HTMLElement; close: () => void }) {
+export function ImportModal({ action, trigger, close, title = "Importar escuelas", tipo = "escuelas", help = ESCUELAS_HELP }: {
+  action: string; trigger: HTMLElement; close: () => void; title?: string; tipo?: string; help?: ReactNode;
+}) {
   const modal = useRef<HTMLDivElement>(null);
   const [processing, setProcessing] = useState(false);
   useBootstrapModal(modal, close, trigger);
@@ -234,18 +230,14 @@ function ImportModal({ action, trigger, close }: { action: string; trigger: HTML
         onSubmit={() => setProcessing(true)}>
         <input type="hidden" name="csrfmiddlewaretoken" value={leerCookie("csrftoken") ?? ""} />
         <div className="modal-header">
-          <h2 className="modal-title h5" id="insp-modal-importar-titulo">Importar escuelas</h2>
+          <h2 className="modal-title h5" id="insp-modal-importar-titulo">{title}</h2>
           <button type="button" className="btn-close" aria-label="Cerrar" onClick={close} />
         </div>
         <div className="modal-body">
           {PASOS}
-          <p className="small text-muted">
-            {"Columnas del padrón oficial: "}<strong>Jurisdicción</strong>{", "}<strong>Localidad</strong>{", "}
-            <strong>Cueanexo</strong>{" y "}<strong>Nombre</strong>
-            {" (obligatorias), Domicilio, C. P., Teléfono y Mail. Del Excel se lee sólo la primera hoja y el encabezado puede estar después de filas de título. El Cueanexo lleva 9 dígitos: dejá la columna como texto para conservar los ceros iniciales. Una escuela que ya está en el catálogo se actualiza; nada se borra. Antes de guardar vas a ver qué se importa y qué queda a revisar."}
-          </p>
-          <label className="form-label" htmlFor="id_archivo_escuelas">Archivo Excel (.xlsx) o CSV</label>
-          <input id="id_archivo_escuelas" className="form-control" type="file" name="archivo" accept=".xlsx,.csv" required />
+          {help}
+          <label className="form-label" htmlFor={`id_archivo_${tipo}`}>Archivo Excel (.xlsx) o CSV</label>
+          <input id={`id_archivo_${tipo}`} className="form-control" type="file" name="archivo" accept=".xlsx,.csv" required />
         </div>
         <div className="modal-footer">
           <button type="button" className="btn btn-link" onClick={close}>Cancelar</button>
@@ -370,31 +362,12 @@ function FormPage({ data, endpoint, onForbidden }: { data: EscuelaFormData; endp
   );
 }
 
-type Loaded<T> = { status: "loading" } | { status: "error" } | { status: "forbidden"; prerequisite: WebPrerequisite | null } | { status: "ready"; data: T; session: Session };
-
-function useScreen<T>(url: string, valid: (v: unknown) => v is T) {
-  const [state, setState] = useState<Loaded<T>>({ status: "loading" });
-  const forbidden = useCallback((data: unknown) => setState({ status: "forbidden", prerequisite: prerequisiteFromForbidden(data) }), []);
-  useEffect(() => {
-    const controller = new AbortController();
-    const options = { signal: controller.signal, validateStatus: accepted };
-    Promise.all([client.get("web/session/", options), client.get(url, options)]).then(([session, screen]: { data: unknown; status?: number }[]) => {
-      if (controller.signal.aborted) return;
-      if (session.status === 403 || screen.status === 403) forbidden(session.status === 403 ? session.data : screen.data);
-      else if (sessionValid(session.data) && valid(screen.data)) setState({ status: "ready", data: screen.data, session: session.data });
-      else setState({ status: "error" });
-    }).catch(() => { if (!controller.signal.aborted) setState({ status: "error" }); });
-    return () => controller.abort();
-  }, [url, valid, forbidden]);
-  return { state, forbidden };
-}
-
-function Screen<T extends { layout: ClaroLayout }>({ state, children }: { state: Loaded<T>; children: (data: T) => ReactNode }) {
-  if (state.status === "loading") return <main role="status">Cargando escuelas…</main>;
-  if (state.status === "error") return <main role="alert">No se pudieron cargar las escuelas.</main>;
+export function Screen<T extends { layout: ClaroLayout }>({ state, children, noun = "escuelas", title = "Inspecciones escolares" }: { state: Loaded<T>; children: (data: T) => ReactNode; noun?: string; title?: string }) {
+  if (state.status === "loading") return <main role="status">Cargando {noun}…</main>;
+  if (state.status === "error") return <main role="alert">No se pudieron cargar las {noun}.</main>;
   if (state.status === "forbidden") return <InsumosAccessError prerequisite={state.prerequisite} />;
   return (
-    <ClaroFrame title="Inspecciones escolares" user={state.session.user} layout={state.data.layout} navigation={state.session.navigation} footerLabel={state.session.footer_version_label}>
+    <ClaroFrame title={title} user={state.session.user} layout={state.data.layout} navigation={state.session.navigation} footerLabel={state.session.footer_version_label}>
       {children(state.data)}
     </ClaroFrame>
   );

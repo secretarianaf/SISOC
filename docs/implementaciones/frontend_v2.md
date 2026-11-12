@@ -555,6 +555,24 @@ selector J2 (`routes/InspSelect2.tsx`) admite deshabilitado, vaciado dependiente
 `dropdownParent` del modal. Registro:
 `../registro/cambios/2026-T4/2026-11-10-2785-react-inspecciones-escuelas.md`.
 
+La pestaña Asignaciones (`/inspecciones/asignaciones/` y el alta de asignación)
+sigue el mismo patrón: la API
+(`src/backends/inspecciones/inspecciones/web_api_asignaciones.py`) corre
+`AsignacionesView` y devuelve los totales de la jornada del servicio nativo, que
+ignoran los filtros de estado, por lo que la pantalla no los deriva de la página;
+el alta corre el `post()` nativo y «Quitar» es un POST propio con `confirm`, sin
+reintento. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-inspecciones-asignaciones.md`.
+
+El Tablero (`/inspecciones/tablero/`) consulta cada 5 s el mismo JSON que la
+página nativa: la API
+(`src/backends/inspecciones/inspecciones/web_api_tablero.py`) devuelve sin tocarla
+la respuesta de las vistas nativas de datos, CSV y descarga de actas (PDF o ZIP), de
+modo que cifras, filas, mapa, CSV y ZIP salen del mismo servicio y la pantalla no
+recalcula nada. El mapa carga Leaflet del mismo CDN y con los mismos hashes que la
+nativa. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-inspecciones-tablero.md`.
+
 Seguimientos compartidos de la migración: el selector J2 deja el foco en la
 caja al abrir y responde al teclado como Select2 4.1 nativo (Enter/Espacio/Alt+↓
 abren; Escape/Tab/Alt+↑ cierran sin mover el foco), y `SisocShell` recibe

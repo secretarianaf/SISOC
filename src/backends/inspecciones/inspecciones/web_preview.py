@@ -22,11 +22,13 @@ from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from inspecciones.views_actas import ActaDetalleView, ActasView
+from inspecciones.views_asignaciones import AsignacionCrearView, AsignacionesView
 from inspecciones.views_escuelas import (
     EscuelaCrearView,
     EscuelaEditarView,
     EscuelasView,
 )
+from inspecciones.views_tablero import TableroView
 
 BUILD_ASSETS = "/v2/sisoc/assets/"
 PUBLIC_ASSETS = "/inspecciones/react/assets/"
@@ -114,6 +116,36 @@ class EscuelaEditarEntry(EscuelaEditarView):
         return _escuela_form_entry(self, request)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class AsignacionesEntry(AsignacionesView):
+    """Native guards, then the frozen index (an unknown page is the last page)."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return _index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class AsignacionNuevaEntry(AsignacionCrearView):
+    """``/inspecciones/asignaciones/nueva/`` as a page; its POST stays native."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return _index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class TableroEntry(TableroView):
+    """``/inspecciones/tablero/``: native guards, then the frozen index."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return _index_response(request, self.index_bytes)
+
+
 class ReactAssetView(View):
     """Serve only frozen build assets; no request data reaches a static upstream."""
 
@@ -184,6 +216,18 @@ def actas_preview_patterns(build_directory):
         path(
             "inspecciones/escuelas/<int:pk>/editar/",
             EscuelaEditarEntry.as_view(index_bytes=index_bytes),
+        ),
+        path(
+            "inspecciones/asignaciones/",
+            AsignacionesEntry.as_view(index_bytes=index_bytes),
+        ),
+        path(
+            "inspecciones/asignaciones/nueva/",
+            AsignacionNuevaEntry.as_view(index_bytes=index_bytes),
+        ),
+        path(
+            "inspecciones/tablero/",
+            TableroEntry.as_view(index_bytes=index_bytes),
         ),
         path(
             "inspecciones/react/<path:asset_path>",

@@ -8,6 +8,19 @@ from inspecciones.web_api_acta import (
     AnularActaWebView,
     MarcarPruebaWebView,
 )
+from inspecciones.web_api_asignaciones import (
+    AsignacionesWebView,
+    AsignacionNuevaWebView,
+    AsignacionQuitarWebView,
+    EscuelasBuscarWebView,
+    VerificarAsignacionWebView,
+)
+from inspecciones.web_api_tablero import (
+    TableroDatosWebView,
+    TableroDescargarWebView,
+    TableroExportarWebView,
+    TableroWebView,
+)
 from inspecciones.web_api_escuelas import (
     EscuelaEditarWebView,
     EscuelaNuevaWebView,
@@ -31,6 +44,47 @@ urlpatterns = [
         "actas/<str:numero>/prueba/",
         MarcarPruebaWebView.as_view(),
         name="inspecciones_web_acta_prueba",
+    ),
+    path(
+        "asignaciones/",
+        AsignacionesWebView.as_view(),
+        name="inspecciones_web_asignaciones",
+    ),
+    path(
+        "asignaciones/nueva/",
+        AsignacionNuevaWebView.as_view(),
+        name="inspecciones_web_asignacion_nueva",
+    ),
+    path(
+        "asignaciones/verificar/",
+        VerificarAsignacionWebView.as_view(),
+        name="inspecciones_web_asignacion_verificar",
+    ),
+    path(
+        "asignaciones/<int:pk>/quitar/",
+        AsignacionQuitarWebView.as_view(),
+        name="inspecciones_web_asignacion_quitar",
+    ),
+    path(
+        "escuelas/buscar/",
+        EscuelasBuscarWebView.as_view(),
+        name="inspecciones_web_escuelas_buscar",
+    ),
+    path("tablero/", TableroWebView.as_view(), name="inspecciones_web_tablero"),
+    path(
+        "tablero/datos/",
+        TableroDatosWebView.as_view(),
+        name="inspecciones_web_tablero_datos",
+    ),
+    path(
+        "tablero/exportar.csv",
+        TableroExportarWebView.as_view(),
+        name="inspecciones_web_tablero_exportar",
+    ),
+    path(
+        "tablero/descargar-actas/",
+        TableroDescargarWebView.as_view(),
+        name="inspecciones_web_tablero_descargar",
     ),
     path("escuelas/", EscuelasWebView.as_view(), name="inspecciones_web_escuelas"),
     path(

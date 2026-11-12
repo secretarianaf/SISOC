@@ -2890,6 +2890,26 @@
   "regex": "^api/web/inspecciones/actas/\\Z"
  },
  {
+  "name": "inspecciones_web_asignacion_nueva",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/asignaciones/nueva/\\Z"
+ },
+ {
+  "name": "inspecciones_web_asignacion_quitar",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/asignaciones/(?P<pk>[0-9]+)/quitar/\\Z"
+ },
+ {
+  "name": "inspecciones_web_asignacion_verificar",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/asignaciones/verificar/\\Z"
+ },
+ {
+  "name": "inspecciones_web_asignaciones",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/asignaciones/\\Z"
+ },
+ {
   "name": "inspecciones_web_escuela_editar",
   "namespace": "",
   "regex": "^api/web/inspecciones/escuelas/(?P<pk>[0-9]+)/editar/\\Z"
@@ -2905,6 +2925,11 @@
   "regex": "^api/web/inspecciones/escuelas/\\Z"
  },
  {
+  "name": "inspecciones_web_escuelas_buscar",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/escuelas/buscar/\\Z"
+ },
+ {
   "name": "inspecciones_web_inspectores",
   "namespace": "",
   "regex": "^api/web/inspecciones/inspectores/\\Z"
@@ -2913,6 +2938,26 @@
   "name": "inspecciones_web_localidades",
   "namespace": "",
   "regex": "^api/web/inspecciones/localidades/\\Z"
+ },
+ {
+  "name": "inspecciones_web_tablero",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/tablero/\\Z"
+ },
+ {
+  "name": "inspecciones_web_tablero_datos",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/tablero/datos/\\Z"
+ },
+ {
+  "name": "inspecciones_web_tablero_descargar",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/tablero/descargar\\-actas/\\Z"
+ },
+ {
+  "name": "inspecciones_web_tablero_exportar",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/tablero/exportar\\.csv\\Z"
  },
  {
   "name": "insumos_categorias_crear",

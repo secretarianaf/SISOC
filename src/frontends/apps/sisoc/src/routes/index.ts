@@ -29,7 +29,9 @@ import { inicioRoute } from "./inicio";
 import { insumosRoute } from "./insumos";
 import { inspeccionesActaDetalleRoute } from "./inspeccionesActaDetalle";
 import { inspeccionesActasRoute } from "./inspeccionesActas";
+import { inspeccionesAsignacionesRoute } from "./inspeccionesAsignaciones";
 import { inspeccionesEscuelasRoute } from "./inspeccionesEscuelas";
+import { inspeccionesTableroRoute } from "./inspeccionesTablero";
 import { loginRoute } from "./login";
 import { montosRoute } from "./montos";
 import { ocrRoute } from "./ocr";
@@ -68,7 +70,9 @@ export const ROUTES: RouteDefinition[] = [
   bulkCredentialsRoute,
   inspeccionesActasRoute,
   inspeccionesActaDetalleRoute,
+  inspeccionesAsignacionesRoute,
   inspeccionesEscuelasRoute,
+  inspeccionesTableroRoute,
   cdiReportesRoute,
   cdiObservacionesRoute,
   cdfCentrosRoute,

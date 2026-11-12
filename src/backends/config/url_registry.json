@@ -2055,6 +2055,11 @@
   "regex": "^admision/(?P<admision_id>[0-9]+)/documentacion/(?P<documentacion_id>[0-9]+)/eliminar/\\Z"
  },
  {
+  "name": "eliminar_archivo_importado",
+  "namespace": "",
+  "regex": "^importarexpedientes/(?P<id_archivo>[0-9]+)/eliminar/\\Z"
+ },
+ {
   "name": "eliminar_archivo_intervencion",
   "namespace": "",
   "regex": "^intervencion/(?P<intervencion_id>[0-9]+)/documentacion/eliminar/\\Z"

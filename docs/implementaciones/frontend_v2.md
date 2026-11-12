@@ -762,6 +762,13 @@ revisión y baja son formularios POST nativos con CSRF; el acceso, incluido el
 detalle sin alcance por comedor, es el de hoy. Registro:
 `../registro/cambios/2026-T4/2026-11-12-2785-react-relevamientos-listado-detalle.md`.
 
+El detalle de seguimientos (R03.01), de seguimientos PNUD y de actas complementarias
+(R02.01) suma `GET .../relevamientos/<comedor_pk>/relevamiento/<r>/seguimientos/<pk>/`
+(y `.../primero/`), `.../pnud/<pk>/` y `.../actas/<pk>/`, que ejecutan sus vistas
+nativas con los mismos 404 y proyectan su contexto. Los PDF, las ediciones, las
+revisiones y las bajas siguen siendo enlaces y POST nativos con CSRF. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-relevamientos-seguimientos-actas.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

@@ -26,8 +26,27 @@ from rest_framework.views import APIView
 # The exact predicate of ``permissions_any_required``, the native URL guard.
 from core.decorators import _has_any_permissions
 from core.web_gate import WebGatePermission
-from relevamientos.views.web_views import RelevamientoDetailView, RelevamientoListView
+from relevamientos.views.backoffice_views import (
+    ActaComplementariaDetailView,
+    SeguimientoPnudDetailView,
+)
+from relevamientos.views.web_views import (
+    PrimerSeguimientoDetailView,
+    RelevamientoDetailView,
+    RelevamientoListView,
+)
 from relevamientos.web_api_serializers import (
+    acta_resumen,
+    bloques_seguimiento,
+    instancias_ciclo,
+    mostrar,
+    pdf_seguimiento,
+    pnud_resumen,
+    prestaciones_acta,
+    prestaciones_seguimiento,
+    receta_items,
+    secciones_pnud,
+    seguimiento_resumen,
     actas_listado,
     adjuntos_detalle,
     cabecera,
@@ -185,6 +204,155 @@ class RelevamientoDetalleWebView(_NativeReadView):
                     "territoriales_sincronizar": reverse(
                         "api_sincronizar_territoriales", args=[comedor_id]
                     ),
+                },
+                "messages": pending_messages(request),
+            }
+        )
+
+
+class SeguimientoDetalleWebView(_NativeReadView):
+    """``GET .../relevamiento/<relevamiento_pk>/seguimientos/<pk>/`` (or ``primero/``): ``primer_seguimiento_detail.html``."""
+
+    def get(self, request, comedor_pk, relevamiento_pk, pk=None):
+        kwargs = {"comedor_pk": comedor_pk, "relevamiento_pk": relevamiento_pk}
+        if pk is not None:
+            kwargs["pk"] = pk
+        vista = self.native(PrimerSeguimientoDetailView, request, **kwargs)
+        try:
+            vista.object = vista.get_object()
+        except Http404 as exc:
+            raise NotFound(str(exc) if exc.args else None) from exc
+        context = vista.get_context_data(object=vista.object)
+        seguimiento = vista.object
+        relevamiento = context["relevamiento"]
+        comedor = context["comedor"]
+        args = [comedor.id, relevamiento.id, seguimiento.id]
+        return Response(
+            {
+                "seguimiento": seguimiento_resumen(seguimiento),
+                "relevamiento": {
+                    "id": relevamiento.id,
+                    "fecha_visita": mostrar(
+                        relevamiento.fecha_visita, "Sin información"
+                    ),
+                },
+                "comedor": {"id": comedor.id, "nombre": comedor.nombre},
+                "instancias": instancias_ciclo(
+                    context["instancias"], comedor.id, relevamiento.id
+                ),
+                "bloques": bloques_seguimiento(context["bloques"]),
+                "es_primer": context["es_primer"],
+                "prestaciones": prestaciones_seguimiento(
+                    context["prestaciones"], context["es_primer"]
+                ),
+                "receta_items": receta_items(context["receta_items"]),
+                "adjuntos": adjuntos_detalle(context["adjuntos"]),
+                "pdf": pdf_seguimiento(
+                    seguimiento, context["pdf_oficial"], comedor.id, relevamiento.id
+                ),
+                "capabilities": _perms(
+                    request.user,
+                    "change_primerseguimiento",
+                    "review_relevamiento",
+                    "delete_primerseguimiento",
+                ),
+                "urls": {
+                    "comedores": reverse("comedores"),
+                    "comedor": reverse("comedor_detalle", args=[comedor.id]),
+                    "relevamiento": reverse(
+                        "relevamiento_detalle", args=[comedor.id, relevamiento.id]
+                    ),
+                    "editar": reverse("seguimiento_editar", args=args),
+                    "revision": reverse("seguimiento_revision_coordinador", args=args),
+                },
+                "messages": pending_messages(request),
+            }
+        )
+
+
+class SeguimientoPnudDetalleWebView(_NativeReadView):
+    """``GET .../pnud/<pk>/``: ``seguimiento_pnud_detail.html``."""
+
+    def get(self, request, comedor_pk, pk):
+        vista = self.native(
+            SeguimientoPnudDetailView, request, comedor_pk=comedor_pk, pk=pk
+        )
+        try:
+            vista.object = vista.get_object()
+        except Http404 as exc:
+            raise NotFound() from exc
+        context = vista.get_context_data(object=vista.object)
+        seguimiento = vista.object
+        comedor = context["comedor"]
+        encabezado = context["encabezado_formulario"] or {}
+        return Response(
+            {
+                "seguimiento": pnud_resumen(seguimiento),
+                "comedor": {"id": comedor.id, "nombre": comedor.nombre},
+                "encabezado_formulario": {
+                    "linea": encabezado.get("linea") or "",
+                    "titulo": encabezado.get("titulo") or "",
+                },
+                "secciones": secciones_pnud(context["secciones"]),
+                "adjuntos": adjuntos_detalle(context["adjuntos"]),
+                "pdf_url": (
+                    reverse(
+                        "seguimiento_pnud_pdf",
+                        kwargs={"comedor_pk": comedor.pk, "pk": seguimiento.pk},
+                    )
+                    if seguimiento.formulario == "siph"
+                    else None
+                ),
+                "capabilities": _perms(request.user, "review_relevamiento"),
+                "urls": {
+                    "comedores": reverse("comedores"),
+                    "comedor": reverse("comedor_detalle", args=[comedor.id]),
+                    "listado": reverse("relevamientos", args=[comedor.id]),
+                    "revision": reverse(
+                        "seguimiento_pnud_revision_coordinador",
+                        args=[comedor.id, seguimiento.id],
+                    ),
+                },
+                "messages": pending_messages(request),
+            }
+        )
+
+
+class ActaDetalleWebView(_NativeReadView):
+    """``GET .../actas/<pk>/``: ``acta_complementaria_detail.html``."""
+
+    def get(self, request, comedor_pk, pk):
+        vista = self.native(
+            ActaComplementariaDetailView, request, comedor_pk=comedor_pk, pk=pk
+        )
+        try:
+            vista.object = vista.get_object()
+        except Http404 as exc:
+            raise NotFound() from exc
+        context = vista.get_context_data(object=vista.object)
+        acta = vista.object
+        comedor = context["comedor"]
+        args = [comedor.id, acta.id]
+        return Response(
+            {
+                "acta": acta_resumen(acta),
+                "prestaciones": prestaciones_acta(context["prestaciones"]),
+                "adjuntos": adjuntos_detalle(context["adjuntos"]),
+                "capabilities": _perms(
+                    request.user,
+                    "change_actacomplementaria",
+                    "review_relevamiento",
+                    "delete_actacomplementaria",
+                ),
+                "urls": {
+                    "comedores": reverse("comedores"),
+                    "comedor": reverse("comedor_detalle", args=[comedor.id]),
+                    "listado": reverse("relevamientos", args=[comedor.id]),
+                    "editar": reverse("acta_complementaria_editar", args=args),
+                    "revision": reverse(
+                        "acta_complementaria_revision_coordinador", args=args
+                    ),
+                    "eliminar": reverse("acta_complementaria_eliminar", args=args),
                 },
                 "messages": pending_messages(request),
             }

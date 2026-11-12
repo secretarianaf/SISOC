@@ -26,7 +26,7 @@ export type RelevamientosListData = {
   capabilities: { add_relevamiento: boolean; change_relevamiento: boolean; add_actacomplementaria: boolean; change_actacomplementaria: boolean };
   urls: { listado: string; alta: string; acta_crear: string; territoriales: string; territoriales_sincronizar: string }; messages: Message[];
 };
-type TreeNode = string | { t: string; a: Record<string, string>; c: TreeNode[] };
+export type TreeNode = string | { t: string; a: Record<string, string>; c: TreeNode[] };
 type Detalle = { id: number; fecha: string; estado: string; estado_badge: string; estado_validacion: string; a_subsanar: boolean; origen: string; sincronizado_gestionar: boolean; detalle_url: string; editar_url: string; eliminar_url: string; numero_orden: number; tipo: string };
 type Adjunto = { id: number; nombre_original: string; es_pdf: boolean; tamano: string; fecha_subida: string; descargar_url: string };
 export type RelevamientoDetailData = {
@@ -45,10 +45,10 @@ export type RelevamientoDetailData = {
 
 const API = "web/comedores/relevamientos/";
 const LEVELS = ["success", "error", "warning", "info"];
-const integer = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v);
-const bool = (v: unknown): v is boolean => typeof v === "boolean";
-const arr = (v: unknown, each: (x: unknown) => boolean) => Array.isArray(v) && v.every(each);
-const messagesValid = (v: unknown) => arr(v, (m) => record(m) && text(m.message) && LEVELS.includes(m.level as string));
+export const integer = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v);
+export const bool = (v: unknown): v is boolean => typeof v === "boolean";
+export const arr = (v: unknown, each: (x: unknown) => boolean) => Array.isArray(v) && v.every(each);
+export const messagesValid = (v: unknown) => arr(v, (m) => record(m) && text(m.message) && LEVELS.includes(m.level as string));
 const optionsValid = (v: unknown) => arr(v, (o) => record(o) && text(o.value) && text(o.label));
 const seguimientoValid = (s: unknown) => record(s) && integer(s.id) && text(s.fecha) && text(s.estado) && text(s.estado_badge) && text(s.tipo) && integer(s.numero_orden) && text(s.origen) && bool(s.sincronizado_gestionar) && internal(s.detalle_url);
 
@@ -84,10 +84,10 @@ export function detailValid(v: unknown): v is RelevamientoDetailData {
     ["listado", "comedores", "comedor", "alta", "eliminar", "revision", "historial", "territoriales", "territoriales_sincronizar"].every((k) => internal(urls[k])) && messagesValid(v.messages);
 }
 
-const nodeValid = (n: unknown): boolean => text(n) || (record(n) && text(n.t) && record(n.a) && Object.values(n.a).every(text) && arr(n.c, nodeValid));
-const CSS = <link rel="stylesheet" href="/static/custom/css/comedorRelevamiento.css" />;
-const path = (url: string) => safeInternalPath(url) ?? "/";
-const csrf = () => <input type="hidden" name="csrfmiddlewaretoken" value={leerCookie("csrftoken") ?? ""} />;
+export const nodeValid = (n: unknown): boolean => text(n) || (record(n) && text(n.t) && record(n.a) && Object.values(n.a).every(text) && arr(n.c, nodeValid));
+export const CSS = <link rel="stylesheet" href="/static/custom/css/comedorRelevamiento.css" />;
+export const path = (url: string) => safeInternalPath(url) ?? "/";
+export const csrf = () => <input type="hidden" name="csrfmiddlewaretoken" value={leerCookie("csrftoken") ?? ""} />;
 
 // --- Modals (Bootstrap 5.3 look, native POST) --------------------------------
 
@@ -208,7 +208,7 @@ function TerritorialStatus({ t }: { t: Territoriales }) {
   </>;
 }
 
-function Modal({ id, close, trigger, children, footer, action }: { id: string; title: string; close: () => void; trigger: HTMLElement | null; children: ReactNode; footer: ReactNode; action: string }) {
+export function Modal({ id, close, trigger, children, footer, action }: { id: string; title: string; close: () => void; trigger: HTMLElement | null; children: ReactNode; footer: ReactNode; action: string }) {
   const ref = useRef<HTMLDivElement>(null);
   useBootstrapModal(ref, close, trigger);
   // The dialog stays in the page flow, like the native one, so Tab leaves its last control the same way; only the backdrop goes to `<body>`.
@@ -227,10 +227,10 @@ function Modal({ id, close, trigger, children, footer, action }: { id: string; t
   </>;
 }
 
-const ModalHeader = ({ id, title, close }: { id: string; title: string; close: () => void }) => (
+export const ModalHeader = ({ id, title, close }: { id: string; title: string; close: () => void }) => (
   <div className="modal-header"><h5 className="modal-title" id={`${id}Label`}>{title}</h5><button type="button" className="btn-close" aria-label="Cerrar" onClick={close} /></div>
 );
-const Cancel = ({ close }: { close: () => void }) => <button type="button" className="btn btn-secondary" onClick={close}>Cancelar</button>;
+export const Cancel = ({ close }: { close: () => void }) => <button type="button" className="btn btn-secondary" onClick={close}>Cancelar</button>;
 
 function AltaModal({ data, close, trigger }: { data: RelevamientosListData; close: () => void; trigger: HTMLElement | null }) {
   const t = useTerritoriales(data.urls.territoriales, data.urls.territoriales_sincronizar);
@@ -474,7 +474,7 @@ function propsOf(a: Record<string, string>) {
 }
 
 /** The native partial as React elements: same tags, classes and text (`relevamiento_detail_secciones.html`). */
-function Tree({ nodes }: { nodes: TreeNode[] }) {
+export function Tree({ nodes }: { nodes: TreeNode[] }) {
   return <>{nodes.map((n, i) => {
     if (typeof n === "string") return n;
     if (n.a.id === "carouselExample") return <Carousel key={i} node={n} />;

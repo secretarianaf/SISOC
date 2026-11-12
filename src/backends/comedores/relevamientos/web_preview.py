@@ -1,4 +1,4 @@
-"""Explicit local React preview of the relevamiento list and detail (R01.01); never mounted by a production URLconf.
+"""Explicit local React preview of the relevamiento pages (R01.01, R03.01, R02.01); never mounted by a production URLconf.
 
 The entries keep the native URLs, their route decorator and the native views'
 dispatch: anonymous users and users without ``view_relevamiento`` get the
@@ -24,7 +24,15 @@ from comedores.web_preview_catalogos import (
     _index,
 )
 from core.decorators import permissions_any_required
-from relevamientos.views.web_views import RelevamientoDetailView, RelevamientoListView
+from relevamientos.views.backoffice_views import (
+    ActaComplementariaDetailView,
+    SeguimientoPnudDetailView,
+)
+from relevamientos.views.web_views import (
+    PrimerSeguimientoDetailView,
+    RelevamientoDetailView,
+    RelevamientoListView,
+)
 from relevamientos.web_api_views import VIEW_PERMISSIONS
 
 PUBLIC_ASSETS = "/comedores/react/relevamientos/assets/"
@@ -46,6 +54,34 @@ class DetalleEntry(RelevamientoDetailView):
 
     def get(self, request, *args, **kwargs):
         # Same Http404 as the native detail outside its queryset.
+        self.get_object()
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class SeguimientoEntry(PrimerSeguimientoDetailView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        # Same Http404 as the native view (also the alias without instances).
+        self.get_object()
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class PnudEntry(SeguimientoPnudDetailView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.get_object()
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ActaEntry(ActaComplementariaDetailView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
         self.get_object()
         return _index(request, self.index_bytes)
 
@@ -74,6 +110,22 @@ def relevamientos_preview_patterns(build_directory):
         path(
             "comedores/<comedor_pk>/relevamiento/<int:pk>",
             guard(DetalleEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimiento/<int:pk>/",
+            guard(SeguimientoEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/primer-seguimiento/",
+            guard(SeguimientoEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "comedores/<int:comedor_pk>/seguimiento-pnud/<int:pk>",
+            guard(PnudEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "comedores/<int:comedor_pk>/acta-complementaria/<int:pk>",
+            guard(ActaEntry.as_view(index_bytes=index_bytes)),
         ),
         path(
             "comedores/react/relevamientos/<path:asset_path>",

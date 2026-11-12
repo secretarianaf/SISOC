@@ -375,3 +375,212 @@ def secciones(context):
     parser.feed(render_to_string(SECCIONES_TEMPLATE, context))
     parser.close()
     return parser.raiz, list(_titulos(parser.raiz))
+
+
+# --- Seguimientos, seguimientos PNUD and actas ---------------------------------
+
+
+def defecto(valor, texto):
+    """``{{ valor|default:texto }}``: the default applies to every falsy value."""
+    return mostrar(valor) if valor else texto
+
+
+def revision(registro):
+    """The coordinator review block shared by the detail pages (N16)."""
+    coordinador = registro.coordinador
+    return {
+        "estado_validacion": registro.estado_validacion or "",
+        "a_subsanar": registro.estado_validacion == "A subsanar",
+        "esta_validado": registro.esta_validado,
+        "sin_cargar": bool(registro.sin_cargar),
+        "observaciones_coordinador": registro.observaciones_coordinador or "",
+        "coordinador": coordinador.username if coordinador else None,
+        "fecha_revision_coordinador": mostrar(registro.fecha_revision_coordinador),
+    }
+
+
+def estado_de(registro):
+    estado = RelevamientoService.estado_unificado(registro)
+    return {
+        "estado": estado,
+        "estado_badge": RelevamientoService.badge_estado_unificado(estado),
+    }
+
+
+def seguimiento_resumen(seguimiento):
+    return {
+        "id": seguimiento.id,
+        "tipo_display": seguimiento.get_tipo_display(),
+        "numero_orden": seguimiento.numero_orden,
+        "fecha_hora": mostrar(seguimiento.fecha_hora, "Sin información"),
+        **estado_de(seguimiento),
+        **revision(seguimiento),
+        "origen": seguimiento.origen,
+        "sincronizado_gestionar": bool(seguimiento.sincronizado_gestionar),
+        "gestionar_id": defecto(seguimiento.gestionar_id, "Sin asignar"),
+        "tecnico": defecto(seguimiento.tecnico, "Sin asignar"),
+        "referente": defecto(seguimiento.referente, "Sin asignar"),
+        "motivo_diferencia_aprobado_declarado": (
+            seguimiento.motivo_diferencia_aprobado_declarado or ""
+        ),
+    }
+
+
+def instancias_ciclo(instancias, comedor_id, relevamiento_id):
+    return [
+        {
+            "id": instancia.id,
+            "numero_orden": instancia.numero_orden,
+            "tipo_display": instancia.get_tipo_display(),
+            "detalle_url": reverse(
+                "seguimiento_detalle", args=[comedor_id, relevamiento_id, instancia.id]
+            ),
+        }
+        for instancia in instancias
+    ]
+
+
+def _imagen(valor, etiqueta):
+    from core.templatetags.image_tags import (  # pylint: disable=import-outside-toplevel
+        optimized_image,
+    )
+
+    parser = _Arbol()
+    parser.feed(
+        optimized_image(
+            valor, etiqueta, css_class="img-fluid my-1 rounded object-fit-contain"
+        )
+    )
+    parser.close()
+    return parser.raiz
+
+
+def bloques_seguimiento(bloques):
+    """The native ``bloques``; values printed by the template engine, signatures as image nodes."""
+    return [
+        {
+            "key": bloque["key"],
+            "label": bloque["label"],
+            "campos": [
+                {
+                    "label": campo["label"],
+                    "es_imagen": campo["es_imagen"],
+                    "value": (
+                        _imagen(campo["value"], campo["label"])
+                        if campo["es_imagen"]
+                        else mostrar(campo["value"])
+                    ),
+                }
+                for campo in bloque["campos"]
+            ],
+        }
+        for bloque in bloques
+    ]
+
+
+def prestaciones_seguimiento(prestaciones, es_primer):
+    filas = []
+    for p in prestaciones:
+        ap = (
+            [mostrar(p.ap_total_efectivo, "-")]
+            if es_primer
+            else [mostrar(p.ap_presencial, "-"), mostrar(p.ap_vianda, "-")]
+        )
+        filas.append(
+            [
+                mostrar(p.dias_prestacion, "-"),
+                mostrar(p.tipo_prestacion, "-"),
+                *ap,
+                mostrar(p.de_presencial, "-"),
+                mostrar(p.de_vianda, "-"),
+            ]
+        )
+    return filas
+
+
+def receta_items(items):
+    return [
+        [
+            mostrar(i.ingrediente, "-"),
+            mostrar(i.unidad_medida, "-"),
+            mostrar(i.cantidad_medida, "-"),
+        ]
+        for i in items
+    ]
+
+
+def pdf_seguimiento(seguimiento, pdf_oficial, comedor_id, relevamiento_id):
+    return {
+        "url": (
+            reverse(
+                "seguimiento_pdf", args=[comedor_id, relevamiento_id, seguimiento.id]
+            )
+            if pdf_oficial
+            else None
+        ),
+        "fecha_oficial": (
+            _forma(pdf_oficial.fecha_actualizacion, "d/m/Y H:i", "")
+            if pdf_oficial
+            else None
+        ),
+    }
+
+
+def pnud_resumen(seguimiento):
+    return {
+        "id": seguimiento.id,
+        "formulario": seguimiento.formulario,
+        "formulario_display": seguimiento.get_formulario_display(),
+        "fecha_hora": mostrar(seguimiento.fecha_hora, "Sin fecha"),
+        "tecnico": defecto(seguimiento.tecnico, "Sin técnico"),
+        "fecha_creacion": mostrar(seguimiento.fecha_creacion) or "",
+        **estado_de(seguimiento),
+        **revision(seguimiento),
+        "origen": seguimiento.origen,
+    }
+
+
+def secciones_pnud(secciones_nativas):
+    """``respuestas_por_seccion``: text values stay raw (the page applies ``linebreaksbr``)."""
+    resultado = []
+    for seccion in secciones_nativas:
+        filas = []
+        for fila in seccion["filas"]:
+            if fila["tipo"] == "tabla":
+                filas.append(
+                    {
+                        **fila,
+                        "columnas": [str(c) for c in fila["columnas"]],
+                        "filas": [[mostrar(c) or "" for c in f] for f in fila["filas"]],
+                    }
+                )
+            else:
+                filas.append({**fila, "valor": mostrar(fila["valor"]) or ""})
+        resultado.append({"titulo": seccion["titulo"], "filas": filas})
+    return resultado
+
+
+def acta_resumen(acta):
+    return {
+        "id": acta.id,
+        "comedor": {"id": acta.comedor.id, "nombre": acta.comedor.nombre},
+        "fecha_hora": mostrar(acta.fecha_hora, "Sin fecha"),
+        "tecnico": defecto(acta.tecnico, "Sin asignar"),
+        "fecha_creacion": mostrar(acta.fecha_creacion) or "",
+        "observaciones": acta.observaciones or "",
+        "origen": acta.origen,
+        **estado_de(acta),
+        **revision(acta),
+    }
+
+
+def prestaciones_acta(prestaciones):
+    return [
+        [
+            mostrar(p.dias_prestacion, "-"),
+            mostrar(p.tipo_prestacion, "-"),
+            mostrar(p.cantidad_actual, "-"),
+            mostrar(p.cantidad_espera, "-"),
+        ]
+        for p in prestaciones
+    ]

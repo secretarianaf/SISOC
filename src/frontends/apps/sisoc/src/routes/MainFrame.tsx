@@ -20,7 +20,7 @@ export type MainState<T> =
   | { status: "ready"; data: T; session: MainSession };
 /** `activePath`: the menu entry the native sidebar marks (it matches by path fragment). */
 /** `appHeader`: the page's `{% block app-header %}` (the shell's empty row otherwise). */
-export type MainPage = { title: string; heading?: string; breadcrumb: ReactNode; content: ReactNode; activePath?: string; appHeader?: ReactNode };
+export type MainPage = { title: string; heading?: ReactNode; breadcrumb: ReactNode; content: ReactNode; activePath?: string; appHeader?: ReactNode };
 
 export const webClient = crearCliente("/api");
 export const accepted = (status: number) => (status >= 200 && status < 300) || status === 403;

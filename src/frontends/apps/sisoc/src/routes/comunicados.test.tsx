@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import App from "../App";
 import { findRoute } from "./index";
-import { detailValid, listValid } from "./comunicados";
+import { comunicadosNavigation, detailValid, gestionValid, listValid } from "./comunicados";
 import { readyContext, setViewport } from "./testFixtures";
 
 const { webGet } = vi.hoisted(() => ({ webGet: vi.fn() }));
@@ -25,7 +25,17 @@ const list = (over: Record<string, unknown> = {}) => ({
 const detail = (over: Record<string, unknown> = {}) => ({
   id: 4, titulo: "Aviso <importante>", cuerpo: "Uno\nlinea\n\nDos", estado: "publicado", estado_label: "Publicado", destacado: false,
   fecha_publicacion: "04/03/2026 15:07", fecha_vencimiento: "", esta_vencido: false, creador: "Ana Pérez", adjuntos: [],
-  can_manage: false, permisos: { editar: false, publicar: false, archivar: false, eliminar: false }, messages: [], ...over,
+  can_manage: false, fecha_creacion: "03/03/2026 09:00", modificado_por: "",
+  permisos: { editar: false, publicar: false, archivar: false, eliminar: false }, messages: [], ...over,
+});
+const acciones = (over: Record<string, unknown> = {}) => ({ editar: false, publicar: false, archivar: false, destacado: false, ...over });
+const fila = (over: Record<string, unknown> = {}) => ({
+  id: 7, titulo: "Aviso largo de prueba", titulo_corto: "Aviso largo …", tipo: "interno", estado: "borrador", esta_vencido: false, destacado: false,
+  fecha_creacion: "03/03/2026", fecha_publicacion: "", creador: "Ana Pérez", acciones: acciones(), ...over,
+});
+const gestion = (over: Record<string, unknown> = {}) => ({
+  results: [fila()], page: page(), filtros: { titulo: "", estado: "", tipo: "" },
+  flags: { can_create: false, is_admin: false, es_tecnico: false }, mailing_url: null, messages: [], ...over,
 });
 
 function serve(data: unknown, status = 200) {
@@ -45,10 +55,11 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe("Comunicados published route", () => {
-  it("owns the list and the detail paths only", () => {
+  it("owns the list, the gestion list and the detail paths only", () => {
     expect(findRoute("/comunicados/")?.route.name).toBe("comedores-comunicados");
+    expect(findRoute("/comunicados/gestion/")?.route.name).toBe("comedores-comunicados");
     expect(findRoute("/comunicados/ver/12/")?.route.name).toBe("comedores-comunicados");
-    for (const other of ["/comunicados", "/comunicados/gestion/", "/comunicados/crear/", "/comunicados/ver/x/", "/comunicados/editar/3/",
+    for (const other of ["/comunicados", "/comunicados/gestion", "/comunicados/crear/", "/comunicados/ver/x/", "/comunicados/editar/3/",
       "/comunicados/mailing/", "/api/comunicados/"]) {
       expect(findRoute(other)?.route.name).not.toBe("comedores-comunicados");
     }
@@ -148,5 +159,126 @@ describe("Comunicados published route", () => {
     expect(listValid(list())).toBe(true);
     expect(detailValid(detail())).toBe(true);
     expect(detailValid(detail({ permisos: { editar: "x" } }))).toBe(false);
+  });
+});
+
+describe("Comunicados management route (CM02.01)", () => {
+  it("renders the table, filters, badges and the row actions from the API", async () => {
+    const all = acciones({ editar: true, publicar: true });
+    serve(gestion({
+      results: [
+        fila({ acciones: all }),
+        fila({ id: 8, estado: "publicado", destacado: true, fecha_publicacion: "05/03/2026", acciones: acciones({ archivar: true, destacado: true }) }),
+        fila({ id: 9, estado: "publicado", tipo: "externo", esta_vencido: true, acciones: acciones({ archivar: true }) }),
+        fila({ id: 10, estado: "publicado", acciones: acciones({ destacado: true }) }),
+        fila({ id: 11, estado: "archivado" }),
+      ],
+      filtros: { titulo: "avi", estado: "publicado", tipo: "interno" },
+      flags: { can_create: true, is_admin: true, es_tecnico: false }, mailing_url: "/comunicados/mailing/",
+    }));
+    setup("/comunicados/gestion/?titulo=avi&estado=publicado");
+    await screen.findByText("Comunicados", { selector: "h5" });
+    expect(webGet).toHaveBeenCalledWith(`${API}gestion/?titulo=avi&estado=publicado`, expect.anything());
+    await waitFor(() => expect(document.title).toBe("SISOC - Gestión de Comunicados"));
+    expect(screen.getByRole("heading", { level: 3, name: "Gestión de Comunicados" })).toBeTruthy();
+    expect((screen.getByRole("searchbox", { name: "Buscar por título." }) as HTMLInputElement).placeholder).toBe("Buscar comunicado...");
+    expect(screen.getByRole("link", { name: "Resetear" }).getAttribute("href")).toBe("/comunicados/gestion/");
+    expect(screen.getByRole("link", { name: /Nuevo/ }).getAttribute("href")).toBe("/comunicados/crear/");
+    expect(screen.getByRole("link", { name: "Mailing masivo" }).getAttribute("href")).toBe("/comunicados/mailing/");
+    expect((screen.getByLabelText("Estado") as HTMLSelectElement).value).toBe("publicado");
+    expect((screen.getByLabelText("Tipo") as HTMLSelectElement).value).toBe("interno");
+    expect(screen.getByRole("link", { name: "Limpiar búsqueda" }).getAttribute("href")).toBe("?estado=publicado&tipo=interno");
+    expect(screen.getByRole("link", { name: /Ver Vista Pública/ }).getAttribute("href")).toBe("/comunicados/");
+    const rows = [...document.querySelectorAll<HTMLElement>("tbody tr")];
+    const titles = (row: HTMLElement) => [...row.querySelectorAll(".btn-group a, .btn-group button")].map((e) => e.getAttribute("title"));
+    expect(rows).toHaveLength(5);
+    expect(within(rows[0]).getByText("Borrador").className).toBe("badge bg-secondary");
+    expect(within(rows[0]).getByText("Interno").className).toBe("badge bg-info");
+    expect(within(rows[0]).getByRole("link", { name: "Aviso largo …" }).getAttribute("href")).toBe("/comunicados/ver/7/");
+    expect(within(rows[0]).getByText("-").className).toBe("text-muted");
+    expect(titles(rows[0])).toEqual(["Ver", "Editar", "Publicar"]);
+    expect(within(rows[0]).getByTitle("Editar").getAttribute("href")).toBe("/comunicados/editar/7/");
+    expect(rows[1].querySelector(".fa-star.text-warning")).not.toBeNull();
+    expect(titles(rows[1])).toEqual(["Ver", "Archivar", "Quitar destacado"]);
+    expect(within(rows[1]).getByText("05/03/2026")).toBeTruthy();
+    expect(within(rows[2]).getByText("Vencido").className).toBe("badge bg-danger");
+    expect(within(rows[2]).getByText("Externo").className).toBe("badge bg-warning text-dark");
+    expect(titles(rows[3])).toEqual(["Ver", "Marcar como destacado"]);
+    expect(within(rows[4]).getByText("Archivado").className).toBe("badge bg-dark");
+    expect(titles(rows[4])).toEqual(["Ver"]);
+    const form = rows[0].querySelector("form") as HTMLFormElement;
+    expect([form.method, form.getAttribute("action")]).toEqual(["post", "/comunicados/publicar/7/"]);
+    expect((form.elements.namedItem("csrfmiddlewaretoken") as HTMLInputElement).value).toBe("synthetic-csrf-token");
+  });
+
+  it("asks before publishing or archiving", async () => {
+    serve(gestion({ results: [fila({ acciones: acciones({ publicar: true }) }), fila({ id: 8, estado: "publicado", acciones: acciones({ archivar: true }) })] }));
+    setup("/comunicados/gestion/");
+    const publicar = await screen.findByTitle("Publicar");
+    const confirm = vi.spyOn(comunicadosNavigation, "confirm").mockReturnValueOnce(false);
+    expect(fireEvent.click(publicar)).toBe(false);
+    expect(confirm).toHaveBeenLastCalledWith("¿Publicar este comunicado?");
+    confirm.mockReturnValueOnce(true);
+    const archivar = screen.getByTitle("Archivar");
+    archivar.closest("form")?.addEventListener("submit", (e) => e.preventDefault());
+    expect(fireEvent.click(archivar)).toBe(true);
+    expect(confirm).toHaveBeenLastCalledWith("¿Archivar este comunicado?");
+  });
+
+  it("submits the search form when a module select changes and hides tipo for technicians", async () => {
+    serve(gestion({ results: [], flags: { can_create: false, is_admin: false, es_tecnico: true } }));
+    setup("/comunicados/gestion/");
+    expect(await screen.findByText("No hay comunicados.")).toBeTruthy();
+    expect(screen.queryByLabelText("Tipo")).toBeNull();
+    expect(screen.queryByRole("link", { name: /Nuevo/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Mailing masivo" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Limpiar búsqueda" })).toBeNull();
+    const submit = vi.spyOn(comunicadosNavigation, "submit").mockImplementation(() => undefined);
+    const select = screen.getByLabelText("Estado") as HTMLSelectElement;
+    expect(select.getAttribute("form")).toBe("simple-search-form");
+    fireEvent.change(select, { target: { value: "archivado" } });
+    expect(submit).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the count, the pagination, the 403 and the bad payload screens", async () => {
+    serve(gestion({ page: page({ is_paginated: true, number: 1, num_pages: 2, count: 21, next: 2, range: [1, 2], query_without_page: "estado=borrador&" }) }));
+    setup("/comunicados/gestion/");
+    expect(await screen.findByText("(21)")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Continuar" }).getAttribute("href")).toBe("?estado=borrador&page=2");
+    cleanup();
+    serve({ detail: "No tiene permisos para gestionar comunicados." }, 403);
+    setup("/comunicados/gestion/");
+    await waitFor(() => expect(document.title).toBe("SISOC - Error 403"));
+    cleanup();
+    serve(gestion({ mailing_url: "https://evil.example/" }));
+    setup("/comunicados/gestion/");
+    expect((await screen.findByRole("alert")).textContent).toBe("No se pudo cargar la página.");
+    expect(gestionValid(gestion())).toBe(true);
+    expect(gestionValid(gestion({ results: [fila({ acciones: { editar: 1 } })] }))).toBe(false);
+  });
+
+  it("renders the manager footer of the detail by state and permission", async () => {
+    const todos = { editar: true, publicar: true, archivar: true, eliminar: true };
+    serve(detail({ estado: "borrador", estado_label: "Borrador", can_manage: true, permisos: todos, modificado_por: "editor" }));
+    setup("/comunicados/ver/4/");
+    await screen.findByRole("heading", { level: 4, name: "Aviso <importante>" });
+    const footer = document.querySelector(".card-footer") as HTMLElement;
+    expect(footer.querySelector("small")?.textContent).toBe("Creado: 03/03/2026 09:00 | Modificado por: editor");
+    expect([...footer.querySelectorAll("a, button")].map((e) => e.textContent?.trim())).toEqual(["Editar", "Publicar", "Eliminar"]);
+    expect(within(footer).getByRole("link", { name: "Eliminar" }).getAttribute("href")).toBe("/comunicados/eliminar/4/");
+    expect((footer.querySelector("form") as HTMLFormElement).getAttribute("action")).toBe("/comunicados/publicar/4/");
+    cleanup();
+    serve(detail({ can_manage: true, permisos: todos }));
+    setup("/comunicados/ver/4/");
+    await screen.findByRole("heading", { level: 4, name: "Aviso <importante>" });
+    const pub = document.querySelector(".card-footer") as HTMLElement;
+    expect(pub.querySelector("small")?.textContent).toBe("Creado: 03/03/2026 09:00");
+    expect([...pub.querySelectorAll("a, button")].map((e) => e.textContent?.trim())).toEqual(["Archivar"]);
+    expect((pub.querySelector("form") as HTMLFormElement).getAttribute("action")).toBe("/comunicados/archivar/4/");
+    cleanup();
+    serve(detail({ can_manage: true, permisos: { editar: false, publicar: false, archivar: false, eliminar: false } }));
+    setup("/comunicados/ver/4/");
+    await screen.findByRole("heading", { level: 4, name: "Aviso <importante>" });
+    expect(document.querySelector(".card-footer")).toBeNull();
   });
 });

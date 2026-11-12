@@ -221,6 +221,10 @@ def test_detail_fields_match_the_template(creador, lector):
         "fecha_vencimiento": timezone.localtime(vence).strftime("%d/%m/%Y %H:%M"),
         "esta_vencido": False,
         "creador": "Ana Pérez",
+        "fecha_creacion": timezone.localtime(comunicado.fecha_creacion).strftime(
+            "%d/%m/%Y %H:%M"
+        ),
+        "modificado_por": "",
         "adjuntos": [
             {
                 "id": adjunto.pk,

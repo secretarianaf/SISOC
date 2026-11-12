@@ -1,12 +1,12 @@
-"""Explicit local React preview of the published comunicados (CM03.01); never mounted by a production URLconf.
+"""Explicit local React preview of the comunicados (CM03.01, CM02.01); never mounted by a production URLconf.
 
 The entries keep the native URLs and the native views' dispatch: anonymous
 users get the login redirect of ``LoginRequiredMixin``, an invalid ``page`` the
 native 404 and an id outside the native detail queryset the native 404. Only
 then a GET returns the frozen React ``index.html``, which loads its data from
-``/api/web/comedores/comunicados/``. The detail is React only for users without
-``can_manage_comunicados`` (the variant this delivery covers); managers keep
-the native page until the management delivery (CM02.01) is accepted. Assets
+``/api/web/comedores/comunicados/``. The management list (CM02.01) keeps the
+native 403 for users without ``can_manage_comunicados``; the detail serves
+both variants (reader, and manager with its footer). Assets
 are served under the backend's own prefix ``/comunicados/react/``.
 """
 
@@ -22,8 +22,11 @@ from comedores.web_preview_catalogos import (
     _frozen_assets,
     _index,
 )
-from comunicados.permissions import can_manage_comunicados
-from comunicados.views import ComunicadoDetailView, ComunicadoListView
+from comunicados.views import (
+    ComunicadoDetailView,
+    ComunicadoGestionListView,
+    ComunicadoListView,
+)
 
 PUBLIC_ASSETS = "/comunicados/react/assets/"
 
@@ -40,12 +43,22 @@ class ListadoEntry(ComunicadoListView):
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
+class GestionEntry(ComunicadoGestionListView):
+    """Native ``dispatch`` (403 without management) and paginator 404 first."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        self.paginate_queryset(self.object_list, self.get_paginate_by(self.object_list))
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class DetalleEntry(ComunicadoDetailView):
     index_bytes = b""
 
     def get(self, request, *args, **kwargs):
-        if can_manage_comunicados(request.user):
-            return super().get(request, *args, **kwargs)
         # Same Http404 as the native detail outside its queryset.
         self.get_object()
         return _index(request, self.index_bytes)
@@ -68,6 +81,7 @@ def comunicados_preview_patterns(build_directory):
     )
     return [
         path("comunicados/", ListadoEntry.as_view(index_bytes=index_bytes)),
+        path("comunicados/gestion/", GestionEntry.as_view(index_bytes=index_bytes)),
         path(
             "comunicados/ver/<int:pk>/",
             DetalleEntry.as_view(index_bytes=index_bytes),

@@ -730,9 +730,16 @@ Registro:
 Los comunicados publicados (CM03.01) usan el mismo marco:
 `src/backends/comedores/comunicados/web_api_views.py` ejecuta
 `ComunicadoListView` y `ComunicadoDetailView` (solo internos publicados y
-vigentes, detalle sin filtro para gestores) y no reutiliza la API PWA. La vista
-previa sirve el detalle en React solo a quien no gestiona. Registro:
+vigentes, detalle sin filtro para gestores) y no reutiliza la API PWA. Registro:
 `../registro/cambios/2026-T4/2026-11-11-2785-react-comunicados-publicados.md`.
+
+La gestión de comunicados (CM02.01) suma `GET .../comunicados/gestion/`, que ejecuta
+`ComunicadoGestionListView` con su guarda de permisos (403 «No tiene permisos para
+gestionar comunicados.»), y el pie del detalle para gestores. Publicar, archivar y
+destacar siguen siendo formularios POST nativos con CSRF; React solo los dibuja y
+pregunta antes de publicar o archivar. La vista previa sirve ambas pantallas en React
+a todos los perfiles. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-comunicados-gestion.md`.
 
 ### DDJJ pública PAS: entrada React sin montar
 

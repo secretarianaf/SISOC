@@ -90,14 +90,23 @@ def test_native_guards_decide_first():
 
 
 @pytest.mark.usefixtures("preview")
-def test_managers_keep_the_native_detail():
+def test_managers_get_the_index_for_gestion_and_detail():
     borrador = _comunicado(estado=EstadoComunicado.BORRADOR)
     gestor = _login("gestor_prev_cm", perms=["change_comunicado"])
 
-    respuesta = gestor.get(f"/comunicados/ver/{borrador.pk}/")
+    for url in ("/comunicados/gestion/", f"/comunicados/ver/{borrador.pk}/"):
+        respuesta = gestor.get(url)
+        assert respuesta.status_code == 200
+        assert '/comunicados/react/assets/app-1.js"' in respuesta.content.decode()
 
-    assert respuesta.status_code == 200
-    assert "comunicados/comunicado_detail.html" in [t.name for t in respuesta.templates]
+
+@pytest.mark.usefixtures("preview")
+def test_gestion_keeps_the_native_guards():
+    anonimo = Client().get("/comunicados/gestion/")
+    assert anonimo.status_code == 403
+    assert _login("lector3_prev_cm").get("/comunicados/gestion/").status_code == 403
+    gestor = _login("gestor2_prev_cm", perms=["add_comunicado"])
+    assert gestor.get("/comunicados/gestion/", {"page": "9"}).status_code == 404
 
 
 def test_build_without_index_is_refused(tmp_path):

@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- the unit surface is this route module; its validators are exported for the tests. */
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
+import { leerCookie } from "@sisoc/api";
 import { InsumosToastList } from "../InsumosToast";
 import { safeInternalPath } from "../webAccess";
 import { Pagination } from "./listControls";
@@ -8,8 +9,9 @@ import type { RouteDefinition } from "./types";
 
 /**
  * CM03.01 published comunicados: `comunicado_list.html` (`search_bar.html` in
- * simple mode, the cards and `pagination.html`) and the reader variant of
- * `comunicado_detail.html`. Data comes from `/api/web/comedores/comunicados/`,
+ * simple mode, the cards and `pagination.html`) and `comunicado_detail.html`;
+ * CM02.01 management list (`comunicado_gestion_list.html`) and the manager
+ * footer of the detail. Data comes from `/api/web/comedores/comunicados/`,
  * which runs the native views; dates and the card summary arrive formatted.
  */
 type Message = { message: string; level: "success" | "error" | "warning" | "info" };
@@ -20,7 +22,17 @@ type Adjunto = { id: number; nombre_original: string; url: string };
 export type ComunicadoDetailData = {
   id: number; titulo: string; cuerpo: string; estado: string; estado_label: string; destacado: boolean;
   fecha_publicacion: string; fecha_vencimiento: string; esta_vencido: boolean; creador: string; adjuntos: Adjunto[];
+  fecha_creacion: string; modificado_por: string;
   can_manage: boolean; permisos: { editar: boolean; publicar: boolean; archivar: boolean; eliminar: boolean }; messages: Message[];
+};
+type Acciones = { editar: boolean; publicar: boolean; archivar: boolean; destacado: boolean };
+type Fila = {
+  id: number; titulo: string; titulo_corto: string; tipo: string; estado: string; esta_vencido: boolean; destacado: boolean;
+  fecha_creacion: string; fecha_publicacion: string; creador: string; acciones: Acciones;
+};
+export type ComunicadoGestionData = {
+  results: Fila[]; page: Page; filtros: { titulo: string; estado: string; tipo: string };
+  flags: { can_create: boolean; is_admin: boolean; es_tecnico: boolean }; mailing_url: string | null; messages: Message[];
 };
 
 const API = "web/comedores/comunicados/";
@@ -30,15 +42,15 @@ const integer = (v: unknown): v is number => typeof v === "number" && Number.isS
 const bool = (v: unknown): v is boolean => typeof v === "boolean";
 const messagesValid = (v: unknown) => Array.isArray(v) && v.every((m) => record(m) && text(m.message) && LEVELS.includes(m.level as string));
 
+const pageValid = (p: unknown) => record(p) && bool(p.is_paginated) && integer(p.number) && integer(p.num_pages) && integer(p.count) &&
+  (p.previous === null || integer(p.previous)) && (p.next === null || integer(p.next)) &&
+  Array.isArray(p.range) && p.range.every((n) => n === "…" || integer(n)) && text(p.query_without_page);
+
 export function listValid(v: unknown): v is ComunicadoListData {
-  if (!record(v) || !record(v.page)) return false;
-  const p = v.page;
+  if (!record(v)) return false;
   return Array.isArray(v.results) && v.results.every((c) => record(c) && integer(c.id) && text(c.titulo) && text(c.cuerpo_resumen) && bool(c.destacado) &&
       text(c.fecha_publicacion) && text(c.creador) && integer(c.adjuntos_count) && internal(c.detail_url)) &&
-    bool(p.is_paginated) && integer(p.number) && integer(p.num_pages) && integer(p.count) &&
-    (p.previous === null || integer(p.previous)) && (p.next === null || integer(p.next)) &&
-    Array.isArray(p.range) && p.range.every((n) => n === "…" || integer(n)) && text(p.query_without_page) &&
-    text(v.filtro_titulo) && bool(v.can_manage) && (v.gestion_url === null || internal(v.gestion_url)) && messagesValid(v.messages);
+    pageValid(v.page) && text(v.filtro_titulo) && bool(v.can_manage) && (v.gestion_url === null || internal(v.gestion_url)) && messagesValid(v.messages);
 }
 
 export function detailValid(v: unknown): v is ComunicadoDetailData {
@@ -46,22 +58,41 @@ export function detailValid(v: unknown): v is ComunicadoDetailData {
   const p = v.permisos;
   return integer(v.id) && text(v.titulo) && text(v.cuerpo) && text(v.estado) && text(v.estado_label) && bool(v.destacado) &&
     text(v.fecha_publicacion) && text(v.fecha_vencimiento) && bool(v.esta_vencido) && text(v.creador) &&
+    text(v.fecha_creacion) && text(v.modificado_por) &&
     Array.isArray(v.adjuntos) && v.adjuntos.every((a) => record(a) && integer(a.id) && text(a.nombre_original) && text(a.url)) &&
     bool(v.can_manage) && ["editar", "publicar", "archivar", "eliminar"].every((k) => bool(p[k])) && messagesValid(v.messages);
 }
 
+export function gestionValid(v: unknown): v is ComunicadoGestionData {
+  if (!record(v) || !record(v.filtros) || !record(v.flags)) return false;
+  const f = v.filtros, g = v.flags;
+  return Array.isArray(v.results) && v.results.every((r) => record(r) && integer(r.id) && text(r.titulo) && text(r.titulo_corto) &&
+      text(r.tipo) && text(r.estado) && bool(r.esta_vencido) && bool(r.destacado) && text(r.fecha_creacion) && text(r.fecha_publicacion) &&
+      text(r.creador) && record(r.acciones) && ["editar", "publicar", "archivar", "destacado"].every((k) => bool((r.acciones as Record<string, unknown>)[k]))) &&
+    pageValid(v.page) && text(f.titulo) && text(f.estado) && text(f.tipo) &&
+    bool(g.can_create) && bool(g.is_admin) && bool(g.es_tecnico) && (v.mailing_url === null || internal(v.mailing_url)) && messagesValid(v.messages);
+}
+
+/** Full-page actions of the native forms; replaceable in tests. */
+export const comunicadosNavigation = {
+  confirm: (message: string) => window.confirm(message),
+  submit: (form: HTMLFormElement) => form.submit(),
+};
+
 // --- List (`comunicado_list.html`) -----------------------------------------
 
-/** `search_bar.html` in simple mode with `search_name='titulo'` and its `additional_buttons`. */
-function SearchBar({ data }: { data: ComunicadoListData }) {
+type SearchProps = { placeholder: string; query: string; reset: string; children?: ReactNode };
+
+/** `search_bar.html` in simple mode with `search_name='titulo'`; `children` are its add and additional buttons. */
+function SearchBar({ placeholder, query, reset, children }: SearchProps) {
   return <>
     <link rel="stylesheet" href="/static/custom/css/comedoresSearchBar.css" />
     <link rel="stylesheet" href="/static/custom/css/poncho_listados.css" />
     <h2 className="text-center mb-4 poncho-titulo">Buscar comunicado</h2>
     <form method="GET" action="" id="simple-search-form">
       <div className="poncho-search poncho-search--solo"><div className="poncho-search__box">
-        <input type="search" id="ajax-search-input" name="titulo" className="poncho-search__input" placeholder="Buscar por título..."
-          title="Buscar por título." autoComplete="off" aria-label="Buscar por título." defaultValue={data.filtro_titulo} />
+        <input type="search" id="ajax-search-input" name="titulo" className="poncho-search__input" placeholder={placeholder}
+          title="Buscar por título." autoComplete="off" aria-label="Buscar por título." defaultValue={query} />
         <button type="submit" className="poncho-search__go" aria-label="Buscar"><i className="fas fa-search" aria-hidden="true" /></button>
       </div></div>
       <div className="poncho-search__meta"><span id="ajax-results-count" /></div>
@@ -70,10 +101,8 @@ function SearchBar({ data }: { data: ComunicadoListData }) {
       </div>
     </form>
     <div className="row mt-3"><div className="col-12 d-flex flex-wrap justify-content-end gap-2 search-actions">
-      <a href={LIST} className="poncho-btn poncho-btn--neutro">Resetear</a>
-      {data.can_manage && data.gestion_url && (
-        <a href={data.gestion_url} className="poncho-btn poncho-btn--neutro" title="Gestionar comunicados">Gestionar</a>
-      )}
+      <a href={reset} className="poncho-btn poncho-btn--neutro">Resetear</a>
+      {children}
     </div></div>
   </>;
 }
@@ -111,7 +140,11 @@ export function ComunicadoListContent({ data }: { data: ComunicadoListData }) {
     <link rel="stylesheet" href="/static/custom/css/listModerno.css" />
     <InsumosToastList messages={data.messages} />
     <div className="mt-4">
-      <SearchBar data={data} />
+      <SearchBar placeholder="Buscar por título..." query={data.filtro_titulo} reset={LIST}>
+        {data.can_manage && data.gestion_url && (
+          <a href={data.gestion_url} className="poncho-btn poncho-btn--neutro" title="Gestionar comunicados">Gestionar</a>
+        )}
+      </SearchBar>
       {data.results.length ? data.results.map((card) => <ComunicadoCard key={card.id} card={card} />) : (
         <div className="card comunicado-card mt-4">
           <div className="card-body text-center py-5">
@@ -138,7 +171,170 @@ function ListPage() {
   }));
 }
 
+// --- Management list (`comunicado_gestion_list.html`) -----------------------
+
+const GESTION = "/comunicados/gestion/";
+const PUBLICAR = "¿Publicar este comunicado?";
+const ARCHIVAR = "¿Archivar este comunicado?";
+
+/** A native POST form (`{% csrf_token %}`) whose button may ask `data-confirm-click` first (`base.js`). */
+function ActionForm({ action, className, title, confirm, children }: { action: string; className: string; title?: string; confirm?: string; children: ReactNode }) {
+  return (
+    <form method="post" action={action} className="d-inline">
+      <input type="hidden" name="csrfmiddlewaretoken" value={leerCookie("csrftoken") ?? ""} />
+      <button type="submit" className={className} title={title} data-confirm-click={confirm}
+        onClick={(e) => { if (confirm && !comunicadosNavigation.confirm(confirm)) e.preventDefault(); }}>{children}</button>
+    </form>
+  );
+}
+
+function EstadoBadge({ fila }: { fila: Fila }) {
+  if (fila.estado === "borrador") return <span className="badge bg-secondary">Borrador</span>;
+  if (fila.estado === "publicado") return fila.esta_vencido ? <span className="badge bg-danger">Vencido</span> : <span className="badge bg-success">Publicado</span>;
+  if (fila.estado === "archivado") return <span className="badge bg-dark">Archivado</span>;
+  return null;
+}
+
+function GestionRow({ fila }: { fila: Fila }) {
+  const ver = `/comunicados/ver/${fila.id}/`;
+  const { acciones } = fila;
+  return (
+    <tr>
+      <td>{fila.id}</td>
+      <td className="text-center">{fila.destacado ? <i className="fas fa-star text-warning" /> : <i className="far fa-star text-muted" />}</td>
+      <td><a href={ver}>{fila.titulo_corto}</a></td>
+      <td>{fila.tipo === "interno" ? <span className="badge bg-info">Interno</span> : <span className="badge bg-warning text-dark">Externo</span>}</td>
+      <td><EstadoBadge fila={fila} /></td>
+      <td>{fila.fecha_creacion}</td>
+      <td>{fila.fecha_publicacion || <span className="text-muted">-</span>}</td>
+      <td>{fila.creador}</td>
+      <td>
+        <div className="btn-group btn-group-sm">
+          <a href={ver} className="btn btn-outline-primary" title="Ver"><i className="fas fa-eye" /></a>
+          {acciones.editar && <a href={`/comunicados/editar/${fila.id}/`} className="btn btn-outline-secondary" title="Editar"><i className="fas fa-edit" /></a>}
+          {acciones.publicar && (
+            <ActionForm action={`/comunicados/publicar/${fila.id}/`} className="btn btn-outline-success" title="Publicar" confirm={PUBLICAR}><i className="fas fa-paper-plane" /></ActionForm>
+          )}
+          {acciones.archivar && (
+            <ActionForm action={`/comunicados/archivar/${fila.id}/`} className="btn btn-outline-dark" title="Archivar" confirm={ARCHIVAR}><i className="fas fa-archive" /></ActionForm>
+          )}
+          {acciones.destacado && (fila.destacado ? (
+            <ActionForm action={`/comunicados/toggle-destacado/${fila.id}/`} className="btn btn-warning" title="Quitar destacado"><i className="fas fa-star" /></ActionForm>
+          ) : (
+            <ActionForm action={`/comunicados/toggle-destacado/${fila.id}/`} className="btn btn-outline-warning" title="Marcar como destacado"><i className="far fa-star" /></ActionForm>
+          ))}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+/** The module selects submit the search form on change (`onchange="this.form.submit()"`). */
+function FiltroSelect({ id, name, label, value, options, className }: { id: string; name: string; label: string; value: string; options: [string, string][]; className: string }) {
+  return <>
+    <label htmlFor={id} className={className}>{label}</label>
+    <select id={id} name={name} form="simple-search-form" className="form-select" defaultValue={value}
+      onChange={(e) => { if (e.currentTarget.form) comunicadosNavigation.submit(e.currentTarget.form); }}>
+      <option value="">Todos</option>
+      {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+    </select>
+  </>;
+}
+
+export function ComunicadoGestionContent({ data }: { data: ComunicadoGestionData }) {
+  const { page, filtros } = data;
+  const limpiar = `?${filtros.estado ? `estado=${filtros.estado}` : ""}${filtros.tipo ? `${filtros.estado ? "&" : ""}tipo=${filtros.tipo}` : ""}`;
+  return <>
+    <link rel="stylesheet" href="/static/custom/css/listModerno.css" />
+    <InsumosToastList messages={data.messages} />
+    <div className="mt-4">
+      <SearchBar placeholder="Buscar comunicado..." query={filtros.titulo} reset={GESTION}>
+        {data.flags.can_create && <a href="/comunicados/crear/" className="poncho-btn poncho-btn--cta"><i className="fas fa-plus" aria-hidden="true" />Nuevo</a>}
+        {data.mailing_url && <a href={data.mailing_url} className="poncho-btn poncho-btn--neutro" title="Enviar mailing masivo">Mailing masivo</a>}
+      </SearchBar>
+      <div className="poncho-filtros-modulo">
+        <FiltroSelect id="filtro-estado" name="estado" label="Estado" className="mb-0" value={filtros.estado}
+          options={[["borrador", "Borrador"], ["publicado", "Publicado"], ["archivado", "Archivado"]]} />
+        {!data.flags.es_tecnico && (
+          <FiltroSelect id="filtro-tipo" name="tipo" label="Tipo" className="mb-0 ms-3" value={filtros.tipo}
+            options={[["interno", "Interno"], ["externo", "Externo"]]} />
+        )}
+        {filtros.titulo && <a href={limpiar} className="btn btn-outline-danger btn-sm" title="Limpiar búsqueda"><i className="fas fa-times" /></a>}
+      </div>
+      <div className="card">
+        <div className="card-header d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Comunicados{" "}{page.is_paginated && <span className="text-muted">({page.count})</span>}</h5>
+          <a href={LIST} className="btn btn-sm btn-outline-secondary"><i className="fas fa-eye" />{" "}Ver Vista Pública</a>
+        </div>
+        <div className="card-body">
+          <div className="table-responsive">
+            <table className="table table-bordered table-striped table-hover">
+              <thead>
+                <tr>
+                  <th style={{ width: "5%" }}>ID</th><th style={{ width: "5%" }}>Destacado</th><th>Título</th>
+                  <th style={{ width: "8%" }}>Tipo</th><th style={{ width: "8%" }}>Estado</th><th style={{ width: "10%" }}>Creación</th>
+                  <th style={{ width: "10%" }}>Publicación</th><th style={{ width: "12%" }}>Creador</th><th style={{ width: "15%" }}>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.results.length ? data.results.map((fila) => <GestionRow key={fila.id} fila={fila} />) : (
+                  <tr>
+                    <td colSpan={9} className="text-center py-4">
+                      <i className="fas fa-newspaper fa-2x text-muted mb-2" />
+                      <p className="text-muted mb-0">No hay comunicados.</p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {page.is_paginated && (
+            <Pagination paginated number={page.number} previous={page.previous} next={page.next} range={page.range}
+              href={(n) => `?${page.query_without_page}page=${n}`} count={page.count} />
+          )}
+        </div>
+      </div>
+    </div>
+  </>;
+}
+
+function GestionPage() {
+  const [state] = useMainResource(`${API}gestion/${window.location.search}`, gestionValid);
+  return renderMain(state, "Cargando comunicados…", (data) => ({
+    title: "Gestión de Comunicados",
+    heading: "Gestión de Comunicados",
+    breadcrumb: null,
+    content: <ComunicadoGestionContent data={data} />,
+  }));
+}
+
 // --- Detail (`comunicado_detail.html`) -------------------------------------
+
+/** The footer of the detail: only with one of the native permissions. */
+function DetailFooter({ data }: { data: ComunicadoDetailData }) {
+  const p = data.permisos;
+  if (!(p.editar || p.publicar || p.archivar || p.eliminar)) return null;
+  const borrador = data.estado === "borrador";
+  return (
+    <div className="card-footer">
+      <div className="d-flex justify-content-between align-items-center">
+        <div>
+          <small className="text-muted">Creado: {data.fecha_creacion}{data.modificado_por && <>{" "}| Modificado por: {data.modificado_por}</>}</small>
+        </div>
+        <div className="btn-group">
+          {p.editar && borrador && <a href={`/comunicados/editar/${data.id}/`} className="btn btn-outline-secondary"><i className="fas fa-edit" />{" "}Editar</a>}
+          {p.publicar && borrador && (
+            <ActionForm action={`/comunicados/publicar/${data.id}/`} className="btn btn-outline-success" confirm={PUBLICAR}><i className="fas fa-paper-plane" />{" "}Publicar</ActionForm>
+          )}
+          {p.archivar && data.estado === "publicado" && (
+            <ActionForm action={`/comunicados/archivar/${data.id}/`} className="btn btn-outline-dark" confirm={ARCHIVAR}><i className="fas fa-archive" />{" "}Archivar</ActionForm>
+          )}
+          {p.eliminar && borrador && <a href={`/comunicados/eliminar/${data.id}/`} className="btn btn-outline-danger"><i className="fas fa-trash" />{" "}Eliminar</a>}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const BADGES: Record<string, string> = { borrador: "badge bg-secondary", publicado: "badge bg-success", archivado: "badge bg-dark" };
 
@@ -181,6 +377,7 @@ export function ComunicadoDetailContent({ data }: { data: ComunicadoDetailData }
             </ul>
           </>}
         </div>
+        <DetailFooter data={data} />
       </div>
     </div>
   </>;
@@ -196,17 +393,19 @@ function DetailPage({ id }: { id: string }) {
   }));
 }
 
-type Params = { id?: string };
+type Params = { id?: string; gestion?: boolean };
 const DETAIL = /^\/comunicados\/ver\/([0-9]+)\/$/;
 
 export const comunicadosRoute: RouteDefinition<Params> = {
   name: "comedores-comunicados",
   match(pathname) {
     if (pathname === LIST) return {};
+    if (pathname === GESTION) return { gestion: true };
     const detail = DETAIL.exec(pathname);
     return detail ? { id: detail[1] } : null;
   },
-  render({ id }) {
+  render({ id, gestion }) {
+    if (gestion) return <GestionPage />;
     return id ? <DetailPage id={id} /> : <ListPage />;
   },
 };

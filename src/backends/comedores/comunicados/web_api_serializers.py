@@ -24,9 +24,9 @@ MESSAGE_LEVELS = {
 }
 
 
-def fecha_hora(valor):
-    """``{{ valor|date:"d/m/Y H:i" }}`` (the template renders it in local time)."""
-    return date_filter(localtime(valor), FECHA_HORA) if valor else ""
+def fecha_hora(valor, formato=FECHA_HORA):
+    """``{{ valor|date:formato }}`` (the template renders it in local time)."""
+    return date_filter(localtime(valor), formato) if valor else ""
 
 
 def nombre_usuario(usuario):
@@ -106,11 +106,40 @@ def detalle(comunicado, context):
             }
             for adjunto in comunicado.adjuntos.all()
         ],
+        "fecha_creacion": fecha_hora(comunicado.fecha_creacion),
+        "modificado_por": nombre_usuario(comunicado.usuario_ultima_modificacion),
         "can_manage": context["can_manage"],
         "permisos": {
             "editar": context["can_edit"],
             "publicar": context["can_publish"],
             "archivar": context["can_archive"],
             "eliminar": context["can_delete"],
+        },
+    }
+
+
+def fila_gestion(comunicado, context):
+    """One row of ``comunicado_gestion_list.html``; ``acciones`` keeps its conditions."""
+    borrador = comunicado.estado == "borrador"
+    publicado = comunicado.estado == "publicado"
+    editar = borrador and context["can_edit"]
+    return {
+        "id": comunicado.pk,
+        "titulo": comunicado.titulo,
+        "titulo_corto": truncatewords(comunicado.titulo, 8),
+        "tipo": comunicado.tipo,
+        "estado": comunicado.estado,
+        "esta_vencido": comunicado.esta_vencido,
+        "destacado": comunicado.destacado,
+        "fecha_creacion": fecha_hora(comunicado.fecha_creacion, "d/m/Y"),
+        "fecha_publicacion": fecha_hora(comunicado.fecha_publicacion, "d/m/Y"),
+        "creador": nombre_usuario(comunicado.usuario_creador),
+        "acciones": {
+            "editar": editar,
+            "publicar": editar and context["can_publish"],
+            "archivar": publicado and context["can_archive"],
+            "destacado": publicado
+            and comunicado.tipo != "externo"
+            and context["can_toggle_destacado"],
         },
     }

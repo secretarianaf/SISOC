@@ -1,4 +1,4 @@
-"""Web API (G1 v1) of the comunicados pages served by React (CM03.01).
+"""Web API (G1 v1) of the comunicados pages served by React (CM03.01, CM02.01).
 
 ``/api/web/comedores/`` is published by the Comedores backend (``url_prefixes``
 in ``src/backends/config/backends.json``). In a split deploy the core checks the
@@ -14,14 +14,20 @@ not the PWA API (``comunicados.api_views``), which stays untouched.
 
 from django.http import Http404
 from rest_framework.authentication import SessionAuthentication
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from comunicados.views import ComunicadoDetailView, ComunicadoListView
+from comunicados.permissions import can_manage_comunicados
+from comunicados.views import (
+    ComunicadoDetailView,
+    ComunicadoGestionListView,
+    ComunicadoListView,
+)
 from comunicados.web_api_serializers import (
     detalle,
+    fila_gestion,
     pagina,
     pending_messages,
     tarjeta_publicada,
@@ -61,6 +67,43 @@ class ComunicadoListWebView(_NativeReadView):
                 "can_manage": can_manage,
                 "gestion_url": (
                     context["additional_buttons"][0]["url"] if can_manage else None
+                ),
+                "messages": pending_messages(request),
+            }
+        )
+
+
+class ComunicadoGestionWebView(_NativeReadView):
+    """``GET .../comunicados/gestion/``: ``comunicado_gestion_list.html`` (CM02.01)."""
+
+    def get(self, request):
+        # ``ComunicadoGestionListView.dispatch``: same check and message.
+        if not can_manage_comunicados(request.user):
+            raise PermissionDenied("No tiene permisos para gestionar comunicados.")
+        vista = self.native(ComunicadoGestionListView, request)
+        vista.object_list = vista.get_queryset()
+        try:
+            context = vista.get_context_data()
+        except Http404 as exc:
+            raise NotFound("Página no válida.") from exc
+        return Response(
+            {
+                "results": [fila_gestion(c, context) for c in context["comunicados"]],
+                "page": pagina(context, request),
+                "filtros": {
+                    "titulo": context["filtro_titulo"],
+                    "estado": context["filtro_estado"],
+                    "tipo": context["filtro_tipo"],
+                },
+                "flags": {
+                    "can_create": context["can_create"],
+                    "is_admin": context["is_admin"],
+                    "es_tecnico": context["es_tecnico"],
+                },
+                "mailing_url": (
+                    context["additional_buttons"][0]["url"]
+                    if context["is_admin"]
+                    else None
                 ),
                 "messages": pending_messages(request),
             }

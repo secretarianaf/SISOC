@@ -1870,6 +1870,11 @@
   "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "comunicados_web_gestion",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/gestion/\\Z"
+ },
+ {
   "name": "comunicados_web_listado",
   "namespace": "",
   "regex": "^api/web/comedores/comunicados/\\Z"

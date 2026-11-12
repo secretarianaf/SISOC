@@ -53,7 +53,7 @@ describe("PAS03.02 results and evidence", () => {
   it("prints the pending circuit with the native texts and order", async () => {
     serve(page());
     await open();
-    expect(document.title).toContain("Cruces y Novedades · PAS");
+    await waitFor(() => expect(document.title).toContain("Cruces y Novedades · PAS"));
     expect(screen.getByRole("heading", { level: 1, name: "Cruces y Novedades" })).toBeTruthy();
     expect(screen.getByText("RENAPER · control diario").className).toBe("pas-source-chip");
     expect(screen.getByText("Período 11/2026 · 12 titulares incluidos")).toBeTruthy();

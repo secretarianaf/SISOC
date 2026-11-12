@@ -1680,6 +1680,11 @@
   "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "ciudadanos_web_marcar_revisado",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/marcar\\-revisado/\\Z"
+ },
+ {
   "name": "colaborador_espacio_crear",
   "namespace": "",
   "regex": "^comedores/(?P<pk>[0-9]+)/colaboradores/crear/\\Z"

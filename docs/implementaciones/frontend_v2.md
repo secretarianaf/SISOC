@@ -866,6 +866,12 @@ arma el servidor, cada aporte a `/api/web/<backend>/ciudadanos/<pk>/aportes/<apo
 tarjetas viven en `routes/ciudadano360Aportes.tsx` y degradan solas a «No disponible»
 (C2). Ver `docs/registro/cambios/2026-T4/2026-11-12-2785-react-ciudadano360-aportes.md`.
 
+La ficha completa (C05.01) suma la proyección `ciudadanos.web_ficha` (datos, familia,
+historial, interacciones, acciones y mensajes ya formateados con las reglas del template)
+y `routes/ciudadano360Ficha.tsx` (pestañas, Datos Personales, Grupo Familiar, gráfico
+Chart.js, programas, interacciones y observaciones). Ver
+`docs/registro/cambios/2026-T4/2026-11-12-2785-react-ciudadano360-ficha.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

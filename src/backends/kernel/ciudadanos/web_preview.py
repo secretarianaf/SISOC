@@ -1,10 +1,12 @@
-"""Explicit local React preview of Ciudadano 360 (C05.01 piece for C04); never mounted by a production URLconf.
+"""Explicit local React preview of Ciudadano 360 (C05.01); never mounted by a production URLconf.
 
 The entry keeps the native URL and guards: anonymous users get
 the login redirect of ``login_required``, users without
 ``ciudadanos.view_ciudadano`` the native 403 and a missing ciudadano the native 404.
-Only then a GET returns the frozen React ``index.html``, which loads its data from
-``/api/web/ciudadanos/<pk>/`` and the aportes of the verticals. Assets are served
+Only then a GET returns the frozen React ``index.html``, which loads the whole ficha from
+``/api/web/ciudadanos/<pk>/`` and the aportes of the verticals; its actions keep pointing at the
+native pages (Editar, Dar de baja, Historial, Agregar familiar) and ``Marcar revisado`` posts to
+``/api/web/ciudadanos/<pk>/marcar-revisado/``. Assets are served
 under ``/ciudadanos/react/``.
 """
 

@@ -6,6 +6,7 @@ import {
   aporteResult, CdfCard, CdfMonto, CeliaquiaCard, ColaboracionesCard, ComedoresCard, PwaBadges, PwaFilas, VatCard, type AporteState,
 } from "./ciudadano360Aportes";
 import { fichaValid } from "./ciudadano360";
+import { fichaExtra } from "./ciudadano360Fixtures";
 import { readyContext, setViewport } from "./testFixtures";
 
 const { webGet } = vi.hoisted(() => ({ webGet: vi.fn() }));
@@ -153,7 +154,7 @@ describe("cards", () => {
 
 describe("Ciudadano 360 route", () => {
   const ficha = (aportes: unknown[]) => ({
-    id: 7, nombre: "Ana", apellido: "Aporte", tipo_documento_texto: "DNI", numero_documento: "30111222", pais_emisor: null, identificador_interno: null, aportes,
+    id: 7, nombre: "Ana", apellido: "Aporte", tipo_documento_texto: "DNI", numero_documento: "30111222", pais_emisor: null, identificador_interno: null, aportes, ...fichaExtra(),
   });
   const entry = (aporte: string, secciones: string[]) => ({ aporte, secciones, url: `/api/web/x/ciudadanos/7/aportes/${aporte}/` });
   function serve(aportes: unknown[], byAporte: Record<string, { status: number; data: unknown } | "reject">) {
@@ -198,7 +199,8 @@ describe("Ciudadano 360 route", () => {
     render(<App />);
     await waitFor(() => expect(screen.getByText("No hay registros VAT para este ciudadano.")).toBeTruthy());
     expect(screen.queryByText("Comedores")).toBeNull();
-    expect(screen.queryByText("Centro de Familia")).toBeNull();
+    // The program card is part of the page; only its amount comes from the provider (native default `$0.00`).
+    expect(document.querySelector(".programa-card.centro-familia .monto")?.textContent).toBe("$0.00");
   });
 
   it("a pending web requirement from a provider shows the standard access screen", async () => {

@@ -347,6 +347,29 @@ Sentry usa el **mismo proyecto que el back**, configurado con `@sisoc/api` /
   anterior.
 - No hay cambios en el Nginx del host.
 
+## Componentes de paridad compartidos (#2785)
+
+Los módulos de `src/frontends/apps/sisoc/src/routes/` repetían la misma mecánica para
+parecerse a la pantalla nativa. Ahora viven en dos módulos; usarlos en lugar de copiar:
+
+- `select2.tsx`: un único `Select2` sobre opciones locales (simple o múltiple) con el
+  marcado de Select2 4.1. Cada diferencia entre las pantallas es una opción explícita
+  (`termHandling`, `enterOnSelected`, `removeOpensResults`, `clearTrigger`, `focusMarker`,
+  `outsideClick`, `dropdownParent`, `hideEmptyChoice`, `singleFocus`). Los archivos
+  `cdfSelect2.tsx`, `duplasSelect2.tsx`, `pasSelect2.tsx` y `datacalleSelect2.tsx` son
+  envolturas finas que fijan las opciones de su pantalla. `singleFocus="selection"` es la
+  regla de foco del select simple nativo (la caja conserva el foco; Enter, Espacio y
+  Alt+Abajo abren; Escape, Tab y Alt+Arriba cierran). `InspSelect2.tsx` sigue aparte: su
+  fuente es remota (búsqueda asíncrona, demora de 250 ms, opción de dos líneas).
+- `nativeParity.tsx`: `NativeToasts` (toasts al final de `<body>`, como toastr),
+  `useModalTabTrap` y `NativeModal` (modal Bootstrap en su lugar del DOM, con trampa de
+  Tab, Escape y foco devuelto) y `resetAfterRejectedPost` (arriba del documento y teclado
+  desde el inicio, como la recarga nativa tras un POST rechazado).
+
+Cuándo usarlos: un select con búsqueda local, un modal propio de la pantalla, los toasts
+de una pantalla o el reinicio tras un 400. No agregar una variante nueva: sumar una
+opción al componente compartido y una prueba en `select2.test.tsx`.
+
 ## Pendientes
 
 Resueltos:

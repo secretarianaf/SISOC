@@ -1,8 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- the unit surface is this route module; its screens live here with the route. */
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { createPortal } from "react-dom";
 import { leerCookie } from "@sisoc/api";
-import { InsumosToastList } from "../InsumosToast";
+import { NativeToasts } from "./nativeParity";
 import { internal, record, renderMain, text, useMainResource } from "./MainFrame";
 import type { RouteDefinition } from "./types";
 
@@ -169,7 +168,7 @@ function InformePage({ data }: { data: InformeData }) {
   const alternar = (nombre: string) => setMarcados((actuales) => actuales.includes(nombre) ? actuales.filter((n) => n !== nombre) : [...actuales, nombre]);
   return <>
     {/* Toastr appends its container to the body in the native page. */}
-    {createPortal(<InsumosToastList messages={data.messages} />, document.body)}
+    <NativeToasts messages={data.messages} />
     <div className="container mt-4">
       <Acciones data={data} abrir={setModal} />
       <div className="row">

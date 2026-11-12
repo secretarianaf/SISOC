@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- shared list pieces export their config validator with the components. */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { leerCookie } from "@sisoc/api";
+import { useModalTabTrap } from "./nativeParity";
 
 /**
  * Shared pieces of the native listados (`components/search_bar.html`,
@@ -148,29 +149,7 @@ export function ColumnModal({ columns, close, reload }: { columns: Columns; clos
   const [pending, setPending] = useState(false);
   const modal = useRef<HTMLDivElement>(null);
   const busy = useRef(false);
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    const before = document.body.style.overflow;
-    document.body.classList.add("modal-open");
-    document.body.style.overflow = "hidden";
-    modal.current?.focus();
-    // Bootstrap's focus trap keeps Tab inside the open modal.
-    const key = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !busy.current) close();
-      if (e.key !== "Tab") return;
-      const controls = Array.from(modal.current?.querySelectorAll<HTMLElement>("button:not([disabled]),input:not([disabled])") ?? []);
-      const first = controls[0], last = controls.at(-1);
-      if (e.shiftKey && (document.activeElement === first || document.activeElement === modal.current)) { e.preventDefault(); last?.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
-    };
-    document.addEventListener("keydown", key);
-    return () => {
-      document.removeEventListener("keydown", key);
-      document.body.classList.remove("modal-open");
-      document.body.style.overflow = before;
-      previous?.focus();
-    };
-  }, [close]);
+  useModalTabTrap(modal, close, { busy });
   const save = useCallback(async (reset: boolean) => {
     if (busy.current) return;
     const values = order.filter((k) => selected.includes(k));

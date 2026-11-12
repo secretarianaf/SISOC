@@ -1,10 +1,11 @@
 /* eslint-disable react-refresh/only-export-components -- the unit surface is this route module; its screen, validator and navigation seam live here with the route. */
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useLegacyScrollHints } from "../useLegacyScrollHints";
 import { safeInternalPath } from "../webAccess";
 import { Breadcrumb, crumbsValid, internal, messagesValid, record, renderCdi, text, useCdiPage, type CdiMessage, type Crumb } from "./cdiFrame";
 import { ColumnModal, Filters, filtersConfigValid, Pagination, type Columns, type Favorites, type FiltersConfig } from "./listControls";
 import type { RouteDefinition } from "./types";
+import { useModalTabTrap } from "./nativeParity";
 
 /**
  * CDI09.01 centres list (`centrodeinfancia/centrodeinfancia_list.html` +
@@ -100,28 +101,7 @@ type Sort = { column: string | null; direction: "asc" | "desc" | null };
 
 function NominaNinosModal({ config, close }: { config: NonNullable<CentrosData["nomina_ninos"]>; close: () => void }) {
   const modal = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    const before = document.body.style.overflow;
-    document.body.classList.add("modal-open");
-    document.body.style.overflow = "hidden";
-    modal.current?.focus();
-    const key = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-      if (e.key !== "Tab") return;
-      const controls = Array.from(modal.current?.querySelectorAll<HTMLElement>("button:not([disabled]),select:not([disabled])") ?? []);
-      const first = controls[0], last = controls.at(-1);
-      if (e.shiftKey && (document.activeElement === first || document.activeElement === modal.current)) { e.preventDefault(); last?.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
-    };
-    document.addEventListener("keydown", key);
-    return () => {
-      document.removeEventListener("keydown", key);
-      document.body.classList.remove("modal-open");
-      document.body.style.overflow = before;
-      previous?.focus();
-    };
-  }, [close]);
+  useModalTabTrap(modal, close, { controls: "button:not([disabled]),select:not([disabled])" });
   return (
     <>
       <div className="modal-backdrop fade show" />

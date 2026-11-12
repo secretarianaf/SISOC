@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type MouseEve
 import { InsumosToastList } from "../InsumosToast";
 import { safeInternalPath } from "../webAccess";
 import { Pagination } from "./listControls";
+import { NativeModal } from "./nativeParity";
 import { accepted, internal, record, renderMain, text, useMainResource, webClient } from "./MainFrame";
 import type { RouteDefinition } from "./types";
 
@@ -79,31 +80,8 @@ function Visualizar({ url }: { url: string | null }) {
 
 /** Bootstrap-like modal: focus inside, Escape and backdrop close it (unless busy). */
 function Modal({ id, title, close, busy = false, size = "", children }: { id: string; title: string; close: () => void; busy?: boolean; size?: string; children: ReactNode }) {
-  const modal = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    document.body.classList.add("modal-open");
-    modal.current?.focus();
-    const key = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !busy) close();
-      if (e.key !== "Tab") return;
-      const controls = Array.from(modal.current?.querySelectorAll<HTMLElement>("button:not([disabled]),input:not([disabled]),textarea:not([disabled]),a[href]") ?? []);
-      const first = controls[0], last = controls.at(-1);
-      if (e.shiftKey && (document.activeElement === first || document.activeElement === modal.current)) { e.preventDefault(); last?.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
-    };
-    document.addEventListener("keydown", key);
-    return () => { document.removeEventListener("keydown", key); document.body.classList.remove("modal-open"); previous?.focus(); };
-  }, [close, busy]);
-  return (
-    <>
-      <div className="modal-backdrop fade show" />
-      <div ref={modal} className="modal fade show d-block" id={id} tabIndex={-1} role="dialog" aria-modal="true"
-        aria-labelledby={`${id}-label`} onClick={(e) => { if (e.target === e.currentTarget && !busy) close(); }}>
-        <div className={`modal-dialog${size}`}>{children}<span hidden id={`${id}-label`}>{title}</span></div>
-      </div>
-    </>
-  );
+  return <NativeModal id={id} title={title} close={close} busy={busy} size={size}
+    controls="button:not([disabled]),input:not([disabled]),textarea:not([disabled]),a[href]">{children}</NativeModal>;
 }
 
 function ModalHeader({ id, title, close, closeLabel = true }: { id: string; title: string; close: () => void; closeLabel?: boolean }) {

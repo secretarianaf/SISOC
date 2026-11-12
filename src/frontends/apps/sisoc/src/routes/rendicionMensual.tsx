@@ -1,11 +1,12 @@
 /* eslint-disable react-refresh/only-export-components -- the unit surface is this route module; its validator and navigation seam are exported for the tests. */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { leerCookie } from "@sisoc/api";
 import { InsumosToastList } from "../InsumosToast";
 import { useLegacyScrollHints } from "../useLegacyScrollHints";
 import { safeInternalPath } from "../webAccess";
 import { Breadcrumb, breadcrumbValid, internal, record, renderMain, text, useMainResource, type Breadcrumbs } from "./MainFrame";
 import type { RouteDefinition } from "./types";
+import { useModalTabTrap } from "./nativeParity";
 
 /**
  * RM01.01 global list of monthly rendiciones
@@ -185,28 +186,7 @@ function ColumnModal({ columns, close }: { columns: Columns; close: () => void }
   const [pending, setPending] = useState(false);
   const modal = useRef<HTMLDivElement>(null);
   const busy = useRef(false);
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    const before = document.body.style.overflow;
-    document.body.classList.add("modal-open");
-    document.body.style.overflow = "hidden";
-    modal.current?.focus();
-    const key = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !busy.current) close();
-      if (e.key !== "Tab") return;
-      const controls = Array.from(modal.current?.querySelectorAll<HTMLElement>("button:not([disabled]),input:not([disabled])") ?? []);
-      const first = controls[0], last = controls.at(-1);
-      if (e.shiftKey && (document.activeElement === first || document.activeElement === modal.current)) { e.preventDefault(); last?.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
-    };
-    document.addEventListener("keydown", key);
-    return () => {
-      document.removeEventListener("keydown", key);
-      document.body.classList.remove("modal-open");
-      document.body.style.overflow = before;
-      previous?.focus();
-    };
-  }, [close]);
+  useModalTabTrap(modal, close, { busy });
   const save = useCallback(async (reset: boolean) => {
     if (busy.current) return;
     const values = order.filter((k) => selected.includes(k));

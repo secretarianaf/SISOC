@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
-import { InsumosToastList } from "../InsumosToast";
+import { NativeToasts, resetAfterRejectedPost } from "./nativeParity";
 import { internal, record, text, webClient } from "./MainFrame";
 
 /**
@@ -66,20 +65,13 @@ export async function postApi(endpoint: string, body: URLSearchParams): Promise<
  * After a form is re-rendered with its errors the native page has been reloaded: the view starts at
  * the top and keyboard focus at the start of the document, so do the same.
  */
-export function restartFromTop() {
-  window.scrollTo(0, 0);
-  const marker = document.createElement("span");
-  marker.tabIndex = -1;
-  document.body.prepend(marker);
-  marker.focus({ preventScroll: true });
-  marker.remove();
-}
+export const restartFromTop = resetAfterRejectedPost;
 
 /** The toasts of a screen: the ones its data carried, the flash of the previous mutation and the new ones. */
 export function useToasts(initial: Message[]) {
   const [state, setState] = useState<{ version: number; messages: Message[] }>(() => ({ version: 0, messages: [...initial, ...takeFlash()] }));
   const push = (message: Message) => setState((s) => ({ version: s.version + 1, messages: [message] }));
   // Toastr appends its container to the end of `<body>`: the toasts go to the same place.
-  const toasts: ReactNode = createPortal(<InsumosToastList key={state.version} messages={state.messages} />, document.body);
+  const toasts: ReactNode = <NativeToasts key={state.version} messages={state.messages} />;
   return { toasts, push };
 }

@@ -14,6 +14,7 @@ urlpatterns = [
         "admisiones/plantillas-informe/",
         include("admisiones.web_api_templates_urls"),
     ),
+    path("admisiones/informes/", include("admisiones.web_api_informes_urls")),
     path("acompanamientos/", include("acompanamientos.web_api_urls")),
     path("expedientespagos/", include("expedientespagos.web_api_urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.web_api_urls")),

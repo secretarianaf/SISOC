@@ -713,6 +713,12 @@ restaura hitos con `admision_id` explícito y lista blanca de los 23 hitos.
 Registros: `../registro/cambios/2026-T4/2026-11-10-2785-react-ad01-gestor-templates.md` y
 `../registro/cambios/2026-T4/2026-11-10-2785-react-ac01-acompanamientos.md`.
 
+Detalle del informe técnico de admisión (AD02.01):
+`src/backends/comedores/admisiones/web_api_informes.py` ejecuta
+`InformeTecnicoDetailView` con el acceso actual y las acciones (subir DOCX editado,
+revisar) siguen siendo POST a la URL nativa. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-informe-detalle.md`.
+
 Expedientes de pago de un comedor (EX01) usan el mismo marco:
 `src/backends/comedores/expedientespagos/web_api.py` ejecuta las vistas nativas
 de listado, ficha, alta, edición y baja lógica con el acceso actual (lectura con

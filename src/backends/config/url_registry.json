@@ -2660,6 +2660,11 @@
   "regex": "^comedores/admision/informe_tecnico/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/ver/\\Z"
  },
  {
+  "name": "informe_tecnico_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
   "name": "informecabal_archivo_centro_detail",
   "namespace": "",
   "regex": "^centrodefamilia/centros/(?P<centro_id>[0-9]+)/informecabal/(?P<pk>[0-9]+)/\\Z"

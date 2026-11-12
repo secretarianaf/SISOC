@@ -237,8 +237,12 @@ describe("Dispositivos map", () => {
     serve({ "web/dispositivos/mapa/": { data: mapa([device(1), device(2)]) } });
     setup("/dispositivos/mapa/");
     await screen.findByRole("heading", { name: "Mapa de dispositivos" });
-    expect(document.getElementById("map-status")?.textContent).toBe("2 dispositivos para cargar.");
-    const script = document.querySelector("script[src*='leaflet']") as HTMLScriptElement;
+    await waitFor(() => expect(document.getElementById("map-status")?.textContent).toBe("2 dispositivos para cargar."));
+    const script = await waitFor(() => {
+      const found = document.querySelector("script[src*='leaflet']") as HTMLScriptElement | null;
+      expect(found).not.toBeNull();
+      return found as HTMLScriptElement;
+    });
     expect(script.integrity).toBe("sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH");
     act(() => { script.dispatchEvent(new Event("error")); });
     await waitFor(() => expect(document.getElementById("map-status")?.textContent).toBe("No se pudo cargar el mapa. Consultá las direcciones en la tabla."));

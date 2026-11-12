@@ -8,6 +8,7 @@ import { businessRoute } from "./business";
 import { categoriasRoute } from "./categorias";
 import { cdiCentrosRoute } from "./cdiCentros";
 import { cdiNominaRoute } from "./cdiNomina";
+import { cdiNominaListaRoute } from "./cdiNominaLista";
 import { cdiObservacionesRoute } from "./cdiObservaciones";
 import { cdiReportesRoute } from "./cdiReportes";
 import { cdfBeneficiariosRoute } from "./cdfBeneficiarios";
@@ -86,6 +87,7 @@ export const ROUTES: RouteDefinition[] = [
   cdiObservacionesRoute,
   cdiCentrosRoute,
   cdiNominaRoute,
+  cdiNominaListaRoute,
   cdfCentrosRoute,
   cdfCentroFormRoute,
   dispositivosRoute,

@@ -23,6 +23,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from centrodeinfancia.views import (
     CentroDeInfanciaListView,
     NominaCentroInfanciaDestinatariosDetailView,
+    NominaCentroInfanciaDetailView,
     ObservacionCentroInfanciaCreateView,
     ObservacionCentroInfanciaDeleteView,
     ObservacionCentroInfanciaDetailView,
@@ -60,6 +61,18 @@ class ReportesEntry(ReportesCDIView):
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class CentrosListEntry(CentroDeInfanciaListView):
     """Native guards, then the page check (an invalid ``page`` is 404), then the index."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        self.get_context_data()
+        return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class NominaListaEntry(NominaCentroInfanciaDetailView):
+    """Native guards, scoped centre and page check (both 404), then the index."""
 
     index_bytes = b""
 
@@ -195,6 +208,14 @@ def cdi_preview_patterns(build_directory):
             _entry(
                 CentrosListEntry,
                 "centrodeinfancia.view_centrodeinfancia",
+                index_bytes,
+            ),
+        ),
+        path(
+            "centrodeinfancia/<int:pk>/nomina/",
+            _entry(
+                NominaListaEntry,
+                "centrodeinfancia.view_nominacentroinfancia",
                 index_bytes,
             ),
         ),

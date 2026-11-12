@@ -1525,9 +1525,19 @@
   "regex": "^api/web/cdi/centros/\\Z"
  },
  {
+  "name": "centrodeinfancia_web_nomina_derivar",
+  "namespace": "",
+  "regex": "^api/web/cdi/nomina/(?P<pk>[0-9]+)/derivar/\\Z"
+ },
+ {
   "name": "centrodeinfancia_web_nomina_destinatario",
   "namespace": "",
   "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/nomina/(?P<nomina_id>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_nomina_lista",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/nomina/\\Z"
  },
  {
   "name": "centrodeinfancia_web_observacion_crear",

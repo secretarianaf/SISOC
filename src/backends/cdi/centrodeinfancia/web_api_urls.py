@@ -3,7 +3,8 @@
 Ver ``centrodeinfancia.web_api`` (reportes),
 ``centrodeinfancia.web_api_observaciones`` (observaciones),
 ``centrodeinfancia.web_api_centros`` (listado de centros) y
-``centrodeinfancia.web_api_nomina`` (ficha de un destinatario de la nómina).
+``centrodeinfancia.web_api_nomina`` (ficha de un destinatario de la nómina) y
+``centrodeinfancia.web_api_nomina_lista`` (lista de la nómina y derivación).
 """
 
 from django.urls import path
@@ -11,6 +12,10 @@ from django.urls import path
 from centrodeinfancia.web_api import ReportesWebView
 from centrodeinfancia.web_api_centros import CentrosListWebView
 from centrodeinfancia.web_api_nomina import NominaDestinatarioWebView
+from centrodeinfancia.web_api_nomina_lista import (
+    NominaListaWebView,
+    nomina_derivar_web,
+)
 from centrodeinfancia.web_api_observaciones import (
     ObservacionCrearWebView,
     ObservacionDetalleWebView,
@@ -21,6 +26,16 @@ from centrodeinfancia.web_api_observaciones import (
 urlpatterns = [
     path("reportes/", ReportesWebView.as_view(), name="centrodeinfancia_web_reportes"),
     path("centros/", CentrosListWebView.as_view(), name="centrodeinfancia_web_centros"),
+    path(
+        "centros/<int:pk>/nomina/",
+        NominaListaWebView.as_view(),
+        name="centrodeinfancia_web_nomina_lista",
+    ),
+    path(
+        "nomina/<int:pk>/derivar/",
+        nomina_derivar_web,
+        name="centrodeinfancia_web_nomina_derivar",
+    ),
     path(
         "centros/<int:pk>/nomina/<int:nomina_id>/",
         NominaDestinatarioWebView.as_view(),

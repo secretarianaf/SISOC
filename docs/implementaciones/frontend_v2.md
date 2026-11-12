@@ -628,6 +628,10 @@ vertical, dibuja `SisocShell` y agrega el botón «Consultas» de la cabecera.
 - `/centrodeinfancia/<centro>/nomina/<nómina>/ver/` (`routes/cdiNomina.tsx`,
   CDI04.01): ficha de un destinatario de la nómina; los valores salen del
   backend con las mismas expresiones del template nativo.
+- `/centrodeinfancia/<centro>/nomina/` (`routes/cdiNominaLista.tsx`,
+  CDI04.02/CDI04.03): lista de la nómina con métricas, filtros locales, páginas de 100
+  y el modal «Derivar»; la derivación es el único POST y ejecuta la función nativa
+  `nomina_centrodeinfancia_derivar`. Alta, edición y baja siguen siendo enlaces nativos.
 
 El menú lateral de `SisocShell` y `ClaroFrame` dibuja los grupos anidados con el
 marcado de cada nivel del template y los abre y resalta con las mismas
@@ -639,7 +643,8 @@ Registros:
 `../registro/cambios/2026-T4/2026-11-10-2785-react-cdi-reportes.md` y
 `../registro/cambios/2026-T4/2026-11-10-2785-react-cdi-observaciones.md`,
 `../registro/cambios/2026-T4/2026-11-12-2785-react-cdi-centros-listado.md` y
-`../registro/cambios/2026-T4/2026-11-12-2785-react-cdi-nomina-ficha.md`.
+`../registro/cambios/2026-T4/2026-11-12-2785-react-cdi-nomina-ficha.md` y
+`../registro/cambios/2026-T4/2026-11-12-2785-react-cdi-nomina-lista.md`.
 ### Vertical remoto sobre G1: Duplas (equipo técnico) de Comedores
 
 Segunda aplicación del patrón, ahora con el marco nativo `includes/main.html`

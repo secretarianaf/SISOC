@@ -233,3 +233,34 @@ def test_list_and_detail_entries_return_the_index_after_the_native_checks(ficha)
     for ruta in ("/centrodeinfancia/listar", detalle):
         assert sin_permiso.get(ruta).status_code == 403, ruta
         assert Client().get(ruta).status_code in (302, 401, 403), ruta
+
+
+@pytest.mark.usefixtures("preview")
+def test_nomina_list_entry_returns_the_index_after_the_native_checks(ficha):
+    user = User.objects.create_user("preview-nomina-lista")
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="centrodeinfancia",
+            codename="view_nominacentroinfancia",
+        )
+    )
+    client = _cliente(user)
+    ruta = f"/centrodeinfancia/{ficha.centro_id}/nomina/"
+
+    respuesta = client.get(ruta)
+
+    assert respuesta.status_code == 200
+    assert b"/centrodeinfancia/react/assets/app-1.js" in respuesta.content
+    assert "no-store" in respuesta["Cache-Control"]
+    assert client.head(ruta).content == b""
+    assert client.get(ruta, {"page": "9"}).status_code == 404
+    assert client.get("/centrodeinfancia/999999/nomina/").status_code == 404
+    # The native URL guard is the nómina permission, not the centre one.
+    solo_centro = User.objects.create_user("preview-nomina-centro")
+    solo_centro.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="centrodeinfancia", codename="view_centrodeinfancia"
+        )
+    )
+    assert _cliente(solo_centro).get(ruta).status_code == 403
+    assert Client().get(ruta).status_code in (302, 401, 403)

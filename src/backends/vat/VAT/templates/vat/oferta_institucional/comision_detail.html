@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block content %}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .app-content-header { display: none; }
 
         .sisoc-centro-page {
@@ -1229,24 +1229,24 @@
                     class="sisoc-tab-chip is-active"
                     data-sisoc-tab-target="general"
                     aria-selected="true">Información</button>
-            <button type="button"
-                    class="sisoc-tab-chip"
-                    data-sisoc-tab-target="inscriptos"
-                    aria-selected="false">Inscriptos</button>
+            {% if not solo_asistencia %}<button type="button"
+        class="sisoc-tab-chip"
+        data-sisoc-tab-target="inscriptos"
+        aria-selected="false">Inscriptos</button>{% endif %}
             {% if comision.acepta_lista_espera or lista_espera %}
-                <button type="button"
-                        class="sisoc-tab-chip"
-                        data-sisoc-tab-target="espera"
-                        aria-selected="false">Lista de espera</button>
+                {% if not solo_asistencia %}<button type="button"
+        class="sisoc-tab-chip"
+        data-sisoc-tab-target="espera"
+        aria-selected="false">Lista de espera</button>{% endif %}
             {% endif %}
             <button type="button"
                     class="sisoc-tab-chip"
                     data-sisoc-tab-target="sesiones"
                     aria-selected="false">Clases</button>
-            <button type="button"
-                    class="sisoc-tab-chip"
-                    data-sisoc-tab-target="horarios"
-                    aria-selected="false">Horarios</button>
+            {% if not solo_asistencia %}<button type="button"
+        class="sisoc-tab-chip"
+        data-sisoc-tab-target="horarios"
+        aria-selected="false">Horarios</button>{% endif %}
             {% if puede_gestionar_resultados %}
                 <button type="button"
                         class="sisoc-tab-chip"
@@ -1275,25 +1275,29 @@
                         aria-selected="true">
                     <span>Información</span>
                 </button>
-                <button type="button"
-                        class="sisoc-side-tab"
-                        data-sisoc-tab-target="inscriptos"
-                        aria-selected="false"
-                        hidden>
-                    <span>Inscriptos
-                        {% if inscripciones %}({{ inscripciones|length }}){% endif %}
-                    </span>
-                </button>
-                {% if comision.acepta_lista_espera or lista_espera %}
+                {% if not solo_asistencia %}
                     <button type="button"
                             class="sisoc-side-tab"
-                            data-sisoc-tab-target="espera"
+                            data-sisoc-tab-target="inscriptos"
                             aria-selected="false"
                             hidden>
-                        <span>Lista de espera
-                            {% if lista_espera %}({{ lista_espera|length }}){% endif %}
+                        <span>Inscriptos
+                            {% if inscripciones %}({{ inscripciones|length }}){% endif %}
                         </span>
                     </button>
+                {% endif %}
+                {% if comision.acepta_lista_espera or lista_espera %}
+                    {% if not solo_asistencia %}
+                        <button type="button"
+                                class="sisoc-side-tab"
+                                data-sisoc-tab-target="espera"
+                                aria-selected="false"
+                                hidden>
+                            <span>Lista de espera
+                                {% if lista_espera %}({{ lista_espera|length }}){% endif %}
+                            </span>
+                        </button>
+                    {% endif %}
                 {% endif %}
                 <button type="button"
                         class="sisoc-side-tab"
@@ -1304,15 +1308,17 @@
                         {% if sesiones %}({{ sesiones|length }}){% endif %}
                     </span>
                 </button>
-                <button type="button"
-                        class="sisoc-side-tab"
-                        data-sisoc-tab-target="horarios"
-                        aria-selected="false"
-                        hidden>
-                    <span>Horarios
-                        {% if horarios %}({{ horarios|length }}){% endif %}
-                    </span>
-                </button>
+                {% if not solo_asistencia %}
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="horarios"
+                            aria-selected="false"
+                            hidden>
+                        <span>Horarios
+                            {% if horarios %}({{ horarios|length }}){% endif %}
+                        </span>
+                    </button>
+                {% endif %}
                 {% if puede_gestionar_resultados %}
                     <button type="button"
                             class="sisoc-side-tab"
@@ -1397,298 +1403,193 @@
                 </section>
 
                 {# INSCRIPTOS #}
-                <section class="sisoc-info-panel sisoc-info-panel--overflow"
-                         data-sisoc-panel="inscriptos">
-                    <div class="sisoc-metric-grid sisoc-metric-grid--pair">
-                        <article class="sisoc-metric-card">
-                            <strong class="sisoc-metric-value">{{ comision.cupo }}</strong>
-                            <span class="sisoc-metric-label">Cupo total</span>
-                        </article>
-                        <article class="sisoc-metric-card">
-                            <strong class="sisoc-metric-value">{{ inscripciones|length }}</strong>
-                            <span class="sisoc-metric-label">Inscriptos</span>
-                        </article>
-                    </div>
-                    <div class="ci-tbl-card" id="inscriptosTabla">
-                        <div class="ci-tbl-head">
-                            <i class="bi bi-people"></i>
-                            <span>Inscriptos</span>
-                        </div>
-                        {% if puede_gestionar_lote_inscriptos %}
-                            <form id="formInscriptosLote"
-                                  method="post"
-                                  action="{{ inscripcion_estado_lote_url }}">
-                                {% csrf_token %}
-                                <input type="hidden" name="estado" id="inscriptosLoteEstado" />
-                            </form>
-                        {% endif %}
-                        <div class="ci-tbl-toolbar">
-                            <div class="ci-tbl-search">
-                                <i class="bi bi-search"></i>
-                                <input type="text"
-                                       id="inscriptosBuscador"
-                                       placeholder="Buscar por nombre..."
-                                       autocomplete="off"
-                                       aria-label="Buscar inscriptos por nombre" />
-                            </div>
-                            {% if puede_gestionar_lote_inscriptos %}
-                                <div class="ci-lote-acciones">
-                                    <span class="ci-lote-conteo" id="inscriptosLoteConteo">0 seleccionados</span>
-                                    <button type="button"
-                                            class="sisoc-btn sisoc-btn--add"
-                                            id="inscriptosLoteAceptar"
-                                            data-lote-estado="inscripta"
-                                            disabled>
-                                        <i class="bi bi-check-lg"></i><span>Aceptar</span>
-                                    </button>
-                                    <button type="button"
-                                            class="sisoc-btn sisoc-btn--delete"
-                                            id="inscriptosLoteRechazar"
-                                            data-lote-estado="rechazada"
-                                            disabled>
-                                        <i class="bi bi-x-lg"></i><span>Rechazar</span>
-                                    </button>
-                                </div>
-                            {% endif %}
-                            {% if puede_agregar_inscripcion %}
-                                <button type="button"
-                                        class="sisoc-btn sisoc-btn--add"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#modalInscripcionRapida">
-                                    <i class="bi bi-plus-lg"></i><span>Agregar inscripto</span>
-                                </button>
-                            {% endif %}
-                            {% if export_preinscriptos_url %}
-                                <a href="{{ export_preinscriptos_url }}"
-                                   class="sisoc-btn sisoc-btn--ghost">
-                                    <i class="bi bi-file-earmark-excel"></i><span>Descargar preinscriptos</span>
-                                </a>
-                            {% endif %}
-                            {% if export_inscriptos_url %}
-                                <a href="{{ export_inscriptos_url }}" class="sisoc-btn sisoc-btn--ghost">
-                                    <i class="bi bi-file-earmark-excel"></i><span>Descargar inscriptos</span>
-                                </a>
-                            {% endif %}
-                        </div>
-                        <div class="ci-tbl-scroll">
-                            <table class="ci-tbl">
-                                <thead>
-                                    <tr>
-                                        {% if puede_gestionar_lote_inscriptos %}
-                                            <th class="ci-tbl-col-check">
-                                                <input type="checkbox"
-                                                       id="inscriptosLoteTodos"
-                                                       aria-label="Seleccionar todos los inscriptos" />
-                                            </th>
-                                        {% endif %}
-                                        <th>Apellido</th>
-                                        <th>Nombre</th>
-                                        <th>Documento</th>
-                                        <th>Tipo de alumno</th>
-                                        <th>Estado</th>
-                                        <th>Email</th>
-                                        <th>Teléfono</th>
-                                        <th>Asistencia</th>
-                                        {% if puede_cambiar_inscripcion or puede_eliminar_inscripcion %}<th class="ci-tbl-col-actions">&nbsp;</th>{% endif %}
-                                    </tr>
-                                </thead>
-                                <tbody id="inscriptosTablaBody">
-                                    {% for insc in inscripciones %}
-                                        <tr class="ci-tbl-row"
-                                            data-nombre="{{ insc.ciudadano.apellido|lower }} {{ insc.ciudadano.nombre|lower }}"
-                                            data-estado="{{ insc.estado }}">
-                                            {% if puede_gestionar_lote_inscriptos %}
-                                                <td class="ci-tbl-col-check">
-                                                    <input type="checkbox"
-                                                           class="ci-lote-check"
-                                                           value="{{ insc.pk }}"
-                                                           aria-label="Seleccionar a {{ insc.ciudadano.apellido }} {{ insc.ciudadano.nombre }}" />
-                                                </td>
-                                            {% endif %}
-                                            <td>
-                                                <a href="{% url 'vat_inscripcion_detail' insc.pk %}">{{ insc.ciudadano.apellido|default:"—" }}</a>
-                                            </td>
-                                            <td>{{ insc.ciudadano.nombre|default:"—" }}</td>
-                                            <td>{{ insc.ciudadano.get_tipo_documento_display }} {{ insc.ciudadano.numero_documento|default:"—" }}</td>
-                                            <td>
-                                                {% if insc.es_alumno_vat %}
-                                                    <span class="ci-pill ci-pill-teal">{{ insc.tipo_alumno }}</span>
-                                                {% else %}
-                                                    <span class="ci-pill ci-pill-gray">{{ insc.tipo_alumno }}</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if insc.estado == "inscripta" or insc.estado == "validada_presencial" %}
-                                                    <span class="ci-pill ci-pill-green">{{ insc.get_estado_display }}</span>
-                                                {% elif insc.estado == "pre_inscripta" %}
-                                                    <span class="ci-pill ci-pill-yellow">{{ insc.get_estado_display }}</span>
-                                                {% elif insc.estado == "completada" %}
-                                                    <span class="ci-pill ci-pill-blue">{{ insc.get_estado_display }}</span>
-                                                {% elif insc.estado == "rechazada" %}
-                                                    <span class="ci-pill ci-pill-red">{{ insc.get_estado_display }}</span>
-                                                {% else %}
-                                                    <span class="ci-pill ci-pill-gray">{{ insc.get_estado_display }}</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ insc.ciudadano.email|default:"—" }}</td>
-                                            <td>{{ insc.ciudadano.telefono|default:"—" }}</td>
-                                            <td>
-                                                {% if insc.porcentaje_asistencia is not None %}
-                                                    {{ insc.porcentaje_asistencia }}%
-                                                {% else %}
-                                                    —
-                                                {% endif %}
-                                            </td>
-                                            {% if puede_cambiar_inscripcion or puede_eliminar_inscripcion %}
-                                                <td>
-                                                    <div class="ci-tbl-actions">
-                                                        {% if puede_eliminar_inscripcion %}
-                                                            <a href="{% url 'vat_inscripcion_delete' insc.pk %}"
-                                                               class="sisoc-btn sisoc-btn--delete">
-                                                                <i class="bi bi-trash"></i><span>Borrar</span>
-                                                            </a>
-                                                        {% endif %}
-                                                    </div>
-                                                </td>
-                                            {% endif %}
-                                        </tr>
-                                    {% empty %}
-                                        <tr class="ci-tbl-empty" data-empty-row>
-                                            <td colspan="{% if puede_gestionar_lote_inscriptos %}10{% elif puede_cambiar_inscripcion or puede_eliminar_inscripcion %}9{% else %}8{% endif %}">
-                                                Sin inscriptos aún. Inscribí ciudadanos a esta comisión para verlos aquí.
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                    <tr class="ci-tbl-empty d-none" data-no-results-row>
-                                        <td colspan="{% if puede_gestionar_lote_inscriptos %}10{% elif puede_cambiar_inscripcion or puede_eliminar_inscripcion %}9{% else %}8{% endif %}">
-                                            No se encontraron inscriptos para la búsqueda.
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="ci-tbl-foot">
-                            <span id="inscriptosConteo">
-                                Mostrando {{ inscripciones|length|yesno:"1,0" }}-{{ inscripciones|length }} de {{ inscripciones|length }}
-                            </span>
-                            <div class="ci-pager">
-                                <button type="button"
-                                        class="ci-pager-prev"
-                                        id="inscriptosPrev"
-                                        aria-label="Página anterior"
-                                        disabled>
-                                    <i class="bi bi-chevron-left"></i>
-                                </button>
-                                <span class="ci-pager-label" id="inscriptosPager">1 de 1</span>
-                                <button type="button"
-                                        class="ci-pager-next"
-                                        id="inscriptosNext"
-                                        aria-label="Página siguiente"
-                                        disabled>
-                                    <i class="bi bi-chevron-right"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {% if comision.acepta_lista_espera or lista_espera %}
+                {% if not solo_asistencia %}
                     <section class="sisoc-info-panel sisoc-info-panel--overflow"
-                             data-sisoc-panel="espera">
+                             data-sisoc-panel="inscriptos">
                         <div class="sisoc-metric-grid sisoc-metric-grid--pair">
                             <article class="sisoc-metric-card">
-                                <strong class="sisoc-metric-value">{{ comision.cupo_lista_espera|default:"—" }}</strong>
-                                <span class="sisoc-metric-label">Cupo de espera</span>
+                                <strong class="sisoc-metric-value">{{ comision.cupo }}</strong>
+                                <span class="sisoc-metric-label">Cupo total</span>
                             </article>
                             <article class="sisoc-metric-card">
-                                <strong class="sisoc-metric-value">{{ lista_espera|length }}</strong>
-                                <span class="sisoc-metric-label">En espera</span>
+                                <strong class="sisoc-metric-value">{{ inscripciones|length }}</strong>
+                                <span class="sisoc-metric-label">Inscriptos</span>
                             </article>
                         </div>
-                        <div class="ci-tbl-card" id="esperaTabla">
+                        <div class="ci-tbl-card" id="inscriptosTabla">
                             <div class="ci-tbl-head">
-                                <i class="bi bi-hourglass-split"></i>
-                                <span>Lista de espera</span>
+                                <i class="bi bi-people"></i>
+                                <span>Inscriptos</span>
+                            </div>
+                            {% if puede_gestionar_lote_inscriptos %}
+                                <form id="formInscriptosLote"
+                                      method="post"
+                                      action="{{ inscripcion_estado_lote_url }}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="estado" id="inscriptosLoteEstado" />
+                                </form>
+                            {% endif %}
+                            <div class="ci-tbl-toolbar">
+                                <div class="ci-tbl-search">
+                                    <i class="bi bi-search"></i>
+                                    <input type="text"
+                                           id="inscriptosBuscador"
+                                           placeholder="Buscar por nombre..."
+                                           autocomplete="off"
+                                           aria-label="Buscar inscriptos por nombre" />
+                                </div>
+                                {% if puede_gestionar_lote_inscriptos %}
+                                    <div class="ci-lote-acciones">
+                                        <span class="ci-lote-conteo" id="inscriptosLoteConteo">0 seleccionados</span>
+                                        <button type="button"
+                                                class="sisoc-btn sisoc-btn--add"
+                                                id="inscriptosLoteAceptar"
+                                                data-lote-estado="inscripta"
+                                                disabled>
+                                            <i class="bi bi-check-lg"></i><span>Aceptar</span>
+                                        </button>
+                                        <button type="button"
+                                                class="sisoc-btn sisoc-btn--delete"
+                                                id="inscriptosLoteRechazar"
+                                                data-lote-estado="rechazada"
+                                                disabled>
+                                            <i class="bi bi-x-lg"></i><span>Rechazar</span>
+                                        </button>
+                                    </div>
+                                {% endif %}
+                                {% if puede_agregar_inscripcion %}
+                                    <button type="button"
+                                            class="sisoc-btn sisoc-btn--add"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalInscripcionRapida">
+                                        <i class="bi bi-plus-lg"></i><span>Agregar inscripto</span>
+                                    </button>
+                                {% endif %}
+                                {% if export_preinscriptos_url %}
+                                    <a href="{{ export_preinscriptos_url }}"
+                                       class="sisoc-btn sisoc-btn--ghost">
+                                        <i class="bi bi-file-earmark-excel"></i><span>Descargar preinscriptos</span>
+                                    </a>
+                                {% endif %}
+                                {% if export_inscriptos_url %}
+                                    <a href="{{ export_inscriptos_url }}" class="sisoc-btn sisoc-btn--ghost">
+                                        <i class="bi bi-file-earmark-excel"></i><span>Descargar inscriptos</span>
+                                    </a>
+                                {% endif %}
                             </div>
                             <div class="ci-tbl-scroll">
                                 <table class="ci-tbl">
                                     <thead>
                                         <tr>
+                                            {% if puede_gestionar_lote_inscriptos %}
+                                                <th class="ci-tbl-col-check">
+                                                    <input type="checkbox"
+                                                           id="inscriptosLoteTodos"
+                                                           aria-label="Seleccionar todos los inscriptos" />
+                                                </th>
+                                            {% endif %}
                                             <th>Apellido</th>
                                             <th>Nombre</th>
                                             <th>Documento</th>
-                                            <th>Fecha</th>
+                                            <th>Tipo de alumno</th>
                                             <th>Estado</th>
-                                            {% if puede_cambiar_inscripcion %}<th class="ci-tbl-col-actions">Acciones</th>{% endif %}
+                                            <th>Email</th>
+                                            <th>Teléfono</th>
+                                            <th>Asistencia</th>
+                                            {% if puede_cambiar_inscripcion or puede_eliminar_inscripcion %}<th class="ci-tbl-col-actions">&nbsp;</th>{% endif %}
                                         </tr>
                                     </thead>
-                                    <tbody id="esperaTablaBody">
-                                        {% for insc in lista_espera %}
-                                            <tr class="ci-tbl-row">
+                                    <tbody id="inscriptosTablaBody">
+                                        {% for insc in inscripciones %}
+                                            <tr class="ci-tbl-row"
+                                                data-nombre="{{ insc.ciudadano.apellido|lower }} {{ insc.ciudadano.nombre|lower }}"
+                                                data-estado="{{ insc.estado }}">
+                                                {% if puede_gestionar_lote_inscriptos %}
+                                                    <td class="ci-tbl-col-check">
+                                                        <input type="checkbox"
+                                                               class="ci-lote-check"
+                                                               value="{{ insc.pk }}"
+                                                               aria-label="Seleccionar a {{ insc.ciudadano.apellido }} {{ insc.ciudadano.nombre }}" />
+                                                    </td>
+                                                {% endif %}
                                                 <td>
                                                     <a href="{% url 'vat_inscripcion_detail' insc.pk %}">{{ insc.ciudadano.apellido|default:"—" }}</a>
                                                 </td>
                                                 <td>{{ insc.ciudadano.nombre|default:"—" }}</td>
                                                 <td>{{ insc.ciudadano.get_tipo_documento_display }} {{ insc.ciudadano.numero_documento|default:"—" }}</td>
-                                                <td>{{ insc.fecha_inscripcion|date:"d/m/Y" }}</td>
                                                 <td>
-                                                    <span class="ci-pill ci-pill-yellow">{{ insc.get_estado_display }}</span>
+                                                    {% if insc.es_alumno_vat %}
+                                                        <span class="ci-pill ci-pill-teal">{{ insc.tipo_alumno }}</span>
+                                                    {% else %}
+                                                        <span class="ci-pill ci-pill-gray">{{ insc.tipo_alumno }}</span>
+                                                    {% endif %}
                                                 </td>
-                                                {% if puede_cambiar_inscripcion %}
+                                                <td>
+                                                    {% if insc.estado == "inscripta" or insc.estado == "validada_presencial" %}
+                                                        <span class="ci-pill ci-pill-green">{{ insc.get_estado_display }}</span>
+                                                    {% elif insc.estado == "pre_inscripta" %}
+                                                        <span class="ci-pill ci-pill-yellow">{{ insc.get_estado_display }}</span>
+                                                    {% elif insc.estado == "completada" %}
+                                                        <span class="ci-pill ci-pill-blue">{{ insc.get_estado_display }}</span>
+                                                    {% elif insc.estado == "rechazada" %}
+                                                        <span class="ci-pill ci-pill-red">{{ insc.get_estado_display }}</span>
+                                                    {% else %}
+                                                        <span class="ci-pill ci-pill-gray">{{ insc.get_estado_display }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ insc.ciudadano.email|default:"—" }}</td>
+                                                <td>{{ insc.ciudadano.telefono|default:"—" }}</td>
+                                                <td>
+                                                    {% if insc.porcentaje_asistencia is not None %}
+                                                        {{ insc.porcentaje_asistencia }}%
+                                                    {% else %}
+                                                        —
+                                                    {% endif %}
+                                                </td>
+                                                {% if puede_cambiar_inscripcion or puede_eliminar_inscripcion %}
                                                     <td>
                                                         <div class="ci-tbl-actions">
-                                                            <form method="post"
-                                                                  action="{% url inscripcion_estado_url_name insc.pk %}"
-                                                                  class="d-inline">
-                                                                {% csrf_token %}
-                                                                <input type="hidden" name="estado" value="inscripta" />
-                                                                <button type="submit"
-                                                                        class="sisoc-btn sisoc-btn--add"
-                                                                        title="Admitir desde la lista de espera">
-                                                                    <i class="bi bi-check-lg"></i><span>Admitir</span>
-                                                                </button>
-                                                            </form>
-                                                            <form method="post"
-                                                                  action="{% url inscripcion_estado_url_name insc.pk %}"
-                                                                  class="d-inline">
-                                                                {% csrf_token %}
-                                                                <input type="hidden" name="estado" value="rechazada" />
-                                                                <button type="submit"
-                                                                        class="sisoc-btn sisoc-btn--delete"
-                                                                        title="Rechazar inscripción en espera">
-                                                                    <i class="bi bi-x-lg"></i><span>Rechazar</span>
-                                                                </button>
-                                                            </form>
+                                                            {% if puede_eliminar_inscripcion %}
+                                                                <a href="{% url 'vat_inscripcion_delete' insc.pk %}"
+                                                                   class="sisoc-btn sisoc-btn--delete">
+                                                                    <i class="bi bi-trash"></i><span>Borrar</span>
+                                                                </a>
+                                                            {% endif %}
                                                         </div>
                                                     </td>
                                                 {% endif %}
                                             </tr>
                                         {% empty %}
-                                            <tr class="ci-tbl-empty">
-                                                <td colspan="{% if puede_cambiar_inscripcion %}6{% else %}5{% endif %}">
-                                                    Sin personas en espera. Cuando la comisión esté llena, las nuevas altas quedarán listadas aquí.
+                                            <tr class="ci-tbl-empty" data-empty-row>
+                                                <td colspan="{% if puede_gestionar_lote_inscriptos %}10{% elif puede_cambiar_inscripcion or puede_eliminar_inscripcion %}9{% else %}8{% endif %}">
+                                                    Sin inscriptos aún. Inscribí ciudadanos a esta comisión para verlos aquí.
                                                 </td>
                                             </tr>
                                         {% endfor %}
+                                        <tr class="ci-tbl-empty d-none" data-no-results-row>
+                                            <td colspan="{% if puede_gestionar_lote_inscriptos %}10{% elif puede_cambiar_inscripcion or puede_eliminar_inscripcion %}9{% else %}8{% endif %}">
+                                                No se encontraron inscriptos para la búsqueda.
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
                             <div class="ci-tbl-foot">
-                                <span id="esperaConteo">
-                                    Mostrando {{ lista_espera|length|yesno:"1,0" }}-{{ lista_espera|length }} de {{ lista_espera|length }}
+                                <span id="inscriptosConteo">
+                                    Mostrando {{ inscripciones|length|yesno:"1,0" }}-{{ inscripciones|length }} de {{ inscripciones|length }}
                                 </span>
                                 <div class="ci-pager">
                                     <button type="button"
                                             class="ci-pager-prev"
-                                            id="esperaPrev"
+                                            id="inscriptosPrev"
                                             aria-label="Página anterior"
                                             disabled>
                                         <i class="bi bi-chevron-left"></i>
                                     </button>
-                                    <span class="ci-pager-label" id="esperaPager">1 de 1</span>
+                                    <span class="ci-pager-label" id="inscriptosPager">1 de 1</span>
                                     <button type="button"
                                             class="ci-pager-next"
-                                            id="esperaNext"
+                                            id="inscriptosNext"
                                             aria-label="Página siguiente"
                                             disabled>
                                         <i class="bi bi-chevron-right"></i>
@@ -1697,6 +1598,115 @@
                             </div>
                         </div>
                     </section>
+                {% endif %}
+
+                {% if comision.acepta_lista_espera or lista_espera %}
+                    {% if not solo_asistencia %}
+                        <section class="sisoc-info-panel sisoc-info-panel--overflow"
+                                 data-sisoc-panel="espera">
+                            <div class="sisoc-metric-grid sisoc-metric-grid--pair">
+                                <article class="sisoc-metric-card">
+                                    <strong class="sisoc-metric-value">{{ comision.cupo_lista_espera|default:"—" }}</strong>
+                                    <span class="sisoc-metric-label">Cupo de espera</span>
+                                </article>
+                                <article class="sisoc-metric-card">
+                                    <strong class="sisoc-metric-value">{{ lista_espera|length }}</strong>
+                                    <span class="sisoc-metric-label">En espera</span>
+                                </article>
+                            </div>
+                            <div class="ci-tbl-card" id="esperaTabla">
+                                <div class="ci-tbl-head">
+                                    <i class="bi bi-hourglass-split"></i>
+                                    <span>Lista de espera</span>
+                                </div>
+                                <div class="ci-tbl-scroll">
+                                    <table class="ci-tbl">
+                                        <thead>
+                                            <tr>
+                                                <th>Apellido</th>
+                                                <th>Nombre</th>
+                                                <th>Documento</th>
+                                                <th>Fecha</th>
+                                                <th>Estado</th>
+                                                {% if puede_cambiar_inscripcion %}<th class="ci-tbl-col-actions">Acciones</th>{% endif %}
+                                            </tr>
+                                        </thead>
+                                        <tbody id="esperaTablaBody">
+                                            {% for insc in lista_espera %}
+                                                <tr class="ci-tbl-row">
+                                                    <td>
+                                                        <a href="{% url 'vat_inscripcion_detail' insc.pk %}">{{ insc.ciudadano.apellido|default:"—" }}</a>
+                                                    </td>
+                                                    <td>{{ insc.ciudadano.nombre|default:"—" }}</td>
+                                                    <td>{{ insc.ciudadano.get_tipo_documento_display }} {{ insc.ciudadano.numero_documento|default:"—" }}</td>
+                                                    <td>{{ insc.fecha_inscripcion|date:"d/m/Y" }}</td>
+                                                    <td>
+                                                        <span class="ci-pill ci-pill-yellow">{{ insc.get_estado_display }}</span>
+                                                    </td>
+                                                    {% if puede_cambiar_inscripcion %}
+                                                        <td>
+                                                            <div class="ci-tbl-actions">
+                                                                <form method="post"
+                                                                      action="{% url inscripcion_estado_url_name insc.pk %}"
+                                                                      class="d-inline">
+                                                                    {% csrf_token %}
+                                                                    <input type="hidden" name="estado" value="inscripta" />
+                                                                    <button type="submit"
+                                                                            class="sisoc-btn sisoc-btn--add"
+                                                                            title="Admitir desde la lista de espera">
+                                                                        <i class="bi bi-check-lg"></i><span>Admitir</span>
+                                                                    </button>
+                                                                </form>
+                                                                <form method="post"
+                                                                      action="{% url inscripcion_estado_url_name insc.pk %}"
+                                                                      class="d-inline">
+                                                                    {% csrf_token %}
+                                                                    <input type="hidden" name="estado" value="rechazada" />
+                                                                    <button type="submit"
+                                                                            class="sisoc-btn sisoc-btn--delete"
+                                                                            title="Rechazar inscripción en espera">
+                                                                        <i class="bi bi-x-lg"></i><span>Rechazar</span>
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        </td>
+                                                    {% endif %}
+                                                </tr>
+                                            {% empty %}
+                                                <tr class="ci-tbl-empty">
+                                                    <td colspan="{% if puede_cambiar_inscripcion %}6{% else %}5{% endif %}">
+                                                        Sin personas en espera. Cuando la comisión esté llena, las nuevas altas quedarán listadas aquí.
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="ci-tbl-foot">
+                                    <span id="esperaConteo">
+                                        Mostrando {{ lista_espera|length|yesno:"1,0" }}-{{ lista_espera|length }} de {{ lista_espera|length }}
+                                    </span>
+                                    <div class="ci-pager">
+                                        <button type="button"
+                                                class="ci-pager-prev"
+                                                id="esperaPrev"
+                                                aria-label="Página anterior"
+                                                disabled>
+                                            <i class="bi bi-chevron-left"></i>
+                                        </button>
+                                        <span class="ci-pager-label" id="esperaPager">1 de 1</span>
+                                        <button type="button"
+                                                class="ci-pager-next"
+                                                id="esperaNext"
+                                                aria-label="Página siguiente"
+                                                disabled>
+                                            <i class="bi bi-chevron-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    {% endif %}
                 {% endif %}
 
                 {# SESIONES #}
@@ -1820,123 +1830,125 @@
                 </section>
 
                 {# HORARIOS #}
-                <section class="sisoc-info-panel" data-sisoc-panel="horarios">
-                    <div class="ci-tbl-card" id="horariosTabla">
-                        <div class="ci-tbl-head">
-                            <i class="bi bi-clock-history"></i>
-                            <span>Horarios</span>
-                        </div>
-                        {% if puede_agregar_comision_horario %}
-                            <div class="ci-tbl-toolbar">
-                                <span></span>
-                                <button type="button"
-                                        class="sisoc-btn sisoc-btn--add"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#modalComisionHorario">
-                                    <i class="bi bi-plus-lg"></i><span>Agregar</span>
-                                </button>
+                {% if not solo_asistencia %}
+                    <section class="sisoc-info-panel" data-sisoc-panel="horarios">
+                        <div class="ci-tbl-card" id="horariosTabla">
+                            <div class="ci-tbl-head">
+                                <i class="bi bi-clock-history"></i>
+                                <span>Horarios</span>
                             </div>
-                        {% endif %}
-                        <div class="ci-tbl-scroll">
-                            <table class="ci-tbl">
-                                <thead>
-                                    <tr>
-                                        <th>Día</th>
-                                        <th>Desde</th>
-                                        <th>Hasta</th>
-                                        <th>Aula / Espacio</th>
-                                        <th>Estado</th>
-                                        {% if puede_editar_comision_horario or puede_eliminar_comision_horario %}
-                                            <th class="ci-tbl-col-actions">Acciones</th>
-                                        {% endif %}
-                                    </tr>
-                                </thead>
-                                <tbody id="horariosTablaBody">
-                                    {% for horario in horarios %}
-                                        <tr class="ci-tbl-row">
-                                            <td>{{ horario.dia_semana }}</td>
-                                            <td>{{ horario.hora_desde|time:"H:i" }} hs</td>
-                                            <td>{{ horario.hora_hasta|time:"H:i" }} hs</td>
-                                            <td>{{ horario.aula_espacio|default:"—" }}</td>
-                                            <td>
-                                                <span class="ci-pill {% if horario.vigente %}ci-pill-green{% else %}ci-pill-gray{% endif %}">
-                                                    {% if horario.vigente %}
-                                                        Vigente
-                                                    {% else %}
-                                                        Inactivo
-                                                    {% endif %}
-                                                </span>
-                                            </td>
+                            {% if puede_agregar_comision_horario %}
+                                <div class="ci-tbl-toolbar">
+                                    <span></span>
+                                    <button type="button"
+                                            class="sisoc-btn sisoc-btn--add"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalComisionHorario">
+                                        <i class="bi bi-plus-lg"></i><span>Agregar</span>
+                                    </button>
+                                </div>
+                            {% endif %}
+                            <div class="ci-tbl-scroll">
+                                <table class="ci-tbl">
+                                    <thead>
+                                        <tr>
+                                            <th>Día</th>
+                                            <th>Desde</th>
+                                            <th>Hasta</th>
+                                            <th>Aula / Espacio</th>
+                                            <th>Estado</th>
                                             {% if puede_editar_comision_horario or puede_eliminar_comision_horario %}
-                                                <td>
-                                                    <div class="ci-tbl-actions">
-                                                        {% if puede_editar_comision_horario %}
-                                                            <button type="button"
-                                                                    class="sisoc-btn sisoc-btn--edit"
-                                                                    data-bs-toggle="modal"
-                                                                    data-bs-target="#modalComisionHorario"
-                                                                    data-horario-mode="edit"
-                                                                    data-edit-url="{% url horario_update_url_name horario.pk %}"
-                                                                    data-dia-semana-id="{{ horario.dia_semana_id }}"
-                                                                    data-hora-desde="{{ horario.hora_desde|time:'H:i' }}"
-                                                                    data-hora-hasta="{{ horario.hora_hasta|time:'H:i' }}"
-                                                                    data-aula-espacio="{{ horario.aula_espacio|default:'' }}"
-                                                                    data-vigente="{{ horario.vigente|yesno:'1,0' }}"
-                                                                    title="Editar horario"
-                                                                    aria-label="Editar horario {{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} a {{ horario.hora_hasta|time:'H:i' }}">
-                                                                <i class="bi bi-pencil-square"></i><span>Editar</span>
-                                                            </button>
-                                                        {% endif %}
-                                                        {% if puede_eliminar_comision_horario %}
-                                                            <button type="button"
-                                                                    class="sisoc-btn sisoc-btn--delete"
-                                                                    data-bs-toggle="modal"
-                                                                    data-bs-target="#modalEliminarComisionHorario"
-                                                                    data-delete-url="{% url horario_delete_url_name horario.pk %}"
-                                                                    data-horario-resumen="{{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} - {{ horario.hora_hasta|time:'H:i' }}{% if horario.aula_espacio %} · {{ horario.aula_espacio }}{% endif %}"
-                                                                    title="Eliminar horario"
-                                                                    aria-label="Eliminar horario {{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} a {{ horario.hora_hasta|time:'H:i' }}">
-                                                                <i class="bi bi-trash"></i><span>Borrar</span>
-                                                            </button>
-                                                        {% endif %}
-                                                    </div>
-                                                </td>
+                                                <th class="ci-tbl-col-actions">Acciones</th>
                                             {% endif %}
                                         </tr>
-                                    {% empty %}
-                                        <tr class="ci-tbl-empty">
-                                            <td colspan="{% if puede_editar_comision_horario or puede_eliminar_comision_horario %}6{% else %}5{% endif %}">
-                                                Sin horarios cargados. Agregá un horario para esta comisión.
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="ci-tbl-foot">
-                            <span id="horariosConteo">
-                                Mostrando {{ horarios|length|yesno:"1,0" }}-{{ horarios|length }} de {{ horarios|length }}
-                            </span>
-                            <div class="ci-pager">
-                                <button type="button"
-                                        class="ci-pager-prev"
-                                        id="horariosPrev"
-                                        aria-label="Página anterior"
-                                        disabled>
-                                    <i class="bi bi-chevron-left"></i>
-                                </button>
-                                <span class="ci-pager-label" id="horariosPager">1 de 1</span>
-                                <button type="button"
-                                        class="ci-pager-next"
-                                        id="horariosNext"
-                                        aria-label="Página siguiente"
-                                        disabled>
-                                    <i class="bi bi-chevron-right"></i>
-                                </button>
+                                    </thead>
+                                    <tbody id="horariosTablaBody">
+                                        {% for horario in horarios %}
+                                            <tr class="ci-tbl-row">
+                                                <td>{{ horario.dia_semana }}</td>
+                                                <td>{{ horario.hora_desde|time:"H:i" }} hs</td>
+                                                <td>{{ horario.hora_hasta|time:"H:i" }} hs</td>
+                                                <td>{{ horario.aula_espacio|default:"—" }}</td>
+                                                <td>
+                                                    <span class="ci-pill {% if horario.vigente %}ci-pill-green{% else %}ci-pill-gray{% endif %}">
+                                                        {% if horario.vigente %}
+                                                            Vigente
+                                                        {% else %}
+                                                            Inactivo
+                                                        {% endif %}
+                                                    </span>
+                                                </td>
+                                                {% if puede_editar_comision_horario or puede_eliminar_comision_horario %}
+                                                    <td>
+                                                        <div class="ci-tbl-actions">
+                                                            {% if puede_editar_comision_horario %}
+                                                                <button type="button"
+                                                                        class="sisoc-btn sisoc-btn--edit"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#modalComisionHorario"
+                                                                        data-horario-mode="edit"
+                                                                        data-edit-url="{% url horario_update_url_name horario.pk %}"
+                                                                        data-dia-semana-id="{{ horario.dia_semana_id }}"
+                                                                        data-hora-desde="{{ horario.hora_desde|time:'H:i' }}"
+                                                                        data-hora-hasta="{{ horario.hora_hasta|time:'H:i' }}"
+                                                                        data-aula-espacio="{{ horario.aula_espacio|default:'' }}"
+                                                                        data-vigente="{{ horario.vigente|yesno:'1,0' }}"
+                                                                        title="Editar horario"
+                                                                        aria-label="Editar horario {{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} a {{ horario.hora_hasta|time:'H:i' }}">
+                                                                    <i class="bi bi-pencil-square"></i><span>Editar</span>
+                                                                </button>
+                                                            {% endif %}
+                                                            {% if puede_eliminar_comision_horario %}
+                                                                <button type="button"
+                                                                        class="sisoc-btn sisoc-btn--delete"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#modalEliminarComisionHorario"
+                                                                        data-delete-url="{% url horario_delete_url_name horario.pk %}"
+                                                                        data-horario-resumen="{{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} - {{ horario.hora_hasta|time:'H:i' }}{% if horario.aula_espacio %} · {{ horario.aula_espacio }}{% endif %}"
+                                                                        title="Eliminar horario"
+                                                                        aria-label="Eliminar horario {{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} a {{ horario.hora_hasta|time:'H:i' }}">
+                                                                    <i class="bi bi-trash"></i><span>Borrar</span>
+                                                                </button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </td>
+                                                {% endif %}
+                                            </tr>
+                                        {% empty %}
+                                            <tr class="ci-tbl-empty">
+                                                <td colspan="{% if puede_editar_comision_horario or puede_eliminar_comision_horario %}6{% else %}5{% endif %}">
+                                                    Sin horarios cargados. Agregá un horario para esta comisión.
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="ci-tbl-foot">
+                                <span id="horariosConteo">
+                                    Mostrando {{ horarios|length|yesno:"1,0" }}-{{ horarios|length }} de {{ horarios|length }}
+                                </span>
+                                <div class="ci-pager">
+                                    <button type="button"
+                                            class="ci-pager-prev"
+                                            id="horariosPrev"
+                                            aria-label="Página anterior"
+                                            disabled>
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <span class="ci-pager-label" id="horariosPager">1 de 1</span>
+                                    <button type="button"
+                                            class="ci-pager-next"
+                                            id="horariosNext"
+                                            aria-label="Página siguiente"
+                                            disabled>
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
+                {% endif %}
 
                 {# RESULTADOS #}
                 {% if puede_gestionar_resultados %}
@@ -2040,12 +2052,14 @@
                                         <button type="button" class="ci-filtro-btn" data-filtro="pendientes">A calificar</button>
                                         <button type="button" class="ci-filtro-btn" data-filtro="finalizados">Finalizados</button>
                                     </div>
-                                    <button type="button"
-                                            class="sisoc-btn sisoc-btn--add"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#modalProfesorNuevo">
-                                        <i class="bi bi-person-plus"></i><span>Agregar profesor</span>
-                                    </button>
+                                    {% if puede_gestionar_comision %}
+                                        <button type="button"
+                                                class="sisoc-btn sisoc-btn--add"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalProfesorNuevo">
+                                            <i class="bi bi-person-plus"></i><span>Agregar profesor</span>
+                                        </button>
+                                    {% endif %}
                                 </div>
                                 <div class="ci-tbl-scroll">
                                     <table class="ci-tbl">
@@ -2133,23 +2147,27 @@
                         hidden>
                     <span>Información</span>
                 </button>
-                <button type="button"
-                        class="sisoc-side-tab"
-                        data-sisoc-tab-target="inscriptos"
-                        aria-selected="false">
-                    <span>Inscriptos
-                        {% if inscripciones %}({{ inscripciones|length }}){% endif %}
-                    </span>
-                </button>
-                {% if comision.acepta_lista_espera or lista_espera %}
+                {% if not solo_asistencia %}
                     <button type="button"
                             class="sisoc-side-tab"
-                            data-sisoc-tab-target="espera"
+                            data-sisoc-tab-target="inscriptos"
                             aria-selected="false">
-                        <span>Lista de espera
-                            {% if lista_espera %}({{ lista_espera|length }}){% endif %}
+                        <span>Inscriptos
+                            {% if inscripciones %}({{ inscripciones|length }}){% endif %}
                         </span>
                     </button>
+                {% endif %}
+                {% if comision.acepta_lista_espera or lista_espera %}
+                    {% if not solo_asistencia %}
+                        <button type="button"
+                                class="sisoc-side-tab"
+                                data-sisoc-tab-target="espera"
+                                aria-selected="false">
+                            <span>Lista de espera
+                                {% if lista_espera %}({{ lista_espera|length }}){% endif %}
+                            </span>
+                        </button>
+                    {% endif %}
                 {% endif %}
                 <button type="button"
                         class="sisoc-side-tab"
@@ -2159,14 +2177,16 @@
                         {% if sesiones %}({{ sesiones|length }}){% endif %}
                     </span>
                 </button>
-                <button type="button"
-                        class="sisoc-side-tab"
-                        data-sisoc-tab-target="horarios"
-                        aria-selected="false">
-                    <span>Horarios
-                        {% if horarios %}({{ horarios|length }}){% endif %}
-                    </span>
-                </button>
+                {% if not solo_asistencia %}
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="horarios"
+                            aria-selected="false">
+                        <span>Horarios
+                            {% if horarios %}({{ horarios|length }}){% endif %}
+                        </span>
+                    </button>
+                {% endif %}
                 {% if puede_gestionar_resultados %}
                     <button type="button"
                             class="sisoc-side-tab"
@@ -2269,6 +2289,16 @@
                                         <label for="{{ ciudadano_rapido_form.sexo.id_for_label }}"
                                                class="form-label">Sexo</label>
                                         {{ ciudadano_rapido_form.sexo }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ ciudadano_rapido_form.telefono.id_for_label }}"
+                                               class="form-label">Teléfono (opcional)</label>
+                                        {{ ciudadano_rapido_form.telefono }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ ciudadano_rapido_form.email.id_for_label }}"
+                                               class="form-label">Mail (opcional)</label>
+                                        {{ ciudadano_rapido_form.email }}
                                     </div>
                                 </div>
                             </div>

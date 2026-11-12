@@ -39,6 +39,9 @@ from VAT.models import (
 from VAT.services.inet_workflow import guardar_asistencia
 from VAT.services.access_scope import (
     can_user_edit_centro,
+    centros_para_asistencia,
+    es_perfil_solo_asistencia,
+    puede_cargar_asistencia_resultados,
     filter_centros_queryset_for_management,
     filter_centros_queryset_for_user,
 )
@@ -59,6 +62,16 @@ def _scoped_centros_ids(user):
     return filter_centros_queryset_for_management(
         Centro.objects.all(), user
     ).values_list("id", flat=True)
+
+
+def _centros_asistencia_ids(user):
+    return centros_para_asistencia(user).values_list("id", flat=True)
+
+
+def _comisiones_asistencia_queryset(user):
+    return ComisionCurso.objects.select_related("curso__centro").filter(
+        curso__centro_id__in=_centros_asistencia_ids(user)
+    )
 
 
 def _readable_centros_ids(user):
@@ -477,9 +490,8 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
         total_inscriptos = sum(
             1 for inscripcion in inscripciones if inscripcion.estado != "en_espera"
         )
-        puede_gestionar_resultados = (
-            puede_gestionar_comision
-            and self.request.user.has_perm("VAT.change_inscripcion")
+        puede_gestionar_resultados = puede_cargar_asistencia_resultados(
+            self.request.user, comision.curso.centro
         )
         alumnos_resultados = list(
             ResultadosComisionService.alumnos_calificables(comision)
@@ -574,8 +586,8 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                 and self.request.user.has_perm("VAT.change_inscripcion"),
                 "puede_eliminar_inscripcion": puede_gestionar_comision
                 and self.request.user.has_perm("VAT.delete_inscripcion"),
-                "puede_gestionar_asistencia": puede_gestionar_comision
-                and self.request.user.has_perm("VAT.change_inscripcion"),
+                "solo_asistencia": es_perfil_solo_asistencia(self.request.user),
+                "puede_gestionar_asistencia": puede_gestionar_resultados,
                 "puede_agregar_comision_horario": puede_gestionar_comision
                 and self.request.user.has_perm("VAT.add_comisionhorario"),
                 "puede_editar_comision_horario": puede_gestionar_comision
@@ -663,6 +675,8 @@ class _ComisionCursoNominaExportView(LoginRequiredMixin, View):
         return queryset
 
     def get(self, request, pk):
+        if es_perfil_solo_asistencia(request.user):
+            raise PermissionDenied
         comision = get_object_or_404(
             _readable_comisiones_curso_queryset(request.user),
             pk=pk,
@@ -708,7 +722,7 @@ class ComisionCursoResultadosView(LoginRequiredMixin, View):
 
     def post(self, request, pk):
         comision = get_object_or_404(
-            _scoped_comisiones_curso_queryset(request.user), pk=pk
+            _comisiones_asistencia_queryset(request.user), pk=pk
         )
         detail_url = reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
 
@@ -759,7 +773,7 @@ class ProfesorCentroBuscarView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
         comision = get_object_or_404(
-            _scoped_comisiones_curso_queryset(request.user), pk=pk
+            _comisiones_asistencia_queryset(request.user), pk=pk
         )
         query = (request.GET.get("q") or "").strip()
         profesores = ProfesorCentro.objects.filter(centro_id=comision.curso.centro_id)
@@ -973,7 +987,7 @@ class AsistenciaSesionCursoView(LoginRequiredMixin, TemplateView):
                 "comision_curso__curso__centro",
                 "horario__dia_semana",
             ).filter(
-                comision_curso__curso__centro_id__in=_scoped_centros_ids(
+                comision_curso__curso__centro_id__in=_centros_asistencia_ids(
                     self.request.user
                 )
             ),

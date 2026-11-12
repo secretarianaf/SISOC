@@ -1,5 +1,10 @@
 /* eslint-disable react-refresh/only-export-components -- the screen exports its validator and script seam for the unit tests. */
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { ConveniosSection, conveniosSectionValid } from "./organizacionConvenio";
+import { DocumentosSection, documentosSectionValid } from "./organizacionDocumentos";
+import { FirmantesSection, firmantesSectionValid } from "./organizacionFirmantes";
+import { RendicionesFiltro, rendicionesFiltroValid, RendicionesTable, rendicionesSectionValid } from "./organizacionRendiciones";
 import { FlashToasts } from "./organizacionesForm";
 import { safeInternalPath } from "../webAccess";
 import { record, renderMain, text, useMainResource } from "./MainFrame";
@@ -13,12 +18,15 @@ import { record, renderMain, text, useMainResource } from "./MainFrame";
  * documentation script of the native page runs on it once, as it does there.
  */
 type Message = { message: string; level: "success" | "error" | "warning" | "info" };
-export type OrganizacionLegajoData = { title: string; html: string; scripts: string[]; messages: Message[] };
+/** A section React draws itself in the placeholder `<div data-legajo-seccion="N">` of `html`. */
+export type LegajoSection = { kind: string } & Record<string, unknown>;
+export type OrganizacionLegajoData = { title: string; html: string; sections: LegajoSection[]; scripts: string[]; messages: Message[] };
 
 const LEVELS = ["success", "error", "warning", "info"];
 
 export function legajoValid(v: unknown): v is OrganizacionLegajoData {
   return record(v) && text(v.title) && text(v.html) &&
+    Array.isArray(v.sections) && v.sections.every((x) => record(x) && text(x.kind)) &&
     Array.isArray(v.scripts) && v.scripts.every((s) => safeInternalPath(s) !== null) &&
     Array.isArray(v.messages) && v.messages.every((m) => record(m) && text(m.message) && LEVELS.includes(m.level as string));
 }
@@ -45,8 +53,21 @@ export const legajoScripts = {
 // The native script binds its handlers on `DOMContentLoaded`: run the same three initializers on the fragment.
 const INITIALIZERS = ["orgInitRectificarModal", "orgInitDocumentoAdicional"];
 
-function LegajoFragment({ html, scripts }: { html: string; scripts: string[] }) {
+function sectionView(section: LegajoSection): ReactNode {
+  if (section.kind === "convenios" && conveniosSectionValid(section)) return <ConveniosSection section={section} />;
+  if (section.kind === "documentos" && documentosSectionValid(section)) return <DocumentosSection section={section} />;
+  if (section.kind === "firmantes" && firmantesSectionValid(section)) return <FirmantesSection section={section} />;
+  if (section.kind === "rendiciones" && rendicionesSectionValid(section)) return <RendicionesTable section={section} />;
+  if (section.kind === "rendiciones_filtro" && rendicionesFiltroValid(section)) return <RendicionesFiltro section={section} />;
+  return null;
+}
+
+function LegajoFragment({ html, scripts, sections }: { html: string; scripts: string[]; sections: LegajoSection[] }) {
   const root = useRef<HTMLDivElement>(null);
+  const [hosts, setHosts] = useState<HTMLElement[]>([]);
+  useLayoutEffect(() => {
+    setHosts(Array.from(root.current?.querySelectorAll<HTMLElement>("[data-legajo-seccion]") ?? []));
+  }, [html]);
   useEffect(() => {
     let active = true;
     Promise.all(scripts.map((src) => legajoScripts.load(src))).then(() => {
@@ -58,7 +79,17 @@ function LegajoFragment({ html, scripts }: { html: string; scripts: string[] }) 
     }).catch(() => undefined);
     return () => { active = false; };
   }, [html, scripts]);
-  return <div ref={root} dangerouslySetInnerHTML={{ __html: html }} />;
+  // One element per `html`: a re-render with a fresh props object would reset the innerHTML and detach the section hosts.
+  const fragment = useMemo(() => <div ref={root} dangerouslySetInnerHTML={{ __html: html }} />, [html]);
+  return (
+    <>
+      {fragment}
+      {hosts.map((host) => {
+        const section = sections[Number(host.dataset.legajoSeccion)];
+        return section ? createPortal(sectionView(section), host, host.dataset.legajoSeccion) : null;
+      })}
+    </>
+  );
 }
 
 export default function OrganizacionLegajo({ id }: { id: number }) {
@@ -69,7 +100,7 @@ export default function OrganizacionLegajo({ id }: { id: number }) {
     content: (
       <>
         <FlashToasts messages={data.messages} />
-        <LegajoFragment html={data.html} scripts={data.scripts} />
+        <LegajoFragment html={data.html} scripts={data.scripts} sections={data.sections} />
       </>
     ),
   }));

@@ -860,3 +860,10 @@ y el include nativo de filas; el CSV sigue en `/organizaciones/exportar`.
 `/organizaciones/detalle/<pk>` monta el fragmento nativo del legajo que sirve
 `/api/web/comedores/organizaciones/<pk>/`. Ver
 [registro](../registro/cambios/2026-T4/2026-11-11-2785-react-organizaciones-listado.md).
+Organizaciones (O01 a O04): las secciones del legajo (convenio, documentación,
+firmantes, rendiciones) llegan en `sections` y React las monta en los marcadores
+`data-legajo-seccion` del fragmento; el convenio, el historial de documentos,
+los firmantes/avales y el detalle de rendición tienen página propia
+(`routes/organizacion{Convenio,Documentos,Firmantes,Rendiciones}.tsx`) sobre las
+vistas nativas. Ver
+[registro](../registro/cambios/2026-T4/2026-11-12-2785-react-organizaciones-secciones.md).

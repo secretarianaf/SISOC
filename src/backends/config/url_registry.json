@@ -3370,9 +3370,39 @@
   "regex": "^organizaciones/ajax/\\Z"
  },
  {
+  "name": "organizaciones_web_avales_baja",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/avales/(?P<pk>[0-9]+)/baja/\\Z"
+ },
+ {
+  "name": "organizaciones_web_avales_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/avales/\\Z"
+ },
+ {
+  "name": "organizaciones_web_avales_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/avales/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "organizaciones_web_avales_formulario_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/avales/formulario/\\Z"
+ },
+ {
+  "name": "organizaciones_web_avales_formulario_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/avales/(?P<pk>[0-9]+)/formulario/\\Z"
+ },
+ {
   "name": "organizaciones_web_baja",
   "namespace": "",
   "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/baja/\\Z"
+ },
+ {
+  "name": "organizaciones_web_convenio",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/proyectos/(?P<proyecto_id>[0-9]+)/convenio/\\Z"
  },
  {
   "name": "organizaciones_web_crear",
@@ -3385,9 +3415,64 @@
   "regex": "^api/web/comedores/organizaciones/cuil/\\Z"
  },
  {
+  "name": "organizaciones_web_documento_estado",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/documentacion/(?P<archivo_id>[0-9]+)/estado/\\Z"
+ },
+ {
+  "name": "organizaciones_web_documento_gde",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/documentacion/(?P<archivo_id>[0-9]+)/numero\\-gde/\\Z"
+ },
+ {
+  "name": "organizaciones_web_documento_historial",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/documentacion/(?P<documentacion_id>[0-9]+)/historial/\\Z"
+ },
+ {
+  "name": "organizaciones_web_documento_personalizada",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/documentacion/personalizada/\\Z"
+ },
+ {
+  "name": "organizaciones_web_documento_subir",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/documentacion/(?P<documentacion_id>[0-9]+)/subir/\\Z"
+ },
+ {
+  "name": "organizaciones_web_documento_vencimiento",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/documentacion/(?P<archivo_id>[0-9]+)/vencimiento/\\Z"
+ },
+ {
   "name": "organizaciones_web_editar",
   "namespace": "",
   "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "organizaciones_web_firmantes_baja",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/firmantes/(?P<pk>[0-9]+)/baja/\\Z"
+ },
+ {
+  "name": "organizaciones_web_firmantes_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/firmantes/\\Z"
+ },
+ {
+  "name": "organizaciones_web_firmantes_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/firmantes/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "organizaciones_web_firmantes_formulario_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/firmantes/formulario/\\Z"
+ },
+ {
+  "name": "organizaciones_web_firmantes_formulario_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/firmantes/(?P<pk>[0-9]+)/formulario/\\Z"
  },
  {
   "name": "organizaciones_web_formulario",
@@ -3408,6 +3493,11 @@
   "name": "organizaciones_web_listado",
   "namespace": "",
   "regex": "^api/web/comedores/organizaciones/listado/\\Z"
+ },
+ {
+  "name": "organizaciones_web_rendicion_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/rendiciones/(?P<rendicion_id>[0-9]+)/\\Z"
  },
  {
   "name": "organizaciones_web_subtipos",

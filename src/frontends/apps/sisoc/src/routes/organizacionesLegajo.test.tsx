@@ -15,6 +15,7 @@ const SCRIPT = "/static/custom/js/organizacionesDocumentos.js";
 const legajo = (over: Record<string, unknown> = {}) => ({
   title: "Organización: Ñandú <Sur>",
   html: '<div class="legajo-header"><h1>Ñandú &lt;Sur&gt;</h1><a href="/organizaciones/editar/8" class="btn">Editar</a></div>',
+  sections: [],
   scripts: [SCRIPT],
   messages: [],
   ...over,
@@ -58,6 +59,49 @@ describe("Organizaciones legajo route", () => {
     expect(init).toHaveBeenCalledTimes(2);
     expect(await screen.findByText("Se reinicio la documentacion del legajo porque cambio el Tipo de Entidad.")).toBeTruthy();
     for (const name of ["orgInitRectificarModal", "orgInitDocumentoAdicional", "orgBindDynamicHandlers"]) delete (window as unknown as Record<string, unknown>)[name];
+  });
+
+  it("mounts each React section in its placeholder, keeping the native HTML around it", async () => {
+    serve(legajo({
+      html: '<h1>Legajo</h1><div data-legajo-seccion="0"></div><p id="after">Después</p>',
+      sections: [{
+        kind: "convenios", program: "Línea Secos", color: "secos", is_tradicional: false, can_manage: true,
+        rows: [
+          { project: { id: 5, code: "P-1" }, url: "/organizaciones/proyectos/5/convenio/", summary: { suma: "$950", total: "$1.000", diferencia: "$50", coincide: false },
+            convenio: { number: "CV-1", date: "15/01/2026", months: 12, total: "$1.000", imprevistos: "-", components: [{ label: "Componente SIPH", amount: "$150" }] } },
+          { project: { id: 6, code: "P-2" }, url: "/organizaciones/proyectos/6/convenio/", summary: null, convenio: null },
+        ],
+      }],
+    }));
+    window.history.replaceState({}, "", "/organizaciones/detalle/8");
+    render(<App />);
+    expect(await screen.findByRole("heading", { level: 5, name: "Datos de Convenio · Línea Secos" })).toBeTruthy();
+    const host = document.querySelector("[data-legajo-seccion='0']");
+    expect(host?.querySelector("h5")).toBeTruthy();
+    expect(host?.nextElementSibling?.id).toBe("after");
+    expect(screen.getByText("Revisar montos")).toBeTruthy();
+    expect(screen.getByText("Sin cargar")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Editar convenio" }).getAttribute("href")).toBe("/organizaciones/proyectos/5/convenio/");
+    expect(screen.getByRole("link", { name: "Cargar convenio" }).getAttribute("href")).toBe("/organizaciones/proyectos/6/convenio/");
+    expect(screen.getByText("Imprevistos no aplica: es solo para Línea Tradicional.")).toBeTruthy();
+  });
+
+  it("mounts the documents section next to the convenios one, each in its own placeholder", async () => {
+    serve(legajo({
+      html: '<div data-legajo-seccion="0"></div><hr id="mid"><div data-legajo-seccion="1"></div>',
+      sections: [
+        { kind: "documentos", organization_id: 8, category: "Tipo documental", can_validate: false, can_send: false, rows: [] },
+        { kind: "convenios", program: "Línea Secos", color: "secos", is_tradicional: false, can_manage: false, rows: [] },
+        { kind: "desconocida" },
+      ],
+    }));
+    window.history.replaceState({}, "", "/organizaciones/detalle/8");
+    render(<App />);
+    expect(await screen.findByText("No hay documentación configurada.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Agregar documento adicional/ })).toBeNull();
+    expect(document.querySelector("[data-legajo-seccion='0'] #documentacion")).toBeTruthy();
+    expect(document.querySelector("[data-legajo-seccion='1'] .card-secos")).toBeTruthy();
+    expect(screen.getByText("No hay proyectos en esta línea.")).toBeTruthy();
   });
 
   it("injects each native script one time", async () => {

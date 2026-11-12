@@ -11,8 +11,11 @@ own prefix ``/organizaciones/react/``. The CSV stays the native
 
 from pathlib import Path
 
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import get_object_or_404
 from django.urls import path
 from django.utils.decorators import method_decorator
+from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from core.decorators import permissions_any_required
@@ -24,12 +27,22 @@ from comedores.web_preview_catalogos import (
 )
 from gestion_organizaciones.urls import ORGANIZACION_DOCUMENTACION_PERMS
 from gestion_organizaciones.views import (
+    AvalCreateView,
+    AvalDeleteView,
+    AvalUpdateView,
+    ConvenioProyectoView,
+    FirmanteCreateView,
+    FirmanteDeleteView,
+    FirmanteUpdateView,
     OrganizacionCreateView,
     OrganizacionDeleteView,
     OrganizacionDetailView,
     OrganizacionListView,
+    OrganizacionRendicionDetailView,
     OrganizacionUpdateView,
+    _filtrar_organizaciones_por_dupla,
 )
+from organizaciones.models import DocumentacionOrganizacion, Organizacion
 
 PUBLIC_ASSETS = "/organizaciones/react/assets/"
 
@@ -82,6 +95,62 @@ class EliminarEntry(OrganizacionDeleteView):
         return _index(request, self.index_bytes)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ConvenioEntry(ConvenioProyectoView):
+    """O01: the native lookup and its "sin línea" redirect (with message) come first."""
+
+    index_bytes = b""
+    http_method_names = ["get", "head"]
+
+    def get(self, request, *args, **kwargs):
+        self.get_proyecto()
+        return self._sin_linea() or _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class HistorialEntry(LoginRequiredMixin, View):
+    """O02: the native lookups of ``historial_documento_organizacion`` (404 outside the dupla)."""
+
+    index_bytes = b""
+
+    def get(self, request, organizacion_id, documentacion_id):
+        get_object_or_404(
+            _filtrar_organizaciones_por_dupla(Organizacion.objects.all(), request.user),
+            pk=organizacion_id,
+        )
+        get_object_or_404(DocumentacionOrganizacion, pk=documentacion_id)
+        return _index(request, self.index_bytes)
+
+
+def _entrada_firmante(vista, *, crea):
+    """O03: a form/confirmation entry; React saves through the web API (no native POST)."""
+
+    @method_decorator(ensure_csrf_cookie, name="dispatch")
+    class Entry(vista):
+        index_bytes = b""
+        http_method_names = ["get", "head"]
+
+        def get(self, request, *args, **kwargs):
+            if not crea:
+                self.get_object()
+            return _index(request, self.index_bytes)
+
+    Entry.__name__ = f"{vista.__name__}Entry"
+    return Entry
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class RendicionEntry(OrganizacionRendicionDetailView):
+    """O04: the native queryset (visible organization, 404 otherwise)."""
+
+    index_bytes = b""
+    http_method_names = ["get", "head"]
+
+    def get(self, request, *args, **kwargs):
+        self.get_object()
+        return _index(request, self.index_bytes)
+
+
 def organizaciones_preview_patterns(build_directory):
     """Freeze an explicit local ``apps/sisoc`` build for a disposable preview URLconf.
 
@@ -104,7 +173,37 @@ def organizaciones_preview_patterns(build_directory):
         LegajoEntry.as_view(index_bytes=index_bytes)
     )
     abm = permissions_any_required(["organizaciones.view_organizacion"])
+    documentos = permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)
+    firmantes = [
+        ("firmante/crear/<int:organizacion_pk>", FirmanteCreateView, True),
+        ("firmante/editar/<int:pk>", FirmanteUpdateView, False),
+        ("firmante/eliminar/<int:pk>", FirmanteDeleteView, False),
+        ("aval/crear/<int:organizacion_pk>", AvalCreateView, True),
+        ("aval/editar/<int:pk>", AvalUpdateView, False),
+        ("aval/eliminar/<int:pk>", AvalDeleteView, False),
+    ]
     return [
+        path(
+            "organizaciones/proyectos/<int:proyecto_id>/convenio/",
+            abm(ConvenioEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "organizaciones/<int:organizacion_id>/documentacion/<int:documentacion_id>/historial/",
+            documentos(HistorialEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "organizaciones/<int:organizacion_id>/rendiciones/<int:pk>/detalle/",
+            documentos(RendicionEntry.as_view(index_bytes=index_bytes)),
+        ),
+        *[
+            path(
+                f"organizaciones/{ruta}",
+                abm(
+                    _entrada_firmante(vista, crea=crea).as_view(index_bytes=index_bytes)
+                ),
+            )
+            for ruta, vista, crea in firmantes
+        ],
         path("organizaciones/crear", abm(CrearEntry.as_view(index_bytes=index_bytes))),
         path(
             "organizaciones/editar/<int:pk>",

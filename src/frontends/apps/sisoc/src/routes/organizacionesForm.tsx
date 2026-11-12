@@ -24,7 +24,7 @@ export type OrganizacionFormData = {
   subzonas: { id: number; nombre: string; region_id: number | null }[] | null;
   tipo_entidad_actual: number | null; urls: { cancel: string; subtipos: string; cuil: string };
 };
-type Message = { message: string; level: "success" | "error" | "warning" | "info" };
+export type Message = { message: string; level: "success" | "error" | "warning" | "info" };
 type Payload = { form: OrganizacionFormData; messages: Message[] };
 
 const LEVELS = ["success", "error", "warning", "info"];
@@ -40,6 +40,18 @@ export function FlashToasts({ messages }: { messages: Message[] }) {
     } catch { return []; }
   });
   return <InsumosToastList messages={[...flash, ...messages]} />;
+}
+
+/** A page the native flow answers with a reload (form errors): scrolled to the top, nothing focused and the keyboard starting at the top. */
+export function freshPage() {
+  try {
+    window.scrollTo(0, 0);
+    (document.activeElement as HTMLElement | null)?.blur();
+    document.body.setAttribute("tabindex", "-1");
+    document.body.focus({ preventScroll: true });
+    document.body.blur();
+    document.body.removeAttribute("tabindex");
+  } catch { /* cosmetic only */ }
 }
 
 export const organizacionesNavigation = { assign: (to: string) => window.location.assign(to) };
@@ -87,7 +99,7 @@ function Control({ f, value, onChange }: { f: Field; value: unknown; onChange: (
   );
 }
 
-function CrispyField({ f, values, set }: { f: Field; values: Record<string, unknown>; set: (name: string, v: unknown) => void }) {
+export function CrispyField({ f, values, set }: { f: Field; values: Record<string, unknown>; set: (name: string, v: unknown) => void }) {
   const value = values[f.name];
   if (f.type === "checkbox") {
     return (

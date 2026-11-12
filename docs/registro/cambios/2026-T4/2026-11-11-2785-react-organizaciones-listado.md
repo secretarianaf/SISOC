@@ -64,7 +64,12 @@ carga el script una vez y ejecuta sus inicializadores, como hace
 `DOMContentLoaded` en la página nativa. Los enlaces (selector de programa,
 pestañas, Editar, Eliminar, convenio, firmantes) siguen siendo los nativos.
 
-Decisión tomada: las secciones de O01 a O04 (convenios, documentación,
+Actualización: O01 a O04 ya tienen componentes React propios en el legajo y
+páginas propias; ver
+[el registro de las secciones](2026-11-12-2785-react-organizaciones-secciones.md).
+El script `organizacionesDocumentos.js` ya no se carga en el legajo.
+
+Decisión tomada (entrega original): las secciones de O01 a O04 (convenios, documentación,
 firmantes y avales, rendiciones) se muestran como fragmentos nativos hasta que
 esas entregas existan. Por la misma vía quedan hoy también el encabezado, el
 selector de programa y los datos de la organización, que el contrato asigna a

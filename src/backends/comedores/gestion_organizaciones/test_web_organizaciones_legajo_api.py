@@ -79,6 +79,23 @@ def _normal(texto):
     return " ".join(texto.split())
 
 
+MARCADOR = re.compile(r'<div data-legajo-seccion="\d+"></div>')
+
+
+def _es_el_bloque_nativo(fragmento, pagina):
+    """The fragment is the native block, but for the sections React draws itself.
+
+    Every piece of HTML around the section placeholders is in the native page,
+    in order; the placeholders stand where the native partial was.
+    """
+    nativa, posicion = _normal(pagina), 0
+    for trozo in MARCADOR.split(fragmento):
+        trozo = _normal(trozo)
+        encontrado = nativa.find(trozo, posicion) if trozo else posicion
+        assert encontrado >= 0, trozo[:120]
+        posicion = encontrado + len(trozo)
+
+
 def test_fragment_is_the_native_content_block():
     organizacion = _organizacion()
     web = _client(_usuario("lector_leg", VIEW))
@@ -88,7 +105,7 @@ def test_fragment_is_the_native_content_block():
 
     assert nativa.status_code == 200
     assert data["title"] == "Organización: Legajo Sintético"
-    assert _normal(data["html"]) in _normal(nativa.content.decode())
+    _es_el_bloque_nativo(data["html"], nativa.content.decode())
     for texto in (
         "Legajo Sintético",
         "CUIT: 20111111112",
@@ -97,7 +114,9 @@ def test_fragment_is_the_native_content_block():
         'href="/organizaciones/editar/%d"' % organizacion.pk,
     ):
         assert texto in data["html"]
-    assert data["scripts"] == ["/static/custom/js/organizacionesDocumentos.js"]
+    # The documentation table is a React section: no native script is needed.
+    assert data["scripts"] == []
+    assert "documentos" in [s["kind"] for s in data["sections"]]
     assert data["messages"] == []
 
 
@@ -109,7 +128,7 @@ def test_program_and_section_parameters_reach_the_native_view():
     data = web.get(_api(organizacion) + consulta).json()
     nativa = web.get(f"/organizaciones/detalle/{organizacion.pk}{consulta}")
 
-    assert _normal(data["html"]) in _normal(nativa.content.decode())
+    _es_el_bloque_nativo(data["html"], nativa.content.decode())
 
 
 def test_technicians_see_only_their_dupla_and_no_manage_buttons():

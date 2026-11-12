@@ -10,8 +10,8 @@ import { accepted, internal, record, renderMain, text, useMainResource, webClien
  * Organización» POST through the native `OrganizacionDeleteView`. A blocked
  * baja (409) keeps the page and shows the native error message.
  */
-type Item = { modelo: string; cantidad: number; modo: string; ejemplos: string[] };
-type Preview = { total_afectados: number; total_baja_logica?: number; total_borrado_fisico?: number; desglose_por_modelo: Item[] };
+export type Item = { modelo: string; cantidad: number; modo: string; ejemplos: string[] };
+export type Preview = { total_afectados: number; total_baja_logica?: number; total_borrado_fisico?: number; desglose_por_modelo: Item[] };
 type Message = { message: string; level: "success" | "error" | "warning" | "info" };
 export type BajaData = { id: number; nombre: string; cascade_preview: Preview | null; motivo: string | null; urls: { cancel: string; list: string }; messages: Message[] };
 
@@ -22,6 +22,34 @@ export function bajaValid(v: unknown): v is BajaData {
   return record(v) && typeof v.id === "number" && text(v.nombre) && record(v.urls) && internal(v.urls.cancel) && internal(v.urls.list) &&
     (v.cascade_preview === null || (record(v.cascade_preview) && Array.isArray(v.cascade_preview.desglose_por_modelo))) &&
     Array.isArray(v.messages) && v.messages.every((m) => record(m) && text(m.message) && LEVELS.includes(m.level as string));
+}
+
+/** `components/delete_confirm.html` cascade block: the totals alert and the per-model table. */
+export function CascadePreview({ preview }: { preview: Preview | null }) {
+  if (!preview) return null;
+  return (
+    <>
+      <div className="alert alert-info">
+        <div><strong>Total de registros afectados:</strong> {preview.total_afectados}</div>
+        {preview.total_baja_logica ? <div>Bajas lógicas: {preview.total_baja_logica}</div> : null}
+        {preview.total_borrado_fisico ? <div>Borrados físicos técnicos: {preview.total_borrado_fisico}</div> : null}
+      </div>
+      <div className="table-responsive mb-3">
+        <table className="table table-sm table-striped mb-0">
+          <thead><tr><th>Modelo</th><th>Cantidad</th><th>Acción</th><th>Ejemplos</th></tr></thead>
+          <tbody>
+            {preview.desglose_por_modelo.map((item) => (
+              <tr key={item.modelo}>
+                <td>{item.modelo}</td><td>{item.cantidad}</td>
+                <td>{item.modo === "baja_logica" ? "Baja lógica" : "Borrado físico técnico"}</td>
+                <td>{item.ejemplos?.length ? item.ejemplos.join(", ") : "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
 }
 
 function BajaContent({ data }: { data: BajaData }) {
@@ -50,29 +78,7 @@ function BajaContent({ data }: { data: BajaData }) {
         <div className="error-content">
           <h3><i className="fas fa-exclamation-triangle text-danger px-2" /> Dar de baja Organización</h3>
           <p>¿Estás seguro que deseas realizar una baja lógica en cascada del registro <span className="font-weight-bold">{data.nombre.toUpperCase()}</span>?</p>
-          {preview && (
-            <>
-              <div className="alert alert-info">
-                <div><strong>Total de registros afectados:</strong> {preview.total_afectados}</div>
-                {preview.total_baja_logica ? <div>Bajas lógicas: {preview.total_baja_logica}</div> : null}
-                {preview.total_borrado_fisico ? <div>Borrados físicos técnicos: {preview.total_borrado_fisico}</div> : null}
-              </div>
-              <div className="table-responsive mb-3">
-                <table className="table table-sm table-striped mb-0">
-                  <thead><tr><th>Modelo</th><th>Cantidad</th><th>Acción</th><th>Ejemplos</th></tr></thead>
-                  <tbody>
-                    {preview.desglose_por_modelo.map((item) => (
-                      <tr key={item.modelo}>
-                        <td>{item.modelo}</td><td>{item.cantidad}</td>
-                        <td>{item.modo === "baja_logica" ? "Baja lógica" : "Borrado físico técnico"}</td>
-                        <td>{item.ejemplos?.length ? item.ejemplos.join(", ") : "-"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
+          <CascadePreview preview={preview} />
           <div className="text-left">
             <form method="post" onSubmit={submit}>
               <button type="submit" className="btn btn-danger btn-sm" disabled={pending}>Dar de baja Organización</button>{" "}

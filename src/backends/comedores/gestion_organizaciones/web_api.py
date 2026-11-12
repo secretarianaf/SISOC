@@ -39,6 +39,7 @@ from core.pagination import build_compact_page_range
 from core.templatetags.custom_filters import has_any_perm
 from core.web_gate import WebGatePermission
 from gestion_organizaciones.urls import ORGANIZACION_DOCUMENTACION_PERMS
+from gestion_organizaciones.web_api_secciones import instrumentar
 from gestion_organizaciones.views import OrganizacionDetailView, OrganizacionListView
 
 # ``search_bar.html`` with ``export_url`` and its default permissions.
@@ -238,7 +239,8 @@ class OrganizacionListadoWebView(APIView):
 
 
 LEGAJO_TEMPLATE = "organizacion_detail.html"
-LEGAJO_SCRIPTS = ("custom/js/organizacionesDocumentos.js",)
+# The documentation table is a React section now: its native script is no longer needed.
+LEGAJO_SCRIPTS = ()
 
 
 def _bloque(template, nombre):
@@ -253,9 +255,11 @@ class OrganizacionLegajoWebView(APIView):
 
     Runs the native ``OrganizacionDetailView`` (dupla scope, program and section
     parameters, ``datos_legajo``) and renders the template's own ``content``
-    block with its partials. Until O01-O04 deliver their React sections, the
-    whole legajo is a server-rendered native fragment that React mounts inside
-    the shared frame; its documentation script is listed in ``scripts``.
+    block with its partials. The sections that already have a React component
+    (``web_api_secciones``) travel as JSON in ``sections`` and leave a
+    placeholder in ``html``; the rest of the legajo is a server-rendered native
+    fragment that React mounts inside the shared frame (``scripts`` lists the
+    native scripts it still needs).
     """
 
     authentication_classes = [SessionAuthentication]
@@ -271,13 +275,17 @@ class OrganizacionLegajoWebView(APIView):
         context = vista.get_context_data()
         plantilla = get_template(LEGAJO_TEMPLATE)
         contexto = RequestContext(django_request, context)
+        secciones = []
         with contexto.bind_template(plantilla.template):
             titulo = _bloque(plantilla, "title").nodelist.render(contexto)
-            html = _bloque(plantilla, "content").nodelist.render(contexto)
+            contenido = _bloque(plantilla, "content").nodelist
+            instrumentar(contexto, contenido, secciones)
+            html = contenido.render(contexto)
         return Response(
             {
                 "title": titulo,
                 "html": html,
+                "sections": secciones,
                 "scripts": [static(ruta) for ruta in LEGAJO_SCRIPTS],
                 "messages": _pending_messages(django_request),
             }

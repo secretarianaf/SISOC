@@ -46,6 +46,11 @@ _OWNED_PATTERNS = (
     r"/api/web/dispositivos/datacalle/casos/[0-9a-f-]{36}/",
     r"/api/web/ocr/(?:carga/|lotes/(?:[0-9]+/)?)",
     r"/api/web/comedores/organizaciones/(?:listado/|formulario/|crear/|subtipos/|cuil/|[0-9]+/(?:formulario/|editar/|baja/)?)",
+    r"/api/web/comedores/organizaciones/(?:proyectos/[0-9]+/convenio/"
+    r"|[0-9]+/(?:documentacion/(?:[0-9]+/(?:historial/|subir/)|personalizada/)"
+    r"|(?:firmantes|avales)/(?:formulario/)?|rendiciones/[0-9]+/)"
+    r"|documentacion/[0-9]+/(?:estado/|vencimiento/|numero-gde/)"
+    r"|(?:firmantes|avales)/[0-9]+/(?:formulario/|baja/)?)",
 )
 
 

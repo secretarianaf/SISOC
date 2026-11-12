@@ -19,6 +19,10 @@ import { expedientesPagosRoute } from "./expedientesPagos";
 import { rendicionFinalRoute } from "./rendicionFinal";
 import { rendicionMensualRoute } from "./rendicionMensual";
 import { comunicadosRoute } from "./comunicados";
+import { organizacionConvenioRoute } from "./organizacionConvenio";
+import { organizacionDocumentosRoute } from "./organizacionDocumentos";
+import { organizacionFirmantesRoute } from "./organizacionFirmantes";
+import { organizacionRendicionesRoute } from "./organizacionRendiciones";
 import { organizacionesRoute } from "./organizaciones";
 import { relevamientosRoute } from "./relevamientos";
 import { relevamientosActasRoute } from "./relevamientosActas";
@@ -98,6 +102,10 @@ export const ROUTES: RouteDefinition[] = [
   comunicadosRoute,
   ocrRoute,
   organizacionesRoute,
+  organizacionConvenioRoute,
+  organizacionDocumentosRoute,
+  organizacionFirmantesRoute,
+  organizacionRendicionesRoute,
   relevamientosRoute,
   relevamientosSeguimientosRoute,
   relevamientosActasRoute,

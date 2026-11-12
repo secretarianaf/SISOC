@@ -112,3 +112,44 @@ def test_obtener_datos_para_formulario_conserva_las_claves_de_relacion(mocker):
         "nacionalidad": 3,
     }
     assert resultado["datos_api"] == {"origen": "fake"}
+
+
+def test_consulta_por_dni_usa_un_solo_cliente_con_tope_total(mocker):
+    """#2889: un login para los tres sexos y un tope por debajo del proxy."""
+    mocker.patch.object(api.time, "monotonic", return_value=1000.0)
+    consultar = mocker.patch(
+        "ciudadanos.api.consultar_datos_renaper",
+        return_value={"success": False, "error": "Sin datos", "error_type": "no_match"},
+    )
+
+    resultado = api._consultar_por_dni("30111222", None)
+
+    assert resultado == {"success": False, "error": "Sin datos"}
+    assert [llamada.args for llamada in consultar.call_args_list] == [
+        ("30111222", "M"),
+        ("30111222", "F"),
+        ("30111222", "X"),
+    ]
+    clientes = {id(llamada.kwargs["client"]) for llamada in consultar.call_args_list}
+    assert len(clientes) == 1
+    client = consultar.call_args.kwargs["client"]
+    assert client.reuse_token is True
+    assert client.deadline == 1000.0 + api.PRESUPUESTO_CONSULTA_RENAPER_SEGUNDOS
+    assert api.PRESUPUESTO_CONSULTA_RENAPER_SEGUNDOS < 25
+
+
+def test_consulta_por_dni_corta_ante_un_timeout(mocker):
+    consultar = mocker.patch(
+        "ciudadanos.api.consultar_datos_renaper",
+        return_value={
+            "success": False,
+            "error": "RENAPER no respondio a tiempo durante la consulta.",
+            "error_type": "timeout",
+        },
+    )
+
+    resultado = api._consultar_por_dni("30111222", None)
+
+    assert consultar.call_count == 1
+    assert resultado["success"] is False
+    assert "no respondio a tiempo" in resultado["error"]

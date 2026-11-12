@@ -1,7 +1,8 @@
 """Lecturas y alcance del frontend INET, dentro del dominio VAT."""
 
 from django.utils import timezone
-from django.db.models import Count, Q
+from django.db.models import Count, IntegerField, OuterRef, Q, Subquery
+from django.db.models.functions import Coalesce
 from rest_framework.exceptions import ValidationError
 
 from VAT import models
@@ -15,7 +16,6 @@ from VAT.services.access_scope import (
 )
 from iam.services import user_has_permission_code
 from users.territorial_scope import apply_full_province_scope
-
 
 RESOURCES = {
     "centros": (models.Centro, "centro"),
@@ -106,6 +106,26 @@ def centros_for_actor(actor, *, management=False):
     return scope(models.Centro.objects.all(), actor)
 
 
+def _contar_por_comision(queryset):
+    """Cantidad de filas de ``queryset`` de la comisión de cada fila (0 si no hay).
+
+    Como subconsulta se calcula solo para las comisiones de la página. Con
+    ``Count`` sobre dos relaciones, MySQL cruzaba inscripciones x sesiones de
+    todas las comisiones antes de paginar (#2889).
+    """
+    return Coalesce(
+        Subquery(
+            queryset.filter(comision_curso_id=OuterRef("pk"))
+            .order_by()
+            .values("comision_curso_id")
+            .annotate(total=Count("pk"))
+            .values("total"),
+            output_field=IntegerField(),
+        ),
+        0,
+    )
+
+
 # Cada recurso conserva su queryset y alcance de dominio.
 # pylint: disable-next=too-many-return-statements
 def resource_queryset(resource, actor, *, management=False):
@@ -137,16 +157,16 @@ def resource_queryset(resource, actor, *, management=False):
             .select_related("curso__centro", "ubicacion", "curso__plan_estudio")
             .prefetch_related("horarios__dia_semana")
             .annotate(
-                inscriptos_count=Count(
-                    "inscripciones",
-                    filter=Q(
-                        inscripciones__estado__in=("inscripta", "validada_presencial")
-                    ),
-                    distinct=True,
+                # all_objects: el Count por relación también contaba las bajas
+                # lógicas; se conserva el mismo número.
+                inscriptos_count=_contar_por_comision(
+                    models.Inscripcion.all_objects.filter(
+                        estado__in=("inscripta", "validada_presencial")
+                    )
                 ),
-                clases_count=Count("sesiones", distinct=True),
-                clases_realizadas=Count(
-                    "sesiones", filter=Q(sesiones__estado="realizada"), distinct=True
+                clases_count=_contar_por_comision(models.SesionComision.objects.all()),
+                clases_realizadas=_contar_por_comision(
+                    models.SesionComision.objects.filter(estado="realizada")
                 ),
             )
         )

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 import unicodedata
 from datetime import date, datetime
 from typing import Any
@@ -11,8 +12,8 @@ from django.db import IntegrityError
 
 from ciudadanos.models import Ciudadano
 from core.models import Localidad, Municipio, Nacionalidad, Provincia
+from core.integrations.renaper import APIClient
 from core.services.renaper import consultar_datos_renaper
-
 
 logger = logging.getLogger("django")
 
@@ -134,7 +135,17 @@ def _parse_fecha(valor: object):
     return None
 
 
+# Tope de una búsqueda por DNI (login y hasta tres sexos). Queda por debajo
+# del corte de 25 s del proxy del core: si RENAPER está lento, la pantalla avisa
+# y sigue en lugar de responder 504 (#2889).
+PRESUPUESTO_CONSULTA_RENAPER_SEGUNDOS = 15
+
+
 def _consultar_por_dni(dni: str, sexo: str | None) -> dict[str, Any]:
+    client = APIClient(
+        reuse_token=True,
+        deadline=time.monotonic() + PRESUPUESTO_CONSULTA_RENAPER_SEGUNDOS,
+    )
     sexos = (
         (sexo.upper(),)
         if sexo and sexo.upper() in {"M", "F", "X"}
@@ -146,7 +157,7 @@ def _consultar_por_dni(dni: str, sexo: str | None) -> dict[str, Any]:
     )
     ultimo_error = "No se encontraron datos en RENAPER."
     for sexo_consulta in sexos:
-        resultado = consultar_datos_renaper(dni, sexo_consulta)
+        resultado = consultar_datos_renaper(dni, sexo_consulta, client=client)
         if resultado.get("success"):
             return resultado
         ultimo_error = resultado.get("error") or ultimo_error

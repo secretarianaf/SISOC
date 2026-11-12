@@ -56,7 +56,7 @@ describe("CDI observations route", () => {
     expect(findRoute("/centrodeinfancia/observacion/9/")?.params).toEqual({ mode: "detail", id: "9" });
     expect(findRoute("/centrodeinfancia/observacion/9/editar/")?.params).toEqual({ mode: "edit", id: "9" });
     expect(findRoute("/centrodeinfancia/observacion/9/eliminar/")?.params).toEqual({ mode: "delete", id: "9" });
-    for (const other of ["/centrodeinfancia/observacion/9", "/centrodeinfancia/observacion/x/", "/centrodeinfancia/4/observacion/crear", "/centrodeinfancia/detalle/4"]) {
+    for (const other of ["/centrodeinfancia/observacion/9", "/centrodeinfancia/observacion/x/", "/centrodeinfancia/4/observacion/crear", "/centrodeinfancia/detalle/4/"]) {
       expect(findRoute(other)?.route.name).toBe("business");
     }
   });

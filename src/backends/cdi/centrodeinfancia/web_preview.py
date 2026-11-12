@@ -13,6 +13,7 @@ import mimetypes
 from pathlib import Path
 from types import MappingProxyType
 
+from django.conf import settings
 from django.http import HttpResponse
 from django.urls import path
 from django.utils.cache import patch_cache_control, patch_vary_headers
@@ -21,6 +22,7 @@ from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from centrodeinfancia.views import (
+    CentroDeInfanciaDetailView,
     CentroDeInfanciaListView,
     NominaCentroInfanciaDestinatariosDetailView,
     NominaCentroInfanciaDetailView,
@@ -67,6 +69,23 @@ class CentrosListEntry(CentroDeInfanciaListView):
     def get(self, request, *args, **kwargs):
         self.object_list = self.get_queryset()
         self.get_context_data()
+        return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CentroDetalleEntry(CentroDeInfanciaDetailView):
+    """Native guards and the scoped centre (404), then the index.
+
+    While ``CDI_INTERVENCIONES_VISIBLE`` is on, the interventions card and its
+    modal are not in React yet: the native page answers.
+    """
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        if settings.CDI_INTERVENCIONES_VISIBLE:
+            return super().get(request, *args, **kwargs)
+        self.object = self.get_object()
         return index_response(request, self.index_bytes)
 
 
@@ -207,6 +226,14 @@ def cdi_preview_patterns(build_directory):
             "centrodeinfancia/listar",
             _entry(
                 CentrosListEntry,
+                "centrodeinfancia.view_centrodeinfancia",
+                index_bytes,
+            ),
+        ),
+        path(
+            "centrodeinfancia/detalle/<int:pk>",
+            _entry(
+                CentroDetalleEntry,
                 "centrodeinfancia.view_centrodeinfancia",
                 index_bytes,
             ),

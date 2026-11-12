@@ -7,6 +7,7 @@ import { admisionesInformeEditorRoute } from "./admisionesInformeEditor";
 import { businessRoute } from "./business";
 import { categoriasRoute } from "./categorias";
 import { ciudadano360Route } from "./ciudadano360";
+import { cdiCentroDetalleRoute } from "./cdiCentroDetalle";
 import { cdiCentrosRoute } from "./cdiCentros";
 import { cdiNominaRoute } from "./cdiNomina";
 import { cdiNominaListaRoute } from "./cdiNominaLista";
@@ -87,6 +88,7 @@ export const ROUTES: RouteDefinition[] = [
   cdiReportesRoute,
   cdiObservacionesRoute,
   cdiCentrosRoute,
+  cdiCentroDetalleRoute,
   cdiNominaRoute,
   cdiNominaListaRoute,
   cdfCentrosRoute,

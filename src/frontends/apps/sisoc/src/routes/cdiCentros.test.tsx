@@ -65,7 +65,8 @@ describe("CDI centres list route", () => {
   it("owns only the native list path", () => {
     expect(findRoute("/centrodeinfancia/listar")?.route.name).toBe("cdi-centros");
     expect(findRoute("/centrodeinfancia/listar/")?.route.name).toBe("business");
-    expect(findRoute("/centrodeinfancia/detalle/1")?.route.name).toBe("business");
+    expect(findRoute("/centrodeinfancia/detalle/1")?.route.name).toBe("cdi-centro-detalle");
+    expect(findRoute("/centrodeinfancia/detalle/1/")?.route.name).toBe("business");
   });
 
   it("loads the session and the API with the page query and draws the native table", async () => {

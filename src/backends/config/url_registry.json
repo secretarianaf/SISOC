@@ -1530,6 +1530,11 @@
   "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/usuarios/(?P<acceso_id>[0-9]+)/estado/\\Z"
  },
  {
+  "name": "centrodeinfancia_web_centro_detalle",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
   "name": "centrodeinfancia_web_centros",
   "namespace": "",
   "regex": "^api/web/cdi/centros/\\Z"
@@ -1573,6 +1578,16 @@
   "name": "centrodeinfancia_web_reportes",
   "namespace": "",
   "regex": "^api/web/cdi/reportes/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_trabajador_eliminar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/trabajadores/(?P<trabajador_id>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_usuario_estado",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/usuarios/(?P<acceso_id>[0-9]+)/estado/\\Z"
  },
  {
   "name": "centros_ajax",

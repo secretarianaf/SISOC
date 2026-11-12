@@ -4,13 +4,19 @@ Ver ``centrodeinfancia.web_api`` (reportes),
 ``centrodeinfancia.web_api_observaciones`` (observaciones),
 ``centrodeinfancia.web_api_centros`` (listado de centros) y
 ``centrodeinfancia.web_api_nomina`` (ficha de un destinatario de la nómina) y
-``centrodeinfancia.web_api_nomina_lista`` (lista de la nómina y derivación).
+``centrodeinfancia.web_api_nomina_lista`` (lista de la nómina y derivación) y
+``centrodeinfancia.web_api_legajo`` (ficha del centro y sus acciones).
 """
 
 from django.urls import path
 
 from centrodeinfancia.web_api import ReportesWebView
 from centrodeinfancia.web_api_centros import CentrosListWebView
+from centrodeinfancia.web_api_legajo import (
+    CentroDetalleWebView,
+    trabajador_eliminar_web,
+    usuario_estado_web,
+)
 from centrodeinfancia.web_api_nomina import NominaDestinatarioWebView
 from centrodeinfancia.web_api_nomina_lista import (
     NominaListaWebView,
@@ -26,6 +32,21 @@ from centrodeinfancia.web_api_observaciones import (
 urlpatterns = [
     path("reportes/", ReportesWebView.as_view(), name="centrodeinfancia_web_reportes"),
     path("centros/", CentrosListWebView.as_view(), name="centrodeinfancia_web_centros"),
+    path(
+        "centros/<int:pk>/",
+        CentroDetalleWebView.as_view(),
+        name="centrodeinfancia_web_centro_detalle",
+    ),
+    path(
+        "centros/<int:pk>/usuarios/<int:acceso_id>/estado/",
+        usuario_estado_web,
+        name="centrodeinfancia_web_usuario_estado",
+    ),
+    path(
+        "centros/<int:pk>/trabajadores/<int:trabajador_id>/eliminar/",
+        trabajador_eliminar_web,
+        name="centrodeinfancia_web_trabajador_eliminar",
+    ),
     path(
         "centros/<int:pk>/nomina/",
         NominaListaWebView.as_view(),

@@ -4,6 +4,7 @@ import { crearCliente } from "@sisoc/api";
 import InsumosAccessError from "../InsumosAccessError";
 import { InsumosToastList } from "../InsumosToast";
 import { prerequisiteFromForbidden, safeInternalPath, type WebPrerequisite } from "../webAccess";
+import { NativeToasts } from "./nativeParity";
 import SisocShell from "./SisocShell";
 import type { NavigationNode } from "./types";
 import { HITOS_STYLESHEET } from "./userImport";
@@ -106,22 +107,23 @@ function AppLoadedBody() {
 
 export function renderCdi<T extends { messages: CdiMessage[] }>(
   state: State<T>,
-  render: (data: T) => { title: string; heading: string; content: ReactNode; breadcrumb?: ReactNode },
+  render: (data: T) => { title: string; heading: string; content: ReactNode; breadcrumb?: ReactNode; appHeader?: ReactNode; bodyToasts?: boolean },
 ) {
   if (state.status === "loading") return <main role="status">Cargando…</main>;
   if (state.status === "error") return <main role="alert">No se pudo cargar la página.</main>;
   if (state.status === "notfound") return <main role="alert">No se encontró la página.</main>;
   if (state.status === "forbidden") return <InsumosAccessError prerequisite={state.prerequisite} />;
-  const { title, heading, content, breadcrumb } = render(state.data);
+  const { title, heading, content, breadcrumb, appHeader, bodyToasts } = render(state.data);
   return (
     <SisocShell
       context={state.session}
       pageTitle={title}
       heading={heading}
       breadcrumb={breadcrumb}
+      appHeader={appHeader}
       previewLinks={false}
       headerItems={CDI_HEADER_ITEMS}
-      content={<>{HITOS_STYLESHEET}<AppLoadedBody /><InsumosToastList messages={state.data.messages} />{content}</>}
+      content={<>{HITOS_STYLESHEET}<AppLoadedBody />{bodyToasts ? <NativeToasts messages={state.data.messages} /> : <InsumosToastList messages={state.data.messages} />}{content}</>}
     />
   );
 }

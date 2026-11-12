@@ -19,7 +19,8 @@ _OWNED_PATTERNS = (
     r"/api/web/inspecciones/tablero/(?:datos/|exportar\.csv|descargar-actas/)?",
     r"/api/web/cdi/(?:reportes/|centros/[0-9]+/observaciones/crear/"
     r"|observaciones/[0-9]+/(?:editar/|eliminar/)?)",
-    r"/api/web/cdi/centros/(?:[0-9]+/nomina/(?:[0-9]+/)?)?",
+    r"/api/web/cdi/centros/(?:[0-9]+/(?:nomina/(?:[0-9]+/)?"
+    r"|usuarios/[0-9]+/estado/|trabajadores/[0-9]+/eliminar/)?)?",
     r"/api/web/cdi/nomina/[0-9]+/derivar/",
     r"/api/web/cdi/centros/(?:[0-9]+/nomina/[0-9]+/(?:(?:publicar|archivar|destacado|eliminar)/)?)?",
     r"/api/web/comedores/duplas/(?:crear/|[0-9]+/(?:(?:editar|eliminar)/)?)?",

@@ -264,3 +264,37 @@ def test_nomina_list_entry_returns_the_index_after_the_native_checks(ficha):
     )
     assert _cliente(solo_centro).get(ruta).status_code == 403
     assert Client().get(ruta).status_code in (302, 401, 403)
+
+
+@pytest.mark.usefixtures("preview")
+def test_centre_detail_entry_returns_the_index_unless_the_interventions_flag_is_on(
+    ficha,
+):
+    user = User.objects.create_user("preview-detalle-centro")
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="centrodeinfancia", codename="view_centrodeinfancia"
+        )
+    )
+    client = _cliente(user)
+    ruta = f"/centrodeinfancia/detalle/{ficha.centro_id}"
+
+    respuesta = client.get(ruta)
+
+    assert respuesta.status_code == 200
+    assert b"/centrodeinfancia/react/assets/app-1.js" in respuesta.content
+    assert "no-store" in respuesta["Cache-Control"]
+    assert "csrftoken" in respuesta.cookies
+    assert client.get("/centrodeinfancia/detalle/999999").status_code == 404
+    assert (
+        _cliente(User.objects.create_user("preview-detalle-sin")).get(ruta).status_code
+        == 403
+    )
+    with override_settings(ROOT_URLCONF="config.urls_all"):
+        nativo_anonimo = Client().get(ruta).status_code
+    assert Client().get(ruta).status_code == nativo_anonimo
+    with override_settings(CDI_INTERVENCIONES_VISIBLE=True):
+        nativa = client.get(ruta)
+    assert nativa.status_code == 200
+    assert b"app-1.js" not in nativa.content
+    assert "Nueva Intervención".encode() in nativa.content

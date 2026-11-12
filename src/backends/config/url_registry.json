@@ -3520,6 +3520,31 @@
   "regex": "^api/web/pas/formacion/personas/\\Z"
  },
  {
+  "name": "pas_web_informe",
+  "namespace": "",
+  "regex": "^api/web/pas/informes/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "pas_web_informes",
+  "namespace": "",
+  "regex": "^api/web/pas/informes/\\Z"
+ },
+ {
+  "name": "pas_web_informes_generar",
+  "namespace": "",
+  "regex": "^api/web/pas/informes/generar/\\Z"
+ },
+ {
+  "name": "pas_web_informes_opciones",
+  "namespace": "",
+  "regex": "^api/web/pas/informes/opciones/\\Z"
+ },
+ {
+  "name": "pas_web_informes_previsualizar",
+  "namespace": "",
+  "regex": "^api/web/pas/informes/previsualizar/\\Z"
+ },
+ {
   "name": "pas_web_panel",
   "namespace": "",
   "regex": "^api/web/pas/panel/\\Z"

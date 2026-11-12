@@ -27,6 +27,8 @@ import { inspeccionesEscuelasRoute } from "./inspeccionesEscuelas";
 import { loginRoute } from "./login";
 import { montosRoute } from "./montos";
 import { pasRoute } from "./pas";
+import { pasInformesRoute } from "./pasInformes";
+import { pasInformesGenerarRoute } from "./pasInformesGenerar";
 import { passwordChangeRoute } from "./passwordChange";
 import { passwordResetRoute } from "./passwordReset";
 import { requiredPasswordRoute } from "./requiredPassword";
@@ -74,6 +76,8 @@ export const ROUTES: RouteDefinition[] = [
   montosRoute,
   actividadesPnudRoute,
   pasRoute,
+  pasInformesRoute,
+  pasInformesGenerarRoute,
   admisionesTemplatesRoute,
   acompanamientosRoute,
   expedientesPagosRoute,

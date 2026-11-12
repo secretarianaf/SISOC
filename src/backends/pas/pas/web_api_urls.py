@@ -2,6 +2,13 @@
 
 from django.urls import path
 
+from pas.web_api_informes import (
+    PasInformeDetailWebView,
+    PasInformeGenerarCsvWebView,
+    PasInformeListWebView,
+    PasInformeOpcionesWebView,
+    PasInformePrevisualizarWebView,
+)
 from pas.web_api_views import (
     PasAreaWebView,
     PasCambioEstadoWebView,
@@ -38,5 +45,26 @@ urlpatterns = [
         "personas/<int:pk>/cambiar-estado/",
         PasCambioEstadoWebView.as_view(),
         name="pas_web_persona_cambiar_estado",
+    ),
+    path("informes/", PasInformeListWebView.as_view(), name="pas_web_informes"),
+    path(
+        "informes/opciones/",
+        PasInformeOpcionesWebView.as_view(),
+        name="pas_web_informes_opciones",
+    ),
+    path(
+        "informes/previsualizar/",
+        PasInformePrevisualizarWebView.as_view(),
+        name="pas_web_informes_previsualizar",
+    ),
+    path(
+        "informes/generar/",
+        PasInformeGenerarCsvWebView.as_view(),
+        name="pas_web_informes_generar",
+    ),
+    path(
+        "informes/<int:pk>/",
+        PasInformeDetailWebView.as_view(),
+        name="pas_web_informe",
     ),
 ]

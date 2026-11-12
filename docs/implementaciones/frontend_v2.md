@@ -778,3 +778,14 @@ vista nativa, termina siempre en `/pas/panel-control/<pk>` con el mensaje como
 toast. Registros:
 `../registro/cambios/2026-T4/2026-11-10-2806-react-pas-backoffice.md` y
 `../registro/cambios/2026-T4/2026-11-10-2806-react-pas-cambio-estado.md`.
+
+La consulta de informes PAS (`routes/pasInformes.tsx`) toma `/pas/informes` y
+`/pas/informes/<pk>`; los datos salen de `/api/web/pas/informes/`
+(`src/backends/pas/pas/web_api_informes.py`), que corre las vistas nativas con
+la regla de todos los permisos. La descarga CSV sigue nativa. La solicitud de un informe
+(`routes/pasInformesGenerar.tsx`) toma `/pas/informes/generar` y usa
+`opciones/`, `previsualizar/` y `generar/` bajo la misma API: reusan el
+formulario y los servicios nativos, y `generar/` devuelve el CSV en el mismo
+POST. Entrada local: `src/backends/pas/pas/web_preview_informes.py`. Registros:
+`../registro/cambios/2026-T4/2026-11-11-2785-react-pas-informes.md` y
+`../registro/cambios/2026-T4/2026-11-12-2785-react-pas-informes-generar.md`.

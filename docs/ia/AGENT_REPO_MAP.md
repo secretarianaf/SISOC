@@ -233,6 +233,7 @@ Reglas entre servicios: `AGENTS.md` ("Verticales independientes") y la guía
 - `src/scripts/ai/codex_run.ps1 validate`: corre `black`, `djlint`, smoke tests y `makemigrations --check`.
 - `src/scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado, hace fast-forward antes de validar los Compose y bloquea una revisión obsoleta antes del downtime. Así un checkout anterior puede incorporar un Compose nuevo de forma segura.
 - `src/scripts/operacion/deploy_verified.sh`: wrapper de CI para QA/HML/PRD; valida migraciones y healthcheck y restaura automáticamente el checkout/stack anterior ante un fallo.
+- `src/scripts/operacion/manage_deploy.py`: administración desde el host con el migrador de la revisión activa; conserva argumentos Django y evita cargar el grafo parcial del core. Para diagnóstico, `makemigrations --check --dry-run` y `migrate --plan`.
 
 ## Estructura general del proyecto
 

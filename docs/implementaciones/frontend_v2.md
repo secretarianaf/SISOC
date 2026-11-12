@@ -886,6 +886,11 @@ La baja de un ciudadano (C05.03) es `routes/ciudadanoBaja.tsx` sobre
 y proyecta su confirmación). Ver
 `docs/registro/cambios/2026-T4/2026-11-12-2785-react-ciudadano-baja.md`.
 
+Agregar familiar (C05.02) es `routes/ciudadanoFamiliar.tsx` sobre
+`/api/web/ciudadanos/<pk>/familiares/nuevo/` (`ciudadanos.web_familiar`, que corre la vista
+nativa con su formulario). Ver
+`docs/registro/cambios/2026-T4/2026-11-12-2785-react-ciudadano-familiar.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

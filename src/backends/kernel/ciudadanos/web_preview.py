@@ -5,8 +5,9 @@ the login redirect of ``login_required``, users without
 ``ciudadanos.view_ciudadano`` the native 403 and a missing ciudadano the native 404.
 Only then a GET returns the frozen React ``index.html``, which loads the whole ficha from
 ``/api/web/ciudadanos/<pk>/`` and the aportes of the verticals; its actions keep pointing at the
-native pages (Editar, Historial, Agregar familiar) and ``Dar de baja`` to the React baja page
-(C05.03: ``ciudadanos/eliminar/<pk>``) and ``Marcar revisado`` posts to
+native pages (Editar, Historial) and ``Dar de baja`` to the React baja page
+(C05.03: ``ciudadanos/eliminar/<pk>``), ``Agregar`` (familiar) to its React form
+(C05.02: ``ciudadanos/<pk>/familiares/nuevo``) and ``Marcar revisado`` posts to
 ``/api/web/ciudadanos/<pk>/marcar-revisado/``. Assets are served
 under ``/ciudadanos/react/``.
 """
@@ -24,7 +25,11 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from ciudadanos.views import CiudadanosDeleteView, CiudadanosDetailView
+from ciudadanos.views import (
+    CiudadanosDeleteView,
+    CiudadanosDetailView,
+    GrupoFamiliarCreateView,
+)
 
 BUILD_ASSETS = "/v2/sisoc/assets/"
 PUBLIC_ASSETS = "/ciudadanos/react/assets/"
@@ -61,6 +66,16 @@ class BajaEntry(CiudadanosDeleteView):
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class FamiliarNuevoEntry(GrupoFamiliarCreateView):
+    """Native 404 (ciudadano), login and ``change_ciudadano`` first, then the React index (C05.02)."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
         return _index(request, self.index_bytes)
 
 
@@ -128,6 +143,10 @@ def ciudadanos_preview_patterns(build_directory):
         path(
             "ciudadanos/eliminar/<int:pk>",
             login_required(BajaEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "ciudadanos/<int:pk>/familiares/nuevo",
+            login_required(FamiliarNuevoEntry.as_view(index_bytes=index_bytes)),
         ),
         path(
             "ciudadanos/react/<path:asset_path>",

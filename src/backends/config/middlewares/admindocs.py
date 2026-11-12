@@ -62,6 +62,7 @@ _OWNED_PATTERNS = (
     r"/api/web/vat/(?:vouchers/(?:parametrias/|[0-9]+/)?|evaluaciones/(?:[0-9]+/)?)",
     r"/api/web/ciudadanos/[0-9]+/marcar-revisado/",
     r"/api/web/ciudadanos/[0-9]+/baja/",
+    r"/api/web/ciudadanos/[0-9]+/familiares/nuevo/",
     r"/api/web/(?:comedores|cdf|celiaquia|vat)/ciudadanos/[0-9]+/aportes/[a-z]+/",
 )
 

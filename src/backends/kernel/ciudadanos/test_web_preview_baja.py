@@ -31,7 +31,7 @@ def preview_fixture(tmp_path):
 
 
 def _client(codename):
-    user = User.objects.create_user(f"prev_baja_{codename}")
+    user, _ = User.objects.get_or_create(username=f"prev_baja_{codename}")
     user.user_permissions.add(
         Permission.objects.get(content_type__app_label="ciudadanos", codename=codename)
     )
@@ -52,3 +52,18 @@ def test_native_guards_then_frozen_index(preview):
     assert "/ciudadanos/react/assets/app-1.js" in respuesta.content.decode()
     # The page is only the index: nothing is deleted by looking at it.
     assert Ciudadano.objects.filter(pk=ciudadano.pk).exists()
+
+
+def test_familiar_nuevo_native_guards_then_frozen_index(preview):
+    ciudadano = Ciudadano.objects.create(nombre="Ana", apellido="Prev", documento=3112)
+    url = f"/ciudadanos/{ciudadano.pk}/familiares/nuevo"
+    assert Client().get(url).status_code == 302
+    # The native view looks the ciudadano up before checking the permission.
+    assert (
+        _client("view_ciudadano").get("/ciudadanos/99999/familiares/nuevo").status_code
+        == 404
+    )
+    assert _client("view_ciudadano").get(url).status_code == 403
+    respuesta = _client("change_ciudadano").get(url)
+    assert respuesta.status_code == 200
+    assert "/ciudadanos/react/assets/app-1.js" in respuesta.content.decode()

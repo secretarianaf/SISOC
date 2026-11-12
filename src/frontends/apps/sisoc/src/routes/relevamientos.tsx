@@ -1,11 +1,12 @@
 /* eslint-disable react-refresh/only-export-components -- the unit surface is this route module; its validators are exported for the tests. */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { leerCookie } from "@sisoc/api";
-import { InsumosToastList } from "../InsumosToast";
 import { safeInternalPath } from "../webAccess";
 import { internal, record, renderMain, text, useMainResource } from "./MainFrame";
 import { useBootstrapModal } from "./inspeccionesModal";
+import { UNCERTAIN, postApi, relevamientosNavigation, setFlash, useToasts } from "./relevamientosApi";
+import RelevamientoBaja from "./relevamientosBaja";
 import type { RouteDefinition } from "./types";
 
 /**
@@ -24,7 +25,7 @@ export type RelevamientosListData = {
   comedor: { id: number; nombre: string }; encabezado: string; relevamientos: Item[]; actas: Acta[]; seguimientos_pnud: Pnud[];
   opciones_alta: Option[]; opciones_seguimiento: Option[];
   capabilities: { add_relevamiento: boolean; change_relevamiento: boolean; add_actacomplementaria: boolean; change_actacomplementaria: boolean };
-  urls: { listado: string; alta: string; acta_crear: string; territoriales: string; territoriales_sincronizar: string }; messages: Message[];
+  urls: { listado: string; alta: string; acta_crear: string; territoriales: string; territoriales_sincronizar: string; numero_if: string }; messages: Message[];
 };
 export type TreeNode = string | { t: string; a: Record<string, string>; c: TreeNode[] };
 type Detalle = { id: number; fecha: string; estado: string; estado_badge: string; estado_validacion: string; a_subsanar: boolean; origen: string; sincronizado_gestionar: boolean; detalle_url: string; editar_url: string; eliminar_url: string; numero_orden: number; tipo: string };
@@ -39,7 +40,7 @@ export type RelevamientoDetailData = {
   secciones: TreeNode[]; titulos: string[]; seguimientos: Detalle[]; adjuntos: Adjunto[];
   pdf: { disponible: boolean; url: string; oficial: boolean; fecha_oficial: string | null };
   capabilities: { change_relevamiento: boolean; review_relevamiento: boolean; change_primerseguimiento: boolean; delete_primerseguimiento: boolean; view_logentry: boolean };
-  urls: { listado: string; comedores: string; comedor: string; alta: string; eliminar: string; revision: string; historial: string; territoriales: string; territoriales_sincronizar: string };
+  urls: { listado: string; comedores: string; comedor: string; alta: string; eliminar: string; revision: string; revision_api: string; historial: string; territoriales: string; territoriales_sincronizar: string };
   messages: Message[];
 };
 
@@ -64,7 +65,7 @@ export function listValid(v: unknown): v is RelevamientosListData {
       text(p.estado) && text(p.estado_badge) && bool(p.a_subsanar) && internal(p.detalle_url)) &&
     optionsValid(v.opciones_alta) && optionsValid(v.opciones_seguimiento) &&
     ["add_relevamiento", "change_relevamiento", "add_actacomplementaria", "change_actacomplementaria"].every((k) => bool(caps[k])) &&
-    ["listado", "alta", "acta_crear", "territoriales", "territoriales_sincronizar"].every((k) => internal(urls[k])) && messagesValid(v.messages);
+    ["listado", "alta", "acta_crear", "territoriales", "territoriales_sincronizar", "numero_if"].every((k) => internal(urls[k])) && messagesValid(v.messages);
 }
 
 export function detailValid(v: unknown): v is RelevamientoDetailData {
@@ -81,7 +82,7 @@ export function detailValid(v: unknown): v is RelevamientoDetailData {
     arr(v.adjuntos, (a) => record(a) && integer(a.id) && text(a.nombre_original) && bool(a.es_pdf) && text(a.tamano) && text(a.fecha_subida) && internal(a.descargar_url)) &&
     bool(v.pdf.disponible) && internal(v.pdf.url) && bool(v.pdf.oficial) && (v.pdf.fecha_oficial === null || text(v.pdf.fecha_oficial)) &&
     ["change_relevamiento", "review_relevamiento", "change_primerseguimiento", "delete_primerseguimiento", "view_logentry"].every((k) => bool(caps[k])) &&
-    ["listado", "comedores", "comedor", "alta", "eliminar", "revision", "historial", "territoriales", "territoriales_sincronizar"].every((k) => internal(urls[k])) && messagesValid(v.messages);
+    ["listado", "comedores", "comedor", "alta", "eliminar", "revision", "revision_api", "historial", "territoriales", "territoriales_sincronizar"].every((k) => internal(urls[k])) && messagesValid(v.messages);
 }
 
 export const nodeValid = (n: unknown): boolean => text(n) || (record(n) && text(n.t) && record(n.a) && Object.values(n.a).every(text) && arr(n.c, nodeValid));
@@ -208,7 +209,7 @@ function TerritorialStatus({ t }: { t: Territoriales }) {
   </>;
 }
 
-export function Modal({ id, close, trigger, children, footer, action }: { id: string; title: string; close: () => void; trigger: HTMLElement | null; children: ReactNode; footer: ReactNode; action: string }) {
+export function Modal({ id, close, trigger, children, footer, action, onSubmit }: { id: string; title: string; close: () => void; trigger: HTMLElement | null; children: ReactNode; footer: ReactNode; action: string; onSubmit?: (fields: URLSearchParams) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useBootstrapModal(ref, close, trigger);
   // The dialog stays in the page flow, like the native one, so Tab leaves its last control the same way; only the backdrop goes to `<body>`.
@@ -216,7 +217,8 @@ export function Modal({ id, close, trigger, children, footer, action }: { id: st
     <div className="modal fade show" id={id} tabIndex={-1} aria-labelledby={`${id}Label`} aria-modal="true" role="dialog" style={{ display: "block" }} ref={ref}
       onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
       <div className="modal-dialog modal-dialog-centered"><div className="modal-content">
-        <form method="post" action={path(action)}>
+        <form method="post" action={path(action)}
+          onSubmit={onSubmit ? (e) => { e.preventDefault(); onSubmit(new URLSearchParams(new FormData(e.currentTarget) as unknown as Record<string, string>)); } : undefined}>
           {csrf()}
           {children}
           <div className="modal-footer">{footer}</div>
@@ -316,29 +318,51 @@ const Rows = ({ children }: { children: ReactNode }) => (
   <div className="card-body card-comments p-0 pb-1"><div className="nav nav-pills row my-3"><div className="col-12"><div className="nav-item d-flex"><div className="comment-text w-100">{children}</div></div></div></div></div>
 );
 
-function IfCell({ item, can }: { item: Item; can: boolean }) {
+function IfCell({ item, can, url, value, onSaved, onError }: { item: Item; can: boolean; url: string; value: string | null; onSaved: (id: number, numeroIf: string | null, message: string) => void; onError: (message: string) => void }) {
   const [editing, setEditing] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [uncertain, setUncertain] = useState(false);
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    const result = await postApi(url, new URLSearchParams(new FormData(event.currentTarget) as unknown as Record<string, string>));
+    if (result.kind === "ok") {
+      const saved = result.body.numero_if;
+      onSaved(item.id, typeof saved === "string" ? saved : null, result.message);
+      setEditing(false);
+    } else if (result.kind === "error") onError(result.message);
+    else setUncertain(true);
+    setPending(false);
+  }
   return <>
     <div id={`numero-if-display-${item.id}`} className={`d-flex align-items-end gap-2${editing ? " d-none" : ""}`}>
-      <div className="flex-grow-1 d-flex align-items-center gap-2"><span>Número de IF:</span><span className="fw-semibold">{item.numero_if || "Sin número de IF"}</span></div>
+      <div className="flex-grow-1 d-flex align-items-center gap-2"><span>Número de IF:</span><span className="fw-semibold">{value || "Sin número de IF"}</span></div>
       {can && <button type="button" className="btn btn-sm btn-primary mb-0 py-1 px-2" onClick={() => setEditing(true)}>Actualizar IF</button>}
     </div>
     {can && editing && (
-      <form method="post" id={`numero-if-form-${item.id}`} className="d-flex align-items-end gap-2">
+      <form method="post" id={`numero-if-form-${item.id}`} className="d-flex align-items-end gap-2" onSubmit={submit}>
         {csrf()}
         <input type="hidden" name="relevamiento_id" value={item.id} />
         <div className="flex-grow-1"><label className="form-label mb-1">Número de IF</label>
-          <input type="text" name="numero_if" maxLength={255} className="form-control form-control-sm" defaultValue={item.numero_if ?? ""} autoFocus /></div>
-        <button type="submit" className="btn btn-sm btn-primary mb-0">Guardar</button>
+          <input type="text" name="numero_if" maxLength={255} className="form-control form-control-sm" defaultValue={value ?? ""} autoFocus /></div>
+        <button type="submit" className="btn btn-sm btn-primary mb-0" disabled={pending || uncertain}>Guardar</button>
         <button type="button" className="btn btn-sm btn-secondary mb-0" onClick={() => setEditing(false)}>Cancelar</button>
+        {uncertain && <UncertainNotice />}
       </form>
     )}
   </>;
 }
 
+/** A lost answer is never resubmitted: the page is reloaded by GET to read the real state. */
+export const UncertainNotice = () => (
+  <div role="alert" className="alert alert-warning mb-2">
+    {UNCERTAIN}{" "}<button type="button" className="btn btn-link p-0 align-baseline" onClick={() => relevamientosNavigation.assign(window.location.pathname + window.location.search)}>Recargar</button>
+  </div>
+);
+
 const estadoBadge = (item: { estado_badge: string }) => `badge align-self-start ${item.estado_badge}`;
 
-function Parent({ item, data, onSeguimiento }: { item: Item; data: RelevamientosListData; onSeguimiento: (id: number, el: HTMLElement) => void }) {
+function Parent({ item, data, ifs, onSeguimiento, onSaved, onError }: { item: Item; data: RelevamientosListData; ifs: Record<number, string | null>; onSeguimiento: (id: number, el: HTMLElement) => void; onSaved: (id: number, numeroIf: string | null, message: string) => void; onError: (message: string) => void }) {
   const caps = data.capabilities;
   return <>
     <div className="row align-items-center w-100 mx-0 mb-2">
@@ -347,7 +371,7 @@ function Parent({ item, data, onSeguimiento }: { item: Item; data: Relevamientos
       <div className="col-5"><div className="d-flex flex-column gap-1">
         {item.sincronizado_gestionar ? <span className="badge bg-success align-self-start">Sincronizado</span> : <span className="badge bg-secondary align-self-start">No sincronizado</span>}
         {item.origen === "app" && <span className="badge bg-primary align-self-start" title="Creado desde la app">App</span>}
-        <IfCell item={item} can={caps.change_relevamiento} />
+        <IfCell item={item} can={caps.change_relevamiento} url={data.urls.numero_if} value={item.id in ifs ? ifs[item.id] : item.numero_if} onSaved={onSaved} onError={onError} />
       </div></div>
       <div className="col-2 d-flex justify-content-end">
         {caps.add_relevamiento && data.opciones_seguimiento.length > 0 && (
@@ -372,19 +396,22 @@ function Parent({ item, data, onSeguimiento }: { item: Item; data: Relevamientos
 
 export function RelevamientosListContent({ data }: { data: RelevamientosListData }) {
   useCardCollapse();
+  const { toasts, push } = useToasts(data.messages);
+  const [ifs, setIfs] = useState<Record<number, string | null>>({});
   const caps = data.capabilities;
   const [modal, setModal] = useState<{ kind: "alta" } | { kind: "seguimiento"; id: number } | null>(null);
   const [trigger, setTrigger] = useState<HTMLElement | null>(null);
   const open = (next: NonNullable<typeof modal>, el: HTMLElement) => { setTrigger(el); setModal(next); };
   const close = () => setModal(null);
   return <>
-    <InsumosToastList messages={data.messages} />
+    {toasts}
     {CSS}
     <div className="row relevamiento-container"><div className="col-12"><div className="row"><div className="col-12"><div className="card card-informacion">
       <CardHead title="Acompañamiento Territorial">
         {caps.add_relevamiento && <button type="button" className="btn btn-primary btn-sm" onClick={(e) => open({ kind: "alta" }, e.currentTarget)}>Agregar</button>}
       </CardHead>
-      <Rows>{data.relevamientos.map((item) => <Parent key={item.id} item={item} data={data} onSeguimiento={(id, el) => open({ kind: "seguimiento", id }, el)} />)}</Rows>
+      <Rows>{data.relevamientos.map((item) => <Parent key={item.id} item={item} data={data} ifs={ifs} onSeguimiento={(id, el) => open({ kind: "seguimiento", id }, el)}
+        onSaved={(id, numeroIf, message) => { setIfs((c) => ({ ...c, [id]: numeroIf })); push({ message, level: "success" }); }} onError={(message) => push({ message, level: "error" })} />)}</Rows>
     </div></div></div></div></div>
 
     <div className="row relevamiento-container mt-3"><div className="col-12"><div className="card card-informacion">
@@ -555,11 +582,25 @@ function AsignarModal({ data, close, trigger }: { data: RelevamientoDetailData; 
   );
 }
 
-function RevisionModal({ data, close, trigger }: { data: RelevamientoDetailData; close: () => void; trigger: HTMLElement | null }) {
+function RevisionModal({ data, close, trigger, onError }: { data: RelevamientoDetailData; close: () => void; trigger: HTMLElement | null; onError: (message: string) => void }) {
   const id = "modalRevisionCoordinador";
+  const [pending, setPending] = useState(false);
+  const [uncertain, setUncertain] = useState(false);
+  async function submit(fields: URLSearchParams) {
+    setPending(true);
+    const result = await postApi(data.urls.revision_api, fields);
+    if (result.kind === "ok") {
+      setFlash([{ message: result.message, level: "success" }]);
+      relevamientosNavigation.assign(result.redirect);
+      return;
+    }
+    if (result.kind === "error") onError(result.message);
+    else setUncertain(true);
+    setPending(false);
+  }
   return (
-    <Modal id={id} title="Revisión del coordinador" close={close} trigger={trigger} action={data.urls.revision}
-      footer={<><Cancel close={close} /><button type="submit" className="btn btn-primary">Guardar revisión</button></>}>
+    <Modal id={id} title="Revisión del coordinador" close={close} trigger={trigger} action={data.urls.revision} onSubmit={submit}
+      footer={<><Cancel close={close} /><button type="submit" className="btn btn-primary" disabled={pending || uncertain}>Guardar revisión</button></>}>
       <ModalHeader id={id} title="Revisión del coordinador" close={close} />
       <div className="modal-body">
         <div className="mb-2">
@@ -576,6 +617,7 @@ function RevisionModal({ data, close, trigger }: { data: RelevamientoDetailData;
             placeholder="Qué debe corregir el territorial (obligatorio si devuelve el acompañamiento territorial)" />
         </div>
         <small className="text-muted">Si valida, el territorial ya no podrá modificar el acompañamiento territorial desde la app.</small>
+        {uncertain && <UncertainNotice />}
       </div>
     </Modal>
   );
@@ -613,7 +655,7 @@ function Cycle({ data }: { data: RelevamientoDetailData }) {
           <tbody>{seguimientos.map((s) => (
             <tr key={s.id}>
               <td>{s.numero_orden}</td><td>{s.tipo}</td><td>{s.fecha}</td>
-              <td><span className={`badge ${s.estado_badge}`}>{s.estado}</span>{s.a_subsanar && <span className="badge bg-danger ml-1">A subsanar</span>}</td>
+              <td><span className={`badge ${s.estado_badge}`}>{s.estado}</span>{s.a_subsanar && <>{" "}<span className="badge bg-danger ml-1">A subsanar</span></>}</td>
               <td>{s.estado_validacion || <span className="text-muted">-</span>}</td>
               <td>{s.origen === "app" ? <span className="badge bg-primary" title="Cargado desde la app">App</span> : <span className="badge bg-light text-dark" title="Cargado desde SISOC">SISOC</span>}</td>
               <td>{s.sincronizado_gestionar ? <span className="badge bg-success">Sincronizado</span> : <span className="badge bg-secondary">Pendiente</span>}</td>
@@ -633,6 +675,7 @@ function Cycle({ data }: { data: RelevamientoDetailData }) {
 
 export function RelevamientoDetailContent({ data }: { data: RelevamientoDetailData }) {
   const { relevamiento: r, capabilities: caps } = data;
+  const { toasts, push } = useToasts(data.messages);
   const [modal, setModal] = useState<"asignar" | "revision" | null>(null);
   const [trigger, setTrigger] = useState<HTMLElement | null>(null);
   const open = (kind: "asignar" | "revision", el: HTMLElement) => { setTrigger(el); setModal(kind); };
@@ -641,7 +684,7 @@ export function RelevamientoDetailContent({ data }: { data: RelevamientoDetailDa
   const revisar = caps.review_relevamiento && !r.esta_validado && !r.sin_cargar;
   useCardCollapse();
   return <>
-    <InsumosToastList messages={data.messages} />
+    {toasts}
     {CSS}
     <div className="row justify-content-between d-print-none mx-1 mb-3">
       <div className="col-auto" />
@@ -665,6 +708,8 @@ export function RelevamientoDetailContent({ data }: { data: RelevamientoDetailDa
         <div className="mt-1">{r.observaciones_coordinador.split(/\r\n|\r|\n/).map((line, i) => <span key={i}>{i > 0 && <br />}{line}</span>)}</div>
       </div>
     )}
+    {modal === "revision" && <RevisionModal data={data} close={() => setModal(null)} trigger={trigger} onError={(message) => { setModal(null); push({ message, level: "error" }); }} />}
+    {modal === "asignar" && <AsignarModal data={data} close={() => setModal(null)} trigger={trigger} />}
     <div className="comedor-header-card mb-5"><div className="row align-items-center">
       <div className="col-md-8"><h1 className="comedor-header-title">{r.nombre_comedor ?? "None"}{" "}<span className="comedor-header-divider">|</span></h1></div>
       <div className="col-md-4"><div className="comedor-header-dates">
@@ -699,8 +744,6 @@ export function RelevamientoDetailContent({ data }: { data: RelevamientoDetailDa
         </ul></div>
       </div>
     )}
-    {modal === "asignar" && <AsignarModal data={data} close={() => setModal(null)} trigger={trigger} />}
-    {modal === "revision" && <RevisionModal data={data} close={() => setModal(null)} trigger={trigger} />}
   </>;
 }
 
@@ -734,18 +777,22 @@ function DetailPage({ comedor, id }: { comedor: string; id: string }) {
 }
 
 const LIST = /^\/comedores\/([0-9]+)\/relevamiento\/listar$/;
+const BAJA = /^\/comedores\/([0-9]+)\/relevamiento\/([0-9]+)\/eliminar$/;
 const DETAIL = /^\/comedores\/([0-9]+)\/relevamiento\/([0-9]+)$/;
-type Params = { comedor: string; id?: string };
+type Params = { comedor: string; id?: string; baja?: boolean };
 
 export const relevamientosRoute: RouteDefinition<Params> = {
   name: "comedores-relevamientos",
   match(pathname) {
     const list = LIST.exec(pathname);
     if (list) return { comedor: list[1] };
+    const baja = BAJA.exec(pathname);
+    if (baja) return { comedor: baja[1], id: baja[2], baja: true };
     const detail = DETAIL.exec(pathname);
     return detail ? { comedor: detail[1], id: detail[2] } : null;
   },
-  render({ comedor, id }) {
+  render({ comedor, id, baja }) {
+    if (baja) return <RelevamientoBaja comedor={comedor} id={id!} />;
     return id ? <DetailPage comedor={comedor} id={id} /> : <ListPage comedor={comedor} />;
   },
 };

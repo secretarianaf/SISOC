@@ -137,6 +137,9 @@ class RelevamientosListadoWebView(_NativeReadView):
                     "territoriales_sincronizar": reverse(
                         "api_sincronizar_territoriales", args=[comedor_id]
                     ),
+                    "numero_if": reverse(
+                        "relevamientos_web_numero_if", args=[comedor_id]
+                    ),
                 },
                 "messages": pending_messages(request),
             }
@@ -192,6 +195,10 @@ class RelevamientoDetalleWebView(_NativeReadView):
                     ),
                     "revision": reverse(
                         "relevamiento_revision_coordinador",
+                        args=[comedor_id, relevamiento.id],
+                    ),
+                    "revision_api": reverse(
+                        "relevamientos_web_revision",
                         args=[comedor_id, relevamiento.id],
                     ),
                     "historial": reverse(

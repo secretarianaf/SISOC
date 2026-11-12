@@ -21,7 +21,7 @@ const list = (over: Record<string, unknown> = {}) => ({
   actas: [{ id: 5, fecha_hora: "Sin fecha", tecnico: "Sin técnico", origen: "sisoc", prestaciones_count: 1, estado: "Finalizado", estado_badge: "bg-success", a_subsanar: false, detalle_url: "/comedores/7/acta/5", editar_url: "/comedores/7/acta/5/editar" }],
   seguimientos_pnud: [{ id: 9, formulario_display: "FORM-SIPH", fecha_hora: "Sin fecha", tecnico: "Sin técnico", origen: "app", estado: "Pendiente Revisión", estado_badge: "bg-warning text-dark", a_subsanar: true, detalle_url: "/comedores/7/pnud/9" }],
   opciones_alta: [{ value: "inicial", label: "Relevamiento inicial" }], opciones_seguimiento: [{ value: "posterior", label: "Seguimiento posterior" }],
-  capabilities: caps(), urls: { listado: LIST, alta: "/comedores/ajax/7/relevamiento/", acta_crear: "/comedores/7/acta/crear", territoriales: "/comedores/7/territoriales/", territoriales_sincronizar: "/comedores/7/territoriales/sincronizar/" },
+  capabilities: caps(), urls: { listado: LIST, alta: "/comedores/ajax/7/relevamiento/", acta_crear: "/comedores/7/acta/crear", territoriales: "/comedores/7/territoriales/", territoriales_sincronizar: "/comedores/7/territoriales/sincronizar/", numero_if: "/comedores/7/numero-if/" },
   messages: [], ...over,
 });
 type N = string | { t: string; a: Record<string, string>; c: N[] };
@@ -45,7 +45,7 @@ const detail = (over: Record<string, unknown> = {}, rel: Record<string, unknown>
     detalle_url: "/comedores/7/relevamiento/12/seguimiento/3", editar_url: "/comedores/7/relevamiento/12/seguimiento/3/editar", eliminar_url: "/comedores/7/relevamiento/12/seguimiento/3/eliminar" }],
   adjuntos: [], pdf: { disponible: false, url: "/comedores/7/relevamiento/12/pdf", oficial: false, fecha_oficial: null },
   capabilities: { change_relevamiento: false, review_relevamiento: false, change_primerseguimiento: false, delete_primerseguimiento: false, view_logentry: false },
-  urls: { listado: LIST, comedores: "/comedores/listar", comedor: "/comedores/7", alta: "/comedores/ajax/7/relevamiento/", eliminar: "/comedores/7/relevamiento/12/eliminar", revision: "/comedores/7/relevamiento/12/revision",
+  urls: { listado: LIST, comedores: "/comedores/listar", comedor: "/comedores/7", alta: "/comedores/ajax/7/relevamiento/", eliminar: "/comedores/7/relevamiento/12/eliminar", revision: "/comedores/7/relevamiento/12/revision", revision_api: "/comedores/7/relevamiento/12/revision/",
     historial: "/audittrail/relevamientos/relevamiento/12/", territoriales: "/comedores/7/territoriales/", territoriales_sincronizar: "/comedores/7/territoriales/sincronizar/" },
   messages: [], ...over,
 });
@@ -72,7 +72,7 @@ describe("Relevamientos route", () => {
     expect(findRoute(LIST)?.route.name).toBe("comedores-relevamientos");
     expect(findRoute(DETAIL)?.route.name).toBe("comedores-relevamientos");
     for (const other of ["/comedores/7/relevamiento/listar/", "/comedores/x/relevamiento/listar", "/comedores/7/relevamiento/12/pdf", "/comedores/7/relevamiento/crear",
-      "/comedores/7/relevamiento/12/editar", "/comedores/7/relevamiento/12/eliminar", "/comedores/7/relevamiento/12/seguimiento/3"]) {
+      "/comedores/7/relevamiento/12/editar", "/comedores/7/relevamiento/12/seguimiento/3"]) {
       expect(findRoute(other)?.route.name).not.toBe("comedores-relevamientos");
     }
   });
@@ -133,7 +133,7 @@ describe("Relevamientos route", () => {
     expect(within(seguimiento).getByText("Crear seguimiento")).toBeTruthy();
   });
 
-  it("edits the Numero de IF with a native form", async () => {
+  it("opens and cancels the inline Numero de IF form", async () => {
     serve(list({ capabilities: caps({ change_relevamiento: true }) }));
     setup(LIST);
     fireEvent.click(await screen.findByRole("button", { name: "Actualizar IF" }));

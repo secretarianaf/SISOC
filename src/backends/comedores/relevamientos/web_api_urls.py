@@ -2,6 +2,11 @@
 
 from django.urls import path
 
+from relevamientos.web_api_mutations import (
+    NumeroIfWebView,
+    RelevamientoBajaWebView,
+    RelevamientoRevisionWebView,
+)
 from relevamientos.web_api_views import (
     ActaDetalleWebView,
     SeguimientoDetalleWebView,
@@ -40,5 +45,20 @@ urlpatterns = [
         "<int:comedor_pk>/actas/<int:pk>/",
         ActaDetalleWebView.as_view(),
         name="relevamientos_web_acta",
+    ),
+    path(
+        "<int:comedor_pk>/relevamiento/numero-if/",
+        NumeroIfWebView.as_view(),
+        name="relevamientos_web_numero_if",
+    ),
+    path(
+        "<int:comedor_pk>/relevamiento/<int:pk>/eliminar/",
+        RelevamientoBajaWebView.as_view(),
+        name="relevamientos_web_baja",
+    ),
+    path(
+        "<int:comedor_pk>/relevamiento/<int:pk>/revision/",
+        RelevamientoRevisionWebView.as_view(),
+        name="relevamientos_web_revision",
     ),
 ]

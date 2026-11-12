@@ -793,6 +793,14 @@ nativas con los mismos 404 y proyectan su contexto. Los PDF, las ediciones, las
 revisiones y las bajas siguen siendo enlaces y POST nativos con CSRF. Registro:
 `../registro/cambios/2026-T4/2026-11-12-2785-react-relevamientos-seguimientos-actas.md`.
 
+Las mutaciones de relevamientos (R01.02) suman `POST .../relevamiento/numero-if/`,
+`GET/POST .../relevamiento/<pk>/eliminar/` y `POST .../relevamiento/<pk>/revision/`: cada
+una repite el permiso y las reglas de su vista nativa y reutiliza su código (baja lógica
+en cascada, `aplicar_revision_coordinador`), responde `{ok, message, redirect}` o el
+error con 400, 403 o 409 y exige CSRF. React muestra la confirmación de baja con su vista
+previa y nunca reenvía un resultado incierto. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-relevamientos-mutaciones.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

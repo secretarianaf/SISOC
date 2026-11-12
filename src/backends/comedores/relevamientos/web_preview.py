@@ -30,6 +30,7 @@ from relevamientos.views.backoffice_views import (
 )
 from relevamientos.views.web_views import (
     PrimerSeguimientoDetailView,
+    RelevamientoDeleteView,
     RelevamientoDetailView,
     RelevamientoListView,
 )
@@ -86,6 +87,18 @@ class ActaEntry(ActaComplementariaDetailView):
         return _index(request, self.index_bytes)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EliminarEntry(RelevamientoDeleteView):
+    """GET gets the React page after the native lookup; POST stays the native baja."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        # Same Http404 as the native confirmation (unknown or soft deleted).
+        self.get_object()
+        return _index(request, self.index_bytes)
+
+
 def relevamientos_preview_patterns(build_directory):
     """Freeze an explicit local ``apps/sisoc`` build for a disposable preview URLconf.
 
@@ -106,6 +119,12 @@ def relevamientos_preview_patterns(build_directory):
         path(
             "comedores/<comedor_pk>/relevamiento/listar",
             guard(ListadoEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "comedores/<comedor_pk>/relevamiento/<int:pk>/eliminar",
+            permissions_any_required(["relevamientos.change_relevamiento"])(
+                EliminarEntry.as_view(index_bytes=index_bytes)
+            ),
         ),
         path(
             "comedores/<comedor_pk>/relevamiento/<int:pk>",

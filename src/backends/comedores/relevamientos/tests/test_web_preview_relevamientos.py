@@ -90,3 +90,29 @@ def test_native_guards_decide_first():
 def test_build_without_index_is_refused(tmp_path):
     with pytest.raises(ValueError):
         relevamientos_preview_patterns(tmp_path)
+
+
+@pytest.mark.usefixtures("preview")
+def test_the_baja_confirmation_gets_the_frozen_index_and_post_stays_native():
+    comedor = Comedor.objects.create(nombre="Prev baja")
+    relevamiento = Relevamiento.objects.create(comedor=comedor)
+    url = f"/comedores/{comedor.pk}/relevamiento/{relevamiento.pk}/eliminar"
+    usuario = get_user_model().objects.create_user("editor_prev_baja")
+    usuario.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="relevamientos", codename="change_relevamiento"
+        )
+    )
+    client = Client()
+    client.force_login(usuario)
+
+    assert Client().get(url).status_code == 403
+    assert _login("lector_prev_baja").get(url).status_code == 403
+    assert client.get(f"{url[:-8]}9999/eliminar").status_code == 404
+    respuesta = client.get(url)
+    assert respuesta.status_code == 200
+    assert (
+        "/comedores/react/relevamientos/assets/app-1.js" in respuesta.content.decode()
+    )
+    assert client.post(url).status_code == 302
+    assert client.get(url).status_code == 404

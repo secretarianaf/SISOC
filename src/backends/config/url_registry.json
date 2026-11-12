@@ -14965,6 +14965,16 @@
   "regex": "^api/web/vat/inscripciones/(?P<pk>[0-9]+)/estado/\\Z"
  },
  {
+  "name": "evaluaciones-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/evaluaciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "evaluaciones-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/evaluaciones/\\Z"
+ },
+ {
   "name": "horario-form",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/horario\\-form/\\Z"
@@ -15113,5 +15123,20 @@
   "name": "ubicaciones-options",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/ubicaciones/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "vouchers-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "vouchers-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/\\Z"
+ },
+ {
+  "name": "vouchers-parametrias-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/parametrias/\\Z"
  }
 ]

@@ -55,6 +55,8 @@ import { passwordResetRoute } from "./passwordReset";
 import { requiredPasswordRoute } from "./requiredPassword";
 import { bulkCredentialsRoute } from "./bulkCredentials";
 import { userImportRoute } from "./userImport";
+import { vatEvaluacionesRoute } from "./vatEvaluaciones";
+import { vatVouchersRoute } from "./vatVouchers";
 import type { RouteDefinition, ShellRouteDefinition } from "./types";
 
 export type { RouteDefinition, ShellRouteDefinition } from "./types";
@@ -114,6 +116,8 @@ export const ROUTES: RouteDefinition[] = [
   rendicionMensualRoute,
   rendicionFinalRoute,
   comunicadosRoute,
+  vatVouchersRoute,
+  vatEvaluacionesRoute,
   ocrRoute,
   organizacionesRoute,
   organizacionConvenioRoute,

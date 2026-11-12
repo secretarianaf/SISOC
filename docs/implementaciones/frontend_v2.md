@@ -957,3 +957,11 @@ El alta y la edición de comunicados (CM02.02) usan `GET` y `POST .../comunicado
 `ComunicadoCreateView`, `ComunicadoUpdateView` y las vistas nativas de destinatarios (POST multipart, 400 con el
 formulario ligado, JSON 415) y el panel de destinatarios se reimplementa en React. Registro:
 `../registro/cambios/2026-T4/2026-11-12-2785-react-comunicados-formulario.md`.
+
+Los vouchers y las parametrías de VAT (V01.01) y las evaluaciones (V08.01) usan `GET /api/web/vat/vouchers/`,
+`.../vouchers/<pk>/`, `.../vouchers/parametrias/`, `.../evaluaciones/` y `.../evaluaciones/<pk>/`
+(`src/backends/vat/VAT/web_api_vouchers.py`, `web_api_evaluaciones.py` y la base `web_api_common.py`): cada una
+ejecuta la vista nativa y proyecta su contexto, con el permiso de la ruta (`VAT.view_voucher`,
+`VAT.view_evaluacion`) detrás de la compuerta G1. La recarga y la cancelación del detalle siguen siendo los POST
+nativos con CSRF. Contrato: `../plans/2026-T4/2026-11-12-2785-vat-v01-v08-m2.md`. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-vat-vouchers-evaluaciones.md`.

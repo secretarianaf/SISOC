@@ -8,6 +8,12 @@ from ciudadanos.web_aportes import AporteCiudadanoWebView
 from VAT import api_inet_views as views
 from VAT.services.inet_forms import FORM_CLASSES
 from VAT.services.inet_queries import RESOURCES
+from VAT.web_api_evaluaciones import EvaluacionDetailWebView, EvaluacionListWebView
+from VAT.web_api_vouchers import (
+    VoucherDetailWebView,
+    VoucherListWebView,
+    VoucherParametriaListWebView,
+)
 
 app_name = "vat_web_api"
 urlpatterns = [
@@ -96,5 +102,22 @@ urlpatterns += [
         "ciudadanos/<int:pk>/aportes/<str:aporte>/",
         AporteCiudadanoWebView.as_view(backend="vat"),
         name="ciudadano-aporte",
+    ),
+]
+
+# V01.01 vouchers y parametrías, V08.01 evaluaciones: lectura de las vistas nativas.
+urlpatterns += [
+    path("vouchers/", VoucherListWebView.as_view(), name="vouchers-list"),
+    path(
+        "vouchers/parametrias/",
+        VoucherParametriaListWebView.as_view(),
+        name="vouchers-parametrias-list",
+    ),
+    path("vouchers/<int:pk>/", VoucherDetailWebView.as_view(), name="vouchers-detail"),
+    path("evaluaciones/", EvaluacionListWebView.as_view(), name="evaluaciones-list"),
+    path(
+        "evaluaciones/<int:pk>/",
+        EvaluacionDetailWebView.as_view(),
+        name="evaluaciones-detail",
     ),
 ]

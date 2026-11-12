@@ -58,6 +58,7 @@ _OWNED_PATTERNS = (
     r"|documentacion/[0-9]+/(?:estado/|vencimiento/|numero-gde/)"
     r"|(?:firmantes|avales)/[0-9]+/(?:formulario/|baja/)?)",
     r"/api/web/ciudadanos/[0-9]+/",
+    r"/api/web/vat/(?:vouchers/(?:parametrias/|[0-9]+/)?|evaluaciones/(?:[0-9]+/)?)",
     r"/api/web/(?:comedores|cdf|celiaquia|vat)/ciudadanos/[0-9]+/aportes/[a-z]+/",
 )
 

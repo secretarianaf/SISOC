@@ -1414,7 +1414,8 @@
                 </div>
                 <div class="card-body">
                     <form method="post"
-                          action="{% url 'expediente_asignar_tecnico' expediente.pk %}">
+                          action="{% url 'expediente_asignar_tecnico' expediente.pk %}"
+                          data-un-solo-envio="Asignando…">
                         {% csrf_token %}
                         <div class="form-group">
                             <label for="tecnico">Seleccionar Técnico:</label>
@@ -2266,10 +2267,11 @@
           content="{% url 'legajo_motivo_preview' expediente.pk 0 %}" />
     {{ catalogo_comentarios_tecnicos|json_script:"catalogo-comentarios-tecnicos" }}
     <script src="{% static 'custom/js/expediente_detail_config.js' %}?v=20260902-comentarios-tecnicos"></script>
-    <script src="{% static 'custom/js/registros_erroneos.js' %}?v=20260326-guardado-parcial-siempre"></script>
+    <script src="{% static 'custom/js/registros_erroneos.js' %}?v=20261112-un-solo-envio"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
     <script src="{% static 'custom/js/expediente_detail.js' %}?v=20261022-renaper-comparacion"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
-    <script src="{% static 'custom/js/legajo_comentarios.js' %}?v=20261112-sin-doble-envio"></script>
+    <script src="{% static 'custom/js/legajo_comentarios.js' %}?v=20261112-spinner"></script>
+    <script src="{% static 'custom/js/celiaquia_un_solo_envio.js' %}?v=20261112"></script>
 {% endblock %}

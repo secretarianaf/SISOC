@@ -23,7 +23,10 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <form id="expediente-form" method="post" enctype="multipart/form-data">
+                    <form id="expediente-form"
+                          method="post"
+                          enctype="multipart/form-data"
+                          data-un-solo-envio="Guardando…">
                         {% csrf_token %}
                         <div class="mb-3">{{ form.numero_expediente|as_crispy_field }}</div>
                         <div class="mb-3">{{ form.observaciones|as_crispy_field }}</div>
@@ -153,4 +156,5 @@
     </script>
     <script src="{% static 'custom/js/localidades_modal.js' %}"></script>
     <script src="{% static 'custom/js/celiaquia.js' %}"></script>
+    <script src="{% static 'custom/js/celiaquia_un_solo_envio.js' %}?v=20261112"></script>
 {% endblock %}

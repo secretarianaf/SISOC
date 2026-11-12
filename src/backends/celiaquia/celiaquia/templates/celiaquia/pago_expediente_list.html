@@ -11,6 +11,7 @@
                class="btn btn-outline-secondary btn-sm">← Volver</a>
             <form action="{% url 'pago_expediente_create' provincia.id %}"
                   method="post"
+                  data-un-solo-envio="Generando…"
                   class="d-inline">
                 {% csrf_token %}
                 <button class="btn btn-success btn-sm">Generar expediente de pago</button>
@@ -87,4 +88,5 @@
 {% block customJS %}
     <!-- Script de ordenamiento reutilizable para tablas -->
     <script src="{% static 'custom/js/listSort.js' %}"></script>
+    <script src="{% static 'custom/js/celiaquia_un_solo_envio.js' %}?v=20261112"></script>
 {% endblock %}

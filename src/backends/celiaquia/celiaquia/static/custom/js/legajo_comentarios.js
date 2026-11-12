@@ -204,7 +204,11 @@ function enviarComentario(form) {
     if (form.dataset.enviando === 'true') return;
     form.dataset.enviando = 'true';
     const botonGuardar = form.querySelector('button[type="submit"]');
-    if (botonGuardar) botonGuardar.disabled = true;
+    const htmlOriginal = botonGuardar ? botonGuardar.innerHTML : '';
+    if (botonGuardar) {
+        botonGuardar.disabled = true;
+        botonGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando…';
+    }
 
     const formData = new FormData(form);
     const legajoId = form.dataset.legajoId;
@@ -246,7 +250,10 @@ function enviarComentario(form) {
     })
     .finally(() => {
         form.dataset.enviando = 'false';
-        if (botonGuardar) botonGuardar.disabled = false;
+        if (botonGuardar) {
+            botonGuardar.disabled = false;
+            botonGuardar.innerHTML = htmlOriginal;
+        }
     });
 }
 

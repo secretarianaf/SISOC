@@ -28,7 +28,6 @@ from importarexpediente.models import (
     RegistroImportado,
 )
 
-
 User = get_user_model()
 ACTIVO = "Activo"
 INACTIVO = "Inactivo"

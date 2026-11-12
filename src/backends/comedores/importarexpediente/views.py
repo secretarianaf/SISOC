@@ -42,7 +42,6 @@ from importarexpediente.services import (
     parse_import_file,
 )
 
-
 MAX_ERROR_MESSAGES = 20
 logger = logging.getLogger(__name__)
 

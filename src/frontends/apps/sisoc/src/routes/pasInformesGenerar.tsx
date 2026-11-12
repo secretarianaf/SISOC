@@ -68,7 +68,7 @@ async function generate(values: Values): Promise<Outcome> {
     if (response.status !== 200 || !isBuffer(response.data)) return { kind: "uncertain" };
     const headers = response.headers as Record<string, string | undefined>;
     const name = /filename="([^"]+)"/.exec(headers["content-disposition"] ?? "")?.[1] ?? `pas-inf-${headers["x-pas-informe-id"] ?? "nuevo"}.csv`;
-    const url = URL.createObjectURL(new Blob([response.data], { type: "text/csv; charset=utf-8" }));
+    const url = URL.createObjectURL(new Blob([response.data], { type: headers["content-type"] ?? "" }));
     const link = document.createElement("a");
     link.href = url;
     link.download = name;

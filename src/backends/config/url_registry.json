@@ -3205,6 +3205,21 @@
   "regex": "^ocr/\\Z"
  },
  {
+  "name": "ocr_web_carga",
+  "namespace": "",
+  "regex": "^api/web/ocr/carga/\\Z"
+ },
+ {
+  "name": "ocr_web_lote",
+  "namespace": "",
+  "regex": "^api/web/ocr/lotes/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "ocr_web_lote_crear",
+  "namespace": "",
+  "regex": "^api/web/ocr/lotes/\\Z"
+ },
+ {
   "name": "organizacion_crear",
   "namespace": "",
   "regex": "^organizaciones/crear\\Z"

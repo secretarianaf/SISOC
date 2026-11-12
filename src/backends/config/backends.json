@@ -412,6 +412,7 @@
     ],
     "url_prefixes": [
       "ocr/",
+      "api/web/ocr/",
       "admin/ocr/"
     ],
     "urlconf": "ocr_runtime.urls",

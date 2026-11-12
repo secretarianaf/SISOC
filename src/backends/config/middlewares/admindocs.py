@@ -38,6 +38,7 @@ _OWNED_PATTERNS = (
     r"(?:formulario/|crear/|[0-9a-f-]{36}/(?:formulario/|editar/|cerrar/|eliminar/)?)?)",
     r"/api/web/comedores/comunicados/(?:gestion/|[0-9]+/)?",
     r"/api/web/dispositivos/datacalle/casos/[0-9a-f-]{36}/",
+    r"/api/web/ocr/(?:carga/|lotes/(?:[0-9]+/)?)",
 )
 
 

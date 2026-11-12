@@ -26,6 +26,7 @@ import { inspeccionesActasRoute } from "./inspeccionesActas";
 import { inspeccionesEscuelasRoute } from "./inspeccionesEscuelas";
 import { loginRoute } from "./login";
 import { montosRoute } from "./montos";
+import { ocrRoute } from "./ocr";
 import { pasRoute } from "./pas";
 import { pasInformesRoute } from "./pasInformes";
 import { pasInformesGenerarRoute } from "./pasInformesGenerar";
@@ -83,6 +84,7 @@ export const ROUTES: RouteDefinition[] = [
   expedientesPagosRoute,
   rendicionMensualRoute,
   comunicadosRoute,
+  ocrRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

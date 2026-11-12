@@ -789,3 +789,10 @@ formulario y los servicios nativos, y `generar/` devuelve el CSV en el mismo
 POST. Entrada local: `src/backends/pas/pas/web_preview_informes.py`. Registros:
 `../registro/cambios/2026-T4/2026-11-11-2785-react-pas-informes.md` y
 `../registro/cambios/2026-T4/2026-11-12-2785-react-pas-informes-generar.md`.
+
+La carga y el seguimiento de lotes OCR (`routes/ocr.tsx`) toman `/ocr/` y
+`/ocr/<pk>/`; los datos salen de `/api/web/ocr/`
+(`src/backends/ocr/ocr/web_api_views.py`), que reusa el formulario nativo y
+`create_ocr_job`; el procesamiento sigue en el worker OCR y la descarga del .txt
+sigue en la ruta nativa. Entrada local: `src/backends/ocr/ocr/web_preview.py`.
+Registro: `../registro/cambios/2026-T4/2026-11-12-2785-react-ocr.md`.

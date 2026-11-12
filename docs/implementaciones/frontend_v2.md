@@ -809,6 +809,14 @@ error con 400, 403 o 409 y exige CSRF. React muestra la confirmación de baja co
 previa y nunca reenvía un resultado incierto. Registro:
 `../registro/cambios/2026-T4/2026-11-12-2785-react-relevamientos-mutaciones.md`.
 
+La edición, baja y revisión de seguimientos, seguimientos PNUD y actas (R03.02, R02.02)
+suman endpoints bajo `/api/web/comedores/relevamientos/<comedor>/` que ejecutan el código
+nativo (`SeguimientoEditor`, `ActaComplementariaEditor`, las vistas de baja y
+`aplicar_revision_coordinador`). Los formularios viajan como el marcado real de cada campo
+(`{{ field }}`) con sus errores y React los pinta sin controlar, así que los nombres y valores
+del POST son los nativos; un formulario inválido responde 400 sin escribir nada. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-relevamientos-formularios.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

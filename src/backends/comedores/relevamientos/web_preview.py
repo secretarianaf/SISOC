@@ -26,7 +26,13 @@ from comedores.web_preview_catalogos import (
 from core.decorators import permissions_any_required
 from relevamientos.views.backoffice_views import (
     ActaComplementariaDetailView,
+    ActaComplementariaFormView,
+    SeguimientoUpdateView,
     SeguimientoPnudDetailView,
+)
+from relevamientos.views.seguimiento_helpers import (
+    resolver_seguimiento,
+    seguimiento_queryset,
 )
 from relevamientos.views.web_views import (
     PrimerSeguimientoDetailView,
@@ -99,6 +105,26 @@ class EliminarEntry(RelevamientoDeleteView):
         return _index(request, self.index_bytes)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class SeguimientoEditarEntry(SeguimientoUpdateView):
+    """GET gets the React page after the native lookup; POST stays the native editor."""
+
+    index_bytes = b""
+
+    def get(self, request, **kwargs):
+        resolver_seguimiento(self.kwargs, seguimiento_queryset())
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ActaFormularioEntry(ActaComplementariaFormView):
+    index_bytes = b""
+
+    def get(self, request, **kwargs):
+        self._cargar()
+        return _index(request, self.index_bytes)
+
+
 def relevamientos_preview_patterns(build_directory):
     """Freeze an explicit local ``apps/sisoc`` build for a disposable preview URLconf.
 
@@ -133,6 +159,24 @@ def relevamientos_preview_patterns(build_directory):
         path(
             "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimiento/<int:pk>/",
             guard(SeguimientoEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimiento/<int:pk>/editar",
+            permissions_any_required(["relevamientos.change_primerseguimiento"])(
+                SeguimientoEditarEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "comedores/<int:comedor_pk>/acta-complementaria/crear",
+            permissions_any_required(["relevamientos.add_actacomplementaria"])(
+                ActaFormularioEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "comedores/<int:comedor_pk>/acta-complementaria/<int:pk>/editar",
+            permissions_any_required(["relevamientos.change_actacomplementaria"])(
+                ActaFormularioEntry.as_view(index_bytes=index_bytes)
+            ),
         ),
         path(
             "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/primer-seguimiento/",

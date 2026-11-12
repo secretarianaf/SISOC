@@ -4070,6 +4070,26 @@
   "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/actas/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "relevamientos_web_acta_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/actas/crear/\\Z"
+ },
+ {
+  "name": "relevamientos_web_acta_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/actas/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "relevamientos_web_acta_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/actas/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "relevamientos_web_acta_revision",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/actas/(?P<pk>[0-9]+)/revision/\\Z"
+ },
+ {
   "name": "relevamientos_web_baja",
   "namespace": "",
   "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<pk>[0-9]+)/eliminar/\\Z"
@@ -4095,6 +4115,11 @@
   "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/pnud/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "relevamientos_web_pnud_revision",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/pnud/(?P<pk>[0-9]+)/revision/\\Z"
+ },
+ {
   "name": "relevamientos_web_revision",
   "namespace": "",
   "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<pk>[0-9]+)/revision/\\Z"
@@ -4105,9 +4130,29 @@
   "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimientos/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "relevamientos_web_seguimiento_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimientos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "relevamientos_web_seguimiento_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimientos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
   "name": "relevamientos_web_seguimiento_primero",
   "namespace": "",
   "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimientos/primero/\\Z"
+ },
+ {
+  "name": "relevamientos_web_seguimiento_primero_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimientos/primero/eliminar/\\Z"
+ },
+ {
+  "name": "relevamientos_web_seguimiento_revision",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimientos/(?P<pk>[0-9]+)/revision/\\Z"
  },
  {
   "name": "renaper-consulta-consultar",

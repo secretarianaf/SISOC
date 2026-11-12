@@ -1,11 +1,11 @@
 /* eslint-disable react-refresh/only-export-components -- the unit surface is this route module; its validators are exported for the tests. */
-import { InsumosToastList } from "../InsumosToast";
 import { internal, record, renderMain, text, useMainResource } from "./MainFrame";
-import { Cancel, ModalHeader, Modal, bool, integer, messagesValid, path } from "./relevamientos";
+import { Cancel, ModalHeader, Modal, UncertainNotice, bool, integer, messagesValid, path } from "./relevamientos";
 import {
-  Adjuntos, Badges, Cell, CSS, Lines, ObservacionesAlert, RevisionModal, SummaryCard, adjuntosValid, canReview, reviewValid, rowsValid, useModalState,
+  Adjuntos, Badges, Cell, CSS, Lines, ObservacionesAlert, RevisionModal, SummaryCard, adjuntosValid, canReview, reviewValid, rowsValid, useApiAction, useModalState,
   type Adjunto, type Review,
 } from "./relevamientosShared";
+import { useToasts } from "./relevamientosApi";
 import type { RouteDefinition } from "./types";
 
 /**
@@ -18,7 +18,7 @@ export type ActaData = {
   acta: Review & { id: number; comedor: { id: number; nombre: string }; fecha_hora: string; tecnico: string; fecha_creacion: string; observaciones: string };
   prestaciones: string[][]; adjuntos: Adjunto[];
   capabilities: { change_actacomplementaria: boolean; review_relevamiento: boolean; delete_actacomplementaria: boolean };
-  urls: { comedores: string; comedor: string; listado: string; editar: string; revision: string; eliminar: string }; messages: Message[];
+  urls: { comedores: string; comedor: string; listado: string; editar: string; revision: string; eliminar: string; revision_api: string; eliminar_api: string }; messages: Message[];
 };
 
 const API = "web/comedores/relevamientos/";
@@ -29,20 +29,22 @@ export function actaValid(v: unknown): v is ActaData {
   return reviewValid(a) && integer(a.id) && integer(ac.id) && text(ac.nombre) && text(a.fecha_hora) && text(a.tecnico) && text(a.fecha_creacion) && text(a.observaciones) &&
     rowsValid(v.prestaciones) && adjuntosValid(v.adjuntos) &&
     ["change_actacomplementaria", "review_relevamiento", "delete_actacomplementaria"].every((k) => bool(c[k])) &&
-    ["comedores", "comedor", "listado", "editar", "revision", "eliminar"].every((k) => internal(u[k])) && messagesValid(v.messages);
+    ["comedores", "comedor", "listado", "editar", "revision", "eliminar", "revision_api", "eliminar_api"].every((k) => internal(u[k])) && messagesValid(v.messages);
 }
 
 const REVISION = { modal: "modalRevisionActa", select: "revision_acta_estado", textarea: "revision_acta_observaciones", placeholder: "Qué debe corregir el territorial (obligatorio si devuelve el acta)" };
 
-function EliminarModal({ action, close, trigger }: { action: string; close: () => void; trigger: HTMLElement | null }) {
+function EliminarModal({ action, api, close, trigger, onError }: { action: string; api: string; close: () => void; trigger: HTMLElement | null; onError: (message: string) => void }) {
   const id = "modalEliminarActa";
+  const { submit, disabled, uncertain } = useApiAction(api, onError);
   return (
-    <Modal id={id} title="Eliminar acta complementaria" close={close} trigger={trigger} action={action}
-      footer={<><Cancel close={close} /><button type="submit" className="btn btn-danger">Eliminar</button></>}>
+    <Modal id={id} title="Eliminar acta complementaria" close={close} trigger={trigger} action={action} onSubmit={submit}
+      footer={<><Cancel close={close} /><button type="submit" className="btn btn-danger" disabled={disabled}>Eliminar</button></>}>
       <ModalHeader id={id} title="Eliminar acta complementaria" close={close} />
       <div className="modal-body">
         <p className="mb-2">Esta acción elimina el acta y sus prestaciones.</p>
         <p className="mb-0 text-muted">No se puede deshacer.</p>
+        {uncertain && <UncertainNotice />}
       </div>
     </Modal>
   );
@@ -51,9 +53,11 @@ function EliminarModal({ action, close, trigger }: { action: string; close: () =
 export function ActaContent({ data }: { data: ActaData }) {
   const { acta, capabilities: caps } = data;
   const modal = useModalState<"revision" | "eliminar">();
+  const { toasts, push } = useToasts(data.messages);
+  const fail = (message: string) => { modal.close(); push({ message, level: "error" }); };
   const revisar = canReview(caps.review_relevamiento, acta);
   return <>
-    <InsumosToastList messages={data.messages} />
+    {toasts}
     {CSS}
     <div className="row justify-content-between d-print-none mx-1 mb-3">
       <div className="col-auto" />
@@ -64,7 +68,7 @@ export function ActaContent({ data }: { data: ActaData }) {
       </div>
     </div>
     <ObservacionesAlert r={acta} />
-    {modal.open === "revision" && <RevisionModal ids={REVISION} action={data.urls.revision} observaciones={acta.observaciones_coordinador} close={modal.close} trigger={modal.trigger} />}
+    {modal.open === "revision" && <RevisionModal ids={REVISION} action={data.urls.revision} api={data.urls.revision_api} onError={fail} observaciones={acta.observaciones_coordinador} close={modal.close} trigger={modal.trigger} />}
     <SummaryCard>
       <Cell label="ID SISOC" value={acta.id} />
       <Cell label="Fecha y hora" value={acta.fecha_hora} />
@@ -85,7 +89,7 @@ export function ActaContent({ data }: { data: ActaData }) {
         ) : <p className="text-muted m-3">El acta no tiene prestaciones cargadas.</p>}
       </div>
     </div>
-    {modal.open === "eliminar" && <EliminarModal action={data.urls.eliminar} close={modal.close} trigger={modal.trigger} />}
+    {modal.open === "eliminar" && <EliminarModal action={data.urls.eliminar} api={data.urls.eliminar_api} onError={fail} close={modal.close} trigger={modal.trigger} />}
     <Adjuntos adjuntos={data.adjuntos} />
   </>;
 }

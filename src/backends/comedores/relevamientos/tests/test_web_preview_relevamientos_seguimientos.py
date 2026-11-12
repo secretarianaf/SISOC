@@ -98,3 +98,66 @@ def test_native_guards_and_404s_decide_first():
         == 404
     )
     assert lector.get(urls["acta"] + "9").status_code == 404
+
+
+def _con_permisos(nombre, *codenames):
+    usuario = get_user_model().objects.create_user(nombre)
+    for codename in codenames:
+        usuario.user_permissions.add(
+            Permission.objects.get(
+                content_type__app_label="relevamientos", codename=codename
+            )
+        )
+    client = Client()
+    client.force_login(usuario)
+    return client
+
+
+@pytest.mark.usefixtures("preview")
+def test_the_edit_forms_get_the_frozen_index_and_post_stays_native():
+    urls = _datos()
+    comedor = Comedor.objects.get()
+    editar = urls["seguimiento"] + "editar"
+    acta_editar = urls["acta"] + "/editar"
+    acta_crear = f"/comedores/{comedor.pk}/acta-complementaria/crear"
+    cliente = _con_permisos(
+        "form_prev_seg",
+        "change_primerseguimiento",
+        "add_actacomplementaria",
+        "change_actacomplementaria",
+    )
+
+    sin_permiso = _login("sin_form_prev")
+    for url in (editar, acta_editar, acta_crear):
+        respuesta = cliente.get(url)
+        assert respuesta.status_code == 200, url
+        assert (
+            "/comedores/react/relevamientos/assets/app-1.js"
+            in respuesta.content.decode()
+        )
+        assert Client().get(url).status_code == 403
+        assert sin_permiso.get(url).status_code == 403
+    assert (
+        cliente.get(editar.replace("seguimiento/", "seguimiento/9")).status_code == 404
+    )
+    assert (
+        cliente.get(
+            acta_editar.replace("acta-complementaria/", "acta-complementaria/9")
+        ).status_code
+        == 404
+    )
+    # The native POST still creates the acta.
+    assert (
+        cliente.post(
+            acta_crear,
+            {
+                "acta-observaciones": "x",
+                "prestaciones-TOTAL_FORMS": "0",
+                "prestaciones-INITIAL_FORMS": "0",
+                "prestaciones-MIN_NUM_FORMS": "0",
+                "prestaciones-MAX_NUM_FORMS": "1000",
+            },
+        ).status_code
+        == 302
+    )
+    assert ActaComplementaria.objects.filter(observaciones="x").count() == 1

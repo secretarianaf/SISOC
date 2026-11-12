@@ -271,6 +271,9 @@ class SeguimientoDetalleWebView(_NativeReadView):
                     ),
                     "editar": reverse("seguimiento_editar", args=args),
                     "revision": reverse("seguimiento_revision_coordinador", args=args),
+                    "revision_api": reverse(
+                        "relevamientos_web_seguimiento_revision", args=args
+                    ),
                 },
                 "messages": pending_messages(request),
             }
@@ -319,6 +322,10 @@ class SeguimientoPnudDetalleWebView(_NativeReadView):
                         "seguimiento_pnud_revision_coordinador",
                         args=[comedor.id, seguimiento.id],
                     ),
+                    "revision_api": reverse(
+                        "relevamientos_web_pnud_revision",
+                        args=[comedor.id, seguimiento.id],
+                    ),
                 },
                 "messages": pending_messages(request),
             }
@@ -360,6 +367,12 @@ class ActaDetalleWebView(_NativeReadView):
                         "acta_complementaria_revision_coordinador", args=args
                     ),
                     "eliminar": reverse("acta_complementaria_eliminar", args=args),
+                    "revision_api": reverse(
+                        "relevamientos_web_acta_revision", args=args
+                    ),
+                    "eliminar_api": reverse(
+                        "relevamientos_web_acta_eliminar", args=args
+                    ),
                 },
                 "messages": pending_messages(request),
             }

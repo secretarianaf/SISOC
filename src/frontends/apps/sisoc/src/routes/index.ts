@@ -28,6 +28,7 @@ import { organizacionRendicionesRoute } from "./organizacionRendiciones";
 import { organizacionesRoute } from "./organizaciones";
 import { relevamientosRoute } from "./relevamientos";
 import { relevamientosActasRoute } from "./relevamientosActas";
+import { relevamientosFormsRoute } from "./relevamientosForms";
 import { relevamientosSeguimientosRoute } from "./relevamientosSeguimientos";
 import { duplasFormRoute } from "./duplasFormRoute";
 import { groupsRoute } from "./groups";
@@ -113,6 +114,7 @@ export const ROUTES: RouteDefinition[] = [
   relevamientosRoute,
   relevamientosSeguimientosRoute,
   relevamientosActasRoute,
+  relevamientosFormsRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { InsumosToastList } from "../InsumosToast";
 import { internal, record, text, webClient } from "./MainFrame";
 
@@ -13,6 +14,7 @@ export type Message = { message: string; level: "success" | "error" | "warning" 
 export type PostResult =
   | { kind: "ok"; message: string; redirect: string; body: Record<string, unknown> }
   | { kind: "error"; message: string }
+  | { kind: "invalid"; body: Record<string, unknown> }
   | { kind: "uncertain" };
 
 export const UNCERTAIN = "No se pudo confirmar el resultado.";
@@ -51,6 +53,8 @@ export async function postApi(endpoint: string, body: URLSearchParams): Promise<
   try {
     const { data, status } = await webClient.post(endpoint.replace(/^\/api\//, ""), body, { validateStatus: () => true });
     if (status === 200 && record(data) && data.ok === true && text(data.message) && internal(data.redirect)) return { kind: "ok", message: data.message, redirect: data.redirect, body: data };
+    // A form the server re-rendered with its bound errors (`detail` + descriptors).
+    if (status === 400 && record(data) && text(data.detail) && !record(data.errors)) return { kind: "invalid", body: data };
     if (status === 504 || (record(data) && data.uncertain === true)) return { kind: "uncertain" };
     return { kind: "error", message: firstError(data) || "No se pudo completar la operación." };
   } catch {
@@ -58,9 +62,24 @@ export async function postApi(endpoint: string, body: URLSearchParams): Promise<
   }
 }
 
+/**
+ * After a form is re-rendered with its errors the native page has been reloaded: the view starts at
+ * the top and keyboard focus at the start of the document, so do the same.
+ */
+export function restartFromTop() {
+  window.scrollTo(0, 0);
+  const marker = document.createElement("span");
+  marker.tabIndex = -1;
+  document.body.prepend(marker);
+  marker.focus({ preventScroll: true });
+  marker.remove();
+}
+
 /** The toasts of a screen: the ones its data carried, the flash of the previous mutation and the new ones. */
 export function useToasts(initial: Message[]) {
   const [state, setState] = useState<{ version: number; messages: Message[] }>(() => ({ version: 0, messages: [...initial, ...takeFlash()] }));
   const push = (message: Message) => setState((s) => ({ version: s.version + 1, messages: [message] }));
-  return { toasts: <InsumosToastList key={state.version} messages={state.messages} />, push };
+  // Toastr appends its container to the end of `<body>`: the toasts go to the same place.
+  const toasts: ReactNode = createPortal(<InsumosToastList key={state.version} messages={state.messages} />, document.body);
+  return { toasts, push };
 }

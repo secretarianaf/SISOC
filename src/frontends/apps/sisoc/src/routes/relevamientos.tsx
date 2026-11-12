@@ -28,7 +28,7 @@ export type RelevamientosListData = {
   urls: { listado: string; alta: string; acta_crear: string; territoriales: string; territoriales_sincronizar: string; numero_if: string }; messages: Message[];
 };
 export type TreeNode = string | { t: string; a: Record<string, string>; c: TreeNode[] };
-type Detalle = { id: number; fecha: string; estado: string; estado_badge: string; estado_validacion: string; a_subsanar: boolean; origen: string; sincronizado_gestionar: boolean; detalle_url: string; editar_url: string; eliminar_url: string; numero_orden: number; tipo: string };
+type Detalle = { id: number; fecha: string; estado: string; estado_badge: string; estado_validacion: string; a_subsanar: boolean; origen: string; sincronizado_gestionar: boolean; detalle_url: string; editar_url: string; eliminar_url: string; eliminar_api: string; numero_orden: number; tipo: string };
 type Adjunto = { id: number; nombre_original: string; es_pdf: boolean; tamano: string; fecha_subida: string; descargar_url: string };
 export type RelevamientoDetailData = {
   relevamiento: {
@@ -78,7 +78,7 @@ export function detailValid(v: unknown): v is RelevamientoDetailData {
     arr(v.timeline, (t) => record(t) && integer(t.id) && integer(t.step) && text(t.fecha) && text(t.estado) && text(t.card_class) && text(t.status_class)) &&
     arr(v.secciones, nodeValid) && arr(v.titulos, text) &&
     arr(v.seguimientos, (s) => record(s) && integer(s.id) && integer(s.numero_orden) && text(s.tipo) && text(s.fecha) && text(s.estado) && text(s.estado_badge) && text(s.estado_validacion) &&
-      bool(s.a_subsanar) && text(s.origen) && bool(s.sincronizado_gestionar) && internal(s.detalle_url) && internal(s.editar_url) && internal(s.eliminar_url)) &&
+      bool(s.a_subsanar) && text(s.origen) && bool(s.sincronizado_gestionar) && internal(s.detalle_url) && internal(s.editar_url) && internal(s.eliminar_url) && internal(s.eliminar_api)) &&
     arr(v.adjuntos, (a) => record(a) && integer(a.id) && text(a.nombre_original) && bool(a.es_pdf) && text(a.tamano) && text(a.fecha_subida) && internal(a.descargar_url)) &&
     bool(v.pdf.disponible) && internal(v.pdf.url) && bool(v.pdf.oficial) && (v.pdf.fecha_oficial === null || text(v.pdf.fecha_oficial)) &&
     ["change_relevamiento", "review_relevamiento", "change_primerseguimiento", "delete_primerseguimiento", "view_logentry"].every((k) => bool(caps[k])) &&
@@ -477,7 +477,13 @@ function ListPage({ comedor }: { comedor: string }) {
 
 const UNSAFE = /^\s*(javascript|vbscript):/i;
 const PROPS: Record<string, string> = { class: "className", colspan: "colSpan", srcset: "srcSet", "aria-label": "aria-label" };
-const VOID = new Set(["img", "source"]);
+const VOID = new Set(["img", "source", "input"]);
+/** Attributes of form widgets: name, constraints and the boolean ones. */
+const CONTROL_PROPS: Record<string, string> = {
+  name: "name", placeholder: "placeholder", pattern: "pattern", accept: "accept", scope: "scope", autocomplete: "autoComplete", inputmode: "inputMode",
+  maxlength: "maxLength", minlength: "minLength", min: "min", max: "max", step: "step", rows: "rows", cols: "cols",
+};
+const CONTROL_FLAGS: Record<string, string> = { required: "required", disabled: "disabled", readonly: "readOnly", multiple: "multiple" };
 
 /** `style="height: 500px"` as a React style object. */
 function styleOf(value: string) {
@@ -496,6 +502,8 @@ function propsOf(a: Record<string, string>) {
     if (k === "style") props.style = styleOf(v);
     else if (k === "target" || k === "rel" || k === "title" || k === "loading" || k === "width" || k === "height" || k === "border" || k === "alt" || k === "type" || k === "href" || k === "src" || k === "id" || k === "role" || k.startsWith("aria-") || k.startsWith("data-")) props[PROPS[k] ?? k] = v;
     else if (PROPS[k]) props[PROPS[k]] = k === "colspan" ? Number(v) : v;
+    else if (CONTROL_PROPS[k]) props[CONTROL_PROPS[k]] = ["rows", "cols", "maxlength", "minlength"].includes(k) ? Number(v) : v;
+    else if (CONTROL_FLAGS[k]) props[CONTROL_FLAGS[k]] = true;
   }
   return props;
 }
@@ -505,9 +513,26 @@ export function Tree({ nodes }: { nodes: TreeNode[] }) {
   return <>{nodes.map((n, i) => {
     if (typeof n === "string") return n;
     if (n.a.id === "carouselExample") return <Carousel key={i} node={n} />;
+    if (n.t === "input" || n.t === "select" || n.t === "textarea") return <Control key={i} node={n} />;
+    if (n.t === "option") return <option key={i} value={n.a.value}><Tree nodes={n.c} /></option>;
     const Tag = n.t as "div";
     return VOID.has(n.t) ? <Tag key={i} {...propsOf(n.a)} /> : <Tag key={i} {...propsOf(n.a)}><Tree nodes={n.c} /></Tag>;
   })}</>;
+}
+
+/** A form widget as an uncontrolled control: the server's value, selection or text is its default. */
+function Control({ node }: { node: Exclude<TreeNode, string> }) {
+  const { value, checked, ...rest } = node.a;
+  const props = propsOf(rest) as Record<string, unknown>;
+  if (node.t === "input") {
+    if (node.a.type === "checkbox" || node.a.type === "radio") return <input {...props} value={value} defaultChecked={checked !== undefined} />;
+    return <input {...props} defaultValue={value} />;
+  }
+  if (node.t === "textarea") return <textarea {...props} defaultValue={node.c.filter((c): c is string => typeof c === "string").join("")} />;
+  const options = node.c.filter((c): c is Exclude<TreeNode, string> => typeof c !== "string" && c.t === "option");
+  const selected = options.filter((o) => o.a.selected !== undefined).map((o) => o.a.value ?? "");
+  const initial = node.a.multiple !== undefined ? selected : (selected[0] ?? options[0]?.a.value ?? "");
+  return <select {...props} defaultValue={initial}><Tree nodes={node.c} /></select>;
 }
 
 const hasClass = (n: TreeNode, c: string): n is Exclude<TreeNode, string> => typeof n !== "string" && (n.a.class ?? "").split(" ").includes(c);
@@ -542,7 +567,7 @@ function Carousel({ node }: { node: Exclude<TreeNode, string> }) {
 }
 
 /** AdminLTE `data-card-widget="collapse"`: `collapsed-card`, the card body hidden and the icon swapped. */
-function useCardCollapse() {
+export function useCardCollapse() {
   useEffect(() => {
     const click = (e: MouseEvent) => {
       const button = (e.target as Element).closest?.('[data-card-widget="collapse"]');
@@ -623,22 +648,37 @@ function RevisionModal({ data, close, trigger, onError }: { data: RelevamientoDe
   );
 }
 
-function EliminarSeguimientoModal({ s, close, trigger }: { s: Detalle; close: () => void; trigger: HTMLElement | null }) {
+function EliminarSeguimientoModal({ s, close, trigger, onError }: { s: Detalle; close: () => void; trigger: HTMLElement | null; onError: (message: string) => void }) {
   const id = `modalEliminarSeguimiento${s.id}`;
   const titulo = `Eliminar ${s.tipo.toLowerCase()} #${s.numero_orden}`;
+  const [pending, setPending] = useState(false);
+  const [uncertain, setUncertain] = useState(false);
+  async function submit(fields: URLSearchParams) {
+    setPending(true);
+    const result = await postApi(s.eliminar_api, fields);
+    if (result.kind === "ok") {
+      setFlash([{ message: result.message, level: "success" }]);
+      relevamientosNavigation.assign(result.redirect);
+      return;
+    }
+    if (result.kind === "uncertain") setUncertain(true);
+    else onError(result.kind === "error" ? result.message : "No se pudo completar la operación.");
+    setPending(false);
+  }
   return (
-    <Modal id={id} title={titulo} close={close} trigger={trigger} action={s.eliminar_url}
-      footer={<><Cancel close={close} /><button type="submit" className="btn btn-danger">Eliminar</button></>}>
+    <Modal id={id} title={titulo} close={close} trigger={trigger} action={s.eliminar_url} onSubmit={submit}
+      footer={<><Cancel close={close} /><button type="submit" className="btn btn-danger" disabled={pending || uncertain}>Eliminar</button></>}>
       <ModalHeader id={id} title={titulo} close={close} />
       <div className="modal-body">
         <p className="mb-2">Esta accion eliminara la instancia del ciclo de seguimiento y dara de baja el registro asociado en GESTIONAR.</p>
         <p className="mb-0 text-muted">No se puede deshacer.</p>
+        {uncertain && <UncertainNotice />}
       </div>
     </Modal>
   );
 }
 
-function Cycle({ data }: { data: RelevamientoDetailData }) {
+function Cycle({ data, onError }: { data: RelevamientoDetailData; onError: (message: string) => void }) {
   const { seguimientos, capabilities: caps } = data;
   const [deleting, setDeleting] = useState<Detalle | null>(null);
   const [trigger, setTrigger] = useState<HTMLElement | null>(null);
@@ -669,7 +709,7 @@ function Cycle({ data }: { data: RelevamientoDetailData }) {
         </table>
       </div></div>
     </div>
-    {deleting && <EliminarSeguimientoModal s={deleting} close={() => setDeleting(null)} trigger={trigger} />}
+    {deleting && <EliminarSeguimientoModal s={deleting} close={() => setDeleting(null)} trigger={trigger} onError={(message) => { setDeleting(null); onError(message); }} />}
   </>;
 }
 
@@ -729,7 +769,7 @@ export function RelevamientoDetailContent({ data }: { data: RelevamientoDetailDa
       </div>
     )}
     <Tree nodes={data.secciones} />
-    <Cycle data={data} />
+    <Cycle data={data} onError={(message) => push({ message, level: "error" })} />
     {data.adjuntos.length > 0 && (
       <div className="card mb-4" id="bloque-adjuntos">
         <div className="card-header"><h3 className="card-title font-weight-bold mr-3 pt-1">Archivos adjuntos</h3></div>

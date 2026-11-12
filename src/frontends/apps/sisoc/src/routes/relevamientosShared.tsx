@@ -1,7 +1,8 @@
 /* eslint-disable react-refresh/only-export-components -- shared pieces of the relevamiento detail pages (validators and components travel together). */
 import { Fragment, useState, type ReactNode } from "react";
 import { internal, record, text } from "./MainFrame";
-import { Cancel, CSS, Modal, ModalHeader, arr, bool, csrf, integer, path } from "./relevamientos";
+import { Cancel, CSS, Modal, ModalHeader, UncertainNotice, arr, bool, csrf, integer, path } from "./relevamientos";
+import { postApi, relevamientosNavigation, setFlash } from "./relevamientosApi";
 
 /**
  * Pieces the seguimiento, PNUD and acta detail pages share (R03.01, R02.01): the
@@ -51,11 +52,31 @@ export function ObservacionesAlert({ r }: { r: Review }) {
 
 type RevisionIds = { modal: string; select: string; textarea: string; placeholder: string };
 
-/** The "Revisión del coordinador" modal: a native POST form with CSRF. */
-export function RevisionModal({ ids, action, observaciones, close, trigger }: { ids: RevisionIds; action: string; observaciones: string; close: () => void; trigger: HTMLElement | null }) {
+/** Posts a review or a baja through the API: ok flashes the message and goes on, a rejection is a toast, a lost answer is never resent. */
+export function useApiAction(api: string, onError: (message: string) => void) {
+  const [pending, setPending] = useState(false);
+  const [uncertain, setUncertain] = useState(false);
+  async function submit(fields: URLSearchParams) {
+    setPending(true);
+    const result = await postApi(api, fields);
+    if (result.kind === "ok") {
+      setFlash([{ message: result.message, level: "success" }]);
+      relevamientosNavigation.assign(result.redirect);
+      return;
+    }
+    if (result.kind === "uncertain") setUncertain(true);
+    else onError(result.kind === "error" ? result.message : "No se pudo completar la operación.");
+    setPending(false);
+  }
+  return { submit, disabled: pending || uncertain, uncertain };
+}
+
+/** The "Revisión del coordinador" modal: the review goes through the API (`api`), the form stays the native one. */
+export function RevisionModal({ ids, action, api, observaciones, close, trigger, onError }: { ids: RevisionIds; action: string; api: string; observaciones: string; close: () => void; trigger: HTMLElement | null; onError: (message: string) => void }) {
+  const { submit, disabled, uncertain } = useApiAction(api, onError);
   return (
-    <Modal id={ids.modal} title="Revisión del coordinador" close={close} trigger={trigger} action={action}
-      footer={<><Cancel close={close} /><button type="submit" className="btn btn-warning">Guardar revisión</button></>}>
+    <Modal id={ids.modal} title="Revisión del coordinador" close={close} trigger={trigger} action={action} onSubmit={submit}
+      footer={<><Cancel close={close} /><button type="submit" className="btn btn-warning" disabled={disabled}>Guardar revisión</button></>}>
       <ModalHeader id={ids.modal} title="Revisión del coordinador" close={close} />
       <div className="modal-body">
         <div className="mb-3">
@@ -69,6 +90,7 @@ export function RevisionModal({ ids, action, observaciones, close, trigger }: { 
           <label htmlFor={ids.textarea} className="form-label">Observaciones</label>
           <textarea id={ids.textarea} name="observaciones_coordinador" className="form-control" rows={4} defaultValue={observaciones} placeholder={ids.placeholder} />
         </div>
+        {uncertain && <UncertainNotice />}
       </div>
     </Modal>
   );

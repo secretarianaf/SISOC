@@ -1,11 +1,11 @@
 /* eslint-disable react-refresh/only-export-components -- the unit surface is this route module; its validators are exported for the tests. */
-import { InsumosToastList } from "../InsumosToast";
 import { internal, record, renderMain, text, useMainResource } from "./MainFrame";
 import { Tree, arr, bool, integer, messagesValid, nodeValid, path, type TreeNode } from "./relevamientos";
 import {
   Adjuntos, Badges, Cell, CSS, DataTable, Lines, ObservacionesAlert, RevisionModal, SummaryCard, adjuntosValid, canReview, reviewValid, rowsValid, useModalState,
   type Adjunto, type Review,
 } from "./relevamientosShared";
+import { useToasts } from "./relevamientosApi";
 import type { RouteDefinition } from "./types";
 
 /**
@@ -23,7 +23,7 @@ export type SeguimientoData = {
   es_primer: boolean; prestaciones: string[][]; receta_items: string[][]; adjuntos: Adjunto[];
   pdf: { url: string | null; fecha_oficial: string | null };
   capabilities: { change_primerseguimiento: boolean; review_relevamiento: boolean; delete_primerseguimiento: boolean };
-  urls: { comedores: string; comedor: string; relevamiento: string; editar: string; revision: string }; messages: Message[];
+  urls: { comedores: string; comedor: string; relevamiento: string; editar: string; revision: string; revision_api: string }; messages: Message[];
 };
 type Respuesta = { etiqueta: string; tipo: "texto" | "imagen" | "tabla"; valor?: string; columnas?: string[]; filas?: string[][] };
 export type PnudData = {
@@ -31,7 +31,7 @@ export type PnudData = {
   comedor: { id: number; nombre: string }; encabezado_formulario: { linea: string; titulo: string };
   secciones: { titulo: string; filas: Respuesta[] }[]; adjuntos: Adjunto[]; pdf_url: string | null;
   capabilities: { review_relevamiento: boolean };
-  urls: { comedores: string; comedor: string; listado: string; revision: string }; messages: Message[];
+  urls: { comedores: string; comedor: string; listado: string; revision: string; revision_api: string }; messages: Message[];
 };
 
 const API = "web/comedores/relevamientos/";
@@ -47,7 +47,7 @@ export function seguimientoValid(v: unknown): v is SeguimientoData {
     bool(v.es_primer) && rowsValid(v.prestaciones) && rowsValid(v.receta_items) && adjuntosValid(v.adjuntos) &&
     (v.pdf.url === null || internal(v.pdf.url)) && (v.pdf.fecha_oficial === null || text(v.pdf.fecha_oficial)) &&
     ["change_primerseguimiento", "review_relevamiento", "delete_primerseguimiento"].every((k) => bool(c[k])) &&
-    ["comedores", "comedor", "relevamiento", "editar", "revision"].every((k) => internal(u[k])) && messagesValid(v.messages);
+    ["comedores", "comedor", "relevamiento", "editar", "revision", "revision_api"].every((k) => internal(u[k])) && messagesValid(v.messages);
 }
 
 export function pnudValid(v: unknown): v is PnudData {
@@ -57,7 +57,7 @@ export function pnudValid(v: unknown): v is PnudData {
     integer(v.comedor.id) && text(v.comedor.nombre) && text(v.encabezado_formulario.linea) && text(v.encabezado_formulario.titulo) &&
     arr(v.secciones, (x) => record(x) && text(x.titulo) && arr(x.filas, (f) => record(f) && text(f.etiqueta) && (f.tipo === "tabla" ? arr(f.columnas, text) && rowsValid(f.filas) : text(f.valor)))) &&
     adjuntosValid(v.adjuntos) && (v.pdf_url === null || internal(v.pdf_url)) && bool(v.capabilities.review_relevamiento) &&
-    ["comedores", "comedor", "listado", "revision"].every((k) => internal(u[k])) && messagesValid(v.messages);
+    ["comedores", "comedor", "listado", "revision", "revision_api"].every((k) => internal(u[k])) && messagesValid(v.messages);
 }
 
 const Breadcrumb = ({ items }: { items: { text: string; url: string | null }[] }) => <>
@@ -70,9 +70,10 @@ const REVISION_PNUD = { modal: "modalRevisionSeguimientoPnud", select: "revision
 export function SeguimientoContent({ data }: { data: SeguimientoData }) {
   const { seguimiento: s, capabilities: caps } = data;
   const modal = useModalState<"revision">();
+  const { toasts, push } = useToasts(data.messages);
   const revisar = canReview(caps.review_relevamiento, s);
   return <>
-    <InsumosToastList messages={data.messages} />
+    {toasts}
     {CSS}
     <div className="row justify-content-between d-print-none mx-1 mb-3">
       <div className="col-auto">
@@ -93,7 +94,7 @@ export function SeguimientoContent({ data }: { data: SeguimientoData }) {
       </div>
     </div>
     <ObservacionesAlert r={s} />
-    {modal.open === "revision" && <RevisionModal ids={REVISION} action={data.urls.revision} observaciones={s.observaciones_coordinador} close={modal.close} trigger={modal.trigger} />}
+    {modal.open === "revision" && <RevisionModal ids={REVISION} action={data.urls.revision} api={data.urls.revision_api} onError={(message) => { modal.close(); push({ message, level: "error" }); }} observaciones={s.observaciones_coordinador} close={modal.close} trigger={modal.trigger} />}
     <SummaryCard>
       <Cell label="ID SISOC" value={s.id} />
       <Cell label="ID GESTIONAR" value={s.gestionar_id} />
@@ -154,10 +155,11 @@ function SeguimientoPage({ comedor, relevamiento, id }: { comedor: string; relev
 export function PnudContent({ data }: { data: PnudData }) {
   const s = data.seguimiento;
   const modal = useModalState<"revision">();
+  const { toasts, push } = useToasts(data.messages);
   const revisar = canReview(data.capabilities.review_relevamiento, s);
   const encabezado = data.encabezado_formulario;
   return <>
-    <InsumosToastList messages={data.messages} />
+    {toasts}
     {CSS}
     <div className="row justify-content-between d-print-none mx-1 mb-3">
       <div className="col-auto">{data.pdf_url && <a href={path(data.pdf_url)} className="btn btn-outline-secondary">Descargar PDF</a>}</div>
@@ -166,7 +168,7 @@ export function PnudContent({ data }: { data: PnudData }) {
       </div>
     </div>
     <ObservacionesAlert r={s} />
-    {modal.open === "revision" && <RevisionModal ids={REVISION_PNUD} action={data.urls.revision} observaciones={s.observaciones_coordinador} close={modal.close} trigger={modal.trigger} />}
+    {modal.open === "revision" && <RevisionModal ids={REVISION_PNUD} action={data.urls.revision} api={data.urls.revision_api} onError={(message) => { modal.close(); push({ message, level: "error" }); }} observaciones={s.observaciones_coordinador} close={modal.close} trigger={modal.trigger} />}
     <SummaryCard>
       <Cell label="ID SISOC" value={s.id} />
       <Cell label="Fecha y hora" value={s.fecha_hora} />

@@ -43,7 +43,7 @@ _OWNED_PATTERNS = (
     r"/api/web/dispositivos/datacalle/(?:opciones/(?:dispositivos|relevadores)/|relevamientos/"
     r"(?:formulario/|crear/|[0-9a-f-]{36}/(?:formulario/|editar/|cerrar/|eliminar/)?)?)",
     r"/api/web/comedores/comunicados/(?:gestion/|[0-9]+/)?",
-    r"/api/web/comedores/relevamientos/[0-9]+/(?:relevamiento/(?:numero-if/|[0-9]+/(?:(?:eliminar|revision)/|seguimientos/(?:[0-9]+|primero)/)?)|pnud/[0-9]+/|actas/[0-9]+/)?",
+    r"/api/web/comedores/relevamientos/[0-9]+/(?:relevamiento/(?:numero-if/|[0-9]+/(?:(?:eliminar|revision)/|seguimientos/(?:(?:[0-9]+|primero)/(?:(?:editar|eliminar|revision)/)?)?)?)|pnud/[0-9]+/(?:revision/)?|actas/(?:crear/|[0-9]+/(?:(?:editar|revision|eliminar)/)?))?",
     r"/api/web/dispositivos/datacalle/casos/[0-9a-f-]{36}/",
     r"/api/web/ocr/(?:carga/|lotes/(?:[0-9]+/)?)",
     r"/api/web/comedores/organizaciones/(?:listado/|formulario/|crear/|subtipos/|cuil/|[0-9]+/(?:formulario/|editar/|baja/)?)",

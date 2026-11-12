@@ -198,3 +198,36 @@ describe("Relevamiento baja page", () => {
     expect(bajaValid(baja({ cascade_preview: { total_afectados: 1, desglose_por_modelo: [{ modelo: 1 }] } }))).toBe(false);
   });
 });
+
+describe("Seguimiento and acta actions through the API", () => {
+  const seg = { id: 3, numero_orden: 2, tipo: "Seguimiento Posterior", fecha: "Sin fecha", estado: "Pendiente", estado_badge: "bg-secondary", estado_validacion: "", a_subsanar: false, origen: "app", sincronizado_gestionar: false,
+    detalle_url: "/comedores/7/relevamiento/12/seguimiento/3/", editar_url: "/comedores/7/relevamiento/12/seguimiento/3/editar", eliminar_url: "/comedores/7/relevamiento/12/seguimiento/3/eliminar",
+    eliminar_api: "/api/web/comedores/relevamientos/7/relevamiento/12/seguimientos/3/eliminar/" };
+
+  it("deletes a seguimiento from the cycle table through the API and flashes the message", async () => {
+    const base = detail();
+    serve({ ...base, seguimientos: [seg], capabilities: { ...base.capabilities, delete_primerseguimiento: true } });
+    webPost.mockResolvedValue({ status: 200, data: { ok: true, message: "Seguimiento eliminado correctamente.", redirect: DETAIL } });
+    setup(DETAIL);
+    fireEvent.click((await screen.findAllByRole("button", { name: "Eliminar" })).find((b) => b.className.includes("btn-sm")) as HTMLElement);
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Eliminar seguimiento posterior #2")).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Eliminar" }));
+    await waitFor(() => expect(relevamientosNavigation.assign).toHaveBeenCalledWith(DETAIL));
+    expect(webPost.mock.calls[0][0]).toBe("web/comedores/relevamientos/7/relevamiento/12/seguimientos/3/eliminar/");
+    expect(takeFlash()).toEqual([{ message: "Seguimiento eliminado correctamente.", level: "success" }]);
+  });
+
+  it("keeps the cycle table and shows the error when the baja is rejected", async () => {
+    const base = detail();
+    serve({ ...base, seguimientos: [seg], capabilities: { ...base.capabilities, delete_primerseguimiento: true } });
+    webPost.mockResolvedValue({ status: 404, data: { detail: "No encontrado." } });
+    setup(DETAIL);
+    fireEvent.click((await screen.findAllByRole("button", { name: "Eliminar" })).find((b) => b.className.includes("btn-sm")) as HTMLElement);
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Eliminar" }));
+    await screen.findByText("No encontrado.");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(screen.getByText("Ciclo de seguimiento")).toBeTruthy();
+    expect(relevamientosNavigation.assign).not.toHaveBeenCalled();
+  });
+});

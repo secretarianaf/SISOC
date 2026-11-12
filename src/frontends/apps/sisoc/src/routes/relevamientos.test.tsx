@@ -42,7 +42,7 @@ const detail = (over: Record<string, unknown> = {}, rel: Record<string, unknown>
   timeline: [{ id: 12, step: 1, fecha: "04/03/26", estado: "Pendiente", card_class: "active", status_class: "pendiente" }],
   secciones: tree(), titulos,
   seguimientos: [{ id: 3, numero_orden: 2, tipo: "Seguimiento Posterior", fecha: "Sin fecha", estado: "Pendiente", estado_badge: "bg-secondary", estado_validacion: "", a_subsanar: false, origen: "app", sincronizado_gestionar: false,
-    detalle_url: "/comedores/7/relevamiento/12/seguimiento/3", editar_url: "/comedores/7/relevamiento/12/seguimiento/3/editar", eliminar_url: "/comedores/7/relevamiento/12/seguimiento/3/eliminar" }],
+    detalle_url: "/comedores/7/relevamiento/12/seguimiento/3", editar_url: "/comedores/7/relevamiento/12/seguimiento/3/editar", eliminar_url: "/comedores/7/relevamiento/12/seguimiento/3/eliminar", eliminar_api: "/api/web/comedores/relevamientos/7/relevamiento/12/seguimientos/3/eliminar/" }],
   adjuntos: [], pdf: { disponible: false, url: "/comedores/7/relevamiento/12/pdf", oficial: false, fecha_oficial: null },
   capabilities: { change_relevamiento: false, review_relevamiento: false, change_primerseguimiento: false, delete_primerseguimiento: false, view_logentry: false },
   urls: { listado: LIST, comedores: "/comedores/listar", comedor: "/comedores/7", alta: "/comedores/ajax/7/relevamiento/", eliminar: "/comedores/7/relevamiento/12/eliminar", revision: "/comedores/7/relevamiento/12/revision", revision_api: "/comedores/7/relevamiento/12/revision/",

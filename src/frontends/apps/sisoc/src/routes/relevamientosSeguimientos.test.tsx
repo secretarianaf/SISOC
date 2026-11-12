@@ -3,11 +3,12 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import App from "../App";
 import { findRoute } from "./index";
 import { pnudValid, seguimientoValid } from "./relevamientosSeguimientos";
+import { relevamientosNavigation, takeFlash } from "./relevamientosApi";
 import { readyContext, setViewport } from "./testFixtures";
 
-const { webGet } = vi.hoisted(() => ({ webGet: vi.fn() }));
+const { webGet, webPost } = vi.hoisted(() => ({ webGet: vi.fn(), webPost: vi.fn() }));
 vi.mock("@sisoc/api", () => ({
-  crearCliente: vi.fn(() => ({ get: webGet, post: vi.fn() })),
+  crearCliente: vi.fn(() => ({ get: webGet, post: webPost })),
   leerCookie: vi.fn(() => "synthetic-csrf-token"),
 }));
 
@@ -28,7 +29,7 @@ const seguimiento = (over: Record<string, unknown> = {}, rev: Record<string, unk
     { label: "Firma entrevistado", value: [{ t: "img", a: { src: "/media/firma.png", alt: "Firma entrevistado", class: "img-fluid my-1 rounded object-fit-contain" }, c: [] }], es_imagen: true }] }],
   es_primer: true, prestaciones: [["Lunes", "Almuerzo", "5", "-", "-"]], receta_items: [["Arroz", "-", "2"]], adjuntos: [],
   pdf: { url: null, fecha_oficial: null }, capabilities: caps(),
-  urls: { comedores: "/comedores/listar", comedor: "/comedores/7", relevamiento: "/comedores/7/relevamiento/12", editar: `${SEG}editar`, revision: `${SEG}revision` }, messages: [], ...over,
+  urls: { comedores: "/comedores/listar", comedor: "/comedores/7", relevamiento: "/comedores/7/relevamiento/12", editar: `${SEG}editar`, revision: `${SEG}revision`, revision_api: "/api/web/comedores/relevamientos/7/relevamiento/12/seguimientos/3/revision/" }, messages: [], ...over,
 });
 const pnud = (over: Record<string, unknown> = {}) => ({
   seguimiento: { id: 9, formulario: "siph", formulario_display: "FORM-SIPH", fecha_hora: "Sin fecha", tecnico: "Sin técnico", fecha_creacion: "5 Marzo 2026 10:00", ...review({ estado: "Pendiente Revisión", estado_badge: "bg-warning text-dark", origen: "app" }) },
@@ -36,7 +37,7 @@ const pnud = (over: Record<string, unknown> = {}) => ({
   secciones: [{ titulo: "Funcionamiento", filas: [{ etiqueta: "Estado", tipo: "texto", valor: "Cerrado\nhoy" }, { etiqueta: "Fotos", tipo: "imagen", valor: "/media/f.png" },
     { etiqueta: "Personas", tipo: "tabla", columnas: ["Nombre", "Edad"], filas: [["Ana", "30"]] }] }],
   adjuntos: [], pdf_url: `${PNUD}/pdf`, capabilities: { review_relevamiento: false },
-  urls: { comedores: "/comedores/listar", comedor: "/comedores/7", listado: "/comedores/7/relevamiento/listar", revision: `${PNUD}/revision` }, messages: [], ...over,
+  urls: { comedores: "/comedores/listar", comedor: "/comedores/7", listado: "/comedores/7/relevamiento/listar", revision: `${PNUD}/revision`, revision_api: "/api/web/comedores/relevamientos/7/pnud/9/revision/" }, messages: [], ...over,
 });
 
 function serve(data: unknown, status = 200) {
@@ -52,6 +53,8 @@ beforeEach(() => {
   document.title = "SISOC";
   document.body.className = "layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary dark-mode";
   setViewport(false);
+  window.sessionStorage.clear();
+  vi.spyOn(relevamientosNavigation, "assign").mockImplementation(() => undefined);
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
@@ -160,5 +163,34 @@ describe("Seguimientos route", () => {
     expect(seguimientoValid(seguimiento({ urls: { ...seguimiento().urls, editar: "https://evil.example/" } }))).toBe(false);
     expect(pnudValid(pnud())).toBe(true);
     expect(pnudValid(pnud({ pdf_url: 3 }))).toBe(false);
+  });
+});
+
+describe("Seguimiento and PNUD reviews through the API", () => {
+  it("posts the seguimiento review to its API and flashes the message", async () => {
+    serve(seguimiento({ capabilities: caps({ review_relevamiento: true }) }));
+    webPost.mockResolvedValue({ status: 200, data: { ok: true, message: "Seguimiento validado correctamente.", redirect: SEG } });
+    setup(SEG);
+    fireEvent.click(await screen.findByRole("button", { name: "Revisar" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByRole("combobox"), { target: { value: "A subsanar" } });
+    fireEvent.change(dialog.querySelector("textarea") as HTMLTextAreaElement, { target: { value: "Corregir" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Guardar revisión" }));
+    await waitFor(() => expect(relevamientosNavigation.assign).toHaveBeenCalledWith(SEG));
+    const [url, body] = webPost.mock.calls[0] as [string, URLSearchParams];
+    expect(url).toBe("web/comedores/relevamientos/7/relevamiento/12/seguimientos/3/revision/");
+    expect([body.get("estado_validacion"), body.get("observaciones_coordinador")]).toEqual(["A subsanar", "Corregir"]);
+    expect(takeFlash()).toEqual([{ message: "Seguimiento validado correctamente.", level: "success" }]);
+  });
+
+  it("posts the PNUD review to its API and shows a 400 as a toast", async () => {
+    serve(pnud({ capabilities: { review_relevamiento: true } }));
+    webPost.mockResolvedValue({ status: 400, data: { errors: { __all__: [{ message: "Para devolver el seguimiento debe indicar qué corregir.", code: "invalid" }] } } });
+    setup(PNUD);
+    fireEvent.click(await screen.findByRole("button", { name: "Revisar" }));
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Guardar revisión" }));
+    await screen.findByText("Para devolver el seguimiento debe indicar qué corregir.");
+    expect(webPost.mock.calls[0][0]).toBe("web/comedores/relevamientos/7/pnud/9/revision/");
+    expect(relevamientosNavigation.assign).not.toHaveBeenCalled();
   });
 });

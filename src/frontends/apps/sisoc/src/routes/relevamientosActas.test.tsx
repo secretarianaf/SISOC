@@ -3,11 +3,12 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import App from "../App";
 import { findRoute } from "./index";
 import { actaValid } from "./relevamientosActas";
+import { relevamientosNavigation, takeFlash } from "./relevamientosApi";
 import { readyContext, setViewport } from "./testFixtures";
 
-const { webGet } = vi.hoisted(() => ({ webGet: vi.fn() }));
+const { webGet, webPost } = vi.hoisted(() => ({ webGet: vi.fn(), webPost: vi.fn() }));
 vi.mock("@sisoc/api", () => ({
-  crearCliente: vi.fn(() => ({ get: webGet, post: vi.fn() })),
+  crearCliente: vi.fn(() => ({ get: webGet, post: webPost })),
   leerCookie: vi.fn(() => "synthetic-csrf-token"),
 }));
 
@@ -18,7 +19,7 @@ const acta = (over: Record<string, unknown> = {}, rev: Record<string, unknown> =
     estado: "Pendiente Revisión", estado_badge: "bg-warning text-dark", estado_validacion: "", a_subsanar: false, esta_validado: false, sin_cargar: false,
     observaciones_coordinador: "", coordinador: null, fecha_revision_coordinador: null, origen: "app", ...rev },
   prestaciones: [["Lunes", "Cena", "3", "-"]], adjuntos: [], capabilities: caps(),
-  urls: { comedores: "/comedores/listar", comedor: "/comedores/7", listado: "/comedores/7/relevamiento/listar", editar: `${ACTA}/editar`, revision: `${ACTA}/revision`, eliminar: `${ACTA}/eliminar` },
+  urls: { comedores: "/comedores/listar", comedor: "/comedores/7", listado: "/comedores/7/relevamiento/listar", editar: `${ACTA}/editar`, revision: `${ACTA}/revision`, eliminar: `${ACTA}/eliminar`, revision_api: "/api/web/comedores/relevamientos/7/actas/5/revision/", eliminar_api: "/api/web/comedores/relevamientos/7/actas/5/eliminar/" },
   messages: [], ...over,
 });
 
@@ -35,6 +36,8 @@ beforeEach(() => {
   document.title = "SISOC";
   document.body.className = "layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary dark-mode";
   setViewport(false);
+  window.sessionStorage.clear();
+  vi.spyOn(relevamientosNavigation, "assign").mockImplementation(() => undefined);
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
@@ -109,5 +112,56 @@ describe("Actas complementarias route", () => {
     expect(actaValid(acta())).toBe(true);
     expect(actaValid(acta({ prestaciones: [["a", 1]] }))).toBe(false);
     expect(actaValid(acta({ urls: { ...acta().urls, eliminar: "javascript:alert(1)" } }))).toBe(false);
+  });
+});
+
+describe("Acta actions through the API", () => {
+  const all = () => acta({ capabilities: caps({ review_relevamiento: true, delete_actacomplementaria: true }) });
+
+  it("reviews through the API, flashes the message and goes to the detail", async () => {
+    serve(all());
+    webPost.mockResolvedValue({ status: 200, data: { ok: true, message: "Acta complementaria validada correctamente.", redirect: ACTA } });
+    setup(ACTA);
+    fireEvent.click(await screen.findByRole("button", { name: "Revisar" }));
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Guardar revisión" }));
+    await waitFor(() => expect(relevamientosNavigation.assign).toHaveBeenCalledWith(ACTA));
+    const [url, body] = webPost.mock.calls[0] as [string, URLSearchParams];
+    expect(url).toBe("web/comedores/relevamientos/7/actas/5/revision/");
+    expect([body.get("estado_validacion"), body.get("observaciones_coordinador")]).toEqual(["Validado", ""]);
+    expect(takeFlash()).toEqual([{ message: "Acta complementaria validada correctamente.", level: "success" }]);
+  });
+
+  it("shows a review rejection as a toast and keeps the page", async () => {
+    serve(all());
+    webPost.mockResolvedValue({ status: 409, data: { detail: "El acta complementaria ya está validada: no admite otra revisión." } });
+    setup(ACTA);
+    fireEvent.click(await screen.findByRole("button", { name: "Revisar" }));
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Guardar revisión" }));
+    await screen.findByText("El acta complementaria ya está validada: no admite otra revisión.");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(relevamientosNavigation.assign).not.toHaveBeenCalled();
+  });
+
+  it("deletes through the API to the list and never resends a lost answer", async () => {
+    serve(all());
+    webPost.mockResolvedValueOnce({ status: 504, data: { uncertain: true } });
+    setup(ACTA);
+    fireEvent.click(await screen.findByRole("button", { name: "Eliminar" }));
+    let dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Eliminar" }));
+    await screen.findByText("No se pudo confirmar el resultado.", { exact: false });
+    expect((within(dialog).getByRole("button", { name: "Eliminar" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(webPost).toHaveBeenCalledTimes(1);
+    expect(webPost.mock.calls[0][0]).toBe("web/comedores/relevamientos/7/actas/5/eliminar/");
+    cleanup();
+    vi.clearAllMocks();
+    serve(all());
+    webPost.mockResolvedValue({ status: 200, data: { ok: true, message: "Acta complementaria eliminada correctamente.", redirect: "/comedores/7/relevamiento/listar" } });
+    setup(ACTA);
+    fireEvent.click(await screen.findByRole("button", { name: "Eliminar" }));
+    dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Eliminar" }));
+    await waitFor(() => expect(relevamientosNavigation.assign).toHaveBeenCalledWith("/comedores/7/relevamiento/listar"));
+    expect(takeFlash()).toEqual([{ message: "Acta complementaria eliminada correctamente.", level: "success" }]);
   });
 });

@@ -186,6 +186,9 @@ def seguimientos_detalle(seguimientos, comedor_id, relevamiento_id):
                 "detalle_url": reverse("seguimiento_detalle", args=args),
                 "editar_url": reverse("seguimiento_editar", args=args),
                 "eliminar_url": reverse("seguimiento_eliminar", args=args),
+                "eliminar_api": reverse(
+                    "relevamientos_web_seguimiento_eliminar", args=args
+                ),
             }
         )
     return resultado
@@ -270,8 +273,15 @@ TAGS = {
     "i",
     "p",
     "iframe",
+    "input",
+    "select",
+    "option",
+    "optgroup",
+    "textarea",
 }
-VOID = {"img", "source"}
+VOID = {"img", "source", "input"}
+# Attributes without a value in the markup (``<option selected>``).
+BOOLEANAS = {"checked", "selected", "disabled", "readonly", "required", "multiple"}
 ATTRS = {
     "class",
     "id",
@@ -299,6 +309,27 @@ ATTRS = {
     "data-bs-slide-to",
     "data-bs-ride",
     "role",
+    "name",
+    "value",
+    "checked",
+    "selected",
+    "disabled",
+    "readonly",
+    "required",
+    "multiple",
+    "rows",
+    "cols",
+    "maxlength",
+    "minlength",
+    "min",
+    "max",
+    "step",
+    "placeholder",
+    "autocomplete",
+    "scope",
+    "pattern",
+    "inputmode",
+    "accept",
 }
 
 
@@ -327,7 +358,11 @@ class _Arbol(HTMLParser):
             return
         nodo = {
             "t": tag,
-            "a": {k: v for k, v in attrs if k in ATTRS and v is not None},
+            "a": {
+                k: ("" if v is None else v)
+                for k, v in attrs
+                if k in ATTRS and (v is not None or k in BOOLEANAS)
+            },
             "c": [],
         }
         self._hijos().append(nodo)
@@ -346,6 +381,11 @@ class _Arbol(HTMLParser):
                     break
 
     def handle_data(self, data):
+        if self._pila and self._pila[-1]["t"] == "textarea":
+            # A textarea keeps its text as is (the first newline is not part of it).
+            primero = data[:1] == "\n" and not self._hijos()
+            self._hijos().append(data[1:] if primero else data)
+            return
         if not data.strip():
             return
         texto = (" " if data[:1].isspace() else "") + " ".join(data.split())
@@ -584,3 +624,73 @@ def prestaciones_acta(prestaciones):
         ]
         for p in prestaciones
     ]
+
+
+# --- Django forms as native widget markup ---------------------------------------
+
+FORM_ERROR = "Revise los campos marcados en rojo."
+
+
+def _nodos(html):
+    parser = _Arbol()
+    parser.feed(str(html))
+    parser.close()
+    return parser.raiz
+
+
+def campo(bound):
+    """One bound field: its native widget markup (``{{ field }}``) plus label, help and errors."""
+    return {
+        "name": bound.html_name,
+        "label": str(bound.label or ""),
+        "id": bound.id_for_label or "",
+        "hidden": bound.is_hidden,
+        "help_text": str(bound.help_text or ""),
+        "errors": [str(e) for e in bound.errors],
+        "nodes": _nodos(bound),
+    }
+
+
+def formulario(form):
+    return {
+        "fields": [campo(bound) for bound in form],
+        "non_field_errors": [str(e) for e in form.non_field_errors()],
+    }
+
+
+def formset(fs):
+    """A formset: management form, one hidden/visible split per row and its errors."""
+    return {
+        "management": [campo(bound) for bound in fs.management_form],
+        "forms": [
+            {
+                "hidden": [campo(b) for b in f.hidden_fields()],
+                "fields": [campo(b) for b in f.visible_fields()],
+            }
+            for f in fs
+        ],
+        "non_form_errors": [str(e) for e in fs.non_form_errors()],
+    }
+
+
+def editor_seguimiento(editor):
+    return {
+        "root": formulario(editor.root),
+        "bloques": [
+            {
+                "key": b["key"],
+                "label": b["label"],
+                "existe": b["existe"],
+                "form": formulario(b["form"]),
+            }
+            for b in editor.bloques
+        ],
+        "prestaciones": formset(editor.prestaciones),
+    }
+
+
+def editor_acta(editor):
+    return {
+        "form": formulario(editor.form),
+        "prestaciones": formset(editor.prestaciones),
+    }

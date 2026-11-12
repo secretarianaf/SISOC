@@ -18,6 +18,8 @@ import { expedientesPagosRoute } from "./expedientesPagos";
 import { rendicionFinalRoute } from "./rendicionFinal";
 import { rendicionMensualRoute } from "./rendicionMensual";
 import { comunicadosRoute } from "./comunicados";
+import { organizacionesRoute } from "./organizaciones";
+import { relevamientosRoute } from "./relevamientos";
 import { duplasFormRoute } from "./duplasFormRoute";
 import { groupsRoute } from "./groups";
 import { inicioRoute } from "./inicio";
@@ -87,6 +89,8 @@ export const ROUTES: RouteDefinition[] = [
   rendicionFinalRoute,
   comunicadosRoute,
   ocrRoute,
+  organizacionesRoute,
+  relevamientosRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

@@ -3310,6 +3310,51 @@
   "regex": "^organizaciones/ajax/\\Z"
  },
  {
+  "name": "organizaciones_web_baja",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/baja/\\Z"
+ },
+ {
+  "name": "organizaciones_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/crear/\\Z"
+ },
+ {
+  "name": "organizaciones_web_cuil",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/cuil/\\Z"
+ },
+ {
+  "name": "organizaciones_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "organizaciones_web_formulario",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/formulario/\\Z"
+ },
+ {
+  "name": "organizaciones_web_formulario_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/formulario/\\Z"
+ },
+ {
+  "name": "organizaciones_web_legajo",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "organizaciones_web_listado",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/listado/\\Z"
+ },
+ {
+  "name": "organizaciones_web_subtipos",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/subtipos/\\Z"
+ },
+ {
   "name": "pago_expediente_create",
   "namespace": "",
   "regex": "^celiaquia/pagos/provincia/(?P<provincia_id>[0-9]+)/crear/\\Z"
@@ -3848,6 +3893,16 @@
   "name": "relevamientos",
   "namespace": "",
   "regex": "^comedores/(?P<comedor_pk>[^/]+)/relevamiento/listar\\Z"
+ },
+ {
+  "name": "relevamientos_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "relevamientos_web_listado",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/\\Z"
  },
  {
   "name": "renaper-consulta-consultar",

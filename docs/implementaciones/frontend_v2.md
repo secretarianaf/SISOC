@@ -753,6 +753,15 @@ pregunta antes de publicar o archivar. La vista previa sirve ambas pantallas en 
 a todos los perfiles. Registro:
 `../registro/cambios/2026-T4/2026-11-12-2785-react-comunicados-gestion.md`.
 
+Los relevamientos (R01.01) suman `GET .../relevamientos/<comedor_pk>/` y
+`GET .../relevamientos/<comedor_pk>/relevamiento/<pk>/`, que ejecutan
+`RelevamientoListView` y `RelevamientoDetailView` y proyectan su contexto; las
+secciones de datos del detalle salen del propio parcial nativo, convertido a un árbol de elementos permitidos
+(la misma que alimenta el PDF). Los modales de alta, seguimiento, asignación,
+revisión y baja son formularios POST nativos con CSRF; el acceso, incluido el
+detalle sin alcance por comedor, es el de hoy. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-relevamientos-listado-detalle.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la
@@ -806,3 +815,9 @@ La carga y el seguimiento de lotes OCR (`routes/ocr.tsx`) toman `/ocr/` y
 `create_ocr_job`; el procesamiento sigue en el worker OCR y la descarga del .txt
 sigue en la ruta nativa. Entrada local: `src/backends/ocr/ocr/web_preview.py`.
 Registro: `../registro/cambios/2026-T4/2026-11-12-2785-react-ocr.md`.
+Organizaciones (O05.01): `/organizaciones/listar` en React lee
+`/api/web/comedores/organizaciones/listado/`, que ejecuta `OrganizacionListView`
+y el include nativo de filas; el CSV sigue en `/organizaciones/exportar`.
+`/organizaciones/detalle/<pk>` monta el fragmento nativo del legajo que sirve
+`/api/web/comedores/organizaciones/<pk>/`. Ver
+[registro](../registro/cambios/2026-T4/2026-11-11-2785-react-organizaciones-listado.md).

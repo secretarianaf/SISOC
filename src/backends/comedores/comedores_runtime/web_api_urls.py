@@ -22,4 +22,6 @@ urlpatterns = [
         "rendicion_cuentas_final/",
         include("rendicioncuentasfinal.web_api_urls"),
     ),
+    path("organizaciones/", include("gestion_organizaciones.web_api_urls")),
+    path("relevamientos/", include("relevamientos.web_api_urls")),
 ]

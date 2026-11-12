@@ -1,13 +1,14 @@
 """Rutas de ``/api/web/dispositivos/datacalle/`` (G1 v1).
 
 Ver ``datacalle.web_api`` (operativos: listado, ficha, alta, edición, cierre y
-baja; DC01.01-DC01.03 de #2785). ``<uuid:pk>`` como la ruta nativa: un id que
+baja; DC01.01-DC01.03 de #2785; ficha del caso, DC02.01). ``<uuid:pk>`` como la ruta nativa: un id que
 no es UUID da 404.
 """
 
 from django.urls import path
 
 from datacalle.web_api import (
+    CasoDetailWebView,
     DispositivosOpcionesWebView,
     RelevadoresOpcionesWebView,
     RelevamientoCerrarWebView,
@@ -21,6 +22,7 @@ from datacalle.web_api import (
 )
 
 urlpatterns = [
+    path("casos/<uuid:pk>/", CasoDetailWebView.as_view(), name="web_datacalle_caso"),
     path(
         "relevamientos/",
         RelevamientoListWebView.as_view(),

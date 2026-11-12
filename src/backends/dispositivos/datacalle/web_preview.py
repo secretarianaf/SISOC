@@ -17,6 +17,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from core.decorators import permissions_any_required
 from datacalle.views import (
+    EncuestaDetailView,
     RelevamientoCreateView,
     RelevamientoDeleteView,
     RelevamientoDetailView,
@@ -79,6 +80,11 @@ class RelevamientoDeleteEntry(_ObjectEntryMixin, RelevamientoDeleteView):
     pass
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EncuestaDetailEntry(_ObjectEntryMixin, EncuestaDetailView):
+    pass
+
+
 def datacalle_preview_patterns(build_directory):
     """Freeze an explicit local ``apps/sisoc`` build for a disposable preview URLconf.
 
@@ -111,6 +117,10 @@ def datacalle_preview_patterns(build_directory):
         path(
             f"{base}<uuid:pk>/eliminar/",
             entry("delete_relevamiento", RelevamientoDeleteEntry),
+        ),
+        path(
+            "datacalle/casos/<uuid:pk>/",
+            entry("view_encuesta", EncuestaDetailEntry),
         ),
         path(
             "datacalle/react/<path:asset_path>",

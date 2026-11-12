@@ -5415,6 +5415,11 @@
   "regex": "^api/web/cdf/responsables/\\Z"
  },
  {
+  "name": "web_datacalle_caso",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/casos/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/\\Z"
+ },
+ {
   "name": "web_datacalle_cerrar",
   "namespace": "",
   "regex": "^api/web/dispositivos/datacalle/relevamientos/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/cerrar/\\Z"

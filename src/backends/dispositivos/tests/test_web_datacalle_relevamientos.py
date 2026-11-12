@@ -188,7 +188,13 @@ def test_list_is_the_native_page_with_the_same_rows(web, geo, equipo):
         False,
     )
     assert body["page_range"] == [1, 2]
-    fila = next(f for f in body["results"] if f["denominacion"] == "Zonas")
+    # The grouped queryset has no stable order (native quirk): look in both pages.
+    fila = next(
+        f
+        for page in ("", "?page=2")
+        for f in web.get(LIST + page).json()["results"]
+        if f["denominacion"] == "Zonas"
+    )
     assert fila == {
         "id": str(zonas.pk),
         "denominacion": "Zonas",

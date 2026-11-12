@@ -673,6 +673,8 @@ idempotente y `delete_relevamiento` con su cascada) y `datacalle_preview_pattern
 `routes/datacalleRelevamientoForm.tsx` y `routes/datacalleSelect2.tsx`. Registro:
 `../registro/cambios/2026-T4/2026-11-11-2785-react-datacalle-operativos.md`.
 
+La ficha del caso (`/datacalle/casos/<uuid>/`) sale de `GET /api/web/dispositivos/datacalle/casos/<uuid>/` (`CasoDetailWebView`, permiso `view_encuesta`, solo lo que muestra la ficha nativa) y de `routes/datacalleCasos.tsx`. La API por token `api/datacalle/` no cambia. Registro: `../registro/cambios/2026-T4/2026-11-12-2785-react-datacalle-casos.md`.
+
 ### Comedores sobre G1: catálogos con el marco oscuro
 
 ABM de montos por programa (`/montoprestacion/`, CO05) y catálogo PNUD, con

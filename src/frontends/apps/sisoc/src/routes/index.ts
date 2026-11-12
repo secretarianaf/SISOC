@@ -9,6 +9,7 @@ import { cdiReportesRoute } from "./cdiReportes";
 import { cdfBeneficiariosRoute } from "./cdfBeneficiarios";
 import { cdfCentroFormRoute } from "./cdfCentroForm";
 import { cdfCentrosRoute } from "./cdfCentros";
+import { datacalleCasosRoute } from "./datacalleCasos";
 import { datacalleRelevamientosRoute } from "./datacalleRelevamientos";
 import { dispositivosRoute } from "./dispositivos";
 import { cdfCentroUsuarioRoute } from "./cdfCentroUsuario";
@@ -67,6 +68,7 @@ export const ROUTES: RouteDefinition[] = [
   cdfCentroUsuarioRoute,
   cdfBeneficiariosRoute,
   datacalleRelevamientosRoute,
+  datacalleCasosRoute,
   duplasRoute,
   duplasFormRoute,
   montosRoute,

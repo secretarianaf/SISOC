@@ -33,6 +33,7 @@ from core.web_gate import WebGatePermission
 from datacalle.models import Relevamiento
 from datacalle.services import cerrar_relevamiento
 from datacalle.views import (
+    EncuestaDetailView,
     RelevamientoCerrarView,
     RelevamientoCreateView,
     RelevamientoDeleteView,
@@ -71,6 +72,7 @@ VIEW = _native_permission("view_relevamiento")
 ADD = _native_permission("add_relevamiento")
 CHANGE = _native_permission("change_relevamiento")
 DELETE = _native_permission("delete_relevamiento")
+VIEW_ENCUESTA = _native_permission("view_encuesta")  # pylint: disable=invalid-name
 
 
 class DataCalleWebView(DispositivosWebView):
@@ -480,3 +482,63 @@ class RelevadoresOpcionesWebView(DataCalleWebView):
 
     def get(self, request):
         return cargar_relevadores(_django(request))
+
+
+# --- DC02.01 case ficha (``encuesta_detail.html``) ---------------------------
+
+
+def _respuestas(paginas):
+    """``respuestas_legibles`` as the ficha shows it: no raw key or value."""
+    return [
+        {
+            "titulo": str(pagina["titulo"]),
+            "items": [
+                {
+                    "etiqueta": str(item["etiqueta"]),
+                    "valor": rendered(item["valor"]) if item["valor"] else "",
+                    "historico": bool(item["historico"]),
+                }
+                for item in pagina["items"]
+            ],
+        }
+        for pagina in paginas
+    ]
+
+
+class CasoDetailWebView(DataCalleWebView):
+    """``GET casos/<uuid>/``: ``view_encuesta``, case of an operativo in scope.
+
+    Only what the native ficha shows: no raw ``respuestas``, case GPS or
+    ``grupo_id`` (sensitive data of people in street situation, minors too).
+    """
+
+    permission_classes = [WebGatePermission, VIEW_ENCUESTA]
+
+    def get(self, request, pk):
+        vista = _native_object(EncuestaDetailView, request, pk)
+        context = vista.get_context_data()
+        caso = vista.object
+        codigo = caso.codigo_entrevistado or str(caso.pk)
+        return Response(
+            {
+                "id": str(caso.pk),
+                "titulo": f"Caso {codigo}",
+                "estado": caso.estado,
+                "estado_display": str(caso.get_estado_display()),
+                "origen_display": str(caso.get_origen_display()),
+                "relevador": _name(caso.relevador) if caso.relevador else None,
+                "fecha_inicio": _datetime(caso.fecha_inicio, "d/m/Y H:i"),
+                "variante_etiqueta": str(caso.variante_etiqueta or ""),
+                "es_formulario_menores": caso.es_formulario_menores,
+                "sin_entrevista_por_franja": caso.sin_entrevista_por_franja,
+                "persona_entrevistada_etiqueta": str(
+                    caso.persona_entrevistada_etiqueta or ""
+                ),
+                "respuestas": _respuestas(context["respuestas"]),
+                "breadcrumb": [
+                    {"text": item["text"], "url": item.get("url")}
+                    for item in context["breadcrumb_items"]
+                ],
+                "messages": pending_messages(request),
+            }
+        )

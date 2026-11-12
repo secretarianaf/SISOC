@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within, act } from "@testing-library/react";
 import App from "../App";
 import { findRoute } from "./index";
 import { DocumentosSection, documentosSectionValid, historialValid, type DocRow, type DocumentosSection as Section } from "./organizacionDocumentos";
@@ -69,9 +69,12 @@ describe("Organization documents table", () => {
 
   it("uploads once with progress, replaces the row and shows the success toast", async () => {
     let report: ((e: { loaded: number; total: number }) => void) | undefined;
+    let finish: (() => void) | undefined;
     webPost.mockImplementation((_url: string, _body: unknown, config: { onUploadProgress: typeof report }) => {
       report = config.onUploadProgress;
-      return new Promise((resolve) => setTimeout(() => resolve(ok(row({ file: file({ id: 71, state: "Documento adjunto" }) as DocRow["file"] }))), 20));
+      return new Promise((resolve) => {
+        finish = () => resolve(ok(row({ file: file({ id: 71, state: "Documento adjunto" }) as DocRow["file"] })));
+      });
     });
     render(<DocumentosSection section={section([row({ file: null, history_url: null })])} />);
     fireEvent.change(document.getElementById("org-doc-file-5") as HTMLInputElement, { target: { files: [pdf()] } });
@@ -81,6 +84,7 @@ describe("Organization documents table", () => {
     const [url, body] = webPost.mock.calls[0];
     expect(url).toBe(`${API}8/documentacion/5/subir/`);
     expect((body as FormData).get("archivo")).toBeInstanceOf(File);
+    act(() => finish?.());
     expect(await screen.findByText("Documento cargado con éxito.")).toBeTruthy();
     expect(screen.getByRole("combobox")).toBeTruthy();
     expect(webPost).toHaveBeenCalledTimes(1);

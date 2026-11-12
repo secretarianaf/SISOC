@@ -27,6 +27,7 @@ export function MapPinEditor({ latitude, longitude, address, onChange }: Props) 
   const lon = useRef<HTMLInputElement>(null);
   const callback = useRef(onChange);
   const [error, setError] = useState("");
+  const update = () => callback.current(lat.current?.value || "", lon.current?.value || "");
   useEffect(() => { callback.current = onChange; }, [onChange]);
   useEffect(() => {
     if (!lat.current || !lon.current) return;
@@ -36,11 +37,6 @@ export function MapPinEditor({ latitude, longitude, address, onChange }: Props) 
   useEffect(() => {
     let active = true;
     const element = root.current;
-    const latitudeInput = lat.current;
-    const longitudeInput = lon.current;
-    const update = () => callback.current(latitudeInput?.value || "", longitudeInput?.value || "");
-    latitudeInput?.addEventListener("input", update);
-    longitudeInput?.addEventListener("input", update);
     style("https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css");
     style("/static/custom/css/mapPinEditor.css");
     script("https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js", "sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH")
@@ -49,8 +45,6 @@ export function MapPinEditor({ latitude, longitude, address, onChange }: Props) 
       .catch(reason => { if (active) setError(String(reason.message)); });
     return () => {
       active = false;
-      latitudeInput?.removeEventListener("input", update);
-      longitudeInput?.removeEventListener("input", update);
       element?.dispatchEvent(new Event("pin:destroy"));
     };
   }, []);
@@ -59,8 +53,8 @@ export function MapPinEditor({ latitude, longitude, address, onChange }: Props) 
     data-search-url={address?.provincia ? "/ajax/ubicacion/previsualizar/" : ""}
     data-address-fields={`${id}-address,${id}-province,${id}-locality`}>
     {error && <Alert severity="error">{error}</Alert>}
-    <input ref={lat} id={`${id}-lat`} type="hidden" defaultValue={latitude} />
-    <input ref={lon} id={`${id}-lon`} type="hidden" defaultValue={longitude} />
+    <input ref={lat} id={`${id}-lat`} type="hidden" defaultValue={latitude} onInput={update} />
+    <input ref={lon} id={`${id}-lon`} type="hidden" defaultValue={longitude} onInput={update} />
     <input id={`${id}-address`} type="hidden" data-name="domicilio" value={address?.domicilio || ""} readOnly />
     <input id={`${id}-province`} type="hidden" data-name="provincia" value={address?.provincia || ""} readOnly />
     <input id={`${id}-locality`} type="hidden" data-name="localidad" value={address?.localidad || ""} readOnly />

@@ -20,9 +20,51 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("django")
 
 
+def check_migration_context():
+    """Rechaza el grafo parcial antes de inicializar Django o acceder a la DB."""
+    commands = {
+        "createsuperuser",
+        "makemigrations",
+        "migrate",
+        "showmigrations",
+        "sqlmigrate",
+        "squashmigrations",
+        "optimizemigration",
+    }
+    if len(sys.argv) < 2 or sys.argv[1] not in commands:
+        return
+    if any(arg in {"-h", "--help"} for arg in sys.argv[2:]):
+        return
+    selected = os.environ["DJANGO_SETTINGS_MODULE"]
+    for index, arg in enumerate(sys.argv[2:], 2):
+        if arg.startswith("--settings="):
+            selected = arg.split("=", 1)[1]
+        elif arg == "--settings" and index + 1 < len(sys.argv):
+            selected = sys.argv[index + 1]
+    from config.backends import load_backends_registry
+
+    complete = all(
+        os.path.isdir(os.path.join(BACKENDS_DIR, name))
+        for name in load_backends_registry()
+    )
+    if selected != "config.settings_all" or not complete:
+        print(
+            "Este comando requiere el migrador completo, no el grafo parcial de "
+            "este servicio. Desde el host del deploy ejecute:\n"
+            "python3 src/scripts/operacion/manage_deploy.py "
+            + " ".join(sys.argv[1:2])
+            + " [argumentos Django]\nNo se aplicaron migraciones ni se crearon usuarios.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+    # manage.py consulta DEBUG antes de que Django procese --settings.
+    os.environ["DJANGO_SETTINGS_MODULE"] = selected
+
+
 def main():
     """Run administrative tasks."""
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+    check_migration_context()
 
     # To debug in Docker
     from django.conf import settings

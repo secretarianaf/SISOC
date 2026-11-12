@@ -130,16 +130,69 @@ nuevo:
   lo esperado: las migraciones del kernel dependen de apps del core. Gunicorn
   y las vistas no usan el grafo. Para migrar, usar siempre el migrador.
 - **Comandos de administración que leen migraciones** (`createsuperuser`,
-  `migrate`, `showmigrations`) se corren en el migrador, porque el core
-  tampoco tiene el grafo completo:
+  `makemigrations`, `migrate`, `showmigrations`) se corren en el migrador,
+  porque el core tampoco tiene el grafo completo. No copiar migraciones de
+  otros servicios ni cambiar dependencias para ejecutar estos comandos en
+  `django`: su imagen excluye esos servicios deliberadamente.
+
+  **Entrada recomendada en el host:**
 
   ```bash
-  docker compose --project-directory . -f docker/compose/docker-compose.deploy.yml --profile migrate run --rm migrator python manage.py createsuperuser
+  python3 src/scripts/operacion/manage_deploy.py makemigrations --check --dry-run
+  python3 src/scripts/operacion/manage_deploy.py migrate --plan
   ```
+
+  La herramienta obtiene la revisión y los archivos Compose del core activo,
+  selecciona su migrador completo y conserva argumentos, entrada interactiva y
+  salida de Django. Rechaza versiones `:local`, otros checkouts o un migrador
+  ausente; no construye ni descarga imágenes, inicia dependencias ni ejecuta
+  la preparación de DB. Los argumentos siguen teniendo sus efectos normales:
+  `migrate` sin `--plan` y `createsuperuser` requieren autorización para escribir.
+  Si se intenta leer el grafo parcial mediante `manage.py`, se sale con código
+  2 antes de acceder a la DB y se indica esta herramienta, sin traceback.
+
+  Desde la raíz del checkout de deploy, seleccionar la misma versión que
+  sirve tráfico. El ejemplo siguiente es para Bash en PRD y solo consulta
+  estado; no aplica migraciones ni ejecuta el arranque del migrador. En otro
+  entorno, usar los archivos Compose de su propio deploy:
+
+  ```bash
+  COMPOSE=(docker compose --project-directory .
+    -f docker/compose/docker-compose.deploy.yml
+    -f docker/compose/docker-compose.produccion.yml
+    -f docker/compose/docker-compose.celery.yml)
+  CORE_CONTAINER="$("${COMPOSE[@]}" ps -q django)"
+  CORE_IMAGE="$(docker inspect "$CORE_CONTAINER" --format '{{.Config.Image}}')"
+  export SISOC_RELEASE_SHA="${CORE_IMAGE#sisoc/core:}"
+  [[ "$CORE_IMAGE" == sisoc/core:* && "$SISOC_RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]] || {
+    echo "No se pudo identificar una versión inmutable del core" >&2
+    exit 1
+  }
+  MIGRATOR=("${COMPOSE[@]}"
+    --profile migrate run --rm --no-deps -T --entrypoint python migrator)
+  "${MIGRATOR[@]}" manage.py makemigrations --check --dry-run </dev/null
+  "${MIGRATOR[@]}" manage.py migrate --plan </dev/null
+  ```
+
+  `--no-deps` evita iniciar otros servicios y `</dev/null` impide consumir
+  las siguientes líneas cuando el script llega por SSH. `--entrypoint python` y los
+  argumentos explícitos evitan ejecutar el arranque normal, que sí prepara
+  la DB. La imagen `sisoc/migrator:$SISOC_RELEASE_SHA` debe existir; no usar
+  `:local`, reconstruir desde otro checkout ni sustituirla por la imagen core.
+  `--settings=config.settings_all` no agrega a core los archivos que su imagen
+  no contiene.
+
+  Crear usuarios o aplicar el plan requiere autorización separada. Para un
+  `createsuperuser` autorizado e interactivo, conservar la misma imagen y
+  quitar `-T`; este diagnóstico no requiere crear ninguna cuenta.
 
   En deploy, la web no prepara la DB (`SISOC_PREPARAR_DB=false`). El migrador
   (rol `migrator` del entrypoint) aplica migraciones, fixtures,
   `create_test_users` y `create_groups`.
+  CI usa `config.settings_all` incluso cuando el servicio de desarrollo se
+  llama `django`; ese nombre no implica que sea la misma composición de PRD.
+  Investigación de un caso real y verificaciones:
+  `docs/registro/cambios/2026-T4/2026-11-11-grafo-migraciones-administracion-prd.md`.
 - **Rollback.** `deploy_verified.sh` vuelve al SHA anterior y recrea los
   mismos servicios que tocó el deploy fallido. Las migraciones no se revierten
   solas.

@@ -1,10 +1,12 @@
 /* eslint-disable react-refresh/only-export-components -- the unit surface is this route module; its validators are exported for the tests. */
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { leerCookie } from "@sisoc/api";
 import { InsumosToastList } from "../InsumosToast";
 import { safeInternalPath } from "../webAccess";
 import { Pagination } from "./listControls";
-import { internal, record, renderMain, text, useMainResource } from "./MainFrame";
+import { internal, postForm, record, renderMain, text, useMainResource } from "./MainFrame";
+import { ComunicadoFormPage } from "./comunicadosForm";
+import { ComunicadoEliminarPage } from "./comunicadosEliminar";
 import type { RouteDefinition } from "./types";
 
 /**
@@ -77,6 +79,7 @@ export function gestionValid(v: unknown): v is ComunicadoGestionData {
 export const comunicadosNavigation = {
   confirm: (message: string) => window.confirm(message),
   submit: (form: HTMLFormElement) => form.submit(),
+  assign: (to: string) => window.location.assign(to),
 };
 
 // --- List (`comunicado_list.html`) -----------------------------------------
@@ -177,13 +180,33 @@ const GESTION = "/comunicados/gestion/";
 const PUBLICAR = "¿Publicar este comunicado?";
 const ARCHIVAR = "¿Archivar este comunicado?";
 
-/** A native POST form (`{% csrf_token %}`) whose button may ask `data-confirm-click` first (`base.js`). */
-function ActionForm({ action, className, title, confirm, children }: { action: string; className: string; title?: string; confirm?: string; children: ReactNode }) {
+const UNCERTAIN = "No se pudo confirmar el resultado. Actualice la página antes de volver a intentar.";
+
+/**
+ * A native POST form (`{% csrf_token %}`) whose button may ask `data-confirm-click` first (`base.js`).
+ * CM02.03: the submit goes once to the web API (`web/comedores/comunicados/<id>/<action>/`), which runs the native
+ * view; the confirmed redirect is a full-page navigation (the message waits in the queue). An unconfirmed
+ * outcome is reported and never resent.
+ */
+function ActionForm({ action, endpoint, className, title, confirm, children }: { action: string; endpoint: string; className: string; title?: string; confirm?: string; children: ReactNode }) {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const busy = useRef(false);
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (busy.current || error) return;
+    if (confirm && !comunicadosNavigation.confirm(confirm)) return;
+    busy.current = true; setPending(true);
+    const outcome = await postForm(endpoint, new URLSearchParams());
+    if (outcome.kind === "redirect") { comunicadosNavigation.assign(outcome.url); return; }
+    const detail = outcome.kind === "forbidden" && record(outcome.data) && text(outcome.data.detail) ? outcome.data.detail : UNCERTAIN;
+    setError(detail); setPending(false);
+  }
   return (
-    <form method="post" action={action} className="d-inline">
+    <form method="post" action={action} className="d-inline" onSubmit={submit}>
       <input type="hidden" name="csrfmiddlewaretoken" value={leerCookie("csrftoken") ?? ""} />
-      <button type="submit" className={className} title={title} data-confirm-click={confirm}
-        onClick={(e) => { if (confirm && !comunicadosNavigation.confirm(confirm)) e.preventDefault(); }}>{children}</button>
+      <button type="submit" className={className} title={title} data-confirm-click={confirm} disabled={pending || !!error}>{children}</button>
+      {error && <span role="alert" className="text-danger small">{error}</span>}
     </form>
   );
 }
@@ -213,15 +236,15 @@ function GestionRow({ fila }: { fila: Fila }) {
           <a href={ver} className="btn btn-outline-primary" title="Ver"><i className="fas fa-eye" /></a>
           {acciones.editar && <a href={`/comunicados/editar/${fila.id}/`} className="btn btn-outline-secondary" title="Editar"><i className="fas fa-edit" /></a>}
           {acciones.publicar && (
-            <ActionForm action={`/comunicados/publicar/${fila.id}/`} className="btn btn-outline-success" title="Publicar" confirm={PUBLICAR}><i className="fas fa-paper-plane" /></ActionForm>
+            <ActionForm action={`/comunicados/publicar/${fila.id}/`} endpoint={`${API}${fila.id}/publicar/`} className="btn btn-outline-success" title="Publicar" confirm={PUBLICAR}><i className="fas fa-paper-plane" /></ActionForm>
           )}
           {acciones.archivar && (
-            <ActionForm action={`/comunicados/archivar/${fila.id}/`} className="btn btn-outline-dark" title="Archivar" confirm={ARCHIVAR}><i className="fas fa-archive" /></ActionForm>
+            <ActionForm action={`/comunicados/archivar/${fila.id}/`} endpoint={`${API}${fila.id}/archivar/`} className="btn btn-outline-dark" title="Archivar" confirm={ARCHIVAR}><i className="fas fa-archive" /></ActionForm>
           )}
           {acciones.destacado && (fila.destacado ? (
-            <ActionForm action={`/comunicados/toggle-destacado/${fila.id}/`} className="btn btn-warning" title="Quitar destacado"><i className="fas fa-star" /></ActionForm>
+            <ActionForm action={`/comunicados/toggle-destacado/${fila.id}/`} endpoint={`${API}${fila.id}/destacado/`} className="btn btn-warning" title="Quitar destacado"><i className="fas fa-star" /></ActionForm>
           ) : (
-            <ActionForm action={`/comunicados/toggle-destacado/${fila.id}/`} className="btn btn-outline-warning" title="Marcar como destacado"><i className="far fa-star" /></ActionForm>
+            <ActionForm action={`/comunicados/toggle-destacado/${fila.id}/`} endpoint={`${API}${fila.id}/destacado/`} className="btn btn-outline-warning" title="Marcar como destacado"><i className="far fa-star" /></ActionForm>
           ))}
         </div>
       </td>
@@ -324,10 +347,10 @@ function DetailFooter({ data }: { data: ComunicadoDetailData }) {
         <div className="btn-group">
           {p.editar && borrador && <a href={`/comunicados/editar/${data.id}/`} className="btn btn-outline-secondary"><i className="fas fa-edit" />{" "}Editar</a>}
           {p.publicar && borrador && (
-            <ActionForm action={`/comunicados/publicar/${data.id}/`} className="btn btn-outline-success" confirm={PUBLICAR}><i className="fas fa-paper-plane" />{" "}Publicar</ActionForm>
+            <ActionForm action={`/comunicados/publicar/${data.id}/`} endpoint={`${API}${data.id}/publicar/`} className="btn btn-outline-success" confirm={PUBLICAR}><i className="fas fa-paper-plane" />{" "}Publicar</ActionForm>
           )}
           {p.archivar && data.estado === "publicado" && (
-            <ActionForm action={`/comunicados/archivar/${data.id}/`} className="btn btn-outline-dark" confirm={ARCHIVAR}><i className="fas fa-archive" />{" "}Archivar</ActionForm>
+            <ActionForm action={`/comunicados/archivar/${data.id}/`} endpoint={`${API}${data.id}/archivar/`} className="btn btn-outline-dark" confirm={ARCHIVAR}><i className="fas fa-archive" />{" "}Archivar</ActionForm>
           )}
           {p.eliminar && borrador && <a href={`/comunicados/eliminar/${data.id}/`} className="btn btn-outline-danger"><i className="fas fa-trash" />{" "}Eliminar</a>}
         </div>
@@ -393,18 +416,27 @@ function DetailPage({ id }: { id: string }) {
   }));
 }
 
-type Params = { id?: string; gestion?: boolean };
+type Params = { id?: string; gestion?: boolean; eliminar?: string; form?: { id?: string } };
 const DETAIL = /^\/comunicados\/ver\/([0-9]+)\/$/;
+const EDITAR = /^\/comunicados\/editar\/([0-9]+)\/$/;
+const ELIMINAR = /^\/comunicados\/eliminar\/([0-9]+)\/$/;
 
 export const comunicadosRoute: RouteDefinition<Params> = {
   name: "comedores-comunicados",
   match(pathname) {
     if (pathname === LIST) return {};
     if (pathname === GESTION) return { gestion: true };
+    if (pathname === "/comunicados/crear/") return { form: {} };
+    const editar = EDITAR.exec(pathname);
+    if (editar) return { form: { id: editar[1] } };
+    const eliminar = ELIMINAR.exec(pathname);
+    if (eliminar) return { eliminar: eliminar[1] };
     const detail = DETAIL.exec(pathname);
     return detail ? { id: detail[1] } : null;
   },
-  render({ id, gestion }) {
+  render({ id, gestion, eliminar, form }) {
+    if (form) return <ComunicadoFormPage id={form.id} />;
+    if (eliminar) return <ComunicadoEliminarPage id={eliminar} />;
     if (gestion) return <GestionPage />;
     return id ? <DetailPage id={id} /> : <ListPage />;
   },

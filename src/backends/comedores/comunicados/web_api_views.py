@@ -19,14 +19,29 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from comunicados.permissions import can_manage_comunicados
+from comunicados.permissions import (
+    can_delete_comunicado,
+    can_manage_comunicados,
+    require_create_permission,
+    require_edit_permission,
+)
 from comunicados.views import (
+    ComunicadoArchivarView,
+    ComunicadoCreateView,
+    ComunicadoDeleteView,
     ComunicadoDetailView,
     ComunicadoGestionListView,
     ComunicadoListView,
+    ComunicadoPublicarView,
+    ComunicadoToggleDestacadoView,
+    ComunicadoUpdateView,
+    DestinatariosBuscarView,
+    DestinatariosSeleccionarTodosView,
 )
 from comunicados.web_api_serializers import (
     detalle,
+    eliminar_confirmacion,
+    formulario,
     fila_gestion,
     pagina,
     pending_messages,
@@ -126,3 +141,161 @@ class ComunicadoDetailWebView(_NativeReadView):
                 "messages": pending_messages(request),
             }
         )
+
+
+class _NativeActionView(_NativeReadView):
+    """CM02.03: runs the native ``post()`` of a state-transition view.
+
+    The native view checks its permission first (so an unknown id is 403, not
+    404 without permission), then looks the object up, applies the transition
+    and queues its message. The 302 to ``comunicados_gestion`` becomes
+    ``{"ok": true, "redirect": ...}`` and the next GET consumes the message.
+    """
+
+    http_method_names = ["post"]
+    view_class = None
+
+    def post(self, request, pk):
+        vista = self.native(self.view_class, request, pk=pk)
+        try:
+            # pylint: disable-next=protected-access
+            respuesta = vista.post(request._request, pk=pk)
+        except Http404 as exc:
+            raise NotFound() from exc
+        return Response({"ok": True, "redirect": respuesta["Location"]})
+
+
+class ComunicadoPublicarWebView(_NativeActionView):
+    """``POST .../comunicados/<pk>/publicar/``: ``ComunicadoPublicarView``."""
+
+    view_class = ComunicadoPublicarView
+
+
+class ComunicadoArchivarWebView(_NativeActionView):
+    """``POST .../comunicados/<pk>/archivar/``: ``ComunicadoArchivarView``."""
+
+    view_class = ComunicadoArchivarView
+
+
+class ComunicadoDestacadoWebView(_NativeActionView):
+    """``POST .../comunicados/<pk>/destacado/``: ``ComunicadoToggleDestacadoView``."""
+
+    view_class = ComunicadoToggleDestacadoView
+
+
+class ComunicadoDeleteWebView(_NativeReadView):
+    """``/api/web/comedores/comunicados/<pk>/eliminar/``: ``comunicado_confirm_delete.html``.
+
+    Same order as ``ComunicadoDeleteView.dispatch``: the object first (404),
+    then the delete permission (403), on GET and on POST.
+    """
+
+    http_method_names = ["get", "post"]
+
+    def _view(self, request, pk):
+        vista = self.native(ComunicadoDeleteView, request, pk=pk)
+        try:
+            vista.object = vista.get_object()
+        except Http404 as exc:
+            raise NotFound() from exc
+        if not can_delete_comunicado(request.user, vista.object):
+            raise PermissionDenied("No tiene permisos para eliminar este comunicado.")
+        return vista
+
+    def get(self, request, pk):
+        vista = self._view(request, pk)
+        return Response(
+            {
+                **eliminar_confirmacion(vista.object),
+                "messages": pending_messages(request),
+            }
+        )
+
+    def post(self, request, pk):
+        vista = self._view(request, pk)
+        # pylint: disable-next=protected-access
+        respuesta = vista.post(request._request, pk=pk)
+        return Response({"ok": True, "redirect": respuesta["Location"]})
+
+
+class _ComunicadoFormWebView(_NativeReadView):
+    """CM02.02: ``ComunicadoCreateView`` / ``ComunicadoUpdateView`` as JSON.
+
+    GET returns what the native form renders; POST (multipart or urlencoded,
+    never JSON) runs the native ``post()``: ``ComunicadoForm``, the attachments
+    formset, ``_save_comunicado_with_related`` inside its transaction and the
+    native message. A 302 becomes ``{"ok": true, "redirect": ...}``; a form or
+    formset rejected by the native view returns 400 with its bound payload.
+    """
+
+    http_method_names = ["get", "post"]
+
+    def _view(self, request, pk=None):
+        raise NotImplementedError
+
+    def get(self, request, pk=None):
+        vista = self._view(request, pk)
+        contexto = vista.get_context_data()
+        return Response({**formulario(contexto), "messages": pending_messages(request)})
+
+    def post(self, request, pk=None):
+        # ``Request.content_type`` keeps the multipart boundary; Django strips it.
+        # pylint: disable-next=protected-access
+        if request._request.content_type not in (
+            "multipart/form-data",
+            "application/x-www-form-urlencoded",
+        ):
+            return Response({"detail": "Formato de solicitud no admitido."}, status=415)
+        vista = self._view(request, pk)
+        # pylint: disable-next=protected-access
+        respuesta = vista.post(request._request)
+        if respuesta.status_code == 302:
+            return Response({"ok": True, "redirect": respuesta["Location"]})
+        return Response(formulario(respuesta.context_data), status=400)
+
+
+class ComunicadoCreateWebView(_ComunicadoFormWebView):
+    """``/api/web/comedores/comunicados/crear/``."""
+
+    def _view(self, request, pk=None):
+        # ``ComunicadoCreateView.dispatch``: the check runs on GET and POST.
+        require_create_permission(request.user)
+        vista = self.native(ComunicadoCreateView, request)
+        vista.object = None
+        return vista
+
+
+class ComunicadoUpdateWebView(_ComunicadoFormWebView):
+    """``/api/web/comedores/comunicados/<pk>/editar/``."""
+
+    def _view(self, request, pk=None):
+        vista = self.native(ComunicadoUpdateView, request, pk=pk)
+        try:
+            vista.object = vista.get_object()
+        except Http404 as exc:
+            raise NotFound() from exc
+        require_edit_permission(request.user, vista.object)
+        return vista
+
+
+class _DestinatariosWebView(_NativeReadView):
+    """CM02.02: the native JSON of the recipients panel, unchanged (same 403 and 404)."""
+
+    view_class = None
+
+    def get(self, request, universo):
+        vista = self.native(self.view_class, request)
+        # pylint: disable-next=protected-access
+        return vista.get(request._request, universo)
+
+
+class DestinatariosBuscarWebView(_DestinatariosWebView):
+    """``GET .../destinatarios/<universo>/buscar/``: ``DestinatariosBuscarView``."""
+
+    view_class = DestinatariosBuscarView
+
+
+class DestinatariosTodosWebView(_DestinatariosWebView):
+    """``GET .../destinatarios/<universo>/todos/``: ``DestinatariosSeleccionarTodosView``."""
+
+    view_class = DestinatariosSeleccionarTodosView

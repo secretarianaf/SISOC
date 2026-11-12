@@ -6,12 +6,14 @@ the template filter ``date:"d/m/Y H:i"`` (local time) and the card summary uses
 ``truncatewords:50``, so React never formats values.
 """
 
+from django import forms
 from django.contrib import messages
 from django.template.defaultfilters import date as date_filter
 from django.template.defaultfilters import truncatewords, urlencode
 from django.urls import reverse
 from django.utils.timezone import localtime
 
+from comunicados.forms import ALLOWED_ADJUNTO_EXTENSIONS, MAX_ADJUNTO_SIZE_BYTES
 from core.pagination import build_compact_page_range
 
 FECHA_HORA = "d/m/Y H:i"
@@ -142,4 +144,121 @@ def fila_gestion(comunicado, context):
             and comunicado.tipo != "externo"
             and context["can_toggle_destacado"],
         },
+    }
+
+
+def eliminar_confirmacion(comunicado):
+    """``comunicado_confirm_delete.html``: what the confirmation prints."""
+    return {
+        "id": comunicado.pk,
+        "titulo": comunicado.titulo,
+        "fecha_creacion": fecha_hora(comunicado.fecha_creacion),
+        "creador": nombre_usuario(comunicado.usuario_creador),
+        "adjuntos_count": comunicado.adjuntos.count(),
+    }
+
+
+FORM_FIELDS = (
+    "tipo",
+    "subtipo",
+    "fecha_vencimiento",
+    "destacado",
+    "para_todos_comedores",
+    "comedores",
+    "organizaciones",
+    "titulo",
+    "cuerpo",
+)
+# Order of ``accept=".pdf,.jpg,.jpeg,.png"`` in the native template.
+ACCEPT_ORDER = (".pdf", ".jpg", ".jpeg", ".png")
+MANAGEMENT_FIELDS = ("TOTAL_FORMS", "INITIAL_FORMS", "MIN_NUM_FORMS", "MAX_NUM_FORMS")
+
+
+def _valor(bound):
+    """What ``{{ form.<field> }}`` renders as the control value."""
+    valor, campo = bound.value(), bound.field
+    if isinstance(campo, forms.ModelMultipleChoiceField):
+        return [str(getattr(item, "pk", item)) for item in valor or []]
+    if isinstance(campo.widget, forms.CheckboxInput):
+        return bool(valor)
+    return "" if valor is None else str(valor)
+
+
+def _campo(bound):
+    campo = bound.field
+    datos = {
+        "value": _valor(bound),
+        "required": bool(
+            campo.required and campo.widget.use_required_attribute(bound.initial)
+        ),
+        "hidden": campo.widget.is_hidden,
+        "errors": [str(error) for error in bound.errors],
+    }
+    if isinstance(campo, forms.ChoiceField) and not isinstance(
+        campo, forms.ModelMultipleChoiceField
+    ):
+        datos["choices"] = [
+            {"value": str(valor), "label": str(etiqueta)}
+            for valor, etiqueta in campo.choices
+        ]
+    if getattr(campo, "max_length", None):
+        datos["max_length"] = campo.max_length
+    return datos
+
+
+def _adjunto_existente(adjunto_form):
+    borrar = adjunto_form["DELETE"]
+    return {
+        "nombre_original": adjunto_form.instance.nombre_original,
+        "url": adjunto_form.instance.archivo.url,
+        "hidden": [
+            {
+                "name": oculto.html_name,
+                "value": "" if oculto.value() is None else str(oculto.value()),
+            }
+            for oculto in adjunto_form.hidden_fields()
+        ],
+        "delete": {
+            "name": borrar.html_name,
+            "id": borrar.id_for_label,
+            "checked": bool(borrar.value()),
+        },
+    }
+
+
+def formulario(context):
+    """``comunicado_form.html``: the bound form, its attachments formset and extras."""
+    form, formset = context["form"], context["adjuntos_formset"]
+    objeto = context.get("object") if context["is_edit"] else None
+    gestion = formset.management_form
+    return {
+        "title": context["titulo_pagina"],
+        "is_edit": context["is_edit"],
+        "es_tecnico": context["es_tecnico"],
+        "fields": {nombre: _campo(form[nombre]) for nombre in FORM_FIELDS},
+        "formset": {
+            "prefix": formset.prefix,
+            "has_forms": bool(formset.forms),
+            "management": {
+                nombre: str(gestion[nombre].value()) for nombre in MANAGEMENT_FIELDS
+            },
+            "existing": [_adjunto_existente(f) for f in formset.forms if f.instance.pk],
+        },
+        "info": (
+            {
+                "estado": objeto.estado,
+                "estado_label": objeto.get_estado_display(),
+                "fecha_creacion": fecha_hora(objeto.fecha_creacion),
+                "creador": nombre_usuario(objeto.usuario_creador),
+            }
+            if objeto
+            else None
+        ),
+        "filters_config": context["destinatarios_filters_config"],
+        "seleccionados": context["destinatarios_seleccionados"],
+        "max_adjunto_bytes": MAX_ADJUNTO_SIZE_BYTES,
+        "extensiones": sorted(ALLOWED_ADJUNTO_EXTENSIONS, key=ACCEPT_ORDER.index),
+        "attachment_errors": [str(e) for e in form["archivos_adjuntos"].errors],
+        "formset_errors": [dict(errores) for errores in formset.errors],
+        "non_form_errors": [str(error) for error in formset.non_form_errors()],
     }

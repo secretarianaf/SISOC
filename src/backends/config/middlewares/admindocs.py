@@ -21,6 +21,7 @@ _OWNED_PATTERNS = (
     r"|observaciones/[0-9]+/(?:editar/|eliminar/)?)",
     r"/api/web/cdi/centros/(?:[0-9]+/nomina/(?:[0-9]+/)?)?",
     r"/api/web/cdi/nomina/[0-9]+/derivar/",
+    r"/api/web/cdi/centros/(?:[0-9]+/nomina/[0-9]+/(?:(?:publicar|archivar|destacado|eliminar)/)?)?",
     r"/api/web/comedores/duplas/(?:crear/|[0-9]+/(?:(?:editar|eliminar)/)?)?",
     r"/api/web/comedores/montos/(?:crear/|[0-9]+/(?:editar/|eliminar/)?)?",
     r"/api/web/comedores/actividades-pnud/(?:crear/|[0-9]+/(?:editar|baja)/)?",
@@ -34,7 +35,7 @@ _OWNED_PATTERNS = (
     r"/api/web/cdf/(?:beneficiarios/(?:preinscripcion/(?:options/)?|buscar-cuil/"
     r"|buscar-responsable/|exportar/disponible/|[0-9]+/)?|responsables/(?:[0-9]+/)?)",
     r"/api/web/comedores/admisiones/plantillas-informe/"
-    r"(?:variables/|incidencias/(?:[0-9]+/)?|[0-9]+/)?",
+    r"(?:variables/|incidencias/(?:[0-9]+/)?|[0-9]+/(?:(?:publicar|archivar|destacado|eliminar)/)?)?",
     r"/api/web/comedores/admisiones/informes/[a-z]+/(?:admision/)?[0-9]+/(?:formulario/|guardar/)?",
     r"/api/web/comedores/acompanamientos/(?:[0-9]+/(?:hitos/restaurar/)?)?",
     r"/api/web/comedores/expedientespagos/(?:comedores/[0-9]+/(?:crear/)?|[0-9]+/(?:editar/|eliminar/)?)",
@@ -44,7 +45,8 @@ _OWNED_PATTERNS = (
     r"|[0-9]+/(?:crear|fisicamente_presentada)/)",
     r"/api/web/dispositivos/datacalle/(?:opciones/(?:dispositivos|relevadores)/|relevamientos/"
     r"(?:formulario/|crear/|[0-9a-f-]{36}/(?:formulario/|editar/|cerrar/|eliminar/)?)?)",
-    r"/api/web/comedores/comunicados/(?:gestion/|[0-9]+/)?",
+    r"/api/web/comedores/comunicados/(?:gestion/|crear/|destinatarios/[^/]+/(?:buscar|todos)/"
+    r"|[0-9]+/(?:(?:publicar|archivar|destacado|eliminar|editar)/)?)?",
     r"/api/web/comedores/relevamientos/[0-9]+/(?:relevamiento/(?:numero-if/|[0-9]+/(?:(?:eliminar|revision)/|seguimientos/(?:(?:[0-9]+|primero)/(?:(?:editar|eliminar|revision)/)?)?)?)|pnud/[0-9]+/(?:revision/)?|actas/(?:crear/|[0-9]+/(?:(?:editar|revision|eliminar)/)?))?",
     r"/api/web/dispositivos/datacalle/casos/[0-9a-f-]{36}/",
     r"/api/web/ocr/(?:carga/|lotes/(?:[0-9]+/)?)",

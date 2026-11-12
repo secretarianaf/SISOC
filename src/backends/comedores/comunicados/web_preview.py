@@ -1,4 +1,4 @@
-"""Explicit local React preview of the comunicados (CM03.01, CM02.01); never mounted by a production URLconf.
+"""Explicit local React preview of the comunicados (CM03.01, CM02.01, CM02.02); never mounted by a production URLconf.
 
 The entries keep the native URLs and the native views' dispatch: anonymous
 users get the login redirect of ``LoginRequiredMixin``, an invalid ``page`` the
@@ -23,9 +23,12 @@ from comedores.web_preview_catalogos import (
     _index,
 )
 from comunicados.views import (
+    ComunicadoCreateView,
+    ComunicadoDeleteView,
     ComunicadoDetailView,
     ComunicadoGestionListView,
     ComunicadoListView,
+    ComunicadoUpdateView,
 )
 
 PUBLIC_ASSETS = "/comunicados/react/assets/"
@@ -64,6 +67,36 @@ class DetalleEntry(ComunicadoDetailView):
         return _index(request, self.index_bytes)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EliminarEntry(ComunicadoDeleteView):
+    """Native ``dispatch`` first (404, then 403 unless admin and draft)."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CrearEntry(ComunicadoCreateView):
+    """Native ``dispatch`` first (403 without the create permission)."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EditarEntry(ComunicadoUpdateView):
+    """Native ``dispatch`` first (404, then 403 unless admin or an editable draft)."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return _index(request, self.index_bytes)
+
+
 def comunicados_preview_patterns(build_directory):
     """Freeze an explicit local ``apps/sisoc`` build for a disposable preview URLconf.
 
@@ -85,6 +118,15 @@ def comunicados_preview_patterns(build_directory):
         path(
             "comunicados/ver/<int:pk>/",
             DetalleEntry.as_view(index_bytes=index_bytes),
+        ),
+        path("comunicados/crear/", CrearEntry.as_view(index_bytes=index_bytes)),
+        path(
+            "comunicados/editar/<int:pk>/",
+            EditarEntry.as_view(index_bytes=index_bytes),
+        ),
+        path(
+            "comunicados/eliminar/<int:pk>/",
+            EliminarEntry.as_view(index_bytes=index_bytes),
         ),
         path(
             "comunicados/react/<path:asset_path>",

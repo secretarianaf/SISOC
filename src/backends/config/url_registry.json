@@ -1885,9 +1885,44 @@
   "regex": "^comunicados/ver/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "comunicados_web_archivar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/archivar/\\Z"
+ },
+ {
+  "name": "comunicados_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/crear/\\Z"
+ },
+ {
+  "name": "comunicados_web_destacado",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/destacado/\\Z"
+ },
+ {
+  "name": "comunicados_web_destinatarios_buscar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/destinatarios/(?P<universo>[^/]+)/buscar/\\Z"
+ },
+ {
+  "name": "comunicados_web_destinatarios_todos",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/destinatarios/(?P<universo>[^/]+)/todos/\\Z"
+ },
+ {
   "name": "comunicados_web_detalle",
   "namespace": "",
   "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comunicados_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "comunicados_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
   "name": "comunicados_web_gestion",
@@ -1898,6 +1933,11 @@
   "name": "comunicados_web_listado",
   "namespace": "",
   "regex": "^api/web/comedores/comunicados/\\Z"
+ },
+ {
+  "name": "comunicados_web_publicar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/publicar/\\Z"
  },
  {
   "name": "confirmar_datos_personales",

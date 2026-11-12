@@ -5,9 +5,9 @@ import { findRoute } from "./index";
 import { comunicadosNavigation, detailValid, gestionValid, listValid } from "./comunicados";
 import { readyContext, setViewport } from "./testFixtures";
 
-const { webGet } = vi.hoisted(() => ({ webGet: vi.fn() }));
+const { webGet, webPost } = vi.hoisted(() => ({ webGet: vi.fn(), webPost: vi.fn() }));
 vi.mock("@sisoc/api", () => ({
-  crearCliente: vi.fn(() => ({ get: webGet, post: vi.fn() })),
+  crearCliente: vi.fn(() => ({ get: webGet, post: webPost })),
   leerCookie: vi.fn(() => "synthetic-csrf-token"),
 }));
 
@@ -59,7 +59,7 @@ describe("Comunicados published route", () => {
     expect(findRoute("/comunicados/")?.route.name).toBe("comedores-comunicados");
     expect(findRoute("/comunicados/gestion/")?.route.name).toBe("comedores-comunicados");
     expect(findRoute("/comunicados/ver/12/")?.route.name).toBe("comedores-comunicados");
-    for (const other of ["/comunicados", "/comunicados/gestion", "/comunicados/crear/", "/comunicados/ver/x/", "/comunicados/editar/3/",
+    for (const other of ["/comunicados", "/comunicados/gestion", "/comunicados/crear", "/comunicados/ver/x/", "/comunicados/editar/x/",
       "/comunicados/mailing/", "/api/comunicados/"]) {
       expect(findRoute(other)?.route.name).not.toBe("comedores-comunicados");
     }
@@ -211,18 +211,42 @@ describe("Comunicados management route (CM02.01)", () => {
     expect((form.elements.namedItem("csrfmiddlewaretoken") as HTMLInputElement).value).toBe("synthetic-csrf-token");
   });
 
-  it("asks before publishing or archiving", async () => {
+  it("asks before publishing or archiving and posts once to the web API", async () => {
     serve(gestion({ results: [fila({ acciones: acciones({ publicar: true }) }), fila({ id: 8, estado: "publicado", acciones: acciones({ archivar: true }) })] }));
+    webPost.mockResolvedValue({ data: { ok: true, redirect: "/comunicados/gestion/" }, status: 200 });
+    const assign = vi.spyOn(comunicadosNavigation, "assign").mockImplementation(() => {});
     setup("/comunicados/gestion/");
     const publicar = await screen.findByTitle("Publicar");
     const confirm = vi.spyOn(comunicadosNavigation, "confirm").mockReturnValueOnce(false);
-    expect(fireEvent.click(publicar)).toBe(false);
+    fireEvent.click(publicar);
     expect(confirm).toHaveBeenLastCalledWith("¿Publicar este comunicado?");
+    expect(webPost).not.toHaveBeenCalled();
     confirm.mockReturnValueOnce(true);
     const archivar = screen.getByTitle("Archivar");
-    archivar.closest("form")?.addEventListener("submit", (e) => e.preventDefault());
-    expect(fireEvent.click(archivar)).toBe(true);
+    fireEvent.click(archivar);
+    fireEvent.click(archivar);
     expect(confirm).toHaveBeenLastCalledWith("¿Archivar este comunicado?");
+    await waitFor(() => expect(assign).toHaveBeenCalledWith("/comunicados/gestion/"));
+    expect(webPost).toHaveBeenCalledTimes(1);
+    expect(webPost.mock.calls[0][0]).toBe(`${API}8/archivar/`);
+  });
+
+  it("toggles the highlight without asking and reports a forbidden or unconfirmed result without resending", async () => {
+    serve(gestion({ results: [fila({ id: 9, estado: "publicado", acciones: acciones({ destacado: true }) }), fila({ id: 10, estado: "publicado", destacado: true, acciones: acciones({ destacado: true }) })] }));
+    const assign = vi.spyOn(comunicadosNavigation, "assign").mockImplementation(() => {});
+    const confirm = vi.spyOn(comunicadosNavigation, "confirm");
+    webPost.mockResolvedValueOnce({ data: { detail: "No tiene permisos para modificar el estado destacado." }, status: 403 });
+    webPost.mockRejectedValueOnce(new Error("timeout"));
+    setup("/comunicados/gestion/");
+    fireEvent.click(await screen.findByTitle("Marcar como destacado"));
+    expect((await screen.findByRole("alert")).textContent).toBe("No tiene permisos para modificar el estado destacado.");
+    fireEvent.click(screen.getByTitle("Quitar destacado"));
+    await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
+    expect(screen.getAllByRole("alert")[1].textContent).toBe("No se pudo confirmar el resultado. Actualice la página antes de volver a intentar.");
+    expect(webPost.mock.calls.map((c) => c[0])).toEqual([`${API}9/destacado/`, `${API}10/destacado/`]);
+    expect(confirm).not.toHaveBeenCalled();
+    expect(assign).not.toHaveBeenCalled();
+    expect((screen.getByTitle("Marcar como destacado") as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("submits the search form when a module select changes and hides tipo for technicians", async () => {

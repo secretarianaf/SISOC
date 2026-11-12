@@ -109,6 +109,46 @@ def test_gestion_keeps_the_native_guards():
     assert gestor.get("/comunicados/gestion/", {"page": "9"}).status_code == 404
 
 
+@pytest.mark.usefixtures("preview")
+def test_delete_entry_keeps_the_native_order_of_guards():
+    borrador = _comunicado(estado=EstadoComunicado.BORRADOR)
+    publicado = _comunicado()
+    admin = User.objects.create_user("admin_prev_cm", is_superuser=True)
+    client = Client()
+    client.force_login(admin)
+
+    respuesta = client.get(f"/comunicados/eliminar/{borrador.pk}/")
+    assert respuesta.status_code == 200
+    assert '/comunicados/react/assets/app-1.js"' in respuesta.content.decode()
+    assert client.get(f"/comunicados/eliminar/{publicado.pk}/").status_code == 403
+    assert client.get("/comunicados/eliminar/999999/").status_code == 404
+    assert Client().get(f"/comunicados/eliminar/{borrador.pk}/").status_code == 403
+    assert (
+        _login("gestor3_prev_cm", perms=["change_comunicado"])
+        .get(f"/comunicados/eliminar/{borrador.pk}/")
+        .status_code
+        == 403
+    )
+
+
+@pytest.mark.usefixtures("preview")
+def test_create_and_edit_entries_keep_the_native_guards():
+    borrador = _comunicado(estado=EstadoComunicado.BORRADOR)
+    publicado = _comunicado()
+    editor = _login("editor_prev_cm", perms=["change_comunicado"])
+    creador = _login("creador2_prev_cm", perms=["add_comunicado"])
+
+    for url in ("/comunicados/crear/", f"/comunicados/editar/{borrador.pk}/"):
+        client = creador if "crear" in url else editor
+        respuesta = client.get(url)
+        assert respuesta.status_code == 200
+        assert '/comunicados/react/assets/app-1.js"' in respuesta.content.decode()
+    assert editor.get(f"/comunicados/editar/{publicado.pk}/").status_code == 403
+    assert editor.get("/comunicados/editar/999999/").status_code == 404
+    assert editor.get("/comunicados/crear/").status_code == 403
+    assert _login("lector4_prev_cm").get("/comunicados/crear/").status_code == 403
+
+
 def test_build_without_index_is_refused(tmp_path):
     with pytest.raises(ValueError):
         comunicados_preview_patterns(tmp_path)

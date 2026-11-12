@@ -926,3 +926,18 @@ en el mismo POST y tras cada acción React vuelve a pedir la proyección. La web
 nunca llama a SINTyS ni a RENAPER. Entrada local:
 `src/backends/pas/pas/web_preview_cruces.py`. Registro:
 `../registro/cambios/2026-T4/2026-11-12-2785-react-pas-cruces.md`.
+Publicar, archivar y destacar comunicados (CM02.03) usan `POST .../comunicados/<pk>/publicar/`,
+`.../archivar/` y `.../destacado/`: cada uno ejecuta el `post()` de la vista nativa y devuelve
+`{"ok": true, "redirect": "/comunicados/gestion/"}` con el mensaje nativo en cola. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-comunicados-publicacion-estados.md`.
+
+La baja de comunicados (CM02.02, eliminar) usa `GET` y `POST .../comunicados/<pk>/eliminar/`: ejecutan
+`ComunicadoDeleteView` con su orden nativo de chequeos (404, luego 403 salvo administrador y borrador) y el
+POST devuelve `{"ok": true, "redirect": "/comunicados/gestion/"}`. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-comunicados-eliminacion.md`.
+
+El alta y la edición de comunicados (CM02.02) usan `GET` y `POST .../comunicados/crear/` y
+`.../comunicados/<pk>/editar/`, más `GET .../comunicados/destinatarios/<universo>/buscar/` y `.../todos/`: ejecutan
+`ComunicadoCreateView`, `ComunicadoUpdateView` y las vistas nativas de destinatarios (POST multipart, 400 con el
+formulario ligado, JSON 415) y el panel de destinatarios se reimplementa en React. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-comunicados-formulario.md`.

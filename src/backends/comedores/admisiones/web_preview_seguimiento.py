@@ -23,6 +23,7 @@ from comedores.web_preview_catalogos import (
     _index,
 )
 from admisiones.views.web_views import (
+    AdmisionDetailView,
     AdmisionesLegalesListView,
     AdmisionesTecnicosListView,
 )
@@ -57,6 +58,17 @@ class LegalesListEntry(AdmisionesLegalesListView):
         return _serve_list(self, request)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class DetalleEntry(AdmisionDetailView):
+    """GET serves the index after the native lookup; the native ``post()`` stays."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return _index(request, self.index_bytes)
+
+
 def seguimiento_preview_patterns(build_directory):
     """Freeze an explicit local ``apps/sisoc`` build for a disposable preview URLconf."""
     original = Path(build_directory)
@@ -83,6 +95,10 @@ def seguimiento_preview_patterns(build_directory):
         path(
             "comedores/admisiones/legales/listar",
             entry(LegalesListEntry, LEGALES_PERMISSIONS),
+        ),
+        path(
+            "comedores/<int:comedor_pk>/admision/<int:pk>/detalle/",
+            entry(DetalleEntry, TECNICOS_PERMISSIONS),
         ),
         path(
             "comedores/react/<path:asset_path>",

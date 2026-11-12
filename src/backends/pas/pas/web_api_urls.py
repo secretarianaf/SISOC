@@ -2,6 +2,12 @@
 
 from django.urls import path
 
+from pas.web_api_cruces import (
+    PasCrucesActualizarRenaperWebView,
+    PasCrucesExportarSintysWebView,
+    PasCrucesImportarSintysWebView,
+    PasCrucesWebView,
+)
 from pas.web_api_informes import (
     PasInformeDetailWebView,
     PasInformeGenerarCsvWebView,
@@ -66,5 +72,21 @@ urlpatterns = [
         "informes/<int:pk>/",
         PasInformeDetailWebView.as_view(),
         name="pas_web_informe",
+    ),
+    path("cruces/", PasCrucesWebView.as_view(), name="pas_web_cruces"),
+    path(
+        "cruces/exportar-sintys/",
+        PasCrucesExportarSintysWebView.as_view(),
+        name="pas_web_cruces_exportar_sintys",
+    ),
+    path(
+        "cruces/importar-sintys/",
+        PasCrucesImportarSintysWebView.as_view(),
+        name="pas_web_cruces_importar_sintys",
+    ),
+    path(
+        "cruces/actualizar-renaper/",
+        PasCrucesActualizarRenaperWebView.as_view(),
+        name="pas_web_cruces_actualizar_renaper",
     ),
 ]

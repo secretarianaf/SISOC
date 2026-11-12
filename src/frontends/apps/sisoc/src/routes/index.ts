@@ -45,6 +45,7 @@ import { montosRoute } from "./montos";
 import { ocrRoute } from "./ocr";
 import { pasRoute } from "./pas";
 import { pasInformesRoute } from "./pasInformes";
+import { pasCrucesRoute } from "./pasCruces";
 import { pasInformesGenerarRoute } from "./pasInformesGenerar";
 import { passwordChangeRoute } from "./passwordChange";
 import { passwordResetRoute } from "./passwordReset";
@@ -97,6 +98,7 @@ export const ROUTES: RouteDefinition[] = [
   montosRoute,
   actividadesPnudRoute,
   pasRoute,
+  pasCrucesRoute,
   pasInformesRoute,
   pasInformesGenerarRoute,
   admisionesTemplatesRoute,

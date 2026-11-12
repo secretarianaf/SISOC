@@ -911,3 +911,13 @@ los firmantes/avales y el detalle de rendición tienen página propia
 (`routes/organizacion{Convenio,Documentos,Firmantes,Rendiciones}.tsx`) sobre las
 vistas nativas. Ver
 [registro](../registro/cambios/2026-T4/2026-11-12-2785-react-organizaciones-secciones.md).
+
+Cruces y novedades PAS (PAS03, `routes/pasCruces.tsx`) toma `/pas/cruces`; la
+proyección sale de `/api/web/pas/cruces/`
+(`src/backends/pas/pas/web_api_cruces.py`), que corre `PasCrucesView`. Las tres
+acciones (`exportar-sintys/`, `importar-sintys/`, `actualizar-renaper/`) usan los
+servicios nativos con `pas.change_paspersona`; `exportar-sintys/` devuelve el XLSX
+en el mismo POST y tras cada acción React vuelve a pedir la proyección. La web
+nunca llama a SINTyS ni a RENAPER. Entrada local:
+`src/backends/pas/pas/web_preview_cruces.py`. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-pas-cruces.md`.

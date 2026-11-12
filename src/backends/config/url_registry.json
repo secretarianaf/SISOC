@@ -3745,6 +3745,26 @@
   "regex": "^api/web/pas/areas/mesa\\-ayuda/\\Z"
  },
  {
+  "name": "pas_web_cruces",
+  "namespace": "",
+  "regex": "^api/web/pas/cruces/\\Z"
+ },
+ {
+  "name": "pas_web_cruces_actualizar_renaper",
+  "namespace": "",
+  "regex": "^api/web/pas/cruces/actualizar\\-renaper/\\Z"
+ },
+ {
+  "name": "pas_web_cruces_exportar_sintys",
+  "namespace": "",
+  "regex": "^api/web/pas/cruces/exportar\\-sintys/\\Z"
+ },
+ {
+  "name": "pas_web_cruces_importar_sintys",
+  "namespace": "",
+  "regex": "^api/web/pas/cruces/importar\\-sintys/\\Z"
+ },
+ {
   "name": "pas_web_formacion_personas",
   "namespace": "",
   "regex": "^api/web/pas/formacion/personas/\\Z"

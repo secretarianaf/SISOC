@@ -8,6 +8,9 @@ from comedores.web_api_comedor_form import (
 )
 from comedores.web_api_comedor_admision import ComedorAdmisionWebView
 from comedores.web_api_comedor_ficha import ComedorFichaWebView
+from comedores.web_api_comedor_ficha_capacitaciones import (
+    ComedorCapacitacionEstadoWebView,
+)
 from comedores.web_api_comedores import ComedorBajaWebView, ComedoresListWebView
 
 urlpatterns = [
@@ -21,6 +24,11 @@ urlpatterns = [
         "comedores/<int:pk>/admision/",
         ComedorAdmisionWebView.as_view(),
         name="comedores_web_admision",
+    ),
+    path(
+        "comedores/<int:pk>/capacitaciones/<int:certificado_id>/estado/",
+        ComedorCapacitacionEstadoWebView.as_view(),
+        name="comedores_web_capacitacion_estado",
     ),
     path(
         "comedores/<int:pk>/baja/",

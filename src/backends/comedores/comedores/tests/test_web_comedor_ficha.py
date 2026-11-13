@@ -10,7 +10,7 @@ from django.contrib.auth.models import Permission
 from django.test import Client
 
 from admisiones.models.admisiones import Admision
-from comedores.models import Comedor
+from comedores.models import Comedor, Programas
 from core.models import Localidad, Municipio, Provincia
 from organizaciones.models import Organizacion
 from comedores.utils import get_prestacion_conformidad_pending_period
@@ -362,3 +362,88 @@ def test_admission_card_shows_the_native_texts_and_the_link(lector, comedor):
 
 def test_card_holder_card_only_for_who_can_manage_it(lector, comedor):
     assert _tablero(lector, comedor)["responsable_tarjeta"] is None
+
+
+def test_transactions_card_follows_the_dw_summary_and_the_permission(
+    lector, comedor, monkeypatch
+):
+    from decimal import Decimal
+
+    from comedores.services.dw_transacciones_service.impl import (
+        DWTransaccion,
+        DWTransaccionesService,
+    )
+
+    sin_dato = _tablero(lector, comedor)["transacciones"]
+    assert sin_dato == {
+        "periodo": "Sin información",
+        "movimientos": "Sin información",
+        "transferido": "Sin información",
+        "gastado": "Sin información",
+        "saldo": "Sin información",
+        "detalle": f"/comedores/{comedor.pk}/transacciones",
+    }
+    monkeypatch.setattr(
+        DWTransaccionesService,
+        "obtener_resumen_ultimo_periodo",
+        staticmethod(
+            lambda _id: DWTransaccion(
+                comedor_id_sisoc=_id,
+                periodo="202609",
+                cantidad_debitos=14,
+                credito_total=Decimal("1500"),
+                debito_total=Decimal("12000"),
+                cereo=Decimal("0"),
+            )
+        ),
+    )
+
+    con = _tablero(lector, comedor)["transacciones"]
+
+    assert con["periodo"] == "2026-09"
+    assert con["movimientos"] == "14"
+    assert con["transferido"] == "$12.000"
+    assert con["gastado"] == "$1.500"
+    assert con["saldo"] == "$0"
+    sin_permiso = _client("solo_admision", "view_admision")
+    assert _tablero(sin_permiso, comedor)["transacciones"] is None
+
+
+def test_execution_month_card_only_for_pnud_secos_and_with_the_expediente(
+    lector, comedor
+):
+    from expedientespagos.models import ExpedientePago
+
+    assert _tablero(lector, comedor)["mes_ejecucion"] is None
+    # The native view keys the card on the PNUD - SECOS program id.
+    comedor.programa = Programas.objects.create(pk=2, nombre="PNUD - SECOS")
+    comedor.save()
+
+    sin = _tablero(lector, comedor)["mes_ejecucion"]
+    assert sin["expediente"] is None
+    assert sin["ver_mas"] == f"/expedientespagos/expedientespagos/{comedor.pk}/"
+
+    ExpedientePago.objects.create(
+        comedor=comedor,
+        expediente_convenio="EX-C-1",
+        mes_pago="Octubre",
+        ano="2026",
+        prestaciones_mensuales_desayuno=10,
+        prestaciones_mensuales_almuerzo=5,
+        prestaciones_mensuales_merienda=0,
+        prestaciones_mensuales_cena=0,
+        monto_mensual_desayuno=0,
+        monto_mensual_almuerzo=0,
+        monto_mensual_merienda=0,
+        monto_mensual_cena=0,
+        total=1234.5,
+    )
+    con = _tablero(lector, comedor)["mes_ejecucion"]["expediente"]
+
+    assert con["convenio"] == "EX-C-1"
+    assert con["pago"] == "Sin información"
+    assert con["prestaciones"] == "15"
+    assert con["monto"] == "$1.235"
+    assert con["mes_pago"] == "Octubre"
+    assert con["ano"] == "2026"
+    assert con["mes_ejecucion"] == "Sin información"

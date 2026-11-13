@@ -15,6 +15,7 @@ import html
 from django.urls import reverse
 
 from comedores.web_api_comedor_ficha_datos import _render
+from comedores.web_api_comedor_ficha_tarjetas import tarjetas
 
 SIN_INFO = "Sin información"
 RANGOS = (
@@ -348,4 +349,5 @@ def tablero(context, comedor):
             else _admision(context, comedor)
         ),
         "responsable_tarjeta": _responsable_tarjeta(context, comedor),
+        **tarjetas(context, comedor),
     }

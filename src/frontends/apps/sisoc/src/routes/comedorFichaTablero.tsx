@@ -1,14 +1,15 @@
 /* eslint-disable react-refresh/only-export-components -- the unit surface is this module: the board sections, the chart config and the loader. */
 import { useEffect, useRef, type ReactNode } from "react";
 import { internal, record, text } from "./MainFrame";
+import { tarjetasValid, type Tarjetas } from "./comedorFichaTarjetas";
 
 /**
  * CO07.01 ficha, board part of `comedor_detail.html`: the timeline, the four
  * summary boxes, the «Asistencia por rango etareo» chart (Chart.js, as the native
  * page), the «Detalles de Admisión» / «Datos del Convenio» card and the card-holder
  * card. Data is the `tablero` key of `GET /api/web/comedores/comedores/<pk>/`.
- * The right column (nómina) and the rows with the transactions and execution
- * month cards are slots the page fills with their own components.
+ * The right column (nómina) is a slot the page fills with its own component; the
+ * transactions and execution month cards (`comedorFichaTarjetas`) go in `rows`.
  */
 type Step = { clase: string; circulo: string };
 type Fila = { label: string; value: string; mayusculas?: boolean };
@@ -18,14 +19,14 @@ export type Tablero = {
   grafico: { label: string; valor: number }[];
   detalles: { tipo: "admision" | "convenio"; titulo: string; filas: Fila[]; territoriales?: { territorial: string; codigo: string }[]; accion: { label: string; url: string | null } };
   responsable_tarjeta: { hay_datos: boolean; datos: [string, string][]; editar: string } | null;
-};
+} & Tarjetas;
 
 const strs = (v: unknown, keys: string[]) => record(v) && keys.every((k) => typeof v[k] === "string");
 
 export function tableroValid(v: unknown): v is Tablero {
   if (!record(v) || !record(v.timeline) || !record(v.detalles)) return false;
   const t = v.timeline, d = v.detalles;
-  return record(t.admision) && strs(t.admision, ["clase", "circulo", "fecha"]) && typeof t.admision.completada === "boolean" && typeof t.conector === "string" &&
+  return tarjetasValid(v) && record(t.admision) && strs(t.admision, ["clase", "circulo", "fecha"]) && typeof t.admision.completada === "boolean" && typeof t.conector === "string" &&
     strs(t.ejecucion, ["clase", "circulo"]) && record(t.rendicion) && typeof t.rendicion.circulo === "string" &&
     Array.isArray(v.resumen) && v.resumen.every((c) => strs(c, ["icon", "valor", "label"])) &&
     Array.isArray(v.grafico) && v.grafico.every((g) => record(g) && text(g.label) && typeof g.valor === "number") &&

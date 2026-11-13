@@ -20,6 +20,7 @@ Blocks published so far (the contract grows by adding keys, never by renaming):
 - ``acordeon``: the four panels (``web_api_comedor_ficha_datos``).
 - ``titulo``: the title card (pending conformity notice, name, validation,
   program and estado badges, CARITAS and the execution dates).
+- ``certificaciones`` and the other lower cards (``web_api_comedor_ficha_bloques``).
 
 The ficha has no write here: its POSTs (admisión, descartar expediente) and the
 modals stay native until their own units.
@@ -37,6 +38,7 @@ from rest_framework.views import APIView
 from core.templatetags.custom_filters import replace_query
 from core.web_gate import WebGatePermission
 from comedores.views.comedor import ComedorDetailView
+from comedores.web_api_comedor_ficha_bloques import bloques
 from comedores.web_api_comedor_ficha_datos import acordeon
 from comedores.web_api_comedor_ficha_tablero import tablero
 from comedores.web_api_comedores import VerComedores, pending_messages
@@ -180,6 +182,7 @@ class ComedorFichaWebView(_WebView):
                 "titulo": _titulo(context, comedor),
                 "acordeon": acordeon(context, comedor),
                 "tablero": tablero(context, comedor),
+                **bloques(context, comedor),
                 "messages": pending_messages(request),
             }
         )

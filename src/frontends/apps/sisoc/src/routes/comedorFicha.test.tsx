@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { tableroFixture } from "./comedorFichaFixtures";
+import { bloquesFixture, tableroFixture } from "./comedorFichaFixtures";
 import { FichaAcordeon, FichaHeaderBar, FichaHero, fichaValid, type FichaData, type FichaHeader } from "./comedorFicha";
 
 const header = (over: Partial<FichaHeader> = {}): FichaHeader => ({
@@ -13,7 +13,7 @@ const header = (over: Partial<FichaHeader> = {}): FichaHeader => ({
 });
 const marcas = (labels: string[], on: string[] = []) => labels.map((label) => ({ label, marcado: on.includes(label) }));
 const ficha = (over: Partial<FichaData> = {}): FichaData => ({
-  id: 7, nombre: "Comedor Norte", header: header(), messages: [], tablero: tableroFixture(),
+  id: 7, nombre: "Comedor Norte", header: header(), messages: [], tablero: tableroFixture(), ...bloquesFixture(),
   titulo: { conformidad_pendiente: { periodo: "10/2026" }, nombre: "Comedor Norte", validacion: "Validado", programa: "PAC", etiqueta_estado: "Activo", es_caritas: true, inicio_ejecucion: "01/10/2026", plazo_ejecucion: "12 meses" },
   acordeon: {
     ubicacion: { mapa: { tipo: "iframe", src: "https://maps.google.com/maps?q=-27.45,-58.98&output=embed" }, datos: [{ icon: "bi bi-geo", label: "Calle", value: "Mitre" }] },

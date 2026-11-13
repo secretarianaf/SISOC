@@ -2,6 +2,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { AdmisionModal } from "./comedorFichaAdmision";
 import { FichaTablero, tableroValid, type Tablero } from "./comedorFichaTablero";
+import { FichaBloques, bloquesValid, type Bloques } from "./comedorFichaBloques";
+import { TarjetasFila } from "./comedorFichaTarjetas";
 import { NativeToasts } from "./nativeParity";
 import { internal, record, renderMain, text, useMainResource } from "./MainFrame";
 import type { RouteDefinition } from "./types";
@@ -38,7 +40,7 @@ export type Acordeon = {
   relevamientos: { titulo: string; pnud: boolean; agregar?: string | null; actividades?: Actividad[]; puede_gestionar?: boolean } &
     Partial<{ donaciones: Marca[]; servicio: Marca[]; espacio: Marca[] }> & { actividades_anexo?: string[] };
 };
-export type FichaData = { id: number; nombre: string; header: FichaHeader; titulo: Titulo; acordeon: Acordeon; tablero: Tablero; messages: { message: string; level: string }[] };
+export type FichaData = { id: number; nombre: string; header: FichaHeader; titulo: Titulo; acordeon: Acordeon; tablero: Tablero; messages: { message: string; level: string }[] } & Bloques;
 
 const strs = (v: unknown, keys: string[]) => record(v) && keys.every((k) => typeof v[k] === "string");
 const list = (v: unknown, ok: (x: unknown) => boolean) => Array.isArray(v) && v.every(ok);
@@ -56,7 +58,7 @@ export function fichaValid(v: unknown): v is FichaData {
     record(a.ubicacion) && list(a.ubicacion.datos, (d) => strs(d, ["icon", "label", "value"])) &&
     record(a.responsables) && record(a.responsables.foto) && typeof a.responsables.foto.url === "string" &&
     record(a.prestaciones) && list(a.prestaciones.filas, (f) => record(f) && text(f.comida) && Array.isArray(f.valores)) &&
-    record(a.relevamientos) && text(a.relevamientos.titulo) && tableroValid(v.tablero);
+    record(a.relevamientos) && text(a.relevamientos.titulo) && tableroValid(v.tablero) && bloquesValid(v);
 }
 
 // --- `app-header` block ------------------------------------------------------------------------
@@ -410,7 +412,8 @@ export function FichaPage({ id }: { id: string }) {
     content: <>
       <NativeToasts messages={data.messages as Parameters<typeof NativeToasts>[0]["messages"]} />
       <FichaHero data={data} />
-      <FichaTablero data={data.tablero} />
+      <FichaTablero data={data.tablero} rows={<TarjetasFila data={data.tablero} />} />
+      <FichaBloques data={data} />
       {admision && <AdmisionModal comedorId={data.id} close={() => setAdmision(false)} />}
     </>,
   }));

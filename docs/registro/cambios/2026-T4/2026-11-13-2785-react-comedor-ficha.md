@@ -35,8 +35,16 @@
   gestionarla). Cada valor se renderiza con la expresión de la plantilla, de modo que un dupla
   inexistente queda vacío como en la página.
   `routes/comedorFichaTablero.tsx` dibuja esos bloques con el gráfico de Chart.js 4.4.4 del
-  mismo CDN que el diseño nativo; la columna de nómina y las filas de transacciones y mes de
-  ejecución son huecos que la página completa con sus propios componentes.
+  mismo CDN que el diseño nativo; la columna de nómina es un hueco que la página completa con
+  su propio componente.
+- **Tarjetas «Transacciones - Nación Servicios» y «Mes de ejecución»**
+  (`web_api_comedor_ficha_tarjetas.py`, claves `transacciones` y `mes_ejecucion` de `tablero`).
+  Cada tarjeta es `null` cuando la plantilla no la dibuja (la primera exige `view_comedor`; la
+  segunda, programa 2), de modo que React no dibuja controles que la página no muestra. Los
+  valores salen de las mismas expresiones de la plantilla (`default`, `monto_sin_decimales`) y los
+  enlaces «Ver detalles» y «Ver más» siguen apuntando a las pantallas nativas.
+  `routes/comedorFichaTarjetas.tsx` dibuja la fila (una sola tarjeta se alinea a la derecha, como
+  la plantilla) y entra en el hueco `rows` del tablero.
 - **Comenzar Admisión.** `POST /api/web/comedores/comedores/<pk>/admision/`
   (`web_api_comedor_admision.py`) corre `ComedorService.crear_admision_desde_comedor` para el
   comedor que resuelve el alcance del usuario (fuera de alcance es 404), con el acceso de la
@@ -48,6 +56,20 @@
   alcanzan por esta ruta.
   `routes/comedorFichaAdmision.tsx` dibuja el modal «Seleccione el tipo de Admisión» que abre
   el ítem «Comenzar Admisión» del menú, y la ficha muestra los mensajes en cola.
+- **Certificaciones mensuales** (`web_api_comedor_ficha_bloques.py`, clave `certificaciones`).
+  Las seis últimas conformidades con las celdas de la plantilla (período `m/Y`, usuario generador
+  con el nombre completo o el usuario, badge «Conforme» / «No conforme», fecha en hora local y el
+  enlace «Ver PDF» solo si hay archivo) y el enlace «Ver historial completo». La tarjeta es de
+  solo lectura: la plantilla nativa no tiene acciones de cambio de estado en este bloque; las
+  que existen (aceptar y rechazar con observación) son las de la tabla de Capacitaciones.
+  `routes/comedorFichaBloques.tsx` dibuja la tarjeta con el botón de colapsar de AdminLTE.
+- **Aceptar / Rechazar capacitaciones.**
+  `POST /api/web/comedores/comedores/<pk>/capacitaciones/<certificado_id>/estado/`
+  (`web_api_comedor_ficha_capacitaciones.py`) corre `review_certificate` para un certificado
+  del comedor que resuelve el alcance del usuario (otro comedor o inexistente es 404), con el
+  acceso de la ruta nativa (`change_comedor`: ver la ficha no alcanza). Responde con el mismo
+  JSON nativo (`success` + `item`, o `success: false` + `error` con 400) y un rechazo (estado
+  inválido, certificado ya revisado, rechazo sin observación) deja el certificado sin cambios.
 - **Fuente, sin cambios.** La plantilla nativa actual no dibuja la tabla de admisiones ni el
   modal «Descartar Expediente» (solo existe el armado del contexto y el `post` de
   descartar): no se construyen controles sin origen. Si se vuelven a dibujar, la ruta de

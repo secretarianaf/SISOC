@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FichaPage } from "./comedorFicha";
 import { admisionNavigation } from "./comedorFichaAdmision";
-import { tableroFixture } from "./comedorFichaFixtures";
+import { bloquesFixture, tableroFixture } from "./comedorFichaFixtures";
 import { readyContext, setViewport } from "./testFixtures";
 
 const { webGet, webPost } = vi.hoisted(() => ({ webGet: vi.fn(), webPost: vi.fn() }));
@@ -14,7 +14,7 @@ vi.mock("@sisoc/api", () => ({
 const API = "web/comedores/comedores/7/admision/";
 const marcas = (labels: string[]) => labels.map((label) => ({ label, marcado: false }));
 const ficha = (over: Record<string, unknown> = {}) => ({
-  id: 7, nombre: "Comedor Norte", messages: [], tablero: tableroFixture(),
+  id: 7, nombre: "Comedor Norte", messages: [], tablero: tableroFixture(), ...bloquesFixture(),
   header: {
     validar: false, convenio_pnud: null, actividades: null, acompanamiento_territorial: null, historial: null, convenios: [],
     acciones: { editar: "/comedores/7/editar", responsable_tarjeta: null, eliminar: "/comedores/7/eliminar", equipo_tecnico: null, comenzar_admision: true },

@@ -3,10 +3,11 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "rea
 import { leerCookie } from "@sisoc/api";
 import type { RequiredPasswordPresentation } from "../RequiredPasswordChange";
 import { safeInternalPath } from "../webAccess";
-import DatacalleSelect2 from "./datacalleSelect2";
+import { Control, type Api, type Choice, type Section, type UsuarioField, type Values } from "./usuariosControls";
+import { CreatedUsersCard, MobileBody, TeamsBody, TerritorialComedorBody, type CreatedUser, type Operator } from "./usuariosMobile";
 import { NativeToasts, resetAfterRejectedPost } from "./nativeParity";
 import Select2 from "./select2";
-import { errorsValid, messagesValid, navigation, postOnce, presentationValid, record, type FieldErrors, type JobMessage } from "./userImport";
+import { accepted, client, errorsValid, messagesValid, navigation, presentationValid, record, type FieldErrors, type JobMessage } from "./userImport";
 
 /**
  * `user/user_form.html` (core cards): personal data, access, DataCalle, Inspecciones escolares,
@@ -15,21 +16,8 @@ import { errorsValid, messagesValid, navigation, postOnce, presentationValid, re
  * visibility rules of `user_mobile_access.js`/`usuarioprovincial.js` and posts the enabled
  * controls. A rejected post re-renders the form with the bound values.
  */
-type Value = string | boolean | string[];
-type Choice = { value: string; label: string };
-export type UsuarioField = {
-  name: string;
-  kind: "text" | "email" | "password" | "boolean" | "radio" | "select" | "multiselect" | "hidden";
-  label: string;
-  required: boolean;
-  disabled: boolean;
-  help_text: string;
-  max_length: number | null;
-  value: Value;
-  choices?: Choice[];
-};
-type Section = { key: string; fields: UsuarioField[] };
 type Scope = { provincia_id: string | number | null; municipio_id?: string | number | null; localidad_id?: string | number | null };
+export type { UsuarioField };
 export type UsuarioFormData = {
   mode: "create" | "edit";
   title: string;
@@ -37,7 +25,7 @@ export type UsuarioFormData = {
   sections: Section[];
   identity_present: string[];
   errors: FieldErrors;
-  comedores: { sections: string[]; runtime_required: boolean };
+  comedores: { sections: string[]; runtime_required: boolean; operator?: Operator | null; created_users?: CreatedUser[] };
   territorial: { initial: Scope[]; municipios_url: string; localidades_url: string };
   urls: { cancel: string };
   submit_text: string;
@@ -65,6 +53,9 @@ export function usuarioFormValid(v: unknown): v is UsuarioFormData {
 }
 
 const CARDS: Record<string, { id?: string; icon: string; title: string }> = {
+  mobile: { id: "mobile-access-card", icon: "fas fa-mobile-alt mr-3", title: "Acceso a Espacios comunitarios" },
+  territorial_comedor: { id: "territorial-comedor-card", icon: "fas fa-map-marked-alt mr-3", title: "Acceso SISOC - Mobile Territorial comedor" },
+  teams: { id: "backoffice-equipos-card", icon: "fas fa-users-cog mr-3", title: "Equipos técnicos (Comedores)" },
   personal: { icon: "fas fa-user mr-4", title: "Datos Personales" },
   access: { icon: "fas fa-key mr-3", title: "Datos de Acceso" },
   datacalle: { id: "relevador-calle-card", icon: "fas fa-street-view mr-3", title: "Acceso SISOC - Mobile DataCalle" },
@@ -73,79 +64,6 @@ const CARDS: Record<string, { id?: string; icon: string; title: string }> = {
   territorial: { id: "backoffice-config-card", icon: "fas fa-map mr-3", title: "Alcance territorial" },
   delegation: { id: "backoffice-admin-card", icon: "fas fa-user-shield mr-3", title: "Administración de accesos" },
 };
-const INPUT_CLASS = { text: "textinput", email: "emailinput", password: "passwordinput" } as const;
-
-type Values = Record<string, Value>;
-type Api = {
-  values: Values;
-  errors: FieldErrors;
-  busy: boolean;
-  set: (name: string, value: Value) => void;
-};
-
-const text = (value: Value | undefined) => (typeof value === "string" ? value : "");
-const list = (value: Value | undefined) => (Array.isArray(value) ? value : []);
-
-function Errors({ name, errors, block = false }: { name: string; errors: FieldErrors; block?: boolean }) {
-  return <>{(errors[name] ?? []).map((e, i) => <p id={`error_${i + 1}_id_${name}`} className={`invalid-feedback${block ? " d-block" : ""}`} style={block ? { paddingLeft: "1.5rem" } : undefined} key={i}><strong>{e.message}</strong></p>)}</>;
-}
-const Help = ({ spec }: { spec: UsuarioField }) => (spec.help_text ? <div id={`id_${spec.name}_helptext`} className="form-text">{spec.help_text}</div> : null);
-const describedBy = (spec: UsuarioField) => (spec.help_text ? `id_${spec.name}_helptext` : undefined);
-
-function Control({ spec, api, extra }: { spec: UsuarioField; api: Api; extra?: ReactNode }) {
-  const { values, errors, busy, set } = api;
-  const id = `id_${spec.name}`;
-  const invalid = (errors[spec.name] ?? []).length > 0;
-  const disabled = spec.disabled || busy;
-  if (spec.kind === "boolean") {
-    return (
-      <div className="mb-3">
-        <div id={`div_${id}`} className="form-check">
-          <input type="checkbox" name={spec.name} className={`checkboxinput form-check-input${invalid ? " is-invalid" : ""}`} aria-describedby={describedBy(spec)} id={id}
-            checked={values[spec.name] === true} disabled={disabled} onChange={(e) => set(spec.name, e.target.checked)} />{" "}
-          <label htmlFor={id} className="form-check-label">{spec.label}</label>
-          <Errors name={spec.name} errors={errors} />
-          <Help spec={spec} />
-        </div>
-      </div>
-    );
-  }
-  if (spec.kind === "radio") {
-    return (
-      <div id={`div_${id}`} className="mb-3">
-        <fieldset aria-describedby={describedBy(spec)}>
-          <legend className={`form-label${spec.required ? " requiredField" : ""} fs-6`}>{spec.label}{spec.required && <span className="asteriskField">*</span>}</legend>
-          <div>
-            {(spec.choices ?? []).map((choice, i) => (
-              <div className="form-check" key={choice.value}>
-                <input type="radio" className={`form-check-input${invalid ? " is-invalid" : ""}`} name={spec.name} value={choice.value} id={`${id}_${i}`} required={spec.required}
-                  checked={values[spec.name] === choice.value} disabled={disabled} onChange={() => set(spec.name, choice.value)} />{" "}
-                <label htmlFor={`${id}_${i}`} className="form-check-label">{choice.label}</label>
-              </div>
-            ))}
-          </div>
-          <Errors name={spec.name} errors={errors} block />
-          <Help spec={spec} />
-        </fieldset>
-      </div>
-    );
-  }
-  const multiple = spec.kind === "multiselect";
-  const label = <label htmlFor={id} className={`form-label${spec.required ? " requiredField" : ""}`}>{spec.label}{spec.required && <span className="asteriskField">*</span>}</label>;
-  let control: ReactNode;
-  if (spec.kind === "select" || multiple) {
-    control = <DatacalleSelect2 id={id} name={spec.name} multiple={multiple} className={`select2${multiple ? " selectmultiple" : ""} form-select`} choices={spec.choices ?? []}
-      value={multiple ? list(values[spec.name]) : [text(values[spec.name])]} onChange={(v) => set(spec.name, multiple ? v : (v[0] ?? ""))}
-      disabled={disabled} required={spec.required} invalid={invalid} describedBy={describedBy(spec)} />;
-  } else {
-    const kind = spec.kind === "email" || spec.kind === "password" ? spec.kind : "text";
-    control = <input type={kind === "password" && extra === "visible" ? "text" : kind} name={spec.name} id={id} maxLength={spec.max_length ?? undefined}
-      className={`${INPUT_CLASS[kind]} form-control${invalid ? " is-invalid" : ""}`} required={spec.required} aria-describedby={describedBy(spec)}
-      value={text(values[spec.name])} disabled={disabled} autoComplete="off" onChange={(e) => set(spec.name, e.target.value)} />;
-  }
-  return <div id={`div_${id}`} className="mb-3">{label}{control}<Errors name={spec.name} errors={errors} /><Help spec={spec} /></div>;
-}
-
 function Credential({ credential }: { credential: UsuarioFormData["credential"] }) {
   if (!credential) return null;
   return (
@@ -157,11 +75,11 @@ function Credential({ credential }: { credential: UsuarioFormData["credential"] 
   );
 }
 
-function PasswordField({ spec, api }: { spec: UsuarioField; api: Api }) {
+function PasswordField({ spec, api, hidden = false }: { spec: UsuarioField; api: Api; hidden?: boolean }) {
   const [visible, setVisible] = useState(false);
   return (
     <>
-      <div id="password-field-wrapper">
+      <div id="password-field-wrapper" style={hidden ? { display: "none" } : undefined}>
         <Control spec={spec} api={api} extra={visible ? "visible" : undefined} />
         <button type="button" id="toggle-password" className="btn btn-sm btn-link p-0 mb-2" aria-pressed={visible} aria-label={visible ? "Ocultar la contraseña" : "Mostrar la contraseña"} onClick={() => setVisible(!visible)}>
           <i className={`fas ${visible ? "fa-eye-slash" : "fa-eye"}`} aria-hidden="true" />{" "}
@@ -213,6 +131,23 @@ function ScopeRows({ rows, setRows, provinces, data, busy }: { rows: Row[]; setR
   );
 }
 
+/** POST once; an unconfirmed outcome is reported, never resubmitted. The generated password (creation only) rides this answer. */
+async function postForm(endpoint: string, body: URLSearchParams) {
+  try {
+    const { data, status } = await client.post(endpoint, body, { validateStatus: accepted });
+    if (status === 403) return { kind: "forbidden" as const, data };
+    if (record(data) && data.ok === true && typeof data.redirect === "string" && data.redirect === safeInternalPath(data.redirect) && data.redirect.startsWith("/usuarios/")) {
+      const credential = record(data.credential) && typeof data.credential.temporary_password === "string" ? data.credential.temporary_password : null;
+      return { kind: "redirect" as const, to: data.redirect, credential };
+    }
+    return { kind: "uncertain" as const };
+  } catch (error: unknown) {
+    const response = (error as { response?: { status?: number; data?: unknown } }).response;
+    if (response?.status === 400) return { kind: "invalid" as const, data: response.data };
+    return { kind: "uncertain" as const };
+  }
+}
+
 const serialize = (rows: Row[]) => JSON.stringify(rows.map((r) => ({ provincia_id: r.provincia || null, municipio_id: r.municipio || null, localidad_id: r.localidad || null })));
 let rowKey = 0;
 const blank = (scope: Scope): Row => ({ key: ++rowKey, provincia: asId(scope.provincia_id), municipio: asId(scope.municipio_id), localidad: asId(scope.localidad_id), municipios: null, localidades: null });
@@ -229,6 +164,7 @@ export function UsuarioFormContent({ data: initial, endpoint, onForbidden }: { d
   const [errors, setErrors] = useState<FieldErrors>(initial.errors);
   const [rows, setRows] = useState<Row[]>(() => initial.territorial.initial.map(blank));
   const [revision, setRevision] = useState(0);
+  const [created, setCreated] = useState<{ to: string; password: string } | null>(null);
   const [pending, setPending] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const busy = useRef(false);
@@ -251,6 +187,9 @@ export function UsuarioFormContent({ data: initial, endpoint, onForbidden }: { d
   }, [initial]);
   const api: Api = { values, errors, busy: pending || uncertain, set: (name, value) => setValues((current) => ({ ...current, [name]: value })) };
   const provincial = values.es_usuario_provincial === true;
+  const hasMobile = data.sections.some((s) => s.key === "mobile");
+  // `user_mobile_access.js`: a mobile user hides the backoffice cards and the password (subusers are left alone).
+  const mobileOn = hasMobile && !data.comedores.operator && values.es_representante_pwa === true;
   const detail = (name: string, flag: string) => ({ id: name, style: values[flag] === true ? undefined : { display: "none" } });
 
   async function submit(event: FormEvent) {
@@ -265,9 +204,13 @@ export function UsuarioFormContent({ data: initial, endpoint, onForbidden }: { d
       else if (value !== undefined && !(f.kind === "radio" && value === "")) body.append(f.name, value);
     });
     data.identity_present.forEach((name) => body.append("_identity_present", name));
-    const result = await postOnce(endpoint, body, "/usuarios/");
+    const result = await postForm(endpoint, body);
     if (!mounted.current) return;
-    if (result.kind === "redirect") { navigation.assign(result.to); return; }
+    if (result.kind === "redirect") {
+      if (result.credential) { setCreated({ to: result.to, password: result.credential }); setPending(false); resetAfterRejectedPost(); return; }
+      navigation.assign(result.to);
+      return;
+    }
     busy.current = false;
     if (result.kind === "forbidden") onForbidden(result.data);
     else if (result.kind === "invalid" && usuarioFormValid(result.data) && Object.keys(result.data.errors).length) {
@@ -285,7 +228,13 @@ export function UsuarioFormContent({ data: initial, endpoint, onForbidden }: { d
     if (section.key === "personal") {
       body = <><div className="row"><div className="col-md-6">{field("first_name")}</div><div className="col-md-6">{field("last_name")}</div></div><div className="row"><div className="col-md-6">{field("dni")}</div><div className="col-md-6">{field("cuil")}</div></div>{field("tipo_usuario")}</>;
     } else if (section.key === "access") {
-      body = <><Credential credential={data.credential} />{field("username")}{field("email")}<PasswordField spec={by("password")} api={api} /></>;
+      body = <><Credential credential={data.credential} />{field("username")}{field("email")}<PasswordField spec={by("password")} api={api} hidden={mobileOn} />{hasMobile && <div id="mobile-password-help" className="alert alert-info mt-2 mb-0" style={mobileOn ? undefined : { display: "none" }}>Para usuarios con acceso a Espacios comunitarios la contraseña se genera automáticamente y deberá cambiarse en el primer ingreso.</div>}</>;
+    } else if (section.key === "mobile") {
+      body = <MobileBody section={section} api={api} operator={data.comedores.operator ?? null} />;
+    } else if (section.key === "territorial_comedor") {
+      body = <TerritorialComedorBody section={section} api={api} />;
+    } else if (section.key === "teams") {
+      body = <TeamsBody section={section} api={api} />;
     } else if (section.key === "datacalle") {
       body = <><div id="relevador-calle-toggle-wrapper">{field("es_relevador_calle")}</div><div {...detail("relevador-calle-detalle-wrapper", "es_relevador_calle")}>{field("datacalle_rol")}{field("provincias_datacalle")}</div></>;
     } else if (section.key === "inspecciones") {
@@ -315,13 +264,22 @@ export function UsuarioFormContent({ data: initial, endpoint, onForbidden }: { d
       body = <>{section.fields.map((f) => <Control key={f.name} spec={f} api={api} />)}</>;
     }
     return (
-      <div className="card card-custom mb-3 shadow-sm" id={card?.id} key={section.key}>
+      <div className="card card-custom mb-3 shadow-sm" id={card?.id} key={section.key} style={mobileOn && ["permissions", "territorial", "teams", "delegation"].includes(section.key) ? { display: "none" } : undefined}>
         <div className="card-header card-header-custom"><h5 className="mb-0"><i className={card?.icon} />{card?.title}</h5></div>
         <div className="card-body">{body}</div>
       </div>
     );
   };
 
+  if (created) {
+    return (
+      <div className="row"><div className="col">
+        <p>Usuario mobile creado correctamente.</p>
+        <Credential credential={{ temporary_password: created.password }} />
+        <a href={safeInternalPath(created.to) ?? "/usuarios/"} className="btn btn-primary mb-3">Continuar</a>
+      </div></div>
+    );
+  }
   return (
     <>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/css/select2.min.css" />
@@ -332,7 +290,7 @@ export function UsuarioFormContent({ data: initial, endpoint, onForbidden }: { d
         <div className="col">
           <form key={revision} className="needs-validation" noValidate method="POST" autoComplete="off" onSubmit={submit}>
             <input type="hidden" name="csrfmiddlewaretoken" value={leerCookie("csrftoken") ?? ""} />
-            {data.sections.map(render)}
+            {data.sections.flatMap((section) => (section.key === "permissions" && hasMobile && (data.comedores.created_users ?? []).length > 0 ? [<CreatedUsersCard key="created" users={data.comedores.created_users ?? []} />, render(section)] : [render(section)]))}
             <div className="row">
               <div className="col-md-12">
                 <div className="form-group mb-0 mt-3 d-flex justify-content-between">

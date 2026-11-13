@@ -73,6 +73,7 @@ urlpatterns = [
     path("", include("healthcheck.urls")),
     path("", include("insumos.urls")),
     # API URLs
+    path("api/web/core/", include("core.web_api_urls")),
     path("api/web/insumos/", include("insumos.web_api_urls")),
     path("api/web/ciudadanos/", include("ciudadanos.web_api_urls")),
     path("api/web/auditoria/", include("audittrail.web_api_urls")),

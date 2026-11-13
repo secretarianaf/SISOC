@@ -70,6 +70,11 @@
   "regex": "^interno/usuarios/operacion/\\Z"
  },
  {
+  "name": "",
+  "namespace": "",
+  "regex": "^interno/usuarios/operacion\\-web/\\Z"
+ },
+ {
   "name": "acompanamientos_web_detalle",
   "namespace": "",
   "regex": "^api/web/comedores/acompanamientos/(?P<comedor_id>[0-9]+)/\\Z"
@@ -2263,6 +2268,51 @@
   "name": "confirmar_datos_personales",
   "namespace": "",
   "regex": "^mi\\-cuenta/confirmar/\\Z"
+ },
+ {
+  "name": "core_web_arquitectura",
+  "namespace": "",
+  "regex": "^api/web/core/arquitectura/\\Z"
+ },
+ {
+  "name": "core_web_novedades",
+  "namespace": "",
+  "regex": "^api/web/core/novedades/\\Z"
+ },
+ {
+  "name": "core_web_papelera",
+  "namespace": "",
+  "regex": "^api/web/core/papelera/\\Z"
+ },
+ {
+  "name": "core_web_papelera_restaurar",
+  "namespace": "",
+  "regex": "^api/web/core/papelera/restaurar/(?P<app_label>[^/]+)/(?P<model_name>[^/]+)/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "core_web_programa_crear",
+  "namespace": "",
+  "regex": "^api/web/core/programas/crear/\\Z"
+ },
+ {
+  "name": "core_web_programa_detalle",
+  "namespace": "",
+  "regex": "^api/web/core/programas/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "core_web_programa_editar",
+  "namespace": "",
+  "regex": "^api/web/core/programas/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "core_web_programa_eliminar",
+  "namespace": "",
+  "regex": "^api/web/core/programas/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "core_web_programas",
+  "namespace": "",
+  "regex": "^api/web/core/programas/\\Z"
  },
  {
   "name": "crear_documento_rendicion_cuentas_final",

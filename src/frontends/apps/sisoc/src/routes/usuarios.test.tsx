@@ -186,11 +186,13 @@ describe("user state confirmation", () => {
 });
 
 describe("usuarios route", () => {
-  it("claims only the list and the two state steps", () => {
+  it("claims only the list, the form and the two state steps", () => {
     expect(usuariosRoute.match("/usuarios/")).toEqual({ mode: "list" });
     expect(usuariosRoute.match("/usuarios/borrar/12/")).toEqual({ mode: "deactivate", id: "12" });
     expect(usuariosRoute.match("/usuarios/activar/12/")).toEqual({ mode: "activate", id: "12" });
-    for (const other of ["/usuarios/importar/", "/usuarios/crear/", "/usuarios/editar/1/", "/usuarios/borrar/x/", "/usuarios/exportar/", "/usuarios"]) {
+    expect(usuariosRoute.match("/usuarios/crear/")).toEqual({ mode: "form" });
+    expect(usuariosRoute.match("/usuarios/editar/12/")).toEqual({ mode: "form", id: "12" });
+    for (const other of ["/usuarios/importar/", "/usuarios/editar/", "/usuarios/editar/x/", "/usuarios/crear", "/usuarios/borrar/x/", "/usuarios/exportar/", "/usuarios"]) {
       expect(usuariosRoute.match(other)).toBeNull();
     }
   });

@@ -99,6 +99,8 @@ _OWNED_PATTERNS = (
     r"/api/web/comedores/comedores/[0-9]+/certificaciones-prestaciones/",
     r"/api/web/comedores/comedores/[0-9]+/transacciones/",
     r"/api/web/(?:comedores|cdf|celiaquia|vat)/ciudadanos/[0-9]+/aportes/[a-z]+/",
+    r"/api/web/core/(?:novedades/|arquitectura/|programas/(?:crear/|[0-9]+/(?:editar/|eliminar/)?)?"
+    r"|papelera/(?:restaurar/[a-z_]+/[a-z_]+/[0-9]+/)?)",
 )
 
 

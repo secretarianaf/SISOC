@@ -518,11 +518,13 @@ nativas: el alcance del actor, los filtros, las columnas y el cambio de estado
 (`is_active`) siguen siendo suyos; React solo proyecta. Registro:
 `../registro/cambios/2026-T4/2026-11-13-2785-react-usuarios-listado.md`.
 
-El alta y la edición de usuarios (`/usuarios/crear/` y `/usuarios/editar/<id>/`)
-tienen su transporte de sesión en `/api/web/users/create/` y
-`/api/web/users/<id>/edit/` (`usuarios/web_user_form.py`, sobre las vistas y el
-formulario nativos); la pantalla React se registra al completar el formulario.
-Detalle en
+`/usuarios/crear/` y `/usuarios/editar/<id>/` montan el formulario compuesto
+(`routes/usuariosForm.tsx`, con `usuariosControls.tsx` y `usuariosMobile.tsx`),
+alimentado por `/api/web/users/create/` y `/api/web/users/<id>/edit/`
+(`usuarios/web_user_form.py`, sobre las vistas y el formulario nativos). Para
+actores con secciones de Comedores, el núcleo reenvía la operación al dueño
+(`comedores/pwa/web_user_form.py`, `/interno/usuarios/operacion-web/`), que
+proyecta el formulario compuesto en JSON. Detalle en
 `../registro/cambios/2026-T4/2026-11-13-2785-react-usuarios-formulario.md`.
 
 ### Agregar una pantalla React en `apps/sisoc`
@@ -1002,6 +1004,16 @@ El alta y la edición de un ciudadano (C05.02) son `routes/ciudadanoForm.tsx` so
 `/api/web/ciudadanos/crear/` y `/api/web/ciudadanos/<pk>/editar/` (`ciudadanos.web_form`, que
 corre las vistas nativas; RENAPER solo se simula en las pruebas). Ver
 `docs/registro/cambios/2026-T4/2026-11-12-2785-react-ciudadano-form.md`.
+
+El núcleo del kernel (T01-T07) se sirve desde el core bajo `/api/web/core/`
+(`core.web_api_novedades`, `web_api_arquitectura`, `web_api_programas`, `web_api_papelera`,
+que corren las vistas nativas): novedades (`routes/coreNovedades.tsx`), arquitectura
+(`coreArquitectura.tsx`, documento independiente que monta el visor existente), programas
+(`coreProgramas.tsx`, `coreProgramaForm.tsx`, `coreProgramaBaja.tsx`, acceso actual: solo sesión) y
+papelera con restauración en cascada (`corePapelera.tsx`, `corePapeleraRestaurar.tsx`, solo
+superusuario). Los contratos AJAX de geografía, columnas y filtros favoritos (T04) y la API de
+RENAPER (T07) no tienen pantalla nueva: se fijan con pruebas. Ver
+`docs/registro/cambios/2026-T4/2026-11-13-2785-react-core-t01-t07.md`.
 
 El historial de auditoría de una instancia es `routes/ciudadanoHistorial.tsx` sobre
 `/api/web/auditoria/<app>/<modelo>/<pk>/` (`audittrail.web_historial`, que corre la vista

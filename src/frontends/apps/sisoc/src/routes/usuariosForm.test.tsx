@@ -136,4 +136,69 @@ describe("user form", () => {
     expect(JSON.parse(posted().get("territorial_scopes") as string)).toEqual([{ provincia_id: "2", municipio_id: "9", localidad_id: null }]);
     options.mockRestore();
   });
+
+  const mobileData = (extra: Spec = {}) => {
+    const data = formData({ comedores: { sections: ["mobile_comedores"], runtime_required: false, operator: null, created_users: [] }, ...extra });
+    const mobile = { key: "mobile", fields: [
+      f("es_representante_pwa", "boolean", "Habilitar acceso a Espacios comunitarios"), f("es_coordinador_equipo_tecnico_pwa", "boolean", "Coordinador de Equipo Técnico"),
+      f("duplas_coordinador_pwa", "multiselect", "Equipos técnicos PWA", { choices: [] }), f("comedores_adicionales_coordinador_pwa", "multiselect", "Comedores adicionales PWA", { choices: [] }),
+      f("puede_gestionar_rendiciones_mobile", "boolean", "Puede gestionar rendiciones mobile"), f("puede_gestionar_colaboradores_pwa", "boolean", "Puede gestionar colaboradores mobile"),
+      f("puede_gestionar_usuarios_pwa", "boolean", "Puede crear y gestionar usuarios mobile"), f("puede_gestionar_nomina_pwa", "boolean", "Puede gestionar nomina mobile"),
+      f("puede_gestionar_prestaciones_mensuales_pwa", "boolean", "Puede gestionar prestaciones mensuales mobile"),
+      f("tipo_asociacion_pwa", "select", "Tipo de asociación mobile", { choices: [{ value: "", label: "Seleccione una opción" }, { value: "organizacion", label: "Usuario asociado a Organización" }] }),
+      f("organizaciones_pwa", "multiselect", "Organizaciones", { choices: [{ value: "10", label: "Org diez" }, { value: "11", label: "Org once" }] }),
+      f("comedores_pwa", "multiselect", "Comedores PWA", { choices: [{ value: "1", label: "Espacio uno", organizacion_id: "10", organizacion_nombre: "Org diez" }, { value: "2", label: "Espacio dos", organizacion_id: "11", organizacion_nombre: "Org once" }, { value: "3", label: "Suelto", organizacion_id: "", organizacion_nombre: "" }] }),
+    ] };
+    (data.sections as Spec[]).splice(2, 0, mobile);
+    return data;
+  };
+
+  it("hides the backoffice cards and the password for a mobile user, and syncs spaces with organizations", async () => {
+    await open(mobileData());
+    const hidden = (id: string) => document.getElementById(id)!.style.display === "none";
+    expect(hidden("backoffice-permisos-card")).toBe(false);
+    fireEvent.click(screen.getByLabelText("Habilitar acceso a Espacios comunitarios"));
+    expect(["backoffice-permisos-card", "backoffice-config-card", "backoffice-admin-card", "password-field-wrapper"].every(hidden)).toBe(true);
+    expect(hidden("mobile-password-help")).toBe(false);
+    fireEvent.click(screen.getByLabelText("Org diez"));
+    const byOrg = () => document.getElementById("mobile-comedores-organizacion-table-body")!;
+    expect(byOrg().textContent).toContain("Espacio uno");
+    expect(byOrg().textContent).not.toContain("Espacio dos");
+    expect((byOrg().querySelector("input") as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(screen.getByLabelText("Org diez"));
+    expect(byOrg().textContent).toBe("");
+    webPost.mockResolvedValue({ status: 200, data: { ok: true, redirect: "/usuarios/" } });
+    fireEvent.click(screen.getByRole("button", { name: /Confirmar/ }));
+    await waitFor(() => expect(assign).toHaveBeenCalled());
+    expect(posted().get("es_representante_pwa")).toBe("on");
+    expect(posted().getAll("organizaciones_pwa")).toEqual([]);
+  });
+
+  it("shows the generated password once, from the private result, and continues to the edit page", async () => {
+    await open(mobileData());
+    webPost.mockResolvedValue({ status: 200, data: { ok: true, redirect: "/usuarios/editar/9/", credential: { temporary_password: "Gen-1234-abcd" } } });
+    fireEvent.click(screen.getByRole("button", { name: /Confirmar/ }));
+    expect(await screen.findByText("Gen-1234-abcd")).toBeTruthy();
+    expect(assign).not.toHaveBeenCalled();
+    expect(screen.getByRole("link", { name: "Continuar" }).getAttribute("href")).toBe("/usuarios/editar/9/");
+  });
+
+  it("draws the subuser context instead of the mobile fields", async () => {
+    const data = mobileData();
+    (data.comedores as Spec).operator = { created_by: "principal", accesses: [{ space: "Espacio uno", created_by: "principal" }], permission_labels: ["Gestionar nomina mobile"] };
+    await open(data);
+    expect(screen.getByText("Subusuario mobile.")).toBeTruthy();
+    expect(screen.getByText("Gestionar nomina mobile")).toBeTruthy();
+    expect(screen.queryByLabelText("Habilitar acceso a Espacios comunitarios")).toBeNull();
+    expect(document.getElementById("backoffice-permisos-card")!.style.display).toBe("");
+  });
+
+  it("shows the failure, never a save, when the owner answers a rejection", async () => {
+    await open();
+    webPost.mockRejectedValue({ response: { status: 401, data: { detail: "Debe iniciar sesión para realizar esta operación.", state: "unauthenticated" } } });
+    fireEvent.click(screen.getByRole("button", { name: /Confirmar/ }));
+    expect((await screen.findByRole("alert")).textContent).toContain("No se pudo confirmar el resultado.");
+    expect(assign).not.toHaveBeenCalled();
+    expect(webPost).toHaveBeenCalledTimes(1);
+  });
 });

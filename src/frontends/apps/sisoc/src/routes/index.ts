@@ -18,6 +18,13 @@ import { admisionesLegalesRoute } from "./admisionesLegales";
 import { admisionesSeguimientoRoute } from "./admisionesSeguimiento";
 import { businessRoute } from "./business";
 import { categoriasRoute } from "./categorias";
+import { coreArquitecturaRoute } from "./coreArquitectura";
+import { coreNovedadesRoute } from "./coreNovedades";
+import { corePapeleraRoute } from "./corePapelera";
+import { corePapeleraRestaurarRoute } from "./corePapeleraRestaurar";
+import { coreProgramaBajaRoute } from "./coreProgramaBaja";
+import { coreProgramaFormRoute } from "./coreProgramaForm";
+import { coreProgramasRoute } from "./coreProgramas";
 import { ciudadano360Route } from "./ciudadano360";
 import { ciudadanoBajaRoute } from "./ciudadanoBaja";
 import { ciudadanoFamiliarRoute } from "./ciudadanoFamiliar";
@@ -217,6 +224,13 @@ export const ROUTES: RouteDefinition[] = [
   ciudadanoHistorialRoute,
   auditoriaListadoRoute,
   auditoriaEventoRoute,
+  coreNovedadesRoute,
+  coreArquitecturaRoute,
+  coreProgramasRoute,
+  coreProgramaFormRoute,
+  coreProgramaBajaRoute,
+  corePapeleraRoute,
+  corePapeleraRestaurarRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

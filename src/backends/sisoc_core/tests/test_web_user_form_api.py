@@ -1,11 +1,13 @@
 """Public session contracts for the React user create/edit form (core fields)."""
 
 import hashlib
+import json
 from urllib.parse import urlencode
 
 import pytest
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
+from django.http import HttpResponse, StreamingHttpResponse
 from django.test import Client
 
 pytestmark = pytest.mark.django_db
@@ -104,6 +106,14 @@ def fields_of(data):
         for section in data["sections"]
         for field in section["fields"]
     }
+
+
+@pytest.fixture
+def owner_down(mocker):
+    """The Comedores owner cannot be reached: a relayed write changes nothing."""
+    down = HttpResponse(status=503)
+    down.owner_missing = True
+    return mocker.patch("usuarios.web_user_form.relay_to_owner", return_value=down)
 
 
 @pytest.fixture
@@ -231,7 +241,9 @@ def test_sections_and_assignable_lists_depend_on_the_actor(group):
     assert {"user_permissions", "acceso_web"} <= set(wide["identity_present"])
 
 
-def test_comedores_sections_are_announced_not_projected():
+def test_comedores_sections_fall_back_to_the_core_form_when_the_owner_is_down(
+    owner_down,
+):
     _, client = make_actor(
         "comedores_actor", ["add_user"], sections=["mobile_comedores"]
     )
@@ -241,6 +253,7 @@ def test_comedores_sections_are_announced_not_projected():
         "runtime_required": True,
     }
     assert "es_representante_pwa" not in fields_of(data)
+    assert owner_down.called
 
 
 def test_create_persists_through_the_native_form_and_queues_its_message(manager, group):
@@ -333,7 +346,7 @@ def test_forged_direct_permissions_and_flags_are_ignored_without_the_section(
 
 
 def test_a_role_outside_the_actor_roles_cannot_be_granted_as_a_direct_permission(
-    group,
+    group, owner_down
 ):
     _, client = make_actor(
         "role_admin",
@@ -351,14 +364,14 @@ def test_a_role_outside_the_actor_roles_cannot_be_granted_as_a_direct_permission
         "Solo puede asignar roles habilitados para su usuario."
     )
     assert digest() == before
-    # An operation that needs the Comedores owner is refused, not forwarded.
+    # An operation that needs the Comedores owner is refused while it is down.
     response = post(client, CREATE, payload(user_permissions=[str(allowed.pk)]))
     assert response.status_code == 409
     assert response.json()["state"] == "comedores_runtime_required"
     assert digest() == before
 
 
-def test_domain_group_changes_are_refused_without_mutation(manager):
+def test_domain_group_changes_are_refused_without_mutation(manager, owner_down):
     user, client = manager
     domain = Group.objects.create(name="Grupo con rol de dominio")
     domain.permissions.add(permission("role_exportar_a_csv"))
@@ -376,7 +389,7 @@ def test_domain_group_changes_are_refused_without_mutation(manager):
     assert digest() == before
 
 
-def test_comedores_field_in_the_post_is_refused_without_mutation(manager):
+def test_comedores_field_in_the_post_is_refused_without_mutation(manager, owner_down):
     _, client = manager
     before = digest()
     response = post(client, CREATE, payload(es_representante_pwa="on"))
@@ -478,3 +491,32 @@ def test_temporary_password_is_projected_only_to_the_edit_authority(manager, gro
     # An editor with no scope over the user never gets the credential.
     _, outsider = make_actor("outsider_editor", ["change_user"])
     assert outsider.get(edit(target.pk)).status_code == 404
+
+
+def test_a_streamed_owner_answer_is_relayed_with_the_portal_frame(mocker):
+    """The backend proxy returns a stream: its JSON gets the presentation and URLs."""
+    _, client = make_actor(
+        "streamed_actor", ["add_user"], sections=["mobile_comedores"]
+    )
+    owner = {
+        "mode": "create",
+        "object": None,
+        "sections": [],
+        "identity_present": [],
+        "errors": {},
+        "comedores": {"sections": ["mobile_comedores"], "runtime_required": False},
+        "territorial": {"initial": []},
+        "credential": None,
+        "messages": [],
+    }
+    mocker.patch(
+        "usuarios.web_user_form.relay_to_owner",
+        return_value=StreamingHttpResponse(
+            iter([json.dumps(owner).encode()]), content_type="application/json"
+        ),
+    )
+    data = client.get(CREATE).json()
+    assert data["comedores"]["runtime_required"] is False
+    assert data["presentation"]["user"]["username"] == "streamed_actor"
+    assert data["urls"] == {"cancel": "/usuarios/"}
+    assert data["territorial"]["localidades_url"] == "/ajax/load-localidades/"

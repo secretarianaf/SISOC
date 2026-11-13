@@ -1605,6 +1605,21 @@
   "regex": "^api/web/cdi/centros/\\Z"
  },
  {
+  "name": "centrodeinfancia_web_intervencion_detalle",
+  "namespace": "",
+  "regex": "^api/web/cdi/intervenciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_intervencion_documentacion",
+  "namespace": "",
+  "regex": "^api/web/cdi/intervenciones/(?P<pk>[0-9]+)/documentacion/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_intervencion_documentacion_eliminar",
+  "namespace": "",
+  "regex": "^api/web/cdi/intervenciones/(?P<intervencion_id>[0-9]+)/documentacion/eliminar/\\Z"
+ },
+ {
   "name": "centrodeinfancia_web_nomina_derivar",
   "namespace": "",
   "regex": "^api/web/cdi/nomina/(?P<pk>[0-9]+)/derivar/\\Z"

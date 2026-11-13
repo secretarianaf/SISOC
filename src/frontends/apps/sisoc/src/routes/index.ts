@@ -24,6 +24,7 @@ import { ciudadanoFormRoute } from "./ciudadanoForm";
 import { auditoriaEventoRoute } from "./auditoriaEvento";
 import { auditoriaListadoRoute, ciudadanoHistorialRoute } from "./ciudadanoHistorial";
 import { cdiCentroDetalleRoute } from "./cdiCentroDetalle";
+import { cdiDocumentacionRoute } from "./cdiDocumentacion";
 import { cdiCentrosRoute } from "./cdiCentros";
 import { cdiNominaRoute } from "./cdiNomina";
 import { cdiNominaListaRoute } from "./cdiNominaLista";
@@ -120,6 +121,7 @@ export const ROUTES: RouteDefinition[] = [
   cdiCentroDetalleRoute,
   cdiNominaRoute,
   cdiNominaListaRoute,
+  cdiDocumentacionRoute,
   cdfCentrosRoute,
   cdfCentroFormRoute,
   dispositivosRoute,

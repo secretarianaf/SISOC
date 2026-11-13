@@ -24,6 +24,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from centrodeinfancia.views import (
     CentroDeInfanciaDetailView,
     CentroDeInfanciaListView,
+    IntervencionCentroInfanciaDetailView,
     NominaCentroInfanciaDestinatariosDetailView,
     NominaCentroInfanciaDetailView,
     ObservacionCentroInfanciaCreateView,
@@ -150,6 +151,14 @@ class ObservacionEditarEntry(ObservacionCentroInfanciaUpdateView):
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class ObservacionEliminarEntry(ObservacionCentroInfanciaDeleteView):
     """Delete confirmation entry; POST stays the native soft delete."""
+
+    index_bytes = b""
+    get = _object_entry_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class IntervencionDetalleEntry(IntervencionCentroInfanciaDetailView):
+    """Intervention detail entry; the native view only answers GET/HEAD."""
 
     index_bytes = b""
     get = _object_entry_get
@@ -283,6 +292,14 @@ def cdi_preview_patterns(build_directory):
             _entry(
                 ObservacionEliminarEntry,
                 "centrodeinfancia.delete_intervencioncentroinfancia",
+                index_bytes,
+            ),
+        ),
+        path(
+            "centrodeinfancia/intervencion/detalle/<int:pk>/",
+            _entry(
+                IntervencionDetalleEntry,
+                "centrodeinfancia.view_centrodeinfancia",
                 index_bytes,
             ),
         ),

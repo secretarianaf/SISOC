@@ -638,6 +638,10 @@ vertical, dibuja `SisocShell` y agrega el botón «Consultas» de la cabecera.
   trabajador, alta de observación) ejecutan las vistas nativas y recargan la ficha; la
   contraseña temporal sigue la regla nativa por fila y la respuesta es `no-store`. Con
   `CDI_INTERVENCIONES_VISIBLE` activa la API responde 409 y la vista previa sirve el HTML.
+- `/centrodeinfancia/intervencion/detalle/<id>/` (`routes/cdiDocumentacion.tsx`, CDI06/CDI-F2):
+  detalle de una intervención; «Descargar» usa la descarga autenticada por objeto
+  `/api/web/cdi/intervenciones/<id>/documentacion/` (bytes del storage del objeto, `private, no-store`)
+  y no cierra el alias `/media/documentacion/`, que depende del preflight de ownership del contrato.
 
 El menú lateral de `SisocShell` y `ClaroFrame` dibuja los grupos anidados con el
 marcado de cada nivel del template y los abre y resalta con las mismas
@@ -651,7 +655,8 @@ Registros:
 `../registro/cambios/2026-T4/2026-11-12-2785-react-cdi-centros-listado.md` y
 `../registro/cambios/2026-T4/2026-11-12-2785-react-cdi-nomina-ficha.md` y
 `../registro/cambios/2026-T4/2026-11-12-2785-react-cdi-nomina-lista.md` y
-`../registro/cambios/2026-T4/2026-11-12-2785-react-cdi-centro-detalle.md`.
+`../registro/cambios/2026-T4/2026-11-12-2785-react-cdi-centro-detalle.md` y
+`../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-documentacion.md`.
 ### Vertical remoto sobre G1: Duplas (equipo técnico) de Comedores
 
 Segunda aplicación del patrón, ahora con el marco nativo `includes/main.html`

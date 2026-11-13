@@ -29,6 +29,7 @@ import { comedorIntervencionesRoute } from "./comedorIntervenciones";
 import { comedorObservacionesRoute } from "./comedorObservaciones";
 import { comedorColaboradoresRoute } from "./comedorColaboradores";
 import { comedorActividadesRoute } from "./comedorActividades";
+import { comedorCursosRoute } from "./comedorCursos";
 import { cdiReportesRoute } from "./cdiReportes";
 import { cdfBeneficiariosRoute } from "./cdfBeneficiarios";
 import { cdfCentroFormRoute } from "./cdfCentroForm";
@@ -151,6 +152,7 @@ export const ROUTES: RouteDefinition[] = [
   comedorObservacionesRoute,
   comedorColaboradoresRoute,
   comedorActividadesRoute,
+  comedorCursosRoute,
   vatVouchersRoute,
   vatEvaluacionesRoute,
   vatEvaluacionesFormRoute,

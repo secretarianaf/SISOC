@@ -217,3 +217,11 @@ describe("SisocShell app-header block", () => {
     expect(block().innerHTML).toBe('<div class="pas-top-actions"><a href="/pas/listar">Buscador PAS</a></div>');
   });
 });
+
+describe("SisocShell sidebar wrapper", () => {
+  it("is positioned so it clips the absolutely placed active-branch bar, as the native OverlayScrollbars host does", () => {
+    renderShell("/inicio/");
+    const wrapper = document.querySelector(".app-sidebar > .sidebar-wrapper") as HTMLElement;
+    expect(wrapper.style.position).toBe("relative");
+  });
+});

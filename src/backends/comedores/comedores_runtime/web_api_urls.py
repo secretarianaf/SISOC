@@ -17,6 +17,7 @@ urlpatterns = [
     path("", include("comedores.web_api_nomina_urls")),
     path("colaboradores/", include("comedores.web_api_colaboradores_urls")),
     path("actividades-espacio/", include("comedores.web_api_actividades_espacio_urls")),
+    path("cursos-app-mobile/", include("comedores.web_api_cursos_urls")),
     path(
         "admisiones/plantillas-informe/",
         include("admisiones.web_api_templates_urls"),

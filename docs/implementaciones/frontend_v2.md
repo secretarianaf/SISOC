@@ -953,6 +953,11 @@ Las actividades de un espacio PNUD (CO03.02, `/comedores/<id>/actividades/crear/
 la pantalla manda los campos repetidos `schedule_*` y reproduce el filtro por categoría y las filas del script de la
 plantilla. Ver `docs/registro/cambios/2026-T4/2026-11-13-2785-react-comedor-actividades.md`.
 
+El catálogo global de cursos de la app mobile (CO04.01, `/comedores/configuracion/cursos-app-mobile/`) es
+`routes/comedorCursos.tsx` sobre `/api/web/comedores/cursos-app-mobile/` (`comedores.web_api_cursos`, que corre el
+`dispatch` de las cuatro vistas de `views/cursos_app_mobile.py`). El alta y la edición envían multipart con la imagen y la
+baja es la baja lógica nativa. Ver `docs/registro/cambios/2026-T4/2026-11-13-2785-react-comedor-cursos.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

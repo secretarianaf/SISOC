@@ -2220,6 +2220,26 @@
   "regex": "^comedores/configuracion/cursos\\-app\\-mobile/\\Z"
  },
  {
+  "name": "cursos_app_mobile_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/cursos\\-app\\-mobile/crear/\\Z"
+ },
+ {
+  "name": "cursos_app_mobile_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/cursos\\-app\\-mobile/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "cursos_app_mobile_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/cursos\\-app\\-mobile/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "cursos_app_mobile_web_listado",
+  "namespace": "",
+  "regex": "^api/web/comedores/cursos\\-app\\-mobile/\\Z"
+ },
+ {
   "name": "dashboard",
   "namespace": "",
   "regex": "^dashboard/centro\\-de\\-familia\\Z"

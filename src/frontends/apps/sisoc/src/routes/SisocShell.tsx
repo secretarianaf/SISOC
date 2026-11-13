@@ -479,7 +479,9 @@ export default function SisocShell({
           aria-hidden={isMobile && !mobileOpen}
           data-open={mobileOpen}
         >
-          <div className="sidebar-wrapper">
+          {/* The native wrapper is positioned (OverlayScrollbars host), so it clips the absolutely
+              positioned `.menu-open::before` bar; unpositioned it escapes the clip on short pages. */}
+          <div className="sidebar-wrapper" style={{ position: "relative" }}>
             <nav aria-label="Navegación principal">
               <ul
                 className="nav sidebar-menu flex-column"

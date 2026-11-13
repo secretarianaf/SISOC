@@ -1615,6 +1615,26 @@
   "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/nomina/(?P<nomina_id>[0-9]+)/editar/\\Z"
  },
  {
+  "name": "centrodeinfancia_web_formulario_crear",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/formularios/crear/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_formulario_detalle",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/formularios/(?P<form_pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_formulario_editar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/formularios/(?P<form_pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_formulario_lista",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/formularios/\\Z"
+ },
+ {
   "name": "centrodeinfancia_web_intervencion_detalle",
   "namespace": "",
   "regex": "^api/web/cdi/intervenciones/(?P<pk>[0-9]+)/\\Z"

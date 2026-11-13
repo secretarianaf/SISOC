@@ -668,6 +668,18 @@ vertical, dibuja `SisocShell` y agrega el botón «Consultas» de la cabecera.
   (`web_api_trabajador_form.py` ejecuta las vistas nativas, con aprovisionamiento y veto CDI-A3)
   y los scripts de la plantilla corren como comportamiento del formulario. El POST es
   urlencoded, único y sin reintento.
+- `/centrodeinfancia/<centro>/formularios/` y `.../formularios/<formulario>/`
+  (`routes/cdiFormularios.tsx`, CDI03): listado de formularios institucionales (páginas de 10 con la
+  paginación nativa) y ficha con tarjetas, horarios por día y las tres tablas fijas con sus totales;
+  `web_api_formularios_institucionales.py` ejecuta las vistas nativas y renderiza cada celda con la
+  expresión del template. Entradas de vista previa en `centrodeinfancia/web_preview_formularios_institucionales.py`.
+- `/centrodeinfancia/<centro>/formularios/crear/` y `.../<formulario>/editar/`
+  (`routes/cdiFormulariosForm.tsx` y `cdiFormulariosForm.behavior.ts`, CDI03): secciones del
+  formulario, tarjeta de horarios por día y los tres formsets fijos con totales en vivo;
+  `web_api_formulario_form.py` ejecuta las vistas nativas (con sus formsets, transacción y veto
+  CDI-A3) y envía cada campo como el marcado `as_crispy_field`. El GET de edición conserva el
+  comportamiento nativo de crear las filas fijas faltantes; el POST es urlencoded, único y sin
+  reintento.
 - `/centrodeinfancia/<centro>/generar-usuario/` (`routes/cdiUsuariosGenerar.tsx`, CDI01.01):
   generar usuario referente sobre `GenerarUsuarioCDIView`. La contraseña temporal solo viaja en la
   respuesta (`no-store`) del POST que crea el usuario y vive en el estado del componente, nunca en
@@ -691,7 +703,9 @@ Registros:
 `../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-documentacion.md`.
 `../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-trabajador-ficha.md` y
 `../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-trabajador-form.md`.
-`../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-renaper-generar-usuario.md`.
+`../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-renaper-generar-usuario.md`,
+`../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-formularios-listado-ficha.md` y
+`../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-formulario-form.md`.
 ### Vertical remoto sobre G1: Duplas (equipo técnico) de Comedores
 
 Segunda aplicación del patrón, ahora con el marco nativo `includes/main.html`

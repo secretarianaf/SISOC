@@ -83,6 +83,8 @@ _OWNED_PATTERNS = (
     r"/api/web/comedores/comedores/[0-9]+/(?:validacion|validar|convenio-pnud|responsable-tarjeta)/",
     r"/api/web/comedores/comedores/(?:[0-9]+/(?:admision/[0-9]+/)?nomina/|nomina/[0-9]+/(?:cambiar-estado|derivar)/)",
     r"/api/web/comedores/comedores/[0-9]+/admision/[0-9]+/nomina/asistencia/",
+    r"/api/web/comedores/comedores/[0-9]+/certificaciones-prestaciones/",
+    r"/api/web/comedores/comedores/[0-9]+/transacciones/",
     r"/api/web/(?:comedores|cdf|celiaquia|vat)/ciudadanos/[0-9]+/aportes/[a-z]+/",
 )
 

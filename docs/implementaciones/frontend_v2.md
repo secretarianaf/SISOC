@@ -946,6 +946,18 @@ El historial de asistencia de la nómina (CO01, `/comedores/<id>/admision/<admis
 registra la PWA y el PDF mensual sigue siendo un enlace nativo al archivo. Ver
 `docs/registro/cambios/2026-T4/2026-11-13-2785-react-comedor-asistencia-historial.md`.
 
+El historial de certificaciones mensuales de prestaciones (CO05.01, `/comedores/<id>/certificaciones-prestaciones/`)
+es `routes/comedorCertificaciones.tsx` sobre `/api/web/comedores/comedores/<id>/certificaciones-prestaciones/`
+(`comedores.web_api_certificaciones`, que corre `CertificacionesPrestacionesHistorialView`). Solo lee: el PDF sigue
+siendo la descarga binaria nativa. Ver
+`docs/registro/cambios/2026-T4/2026-11-13-2785-react-comedor-certificaciones.md`.
+
+El histórico de transacciones DW (CO07.01, `/comedores/<id>/transacciones`) es `routes/comedorTransacciones.tsx` sobre
+`/api/web/comedores/comedores/<id>/transacciones/` (`comedores.web_api_transacciones`, que corre
+`ComedorTransaccionesDetailView` y su servicio DW existente). Solo lee: Transferido es `debito_total` y Gastado
+`credito_total`, y un fallo del DW se ve como falta de datos. Ver
+`docs/registro/cambios/2026-T4/2026-11-13-2785-react-comedor-transacciones.md`.
+
 Los colaboradores de un comedor (CO03.01, `/comedores/<id>/colaboradores/crear/` y
 `/comedores/<id>/colaboradores/<colaborador>/editar/`) son `routes/comedorColaboradores.tsx` sobre
 `/api/web/comedores/colaboradores/comedor/<id>/` (`comedores.web_api_colaboradores`, que corre el `dispatch` de

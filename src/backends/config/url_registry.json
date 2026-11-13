@@ -1915,6 +1915,11 @@
   "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/capacitaciones/(?P<certificado_id>[0-9]+)/estado/\\Z"
  },
  {
+  "name": "comedores_web_certificaciones_historial",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/certificaciones\\-prestaciones/\\Z"
+ },
+ {
   "name": "comedores_web_ciudadano_aporte",
   "namespace": "",
   "regex": "^api/web/comedores/ciudadanos/(?P<pk>[0-9]+)/aportes/(?P<aporte>[^/]+)/\\Z"
@@ -2008,6 +2013,11 @@
   "name": "comedores_web_responsable_tarjeta",
   "namespace": "",
   "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/responsable\\-tarjeta/\\Z"
+ },
+ {
+  "name": "comedores_web_transacciones",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/transacciones/\\Z"
  },
  {
   "name": "comedores_web_validacion",

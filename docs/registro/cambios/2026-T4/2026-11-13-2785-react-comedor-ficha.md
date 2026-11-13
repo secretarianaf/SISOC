@@ -28,6 +28,15 @@
   la línea de tiempo, las tarjetas, las tablas de admisiones, las
   certificaciones, los colaboradores, las capacitaciones y los modales; la nómina y las
   tablas de intervenciones y observaciones siguen siendo fragmentos nativos.
+- **`tablero`** (`web_api_comedor_ficha_tablero.py`): la línea de tiempo (admisión enviada,
+  conector y pasos), las cuatro cajas de resumen, los datos del gráfico «Asistencia por rango
+  etareo», la tarjeta «Detalles de Admisión» o «Datos del Convenio» (PNUD, con los
+  territoriales asignados) y la tarjeta «Responsable de la tarjeta» (solo para quien puede
+  gestionarla). Cada valor se renderiza con la expresión de la plantilla, de modo que un dupla
+  inexistente queda vacío como en la página.
+  `routes/comedorFichaTablero.tsx` dibuja esos bloques con el gráfico de Chart.js 4.4.4 del
+  mismo CDN que el diseño nativo; la columna de nómina y las filas de transacciones y mes de
+  ejecución son huecos que la página completa con sus propios componentes.
 - **Comenzar Admisión.** `POST /api/web/comedores/comedores/<pk>/admision/`
   (`web_api_comedor_admision.py`) corre `ComedorService.crear_admision_desde_comedor` para el
   comedor que resuelve el alcance del usuario (fuera de alcance es 404), con el acceso de la
@@ -67,12 +76,13 @@
 - Pytest aislado, 10 pruebas de Comenzar Admisión: creación de incorporación y renovación,
   cada rechazo con su mensaje y sin cambios, tipo ausente o vacío, nómina directa, que la
   acción de descartar no se alcanza, 404, métodos, permisos, CSRF, 401 y 403 con cabecera
-  falsificada. Vitest (10 del encabezado y el acordeón y 8 del modal), tsc, eslint y compilación
+  falsificada. Pytest de la ficha: 18 (4 del tablero). Vitest (10 del encabezado y el
+  acordeón, 8 del modal y 9 del tablero), tsc, eslint y compilación
   sin avisos. G1 con la ficha (200 y 403). Visual S13 de la parte superior (se recortan
   ambos lados después del acordeón, que son entregas siguientes) con una ruta de vista
   previa temporal que no se entrega: escritorio y móvil, también con el menú «Acciones»
   abierto, con el modal de admisión abierto y tras un rechazo (renovación sin incorporación
-  previa), sin diferencias de estructura ni de píxeles. La biblioteca toastr nativa no
+  previa) y el tablero (con y sin admisión), sin diferencias de estructura ni de píxeles. La biblioteca toastr nativa no
   carga sin red en el banco, por lo que los avisos se verifican con las pruebas unitarias.
 
 ## Limitaciones y diferencias conocidas

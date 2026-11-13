@@ -15,6 +15,8 @@ Blocks published so far (the contract grows by adding keys, never by renaming):
   acompañamiento territorial, historial, the «Acciones» menu and the convenio
   selector). Each action carries the flag the template checks, so a control the
   user cannot use is absent, not disabled.
+- ``tablero``: timeline, summary boxes, age chart, admission / convenio card and
+  card-holder card (``web_api_comedor_ficha_tablero``).
 - ``acordeon``: the four panels (``web_api_comedor_ficha_datos``).
 - ``titulo``: the title card (pending conformity notice, name, validation,
   program and estado badges, CARITAS and the execution dates).
@@ -36,6 +38,7 @@ from core.templatetags.custom_filters import replace_query
 from core.web_gate import WebGatePermission
 from comedores.views.comedor import ComedorDetailView
 from comedores.web_api_comedor_ficha_datos import acordeon
+from comedores.web_api_comedor_ficha_tablero import tablero
 from comedores.web_api_comedores import VerComedores, pending_messages
 
 PROGRAMAS = {2: "PAC", 3: "PNUD - SECOS", 4: "PNUD - TRADICIONAL"}
@@ -176,6 +179,7 @@ class ComedorFichaWebView(_WebView):
                 "header": _header(context, request, comedor),
                 "titulo": _titulo(context, comedor),
                 "acordeon": acordeon(context, comedor),
+                "tablero": tablero(context, comedor),
                 "messages": pending_messages(request),
             }
         )

@@ -282,3 +282,83 @@ def test_territorial_panel_has_every_native_option_unmarked_without_relevamiento
     )
     assert len(panel["espacio"]) == 6
     assert panel["actividades_anexo"] == []
+
+
+def _tablero(client, comedor, **params):
+    return client.get(f"{ROOT}{comedor.pk}/", params).json()["tablero"]
+
+
+def test_timeline_follows_the_selected_admission(lector, comedor):
+    antes = _tablero(lector, comedor)["timeline"]
+    assert antes["admision"]["clase"] == "step active"
+    assert antes["admision"]["completada"] is False
+    assert antes["admision"]["fecha"] == "-"
+    assert antes["conector"] == "connector"
+    assert antes["ejecucion"] == {"clase": "step", "circulo": "2"}
+    assert antes["rendicion"] == {"circulo": "3"}
+
+    admision = Admision.objects.create(
+        comedor=comedor, activa=True, enviado_acompaniamiento=True
+    )
+    despues = _tablero(lector, comedor)["timeline"]
+
+    assert despues["admision"]["clase"] == "step completed"
+    assert despues["admision"]["completada"] is True
+    assert despues["admision"]["fecha"] == admision.creado.strftime("%d/%m/%Y")
+    assert despues["conector"] == "connector completed"
+    assert despues["ejecucion"]["clase"] == "step active"
+
+
+def test_summary_boxes_and_chart_use_the_native_defaults(lector, comedor):
+    tablero = _tablero(lector, comedor)
+
+    assert [c["label"] for c in tablero["resumen"]] == [
+        "Prestaciones mensuales",
+        "Actividades Comunitarias",
+        "Acompañamiento Territorial",
+        "Numero de Convenio",
+    ]
+    assert [c["icon"] for c in tablero["resumen"]][0] == "bi bi-cup-hot"
+    assert tablero["resumen"][3]["valor"] == "0"
+    assert [g["label"] for g in tablero["grafico"]] == [
+        "Sin dato",
+        "0-13 años",
+        "14-17 años",
+        "18-49 años",
+        "50-65 años",
+        "+66 años",
+    ]
+    assert all(isinstance(g["valor"], float) for g in tablero["grafico"])
+    Admision.objects.create(comedor=comedor, activa=True)
+    assert _tablero(lector, comedor)["resumen"][3]["valor"] in ("- / 1", "1° / 1")
+
+
+def test_admission_card_shows_the_native_texts_and_the_link(lector, comedor):
+    sin = _tablero(lector, comedor)["detalles"]
+    assert sin["tipo"] == "admision"
+    assert sin["titulo"] == "Detalles de Admisión"
+    assert sin["filas"][0] == {
+        "label": "Fecha",
+        "value": "Sin información",
+        "mayusculas": False,
+    }
+    assert sin["accion"] == {"label": "Ver detalles", "url": None}
+
+    admision = Admision.objects.create(
+        comedor=comedor, activa=True, num_expediente="EX-1"
+    )
+    con = _tablero(lector, comedor)["detalles"]
+
+    valores = {f["label"]: f["value"] for f in con["filas"]}
+    assert valores["Fecha"] == admision.creado.strftime("%d/%m/%Y")
+    assert valores["Número de expediente"] == "EX-1"
+    # As the page: a missing dupla resolves to an empty string, not None.
+    assert valores["Dupla"] == ""
+    assert (
+        con["accion"]["url"]
+        == f"/comedores/{comedor.pk}/admision/{admision.pk}/detalle/"
+    )
+
+
+def test_card_holder_card_only_for_who_can_manage_it(lector, comedor):
+    assert _tablero(lector, comedor)["responsable_tarjeta"] is None

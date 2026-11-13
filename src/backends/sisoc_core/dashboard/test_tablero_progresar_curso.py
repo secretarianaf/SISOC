@@ -106,23 +106,23 @@ def datos(db, tablas_bi):  # pylint: disable=unused-argument,redefined-outer-nam
     return {"salta": salta, "caba": caba}
 
 
-def _permiso():
-    """La llave está en `Meta.permissions`; se crea acá por si la base de tests no
+def _permiso(codename="view_tablero_progresar_curso"):
+    """Las llaves están en `Meta.permissions`; se crean acá por si la base de tests no
     corrió el `post_migrate`."""
     content_type = ContentType.objects.get_for_model(
         ProgresarCursoResumen, for_concrete_model=False
     )
     return Permission.objects.get_or_create(
-        content_type=content_type,
-        codename="view_tablero_progresar_curso",
-        defaults={"name": "Puede ver el Tablero Becas Progresar · Curso obligatorio"},
+        content_type=content_type, codename=codename, defaults={"name": codename}
     )[0]
 
 
-def _usuario(username, con_permiso=True, provincial=False):
+def _usuario(username, con_permiso=True, provincial=False, nacional=False):
     user = User.objects.create_user(username=username, password="pass")
     if con_permiso:
         user.user_permissions.add(_permiso())
+    if nacional:
+        user.user_permissions.add(_permiso("view_tablero_progresar_curso_nacional"))
     if provincial:
         user.profile.es_usuario_provincial = True
         user.profile.save()
@@ -134,8 +134,8 @@ def _titulares(tablero):
     return sum(fila[columna] for fila in tablero["resumen"])
 
 
-def test_usuario_no_provincial_ve_todo_el_pais(datos):
-    tablero = construir_tablero(_usuario("nacional"))
+def test_llave_nacional_ve_todo_el_pais(datos):
+    tablero = construir_tablero(_usuario("nacional", nacional=True))
 
     assert tablero["alcance"] == ALCANCE_NACIONAL
     assert _titulares(tablero) == 150
@@ -143,6 +143,28 @@ def test_usuario_no_provincial_ve_todo_el_pais(datos):
     assert tablero["fecha_carga"] == "2026-11-13 10:00"
     # Los nombres largos de SISOC se acortan para las etiquetas
     assert set(tablero["provincias"].values()) == {"Salta", "CABA"}
+
+
+def test_llave_comun_sin_ser_provincial_no_ve_datos(
+    datos,
+):  # pylint: disable=unused-argument
+    """Un alta incompleta (llave sin perfil provincial) no muestra todo el país."""
+    tablero = construir_tablero(_usuario("incompleto"))
+
+    assert tablero["alcance"] == SIN_ALCANCE
+    assert tablero["resumen"] == []
+
+
+def test_llave_nacional_ve_todo_aunque_sea_provincial(datos):
+    user = _usuario("coordinacion", provincial=True, nacional=True)
+    ProfileTerritorialScope.objects.create(
+        profile=user.profile, provincia=datos["salta"]
+    )
+
+    tablero = construir_tablero(user)
+
+    assert tablero["alcance"] == ALCANCE_NACIONAL
+    assert _titulares(tablero) == 150
 
 
 def test_provincial_ve_solo_su_provincia(datos):
@@ -208,7 +230,7 @@ def test_superusuario_ve_todo_el_pais(datos):  # pylint: disable=unused-argument
 
 
 def test_sin_datos_cargados_no_falla(db, tablas_bi):  # pylint: disable=unused-argument
-    tablero = construir_tablero(_usuario("vacio"))
+    tablero = construir_tablero(_usuario("vacio", nacional=True))
 
     assert tablero["fecha_carga"] is None
     assert tablero["sin_datos"] is True
@@ -223,7 +245,7 @@ def test_sin_tablas_bi_muestra_sin_datos_en_lugar_de_fallar(db, monkeypatch):
 
     monkeypatch.setattr(impl, "_filas", sin_tabla)
 
-    tablero = construir_tablero(_usuario("sin_tablas"))
+    tablero = construir_tablero(_usuario("sin_tablas", nacional=True))
 
     assert tablero["sin_datos"] is True
     assert tablero["resumen"] == []
@@ -246,7 +268,7 @@ def test_tablero_sin_permiso_devuelve_403(
 def test_tablero_con_permiso_muestra_datos_agregados_sin_datos_personales(
     client, datos
 ):  # pylint: disable=unused-argument
-    client.force_login(_usuario("con_permiso"))
+    client.force_login(_usuario("con_permiso", nacional=True))
 
     respuesta = client.get(URL)
 
@@ -262,3 +284,11 @@ def test_tablero_con_permiso_muestra_datos_agregados_sin_datos_personales(
 
 def test_tablero_url_con_nombre():
     assert reverse("dashboard_tablero_progresar_curso") == URL
+
+
+def test_tablero_solo_con_llave_nacional_entra(
+    client, db
+):  # pylint: disable=unused-argument
+    client.force_login(_usuario("solo_nacional", con_permiso=False, nacional=True))
+
+    assert client.get(URL).status_code == 200

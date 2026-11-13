@@ -17,8 +17,10 @@ personal" de Formando Capital Humano. Se agrega una pantalla de SISOC,
   `ProgresarCursoEvolucion`). Ver
   `docs/registro/decisiones/2026-11-13-tableros-leen-tablas-bi-del-equipo-de-datos.md`.
 - Migración `dashboard/0005_tablero_progresar_curso`: registra los dos modelos
-  y la llave nueva `dashboard.view_tablero_progresar_curso`. **No crea ni
-  modifica tablas** (`managed=False`).
+  y dos llaves nuevas: `dashboard.view_tablero_progresar_curso` (ver el
+  tablero, recortado a las provincias del usuario) y
+  `dashboard.view_tablero_progresar_curso_nacional` (ver todo el país). **No
+  crea ni modifica tablas** (`managed=False`).
 - Service: `src/backends/sisoc_core/dashboard/services/tablero_progresar_curso/impl.py`
   (ORM). Vista `TableroProgresarCursoView` (delgada), template
   `tablero_progresar_curso.html` sobre `includes/main.html`, Chart.js, datos por
@@ -30,8 +32,9 @@ personal" de Formando Capital Humano. Se agrega una pantalla de SISOC,
   `poncho_listados.css` (`.app-main:has(...)`).
 
 Para que aparezca en el menú "Tableros" se carga una entrada con
-`ruta_interna = /dashboard/progresar-curso-obligatorio/` y permiso
-`dashboard.view_tablero_progresar_curso`.
+`ruta_interna = /dashboard/progresar-curso-obligatorio/` y permisos
+`dashboard.view_tablero_progresar_curso` y
+`dashboard.view_tablero_progresar_curso_nacional`.
 
 ## Comportamiento
 
@@ -44,11 +47,13 @@ Progresar Obligatorio).
 
 Alcance por usuario (se aplica en el servidor, antes de mandar los datos):
 
-- superusuario o usuario no provincial: todo el país;
-- usuario provincial: solo las provincias completas de su alcance territorial
-  (`users.territorial_scope`, `provincia_lookup="provincia_id"`);
-- usuario provincial sin provincia completa (sin alcance, o solo municipio o
+- superusuario o llave `..._nacional`: todo el país;
+- el resto: solo las provincias completas de su alcance territorial (perfil
+  "usuario provincial", `users.territorial_scope`,
+  `provincia_lookup="provincia_id"`);
+- sin provincia completa (no provincial, sin alcance, o solo municipio o
   localidad, que estas tablas no tienen): aviso "sin jurisdicción", sin datos.
+  Así, un alta incompleta no muestra datos de más.
 
 Si las tablas no existen o no se pueden leer (por ejemplo en QA u
 homologación sin la carga), la pantalla muestra "Todavía no hay datos
@@ -60,13 +65,15 @@ muestra tal cual (sin convertir).
 
 ## Verificación
 
-- `pytest src/backends/sisoc_core/dashboard/`: 30 pasan (todo el país, una y
-  varias provincias, sin jurisdicción, solo municipio, superusuario, sin datos,
-  sin tablas, sin login, sin la llave, sin datos personales en la respuesta).
-  Con `test_urls_no_500` y `DJANGO_DEBUG=False`: 918 pasan.
+- `pytest src/backends/sisoc_core/dashboard/`: 33 pasan (llave nacional, alta
+  incompleta sin perfil provincial, una y varias provincias, sin jurisdicción,
+  solo municipio, superusuario, sin datos, sin tablas, sin login, sin la llave,
+  sin datos personales en la respuesta). Con `test_urls_no_500` y
+  `DJANGO_DEBUG=False`: 918 pasan (antes de las dos llaves).
 - `black`, `djlint` y `pylint` (10/10) sin observaciones; `makemigrations
   --check` sin cambios; `url_registry.json` regenerado.
 - Verificación visual en el entorno local con los totales agregados de la
   carga real (sin personas): usuario con la llave, usuario provincial y
   usuario sin la llave (403 y sin entrada en el menú). Confirmada por quien
-  pidió el tablero.
+  pidió el tablero. Con las dos llaves, además: usuario con la llave común sin
+  perfil provincial (no ve datos).

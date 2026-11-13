@@ -11,10 +11,12 @@ edad, tramos) se aplican en la carga; acá solo se recorta por el alcance del
 usuario y se arma lo que necesita el JS.
 
 Alcance (se aplica en el servidor, antes de mandar los datos a la página):
-- superusuario o usuario no provincial: todo el país;
-- usuario provincial: solo las provincias completas de su alcance territorial;
-- usuario provincial sin provincia completa (sin alcance, o solo municipio o
-  localidad, que estas tablas no tienen): nada, con aviso.
+- superusuario o llave `view_tablero_progresar_curso_nacional`: todo el país;
+- el resto: solo las provincias completas de su alcance territorial (perfil
+  "usuario provincial" con provincia cargada);
+- sin provincia completa (no provincial, sin alcance, o solo municipio o
+  localidad, que estas tablas no tienen): nada, con aviso. Así, un alta
+  incompleta no muestra datos de más.
 
 Si las tablas no existen o no se pueden leer (por ejemplo en un entorno donde el
 equipo de Datos no las cargó), el tablero muestra "sin datos" en lugar de fallar.
@@ -32,7 +34,11 @@ from users.territorial_scope import (  # pylint: disable=import-error
     is_territorial_user,
 )
 
-from dashboard.models import ProgresarCursoEvolucion, ProgresarCursoResumen
+from dashboard.models import (
+    PERMISO_TABLERO_PROGRESAR_CURSO_NACIONAL,
+    ProgresarCursoEvolucion,
+    ProgresarCursoResumen,
+)
 
 ALCANCE_NACIONAL = "nacional"
 ALCANCE_PROVINCIAL = "provincial"
@@ -72,8 +78,12 @@ NOMBRES_CORTOS = {
 def alcance_del_usuario(user):
     """Devuelve (tipo de alcance, filtro Q o None)."""
 
-    if getattr(user, "is_superuser", False) or not is_territorial_user(user):
+    if getattr(user, "is_superuser", False) or user.has_perm(
+        PERMISO_TABLERO_PROGRESAR_CURSO_NACIONAL
+    ):
         return ALCANCE_NACIONAL, None
+    if not is_territorial_user(user):
+        return SIN_ALCANCE, None
     filtro = build_territorial_scope_q(
         get_effective_scopes(user), provincia_lookup="provincia_id"
     )

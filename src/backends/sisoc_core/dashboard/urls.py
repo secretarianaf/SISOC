@@ -2,7 +2,10 @@ from django.contrib.auth.decorators import login_required
 from django.urls import path
 
 from core.decorators import permissions_any_required
-from dashboard.models import PERMISO_TABLERO_PROGRESAR_CURSO
+from dashboard.models import (
+    PERMISO_TABLERO_PROGRESAR_CURSO,
+    PERMISO_TABLERO_PROGRESAR_CURSO_NACIONAL,
+)
 from dashboard.views import (
     DashboardView,
     TableroEmbedView,
@@ -19,9 +22,12 @@ urlpatterns = [
     path(
         "dashboard/progresar-curso-obligatorio/",
         login_required(
-            permissions_any_required([PERMISO_TABLERO_PROGRESAR_CURSO])(
-                TableroProgresarCursoView.as_view()
-            )
+            permissions_any_required(
+                [
+                    PERMISO_TABLERO_PROGRESAR_CURSO,
+                    PERMISO_TABLERO_PROGRESAR_CURSO_NACIONAL,
+                ]
+            )(TableroProgresarCursoView.as_view())
         ),
         name="dashboard_tablero_progresar_curso",
     ),

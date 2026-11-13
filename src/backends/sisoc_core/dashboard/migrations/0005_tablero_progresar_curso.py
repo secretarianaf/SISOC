@@ -1,8 +1,9 @@
 """Tablero Becas Progresar · Curso obligatorio.
 
 Modelos de solo lectura (managed=False) sobre dos tablas `bi_` que mantiene el equipo
-de Datos: esta migración NO crea ni modifica tablas. Solo registra los modelos y la
-llave `dashboard.view_tablero_progresar_curso`.
+de Datos: esta migración NO crea ni modifica tablas. Solo registra los modelos y las
+llaves `dashboard.view_tablero_progresar_curso` (ver el tablero, recortado a las
+provincias del usuario) y `dashboard.view_tablero_progresar_curso_nacional` (todo el país).
 """
 
 import django.db.models.deletion
@@ -63,7 +64,11 @@ class Migration(migrations.Migration):
                     (
                         "view_tablero_progresar_curso",
                         "Puede ver el Tablero Becas Progresar · Curso obligatorio",
-                    )
+                    ),
+                    (
+                        "view_tablero_progresar_curso_nacional",
+                        "Puede ver todo el país en el Tablero Becas Progresar · Curso obligatorio",
+                    ),
                 ],
                 "managed": False,
                 "default_permissions": (),

@@ -217,6 +217,11 @@ class Tablero(models.Model):
 # las lee. Las mantiene el equipo de Datos (no se crean ni migran desde acá).
 
 PERMISO_TABLERO_PROGRESAR_CURSO = "dashboard.view_tablero_progresar_curso"
+# Ver todo el país (coordinación). Sin esta llave, el usuario ve solo las provincias
+# de su alcance territorial: un alta incompleta no muestra datos de más.
+PERMISO_TABLERO_PROGRESAR_CURSO_NACIONAL = (
+    "dashboard.view_tablero_progresar_curso_nacional"
+)
 
 
 class ProgresarCursoResumen(models.Model):
@@ -251,6 +256,10 @@ class ProgresarCursoResumen(models.Model):
             (
                 "view_tablero_progresar_curso",
                 "Puede ver el Tablero Becas Progresar · Curso obligatorio",
+            ),
+            (
+                "view_tablero_progresar_curso_nacional",
+                "Puede ver todo el país en el Tablero Becas Progresar · Curso obligatorio",
             ),
         ]
         verbose_name = "resumen del tablero Progresar curso obligatorio"

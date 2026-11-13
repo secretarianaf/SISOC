@@ -650,6 +650,17 @@ vertical, dibuja `SisocShell` y agrega el botón «Consultas» de la cabecera.
   detalle de una intervención; «Descargar» usa la descarga autenticada por objeto
   `/api/web/cdi/intervenciones/<id>/documentacion/` (bytes del storage del objeto, `private, no-store`)
   y no cierra el alias `/media/documentacion/`, que depende del preflight de ownership del contrato.
+- `/centrodeinfancia/<centro>/trabajadores/<trabajador>/` (`routes/cdiTrabajadores.tsx`, CDI05):
+  ficha de un trabajador con las siete tarjetas plegables del template nativo; los valores
+  salen de `web_api_trabajador_detalle.py` con las mismas expresiones y la baja usa el
+  endpoint existente `trabajadores/<id>/eliminar/`. Las entradas de vista previa de los
+  trabajadores están en `centrodeinfancia/web_preview_trabajadores.py`.
+- `/centrodeinfancia/<centro>/trabajadores/crear/` y `.../<trabajador>/editar/`
+  (`routes/cdiTrabajadoresForm.tsx` y `cdiTrabajadoresForm.behavior.ts`, CDI05): búsqueda por DNI,
+  progreso y siete tarjetas; cada campo es el marcado `as_crispy_field` del formulario nativo
+  (`web_api_trabajador_form.py` ejecuta las vistas nativas, con aprovisionamiento y veto CDI-A3)
+  y los scripts de la plantilla corren como comportamiento del formulario. El POST es
+  urlencoded, único y sin reintento.
 
 El menú lateral de `SisocShell` y `ClaroFrame` dibuja los grupos anidados con el
 marcado de cada nivel del template y los abre y resalta con las mismas
@@ -665,6 +676,8 @@ Registros:
 `../registro/cambios/2026-T4/2026-11-12-2785-react-cdi-nomina-lista.md` y
 `../registro/cambios/2026-T4/2026-11-12-2785-react-cdi-centro-detalle.md` y
 `../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-documentacion.md`.
+`../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-trabajador-ficha.md` y
+`../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-trabajador-form.md`.
 ### Vertical remoto sobre G1: Duplas (equipo técnico) de Comedores
 
 Segunda aplicación del patrón, ahora con el marco nativo `includes/main.html`
@@ -1076,6 +1089,10 @@ los firmantes/avales y el detalle de rendición tienen página propia
 (`routes/organizacion{Convenio,Documentos,Firmantes,Rendiciones}.tsx`) sobre las
 vistas nativas. Ver
 [registro](../registro/cambios/2026-T4/2026-11-12-2785-react-organizaciones-secciones.md).
+Organizaciones (legajo, avales): la tabla «Avales» del legajo, que es marcado en línea
+y no un include, llega como sección `avales` y React la monta en su marcador; los
+marcadores usan `display: contents` para no alterar el diseño del contenedor. Ver
+[registro](../registro/cambios/2026-T4/2026-11-13-2785-react-organizaciones-legajo-avales.md).
 
 Cruces y novedades PAS (PAS03, `routes/pasCruces.tsx`) toma `/pas/cruces`; la
 proyección sale de `/api/web/pas/cruces/`

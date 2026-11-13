@@ -1660,9 +1660,19 @@
   "regex": "^api/web/cdi/reportes/\\Z"
  },
  {
+  "name": "centrodeinfancia_web_trabajador_crear",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/trabajadores/crear/\\Z"
+ },
+ {
   "name": "centrodeinfancia_web_trabajador_detalle",
   "namespace": "",
   "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/trabajadores/(?P<trabajador_id>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_trabajador_editar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/trabajadores/(?P<trabajador_id>[0-9]+)/editar/\\Z"
  },
  {
   "name": "centrodeinfancia_web_trabajador_eliminar",

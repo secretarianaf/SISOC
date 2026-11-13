@@ -114,6 +114,7 @@ describe("Organizaciones ABM routes", () => {
     webPost.mockResolvedValue({ status: 400, data: { errors: {}, non_field_errors: ["Error global"], form: invalid } });
     setup("/organizaciones/crear");
     await screen.findByLabelText(/^Nombre/);
+    fireEvent.change(screen.getByLabelText(/^Nombre/), { target: { value: "Tipeado" } });
     fireEvent.click(screen.getByRole("button", { name: "Guardar organización" }));
     expect(await screen.findByText("Ingresá un CUIT de 11 dígitos, solo con números y sin espacios.")).toBeTruthy();
     expect(screen.getByText("Error global")).toBeTruthy();
@@ -129,6 +130,7 @@ describe("Organizaciones ABM routes", () => {
     vi.spyOn(organizacionesNavigation, "assign").mockImplementation(() => undefined);
     setup("/organizaciones/crear");
     await screen.findByLabelText(/^Nombre/);
+    fireEvent.change(screen.getByLabelText(/^Nombre/), { target: { value: "Org" } });
     fireEvent.change(screen.getByLabelText("Cuit"), { target: { value: "20111111112" } });
     expect(await screen.findByText("Dueña")).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledWith("/api/web/comedores/organizaciones/cuil/?cuil=20111111112", expect.anything());

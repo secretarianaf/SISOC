@@ -212,6 +212,50 @@ export function FirmantesSection({ section }: { section: FirmantesSection }) {
   );
 }
 
+// --- legajo section (inline "Avales" block of `organizacion_detail.html`) ---------------------
+
+type GuarantorRow = { id: number; name: string; cuit: string; edit_url: string; delete_url: string };
+export type AvalesSection = { kind: "avales"; can_manage: boolean; add_url: string | null; rows: GuarantorRow[] };
+
+export const avalesSectionValid = (v: unknown): v is AvalesSection =>
+  record(v) && v.kind === "avales" && typeof v.can_manage === "boolean" && (v.add_url === null || internal(v.add_url)) && Array.isArray(v.rows) &&
+  v.rows.every((r) => record(r) && typeof r.id === "number" && text(r.name) && text(r.cuit) && internal(r.edit_url) && internal(r.delete_url));
+
+export function AvalesSection({ section }: { section: AvalesSection }) {
+  return (
+    <div className="tabla-legajo">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h5 className="mb-0">Avales</h5>
+        {section.add_url && <a href={section.add_url} className="btn btn-success btn-sm"><i className="fas fa-plus" /> Agregar Aval</a>}
+      </div>
+      {section.rows.length > 0 ? (
+        <table className="table table-sm">
+          <thead>
+            <tr>
+              <th>Nombre</th><th>CUIT</th>
+              {section.can_manage && <th className="text-end">Acciones</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {section.rows.map((row) => (
+              <tr key={row.id}>
+                <td>{row.name}</td>
+                <td>{row.cuit}</td>
+                {section.can_manage && (
+                  <td className="text-end">
+                    <a href={row.edit_url} className="btn btn-sm accion-editar" aria-label="Editar aval"><i className="fas fa-edit" /></a>{" "}
+                    <a href={row.delete_url} className="btn btn-sm accion-eliminar" aria-label="Eliminar aval"><i className="fas fa-trash" /></a>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : <p className="texto-vacio">No hay avales registrados.</p>}
+    </div>
+  );
+}
+
 // Native URLs of `urls.py`: no trailing slash.
 const PAGES = { firmante: "firmantes", aval: "avales" } as const;
 const MODES = { crear: "crear", editar: "editar", eliminar: "eliminar" } as const;

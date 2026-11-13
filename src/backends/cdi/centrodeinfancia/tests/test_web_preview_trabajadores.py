@@ -124,3 +124,25 @@ def test_production_urlconf_keeps_the_native_page(datos):
 def test_build_without_index_is_refused(tmp_path):
     with pytest.raises(ValueError):
         cdi_trabajadores_preview_patterns(tmp_path)
+
+
+@pytest.mark.usefixtures("preview")
+def test_form_entries_return_the_index_and_keep_the_native_guards(datos):
+    centro, trabajador, _, ajeno = datos
+    cliente = _cliente(
+        _usuario("prev-trab-form", "add_trabajador", "change_trabajador")
+    )
+    crear = f"/centrodeinfancia/{centro.pk}/trabajadores/crear/"
+    editar = f"{_url(centro, trabajador)}editar/"
+
+    assert cliente.get(crear).status_code == 200
+    assert (
+        "/centrodeinfancia/react/assets/app-1.js"
+        in cliente.get(editar).content.decode()
+    )
+    assert cliente.get(f"{_url(centro, ajeno)}editar/").status_code == 404
+    with override_settings(ROOT_URLCONF="config.urls_all"):
+        esperado = Client().get(crear)
+    assert Client().get(crear).status_code == esperado.status_code
+    assert _cliente(_usuario("prev-trab-form-sin")).get(crear).status_code == 403
+    assert not Trabajador.objects.exclude(pk__in=[trabajador.pk, ajeno.pk]).exists()

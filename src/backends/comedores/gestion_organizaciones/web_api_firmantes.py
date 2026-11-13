@@ -10,8 +10,8 @@ messages. Access is today's: ``organizaciones.view_organizacion`` on the route,
 no object scope (see
 ``docs/registro/decisiones/2026-11-10-2785-brechas-acceso-conservadas.md``).
 The legajo "Firmantes" tables (``legajo/firmantes.html``) are delivered as
-sections (``web_api_secciones``); the "Avales" table stays in the native legajo
-block because it is inline markup, not an include.
+sections (``web_api_secciones``); the "Avales" table is inline markup in the
+legajo block, so it is delivered through ``seccion_en_linea``.
 """
 
 from django.http import HttpResponseRedirect
@@ -33,7 +33,7 @@ from gestion_organizaciones.views import (
 )
 from gestion_organizaciones.web_api import _pending_messages
 from gestion_organizaciones.web_api_abm import OrganizacionAbmAccess, _campo
-from gestion_organizaciones.web_api_secciones import seccion
+from gestion_organizaciones.web_api_secciones import seccion, seccion_en_linea
 
 
 @seccion("organizaciones/partials/legajo/firmantes.html")
@@ -63,6 +63,28 @@ def seccion_firmantes(contexto):
                 "delete_url": reverse("firmante_eliminar", args=[firmante.pk]),
             }
             for firmante in contexto.get("firmantes") or []
+        ],
+    }
+
+
+@seccion_en_linea("avales")
+def seccion_avales(contexto):
+    """The inline "Avales" table of the legajo (only "Asociación de hecho")."""
+    organizacion = contexto["organizacion"]
+    gestionar = bool(contexto.get("puede_gestionar_organizaciones"))
+    return {
+        "kind": "avales",
+        "can_manage": gestionar,
+        "add_url": reverse("aval_crear", args=[organizacion.pk]) if gestionar else None,
+        "rows": [
+            {
+                "id": aval.pk,
+                "name": aval.nombre or "-",
+                "cuit": str(aval.cuit) if aval.cuit else "-",
+                "edit_url": reverse("aval_editar", args=[aval.pk]),
+                "delete_url": reverse("aval_eliminar", args=[aval.pk]),
+            }
+            for aval in contexto.get("avales_data") or []
         ],
     }
 

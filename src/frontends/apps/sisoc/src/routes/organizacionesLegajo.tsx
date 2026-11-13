@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import { createPortal } from "react-dom";
 import { ConveniosSection, conveniosSectionValid } from "./organizacionConvenio";
 import { DocumentosSection, documentosSectionValid } from "./organizacionDocumentos";
-import { FirmantesSection, firmantesSectionValid } from "./organizacionFirmantes";
+import { AvalesSection, avalesSectionValid, FirmantesSection, firmantesSectionValid } from "./organizacionFirmantes";
 import { RendicionesFiltro, rendicionesFiltroValid, RendicionesTable, rendicionesSectionValid } from "./organizacionRendiciones";
 import { FlashToasts } from "./organizacionesForm";
 import { safeInternalPath } from "../webAccess";
@@ -57,6 +57,7 @@ function sectionView(section: LegajoSection): ReactNode {
   if (section.kind === "convenios" && conveniosSectionValid(section)) return <ConveniosSection section={section} />;
   if (section.kind === "documentos" && documentosSectionValid(section)) return <DocumentosSection section={section} />;
   if (section.kind === "firmantes" && firmantesSectionValid(section)) return <FirmantesSection section={section} />;
+  if (section.kind === "avales" && avalesSectionValid(section)) return <AvalesSection section={section} />;
   if (section.kind === "rendiciones" && rendicionesSectionValid(section)) return <RendicionesTable section={section} />;
   if (section.kind === "rendiciones_filtro" && rendicionesFiltroValid(section)) return <RendicionesFiltro section={section} />;
   return null;
@@ -66,7 +67,10 @@ function LegajoFragment({ html, scripts, sections }: { html: string; scripts: st
   const root = useRef<HTMLDivElement>(null);
   const [hosts, setHosts] = useState<HTMLElement[]>([]);
   useLayoutEffect(() => {
-    setHosts(Array.from(root.current?.querySelectorAll<HTMLElement>("[data-legajo-seccion]") ?? []));
+    const found = Array.from(root.current?.querySelectorAll<HTMLElement>("[data-legajo-seccion]") ?? []);
+    // The native partial has no wrapper: an empty or not, the host must not become a flex/grid item of its parent.
+    for (const host of found) host.style.display = "contents";
+    setHosts(found);
   }, [html]);
   useEffect(() => {
     let active = true;

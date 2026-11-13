@@ -30,6 +30,7 @@ import { cdiNominaRoute } from "./cdiNomina";
 import { cdiNominaListaRoute } from "./cdiNominaLista";
 import { cdiObservacionesRoute } from "./cdiObservaciones";
 import { cdiTrabajadorRoute } from "./cdiTrabajadores";
+import { cdiTrabajadorFormRoute } from "./cdiTrabajadoresForm";
 import { comedorIntervencionesRoute } from "./comedorIntervenciones";
 import { comedorObservacionesRoute } from "./comedorObservaciones";
 import { comedorColaboradoresRoute } from "./comedorColaboradores";
@@ -131,6 +132,7 @@ export const ROUTES: RouteDefinition[] = [
   cdiNominaListaRoute,
   cdiDocumentacionRoute,
   cdiTrabajadorRoute,
+  cdiTrabajadorFormRoute,
   cdfCentrosRoute,
   cdfCentroFormRoute,
   dispositivosRoute,

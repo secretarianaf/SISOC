@@ -39,7 +39,7 @@ from core.pagination import build_compact_page_range
 from core.templatetags.custom_filters import has_any_perm
 from core.web_gate import WebGatePermission
 from gestion_organizaciones.urls import ORGANIZACION_DOCUMENTACION_PERMS
-from gestion_organizaciones.web_api_secciones import instrumentar
+from gestion_organizaciones.web_api_secciones import instrumentar, instrumentar_en_linea
 from gestion_organizaciones.views import OrganizacionDetailView, OrganizacionListView
 
 # ``search_bar.html`` with ``export_url`` and its default permissions.
@@ -280,6 +280,7 @@ class OrganizacionLegajoWebView(APIView):
             titulo = _bloque(plantilla, "title").nodelist.render(contexto)
             contenido = _bloque(plantilla, "content").nodelist
             instrumentar(contexto, contenido, secciones)
+            instrumentar_en_linea(contexto, contenido, secciones)
             html = contenido.render(contexto)
         return Response(
             {

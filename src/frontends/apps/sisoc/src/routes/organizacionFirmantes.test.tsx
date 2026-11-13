@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import App from "../App";
 import { findRoute } from "./index";
 import { FLASH_KEY, organizacionesNavigation } from "./organizacionesForm";
-import { bajaValid, FirmantesSection, firmantesSectionValid, formularioValid, type FirmantesSection as Section } from "./organizacionFirmantes";
+import { AvalesSection, avalesSectionValid, bajaValid, FirmantesSection, firmantesSectionValid, formularioValid, type FirmantesSection as Section } from "./organizacionFirmantes";
 import { readyContext, setViewport } from "./testFixtures";
 
 const { webGet, webPost } = vi.hoisted(() => ({ webGet: vi.fn(), webPost: vi.fn() }));
@@ -192,5 +192,35 @@ describe("Firmantes legajo section", () => {
     expect(screen.getByText("No hay firmantes registrados.")).toBeTruthy();
     expect(firmantesSectionValid(section())).toBe(true);
     expect(firmantesSectionValid({ ...section(), add_url: "https://evil.example/" })).toBe(false);
+  });
+});
+
+describe("Avales legajo section", () => {
+  const rows = [
+    { id: 1, name: "Beto", cuit: "-", edit_url: "/organizaciones/aval/editar/1", delete_url: "/organizaciones/aval/eliminar/1" },
+    { id: 2, name: "Carla", cuit: "20111111112", edit_url: "/organizaciones/aval/editar/2", delete_url: "/organizaciones/aval/eliminar/2" },
+  ];
+  const section = (over: Record<string, unknown> = {}) => ({ kind: "avales" as const, can_manage: true, add_url: "/organizaciones/aval/crear/8", rows, ...over });
+
+  it("renders the table with its actions and the add button", () => {
+    render(<AvalesSection section={section()} />);
+    expect(screen.getByRole("heading", { level: 5, name: "Avales" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Agregar Aval/ }).getAttribute("href")).toBe("/organizaciones/aval/crear/8");
+    expect(screen.getAllByRole("columnheader").map((c) => c.textContent)).toEqual(["Nombre", "CUIT", "Acciones"]);
+    expect(screen.getByText("20111111112")).toBeTruthy();
+    expect(screen.getAllByRole("link", { name: "Editar aval" }).map((a) => a.getAttribute("href"))).toEqual(["/organizaciones/aval/editar/1", "/organizaciones/aval/editar/2"]);
+    expect(screen.getAllByRole("link", { name: "Eliminar aval" })[1].getAttribute("href")).toBe("/organizaciones/aval/eliminar/2");
+  });
+
+  it("hides the management without the permission, shows the empty text and validates the payload", () => {
+    const { unmount } = render(<AvalesSection section={section({ can_manage: false, add_url: null })} />);
+    expect(screen.getAllByRole("columnheader").map((c) => c.textContent)).toEqual(["Nombre", "CUIT"]);
+    expect(screen.queryByRole("link")).toBeNull();
+    unmount();
+    render(<AvalesSection section={section({ rows: [] })} />);
+    expect(screen.getByText("No hay avales registrados.")).toBeTruthy();
+    expect(avalesSectionValid(section())).toBe(true);
+    expect(avalesSectionValid(section({ rows: [{ id: 1 }] }))).toBe(false);
+    expect(avalesSectionValid({ ...section(), kind: "x" })).toBe(false);
   });
 });

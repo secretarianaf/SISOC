@@ -14,7 +14,11 @@ from django.urls import path
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from centrodeinfancia.views import TrabajadorCentroInfanciaDetailView
+from centrodeinfancia.views import (
+    TrabajadorCentroInfanciaCreateView,
+    TrabajadorCentroInfanciaDetailView,
+    TrabajadorCentroInfanciaUpdateView,
+)
 from centrodeinfancia.web_preview import BUILD_ASSETS, PUBLIC_ASSETS, index_response
 from core.decorators import permissions_any_required
 
@@ -22,6 +26,29 @@ from core.decorators import permissions_any_required
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class TrabajadorDetalleEntry(TrabajadorCentroInfanciaDetailView):
     """Native guards and the scoped worker (404), then the index."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class TrabajadorCrearEntry(TrabajadorCentroInfanciaCreateView):
+    """Native guards and the scoped centre (404), then the index; POST stays native."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = None
+        self.get_context_data()
+        return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class TrabajadorEditarEntry(TrabajadorCentroInfanciaUpdateView):
+    """Native guards and the scoped worker (404), then the index; POST stays native."""
 
     index_bytes = b""
 
@@ -60,6 +87,18 @@ def cdi_trabajadores_preview_patterns(build_directory):
                 TrabajadorDetalleEntry,
                 "centrodeinfancia.view_trabajador",
                 index_bytes,
+            ),
+        ),
+        path(
+            "centrodeinfancia/<int:pk>/trabajadores/crear/",
+            _entry(
+                TrabajadorCrearEntry, "centrodeinfancia.add_trabajador", index_bytes
+            ),
+        ),
+        path(
+            "centrodeinfancia/<int:pk>/trabajadores/<int:trabajador_id>/editar/",
+            _entry(
+                TrabajadorEditarEntry, "centrodeinfancia.change_trabajador", index_bytes
             ),
         ),
     ]

@@ -86,6 +86,19 @@ describe("Organizaciones legajo route", () => {
     expect(screen.getByText("Imprevistos no aplica: es solo para Línea Tradicional.")).toBeTruthy();
   });
 
+  it("mounts the avales table in its placeholder", async () => {
+    serve(legajo({
+      html: '<div data-legajo-seccion="0"></div><p id="after">Después</p>',
+      sections: [{ kind: "avales", can_manage: true, add_url: "/organizaciones/aval/crear/8", rows: [{ id: 3, name: "Beto", cuit: "-", edit_url: "/organizaciones/aval/editar/3", delete_url: "/organizaciones/aval/eliminar/3" }] }],
+    }));
+    window.history.replaceState({}, "", "/organizaciones/detalle/8");
+    render(<App />);
+    expect(await screen.findByRole("heading", { level: 5, name: "Avales" })).toBeTruthy();
+    expect(document.querySelector("[data-legajo-seccion='0']")?.nextElementSibling?.id).toBe("after");
+    expect((document.querySelector("[data-legajo-seccion='0']") as HTMLElement).style.display).toBe("contents");
+    expect(screen.getByRole("link", { name: "Editar aval" }).getAttribute("href")).toBe("/organizaciones/aval/editar/3");
+  });
+
   it("mounts the documents section next to the convenios one, each in its own placeholder", async () => {
     serve(legajo({
       html: '<div data-legajo-seccion="0"></div><hr id="mid"><div data-legajo-seccion="1"></div>',

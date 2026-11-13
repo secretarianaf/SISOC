@@ -337,7 +337,7 @@ export function OrganizacionFormContent({ initial, messages: initialMessages }: 
       <div className="d-flex justify-content-between mb-3"><div><a href="#" data-history-back="true" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); window.history.back(); }}>Cancelar</a></div></div>
       <div className="row comedor-form">
         <div className="col-12">
-          <form method="post" id="organizacionForm" className="w-100" encType="multipart/form-data" onSubmit={submit} noValidate>
+          <form method="post" id="organizacionForm" className="w-100" encType="multipart/form-data" onSubmit={submit}>
             {form.non_field_errors.length > 0 && <div className="alert alert-block alert-danger"><ul className="m-0">{form.non_field_errors.map((e) => <li key={e}>{e}</li>)}</ul></div>}
             <div className="progress-indicator">
               <div className="progress-header">

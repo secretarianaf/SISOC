@@ -21,5 +21,23 @@ export const bloquesFixture = (over: Partial<Bloques> = {}): Bloques => ({
       { id: 2, periodo: "10/2026", usuario: "Ana Gómez", conforme: true, creado: "05/11/2026 10:30", pdf: "/comedores/7/certificaciones-prestaciones/2/pdf/" },
       { id: 1, periodo: "09/2026", usuario: "-", conforme: false, creado: "05/10/2026 09:00", pdf: null },
     ],
+  },
+  colaboradores: {
+    agregar: "/comedores/7/colaboradores/crear/",
+    items: [
+      { id: 5, nombre: "Gomez, Ana", dni: "28999111", cuil: "27289991116", sexo: "Femenino", genero: "Mujer", telefono: "11 5555", alta: "26/03/2026", baja: "-", actividades: "Compras,Cocina",
+        editar: "/comedores/7/colaboradores/5/editar/", eliminar: { url: "/api/web/comedores/colaboradores/comedor/7/5/eliminar/", deshabilitado: false } },
+      { id: 6, nombre: "Perez, Beto", dni: "30111222", cuil: "-", sexo: "-", genero: "No declara", telefono: "-", alta: "01/02/2026", baja: "01/04/2026", actividades: "-",
+        editar: null, eliminar: { url: "/api/web/comedores/colaboradores/comedor/7/6/eliminar/", deshabilitado: true } },
+    ],
+    resultados: "Se encontraron 2 resultados.",
+  },
+  interacciones: { labels: ["Mar 2026", "May 2026"], values: [2, 1] },
+  capacitaciones: {
+    items: [
+      { id: 11, capacitacion: "Seguridad en la Cocina - Alimentar Comunidad", estado: "presentado", archivo: "http://testserver/media/c.pdf", observacion: "-", revisar: "/api/web/comedores/comedores/7/capacitaciones/11/estado/" },
+      { id: 12, capacitacion: "Creación de Usuario en Plataforma Alimentar Comunidad", estado: "sin_presentar", archivo: null, observacion: "-", revisar: "/api/web/comedores/comedores/7/capacitaciones/12/estado/" },
+      { id: 13, capacitacion: "Pautas de Higiene - Alimentar Comunidad", estado: "rechazado", archivo: null, observacion: "Ilegible", revisar: "/api/web/comedores/comedores/7/capacitaciones/13/estado/" },
+    ],
   }, ...over,
 });

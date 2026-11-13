@@ -182,7 +182,7 @@ class ComedorFichaWebView(_WebView):
                 "titulo": _titulo(context, comedor),
                 "acordeon": acordeon(context, comedor),
                 "tablero": tablero(context, comedor),
-                **bloques(context, comedor),
+                **bloques(context, comedor, request.user),
                 "messages": pending_messages(request),
             }
         )

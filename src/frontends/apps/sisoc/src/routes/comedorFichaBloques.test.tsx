@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { CertificacionesCard, FichaBloques, bloquesValid, certificacionesValid } from "./comedorFichaBloques";
+import { CertificacionesCard, bloquesValid, certificacionesValid } from "./comedorFichaBloques";
 import { bloquesFixture } from "./comedorFichaFixtures";
 
 afterEach(cleanup);
@@ -17,7 +17,7 @@ describe("Comedor ficha: lower cards", () => {
   });
 
   it("certifications card: native title, columns, badges, links and the history button", () => {
-    render(<FichaBloques data={bloquesFixture()} />);
+    render(<CertificacionesCard data={bloquesFixture().certificaciones} />);
     expect(screen.getByRole("heading", { name: "Certificaciones Mensuales de Prestaciones" })).toBeTruthy();
     expect(screen.getAllByRole("columnheader").map((h) => h.textContent)).toEqual(["Período", "Usuario generador", "Estado Conformidad", "Fecha de certificación", "Ver PDF"]);
     expect(screen.getByText("Conforme").className).toBe("badge bg-success");

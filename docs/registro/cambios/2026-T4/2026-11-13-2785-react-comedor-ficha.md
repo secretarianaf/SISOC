@@ -70,6 +70,21 @@
   acceso de la ruta nativa (`change_comedor`: ver la ficha no alcanza). Responde con el mismo
   JSON nativo (`success` + `item`, o `success: false` + `error` con 400) y un rechazo (estado
   inválido, certificado ya revisado, rechazo sin observación) deja el certificado sin cambios.
+- **Colaboradores del espacio, historial de interacciones y capacitaciones**
+  (`web_api_comedor_ficha_bloques.py`, claves `colaboradores`, `interacciones` y
+  `capacitaciones`). Colaboradores: las filas con las celdas de la plantilla (valores por defecto,
+  fechas, actividades), el recuento «Se encontraron N resultado(s).» y cada acción solo si el
+  usuario puede usarla (`Agregar` con permiso de alta y programa que lo permite, `Editar` con
+  permiso de cambio y sin baja, `Eliminar` con permiso de baja; con baja el botón se dibuja
+  deshabilitado, como la plantilla). «Eliminar» pide la confirmación nativa y llama a la API de
+  colaboradores (CO03.01, `colaboradores_web_eliminar`) que corre la baja nativa; la ficha a la que
+  redirige muestra el mensaje en cola. Interacciones: etiquetas y valores del gráfico de líneas
+  (Chart.js 4.4.4, mismo script que la plantilla). Capacitaciones: la tabla, que la página nativa
+  convierte en una tabla DataTables 1.11.5 (textos en inglés, primera columna ascendente, diez
+  filas por página); `routes/comedorFichaCapacitaciones.tsx` reproduce ese comportamiento
+  (orden, búsqueda, tamaño de página, paginación) y las acciones Aceptar / Rechazar (con la fila
+  de observación) llaman a la API de revisión y actualizan la fila en el lugar, con los `alert`
+  de la página nativa.
 - **Fuente, sin cambios.** La plantilla nativa actual no dibuja la tabla de admisiones ni el
   modal «Descartar Expediente» (solo existe el armado del contexto y el `post` de
   descartar): no se construyen controles sin origen. Si se vuelven a dibujar, la ruta de

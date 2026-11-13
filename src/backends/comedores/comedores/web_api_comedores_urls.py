@@ -6,6 +6,7 @@ from comedores.web_api_comedor_form import (
     ComedorFormularioWebView,
     ComedorGuardarWebView,
 )
+from comedores.web_api_comedor_admision import ComedorAdmisionWebView
 from comedores.web_api_comedor_ficha import ComedorFichaWebView
 from comedores.web_api_comedores import ComedorBajaWebView, ComedoresListWebView
 
@@ -15,6 +16,11 @@ urlpatterns = [
         "comedores/<int:pk>/",
         ComedorFichaWebView.as_view(),
         name="comedores_web_ficha",
+    ),
+    path(
+        "comedores/<int:pk>/admision/",
+        ComedorAdmisionWebView.as_view(),
+        name="comedores_web_admision",
     ),
     path(
         "comedores/<int:pk>/baja/",

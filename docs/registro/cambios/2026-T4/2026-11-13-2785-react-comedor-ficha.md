@@ -28,6 +28,21 @@
   la línea de tiempo, las tarjetas, las tablas de admisiones, las
   certificaciones, los colaboradores, las capacitaciones y los modales; la nómina y las
   tablas de intervenciones y observaciones siguen siendo fragmentos nativos.
+- **Comenzar Admisión.** `POST /api/web/comedores/comedores/<pk>/admision/`
+  (`web_api_comedor_admision.py`) corre `ComedorService.crear_admision_desde_comedor` para el
+  comedor que resuelve el alcance del usuario (fuera de alcance es 404), con el acceso de la
+  ficha nativa (sin permiso extra de alta, como pide el contrato). Responde 201 si creó la
+  admisión y 200 con el motivo si el servicio la rechazó (nómina directa, sin tipo,
+  renovación sin incorporación previa, incorporación activa o cuatro renovaciones activas);
+  en ambos casos el mensaje nativo queda en cola para la ficha a la que redirige. Solo lee
+  el tipo: `descartar_expediente` y el redirect territorial del `post` nativo no se
+  alcanzan por esta ruta.
+  `routes/comedorFichaAdmision.tsx` dibuja el modal «Seleccione el tipo de Admisión» que abre
+  el ítem «Comenzar Admisión» del menú, y la ficha muestra los mensajes en cola.
+- **Fuente, sin cambios.** La plantilla nativa actual no dibuja la tabla de admisiones ni el
+  modal «Descartar Expediente» (solo existe el armado del contexto y el `post` de
+  descartar): no se construyen controles sin origen. Si se vuelven a dibujar, la ruta de
+  descarte (solo superusuario) debe sumarse con sus pruebas de efecto persistido.
 - **React (parte superior de la ficha).** `src/frontends/apps/sisoc/src/routes/comedorFicha.tsx`
   dibuja la cabecera (acciones, menú «Acciones» y selector de convenios, con los menús como
   los de Bootstrap), la tarjeta de título y el acordeón horizontal de cuatro paneles con el
@@ -49,11 +64,16 @@
   401, 403 y requisito web pendiente con cabecera falsificada. Las pruebas reemplazan el
   doble automático de la carpeta para correr los servicios reales.
 
-- Vitest (10 pruebas del encabezado, la tarjeta y el acordeón), tsc, eslint y compilación
+- Pytest aislado, 10 pruebas de Comenzar Admisión: creación de incorporación y renovación,
+  cada rechazo con su mensaje y sin cambios, tipo ausente o vacío, nómina directa, que la
+  acción de descartar no se alcanza, 404, métodos, permisos, CSRF, 401 y 403 con cabecera
+  falsificada. Vitest (10 del encabezado y el acordeón y 8 del modal), tsc, eslint y compilación
   sin avisos. G1 con la ficha (200 y 403). Visual S13 de la parte superior (se recortan
   ambos lados después del acordeón, que son entregas siguientes) con una ruta de vista
   previa temporal que no se entrega: escritorio y móvil, también con el menú «Acciones»
-  abierto, sin diferencias de estructura ni de píxeles.
+  abierto, con el modal de admisión abierto y tras un rechazo (renovación sin incorporación
+  previa), sin diferencias de estructura ni de píxeles. La biblioteca toastr nativa no
+  carga sin red en el banco, por lo que los avisos se verifican con las pruebas unitarias.
 
 ## Limitaciones y diferencias conocidas
 

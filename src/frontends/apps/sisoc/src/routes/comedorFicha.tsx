@@ -1,5 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- the unit surface is this route module; its screens live here with the route. */
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { AdmisionModal } from "./comedorFichaAdmision";
+import { NativeToasts } from "./nativeParity";
 import { internal, record, renderMain, text, useMainResource } from "./MainFrame";
 import type { RouteDefinition } from "./types";
 
@@ -79,7 +81,7 @@ function Dropdown({ className, toggle, menuClass, children }: { className: strin
   return (
     <div className={className} ref={root}>
       <button className={`btn btn-md dropdown-toggle${open ? " show" : ""}`} type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{toggle}</button>
-      <ul className={`${menuClass}${open ? " show" : ""}`} style={open && offset ? { right: `${offset}px` } : undefined} {...(open ? { "data-bs-popper": "static" } : {})}>{children}</ul>
+      <ul className={`${menuClass}${open ? " show" : ""}`} style={open && offset ? { right: `${offset}px` } : undefined} onClick={(e) => { if ((e.target as HTMLElement).closest(".dropdown-item")) setOpen(false); }} {...(open ? { "data-bs-popper": "static" } : {})}>{children}</ul>
     </div>
   );
 }
@@ -398,10 +400,17 @@ export function FichaHero({ data }: { data: FichaData }) {
 
 // --- Page and route (not registered in `routes/index.ts` until the whole ficha is real) ------------
 
-function FichaPage({ id }: { id: string }) {
+export function FichaPage({ id }: { id: string }) {
   const [state] = useMainResource(`web/comedores/comedores/${id}/${window.location.search}`, fichaValid);
+  const [admision, setAdmision] = useState(false);
   return renderMain(state, "Cargando comedor…", (data) => ({
-    title: `Espacio Comunitario: ${data.nombre}`, breadcrumb: null, appHeader: <FichaHeaderBar header={data.header} />, content: <FichaHero data={data} />,
+    title: `Espacio Comunitario: ${data.nombre}`, breadcrumb: null,
+    appHeader: <FichaHeaderBar header={data.header} onComenzarAdmision={() => setAdmision(true)} />,
+    content: <>
+      <NativeToasts messages={data.messages as Parameters<typeof NativeToasts>[0]["messages"]} />
+      <FichaHero data={data} />
+      {admision && <AdmisionModal comedorId={data.id} close={() => setAdmision(false)} />}
+    </>,
   }));
 }
 

@@ -1895,6 +1895,11 @@
   "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
+  "name": "comedores_web_ficha",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
   "name": "comedores_web_formulario_crear",
   "namespace": "",
   "regex": "^api/web/comedores/comedores/formulario/\\Z"

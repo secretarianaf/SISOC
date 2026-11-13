@@ -3,6 +3,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { AdmisionModal } from "./comedorFichaAdmision";
 import { FichaTablero, tableroValid, type Tablero } from "./comedorFichaTablero";
 import { FichaBloques, bloquesValid, type Bloques } from "./comedorFichaBloques";
+import { NominaCard, IntervencionesObservaciones, RelacionesModales, relacionesValid, type Relaciones, type RelacionesModal } from "./comedorFichaRelaciones";
+import ComedorValidacion from "./comedorValidacion";
 import { TarjetasFila } from "./comedorFichaTarjetas";
 import { NativeToasts } from "./nativeParity";
 import { internal, record, renderMain, text, useMainResource } from "./MainFrame";
@@ -40,7 +42,7 @@ export type Acordeon = {
   relevamientos: { titulo: string; pnud: boolean; agregar?: string | null; actividades?: Actividad[]; puede_gestionar?: boolean } &
     Partial<{ donaciones: Marca[]; servicio: Marca[]; espacio: Marca[] }> & { actividades_anexo?: string[] };
 };
-export type FichaData = { id: number; nombre: string; header: FichaHeader; titulo: Titulo; acordeon: Acordeon; tablero: Tablero; messages: { message: string; level: string }[] } & Bloques;
+export type FichaData = { id: number; nombre: string; header: FichaHeader; titulo: Titulo; acordeon: Acordeon; tablero: Tablero; messages: { message: string; level: string }[] } & Bloques & Relaciones;
 
 const strs = (v: unknown, keys: string[]) => record(v) && keys.every((k) => typeof v[k] === "string");
 const list = (v: unknown, ok: (x: unknown) => boolean) => Array.isArray(v) && v.every(ok);
@@ -58,7 +60,7 @@ export function fichaValid(v: unknown): v is FichaData {
     record(a.ubicacion) && list(a.ubicacion.datos, (d) => strs(d, ["icon", "label", "value"])) &&
     record(a.responsables) && record(a.responsables.foto) && typeof a.responsables.foto.url === "string" &&
     record(a.prestaciones) && list(a.prestaciones.filas, (f) => record(f) && text(f.comida) && Array.isArray(f.valores)) &&
-    record(a.relevamientos) && text(a.relevamientos.titulo) && tableroValid(v.tablero) && bloquesValid(v);
+    record(a.relevamientos) && text(a.relevamientos.titulo) && tableroValid(v.tablero) && bloquesValid(v) && relacionesValid(v);
 }
 
 // --- `app-header` block ------------------------------------------------------------------------
@@ -406,15 +408,19 @@ export function FichaHero({ data }: { data: FichaData }) {
 export function FichaPage({ id }: { id: string }) {
   const [state] = useMainResource(`web/comedores/comedores/${id}/${window.location.search}`, fichaValid);
   const [admision, setAdmision] = useState(false);
+  const [validar, setValidar] = useState(false);
+  const [relacion, setRelacion] = useState<RelacionesModal>(null);
   return renderMain(state, "Cargando comedor…", (data) => ({
     title: `Espacio Comunitario: ${data.nombre}`, breadcrumb: null,
-    appHeader: <FichaHeaderBar header={data.header} onComenzarAdmision={() => setAdmision(true)} />,
+    appHeader: <FichaHeaderBar header={data.header} onValidar={() => setValidar(true)} onComenzarAdmision={() => setAdmision(true)} />,
     content: <>
       <NativeToasts messages={data.messages as Parameters<typeof NativeToasts>[0]["messages"]} />
       <FichaHero data={data} />
-      <FichaTablero data={data.tablero} rows={<TarjetasFila data={data.tablero} />} />
-      <FichaBloques data={data} />
+      <FichaTablero data={data.tablero} rows={<TarjetasFila data={data.tablero} />} aside={<NominaCard data={data.nomina} />} />
+      <FichaBloques data={data} intervenciones={<IntervencionesObservaciones i={data.intervenciones} o={data.observaciones} onModal={setRelacion} />} />
+      <RelacionesModales i={data.intervenciones} o={data.observaciones} modal={relacion} close={() => setRelacion(null)} />
       {admision && <AdmisionModal comedorId={data.id} close={() => setAdmision(false)} />}
+      {data.header.validar && <ComedorValidacion comedorId={data.id} open={validar} onClose={() => setValidar(false)} />}
     </>,
   }));
 }

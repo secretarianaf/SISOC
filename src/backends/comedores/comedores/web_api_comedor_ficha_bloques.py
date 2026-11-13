@@ -19,6 +19,7 @@ import json
 from django.template import Context, Template
 from django.urls import reverse
 
+from comedores.web_api_comedor_ficha_relaciones import relaciones
 from core.templatetags.custom_filters import has_perm_code
 
 LOAD = "{% load custom_filters %}"
@@ -157,6 +158,7 @@ def capacitaciones(context, comedor):
 def bloques(context, comedor, user):
     """The lower blocks, merged into the ficha payload."""
     return {
+        **relaciones(context, comedor),
         "certificaciones": certificaciones(context, comedor),
         "colaboradores": colaboradores(context, comedor, user),
         "interacciones": interacciones(context),

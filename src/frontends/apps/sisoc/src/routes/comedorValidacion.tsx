@@ -2,6 +2,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { accepted, internal, record, text, webClient } from "./MainFrame";
 import { NativeModal, NativeToasts } from "./nativeParity";
+import { useBodyLock, useModalOpenOff } from "./comedorFichaModal";
 import Select2, { type Choice } from "./select2";
 
 /**
@@ -25,7 +26,11 @@ export const comedorValidacionNavigation = { assign: (to: string) => window.loca
 
 const FAILED = { message: "No se pudo registrar la validación. Recargá la página para ver el estado actual.", level: "error" as const };
 const LOAD_FAILED = { message: "No se pudo cargar la validación del comedor. Recargá la página e intentá de nuevo.", level: "error" as const };
-const MODAL_CONTROLS = "button:not([disabled]),input:not([disabled]),textarea:not([disabled])";
+// Hidden inputs are never focusable: as the first control they would break the Tab wrap.
+const MODAL_CONTROLS = "button:not([disabled]),input:not([disabled]):not([type=hidden]),textarea:not([disabled])";
+// The native base template loads these for every page; the route has to bring them for the select2 look.
+const SELECT2_CSS = "https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/css/select2.min.css";
+const SELECT2_THEME_CSS = "/static/custom/css/select2_theme.css";
 
 function Header({ id, title, close }: { id: string; title: string; close: () => void }) {
   return (
@@ -37,6 +42,7 @@ function Header({ id, title, close }: { id: string; title: string; close: () => 
 }
 
 function ElegirModal({ busy, validar, noValidar, close }: { busy: boolean; validar: () => void; noValidar: () => void; close: () => void }) {
+  useBodyLock();
   return (
     <NativeModal id="modalValidacion" title="Validación del Comedor" close={close} busy={busy} size=" modal-dialog-centered" controls={MODAL_CONTROLS}>
       <div className="modal-content">
@@ -61,6 +67,7 @@ function NoValidarModal({ opciones, busy, submit, close }: { opciones: Choice[];
   const [comentario, setComentario] = useState("");
   const [parent, setParent] = useState<HTMLElement | null>(null);
   const otro = chosen.includes("otro");
+  useModalOpenOff();
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -71,6 +78,9 @@ function NoValidarModal({ opciones, busy, submit, close }: { opciones: Choice[];
   }
 
   return (
+    <>
+    <link rel="stylesheet" href={SELECT2_CSS} />
+    <link rel="stylesheet" href={SELECT2_THEME_CSS} />
     <NativeModal id="modalNoValidar" title="Motivos de No Validación" close={close} busy={busy} size=" modal-dialog-centered" controls={MODAL_CONTROLS}>
       <div className="modal-content">
         <form method="post" id="formNoValidar" onSubmit={onSubmit} noValidate ref={(el) => setParent(el?.closest<HTMLElement>(".modal") ?? null)}>
@@ -95,6 +105,7 @@ function NoValidarModal({ opciones, busy, submit, close }: { opciones: Choice[];
         </form>
       </div>
     </NativeModal>
+    </>
   );
 }
 

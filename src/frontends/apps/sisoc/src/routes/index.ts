@@ -2,6 +2,7 @@ import { accountRoute } from "./account";
 import { acompanamientosRoute } from "./acompanamientos";
 import { comedoresRoute } from "./comedores";
 import { comedorBajaRoute } from "./comedorBaja";
+import { comedorFichaRoute } from "./comedorFicha";
 import { comedorFormRoute } from "./comedorForm";
 import { comedorConvenioRoute } from "./comedorConvenio";
 import { comedorTarjetaRoute } from "./comedorTarjeta";
@@ -161,6 +162,7 @@ export const ROUTES: RouteDefinition[] = [
   acompanamientosRoute,
   comedoresRoute,
   comedorBajaRoute,
+  comedorFichaRoute,
   comedorFormRoute,
   comedorConvenioRoute,
   comedorTarjetaRoute,

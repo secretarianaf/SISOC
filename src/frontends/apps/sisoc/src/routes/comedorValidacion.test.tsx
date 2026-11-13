@@ -121,6 +121,20 @@ describe("Comedor validation modals (CO07.03)", () => {
     expect(body.get("next")).toBe("/comedores/7");
   });
 
+  it("the second modal shows without modal-open or the scroll lock (Bootstrap drops them when the first finishes hiding) and brings the select2 styles", async () => {
+    render(<Host />);
+    await open();
+    expect(document.body.classList.contains("modal-open")).toBe(true);
+    expect(document.body.style.overflow).toBe("hidden");
+    fireEvent.click(screen.getByRole("button", { name: "No Validar" }));
+    await screen.findByText("Motivos de No Validación", { selector: "h5" });
+    expect(document.body.classList.contains("modal-open")).toBe(false);
+    expect(document.body.style.overflow).toBe("");
+    expect([...document.querySelectorAll("link[rel=stylesheet]")].map((l) => l.getAttribute("href"))).toEqual([
+      "https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/css/select2.min.css", "/static/custom/css/select2_theme.css",
+    ]);
+  });
+
   it("drops the comment when «Otros» is unselected, as the native toggle does", async () => {
     webPost.mockResolvedValue({ status: 200, data: { redirect: "/comedores/7" } });
     render(<Host />);

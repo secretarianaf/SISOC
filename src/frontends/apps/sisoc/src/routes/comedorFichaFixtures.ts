@@ -1,3 +1,4 @@
+import type { Relaciones } from "./comedorFichaRelaciones";
 import type { Bloques } from "./comedorFichaBloques";
 import type { Tablero } from "./comedorFichaTablero";
 
@@ -39,5 +40,34 @@ export const bloquesFixture = (over: Partial<Bloques> = {}): Bloques => ({
       { id: 12, capacitacion: "Creación de Usuario en Plataforma Alimentar Comunidad", estado: "sin_presentar", archivo: null, observacion: "-", revisar: "/api/web/comedores/comedores/7/capacitaciones/12/estado/" },
       { id: 13, capacitacion: "Pautas de Higiene - Alimentar Comunidad", estado: "rechazado", archivo: null, observacion: "Ilegible", revisar: "/api/web/comedores/comedores/7/capacitaciones/13/estado/" },
     ],
+  }, ...over,
+});
+
+/** Synthetic nómina / interventions / observations keys of the ficha API for the unit tests. */
+export const relacionesFixture = (over: Partial<Relaciones> = {}): Relaciones => ({
+  nomina: { ver: "/comedores/7/admision/3/nomina/", pendiente: true, importar: "/comedores/7/admision/3/nomina/importar/", directa: false,
+    cifras: { asistentes: "10", hombres: "4", mujeres: "6", menores: "2", espera: "1", bajas: "0" } },
+  intervenciones: {
+    encabezados: ["Fecha", "Intervención", "Sub intervención", "Doc. adjunta", "Destinatario", "Usuario creador", "Acciones"],
+    filas: [[{ texto: "12/03/2026" }, { texto: "Entrevista" }, { texto: "-" }, { insignia: "bg-secondary", texto: "No" }, { texto: "Titular" }, { texto: "Ana Gómez" },
+      { acciones: [{ url: "/comedores/intervencion/9", clase: "btn btn-sm btn-primary", nueva_ventana: false, label: "Ver" }, { url: "/comedores/7/intervencion/9/eliminar", clase: "btn btn-sm btn-danger", nueva_ventana: false, label: "Eliminar" }] }]],
+    paginacion: { param: "intervenciones_page", anterior: null, siguiente: 2, paginas: [{ numero: 1, activa: true }, { numero: 2, activa: false }] }, resultados: 12,
+    convenios: [{ id: 3, texto: "C-1", cerrada: false, seleccionada: true }, { id: 4, texto: "Admisión #4", cerrada: true, seleccionada: false }],
+    modal: {
+      crear: "/api/web/comedores/intervenciones/comedor/7/crear/", formulario: "/comedores/intervencion/crear/7", subestados: "/api/web/comedores/intervenciones/subestados/", next: "/comedores/7?admision_id=3", admision_id: 3,
+      fecha: { id: "id_fecha", label: "Fecha", required: true },
+      tipo_intervencion: { id: "id_tipo_intervencion", label: "Tipo de Intervención", required: true, options: [{ value: "", label: "---------" }, { value: "1", label: "Entrevista" }] },
+      subintervencion: { id: "id_subintervencion", label: "Subtipo de Intervención", required: false, options: [{ value: "", label: "---------" }] },
+      destinatario: { id: "id_destinatario", label: "Destinatario", required: true, options: [{ value: "", label: "---------" }, { value: "2", label: "Titular" }] },
+      forma_contacto: { id: "id_forma_contacto", label: "Forma de Contacto", required: true, options: [{ value: "", label: "---------" }, { value: "3", label: "Telefonico" }] },
+      observaciones: { id: "id_observaciones", label: "Descripción", required: false }, tiene_documentacion: { id: "id_tiene_documentacion", label: "Documentación Adjunta" },
+      documentacion: { id: "id_documentacion", label: "Cargar Documentación" },
+    },
+  },
+  observaciones: {
+    encabezados: ["Fecha", "Observador", "Observación", "Acciones"],
+    filas: [[{ texto: "01/10/2026 10:30" }, { texto: "Ana" }, { texto: "Todo bien" }, { acciones: [{ url: "/comedores/observacion/5", clase: "btn btn-sm btn-primary", nueva_ventana: false, label: "Ver" }] }]],
+    paginacion: null, resultados: 1,
+    modal: { crear: "/api/web/comedores/observaciones/comedor/7/crear/", formulario: "/comedores/7/observacion/crear", next: "/comedores/7", campo: { id: "id_observacion", label: "Observación", required: true, rows: 4, placeholder: "Describa la observación" } },
   }, ...over,
 });

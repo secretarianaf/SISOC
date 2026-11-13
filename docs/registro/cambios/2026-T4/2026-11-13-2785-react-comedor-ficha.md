@@ -85,6 +85,24 @@
   (orden, búsqueda, tamaño de página, paginación) y las acciones Aceptar / Rechazar (con la fila
   de observación) llaman a la API de revisión y actualizan la fila en el lugar, con los `alert`
   de la página nativa.
+- **Ficha completa: nómina, intervenciones, observaciones, validación y registro de la ruta**
+  (`web_api_comedor_ficha_relaciones.py`, claves `nomina`, `intervenciones` y `observaciones`).
+  - La tarjeta «Nómina» (`routes/comedorFichaRelaciones.tsx`) dibuja «Ver nómina» según la
+    admisión seleccionada o la nómina directa, el aviso de nómina pendiente, las seis cifras y el
+    formulario «Importar del convenio anterior», que sigue siendo el POST nativo a `nomina_importar`
+    (con el token CSRF de la cookie); la vista de nómina nativa muestra el resultado.
+  - La tarjeta de pestañas Intervenciones / Observaciones dibuja las tablas de
+    `components/data_table.html` (celdas, insignias, acciones, «Volver / Continuar» con los
+    parámetros `intervenciones_page` y `observaciones_page`, y el selector de convenios con
+    `?admision_id=`). Los modales «Nueva intervención» (subtipos por la API de subestados,
+    validación de año, adjunto) y «Nueva observación» publican a las APIs de las vistas nativas de
+    alta (`intervenciones_web_crear`, `observaciones_web_crear`), por lo que la validación y el
+    efecto persistido son los nativos; con `next` vuelven a la ficha.
+  - «Validar» / «No validar» montan `routes/comedorValidacion.tsx` con `open` / `onClose`; el botón
+    del encabezado solo se dibuja si la API lo permite.
+  - Pruebas: `test_web_comedor_ficha_relaciones.py` (nómina, tablas, paginación, y el efecto
+    persistido y el rechazo sin cambios de ambos modales por las URL que publica la ficha),
+    `test_web_preview_comedor_ficha.py` y `comedorFichaRelaciones.test.tsx`.
 - **Fuente, sin cambios.** La plantilla nativa actual no dibuja la tabla de admisiones ni el
   modal «Descartar Expediente» (solo existe el armado del contexto y el `post` de
   descartar): no se construyen controles sin origen. Si se vuelven a dibujar, la ruta de
@@ -95,10 +113,10 @@
   ancho y el alto que calcula `newcomedor.js` (un panel abierto en escritorio, cada panel
   alterna en el celular). Los controles cuya acción es de una entrega posterior (el modal
   de validación y «Comenzar Admisión») se dibujan solo cuando la página les pasa su
-  acción, de modo que no hay controles inertes. La pantalla **no está registrada** en
-  `routes/index.ts` ni tiene ruta de vista previa: sale cuando toda la ficha sea real (la
-  nómina, las intervenciones y las observaciones reutilizarán los componentes React de sus
-  entregas).
+  acción, de modo que no hay controles inertes. La pantalla queda **registrada** en
+  `routes/index.ts` (`/comedores/<pk>`) y con su entrada de vista previa
+  (`DetailEntry` de `web_preview_comedores.py`) cuando la ficha completa es real (ver la
+  última entrega de este registro).
 
 ## Cómo se verificó
 
@@ -132,3 +150,24 @@
   propia todavía.
 - La proyección corre todo el contexto nativo de la ficha (como la página), por lo que su
   costo es el de la página actual.
+
+## Diferencias conocidas de la ficha completa
+
+- En el modal «Nueva intervención» / «Nueva observación», un rechazo del servidor (400) lleva a la
+  pantalla de alta del comedor (`modal.formulario`, la URL nativa a la que postea el modal) con
+  los valores y los errores, como la página nativa que recarga el formulario. Para eso la ficha
+  guarda el cuerpo del 400 (el mismo que devuelve el GET de esa pantalla) en `sessionStorage`
+  (`routes/comedorFichaRechazo.ts`) y la pantalla de alta lo toma una vez en lugar de pedir el
+  formulario vacío. **Falta del lado de esas pantallas** (`useMainResource` de `MainFrame.tsx`,
+  fuera de esta entrega): consumir `tomarRechazo(endpoint, valid)` antes del GET; sin ese cambio
+  la pantalla de alta se abre vacía. Un 403, un 400 sin cuerpo o un `sessionStorage` bloqueado
+  dejan el modal abierto con un aviso.
+- El segundo modal de «No validar» queda sin `modal-open` ni bloqueo de scroll en la página nativa
+  (Bootstrap los retira cuando termina de ocultarse el primero) y React lo reproduce. Diferencia de
+  24 px sin cerrar: el cuadro de selección múltiple vacío del modal «Motivos de No Validación» mide
+  24 px más en la página nativa (su `ul.select2-selection__rendered` ocupa una línea de 30 px y en
+  React no genera caja); no se encontró el origen en 8 minutos y ambas hojas de estilo son las mismas.
+- El colapsar de las tarjetas usa el módulo compartido de React porque el AdminLTE nativo no
+  carga en el banco de pruebas sin red; el comportamiento nativo no se pudo comparar ahí.
+- Las tablas de admisiones y «Descartar Expediente» no existen en la plantilla actual (ver
+  «Fuente, sin cambios»).

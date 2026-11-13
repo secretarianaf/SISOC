@@ -1193,3 +1193,17 @@ componente `comedorValidacion.tsx` reproduce los dos modales y lo monta la ficha
 `../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-validacion.md`,
 `../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-convenio.md` y
 `../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-tarjeta.md`.
+
+### Comedores sobre G1: ficha del comedor (CO07.01)
+
+`GET /api/web/comedores/comedores/<pk>/` (`web_api_comedor_ficha*.py`) corre `ComedorDetailView` y proyecta
+un bloque de `comedor_detail.html` por clave (`header`, `titulo`, `acordeon`, `tablero`, `certificaciones`,
+`colaboradores`, `interacciones`, `capacitaciones`, `nomina`, `intervenciones`, `observaciones`). La ruta
+`routes/comedorFicha.tsx` (`/comedores/<pk>`, vista previa `DetailEntry`) monta la tarjeta de nómina, las tablas y
+modales de intervenciones y observaciones (`comedorFichaRelaciones.tsx`), las tarjetas inferiores
+(`comedorFichaBloques.tsx`, `comedorFichaCapacitaciones.tsx`) y la validación (`comedorValidacion.tsx`). Aceptar o
+rechazar una capacitación publica a `POST .../<pk>/capacitaciones/<certificado_id>/estado/`.
+Un alta rechazada (400) desde los modales de intervención y observación lleva a la pantalla de alta del
+comedor con los valores y errores del servidor (`comedorFichaRechazo.ts`: el cuerpo del 400 espera en
+`sessionStorage` hasta que la pantalla de alta lo toma con `tomarRechazo`). Registro:
+`../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-ficha.md`.

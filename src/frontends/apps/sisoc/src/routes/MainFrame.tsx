@@ -1,4 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- frame module: hook, helpers and the frame renderer travel together. */
+import { tomarRechazo } from "./comedorFichaRechazo";
 import { useEffect, useState, type ReactElement, type ReactNode } from "react";
 import { crearCliente } from "@sisoc/api";
 import InsumosAccessError from "../InsumosAccessError";
@@ -45,7 +46,8 @@ export function useMainResource<T>(endpoint: string, valid: (v: unknown) => v is
     let active = true;
     const controller = new AbortController();
     const get = (url: string) => webClient.get(url, { signal: controller.signal, validateStatus: accepted });
-    Promise.all([get("web/session/"), get(endpoint)]).then(([session, page]) => {
+    const seeded = tomarRechazo(endpoint, valid);
+    Promise.all([get("web/session/"), seeded ? Promise.resolve({ status: 200, data: seeded }) : get(endpoint)]).then(([session, page]) => {
       if (!active) return;
       const denied = [page, session].find((r) => r.status === 403);
       if (denied) setState({ status: "forbidden", prerequisite: prerequisiteFromForbidden(denied.data) });

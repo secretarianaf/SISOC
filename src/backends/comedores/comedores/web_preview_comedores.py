@@ -20,6 +20,7 @@ from core.decorators import permissions_any_required
 from comedores.views.comedor import (
     ComedorCreateView,
     ComedorDeleteView,
+    ComedorDetailView,
     ComedorListView,
     ComedorUpdateView,
 )
@@ -73,6 +74,16 @@ class DeleteEntry(ComedorDeleteView):
         return _index(request, self.index_bytes)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class DetailEntry(ComedorDetailView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        # Scoped lookup: a comedor outside the user's scope is the native 404.
+        self.object = self.get_object()
+        return _index(request, self.index_bytes)
+
+
 def comedores_preview_patterns(build_directory):
     """Freeze an explicit local ``apps/sisoc`` build for a disposable preview URLconf."""
     original = Path(build_directory)
@@ -90,6 +101,13 @@ def comedores_preview_patterns(build_directory):
             "comedores/listar",
             permissions_any_required(LIST_PERMISSIONS)(
                 ListEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "comedores/<int:pk>",
+            # The native route of the ficha: any of the same three permissions as the list.
+            permissions_any_required(LIST_PERMISSIONS)(
+                DetailEntry.as_view(index_bytes=index_bytes)
             ),
         ),
         path(

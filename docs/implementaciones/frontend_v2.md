@@ -693,6 +693,13 @@ vertical, dibuja `SisocShell` y agrega el botón «Consultas» de la cabecera.
   secciones plegables, el progreso, la edad, la geografía y los tres bloques RENAPER, y envía una sola vez
   solo los campos que el template dibuja. Las entradas de vista previa están en
   `centrodeinfancia/web_preview_destinatario.py`.
+- `/centrodeinfancia/crear` y `/centrodeinfancia/editar/<centro>` (`routes/cdiCentroForm.tsx`,
+  `cdiCentroFormBehavior.ts` y `cdiCentroFormMapa.tsx`, CDI09): alta y edición del centro sobre
+  `CentroDeInfanciaCreateView` y `CentroDeInfanciaUpdateView` mediante `web_api_centro_form.py`
+  (permisos de la URL, alcance, veto CDI-A3 y aprovisionamiento del referente nativos). La pantalla
+  dibuja las cuatro tarjetas, los horarios por día, la geografía en cascada, el editor de pin del mapa
+  y el bloque RENAPER del referente, y envía una sola vez solo los campos que el template dibuja.
+  Entradas de vista previa en `centrodeinfancia/web_preview_centro_form.py`.
 
 El menú lateral de `SisocShell` y `ClaroFrame` dibuja los grupos anidados con el
 marcado de cada nivel del template y los abre y resalta con las mismas

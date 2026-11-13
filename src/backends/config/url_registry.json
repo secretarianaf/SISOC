@@ -870,6 +870,11 @@
   "regex": "^comedores/(?P<comedor_id>[0-9]+)/territoriales/sincronizar/\\Z"
  },
  {
+  "name": "audittrail_web_historial",
+  "namespace": "",
+  "regex": "^api/web/auditoria/(?P<app_label>[^/]+)/(?P<model_name>[^/]+)/(?P<object_pk>[^/]+)/\\Z"
+ },
+ {
   "name": "aval_crear",
   "namespace": "",
   "regex": "^organizaciones/aval/crear/(?P<organizacion_pk>[0-9]+)\\Z"

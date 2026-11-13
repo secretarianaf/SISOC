@@ -69,6 +69,7 @@ _OWNED_PATTERNS = (
     r"|evaluaciones/(?:nueva/|[0-9]+/(?:editar/|eliminar/)?)?"
     r"|resultados-evaluacion/(?:nuevo/|[0-9]+/(?:editar/|eliminar/)?)?"
     r"|reportes/inscripciones-asistencias/)",
+    r"/api/web/auditoria/[a-z_]+/[a-z_]+/[^/]+/",
     r"/api/web/(?:comedores|cdf|celiaquia|vat)/ciudadanos/[0-9]+/aportes/[a-z]+/",
 )
 

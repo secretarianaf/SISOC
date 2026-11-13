@@ -904,6 +904,11 @@ El alta y la edición de un ciudadano (C05.02) son `routes/ciudadanoForm.tsx` so
 corre las vistas nativas; RENAPER solo se simula en las pruebas). Ver
 `docs/registro/cambios/2026-T4/2026-11-12-2785-react-ciudadano-form.md`.
 
+El historial de auditoría de una instancia es `routes/ciudadanoHistorial.tsx` sobre
+`/api/web/auditoria/<app>/<modelo>/<pk>/` (`audittrail.web_historial`, que corre la vista
+nativa; la exportación sigue siendo el `GET` nativo). Ver
+`docs/registro/cambios/2026-T4/2026-11-13-2785-react-ciudadano-historial.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

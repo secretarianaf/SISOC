@@ -26,8 +26,10 @@ from usuarios.views import (
     GroupListView,
     GroupUpdateView,
     UserActiveView,
+    UserCreateView,
     UserDeleteView,
     UserListView,
+    UserUpdateView,
 )
 from usuarios.views_user_import import UserImportJobCreateView, UserImportJobDetailView
 
@@ -203,6 +205,20 @@ class UserActivateEntry(_IdentityEntry, UserActiveView):
         return super().get(request, *args, **kwargs)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class UserCreateEntry(_IdentityEntry, UserCreateView):
+    """Local form GET; the Comedores forward of the native entry is not served."""
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class UserUpdateEntry(_IdentityEntry, UserUpdateView):
+    """Resolve the in-scope user (404) before serving the local React form."""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().get(request, *args, **kwargs)
+
+
 class IdentityAssetView(View):
     """Serve only frozen build assets; no request data reaches a static upstream."""
 
@@ -290,6 +306,18 @@ def identity_preview_patterns(build_directory):
             "usuarios/",
             permissions_any_required(["auth.view_user"])(
                 UserListEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "usuarios/crear/",
+            permissions_any_required(["auth.add_user"])(
+                UserCreateEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "usuarios/editar/<int:pk>/",
+            permissions_any_required(["auth.change_user"])(
+                UserUpdateEntry.as_view(index_bytes=index_bytes)
             ),
         ),
         path(

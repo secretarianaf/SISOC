@@ -23,6 +23,7 @@ from usuarios.web_password_reset import (
     WebPasswordResetView,
 )
 from usuarios.web_required_password import RequiredPasswordChangeWebView
+from usuarios.web_user_form import WebUserCreateView, WebUserUpdateView
 from usuarios.web_users import (
     WebUserActivateView,
     WebUserDeactivateView,
@@ -49,6 +50,8 @@ urlpatterns = [
     path("users/import/", include("usuarios.web_user_import_urls")),
     path("users/bulk-credentials/", include("usuarios.web_bulk_credentials_urls")),
     path("users/list/", WebUserListView.as_view(), name="web_users"),
+    path("users/create/", WebUserCreateView.as_view(), name="web_user_create"),
+    path("users/<int:pk>/edit/", WebUserUpdateView.as_view(), name="web_user_edit"),
     path(
         "users/<int:pk>/deactivate/",
         WebUserDeactivateView.as_view(),

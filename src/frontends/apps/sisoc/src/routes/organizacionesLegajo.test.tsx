@@ -99,6 +99,17 @@ describe("Organizaciones legajo route", () => {
     expect(screen.getByRole("link", { name: "Editar aval" }).getAttribute("href")).toBe("/organizaciones/aval/editar/3");
   });
 
+  it("mounts the región section in its placeholder", async () => {
+    serve(legajo({
+      html: '<div data-legajo-seccion="0"></div><p id="after">Después</p>',
+      sections: [{ kind: "region", can_manage: false, edit_url: null, has_data: true, region: "R", subzona: "S", territorials: [] }],
+    }));
+    window.history.replaceState({}, "", "/organizaciones/detalle/8");
+    render(<App />);
+    expect(await screen.findByRole("heading", { level: 5, name: "Datos de Región" })).toBeTruthy();
+    expect(document.querySelector("[data-legajo-seccion='0']")?.nextElementSibling?.id).toBe("after");
+  });
+
   it("mounts the documents section next to the convenios one, each in its own placeholder", async () => {
     serve(legajo({
       html: '<div data-legajo-seccion="0"></div><hr id="mid"><div data-legajo-seccion="1"></div>',

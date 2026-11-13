@@ -16,6 +16,7 @@ from gestion_organizaciones.web_api_documentos import (
     VencimientoWebView,
 )
 from gestion_organizaciones.web_api_firmantes import vistas
+from gestion_organizaciones import web_api_legajo  # pylint: disable=unused-import
 from gestion_organizaciones.web_api_rendiciones import RendicionDetalleWebView
 from gestion_organizaciones.web_api_abm import (
     OrganizacionBajaWebView,

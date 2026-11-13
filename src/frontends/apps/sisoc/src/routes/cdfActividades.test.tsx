@@ -137,8 +137,10 @@ describe("CDF activity ficha route", () => {
     serve(pagina({ promo_error: true }), `${URL_API}?promo_error=1`);
     setup("/centrodefamilia/centros/actividades/9/detalle/?promo_error=1");
     await screen.findByRole("dialog", { hidden: true });
-    fireEvent.keyDown(document, { key: "Escape" });
-    await waitFor(() => expect(document.querySelector("#promoErrorModal")).toBeNull());
+    await waitFor(() => {
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(document.querySelector("#promoErrorModal")).toBeNull();
+    });
   });
 
   it("shows the queued flash message as a toast at the end of the body", async () => {

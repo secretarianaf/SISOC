@@ -42,6 +42,7 @@ import { cdfActividadFormRoute } from "./cdfActividadForm";
 import { cdfActividadListRoute } from "./cdfActividadList";
 import { cdfActividadRoute } from "./cdfActividades";
 import { cdfAsistenciaRoute } from "./cdfAsistencia";
+import { cdiUsuariosGenerarRoute } from "./cdiUsuariosGenerar";
 import { cdfBeneficiariosRoute } from "./cdfBeneficiarios";
 import { cdfParticipantesRoute } from "./cdfParticipantes";
 import { cdfCentroFormRoute } from "./cdfCentroForm";
@@ -134,6 +135,7 @@ export const ROUTES: RouteDefinition[] = [
   cdiDocumentacionRoute,
   cdiTrabajadorRoute,
   cdiTrabajadorFormRoute,
+  cdiUsuariosGenerarRoute,
   cdfCentrosRoute,
   cdfCentroFormRoute,
   dispositivosRoute,

@@ -5,6 +5,7 @@ import { ConveniosSection, conveniosSectionValid } from "./organizacionConvenio"
 import { DocumentosSection, documentosSectionValid } from "./organizacionDocumentos";
 import { AvalesSection, avalesSectionValid, FirmantesSection, firmantesSectionValid } from "./organizacionFirmantes";
 import { RendicionesFiltro, rendicionesFiltroValid, RendicionesTable, rendicionesSectionValid } from "./organizacionRendiciones";
+import { ComedoresSection, comedoresSectionValid, ProyectosSection, proyectosSectionValid, RegionSection, regionSectionValid } from "./organizacionLegajoDatos";
 import { FlashToasts } from "./organizacionesForm";
 import { safeInternalPath } from "../webAccess";
 import { record, renderMain, text, useMainResource } from "./MainFrame";
@@ -60,6 +61,9 @@ function sectionView(section: LegajoSection): ReactNode {
   if (section.kind === "avales" && avalesSectionValid(section)) return <AvalesSection section={section} />;
   if (section.kind === "rendiciones" && rendicionesSectionValid(section)) return <RendicionesTable section={section} />;
   if (section.kind === "rendiciones_filtro" && rendicionesFiltroValid(section)) return <RendicionesFiltro section={section} />;
+  if (section.kind === "region" && regionSectionValid(section)) return <RegionSection section={section} />;
+  if (section.kind === "proyectos" && proyectosSectionValid(section)) return <ProyectosSection section={section} />;
+  if (section.kind === "comedores" && comedoresSectionValid(section)) return <ComedoresSection section={section} />;
   return null;
 }
 

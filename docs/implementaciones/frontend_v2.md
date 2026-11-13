@@ -518,6 +518,13 @@ nativas: el alcance del actor, los filtros, las columnas y el cambio de estado
 (`is_active`) siguen siendo suyos; React solo proyecta. Registro:
 `../registro/cambios/2026-T4/2026-11-13-2785-react-usuarios-listado.md`.
 
+El alta y la edición de usuarios (`/usuarios/crear/` y `/usuarios/editar/<id>/`)
+tienen su transporte de sesión en `/api/web/users/create/` y
+`/api/web/users/<id>/edit/` (`usuarios/web_user_form.py`, sobre las vistas y el
+formulario nativos); la pantalla React se registra al completar el formulario.
+Detalle en
+`../registro/cambios/2026-T4/2026-11-13-2785-react-usuarios-formulario.md`.
+
 ### Agregar una pantalla React en `apps/sisoc`
 
 `App.tsx` no conoce pantallas: recorre `ROUTES` de
@@ -661,6 +668,12 @@ vertical, dibuja `SisocShell` y agrega el botón «Consultas» de la cabecera.
   (`web_api_trabajador_form.py` ejecuta las vistas nativas, con aprovisionamiento y veto CDI-A3)
   y los scripts de la plantilla corren como comportamiento del formulario. El POST es
   urlencoded, único y sin reintento.
+- `/centrodeinfancia/<centro>/generar-usuario/` (`routes/cdiUsuariosGenerar.tsx`, CDI01.01):
+  generar usuario referente sobre `GenerarUsuarioCDIView`. La contraseña temporal solo viaja en la
+  respuesta (`no-store`) del POST que crea el usuario y vive en el estado del componente, nunca en
+  almacenamiento, URL ni historial. El bloque RENAPER compartido (`routes/cdiRenaperBloque.tsx`:
+  agregar, DNI, verificado y manual, token firmado) consulta `/api/web/cdi/renaper/<bloque>/`, siempre
+  simulado en las pruebas.
 
 El menú lateral de `SisocShell` y `ClaroFrame` dibuja los grupos anidados con el
 marcado de cada nivel del template y los abre y resalta con las mismas
@@ -678,6 +691,7 @@ Registros:
 `../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-documentacion.md`.
 `../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-trabajador-ficha.md` y
 `../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-trabajador-form.md`.
+`../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-renaper-generar-usuario.md`.
 ### Vertical remoto sobre G1: Duplas (equipo técnico) de Comedores
 
 Segunda aplicación del patrón, ahora con el marco nativo `includes/main.html`
@@ -1093,6 +1107,12 @@ Organizaciones (legajo, avales): la tabla «Avales» del legajo, que es marcado 
 y no un include, llega como sección `avales` y React la monta en su marcador; los
 marcadores usan `display: contents` para no alterar el diseño del contenedor. Ver
 [registro](../registro/cambios/2026-T4/2026-11-13-2785-react-organizaciones-legajo-avales.md).
+Organizaciones (legajo, avales y datos): la tabla «Avales» del legajo, que es marcado en línea
+y no un include, y los bloques de datos (región, proyectos, comedores) llegan como
+secciones y React las monta en su marcador; los marcadores usan `display: contents`
+para no alterar el diseño del contenedor. Ver
+[registro](../registro/cambios/2026-T4/2026-11-13-2785-react-organizaciones-legajo-avales.md) y
+[registro de datos](../registro/cambios/2026-T4/2026-11-13-2785-react-organizaciones-legajo-datos.md).
 
 Cruces y novedades PAS (PAS03, `routes/pasCruces.tsx`) toma `/pas/cruces`; la
 proyección sale de `/api/web/pas/cruces/`

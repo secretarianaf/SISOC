@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-11-13 -->
+# Versión SISOC 13.11.2026
+
+## Corrección de Errores
+
+- [Usuarios / DataCalle.] guardar el grupo coordinador junto con rol y provincia validada. (PR #2909)
+<!-- AUTO-GENERATED RELEASE END: 2026-11-13 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-11-11 -->
 # Versión SISOC 11.11.2026
 

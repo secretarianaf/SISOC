@@ -72,7 +72,7 @@ _OWNED_PATTERNS = (
     r"|reportes/inscripciones-asistencias/)",
     r"/api/web/auditoria/(?:listado/|evento/[0-9]+/|[a-z_]+/[a-z_]+/[^/]+/)",
     r"/api/web/auditoria/[a-z_]+/[a-z_]+/[^/]+/",
-    r"/api/web/comedores/comedores/(?:[0-9]+/baja/)?",
+    r"/api/web/comedores/comedores/(?:formulario/|crear/|[0-9]+/(?:baja/|formulario/|editar/))?",
     r"/api/web/(?:comedores|cdf|celiaquia|vat)/ciudadanos/[0-9]+/aportes/[a-z]+/",
 )
 

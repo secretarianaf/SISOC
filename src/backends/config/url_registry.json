@@ -1885,6 +1885,26 @@
   "regex": "^api/web/comedores/ciudadanos/(?P<pk>[0-9]+)/aportes/(?P<aporte>[^/]+)/\\Z"
  },
  {
+  "name": "comedores_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/crear/\\Z"
+ },
+ {
+  "name": "comedores_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "comedores_web_formulario_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/formulario/\\Z"
+ },
+ {
+  "name": "comedores_web_formulario_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/formulario/\\Z"
+ },
+ {
   "name": "comedores_web_listado",
   "namespace": "",
   "regex": "^api/web/comedores/comedores/\\Z"

@@ -6,6 +6,7 @@ import { comedorFormRoute } from "./comedorForm";
 import { comedorConvenioRoute } from "./comedorConvenio";
 import { comedorTarjetaRoute } from "./comedorTarjeta";
 import { comedorNominaRoute } from "./comedorNomina";
+import { comedorAsistenciaHistorialRoute } from "./comedorAsistenciaHistorial";
 import { actividadesPnudRoute } from "./actividadesPnud";
 import { admisionesTemplatesRoute } from "./admisionesTemplates";
 import { admisionesInformeDetalleRoute } from "./admisionesInformeDetalle";
@@ -144,6 +145,7 @@ export const ROUTES: RouteDefinition[] = [
   comedorConvenioRoute,
   comedorTarjetaRoute,
   comedorNominaRoute,
+  comedorAsistenciaHistorialRoute,
   expedientesPagosRoute,
   rendicionMensualRoute,
   rendicionFinalRoute,

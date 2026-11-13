@@ -939,6 +939,13 @@ derivación son `POST` de `comedores.web_api_nomina_acciones` sobre las funcione
 siendo las rutas nativas hasta sus entregas. Ver
 `docs/registro/cambios/2026-T4/2026-11-13-2785-react-comedor-nomina-lectura.md`.
 
+El historial de asistencia de la nómina (CO01, `/comedores/<id>/admision/<admision>/nomina/asistencia/`) es
+`routes/comedorAsistenciaHistorial.tsx` sobre
+`/api/web/comedores/comedores/<id>/admision/<admision>/nomina/asistencia/`
+(`comedores.web_api_asistencia_historial`, que corre `NominaAsistenciaHistorialView`). Solo lee: la asistencia la
+registra la PWA y el PDF mensual sigue siendo un enlace nativo al archivo. Ver
+`docs/registro/cambios/2026-T4/2026-11-13-2785-react-comedor-asistencia-historial.md`.
+
 Los colaboradores de un comedor (CO03.01, `/comedores/<id>/colaboradores/crear/` y
 `/comedores/<id>/colaboradores/<colaborador>/editar/`) son `routes/comedorColaboradores.tsx` sobre
 `/api/web/comedores/colaboradores/comedor/<id>/` (`comedores.web_api_colaboradores`, que corre el `dispatch` de

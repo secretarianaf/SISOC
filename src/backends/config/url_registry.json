@@ -1985,6 +1985,11 @@
   "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/admision/(?P<admision_pk>[0-9]+)/nomina/\\Z"
  },
  {
+  "name": "comedores_web_nomina_asistencia_historial",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/admision/(?P<admision_pk>[0-9]+)/nomina/asistencia/\\Z"
+ },
+ {
   "name": "comedores_web_nomina_cambiar_estado",
   "namespace": "",
   "regex": "^api/web/comedores/comedores/nomina/(?P<pk>[0-9]+)/cambiar\\-estado/\\Z"

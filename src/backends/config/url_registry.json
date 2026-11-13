@@ -1940,6 +1940,26 @@
   "regex": "^api/web/comedores/montos/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
+  "name": "comedores_web_nomina_admision",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/admision/(?P<admision_pk>[0-9]+)/nomina/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_cambiar_estado",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/nomina/(?P<pk>[0-9]+)/cambiar\\-estado/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_derivar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/nomina/(?P<pk>[0-9]+)/derivar/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_directa",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/nomina/\\Z"
+ },
+ {
   "name": "comunicados",
   "namespace": "",
   "regex": "^comunicados/\\Z"

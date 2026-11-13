@@ -932,6 +932,13 @@ exportación y los formularios siguen nativos) y la baja es `routes/comedorBaja.
 `ComedorUpdateView`). Ver
 `docs/registro/cambios/2026-T4/2026-11-13-2785-react-comedor-listado.md`.
 
+La nómina de un comedor (CO01, `/comedores/<id>/admision/<admision>/nomina/` y `/comedores/<id>/nomina/`) es
+`routes/comedorNomina.tsx` sobre `/api/web/comedores/comedores/<id>/[admision/<admision>/]nomina/`
+(`comedores.web_api_nomina`, que corre `NominaDetailView` y `NominaDirectaDetailView`). El cambio de estado y la
+derivación son `POST` de `comedores.web_api_nomina_acciones` sobre las funciones nativas; la baja y el alta siguen
+siendo las rutas nativas hasta sus entregas. Ver
+`docs/registro/cambios/2026-T4/2026-11-13-2785-react-comedor-nomina-lectura.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

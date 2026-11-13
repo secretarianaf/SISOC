@@ -9,7 +9,6 @@ from comedores.utils import (
     is_abordaje_comunitario_linea_tradicional_program,
 )
 
-
 PRESTACIONES_APROBADAS_DIAS = (
     "lunes",
     "martes",

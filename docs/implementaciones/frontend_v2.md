@@ -1077,3 +1077,17 @@ ejecutan `VoucherParametriaDetailView`, `VoucherParametriaAsignarView` y `Vouche
 (`_asignar_desde_parametria`, servicio y mensajes nativos) y el POST devuelve `{"ok": true, "redirect": <detalle>}`;
 el mensaje se muestra al recargar el detalle, como la redirección nativa. Ruta React: `vatParametriaDetalle.tsx`.
 Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-vat-parametria-detalle.md`.
+
+Las intervenciones y observaciones de comedor (CO02, CO06) usan `src/backends/comedores/intervenciones/web_api.py`,
+`web_api_formulario.py` y `web_api_baja.py` bajo `/api/web/comedores/intervenciones/` (listado `comedor/<pk>/`, ficha `<pk>/`,
+baja de archivo `<pk>/documentacion/eliminar/`, alta `comedor/<pk>/crear/`, edición `<pk>/editar/<pk2>/`, subtipos `subestados/`
+y baja `comedor/<comedor_id>/baja/<intervencion_id>/`) y `src/backends/comedores/comedores/web_api_observaciones.py` bajo
+`/api/web/comedores/observaciones/` (`comedor/<comedor_pk>/crear/`, `<pk>/`, `<pk>/editar/`, `<pk>/eliminar/`). Ejecutan las
+vistas nativas con los permisos de sus URLs (las intervenciones sin alcance por comedor, como el nativo; las observaciones con el
+alcance del usuario) y los POST devuelven `{"ok": true, "redirect": ...}` o 400 con el formulario ligado. Rutas React:
+`comedorIntervenciones.tsx`, `comedorIntervencionesForm.tsx`, `comedorIntervencionesBaja.tsx` (componente de baja compartido) y
+`comedorObservaciones.tsx`. Registros:
+`../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-intervenciones-lectura.md`,
+`../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-intervenciones-formulario.md`,
+`../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-intervenciones-baja.md` y
+`../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-observaciones.md`.

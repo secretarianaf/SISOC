@@ -24,6 +24,8 @@ urlpatterns = [
     path("expedientespagos/", include("expedientespagos.web_api_urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.web_api_urls")),
     path("comunicados/", include("comunicados.web_api_urls")),
+    path("intervenciones/", include("intervenciones.web_api_urls")),
+    path("observaciones/", include("comedores.web_api_observaciones_urls")),
     path(
         "rendicion_cuentas_final/",
         include("rendicioncuentasfinal.web_api_urls"),

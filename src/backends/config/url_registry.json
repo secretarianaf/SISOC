@@ -3300,6 +3300,41 @@
   "regex": "^intervencion/detalle/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "intervenciones_web_archivo_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/intervenciones/(?P<pk>[0-9]+)/documentacion/eliminar/\\Z"
+ },
+ {
+  "name": "intervenciones_web_baja",
+  "namespace": "",
+  "regex": "^api/web/comedores/intervenciones/comedor/(?P<comedor_id>[0-9]+)/baja/(?P<intervencion_id>[0-9]+)/\\Z"
+ },
+ {
+  "name": "intervenciones_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/intervenciones/comedor/(?P<pk>[0-9]+)/crear/\\Z"
+ },
+ {
+  "name": "intervenciones_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/intervenciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "intervenciones_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/intervenciones/(?P<pk>[0-9]+)/editar/(?P<pk2>[0-9]+)/\\Z"
+ },
+ {
+  "name": "intervenciones_web_listado",
+  "namespace": "",
+  "regex": "^api/web/comedores/intervenciones/comedor/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "intervenciones_web_subestados",
+  "namespace": "",
+  "regex": "^api/web/comedores/intervenciones/subestados/\\Z"
+ },
+ {
   "name": "legajo_archivo_upload",
   "namespace": "",
   "regex": "^celiaquia/expedientes/(?P<expediente_id>[0-9]+)/ciudadanos/(?P<pk>[0-9]+)/archivo/\\Z"
@@ -3488,6 +3523,26 @@
   "name": "observacion_eliminar",
   "namespace": "",
   "regex": "^comedores/observacion/(?P<pk>[0-9]+)/eliminar\\Z"
+ },
+ {
+  "name": "observaciones_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/observaciones/comedor/(?P<comedor_pk>[^/]+)/crear/\\Z"
+ },
+ {
+  "name": "observaciones_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/observaciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "observaciones_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/observaciones/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "observaciones_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/observaciones/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
   "name": "ocr_document_download",

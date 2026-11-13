@@ -1242,6 +1242,13 @@ Ruta React: `vatAsistencia.tsx` (más `vatTour.tsx`, el menú de ayuda compartid
 `../plans/2026-T4/2026-11-13-2785-vat-v02-v07-m2.md`. Registro:
 `../registro/cambios/2026-T4/2026-11-13-2785-react-vat-asistencia.md`.
 
+Las inscripciones a comisiones de oferta (V03.01) usan `GET .../vat/inscripciones-oferta/` y `.../<pk>/` y `GET` y
+`POST .../nueva/`, `.../<pk>/editar/` y `.../<pk>/eliminar/` (`src/backends/vat/VAT/web_api_inscripcion_oferta.py`):
+ejecutan las vistas nativas `InscripcionOferta{List,Detail,Create,Update,Delete}View` con el permiso de cada ruta; el
+POST devuelve `{"ok": true, "redirect": <lista>}` o 400 con los campos, los errores generales y los mensajes nativos
+encolados (el alta pasa por `InscripcionService.crear_inscripcion_oferta`). Rutas React: `vatInscripcionOferta.tsx` y
+`vatInscripcionOfertaForm.tsx`. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-vat-inscripcion-oferta.md`.
+
 Las intervenciones y observaciones de comedor (CO02, CO06) usan `src/backends/comedores/intervenciones/web_api.py`,
 `web_api_formulario.py` y `web_api_baja.py` bajo `/api/web/comedores/intervenciones/` (listado `comedor/<pk>/`, ficha `<pk>/`,
 baja de archivo `<pk>/documentacion/eliminar/`, alta `comedor/<pk>/crear/`, edición `<pk>/editar/<pk2>/`, subtipos `subestados/`

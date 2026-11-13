@@ -15540,6 +15540,31 @@
   "regex": "^api/web/vat/inscripciones/\\Z"
  },
  {
+  "name": "inscripciones-oferta-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-oferta/nueva/\\Z"
+ },
+ {
+  "name": "inscripciones-oferta-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-oferta/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "inscripciones-oferta-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-oferta/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "inscripciones-oferta-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-oferta/\\Z"
+ },
+ {
+  "name": "inscripciones-oferta-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-oferta/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
   "name": "planes-delete-preview",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/planes/(?P<pk>[0-9]+)/delete\\-preview/\\Z"

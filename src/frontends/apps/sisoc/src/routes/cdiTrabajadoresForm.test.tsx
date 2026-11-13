@@ -150,8 +150,10 @@ describe("CDI worker form route", () => {
     serve(data());
     setup();
     await screen.findByRole("heading", { name: "Institución" });
-    fireEvent.input($("id_fecha_carga"), { target: { value: "2026-09-01" } });
-    expect($("status-espacio_temporal").className).toBe("status-badge complete");
+    await waitFor(() => {
+      fireEvent.input($("id_fecha_carga"), { target: { value: "2026-09-01" } });
+      expect($("status-espacio_temporal").className).toBe("status-badge complete");
+    });
     expect($("status-espacio_temporal").textContent).toContain("Completada");
     expect($("completedSections").textContent).toBe("1");
     expect($("progressBarFill").style.width).toContain("%");

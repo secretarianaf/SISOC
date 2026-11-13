@@ -8,6 +8,13 @@ from ciudadanos.web_aportes import AporteCiudadanoWebView
 from VAT import api_inet_views as views
 from VAT.services.inet_forms import FORM_CLASSES
 from VAT.services.inet_queries import RESOURCES
+from VAT.web_api_inscripcion_oferta import (
+    InscripcionOfertaCreateWebView,
+    InscripcionOfertaDeleteWebView,
+    InscripcionOfertaDetailWebView,
+    InscripcionOfertaListWebView,
+    InscripcionOfertaUpdateWebView,
+)
 from VAT.web_api_asistencia import (
     AsistenciaSesionCursoWebView,
     AsistenciaSesionOfertaWebView,
@@ -245,5 +252,34 @@ urlpatterns += [
         "comisiones/sesiones/<int:pk>/asistencia/",
         AsistenciaSesionOfertaWebView.as_view(),
         name="asistencia-sesion-oferta",
+    ),
+]
+
+# V03.01 inscripciones a comisiones de oferta (vistas nativas).
+urlpatterns += [
+    path(
+        "inscripciones-oferta/nueva/",
+        InscripcionOfertaCreateWebView.as_view(),
+        name="inscripciones-oferta-create",
+    ),
+    path(
+        "inscripciones-oferta/<int:pk>/editar/",
+        InscripcionOfertaUpdateWebView.as_view(),
+        name="inscripciones-oferta-update",
+    ),
+    path(
+        "inscripciones-oferta/<int:pk>/eliminar/",
+        InscripcionOfertaDeleteWebView.as_view(),
+        name="inscripciones-oferta-delete",
+    ),
+    path(
+        "inscripciones-oferta/",
+        InscripcionOfertaListWebView.as_view(),
+        name="inscripciones-oferta-list",
+    ),
+    path(
+        "inscripciones-oferta/<int:pk>/",
+        InscripcionOfertaDetailWebView.as_view(),
+        name="inscripciones-oferta-detail",
     ),
 ]

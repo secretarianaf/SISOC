@@ -72,3 +72,20 @@ def test_export_and_create_stay_native(lector):
 def test_build_without_index_is_refused(tmp_path):
     with pytest.raises(ValueError):
         comedores_preview_patterns(tmp_path)
+
+
+@pytest.mark.usefixtures("preview")
+def test_baja_entry_gets_the_index_after_the_native_guard_and_scope():
+    comedor = Comedor.objects.create(nombre="Para baja")
+    gestor = get_user_model().objects.create_user("gestor_preview_baja")
+    gestor.user_permissions.add(Permission.objects.get(codename="delete_comedor"))
+    client = Client()
+    client.force_login(gestor)
+    url = f"/comedores/{comedor.pk}/eliminar"
+
+    assert client.get(url).status_code == 200
+    assert client.get("/comedores/999999/eliminar").status_code == 404
+    assert Client().get(url).status_code in (302, 403)
+    # The POST reaches the native view: the baja itself is native.
+    assert client.post(url).status_code == 302
+    assert not Comedor.objects.filter(pk=comedor.pk).exists()

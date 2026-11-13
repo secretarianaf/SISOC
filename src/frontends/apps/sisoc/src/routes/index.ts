@@ -1,6 +1,7 @@
 import { accountRoute } from "./account";
 import { acompanamientosRoute } from "./acompanamientos";
 import { comedoresRoute } from "./comedores";
+import { comedorBajaRoute } from "./comedorBaja";
 import { actividadesPnudRoute } from "./actividadesPnud";
 import { admisionesTemplatesRoute } from "./admisionesTemplates";
 import { admisionesInformeDetalleRoute } from "./admisionesInformeDetalle";
@@ -129,6 +130,7 @@ export const ROUTES: RouteDefinition[] = [
   admisionesLegalesRoute,
   acompanamientosRoute,
   comedoresRoute,
+  comedorBajaRoute,
   expedientesPagosRoute,
   rendicionMensualRoute,
   rendicionFinalRoute,

@@ -7,18 +7,27 @@ In the monolith ``WebGatePermission`` evaluates the same policy locally. After
 that the native route guard applies unchanged (superuser bypass included):
 
 - list: ``permissions_any_required(["comedores.view_comedor",
-  "admisiones.view_admision", "acompanamientos.view_informacionrelevante"])``.
+  "admisiones.view_admision", "acompanamientos.view_informacionrelevante"])``;
+- baja: ``permissions_any_required(["comedores.delete_comedor"])``, plus the
+  object scope of the native ``ComedorDeleteView`` (a comedor outside the user's
+  scope is a 404).
 
 The list runs the native ``ComedorListView`` itself (``setup()``, queryset with
 the user scope and the advanced filters, ``NoCountPaginator``, column
 preferences and context), so it cannot drift from ``comedor_list.html``; this
 module only projects that context to JSON. The CSV export stays the native GET.
+
+The baja runs the native ``ComedorDeleteView`` itself (cascade preview, logical
+delete with the actor, native success message); the message stays queued for the
+list the redirect lands on.
 """
 
 from django.contrib import messages
+from django.http import HttpResponseRedirect
 from django.template import Context, Template
 from django.urls import reverse
 from rest_framework.authentication import SessionAuthentication
+from rest_framework import status
 from rest_framework.permissions import BasePermission
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -27,9 +36,10 @@ from rest_framework.views import APIView
 # The exact predicates of the native URL decorators.
 from core.decorators import _has_any_permissions
 from core.pagination import build_compact_page_range
+from core.soft_delete.view_helpers import build_delete_preview
 from core.templatetags.custom_filters import has_any_perm, has_perm_code
 from core.web_gate import WebGatePermission
-from comedores.views.comedor import ComedorListView
+from comedores.views.comedor import ComedorDeleteView, ComedorListView
 
 LIST_PERMISSIONS = [
     "comedores.view_comedor",
@@ -42,6 +52,7 @@ EXPORT_REQUIRED_PERMISSION = "auth.role_exportar_a_csv"
 EXPORT_ADMIN_PERMISSIONS = (
     "auth.role_admin,auth.role_administrador,auth.role_superadmin"
 )
+DELETE_PERMISSIONS = ["comedores.delete_comedor"]
 MESSAGE_LEVELS = {
     messages.DEBUG: "info",
     messages.INFO: "info",
@@ -101,6 +112,11 @@ _TEMPLATES = {key: Template(source) for key, source in _SOURCES.items()}
 class VerComedores(BasePermission):
     def has_permission(self, request, view):
         return _has_any_permissions(request.user, LIST_PERMISSIONS)
+
+
+class BajaComedor(BasePermission):
+    def has_permission(self, request, view):
+        return _has_any_permissions(request.user, DELETE_PERMISSIONS)
 
 
 class _WebView(APIView):
@@ -243,4 +259,45 @@ class ComedoresListWebView(_WebView):
                 },
                 "messages": pending_messages(request),
             }
+        )
+
+
+class ComedorBajaWebView(APIView):
+    """``GET/POST /api/web/comedores/comedores/<pk>/baja/``: ``comedor_confirm_delete.html``."""
+
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [WebGatePermission, BajaComedor]
+    renderer_classes = [JSONRenderer]
+    http_method_names = ["get", "head", "post"]
+
+    @staticmethod
+    def _vista(request, pk):
+        vista = _native(ComedorDeleteView, request, pk=pk)
+        # The scoped queryset: outside the user's scope is the native 404.
+        vista.object = vista.get_object()
+        return vista
+
+    def get(self, request, pk):
+        comedor = self._vista(request, pk).object
+        return Response(
+            {
+                "id": comedor.pk,
+                "nombre": comedor.nombre,
+                "cascade_preview": build_delete_preview(comedor),
+                "urls": {
+                    "cancel": reverse("comedor_detalle", args=[comedor.pk]),
+                    "list": reverse("comedores"),
+                },
+                "messages": pending_messages(request),
+            }
+        )
+
+    def post(self, request, pk):
+        django_request = request._request  # pylint: disable=protected-access
+        respuesta = self._vista(request, pk).post(django_request)
+        if isinstance(respuesta, HttpResponseRedirect):
+            # The native success message stays queued for the list it lands on.
+            return Response({"redirect": respuesta.url})
+        return Response(
+            {"error": "No se pudo dar de baja."}, status=status.HTTP_409_CONFLICT
         )

@@ -1875,6 +1875,11 @@
   "regex": "^api/web/comedores/actividades\\-pnud/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
+  "name": "comedores_web_baja",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/baja/\\Z"
+ },
+ {
   "name": "comedores_web_ciudadano_aporte",
   "namespace": "",
   "regex": "^api/web/comedores/ciudadanos/(?P<pk>[0-9]+)/aportes/(?P<aporte>[^/]+)/\\Z"

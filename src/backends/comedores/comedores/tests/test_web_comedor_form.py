@@ -123,7 +123,8 @@ def test_create_form_projects_the_real_fields_in_template_order(gestor, estados)
         datos["estado_tree"][str(estados[0].pk)]["procesos"][0]["label"]
         == "En ejecución"
     )
-    assert datos["foto_legajo"] is None and datos["imagenes"] == []
+    assert datos["foto_legajo"]["file"] is None and datos["imagenes"] == []
+    assert datos["foto_legajo"]["initial_text"] == "Actualmente"
     assert datos["urls"]["cancel"] == "/comedores/listar"
 
 
@@ -361,3 +362,25 @@ def test_a_failure_while_saving_rolls_back_and_shows_the_native_message(
         "Error al guardar el comedor: storage caido"
     ]
     assert (Comedor.objects.count(), Referente.objects.count()) == antes
+
+
+def test_the_photo_can_be_replaced_and_cleared_like_the_native_widget(gestor, estados):
+    gestor.post(
+        f"{ROOT}crear/",
+        {
+            **_datos(estados),
+            "foto_legajo": SimpleUploadedFile("f.png", PNG, "image/png"),
+        },
+    )
+    comedor = Comedor.objects.get(nombre="Comedor Nuevo")
+    assert comedor.foto_legajo
+    formulario = gestor.get(f"{ROOT}{comedor.pk}/formulario/").json()["form"]
+    assert formulario["foto_legajo"]["file"]["name"] == comedor.foto_legajo.name
+    assert formulario["foto_legajo"]["clear_label"] == "Eliminar"
+
+    gestor.post(
+        f"{ROOT}{comedor.pk}/editar/", {**_datos(estados), "foto_legajo-clear": "on"}
+    )
+
+    comedor.refresh_from_db()
+    assert not comedor.foto_legajo

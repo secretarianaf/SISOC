@@ -64,9 +64,8 @@ def test_native_guards_and_page_validation_decide_first(lector):
 
 
 @pytest.mark.usefixtures("preview")
-def test_export_and_create_stay_native(lector):
+def test_export_stays_native(lector):
     assert lector.get("/comedores/exportar").status_code == 403
-    assert lector.get("/comedores/crear").status_code == 403
 
 
 def test_build_without_index_is_refused(tmp_path):
@@ -89,3 +88,28 @@ def test_baja_entry_gets_the_index_after_the_native_guard_and_scope():
     # The POST reaches the native view: the baja itself is native.
     assert client.post(url).status_code == 302
     assert not Comedor.objects.filter(pk=comedor.pk).exists()
+
+
+@pytest.mark.usefixtures("preview")
+def test_form_entries_get_the_index_after_the_native_guard_and_scope():
+    comedor = Comedor.objects.create(nombre="Para editar")
+    gestor = get_user_model().objects.create_user("gestor_preview_form")
+    gestor.user_permissions.add(Permission.objects.get(codename="add_comedor"))
+    gestor.user_permissions.add(Permission.objects.get(codename="change_comedor"))
+    client = Client()
+    client.force_login(gestor)
+    lector = get_user_model().objects.create_user("lector_preview_form")
+    lector.user_permissions.add(Permission.objects.get(codename="view_comedor"))
+    solo_lector = Client()
+    solo_lector.force_login(lector)
+
+    assert client.get("/comedores/crear").status_code == 200
+    assert client.get(f"/comedores/{comedor.pk}/editar").status_code == 200
+    assert client.get("/comedores/999999/editar").status_code == 404
+    assert solo_lector.get("/comedores/crear").status_code == 403
+    assert solo_lector.get(f"/comedores/{comedor.pk}/editar").status_code == 403
+    assert Client().get("/comedores/crear").status_code in (302, 403)
+    # The POST reaches the native view (it renders its errors: nothing is saved).
+    antes = Comedor.objects.count()
+    assert client.post("/comedores/crear", {}).status_code == 200
+    assert Comedor.objects.count() == antes

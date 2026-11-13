@@ -927,7 +927,9 @@ exportación sigue siendo el `GET` nativo. Ver
 El listado de comedores (CO07.01) es `routes/comedores.tsx` sobre
 `/api/web/comedores/comedores/` (`comedores.web_api_comedores`, que corre `ComedorListView`; la
 exportación y los formularios siguen nativos) y la baja es `routes/comedorBaja.tsx` sobre
-`/api/web/comedores/comedores/<pk>/baja/` (`ComedorDeleteView`). Ver
+`/api/web/comedores/comedores/<pk>/baja/` (`ComedorDeleteView`). El alta y la edición son `routes/comedorForm.tsx` sobre
+`/api/web/comedores/comedores/formulario/` y `crear/`/`<pk>/editar/` (`ComedorCreateView` y
+`ComedorUpdateView`). Ver
 `docs/registro/cambios/2026-T4/2026-11-13-2785-react-comedor-listado.md`.
 
 ### DDJJ pública PAS: entrada React sin montar

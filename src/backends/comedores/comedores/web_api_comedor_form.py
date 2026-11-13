@@ -99,6 +99,8 @@ POSTED_FIELDS = frozenset(
 )
 IMAGE_DELETE = re.compile(r"^imagen_ciudadano-borrar-\d+$")
 POSTED_FILES = frozenset({"foto_legajo", "imagenes"})
+# The clear checkbox ``{{ form.foto_legajo }}`` renders next to an existing photo.
+FOTO_CLEAR = "foto_legajo-clear"
 
 
 class CrearComedor(BasePermission):
@@ -174,6 +176,22 @@ def _archivo(archivo):
     return {"url": archivo.url, "name": archivo.name}
 
 
+def _foto_legajo(form):
+    """The ``{{ form.foto_legajo }}`` widget: current file and its native texts."""
+    campo = form["foto_legajo"]
+    widget = campo.field.widget.get_context(
+        campo.html_name, campo.value(), {"id": campo.auto_id}
+    )["widget"]
+    return {
+        "file": _archivo(form.instance.foto_legajo),
+        "required": campo.field.required,
+        "initial_text": str(widget["initial_text"]),
+        "input_text": str(widget["input_text"]),
+        "clear_label": str(widget["clear_checkbox_label"]),
+        "errors": [str(e) for e in campo.errors],
+    }
+
+
 def _formulario(context, comedor_pk):
     form = context["form"]
     referente = context["referente_form"]
@@ -189,7 +207,7 @@ def _formulario(context, comedor_pk):
         "estado_locked": bool(form.fields["estado_general"].disabled),
         "estado_tree": form.estado_tree,
         "codigo_de_proyecto_programa_ids": form.codigo_de_proyecto_programa_ids,
-        "foto_legajo": _archivo(form.instance.foto_legajo),
+        "foto_legajo": _foto_legajo(form),
         "imagenes": [
             {"id": imagen.pk, **(_archivo(imagen.imagen) or {})}
             for imagen in context.get("imagenes_borrar", [])
@@ -220,7 +238,7 @@ def _whitelist(django_request):
     entrada = django_request.POST
     permitido = QueryDict(mutable=True)
     for clave in entrada:
-        if clave in POSTED_FIELDS or IMAGE_DELETE.match(clave):
+        if clave in POSTED_FIELDS or clave == FOTO_CLEAR or IMAGE_DELETE.match(clave):
             permitido.setlist(clave, entrada.getlist(clave))
     django_request.POST = permitido
     archivos = django_request.FILES

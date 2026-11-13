@@ -1890,6 +1890,11 @@
   "regex": "^api/web/comedores/ciudadanos/(?P<pk>[0-9]+)/aportes/(?P<aporte>[^/]+)/\\Z"
  },
  {
+  "name": "comedores_web_convenio_pnud",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/convenio\\-pnud/\\Z"
+ },
+ {
   "name": "comedores_web_crear",
   "namespace": "",
   "regex": "^api/web/comedores/comedores/crear/\\Z"
@@ -1963,6 +1968,21 @@
   "name": "comedores_web_nomina_directa",
   "namespace": "",
   "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/nomina/\\Z"
+ },
+ {
+  "name": "comedores_web_responsable_tarjeta",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/responsable\\-tarjeta/\\Z"
+ },
+ {
+  "name": "comedores_web_validacion",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/validacion/\\Z"
+ },
+ {
+  "name": "comedores_web_validar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/validar/\\Z"
  },
  {
   "name": "comunicados",

@@ -1091,3 +1091,17 @@ alcance del usuario) y los POST devuelven `{"ok": true, "redirect": ...}` o 400 
 `../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-intervenciones-formulario.md`,
 `../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-intervenciones-baja.md` y
 `../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-observaciones.md`.
+
+La validación, el convenio PNUD/Abordaje y el responsable de tarjeta de comedor (CO07.03, lane K5) usan
+`src/backends/comedores/comedores/web_api_validacion.py`, `web_api_convenio.py` y `web_api_tarjeta.py` bajo
+`/api/web/comedores/comedores/` (`<pk>/validacion/` entrega la capacidad calculada por `ValidacionService.puede_validar` y las
+opciones de «No Validar»; `<pk>/validar/` ejecuta la vista nativa `validar_comedor` y devuelve `{"redirect": ...}`, con el mensaje
+nativo en cola para la ficha; `<pk>/convenio-pnud/` ejecuta `ComedorDatosConvenioPnudUpdateView` con su formulario por variante,
+los montos Decimal y la preservación de centavos históricos; `<pk>/responsable-tarjeta/` ejecuta
+`ResponsableTarjetaComedorUpdateView` con el grupo exacto `Tecnico Comedor` y la cadena Provincia > Municipio > Localidad). El
+componente `comedorValidacion.tsx` reproduce los dos modales y lo monta la ficha del comedor (no tiene ruta propia);
+`comedorConvenio.tsx` y `comedorTarjeta.tsx` son las pantallas `/comedores/<id>/convenio-pnud/` y
+`/comedores/<id>/responsable-tarjeta/editar`, con la vista previa local `web_preview_convenio_tarjeta.py`. Registros:
+`../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-validacion.md`,
+`../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-convenio.md` y
+`../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-tarjeta.md`.

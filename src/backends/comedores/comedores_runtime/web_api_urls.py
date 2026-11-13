@@ -13,6 +13,7 @@ urlpatterns = [
     path("", include("comedores.web_api_montos_urls")),
     path("", include("comedores.web_api_pnud_urls")),
     path("", include("comedores.web_api_comedores_urls")),
+    path("", include("comedores.web_api_validacion_convenio_tarjeta_urls")),
     path("", include("comedores.web_api_nomina_urls")),
     path(
         "admisiones/plantillas-informe/",

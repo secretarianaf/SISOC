@@ -11,6 +11,8 @@ from django.test import Client
 
 from admisiones.models.admisiones import Admision
 from comedores.models import Comedor
+from core.models import Localidad, Municipio, Provincia
+from organizaciones.models import Organizacion
 from comedores.utils import get_prestacion_conformidad_pending_period
 from core import web_gate
 
@@ -167,3 +169,116 @@ def test_pending_web_requirement_is_reported_and_a_forged_header_is_ignored(come
 
     assert respuesta.status_code == 403
     assert respuesta.json()["state"] == "password_change_required"
+
+
+def _acordeon(client, comedor):
+    return client.get(f"{ROOT}{comedor.pk}/").json()["acordeon"]
+
+
+def test_ubicacion_panel_shows_the_native_values_and_the_map_branches(lector):
+    provincia = Provincia.objects.create(nombre="Chaco")
+    municipio = Municipio.objects.create(nombre="Resistencia", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    comedor = Comedor.objects.create(
+        nombre="Comedor Norte",
+        calle="Mitre",
+        numero=120,
+        piso="2",
+        departamento="B",
+        categoria_espacio_comunitario="otra",
+        categoria_espacio_comunitario_otra="Club barrial",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+
+    panel = _acordeon(lector, comedor)["ubicacion"]
+
+    datos = {d["label"]: d["value"] for d in panel["datos"]}
+    assert datos["Nombre del espacio comunitario"] == "Comedor Norte"
+    assert datos["Categorización"].endswith("— Club barrial")
+    assert datos["Calle"] == "Mitre"
+    assert datos["Numeración"] == "120"
+    assert datos["Manzana"] == "-"
+    assert datos["Piso y/o departamento"] == "2 - B"
+    assert datos["Localidad"] == "Centro"
+    assert datos["Provincia"] == "Chaco"
+    assert panel["datos"][0]["icon"] == "bi bi-house-door-fill"
+    # Without coordinates, the address of the template builds the map query.
+    assert panel["mapa"] == {
+        "tipo": "iframe",
+        "src": "https://maps.google.com/maps?q=Mitre+120,+Centro,+Resistencia,+Chaco&output=embed",
+    }
+    comedor.latitud, comedor.longitud = -27.45, -58.98
+    comedor.save()
+    assert _acordeon(lector, comedor)["ubicacion"]["mapa"]["src"].startswith(
+        "https://maps.google.com/maps?q=-27.45,-58.98"
+    )
+    vacio = Comedor.objects.create(nombre="Sin datos")
+    assert _acordeon(lector, vacio)["ubicacion"]["mapa"] == {
+        "tipo": "vacio",
+        "src": None,
+    }
+
+
+def test_responsables_panel_with_and_without_organizacion(lector):
+    sin = Comedor.objects.create(nombre="Sin organizacion")
+    assert _acordeon(lector, sin)["responsables"]["hay_organizacion"] is False
+    assert _acordeon(lector, sin)["responsables"]["foto"]["default"] is True
+    organizacion = Organizacion.objects.create(nombre="Org Uno", cuit=20123456786)
+    con = Comedor.objects.create(nombre="Con organizacion", organizacion=organizacion)
+
+    panel = _acordeon(lector, con)["responsables"]
+
+    assert panel["hay_organizacion"] is True
+    assert panel["items"][0] == {
+        "icon": "bi bi-building",
+        "label": "Nombre",
+        "value": "Org Uno",
+    }
+    assert [i["label"] for i in panel["items"]][:2] == ["Nombre", "CUIT"]
+
+
+def test_prestaciones_panel_without_informe_and_the_tradicional_row(lector, comedor):
+    panel = _acordeon(lector, comedor)["prestaciones"]
+
+    assert panel["dias"] == [
+        "Lunes",
+        "Martes",
+        "Miercoles",
+        "Jueves",
+        "Viernes",
+        "Sabado",
+        "Domingo",
+    ]
+    assert [f["comida"] for f in panel["filas"]] == [
+        "Desayuno",
+        "Almuerzo",
+        "Merienda",
+        "Cena",
+    ]
+    assert panel["filas"][0]["valores"] == ["-"] * 7
+    assert panel["prestaciones_mensuales"] == "-"
+    assert panel["monto_mensual"] == "-"
+    assert panel["dias_por_semana"] == "-"
+
+
+def test_territorial_panel_has_every_native_option_unmarked_without_relevamiento(
+    lector, comedor
+):
+    panel = _acordeon(lector, comedor)["relevamientos"]
+
+    assert panel["titulo"] == "Acompañamiento Territorial"
+    assert panel["pnud"] is False
+    assert [d["label"] for d in panel["donaciones"]] == [
+        "Particulares",
+        "Estado nacional",
+        "Estado provincial",
+        "Estado municipal",
+        "Otros",
+    ]
+    assert not any(
+        d["marcado"] for d in panel["donaciones"] + panel["servicio"] + panel["espacio"]
+    )
+    assert len(panel["espacio"]) == 6
+    assert panel["actividades"] == []

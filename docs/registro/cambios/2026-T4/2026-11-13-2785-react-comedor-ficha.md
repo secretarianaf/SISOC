@@ -1,4 +1,4 @@
-# Cambio: API de la ficha del comedor para React, cabecera y tarjeta de título (#2785, CO07.01)
+# Cambio: API de la ficha del comedor para React, cabecera, título y acordeón (#2785, CO07.01)
 
 ## Qué cambia
 
@@ -14,8 +14,18 @@
   no puede usar no aparece (no hay controles inertes).
 - **`titulo`**: la tarjeta de título (aviso de conformidad pendiente, nombre, validación,
   programa, etiqueta de estado, CARITAS y fechas de ejecución).
+- **`acordeon`** (`web_api_comedor_ficha_datos.py`): los cuatro paneles. Ubicación (mapa por
+  coordenadas o por dirección, o el aviso sin datos, y los doce datos con sus íconos),
+  Responsables (foto de legajo con su versión WebP o la imagen por defecto, datos de la
+  organización, firmantes y avales), Prestaciones (colaboradores, días por semana,
+  prestaciones y monto mensuales, y la tabla de comidas por día, con «Merienda Reforzada»
+  solo en la línea tradicional) y Actividades (PNUD: tabla con detalle y acciones según
+  permiso) o Acompañamiento Territorial (donaciones, tipo de servicio, tipo de espacio y
+  actividades del anexo). Cada valor se renderiza con la misma expresión de plantilla que
+  la página (valores por defecto, formatos de fecha), de modo que el JSON muestra lo que
+  muestra la página.
 - El contrato crece agregando claves, sin renombrar. Quedan para las próximas entregas el
-  acordeón de datos, la línea de tiempo, las tarjetas, las tablas de admisiones, las
+  la línea de tiempo, las tarjetas, las tablas de admisiones, las
   certificaciones, los colaboradores, las capacitaciones y los modales; la nómina y las
   tablas de intervenciones y observaciones siguen siendo fragmentos nativos.
 - No hay pantalla React ni ruta de vista previa todavía: se registran cuando la pantalla
@@ -23,7 +33,9 @@
 
 ## Cómo se verificó
 
-- Pytest aislado (imagen fijada, sin red), 10 pruebas: bloques de cabecera y título contra
+- Pytest aislado (imagen fijada, sin red), 14 pruebas: los cuatro paneles del acordeón
+  (valores, ramas del mapa, con y sin organización, sin informe técnico, opciones
+  territoriales) y bloques de cabecera y título contra
   los valores nativos, selector de convenios (seleccionado y enlaces), acciones según
   permisos, 404 fuera de alcance, que leer no escribe, métodos, cada permiso de acceso,
   401, 403 y requisito web pendiente con cabecera falsificada. Las pruebas reemplazan el
@@ -31,5 +43,8 @@
 
 ## Limitaciones y diferencias conocidas
 
+- Como la página nativa, leer la foto de legajo puede crear su versión WebP en disco.
+- La rama PNUD de Actividades se proyecta con las mismas expresiones pero no tiene prueba
+  propia todavía.
 - La proyección corre todo el contexto nativo de la ficha (como la página), por lo que su
   costo es el de la página actual.

@@ -21,9 +21,30 @@ from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from core.decorators import permissions_any_required
-from VAT.views.evaluacion import EvaluacionDetailView, EvaluacionListView
-from VAT.views.voucher import VoucherDetailView, VoucherListView
-from VAT.views.voucher_parametria import VoucherParametriaListView
+from VAT.views.evaluacion import (
+    EvaluacionCreateView,
+    EvaluacionDeleteView,
+    EvaluacionDetailView,
+    EvaluacionListView,
+    EvaluacionUpdateView,
+    ResultadoEvaluacionCreateView,
+    ResultadoEvaluacionDeleteView,
+    ResultadoEvaluacionDetailView,
+    ResultadoEvaluacionListView,
+    ResultadoEvaluacionUpdateView,
+)
+from VAT.views.reporte import ReporteInscriptosAsistenciasView
+from VAT.views.voucher import (
+    VoucherAsignacionMasivaView,
+    VoucherCreateView,
+    VoucherDetailView,
+    VoucherListView,
+)
+from VAT.views.voucher_parametria import (
+    VoucherParametriaCreateView,
+    VoucherParametriaDetailView,
+    VoucherParametriaListView,
+)
 
 BUILD_ASSETS = "/v2/sisoc/assets/"
 PUBLIC_ASSETS = "/vat/react/assets/"
@@ -84,6 +105,122 @@ class EvaluacionDetailEntry(EvaluacionDetailView):
     get = _detail_get
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EvaluacionCreateEntry(EvaluacionCreateView):
+    """GET the React index; POST stays the native form."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = None
+        return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EvaluacionUpdateEntry(EvaluacionUpdateView):
+    index_bytes = b""
+    get = _detail_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EvaluacionDeleteEntry(EvaluacionDeleteView):
+    index_bytes = b""
+    get = _detail_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ResultadoListEntry(ResultadoEvaluacionListView):
+    index_bytes = b""
+    get = _list_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ResultadoDetailEntry(ResultadoEvaluacionDetailView):
+    index_bytes = b""
+    get = _detail_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ResultadoCreateEntry(ResultadoEvaluacionCreateView):
+    """GET the React index; POST stays the native form."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = None
+        return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ResultadoUpdateEntry(ResultadoEvaluacionUpdateView):
+    index_bytes = b""
+    get = _detail_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ResultadoDeleteEntry(ResultadoEvaluacionDeleteView):
+    index_bytes = b""
+    get = _detail_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class VoucherCreateEntry(VoucherCreateView):
+    """GET the React index; POST stays the native form."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = None
+        return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ParametriaCreateEntry(VoucherParametriaCreateView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = None
+        return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class VoucherMasivoEntry(VoucherAsignacionMasivaView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ParametriaDetailEntry(VoucherParametriaDetailView):
+    index_bytes = b""
+    get = _detail_get
+
+
+EXPORTS = {
+    "csv",
+    "xlsx",
+    "excel",
+    "detalle_csv",
+    "detalle-csv",
+    "detalle_xlsx",
+    "detalle_excel",
+    "detalle-xlsx",
+}
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ReporteEntry(ReporteInscriptosAsistenciasView):
+    """GET the React index; the ``export`` downloads stay the native view."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        if (request.GET.get("export") or "").lower() in EXPORTS:
+            return super().get(request, *args, **kwargs)
+        return index_response(request, self.index_bytes)
+
+
 class ReactAssetView(View):
     """Serve only frozen build assets; no request data reaches a static upstream."""
 
@@ -131,6 +268,12 @@ def _entry(view_class, permission, index_bytes):
     )
 
 
+def _entry_any(view_class, permissions, index_bytes):
+    return permissions_any_required(permissions)(
+        view_class.as_view(index_bytes=index_bytes)
+    )
+
+
 def vat_preview_patterns(build_directory):
     """Freeze an explicit local ``apps/sisoc`` build for a disposable preview URLconf.
 
@@ -166,6 +309,66 @@ def vat_preview_patterns(build_directory):
         path(
             "vat/evaluaciones/<int:pk>/",
             _entry(EvaluacionDetailEntry, "VAT.view_evaluacion", index_bytes),
+        ),
+        path(
+            "vat/evaluaciones/nueva/",
+            _entry(EvaluacionCreateEntry, "VAT.add_evaluacion", index_bytes),
+        ),
+        path(
+            "vat/evaluaciones/<int:pk>/editar/",
+            _entry(EvaluacionUpdateEntry, "VAT.change_evaluacion", index_bytes),
+        ),
+        path(
+            "vat/evaluaciones/<int:pk>/eliminar/",
+            _entry(EvaluacionDeleteEntry, "VAT.delete_evaluacion", index_bytes),
+        ),
+        path(
+            "vat/resultados-evaluacion/",
+            _entry(ResultadoListEntry, "VAT.view_resultadoevaluacion", index_bytes),
+        ),
+        path(
+            "vat/resultados-evaluacion/<int:pk>/",
+            _entry(ResultadoDetailEntry, "VAT.view_resultadoevaluacion", index_bytes),
+        ),
+        path(
+            "vat/resultados-evaluacion/nuevo/",
+            _entry(ResultadoCreateEntry, "VAT.add_resultadoevaluacion", index_bytes),
+        ),
+        path(
+            "vat/resultados-evaluacion/<int:pk>/editar/",
+            _entry(ResultadoUpdateEntry, "VAT.change_resultadoevaluacion", index_bytes),
+        ),
+        path(
+            "vat/resultados-evaluacion/<int:pk>/eliminar/",
+            _entry(ResultadoDeleteEntry, "VAT.delete_resultadoevaluacion", index_bytes),
+        ),
+        path(
+            "vat/vouchers/parametrias/<int:pk>/",
+            _entry(ParametriaDetailEntry, "VAT.view_voucher", index_bytes),
+        ),
+        path(
+            "vat/vouchers/asignar/",
+            _entry(VoucherCreateEntry, "VAT.add_voucher", index_bytes),
+        ),
+        path(
+            "vat/vouchers/asignar-masivo/",
+            _entry(VoucherMasivoEntry, "VAT.add_voucher", index_bytes),
+        ),
+        path(
+            "vat/vouchers/parametrias/nueva/",
+            _entry(ParametriaCreateEntry, "VAT.add_voucher", index_bytes),
+        ),
+        path(
+            "vat/reportes/inscripciones-asistencias/",
+            _entry_any(
+                ReporteEntry,
+                [
+                    "VAT.view_inscripcion",
+                    "VAT.view_comisioncurso",
+                    "VAT.view_centro",
+                ],
+                index_bytes,
+            ),
         ),
         path(
             "vat/react/<path:asset_path>",

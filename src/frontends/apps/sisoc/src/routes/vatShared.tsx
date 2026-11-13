@@ -22,7 +22,7 @@ export const pageValid = (p: unknown) => record(p) && bool(p.is_paginated) && in
 export const listUrlsValid = (u: unknown) => record(u) && internal(u.list) && internal(u.create);
 
 /** Full-page actions of the native forms; replaceable in tests. */
-export const vatNavigation = { confirm: (message: string) => window.confirm(message) };
+export const vatNavigation = { confirm: (message: string) => window.confirm(message), assign: (to: string) => window.location.assign(to) };
 
 /** `components/search_bar.html`, simple mode with the default `busqueda` parameter and an add button. */
 export function VatSearchBar({ title, placeholder, query, reset, add }: {

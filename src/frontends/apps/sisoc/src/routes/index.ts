@@ -60,6 +60,12 @@ import { requiredPasswordRoute } from "./requiredPassword";
 import { bulkCredentialsRoute } from "./bulkCredentials";
 import { userImportRoute } from "./userImport";
 import { vatEvaluacionesRoute } from "./vatEvaluaciones";
+import { vatEvaluacionesFormRoute } from "./vatEvaluacionesForm";
+import { vatParametriaDetalleRoute } from "./vatParametriaDetalle";
+import { vatReporteRoute } from "./vatReporte";
+import { vatResultadosRoute } from "./vatResultados";
+import { vatResultadosFormRoute } from "./vatResultadosForm";
+import { vatVouchersFormRoute } from "./vatVouchersForm";
 import { vatVouchersRoute } from "./vatVouchers";
 import type { RouteDefinition, ShellRouteDefinition } from "./types";
 
@@ -123,6 +129,12 @@ export const ROUTES: RouteDefinition[] = [
   comunicadosRoute,
   vatVouchersRoute,
   vatEvaluacionesRoute,
+  vatEvaluacionesFormRoute,
+  vatResultadosRoute,
+  vatResultadosFormRoute,
+  vatReporteRoute,
+  vatVouchersFormRoute,
+  vatParametriaDetalleRoute,
   ocrRoute,
   organizacionesRoute,
   organizacionConvenioRoute,

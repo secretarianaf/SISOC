@@ -1003,3 +1003,42 @@ ejecuta la vista nativa y proyecta su contexto, con el permiso de la ruta (`VAT.
 `VAT.view_evaluacion`) detrás de la compuerta G1. La recarga y la cancelación del detalle siguen siendo los POST
 nativos con CSRF. Contrato: `../plans/2026-T4/2026-11-12-2785-vat-v01-v08-m2.md`. Registro:
 `../registro/cambios/2026-T4/2026-11-12-2785-react-vat-vouchers-evaluaciones.md`.
+
+El alta, la edición y la baja de evaluaciones (V08.02) usan `GET` y `POST .../evaluaciones/nueva/`,
+`.../evaluaciones/<pk>/editar/` y `.../evaluaciones/<pk>/eliminar/`
+(`src/backends/vat/VAT/web_api_evaluaciones_forms.py`): ejecutan `EvaluacionCreateView`, `EvaluacionUpdateView` y
+`EvaluacionDeleteView` (formulario nativo, `form_valid`, mensajes y baja física) y el POST devuelve
+`{"ok": true, "redirect": "/vat/evaluaciones/"}` o 400 con los campos y errores del formulario ligado. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-vat-evaluaciones-formulario.md`.
+
+Los resultados de evaluación (V08.01 y V08.02) usan `GET .../resultados-evaluacion/`, `.../<pk>/`, `.../nuevo/`,
+`.../<pk>/editar/` y `.../<pk>/eliminar/` (`src/backends/vat/VAT/web_api_resultados.py`): ejecutan las vistas
+nativas `ResultadoEvaluacion*View` (lista con filtros, detalle, formulario con `form_valid`, que fija
+`registrado_por`, y baja lógica del `SoftDeleteDeleteViewMixin`). El POST devuelve
+`{"ok": true, "redirect": "/vat/resultados-evaluacion/"}` o 400 con el formulario ligado. Rutas React:
+`vatResultados.tsx` y `vatResultadosForm.tsx`, sobre `vatFormShared.tsx` (campo, POST y confirmación de baja
+compartidos con las evaluaciones). Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-vat-resultados-evaluacion.md`.
+
+El reporte de inscriptos y asistencias (V08.01) usa `GET .../vat/reportes/inscripciones-asistencias/`
+(`src/backends/vat/VAT/web_api_reportes.py`): ejecuta `ReporteInscriptosAsistenciasView` con su mismo alcance por
+usuario (`build_reporte_inscripciones_asistencia`) y proyecta filtros, métricas, resumen por grupo y detalle nominal
+paginado. Las cuatro exportaciones (`?export=csv|xlsx|detalle_csv|detalle_xlsx`) siguen siendo descargas nativas: la API
+las ignora y la entrada de vista previa las deja pasar a la vista nativa. Ruta React: `vatReporte.tsx` con los
+estilos nativos en `vatReporteStyles.ts`; el menú «Tour de ayuda» carga `driver.js` y `vat_tour.js` y no inicia solo.
+Registro: `../registro/cambios/2026-T4/2026-11-12-2785-react-vat-reporte-inscripciones.md`.
+
+Los formularios de alta de V01.02 (voucher, alta masiva y parametría) usan `GET` y `POST .../vouchers/asignar/`,
+`.../vouchers/asignar-masivo/` y `.../vouchers/parametrias/nueva/` (`src/backends/vat/VAT/web_api_voucher_forms.py`):
+ejecutan `VoucherCreateView`, `VoucherAsignacionMasivaView` y `VoucherParametriaCreateView` (formulario, servicio,
+mensajes y guardado nativos). El alta devuelve `{"ok": true, "redirect": ...}` o 400 con el formulario ligado; la alta
+masiva devuelve 200 con el resultado (asignados, ya tenían, no encontrados, errores) o 400. `campo_formulario` suma el
+tag `radio` y el `help_text`. Ruta React: `vatVouchersForm.tsx` sobre `vatFormShared.tsx`. Registro:
+`../registro/cambios/2026-T4/2026-11-13-2785-react-vat-formularios-voucher.md`.
+
+El detalle de parametría (V01.01) y sus asignaciones (V01.03) usan `GET .../vouchers/parametrias/<pk>/` y
+`POST .../parametrias/<pk>/asignar/` y `.../asignar-masivo/` (`src/backends/vat/VAT/web_api_parametria_detail.py`):
+ejecutan `VoucherParametriaDetailView`, `VoucherParametriaAsignarView` y `VoucherParametriaAsignarMasivoView`
+(`_asignar_desde_parametria`, servicio y mensajes nativos) y el POST devuelve `{"ok": true, "redirect": <detalle>}`;
+el mensaje se muestra al recargar el detalle, como la redirección nativa. Ruta React: `vatParametriaDetalle.tsx`.
+Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-vat-parametria-detalle.md`.

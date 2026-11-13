@@ -11,6 +11,7 @@ from html import unescape
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
+from django.forms import RadioSelect
 from django.http import Http404
 from django.template import Context, Template
 from rest_framework.authentication import SessionAuthentication
@@ -134,3 +135,66 @@ class VatNativeReadView(APIView):
         except Http404 as exc:
             raise NotFound() from exc
         return vista, vista.get_context_data(object=vista.object)
+
+
+def valor_de_campo(campo):
+    """The ``value`` the native widget renders (Select: chosen pk)."""
+    valor = campo.field.widget.format_value(campo.value())
+    if isinstance(valor, list):
+        return valor[0] if valor else ""
+    return "" if valor is None else str(valor)
+
+
+def campo_formulario(campo):
+    """One bound field as the native widget renders it: tag, attributes, value, choices, errors.
+
+    A ``RadioSelect`` is ``tag="radio"`` and each choice carries the ``id`` of its input.
+    """
+    widget = campo.field.widget
+    attrs = {k: str(v) for k, v in widget.attrs.items()}
+    if isinstance(widget, RadioSelect):
+        tag = "radio"
+    elif hasattr(widget, "choices"):
+        tag = "select"
+    elif widget.__class__.__name__ == "Textarea":
+        tag = "textarea"
+    else:
+        tag = "input"
+    if tag == "input":
+        attrs.setdefault("type", widget.input_type)
+    if campo.field.required and widget.use_required_attribute(campo.initial):
+        attrs["required"] = "required"
+    if tag == "textarea":
+        attrs.setdefault("cols", "40")
+        attrs.setdefault("rows", "10")
+    if tag == "radio":
+        opciones = [
+            {
+                "value": str(sub.data["value"]),
+                "label": str(sub.data["label"]),
+                "id": sub.id_for_label,
+            }
+            for sub in campo.subwidgets
+        ]
+    elif tag == "select":
+        opciones = [
+            {"value": "" if valor is None else str(valor), "label": str(etiqueta)}
+            for valor, etiqueta in getattr(campo.field, "choices", widget.choices)
+        ]
+    else:
+        opciones = []
+    return {
+        "name": campo.name,
+        "id": campo.id_for_label,
+        "label": str(campo.label),
+        "help_text": str(campo.help_text),
+        "tag": tag,
+        "attrs": attrs,
+        "value": (
+            bool(campo.value())
+            if getattr(widget, "input_type", "") == "checkbox"
+            else valor_de_campo(campo)
+        ),
+        "choices": opciones,
+        "errors": [str(e) for e in campo.errors],
+    }

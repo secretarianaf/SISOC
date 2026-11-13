@@ -65,6 +65,10 @@ _OWNED_PATTERNS = (
     r"/api/web/ciudadanos/[0-9]+/baja/",
     r"/api/web/ciudadanos/[0-9]+/familiares/nuevo/",
     r"/api/web/ciudadanos/(?:crear/|[0-9]+/editar/)",
+    r"/api/web/vat/(?:vouchers/(?:parametrias/(?:nueva/|[0-9]+/(?:asignar/|asignar-masivo/)?)?|asignar/|asignar-masivo/|[0-9]+/)?"
+    r"|evaluaciones/(?:nueva/|[0-9]+/(?:editar/|eliminar/)?)?"
+    r"|resultados-evaluacion/(?:nuevo/|[0-9]+/(?:editar/|eliminar/)?)?"
+    r"|reportes/inscripciones-asistencias/)",
     r"/api/web/(?:comedores|cdf|celiaquia|vat)/ciudadanos/[0-9]+/aportes/[a-z]+/",
 )
 

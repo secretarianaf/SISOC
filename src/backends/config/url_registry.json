@@ -15015,6 +15015,16 @@
   "regex": "^api/web/vat/inscripciones/(?P<pk>[0-9]+)/estado/\\Z"
  },
  {
+  "name": "evaluaciones-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/evaluaciones/nueva/\\Z"
+ },
+ {
+  "name": "evaluaciones-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/evaluaciones/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
   "name": "evaluaciones-detail",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/evaluaciones/(?P<pk>[0-9]+)/\\Z"
@@ -15023,6 +15033,11 @@
   "name": "evaluaciones-list",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/evaluaciones/\\Z"
+ },
+ {
+  "name": "evaluaciones-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/evaluaciones/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
   "name": "horario-form",
@@ -15125,6 +15140,36 @@
   "regex": "^api/web/vat/planes/options/(?P<field>[^/]+)/\\Z"
  },
  {
+  "name": "reportes-inscripciones-asistencias",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/reportes/inscripciones\\-asistencias/\\Z"
+ },
+ {
+  "name": "resultados-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/resultados\\-evaluacion/nuevo/\\Z"
+ },
+ {
+  "name": "resultados-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/resultados\\-evaluacion/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "resultados-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/resultados\\-evaluacion/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "resultados-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/resultados\\-evaluacion/\\Z"
+ },
+ {
+  "name": "resultados-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/resultados\\-evaluacion/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
   "name": "sesiones-detail",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/sesiones/(?P<pk>[0-9]+)/\\Z"
@@ -15175,6 +15220,16 @@
   "regex": "^api/web/vat/ubicaciones/options/(?P<field>[^/]+)/\\Z"
  },
  {
+  "name": "vouchers-asignar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/asignar/\\Z"
+ },
+ {
+  "name": "vouchers-asignar-masivo",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/asignar\\-masivo/\\Z"
+ },
+ {
   "name": "vouchers-detail",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/vouchers/(?P<pk>[0-9]+)/\\Z"
@@ -15183,6 +15238,26 @@
   "name": "vouchers-list",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/vouchers/\\Z"
+ },
+ {
+  "name": "vouchers-parametrias-asignar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/parametrias/(?P<pk>[0-9]+)/asignar/\\Z"
+ },
+ {
+  "name": "vouchers-parametrias-asignar-masivo",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/parametrias/(?P<pk>[0-9]+)/asignar\\-masivo/\\Z"
+ },
+ {
+  "name": "vouchers-parametrias-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/parametrias/nueva/\\Z"
+ },
+ {
+  "name": "vouchers-parametrias-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/parametrias/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "vouchers-parametrias-list",

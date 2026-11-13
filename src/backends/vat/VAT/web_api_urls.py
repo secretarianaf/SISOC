@@ -8,6 +8,29 @@ from ciudadanos.web_aportes import AporteCiudadanoWebView
 from VAT import api_inet_views as views
 from VAT.services.inet_forms import FORM_CLASSES
 from VAT.services.inet_queries import RESOURCES
+from VAT.web_api_evaluaciones_forms import (
+    EvaluacionCreateWebView,
+    EvaluacionDeleteWebView,
+    EvaluacionUpdateWebView,
+)
+from VAT.web_api_parametria_detail import (
+    ParametriaAsignarMasivoWebView,
+    ParametriaAsignarWebView,
+    ParametriaDetailWebView,
+)
+from VAT.web_api_voucher_forms import (
+    ParametriaCreateWebView,
+    VoucherCreateWebView,
+    VoucherMasivoWebView,
+)
+from VAT.web_api_reportes import ReporteInscripcionesAsistenciasWebView
+from VAT.web_api_resultados import (
+    ResultadoCreateWebView,
+    ResultadoDeleteWebView,
+    ResultadoDetailWebView,
+    ResultadoListWebView,
+    ResultadoUpdateWebView,
+)
 from VAT.web_api_evaluaciones import EvaluacionDetailWebView, EvaluacionListWebView
 from VAT.web_api_vouchers import (
     VoucherDetailWebView,
@@ -114,10 +137,95 @@ urlpatterns += [
         name="vouchers-parametrias-list",
     ),
     path("vouchers/<int:pk>/", VoucherDetailWebView.as_view(), name="vouchers-detail"),
+    path(
+        "evaluaciones/nueva/",
+        EvaluacionCreateWebView.as_view(),
+        name="evaluaciones-create",
+    ),
+    path(
+        "evaluaciones/<int:pk>/editar/",
+        EvaluacionUpdateWebView.as_view(),
+        name="evaluaciones-update",
+    ),
+    path(
+        "evaluaciones/<int:pk>/eliminar/",
+        EvaluacionDeleteWebView.as_view(),
+        name="evaluaciones-delete",
+    ),
     path("evaluaciones/", EvaluacionListWebView.as_view(), name="evaluaciones-list"),
     path(
         "evaluaciones/<int:pk>/",
         EvaluacionDetailWebView.as_view(),
         name="evaluaciones-detail",
+    ),
+]
+
+# V08.01/V08.02 resultados de evaluación (vistas nativas).
+urlpatterns += [
+    path(
+        "resultados-evaluacion/nuevo/",
+        ResultadoCreateWebView.as_view(),
+        name="resultados-create",
+    ),
+    path(
+        "resultados-evaluacion/<int:pk>/editar/",
+        ResultadoUpdateWebView.as_view(),
+        name="resultados-update",
+    ),
+    path(
+        "resultados-evaluacion/<int:pk>/eliminar/",
+        ResultadoDeleteWebView.as_view(),
+        name="resultados-delete",
+    ),
+    path(
+        "resultados-evaluacion/", ResultadoListWebView.as_view(), name="resultados-list"
+    ),
+    path(
+        "resultados-evaluacion/<int:pk>/",
+        ResultadoDetailWebView.as_view(),
+        name="resultados-detail",
+    ),
+]
+
+# V08.01 reporte de inscriptos y asistencias (las exportaciones siguen nativas).
+urlpatterns += [
+    path(
+        "reportes/inscripciones-asistencias/",
+        ReporteInscripcionesAsistenciasWebView.as_view(),
+        name="reportes-inscripciones-asistencias",
+    ),
+]
+
+# V01.02 alta de voucher, alta masiva y alta de parametría (vistas nativas).
+urlpatterns += [
+    path("vouchers/asignar/", VoucherCreateWebView.as_view(), name="vouchers-asignar"),
+    path(
+        "vouchers/asignar-masivo/",
+        VoucherMasivoWebView.as_view(),
+        name="vouchers-asignar-masivo",
+    ),
+    path(
+        "vouchers/parametrias/nueva/",
+        ParametriaCreateWebView.as_view(),
+        name="vouchers-parametrias-create",
+    ),
+]
+
+# V01.01/V01.03 detalle de parametría y asignaciones (vistas nativas).
+urlpatterns += [
+    path(
+        "vouchers/parametrias/<int:pk>/",
+        ParametriaDetailWebView.as_view(),
+        name="vouchers-parametrias-detail",
+    ),
+    path(
+        "vouchers/parametrias/<int:pk>/asignar/",
+        ParametriaAsignarWebView.as_view(),
+        name="vouchers-parametrias-asignar",
+    ),
+    path(
+        "vouchers/parametrias/<int:pk>/asignar-masivo/",
+        ParametriaAsignarMasivoWebView.as_view(),
+        name="vouchers-parametrias-asignar-masivo",
     ),
 ]

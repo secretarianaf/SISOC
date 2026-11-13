@@ -88,6 +88,7 @@ _OWNED_PATTERNS = (
     r"|evaluaciones/(?:nueva/|[0-9]+/(?:editar/|eliminar/)?)?"
     r"|resultados-evaluacion/(?:nuevo/|[0-9]+/(?:editar/|eliminar/)?)?"
     r"|reportes/inscripciones-asistencias/)",
+    r"/api/web/vat/(?:cursos/)?comisiones/sesiones/[0-9]+/asistencia/",
     r"/api/web/auditoria/(?:listado/|evento/[0-9]+/|[a-z_]+/[a-z_]+/[^/]+/)",
     r"/api/web/auditoria/[a-z_]+/[a-z_]+/[^/]+/",
     r"/api/web/comedores/comedores/(?:formulario/|crear/|[0-9]+/(?:baja/|formulario/|editar/|admision/|capacitaciones/[0-9]+/estado/)?)?",

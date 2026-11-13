@@ -1221,6 +1221,15 @@ ejecutan `VoucherParametriaDetailView`, `VoucherParametriaAsignarView` y `Vouche
 el mensaje se muestra al recargar el detalle, como la redirección nativa. Ruta React: `vatParametriaDetalle.tsx`.
 Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-vat-parametria-detalle.md`.
 
+El registro de asistencia por sesión (V02.01) usa `GET` y `POST /api/web/vat/cursos/comisiones/sesiones/<pk>/asistencia/`
+y `.../vat/comisiones/sesiones/<pk>/asistencia/` (`src/backends/vat/VAT/web_api_asistencia.py`): ejecutan
+`AsistenciaSesionCursoView` y `AsistenciaSesionView` con el permiso de la ruta nativa (`VAT.add_asistenciasesion` o
+`VAT.change_asistenciasesion`) y su alcance (404 fuera de él); el POST corre el `post` nativo (guardado de todas las
+inscripciones activas, estado de la sesión y mensaje) y devuelve `{"ok": true, "redirect": <detalle de la comisión>}`.
+Ruta React: `vatAsistencia.tsx` (más `vatTour.tsx`, el menú de ayuda compartido con el reporte). Contrato:
+`../plans/2026-T4/2026-11-13-2785-vat-v02-v07-m2.md`. Registro:
+`../registro/cambios/2026-T4/2026-11-13-2785-react-vat-asistencia.md`.
+
 Las intervenciones y observaciones de comedor (CO02, CO06) usan `src/backends/comedores/intervenciones/web_api.py`,
 `web_api_formulario.py` y `web_api_baja.py` bajo `/api/web/comedores/intervenciones/` (listado `comedor/<pk>/`, ficha `<pk>/`,
 baja de archivo `<pk>/documentacion/eliminar/`, alta `comedor/<pk>/crear/`, edición `<pk>/editar/<pk2>/`, subtipos `subestados/`

@@ -15230,6 +15230,16 @@
   "regex": "^api/web/vat/sesiones/(?P<pk>[0-9]+)/asistencia/\\Z"
  },
  {
+  "name": "asistencia-sesion-curso",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/comisiones/sesiones/(?P<pk>[0-9]+)/asistencia/\\Z"
+ },
+ {
+  "name": "asistencia-sesion-oferta",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/sesiones/(?P<pk>[0-9]+)/asistencia/\\Z"
+ },
+ {
   "name": "centros-delete-preview",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/centros/(?P<pk>[0-9]+)/delete\\-preview/\\Z"

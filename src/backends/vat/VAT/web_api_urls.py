@@ -8,6 +8,10 @@ from ciudadanos.web_aportes import AporteCiudadanoWebView
 from VAT import api_inet_views as views
 from VAT.services.inet_forms import FORM_CLASSES
 from VAT.services.inet_queries import RESOURCES
+from VAT.web_api_asistencia import (
+    AsistenciaSesionCursoWebView,
+    AsistenciaSesionOfertaWebView,
+)
 from VAT.web_api_evaluaciones_forms import (
     EvaluacionCreateWebView,
     EvaluacionDeleteWebView,
@@ -227,5 +231,19 @@ urlpatterns += [
         "vouchers/parametrias/<int:pk>/asignar-masivo/",
         ParametriaAsignarMasivoWebView.as_view(),
         name="vouchers-parametrias-asignar-masivo",
+    ),
+]
+
+# V02.01 asistencia por sesión (vistas nativas).
+urlpatterns += [
+    path(
+        "cursos/comisiones/sesiones/<int:pk>/asistencia/",
+        AsistenciaSesionCursoWebView.as_view(),
+        name="asistencia-sesion-curso",
+    ),
+    path(
+        "comisiones/sesiones/<int:pk>/asistencia/",
+        AsistenciaSesionOfertaWebView.as_view(),
+        name="asistencia-sesion-oferta",
     ),
 ]

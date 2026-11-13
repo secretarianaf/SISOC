@@ -91,6 +91,7 @@ import { requiredPasswordRoute } from "./requiredPassword";
 import { bulkCredentialsRoute } from "./bulkCredentials";
 import { userImportRoute } from "./userImport";
 import { usuariosRoute } from "./usuarios";
+import { vatAsistenciaRoute } from "./vatAsistencia";
 import { vatEvaluacionesRoute } from "./vatEvaluaciones";
 import { vatEvaluacionesFormRoute } from "./vatEvaluacionesForm";
 import { vatParametriaDetalleRoute } from "./vatParametriaDetalle";
@@ -198,6 +199,7 @@ export const ROUTES: RouteDefinition[] = [
   vatReporteRoute,
   vatVouchersFormRoute,
   vatParametriaDetalleRoute,
+  vatAsistenciaRoute,
   ocrRoute,
   organizacionesRoute,
   organizacionConvenioRoute,

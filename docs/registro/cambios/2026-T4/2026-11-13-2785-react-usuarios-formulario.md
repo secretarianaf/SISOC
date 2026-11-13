@@ -60,6 +60,20 @@ correctamente.») lo consume el listado.
   responde 409 `comedores_runtime_required` sin persistir nada, en lugar de
   reenviar HTML. La subunidad U2c lo reemplaza por la proyección del dueño.
 
+## Subunidad U2b: pantalla React de los campos del núcleo
+
+`src/frontends/apps/sisoc/src/routes/usuariosForm.tsx` (y `usuariosForm.test.tsx`)
+dibuja las tarjetas nativas (datos personales, acceso, DataCalle, Inspecciones
+escolares, permisos y roles, alcance territorial, administración de accesos) a
+partir del payload de U2a, con el marcado de `user/user_form.html`. Repite solo
+las reglas de visibilidad de `user_mobile_access.js` y la tabla de alcances de
+`usuarioprovincial.js`; publica solo los controles habilitados más los
+`_identity_present`, y tras un rechazo vuelve a dibujar los valores ligados y
+los errores nativos. La contraseña se puede mostrar/ocultar y la credencial
+temporal vigente se dibuja solo si el servidor la proyecta. La ruta
+(`routes/usuarios.tsx`, patrón `/usuarios/crear/` y `/usuarios/editar/<id>/`)
+NO está registrada: se entrega aparte y se activa al completar U2c.
+
 ## Verificación
 
 Pruebas de API (guardas, proyección por actor, alta persistida, rechazo
@@ -70,4 +84,11 @@ las entradas de vista previa.
 
 - La GET no reenvía a Espacios comunitarios: para un actor con esas secciones
   solo se anuncian en `comedores.sections`.
-- El formulario React, G1 y la comparación visual llegan con U2b/U2c.
+- Las tarjetas de Espacios comunitarios y el reemplazo del 409 por la
+  proyección del dueño (U2c) requieren un módulo nuevo en `comedores/pwa`, fuera
+  de las superficies de esta unidad.
+- Paridad visual (escritorio y móvil, actor con las secciones del núcleo):
+  alta, alta con actor acotado y rechazo coinciden. En la edición con grupos
+  seleccionados difiere solo la posición de dos `<option>` del `<select>`
+  oculto de 1 px (el navegador nativo lo desplaza hasta la opción elegida);
+  la diferencia de píxeles es 0 %.

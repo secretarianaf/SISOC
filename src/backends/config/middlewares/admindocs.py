@@ -28,6 +28,7 @@ _OWNED_PATTERNS = (
     r"/api/web/cdi/centros/[0-9]+/nomina/(?:crear/|[0-9]+/editar/)",
     r"/api/web/cdi/centros/[0-9]+/formularios/(?:crear/|[0-9]+/(?:editar/)?)?",
     r"/api/web/cdi/(?:centros/[0-9]+/usuarios/generar/|renaper/[a-z0-9_]+/)",
+    r"/api/web/cdi/centros/[0-9]+/nomina/(?:crear/|[0-9]+/editar/)",
     r"/api/web/cdi/centros/(?:[0-9]+/nomina/[0-9]+/(?:(?:publicar|archivar|destacado|eliminar)/)?)?",
     r"/api/web/comedores/duplas/(?:crear/|[0-9]+/(?:(?:editar|eliminar)/)?)?",
     r"/api/web/comedores/montos/(?:crear/|[0-9]+/(?:editar/|eliminar/)?)?",

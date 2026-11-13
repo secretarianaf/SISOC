@@ -59,7 +59,7 @@ afterEach(() => {
 describe("CDI nómina list route", () => {
   it("owns only the native list path", () => {
     expect(findRoute("/centrodeinfancia/7/nomina/")?.route.name).toBe("cdi-nomina-lista");
-    for (const other of ["/centrodeinfancia/7/nomina", "/centrodeinfancia/0/nomina/", "/centrodeinfancia/7/nomina/crear/", "/centrodeinfancia/7/nomina/formulario/", "/centrodeinfancia/7/nomina/asistencia/"]) {
+    for (const other of ["/centrodeinfancia/7/nomina", "/centrodeinfancia/0/nomina/", "/centrodeinfancia/7/nomina/formulario/", "/centrodeinfancia/7/nomina/asistencia/"]) {
       expect(findRoute(other)?.route.name).toBe("business");
     }
   });

@@ -64,7 +64,8 @@ describe("CDI beneficiary detail route", () => {
     expect(findRoute("/centrodeinfancia/7/nomina/9/ver/")?.route.name).toBe("cdi-nomina");
     expect(findRoute("/centrodeinfancia/7/nomina/9/ver")?.route.name).toBe("business");
     expect(findRoute("/centrodeinfancia/7/nomina/0/ver/")?.route.name).toBe("business");
-    expect(findRoute("/centrodeinfancia/7/nomina/9/editar/")?.route.name).toBe("business");
+    // The edit screen belongs to cdiDestinatarioForm.
+    expect(findRoute("/centrodeinfancia/7/nomina/9/editar/")?.route.name).toBe("cdi-destinatario-form");
   });
 
   it("loads the session and the API and draws the heading, crumb and edit link", async () => {

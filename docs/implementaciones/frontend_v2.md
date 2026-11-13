@@ -686,6 +686,13 @@ vertical, dibuja `SisocShell` y agrega el botón «Consultas» de la cabecera.
   almacenamiento, URL ni historial. El bloque RENAPER compartido (`routes/cdiRenaperBloque.tsx`:
   agregar, DNI, verificado y manual, token firmado) consulta `/api/web/cdi/renaper/<bloque>/`, siempre
   simulado en las pruebas.
+- `/centrodeinfancia/<centro>/nomina/crear/` y `.../nomina/<ficha>/editar/` (`routes/cdiDestinatarioForm.tsx`,
+  nómina CDI): alta y edición de destinatarios sobre `NominaCentroInfanciaCreateView` y
+  `NominaCentroInfanciaEditView` mediante `web_api_destinatario.py`. La API proyecta los 102 campos del
+  template con el valor que formatea el widget nativo; la pantalla reproduce la búsqueda por DNI, las diez
+  secciones plegables, el progreso, la edad, la geografía y los tres bloques RENAPER, y envía una sola vez
+  solo los campos que el template dibuja. Las entradas de vista previa están en
+  `centrodeinfancia/web_preview_destinatario.py`.
 
 El menú lateral de `SisocShell` y `ClaroFrame` dibuja los grupos anidados con el
 marcado de cada nivel del template y los abre y resalta con las mismas
@@ -706,6 +713,8 @@ Registros:
 `../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-renaper-generar-usuario.md`,
 `../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-formularios-listado-ficha.md` y
 `../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-formulario-form.md`.
+`../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-renaper-generar-usuario.md`.
+`../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-destinatario-form.md`.
 ### Vertical remoto sobre G1: Duplas (equipo técnico) de Comedores
 
 Segunda aplicación del patrón, ahora con el marco nativo `includes/main.html`

@@ -121,6 +121,9 @@ class IdentityAdminForm(
             if not creating and not self.cleaned_data.get("password"):
                 user.password = current.password
             changed = set(self.changed_data)
+            if getattr(self, "_datacalle_group_assigned", False):
+                # Estos valores se derivaron del grupo, no de controles enviados.
+                changed.update({"es_relevador_calle", "datacalle_rol"})
             self._save_identity(user, creating, changed)
             self._save_permissions(user, creating, changed)
             self._save_profile(user, creating, changed)

@@ -328,7 +328,7 @@ def _territorial(context):
             }
             for nombre in ESPACIOS
         ],
-        "actividades": [
+        "actividades_anexo": [
             etiqueta
             for campo, etiqueta in ANEXO
             if anexo and getattr(anexo, campo, False)

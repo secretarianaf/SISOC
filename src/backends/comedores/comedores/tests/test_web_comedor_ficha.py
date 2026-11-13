@@ -281,4 +281,4 @@ def test_territorial_panel_has_every_native_option_unmarked_without_relevamiento
         d["marcado"] for d in panel["donaciones"] + panel["servicio"] + panel["espacio"]
     )
     assert len(panel["espacio"]) == 6
-    assert panel["actividades"] == []
+    assert panel["actividades_anexo"] == []

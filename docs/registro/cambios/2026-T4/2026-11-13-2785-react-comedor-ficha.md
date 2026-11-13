@@ -1,4 +1,4 @@
-# Cambio: API de la ficha del comedor para React, cabecera, título y acordeón (#2785, CO07.01)
+# Cambio: ficha del comedor en React, cabecera, título y acordeón (#2785, CO07.01)
 
 ## Qué cambia
 
@@ -28,8 +28,16 @@
   la línea de tiempo, las tarjetas, las tablas de admisiones, las
   certificaciones, los colaboradores, las capacitaciones y los modales; la nómina y las
   tablas de intervenciones y observaciones siguen siendo fragmentos nativos.
-- No hay pantalla React ni ruta de vista previa todavía: se registran cuando la pantalla
-  esté completa.
+- **React (parte superior de la ficha).** `src/frontends/apps/sisoc/src/routes/comedorFicha.tsx`
+  dibuja la cabecera (acciones, menú «Acciones» y selector de convenios, con los menús como
+  los de Bootstrap), la tarjeta de título y el acordeón horizontal de cuatro paneles con el
+  ancho y el alto que calcula `newcomedor.js` (un panel abierto en escritorio, cada panel
+  alterna en el celular). Los controles cuya acción es de una entrega posterior (el modal
+  de validación y «Comenzar Admisión») se dibujan solo cuando la página les pasa su
+  acción, de modo que no hay controles inertes. La pantalla **no está registrada** en
+  `routes/index.ts` ni tiene ruta de vista previa: sale cuando toda la ficha sea real (la
+  nómina, las intervenciones y las observaciones reutilizarán los componentes React de sus
+  entregas).
 
 ## Cómo se verificó
 
@@ -41,7 +49,16 @@
   401, 403 y requisito web pendiente con cabecera falsificada. Las pruebas reemplazan el
   doble automático de la carpeta para correr los servicios reales.
 
+- Vitest (10 pruebas del encabezado, la tarjeta y el acordeón), tsc, eslint y compilación
+  sin avisos. G1 con la ficha (200 y 403). Visual S13 de la parte superior (se recortan
+  ambos lados después del acordeón, que son entregas siguientes) con una ruta de vista
+  previa temporal que no se entrega: escritorio y móvil, también con el menú «Acciones»
+  abierto, sin diferencias de estructura ni de píxeles.
+
 ## Limitaciones y diferencias conocidas
+
+- Los botones de estado de la tarjeta de título (validación, programa, estado) son
+  `button` sin acción, igual que en la página nativa.
 
 - Como la página nativa, leer la foto de legajo puede crear su versión WebP en disco.
 - La rama PNUD de Actividades se proyecta con las mismas expresiones pero no tiene prueba

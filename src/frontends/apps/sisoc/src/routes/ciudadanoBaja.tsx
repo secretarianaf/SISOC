@@ -32,7 +32,8 @@ export function bajaValid(v: unknown): v is BajaData {
 /** Replaceable in tests: the confirmed redirect is a full-page navigation, like the native 302. */
 export const ciudadanoBajaNavigation = { assign: (to: string) => window.location.assign(to) };
 
-export function BajaContent({ data }: { data: BajaData }) {
+/** `endpoint`: where the confirmed POST goes (the ciudadano baja by default; the familiar unlink reuses this card). */
+export function BajaContent({ data, endpoint }: { data: BajaData; endpoint?: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const busy = useRef(false);
@@ -41,7 +42,7 @@ export function BajaContent({ data }: { data: BajaData }) {
     event.preventDefault();
     if (busy.current || error) return;
     busy.current = true; setPending(true);
-    const outcome = await postForm(`web/ciudadanos/${data.id}/baja/`, new URLSearchParams());
+    const outcome = await postForm(endpoint ?? `web/ciudadanos/${data.id}/baja/`, new URLSearchParams());
     if (outcome.kind === "redirect" && internal(outcome.url)) { ciudadanoBajaNavigation.assign(outcome.url); return; }
     setError(outcome.kind === "forbidden" && record(outcome.data) && text(outcome.data.detail) ? outcome.data.detail : UNCERTAIN);
     setPending(false);

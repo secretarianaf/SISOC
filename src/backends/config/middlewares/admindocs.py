@@ -84,6 +84,9 @@ _OWNED_PATTERNS = (
     r"/api/web/ciudadanos/[0-9]+/baja/",
     r"/api/web/ciudadanos/[0-9]+/familiares/nuevo/",
     r"/api/web/ciudadanos/(?:crear/|[0-9]+/editar/)",
+    r"/api/web/ciudadanos/importacion-masiva/(?:lotes/[0-9]+/(?:reanudar/)?)?",
+    r"/api/web/ciudadanos/(?:revision/|[0-9]+/descartar-revision/)",
+    r"/api/web/ciudadanos/familiares/[0-9]+/eliminar/",
     r"/api/web/vat/(?:vouchers/(?:parametrias/(?:nueva/|[0-9]+/(?:asignar/|asignar-masivo/)?)?|asignar/|asignar-masivo/|[0-9]+/)?"
     r"|evaluaciones/(?:nueva/|[0-9]+/(?:editar/|eliminar/)?)?"
     r"|resultados-evaluacion/(?:nuevo/|[0-9]+/(?:editar/|eliminar/)?)?"

@@ -1020,6 +1020,27 @@ El historial de auditoría de una instancia es `routes/ciudadanoHistorial.tsx` s
 nativa; la exportación sigue siendo el `GET` nativo). Ver
 `docs/registro/cambios/2026-T4/2026-11-13-2785-react-ciudadano-historial.md`.
 
+La importación masiva de ciudadanos (C01) es `routes/ciudadanoImportacion.tsx` (carga y lote) sobre
+`/api/web/ciudadanos/importacion-masiva/`, `.../lotes/<pk>/` y `.../lotes/<pk>/reanudar/`
+(`ciudadanos.web_api_importacion`, que corre las vistas nativas; nunca llama a RENAPER, el lote lo
+procesa el worker). La plantilla y el Excel del lote siguen siendo descargas nativas. Ver
+`docs/registro/cambios/2026-T4/2026-11-13-2785-react-ciudadano-importacion.md`.
+
+La cola de revisión de identidad (C02) es `routes/ciudadanoColaRevision.tsx` sobre
+`GET /api/web/ciudadanos/revision/` y `POST /api/web/ciudadanos/<pk>/descartar-revision/`
+(`ciudadanos.web_api_cola_revision`, que corre `ColaRevisionView` y `descartar_revision`); «Revisado»
+reutiliza `POST .../<pk>/marcar-revisado/`. Ver
+`docs/registro/cambios/2026-T4/2026-11-13-2785-react-ciudadano-cola-revision.md`.
+
+Desvincular un familiar (C03.02) es `routes/ciudadanoFamiliarEliminar.tsx` sobre
+`/api/web/ciudadanos/familiares/<pk>/eliminar/` (`ciudadanos.web_api_familiar_eliminar`, que corre
+`GrupoFamiliarDeleteView`) y reutiliza la tarjeta de confirmación de `ciudadanoBaja.tsx`. Ver
+`docs/registro/cambios/2026-T4/2026-11-13-2785-react-ciudadano-familiar-eliminar.md`.
+
+La exportación CSV del listado de ciudadanos (C05.04, `/ciudadanos/exportar`) sigue siendo la descarga
+nativa: no tiene pantalla React ni API JSON; el listado React la enlaza. Ver
+`docs/registro/cambios/2026-T4/2026-11-13-2785-react-ciudadano-exportacion.md`.
+
 El listado global de auditoría (`/auditoria/`, `GET /api/web/auditoria/listado/`) y el detalle de un
 evento (`/auditoria/evento/<id>/`, `GET /api/web/auditoria/evento/<id>/`) son
 `routes/ciudadanoHistorial.tsx` (modo global) y `routes/auditoriaEvento.tsx`, sobre

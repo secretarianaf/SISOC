@@ -1830,14 +1830,29 @@
   "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/baja/\\Z"
  },
  {
+  "name": "ciudadanos_web_cola_revision",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/revision/\\Z"
+ },
+ {
   "name": "ciudadanos_web_crear",
   "namespace": "",
   "regex": "^api/web/ciudadanos/crear/\\Z"
  },
  {
+  "name": "ciudadanos_web_descartar_revision",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/descartar\\-revision/\\Z"
+ },
+ {
   "name": "ciudadanos_web_editar",
   "namespace": "",
   "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_familiar_eliminar",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/familiares/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
   "name": "ciudadanos_web_familiar_nuevo",
@@ -1848,6 +1863,21 @@
   "name": "ciudadanos_web_ficha",
   "namespace": "",
   "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_importacion",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/importacion\\-masiva/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_importacion_lote",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/importacion\\-masiva/lotes/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_importacion_reanudar",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/importacion\\-masiva/lotes/(?P<pk>[0-9]+)/reanudar/\\Z"
  },
  {
   "name": "ciudadanos_web_marcar_revisado",

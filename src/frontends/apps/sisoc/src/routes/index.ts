@@ -28,7 +28,10 @@ import { coreProgramasRoute } from "./coreProgramas";
 import { ciudadano360Route } from "./ciudadano360";
 import { ciudadanoBajaRoute } from "./ciudadanoBaja";
 import { ciudadanoFamiliarRoute } from "./ciudadanoFamiliar";
+import { ciudadanoColaRevisionRoute } from "./ciudadanoColaRevision";
+import { ciudadanoFamiliarEliminarRoute } from "./ciudadanoFamiliarEliminar";
 import { ciudadanoFormRoute } from "./ciudadanoForm";
+import { ciudadanoImportacionLoteRoute, ciudadanoImportacionRoute } from "./ciudadanoImportacion";
 import { auditoriaEventoRoute } from "./auditoriaEvento";
 import { auditoriaListadoRoute, ciudadanoHistorialRoute } from "./ciudadanoHistorial";
 import { cdiCentroDetalleRoute } from "./cdiCentroDetalle";
@@ -223,8 +226,12 @@ export const ROUTES: RouteDefinition[] = [
   relevamientosFormsRoute,
   ciudadano360Route,
   ciudadanoBajaRoute,
+  ciudadanoColaRevisionRoute,
+  ciudadanoFamiliarEliminarRoute,
   ciudadanoFamiliarRoute,
   ciudadanoFormRoute,
+  ciudadanoImportacionLoteRoute,
+  ciudadanoImportacionRoute,
   ciudadanoHistorialRoute,
   auditoriaListadoRoute,
   auditoriaEventoRoute,

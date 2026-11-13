@@ -939,6 +939,20 @@ derivación son `POST` de `comedores.web_api_nomina_acciones` sobre las funcione
 siendo las rutas nativas hasta sus entregas. Ver
 `docs/registro/cambios/2026-T4/2026-11-13-2785-react-comedor-nomina-lectura.md`.
 
+Los colaboradores de un comedor (CO03.01, `/comedores/<id>/colaboradores/crear/` y
+`/comedores/<id>/colaboradores/<colaborador>/editar/`) son `routes/comedorColaboradores.tsx` sobre
+`/api/web/comedores/colaboradores/comedor/<id>/` (`comedores.web_api_colaboradores`, que corre el `dispatch` de
+`ColaboradorEspacioCreateView` y `ColaboradorEspacioUpdateView`; la baja es el `POST` `.../<colaborador>/eliminar/`
+sobre `ColaboradorEspacioDeleteView`, sin pantalla propia). La búsqueda por DNI es el formulario GET nativo. Ver
+`docs/registro/cambios/2026-T4/2026-11-13-2785-react-comedor-colaboradores.md`.
+
+Las actividades de un espacio PNUD (CO03.02, `/comedores/<id>/actividades/crear/` y
+`/comedores/<id>/actividades/<actividad>/editar/`) son `routes/comedorActividades.tsx` sobre
+`/api/web/comedores/actividades-espacio/comedor/<id>/` (`comedores.web_api_actividades_espacio`, que corre el
+`dispatch` de `ActividadEspacioPWACreateView` y `ActividadEspacioPWAUpdateView`). Cada horario es un registro:
+la pantalla manda los campos repetidos `schedule_*` y reproduce el filtro por categoría y las filas del script de la
+plantilla. Ver `docs/registro/cambios/2026-T4/2026-11-13-2785-react-comedor-actividades.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

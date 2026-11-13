@@ -26,6 +26,8 @@ _OWNED_PATTERNS = (
     r"/api/web/comedores/duplas/(?:crear/|[0-9]+/(?:(?:editar|eliminar)/)?)?",
     r"/api/web/comedores/montos/(?:crear/|[0-9]+/(?:editar/|eliminar/)?)?",
     r"/api/web/comedores/actividades-pnud/(?:crear/|[0-9]+/(?:editar|baja)/)?",
+    r"/api/web/comedores/colaboradores/comedor/[0-9]+/(?:crear/|[0-9]+/(?:editar|eliminar)/)",
+    r"/api/web/comedores/actividades-espacio/comedor/[0-9]+/(?:crear/|[0-9]+/editar/)",
     r"/api/web/pas/(?:areas/(?:formacion|mesa-ayuda|liquidacion)/|formacion/personas/"
     r"|personas/(?:[0-9]+/cambiar-estado/)?|panel/(?:[0-9]+/)?)",
     r"/api/web/pas/cruces/(?:exportar-sintys/|importar-sintys/|actualizar-renaper/)?",

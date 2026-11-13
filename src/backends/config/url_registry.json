@@ -155,6 +155,16 @@
   "regex": "^centrodefamilia/centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/lista\\-espera/\\Z"
  },
  {
+  "name": "actividades_espacio_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/actividades\\-espacio/comedor/(?P<pk>[0-9]+)/crear/\\Z"
+ },
+ {
+  "name": "actividades_espacio_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/actividades\\-espacio/comedor/(?P<pk>[0-9]+)/(?P<pk2>[0-9]+)/editar/\\Z"
+ },
+ {
   "name": "actividades_pnud_baja",
   "namespace": "",
   "regex": "^comedores/configuracion/actividades\\-pnud/(?P<pk>[0-9]+)/baja/\\Z"
@@ -1773,6 +1783,21 @@
   "name": "colaborador_espacio_eliminar",
   "namespace": "",
   "regex": "^comedores/(?P<pk>[0-9]+)/colaboradores/(?P<pk2>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "colaboradores_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/colaboradores/comedor/(?P<pk>[0-9]+)/crear/\\Z"
+ },
+ {
+  "name": "colaboradores_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/colaboradores/comedor/(?P<pk>[0-9]+)/(?P<pk2>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "colaboradores_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/colaboradores/comedor/(?P<pk>[0-9]+)/(?P<pk2>[0-9]+)/eliminar/\\Z"
  },
  {
   "name": "column_preferences",

@@ -510,6 +510,14 @@ API heredan de las nativas, que siguen siendo las únicas que escriben; la
 plantilla se descarga con el envío GET nativo del formulario. Registro:
 `../registro/cambios/2026-T4/2026-11-06-2785-react-credenciales-masivas.md`.
 
+`/usuarios/` y los pasos `/usuarios/borrar/<id>/` y `/usuarios/activar/<id>/`
+montan `routes/usuarios.tsx` (listado en `usuariosList.tsx`, confirmación en
+`usuariosState.tsx`), alimentado por `/api/web/users/list/` y
+`/api/web/users/<id>/(deactivate|activate)/`. Las vistas API heredan de las
+nativas: el alcance del actor, los filtros, las columnas y el cambio de estado
+(`is_active`) siguen siendo suyos; React solo proyecta. Registro:
+`../registro/cambios/2026-T4/2026-11-13-2785-react-usuarios-listado.md`.
+
 ### Agregar una pantalla React en `apps/sisoc`
 
 `App.tsx` no conoce pantallas: recorre `ROUTES` de

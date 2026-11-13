@@ -25,6 +25,9 @@ from usuarios.views import (
     GroupCreateView,
     GroupListView,
     GroupUpdateView,
+    UserActiveView,
+    UserDeleteView,
+    UserListView,
 )
 from usuarios.views_user_import import UserImportJobCreateView, UserImportJobDetailView
 
@@ -177,6 +180,29 @@ class BulkCredentialsJobEntry(_IdentityEntry, BulkCredentialsJobDetailView):
         return super().get(request, *args, **kwargs)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class UserListEntry(_IdentityEntry, UserListView):
+    """Local GET body with the unchanged native list permission and methods."""
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class UserDeactivateEntry(_IdentityEntry, UserDeleteView):
+    """Resolve the in-scope user (404) before serving the local confirm step."""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().get(request, *args, **kwargs)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class UserActivateEntry(_IdentityEntry, UserActiveView):
+    """Resolve the in-scope user (404) before serving the local confirm step."""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().get(request, *args, **kwargs)
+
+
 class IdentityAssetView(View):
     """Serve only frozen build assets; no request data reaches a static upstream."""
 
@@ -258,6 +284,24 @@ def identity_preview_patterns(build_directory):
             "grupos/editar/<int:pk>/",
             permissions_any_required(["auth.change_group"])(
                 GroupUpdateEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "usuarios/",
+            permissions_any_required(["auth.view_user"])(
+                UserListEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "usuarios/borrar/<int:pk>/",
+            permissions_any_required(["auth.delete_user"])(
+                UserDeactivateEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "usuarios/activar/<int:pk>/",
+            permissions_any_required(["auth.delete_user"])(
+                UserActivateEntry.as_view(index_bytes=index_bytes)
             ),
         ),
         path(

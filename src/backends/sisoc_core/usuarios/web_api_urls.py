@@ -23,6 +23,11 @@ from usuarios.web_password_reset import (
     WebPasswordResetView,
 )
 from usuarios.web_required_password import RequiredPasswordChangeWebView
+from usuarios.web_users import (
+    WebUserActivateView,
+    WebUserDeactivateView,
+    WebUserListView,
+)
 
 urlpatterns = [
     path("surveys/pending/", WebPendingSurveyView.as_view(), name="web_survey_pending"),
@@ -43,6 +48,17 @@ urlpatterns = [
     ),
     path("users/import/", include("usuarios.web_user_import_urls")),
     path("users/bulk-credentials/", include("usuarios.web_bulk_credentials_urls")),
+    path("users/list/", WebUserListView.as_view(), name="web_users"),
+    path(
+        "users/<int:pk>/deactivate/",
+        WebUserDeactivateView.as_view(),
+        name="web_user_deactivate",
+    ),
+    path(
+        "users/<int:pk>/activate/",
+        WebUserActivateView.as_view(),
+        name="web_user_activate",
+    ),
     path("groups/", WebGroupListView.as_view(), name="web_groups"),
     path("groups/create/", WebGroupCreateView.as_view(), name="web_group_create"),
     path("groups/<int:pk>/edit/", WebGroupUpdateView.as_view(), name="web_group_edit"),

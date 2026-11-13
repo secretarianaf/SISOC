@@ -8,6 +8,7 @@ from django.contrib.admindocs.middleware import XViewMiddleware
 _OWNED_PATTERNS = (
     r"/api/web/insumos/(?:categorias/)?[0-9]+/(?:editar|eliminar)/",
     r"/api/web/groups/[0-9]+/edit/",
+    r"/api/web/users/[0-9]+/(?:deactivate|activate)/",
     r"/api/web/surveys/[0-9]+/(?:answer|postpone|dismiss)/",
     r"/api/web/password/reset/[^/]+/",
     r"/api/web/users/import/jobs/[0-9]+/(?:resume/)?",
@@ -107,6 +108,7 @@ class WebSessionXViewMiddleware(XViewMiddleware):
                 "/api/web/surveys/pending/",
                 "/api/web/groups/",
                 "/api/web/groups/create/",
+                "/api/web/users/list/",
                 "/api/web/account/",
                 "/api/web/account/confirm/",
                 "/api/web/password/first-change/",

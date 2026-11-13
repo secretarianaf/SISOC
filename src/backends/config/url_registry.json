@@ -6440,6 +6440,16 @@
   "regex": "^api/web/surveys/(?P<pk>[0-9]+)/postpone/\\Z"
  },
  {
+  "name": "web_user_activate",
+  "namespace": "",
+  "regex": "^api/web/users/(?P<pk>[0-9]+)/activate/\\Z"
+ },
+ {
+  "name": "web_user_deactivate",
+  "namespace": "",
+  "regex": "^api/web/users/(?P<pk>[0-9]+)/deactivate/\\Z"
+ },
+ {
   "name": "web_user_import",
   "namespace": "",
   "regex": "^api/web/users/import/\\Z"
@@ -6453,6 +6463,11 @@
   "name": "web_user_import_job_resume",
   "namespace": "",
   "regex": "^api/web/users/import/jobs/(?P<pk>[0-9]+)/resume/\\Z"
+ },
+ {
+  "name": "web_users",
+  "namespace": "",
+  "regex": "^api/web/users/list/\\Z"
  },
  {
   "name": "",

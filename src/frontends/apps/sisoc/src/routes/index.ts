@@ -83,6 +83,7 @@ import { passwordResetRoute } from "./passwordReset";
 import { requiredPasswordRoute } from "./requiredPassword";
 import { bulkCredentialsRoute } from "./bulkCredentials";
 import { userImportRoute } from "./userImport";
+import { usuariosRoute } from "./usuarios";
 import { vatEvaluacionesRoute } from "./vatEvaluaciones";
 import { vatEvaluacionesFormRoute } from "./vatEvaluacionesForm";
 import { vatParametriaDetalleRoute } from "./vatParametriaDetalle";
@@ -115,6 +116,7 @@ export const ROUTES: RouteDefinition[] = [
   passwordChangeRoute,
   passwordResetRoute,
   userImportRoute,
+  usuariosRoute,
   bulkCredentialsRoute,
   inspeccionesActasRoute,
   inspeccionesActaDetalleRoute,

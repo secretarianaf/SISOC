@@ -21,6 +21,7 @@ type Fila = {
   id: number; fecha_texto: string; actor_texto: string; actor_fallback: boolean; evento_texto: string; evento_clase: string;
   continuacion: boolean; masiva: boolean; masiva_inicio: boolean; masiva_cantidad: number; masiva_origen: string; con_diffs: boolean;
   cambios: { campo: string; old: Valor; new: Valor }[]; cambios_total: number; detalle_url: string;
+  modelo_texto?: string; instancia_texto?: string;
 };
 export type HistorialData = {
   title: string; inicio_url: string; fields: Campo[]; field_errors: { label: string; message: string }[]; non_field_errors: string[];
@@ -38,7 +39,8 @@ const campoValid = (c: unknown) => record(c) && text(c.name) && text(c.label) &&
   (c.choices === undefined || (Array.isArray(c.choices) && c.choices.every((o) => record(o) && text(o.value) && text(o.label))));
 const filaValid = (f: unknown) => record(f) && count(f.id) && text(f.fecha_texto) && text(f.actor_texto) && flag(f.actor_fallback) && text(f.evento_texto) &&
   text(f.evento_clase) && flag(f.continuacion) && flag(f.masiva) && flag(f.masiva_inicio) && count(f.masiva_cantidad) && text(f.masiva_origen) && flag(f.con_diffs) &&
-  Array.isArray(f.cambios) && f.cambios.every((c) => record(c) && text(c.campo) && valor(c.old) && valor(c.new)) && count(f.cambios_total) && internal(f.detalle_url);
+  Array.isArray(f.cambios) && f.cambios.every((c) => record(c) && text(c.campo) && valor(c.old) && valor(c.new)) && count(f.cambios_total) && internal(f.detalle_url) &&
+  (f.modelo_texto === undefined || text(f.modelo_texto)) && (f.instancia_texto === undefined || text(f.instancia_texto));
 
 export function historialValid(v: unknown): v is HistorialData {
   if (!record(v) || !record(v.paginacion)) return false;
@@ -69,11 +71,12 @@ function Valor({ v }: { v: Valor }) {
   return v.empty ? <em>No cargado</em> : <>{v.text}</>;
 }
 
-function FilaEvento({ f }: { f: Fila }) {
+function FilaEvento({ f, global }: { f: Fila; global: boolean }) {
   return (
     <tr className={f.continuacion ? "table-light" : undefined}>
       <td>{f.fecha_texto}</td>
       <td><div className={f.actor_fallback ? "text-muted" : ""}>{f.actor_texto}</div></td>
+      {global && <><td>{f.modelo_texto}</td><td>{f.instancia_texto}</td></>}
       <td>
         <span className={`badge ${f.evento_clase}`}>{f.evento_texto}</span>
         {f.masiva && (f.masiva_inicio ? (
@@ -82,20 +85,20 @@ function FilaEvento({ f }: { f: Fila }) {
         ) : <>{" "}<span className="badge bg-light text-dark border ms-1">Mismo lote</span></>)}
         {!f.con_diffs && <>{" "}<span className="badge bg-warning text-dark ms-1">Sin diffs</span></>}
       </td>
-      <td>
+      {!global && <td>
         {f.con_diffs ? (
           <>
             {f.cambios.map((c) => <div key={c.campo}><strong>{c.campo}</strong>: <Valor v={c.old} /> → <Valor v={c.new} /></div>)}
             {f.cambios_total > 2 && <div className="text-muted">+ {f.cambios_total - 2} más</div>}
           </>
         ) : <span className="text-muted">Sin diffs registrados</span>}
-      </td>
+      </td>}
       <td className="text-end"><a href={f.detalle_url} className="btn btn-sm btn-outline-secondary">Ver</a></td>
     </tr>
   );
 }
 
-export function HistorialContent({ data }: { data: HistorialData }) {
+export function HistorialContent({ data, global = false }: { data: HistorialData; global?: boolean }) {
   const p = data.paginacion;
   const enlace = (page: number) => `?page=${page}${p.querystring ? `&${p.querystring}` : ""}`;
   return (
@@ -146,10 +149,10 @@ export function HistorialContent({ data }: { data: HistorialData }) {
             <div className="card-header"><h3 className="card-title">Eventos</h3></div>
             <div className="card-body table-responsive p-0">
               <table className="table table-hover table-striped">
-                <thead><tr><th>Fecha</th><th>Usuario</th><th>Evento</th><th>Cambios</th><th /></tr></thead>
+                <thead><tr><th>Fecha</th><th>Usuario</th>{global && <><th>Modelo</th><th>Instancia</th></>}<th>Evento</th>{!global && <th>Cambios</th>}<th /></tr></thead>
                 <tbody>
-                  {data.filas.length > 0 ? data.filas.map((f) => <FilaEvento key={f.id} f={f} />) : (
-                    <tr><td colSpan={5} className="text-center py-4">
+                  {data.filas.length > 0 ? data.filas.map((f) => <FilaEvento key={f.id} f={f} global={global} />) : (
+                    <tr><td colSpan={global ? 6 : 5} className="text-center py-4">
                       <div className="fw-semibold">No hay eventos para los filtros seleccionados.</div>
                       <div className="small text-muted mt-1">Ajustá los filtros o usá “Limpiar” para volver al listado completo.</div>
                     </td></tr>
@@ -188,6 +191,23 @@ function HistorialPage({ app, model, pk }: { app: string; model: string; pk: str
     content: <HistorialContent data={data} />,
   }));
 }
+
+function ListadoPage() {
+  const [state] = useMainResource(`web/auditoria/listado/${window.location.search}`, historialValid);
+  return renderMain(state, "Cargando auditoría…", (data) => ({
+    title: "Auditoría", activePath: "/auditoria/",
+    heading: data.title,
+    breadcrumb: <Breadcrumb items={[{ text: "Inicio", url: data.inicio_url }, { text: "Auditoría", url: null }]} />,
+    content: <HistorialContent data={data} global />,
+  }));
+}
+
+/** Global list (`/auditoria/`): the same template without the instance mode; same payload plus model and instance per row. */
+export const auditoriaListadoRoute: RouteDefinition<Record<string, never>> = {
+  name: "auditoria-listado",
+  match: (pathname) => (pathname === "/auditoria/" ? {} : null),
+  render: () => <ListadoPage />,
+};
 
 const HISTORIAL = /^\/auditoria\/([a-z_]+)\/([a-z_]+)\/([^/]+)\/$/;
 

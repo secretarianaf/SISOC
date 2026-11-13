@@ -15,7 +15,11 @@ from django.urls import path
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from audittrail.views import AuditLogInstanceView
+from audittrail.views import (
+    AuditLogDetailView,
+    AuditLogInstanceView,
+    AuditLogListView,
+)
 from ciudadanos.web_preview import BUILD_ASSETS, PUBLIC_ASSETS, _index
 
 
@@ -32,6 +36,30 @@ class HistorialEntry(AuditLogInstanceView):
         return _index(request, self.index_bytes)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ListadoEntry(AuditLogListView):
+    """Native guards of the global list first, then the frozen React index (export stays native)."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        respuesta = super().get(request, *args, **kwargs)
+        if (request.GET.get("export") or "").strip().lower() in {"csv", "json"}:
+            return respuesta
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EventoEntry(AuditLogDetailView):
+    """Native login, permission and 404 of the event detail first, then the frozen React index."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        super().get(request, *args, **kwargs)
+        return _index(request, self.index_bytes)
+
+
 def audittrail_preview_patterns(build_directory):
     """Freeze the index of an explicit local ``apps/sisoc`` build for a disposable URLconf."""
     original = Path(build_directory)
@@ -45,6 +73,13 @@ def audittrail_preview_patterns(build_directory):
         .encode("utf-8")
     )
     return [
+        path(
+            "auditoria/", login_required(ListadoEntry.as_view(index_bytes=index_bytes))
+        ),
+        path(
+            "auditoria/evento/<int:pk>/",
+            login_required(EventoEntry.as_view(index_bytes=index_bytes)),
+        ),
         path(
             "auditoria/<str:app_label>/<str:model_name>/<str:object_pk>/",
             login_required(HistorialEntry.as_view(index_bytes=index_bytes)),

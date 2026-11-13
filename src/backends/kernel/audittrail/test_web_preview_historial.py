@@ -4,6 +4,7 @@ import types
 from datetime import date
 
 import pytest
+from auditlog.models import LogEntry
 from django.contrib.auth.models import Permission, User
 from django.test import Client, override_settings
 
@@ -57,3 +58,18 @@ def test_native_guards_then_frozen_index_and_native_export(preview):
     exportado = lector.get(f"{url}?export=json&start_date={hoy}&end_date={hoy}")
     assert exportado["Content-Type"].startswith("application/json")
     assert exportado["Content-Disposition"].startswith("attachment;")
+
+
+def test_listado_y_evento_keep_native_guards_then_frozen_index(preview):
+    ciudadano = Ciudadano.objects.create(nombre="Eva", apellido="Prev", documento=3115)
+    evento = LogEntry.objects.filter(object_pk=str(ciudadano.pk)).first()
+    urls = ["/auditoria/", f"/auditoria/evento/{evento.pk}/"]
+    lector = _client("auditlog.view_logentry")
+    sin_permiso = _client()
+    for url in urls:
+        assert Client().get(url).status_code == 302
+        assert sin_permiso.get(url).status_code == 403
+        respuesta = lector.get(url)
+        assert respuesta.status_code == 200
+        assert "/ciudadanos/react/assets/app-1.js" in respuesta.content.decode()
+    assert lector.get("/auditoria/evento/0/").status_code == 404

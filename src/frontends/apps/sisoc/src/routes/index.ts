@@ -1,5 +1,6 @@
 import { accountRoute } from "./account";
 import { acompanamientosRoute } from "./acompanamientos";
+import { comedoresRoute } from "./comedores";
 import { actividadesPnudRoute } from "./actividadesPnud";
 import { admisionesTemplatesRoute } from "./admisionesTemplates";
 import { admisionesInformeDetalleRoute } from "./admisionesInformeDetalle";
@@ -12,7 +13,8 @@ import { ciudadano360Route } from "./ciudadano360";
 import { ciudadanoBajaRoute } from "./ciudadanoBaja";
 import { ciudadanoFamiliarRoute } from "./ciudadanoFamiliar";
 import { ciudadanoFormRoute } from "./ciudadanoForm";
-import { ciudadanoHistorialRoute } from "./ciudadanoHistorial";
+import { auditoriaEventoRoute } from "./auditoriaEvento";
+import { auditoriaListadoRoute, ciudadanoHistorialRoute } from "./ciudadanoHistorial";
 import { cdiCentroDetalleRoute } from "./cdiCentroDetalle";
 import { cdiCentrosRoute } from "./cdiCentros";
 import { cdiNominaRoute } from "./cdiNomina";
@@ -126,6 +128,7 @@ export const ROUTES: RouteDefinition[] = [
   admisionesSeguimientoRoute,
   admisionesLegalesRoute,
   acompanamientosRoute,
+  comedoresRoute,
   expedientesPagosRoute,
   rendicionMensualRoute,
   rendicionFinalRoute,
@@ -153,6 +156,8 @@ export const ROUTES: RouteDefinition[] = [
   ciudadanoFamiliarRoute,
   ciudadanoFormRoute,
   ciudadanoHistorialRoute,
+  auditoriaListadoRoute,
+  auditoriaEventoRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

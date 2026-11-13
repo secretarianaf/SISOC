@@ -918,6 +918,17 @@ El historial de auditoría de una instancia es `routes/ciudadanoHistorial.tsx` s
 nativa; la exportación sigue siendo el `GET` nativo). Ver
 `docs/registro/cambios/2026-T4/2026-11-13-2785-react-ciudadano-historial.md`.
 
+El listado global de auditoría (`/auditoria/`, `GET /api/web/auditoria/listado/`) y el detalle de un
+evento (`/auditoria/evento/<id>/`, `GET /api/web/auditoria/evento/<id>/`) son
+`routes/ciudadanoHistorial.tsx` (modo global) y `routes/auditoriaEvento.tsx`, sobre
+`audittrail.web_auditoria`: corren `AuditLogListView` y `AuditLogDetailView` con su `dispatch`. La
+exportación sigue siendo el `GET` nativo. Ver
+`docs/registro/cambios/2026-T4/2026-11-13-2785-react-auditoria-listado-evento.md`.
+El listado de comedores (CO07.01) es `routes/comedores.tsx` sobre
+`/api/web/comedores/comedores/` (`comedores.web_api_comedores`, que corre `ComedorListView`; la
+exportación y los formularios siguen nativos). Ver
+`docs/registro/cambios/2026-T4/2026-11-13-2785-react-comedor-listado.md`.
+
 ### DDJJ pública PAS: entrada React sin montar
 
 `apps/pas` es una app propia (base `/v2/pas/`) que reemplaza solo la

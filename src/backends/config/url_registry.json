@@ -885,9 +885,19 @@
   "regex": "^comedores/(?P<comedor_id>[0-9]+)/territoriales/sincronizar/\\Z"
  },
  {
+  "name": "audittrail_web_evento",
+  "namespace": "",
+  "regex": "^api/web/auditoria/evento/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
   "name": "audittrail_web_historial",
   "namespace": "",
   "regex": "^api/web/auditoria/(?P<app_label>[^/]+)/(?P<model_name>[^/]+)/(?P<object_pk>[^/]+)/\\Z"
+ },
+ {
+  "name": "audittrail_web_listado",
+  "namespace": "",
+  "regex": "^api/web/auditoria/listado/\\Z"
  },
  {
   "name": "aval_crear",
@@ -1868,6 +1878,11 @@
   "name": "comedores_web_ciudadano_aporte",
   "namespace": "",
   "regex": "^api/web/comedores/ciudadanos/(?P<pk>[0-9]+)/aportes/(?P<aporte>[^/]+)/\\Z"
+ },
+ {
+  "name": "comedores_web_listado",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/\\Z"
  },
  {
   "name": "comedores_web_montos",

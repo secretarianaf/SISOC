@@ -157,16 +157,20 @@
   pantalla de alta del comedor (`modal.formulario`, la URL nativa a la que postea el modal) con
   los valores y los errores, como la página nativa que recarga el formulario. Para eso la ficha
   guarda el cuerpo del 400 (el mismo que devuelve el GET de esa pantalla) en `sessionStorage`
-  (`routes/comedorFichaRechazo.ts`) y la pantalla de alta lo toma una vez en lugar de pedir el
-  formulario vacío. **Falta del lado de esas pantallas** (`useMainResource` de `MainFrame.tsx`,
-  fuera de esta entrega): consumir `tomarRechazo(endpoint, valid)` antes del GET; sin ese cambio
-  la pantalla de alta se abre vacía. Un 403, un 400 sin cuerpo o un `sessionStorage` bloqueado
-  dejan el modal abierto con un aviso.
+  (`routes/comedorFichaRechazo.ts`) y la pantalla de alta lo toma una vez con `tomarRechazo` desde
+  `useMainResource` (`MainFrame.tsx`) en lugar de pedir el formulario vacío. Un 403, un 400 sin
+  cuerpo o un `sessionStorage` bloqueado dejan el modal abierto con un aviso. El flujo completo
+  (modal, 400, pantalla de alta con errores) se compara contra la página nativa con las vistas
+  previas de observaciones e intervenciones del banco: sin diferencias de estructura ni de píxeles
+  en escritorio y móvil.
 - El segundo modal de «No validar» queda sin `modal-open` ni bloqueo de scroll en la página nativa
-  (Bootstrap los retira cuando termina de ocultarse el primero) y React lo reproduce. Diferencia de
-  24 px sin cerrar: el cuadro de selección múltiple vacío del modal «Motivos de No Validación» mide
-  24 px más en la página nativa (su `ul.select2-selection__rendered` ocupa una línea de 30 px y en
-  React no genera caja); no se encontró el origen en 8 minutos y ambas hojas de estilo son las mismas.
+  (Bootstrap los retira cuando termina de ocultarse el primero) y React lo reproduce.
+- Causa de la diferencia de 24 px del modal «Motivos de No Validación» (cerrada): el `ul` vacío del
+  cuadro de selección múltiple es en línea y solo ocupa una línea (30 px) si Chrome lo maqueta con
+  `select2.min.css` ya aplicada; si la hoja llega después de maquetar el modal, conserva la caja
+  vacía de altura 0. La plantilla nativa carga las hojas en el `head`, y la ruta las montaba con el
+  segundo modal. Ahora `ComedorValidacion` las monta junto con el primer modal, de modo que están
+  cargadas cuando aparece el cuadro de selección.
 - El colapsar de las tarjetas usa el módulo compartido de React porque el AdminLTE nativo no
   carga en el banco de pruebas sin red; el comportamiento nativo no se pudo comparar ahí.
 - Las tablas de admisiones y «Descartar Expediente» no existen en la plantilla actual (ver

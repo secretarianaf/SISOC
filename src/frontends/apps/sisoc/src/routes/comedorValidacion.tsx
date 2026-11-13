@@ -78,9 +78,6 @@ function NoValidarModal({ opciones, busy, submit, close }: { opciones: Choice[];
   }
 
   return (
-    <>
-    <link rel="stylesheet" href={SELECT2_CSS} />
-    <link rel="stylesheet" href={SELECT2_THEME_CSS} />
     <NativeModal id="modalNoValidar" title="Motivos de No Validación" close={close} busy={busy} size=" modal-dialog-centered" controls={MODAL_CONTROLS}>
       <div className="modal-content">
         <form method="post" id="formNoValidar" onSubmit={onSubmit} noValidate ref={(el) => setParent(el?.closest<HTMLElement>(".modal") ?? null)}>
@@ -105,7 +102,6 @@ function NoValidarModal({ opciones, busy, submit, close }: { opciones: Choice[];
         </form>
       </div>
     </NativeModal>
-    </>
   );
 }
 
@@ -154,6 +150,11 @@ export default function ComedorValidacion({ comedorId, open, onClose }: { comedo
   return (
     <>
       {toasts.length > 0 && <NativeToasts messages={toasts} />}
+      {/* Mounted with the first modal, so both sheets are loaded before the select2 box is laid out (the native head loads them up front). */}
+      {open && data && <>
+        <link rel="stylesheet" href={SELECT2_CSS} />
+        <link rel="stylesheet" href={SELECT2_THEME_CSS} />
+      </>}
       {open && data && step === "elegir" && (
         <ElegirModal busy={busy} close={close} validar={() => void post(new URLSearchParams({ accion: "validar" }))} noValidar={() => setStep("no-validar")} />
       )}

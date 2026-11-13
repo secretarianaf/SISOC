@@ -135,6 +135,20 @@ describe("Comedor validation modals (CO07.03)", () => {
     ]);
   });
 
+  it("the select2 sheets load with the first modal, so the motivos box is laid out with them (an empty inline list laid out before them keeps no line height)", async () => {
+    render(<Host />);
+    const sheets = () => [...document.querySelectorAll("link[rel=stylesheet]")].map((l) => l.getAttribute("href"));
+    expect(sheets()).toEqual([]);
+    await open();
+    expect(sheets()).toEqual([
+      "https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/css/select2.min.css", "/static/custom/css/select2_theme.css",
+    ]);
+    expect(document.querySelector(".select2-selection")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "No Validar" }));
+    await screen.findByText("Motivos de No Validación", { selector: "h5" });
+    expect(sheets()).toHaveLength(2);
+  });
+
   it("drops the comment when «Otros» is unselected, as the native toggle does", async () => {
     webPost.mockResolvedValue({ status: 200, data: { redirect: "/comedores/7" } });
     render(<Host />);

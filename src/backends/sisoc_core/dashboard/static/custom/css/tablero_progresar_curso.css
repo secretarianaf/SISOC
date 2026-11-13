@@ -1,0 +1,528 @@
+/* Tablero Becas Progresar · Curso obligatorio (layout estándar de SISOC, oscuro).
+   Todo queda bajo .tpc-tablero para no tocar otras pantallas. */
+
+/* Fondo azul secundario de Poncho, como en la maqueta. Solo en esta pantalla:
+   se hizo como poncho_listados.css (.app-main:has(...)). */
+.app-main:has(.tpc-tablero) {
+    background-color: var(--poncho-azul-secundario, #3e5a7e);
+}
+
+.tpc-tablero {
+    --tpc-tarjeta: #232d4f;
+    --tpc-cabecera: #1c2440;
+    --tpc-borde: rgba(255, 255, 255, 0.08);
+    --tpc-control: rgba(255, 255, 255, 0.25);
+    --tpc-texto: #ffffff;
+    --tpc-gris: #d5dae6;
+    --tpc-gris-claro: #aab4c8;
+    --tpc-grilla: rgba(255, 255, 255, 0.08);
+    --tpc-teal: #3b8681;
+    --tpc-teal-claro: #8fd0c9;
+    --tpc-ambar: #e7a13a;
+    --tpc-rojo: #e5534b;
+    --tpc-track: #2f3d61;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    color: var(--tpc-texto);
+}
+
+/* Encabezado: texto, etiquetas y filtros */
+.tpc-tablero .tpc-encabezado {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.tpc-tablero .tpc-encabezado p {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: var(--tpc-gris-claro);
+}
+
+.tpc-tablero .tpc-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.tpc-tablero .tpc-chip {
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: var(--tpc-tarjeta);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--tpc-gris);
+}
+
+.tpc-tablero .tpc-chip-alcance {
+    background: rgba(59, 134, 129, 0.25);
+    border-color: rgba(59, 134, 129, 0.6);
+    color: var(--tpc-teal-claro);
+    font-weight: 500;
+}
+
+.tpc-tablero .tpc-chip-linea {
+    background: rgba(231, 161, 58, 0.18);
+    border-color: var(--tpc-ambar);
+    color: #f3c57e;
+    font-weight: 500;
+}
+
+.tpc-tablero .tpc-chip.tpc-chip-viejo {
+    background: var(--tpc-ambar);
+    border-color: var(--tpc-ambar);
+    color: #1c1c1c;
+    font-weight: 500;
+}
+
+.tpc-tablero .tpc-btn-borrar {
+    position: relative;
+    width: 26px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--tpc-control);
+    border-radius: 12px;
+    background: var(--tpc-tarjeta);
+    color: var(--tpc-gris);
+    font-size: 13px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tpc-tablero .tpc-btn-borrar:hover:not(:disabled) {
+    border-color: var(--tpc-rojo);
+    color: var(--tpc-rojo);
+}
+
+.tpc-tablero .tpc-btn-borrar:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.tpc-tablero .tpc-btn-borrar-x {
+    position: absolute;
+    right: 1px;
+    bottom: 0;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.tpc-tablero .tpc-filtros {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.tpc-tablero .tpc-filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 220px;
+}
+
+.tpc-tablero .tpc-filtro label {
+    font-size: 12px;
+    color: var(--tpc-gris);
+}
+
+.tpc-tablero .tpc-filtro .form-select {
+    height: 34px;
+    min-height: 34px;
+    font-size: 13px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    background-color: var(--tpc-tarjeta);
+    color: var(--tpc-texto);
+    border-color: var(--tpc-control);
+}
+
+.tpc-tablero .tpc-filtro .form-select:disabled {
+    opacity: 0.8;
+    cursor: not-allowed;
+}
+
+.tpc-tablero .tpc-filtro-activo label {
+    color: var(--tpc-texto);
+    font-weight: 500;
+}
+
+.tpc-tablero .tpc-filtro-activo .form-select {
+    border-color: var(--tpc-ambar);
+    box-shadow: 0 0 0 1px var(--tpc-ambar);
+}
+
+/* Tarjetas */
+.tpc-tablero .tpc-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.tpc-tablero .tpc-kpi {
+    background: var(--tpc-tarjeta);
+    border: 1px solid var(--tpc-borde);
+    border-radius: 6px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tpc-tablero .tpc-kpi.tpc-kpi-chica {
+    flex-direction: row;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+}
+
+.tpc-tablero .tpc-kpi-cabeza {
+    font-size: 24px;
+    line-height: 1.2;
+    color: var(--tpc-texto);
+    white-space: nowrap;
+}
+
+.tpc-tablero .tpc-kpi-chica .tpc-kpi-cabeza {
+    font-size: 20px;
+    white-space: normal;
+}
+
+.tpc-tablero .tpc-kpi-cabeza b {
+    font-weight: 700;
+}
+
+.tpc-tablero .tpc-kpi-cabeza span {
+    font-weight: 300;
+    color: var(--tpc-gris);
+    margin-left: 6px;
+}
+
+.tpc-tablero .tpc-kpi-chica-ico {
+    font-size: 22px;
+    line-height: 1;
+    padding-top: 3px;
+}
+
+.tpc-tablero .tpc-kpi-fila {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin: 12px 0;
+}
+
+.tpc-tablero .tpc-waffle {
+    display: block;
+    flex-shrink: 0;
+}
+
+.tpc-tablero .tpc-ley {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    min-width: 0;
+    min-height: 127px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-size: 12.5px;
+}
+
+.tpc-tablero .tpc-ley li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--tpc-grilla);
+}
+
+.tpc-tablero .tpc-ley li:last-child {
+    border-bottom: 0;
+}
+
+.tpc-tablero .tpc-ley i {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.tpc-tablero .tpc-ley span {
+    flex: 1;
+    color: var(--tpc-gris);
+    line-height: 1.2;
+}
+
+.tpc-tablero .tpc-ley b {
+    color: var(--tpc-texto);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.tpc-tablero .tpc-ley em {
+    font-style: normal;
+    color: var(--tpc-gris-claro);
+    min-width: 40px;
+    text-align: right;
+    margin-left: 4px;
+}
+
+.tpc-tablero .tpc-kpi-pie {
+    margin-top: auto;
+    font-size: 11.5px;
+    color: var(--tpc-gris-claro);
+}
+
+.tpc-tablero .tpc-kpi-chica .tpc-kpi-pie {
+    margin-top: 4px;
+}
+
+/* Secciones */
+.tpc-tablero .tpc-grilla-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    align-items: stretch;
+}
+
+.tpc-tablero .tpc-seccion {
+    background: var(--tpc-tarjeta);
+    border: 1px solid var(--tpc-borde);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tpc-tablero .tpc-seccion-cabecera {
+    padding: 10px 14px;
+    background: var(--tpc-cabecera);
+    border-bottom: 1px dotted var(--tpc-borde);
+    border-radius: 6px 6px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.tpc-tablero .tpc-seccion-cabecera h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--tpc-texto);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.tpc-tablero .tpc-nota {
+    font-size: 12px;
+    color: var(--tpc-gris-claro);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: 6px;
+}
+
+.tpc-tablero .tpc-btn-tabla {
+    border: 1px solid var(--tpc-control);
+    background: transparent;
+    color: var(--tpc-gris);
+    font-size: 12px;
+    border-radius: 4px;
+    padding: 2px 10px;
+    flex-shrink: 0;
+}
+
+.tpc-tablero .tpc-btn-tabla:hover {
+    border-color: var(--tpc-teal);
+    color: var(--tpc-teal-claro);
+}
+
+.tpc-tablero .tpc-seccion-cuerpo {
+    padding: 14px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.tpc-tablero .tpc-lienzo {
+    position: relative;
+    width: 100%;
+}
+
+.tpc-tablero .tpc-leyenda {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--tpc-gris);
+    margin-bottom: 8px;
+}
+
+.tpc-tablero .tpc-leyenda i {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    margin-right: 5px;
+    vertical-align: -1px;
+}
+
+.tpc-tablero .tpc-nota-pie {
+    font-size: 11.5px;
+    color: var(--tpc-gris-claro);
+    margin: 8px 0 0;
+}
+
+.tpc-tablero .tpc-nota-pie i {
+    color: var(--tpc-ambar);
+    margin-right: 4px;
+}
+
+/* Tablas */
+.tpc-tablero .tpc-tabla {
+    width: 100%;
+    font-size: 12.5px;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+    color: var(--tpc-texto);
+}
+
+.tpc-tablero .tpc-tabla th,
+.tpc-tablero .tpc-tabla td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--tpc-grilla);
+    text-align: right;
+}
+
+.tpc-tablero .tpc-tabla th:first-child,
+.tpc-tablero .tpc-tabla td:first-child {
+    text-align: left;
+}
+
+.tpc-tablero .tpc-tabla th {
+    color: var(--tpc-gris);
+    font-weight: 500;
+}
+
+.tpc-tablero .tpc-tblwrap,
+.tpc-tablero .tpc-scroll {
+    overflow-x: auto;
+}
+
+/* Jurisdicción: inscripción y resultados en la misma fila */
+.tpc-tablero .tpc-jur td,
+.tpc-tablero .tpc-jur th {
+    vertical-align: middle;
+    padding: 5px 8px;
+}
+
+.tpc-tablero .tpc-jur th:nth-child(4),
+.tpc-tablero .tpc-jur th:nth-child(5),
+.tpc-tablero .tpc-jur td.tpc-jur-barra {
+    text-align: left;
+}
+
+.tpc-tablero .tpc-jur td:nth-child(4) {
+    width: 30%;
+    min-width: 200px;
+}
+
+.tpc-tablero .tpc-jur td:nth-child(5) {
+    width: 38%;
+    min-width: 260px;
+}
+
+.tpc-tablero .tpc-jur-pct {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tpc-tablero .tpc-jur-pct span {
+    flex: 1;
+    height: 14px;
+    display: block;
+}
+
+.tpc-tablero .tpc-jur-pct span i {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+}
+
+.tpc-tablero .tpc-jur-pct b {
+    font-weight: 500;
+    min-width: 52px;
+    text-align: right;
+    color: var(--tpc-texto);
+}
+
+.tpc-tablero .tpc-mix {
+    display: flex;
+    height: 16px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--tpc-track);
+}
+
+.tpc-tablero .tpc-mix i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-style: normal;
+    font-size: 10.5px;
+    font-weight: 500;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.tpc-tablero .tpc-jur-vacio {
+    font-size: 11.5px;
+    color: var(--tpc-gris-claro);
+}
+
+.tpc-tablero .tpc-jur tr.tpc-jur-atenuada {
+    opacity: 0.35;
+}
+
+/* Sin jurisdicción asignada */
+.tpc-tablero .tpc-sin-alcance {
+    background: var(--tpc-tarjeta);
+    border: 1px solid var(--tpc-borde);
+    border-radius: 6px;
+    padding: 40px;
+    text-align: center;
+    color: var(--tpc-gris);
+}
+
+.tpc-tablero .tpc-sin-alcance i {
+    font-size: 26px;
+    color: var(--tpc-teal);
+}
+
+.tpc-tablero .tpc-oculto {
+    display: none !important;
+}
+
+@media (max-width: 1199px) {
+    .tpc-tablero .tpc-kpis {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 991px) {
+    .tpc-tablero .tpc-grilla-2 {
+        grid-template-columns: 1fr;
+    }
+}

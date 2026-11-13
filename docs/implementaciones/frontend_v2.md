@@ -727,6 +727,26 @@ las búsquedas RENAPER y el alta corren el servicio nativo sin encolar mensajes,
 `exportar/disponible/` reemplaza el aviso del CSV vacío. Registros:
 `../registro/cambios/2026-T4/2026-11-11-2805-react-cdf-centros-usuario.md` y
 `../registro/cambios/2026-T4/2026-11-11-2805-react-cdf-beneficiarios.md`.
+La ficha de la actividad y sus participantes (`routes/cdfActividades.tsx`,
+`routes/cdfParticipantes.tsx`, con `routes/cdfCrispy.tsx`) usan
+`src/backends/cdf/centrodefamilia/web_api_actividades.py`: cada endpoint corre la vista
+nativa (alta por búsqueda o formulario, baja con promoción automática y promoción
+manual) y responde su redirección como JSON; el mensaje queda encolado para la página
+de destino. `cdf_actividades_preview_patterns`
+(`src/backends/cdf/centrodefamilia/web_preview_actividades.py`) monta las entradas.
+La planilla de asistencia (`routes/cdfAsistencia.tsx`) usa
+`src/backends/cdf/centrodefamilia/web_api_asistencia.py`, que corre
+`AsistenciaActividadView` (404, después `puede_tomar_asistencia_cdf`); lo no marcado se
+guarda como ausente. Registros: `../registro/cambios/2026-T4/2026-11-13-2785-react-cdf-actividades-participantes.md`
+y `../registro/cambios/2026-T4/2026-11-13-2785-react-cdf-asistencia.md`.
+El listado de actividades y el catálogo (`routes/cdfActividadList.tsx`) usan
+`src/backends/cdf/centrodefamilia/web_api_actividades_gestion.py`, que corre
+`ActividadCentroListView` y `ActividadCreateView`; el orden por columna es local, como
+`listSort.js`. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-cdf-actividades-lista-catalogo.md`.
+El formulario de la actividad de un centro (`routes/cdfActividadForm.tsx`) usa
+`src/backends/cdf/centrodefamilia/web_api_actividad_form.py`, que corre
+`ActividadCentroCreateView` y `ActividadCentroUpdateView`; la hora usa flatpickr desde el
+CDN, como la página nativa. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-cdf-actividad-formulario.md`.
 
 DataCalle (operativos del backoffice) comparte el runtime y el prefijo: sus rutas viven
 bajo `/api/web/dispositivos/datacalle/` (`src/backends/dispositivos/datacalle/web_api_urls.py`,

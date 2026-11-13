@@ -29,13 +29,19 @@ import { cdiCentrosRoute } from "./cdiCentros";
 import { cdiNominaRoute } from "./cdiNomina";
 import { cdiNominaListaRoute } from "./cdiNominaLista";
 import { cdiObservacionesRoute } from "./cdiObservaciones";
+import { cdiTrabajadorRoute } from "./cdiTrabajadores";
 import { comedorIntervencionesRoute } from "./comedorIntervenciones";
 import { comedorObservacionesRoute } from "./comedorObservaciones";
 import { comedorColaboradoresRoute } from "./comedorColaboradores";
 import { comedorActividadesRoute } from "./comedorActividades";
 import { comedorCursosRoute } from "./comedorCursos";
 import { cdiReportesRoute } from "./cdiReportes";
+import { cdfActividadFormRoute } from "./cdfActividadForm";
+import { cdfActividadListRoute } from "./cdfActividadList";
+import { cdfActividadRoute } from "./cdfActividades";
+import { cdfAsistenciaRoute } from "./cdfAsistencia";
 import { cdfBeneficiariosRoute } from "./cdfBeneficiarios";
+import { cdfParticipantesRoute } from "./cdfParticipantes";
 import { cdfCentroFormRoute } from "./cdfCentroForm";
 import { cdfCentrosRoute } from "./cdfCentros";
 import { datacalleCasosRoute } from "./datacalleCasos";
@@ -122,11 +128,17 @@ export const ROUTES: RouteDefinition[] = [
   cdiNominaRoute,
   cdiNominaListaRoute,
   cdiDocumentacionRoute,
+  cdiTrabajadorRoute,
   cdfCentrosRoute,
   cdfCentroFormRoute,
   dispositivosRoute,
   cdfCentroUsuarioRoute,
   cdfBeneficiariosRoute,
+  cdfActividadRoute,
+  cdfActividadListRoute,
+  cdfActividadFormRoute,
+  cdfAsistenciaRoute,
+  cdfParticipantesRoute,
   datacalleRelevamientosRoute,
   datacalleCasosRoute,
   duplasRoute,

@@ -23,6 +23,7 @@ _OWNED_PATTERNS = (
     r"/api/web/cdi/centros/(?:[0-9]+/(?:nomina/(?:[0-9]+/)?"
     r"|usuarios/[0-9]+/estado/|trabajadores/[0-9]+/eliminar/)?)?",
     r"/api/web/cdi/nomina/[0-9]+/derivar/",
+    r"/api/web/cdi/centros/[0-9]+/trabajadores/[0-9]+/",
     r"/api/web/cdi/centros/(?:[0-9]+/nomina/[0-9]+/(?:(?:publicar|archivar|destacado|eliminar)/)?)?",
     r"/api/web/comedores/duplas/(?:crear/|[0-9]+/(?:(?:editar|eliminar)/)?)?",
     r"/api/web/comedores/montos/(?:crear/|[0-9]+/(?:editar/|eliminar/)?)?",
@@ -37,6 +38,10 @@ _OWNED_PATTERNS = (
     r"/api/web/cdf/centros/(?:[0-9]+/(?:usuarios/)?)?",
     r"/api/web/cdf/centros/(?:options/|crear/|[0-9]+/(?:editar|eliminar)/)",
     r"/api/web/cdf/centros/[0-9]+/generar-usuario/",
+    r"/api/web/cdf/actividades/(?:nueva/|[0-9]+/(?:asistencia/|editar/)?)?",
+    r"/api/web/cdf/centros/[0-9]+/actividades/nueva/",
+    r"/api/web/cdf/centros/[0-9]+/actividades/[0-9]+/"
+    r"(?:participantes/(?:[0-9]+/eliminar/)?|lista-espera/[0-9]+/promover/)",
     r"/api/web/cdf/(?:beneficiarios/(?:preinscripcion/(?:options/)?|buscar-cuil/"
     r"|buscar-responsable/|exportar/disponible/|[0-9]+/)?|responsables/(?:[0-9]+/)?)",
     r"/api/web/comedores/admisiones/plantillas-informe/"

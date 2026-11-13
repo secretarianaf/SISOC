@@ -1660,6 +1660,11 @@
   "regex": "^api/web/cdi/reportes/\\Z"
  },
  {
+  "name": "centrodeinfancia_web_trabajador_detalle",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/trabajadores/(?P<trabajador_id>[0-9]+)/\\Z"
+ },
+ {
   "name": "centrodeinfancia_web_trabajador_eliminar",
   "namespace": "",
   "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/trabajadores/(?P<trabajador_id>[0-9]+)/eliminar/\\Z"
@@ -6115,6 +6120,36 @@
   "regex": "^api/web/users/bulk\\-credentials/jobs/(?P<pk>[0-9]+)/resume/\\Z"
  },
  {
+  "name": "web_cdf_actividades_asistencia",
+  "namespace": "",
+  "regex": "^api/web/cdf/actividades/(?P<pk>[0-9]+)/asistencia/\\Z"
+ },
+ {
+  "name": "web_cdf_actividades_catalogo",
+  "namespace": "",
+  "regex": "^api/web/cdf/actividades/nueva/\\Z"
+ },
+ {
+  "name": "web_cdf_actividades_crear",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<centro_id>[0-9]+)/actividades/nueva/\\Z"
+ },
+ {
+  "name": "web_cdf_actividades_detail",
+  "namespace": "",
+  "regex": "^api/web/cdf/actividades/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_cdf_actividades_editar",
+  "namespace": "",
+  "regex": "^api/web/cdf/actividades/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "web_cdf_actividades_list",
+  "namespace": "",
+  "regex": "^api/web/cdf/actividades/\\Z"
+ },
+ {
   "name": "web_cdf_beneficiarios_detail",
   "namespace": "",
   "regex": "^api/web/cdf/beneficiarios/(?P<pk>[0-9]+)/\\Z"
@@ -6178,6 +6213,21 @@
   "name": "web_cdf_centros_usuarios",
   "namespace": "",
   "regex": "^api/web/cdf/centros/(?P<pk>[0-9]+)/usuarios/\\Z"
+ },
+ {
+  "name": "web_cdf_participantes_crear",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/participantes/\\Z"
+ },
+ {
+  "name": "web_cdf_participantes_eliminar",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/participantes/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "web_cdf_participantes_promover",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/lista\\-espera/(?P<pk>[0-9]+)/promover/\\Z"
  },
  {
   "name": "web_cdf_preinscripcion",

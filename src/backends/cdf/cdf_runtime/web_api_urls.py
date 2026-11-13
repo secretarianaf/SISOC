@@ -7,6 +7,7 @@ from ciudadanos.web_aportes import AporteCiudadanoWebView
 urlpatterns = [
     path("", include("centrodefamilia.web_api_urls")),
     path("", include("centrodefamilia.web_api_beneficiarios_urls")),
+    path("", include("centrodefamilia.web_api_actividades_urls")),
     # Aporte de Centro de Familia a Ciudadano 360 (C04).
     path(
         "ciudadanos/<int:pk>/aportes/<str:aporte>/",

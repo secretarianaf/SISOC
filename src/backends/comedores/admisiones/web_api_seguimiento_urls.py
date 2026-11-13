@@ -3,7 +3,7 @@
 Ver ``admisiones.web_api_listas``.
 """
 
-from django.urls import path
+from django.urls import include, path
 
 from admisiones.web_api_detalle import AdmisionDetailWebView
 from admisiones.web_api_editor import EditorAccionWebView, EditorWebView
@@ -17,6 +17,7 @@ urlpatterns = [
         AdmisionDetailWebView.as_view(),
         name="admisiones_web_detalle",
     ),
+    path("legales/", include("admisiones.web_api_legales_urls")),
     path("<int:pk>/", EditorWebView.as_view(), name="admisiones_web_editor"),
     path(
         "<int:pk>/acciones/<slug:accion>/",

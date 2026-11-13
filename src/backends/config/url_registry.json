@@ -280,6 +280,21 @@
   "regex": "^api/web/comedores/admisiones/(?P<pk>[0-9]+)/acciones/(?P<accion>[-a-zA-Z0-9_]+)/\\Z"
  },
  {
+  "name": "admisiones_web_legal",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/legales/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "admisiones_web_legal_accion",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/legales/(?P<pk>[0-9]+)/acciones/(?P<accion>[-a-zA-Z0-9_]+)/\\Z"
+ },
+ {
+  "name": "admisiones_web_legal_revision",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/legales/(?P<pk>[0-9]+)/complementario/revision/\\Z"
+ },
+ {
   "name": "admisiones_web_legales",
   "namespace": "",
   "regex": "^api/web/comedores/admisiones/legales/\\Z"

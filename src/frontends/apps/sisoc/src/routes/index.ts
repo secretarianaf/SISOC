@@ -4,6 +4,7 @@ import { actividadesPnudRoute } from "./actividadesPnud";
 import { admisionesTemplatesRoute } from "./admisionesTemplates";
 import { admisionesInformeDetalleRoute } from "./admisionesInformeDetalle";
 import { admisionesInformeEditorRoute } from "./admisionesInformeEditor";
+import { admisionesLegalesRoute } from "./admisionesLegales";
 import { admisionesSeguimientoRoute } from "./admisionesSeguimiento";
 import { businessRoute } from "./business";
 import { categoriasRoute } from "./categorias";
@@ -123,6 +124,7 @@ export const ROUTES: RouteDefinition[] = [
   admisionesInformeDetalleRoute,
   admisionesInformeEditorRoute,
   admisionesSeguimientoRoute,
+  admisionesLegalesRoute,
   acompanamientosRoute,
   expedientesPagosRoute,
   rendicionMensualRoute,

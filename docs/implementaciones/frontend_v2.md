@@ -803,6 +803,14 @@ embebido de informe y carátula, `informe_embebido` lo proyecta y `acciones/info
 (informe y carátula juntos); el modo embebido es el editor de informe de AD02.
 Registro: `../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-editor-tecnico.md`.
 
+Detalle legal de admisión (AD03.03, `/comedores/admisiones/legales/ver/<pk>` y
+`.../legales/revisar-complementario/<pk>`): `web_api_legales.py` proyecta el contexto de
+`AdmisionesLegalesDetailView` en `/api/web/comedores/admisiones/legales/<pk>/` y cada acción
+(`<pk>/acciones/<accion>/`) alimenta al handler nativo de `LegalesService` con solo los campos del
+botón; los mensajes del servicio se devuelven en `messages` y los formularios inválidos responden 400.
+El módulo React es `admisionesLegales.tsx`; los PDF y DOCX siguen siendo enlaces nativos. Registro:
+`../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-legales-detalle.md`.
+
 Expedientes de pago de un comedor (EX01) usan el mismo marco:
 `src/backends/comedores/expedientespagos/web_api.py` ejecuta las vistas nativas
 de listado, ficha, alta, edición y baja lógica con el acceso actual (lectura con

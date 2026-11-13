@@ -5,5 +5,6 @@ from django.urls import include, path
 urlpatterns = [
     path("", include("centrodeinfancia.web_api_urls")),
     path("", include("centrodeinfancia.web_api_urls_trabajadores")),
+    path("", include("centrodeinfancia.web_api_urls_destinatario")),
     path("", include("centrodeinfancia.web_api_urls_formularios")),
 ]

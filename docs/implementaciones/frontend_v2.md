@@ -798,8 +798,9 @@ Editor técnico de admisión (AD03.02, `/comedores/admisiones/tecnicos/editar/<p
 `web_api_editor.py` proyecta el contexto de `AdmisionesTecnicosUpdateView` en
 `/api/web/comedores/admisiones/<pk>/` y ejecuta el despacho nativo del `post()` (sin la rama
 genérica de `UpdateView`) en `<pk>/acciones/<accion>/`; el módulo React es `admisionesEditor.tsx`
-dentro de la ruta `admisionesSeguimiento.tsx`. Mientras la página nativa dibuja el formulario
-embebido de informe y carátula, la entrada de preview sirve esa página nativa (AD03.02b pendiente).
+dentro de la ruta `admisionesSeguimiento.tsx`. Cuando la página nativa dibuja el formulario
+embebido de informe y carátula, `informe_embebido` lo proyecta y `acciones/informe-caratula/` lo guarda
+(informe y carátula juntos); el modo embebido es el editor de informe de AD02.
 Registro: `../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-editor-tecnico.md`.
 
 Expedientes de pago de un comedor (EX01) usan el mismo marco:

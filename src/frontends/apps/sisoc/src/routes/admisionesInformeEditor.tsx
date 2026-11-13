@@ -26,7 +26,7 @@ export type Field = {
 };
 type Antecedente = { admision_id: number; incluida: string; resolucion: string; convenio: string; expediente: string };
 type Publicacion = { plantilla: { codigo: string; nombre: string; version: number } | null; error: string | null; configuracion_faltante: boolean; detalle_copiable: string };
-type FormData = {
+export type FormData = {
   tipo: string; admision_id: number; informe_id: number | null; estado: string; comedor: string; permite_no_corresponde: boolean;
   fields: Field[]; antecedentes: Antecedente[]; non_field_errors: string[]; campos_a_subsanar: string[]; observacion: string;
   publicacion: Publicacion; urls: { volver: string; previsualizar: string | null; reportar_faltante: string; localidades: string }; messages: Message[];
@@ -39,14 +39,14 @@ const API = "web/comedores/admisiones/informes/";
 const DAYS = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
 const MEALS: [string, string][] = [["desayuno", "Desayuno"], ["almuerzo", "Almuerzo"], ["merienda", "Merienda"], ["cena", "Cena"]];
 const EMPTY_LOCALIDAD: Choice = { value: "", label: "Seleccione una localidad" };
-const fieldValid = (f: unknown): f is Field => record(f) && ["name", "label", "id", "help_text", "widget"].every((k) => text(f[k])) &&
+export const fieldValid = (f: unknown): f is Field => record(f) && ["name", "label", "id", "help_text", "widget"].every((k) => text(f[k])) &&
   KINDS.includes(f.kind as string) && typeof f.required === "boolean" && (text(f.value) || typeof f.value === "boolean") &&
   Array.isArray(f.errors) && f.errors.every(text) && record(f.attrs) &&
   (f.choices === undefined || (Array.isArray(f.choices) && f.choices.every((c) => record(c) && text(c.value) && text(c.label))));
 const messagesValid = (v: unknown): v is Message[] => Array.isArray(v) && v.every((m) => record(m) && text(m.message) && LEVELS.includes(m.level as string) && (m.tags === undefined || text(m.tags)));
 /** The native form draws this tag inside the form; the layout toast script cannot (its tags are not a valid call). */
 const IN_FORM = "configuracion-template";
-const formValid = (v: unknown): v is FormData => record(v) && ["tipo", "estado", "comedor", "observacion"].every((k) => text(v[k])) &&
+export const formValid = (v: unknown): v is FormData => record(v) && ["tipo", "estado", "comedor", "observacion"].every((k) => text(v[k])) &&
   Array.isArray(v.fields) && v.fields.every(fieldValid) && Array.isArray(v.antecedentes) && Array.isArray(v.non_field_errors) &&
   Array.isArray(v.campos_a_subsanar) && record(v.publicacion) && record(v.urls) && internal(v.urls.volver) && internal(v.urls.localidades) &&
   (v.urls.previsualizar === null || internal(v.urls.previsualizar)) && internal(v.urls.reportar_faltante) && messagesValid(v.messages);
@@ -63,7 +63,7 @@ const LAYOUT: Layout[] = [
   { id: "ReferenciaIncorporacion", title: "Referencia a la Incorporación", fields: [["expediente_incorporacion","","col-md-6"],["convenio_incorporacion","","col-md-6"],["presentacion_avales","","col-12",1],["informe_tecnico_complementario_modificacion_prestaciones","","col-12",1],["if_it_complementario","","col-12",1]] },
 ];
 const section = (id: string) => LAYOUT.find((s) => s.id === id)!;
-const ALL_SECTIONS = LAYOUT.map((s) => s.id).concat(["AprobadasUltimoConvenio", "Solicitudes", "Aprobadas", "Antecedentes"]);
+const ALL_SECTIONS = LAYOUT.map((s) => s.id).concat(["AprobadasUltimoConvenio", "Solicitudes", "Aprobadas", "Antecedentes", "Caratula"]);
 
 /** crispy-bootstrap5 field (`as_crispy_field`) with the widget attributes the native form computed. */
 export function Crispy({ f, value, onChange, options }: { f: Field; value: Value; onChange: (v: Value) => void; options?: Choice[] }) {
@@ -164,14 +164,56 @@ async function fetchLocalidades(url: string, provincia: string): Promise<Choice[
   }
 }
 
-function Editor({ initial, saveUrl }: { initial: FormData; saveUrl: string }) {
+/** The cover of the expediente drawn inside the report form of the technical editor (`caratula_expediente_form.html`). */
+export type Caratula = { num_expediente: string | null; borrador: boolean; fields: Field[] | null };
+export type Embedded = { caratula: Caratula; onSaved: (messages: Message[]) => void; flash: (messages: Message[]) => void };
+
+/** `partials/numero_expediente_estructurado.html`: the four parts of the expediente number. */
+export function ExpedienteGrid({ fields, values, set, nonField = [] }: { fields: Field[]; values: Record<string, Value>; set: (name: string, v: string) => void; nonField?: string[] }) {
+  const by = (short: string) => fields.find((f) => f.name.endsWith(short))!;
+  const widget = (f: Field) => {
+    const { class: cls, maxlength, ...rest } = f.attrs;
+    return <input type="text" name={f.name} id={f.id} className={String(cls ?? "form-control")} maxLength={maxlength ? Number(maxlength) : undefined} {...rest}
+      required={f.required} value={String(values[f.name] ?? "")} onChange={(e) => set(f.name, e.target.value)} />;
+  };
+  const err = (f: Field) => f.errors.length > 0 && <ul className="errorlist">{f.errors.map((m, i) => <li key={i}>{m}</li>)}</ul>;
+  const a = by("expediente_anio"), n = by("expediente_numero"), r = by("expediente_reparticion"), o = by("expediente_organismo");
+  return <>
+    <div className="row g-3 expediente-estructurado-grid">
+      <div className="col-12 col-md-2">
+        <label className="form-label" htmlFor={a.id}>Año</label>
+        <div className="input-group"><span className="input-group-text">EX-</span>{widget(a)}</div>
+        {err(a)}
+      </div>
+      <div className="col-12 col-md-3">
+        <label className="form-label" htmlFor={n.id}>Número</label>
+        {widget(n)}
+        {err(n)}
+      </div>
+      <div className="col-12 col-md-4">
+        <label className="form-label" htmlFor={r.id}>Repartición</label>
+        <div className="input-group"><span className="input-group-text">APN-</span>{widget(r)}</div>
+        {err(r)}
+      </div>
+      <div className="col-12 col-md-3">
+        <label className="form-label" htmlFor={o.id}>Organismo</label>
+        <div className="input-group"><span className="input-group-text">#</span>{widget(o)}</div>
+        {err(o)}
+      </div>
+    </div>
+    {nonField.length > 0 && <div className="alert alert-danger mt-3 mb-0"><ul className="errorlist nonfield">{nonField.map((m, i) => <li key={i}>{m}</li>)}</ul></div>}
+  </>;
+}
+
+export function Editor({ initial, saveUrl, embedded }: { initial: FormData; saveUrl: string; embedded?: Embedded }) {
   const [form, setForm] = useState(initial);
-  const [values, setValues] = useState(() => initialValues(initial.fields));
+  const [caratulaFields, setCaratulaFields] = useState<Field[] | null>(embedded?.caratula.fields ?? null);
+  const [values, setValues] = useState(() => initialValues([...initial.fields, ...(embedded?.caratula.fields ?? [])]));
   const [options, setOptions] = useState<Record<string, Choice[]>>({});
   const [toasts, setToasts] = useState<{ key: number; items: Message[] }>({ key: 0, items: initial.messages });
   const [manual, setManual] = useState<Record<string, boolean>>({});
   const [modal, setModal] = useState(false);
-  const reference = useRef(initialValues(initial.fields));
+  const reference = useRef(initialValues([...initial.fields, ...(embedded?.caratula.fields ?? [])]));
   const interacted = useRef(false);
   const sending = useRef(false);
   const pending = useRef<string | null>(null);
@@ -198,8 +240,9 @@ function Editor({ initial, saveUrl }: { initial: FormData; saveUrl: string }) {
       else if (f.name.startsWith("aprobadas_")) open.add("Aprobadas");
       else if (f.name.startsWith("antecedente_")) open.add("Antecedentes");
     }
+    if (caratulaFields?.some((f) => f.errors.length > 0)) open.add("Caratula");
     return open;
-  }, [form.fields, byName, subsanar]);
+  }, [form.fields, byName, subsanar, caratulaFields]);
   const isOpen = (id: string) => manual[id] ?? auto.has(id);
 
   // `geografiaProvinciaLocalidad.js`: populate the localities of the province already selected.
@@ -254,15 +297,30 @@ function Editor({ initial, saveUrl }: { initial: FormData; saveUrl: string }) {
     const toast = (items: Message[]) => setToasts((t) => ({ key: t.key + 1, items }));
     try {
       const { data, status } = await webClient.post(saveUrl, { action, values }, { validateStatus: (s: number) => s >= 200 && s < 500 });
+      if (embedded && record(data) && data.success === true) { embedded.onSaved(messagesValid(data.messages) ? data.messages : []); return; }
       if (record(data) && data.success === true && internal(data.redirect)) { window.location.assign(data.redirect); return; }
       sending.current = false;
       if (status === 400 && record(data) && Array.isArray(data.fields) && data.fields.every(fieldValid)) {
+        const cover = Array.isArray(data.caratula_fields) && data.caratula_fields.every(fieldValid) ? data.caratula_fields as Field[] : null;
         setForm((f) => ({ ...f, fields: data.fields as Field[], non_field_errors: Array.isArray(data.non_field_errors) ? (data.non_field_errors as string[]) : [] }));
-        setValues(initialValues(data.fields as Field[]));
+        if (cover) setCaratulaFields(cover);
+        setValues(initialValues([...(data.fields as Field[]), ...(cover ?? [])]));
         setManual({}); // the native page reloads: only the sections with errors stay open.
+        if (embedded) {
+          embedded.flash(messagesValid(data.messages) ? data.messages : []);
+          // The native page reloads and scrolls to the section: keyboard focus starts at the document start.
+          document.getElementById("informe-tecnico-seccion")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          const marker = document.createElement("span");
+          marker.tabIndex = -1;
+          document.body.prepend(marker);
+          marker.focus({ preventScroll: true });
+          marker.remove();
+          return;
+        }
         toast(text(data.message) ? [{ message: data.message, level: "error" }] : []);
         return;
       }
+      if (embedded && record(data) && messagesValid(data.messages) && data.messages.length) { embedded.flash(data.messages); return; }
       toast([{ message: record(data) && text(data.error) ? data.error : "No se pudo guardar el informe técnico.", level: "error" }]);
     } catch {
       sending.current = false;
@@ -317,13 +375,24 @@ function Editor({ initial, saveUrl }: { initial: FormData; saveUrl: string }) {
     </Card>;
   const pub = form.publicacion;
 
-  return <>
-    {createPortal(<InsumosToastList key={toasts.key} messages={toasts.items.filter((m) => !m.tags?.includes(IN_FORM))} />, document.body)}
-    <link rel="stylesheet" href="/static/custom/css/informeTecnicoSecciones.css" />
-    <div className="container-fluid">
+  const cover = embedded && <Card id="Caratula" title="Carátula del Expediente" open={isOpen("Caratula")} toggle={() => toggle("Caratula")}>
+    {embedded.caratula.num_expediente ? <>
+      <p className="mb-0">Expediente caratulado: <strong>{embedded.caratula.num_expediente}</strong></p>
+      <small className="text-muted">Para modificarlo usá la edición del número de expediente en la ficha de la admisión.</small>
+    </> : caratulaFields ? <>
+      {embedded.caratula.borrador && <p className="mb-2"><span className="badge bg-secondary">Borrador</span>{" "}<small className="text-muted ms-1">Guardado sin caratular todavía.</small></p>}
+      <ExpedienteGrid fields={caratulaFields} values={values} set={(name, v) => set(name, v)} />
+      <small className="text-muted d-block mt-2">
+        Se guarda junto con el informe técnico: <strong>Guardar Borrador</strong> conserva el avance aunque esté incompleto, y <strong>Finalizar</strong> valida y caratula el expediente.
+      </small>
+    </> : <p className="text-muted mb-0">La caratulación no está disponible en el estado actual de la admisión.</p>}
+  </Card>;
+  const formEl = (
       <form method="post" encType="multipart/form-data" data-localidades-url={form.urls.localidades} data-avisar-cambios-sin-guardar="1" onSubmit={onSubmit} onClickCapture={abrirTodo}>
         {/* `{% csrf_token %}`: the notification button posts to the native URL. */}
         <input type="hidden" name="csrfmiddlewaretoken" value={leerCookie("csrftoken") ?? ""} />
+        {embedded && <input type="hidden" name="btnInformeTecnicoCaratula" value="1" />}
+        {cover}
         {toasts.items.filter((m) => m.tags?.includes(IN_FORM)).map((m, i) => <section key={i} className="alert border-0 shadow-sm mb-4" role="status" style={{ background: "#0b5f8a", color: "#fff" }}>
           <div className="d-flex align-items-center gap-3">
             <span className="rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "2.25rem", height: "2.25rem", background: "#9ee7ff", color: "#06415f" }}><i className="fas fa-check" aria-hidden="true" /></span>
@@ -373,17 +442,49 @@ function Editor({ initial, saveUrl }: { initial: FormData; saveUrl: string }) {
             </div>;
           })}
         </Card>}
-        <div className="card"><div className="card-body"><div className="d-flex justify-content-between">
+        {embedded ? <div className="d-flex justify-content-end gap-2">
+          <button type="submit" name="action" value="draft" formNoValidate className="btn btn-primary"><i className="fas fa-save" /> Guardar Borrador</button>
+          <button type="submit" name="action" value="submit" className="btn btn-success"><i className="fas fa-paper-plane" /> Finalizar</button>
+        </div> : <div className="card"><div className="card-body"><div className="d-flex justify-content-between">
           <a href={form.urls.volver} className="btn btn-secondary"><i className="fas fa-arrow-left" /> Volver</a>
           <div>
             <button type="submit" name="action" value="draft" className="btn btn-primary me-2"><i className="fas fa-save" /> Guardar Borrador</button>{" "}
             <button type="submit" name="action" value="submit" className="btn btn-success"><i className="fas fa-paper-plane" /> Finalizar</button>
           </div>
-        </div></div></div>
+        </div></div></div>}
       </form>
-      {modal && <Unsaved keep={() => { pending.current = null; setModal(false); }}
+  );
+  const unsaved = modal && <Unsaved keep={() => { pending.current = null; setModal(false); }}
         leave={() => { const destino = pending.current; pending.current = null; reference.current = { ...values }; interacted.current = false; setModal(false); if (destino) window.location.href = destino; }}
-        save={() => { pending.current = null; setModal(false); void save("draft"); }} />}
+        save={() => { pending.current = null; setModal(false); void save("draft"); }} />;
+  const head = <>
+    {createPortal(<InsumosToastList key={toasts.key} messages={toasts.items.filter((m) => !m.tags?.includes(IN_FORM))} />, document.body)}
+    <link rel="stylesheet" href="/static/custom/css/informeTecnicoSecciones.css" />
+  </>;
+  if (embedded) {
+    return <>
+      {head}
+      <div className="row" id="informe-tecnico-seccion"><div className="col-12">
+        <div className="card card-primary card-outline">
+          <div className="card-header"><h2 className="card-title fw-bold fs-3 mb-0">Informe Técnico y Carátula del Expediente</h2></div>
+          <div className="card-body pb-0">
+            <p className="text-muted mb-0">
+              <i className="fas fa-info-circle me-1" aria-hidden="true" />{" "}
+              <strong>Finalizar</strong> resuelve en un solo paso la caratulación del expediente y el informe técnico, aplicando las validaciones de cada uno.{" "}
+              <strong>Guardar Borrador</strong> guarda el avance de ambos sin exigir los campos obligatorios, incluida una carátula a medio cargar.
+            </p>
+          </div>
+          <div className="card-body">{formEl}</div>
+        </div>
+      </div></div>
+      {unsaved}
+    </>;
+  }
+  return <>
+    {head}
+    <div className="container-fluid">
+      {formEl}
+      {unsaved}
     </div>
   </>;
 }

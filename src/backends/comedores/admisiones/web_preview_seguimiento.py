@@ -72,20 +72,12 @@ class DetalleEntry(AdmisionDetailView):
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class EditorEntry(AdmisionesTecnicosUpdateView):
-    """GET serves the index after the native lookup.
-
-    While the native page draws the embedded report and cover form (the technician can edit
-    the report) the native page itself is served, so that no control is left inert; the
-    native ``post()`` stays for it.
-    """
+    """GET serves the index after the native lookup; the native ``post()`` stays."""
 
     index_bytes = b""
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        context = self.get_context_data(object=self.object)
-        if context.get("informe_form"):
-            return self.render_to_response(context)
         return _index(request, self.index_bytes)
 
 

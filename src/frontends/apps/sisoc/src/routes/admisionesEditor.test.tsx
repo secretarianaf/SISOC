@@ -40,7 +40,7 @@ const editor = (over: Record<string, unknown> = {}) => ({
   documentos: [doc()], documentos_personalizados: [], puede_agregar_documento: true,
   modales: { if_informe: [field("numero_if_tecnico", "Número IF Informe Técnico")], if_informe_archivo: { id: "id_archivo_informe_tecnico_GDE", label: "Archivo Informe Técnico (GDE)" },
     caratular: [field("expediente_anio", "Año"), field("expediente_numero", "Número"), field("expediente_reparticion", "Repartición"), field("expediente_organismo", "Organismo", "MCH")], informe_id: 9 },
-  informe_embebido: false, messages: [], ...over,
+  informe_embebido: null, messages: [], ...over,
 });
 
 function serve(data: unknown) {
@@ -334,5 +334,56 @@ describe("Technical admision editor (AD03.02)", () => {
     expect(screen.getByText("Corregir CUIT")).toBeTruthy();
     expect(screen.getByText("Rectificar X")).toBeTruthy();
     expect(screen.getByText("A Rectificar", { selector: "h2" })).toBeTruthy();
+  });
+
+  const embebido = (over: Record<string, unknown> = {}) => ({
+    tipo: "base", admision_id: 5, informe_id: null, estado: "", comedor: "Comedor Sintético", permite_no_corresponde: false,
+    fields: [field("nombre_organizacion", "Nombre de la organización", "Org", { required: false })], antecedentes: [], non_field_errors: [], campos_a_subsanar: [], observacion: "",
+    publicacion: { plantilla: null, error: null, configuracion_faltante: false, detalle_copiable: "" },
+    urls: { volver: EDITOR, previsualizar: null, reportar_faltante: "/comedores/admisiones/5/templates/reportar-faltante/", localidades: "/ajax/load_localidades/" },
+    caratula: { num_expediente: null, borrador: false, fields: [
+      field("caratula-expediente_anio", "Año"), field("caratula-expediente_numero", "Número"), field("caratula-expediente_reparticion", "Repartición"), field("caratula-expediente_organismo", "Organismo", "MCH")] },
+    messages: [], ...over,
+  });
+
+  it("draws the embedded report and cover form and saves a draft through its action", async () => {
+    serve(editor({ informe_embebido: embebido() }));
+    webPost.mockImplementationOnce(() => ok([{ message: "Informe técnico guardado correctamente.", level: "success" }]));
+    setup();
+    expect(await screen.findByText("Informe Técnico y Carátula del Expediente")).toBeTruthy();
+    expect(screen.getByText("Carátula del Expediente")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Guardar Borrador/ }).getAttribute("formnovalidate")).not.toBeNull();
+    fireEvent.change(document.getElementById("id_nombre_organizacion")!, { target: { value: "Nueva Org" } });
+    fireEvent.click(screen.getByText("Carátula del Expediente"));
+    for (const [name, value] of [["anio", "2026"], ["numero", "123456789"], ["reparticion", "DGD"]]) fireEvent.change(document.getElementById(`id_caratula-expediente_${name}`)!, { target: { value } });
+    fireEvent.click(screen.getByRole("button", { name: /Guardar Borrador/ }));
+    await waitFor(() => expect(webPost).toHaveBeenCalledWith("web/comedores/admisiones/5/acciones/informe-caratula/", expect.objectContaining({ action: "draft" }), expect.anything()));
+    const values = (webPost.mock.calls[0][1] as { values: Record<string, unknown> }).values;
+    expect(values.nombre_organizacion).toBe("Nueva Org");
+    expect(values["caratula-expediente_anio"]).toBe("2026");
+    expect(await screen.findByText("Informe técnico guardado correctamente.")).toBeTruthy();
+    await waitFor(() => expect(webGet).toHaveBeenCalledWith(`${API}?r=1`, expect.anything()));
+  });
+
+  it("keeps the form and shows the field errors of a rejected final submit", async () => {
+    serve(editor({ informe_embebido: embebido() }));
+    webPost.mockImplementationOnce(() => Promise.resolve({ status: 400, data: { success: false, messages: [{ message: "No se pudo guardar el informe. Verificá que los campos obligatorios estén completos.", level: "error" }],
+      non_field_errors: [], fields: [field("nombre_organizacion", "Nombre de la organización", "Org", { errors: ["Este campo es obligatorio."] })],
+      caratula_fields: [field("caratula-expediente_anio", "Año", "", { errors: ["Año inválido."] }), field("caratula-expediente_numero", "Número"), field("caratula-expediente_reparticion", "Repartición"), field("caratula-expediente_organismo", "Organismo", "MCH")] } }));
+    setup();
+    await screen.findByText("Informe Técnico y Carátula del Expediente");
+    for (const [name, value] of [["anio", "2026"], ["numero", "123456789"], ["reparticion", "DGD"]]) fireEvent.change(document.getElementById(`id_caratula-expediente_${name}`)!, { target: { value } });
+    fireEvent.click(screen.getByRole("button", { name: /Finalizar/ }));
+    expect(await screen.findByText("Este campo es obligatorio.")).toBeTruthy();
+    expect(screen.getByText("Año inválido.")).toBeTruthy();
+    expect(screen.getByText("No se pudo guardar el informe. Verificá que los campos obligatorios estén completos.")).toBeTruthy();
+    expect(webGet).not.toHaveBeenCalledWith(`${API}?r=1`, expect.anything());
+  });
+
+  it("shows the caratulated expediente instead of the cover fields", async () => {
+    serve(editor({ informe_embebido: embebido({ caratula: { num_expediente: "EX-2026-000000001- -APN-DGD#MCH", borrador: false, fields: null } }) }));
+    setup();
+    expect(await screen.findByText("Expediente caratulado:")).toBeTruthy();
+    expect(screen.getByText("Para modificarlo usá la edición del número de expediente en la ficha de la admisión.")).toBeTruthy();
   });
 });

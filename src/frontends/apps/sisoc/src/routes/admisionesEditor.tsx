@@ -2,7 +2,7 @@
 import { Fragment, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { leerCookie } from "@sisoc/api";
 import { NativeModal, NativeToasts } from "./nativeParity";
-import { Crispy, type Field, type Value } from "./admisionesInformeEditor";
+import { Crispy, Editor as InformeEditor, ExpedienteGrid, formValid, type Caratula, type Field, type FormData as InformeData, type Value } from "./admisionesInformeEditor";
 import { internal, record, text, webClient } from "./MainFrame";
 
 /**
@@ -45,7 +45,7 @@ export type EditorData = {
   stats: { obligatorios_completos: number | null; obligatorios_total: number | null; aceptados: number | null; a_validar_abogado: number | null; rectificar: number | null; pendientes: number | null };
   documentos: Doc[]; documentos_personalizados: Doc[]; puede_agregar_documento: boolean;
   modales: { if_informe: Field[]; if_informe_archivo: { id: string; label: string }; caratular: Field[]; informe_id: number | null };
-  informe_embebido: boolean; messages: Message[];
+  informe_embebido: (InformeData & { caratula: Caratula }) | null; messages: Message[];
 };
 
 const LEVELS = ["success", "error", "warning", "info"];
@@ -66,7 +66,8 @@ export function editorValid(v: unknown): v is EditorData {
     strings(a, ["tipo_convenio", "tipo_display", "estado_proceso", "fecha", "vencimiento_mandatos", "estado_legales", "observaciones"]) &&
     (a.convenio_numero === null || typeof a.convenio_numero === "number") && (a.personas_conveniadas_nomina === null || typeof a.personas_conveniadas_nomina === "number") &&
     typeof a.vigente_pwa === "boolean" && typeof a.enviado_legales === "boolean" && nullableText(a.num_expediente) && nullableText(a.informe_estado) && nullableText(a.numero_if_tecnico) && fileUrl(a.informe_gde) &&
-    ["puede_editar_convenio_numero", "mostrar_personas_conveniadas_nomina", "puede_editar_personas_conveniadas_nomina", "puede_editar_num_expediente", "puede_agregar_documento", "informe_embebido"].every((k) => typeof v[k] === "boolean") &&
+    ["puede_editar_convenio_numero", "mostrar_personas_conveniadas_nomina", "puede_editar_personas_conveniadas_nomina", "puede_editar_num_expediente", "puede_agregar_documento"].every((k) => typeof v[k] === "boolean") &&
+    (v.informe_embebido === null || (formValid(v.informe_embebido) && record((v.informe_embebido as Record<string, unknown>).caratula))) &&
     (v.pdf === null || (record(v.pdf) && ["archivo", "docx", "docx_editado"].every((k) => fileUrl((v.pdf as Record<string, unknown>)[k])))) &&
     list(v.complementarios, (c) => strings(c, ["fecha", "estado"]) && fileUrl((c as Record<string, unknown>).pdf)) &&
     (v.validaciones === null || (record(v.validaciones) && typeof v.validaciones.editable === "boolean")) &&
@@ -250,49 +251,19 @@ function IFInforme({ data, run, close }: { data: EditorData; run: Runner; close:
 function Caratular({ data, run, close, errors }: { data: EditorData; run: Runner; close: () => void; errors: Errors }) {
   const [busy, setBusy] = useState(false);
   const fields = errors ? errors.fields : data.modales.caratular;
-  const by = (name: string) => fields.find((f) => f.name === name)!;
-  const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(fields.map((f) => [f.name, String(f.value)])));
+  const [values, setValues] = useState<Record<string, Value>>(() => Object.fromEntries(fields.map((f) => [f.name, f.value])));
   const send = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true);
-    await run("caratular", Object.fromEntries(fields.map((f) => [f.name, values[f.name] ?? ""])));
+    await run("caratular", Object.fromEntries(fields.map((f) => [f.name, String(values[f.name] ?? "")])));
     setBusy(false);
   };
-  const widget = (f: Field, extra = "") => {
-    const { class: cls, maxlength, ...rest } = f.attrs;
-    return <input type="text" name={f.name} id={f.id} className={`${String(cls ?? "form-control")}${extra}`} maxLength={maxlength ? Number(maxlength) : undefined} {...rest}
-      required={f.required} value={values[f.name] ?? ""} onChange={(e) => setValues((p) => ({ ...p, [f.name]: e.target.value }))} />;
-  };
-  const err = (f: Field) => f.errors.length > 0 && <ul className="errorlist">{f.errors.map((m, i) => <li key={i}>{m}</li>)}</ul>;
-  const a = by("expediente_anio"), n = by("expediente_numero"), r = by("expediente_reparticion"), o = by("expediente_organismo");
   return (
     <ModalFrame id="caratularExpediente" title="Caratular Expediente" close={close} size=" modal-dialog-centered modal-expediente-amplio" busy={busy}
       formProps={{ onSubmit: (e) => void send(e) }}
       footer={<><button type="button" className="btn btn-secondary" onClick={close}>Cancelar</button>{" "}<button type="submit" className="btn btn-primary" id="btnCaratulacion_id" disabled={busy}>Guardar</button></>}>
       <div className="modal-body">
-        <div className="row g-3 expediente-estructurado-grid">
-          <div className="col-12 col-md-2">
-            <label className="form-label" htmlFor={a.id}>Año</label>
-            <div className="input-group"><span className="input-group-text">EX-</span>{widget(a)}</div>
-            {err(a)}
-          </div>
-          <div className="col-12 col-md-3">
-            <label className="form-label" htmlFor={n.id}>Número</label>
-            {widget(n)}
-            {err(n)}
-          </div>
-          <div className="col-12 col-md-4">
-            <label className="form-label" htmlFor={r.id}>Repartición</label>
-            <div className="input-group"><span className="input-group-text">APN-</span>{widget(r)}</div>
-            {err(r)}
-          </div>
-          <div className="col-12 col-md-3">
-            <label className="form-label" htmlFor={o.id}>Organismo</label>
-            <div className="input-group"><span className="input-group-text">#</span>{widget(o)}</div>
-            {err(o)}
-          </div>
-        </div>
-        {errors && errors.non_field_errors.length > 0 && <div className="alert alert-danger mt-3 mb-0"><ul className="errorlist nonfield">{errors.non_field_errors.map((m, i) => <li key={i}>{m}</li>)}</ul></div>}
+        <ExpedienteGrid fields={fields} values={values} set={(name, v) => setValues((p) => ({ ...p, [name]: v }))} nonField={errors?.non_field_errors} />
       </div>
     </ModalFrame>
   );
@@ -1031,6 +1002,10 @@ export function EditorContent({ data, onDone }: { data: EditorData; onDone: Done
   const [errors, setErrors] = useState<Errors>(null);
   const [expediente, setExpediente] = useState(false);
   const reload = () => onDone([], false);
+  // A reload brings a new `data`: the embedded form starts again from it, as the native page does.
+  const [seen, setSeen] = useState(data);
+  const [generation, setGeneration] = useState(0);
+  if (seen !== data) { setSeen(data); setGeneration((g) => g + 1); }
   const run: Runner = async (accion, body) => {
     try {
       const { data: d, status } = await webClient.post(`web/comedores/admisiones/${data.id}/acciones/${accion}/`, body, { validateStatus: (s: number) => s >= 200 && s < 500 });
@@ -1117,6 +1092,8 @@ export function EditorContent({ data, onDone }: { data: EditorData; onDone: Done
         </div>
       </div></div>}
       <Documentos data={data} toast={setToast} reload={reload} />
+      {data.informe_embebido && <InformeEditor key={generation} initial={data.informe_embebido} saveUrl={`web/comedores/admisiones/${data.id}/acciones/informe-caratula/`}
+        embedded={{ caratula: data.informe_embebido.caratula, flash: setFlash, onSaved: (messages) => { setFlash(messages); reload(); } }} />}
       {conf && <Confirm id={modal!} title={conf.title} question={conf.question} accion={conf.accion} run={run} close={close} centered={modal === "confirmarLegalesModal"} />}
       {modal === "modalIFInformeTecnico" && <IFInforme data={data} run={run} close={close} />}
       {modal === "modalRevisarInformeTecnico" && <RevisarInforme data={data} close={close} upload={() => setModal("modalSubirDocxFinal")} />}

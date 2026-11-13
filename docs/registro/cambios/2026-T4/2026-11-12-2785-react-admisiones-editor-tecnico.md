@@ -14,7 +14,7 @@ Archivos:
 - `src/backends/comedores/admisiones/web_preview_seguimiento.py`: entrada local del GET nativo.
 - `src/backends/config/url_registry.json` (regenerado) y `middlewares/admindocs.py`.
 - `src/frontends/apps/sisoc/src/routes/admisionesEditor.tsx` (con su prueba), `admisionesSeguimiento.tsx`
-  (ruta y encabezado sin cast) y `admisionesInformeEditor.tsx` (solo exporta `Crispy` y sus tipos).
+  (ruta y encabezado sin cast) y `admisionesInformeEditor.tsx` (exporta `Crispy`, `ExpedienteGrid` y el editor con modo embebido).
 - Pruebas: `test_web_api_editor_ad03.py` y `admisionesEditor.test.tsx`.
 
 ## Comportamiento
@@ -39,8 +39,15 @@ Archivos:
   resincronización siguen usando los endpoints nativos que llaman los scripts de la página; React replica
   sus toasts, alertas y modales y recarga los datos después de cada acción.
 - Si el usuario puede editar el informe técnico, la página nativa dibuja el formulario embebido de
-  informe y carátula. Mientras esa sección no esté migrada, la entrada de preview sirve la página nativa
-  en ese caso, de modo que no queda ningún control inerte.
+  informe y carátula. `GET` lo devuelve en `informe_embebido` (campos efectivos del formulario nativo,
+  antecedentes, publicación de template y la carátula con sus cuatro partes, con los nombres con prefijo
+  que el navegador enviaría). `POST .../acciones/informe-caratula/` (`{action: draft|submit, values}`)
+  corre `_handle_informe_tecnico_post`: informe y carátula se guardan juntos en una transacción, con las
+  mismas validaciones y mensajes. Un formulario inválido responde 400 con `fields`, `caratula_fields` y
+  `messages`, y no persiste nada. La sección reutiliza el editor de informe de AD02
+  (`admisionesInformeEditor.tsx`, con la carátula, el cartel de cambios sin guardar y los botones del
+  template embebido); `ExpedienteGrid` comparte el bloque de número de expediente con el modal de
+  «Caratular expediente».
 
 ## Verificación
 
@@ -49,8 +56,8 @@ ESLint, build, visual (S13, estados clave en escritorio) y G1 sobre el árbol fi
 
 ## Limitaciones
 
-- AD03.02b: formulario embebido de informe y carátula (`btnInformeTecnicoCaratula`) y la acción «reportar
-  faltante» que lo acompaña. Hasta entonces, ese estado del editor se sirve nativo.
+- «Notificar a referentes del sistema» (reportar configuración faltante) sigue siendo el POST nativo del
+  formulario, como en la página Django.
 - La descarga de DOCX/PDF sigue siendo nativa (enlaces a las URLs de media o a la vista de descarga).
 - Las brechas de acceso del contrato (resync sin permiso, personas conveniadas sin alcance por objeto,
   acciones sin revalidar rol ni estado de origen) se conservan y se fijan en las pruebas.

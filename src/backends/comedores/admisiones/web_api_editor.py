@@ -44,7 +44,12 @@ from admisiones.templatetags.admisiones_tags import (
 )
 from admisiones.views.web_views import AdmisionesTecnicosUpdateView
 from admisiones.web_api_detalle import VerAdmision
-from admisiones.web_api_informe_formulario import fields_payload
+from admisiones.web_api_informe_formulario import (
+    _antecedentes,
+    _publicacion,
+    _urls,
+    fields_payload,
+)
 from admisiones.web_api_listas import TECNICOS_PERMISSIONS
 from admisiones.web_api_templates import _native, pending_messages
 
@@ -58,6 +63,7 @@ ACCIONES = {
     "confirmar-tipo-convenio": "confirmar_tipo_convenio",
     "validaciones-template": "guardar_validaciones_template",
     "subir-docx-final": "subir_docx_final",
+    "informe-caratula": "btnInformeTecnicoCaratula",
 }
 SIN_INFO = "Sin información"
 # States of the admision in which the template hides the delete button of a file.
@@ -414,6 +420,38 @@ def _modales(admision, context, informe):
     }
 
 
+def _informe_embebido(request, context, admision):
+    """The report and cover form the native page draws inline (None when it does not)."""
+    informe = context.get("informe_tecnico")
+    if not usa_formulario_embebido(request.user, admision, informe):
+        return None
+    form = context["informe_form"]
+    caratular = context.get("caratular_form_informe")
+    observacion = context.get("informe_observacion")
+    return {
+        "tipo": context["informe_tipo"],
+        "admision_id": admision.pk,
+        "informe_id": informe.pk if informe else None,
+        "estado": informe.estado if informe else "",
+        "comedor": admision.comedor.nombre,
+        "permite_no_corresponde": form.permite_no_corresponde_fecha_vencimiento,
+        "fields": fields_payload(form),
+        "antecedentes": _antecedentes(form),
+        "non_field_errors": list(form.non_field_errors()),
+        "campos_a_subsanar": context.get("informe_campos_a_subsanar", []),
+        "observacion": observacion.texto if observacion else "",
+        "publicacion": _publicacion(context),
+        "urls": _urls({"admision": admision}, informe),
+        "caratula": {
+            "num_expediente": admision.num_expediente or None,
+            "borrador": bool(admision.num_expediente_borrador),
+            "fields": _prefijados(caratular) if caratular is not None else None,
+        },
+        "estado_formulario": informe.estado_formulario if informe else "",
+        "messages": [],
+    }
+
+
 def projection(request, context, admision, pk):
     """The JSON of the editor, from the native context."""
     user = request.user
@@ -528,7 +566,7 @@ def projection(request, context, admision, pk):
         ],
         "puede_agregar_documento": bool(adjuntable and rol["gestiona"]),
         "modales": _modales(admision, context, informe),
-        "informe_embebido": usa_formulario_embebido(user, admision, informe),
+        "informe_embebido": _informe_embebido(request, context, admision),
         "messages": pending_messages(request),
     }
 
@@ -555,6 +593,10 @@ def _post_data(request, clave):
     """Form-encoded view of the body, with the key of the action."""
     data = QueryDict(mutable=True)
     cuerpo = request.data
+    if clave == "btnInformeTecnicoCaratula" and isinstance(cuerpo, dict):
+        # ``{"action": "draft"|"submit", "values": {...}}``: the form's own fields.
+        data["action"] = str(cuerpo.get("action", ""))
+        cuerpo = cuerpo.get("values") or {}
     if hasattr(cuerpo, "items"):
         for nombre, valor in cuerpo.items():
             if valor is True:
@@ -565,8 +607,23 @@ def _post_data(request, clave):
     return data
 
 
-def _errores(response):
+def _prefijados(form):
+    """The fields of a prefixed form, named as the browser would post them."""
+    return [{**f, "name": form.add_prefix(f["name"])} for f in fields_payload(form)]
+
+
+def _errores(response, accion):
     contexto = getattr(response, "context_data", None) or {}
+    informe = contexto.get("informe_form")
+    if informe is not None and accion == "informe-caratula":
+        caratula = contexto.get("caratular_form_informe")
+        return {
+            "fields": fields_payload(informe),
+            "caratula_fields": (
+                _prefijados(caratula) if caratula is not None else None
+            ),
+            "non_field_errors": list(informe.non_field_errors()),
+        }
     formulario = contexto.get("caratular_form")
     if formulario is None:
         return {}
@@ -609,6 +666,12 @@ class EditorAccionWebView(APIView):
                     post_request
                 )
             )
+        elif accion == "informe-caratula":
+            respuesta = (
+                vista._handle_informe_tecnico_post(  # pylint: disable=protected-access
+                    post_request, vista.object
+                )
+            )
         else:
             respuesta = (
                 vista._handle_post_update_actions(  # pylint: disable=protected-access
@@ -639,5 +702,5 @@ class EditorAccionWebView(APIView):
         }
         if cuerpo["success"]:
             return Response(cuerpo)
-        cuerpo.update(_errores(respuesta))
+        cuerpo.update(_errores(respuesta, accion))
         return Response(cuerpo, status=400)

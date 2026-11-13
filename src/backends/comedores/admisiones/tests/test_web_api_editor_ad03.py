@@ -171,10 +171,10 @@ def test_read_buttons_follow_the_native_state(admision, root):
 def test_read_marks_the_embedded_report_form_for_the_technician(admision, root):
     datos = _lee(root, admision).json()
 
-    assert datos["informe_embebido"] is True
+    assert datos["informe_embebido"] is not None
     admision.estado_admision = "enviado_a_legales"
     admision.save()
-    assert _lee(root, admision).json()["informe_embebido"] is False
+    assert _lee(root, admision).json()["informe_embebido"] is None
 
 
 def test_access_and_lookups_are_the_native_ones(admision):
@@ -560,20 +560,83 @@ def preview_fixture(tmp_path):
 
 
 @pytest.mark.usefixtures("preview")
-def test_preview_serves_the_index_unless_the_native_page_embeds_the_report(admision):
+def test_preview_serves_the_index_after_the_native_guards(admision):
     url = f"/comedores/admisiones/tecnicos/editar/{admision.pk}"
-    lector = _cliente(_usuario("lector_prev_ed", "comedores.view_comedor"))
+    root = _cliente(_usuario("root_prev_ed", superuser=True))
 
-    # A plain reader cannot edit the report: React page.
-    assert '/comedores/react/assets/app-1.js"' in lector.get(url).content.decode()
+    assert '/comedores/react/assets/app-1.js"' in root.get(url).content.decode()
     assert Client().get(url).status_code in (302, 403)
     assert _cliente(_usuario("sin_prev_ed")).get(url).status_code == 403
-    assert lector.get("/comedores/admisiones/tecnicos/editar/999999").status_code == 404
-    # The technician that can edit it keeps the native page, so no control is inert.
-    root = _cliente(_usuario("root_prev_ed", superuser=True))
-    nativa = root.get(url).content.decode()
-    assert "informe-tecnico-seccion" in nativa
-    assert "/comedores/react/assets/app-1.js" not in nativa
-    # The native POST stays for that page.
+    assert root.get("/comedores/admisiones/tecnicos/editar/999999").status_code == 404
+    # The native POST stays.
     assert root.post(url, {"mandarLegales": "1"}).status_code == 302
     assert _fresca(admision).estado_admision == "enviado_a_legales"
+
+
+def test_embedded_report_form_is_projected_for_the_editing_technician(admision, root):
+    datos = _lee(root, admision).json()
+
+    informe = datos["informe_embebido"]
+    assert informe["tipo"] == "juridico"
+    assert informe["informe_id"] is None
+    nombres = {f["name"] for f in informe["fields"]}
+    assert "nombre_organizacion" in nombres
+    caratula = {f["name"] for f in informe["caratula"]["fields"]}
+    assert caratula == {
+        "caratula-expediente_anio",
+        "caratula-expediente_numero",
+        "caratula-expediente_reparticion",
+        "caratula-expediente_organismo",
+    }
+    assert informe["caratula"]["num_expediente"] is None
+    lector = _cliente(_usuario("lector_emb", "comedores.view_comedor"))
+    assert _lee(lector, admision).json()["informe_embebido"] is None
+    assert (
+        _accion(lector, admision, "informe-caratula", {"action": "draft"}).status_code
+        == 403
+    )
+
+
+def test_report_and_cover_draft_is_saved_together(admision, root):
+    respuesta = root.post(
+        f"{API}{admision.pk}/acciones/informe-caratula/",
+        {
+            "action": "draft",
+            "values": {
+                "nombre_organizacion": "Org Borrador",
+                "caratula-expediente_anio": "2026",
+                "caratula-expediente_numero": "123456789",
+                "caratula-expediente_reparticion": "DGD",
+                "caratula-expediente_organismo": "MCH",
+            },
+        },
+        content_type="application/json",
+    )
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["message"] == "Informe técnico guardado correctamente."
+    admision = _fresca(admision)
+    assert admision.num_expediente_borrador == "EX-2026-123456789- -APN-DGD#MCH"
+    informe = InformeTecnico.objects.get(admision=admision)
+    assert informe.nombre_organizacion == "Org Borrador"
+    assert (
+        _lee(root, admision).json()["informe_embebido"]["caratula"]["borrador"] is True
+    )
+
+
+def test_invalid_final_submit_returns_the_errors_and_persists_nothing(admision, root):
+    respuesta = root.post(
+        f"{API}{admision.pk}/acciones/informe-caratula/",
+        {"action": "submit", "values": {"nombre_organizacion": "Solo esto"}},
+        content_type="application/json",
+    )
+
+    assert respuesta.status_code == 400
+    cuerpo = respuesta.json()
+    assert cuerpo["success"] is False
+    assert any(f["errors"] for f in cuerpo["fields"])
+    assert cuerpo["messages"][-1]["message"].startswith(
+        "No se pudo guardar el informe."
+    )
+    assert not InformeTecnico.objects.filter(admision=admision).exists()
+    assert _fresca(admision).num_expediente in (None, "")

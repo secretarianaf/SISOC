@@ -14,7 +14,6 @@ from audittrail.constants import get_tracked_model_allowlist
 from audittrail.context import get_audit_context
 from audittrail.models import AuditEntryMeta
 
-
 AUDITTRAIL_EXTRA_BATCH_KEYS = (
     "audittrail_batch_key",
     "batch_id",

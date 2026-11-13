@@ -270,6 +270,16 @@
   "regex": "^api/web/comedores/admisiones/(?P<comedor_pk>[0-9]+)/(?P<pk>[0-9]+)/detalle/\\Z"
  },
  {
+  "name": "admisiones_web_editor",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "admisiones_web_editor_accion",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/(?P<pk>[0-9]+)/acciones/(?P<accion>[-a-zA-Z0-9_]+)/\\Z"
+ },
+ {
   "name": "admisiones_web_legales",
   "namespace": "",
   "regex": "^api/web/comedores/admisiones/legales/\\Z"

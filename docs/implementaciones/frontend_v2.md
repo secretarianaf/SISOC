@@ -794,6 +794,14 @@ el acceso actual; «Forzar Cierre» sigue siendo el POST nativo. Registros:
 `../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-seguimiento-listas.md` y
 `../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-seguimiento-detalle.md`.
 
+Editor técnico de admisión (AD03.02, `/comedores/admisiones/tecnicos/editar/<pk>`):
+`web_api_editor.py` proyecta el contexto de `AdmisionesTecnicosUpdateView` en
+`/api/web/comedores/admisiones/<pk>/` y ejecuta el despacho nativo del `post()` (sin la rama
+genérica de `UpdateView`) en `<pk>/acciones/<accion>/`; el módulo React es `admisionesEditor.tsx`
+dentro de la ruta `admisionesSeguimiento.tsx`. Mientras la página nativa dibuja el formulario
+embebido de informe y carátula, la entrada de preview sirve esa página nativa (AD03.02b pendiente).
+Registro: `../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-editor-tecnico.md`.
+
 Expedientes de pago de un comedor (EX01) usan el mismo marco:
 `src/backends/comedores/expedientespagos/web_api.py` ejecuta las vistas nativas
 de listado, ficha, alta, edición y baja lógica con el acceso actual (lectura con

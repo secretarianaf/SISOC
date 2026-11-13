@@ -1,4 +1,4 @@
-"""Explicit local React preview of the admision circuit pages (AD03.01).
+"""Explicit local React preview of the admision circuit pages (AD03.01, AD03.02).
 
 Never mounted by a production URLconf. Each entry keeps the native URL, the
 native route decorator (``permissions_any_required``) and the native view's
@@ -26,6 +26,7 @@ from admisiones.views.web_views import (
     AdmisionDetailView,
     AdmisionesLegalesListView,
     AdmisionesTecnicosListView,
+    AdmisionesTecnicosUpdateView,
 )
 from admisiones.web_api_listas import LEGALES_PERMISSIONS, TECNICOS_PERMISSIONS
 
@@ -69,6 +70,25 @@ class DetalleEntry(AdmisionDetailView):
         return _index(request, self.index_bytes)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EditorEntry(AdmisionesTecnicosUpdateView):
+    """GET serves the index after the native lookup.
+
+    While the native page draws the embedded report and cover form (the technician can edit
+    the report) the native page itself is served, so that no control is left inert; the
+    native ``post()`` stays for it.
+    """
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        context = self.get_context_data(object=self.object)
+        if context.get("informe_form"):
+            return self.render_to_response(context)
+        return _index(request, self.index_bytes)
+
+
 def seguimiento_preview_patterns(build_directory):
     """Freeze an explicit local ``apps/sisoc`` build for a disposable preview URLconf."""
     original = Path(build_directory)
@@ -99,6 +119,10 @@ def seguimiento_preview_patterns(build_directory):
         path(
             "comedores/<int:comedor_pk>/admision/<int:pk>/detalle/",
             entry(DetalleEntry, TECNICOS_PERMISSIONS),
+        ),
+        path(
+            "comedores/admisiones/tecnicos/editar/<int:pk>",
+            entry(EditorEntry, TECNICOS_PERMISSIONS),
         ),
         path(
             "comedores/react/<path:asset_path>",

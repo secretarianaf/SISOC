@@ -17,9 +17,9 @@ import type { RouteDefinition } from "./types";
  */
 type Params = { tipo: string; admision?: string; id?: string };
 type Message = { message: string; level: "success" | "error" | "warning" | "info"; tags?: string };
-type Choice = { value: string; label: string };
-type Value = string | boolean;
-type Field = {
+export type Choice = { value: string; label: string };
+export type Value = string | boolean;
+export type Field = {
   name: string; label: string; kind: "text" | "select" | "textarea" | "date" | "number" | "checkbox"; required: boolean;
   value: Value; help_text: string; max_length: number | null; errors: string[]; id: string;
   attrs: Record<string, string | boolean>; widget: string; choices?: Choice[];
@@ -66,7 +66,7 @@ const section = (id: string) => LAYOUT.find((s) => s.id === id)!;
 const ALL_SECTIONS = LAYOUT.map((s) => s.id).concat(["AprobadasUltimoConvenio", "Solicitudes", "Aprobadas", "Antecedentes"]);
 
 /** crispy-bootstrap5 field (`as_crispy_field`) with the widget attributes the native form computed. */
-function Crispy({ f, value, onChange, options }: { f: Field; value: Value; onChange: (v: Value) => void; options?: Choice[] }) {
+export function Crispy({ f, value, onChange, options }: { f: Field; value: Value; onChange: (v: Value) => void; options?: Choice[] }) {
   const invalid = f.errors.length > 0;
   const { class: widgetClass, maxlength, ...rest } = f.attrs;
   const props: Record<string, unknown> = { name: f.name, id: f.id, ...rest };

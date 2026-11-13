@@ -460,7 +460,7 @@ function RendicionFinal({ data }: { data: DetalleData }) {
 }
 
 /** The `titulo-pagina` block: the title and the active/closed badge. */
-export function DetalleHeading({ activa }: { activa: boolean }): ReactNode {
+export function DetalleHeading({ activa }: { activa: boolean }) {
   return <>Detalle de Admision{" "}{activa ? <span className="badge bg-success">Activa</span> : <span className="badge bg-danger">Cerrada</span>}</>;
 }
 

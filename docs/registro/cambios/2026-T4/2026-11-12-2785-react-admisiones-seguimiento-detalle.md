@@ -44,6 +44,7 @@ Entorno sintético, sin red: pruebas de la API y del preview, `black`, `pylint`,
 
 ## Limitaciones
 
-- `SisocShell` tipa `heading` como texto; el encabezado con la insignia se pasa como nodo con un cast
-  local hasta que el marco acepte `ReactNode`.
-- Quedan para otras entregas el editor técnico y el detalle legal, y el resto de las acciones de AD03.02/03.
+- El encabezado con la insignia se pasa como nodo (`<DetalleHeading />`): `MainPage.heading` y
+  `SisocShell` aceptan `ReactNode` y ya no hace falta el cast.
+- El editor técnico tiene su propio [registro](2026-11-12-2785-react-admisiones-editor-tecnico.md); el
+  detalle legal y sus acciones quedan para otra entrega.

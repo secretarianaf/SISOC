@@ -68,7 +68,7 @@ describe("Admision lists route (AD03.01)", () => {
   it("owns only the two native list pages, without a trailing slash", () => {
     expect(findRoute(TECNICOS)?.params).toEqual({ page: "tecnicos" });
     expect(findRoute(LEGALES)?.params).toEqual({ page: "legales" });
-    for (const other of [`${TECNICOS}/`, "/comedores/admisiones/tecnicos/editar/5", "/comedores/admisiones/legales/ver/5"]) {
+    for (const other of [`${TECNICOS}/`, "/comedores/admisiones/tecnicos/editar/5/", "/comedores/admisiones/legales/ver/5"]) {
       expect(findRoute(other)?.route.name).not.toBe("comedores-admisiones-seguimiento");
     }
   });

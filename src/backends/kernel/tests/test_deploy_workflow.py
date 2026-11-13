@@ -2,7 +2,6 @@ from pathlib import Path
 
 from django.db.migrations.loader import MigrationLoader
 
-
 REPO_ROOT = Path(__file__).resolve().parents[4]
 DEPLOY_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "deploy.yml"
 VERIFIED_DEPLOY = REPO_ROOT / "src" / "scripts" / "operacion" / "deploy_verified.sh"

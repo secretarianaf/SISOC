@@ -31,6 +31,10 @@ MENSAJE_CUPO_ALIMENTARIO_WEB = (
     "espacio ya completó el cupo de personas conveniadas. Puede agregarla "
     "solo en Actividades, o dar de baja a otra persona para liberar un lugar."
 )
+MENSAJE_SOLO_ACTIVIDADES_POR_CUPO = (
+    "La persona se agregó solo en Actividades: no se la sumó a Prestación "
+    "alimentaria porque el espacio ya completó el cupo de personas conveniadas."
+)
 
 
 class ReferenteForm(forms.ModelForm):
@@ -102,6 +106,7 @@ class NominaExtraForm(NominaForm):
     def __init__(self, *args, **kwargs):
         self.comedor = kwargs.pop("comedor", None)
         super().__init__(*args, **kwargs)
+        self.alimentaria_omitida_por_cupo = False
         self.es_pnud = bool(self.comedor and is_pnud_comedor(self.comedor))
         if not self.es_pnud:
             self.fields.pop("asistencia_alimentaria", None)
@@ -147,11 +152,20 @@ class NominaExtraForm(NominaForm):
                 "actividad_ids",
                 "Debe seleccionar al menos una actividad.",
             )
-        self._validar_tope_nomina_alimentaria(cleaned_data, asistencia_alimentaria)
+        self._aplicar_tope_nomina_alimentaria(
+            cleaned_data, asistencia_alimentaria, asistencia_actividades
+        )
         return cleaned_data
 
-    def _validar_tope_nomina_alimentaria(self, cleaned_data, asistencia_alimentaria):
-        """Misma regla de tope que el alta desde la PWA (issue #2844)."""
+    def _aplicar_tope_nomina_alimentaria(
+        self, cleaned_data, asistencia_alimentaria, asistencia_actividades
+    ):
+        """Misma regla de tope que el alta desde la PWA (issue #2844).
+
+        Con el cupo completo, si también se eligió Actividades la persona se
+        suma solo a Actividades (``alimentaria_omitida_por_cupo`` avisa a la
+        vista); si solo se eligió Prestación alimentaria, el alta se rechaza.
+        """
         # Import diferido: pwa.services.nomina_service importa ComedorService,
         # que a su vez importa este módulo de forms.
         # pylint: disable-next=import-outside-toplevel
@@ -161,8 +175,13 @@ class NominaExtraForm(NominaForm):
             return
         if cleaned_data.get("estado") == Nomina.ESTADO_BAJA:
             return
-        if tope_nomina_alimentaria_cubierto(comedor_id=self.comedor.pk):
-            self.add_error("asistencia_alimentaria", MENSAJE_CUPO_ALIMENTARIO_WEB)
+        if not tope_nomina_alimentaria_cubierto(comedor_id=self.comedor.pk):
+            return
+        if asistencia_actividades:
+            cleaned_data["asistencia_alimentaria"] = False
+            self.alimentaria_omitida_por_cupo = True
+            return
+        self.add_error("asistencia_alimentaria", MENSAJE_CUPO_ALIMENTARIO_WEB)
 
 
 class CiudadanoFormParaNomina(forms.ModelForm):

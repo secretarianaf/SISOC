@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block content %}
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .app-content-header { display: none; }
 
         .asis-page {

@@ -1,0 +1,13 @@
+/* Datos del Convenio (#2843): ancho de cada caja según el dato que entra. */
+.convenio-campo {
+    width: 100%;
+    max-width: 24rem; /* texto libre, ej. Número de Convenio */
+}
+
+.convenio-campo--monto {
+    max-width: 16rem;
+}
+
+.convenio-campo--cantidad {
+    max-width: 10rem;
+}

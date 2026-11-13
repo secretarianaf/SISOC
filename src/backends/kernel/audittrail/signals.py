@@ -6,13 +6,13 @@ organizaciones.
 import json
 
 from django.db import OperationalError, ProgrammingError
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from auditlog.models import LogEntry
+from audittrail.constants import get_tracked_model_allowlist
 from audittrail.context import get_audit_context
 from audittrail.models import AuditEntryMeta
-
 
 AUDITTRAIL_EXTRA_BATCH_KEYS = (
     "audittrail_batch_key",
@@ -164,3 +164,18 @@ def ensure_audit_entry_meta(sender, instance: LogEntry, created: bool, **kwargs)
     except (OperationalError, ProgrammingError):
         # Permite bootstrapping previo a migrar audittrail (fase 2).
         return
+
+
+@receiver(pre_save, sender=LogEntry)
+def redact_sensitive_object_repr(sender, instance: LogEntry, **kwargs):
+    """Keep model __str__ personal data out of sensitive audit labels.
+
+    django-auditlog applies include/exclude_fields only to changes, not to
+    object_repr. Use the central definition without importing vertical models.
+    """
+    content_type = instance.content_type
+    definition = get_tracked_model_allowlist().get(
+        (content_type.app_label, content_type.model)
+    )
+    if definition and definition.redact_object_repr:
+        instance.object_repr = f"{definition.label} #{instance.object_pk}"

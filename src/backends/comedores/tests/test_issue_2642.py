@@ -77,11 +77,11 @@ def test_montos_aceptan_pesos_enteros_y_separadores(valor):
     form = ComedorDatosConvenioPnudForm(
         data={
             **{name: 0 for name in PRESTACIONES_APROBADAS_FIELDS},
-            "monto_total_conveniado": valor,
+            "monto_convenio_prestaciones_alimentarias": valor,
         }
     )
     assert form.is_valid(), form.errors
-    assert form.cleaned_data["monto_total_conveniado"] == Decimal(
+    assert form.cleaned_data["monto_convenio_prestaciones_alimentarias"] == Decimal(
         valor.replace(".", "")
     )
 
@@ -91,26 +91,32 @@ def test_montos_rechazan_formatos_ambiguos(valor):
     form = ComedorDatosConvenioPnudForm(
         data={
             **{name: 0 for name in PRESTACIONES_APROBADAS_FIELDS},
-            "monto_total_conveniado": valor,
+            "monto_convenio_prestaciones_alimentarias": valor,
         }
     )
     assert not form.is_valid()
-    assert "monto_total_conveniado" in form.errors
+    assert "monto_convenio_prestaciones_alimentarias" in form.errors
 
 
 def test_montos_se_muestran_sin_decimales_y_conservan_centavos_historicos():
-    instance = ComedorDatosConvenioPnud(monto_total_conveniado=Decimal("100000000.25"))
+    instance = ComedorDatosConvenioPnud(
+        monto_convenio_prestaciones_alimentarias=Decimal("100000000.25")
+    )
     form = ComedorDatosConvenioPnudForm(instance=instance)
-    assert 'value="100.000.000"' in str(form["monto_total_conveniado"])
+    assert 'value="100.000.000"' in str(
+        form["monto_convenio_prestaciones_alimentarias"]
+    )
     bound = ComedorDatosConvenioPnudForm(
         data={
             **{name: 0 for name in PRESTACIONES_APROBADAS_FIELDS},
-            "monto_total_conveniado": "100.000.000",
+            "monto_convenio_prestaciones_alimentarias": "100.000.000",
         },
         instance=instance,
     )
     assert bound.is_valid(), bound.errors
-    assert bound.cleaned_data["monto_total_conveniado"] == Decimal("100000000.25")
+    assert bound.cleaned_data["monto_convenio_prestaciones_alimentarias"] == Decimal(
+        "100000000.25"
+    )
 
 
 @pytest.mark.django_db

@@ -9,7 +9,6 @@ from comedores.utils import (
     is_abordaje_comunitario_linea_tradicional_program,
 )
 
-
 PRESTACIONES_APROBADAS_DIAS = (
     "lunes",
     "martes",
@@ -33,6 +32,15 @@ PRESTACIONES_APROBADAS_FIELDS = [
 ]
 
 
+SOLO_NUMEROS_ATTRS = {
+    "class": "form-control",
+    "min": "0",
+    "step": "1",
+    "inputmode": "numeric",
+    "data-solo-numeros": "true",
+}
+
+
 class MontoConvenioWidget(forms.TextInput):
     def format_value(self, value):
         if value in (None, ""):
@@ -49,7 +57,7 @@ class MontoConvenioWidget(forms.TextInput):
 class MontoConvenioField(forms.DecimalField):
     def to_python(self, value):
         if isinstance(value, str) and value.strip():
-            value = value.strip()
+            value = value.strip().lstrip("$").strip()
             if not re.fullmatch(r"-?(?:[0-9]+|[0-9]{1,3}(?:\.[0-9]{3})+)", value):
                 raise forms.ValidationError(
                     "Ingresá un monto sin decimales, por ejemplo 100.000.000."
@@ -60,7 +68,6 @@ class MontoConvenioField(forms.DecimalField):
 
 class ComedorDatosConvenioPnudForm(forms.ModelForm):
     MONTOS_FIELDS = (
-        "monto_total_conveniado",
         "monto_convenio_prestaciones_alimentarias",
         "monto_convenio_siph",
     )
@@ -71,6 +78,13 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
         "prestaciones_financiadas_diarias_merienda_reforzada",
         "prestaciones_financiadas_diarias_cena",
     ]
+    ENTEROS_FIELDS = (
+        "prestaciones_financiadas_mensuales",
+        *PRESTACIONES_DIARIAS_FIELDS,
+        "personas_conveniadas",
+        "personas_declaradas_siph",
+        "cantidad_modulos",
+    )
 
     def __init__(self, *args, comedor=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -89,6 +103,9 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
                     }
                 ),
             )
+        for name in self.ENTEROS_FIELDS:
+            self.fields[name].widget = forms.NumberInput(attrs=SOLO_NUMEROS_ATTRS)
+        self.fields["nro_convenio"].widget.attrs["class"] = "form-control"
         if is_abordaje_comunitario_linea_secos_program(comedor):
             for field_name in [
                 "prestaciones_financiadas_mensuales",
@@ -125,8 +142,8 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
 
     class Meta:
         model = ComedorDatosConvenioPnud
+        # Orden de carga pedido en #2843; la vista de edición y el legajo lo siguen.
         fields = [
-            "monto_total_conveniado",
             "nro_convenio",
             "monto_convenio_prestaciones_alimentarias",
             "monto_convenio_siph",
@@ -137,27 +154,26 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
             "prestaciones_financiadas_diarias_merienda_reforzada",
             "prestaciones_financiadas_diarias_cena",
             "personas_conveniadas",
-            "personas_declaradas_siph",
             "cantidad_modulos",
+            "personas_declaradas_siph",
         ] + PRESTACIONES_APROBADAS_FIELDS
         labels = {
-            "monto_total_conveniado": "Monto total conveniado",
-            "nro_convenio": "Nro convenio",
-            "monto_convenio_prestaciones_alimentarias": "Monto total de convenio por Espacio - Prestaciones Alimentarias",
-            "monto_convenio_siph": "Monto total de convenio por Espacio - Servicio Integral de Promoción Humana",
+            "nro_convenio": "Número de Convenio",
+            "monto_convenio_prestaciones_alimentarias": "Monto total del Convenio por Espacio - Prestaciones Alimentarias",
+            "monto_convenio_siph": "Monto total del Convenio por Espacio - Servicio Integral de Promoción Humana",
             "prestaciones_financiadas_mensuales": "Prestaciones financiadas mensuales",
             "prestaciones_financiadas_diarias_desayuno": "Prestaciones Financiadas Diarias - Desayuno",
             "prestaciones_financiadas_diarias_almuerzo": "Prestaciones Financiadas Diarias - Almuerzo",
             "prestaciones_financiadas_diarias_merienda": "Prestaciones Financiadas Diarias - Merienda",
             "prestaciones_financiadas_diarias_merienda_reforzada": "Prestaciones Financiadas Diarias - Merienda Reforzada",
             "prestaciones_financiadas_diarias_cena": "Prestaciones Financiadas Diarias - Cena",
-            "personas_conveniadas": "Personas conveniadas",
-            "personas_declaradas_siph": "Total de Personas declaradas en Servicio Integral de Promoción Humana",
-            "cantidad_modulos": "Cantidad Módulos Mensuales",
+            "personas_conveniadas": "Personas Conveniadas",
+            "cantidad_modulos": "Cantidad de Módulos Mensuales",
+            "personas_declaradas_siph": "Total de personas declaradas en Servicio Integral de Promoción Humana",
         }
         widgets = {
             field_name: forms.NumberInput(
-                attrs={"class": "form-control form-control-sm", "min": "0"}
+                attrs={**SOLO_NUMEROS_ATTRS, "class": "form-control form-control-sm"}
             )
             for field_name in PRESTACIONES_APROBADAS_FIELDS
         }

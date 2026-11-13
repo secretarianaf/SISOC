@@ -21,11 +21,8 @@ The CSV export stays the native GET ``/organizaciones/exportar``.
 from html.parser import HTMLParser
 
 from django.contrib import messages
-from django.template import RequestContext
 from django.template.defaultfilters import urlencode
-from django.template.loader import get_template, render_to_string
-from django.template.loader_tags import BlockNode
-from django.templatetags.static import static
+from django.template.loader import render_to_string
 from django.urls import reverse
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import BasePermission
@@ -39,11 +36,12 @@ from core.pagination import build_compact_page_range
 from core.templatetags.custom_filters import has_any_perm
 from core.web_gate import WebGatePermission
 from gestion_organizaciones.urls import ORGANIZACION_DOCUMENTACION_PERMS
-from gestion_organizaciones.web_api_secciones import instrumentar, instrumentar_en_linea
+from gestion_organizaciones.web_api_legajo_pagina import pagina
 from gestion_organizaciones.views import OrganizacionDetailView, OrganizacionListView
 
 # ``search_bar.html`` with ``export_url`` and its default permissions.
 EXPORT_BUTTON_PERMISSIONS = "auth.role_exportar_a_csv"
+HISTORIAL = "auditlog.view_logentry"
 ROWS_TEMPLATE = "organizaciones/partials/organizacion_rows.html"
 MESSAGE_LEVELS = {
     messages.DEBUG: "info",
@@ -238,28 +236,14 @@ class OrganizacionListadoWebView(APIView):
         )
 
 
-LEGAJO_TEMPLATE = "organizacion_detail.html"
-# The documentation table is a React section now: its native script is no longer needed.
-LEGAJO_SCRIPTS = ()
-
-
-def _bloque(template, nombre):
-    for nodo in template.template.nodelist.get_nodes_by_type(BlockNode):
-        if nodo.name == nombre:
-            return nodo
-    raise LookupError(nombre)
-
-
 class OrganizacionLegajoWebView(APIView):
     """``GET .../organizaciones/<pk>/``: ``organizacion_detail.html`` (legajo).
 
     Runs the native ``OrganizacionDetailView`` (dupla scope, program and section
-    parameters, ``datos_legajo``) and renders the template's own ``content``
-    block with its partials. The sections that already have a React component
-    (``web_api_secciones``) travel as JSON in ``sections`` and leave a
-    placeholder in ``html``; the rest of the legajo is a server-rendered native
-    fragment that React mounts inside the shared frame (``scripts`` lists the
-    native scripts it still needs).
+    parameters, ``datos_legajo``) and returns the page as data
+    (``web_api_legajo_pagina``): header, program selector, data card, notices,
+    program strip, tabs and the sections of every legajo block. React draws all
+    of it; there is no server-rendered fragment.
     """
 
     authentication_classes = [SessionAuthentication]
@@ -272,22 +256,11 @@ class OrganizacionLegajoWebView(APIView):
         vista = OrganizacionDetailView()
         vista.setup(django_request, pk=pk)
         vista.object = vista.get_object()
-        context = vista.get_context_data()
-        plantilla = get_template(LEGAJO_TEMPLATE)
-        contexto = RequestContext(django_request, context)
-        secciones = []
-        with contexto.bind_template(plantilla.template):
-            titulo = _bloque(plantilla, "title").nodelist.render(contexto)
-            contenido = _bloque(plantilla, "content").nodelist
-            instrumentar(contexto, contenido, secciones)
-            instrumentar_en_linea(contexto, contenido, secciones)
-            html = contenido.render(contexto)
+        contexto = vista.get_context_data()
+        contexto["ver_historial"] = request.user.has_perm(HISTORIAL)
         return Response(
             {
-                "title": titulo,
-                "html": html,
-                "sections": secciones,
-                "scripts": [static(ruta) for ruta in LEGAJO_SCRIPTS],
+                **pagina(contexto),
                 "messages": _pending_messages(django_request),
             }
         )

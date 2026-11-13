@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import App from "../App";
 import { findRoute } from "./index";
-import { legajoScripts, legajoValid } from "./organizacionesLegajo";
+import { legajoValid } from "./organizacionesLegajo";
 import { readyContext, setViewport } from "./testFixtures";
 
 const { webGet } = vi.hoisted(() => ({ webGet: vi.fn() }));
@@ -11,26 +11,28 @@ vi.mock("@sisoc/api", () => ({
   leerCookie: vi.fn(() => "synthetic-csrf-token"),
 }));
 
-const SCRIPT = "/static/custom/js/organizacionesDocumentos.js";
+const datos = (over: Record<string, unknown> = {}) => ({
+  edit_url: "/organizaciones/editar/8", name: "Ñandú <Sur>", cuit: "20111111112", tipo: "Asociación civil", subtipo: "Mutual", phone: "1140000000", email: "a@b.org",
+  programs: ["Alimentar comunidad", "Abordaje comunitario - Línea Secos"], comedores_count: 2, provincia: "Prov", municipio: "-", localidad: "-", partido: "-", domicilio: "Mitre 1",
+  expiry: { text: "31/01/2999", state: "vigente" }, created: "01/10/2026 09:30", ...over,
+});
+const header = (over: Record<string, unknown> = {}) => ({
+  name: "Ñandú <Sur>", cuit: "20111111112", tipo: "Asociación civil", subtipo: "Mutual", history_url: "/audit/x/", edit_url: "/organizaciones/editar/8", delete_url: "/organizaciones/eliminar/8", ...over,
+});
 const legajo = (over: Record<string, unknown> = {}) => ({
-  title: "Organización: Ñandú <Sur>",
-  html: '<div class="legajo-header"><h1>Ñandú &lt;Sur&gt;</h1><a href="/organizaciones/editar/8" class="btn">Editar</a></div>',
-  sections: [],
-  scripts: [SCRIPT],
-  messages: [],
-  ...over,
+  title: "Organización: Ñandú <Sur>", css: ".legajo-header{color:red}", header: header(), selector: { kind: "none" }, datos: datos(), blocks: [], messages: [], ...over,
 });
 
 function serve(data: unknown, status = 200) {
   webGet.mockImplementation((url: string) => Promise.resolve(url === "web/session/" ? { data: readyContext, status: 200 } : { data, status }));
 }
+const open = (path = "/organizaciones/detalle/8") => { window.history.replaceState({}, "", path); return render(<App />); };
 
 beforeEach(() => {
   vi.clearAllMocks();
   document.title = "SISOC";
   document.body.className = "layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary dark-mode";
   setViewport(false);
-  legajoScripts.loaded.clear();
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
@@ -42,107 +44,130 @@ describe("Organizaciones legajo route", () => {
     }
   });
 
-  it("mounts the native fragment, keeps the query and runs the documentation initializers once", async () => {
-    const load = vi.spyOn(legajoScripts, "load").mockResolvedValue();
-    const init = vi.fn();
-    const bind = vi.fn();
-    Object.assign(window, { orgInitRectificarModal: init, orgInitDocumentoAdicional: init, orgBindDynamicHandlers: bind });
+  it("draws the header, the data card and the native styles, keeping the query", async () => {
     serve(legajo({ messages: [{ message: "Se reinicio la documentacion del legajo porque cambio el Tipo de Entidad.", level: "warning" }] }));
-    window.history.replaceState({}, "", "/organizaciones/detalle/8?programa=2&seccion=rendiciones");
-    render(<App />);
+    open("/organizaciones/detalle/8?programa=2&seccion=rendiciones");
     expect(await screen.findByRole("heading", { level: 1, name: "Ñandú <Sur>" })).toBeTruthy();
     expect(webGet).toHaveBeenCalledWith("web/comedores/organizaciones/8/?programa=2&seccion=rendiciones", expect.anything());
     await waitFor(() => expect(document.title).toBe("SISOC - Organización: Ñandú <Sur>"));
-    expect(screen.getByRole("link", { name: "Editar" }).getAttribute("href")).toBe("/organizaciones/editar/8");
-    await waitFor(() => expect(bind).toHaveBeenCalledTimes(1));
-    expect(load).toHaveBeenCalledWith(SCRIPT);
-    expect(init).toHaveBeenCalledTimes(2);
+    expect(document.querySelector("style")?.textContent).toContain(".legajo-header{color:red}");
+    expect(document.querySelector(".subtitle")?.textContent).toBe("CUIT: 20111111112 | Asociación civil - Mutual");
+    expect(screen.getAllByRole("link").filter((a) => ["Historial", "Editar", "Eliminar"].includes(a.textContent ?? "")).map((a) => a.getAttribute("href")))
+      .toEqual(["/audit/x/", "/organizaciones/editar/8", "/organizaciones/eliminar/8"]);
+    expect(screen.getByRole("link", { name: "Editar datos de la organización" }).getAttribute("href")).toBe("/organizaciones/editar/8");
+    expect(screen.getByText("Programas:").nextElementSibling?.textContent).toBe("Alimentar comunidad · Abordaje comunitario - Línea Secos");
+    expect(screen.getByText("Comedores asociados:").nextElementSibling?.textContent).toBe("2 en total");
+    expect(screen.getByText(/Vigente/).className).toContain("badge-status vigente");
     expect(await screen.findByText("Se reinicio la documentacion del legajo porque cambio el Tipo de Entidad.")).toBeTruthy();
-    for (const name of ["orgInitRectificarModal", "orgInitDocumentoAdicional", "orgBindDynamicHandlers"]) delete (window as unknown as Record<string, unknown>)[name];
   });
 
-  it("mounts each React section in its placeholder, keeping the native HTML around it", async () => {
+  it("hides the management and history controls and shows the expired badge and the default chip", async () => {
     serve(legajo({
-      html: '<h1>Legajo</h1><div data-legajo-seccion="0"></div><p id="after">Después</p>',
-      sections: [{
-        kind: "convenios", program: "Línea Secos", color: "secos", is_tradicional: false, can_manage: true,
-        rows: [
-          { project: { id: 5, code: "P-1" }, url: "/organizaciones/proyectos/5/convenio/", summary: { suma: "$950", total: "$1.000", diferencia: "$50", coincide: false },
-            convenio: { number: "CV-1", date: "15/01/2026", months: 12, total: "$1.000", imprevistos: "-", components: [{ label: "Componente SIPH", amount: "$150" }] } },
-          { project: { id: 6, code: "P-2" }, url: "/organizaciones/proyectos/6/convenio/", summary: null, convenio: null },
-        ],
-      }],
+      header: header({ history_url: null, edit_url: null, delete_url: null, subtipo: null }),
+      datos: datos({ edit_url: null, programs: [], expiry: { text: "01/02/2000", state: "vencido" } }),
     }));
-    window.history.replaceState({}, "", "/organizaciones/detalle/8");
-    render(<App />);
-    expect(await screen.findByRole("heading", { level: 5, name: "Datos de Convenio · Línea Secos" })).toBeTruthy();
-    const host = document.querySelector("[data-legajo-seccion='0']");
-    expect(host?.querySelector("h5")).toBeTruthy();
-    expect(host?.nextElementSibling?.id).toBe("after");
-    expect(screen.getByText("Revisar montos")).toBeTruthy();
-    expect(screen.getByText("Sin cargar")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Editar convenio" }).getAttribute("href")).toBe("/organizaciones/proyectos/5/convenio/");
-    expect(screen.getByRole("link", { name: "Cargar convenio" }).getAttribute("href")).toBe("/organizaciones/proyectos/6/convenio/");
-    expect(screen.getByText("Imprevistos no aplica: es solo para Línea Tradicional.")).toBeTruthy();
+    open();
+    expect(await screen.findByRole("heading", { level: 1 })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Editar" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Historial" })).toBeNull();
+    expect(document.querySelector(".subtitle")?.textContent).toBe("CUIT: 20111111112 | Asociación civil");
+    expect(screen.getByText("Sin programas", { selector: ".chip-legajo" })).toBeTruthy();
+    expect(screen.getByText("Programas:").nextElementSibling?.textContent).toBe("Sin programas");
+    expect(screen.getByText(/Vencido/).className).toContain("vencido");
   });
 
-  it("mounts the avales table in its placeholder", async () => {
+  it("draws the program selector as a switch and the strip with the tabs", async () => {
     serve(legajo({
-      html: '<div data-legajo-seccion="0"></div><p id="after">Después</p>',
-      sections: [{ kind: "avales", can_manage: true, add_url: "/organizaciones/aval/crear/8", rows: [{ id: 3, name: "Beto", cuit: "-", edit_url: "/organizaciones/aval/editar/3", delete_url: "/organizaciones/aval/eliminar/3" }] }],
+      selector: { kind: "switch", items: [{ id: 1, name: "Alimentar", color: "alco", active: false, url: "?programa=1" }, { id: 2, name: "Secos", color: "secos", active: true, url: "?programa=2" }] },
+      blocks: [
+        { kind: "franja", color: "secos", label: "Abordaje Comunitario", name: "Secos", summary: "1 espacio · 2 proyectos" },
+        { kind: "tabs", color: "secos", items: [{ label: "Información del programa", url: "?programa=2&seccion=info", active: true }, { label: "Rendiciones Presentadas (3)", url: "?programa=2&seccion=rendiciones", active: false }] },
+      ],
     }));
-    window.history.replaceState({}, "", "/organizaciones/detalle/8");
-    render(<App />);
-    expect(await screen.findByRole("heading", { level: 5, name: "Avales" })).toBeTruthy();
-    expect(document.querySelector("[data-legajo-seccion='0']")?.nextElementSibling?.id).toBe("after");
-    expect((document.querySelector("[data-legajo-seccion='0']") as HTMLElement).style.display).toBe("contents");
-    expect(screen.getByRole("link", { name: "Editar aval" }).getAttribute("href")).toBe("/organizaciones/aval/editar/3");
+    open();
+    const nav = await screen.findByRole("navigation", { name: "Programa del legajo" });
+    expect(within(nav).getByRole("link", { name: "Secos" }).getAttribute("aria-current")).toBe("page");
+    expect(within(nav).getByRole("link", { name: "Secos" }).className).toBe("activo color-secos");
+    expect(within(nav).getByRole("link", { name: "Alimentar" }).getAttribute("href")).toBe("?programa=1");
+    expect(document.querySelector(".franja-programa.color-secos")?.textContent).toBe("Abordaje Comunitario Secos 1 espacio · 2 proyectos");
+    const tabs = screen.getByRole("navigation", { name: "Secciones del programa" });
+    expect(within(tabs).getByRole("link", { name: "Información del programa" }).getAttribute("aria-current")).toBe("page");
+    expect(within(tabs).getByRole("link", { name: "Rendiciones Presentadas (3)" }).getAttribute("href")).toBe("?programa=2&seccion=rendiciones");
   });
 
-  it("mounts the región section in its placeholder", async () => {
+  it("draws a single-program chip, the no-program notice and the abordaje notice", async () => {
     serve(legajo({
-      html: '<div data-legajo-seccion="0"></div><p id="after">Después</p>',
-      sections: [{ kind: "region", can_manage: false, edit_url: null, has_data: true, region: "R", subzona: "S", territorials: [] }],
+      selector: { kind: "chip", name: "Secos", color: "secos" },
+      blocks: [{ kind: "sin_programas", edit_url: "/organizaciones/editar/8#section-programas" }, { kind: "aviso_abordaje" }],
     }));
-    window.history.replaceState({}, "", "/organizaciones/detalle/8");
-    render(<App />);
-    expect(await screen.findByRole("heading", { level: 5, name: "Datos de Región" })).toBeTruthy();
-    expect(document.querySelector("[data-legajo-seccion='0']")?.nextElementSibling?.id).toBe("after");
+    open();
+    expect(await screen.findByText("Secos", { selector: ".chip-legajo" })).toBeTruthy();
+    expect(screen.getByText("Sin programas asignados")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Cargar programas" }).getAttribute("href")).toBe("/organizaciones/editar/8#section-programas");
+    expect(screen.getByText(/La organización tiene datos de Abordaje Comunitario/)).toBeTruthy();
   });
 
-  it("mounts the documents section next to the convenios one, each in its own placeholder", async () => {
+  it("draws the rendiciones cards with their filter, table and empty text", async () => {
+    const row = { id: 5, line: null, line_label: null, project: "P-1", convenio: "CV", number: "1", period: "01/2026", territorial: true, audit: false, validated: true, audited: false, url: "/organizaciones/8/rendiciones/5/" };
     serve(legajo({
-      html: '<div data-legajo-seccion="0"></div><hr id="mid"><div data-legajo-seccion="1"></div>',
-      sections: [
-        { kind: "documentos", organization_id: 8, category: "Tipo documental", can_validate: false, can_send: false, rows: [] },
+      blocks: [
+        { kind: "rendiciones_generales", total: 0, filter: { kind: "rendiciones_filtro", codes: ["P-1", "P-2"], selected: "", program_id: null }, table: null },
+        { kind: "rendiciones_programa", color: "secos", title: "Rendiciones Presentadas · Secos", total: 1, filter: { kind: "rendiciones_filtro", codes: [], selected: "", program_id: 2 },
+          table: { kind: "rendiciones", show_line: false, rows: [row] } },
+        { kind: "rendiciones_otras", total: 1, table: { kind: "rendiciones", show_line: true, rows: [row] } },
+      ],
+    }));
+    open();
+    expect(await screen.findByText("No hay rendiciones presentadas para la selección actual.")).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Código de Proyecto" })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 5, name: "Rendiciones Presentadas · Secos 1 Total" })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 5, name: "Rendiciones de otras líneas 1 Total" })).toBeTruthy();
+    expect(screen.getByText("Su línea no está entre los programas de la organización. Se muestran acá para que no queden ocultas.")).toBeTruthy();
+    expect(screen.getAllByRole("link", { name: "Ver" })).toHaveLength(2);
+  });
+
+  it("draws the projects-without-line notice with its singular and plural forms", async () => {
+    const block = (count: number, codes: string[], edit: string | null) => ({ kind: "aviso_sin_linea", count, plural: count === 1 ? "" : "s", plural_n: count === 1 ? "" : "n", plural_s: count === 1 ? "" : "s", codes, edit_url: edit });
+    serve(legajo({ blocks: [block(2, ["A-1", "B-2"], "/organizaciones/editar/8#abordaje-card")] }));
+    open();
+    expect(await screen.findByText("2 proyectos sin línea")).toBeTruthy();
+    expect(document.querySelector(".aviso-legajo")?.textContent).toContain("no aparecen en las líneas de la organización: no tienen línea o su línea no está cargada en la organización. Asignales una: A-1 B-2");
+    expect(screen.getByRole("link", { name: "Asignar línea" }).getAttribute("href")).toBe("/organizaciones/editar/8#abordaje-card");
+    cleanup();
+    serve(legajo({ blocks: [block(1, ["A-1"], null)] }));
+    open();
+    expect(await screen.findByText("1 proyecto sin línea")).toBeTruthy();
+    expect(document.querySelector(".aviso-legajo")?.textContent).toContain("no aparece en las líneas de la organización: no tiene línea o su línea no está cargada en la organización. Asignale una: A-1");
+    expect(screen.queryByRole("link", { name: "Asignar línea" })).toBeNull();
+  });
+
+  it("draws every legajo section in order, and the sin-programa group with its own sections", async () => {
+    serve(legajo({
+      blocks: [
+        { kind: "avales", can_manage: false, add_url: null, rows: [] },
+        { kind: "region", can_manage: false, edit_url: null, has_data: true, region: "R", subzona: "S", territorials: [] },
+        { kind: "proyectos", title: "Proyectos", color: "otro", can_manage: false, edit_url: null, total: 0, rows: [] },
         { kind: "convenios", program: "Línea Secos", color: "secos", is_tradicional: false, can_manage: false, rows: [] },
+        { kind: "firmantes", title: "Firmantes · Secos", color: "secos", show_program: false, can_manage: false, add_url: null, rows: [] },
+        { kind: "comedores", title: "Comedores Asociados · Secos", color: "secos", show_code: false, show_program: false, total: 0, rows: [] },
+        { kind: "documentos", organization_id: 8, category: "Tipo documental", can_validate: false, can_send: false, rows: [] },
+        { kind: "sin_programa", sections: [{ kind: "firmantes", title: "Firmantes", color: "sin", show_program: true, can_manage: false, add_url: null, rows: [] }, { kind: "desconocida" }] },
         { kind: "desconocida" },
       ],
     }));
-    window.history.replaceState({}, "", "/organizaciones/detalle/8");
-    render(<App />);
-    expect(await screen.findByText("No hay documentación configurada.")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Agregar documento adicional/ })).toBeNull();
-    expect(document.querySelector("[data-legajo-seccion='0'] #documentacion")).toBeTruthy();
-    expect(document.querySelector("[data-legajo-seccion='1'] .card-secos")).toBeTruthy();
-    expect(screen.getByText("No hay proyectos en esta línea.")).toBeTruthy();
+    open();
+    await screen.findByText("No hay documentación configurada.");
+    const titles = Array.from(document.querySelectorAll(".px-4 h5")).map((h) => h.textContent?.replace(/\s+/g, " ").trim());
+    expect(titles).toEqual([
+      "Datos de la Organización Común a todos los programas", "Avales", "Datos de Región", "Proyectos 0 Total", "Datos de Convenio · Línea Secos", "Firmantes · Secos",
+      "Comedores Asociados · Secos 0 Total", "Documentación de la Organización", "Sin programa asignado Visible en cualquier programa", "Firmantes",
+    ]);
+    expect(screen.getByText(/Editalos para asignarles uno\./)).toBeTruthy();
   });
 
-  it("injects each native script one time", async () => {
-    const first = legajoScripts.load("/static/x.js");
-    const second = legajoScripts.load("/static/x.js");
-    expect(second).toBe(first);
-    const tags = document.querySelectorAll('script[src="/static/x.js"]');
-    expect(tags).toHaveLength(1);
-    tags[0].dispatchEvent(new Event("load"));
-    await first;
-    tags[0].remove();
-  });
-
-  it("shows the access screen on 403, an error on 404 and on an invalid payload", async () => {
+  it("shows the access screen on 403, an error on 404 and rejects malformed payloads", async () => {
     serve({ detail: "x", state: "password_change_required", required_action_url: "/password/first-change/" }, 403);
-    window.history.replaceState({}, "", "/organizaciones/detalle/8");
-    render(<App />);
+    open();
     await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
     expect(document.querySelector(".legajo-header")).toBeNull();
     cleanup();
@@ -150,7 +175,10 @@ describe("Organizaciones legajo route", () => {
     render(<App />);
     expect(await screen.findByRole("alert")).toBeTruthy();
     expect(legajoValid(legajo())).toBe(true);
-    expect(legajoValid(legajo({ scripts: ["https://evil.example/x.js"] }))).toBe(false);
-    expect(legajoValid(legajo({ html: 1 }))).toBe(false);
+    expect(legajoValid({ ...legajo(), header: { ...header(), edit_url: "https://evil.example/" } })).toBe(false);
+    expect(legajoValid({ ...legajo(), selector: { kind: "switch", items: "x" } })).toBe(false);
+    expect(legajoValid({ ...legajo(), datos: datos({ expiry: { text: "x", state: "otro" } }) })).toBe(false);
+    expect(legajoValid({ ...legajo(), messages: [{ message: "x", level: "otro" }] })).toBe(false);
+    expect(legajoValid({ ...legajo(), blocks: [{}] })).toBe(false);
   });
 });

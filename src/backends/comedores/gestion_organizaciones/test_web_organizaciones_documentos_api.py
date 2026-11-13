@@ -122,6 +122,22 @@ def _estado(cliente, archivo, estado, **extra):
 # --- subir -----------------------------------------------------------------------------
 
 
+def _todas(valor):
+    """Every JSON object with a ``kind`` in the page, in document order."""
+    if isinstance(valor, dict):
+        if "kind" in valor:
+            yield valor
+        for hijo in valor.values():
+            yield from _todas(hijo)
+    elif isinstance(valor, list):
+        for hijo in valor:
+            yield from _todas(hijo)
+
+
+def _secciones_de(data, kind):
+    return [s for s in _todas(data["blocks"]) if s["kind"] == kind]
+
+
 def test_technician_uploads_and_gets_the_row_as_data(mundo):
     respuesta = _subir(mundo.tec, mundo)
 
@@ -428,7 +444,7 @@ def test_legajo_delivers_the_documentation_table_as_a_section(mundo):
 
     data = mundo.tec.get(f"{API}{mundo.org.pk}/").json()
 
-    secciones = [s for s in data["sections"] if s["kind"] == "documentos"]
+    secciones = _secciones_de(data, "documentos")
     assert len(secciones) == 1
     seccion = secciones[0]
     assert seccion["organization_id"] == mundo.org.pk
@@ -437,6 +453,4 @@ def test_legajo_delivers_the_documentation_table_as_a_section(mundo):
     assert [f["name"] for f in seccion["rows"]] == ["Estatuto", "Extra"]
     assert seccion["rows"][0]["file"]["gde"] == "GDE-9"
     assert seccion["rows"][1]["custom"] is True
-    assert f'<div data-legajo-seccion="{data["sections"].index(seccion)}"></div>' in data["html"]
-    assert "Documentación de la Organización" not in data["html"]
-    assert data["scripts"] == []
+    assert "html" not in data and "scripts" not in data

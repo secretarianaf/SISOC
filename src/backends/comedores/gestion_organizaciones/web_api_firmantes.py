@@ -10,8 +10,7 @@ messages. Access is today's: ``organizaciones.view_organizacion`` on the route,
 no object scope (see
 ``docs/registro/decisiones/2026-11-10-2785-brechas-acceso-conservadas.md``).
 The legajo "Firmantes" tables (``legajo/firmantes.html``) are delivered as
-sections (``web_api_secciones``); the "Avales" table is inline markup in the
-legajo block, so it is delivered through ``seccion_en_linea``.
+sections (``web_api_secciones``), the "Avales" table among them.
 """
 
 from django.http import HttpResponseRedirect
@@ -33,7 +32,7 @@ from gestion_organizaciones.views import (
 )
 from gestion_organizaciones.web_api import _pending_messages
 from gestion_organizaciones.web_api_abm import OrganizacionAbmAccess, _campo
-from gestion_organizaciones.web_api_secciones import seccion, seccion_en_linea
+from gestion_organizaciones.web_api_secciones import AVALES, seccion
 
 
 @seccion("organizaciones/partials/legajo/firmantes.html")
@@ -67,7 +66,7 @@ def seccion_firmantes(contexto):
     }
 
 
-@seccion_en_linea("avales")
+@seccion(AVALES)
 def seccion_avales(contexto):
     """The inline "Avales" table of the legajo (only "Asociación de hecho")."""
     organizacion = contexto["organizacion"]

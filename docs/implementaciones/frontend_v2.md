@@ -1093,12 +1093,12 @@ Registro: `../registro/cambios/2026-T4/2026-11-12-2785-react-ocr.md`.
 Organizaciones (O05.01): `/organizaciones/listar` en React lee
 `/api/web/comedores/organizaciones/listado/`, que ejecuta `OrganizacionListView`
 y el include nativo de filas; el CSV sigue en `/organizaciones/exportar`.
-`/organizaciones/detalle/<pk>` monta el fragmento nativo del legajo que sirve
+`/organizaciones/detalle/<pk>` muestra el legajo que sirve
 `/api/web/comedores/organizaciones/<pk>/`. Ver
 [registro](../registro/cambios/2026-T4/2026-11-11-2785-react-organizaciones-listado.md).
 Organizaciones (O01 a O04): las secciones del legajo (convenio, documentación,
-firmantes, rendiciones) llegan en `sections` y React las monta en los marcadores
-`data-legajo-seccion` del fragmento; el convenio, el historial de documentos,
+firmantes, rendiciones) llegan como bloques de la página del legajo (antes, en `sections`
+con marcadores `data-legajo-seccion`); el convenio, el historial de documentos,
 los firmantes/avales y el detalle de rendición tienen página propia
 (`routes/organizacion{Convenio,Documentos,Firmantes,Rendiciones}.tsx`) sobre las
 vistas nativas. Ver
@@ -1111,6 +1111,11 @@ Organizaciones (legajo, avales y datos): la tabla «Avales» del legajo, que es 
 y no un include, y los bloques de datos (región, proyectos, comedores) llegan como
 secciones y React las monta en su marcador; los marcadores usan `display: contents`
 para no alterar el diseño del contenedor. Ver
+Organizaciones (legajo): `/organizaciones/detalle/<pk>` ya no monta un fragmento nativo. La API
+(`/api/web/comedores/organizaciones/<pk>/`) corre `OrganizacionDetailView`, sigue el flujo de la
+plantilla sobre su contexto y devuelve la página como datos (`header`, `selector`, `datos`, `blocks`,
+`css`); React la dibuja en `routes/organizacionLegajoPagina.tsx` con los componentes de cada sección
+(avales, región, proyectos, convenios, firmantes, comedores, documentación, rendiciones). Ver
 [registro](../registro/cambios/2026-T4/2026-11-13-2785-react-organizaciones-legajo-avales.md) y
 [registro de datos](../registro/cambios/2026-T4/2026-11-13-2785-react-organizaciones-legajo-datos.md).
 

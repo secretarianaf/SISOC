@@ -90,6 +90,22 @@ def _campos(data):
     return [c["name"] for c in data["form"]["fields"]]
 
 
+def _todas(valor):
+    """Every JSON object with a ``kind`` in the page, in document order."""
+    if isinstance(valor, dict):
+        if "kind" in valor:
+            yield valor
+        for hijo in valor.values():
+            yield from _todas(hijo)
+    elif isinstance(valor, list):
+        for hijo in valor:
+            yield from _todas(hijo)
+
+
+def _secciones_de(data, kind):
+    return [s for s in _todas(data["blocks"]) if s["kind"] == kind]
+
+
 def test_new_convenio_projects_the_header_data_and_the_real_form(web):
     proyecto = _proyecto()
 
@@ -273,7 +289,7 @@ def test_legajo_delivers_the_convenios_summary_as_a_section(web):
 
     data = web.get(url).json()
 
-    secciones = [s for s in data["sections"] if s["kind"] == "convenios"]
+    secciones = _secciones_de(data, "convenios")
     assert len(secciones) == 1
     seccion = secciones[0]
     assert seccion["program"] == "Abordaje comunitario - Línea Secos"
@@ -284,6 +300,4 @@ def test_legajo_delivers_the_convenios_summary_as_a_section(web):
     assert fila["convenio"]["date"] == "15/01/2026"
     assert fila["summary"]["coincide"] is False
     assert fila["url"] == f"/organizaciones/proyectos/{proyecto.pk}/convenio/"
-    marcador = f'<div data-legajo-seccion="{data["sections"].index(seccion)}"></div>'
-    assert marcador in data["html"]
-    assert "Datos de Convenio" not in data["html"]
+    assert "html" not in data and "sections" not in data

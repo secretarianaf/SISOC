@@ -22,6 +22,11 @@ No cambia vistas, formularios, servicios, modelos, plantillas, JavaScript ni
 URLs nativas. No activa React en producción. El acceso sigue siendo el de hoy
 (ver [brechas de acceso conservadas](../../decisiones/2026-11-10-2785-brechas-acceso-conservadas.md)).
 
+> Actualización (O2-U5): el legajo ya no usa `sections` ni marcadores `data-legajo-seccion`;
+> la API devuelve la página completa como datos y cada sección viaja dentro de `blocks`
+> (ver [el registro del legajo](2026-11-13-2785-react-organizaciones-legajo-datos.md)).
+> Las secciones, sus constructores y sus componentes son los descritos abajo.
+
 ## Cómo funciona
 
 - **Secciones del legajo.** `OrganizacionLegajoWebView` sigue ejecutando

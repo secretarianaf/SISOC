@@ -226,6 +226,18 @@ def test_access_is_todays_anonymous_401_no_permission_403_and_read_only(org):
         assert getattr(web, metodo)(url).status_code == 405, metodo
 
 
+def _todas(valor):
+    """Every JSON object with a ``kind`` in the page, in document order."""
+    if isinstance(valor, dict):
+        if "kind" in valor:
+            yield valor
+        for hijo in valor.values():
+            yield from _todas(hijo)
+    elif isinstance(valor, list):
+        for hijo in valor:
+            yield from _todas(hijo)
+
+
 def test_legajo_delivers_the_table_filter_and_other_lines_as_sections():
     secos = Programas.objects.create(nombre="Abordaje comunitario - Línea Secos")
     tradicional = Programas.objects.create(
@@ -246,8 +258,8 @@ def test_legajo_delivers_the_table_filter_and_other_lines_as_sections():
         f"{API}{organizacion.pk}/?programa={secos.pk}&seccion=rendiciones"
     ).json()
 
-    tablas = [s for s in data["sections"] if s["kind"] == "rendiciones"]
-    filtros = [s for s in data["sections"] if s["kind"] == "rendiciones_filtro"]
+    tablas = [s for s in _todas(data["blocks"]) if s["kind"] == "rendiciones"]
+    filtros = [s for s in _todas(data["blocks"]) if s["kind"] == "rendiciones_filtro"]
     assert [t["show_line"] for t in tablas] == [False, True]
     principal, otras = tablas
     assert [r["convenio"] for r in principal["rows"]] == ["C-1"]
@@ -270,5 +282,7 @@ def test_legajo_delivers_the_table_filter_and_other_lines_as_sections():
         "selected": "",
         "program_id": secos.pk,
     }
-    assert "Rendiciones Presentadas" in data["html"]
-    assert "N° de Rend." not in data["html"]
+    assert [b["kind"] for b in data["blocks"]][2:4] == [
+        "rendiciones_programa",
+        "rendiciones_otras",
+    ]

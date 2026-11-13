@@ -56,13 +56,21 @@ def web_fixture():
     return client
 
 
+def _todas(valor):
+    """Every JSON object with a ``kind`` in the page, in document order."""
+    if isinstance(valor, dict):
+        if "kind" in valor:
+            yield valor
+        for hijo in valor.values():
+            yield from _todas(hijo)
+    elif isinstance(valor, list):
+        for hijo in valor:
+            yield from _todas(hijo)
+
+
 def _secciones(client, organizacion, kind):
     data = client.get(f"{API}{organizacion.pk}/").json()
-    return data, [s for s in data["sections"] if s["kind"] == kind]
-
-
-def _marcador(data, seccion):
-    return f'<div data-legajo-seccion="{data["sections"].index(seccion)}"></div>'
+    return data, [s for s in _todas(data["blocks"]) if s["kind"] == kind]
 
 
 def test_region_section_carries_region_subzona_and_the_old_territoriales(web):
@@ -87,8 +95,6 @@ def test_region_section_carries_region_subzona_and_the_old_territoriales(web):
     assert seccion["edit_url"] == (
         f"/organizaciones/editar/{organizacion.pk}#abordaje-card"
     )
-    assert _marcador(data, seccion) in data["html"]
-    assert "Datos de Región" not in data["html"]
 
 
 def test_region_section_without_data_and_with_only_a_subzona(web):
@@ -166,8 +172,6 @@ def test_proyectos_section_without_program_lists_only_active_projects(web):
     assert (
         seccion["edit_url"] == f"/organizaciones/editar/{organizacion.pk}#abordaje-card"
     )
-    assert _marcador(data, seccion) in data["html"]
-    assert "Cada proyecto pertenece a una sola línea" not in data["html"]
 
 
 def test_proyectos_section_of_a_program_uses_its_title_color_and_lines(web):
@@ -264,8 +268,6 @@ def test_comedores_section_carries_the_native_cells_and_defaults(web):
     assert (vacio["referent"], vacio["validation"]) == (None, "no")
     assert filas["Pendiente"]["validation"] == "pending"
     assert pelado.pk and pendiente.pk
-    assert _marcador(data, seccion) in data["html"]
-    assert "Comedor Completo" not in data["html"]
 
 
 def test_comedores_section_empty_has_no_rows(web):
@@ -275,4 +277,3 @@ def test_comedores_section_empty_has_no_rows(web):
 
     (seccion,) = secciones
     assert seccion["rows"] == [] and seccion["total"] == 0
-    assert _marcador(data, seccion) in data["html"]

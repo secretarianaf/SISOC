@@ -7,7 +7,8 @@ HTML page ``/organizaciones/detalle/<pk>`` and pin today's access: any of
 ``ORGANIZACION_DOCUMENTACION_PERMS`` and the dupla scope (404 outside it).
 """
 
-import re
+import json
+from datetime import date
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -20,7 +21,14 @@ from django.test.utils import CaptureQueriesContext
 from comedores.models import Comedor
 from core import web_gate
 from duplas.models import Dupla
-from organizaciones.models import Organizacion, SubtipoEntidad, TipoEntidad
+from comedores.models import Programas
+from gestion_organizaciones.models import Firmante, ProgramaOrganizacion
+from organizaciones.models import (
+    Organizacion,
+    ProyectoOrganizacion,
+    SubtipoEntidad,
+    TipoEntidad,
+)
 
 VIEW = "organizaciones.view_organizacion"
 
@@ -69,66 +77,251 @@ def _organizacion():
     )
 
 
+@pytest.fixture(name="web_secos")
+def web_secos_fixture():
+    secos = Programas.objects.create(nombre="Abordaje comunitario - Línea Secos")
+    alimentar = Programas.objects.create(nombre="Alimentar comunidad")
+    organizacion = Organizacion.objects.create(nombre="Org Programas")
+    for programa in (alimentar, secos):
+        ProgramaOrganizacion.objects.create(
+            organizacion=organizacion, programa=programa
+        )
+    return {
+        "web": _client(_usuario("lector_prog", VIEW)),
+        "org": organizacion,
+        "secos": secos,
+        "alimentar": alimentar,
+    }
+
+
 def _api(organizacion):
     return f"/api/web/comedores/organizaciones/{organizacion.pk}/"
 
 
-def _normal(texto):
-    """Whitespace-insensitive text; the CSRF token is masked anew on every render."""
-    texto = re.sub(r'data-csrf-token="[^"]*"', 'data-csrf-token="T"', texto)
-    return " ".join(texto.split())
+def _todas(valor):
+    """Every JSON object with a ``kind`` in the page, in document order."""
+    if isinstance(valor, dict):
+        if "kind" in valor:
+            yield valor
+        for hijo in valor.values():
+            yield from _todas(hijo)
+    elif isinstance(valor, list):
+        for hijo in valor:
+            yield from _todas(hijo)
 
 
-MARCADOR = re.compile(r'<div data-legajo-seccion="\d+"></div>')
+def _tipos(data):
+    return [b["kind"] for b in data["blocks"]]
 
 
-def _es_el_bloque_nativo(fragmento, pagina):
-    """The fragment is the native block, but for the sections React draws itself.
-
-    Every piece of HTML around the section placeholders is in the native page,
-    in order; the placeholders stand where the native partial was.
-    """
-    nativa, posicion = _normal(pagina), 0
-    for trozo in MARCADOR.split(fragmento):
-        trozo = _normal(trozo)
-        encontrado = nativa.find(trozo, posicion) if trozo else posicion
-        assert encontrado >= 0, trozo[:120]
-        posicion = encontrado + len(trozo)
-
-
-def test_fragment_is_the_native_content_block():
+def test_page_is_data_with_header_data_card_and_no_html():
     organizacion = _organizacion()
     web = _client(_usuario("lector_leg", VIEW))
 
     data = web.get(_api(organizacion)).json()
-    nativa = web.get(f"/organizaciones/detalle/{organizacion.pk}")
 
-    assert nativa.status_code == 200
     assert data["title"] == "Organización: Legajo Sintético"
-    _es_el_bloque_nativo(data["html"], nativa.content.decode())
-    for texto in (
-        "Legajo Sintético",
-        "CUIT: 20111111112",
-        "Datos de la Organización",
-        "Sin programas",
-        'href="/organizaciones/editar/%d"' % organizacion.pk,
-    ):
-        assert texto in data["html"]
-    # The documentation table is a React section: no native script is needed.
-    assert data["scripts"] == []
-    assert "documentos" in [s["kind"] for s in data["sections"]]
+    assert "html" not in data and "sections" not in data and "scripts" not in data
+    assert ".legajo-header" in data["css"] and "<style" not in data["css"]
+    assert data["header"] == {
+        "name": "Legajo Sintético",
+        "cuit": "20111111112",
+        "tipo": "Asociación civil",
+        "subtipo": "Mutual",
+        "history_url": None,
+        "edit_url": f"/organizaciones/editar/{organizacion.pk}",
+        "delete_url": f"/organizaciones/eliminar/{organizacion.pk}",
+    }
+    assert data["selector"] == {"kind": "none"}
+    datos = data["datos"]
+    assert (datos["phone"], datos["email"], datos["programs"]) == (
+        "1140000000",
+        "legajo@ejemplo.org",
+        [],
+    )
+    assert (datos["provincia"], datos["partido"], datos["comedores_count"]) == (
+        "-",
+        "-",
+        0,
+    )
+    assert datos["expiry"] == {"text": "-", "state": None}
+    assert datos["created"] != "-"
+    assert _tipos(data) == [
+        "sin_programas",
+        "rendiciones_generales",
+        "documentos",
+        "sin_programa",
+    ]
     assert data["messages"] == []
 
 
-def test_program_and_section_parameters_reach_the_native_view():
+def test_header_without_type_and_cuit_uses_the_native_defaults():
+    organizacion = Organizacion.objects.create(nombre="Mínima")
+    web = _client(_usuario("lector_min", VIEW))
+
+    header = web.get(_api(organizacion)).json()["header"]
+
+    assert (header["cuit"], header["tipo"], header["subtipo"]) == (
+        "Sin información",
+        "Sin tipo de entidad",
+        None,
+    )
+
+
+def test_history_link_needs_the_auditlog_permission():
+    organizacion = _organizacion()
+    admin = _client(_usuario("auditor_leg", VIEW, "auditlog.view_logentry"))
+
+    header = admin.get(_api(organizacion)).json()["header"]
+
+    assert header["history_url"].endswith(f"/organizacion/{organizacion.pk}/")
+
+
+def test_expiry_state_vigente_vencido_and_sin_vencimiento():
+    web = _client(_usuario("lector_venc", VIEW))
+    futura = Organizacion.objects.create(
+        nombre="F", fecha_vencimiento=date(2999, 1, 31)
+    )
+    vencida = Organizacion.objects.create(
+        nombre="V", fecha_vencimiento=date(2000, 2, 1)
+    )
+    sin = Organizacion.objects.create(
+        nombre="S", sin_vencimiento=True, fecha_vencimiento=date(2000, 2, 1)
+    )
+
+    def vencimiento(org):
+        return web.get(_api(org)).json()["datos"]["expiry"]
+
+    assert vencimiento(futura) == {"text": "31/01/2999", "state": "vigente"}
+    assert vencimiento(vencida) == {"text": "01/02/2000", "state": "vencido"}
+    assert vencimiento(sin) == {"text": "Sin Vencimiento", "state": "vencido"}
+
+
+def test_program_selector_and_program_flow(web_secos):
+    organizacion, secos = web_secos["org"], web_secos["secos"]
+    alimentar, web = web_secos["alimentar"], web_secos["web"]
+
+    info = web.get(_api(organizacion) + f"?programa={secos.pk}").json()
+    rend = web.get(
+        _api(organizacion) + f"?programa={secos.pk}&seccion=rendiciones"
+    ).json()
+    alco = web.get(_api(organizacion) + f"?programa={alimentar.pk}").json()
+
+    assert info["selector"]["kind"] == "switch"
+    assert [(i["name"], i["active"], i["url"]) for i in info["selector"]["items"]] == [
+        (alimentar.nombre, False, f"?programa={alimentar.pk}"),
+        (secos.nombre, True, f"?programa={secos.pk}"),
+    ]
+    assert _tipos(info) == [
+        "franja",
+        "tabs",
+        "region",
+        "proyectos",
+        "convenios",
+        "firmantes",
+        "comedores",
+    ]
+    franja = info["blocks"][0]
+    assert (franja["label"], franja["name"], franja["summary"]) == (
+        "Abordaje Comunitario",
+        secos.nombre,
+        "0 espacios · 0 proyectos",
+    )
+    tabs = info["blocks"][1]["items"]
+    assert [(t["label"], t["active"]) for t in tabs] == [
+        ("Información del programa", True),
+        ("Rendiciones Presentadas (0)", False),
+    ]
+    assert tabs[1]["url"] == f"?programa={secos.pk}&seccion=rendiciones"
+    assert _tipos(rend)[:3] == ["franja", "tabs", "rendiciones_programa"]
+    assert rend["blocks"][2]["title"] == f"Rendiciones Presentadas · {secos.nombre}"
+    assert rend["blocks"][2]["table"] is None
+    assert _tipos(alco)[:2] == ["franja", "firmantes"]
+    assert alco["blocks"][0]["summary"] == "0 comedores · 0 firmantes"
+    assert alco["blocks"][0]["label"] == "Programa"
+
+
+def test_program_chip_with_a_single_program(web_secos):
+    web, secos = web_secos["web"], web_secos["secos"]
+    unica = Organizacion.objects.create(nombre="Un programa")
+    ProgramaOrganizacion.objects.create(organizacion=unica, programa=secos)
+
+    data = web.get(_api(unica)).json()
+
+    assert data["selector"]["kind"] == "chip"
+    assert data["selector"]["name"] == secos.nombre
+
+
+def test_projects_without_line_show_the_notice(web_secos):
+    web, organizacion = web_secos["web"], web_secos["org"]
+    secos = web_secos["secos"]
+    ProyectoOrganizacion.objects.create(organizacion=organizacion, codigo="SIN-1")
+    ProyectoOrganizacion.objects.create(organizacion=organizacion, codigo="SIN-2")
+
+    data = web.get(_api(organizacion) + f"?programa={secos.pk}").json()
+
+    aviso = [b for b in data["blocks"] if b["kind"] == "aviso_sin_linea"][0]
+    assert (aviso["count"], aviso["plural"], aviso["plural_n"], aviso["plural_s"]) == (
+        2,
+        "s",
+        "n",
+        "s",
+    )
+    assert aviso["codes"] == ["SIN-1", "SIN-2"]
+    assert aviso["edit_url"] == (
+        f"/organizaciones/editar/{organizacion.pk}#abordaje-card"
+    )
+
+
+def test_abordaje_data_without_a_line_shows_the_notice_and_the_sections():
+    organizacion = Organizacion.objects.create(nombre="Datos sin línea")
+    ProyectoOrganizacion.objects.create(organizacion=organizacion, codigo="X-1")
+    web = _client(_usuario("lector_avi", VIEW))
+
+    data = web.get(_api(organizacion)).json()
+
+    assert _tipos(data)[:5] == [
+        "sin_programas",
+        "aviso_abordaje",
+        "region",
+        "proyectos",
+        "rendiciones_generales",
+    ]
+    assert data["blocks"][3]["title"] == "Proyectos"
+    assert data["blocks"][3]["color"] == "otro"
+
+
+def test_sin_programa_block_groups_what_is_outside_the_loaded_programs(web_secos):
+    web, organizacion = web_secos["web"], web_secos["org"]
+    secos = web_secos["secos"]
+    Firmante.objects.create(organizacion=organizacion, nombre="Suelto")
+    Comedor.objects.create(nombre="Espacio suelto", organizacion=organizacion)
+
+    data = web.get(_api(organizacion) + f"?programa={secos.pk}").json()
+
+    bloque = data["blocks"][-1]
+    assert bloque["kind"] == "sin_programa"
+    firmantes, comedores = bloque["sections"]
+    assert (firmantes["title"], firmantes["add_url"], firmantes["show_program"]) == (
+        "Firmantes",
+        None,
+        True,
+    )
+    assert (comedores["title"], comedores["show_code"], comedores["show_program"]) == (
+        "Comedores",
+        True,
+        True,
+    )
+
+
+def test_invalid_program_and_section_parameters_fall_back_like_the_native_view():
     organizacion = _organizacion()
     web = _client(_usuario("lector_par", VIEW))
-    consulta = "?programa=999&seccion=rendiciones&proyecto=X"
 
-    data = web.get(_api(organizacion) + consulta).json()
-    nativa = web.get(f"/organizaciones/detalle/{organizacion.pk}{consulta}")
+    data = web.get(_api(organizacion) + "?programa=999&seccion=otra&proyecto=X").json()
 
-    _es_el_bloque_nativo(data["html"], nativa.content.decode())
+    assert data["selector"] == {"kind": "none"}
+    assert "sin_programas" in _tipos(data)
 
 
 def test_technicians_see_only_their_dupla_and_no_manage_buttons():
@@ -144,7 +337,11 @@ def test_technicians_see_only_their_dupla_and_no_manage_buttons():
     respuesta = web.get(_api(propia))
 
     assert respuesta.status_code == 200
-    assert "/organizaciones/editar/" not in respuesta.json()["html"]
+    data = respuesta.json()
+    assert data["header"]["edit_url"] is None
+    assert data["header"]["delete_url"] is None
+    assert data["datos"]["edit_url"] is None
+    assert "/organizaciones/editar/" not in json.dumps(data)
     assert web.get(_api(ajena)).status_code == 404
     assert web.get("/api/web/comedores/organizaciones/999999/").status_code == 404
 

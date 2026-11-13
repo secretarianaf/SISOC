@@ -7,21 +7,16 @@ organization comes from the body) and today's access
 (``organizaciones.view_organizacion`` on the route, no object scope).
 """
 
-import threading
-
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
-from django.template import Context
-from django.template.base import Node
 from django.test import Client
 
 from comedores.models import Comedor, Programas
 from core import web_gate
 from duplas.models import Dupla
 from gestion_organizaciones.models import Firmante, ProgramaOrganizacion
-from gestion_organizaciones.web_api_secciones import _RECOLECTOR, _BloqueEnLinea
 from organizaciones.models import Aval, Organizacion, RolFirmante, TipoEntidad
 
 API = "/api/web/comedores/organizaciones/"
@@ -350,6 +345,22 @@ def test_access_is_todays_anonymous_401_no_permission_403_and_csrf_403(web):
     assert web.put(url).status_code == 405
 
 
+def _todas(valor):
+    """Every JSON object with a ``kind`` in the page, in document order."""
+    if isinstance(valor, dict):
+        if "kind" in valor:
+            yield valor
+        for hijo in valor.values():
+            yield from _todas(hijo)
+    elif isinstance(valor, list):
+        for hijo in valor:
+            yield from _todas(hijo)
+
+
+def _secciones_de(data, kind):
+    return [s for s in _todas(data["blocks"]) if s["kind"] == kind]
+
+
 def test_legajo_delivers_the_signers_tables_as_sections(web, roles):
     organizacion = _organizacion("Asociación de hecho")
     programa = Programas.objects.create(nombre="Alimentar comunidad")
@@ -366,7 +377,7 @@ def test_legajo_delivers_the_signers_tables_as_sections(web, roles):
 
     data = web.get(f"{API}{organizacion.pk}/?programa={programa.pk}").json()
 
-    secciones = [s for s in data["sections"] if s["kind"] == "firmantes"]
+    secciones = _secciones_de(data, "firmantes")
     assert [s["title"] for s in secciones] == [
         "Firmantes · Alimentar comunidad",
         "Firmantes",
@@ -376,22 +387,20 @@ def test_legajo_delivers_the_signers_tables_as_sections(web, roles):
     assert programa_s["add_url"] == f"/organizaciones/firmante/crear/{organizacion.pk}"
     assert programa_s["show_program"] is False
     fila = programa_s["rows"][0]
-    assert (fila["name"], fila["role"], fila["cuit"]) == ("Ana", "Firmante 1", "20111111112")
+    assert (fila["name"], fila["role"], fila["cuit"]) == (
+        "Ana",
+        "Firmante 1",
+        "20111111112",
+    )
     assert fila["edit_url"] == f"/organizaciones/firmante/editar/{fila['id']}"
     assert fila["delete_url"] == f"/organizaciones/firmante/eliminar/{fila['id']}"
     assert sin_programa["add_url"] is None and sin_programa["show_program"] is True
     assert sin_programa["rows"][0]["program"] is None
     assert sin_programa["rows"][0]["cuit"] == "-"
-    for seccion in secciones:
-        assert f'<div data-legajo-seccion="{data["sections"].index(seccion)}"></div>' in data["html"]
-    assert "Beto" not in data["html"]
+    assert "html" not in data and "sections" not in data
 
 
-def _avales(data):
-    return [s for s in data["sections"] if s["kind"] == "avales"]
-
-
-def test_legajo_delivers_the_avales_table_as_a_section_with_its_placeholder(web):
+def test_legajo_delivers_the_avales_table_as_a_section(web):
     organizacion = _organizacion("Asociación de hecho")
     sin_cuit = Aval.objects.create(organizacion=organizacion, nombre="Beto")
     con_cuit = Aval.objects.create(
@@ -400,7 +409,7 @@ def test_legajo_delivers_the_avales_table_as_a_section_with_its_placeholder(web)
 
     data = web.get(f"{API}{organizacion.pk}/").json()
 
-    (seccion,) = _avales(data)
+    (seccion,) = _secciones_de(data, "avales")
     assert seccion["can_manage"] is True
     assert seccion["add_url"] == f"/organizaciones/aval/crear/{organizacion.pk}"
     assert [(r["id"], r["name"], r["cuit"]) for r in seccion["rows"]] == [
@@ -413,9 +422,6 @@ def test_legajo_delivers_the_avales_table_as_a_section_with_its_placeholder(web)
     assert seccion["rows"][0]["delete_url"] == (
         f"/organizaciones/aval/eliminar/{sin_cuit.pk}"
     )
-    marcador = f'<div data-legajo-seccion="{data["sections"].index(seccion)}"></div>'
-    assert marcador in data["html"]
-    assert "Agregar Aval" not in data["html"] and "Beto" not in data["html"]
 
 
 def test_legajo_avales_empty_and_only_for_asociacion_de_hecho(web):
@@ -423,9 +429,9 @@ def test_legajo_avales_empty_and_only_for_asociacion_de_hecho(web):
     otra = _organizacion("Personería Jurídica", "Con personería")
     Aval.objects.create(organizacion=otra, nombre="No se muestra")
 
-    (seccion,) = _avales(web.get(f"{API}{vacia.pk}/").json())
+    (seccion,) = _secciones_de(web.get(f"{API}{vacia.pk}/").json(), "avales")
     assert seccion["rows"] == []
-    assert _avales(web.get(f"{API}{otra.pk}/").json()) == []
+    assert _secciones_de(web.get(f"{API}{otra.pk}/").json(), "avales") == []
 
 
 def test_legajo_avales_of_a_dupla_technician_have_no_management_actions():
@@ -440,89 +446,9 @@ def test_legajo_avales_of_a_dupla_technician_have_no_management_actions():
     cliente = Client()
     cliente.force_login(tecnico)
 
-    (seccion,) = _avales(cliente.get(f"{API}{organizacion.pk}/").json())
+    (seccion,) = _secciones_de(
+        cliente.get(f"{API}{organizacion.pk}/").json(), "avales"
+    )
 
     assert seccion["can_manage"] is False and seccion["add_url"] is None
     assert [r["name"] for r in seccion["rows"]] == ["Beto"]
-
-
-def test_native_legajo_page_still_renders_the_avales_table():
-    organizacion = _organizacion("Asociación de hecho")
-    Aval.objects.create(organizacion=organizacion, nombre="Beto")
-    cliente = Client()
-    cliente.force_login(_usuario("nativo_avales", VIEW))
-    cliente.get(f"{API}{organizacion.pk}/")  # the wrapper is installed now
-
-    html = cliente.get(f"/organizaciones/detalle/{organizacion.pk}").content.decode()
-
-    assert (
-        "Agregar Aval" in html and "Beto" in html and "data-legajo-seccion" not in html
-    )
-
-
-class _Fijo(Node):
-    def render(self, context):
-        return "<p>native avales</p>"
-
-
-def _recolector(secciones):
-    contexto = Context()
-    contexto.render_context.dicts[0][_RECOLECTOR] = secciones
-    return contexto
-
-
-def test_collecting_state_lives_in_the_render_context_not_in_the_process():
-    """Interleaved renders of one shared wrapper: only the collecting one is replaced."""
-    nativo = Context()
-    salidas = {}
-
-    def builder(_contexto):
-        # A native render happens while the API render is mid-flight.
-        salidas["durante"] = envoltorio.render(nativo)
-        return {"kind": "avales"}
-
-    envoltorio = _BloqueEnLinea(_Fijo(), builder)
-    secciones = []
-
-    api = envoltorio.render(_recolector(secciones))
-
-    assert api == '<div data-legajo-seccion="0"></div>'
-    assert secciones == [{"kind": "avales"}]
-    assert salidas["durante"] == "<p>native avales</p>"
-    assert envoltorio.render(Context()) == "<p>native avales</p>"
-    assert envoltorio.render(nativo) == "<p>native avales</p>"
-
-
-def test_concurrent_threads_never_leak_the_collecting_state():
-    envoltorio = _BloqueEnLinea(_Fijo(), lambda _c: {"kind": "avales"})
-    corte = threading.Barrier(2)
-    salidas = {}
-
-    def hilo(nombre, contexto):
-        corte.wait()
-        salidas[nombre] = [envoltorio.render(contexto) for _ in range(200)]
-
-    api = threading.Thread(target=hilo, args=("api", _recolector([])))
-    nativo = threading.Thread(target=hilo, args=("nativo", Context()))
-    api.start()
-    nativo.start()
-    api.join()
-    nativo.join()
-
-    assert set(salidas["nativo"]) == {"<p>native avales</p>"}
-    assert all(
-        salida.startswith('<div data-legajo-seccion="') for salida in salidas["api"]
-    )
-
-
-def test_wrapping_twice_is_idempotent_and_native_render_stays_original():
-    organizacion = _organizacion("Asociación de hecho")
-    Aval.objects.create(organizacion=organizacion, nombre="Beto")
-    cliente = Client()
-    cliente.force_login(_usuario("repetido_avales", VIEW))
-
-    for _ in range(2):
-        assert _avales(cliente.get(f"{API}{organizacion.pk}/").json())
-        nativa = cliente.get(f"/organizaciones/detalle/{organizacion.pk}")
-        html = nativa.content.decode()
-        assert "Agregar Aval" in html and "data-legajo-seccion" not in html

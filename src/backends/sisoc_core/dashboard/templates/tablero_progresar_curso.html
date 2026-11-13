@@ -1,0 +1,150 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Becas Progresar · Curso obligatorio{% endblock %}
+
+{% block titulo-pagina %}Becas Progresar · Curso obligatorio{% endblock %}
+
+{% block breadcrumb %}
+    {# includes/main.html ya abre el <ol class="breadcrumb">: acá van solo los ítems #}
+    <li class="breadcrumb-item">Tableros</li>
+    <li class="breadcrumb-item active">Becas Progresar · Curso obligatorio</li>
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/tablero_progresar_curso.css' %}" />
+{% endblock %}
+
+{% block content %}
+    <div class="tpc-tablero">
+        <div class="tpc-encabezado">
+            <div>
+                <p>
+                    Titulares de Beca Progresar y su paso por el curso "Proyecto de vida y economía personal" de Formando Capital Humano.
+                </p>
+                <div class="tpc-chips tpc-con-datos">
+                    <span class="tpc-chip" id="tpc-chip-actualizado"></span>
+                    <span class="tpc-chip tpc-chip-alcance" id="tpc-chip-alcance">Todas las jurisdicciones</span>
+                    <span class="tpc-chip tpc-chip-linea" id="tpc-chip-linea"></span>
+                    <button type="button"
+                            class="tpc-btn-borrar"
+                            id="tpc-borrar-filtros"
+                            title="Borrar filtros: volver a la jurisdicción y la línea Progresar Obligatorio"
+                            aria-label="Borrar filtros">
+                        <i class="bi bi-funnel" aria-hidden="true"></i><i class="bi bi-x tpc-btn-borrar-x" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="tpc-filtros tpc-con-datos">
+                <div class="tpc-filtro">
+                    <label for="tpc-filtro-provincia">Jurisdicción</label>
+                    <select id="tpc-filtro-provincia" class="form-select"></select>
+                </div>
+                <div class="tpc-filtro" id="tpc-filtro-linea-caja">
+                    <label for="tpc-filtro-linea">Línea</label>
+                    <select id="tpc-filtro-linea" class="form-select"></select>
+                </div>
+            </div>
+        </div>
+        <div class="tpc-sin-alcance tpc-sin-datos tpc-oculto">
+            <i class="bi bi-database-x" aria-hidden="true"></i>
+            <br />
+            <strong>Todavía no hay datos cargados para este tablero.</strong>
+            <br />
+            Los carga el equipo de Datos una vez por día.
+        </div>
+        <div class="tpc-sin-alcance tpc-sin-jurisdiccion tpc-oculto">
+            <i class="bi bi-lock" aria-hidden="true"></i>
+            <br />
+            <strong>Tu usuario no tiene una jurisdicción asignada.</strong>
+            <br />
+            Pedile a un administrador de SISOC que la cargue en tu perfil para ver el tablero.
+        </div>
+        <section class="tpc-kpis tpc-con-datos"
+                 id="tpc-kpis"
+                 aria-label="Cifras principales">
+        </section>
+        <section class="tpc-kpis tpc-con-datos"
+                 id="tpc-kpis2"
+                 aria-label="Seguimiento">
+        </section>
+        <section class="tpc-seccion tpc-con-datos" data-id="evolucion">
+            <div class="tpc-seccion-cabecera">
+                <h2>
+                    Inscriptos y aprobados en el tiempo <span class="tpc-nota">acumulado por día</span>
+                </h2>
+                <button class="tpc-btn-tabla" type="button">Tabla</button>
+            </div>
+            <div class="tpc-seccion-cuerpo">
+                <div class="tpc-chart">
+                    <div class="tpc-leyenda" id="ley-evolucion"></div>
+                    <div class="tpc-lienzo">
+                        <canvas id="ch-evolucion"></canvas>
+                    </div>
+                </div>
+                <div class="tpc-tblwrap tpc-oculto"></div>
+                <p class="tpc-nota-pie">
+                    <i class="bi bi-info-circle" aria-hidden="true"></i>Inscripción: primer ingreso de la persona al curso. Aprobación: primer intento aprobado. Solo titulares del padrón; la tabla va del día más reciente al más viejo.
+                </p>
+            </div>
+        </section>
+        <section class="tpc-seccion tpc-con-datos" data-id="jurisdiccion">
+            <div class="tpc-seccion-cabecera">
+                <h2>
+                    Inscripción y resultados por jurisdicción <span class="tpc-nota">% de los titulares que se inscribió y cómo les fue a los inscriptos</span>
+                </h2>
+                <button class="tpc-btn-tabla" type="button">Tabla</button>
+            </div>
+            <div class="tpc-seccion-cuerpo">
+                <div class="tpc-chart">
+                    <div class="tpc-leyenda" id="ley-jurisdiccion"></div>
+                    <div class="tpc-scroll">
+                        <table class="tpc-tabla tpc-jur" id="tbl-jurisdiccion">
+                        </table>
+                    </div>
+                </div>
+                <div class="tpc-tblwrap tpc-oculto"></div>
+            </div>
+        </section>
+        <div class="tpc-grilla-2 tpc-con-datos">
+            <section class="tpc-seccion" data-id="edad">
+                <div class="tpc-seccion-cabecera">
+                    <h2>Inscriptos por edad y género</h2>
+                    <button class="tpc-btn-tabla" type="button">Tabla</button>
+                </div>
+                <div class="tpc-seccion-cuerpo">
+                    <div class="tpc-chart">
+                        <div class="tpc-leyenda" id="ley-edad"></div>
+                        <div class="tpc-lienzo">
+                            <canvas id="ch-edad"></canvas>
+                        </div>
+                    </div>
+                    <div class="tpc-tblwrap tpc-oculto"></div>
+                </div>
+            </section>
+            <section class="tpc-seccion" data-id="perfil">
+                <div class="tpc-seccion-cabecera">
+                    <h2>
+                        Tasa de inscripción por edad y género <span class="tpc-nota">% de los titulares de cada grupo que se inscribió</span>
+                    </h2>
+                    <button class="tpc-btn-tabla" type="button">Tabla</button>
+                </div>
+                <div class="tpc-seccion-cuerpo">
+                    <div class="tpc-chart">
+                        <div class="tpc-leyenda" id="ley-perfil"></div>
+                        <div class="tpc-lienzo">
+                            <canvas id="ch-perfil"></canvas>
+                        </div>
+                    </div>
+                    <div class="tpc-tblwrap tpc-oculto"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+    {{ tablero_datos|json_script:"tpc-tablero-datos" }}
+{% endblock %}
+
+{% block customJS %}
+    <script src="{% static 'custom/js/tablero_progresar_curso.js' %}"></script>
+{% endblock %}

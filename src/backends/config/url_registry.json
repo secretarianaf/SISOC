@@ -1850,6 +1850,11 @@
   "regex": "^dashboard/(?P<slug>[-a-zA-Z0-9_]+)/\\Z"
  },
  {
+  "name": "dashboard_tablero_progresar_curso",
+  "namespace": "",
+  "regex": "^dashboard/progresar\\-curso\\-obligatorio/\\Z"
+ },
+ {
   "name": "datacalle_ajax_dispositivos",
   "namespace": "",
   "regex": "^datacalle/ajax/dispositivos/\\Z"

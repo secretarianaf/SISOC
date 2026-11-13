@@ -207,3 +207,77 @@ class Tablero(models.Model):
         if self.mensaje_construccion:
             return self.mensaje_construccion
         return f"El tablero de {self.nombre} estará disponible próximamente."
+
+
+# ---------------------------------------------------------------------------
+# Tablero Becas Progresar · Curso obligatorio
+# ---------------------------------------------------------------------------
+# Los datos de Progresar no viven en SISOC: el padrón y el curso (WordPress de FCH)
+# los trae una carga diaria del equipo de Datos a tablas `bi_` de la base. SISOC solo
+# las lee. Las mantiene el equipo de Datos (no se crean ni migran desde acá).
+
+PERMISO_TABLERO_PROGRESAR_CURSO = "dashboard.view_tablero_progresar_curso"
+
+
+class ProgresarCursoResumen(models.Model):
+    """Titulares por provincia, línea, estado del curso, género y edad (agregado)."""
+
+    provincia_codigo = models.PositiveSmallIntegerField(
+        help_text="Código INDEC de la provincia."
+    )
+    provincia = models.ForeignKey(
+        "core.Provincia",
+        on_delete=models.DO_NOTHING,
+        db_constraint=False,
+        null=True,
+        related_name="+",
+    )
+    linea = models.CharField(max_length=30)
+    estado_curso = models.CharField(max_length=25)
+    genero_codigo = models.CharField(max_length=1, null=True)
+    rango_edad = models.CharField(max_length=10)
+    tramo_inactividad = models.CharField(max_length=10, null=True)
+    tramo_aprobacion = models.CharField(max_length=15, null=True)
+    titulares = models.PositiveIntegerField()
+    suma_edad = models.PositiveIntegerField(null=True)
+    casos_edad = models.PositiveIntegerField()
+    fecha_carga = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = "bi_progresar_curso_obligatorio_resumen"
+        default_permissions = ()
+        permissions = [
+            (
+                "view_tablero_progresar_curso",
+                "Puede ver el Tablero Becas Progresar · Curso obligatorio",
+            ),
+        ]
+        verbose_name = "resumen del tablero Progresar curso obligatorio"
+
+
+class ProgresarCursoEvolucion(models.Model):
+    """Inscriptos y aprobados por día, provincia, línea y género (agregado)."""
+
+    fecha = models.DateField()
+    provincia_codigo = models.PositiveSmallIntegerField(
+        help_text="Código INDEC de la provincia."
+    )
+    provincia = models.ForeignKey(
+        "core.Provincia",
+        on_delete=models.DO_NOTHING,
+        db_constraint=False,
+        null=True,
+        related_name="+",
+    )
+    linea = models.CharField(max_length=30)
+    genero_codigo = models.CharField(max_length=1, null=True)
+    inscriptos = models.PositiveIntegerField()
+    aprobados = models.PositiveIntegerField()
+    fecha_carga = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = "bi_progresar_curso_obligatorio_evolucion"
+        default_permissions = ()
+        verbose_name = "evolución del tablero Progresar curso obligatorio"

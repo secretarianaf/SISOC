@@ -1,15 +1,15 @@
-"""Explicit local React preview of Ciudadano 360 (C05.01); never mounted by a production URLconf.
+"""Explicit local React preview of Ciudadano 360 (C05); never mounted by a production URLconf.
 
-The entry keeps the native URL and guards: anonymous users get
-the login redirect of ``login_required``, users without
-``ciudadanos.view_ciudadano`` the native 403 and a missing ciudadano the native 404.
-Only then a GET returns the frozen React ``index.html``, which loads the whole ficha from
-``/api/web/ciudadanos/<pk>/`` and the aportes of the verticals; its actions keep pointing at the
-native pages (Editar, Historial) and ``Dar de baja`` to the React baja page
-(C05.03: ``ciudadanos/eliminar/<pk>``), ``Agregar`` (familiar) to its React form
-(C05.02: ``ciudadanos/<pk>/familiares/nuevo``) and ``Marcar revisado`` posts to
-``/api/web/ciudadanos/<pk>/marcar-revisado/``. Assets are served
-under ``/ciudadanos/react/``.
+Every entry keeps the native URL and guards (login redirect, the native permission, the native
+404) and only then returns the frozen React ``index.html``:
+
+- ``ciudadanos/ver/<pk>``: the whole ficha, from ``/api/web/ciudadanos/<pk>/`` and the aportes of
+  the verticals. Its ``Historial`` link stays native; ``Marcar revisado`` posts to
+  ``/api/web/ciudadanos/<pk>/marcar-revisado/``.
+- ``ciudadanos/eliminar/<pk>`` (C05.03), ``ciudadanos/<pk>/familiares/nuevo`` (C05.02),
+  ``ciudadanos/crear/`` and ``ciudadanos/editar/<pk>`` (C05.02): their React pages.
+
+Assets are served under ``/ciudadanos/react/``.
 """
 
 import hashlib
@@ -26,8 +26,10 @@ from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from ciudadanos.views import (
+    CiudadanosCreateView,
     CiudadanosDeleteView,
     CiudadanosDetailView,
+    CiudadanosUpdateView,
     GrupoFamiliarCreateView,
 )
 
@@ -76,6 +78,30 @@ class FamiliarNuevoEntry(GrupoFamiliarCreateView):
     index_bytes = b""
 
     def get(self, request, *args, **kwargs):
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CrearEntry(CiudadanosCreateView):
+    """Native login and ``add_ciudadano`` first, then the React index (C05.02).
+
+    The RENAPER search of the native ``get`` is not run here: the page asks the web API for it.
+    """
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EditarEntry(CiudadanosUpdateView):
+    """Native login, ``change_ciudadano`` and 404 first, then the React index (C05.02)."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
         return _index(request, self.index_bytes)
 
 
@@ -147,6 +173,14 @@ def ciudadanos_preview_patterns(build_directory):
         path(
             "ciudadanos/<int:pk>/familiares/nuevo",
             login_required(FamiliarNuevoEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "ciudadanos/crear/",
+            login_required(CrearEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "ciudadanos/editar/<int:pk>",
+            login_required(EditarEntry.as_view(index_bytes=index_bytes)),
         ),
         path(
             "ciudadanos/react/<path:asset_path>",

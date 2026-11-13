@@ -67,3 +67,19 @@ def test_familiar_nuevo_native_guards_then_frozen_index(preview):
     respuesta = _client("change_ciudadano").get(url)
     assert respuesta.status_code == 200
     assert "/ciudadanos/react/assets/app-1.js" in respuesta.content.decode()
+
+
+def test_form_native_guards_then_frozen_index(preview):
+    ciudadano = Ciudadano.objects.create(nombre="Ana", apellido="Prev", documento=3113)
+    editar = f"/ciudadanos/editar/{ciudadano.pk}"
+    assert Client().get("/ciudadanos/crear/").status_code == 302
+    assert _client("view_ciudadano").get("/ciudadanos/crear/").status_code == 403
+    assert (
+        _client("add_ciudadano").get("/ciudadanos/crear/?dni=3111").status_code == 200
+    )
+    assert _client("view_ciudadano").get(editar).status_code == 403
+    cambio = _client("change_ciudadano")
+    assert cambio.get("/ciudadanos/editar/99999").status_code == 404
+    respuesta = cambio.get(editar)
+    assert respuesta.status_code == 200
+    assert "/ciudadanos/react/assets/app-1.js" in respuesta.content.decode()

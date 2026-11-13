@@ -10,6 +10,7 @@ import { categoriasRoute } from "./categorias";
 import { ciudadano360Route } from "./ciudadano360";
 import { ciudadanoBajaRoute } from "./ciudadanoBaja";
 import { ciudadanoFamiliarRoute } from "./ciudadanoFamiliar";
+import { ciudadanoFormRoute } from "./ciudadanoForm";
 import { cdiCentroDetalleRoute } from "./cdiCentroDetalle";
 import { cdiCentrosRoute } from "./cdiCentros";
 import { cdiNominaRoute } from "./cdiNomina";
@@ -135,6 +136,7 @@ export const ROUTES: RouteDefinition[] = [
   ciudadano360Route,
   ciudadanoBajaRoute,
   ciudadanoFamiliarRoute,
+  ciudadanoFormRoute,
   businessRoute(SHELL_ROUTES),
 ];
 

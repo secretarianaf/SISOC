@@ -63,6 +63,7 @@ _OWNED_PATTERNS = (
     r"/api/web/ciudadanos/[0-9]+/marcar-revisado/",
     r"/api/web/ciudadanos/[0-9]+/baja/",
     r"/api/web/ciudadanos/[0-9]+/familiares/nuevo/",
+    r"/api/web/ciudadanos/(?:crear/|[0-9]+/editar/)",
     r"/api/web/(?:comedores|cdf|celiaquia|vat)/ciudadanos/[0-9]+/aportes/[a-z]+/",
 )
 

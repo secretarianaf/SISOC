@@ -5,10 +5,17 @@ from django.urls import path
 from ciudadanos.web_api import CiudadanoFichaWebView, CiudadanoMarcarRevisadoWebView
 from ciudadanos.web_baja import CiudadanoBajaWebView
 from ciudadanos.web_familiar import CiudadanoFamiliarNuevoWebView
+from ciudadanos.web_form import CiudadanoCrearWebView, CiudadanoEditarWebView
 
 urlpatterns = [
     path("<int:pk>/", CiudadanoFichaWebView.as_view(), name="ciudadanos_web_ficha"),
     path("<int:pk>/baja/", CiudadanoBajaWebView.as_view(), name="ciudadanos_web_baja"),
+    path("crear/", CiudadanoCrearWebView.as_view(), name="ciudadanos_web_crear"),
+    path(
+        "<int:pk>/editar/",
+        CiudadanoEditarWebView.as_view(),
+        name="ciudadanos_web_editar",
+    ),
     path(
         "<int:pk>/familiares/nuevo/",
         CiudadanoFamiliarNuevoWebView.as_view(),

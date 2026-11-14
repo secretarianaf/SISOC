@@ -6,7 +6,6 @@ from django.db import models
 from comedores.models import Comedor
 from core.soft_delete import SoftDeleteModelMixin
 
-
 # Margen para el sufijo "_XXXXXXX" que agrega Storage cuando el nombre ya existe.
 _MARGEN_SUFIJO_STORAGE = 8
 
@@ -718,6 +717,10 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
             (
                 "manage_regularizacion_stage",
                 "Puede gestionar la etapa Regularización",
+            ),
+            (
+                "change_review_stage_state",
+                "Puede modificar el estado de rendiciones en revisión",
             ),
         ]
         verbose_name = "Rendición de Cuenta Mensual"

@@ -305,9 +305,14 @@ def test_alta_con_programas_proyectos_y_region(programas, region, provincia):
         data=_datos_form(
             provincia,
             [programas.alco.pk, programas.secos.pk],
-            [{"codigo": "S-1", "linea": programas.secos.pk}],
-            region_abordaje=str(region.norte.pk),
-            subzona_abordaje=str(region.salta.pk),
+            [
+                {
+                    "codigo": "S-1",
+                    "linea": programas.secos.pk,
+                    "region": region.norte.pk,
+                    "subzona": region.salta.pk,
+                }
+            ],
         )
     )
 
@@ -321,10 +326,12 @@ def test_alta_con_programas_proyectos_y_region(programas, region, provincia):
     proyecto = organizacion.proyectos.get()
     assert proyecto.codigo == "S-1"
     assert proyecto.linea.programa == programas.secos
-    assert (organizacion.region_abordaje, organizacion.subzona_abordaje) == (
+    # Región y subzona son del proyecto; la organización no las recibe.
+    assert (proyecto.region_abordaje, proyecto.subzona_abordaje) == (
         region.norte,
         region.salta,
     )
+    assert organizacion.region_abordaje is None
 
 
 def test_sin_programas_el_proyecto_no_exige_linea(programas, provincia):
@@ -409,7 +416,7 @@ def test_edicion_muestra_lineas_y_conserva_programas_de_otros_programas(
     }
     assert set(form.initial["programas"]) == {programas.pnud.pk, programas.secos.pk}
     assert json.loads(form.initial["proyectos_lineas"]) == [
-        {"codigo": "S-1", "linea": programas.secos.pk}
+        {"codigo": "S-1", "linea": programas.secos.pk, "region": None, "subzona": None}
     ]
 
 
@@ -504,13 +511,27 @@ def test_no_pasa_a_secos_un_proyecto_con_imprevistos(programas, provincia):
     assert "Imprevistos" in form.errors["proyectos_lineas"][0]
 
 
-def test_formulario_tiene_una_sola_region(programas):
+def test_region_y_subzona_van_por_proyecto(programas, region):
     form = OrganizacionForm()
 
-    assert "region" not in form.fields
-    assert "subzona" not in form.fields
-    assert "region_abordaje" in form.fields
-    assert "subzona_abordaje" in form.fields
+    assert "region_abordaje" not in form.fields
+    assert "subzona_abordaje" not in form.fields
+    datos = form.datos_formulario()
+    assert {"id": region.norte.pk, "nombre": "NORTE 2745"} in datos["regiones"]
+    assert {
+        "id": region.salta.pk,
+        "nombre": "SALTA 2745",
+        "region_id": region.norte.pk,
+    } in datos["subzonas"]
+
+
+def _fila(codigo, linea, region=None, subzona=None):
+    return {
+        "codigo": codigo,
+        "linea": linea,
+        "region": getattr(region, "pk", region),
+        "subzona": getattr(subzona, "pk", subzona),
+    }
 
 
 def test_subzona_de_otra_region(programas, region, provincia):
@@ -518,17 +539,93 @@ def test_subzona_de_otra_region(programas, region, provincia):
         data=_datos_form(
             provincia,
             [programas.secos.pk],
-            region_abordaje=str(region.norte.pk),
-            subzona_abordaje=str(region.chubut.pk),
+            [_fila("S-1", programas.secos.pk, region.norte, region.chubut)],
         )
     )
 
     assert not form.is_valid()
-    assert "subzona_abordaje" in form.errors
+    assert "no pertenece a la región" in str(form.errors["proyectos_lineas"])
 
 
-def test_cambiar_region(programas, region, provincia):
+def test_subzona_sin_region(programas, region, provincia):
+    form = OrganizacionForm(
+        data=_datos_form(
+            provincia,
+            [programas.secos.pk],
+            [_fila("S-1", programas.secos.pk, None, region.salta)],
+        )
+    )
+
+    assert not form.is_valid()
+    assert "antes que su subzona" in str(form.errors["proyectos_lineas"])
+
+
+def test_region_inexistente(programas, provincia):
+    form = OrganizacionForm(
+        data=_datos_form(
+            provincia, [programas.secos.pk], [_fila("S-1", programas.secos.pk, 999999)]
+        )
+    )
+
+    assert not form.is_valid()
+    assert "región válida" in str(form.errors["proyectos_lineas"])
+
+
+def test_cambiar_region_de_un_proyecto(programas, region, provincia):
     organizacion = _organizacion("Org región cambio", programas.secos)
+    proyecto = _proyecto(organizacion, "S-1", programas.secos)
+    proyecto.region_abordaje = region.norte
+    proyecto.subzona_abordaje = region.salta
+    proyecto.save()
+
+    form = OrganizacionForm(
+        data=_datos_form(
+            provincia,
+            [programas.secos.pk],
+            [_fila("S-1", programas.secos.pk, region.sur, region.chubut)],
+        ),
+        instance=organizacion,
+    )
+    assert form.is_valid(), form.errors
+    form.save()
+
+    proyecto.refresh_from_db()
+    assert proyecto.region_abordaje == region.sur
+    assert proyecto.subzona_abordaje == region.chubut
+
+
+def test_cliente_anterior_sin_region_no_borra_la_del_proyecto(
+    programas, region, provincia
+):
+    """Una fila sin las claves region/subzona conserva lo guardado."""
+    organizacion = _organizacion("Org cliente anterior", programas.secos)
+    proyecto = _proyecto(organizacion, "S-1", programas.secos)
+    proyecto.region_abordaje = region.norte
+    proyecto.subzona_abordaje = region.salta
+    proyecto.save()
+
+    form = OrganizacionForm(
+        data=_datos_form(
+            provincia,
+            [programas.secos.pk],
+            [{"codigo": "S-1", "linea": programas.secos.pk}],
+        ),
+        instance=organizacion,
+    )
+    assert form.is_valid(), form.errors
+    form.save()
+
+    proyecto.refresh_from_db()
+    assert (proyecto.region_abordaje, proyecto.subzona_abordaje) == (
+        region.norte,
+        region.salta,
+    )
+
+
+def test_guardar_la_organizacion_no_toca_su_region_anterior(
+    programas, region, provincia
+):
+    organizacion = _organizacion("Org región anterior", programas.secos)
     organizacion.region_abordaje = region.norte
     organizacion.subzona_abordaje = region.salta
     organizacion.save()
@@ -537,8 +634,7 @@ def test_cambiar_region(programas, region, provincia):
         data=_datos_form(
             provincia,
             [programas.secos.pk],
-            region_abordaje=str(region.sur.pk),
-            subzona_abordaje=str(region.chubut.pk),
+            [_fila("S-1", programas.secos.pk, region.sur, region.chubut)],
         ),
         instance=organizacion,
     )
@@ -546,8 +642,14 @@ def test_cambiar_region(programas, region, provincia):
     form.save()
 
     organizacion.refresh_from_db()
-    assert organizacion.region_abordaje == region.sur
-    assert organizacion.subzona_abordaje == region.chubut
+    assert (organizacion.region_abordaje, organizacion.subzona_abordaje) == (
+        region.norte,
+        region.salta,
+    )
+    assert form.datos_formulario()["region_anterior"] == {
+        "region": region.norte.pk,
+        "subzona": region.salta.pk,
+    }
 
 
 # --- Etapa 3 + #2642: territoriales por proyecto --------------------------------
@@ -739,16 +841,16 @@ def _datos_convenio(**extra):
 
 def test_convenio_secos_sin_imprevistos(client, usuario, programas, region):
     organizacion = _organizacion("Org conv secos", programas.secos)
-    organizacion.region_abordaje = region.norte
-    organizacion.subzona_abordaje = region.salta
-    organizacion.save()
     proyecto = _proyecto(organizacion, "S-1", programas.secos)
+    proyecto.region_abordaje = region.norte
+    proyecto.subzona_abordaje = region.salta
+    proyecto.save()
     client.force_login(usuario)
     url = reverse("organizacion_proyecto_convenio", kwargs={"proyecto_id": proyecto.pk})
 
     respuesta = client.get(url)
     assert respuesta.status_code == 200
-    # Muestra la región de la organización (#2642).
+    # Muestra la región del proyecto (#2642, ahora por proyecto).
     assert "NORTE 2745" in respuesta.content.decode()
     assert "SALTA 2745" in respuesta.content.decode()
     assert "imprevistos" not in respuesta.context["form"].fields

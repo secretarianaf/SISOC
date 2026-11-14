@@ -33,6 +33,9 @@ FIELD_MAP: Dict[str, str] = {
     # FKs -> nombre
     "organizacion": "organizacion__nombre",
     "programa": "programa__nombre",
+    # Región y subzona de Abordaje Comunitario: las del proyecto del comedor.
+    "region": "proyecto__region_abordaje__nombre",
+    "subzona": "proyecto__subzona_abordaje__nombre",
     "tipocomedor": "tipocomedor__nombre",
     "dupla": "dupla__nombre",
     "provincia": "provincia__nombre",
@@ -70,7 +73,6 @@ FIELD_TYPES: Dict[str, str] = {
             "partido",
             "barrio",
             "organizacion",
-            "programa",
             "tipocomedor",
             "dupla",
             "provincia",
@@ -89,6 +91,9 @@ FIELD_TYPES: Dict[str, str] = {
             "estado_detalle",
             "estado_validacion",
             "categoria_espacio_comunitario",
+            "programa",
+            "region",
+            "subzona",
         ]
     },
     # Booleanos
@@ -141,7 +146,13 @@ FILTER_FIELDS = [
     {"name": "partido", "label": "Partido", "type": "text"},
     {"name": "barrio", "label": "Barrio", "type": "text"},
     {"name": "organizacion", "label": "Organizacion (nombre)", "type": "text"},
-    {"name": "programa", "label": "Programa (nombre)", "type": "text"},
+    {"name": "programa", "label": "Programa", "type": "choice"},
+    {"name": "region", "label": "Región (Abordaje Comunitario)", "type": "choice"},
+    {
+        "name": "subzona",
+        "label": "Subzona/Aglomerado (Abordaje Comunitario)",
+        "type": "choice",
+    },
     {"name": "tipocomedor", "label": "Tipo de comedor (nombre)", "type": "text"},
     {"name": "dupla", "label": "Dupla (nombre)", "type": "text"},
     {"name": "provincia", "label": "Provincia (nombre)", "type": "text"},
@@ -188,7 +199,7 @@ FILTER_FIELDS = [
 ]
 
 DEFAULT_FIELD = "nombre"
-FILTERS_UI_CONFIG_CACHE_KEY = "comedores:filters_ui_config:v6"
+FILTERS_UI_CONFIG_CACHE_KEY = "comedores:filters_ui_config:v7"
 FILTERS_UI_CONFIG_CACHE_TTL = 60 * 15
 
 
@@ -214,7 +225,11 @@ def get_filters_ui_config() -> Dict[str, Any]:
             ]
 
     try:
-        from comedores.models import EstadoDetalle, EstadoProceso
+        from comedores.models import EstadoDetalle, EstadoProceso, Programas
+        from organizaciones.models import (
+            RegionAbordajeComunitario,
+            SubzonaAbordajeComunitario,
+        )
 
         def build_state_choices(model_cls):
             return [
@@ -225,7 +240,19 @@ def get_filters_ui_config() -> Dict[str, Any]:
                 if value
             ]
 
+        def build_name_choices(queryset):
+            return [
+                {"value": nombre, "label": nombre}
+                for nombre in queryset.order_by("nombre")
+                .values_list("nombre", flat=True)
+                .distinct()
+                if nombre
+            ]
+
         choices_by_field = {
+            "programa": build_name_choices(Programas.objects),
+            "region": build_name_choices(RegionAbordajeComunitario.objects),
+            "subzona": build_name_choices(SubzonaAbordajeComunitario.objects),
             "estado_proceso": build_state_choices(EstadoProceso),
             "estado_detalle": build_state_choices(EstadoDetalle),
             "estado_validacion": [

@@ -14,8 +14,13 @@ from core.services.advanced_filters import AdvancedFilterEngine
 
 # Mapea el nombre de campo expuesto en filtros -> lookup real en Django ORM
 FIELD_MAP: Dict[str, str] = {
-    "region": "region_abordaje__nombre",
-    "subzona": "subzona_abordaje__nombre",
+    # Región y subzona son por proyecto: la organización aparece si alguno de
+    # sus proyectos la tiene. La migración copió el dato anterior a todos los
+    # proyectos; una organización sin proyectos no entra en este filtro.
+    "region": "proyectos__region_abordaje__nombre",
+    "subzona": "proyectos__subzona_abordaje__nombre",
+    # Programas cargados en la organización (ProgramaOrganizacion, #2745).
+    "programa": "programas_asignados__programa__nombre",
     # Texto simples
     "nombre": "nombre",
     "sigla": "sigla",
@@ -45,6 +50,7 @@ FIELD_MAP: Dict[str, str] = {
 FIELD_TYPES: Dict[str, str] = {
     "region": "choice",
     "subzona": "choice",
+    "programa": "choice",
     **{
         k: "text"
         for k in [
@@ -93,8 +99,13 @@ BOOL_OPS = ["eq", "ne"]
 DATE_OPS = ["eq", "ne", "gt", "lt", "gte", "lte", "empty"]
 
 FILTER_FIELDS = [
-    {"name": "region", "label": "Región", "type": "choice"},
-    {"name": "subzona", "label": "Subzona", "type": "choice"},
+    {"name": "programa", "label": "Programa", "type": "choice"},
+    {"name": "region", "label": "Región (Abordaje Comunitario)", "type": "choice"},
+    {
+        "name": "subzona",
+        "label": "Subzona/Aglomerado (Abordaje Comunitario)",
+        "type": "choice",
+    },
     {"name": "nombre", "label": "Nombre", "type": "text"},
     {"name": "sigla", "label": "Sigla", "type": "text"},
     {"name": "cuit", "label": "CUIT", "type": "number"},
@@ -136,7 +147,7 @@ ORGANIZACION_ADVANCED_FILTER = AdvancedFilterEngine(
 )
 
 DEFAULT_FIELD = "nombre"
-FILTERS_UI_CONFIG_CACHE_KEY = "organizaciones:filters_ui_config:v4"
+FILTERS_UI_CONFIG_CACHE_KEY = "organizaciones:filters_ui_config:v5"
 FILTERS_UI_CONFIG_CACHE_TTL = 60 * 15
 
 
@@ -169,7 +180,10 @@ def get_filters_ui_config() -> Dict[str, Any]:
                 if nombre
             ]
 
+        from comedores.models import Programas
+
         choices_by_field = {
+            "programa": build_choices(Programas.objects),
             "region": build_choices(RegionAbordajeComunitario.objects),
             "subzona": build_choices(SubzonaAbordajeComunitario.objects),
             "tipo_entidad": build_choices(TipoEntidad.objects),

@@ -9,13 +9,21 @@ from organizaciones.models import (
     Organizacion,
     ProyectoOrganizacion,
     Aval,
+    RegionAbordajeComunitario,
     SubtipoEntidad,
+    SubzonaAbordajeComunitario,
 )
 from gestion_organizaciones.models import (
     ConvenioProyecto,
     Firmante,
     LineaProyecto,
     ProgramaOrganizacion,
+)
+from gestion_organizaciones.services.proyectos import (
+    LARGO_MAXIMO_CODIGO,
+    cambio_de_linea_por_codigo,
+    normalizar_codigo,
+    validar_codigo_proyecto,
 )
 from gestion_organizaciones.services.programas import (
     asociaciones_de_programa,
@@ -38,10 +46,15 @@ class TerritorialesMultipleChoiceField(forms.ModelMultipleChoiceField):
         return etiqueta_territorial(obj)
 
 
+_SIN_DATO = object()
+
+
 class OrganizacionForm(forms.ModelForm):
-    # JSON con filas {"codigo", "linea"}; la línea es el id del programa de
-    # Abordaje (#2745). Lo arma el JS del formulario. Va antes que
-    # asignaciones_territoriales: su validación usa estos códigos.
+    # JSON con filas {"codigo", "linea", "region", "subzona"}; la línea es el id
+    # del programa de Abordaje (#2745) y región/subzona son ids del catálogo del
+    # #2642, ahora por proyecto. Lo arma el JS del formulario. Una fila sin las
+    # claves "region"/"subzona" (cliente anterior) no toca las del proyecto.
+    # Va antes que asignaciones_territoriales: su validación usa estos códigos.
     proyectos_lineas = forms.CharField(
         required=False,
         label="Proyectos",
@@ -76,7 +89,7 @@ class OrganizacionForm(forms.ModelForm):
     territoriales_abordaje_comunitario = TerritorialesMultipleChoiceField(
         queryset=usuarios_territoriales_pnud(),
         required=False,
-        label="Territorial Asignado Abordaje Comunitario",
+        label="Territorial/Supervisor Asignado Abordaje Comunitario",
         widget=forms.SelectMultiple(attrs={"class": "form-control"}),
     )
     quitar_territoriales_sin_proyecto = TerritorialesMultipleChoiceField(
@@ -115,12 +128,7 @@ class OrganizacionForm(forms.ModelForm):
             subtipos = subtipos | SubtipoEntidad.objects.filter(pk=subtipo_actual_id)
         self.fields["subtipo_entidad"].queryset = subtipos.order_by("nombre")
         self._configurar_territoriales()
-        for name in ("region_abordaje", "subzona_abordaje"):
-            field = self.fields[name]
-            field.queryset = field.queryset.filter(
-                Q(activo=True) | Q(pk=getattr(self.instance, f"{name}_id", None))
-            )
-        self._configurar_subzonas()
+        self._configurar_regiones()
         self._configurar_programas()
         if not self.is_bound and self.instance.pk:
             self.initial["asignaciones_territoriales"] = [
@@ -133,7 +141,12 @@ class OrganizacionForm(forms.ModelForm):
         if not self.is_bound and self.instance.pk:
             self.initial["proyectos_lineas"] = json.dumps(
                 [
-                    {"codigo": fila["codigo"], "linea": fila["linea"]}
+                    {
+                        "codigo": fila["codigo"],
+                        "linea": fila["linea"],
+                        "region": fila["region"],
+                        "subzona": fila["subzona"],
+                    }
                     for fila in self.proyectos_actuales()
                 ]
             )
@@ -151,24 +164,36 @@ class OrganizacionForm(forms.ModelForm):
         if not self.is_bound:
             self.initial["programas"] = [p.pk for p in self.programas_asignados]
 
-    def _configurar_subzonas(self):
-        region = (
-            self.data.get(self.add_prefix("region_abordaje"))
-            if self.is_bound
-            else self.initial.get("region_abordaje")
+    def _configurar_regiones(self):
+        """Catálogo de Región y Subzona/Aglomerado para las filas de proyectos.
+
+        Se ofrecen las activas y las que ya usa la organización (en sus
+        proyectos o como dato anterior), para que guardar no quite un valor
+        que se desactivó en el catálogo.
+        """
+        en_uso_regiones = Q()
+        en_uso_subzonas = Q()
+        if self.instance.pk:
+            proyectos = ProyectoOrganizacion.objects.filter(organizacion=self.instance)
+            en_uso_regiones = Q(pk__in=proyectos.values("region_abordaje")) | Q(
+                pk=self.instance.region_abordaje_id
+            )
+            en_uso_subzonas = Q(pk__in=proyectos.values("subzona_abordaje")) | Q(
+                pk=self.instance.subzona_abordaje_id
+            )
+        self.regiones_abordaje = list(
+            RegionAbordajeComunitario.objects.filter(Q(activo=True) | en_uso_regiones)
+            .order_by("nombre")
+            .values("id", "nombre")
         )
-        region_id = int(region) if region and str(region).isdigit() else None
-        field = self.fields["subzona_abordaje"]
         self.subzonas_abordaje = list(
-            field.queryset.values("id", "nombre", "region_id")
+            SubzonaAbordajeComunitario.objects.filter(Q(activo=True) | en_uso_subzonas)
+            .order_by("nombre")
+            .values("id", "nombre", "region_id")
         )
-        permitidas = Q(region_id=region_id, region__isnull=False)
-        if region_id == self.instance.region_abordaje_id:
-            permitidas |= Q(pk=self.instance.subzona_abordaje_id, region__isnull=True)
-        field.queryset = field.queryset.filter(permitidas)
 
     def proyectos_actuales(self):
-        """Proyectos activos con su línea y si tienen convenio cargado."""
+        """Proyectos activos con línea, región, subzona y si tienen convenio."""
         if not self.instance.pk:
             return []
         return [
@@ -176,6 +201,8 @@ class OrganizacionForm(forms.ModelForm):
                 "id": proyecto.pk,
                 "codigo": proyecto.codigo,
                 "linea": getattr(getattr(proyecto, "linea", None), "programa_id", None),
+                "region": proyecto.region_abordaje_id,
+                "subzona": proyecto.subzona_abordaje_id,
                 "convenio": hasattr(proyecto, "convenio"),
             }
             for proyecto in self.instance.proyectos.filter(activo=True)
@@ -198,6 +225,25 @@ class OrganizacionForm(forms.ModelForm):
             ],
             "proyectos": self.proyectos_actuales(),
             "inactivos": self.lineas_de_proyectos_quitados(),
+            "inactivos_region": self.regiones_de_proyectos_quitados(),
+            "regiones": self.regiones_abordaje,
+            "subzonas": self.subzonas_abordaje,
+            # Dato anterior de la organización: valor inicial de un proyecto nuevo.
+            "region_anterior": {
+                "region": self.instance.region_abordaje_id,
+                "subzona": self.instance.subzona_abordaje_id,
+            },
+        }
+
+    def regiones_de_proyectos_quitados(self):
+        """Región y subzona de cada proyecto quitado, por código."""
+        if not self.instance.pk:
+            return {}
+        return {
+            codigo: {"region": region, "subzona": subzona}
+            for codigo, region, subzona in self.instance.proyectos.filter(
+                activo=False
+            ).values_list("codigo", "region_abordaje_id", "subzona_abordaje_id")
         }
 
     def lineas_de_proyectos_quitados(self):
@@ -341,7 +387,44 @@ class OrganizacionForm(forms.ModelForm):
 
         self._validar_programas_quitados(cleaned_data)
         self._validar_lineas_proyecto(cleaned_data)
+        self._validar_regiones_proyecto(cleaned_data)
         return cleaned_data
+
+    def _validar_regiones_proyecto(self, cleaned_data):
+        """Región del catálogo y Subzona/Aglomerado de esa región, por proyecto."""
+        if "proyectos_lineas" not in cleaned_data:
+            return
+        regiones = {fila["id"] for fila in self.regiones_abordaje}
+        subzonas = {fila["id"]: fila["region_id"] for fila in self.subzonas_abordaje}
+        for fila in cleaned_data["proyectos_lineas"]:
+            codigo = fila["codigo"]
+            region = fila.get("region", _SIN_DATO)
+            subzona = fila.get("subzona", _SIN_DATO)
+            if region not in (_SIN_DATO, None) and region not in regiones:
+                self.add_error(
+                    "proyectos_lineas",
+                    f"Elegí una región válida para el proyecto {codigo}.",
+                )
+                continue
+            if subzona in (_SIN_DATO, None):
+                continue
+            if subzona not in subzonas:
+                self.add_error(
+                    "proyectos_lineas",
+                    f"Elegí una subzona/aglomerado válida para el proyecto {codigo}.",
+                )
+            elif region in (_SIN_DATO, None):
+                self.add_error(
+                    "proyectos_lineas",
+                    f"Elegí la región del proyecto {codigo} antes que su "
+                    "subzona/aglomerado.",
+                )
+            elif subzonas[subzona] is not None and subzonas[subzona] != region:
+                self.add_error(
+                    "proyectos_lineas",
+                    f"La subzona/aglomerado del proyecto {codigo} no pertenece a "
+                    "la región elegida.",
+                )
 
     def clean_proyectos_lineas(self):
         crudo = (self.cleaned_data.get("proyectos_lineas") or "").strip()
@@ -367,15 +450,28 @@ class OrganizacionForm(forms.ModelForm):
                 raise forms.ValidationError(
                     f"El código {codigo[:20]}… supera los 255 caracteres."
                 )
-            linea = fila.get("linea")
-            try:
-                linea = int(linea) if linea not in (None, "") else None
-            except (TypeError, ValueError) as error:
-                raise forms.ValidationError(
-                    f"La línea del proyecto {codigo} no es válida."
-                ) from error
+            linea = self._id_opcional(
+                fila.get("linea"), f"La línea del proyecto {codigo}"
+            )
             proyectos[codigo] = {"codigo": codigo, "linea": linea}
+            # Sin la clave (cliente anterior) no se toca lo guardado.
+            for clave, nombre in (("region", "La región"), ("subzona", "La subzona")):
+                if clave in fila:
+                    proyectos[codigo][clave] = self._id_opcional(
+                        fila[clave], f"{nombre} del proyecto {codigo}"
+                    )
         return [proyectos[codigo] for codigo in sorted(proyectos)]
+
+    @staticmethod
+    def _id_opcional(valor, descripcion):
+        if valor in (None, ""):
+            return None
+        if isinstance(valor, bool):
+            raise forms.ValidationError(f"{descripcion} no es válida.")
+        try:
+            return int(valor)
+        except (TypeError, ValueError) as error:
+            raise forms.ValidationError(f"{descripcion} no es válida.") from error
 
     def clean_asignaciones_territoriales(self):
         asignaciones = self.cleaned_data.get("asignaciones_territoriales") or []
@@ -545,10 +641,15 @@ class OrganizacionForm(forms.ModelForm):
         # Los proyectos que se quitan se desactivan; su línea y convenio quedan.
         organizacion.proyectos.exclude(codigo__in=codigos).update(activo=False)
         for fila in proyectos:
+            defaults = {"activo": True}
+            if "region" in fila:
+                defaults["region_abordaje_id"] = fila["region"]
+            if "subzona" in fila:
+                defaults["subzona_abordaje_id"] = fila["subzona"]
             proyecto, _ = ProyectoOrganizacion.objects.update_or_create(
                 organizacion=organizacion,
                 codigo=fila["codigo"],
-                defaults={"activo": True},
+                defaults=defaults,
             )
             if fila["linea"] is None:
                 continue
@@ -563,13 +664,61 @@ class OrganizacionForm(forms.ModelForm):
 
     class Meta:
         model = Organizacion
-        fields = "__all__"
+        # Región y subzona van por proyecto (proyectos_lineas); las de la
+        # organización quedan como dato anterior y no se editan acá.
+        exclude = ("region_abordaje", "subzona_abordaje")
         widgets = {
             "fecha_vencimiento": forms.DateInput(
                 attrs={"type": "date", "class": "form-control"},
                 format="%Y-%m-%d",
             ),
         }
+
+
+class ProyectoCodigoForm(forms.Form):
+    """Corrige el código de un proyecto ya cargado (error de tipeo)."""
+
+    codigo = forms.CharField(
+        label="Código de Proyecto",
+        max_length=LARGO_MAXIMO_CODIGO,
+        widget=forms.TextInput(attrs={"class": "form-control", "autocomplete": "off"}),
+    )
+
+    confirmar_cambio_linea = forms.BooleanField(
+        required=False,
+        label="Entiendo que cambia la línea de las rendiciones nuevas de este proyecto",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    def __init__(self, *args, proyecto, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.proyecto = proyecto
+        self.cambio_linea = None
+        if not self.is_bound:
+            self.initial["codigo"] = proyecto.codigo
+
+    def clean_codigo(self):
+        codigo = normalizar_codigo(self.cleaned_data.get("codigo"))
+        if codigo != self.proyecto.codigo:
+            validar_codigo_proyecto(self.proyecto, codigo)
+        return codigo
+
+    def clean(self):
+        cleaned = super().clean()
+        codigo = cleaned.get("codigo")
+        if not codigo or codigo == self.proyecto.codigo:
+            return cleaned
+        # Corregir el prefijo AMBA cambia la línea de las rendiciones nuevas
+        # (SISOC y PWA): se pide confirmarlo para que no pase sin querer.
+        self.cambio_linea = cambio_de_linea_por_codigo(self.proyecto, codigo)
+        if self.cambio_linea and not cleaned.get("confirmar_cambio_linea"):
+            antes, despues = self.cambio_linea
+            self.add_error(
+                "confirmar_cambio_linea",
+                f"Con este código las rendiciones nuevas del proyecto pasan de "
+                f"{antes} a {despues}. Confirmá si es correcto.",
+            )
+        return cleaned
 
 
 class FirmanteForm(forms.ModelForm):

@@ -202,19 +202,26 @@ def test_asignacion_general_legada_puede_quitarse_sin_proyecto(scopes):
 
 @pytest.mark.django_db
 def test_region_subzona_son_opcionales_y_selectores_cerrados(scopes):
+    """Región y subzona son opcionales y de catálogo cerrado, ahora por proyecto."""
     _, proyecto, _, _ = scopes
     region = RegionAbordajeComunitario.objects.create(nombre="Región de prueba")
     subzona = SubzonaAbordajeComunitario.objects.create(
         nombre="Subzona de prueba", region=region
     )
-    proyecto.organizacion.region_abordaje = region
     form = OrganizacionForm(instance=proyecto.organizacion)
-    assert not form.fields["region_abordaje"].required
-    assert not form.fields["subzona_abordaje"].required
-    assert form.fields["region_abordaje"].clean(region.pk) == region
-    assert form.fields["subzona_abordaje"].clean(subzona.pk) == subzona
+    datos = form.datos_formulario()
+    assert region.pk in {fila["id"] for fila in datos["regiones"]}
+    assert subzona.pk in {fila["id"] for fila in datos["subzonas"]}
+
+    def _clean(fila):
+        form = OrganizacionForm(instance=proyecto.organizacion)
+        form.cleaned_data = {"proyectos_lineas": json.dumps([fila])}
+        return form.clean_proyectos_lineas()
+
+    assert _clean({"codigo": "P1"}) == [{"codigo": "P1", "linea": None}]
+    assert _clean({"codigo": "P1", "region": "", "subzona": None})[0]["region"] is None
     with pytest.raises(ValidationError):
-        form.fields["region_abordaje"].clean("valor inventado")
+        _clean({"codigo": "P1", "region": "valor inventado"})
 
 
 @pytest.mark.django_db

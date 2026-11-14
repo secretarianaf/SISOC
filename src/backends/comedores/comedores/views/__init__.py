@@ -52,11 +52,13 @@ from .actividades_pnud import (
 )
 from .actividad_espacio_pwa import (
     ActividadEspacioPWACreateView,
+    ActividadEspacioPWADeleteView,
     ActividadEspacioPWAUpdateView,
 )
 
 __all__ = [
     "ActividadEspacioPWACreateView",
+    "ActividadEspacioPWADeleteView",
     "ActividadEspacioPWAUpdateView",
     "ActividadPnudCreateView",
     "ActividadPnudDeactivateView",

@@ -1,0 +1,86 @@
+/* Alta/edición de actividades del espacio: flecha que marca los desplegables.
+   comedorFormModerno.css pisa el fondo de los select con !important pero no la
+   imagen, así que la flecha se dibuja como SVG de fondo, igual que el buscador
+   de los listados (comedoresSearchBar.css). */
+.actividad-form select.form-control {
+    padding-right: 2.5rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23e5e7eb' stroke-width='2'%3E%3Cpath d='M3 6l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 16px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* Días y horarios: cada bloque agrupa los días que comparten horario. */
+.actividad-form .horario-ayuda {
+    color: #9ca3af;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+.actividad-form .schedule-row {
+    border: 1px solid #3d4f63;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.actividad-form .horario-dias-legend {
+    float: none;
+    width: auto;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.actividad-form .horario-dias {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* El checkbox queda accesible (teclado y lector de pantalla) pero oculto;
+   se ve la etiqueta como botón conmutable. */
+.actividad-form .dia-chip-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+}
+
+.actividad-form .dia-chip {
+    margin: 0;
+    padding: 0.375rem 0.875rem;
+    border: 1px solid #3d4f63;
+    border-radius: 999px;
+    background: #1e2a3a;
+    color: #e5e7eb;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.actividad-form .dia-chip:hover {
+    border-color: #f39c12;
+}
+
+.actividad-form .dia-chip-input:checked + .dia-chip {
+    background: #f39c12;
+    border-color: #f39c12;
+    color: #111827;
+    font-weight: 600;
+}
+
+.actividad-form .dia-chip-input:focus-visible + .dia-chip {
+    outline: 2px solid #f39c12;
+    outline-offset: 2px;
+}
+
+/* "Actividad" queda bloqueada hasta elegir una categoría. */
+.actividad-form select.form-control:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}

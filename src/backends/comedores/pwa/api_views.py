@@ -784,7 +784,10 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
             .annotate(
                 cantidad_actividades_pwa=Count(
                     "inscripciones_actividad_pwa__actividad_espacio__catalogo_actividad_id",
-                    filter=Q(inscripciones_actividad_pwa__activo=True),
+                    filter=Q(
+                        inscripciones_actividad_pwa__activo=True,
+                        inscripciones_actividad_pwa__deleted_at__isnull=True,
+                    ),
                     distinct=True,
                 )
             )

@@ -110,6 +110,11 @@
   "regex": "^comedores/(?P<pk>[0-9]+)/actividades/(?P<pk2>[0-9]+)/editar/\\Z"
  },
  {
+  "name": "actividad_espacio_pwa_eliminar",
+  "namespace": "",
+  "regex": "^comedores/(?P<pk>[0-9]+)/actividades/(?P<pk2>[0-9]+)/eliminar/\\Z"
+ },
+ {
   "name": "actividadcentro_asistencia",
   "namespace": "",
   "regex": "^centrodefamilia/centros/actividades/(?P<pk>[0-9]+)/asistencia/\\Z"

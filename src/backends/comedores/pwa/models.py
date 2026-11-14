@@ -7,6 +7,7 @@ from audittrail.models import AuditoriaSesionPWA  # pylint: disable=unused-impor
 from comedores.models import Comedor
 from comedores.models import Nomina
 from core.models import Dia
+from core.soft_delete import SoftDeleteModelMixin
 
 
 class AuditoriaOperacionPWA(models.Model):
@@ -274,8 +275,18 @@ class CatalogoActividadPWA(models.Model):
         return f"{self.categoria} - {self.actividad}"
 
 
-class ActividadEspacioPWA(models.Model):
-    """Actividad dada de alta en un espacio (comedor)."""
+class ActividadEspacioPWA(SoftDeleteModelMixin, models.Model):
+    """Actividad dada de alta en un espacio (comedor).
+
+    Inactivar (``activo``) es la baja operativa; eliminar es borrado lógico en
+    cascada sobre sus inscriptos, pensado para cargas erróneas. Lo eliminado
+    se restaura desde la Papelera tal como estaba.
+
+    Eliminar no toca ``activo``: un inscripto puede tener una fila activa y otra
+    inactiva para la misma actividad (``uniq_inscripto_actividad_nomina_estado_pwa``)
+    y pasarlas a inactivas rompería esa unicidad. Las consultas que cruzan desde
+    la nómina hacia ``inscripciones_actividad_pwa`` filtran ``deleted_at``.
+    """
 
     comedor = models.ForeignKey(
         Comedor,
@@ -291,6 +302,15 @@ class ActividadEspacioPWA(models.Model):
         Dia,
         on_delete=models.PROTECT,
         related_name="actividades_pwa",
+    )
+    nombre_fantasia = models.CharField(
+        "Nombre de fantasía", max_length=255, blank=True, default=""
+    )
+    cantidad_personas = models.PositiveIntegerField(
+        "Número de personas",
+        null=True,
+        blank=True,
+        help_text="Dato informativo cargado en la web; no interviene en ningún cálculo.",
     )
     horario_actividad = models.CharField(max_length=60)
     hora_inicio = models.TimeField(null=True, blank=True)
@@ -333,7 +353,7 @@ class ActividadEspacioPWA(models.Model):
         return f"{self.comedor} - {self.catalogo_actividad}"
 
 
-class InscriptoActividadEspacioPWA(models.Model):
+class InscriptoActividadEspacioPWA(SoftDeleteModelMixin, models.Model):
     """Vinculacion de nomina del espacio con una actividad PWA."""
 
     actividad_espacio = models.ForeignKey(

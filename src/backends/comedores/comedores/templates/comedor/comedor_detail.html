@@ -843,6 +843,7 @@
                                             <th>Horario</th>
                                             <th>Responsable</th>
                                             <th>Vigencia</th>
+                                            <th>N&uacute;mero de personas</th>
                                             <th>Inscriptos</th>
                                             <th>Estado</th>
                                             <th>Detalle</th>
@@ -853,7 +854,10 @@
                                         {% for actividad in actividades_pnud_legajo %}
                                             <tr>
                                                 <td>{{ actividad.catalogo_actividad.categoria|default:"-" }}</td>
-                                                <td>{{ actividad.catalogo_actividad.actividad|default:"-" }}</td>
+                                                <td>
+                                                    {{ actividad.catalogo_actividad.actividad|default:"-" }}
+                                                    {% if actividad.nombre_fantasia %}<div class="small text-white-50">{{ actividad.nombre_fantasia }}</div>{% endif %}
+                                                </td>
                                                 <td>{{ actividad.dia_actividad|default:"-" }}</td>
                                                 <td>{{ actividad.horario_actividad|default:"-" }}</td>
                                                 <td>{{ actividad.responsable_actividad|default:"-" }}</td>
@@ -864,6 +868,7 @@
                                                         -
                                                     {% endif %}
                                                 </td>
+                                                <td>{{ actividad.cantidad_personas|default_if_none:"-" }}</td>
                                                 <td>{{ actividad.inscriptos_activos_count|default_if_none:"0" }}</td>
                                                 <td>
                                                     {% if actividad.activo %}
@@ -901,13 +906,16 @@
                                                     </details>
                                                 </td>
                                                 {% if puede_gestionar_actividades_espacio %}
-                                                    <td>
+                                                    <td class="text-nowrap">
                                                         {% if actividad.activo %}
                                                             <a href="{% url 'actividad_espacio_pwa_editar' comedor.id actividad.id %}"
                                                                class="btn btn-sm btn-primary">Editar</a>
-                                                        {% else %}
-                                                            -
                                                         {% endif %}
+                                                        <a href="{% url 'actividad_espacio_pwa_eliminar' comedor.id actividad.id %}"
+                                                           class="btn btn-sm btn-outline-danger"
+                                                           title="Eliminar actividad cargada por error">
+                                                            <i class="fas fa-trash" aria-hidden="true"></i> Eliminar
+                                                        </a>
                                                     </td>
                                                 {% endif %}
                                             </tr>

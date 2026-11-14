@@ -4,17 +4,18 @@ from django.db import transaction
 from django.http import Http404
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.views.generic import FormView, UpdateView
+from django.views.generic import DeleteView, FormView, UpdateView
 
 from comedores.forms.actividad_espacio_pwa_form import ActividadEspacioPWAWebForm
 from comedores.services.comedor_service import ComedorService
 from comedores.utils import is_pnud_comedor
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from pwa.models import ActividadEspacioPWA
 from pwa.services.actividades_service import (
     create_actividad_espacio,
+    eliminar_actividad_espacio,
     update_actividad_espacio,
 )
-
 
 MANAGE_ACTIVIDADES_ESPACIO_PERMISSION = "pwa.manage_colaboradores_pwa"
 
@@ -117,3 +118,38 @@ class ActividadEspacioPWAUpdateView(ActividadEspacioPWAWebPermissionMixin, Updat
         else:
             messages.success(self.request, "Actividad actualizada correctamente.")
         return redirect(self.get_success_url())
+
+
+class ActividadEspacioPWADeleteView(
+    ActividadEspacioPWAWebPermissionMixin, SoftDeleteDeleteViewMixin, DeleteView
+):
+    """Elimina (borrado lógico en cascada) una actividad cargada por error."""
+
+    model = ActividadEspacioPWA
+    template_name = "comedor/actividad_espacio_pwa_confirm_delete.html"
+    pk_url_kwarg = "pk2"
+    success_message = "Actividad eliminada correctamente."
+
+    def get_queryset(self):
+        return ActividadEspacioPWA.objects.filter(comedor=self.comedor).select_related(
+            "catalogo_actividad", "dia_actividad"
+        )
+
+    def get_form_kwargs(self):
+        # El form de confirmación de DeleteView no recibe el comedor.
+        kwargs = super().get_form_kwargs()
+        kwargs.pop("comedor", None)
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comedor"] = self.comedor
+        actividad = self.object
+        context["nombre_actividad"] = (
+            f"{actividad.catalogo_actividad.actividad} - "
+            f"{actividad.dia_actividad} {actividad.horario_actividad}"
+        )
+        return context
+
+    def _soft_delete_instance(self, instance):
+        eliminar_actividad_espacio(actividad=instance, actor=self.request.user)

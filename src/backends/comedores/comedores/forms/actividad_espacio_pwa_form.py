@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.db.models import Q
@@ -6,6 +8,9 @@ from django.db.models.functions import Lower
 from core.models import Dia
 from core.services.text_encoding import normalize_text
 from pwa.models import ActividadEspacioPWA, CatalogoActividadPWA
+
+# Clave de cada grupo de horario en el POST; arma el nombre schedule_dias_<clave>.
+_CLAVE_GRUPO_RE = re.compile(r"[A-Za-z0-9_-]{1,20}")
 
 
 def _format_activity_schedule(start_time, end_time):
@@ -27,16 +32,24 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
         model = ActividadEspacioPWA
         fields = (
             "catalogo_actividad",
+            "nombre_fantasia",
+            "cantidad_personas",
             "responsable_actividad",
             "vigencia_actividad_meses",
         )
         labels = {
             "catalogo_actividad": "Actividad",
+            "nombre_fantasia": "Nombre de fantasía",
+            "cantidad_personas": "Número de personas",
             "responsable_actividad": "Responsable",
             "vigencia_actividad_meses": "Vigencia en meses",
         }
         widgets = {
             "catalogo_actividad": forms.Select(attrs={"class": "form-control"}),
+            "nombre_fantasia": forms.TextInput(attrs={"class": "form-control"}),
+            "cantidad_personas": forms.NumberInput(
+                attrs={"class": "form-control", "min": "0", "step": "1"}
+            ),
             "responsable_actividad": forms.TextInput(attrs={"class": "form-control"}),
             "vigencia_actividad_meses": forms.NumberInput(
                 attrs={"class": "form-control", "min": "1"}
@@ -68,12 +81,15 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
         self.schedule_rows = self._get_initial_schedule_rows()
 
     def _get_initial_schedule_rows(self):
+        """Grupos de horario: varios días comparten una misma hora de inicio y fin."""
         if self.is_bound:
             return self._get_bound_schedule_rows()
         if self.instance and self.instance.pk:
+            dia_id = self.instance.dia_actividad_id
             return [
                 {
-                    "dia_actividad": str(self.instance.dia_actividad_id or ""),
+                    "key": "0",
+                    "dias": [str(dia_id)] if dia_id else [],
                     "hora_inicio": (
                         self.instance.hora_inicio.strftime("%H:%M")
                         if self.instance.hora_inicio
@@ -86,7 +102,7 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
                     ),
                 }
             ]
-        return [{"dia_actividad": "", "hora_inicio": "", "hora_fin": ""}]
+        return [{"key": "0", "dias": [], "hora_inicio": "", "hora_fin": ""}]
 
     def _getlist(self, field_name):
         if hasattr(self.data, "getlist"):
@@ -97,15 +113,43 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
         return [value] if value else []
 
     def _get_bound_schedule_rows(self):
-        dias = self._getlist("schedule_dia_actividad")
+        """Lee los grupos del POST.
+
+        Cada grupo manda ``schedule_grupo`` (su clave), sus días marcados en
+        ``schedule_dias_<clave>`` y una hora de inicio y fin en el mismo orden.
+        Sin ``schedule_grupo`` se acepta el formato anterior: un día por fila en
+        ``schedule_dia_actividad``.
+        """
+        grupos = self._getlist("schedule_grupo")
         horas_inicio = self._getlist("schedule_hora_inicio")
         horas_fin = self._getlist("schedule_hora_fin")
-        row_count = max(len(dias), len(horas_inicio), len(horas_fin), 1)
+        if grupos:
+            claves = [
+                clave if _CLAVE_GRUPO_RE.fullmatch(clave or "") else ""
+                for clave in grupos
+            ]
+            dias_por_grupo = [
+                self._getlist(f"schedule_dias_{clave}") if clave else []
+                for clave in claves
+            ]
+        else:
+            dias_legacy = self._getlist("schedule_dia_actividad")
+            total = max(len(dias_legacy), len(horas_inicio), len(horas_fin), 1)
+            claves = [str(index) for index in range(total)]
+            dias_por_grupo = [
+                (
+                    [dias_legacy[index]]
+                    if index < len(dias_legacy) and dias_legacy[index]
+                    else []
+                )
+                for index in range(total)
+            ]
         rows = []
-        for index in range(row_count):
+        for index, clave in enumerate(claves):
             rows.append(
                 {
-                    "dia_actividad": dias[index] if index < len(dias) else "",
+                    "key": clave or str(index),
+                    "dias": [str(dia) for dia in dias_por_grupo[index] if dia],
                     "hora_inicio": (
                         horas_inicio[index] if index < len(horas_inicio) else ""
                     ),
@@ -130,16 +174,16 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
 
         for index, row in enumerate(self.schedule_rows):
             row_errors = self.schedule_errors[index]
-            dia_actividad = self._clean_schedule_day(row.get("dia_actividad"))
+            dias = self._clean_schedule_days(row.get("dias"))
             hora_inicio = self._clean_schedule_time(
                 row.get("hora_inicio"),
                 "Hora inicio",
             )
             hora_fin = self._clean_schedule_time(row.get("hora_fin"), "Hora fin")
 
-            if isinstance(dia_actividad, ValidationError):
-                row_errors["dia_actividad"] = dia_actividad.message
-                dia_actividad = None
+            if isinstance(dias, ValidationError):
+                row_errors["dias"] = dias.message
+                dias = []
             if isinstance(hora_inicio, ValidationError):
                 row_errors["hora_inicio"] = hora_inicio.message
                 hora_inicio = None
@@ -155,18 +199,21 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
             if row_errors:
                 continue
 
-            parsed_rows.append(
-                {
-                    "dia_actividad": dia_actividad,
-                    "hora_inicio": hora_inicio,
-                    "hora_fin": hora_fin,
-                }
-            )
+            # Cada día marcado se guarda como una actividad con el mismo horario.
+            for dia_actividad in dias:
+                parsed_rows.append(
+                    {
+                        "dia_actividad": dia_actividad,
+                        "hora_inicio": hora_inicio,
+                        "hora_fin": hora_fin,
+                    }
+                )
 
         if any(self.schedule_errors):
             self.add_error(
                 None,
-                "Completa todos los dias y horarios con formato HH:MM.",
+                "Completá cada horario: elegí al menos un día y las horas con "
+                "formato HH:MM.",
             )
             return cleaned
 
@@ -218,13 +265,17 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
                 "Selecciona una actividad de la categoría elegida.",
             )
 
-    def _clean_schedule_day(self, value):
-        if not value:
-            return ValidationError("Este campo es obligatorio.")
+    def _clean_schedule_days(self, values):
+        if not values:
+            return ValidationError("Seleccioná al menos un día.")
         try:
-            return Dia.objects.get(pk=value)
-        except (Dia.DoesNotExist, ValueError, TypeError):
+            ids = {int(value) for value in values}
+        except (ValueError, TypeError):
             return ValidationError("Selecciona un dia valido.")
+        dias = list(Dia.objects.filter(pk__in=ids).order_by("id"))
+        if len(dias) != len(ids):
+            return ValidationError("Selecciona un dia valido.")
+        return dias
 
     def _clean_schedule_time(self, value, label):
         if not value:
@@ -276,7 +327,7 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
             errors = (
                 self.schedule_errors[index] if index < len(self.schedule_errors) else {}
             )
-            rows.append({"values": row, "errors": errors})
+            rows.append({"key": row["key"], "values": row, "errors": errors})
         return rows
 
     def get_service_data(self, schedule):

@@ -196,6 +196,7 @@ def test_list_actividades_e_inscriptos_ok(comedor, dia, admision):
         horario_actividad="10:00 a 11:00",
         hora_inicio="10:00",
         hora_fin="11:00",
+        nombre_fantasia="Taller de los martes",
         creado_por=representante,
         actualizado_por=representante,
     )
@@ -225,6 +226,13 @@ def test_list_actividades_e_inscriptos_ok(comedor, dia, admision):
     assert list_response.data[0]["cantidad_inscriptos"] == 1
     assert list_response.data[0]["hora_inicio"] == "10:00:00"
     assert list_response.data[0]["hora_fin"] == "11:00:00"
+    assert list_response.data[0]["nombre_fantasia"] == "Taller de los martes"
+
+    detail_response = client.get(
+        f"/api/pwa/espacios/{comedor.id}/actividades/{actividad.id}/"
+    )
+    assert detail_response.status_code == 200
+    assert detail_response.data["nombre_fantasia"] == "Taller de los martes"
 
     inscriptos_response = client.get(
         f"/api/pwa/espacios/{comedor.id}/actividades/{actividad.id}/inscriptos/"

@@ -19,8 +19,11 @@ def _snapshot_actividad(actividad: ActividadEspacioPWA) -> dict:
         "horario_actividad": actividad.horario_actividad,
         "responsable_actividad": actividad.responsable_actividad,
         "vigencia_actividad_meses": actividad.vigencia_actividad_meses,
+        "nombre_fantasia": actividad.nombre_fantasia,
+        "cantidad_personas": actividad.cantidad_personas,
         "activo": actividad.activo,
         "fecha_baja": actividad.fecha_baja,
+        "deleted_at": actividad.deleted_at,
     }
 
 
@@ -47,6 +50,8 @@ def create_actividad_espacio(
         horario_actividad=data["horario_actividad"],
         responsable_actividad=data.get("responsable_actividad", ""),
         vigencia_actividad_meses=data.get("vigencia_actividad_meses"),
+        nombre_fantasia=data.get("nombre_fantasia") or "",
+        cantidad_personas=data.get("cantidad_personas"),
         creado_por=actor,
         actualizado_por=actor,
     )
@@ -73,6 +78,8 @@ def update_actividad_espacio(*, actividad: ActividadEspacioPWA, actor, data: dic
         "horario_actividad",
         "responsable_actividad",
         "vigencia_actividad_meses",
+        "nombre_fantasia",
+        "cantidad_personas",
     ):
         if field in data:
             setattr(actividad, field, data[field])
@@ -156,3 +163,34 @@ def soft_delete_actividad_espacio(*, actividad: ActividadEspacioPWA, actor):
         )
 
     return actividad
+
+
+@transaction.atomic
+def eliminar_actividad_espacio(*, actividad: ActividadEspacioPWA, actor) -> int:
+    """Borrado lógico de una actividad cargada por error, en cascada.
+
+    A diferencia de inactivar, la actividad y sus inscriptos dejan de verse en la
+    web y en la PWA; se pueden restaurar desde la Papelera. Devuelve la cantidad
+    de registros eliminados (actividad + inscriptos).
+    """
+    snapshot_antes = _snapshot_actividad(actividad)
+    inscriptos_ids = list(
+        InscriptoActividadEspacioPWA.objects.filter(
+            actividad_espacio=actividad
+        ).values_list("id", flat=True)
+    )
+    eliminados, _ = actividad.delete(user=actor, cascade=True)
+    registrar_evento_operacion(
+        actor=actor,
+        comedor_id=actividad.comedor_id,
+        entidad="actividad",
+        entidad_id=actividad.id,
+        accion="delete",
+        snapshot_antes=snapshot_antes,
+        snapshot_despues=_snapshot_actividad(actividad),
+        metadata={
+            "motivo": "eliminacion_logica",
+            "inscriptos_eliminados": inscriptos_ids,
+        },
+    )
+    return eliminados

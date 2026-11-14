@@ -17,7 +17,6 @@ from pwa.services.actividades_service import (
     update_actividad_espacio,
 )
 
-
 MANAGE_ACTIVIDADES_ESPACIO_PERMISSION = "pwa.manage_colaboradores_pwa"
 
 

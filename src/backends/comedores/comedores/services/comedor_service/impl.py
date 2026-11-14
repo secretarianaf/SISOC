@@ -77,7 +77,6 @@ from comedores.services.filter_config import (
     TEXT_OPS,
 )
 
-
 COMEDOR_ADVANCED_FILTER = AdvancedFilterEngine(
     field_map=FIELD_MAP,
     field_types=FIELD_TYPES,

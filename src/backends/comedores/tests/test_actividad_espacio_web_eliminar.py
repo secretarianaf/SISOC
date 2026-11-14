@@ -147,7 +147,9 @@ def test_eliminar_no_altera_la_nomina_ni_otras_actividades(
     assert not otra_inscripcion.is_deleted
     assert ActividadEspacioPWA.objects.filter(pk=otra_actividad.pk).exists()
     assert list(
-        nomina.inscripciones_actividad_pwa.values_list("actividad_espacio_id", flat=True)
+        nomina.inscripciones_actividad_pwa.values_list(
+            "actividad_espacio_id", flat=True
+        )
     ) == [otra_actividad.pk]
 
 
@@ -169,9 +171,7 @@ def test_pestania_actividades_de_nomina_ignora_inscripciones_eliminadas(
 
 
 @pytest.mark.django_db
-def test_se_puede_recargar_la_actividad_correcta_tras_eliminar(
-    admin_client, actividad
-):
+def test_se_puede_recargar_la_actividad_correcta_tras_eliminar(admin_client, actividad):
     """El horario de la eliminada no bloquea cargar la actividad bien."""
     client, _ = admin_client
     client.post(_url(actividad))

@@ -50,10 +50,12 @@ Local, en Docker:
   aislamiento por comedor.
 - `makemigrations --check`, `black`, `pylint` y `djlint` sobre los archivos
   tocados.
-- Verificación visual en el entorno local: quien pidió el cambio aprobó el
-  estilo del formulario y la flecha de los desplegables. El agrupado de días,
-  los campos nuevos, la eliminación y el legajo de organización quedan para la
-  revisión del PR.
+- Verificación manual en el entorno local: quien pidió el cambio probó el
+  formulario, el agrupado de días, los campos nuevos, la eliminación y el legajo
+  de organización, y los dio por correctos.
+- La suite completa de `src/backends/comedores` pasó localmente antes de sumar la
+  eliminación; con la eliminación no se pudo terminar (Docker local sin
+  recursos) y queda a cargo de CI.
 
 No corrido localmente: el test JS
 `src/backends/comedores/tests/js/rendicionVisualizacion.test.js` (no hay Node

@@ -54,8 +54,14 @@
 
 .datos-card-content {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 1.5rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem 2.5rem;
+}
+
+@media (max-width: 768px) {
+    .datos-card-content {
+        grid-template-columns: 1fr;
+    }
 }
 
 .datos-card label, .datos-card strong {
@@ -207,19 +213,6 @@
     background: var(--gold);
     color: var(--navy-dark);
     border-color: var(--gold);
-}
-
-.icon-placeholder {
-    width: 180px;
-    height: 180px;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 4rem;
 }
 
 .badge-status {
@@ -598,12 +591,6 @@
                     Datos de la Organización <span class="chip-legajo ms-2">Común a todos los programas</span>
                 </h5>
                 <div class="datos-card-content">
-                    <div style="display: flex; justify-content: center; align-items: center;">
-                        <div class="icon-placeholder">
-                            <i class="fas fa-building"></i>
-                        </div>
-                    </div>
-
                     <div class="info-column">
                         <div class="info-row">
                             <strong>Nombre:</strong>

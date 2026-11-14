@@ -3,6 +3,7 @@ from django.views import View
 from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -37,6 +38,9 @@ def _safe_profile(user):
 
 ALLOWED_UPLOAD_TYPES = {"application/pdf", "image/jpeg", "image/png"}
 MAX_UPLOAD_MB = 5
+# Un doble clic en "Guardar Comentario" manda dos POST idénticos (issue #2892);
+# dentro de esta ventana el segundo devuelve el comentario ya creado.
+VENTANA_REENVIO_COMENTARIO_SEGUNDOS = 10
 
 #: Tipos de comentario que se listan en el panel del legajo.
 TIPOS_LISTABLES = [
@@ -132,7 +136,9 @@ def _serializar_comentario(comentario, es_provincia=None):
             if comentario.usuario
             else "Sistema"
         ),
-        "fecha": comentario.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
+        "fecha": timezone.localtime(comentario.fecha_creacion).strftime(
+            "%d/%m/%Y %H:%M"
+        ),
         "tiene_archivo": bool(comentario.archivo_adjunto),
         "archivo_url": (
             comentario.archivo_adjunto.url if comentario.archivo_adjunto else None
@@ -146,7 +152,7 @@ def _serializar_comentario(comentario, es_provincia=None):
         "tiene_observaciones": comentario.tiene_observaciones,
         "observacion_codigo": comentario.observacion_codigo,
         "publicado_en": (
-            comentario.publicado_en.strftime("%d/%m/%Y %H:%M")
+            timezone.localtime(comentario.publicado_en).strftime("%d/%m/%Y %H:%M")
             if comentario.publicado_en
             else None
         ),
@@ -181,6 +187,7 @@ class LegajoComentarioCreateView(View):
                 observacion_codigo=request.POST.get("observacion_codigo"),
                 observacion_libre=request.POST.get("observacion_libre", ""),
                 usuario=request.user,
+                ventana_reenvio_segundos=VENTANA_REENVIO_COMENTARIO_SEGUNDOS,
             )
         except ValidationError as exc:
             return JsonResponse(

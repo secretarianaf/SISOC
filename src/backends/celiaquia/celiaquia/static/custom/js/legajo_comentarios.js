@@ -199,6 +199,17 @@ function mostrarComentarios(legajoId, comentarios) {
 }
 
 function enviarComentario(form) {
+    // Un doble clic (o clic + Enter) mandaba dos POST y el comentario quedaba
+    // duplicado (issue #2892): se ignoran los envíos mientras hay uno en curso.
+    if (form.dataset.enviando === 'true') return;
+    form.dataset.enviando = 'true';
+    const botonGuardar = form.querySelector('button[type="submit"]');
+    const htmlOriginal = botonGuardar ? botonGuardar.innerHTML : '';
+    if (botonGuardar) {
+        botonGuardar.disabled = true;
+        botonGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando…';
+    }
+
     const formData = new FormData(form);
     const legajoId = form.dataset.legajoId;
     const expedienteId = document.querySelector('meta[name="expediente-id"]')?.content;
@@ -236,6 +247,13 @@ function enviarComentario(form) {
     .catch(error => {
         console.error('Error:', error);
         mostrarAlerta('danger', 'Error al agregar comentario');
+    })
+    .finally(() => {
+        form.dataset.enviando = 'false';
+        if (botonGuardar) {
+            botonGuardar.disabled = false;
+            botonGuardar.innerHTML = htmlOriginal;
+        }
     });
 }
 

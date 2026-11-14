@@ -30,6 +30,7 @@
                class="btn btn-outline-success btn-sm">Ver expedientes de pago</a>
             <form action="{% url 'pago_expediente_create' provincia.id %}"
                   method="post"
+                  data-un-solo-envio="Generando…"
                   class="d-inline">
                 {% csrf_token %}
                 <button class="btn btn-success btn-sm">Generar expediente de pago</button>
@@ -288,4 +289,5 @@
 {% endblock %}
 {% block customJS %}
     <script src="{% static 'custom/js/cupo_provincia.js' %}"></script>
+    <script src="{% static 'custom/js/celiaquia_un_solo_envio.js' %}?v=20261112"></script>
 {% endblock %}

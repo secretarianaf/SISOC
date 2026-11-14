@@ -170,11 +170,21 @@ def test_abordaje_muestra_proyectos_region_convenio_y_territoriales(cliente, pro
 
     html = _html(_legajo(cliente, organizacion, programa=programas.secos.pk))
 
-    assert "Proyectos · Abordaje comunitario - Línea Secos" in html
+    # Proyectos y convenio en una sola tarjeta: cada fila se despliega con su convenio.
+    assert "Proyectos y Convenio · Abordaje comunitario - Línea Secos" in html
+    assert "Datos de Convenio ·" not in html
+    assert "Datos de Región" not in html
     assert "S-1" in html
     assert "T-1" not in html
     assert "Zapata, Ana (terr2745)" in html
-    assert "Datos de Región" in html
+    # Región y subzona/aglomerado van en la tabla de proyectos; la card de
+    # datos anteriores solo aparece si la organización los tiene.
+    assert "Subzona/Aglomerado" in html
+    assert "Sin región" in html
+    assert "Territoriales/Supervisores" in html
+    assert "Datos anteriores de la organización" not in html
+    # Los comentarios del template no llegan a la pantalla.
+    assert "Recibe: territoriales_sin_proyecto" not in html
     assert "Convenio 0456/2026" in html
     assert "no coincide con el monto total" in html
     assert "Imprevistos no aplica" in html

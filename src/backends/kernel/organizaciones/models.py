@@ -117,8 +117,8 @@ class SubzonaAbordajeComunitario(models.Model):
 
     class Meta:
         ordering = ["nombre"]
-        verbose_name = "Subzona de Abordaje Comunitario"
-        verbose_name_plural = "Subzonas de Abordaje Comunitario"
+        verbose_name = "Subzona/Aglomerado de Abordaje Comunitario"
+        verbose_name_plural = "Subzonas/Aglomerados de Abordaje Comunitario"
 
 
 class Organizacion(SoftDeleteModelMixin, models.Model):
@@ -171,14 +171,14 @@ class Organizacion(SoftDeleteModelMixin, models.Model):
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        verbose_name="Subzona",
+        verbose_name="Subzona/Aglomerado",
     )
     fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     territoriales_abordaje_comunitario = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         blank=True,
         related_name="organizaciones_territorial_abordaje",
-        verbose_name="Territorial Asignado Abordaje Comunitario",
+        verbose_name="Territorial/Supervisor Asignado Abordaje Comunitario",
     )
 
     def __str__(self):
@@ -202,11 +202,29 @@ class ProyectoOrganizacion(models.Model):
     codigo = models.CharField(max_length=255)
     nombre = models.CharField(max_length=255, blank=True, null=True)
     activo = models.BooleanField(default=True)
+    # Región y subzona por proyecto. Organizacion.region_abordaje y
+    # subzona_abordaje quedan como dato anterior de la organización.
+    region_abordaje = models.ForeignKey(
+        RegionAbordajeComunitario,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="proyectos",
+        verbose_name="Región",
+    )
+    subzona_abordaje = models.ForeignKey(
+        SubzonaAbordajeComunitario,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="proyectos",
+        verbose_name="Subzona/Aglomerado",
+    )
     territoriales = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         blank=True,
         related_name="proyectos_abordaje",
-        verbose_name="Territoriales asignados",
+        verbose_name="Territoriales/Supervisores asignados",
     )
 
     def __str__(self):

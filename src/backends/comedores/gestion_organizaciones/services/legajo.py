@@ -143,6 +143,7 @@ def _abordaje_sin_programa(organizacion, codigo_proyecto):
     proyectos = list(
         organizacion.proyectos.filter(activo=True)
         .order_by("codigo")
+        .select_related("region_abordaje", "subzona_abordaje")
         .prefetch_related("territoriales")
     )
     territoriales = _territoriales_sin_proyecto(organizacion)
@@ -153,7 +154,11 @@ def _abordaje_sin_programa(organizacion, codigo_proyecto):
     codigo = codigo_proyecto if codigo_proyecto in codigos else ""
     return {
         "abordaje_sin_programa": (
-            {"proyectos": proyectos, "territoriales_sin_proyecto": territoriales}
+            {
+                "proyectos": proyectos,
+                "filas": _convenios(proyectos),
+                "territoriales_sin_proyecto": territoriales,
+            }
             if proyectos or territoriales or tiene_region
             else None
         ),
@@ -182,7 +187,7 @@ def _convenios(proyectos):
 def _datos_abordaje(organizacion, programa, programas, seccion, codigo_proyecto):
     proyectos = list(
         proyectos_por_linea(organizacion, programa)
-        .select_related("convenio")
+        .select_related("convenio", "region_abordaje", "subzona_abordaje")
         .prefetch_related("territoriales")
     )
     # Las mismas opciones que el legajo anterior (incluye códigos de comedor).

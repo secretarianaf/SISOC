@@ -9,8 +9,15 @@ from .views import (
     importarexpediente_detail_ajax,
     ImportDatosView,
     BorrarDatosImportadosView,
+    EliminarArchivoImportadoView,
     descargar_archivo_importado,
 )
+
+# Mismos permisos que muestran los botones de gestion del lote en el detalle.
+PERMISOS_GESTION_LOTE = [
+    "importarexpediente.change_archivosimportados",
+    "expedientespagos.change_expedientepago",
+]
 
 urlpatterns = [
     path("importarexpedientes/upload", ImportExpedientesView.as_view(), name="upload"),
@@ -51,12 +58,9 @@ urlpatterns = [
     ),
     path(
         "importarexpedientes/<int:id_archivo>/fechas-acreditacion/",
-        permissions_any_required(
-            [
-                "importarexpediente.change_archivosimportados",
-                "expedientespagos.change_expedientepago",
-            ]
-        )(ImportarFechasAcreditacionView.as_view()),
+        permissions_any_required(PERMISOS_GESTION_LOTE)(
+            ImportarFechasAcreditacionView.as_view()
+        ),
         name="importar_fechas_acreditacion",
     ),
     path(
@@ -66,7 +70,16 @@ urlpatterns = [
     ),
     path(
         "importarexpedientes/<int:id_archivo>/borrar_datos_importados/",
-        BorrarDatosImportadosView.as_view(),
+        permissions_any_required(PERMISOS_GESTION_LOTE)(
+            BorrarDatosImportadosView.as_view()
+        ),
         name="borrar_datos_importados",
+    ),
+    path(
+        "importarexpedientes/<int:id_archivo>/eliminar/",
+        permissions_any_required(PERMISOS_GESTION_LOTE)(
+            EliminarArchivoImportadoView.as_view()
+        ),
+        name="eliminar_archivo_importado",
     ),
 ]

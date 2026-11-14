@@ -240,7 +240,8 @@ def test_user_can_list_and_interact_with_another_users_import(client_logged, tmp
     )
     assert import_response.status_code == 302
 
+    # Deshacer o eliminar un lote exige permiso de gestion, no solo de lectura.
     delete_response = client_logged.post(
         reverse("borrar_datos_importados", kwargs={"id_archivo": batch.id})
     )
-    assert delete_response.status_code == 302
+    assert delete_response.status_code == 403

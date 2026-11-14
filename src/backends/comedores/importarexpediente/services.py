@@ -11,6 +11,7 @@ from typing import List, Optional, Tuple
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 from openpyxl import load_workbook
 
 from comedores.models import (
@@ -22,7 +23,13 @@ from comedores.models import (
 )
 from comedores.services.estado_manager import registrar_cambio_estado
 from expedientespagos.models import ExpedientePago
-from importarexpediente.models import ArchivosImportados, RegistroImportado
+from importarexpediente.models import (
+    ArchivosImportados,
+    CambioEstadoImportacion,
+    ErroresImportacion,
+    ExitoImportacion,
+    RegistroImportado,
+)
 
 # Formatos de fecha aceptados
 DATE_FORMATS = ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"]
@@ -623,7 +630,44 @@ def _actualizar_mes_ejecucion(comedor, mes_ejecucion):
     comedor.mes_ejecucion = mes_ejecucion
 
 
-def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-locals
+def _cambio_estado(batch, comedor, estado_anterior_id, mes_anterior):
+    """Arma el registro para deshacer el lote, o None si el comedor no cambio."""
+    if (
+        comedor.ultimo_estado_id == estado_anterior_id
+        and comedor.mes_ejecucion == mes_anterior
+    ):
+        return None
+    return CambioEstadoImportacion(
+        archivo_importado=batch,
+        comedor_id=comedor.pk,
+        estado_anterior_id=estado_anterior_id,
+        estado_nuevo_id=comedor.ultimo_estado_id,
+        mes_ejecucion_anterior=mes_anterior,
+        mes_ejecucion_nuevo=comedor.mes_ejecucion,
+    )
+
+
+def _registrar_fecha_importacion(batch):
+    batch.fecha_importacion = timezone.now()
+    ArchivosImportados.objects.filter(pk=batch.pk).update(
+        fecha_importacion=batch.fecha_importacion
+    )
+
+
+def aplicar_estados_por_lote(batch, usuario=None):
+    """Actualiza los estados de los comedores y guarda como estaban para deshacerlo."""
+    cambios = []
+    updated_count = _aplicar_estados_por_lote(batch, usuario, cambios)
+    CambioEstadoImportacion.objects.bulk_create(
+        [cambio for cambio in cambios if cambio is not None]
+    )
+    _registrar_fecha_importacion(batch)
+    return updated_count
+
+
+def _aplicar_estados_por_lote(
+    batch, usuario, cambios
+):  # pylint: disable=too-many-locals,too-many-statements
     registros_actuales = list(
         RegistroImportado.objects.filter(
             exito_importacion__archivo_importado=batch,
@@ -651,6 +695,8 @@ def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-l
         "ultimo_estado__estado_general__estado_actividad"
     )
     for comedor in comedores_presentes:
+        estado_anterior_id = comedor.ultimo_estado_id
+        mes_anterior = comedor.mes_ejecucion
         mes_convenio = present_mes_by_comedor[comedor.id]
         if mes_convenio in (1, 2, 3):
             _registrar_estado(
@@ -671,6 +717,7 @@ def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-l
                 usuario,
             )
         _actualizar_mes_ejecucion(comedor, mes_convenio)
+        cambios.append(_cambio_estado(batch, comedor, estado_anterior_id, mes_anterior))
         updated_count += 1
 
     previous_batches = _new_imported_batches_before(batch)
@@ -685,6 +732,8 @@ def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-l
         [comedor.id for comedor in comedores_ausentes]
     )
     for comedor in comedores_ausentes:
+        estado_anterior_id = comedor.ultimo_estado_id
+        mes_anterior = comedor.mes_ejecucion
         ultimo_estado = getattr(comedor, "ultimo_estado", None)
         actividad_actual = None
         if ultimo_estado and ultimo_estado.estado_general_id:
@@ -723,9 +772,114 @@ def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-l
                 usuario,
             )
             _actualizar_mes_ejecucion(comedor, -ausencias)
+        cambios.append(_cambio_estado(batch, comedor, estado_anterior_id, mes_anterior))
         updated_count += 1
 
     return updated_count
+
+
+def ultimo_lote_deshacible():
+    """Ultimo lote importado que guardo los estados previos de los comedores."""
+    return (
+        ArchivosImportados.objects.filter(
+            importacion_completada=True,
+            fecha_importacion__isnull=False,
+        )
+        .order_by("-fecha_importacion", "-id")
+        .first()
+    )
+
+
+def motivo_no_deshacer_importacion(batch):
+    """Explica por que no se puede deshacer la importacion del lote, o None si se puede."""
+    if not batch.importacion_completada:
+        return "Este lote todavía no fue importado."
+    if batch.fecha_importacion is None:
+        return (
+            "Este lote se importó antes de que el sistema guardara cómo "
+            "estaban los comedores, por eso no se puede deshacer."
+        )
+    ultimo = ultimo_lote_deshacible()
+    if ultimo is not None and ultimo.pk != batch.pk:
+        return (
+            "Solo se puede deshacer el último lote importado. "
+            "Primero deshacé los lotes importados después de este."
+        )
+    return None
+
+
+def revertir_estados_por_lote(batch):
+    """Devuelve los comedores al estado previo a importar el lote.
+
+    No toca los comedores que alguien cambio despues de la importacion.
+    Retorna (comedores revertidos, comedores con cambios posteriores respetados).
+    """
+    cambios = list(CambioEstadoImportacion.objects.filter(archivo_importado=batch))
+    actuales = {
+        comedor_id: (ultimo_estado_id, mes_ejecucion)
+        for comedor_id, ultimo_estado_id, mes_ejecucion in Comedor.all_objects.filter(
+            id__in=[cambio.comedor_id for cambio in cambios]
+        ).values_list("id", "ultimo_estado_id", "mes_ejecucion")
+    }
+    revertidos = 0
+    respetados = 0
+    historiales_a_borrar = []
+    for cambio in cambios:
+        if actuales.get(cambio.comedor_id) != (
+            cambio.estado_nuevo_id,
+            cambio.mes_ejecucion_nuevo,
+        ):
+            respetados += 1
+            continue
+        Comedor.all_objects.filter(pk=cambio.comedor_id).update(
+            ultimo_estado_id=cambio.estado_anterior_id,
+            mes_ejecucion=cambio.mes_ejecucion_anterior,
+        )
+        if (
+            cambio.estado_nuevo_id
+            and cambio.estado_nuevo_id != cambio.estado_anterior_id
+        ):
+            historiales_a_borrar.append(cambio.estado_nuevo_id)
+        revertidos += 1
+
+    CambioEstadoImportacion.objects.filter(archivo_importado=batch).delete()
+    EstadoHistorial.objects.filter(id__in=historiales_a_borrar).delete()
+    return revertidos, respetados
+
+
+def deshacer_importacion(batch):
+    """Borra los expedientes del lote y revierte los estados de los comedores.
+
+    El lote queda listo para volver a importarse. Debe llamarse dentro de una
+    transaccion y solo si ``motivo_no_deshacer_importacion`` devuelve None.
+    """
+    registros_qs = RegistroImportado.objects.filter(
+        exito_importacion__archivo_importado=batch
+    )
+    expediente_ids = list(registros_qs.values_list("expediente_pago_id", flat=True))
+    registros_qs.delete()
+    expedientes_eliminados, _ = ExpedientePago.all_objects.filter(
+        id__in=expediente_ids
+    ).hard_delete()
+    revertidos, respetados = revertir_estados_por_lote(batch)
+    batch.importacion_completada = False
+    batch.fecha_importacion = None
+    batch.save(update_fields=["importacion_completada", "fecha_importacion"])
+    return expedientes_eliminados, revertidos, respetados
+
+
+def eliminar_lote(batch):
+    """Borra un lote que no fue importado, con sus filas validadas y su archivo."""
+    if batch.importacion_completada:
+        raise ValueError("No se puede eliminar un lote importado.")
+    archivo = batch.archivo
+    nombre_archivo = archivo.name
+    ErroresImportacion.objects.filter(archivo_importado=batch).delete()
+    ExitoImportacion.objects.filter(archivo_importado=batch).delete()
+    batch.delete()
+    if nombre_archivo:
+        storage = archivo.storage
+        transaction.on_commit(lambda: storage.delete(nombre_archivo))
 
 
 def friendly_error_message(exc: Exception) -> str:

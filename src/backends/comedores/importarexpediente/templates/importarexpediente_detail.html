@@ -38,18 +38,39 @@
                     <i class="fas fa-calendar-check me-1"></i>Actualizar fechas de acreditaci&oacute;n
                 </a>
             {% endif %}
-            <form method="post"
-                  action="{% url 'borrar_datos_importados' batch_id %}"
-                  class="d-inline">
-                {% csrf_token %}
-                <button type="submit"
-                        class="btn btn-md btn-danger"
-                        title="Borrar datos"
-                        data-confirm-click="¿Confirmar borrado de datos importados del lote?">
-                    <i class="fas fa-trash me-1"></i>Eliminar Archivo
-                </button>
-            </form>
+            {% if request.user|has_any_perm:"importarexpediente.change_archivosimportados,expedientespagos.change_expedientepago" %}
+                {% if not batch.importacion_completada %}
+                    <form method="post"
+                          action="{% url 'eliminar_archivo_importado' batch_id %}"
+                          class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-md btn-danger"
+                                title="Eliminar archivo"
+                                data-confirm-click="¿Eliminar este archivo? Se borra el lote completo y no se puede recuperar.">
+                            <i class="fas fa-trash me-1"></i>Eliminar Archivo
+                        </button>
+                    </form>
+                {% elif not motivo_no_deshacer %}
+                    <form method="post"
+                          action="{% url 'borrar_datos_importados' batch_id %}"
+                          class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-md btn-danger"
+                                title="Deshacer importación"
+                                data-confirm-click="¿Deshacer la importación? Se borran los expedientes de este lote y los comedores vuelven al estado que tenían antes de importarlo.">
+                            <i class="fas fa-undo me-1"></i>Deshacer importación
+                        </button>
+                    </form>
+                {% endif %}
+            {% endif %}
         </div>
+        {% if batch.importacion_completada and motivo_no_deshacer %}
+            <div class="col-12 text-lg-end">
+                <small class="text-muted">{{ motivo_no_deshacer }}</small>
+            </div>
+        {% endif %}
     </div>
 {% endblock %}
 

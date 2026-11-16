@@ -1270,6 +1270,15 @@ POST devuelve `{"ok": true, "redirect": <lista>}` o 400 con los campos, los erro
 encolados (el alta pasa por `InscripcionService.crear_inscripcion_oferta`). Rutas React: `vatInscripcionOferta.tsx` y
 `vatInscripcionOfertaForm.tsx`. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-vat-inscripcion-oferta.md`.
 
+Las inscripciones de comisión y el buscador por ciudadano (V03.02) usan `GET .../vat/inscripciones-persona/` y `.../<pk>/`, `GET` y
+`POST .../nueva/`, `.../<pk>/editar/` y `.../<pk>/eliminar/`, las acciones `POST .../<pk>/cambiar-estado/`, `cursos/<pk>/cambiar-estado/`,
+`cursos/comisiones/<pk>/cambiar-estado-lote/`, `rapida-comision/` y `cursos/rapida-comision/` (`web_api_inscripcion_persona.py` y
+`web_api_inscripcion_acciones.py`) y `GET` y `POST .../vat/buscador-ciudadano/` (`web_api_buscador_ciudadano.py`): ejecutan las vistas
+nativas de `views/persona.py`, `oferta_institucional.py`, `curso.py` y `buscador_ciudadano.py` con el permiso y el alcance de cada ruta. Los
+POST de escritura devuelven `{"ok": true, "redirect": ...}` (el mensaje nativo queda encolado) o 400 con el formulario ligado; las
+exportaciones CSV/XLSX del buscador siguen siendo el POST nativo de la página. Rutas React: `vatInscripcion.tsx`, `vatInscripcionForm.tsx`
+y `vatBuscadorCiudadano.tsx`. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-vat-inscripcion-persona.md`.
+
 Las intervenciones y observaciones de comedor (CO02, CO06) usan `src/backends/comedores/intervenciones/web_api.py`,
 `web_api_formulario.py` y `web_api_baja.py` bajo `/api/web/comedores/intervenciones/` (listado `comedor/<pk>/`, ficha `<pk>/`,
 baja de archivo `<pk>/documentacion/eliminar/`, alta `comedor/<pk>/crear/`, edición `<pk>/editar/<pk2>/`, subtipos `subestados/`
@@ -1318,3 +1327,22 @@ Los catálogos de VAT (V07.01 y V07.02: sectores, subsectores, modalidades de cu
 ejecutan las vistas nativas con el permiso de cada ruta y proyectan su contexto o corren su `form_valid` y su `post`. Las
 pantallas son `routes/vatCatalogos.tsx` y `routes/vatCatalogosForm.tsx`. Registro:
 `docs/registro/cambios/2026-T4/2026-11-13-2785-react-vat-catalogos.md`.
+### Encuestas sobre G1: segmentación (E02)
+
+`GET /api/web/encuestas/<pk>/segmentacion/` (`src/backends/sisoc_core/encuestas/web_api_segmentacion.py`, rutas en `src/backends/sisoc_core/encuestas/web_api_urls.py`)
+corre `EncuestaSegmentacionView` y proyecta el contexto de `encuesta_segmentacion.html`; los POST de tipo, alta y baja de
+destinatarios y la importación de encuestas corren sus vistas nativas por `src/backends/sisoc_core/encuestas/web_transport_encuestas.py` (mismos
+permisos que `src/backends/sisoc_core/encuestas/urls.py`, mensajes nativos en la respuesta). La ruta `routes/encuestasSegmentacion.tsx`
+(`/encuestas/<pk>/segmentacion/`, vista previa `src/backends/sisoc_core/encuestas/web_preview_encuestas.py`) envía lo que envía el formulario nativo y
+vuelve a leer la página tras cada POST. Registro:
+`../registro/cambios/2026-T4/2026-11-13-2785-react-encuestas-segmentacion.md`.
+
+`GET /api/web/encuestas/<pk>/resultados/` (`src/backends/sisoc_core/encuestas/web_api_resultados.py`) corre `EncuestaResultadosView` y proyecta el
+contexto de `encuesta_resultados.html` con los números y fechas ya formateados; la ruta `routes/encuestasResultados.tsx`
+(`/encuestas/<pk>/resultados/`) cambia de ronda con un GET de la página y enlaza las exportaciones nativas. Registro:
+`../registro/cambios/2026-T4/2026-11-13-2785-react-encuestas-resultados.md`.
+
+`GET /api/web/encuestas/lista/` (`src/backends/sisoc_core/encuestas/web_api_lista.py`) corre `EncuestaListView` y proyecta la tabla y la
+barra de filtros; «Solicitar publicación» (`POST .../<pk>/publicar/`) e «Importar» (`POST .../importar/`) dejan el mensaje nativo en
+cola y la ruta `routes/encuestasLista.tsx` (`/encuestas/`) navega al redirect, como el formulario nativo. La revisión y el
+formulario de encuestas siguen nativos. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-encuestas-lista.md`.

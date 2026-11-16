@@ -15,6 +15,21 @@ from VAT.web_api_inscripcion_oferta import (
     InscripcionOfertaListWebView,
     InscripcionOfertaUpdateWebView,
 )
+from VAT.web_api_buscador_ciudadano import BuscadorCiudadanoWebView
+from VAT.web_api_inscripcion_acciones import (
+    InscripcionCambiarEstadoWebView,
+    InscripcionCursoCambiarEstadoLoteWebView,
+    InscripcionCursoCambiarEstadoWebView,
+    InscripcionRapidaComisionCursoWebView,
+    InscripcionRapidaComisionWebView,
+)
+from VAT.web_api_inscripcion_persona import (
+    InscripcionCreateWebView,
+    InscripcionDeleteWebView,
+    InscripcionDetailWebView,
+    InscripcionListWebView,
+    InscripcionUpdateWebView,
+)
 from VAT.web_api_asistencia import (
     AsistenciaSesionCursoWebView,
     AsistenciaSesionOfertaWebView,
@@ -409,5 +424,65 @@ urlpatterns += [
         "catalogos/titulos-referencia/<int:pk>/",
         TituloReferenciaDetailWebView.as_view(),
         name="catalogos-titulorreferencia-detail",
+    ),
+]
+
+# V03.02 inscripciones (U3): vistas nativas de ``views/persona.py`` y sus acciones. Prefijo
+# propio: ``inscripciones/`` es el recurso del front INET.
+urlpatterns += [
+    path(
+        "inscripciones-persona/",
+        InscripcionListWebView.as_view(),
+        name="inscripciones-persona-list",
+    ),
+    path(
+        "inscripciones-persona/nueva/",
+        InscripcionCreateWebView.as_view(),
+        name="inscripciones-persona-create",
+    ),
+    path(
+        "inscripciones-persona/rapida-comision/",
+        InscripcionRapidaComisionWebView.as_view(),
+        name="inscripciones-persona-rapida-comision",
+    ),
+    path(
+        "inscripciones-persona/cursos/rapida-comision/",
+        InscripcionRapidaComisionCursoWebView.as_view(),
+        name="inscripciones-persona-rapida-comision-curso",
+    ),
+    path(
+        "inscripciones-persona/cursos/<int:pk>/cambiar-estado/",
+        InscripcionCursoCambiarEstadoWebView.as_view(),
+        name="inscripciones-persona-curso-cambiar-estado",
+    ),
+    path(
+        "inscripciones-persona/cursos/comisiones/<int:pk>/cambiar-estado-lote/",
+        InscripcionCursoCambiarEstadoLoteWebView.as_view(),
+        name="inscripciones-persona-curso-cambiar-estado-lote",
+    ),
+    path(
+        "inscripciones-persona/<int:pk>/",
+        InscripcionDetailWebView.as_view(),
+        name="inscripciones-persona-detail",
+    ),
+    path(
+        "inscripciones-persona/<int:pk>/editar/",
+        InscripcionUpdateWebView.as_view(),
+        name="inscripciones-persona-update",
+    ),
+    path(
+        "inscripciones-persona/<int:pk>/eliminar/",
+        InscripcionDeleteWebView.as_view(),
+        name="inscripciones-persona-delete",
+    ),
+    path(
+        "inscripciones-persona/<int:pk>/cambiar-estado/",
+        InscripcionCambiarEstadoWebView.as_view(),
+        name="inscripciones-persona-cambiar-estado",
+    ),
+    path(
+        "buscador-ciudadano/",
+        BuscadorCiudadanoWebView.as_view(),
+        name="buscador-ciudadano",
     ),
 ]

@@ -2780,6 +2780,51 @@
   "regex": "^encuestas/(?P<pk>[0-9]+)/segmentacion/tipo/\\Z"
  },
  {
+  "name": "encuestas_web_importar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/importar/\\Z"
+ },
+ {
+  "name": "encuestas_web_lista",
+  "namespace": "",
+  "regex": "^api/web/encuestas/lista/\\Z"
+ },
+ {
+  "name": "encuestas_web_publicar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/publicar/\\Z"
+ },
+ {
+  "name": "encuestas_web_resultados",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/resultados/\\Z"
+ },
+ {
+  "name": "encuestas_web_ronda_cerrar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/rondas/(?P<pk>[0-9]+)/cerrar/\\Z"
+ },
+ {
+  "name": "encuestas_web_segmentacion",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/segmentacion/\\Z"
+ },
+ {
+  "name": "encuestas_web_segmentacion_agregar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/segmentacion/agregar/\\Z"
+ },
+ {
+  "name": "encuestas_web_segmentacion_quitar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/segmentacion/(?P<destinatario_pk>[0-9]+)/quitar/\\Z"
+ },
+ {
+  "name": "encuestas_web_segmentacion_tipo",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/segmentacion/tipo/\\Z"
+ },
+ {
   "name": "expediente_asignar_tecnico",
   "namespace": "",
   "regex": "^celiaquia/expedientes/(?P<pk>[0-9]+)/asignar\\-tecnico/\\Z"
@@ -15320,6 +15365,11 @@
   "regex": "^api/web/vat/comisiones/sesiones/(?P<pk>[0-9]+)/asistencia/\\Z"
  },
  {
+  "name": "buscador-ciudadano",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/buscador\\-ciudadano/\\Z"
+ },
+ {
   "name": "catalogos-modalidadcursada-create",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/catalogos/modalidades\\-cursado/nueva/\\Z"
@@ -15693,6 +15743,56 @@
   "name": "inscripciones-oferta-update",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/inscripciones\\-oferta/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-cambiar-estado",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/(?P<pk>[0-9]+)/cambiar\\-estado/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/nueva/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-curso-cambiar-estado",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/cursos/(?P<pk>[0-9]+)/cambiar\\-estado/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-curso-cambiar-estado-lote",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/cursos/comisiones/(?P<pk>[0-9]+)/cambiar\\-estado\\-lote/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-rapida-comision",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/rapida\\-comision/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-rapida-comision-curso",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/cursos/rapida\\-comision/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
   "name": "planes-delete-preview",

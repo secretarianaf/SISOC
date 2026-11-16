@@ -10,6 +10,8 @@ _OWNED_PATTERNS = (
     r"(?:nuevo/|nueva/|[0-9]+/(?:editar/|eliminar/)?)?",
     r"/api/web/insumos/(?:categorias/)?[0-9]+/(?:editar|eliminar)/",
     r"/api/web/groups/[0-9]+/edit/",
+    r"/api/web/encuestas/(?:lista/|importar/|rondas/[0-9]+/cerrar/"
+    r"|[0-9]+/(?:resultados/|publicar/|segmentacion/(?:(?:tipo|agregar)/|[0-9]+/quitar/)?))",
     r"/api/web/users/[0-9]+/(?:deactivate|activate|edit)/",
     r"/api/web/surveys/[0-9]+/(?:answer|postpone|dismiss)/",
     r"/api/web/password/reset/[^/]+/",
@@ -94,6 +96,9 @@ _OWNED_PATTERNS = (
     r"|resultados-evaluacion/(?:nuevo/|[0-9]+/(?:editar/|eliminar/)?)?"
     r"|reportes/inscripciones-asistencias/)",
     r"/api/web/vat/(?:cursos/)?comisiones/sesiones/[0-9]+/asistencia/",
+    r"/api/web/vat/(?:inscripciones-persona/(?:nueva/|rapida-comision/|[0-9]+/(?:editar/|eliminar/|cambiar-estado/)?"
+    r"|cursos/(?:rapida-comision/|[0-9]+/cambiar-estado/|comisiones/[0-9]+/cambiar-estado-lote/))?"
+    r"|buscador-ciudadano/)",
     r"/api/web/vat/inscripciones-oferta/(?:nueva/|[0-9]+/(?:editar/|eliminar/)?)?",
     r"/api/web/auditoria/(?:listado/|evento/[0-9]+/|[a-z_]+/[a-z_]+/[^/]+/)",
     r"/api/web/auditoria/[a-z_]+/[a-z_]+/[^/]+/",

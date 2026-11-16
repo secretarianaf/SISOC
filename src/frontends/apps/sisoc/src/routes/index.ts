@@ -66,6 +66,9 @@ import { datacalleRelevamientosRoute } from "./datacalleRelevamientos";
 import { dispositivosRoute } from "./dispositivos";
 import { cdfCentroUsuarioRoute } from "./cdfCentroUsuario";
 import { duplasRoute } from "./duplas";
+import { encuestasListaRoute } from "./encuestasLista";
+import { encuestasResultadosRoute } from "./encuestasResultados";
+import { encuestasSegmentacionRoute } from "./encuestasSegmentacion";
 import { expedientesPagosRoute } from "./expedientesPagos";
 import { rendicionFinalRoute } from "./rendicionFinal";
 import { rendicionMensualRoute } from "./rendicionMensual";
@@ -106,8 +109,11 @@ import { vatInscripcionOfertaRoute } from "./vatInscripcionOferta";
 import { vatInscripcionOfertaFormRoute } from "./vatInscripcionOfertaForm";
 import { vatCatalogosRoute } from "./vatCatalogos";
 import { vatCatalogosFormRoute } from "./vatCatalogosForm";
+import { vatBuscadorCiudadanoRoute } from "./vatBuscadorCiudadano";
 import { vatEvaluacionesRoute } from "./vatEvaluaciones";
 import { vatEvaluacionesFormRoute } from "./vatEvaluacionesForm";
+import { vatInscripcionRoute } from "./vatInscripcion";
+import { vatInscripcionFormRoute } from "./vatInscripcionForm";
 import { vatParametriaDetalleRoute } from "./vatParametriaDetalle";
 import { vatReporteRoute } from "./vatReporte";
 import { vatResultadosRoute } from "./vatResultados";
@@ -140,6 +146,9 @@ export const ROUTES: RouteDefinition[] = [
   userImportRoute,
   usuariosRoute,
   bulkCredentialsRoute,
+  encuestasSegmentacionRoute,
+  encuestasResultadosRoute,
+  encuestasListaRoute,
   inspeccionesActasRoute,
   inspeccionesActaDetalleRoute,
   inspeccionesAsignacionesRoute,
@@ -218,6 +227,9 @@ export const ROUTES: RouteDefinition[] = [
   vatAsistenciaRoute,
   vatInscripcionOfertaRoute,
   vatInscripcionOfertaFormRoute,
+  vatInscripcionRoute,
+  vatInscripcionFormRoute,
+  vatBuscadorCiudadanoRoute,
   ocrRoute,
   organizacionesRoute,
   organizacionConvenioRoute,

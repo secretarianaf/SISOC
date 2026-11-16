@@ -1135,6 +1135,11 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
     form_class = AdmisionForm
     context_object_name = "admision"
 
+    def get_queryset(self):
+        return AdmisionService.acotar_admisiones_por_programa(
+            super().get_queryset(), self.request.user
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         admision = self.get_object()
@@ -1371,7 +1376,9 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                 "historial_estados__usuario",
             )
         )
-        return queryset
+        return AdmisionService.acotar_admisiones_por_programa(
+            queryset, self.request.user
+        )
 
     def get_object(self, queryset=None):
         admision = super().get_object(queryset)

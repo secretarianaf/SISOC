@@ -143,6 +143,24 @@ def acotar_ids_comedores_por_programa(user, ids_scope):
     return tuple(comedores.values_list("pk", flat=True))
 
 
+def acotar_ids_organizaciones_por_programa(user, ids_scope):
+    """Suma el alcance por programa a un alcance de ids de organizaciones.
+
+    Con restricción de programa quedan solo las organizaciones que tienen al
+    menos un comedor visible para el usuario. ``None`` es alcance total.
+    """
+
+    if programas_visibles(user) is None:
+        return ids_scope
+    comedores = apply_programa_scope(
+        Comedor.objects.filter(organizacion__isnull=False), user
+    )
+    organizaciones = comedores.values_list("organizacion_id", flat=True).distinct()
+    if ids_scope is not None:
+        organizaciones = organizaciones.filter(organizacion_id__in=tuple(ids_scope))
+    return tuple(organizaciones)
+
+
 def _acotar(queryset, ids_scope):
     """Aplica el alcance del usuario.
 

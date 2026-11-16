@@ -5,6 +5,8 @@ con AND sobre el alcance que ya tenga el usuario. Solo el superusuario lo
 saltea. Ver ``docs/registro/decisiones/2026-11-16-alcance-programa-comedores.md``.
 """
 
+from django.db.models.signals import post_delete, post_save
+
 from comedores.models import AlcanceProgramaComedor, Programas
 from comedores.utils import (
     es_programa_alimentar_comunidad,
@@ -66,13 +68,51 @@ def invalidar_cache_alcance_programa(user):
         delattr(user, _CACHE_ATTR)
 
 
+_IDS_POR_GRUPO_CACHE = None
+
+
+def _limpiar_cache_ids_por_grupo(**_kwargs):
+    global _IDS_POR_GRUPO_CACHE
+    _IDS_POR_GRUPO_CACHE = None
+
+
+post_save.connect(
+    _limpiar_cache_ids_por_grupo,
+    sender=Programas,
+    dispatch_uid="alcance_programa.programas_post_save",
+)
+post_delete.connect(
+    _limpiar_cache_ids_por_grupo,
+    sender=Programas,
+    dispatch_uid="alcance_programa.programas_post_delete",
+)
+
+
 def programa_ids_por_grupos(grupos):
-    """Ids de ``Programas`` que pertenecen a los grupos dados (por nombre)."""
-    return [
-        programa.pk
-        for programa in Programas.objects.only("id", "nombre")
-        if grupo_de_programa(programa) in grupos
-    ]
+    """Ids de ``Programas`` que pertenecen a los grupos dados (por nombre).
+
+    El mapa grupo -> ids se cachea a nivel de módulo y se invalida al guardar
+    o borrar un ``Programas``, así no se recorre la tabla en cada consulta.
+    """
+    global _IDS_POR_GRUPO_CACHE
+    mapa = _IDS_POR_GRUPO_CACHE
+    if mapa is None:
+        mapa = {grupo: [] for grupo in TODOS_LOS_GRUPOS}
+        for programa in Programas.objects.only("id", "nombre"):
+            grupo = grupo_de_programa(programa)
+            if grupo is not None:
+                mapa[grupo].append(programa.pk)
+        _IDS_POR_GRUPO_CACHE = mapa
+    return [pk for grupo in grupos for pk in mapa.get(grupo, ())]
+
+
+def comedor_en_alcance_programa(user, comedor):
+    """``True`` si el comedor es visible para el usuario según su programa."""
+    grupos = programas_visibles(user)
+    if grupos is None:
+        return True
+    programa_id = getattr(comedor, "programa_id", None)
+    return programa_id is not None and programa_id in programa_ids_por_grupos(grupos)
 
 
 def apply_programa_scope(queryset, user, lookup="programa"):

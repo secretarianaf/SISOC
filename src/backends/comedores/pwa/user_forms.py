@@ -10,7 +10,10 @@ from django.utils import timezone
 
 
 from comedores.models import AlcanceProgramaComedor
-from comedores.services.alcance_programa import invalidar_cache_alcance_programa
+from comedores.services.alcance_programa import (
+    invalidar_cache_alcance_programa,
+    programas_visibles,
+)
 from core.models import Provincia
 
 from users.form_sections import (
@@ -574,13 +577,55 @@ class AlcanceProgramaComedorFormMixin:
     """
 
     def _setup_alcance_programa_fields(self):
+        """Arma el campo según el actor.
+
+        Superusuario: sin límites. Actor que se edita a sí mismo: deshabilitado.
+        Actor sin restricción: cualquier combinación. Actor restringido: solo
+        sus grupos y selección obligatoria (dejar vacío equivale a «ve todo»).
+        """
+        actor = getattr(self, "actor", None)
+        choices = list(AlcanceProgramaComedor.PROGRAMA_CHOICES)
+        self._alcance_programa_actor_grupos = None
+        self._alcance_programa_autoedicion = False
+        required = False
+        if actor is not None and not getattr(actor, "is_superuser", False):
+            instance_pk = getattr(getattr(self, "instance", None), "pk", None)
+            if instance_pk is not None and instance_pk == actor.pk:
+                self._alcance_programa_autoedicion = True
+            else:
+                grupos = programas_visibles(actor)
+                if grupos is not None:
+                    self._alcance_programa_actor_grupos = frozenset(grupos)
+                    choices = [c for c in choices if c[0] in grupos]
+                    required = True
         self.fields["programas_comedores"] = forms.MultipleChoiceField(
-            choices=AlcanceProgramaComedor.PROGRAMA_CHOICES,
-            required=False,
+            choices=choices,
+            required=required,
             widget=forms.CheckboxSelectMultiple,
             label="Programas",
-            help_text="Sin tildar: ve todos los programas.",
+            help_text=(
+                "Sin tildar: ve todos los programas."
+                if not required
+                else "Tilde al menos uno de sus programas."
+            ),
+            disabled=self._alcance_programa_autoedicion,
         )
+
+    def _clean_alcance_programa_fields(self, cleaned):
+        grupos = self._alcance_programa_actor_grupos
+        if grupos is None or self._alcance_programa_autoedicion:
+            return cleaned
+        elegidos = set(cleaned.get("programas_comedores") or [])
+        if not elegidos:
+            self.add_error(
+                "programas_comedores", "Seleccione al menos uno de sus programas."
+            )
+        elif not elegidos <= grupos:
+            self.add_error(
+                "programas_comedores",
+                "No puede asignar programas fuera de su propio alcance.",
+            )
+        return cleaned
 
     def _init_alcance_programa_fields(self, profile):
         if not profile:
@@ -590,7 +635,7 @@ class AlcanceProgramaComedorFormMixin:
         )
 
     def _sync_alcance_programa(self, profile):
-        if self.fields["programas_comedores"].disabled:
+        if self._alcance_programa_autoedicion:
             return
         selected = set(self.cleaned_data.get("programas_comedores") or [])
         existing = set(
@@ -684,6 +729,7 @@ class UserCreationForm(
         self._validate_selected_within_allowed(cleaned)
         cleaned = self._clean_pwa_fields(cleaned)
         cleaned = self._clean_territorial_comedor_fields(cleaned)
+        cleaned = self._clean_alcance_programa_fields(cleaned)
         cleaned = self._clean_relevador_calle_fields(cleaned)
         cleaned = self._clean_inspecciones_escolares_fields(cleaned)
         cleaned = self._validar_provincia_unica_coordinador(cleaned)
@@ -917,6 +963,7 @@ class CustomUserChangeForm(
         self._validate_selected_within_allowed(cleaned)
         cleaned = self._clean_pwa_fields(cleaned)
         cleaned = self._clean_territorial_comedor_fields(cleaned)
+        cleaned = self._clean_alcance_programa_fields(cleaned)
         cleaned = self._clean_relevador_calle_fields(cleaned)
         cleaned = self._clean_inspecciones_escolares_fields(cleaned)
         cleaned = self._validar_provincia_unica_coordinador(cleaned)

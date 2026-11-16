@@ -50,5 +50,22 @@
 - El alta de comedor por la app territorial crea el comedor sin programa:
   para un usuario restringido ese comedor queda fuera de su vista.
   `_replay_is_authorized` no se filtra por programa por ese motivo.
-- Los alcances de organizaciones para destinatarios de comunicados no se
-  acotan por programa.
+- Organizaciones de comunicados: con restricción de programa quedan solo las que
+  tienen al menos un comedor visible (fachada
+  `comedores.api.acotar_ids_organizaciones_por_programa`); las sin comedor
+  quedan fuera para el usuario restringido.
+- `acotar_ids_comedores_por_programa` sigue materializando ids cuando hay
+  restricción (contrato de tupla de ids de la fachada); cambiarlo a subquery
+  es invasivo y queda para otro PR.
+
+## Quién puede editar el alcance (formulario de usuario)
+- Superusuario: sin límites.
+- Un actor no superusuario no puede cambiar su propio alcance (campo
+  deshabilitado, no se guarda).
+- Actor sin restricción: asigna cualquier combinación.
+- Actor restringido: solo ofrece sus grupos, la selección es obligatoria y se
+  valida en `clean()` que sea subconjunto de los suyos.
+- Admisiones (listado técnico, detalle, edición y chequeos de dupla) y
+  comunicados (campo de comedores, «para todos», listado de gestión) aplican el
+  mismo filtro. Los ids de `Programas` por grupo se cachean a nivel de módulo
+  y se invalidan por `post_save`/`post_delete` de `Programas`.

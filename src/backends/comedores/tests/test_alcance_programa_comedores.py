@@ -459,3 +459,246 @@ def test_form_edicion_precarga_programas():
     user = _user("precarga_prog", ALIM)
     form = CompositeUserChangeForm(instance=user)
     assert form.fields["programas_comedores"].initial == [ALIM]
+
+
+# ------------------------------------- formulario: alcance del actor
+
+
+def _datos_edicion(user, **extra):
+    return {
+        "username": user.username,
+        "email": "",
+        "tipo_usuario": "interno",
+        "territorial_scopes": "[]",
+        **extra,
+    }
+
+
+def _grupos(user):
+    return set(
+        user.profile.alcances_programa_comedor.values_list("programa", flat=True)
+    )
+
+
+def test_form_autoedicion_no_cambia_el_alcance_aunque_se_postee():
+    user = _user("auto_prog", PNUD)
+    form = CompositeUserChangeForm(
+        instance=user,
+        actor=user,
+        data=_datos_edicion(user, programas_comedores=[ALIM]),
+    )
+    assert form.fields["programas_comedores"].disabled
+    assert form.is_valid(), form.errors
+    form.save()
+    assert _grupos(user) == {PNUD}
+
+
+def test_form_autoedicion_no_puede_quitarse_la_restriccion():
+    user = _user("auto_prog2", PNUD)
+    form = CompositeUserChangeForm(instance=user, actor=user, data=_datos_edicion(user))
+    assert form.is_valid(), form.errors
+    form.save()
+    assert _grupos(user) == {PNUD}
+
+
+def test_form_delegado_restringido_no_puede_dejar_vacio():
+    actor = _user("deleg_pnud", PNUD)
+    objetivo = _user("objetivo_1")
+    form = CompositeUserChangeForm(
+        instance=objetivo, actor=actor, data=_datos_edicion(objetivo)
+    )
+    assert not form.is_valid()
+    assert "programas_comedores" in form.errors
+
+
+def test_form_delegado_restringido_no_puede_asignar_otro_programa():
+    actor = _user("deleg_pnud2", PNUD)
+    objetivo = _user("objetivo_2")
+    for elegidos in ([ALIM], [PNUD, ALIM]):
+        form = CompositeUserChangeForm(
+            instance=objetivo,
+            actor=actor,
+            data=_datos_edicion(objetivo, programas_comedores=elegidos),
+        )
+        assert not form.is_valid()
+        assert "programas_comedores" in form.errors
+
+
+def test_form_delegado_restringido_solo_ve_sus_opciones_y_puede_asignarlas():
+    actor = _user("deleg_pnud3", PNUD)
+    objetivo = _user("objetivo_3")
+    form = CompositeUserChangeForm(
+        instance=objetivo,
+        actor=actor,
+        data=_datos_edicion(objetivo, programas_comedores=[PNUD]),
+    )
+    assert [c[0] for c in form.fields["programas_comedores"].choices] == [PNUD]
+    assert form.is_valid(), form.errors
+    form.save()
+    assert _grupos(objetivo) == {PNUD}
+
+
+def test_form_delegado_sin_restriccion_asigna_cualquier_combinacion():
+    actor = _user("deleg_libre")
+    objetivo = _user("objetivo_4")
+
+    def _guardar(**extra):
+        form = CompositeUserChangeForm(
+            instance=objetivo, actor=actor, data=_datos_edicion(objetivo, **extra)
+        )
+        assert form.is_valid(), form.errors
+        form.save()
+        return _grupos(objetivo)
+
+    assert _guardar(programas_comedores=[ALIM]) == {ALIM}
+    assert _guardar(programas_comedores=[PNUD, ALIM]) == {PNUD, ALIM}
+    assert _guardar() == set()
+
+
+def test_form_superuser_asigna_sin_limites_y_en_alta():
+    actor = _user("su_form", PNUD, superuser=True)
+    objetivo = _user("objetivo_5")
+    form = CompositeUserChangeForm(
+        instance=objetivo,
+        actor=actor,
+        data=_datos_edicion(objetivo, programas_comedores=[ALIM]),
+    )
+    assert form.is_valid(), form.errors
+    form.save()
+    assert _grupos(objetivo) == {ALIM}
+    alta = CompositeUserCreationForm(
+        actor=actor, data=_datos_alta("alta_su", programas_comedores=[ALIM])
+    )
+    assert alta.is_valid(), alta.errors
+
+
+def test_form_alta_de_delegado_restringido_exige_su_programa():
+    actor = _user("deleg_alta", ALIM)
+    vacio = CompositeUserCreationForm(actor=actor, data=_datos_alta("alta_vacia"))
+    assert not vacio.is_valid()
+    assert "programas_comedores" in vacio.errors
+    ok = CompositeUserCreationForm(
+        actor=actor, data=_datos_alta("alta_ok", programas_comedores=[ALIM])
+    )
+    assert ok.is_valid(), ok.errors
+
+
+# ------------------------------------------------------------ comunicados
+
+
+def _usuario_comunicados(monkeypatch, username, *grupos):
+    from comunicados import permissions as perms
+
+    monkeypatch.setattr(perms, "tiene_alcance_total_destinatarios", lambda u: True)
+    return _user(username, *grupos)
+
+
+def test_comunicados_ids_y_form_acotados_por_programa(monkeypatch, escenario):
+    from django.core.exceptions import ValidationError
+
+    from comunicados.forms import ComunicadoForm
+    from comunicados.permissions import get_ids_comedores_del_usuario
+
+    _, comedores = escenario
+    user = _usuario_comunicados(monkeypatch, "com_pnud", PNUD)
+    ids = set(get_ids_comedores_del_usuario(user))
+    assert _ids(comedores, "secos", "tradicional") <= ids
+    assert not (_ids(comedores, "alimentar", "otro", "nulo") & ids)
+
+    form = ComunicadoForm(user=user)
+    queryset_ids = set(form.fields["comedores"].queryset.values_list("pk", flat=True))
+    assert queryset_ids == ids
+    # POST manual con un comedor de otro programa: no es una opcion valida.
+    with pytest.raises(ValidationError):
+        form.fields["comedores"].clean([comedores["alimentar"].pk])
+    assert form.fields["comedores"].clean([comedores["secos"].pk])
+
+
+def test_comunicados_sin_restriccion_ve_todos(monkeypatch, escenario):
+    from comunicados.permissions import get_ids_comedores_del_usuario
+
+    _, comedores = escenario
+    user = _usuario_comunicados(monkeypatch, "com_libre")
+    ids = set(get_ids_comedores_del_usuario(user))
+    assert _ids(comedores, "alimentar", "secos", "otro", "nulo") <= ids
+
+
+def test_comunicados_para_todos_solo_asigna_los_del_programa(monkeypatch, escenario):
+    from types import SimpleNamespace
+
+    from comunicados.models import Comunicado, SubtipoComunicado, TipoComunicado
+    from comunicados.views import ComunicadoPersistMixin
+
+    _, comedores = escenario
+    user = _usuario_comunicados(monkeypatch, "com_todos", ALIM)
+    comunicado = Comunicado.objects.create(
+        titulo="T",
+        cuerpo="C",
+        tipo=TipoComunicado.EXTERNO,
+        subtipo=SubtipoComunicado.COMEDORES,
+        usuario_creador=user,
+    )
+    vista = ComunicadoPersistMixin()
+    vista.request = SimpleNamespace(user=user)
+    vista.object = comunicado
+    vista._handle_comedores(
+        SimpleNamespace(cleaned_data={"para_todos_comedores": True})
+    )
+    asignados = set(comunicado.comedores.values_list("pk", flat=True))
+    assert comedores["alimentar"].pk in asignados
+    assert not (_ids(comedores, "secos", "tradicional", "otro", "nulo") & asignados)
+
+
+# -------------------------------------------------------------- admisiones
+
+
+def _admisiones_escenario(escenario):
+    from admisiones.models.admisiones import Admision
+    from duplas.models import Dupla
+
+    _, comedores = escenario
+    tecnico = get_user_model().objects.create_user(username="tec_adm")
+    abogado = get_user_model().objects.create_user(username="abo_adm")
+    dupla = Dupla.objects.create(nombre="Dupla Adm", estado="Activo", abogado=abogado)
+    dupla.tecnico.add(tecnico)
+    for comedor in comedores.values():
+        comedor.dupla = dupla
+        comedor.save()
+    admisiones = {
+        clave: Admision.objects.create(comedor=comedor)
+        for clave, comedor in comedores.items()
+    }
+    return tecnico, comedores, admisiones
+
+
+def test_admisiones_queryset_y_chequeo_acotados_por_programa(escenario):
+    from admisiones.models.admisiones import Admision
+    from admisiones.services.admisiones_service import AdmisionService
+
+    tecnico, comedores, admisiones = _admisiones_escenario(escenario)
+    AlcanceProgramaComedor.objects.create(profile=tecnico.profile, programa=PNUD)
+    tecnico = get_user_model().objects.get(pk=tecnico.pk)
+
+    ids = set(
+        AdmisionService.get_admisiones_tecnicos_queryset(tecnico).values_list(
+            "pk", flat=True
+        )
+    )
+    assert ids == {admisiones["secos"].pk, admisiones["tradicional"].pk}
+    assert not AdmisionService._verificar_permiso_dupla(tecnico, comedores["alimentar"])
+    assert AdmisionService._verificar_permiso_dupla(tecnico, comedores["secos"])
+    assert not AdmisionService.acotar_admisiones_por_programa(
+        Admision.objects.filter(pk=admisiones["alimentar"].pk), tecnico
+    ).exists()
+
+
+def test_admisiones_tecnico_sin_restriccion_ve_todas(escenario):
+    from admisiones.services.admisiones_service import AdmisionService
+
+    tecnico, _comedores, admisiones = _admisiones_escenario(escenario)
+    ids = set(
+        AdmisionService.get_admisiones_tecnicos_queryset(tecnico).values_list(
+            "pk", flat=True
+        )
+    )
+    assert ids == {a.pk for a in admisiones.values()}

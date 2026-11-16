@@ -15,6 +15,7 @@ from typing import Any, Dict, Iterable, List
 
 from comedores.api import (
     acotar_ids_comedores_por_programa,
+    acotar_ids_organizaciones_por_programa,
     buscar_comedores_para_destinatarios,
     buscar_organizaciones_para_destinatarios,
     get_filtros_destinatarios_config as _config_de_filtros_de_la_fachada,
@@ -43,18 +44,15 @@ def _ids_scope_comedores(user):
     armar un ``IN`` con todos los comedores del sistema.
     """
 
-    ids = (
-        None
-        if tiene_alcance_total_destinatarios(user)
-        else get_ids_comedores_del_usuario(user)
-    )
-    # El alcance por programa del usuario aplica también a los destinatarios.
-    return acotar_ids_comedores_por_programa(user, ids)
+    if tiene_alcance_total_destinatarios(user):
+        # El alcance por programa del usuario aplica también a los destinatarios.
+        return acotar_ids_comedores_por_programa(user, None)
+    return get_ids_comedores_del_usuario(user)
 
 
 def _ids_scope_organizaciones(user):
     if tiene_alcance_total_destinatarios(user):
-        return None
+        return acotar_ids_organizaciones_por_programa(user, None)
     return get_ids_organizaciones_del_usuario(user)
 
 

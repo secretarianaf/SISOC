@@ -503,7 +503,7 @@ def test_form_autoedicion_no_puede_quitarse_la_restriccion():
 
 def test_form_delegado_restringido_no_puede_dejar_vacio():
     actor = _user("deleg_pnud", PNUD)
-    objetivo = _user("objetivo_1")
+    objetivo = _user("objetivo_1", PNUD)
     form = CompositeUserChangeForm(
         instance=objetivo, actor=actor, data=_datos_edicion(objetivo)
     )
@@ -513,7 +513,7 @@ def test_form_delegado_restringido_no_puede_dejar_vacio():
 
 def test_form_delegado_restringido_no_puede_asignar_otro_programa():
     actor = _user("deleg_pnud2", PNUD)
-    objetivo = _user("objetivo_2")
+    objetivo = _user("objetivo_2", PNUD)
     for elegidos in ([ALIM], [PNUD, ALIM]):
         form = CompositeUserChangeForm(
             instance=objetivo,
@@ -526,7 +526,7 @@ def test_form_delegado_restringido_no_puede_asignar_otro_programa():
 
 def test_form_delegado_restringido_solo_ve_sus_opciones_y_puede_asignarlas():
     actor = _user("deleg_pnud3", PNUD)
-    objetivo = _user("objetivo_3")
+    objetivo = _user("objetivo_3", PNUD)
     form = CompositeUserChangeForm(
         instance=objetivo,
         actor=actor,
@@ -536,6 +536,21 @@ def test_form_delegado_restringido_solo_ve_sus_opciones_y_puede_asignarlas():
     assert form.is_valid(), form.errors
     form.save()
     assert _grupos(objetivo) == {PNUD}
+
+
+@pytest.mark.parametrize("grupos_objetivo", [(), (ALIM,), (PNUD, ALIM)])
+def test_form_delegado_restringido_no_toca_alcance_mayor_que_el_suyo(grupos_objetivo):
+    actor = _user(f"deleg_mayor_{len(grupos_objetivo)}", PNUD)
+    objetivo = _user(f"objetivo_mayor_{len(grupos_objetivo)}", *grupos_objetivo)
+    form = CompositeUserChangeForm(
+        instance=objetivo,
+        actor=actor,
+        data=_datos_edicion(objetivo, programas_comedores=[PNUD]),
+    )
+    assert form.fields["programas_comedores"].disabled
+    assert form.is_valid(), form.errors
+    form.save()
+    assert _grupos(objetivo) == set(grupos_objetivo)
 
 
 def test_form_delegado_sin_restriccion_asigna_cualquier_combinacion():

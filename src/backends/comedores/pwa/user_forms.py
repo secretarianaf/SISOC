@@ -581,11 +581,14 @@ class AlcanceProgramaComedorFormMixin:
 
         Superusuario: sin límites. Actor que se edita a sí mismo: deshabilitado.
         Actor sin restricción: cualquier combinación. Actor restringido: solo
-        sus grupos y selección obligatoria (dejar vacío equivale a «ve todo»).
+        sus grupos y selección obligatoria (dejar vacío equivale a «ve todo»);
+        si edita a alguien cuyo alcance actual excede el suyo (ve todo u otro
+        programa), el campo queda deshabilitado y ese alcance no se toca.
         """
         actor = getattr(self, "actor", None)
         choices = list(AlcanceProgramaComedor.PROGRAMA_CHOICES)
         self._alcance_programa_actor_grupos = None
+        # Campo deshabilitado: ni se valida ni se guarda.
         self._alcance_programa_autoedicion = False
         required = False
         if actor is not None and not getattr(actor, "is_superuser", False):
@@ -595,9 +598,14 @@ class AlcanceProgramaComedorFormMixin:
             else:
                 grupos = programas_visibles(actor)
                 if grupos is not None:
-                    self._alcance_programa_actor_grupos = frozenset(grupos)
-                    choices = [c for c in choices if c[0] in grupos]
-                    required = True
+                    if instance_pk is not None and not self._alcance_actual_dentro_de(
+                        grupos
+                    ):
+                        self._alcance_programa_autoedicion = True
+                    else:
+                        self._alcance_programa_actor_grupos = frozenset(grupos)
+                        choices = [c for c in choices if c[0] in grupos]
+                        required = True
         self.fields["programas_comedores"] = forms.MultipleChoiceField(
             choices=choices,
             required=required,
@@ -610,6 +618,16 @@ class AlcanceProgramaComedorFormMixin:
             ),
             disabled=self._alcance_programa_autoedicion,
         )
+
+    def _alcance_actual_dentro_de(self, grupos):
+        """True si el usuario editado ya está restringido a un subconjunto de ``grupos``."""
+        profile = getattr(getattr(self, "instance", None), "profile", None)
+        if profile is None or not getattr(profile, "pk", None):
+            return False
+        actuales = set(
+            profile.alcances_programa_comedor.values_list("programa", flat=True)
+        )
+        return bool(actuales) and actuales <= set(grupos)
 
     def _clean_alcance_programa_fields(self, cleaned):
         grupos = self._alcance_programa_actor_grupos

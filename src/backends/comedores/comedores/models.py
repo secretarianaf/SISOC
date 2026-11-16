@@ -724,6 +724,15 @@ class ComedorDatosConvenioPnud(models.Model):
         null=True, blank=True
     )
     personas_conveniadas = models.PositiveIntegerField(null=True, blank=True)
+    personas_identidad_reservada = models.PositiveIntegerField(
+        "Cantidad de personas con identidad reservada",
+        default=0,
+        blank=True,
+        help_text=(
+            "Asisten al espacio pero no figuran en la nómina: ocupan lugar "
+            "dentro de las personas conveniadas."
+        ),
+    )
     personas_declaradas_siph = models.PositiveIntegerField(null=True, blank=True)
     cantidad_modulos = models.PositiveIntegerField(null=True, blank=True)
     aprobadas_desayuno_lunes = models.IntegerField(

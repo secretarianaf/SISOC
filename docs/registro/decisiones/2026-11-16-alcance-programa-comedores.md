@@ -47,9 +47,16 @@
   para altas/adjuntos/PNUD/actas) y `_scope_relevamientos_for_authenticated_user`.
 
 ## Fuera de alcance / riesgos
-- El alta de comedor por la app territorial crea el comedor sin programa:
-  para un usuario restringido ese comedor queda fuera de su vista.
-  `_replay_is_authorized` no se filtra por programa por ese motivo.
+- Alta/edición de comedor por la app territorial (hoy la app no tiene pantalla
+  de alta: es una defensa en el servidor). `POST` y `PATCH` de
+  `/api/territorial/comedores/` aplican el alcance por programa: un usuario
+  restringido que manda un programa fuera de su alcance recibe 400 en
+  `programa` («El programa no está dentro de su alcance.»); si no manda
+  programa y sus programas visibles son una sola fila se asigna esa, y si son
+  varias (PNUD = dos líneas) recibe 400 («Seleccione el programa del
+  comedor.»). Sin restricción, igual que antes (programa opcional). El replay
+  idempotente por `client_uuid` responde antes de validar, sin cambios; no
+  se filtra por programa en `_replay_is_authorized`.
 - Organizaciones de comunicados: con restricción de programa quedan solo las que
   tienen al menos un comedor visible (fachada
   `comedores.api.acotar_ids_organizaciones_por_programa`); las sin comedor

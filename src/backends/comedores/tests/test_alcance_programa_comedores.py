@@ -717,3 +717,106 @@ def test_admisiones_tecnico_sin_restriccion_ve_todas(escenario):
         )
     )
     assert ids == {a.pk for a in admisiones.values()}
+
+
+# ------------------------------------------- alta/edición con programa (API)
+
+
+def _payload_alta(provincia, **extra):
+    from comedores.models import TipoDeComedor
+
+    TipoDeComedor.objects.get_or_create(nombre="Comedor")
+    data = {
+        "client_uuid": f"uuid-{extra.pop('uuid', 'a')}",
+        "nombre": "Comedor nuevo",
+        "tipo": "Comedor",
+        "provincia": provincia.nombre,
+    }
+    data.update(extra)
+    return data
+
+
+def test_alta_pnud_sin_programa_exige_elegir(escenario):
+    provincia, _ = escenario
+    api = _api(_territorial("alta_pnud_sin", provincia, PNUD))
+    response = api.post(
+        "/api/territorial/comedores/", _payload_alta(provincia), format="json"
+    )
+    assert response.status_code == 400
+    assert response.json()["programa"] == ["Seleccione el programa del comedor."] or (
+        "Seleccione el programa del comedor." in str(response.json()["programa"])
+    )
+
+
+def test_alta_pnud_con_linea_tradicional_queda_visible(escenario):
+    provincia, _ = escenario
+    user = _territorial("alta_pnud_ok", provincia, PNUD)
+    response = _api(user).post(
+        "/api/territorial/comedores/",
+        _payload_alta(provincia, programa=TRADICIONAL),
+        format="json",
+    )
+    assert response.status_code == 201
+    comedor = Comedor.objects.get(pk=response.json()["id"])
+    assert comedor.programa.nombre == TRADICIONAL
+    assert alcance.comedor_en_alcance_programa(user, comedor)
+
+
+def test_alta_pnud_con_alimentar_fuera_de_alcance(escenario):
+    provincia, _ = escenario
+    response = _api(_territorial("alta_pnud_alim", provincia, PNUD)).post(
+        "/api/territorial/comedores/",
+        _payload_alta(provincia, programa=ALIMENTAR),
+        format="json",
+    )
+    assert response.status_code == 400
+    assert "El programa no está dentro de su alcance." in str(
+        response.json()["programa"]
+    )
+
+
+def test_alta_alimentar_sin_programa_asigna_alimentar(escenario):
+    provincia, _ = escenario
+    response = _api(_territorial("alta_alim", provincia, ALIM)).post(
+        "/api/territorial/comedores/", _payload_alta(provincia), format="json"
+    )
+    assert response.status_code == 201
+    assert Comedor.objects.get(pk=response.json()["id"]).programa.nombre == ALIMENTAR
+
+
+def test_alta_sin_restriccion_sin_programa_queda_nulo(escenario):
+    provincia, _ = escenario
+    response = _api(_territorial("alta_libre", provincia)).post(
+        "/api/territorial/comedores/", _payload_alta(provincia), format="json"
+    )
+    assert response.status_code == 201
+    assert Comedor.objects.get(pk=response.json()["id"]).programa is None
+
+
+def test_alta_replay_idempotente_con_programa_asignado(escenario):
+    provincia, _ = escenario
+    api = _api(_territorial("alta_replay", provincia, ALIM))
+    payload = _payload_alta(provincia)
+    primero = api.post("/api/territorial/comedores/", payload, format="json")
+    segundo = api.post("/api/territorial/comedores/", payload, format="json")
+    assert primero.status_code == 201
+    assert segundo.status_code == 200
+    assert segundo.json()["id"] == primero.json()["id"]
+
+
+def test_patch_programa_fuera_de_alcance_rechazado(escenario):
+    provincia, comedores = escenario
+    user = _territorial("patch_pnud", provincia, PNUD)
+    comedor = comedores["secos"]
+    from relevamientos.models import Relevamiento as Rel
+
+    Rel.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=user
+    )
+    api = _api(user)
+    url = f"/api/territorial/comedores/{comedor.id}/"
+    fuera = api.patch(url, {"programa": ALIMENTAR}, format="json")
+    assert fuera.status_code == 400
+    assert "El programa no está dentro de su alcance." in str(fuera.json()["programa"])
+    dentro = api.patch(url, {"programa": TRADICIONAL}, format="json")
+    assert dentro.status_code == 200

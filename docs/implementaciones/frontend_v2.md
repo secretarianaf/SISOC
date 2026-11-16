@@ -1351,3 +1351,6 @@ formulario de encuestas siguen nativos. Registro: `../registro/cambios/2026-T4/2
 `GET /api/web/dashboard/centro-de-familia/` y `GET /api/web/dashboard/<slug>/` (`src/backends/sisoc_core/dashboard/web_api_dashboard.py`) corren
 `DashboardView` y `TableroEmbedView`; la ruta `routes/dashboardTableros.tsx` dibuja los indicadores solo con `dashboard.view_dashboard` y los
 iframes de la plantilla. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-dashboard-tableros.md`.
+`GET /api/web/encuestas/<pk>/revision/` (`src/backends/sisoc_core/encuestas/web_api_revision.py`) corre `EncuestaRevisionView`; aprobar y rechazar
+(`POST .../aprobar/` y `.../rechazar/`) corren sus vistas nativas y la ruta `routes/encuestasRevision.tsx` navega al redirect con el mensaje en cola.
+Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-encuestas-revision.md`.

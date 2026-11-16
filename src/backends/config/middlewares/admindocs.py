@@ -12,7 +12,7 @@ _OWNED_PATTERNS = (
     r"/api/web/groups/[0-9]+/edit/",
     r"/api/web/dashboard/(?:centro-de-familia/|[-a-zA-Z0-9_]+/)",
     r"/api/web/encuestas/(?:lista/|importar/|rondas/[0-9]+/cerrar/"
-    r"|[0-9]+/(?:resultados/|publicar/|segmentacion/(?:(?:tipo|agregar)/|[0-9]+/quitar/)?))",
+    r"|[0-9]+/(?:resultados/|publicar/|revision/|aprobar/|rechazar/|segmentacion/(?:(?:tipo|agregar)/|[0-9]+/quitar/)?))",
     r"/api/web/users/[0-9]+/(?:deactivate|activate|edit)/",
     r"/api/web/surveys/[0-9]+/(?:answer|postpone|dismiss)/",
     r"/api/web/password/reset/[^/]+/",

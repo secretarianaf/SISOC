@@ -20,6 +20,7 @@ from core.decorators import permissions_any_required
 from encuestas.views import (
     EncuestaListView,
     EncuestaResultadosView,
+    EncuestaRevisionView,
     EncuestaSegmentacionView,
 )
 
@@ -61,6 +62,17 @@ class ListaEntry(EncuestaListView):
         return _index(request, self.index_bytes)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class RevisionEntry(EncuestaRevisionView):
+    """Native login and 404 first, then the frozen React index; POSTs stay native."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        super().get(request, *args, **kwargs)
+        return _index(request, self.index_bytes)
+
+
 def encuestas_preview_patterns(build_directory):
     """Freeze the index of an explicit local ``apps/sisoc`` build for a disposable URLconf."""
     original = Path(build_directory)
@@ -79,6 +91,12 @@ def encuestas_preview_patterns(build_directory):
             permissions_any_required(
                 ["encuestas.view_encuesta", "encuestas.ver_resultados"]
             )(ListaEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "encuestas/<int:pk>/revision/",
+            permissions_any_required(
+                ["encuestas.aprobar_encuesta", "encuestas.change_encuesta"]
+            )(RevisionEntry.as_view(index_bytes=index_bytes)),
         ),
         path(
             "encuestas/<int:pk>/segmentacion/",

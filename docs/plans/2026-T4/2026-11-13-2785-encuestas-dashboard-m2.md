@@ -104,10 +104,15 @@ E04 se entrega en subunidades; cada una activa solo los pathname que cubre.
 - Los enlaces «Editar», «Segmentación», «Revisar solicitud», «Resultados», «Ver motivo del rechazo», «Crear encuesta» y
   «Ver pendientes» van a las rutas nativas o de React ya incorporadas.
 
-### E04.B Revisión, aprobar y rechazar (pendiente)
+### E04.B Revisión, aprobar y rechazar (entregada)
 
-- `EncuestaRevisionView` (`encuestas.aprobar_encuesta` o `encuestas.change_encuesta`), `EncuestaAprobarView` y
-  `EncuestaRechazarView` (solo `aprobar_encuesta`; el rechazo con motivo inválido es 400 con el formulario). Sin implementar.
+- `GET /api/web/encuestas/<pk>/revision/` corre `EncuestaRevisionView` (`encuestas.aprobar_encuesta` o `encuestas.change_encuesta`) y
+  proyecta `encuesta_revision.html`: cabecera, motivo del último rechazo, datos, destinatarios, preguntas con condición y puntos y la
+  tarjeta de decisión (`puede_aprobar` es `perms.encuestas.aprobar_encuesta`). Una encuesta inexistente es 404.
+- `POST .../aprobar/` corre `EncuestaAprobarView` (`publicar`) y `POST .../rechazar/` corre `EncuestaRechazarView`
+  (`rechazar_publicacion`); ambos exigen `aprobar_encuesta`. Dejan el mensaje nativo en cola y la pantalla navega al redirect (la
+  lista, o la revisión otra vez si el servicio rechaza). Un motivo inválido es el 400 nativo con `errors.motivo`: el modal sigue
+  abierto con el error y el texto escrito. Repetir una transición devuelve el error nativo sin cambios.
 
 ### E04.C Formulario de alta y edición (pendiente)
 

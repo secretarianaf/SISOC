@@ -4,6 +4,11 @@ from django.urls import path
 
 from encuestas.web_api_lista import ListaWebView, PublicarWebView, RondaCerrarWebView
 from encuestas.web_api_resultados import ResultadosWebView
+from encuestas.web_api_revision import (
+    AprobarWebView,
+    RechazarWebView,
+    RevisionWebView,
+)
 from encuestas.web_api_segmentacion import (
     EncuestaImportarWebView,
     SegmentacionAgregarWebView,
@@ -13,6 +18,13 @@ from encuestas.web_api_segmentacion import (
 )
 
 urlpatterns = [
+    path(
+        "<int:pk>/revision/", RevisionWebView.as_view(), name="encuestas_web_revision"
+    ),
+    path("<int:pk>/aprobar/", AprobarWebView.as_view(), name="encuestas_web_aprobar"),
+    path(
+        "<int:pk>/rechazar/", RechazarWebView.as_view(), name="encuestas_web_rechazar"
+    ),
     path("lista/", ListaWebView.as_view(), name="encuestas_web_lista"),
     path(
         "<int:pk>/publicar/", PublicarWebView.as_view(), name="encuestas_web_publicar"

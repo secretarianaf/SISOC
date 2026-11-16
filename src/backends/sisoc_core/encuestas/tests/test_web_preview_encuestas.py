@@ -122,3 +122,17 @@ def test_lista_keeps_native_guards_legacy_redirect_and_page_check(preview):
     legacy = client.get("/encuestas/?busqueda=Lista")
     assert legacy.status_code == 302 and "filters=" in legacy["Location"]
     assert client.get("/encuestas/?page=9").status_code == 404
+
+
+def test_revision_keeps_native_guards_then_frozen_index(preview):
+    aprobador, client = _client("prev_rev", "encuestas.aprobar_encuesta")
+    encuesta = crear_encuesta(
+        usuario=aprobador, titulo="Revision", es_obligatoria=True, duracion_ronda_dias=3
+    )
+    url = f"/encuestas/{encuesta.pk}/revision/"
+    assert Client().get(url).status_code == 403
+    assert _client("prev_rev_sin")[1].get(url).status_code == 403
+    response = client.get(url)
+    assert response.status_code == 200
+    assert "/ciudadanos/react/assets/app-1.js" in response.content.decode()
+    assert client.get("/encuestas/0/revision/").status_code == 404

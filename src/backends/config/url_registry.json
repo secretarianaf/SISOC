@@ -2790,6 +2790,11 @@
   "regex": "^encuestas/(?P<pk>[0-9]+)/segmentacion/tipo/\\Z"
  },
  {
+  "name": "encuestas_web_aprobar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/aprobar/\\Z"
+ },
+ {
   "name": "encuestas_web_importar",
   "namespace": "",
   "regex": "^api/web/encuestas/importar/\\Z"
@@ -2805,9 +2810,19 @@
   "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/publicar/\\Z"
  },
  {
+  "name": "encuestas_web_rechazar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/rechazar/\\Z"
+ },
+ {
   "name": "encuestas_web_resultados",
   "namespace": "",
   "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/resultados/\\Z"
+ },
+ {
+  "name": "encuestas_web_revision",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/revision/\\Z"
  },
  {
   "name": "encuestas_web_ronda_cerrar",

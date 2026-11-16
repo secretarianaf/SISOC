@@ -69,6 +69,7 @@ import { dashboardRoute, dashboardTableroRoute } from "./dashboardTableros";
 import { duplasRoute } from "./duplas";
 import { encuestasListaRoute } from "./encuestasLista";
 import { encuestasResultadosRoute } from "./encuestasResultados";
+import { encuestasRevisionRoute } from "./encuestasRevision";
 import { encuestasSegmentacionRoute } from "./encuestasSegmentacion";
 import { expedientesPagosRoute } from "./expedientesPagos";
 import { rendicionFinalRoute } from "./rendicionFinal";
@@ -152,6 +153,7 @@ export const ROUTES: RouteDefinition[] = [
   encuestasListaRoute,
   dashboardRoute,
   dashboardTableroRoute,
+  encuestasRevisionRoute,
   inspeccionesActasRoute,
   inspeccionesActaDetalleRoute,
   inspeccionesAsignacionesRoute,

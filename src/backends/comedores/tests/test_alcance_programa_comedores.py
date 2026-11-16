@@ -280,6 +280,30 @@ def test_detalle_de_relevamiento_exige_que_sea_del_comedor_de_la_url(client, reg
     assert response.status_code == 404
 
 
+@pytest.mark.parametrize("nombre", ["relevamiento_editar", "relevamiento_eliminar"])
+def test_editar_y_eliminar_relevamiento_exigen_que_sea_del_comedor_de_la_url(
+    client, registros, nombre
+):
+    user = _user(f"reg_cruzado_{nombre}", ALIM)
+    user.user_permissions.add(
+        *Permission.objects.filter(
+            content_type__app_label="relevamientos",
+            codename="change_relevamiento",
+        )
+    )
+    cliente = _cliente_web(client, user)
+    comedor_propio = registros["alimentar"][0]
+    relevamiento_ajeno = registros["secos"][1]
+    url = reverse(
+        nombre, kwargs={"comedor_pk": comedor_propio.pk, "pk": relevamiento_ajeno.pk}
+    )
+
+    assert cliente.get(url).status_code == 404
+    assert cliente.post(url).status_code == 404
+    relevamiento_ajeno.refresh_from_db()
+    assert relevamiento_ajeno.comedor_id == registros["secos"][0].pk
+
+
 def test_vistas_de_registros_sin_restriccion_ven_todo(client, registros):
     cliente = _cliente_web(client, _user("reg_libre"))
     comedor, relevamiento, *_ = registros["secos"]

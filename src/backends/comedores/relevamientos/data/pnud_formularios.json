@@ -2627,6 +2627,11 @@
             ]
           },
           {
+            "name": "almacenamiento_alimentos_adecuado_porque",
+            "label": "¿Por qué?",
+            "type": "longtext"
+          },
+          {
             "name": "tiene_heladera",
             "label": "Heladera",
             "type": "bool"
@@ -2644,6 +2649,11 @@
               "SI",
               "NO"
             ]
+          },
+          {
+            "name": "almacenamiento_limpieza_adecuado_porque",
+            "label": "¿Por qué?",
+            "type": "longtext"
           },
           {
             "name": "condicion_limpieza",
@@ -3812,6 +3822,11 @@
             ]
           },
           {
+            "name": "almacenamiento_alimentos_adecuado_porque",
+            "label": "¿Por qué?",
+            "type": "longtext"
+          },
+          {
             "name": "tiene_heladera",
             "label": "Heladera",
             "type": "bool"
@@ -3829,6 +3844,11 @@
               "SI",
               "NO"
             ]
+          },
+          {
+            "name": "almacenamiento_limpieza_adecuado_porque",
+            "label": "¿Por qué?",
+            "type": "longtext"
           },
           {
             "name": "condicion_limpieza",

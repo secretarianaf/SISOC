@@ -447,6 +447,10 @@ class RelevamientoUpdateView(LoginRequiredMixin, ComedorAlcanceMixin, UpdateView
     template_name = "relevamiento_form.html"
     success_url = reverse_lazy("relevamiento_lista")
 
+    def get_queryset(self):
+        # Solo relevamientos del comedor de la URL, que ya se validó contra el alcance.
+        return super().get_queryset().filter(comedor_id=self.kwargs["comedor_pk"])
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["comedor_pk"] = self.kwargs["comedor_pk"]
@@ -514,6 +518,10 @@ class RelevamientoDeleteView(
     template_name = "relevamiento_confirm_delete.html"
     context_object_name = "relevamiento"
     success_message = "Acompañamiento Territorial dado de baja correctamente."
+
+    def get_queryset(self):
+        # Solo relevamientos del comedor de la URL, que ya se validó contra el alcance.
+        return super().get_queryset().filter(comedor_id=self.kwargs["comedor_pk"])
 
     def get_success_url(self):
         comedor = self.object.comedor

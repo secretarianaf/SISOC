@@ -82,7 +82,7 @@ def test_ranking_y_casillas_se_muestran_en_su_seccion_con_su_etiqueta():
     assert not [s for s in secciones if s["titulo"] == "Otros datos"]
     espacio = _seccion(secciones, "7. DATOS SOBRE EL ESPACIO FÍSICO")
     filas = {f["etiqueta"]: f["valor"] for f in espacio["filas"]}
-    assert filas["Heladeras"] == "Sí"
+    assert filas["Heladera"] == "Sí"
     assert filas["Freezer"] == "No"
     # Los ítems del ranking llevan la pregunta (se ven sueltos en el detalle).
     pregunta = "7.2.1 Tipo de combustible que utilizan para cocinar"

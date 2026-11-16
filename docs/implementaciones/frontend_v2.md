@@ -876,6 +876,10 @@ formulario efectivo y `web_api_informe_guardar.py` guarda borrador y finalizaci√
 Registros: `../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-informe-formulario.md`,
 `../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-informe-guardar.md` y
 `../registro/cambios/2026-T4/2026-11-12-2785-react-admisiones-informe-editor.md`.
+Acciones del detalle y complementario (AD02.02): `web_api_informe_acciones.py` (`docx-editado/` y `revision/`) y
+`web_api_informe_complementario.py` (GET y POST de `informes/complementario/<tipo>/<pk>/`) ejecutan los manejadores
+nativos con el cuerpo como POST y devuelven mensajes y la URL a la que React redirige; ver
+`../registro/cambios/2026-T4/2026-11-13-2785-react-admisiones-informe-acciones.md`.
 
 Circuito t√©cnico/legal de admisiones (AD03.01, entrega de listados):
 `src/backends/comedores/admisiones/web_api_listas.py` ejecuta `AdmisionesTecnicosListView` y

@@ -2,11 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import App from "../App";
 import { findRoute } from "./index";
+import { informeNative } from "./admisionesInformeDetalle";
 import { readyContext, setViewport } from "./testFixtures";
 
-const { webGet } = vi.hoisted(() => ({ webGet: vi.fn() }));
+const { webGet, webPost } = vi.hoisted(() => ({ webGet: vi.fn(), webPost: vi.fn() }));
 vi.mock("@sisoc/api", () => ({
-  crearCliente: vi.fn(() => ({ get: webGet, post: vi.fn() })),
+  crearCliente: vi.fn(() => ({ get: webGet, post: webPost })),
   leerCookie: vi.fn(() => "synthetic-csrf-token"),
 }));
 
@@ -30,6 +31,7 @@ function setup(path = NATIVO) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  webPost.mockReset();
   document.title = "SISOC";
   setViewport(false);
 });
@@ -66,25 +68,63 @@ describe("Technical report detail route (AD02.01)", () => {
     expect(screen.queryByLabelText("Subsanar")).toBeNull();
   });
 
-  it("the upload modal posts the DOCX to the native URL", async () => {
-    serve(informe({ estado: "Docx generado", puede_cambiar_estado: false, archivos: { docx_descargar: "/media/b.docx", docx_editado_ver: null, pdf_final: null, borrador: { kind: "docx_final", url: "/media/b.docx" } } }));
+  const generado = () => informe({ estado: "Docx generado", puede_cambiar_estado: false, archivos: { docx_descargar: "/media/b.docx", docx_editado_ver: null, pdf_final: null, borrador: { kind: "docx_final", url: "/media/b.docx" } } });
+
+  it("the upload modal posts the DOCX to the G1 action and opens the redirect it answers", async () => {
+    serve(generado());
+    const navegar = vi.spyOn(informeNative, "navigate").mockImplementation(() => undefined);
+    webPost.mockResolvedValue({ status: 200, data: { success: true, messages: [], redirect: NATIVO } });
     setup();
     expect((await screen.findByRole("link", { name: /Descargar DOCX/ })).getAttribute("href")).toBe("/media/b.docx");
     expect(screen.getByRole("link", { name: /DOCX Final/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Subir DOCX Editado/ }));
-    const form = screen.getByRole("button", { name: "Subir Archivo" }).closest("form")!;
-    expect(form.method).toBe("post");
-    expect(form.enctype).toBe("multipart/form-data");
-    expect(form.getAttribute("action")).toBe(NATIVO);
-    expect((form.querySelector('[name="csrfmiddlewaretoken"]') as HTMLInputElement).value).toBe("synthetic-csrf-token");
-    expect((form.querySelector("#docx_editado") as HTMLInputElement).required).toBe(true);
-    expect((screen.getByRole("button", { name: "Subir Archivo" }) as HTMLButtonElement).name).toBe("subir_docx");
-    fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.queryByRole("button", { name: "Subir Archivo" })).toBeNull();
+    const boton = screen.getByRole("button", { name: "Subir Archivo" }) as HTMLButtonElement;
+    expect(boton.name).toBe("subir_docx");
+    const entrada = document.querySelector("#docx_editado") as HTMLInputElement;
+    expect(entrada.required).toBe(true);
+    const archivo = new File(["PK"], "editado.docx");
+    fireEvent.change(entrada, { target: { files: [archivo] } });
+    fireEvent.submit(boton.closest("form")!);
+    await waitFor(() => expect(navegar).toHaveBeenCalledWith(NATIVO));
+    expect(webPost).toHaveBeenCalledTimes(1);
+    const [url, cuerpo] = webPost.mock.calls[0];
+    expect(url).toBe("web/comedores/admisiones/informes/base/5/docx-editado/");
+    expect((cuerpo as FormData).get("docx_editado")).toBe(archivo);
+    navegar.mockRestore();
   });
 
-  it("the status modal needs a checked field and observations to fix, like the native script", async () => {
+  it("a rejected upload still opens the page where the error message waits, and a 403 is the shared access screen", async () => {
+    serve(generado());
+    const navegar = vi.spyOn(informeNative, "navigate").mockImplementation(() => undefined);
+    webPost.mockResolvedValueOnce({ status: 400, data: { success: false, messages: [{ message: "x", level: "error" }], redirect: NATIVO } });
+    setup();
+    fireEvent.click(await screen.findByRole("button", { name: /Subir DOCX Editado/ }));
+    fireEvent.submit(screen.getByRole("button", { name: "Subir Archivo" }).closest("form")!);
+    await waitFor(() => expect(navegar).toHaveBeenCalledWith(NATIVO));
+    expect(navegar).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(document, { key: "Escape" });
+    webPost.mockResolvedValueOnce({ status: 403, data: { success: false, messages: [] } });
+    fireEvent.click(screen.getByRole("button", { name: /Subir DOCX Editado/ }));
+    fireEvent.submit(screen.getByRole("button", { name: "Subir Archivo" }).closest("form")!);
+    expect((await screen.findByRole("link", { name: "volver al inicio" })).getAttribute("href")).toBe("/inicio/");
+    expect(navegar).toHaveBeenCalledTimes(1);
+    navegar.mockRestore();
+  });
+
+  it("a server failure of the review is the error screen", async () => {
     serve(informe());
+    webPost.mockResolvedValueOnce({ status: 500, data: {} });
+    setup();
+    fireEvent.click(await screen.findByText("Cambiar estado"));
+    fireEvent.change(screen.getByLabelText("Nuevo estado"), { target: { value: "Validado" } });
+    fireEvent.submit(screen.getByRole("button", { name: "Guardar" }).closest("form")!);
+    expect(await screen.findByText("No se pudo cargar la página.")).toBeTruthy();
+  });
+
+  it("the status modal needs a checked field and observations to fix, like the native script, and posts the review", async () => {
+    serve(informe());
+    const navegar = vi.spyOn(informeNative, "navigate").mockImplementation(() => undefined);
+    webPost.mockResolvedValue({ status: 200, data: { success: true, messages: [], redirect: "/comedores/admision/3/tecnicos/editar/" } });
     setup();
     await screen.findByText("Fecha de pedido");
     fireEvent.click(screen.getByText("Cambiar estado"));
@@ -96,16 +136,28 @@ describe("Technical report detail route (AD02.01)", () => {
     expect(guardar.disabled).toBe(false);
     expect(screen.getByLabelText("Observaciones")).toBeTruthy();
     const form = guardar.closest("form")!;
-    expect(form.getAttribute("action")).toBe(NATIVO);
-    expect((form.querySelector('[name="campos_a_subsanar"]') as HTMLInputElement).value).toBe("Localidad");
-    const evento = new Event("submit", { bubbles: true, cancelable: true });
-    form.dispatchEvent(evento);
-    expect(evento.defaultPrevented).toBe(true);
+    fireEvent.submit(form);
     expect(await screen.findByText("Debe completar el campo de observaciones.")).toBeTruthy();
+    expect(webPost).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText("Observaciones"), { target: { value: " Corregir " } });
-    const valido = new Event("submit", { bubbles: true, cancelable: true });
-    form.dispatchEvent(valido);
-    expect(valido.defaultPrevented).toBe(false);
+    fireEvent.submit(form);
+    await waitFor(() => expect(navegar).toHaveBeenCalledWith("/comedores/admision/3/tecnicos/editar/"));
+    expect(webPost).toHaveBeenCalledWith("web/comedores/admisiones/informes/base/5/revision/",
+      { estado: "A subsanar", observacion: " Corregir ", campos_a_subsanar: ["Localidad"] }, expect.anything());
+    navegar.mockRestore();
+  });
+
+  it("validating posts only the state", async () => {
+    serve(informe());
+    const navegar = vi.spyOn(informeNative, "navigate").mockImplementation(() => undefined);
+    webPost.mockResolvedValue({ status: 200, data: { success: true, messages: [], redirect: "/comedores/admision/3/tecnicos/editar/" } });
+    setup();
+    fireEvent.click(await screen.findByText("Cambiar estado"));
+    fireEvent.change(screen.getByLabelText("Nuevo estado"), { target: { value: "Validado" } });
+    fireEvent.submit(screen.getByRole("button", { name: "Guardar" }).closest("form")!);
+    await waitFor(() => expect(navegar).toHaveBeenCalled());
+    expect(webPost).toHaveBeenCalledWith("web/comedores/admisiones/informes/base/5/revision/", { estado: "Validado" }, expect.anything());
+    navegar.mockRestore();
   });
 
   it("a 403 from the API is the access screen", async () => {

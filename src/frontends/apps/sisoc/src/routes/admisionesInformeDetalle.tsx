@@ -1,16 +1,18 @@
 /* eslint-disable react-refresh/only-export-components -- the unit surface is this route module; its screens live here with the route. */
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { leerCookie } from "@sisoc/api";
 import { NativeToasts } from "./nativeParity";
-import { internal, record, renderMain, text, useMainResource } from "./MainFrame";
+import { prerequisiteFromForbidden } from "../webAccess";
+import { internal, record, renderMain, text, useMainResource, webClient } from "./MainFrame";
 import type { RouteDefinition } from "./types";
 
 /**
  * AD02.01 technical-report detail (`comedores/admision/informe_tecnico/<tipo>/<pk>/ver/`),
  * with the native template's markup. Data comes from
  * `/api/web/comedores/admisiones/informes/<tipo>/<pk>/`, which runs the native view.
- * The upload of the edited DOCX and the review (status change, fields to fix) keep
- * posting to the native URL, whose own rules decide; DOCX/PDF files stay backend-made.
+ * AD02.02: the upload of the edited DOCX and the review (status change, fields to fix) post to
+ * `.../docx-editado/` and `.../revision/`, which run the native handlers, so their own rules decide;
+ * the browser then opens the page the native redirect opened (the flash messages wait there).
+ * DOCX/PDF files stay backend-made.
  */
 type Params = { tipo: string; id: string };
 type Message = { message: string; level: "success" | "error" | "warning" | "info" };
@@ -24,6 +26,29 @@ type InformeData = {
 };
 
 const LEVELS = ["success", "error", "warning", "info"];
+type Respuesta = { redirect?: unknown };
+type Fallar = (status: number, data: unknown) => void;
+
+/** The seams of the page's actions: the POST to the native handlers and the redirect they answer with. */
+export const informeNative = {
+  post: async (url: string, body: FormData | Record<string, unknown>): Promise<{ status: number; redirect: string | null; data: unknown }> => {
+    const { data, status } = await webClient.post(url, body, { validateStatus: (s: number) => s >= 200 && s < 500 });
+    const redirect = record(data) && internal((data as Respuesta).redirect) ? ((data as Respuesta).redirect as string) : null;
+    return { status, redirect, data };
+  },
+  navigate: (url: string) => window.location.assign(url),
+};
+
+/** Sends the action; a redirect (native success or rejection) opens its page, anything else goes to the page's access or error screen. */
+async function enviar(url: string, body: FormData | Record<string, unknown>, fallo: Fallar) {
+  try {
+    const { status, redirect, data } = await informeNative.post(url, body);
+    if (redirect !== null && (status === 200 || status === 400)) informeNative.navigate(redirect);
+    else fallo(status, data);
+  } catch {
+    fallo(0, null);
+  }
+}
 const int = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v);
 const fileUrl = (v: unknown): v is string => internal(v) || (text(v) && /^https?:\/\//.test(v));
 const nullableUrl = (v: unknown) => v === null || fileUrl(v);
@@ -37,11 +62,6 @@ const informeValid = (v: unknown): v is InformeData => record(v) && int(v.id) &&
   typeof v.puede_cambiar_estado === "boolean" && typeof v.puede_subsanar === "boolean" &&
   record(v.urls) && internal(v.urls.admision) && internal(v.urls.accion) &&
   Array.isArray(v.messages) && v.messages.every((m) => record(m) && text(m.message) && LEVELS.includes(m.level as string));
-
-/** `{% csrf_token %}` of the native forms (the entry sets the cookie). */
-function Csrf() {
-  return <input type="hidden" name="csrfmiddlewaretoken" value={leerCookie("csrftoken") ?? ""} />;
-}
 
 /** The native Bootstrap modal (`modal fade` + backdrop), closed with the button, the backdrop or Escape. */
 function Modal({ id, title, close, children }: { id: string; title: string; close: () => void; children: ReactNode }) {
@@ -79,11 +99,19 @@ function Modal({ id, title, close, children }: { id: string; title: string; clos
   </>;
 }
 
-function UploadModal({ data, close }: { data: InformeData; close: () => void }) {
+function UploadModal({ data, close, fallo }: { data: InformeData; close: () => void; fallo: Fallar }) {
+  const enviando = useRef(false);
+  const alEnviar = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (enviando.current) return;
+    enviando.current = true;
+    const form = new FormData();
+    const archivo = event.currentTarget.querySelector<HTMLInputElement>("#docx_editado")?.files?.[0];
+    if (archivo) form.append("docx_editado", archivo);
+    void enviar(`web/comedores/admisiones/informes/${data.tipo}/${data.id}/docx-editado/`, form, (e, d) => { enviando.current = false; close(); fallo(e, d); });
+  };
   return <Modal id="subirDocxModal" title="Subir DOCX Editado" close={close}>
-    <form method="post" encType="multipart/form-data" action={data.urls.accion}>
-      <Csrf />
-      <input type="hidden" name="informe_id" value={data.id} />
+    <form method="post" encType="multipart/form-data" onSubmit={alEnviar}>
       <div className="modal-body">
         <div className="mb-3">
           <label htmlFor="docx_editado" className="form-label">Archivo DOCX editado</label>
@@ -100,7 +128,8 @@ function UploadModal({ data, close }: { data: InformeData; close: () => void }) 
 }
 
 /** The status modal, with the checks of the page's inline script. */
-function StateModal({ data, marcados, close }: { data: InformeData; marcados: string[]; close: () => void }) {
+function StateModal({ data, marcados, close, falloAccion }: { data: InformeData; marcados: string[]; close: () => void; falloAccion: Fallar }) {
+  const enviando = useRef(false);
   const [estado, setEstado] = useState("");
   const [observacion, setObservacion] = useState("");
   const [fallo, setFallo] = useState<string | null>(null);
@@ -109,14 +138,20 @@ function StateModal({ data, marcados, close }: { data: InformeData; marcados: st
   const mostrarObservacion = subsanar && marcados.length > 0;
   const error = sinMarcar ? "Debe marcar al menos un campo para subsanar." : fallo;
   const alEnviar = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (subsanar && observacion.trim() === "") {
-      event.preventDefault();
       setFallo("Debe completar el campo de observaciones.");
+      return;
     }
+    if (enviando.current) return;
+    enviando.current = true;
+    const cuerpo: Record<string, unknown> = { estado };
+    if (mostrarObservacion) cuerpo.observacion = observacion;
+    if (subsanar) cuerpo.campos_a_subsanar = marcados;
+    void enviar(`web/comedores/admisiones/informes/${data.tipo}/${data.id}/revision/`, cuerpo, (e, d) => { enviando.current = false; close(); falloAccion(e, d); });
   };
   return <Modal id="cambiarEstadoModal" title="Cambiar estado del informe" close={close}>
-    <form method="post" action={data.urls.accion} onSubmit={alEnviar}>
-      <Csrf />
+    <form method="post" onSubmit={alEnviar}>
       <div className="modal-body">
         <div className="mb-3">
           <label htmlFor="estado" className="form-label">Nuevo estado</label>
@@ -133,7 +168,6 @@ function StateModal({ data, marcados, close }: { data: InformeData; marcados: st
         {error !== null && subsanar && <div className="mb-3 h6 d-flex justify-content-center align-items-center text-center" id="observacion-error">
           <i className="bi bi-x-circle-fill text-danger me-1" /> {error}
         </div>}
-        {subsanar && marcados.map((campo) => <input key={campo} type="hidden" name="campos_a_subsanar" value={campo} />)}
       </div>
       <div className="modal-footer">
         <button type="button" className="btn btn-secondary" onClick={close}>Cancelar</button>
@@ -161,7 +195,7 @@ function Acciones({ data, abrir }: { data: InformeData; abrir: (modal: "docx" | 
   </div>;
 }
 
-function InformePage({ data }: { data: InformeData }) {
+function InformePage({ data, fallar }: { data: InformeData; fallar: Fallar }) {
   const [modal, setModal] = useState<"docx" | "estado" | null>(null);
   const [marcados, setMarcados] = useState<string[]>([]);
   const cerrar = () => setModal(null);
@@ -190,13 +224,15 @@ function InformePage({ data }: { data: InformeData }) {
         </div>
       </div>
     </div>
-    {modal === "docx" && <UploadModal data={data} close={cerrar} />}
-    {modal === "estado" && <StateModal data={data} marcados={marcados} close={cerrar} />}
+    {modal === "docx" && <UploadModal data={data} close={cerrar} fallo={fallar} />}
+    {modal === "estado" && <StateModal data={data} marcados={marcados} close={cerrar} falloAccion={fallar} />}
   </>;
 }
 
 function InformeRoute({ tipo, id }: Params) {
-  const [state] = useMainResource(`web/comedores/admisiones/informes/${tipo}/${id}/`, informeValid);
+  const [state, setState] = useMainResource(`web/comedores/admisiones/informes/${tipo}/${id}/`, informeValid);
+  // Like the other screens: a 403 is the shared access screen, anything else the error screen.
+  const fallar: Fallar = (status, body) => setState(status === 403 ? { status: "forbidden", prerequisite: prerequisiteFromForbidden(body) } : { status: "error" });
   return renderMain(state, "Cargando informe…", (data) => ({
     title: `Informe Técnico: ${data.comedor}`,
     heading: `Informe Técnico: ${data.comedor} - Estado: ${data.estado}`,
@@ -204,7 +240,7 @@ function InformeRoute({ tipo, id }: Params) {
       <div className="breadcrumb-item"><a href={data.urls.admision}>{data.comedor}</a></div>
       <div className="breadcrumb-item active">Informe Técnico</div>
     </ol>,
-    content: <InformePage data={data} />,
+    content: <InformePage data={data} fallar={fallar} />,
   }));
 }
 

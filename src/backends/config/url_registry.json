@@ -3240,6 +3240,11 @@
   "regex": "^comedores/admision/informe_complementario/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/ver/\\Z"
  },
  {
+  "name": "informe_complementario_web",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/informes/complementario/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
   "name": "informe_tecnico_crear",
   "namespace": "",
   "regex": "^comedores/admision/informe_tecnico/(?P<tipo>[^/]+)/(?P<admision_id>[0-9]+)/crear/\\Z"
@@ -3270,6 +3275,11 @@
   "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "informe_tecnico_web_docx_editado",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/docx\\-editado/\\Z"
+ },
+ {
   "name": "informe_tecnico_web_formulario_crear",
   "namespace": "",
   "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/admision/(?P<admision_id>[0-9]+)/formulario/\\Z"
@@ -3288,6 +3298,11 @@
   "name": "informe_tecnico_web_guardar_editar",
   "namespace": "",
   "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/guardar/\\Z"
+ },
+ {
+  "name": "informe_tecnico_web_revision",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/revision/\\Z"
  },
  {
   "name": "informecabal_archivo_centro_detail",

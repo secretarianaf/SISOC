@@ -13,6 +13,7 @@ import { comedorTransaccionesRoute } from "./comedorTransacciones";
 import { actividadesPnudRoute } from "./actividadesPnud";
 import { admisionesTemplatesRoute } from "./admisionesTemplates";
 import { admisionesInformeDetalleRoute } from "./admisionesInformeDetalle";
+import { admisionesInformeComplementarioRoute } from "./admisionesInformeComplementario";
 import { admisionesInformeEditorRoute } from "./admisionesInformeEditor";
 import { admisionesLegalesRoute } from "./admisionesLegales";
 import { admisionesSeguimientoRoute } from "./admisionesSeguimiento";
@@ -202,6 +203,7 @@ export const ROUTES: RouteDefinition[] = [
   pasInformesGenerarRoute,
   admisionesTemplatesRoute,
   admisionesInformeDetalleRoute,
+  admisionesInformeComplementarioRoute,
   admisionesInformeEditorRoute,
   admisionesSeguimientoRoute,
   admisionesLegalesRoute,

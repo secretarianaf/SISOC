@@ -115,11 +115,17 @@ def _get_tope_nomina_alimentaria(comedor_id: int) -> int | None:
 
     programa_nombre = _programa_nombre_normalizado(comedor)
     if "abordaje comunitario" in programa_nombre or "pnud" in programa_nombre:
-        return (
+        datos = (
             ComedorDatosConvenioPnud.objects.filter(comedor_id=comedor_id)
-            .values_list("personas_conveniadas", flat=True)
+            .values_list("personas_conveniadas", "personas_identidad_reservada")
             .first()
         )
+        if not datos or datos[0] is None:
+            return None
+        # #2917: las personas con identidad reservada no figuran en la nómina
+        # pero ocupan lugar dentro de las conveniadas.
+        conveniadas, reservadas = datos
+        return max(conveniadas - (reservadas or 0), 0)
 
     if programa_nombre == "alimentar comunidad":
         admision = ComedorService.get_admision_vigente_pwa(comedor_id)

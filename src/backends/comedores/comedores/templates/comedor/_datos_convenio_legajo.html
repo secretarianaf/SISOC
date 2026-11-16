@@ -28,6 +28,9 @@
         {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Prestaciones financiadas mensuales" valor=datos_convenio_pnud.prestaciones_financiadas_mensuales columna="col-sm-6" only %}
     {% endif %}
     {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Personas Conveniadas" valor=datos_convenio_pnud.personas_conveniadas columna="col-sm-6" only %}
+    {% if es_linea_tradicional or es_linea_secos %}
+        {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Cantidad de personas con identidad reservada" valor=datos_convenio_pnud.personas_identidad_reservada|default_if_none:0 columna="col-sm-6" only %}
+    {% endif %}
     {% if not es_linea_tradicional %}
         {% include 'comedor/_dato_convenio_legajo.html' with etiqueta="Cantidad de Módulos Mensuales" valor=datos_convenio_pnud.cantidad_modulos columna="col-sm-6" only %}
     {% endif %}

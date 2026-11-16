@@ -15,7 +15,8 @@ import type { RouteDefinition } from "./types";
  * (scope, permissions, tables and messages are the native ones). The tabs, the search and the local pagination are the
  * page's own JavaScript. The actions of the page (accept/reject one or a batch, quick enrolment, results of the acta) POST to
  * the U3 endpoints and to `.../cursos/<id>/{resultados,profesores}/`; the ones whose API is not part of this screen
- * (delete the commission, add/edit/delete a schedule, delete an enrolment) link to their native screen.
+ * (delete the commission, add/edit/delete a schedule, delete an enrolment) are plain links to the URL of their screen: the
+ * schedule forms (U5, `vatComisionHorarioForm.tsx`) and the enrolment delete (U3) are React routes under those same URLs.
  */
 type Estado = { id: number; apellido: string; nombre: string; documento: string; estado: string; estado_label: string; detail_url: string };
 export type Inscripto = Estado & {

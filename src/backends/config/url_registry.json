@@ -15685,6 +15685,36 @@
   "regex": "^api/web/vat/comisiones/form/\\Z"
  },
  {
+  "name": "comisiones-horarios-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/nuevo/\\Z"
+ },
+ {
+  "name": "comisiones-horarios-curso-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/cursos/nuevo/\\Z"
+ },
+ {
+  "name": "comisiones-horarios-curso-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/cursos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "comisiones-horarios-curso-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/cursos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "comisiones-horarios-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "comisiones-horarios-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
   "name": "comisiones-list",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/comisiones/\\Z"
@@ -15953,6 +15983,56 @@
   "name": "institucion-contactos-update",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/institucion/contactos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "institucion-identificadores-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/identificadores/nuevo/\\Z"
+ },
+ {
+  "name": "institucion-identificadores-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/identificadores/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "institucion-identificadores-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/identificadores/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "institucion-identificadores-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/identificadores/\\Z"
+ },
+ {
+  "name": "institucion-identificadores-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/identificadores/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "institucion-ubicaciones-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/ubicaciones/nuevo/\\Z"
+ },
+ {
+  "name": "institucion-ubicaciones-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/ubicaciones/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "institucion-ubicaciones-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/ubicaciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "institucion-ubicaciones-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/ubicaciones/\\Z"
+ },
+ {
+  "name": "institucion-ubicaciones-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/ubicaciones/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
   "name": "modalidades-institucionales-create",

@@ -1317,6 +1317,13 @@ de él) y proyectan sus datos, tablas, permisos `puede_*` y enlaces. Ruta React:
 no migran (eliminar la comisión, alta, edición y baja de horarios, baja de inscripción) enlazan a su pantalla nativa y las
 descargas de nómina siguen siendo las nativas. Registro: `../registro/cambios/2026-T4/2026-11-16-2785-react-vat-comision-detalle.md`.
 
+Los horarios de comisión (V04.02, U5) usan `GET|POST /api/web/vat/comisiones-horarios/{nuevo,<pk>/editar,<pk>/eliminar}/` (oferta) y
+`.../comisiones-horarios/cursos/...` (curso) (`src/backends/vat/VAT/web_api_comision_horario_forms.py`): corren `ComisionHorario*View` y
+`ComisionCursoHorario*View` con el permiso de la ruta nativa (`VAT.add|change|delete_comisionhorario`) y su alcance (404 fuera de él);
+el POST ejecuta su `form_valid` (guardado, regeneración de clases y mensaje) o su baja y responde `{"ok": true, "redirect": ...}` o 400 con
+el formulario ligado. Ruta React: `vatComisionHorarioForm.tsx`, que atiende las seis URLs nativas; el detalle de comisión ya enlaza a ellas.
+Registro: `../registro/cambios/2026-T4/2026-11-16-2785-react-vat-comision-horarios.md`.
+
 Las intervenciones y observaciones de comedor (CO02, CO06) usan `src/backends/comedores/intervenciones/web_api.py`,
 `web_api_formulario.py` y `web_api_baja.py` bajo `/api/web/comedores/intervenciones/` (listado `comedor/<pk>/`, ficha `<pk>/`,
 baja de archivo `<pk>/documentacion/eliminar/`, alta `comedor/<pk>/crear/`, edición `<pk>/editar/<pk2>/`, subtipos `subestados/`
@@ -1410,3 +1417,16 @@ Los contactos de institución de VAT (V06.01) usan `GET /api/web/vat/institucion
 `.../<pk>/editar/` y `.../<pk>/eliminar/` (`src/backends/vat/VAT/web_api_vat_contactos.py`, sobre las bases de `web_api_vat_centros_base.py`):
 corren las vistas nativas `InstitucionContacto*View`, con sus filtros, el centro bloqueado por `?centro=` y el mensaje nativo en cola. Rutas
 React: `routes/vatContactos.tsx` y `routes/vatContactosForm.tsx`. El acceso es el de cada ruta nativa.
+
+Los identificadores históricos de institución de VAT (V06.01) usan `GET /api/web/vat/institucion/identificadores/` y `.../<pk>/`, y `GET` y `POST`
+`.../nuevo/`, `.../<pk>/editar/` y `.../<pk>/eliminar/` (`src/backends/vat/VAT/web_api_vat_identificadores.py`, sobre las bases de
+`web_api_vat_centros_base.py`): corren las vistas nativas `InstitucionIdentificadorHist*View`, con sus filtros, el centro preseleccionado por `?centro=` y
+el mensaje nativo en cola. El formulario envía solo los campos que dibuja la plantilla (no `ubicacion`). Rutas React: `routes/vatIdentificadores.tsx` y
+`routes/vatIdentificadoresForm.tsx`. El acceso es el de cada ruta nativa.
+
+Las ubicaciones de institución de VAT (V06.01) usan `GET /api/web/vat/institucion/ubicaciones/` y `.../<pk>/`, y `GET` y `POST` `.../nuevo/`,
+`.../<pk>/editar/` y `.../<pk>/eliminar/` (`src/backends/vat/VAT/web_api_vat_ubicaciones.py`, sobre las bases de `web_api_vat_centros_base.py`): corren las
+vistas nativas `InstitucionUbicacion*View`, con sus filtros, la guarda de `dispatch` sobre `?centro=` (403 si el centro no es editable), el centro bloqueado y el
+mensaje nativo en cola. El formulario envía solo los campos que dibuja la plantilla (no `nombre_ubicacion`) y la cascada Departamento -> Localidad consulta los
+mismos endpoints nativos que el script de `ubicacion_form.html` (`vat_ajax_municipios_por_centro` y `ajax_load_localidades`). Rutas React:
+`routes/vatUbicaciones.tsx` y `routes/vatUbicacionesForm.tsx`. El acceso es el de cada ruta nativa.

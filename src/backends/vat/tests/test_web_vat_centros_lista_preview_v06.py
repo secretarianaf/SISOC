@@ -10,7 +10,13 @@ from django.test import Client, override_settings
 
 from config.urls_all import urlpatterns as monolith_patterns
 from core.models import Localidad, Municipio, Provincia
-from VAT.models import Centro, InstitucionContacto, ModalidadInstitucional
+from VAT.models import (
+    Centro,
+    InstitucionContacto,
+    InstitucionIdentificadorHist,
+    InstitucionUbicacion,
+    ModalidadInstitucional,
+)
 from VAT.web_preview_vat_centros_lista import ROUTES, centros_preview_patterns
 
 pytestmark = pytest.mark.django_db
@@ -63,6 +69,12 @@ def _pks():
         ModalidadInstitucional: ModalidadInstitucional.objects.create(nombre="M").pk,
         InstitucionContacto: InstitucionContacto.objects.create(
             centro=centro, tipo="email", valor="a@b.com"
+        ).pk,
+        InstitucionIdentificadorHist: InstitucionIdentificadorHist.objects.create(
+            centro=centro, tipo_identificador="cue", valor_identificador="0601449"
+        ).pk,
+        InstitucionUbicacion: InstitucionUbicacion.objects.create(
+            centro=centro, localidad=centro.localidad, rol_ubicacion="sede_principal"
         ).pk,
     }
 

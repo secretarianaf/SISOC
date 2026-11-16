@@ -102,12 +102,15 @@ _OWNED_PATTERNS = (
     r"|reportes/inscripciones-asistencias/)",
     r"/api/web/vat/(?:cursos/)?comisiones/sesiones/[0-9]+/asistencia/",
     r"/api/web/vat/comisiones-detalle/(?:[0-9]+/|cursos/[0-9]+/(?:resultados/|profesores/(?:buscar|nuevo)/)?)",
+    r"/api/web/vat/comisiones-horarios/(?:cursos/)?(?:nuevo/|[0-9]+/(?:editar/|eliminar/))",
     r"/api/web/vat/(?:inscripciones-persona/(?:nueva/|rapida-comision/|[0-9]+/(?:editar/|eliminar/|cambiar-estado/)?"
     r"|cursos/(?:rapida-comision/|[0-9]+/cambiar-estado/|comisiones/[0-9]+/cambiar-estado-lote/))?"
     r"|buscador-ciudadano/)",
     r"/api/web/vat/inscripciones-oferta/(?:nueva/|[0-9]+/(?:editar/|eliminar/)?)?",
     r"/api/web/vat/modalidades-institucionales/(?:nueva/|[0-9]+/(?:editar/|eliminar/)?)?",
     r"/api/web/vat/institucion/contactos/(?:nuevo/|[0-9]+/(?:editar/|eliminar/)?)?",
+    r"/api/web/vat/institucion/ubicaciones/(?:nuevo/|[0-9]+/(?:editar/|eliminar/)?)?",
+    r"/api/web/vat/institucion/identificadores/(?:nuevo/|[0-9]+/(?:editar/|eliminar/)?)?",
     r"/api/web/auditoria/(?:listado/|evento/[0-9]+/|[a-z_]+/[a-z_]+/[^/]+/)",
     r"/api/web/auditoria/[a-z_]+/[a-z_]+/[^/]+/",
     r"/api/web/comedores/comedores/(?:formulario/|crear/|[0-9]+/(?:baja/|formulario/|editar/|admision/|capacitaciones/[0-9]+/estado/)?)?",

@@ -16,6 +16,14 @@ from VAT.web_api_inscripcion_oferta import (
     InscripcionOfertaUpdateWebView,
 )
 from VAT.web_api_buscador_ciudadano import BuscadorCiudadanoWebView
+from VAT.web_api_comision_horario_forms import (
+    ComisionCursoHorarioCreateWebView,
+    ComisionCursoHorarioDeleteWebView,
+    ComisionCursoHorarioUpdateWebView,
+    ComisionHorarioCreateWebView,
+    ComisionHorarioDeleteWebView,
+    ComisionHorarioUpdateWebView,
+)
 from VAT.web_api_comision_detalle import (
     ComisionCursoResultadosWebView,
     ComisionDetalleCursoWebView,
@@ -86,6 +94,20 @@ from VAT.web_api_vat_contactos import (
     ContactoDetailWebView,
     ContactoListWebView,
     ContactoUpdateWebView,
+)
+from VAT.web_api_vat_ubicaciones import (
+    UbicacionCreateWebView,
+    UbicacionDeleteWebView,
+    UbicacionDetailWebView,
+    UbicacionListWebView,
+    UbicacionUpdateWebView,
+)
+from VAT.web_api_vat_identificadores import (
+    IdentificadorCreateWebView,
+    IdentificadorDeleteWebView,
+    IdentificadorDetailWebView,
+    IdentificadorListWebView,
+    IdentificadorUpdateWebView,
 )
 from VAT.web_api_vat_modalidad_institucional import (
     ModalidadCreateWebView,
@@ -592,5 +614,97 @@ urlpatterns += [
         "comisiones-detalle/<int:pk>/",
         ComisionDetalleOfertaWebView.as_view(),
         name="comisiones-detalle-oferta",
+    ),
+]
+
+# V04.02 horarios de comisión: alta, edición y baja (vistas nativas).
+urlpatterns += [
+    path(
+        "comisiones-horarios/nuevo/",
+        ComisionHorarioCreateWebView.as_view(),
+        name="comisiones-horarios-create",
+    ),
+    path(
+        "comisiones-horarios/<int:pk>/editar/",
+        ComisionHorarioUpdateWebView.as_view(),
+        name="comisiones-horarios-update",
+    ),
+    path(
+        "comisiones-horarios/<int:pk>/eliminar/",
+        ComisionHorarioDeleteWebView.as_view(),
+        name="comisiones-horarios-delete",
+    ),
+    path(
+        "comisiones-horarios/cursos/nuevo/",
+        ComisionCursoHorarioCreateWebView.as_view(),
+        name="comisiones-horarios-curso-create",
+    ),
+    path(
+        "comisiones-horarios/cursos/<int:pk>/editar/",
+        ComisionCursoHorarioUpdateWebView.as_view(),
+        name="comisiones-horarios-curso-update",
+    ),
+    path(
+        "comisiones-horarios/cursos/<int:pk>/eliminar/",
+        ComisionCursoHorarioDeleteWebView.as_view(),
+        name="comisiones-horarios-curso-delete",
+    ),
+]
+
+# V06.01 identificadores históricos de institución (vistas nativas).
+urlpatterns += [
+    path(
+        "institucion/identificadores/nuevo/",
+        IdentificadorCreateWebView.as_view(),
+        name="institucion-identificadores-create",
+    ),
+    path(
+        "institucion/identificadores/<int:pk>/editar/",
+        IdentificadorUpdateWebView.as_view(),
+        name="institucion-identificadores-update",
+    ),
+    path(
+        "institucion/identificadores/<int:pk>/eliminar/",
+        IdentificadorDeleteWebView.as_view(),
+        name="institucion-identificadores-delete",
+    ),
+    path(
+        "institucion/identificadores/",
+        IdentificadorListWebView.as_view(),
+        name="institucion-identificadores-list",
+    ),
+    path(
+        "institucion/identificadores/<int:pk>/",
+        IdentificadorDetailWebView.as_view(),
+        name="institucion-identificadores-detail",
+    ),
+]
+
+# V06.01 ubicaciones de institución (vistas nativas).
+urlpatterns += [
+    path(
+        "institucion/ubicaciones/nuevo/",
+        UbicacionCreateWebView.as_view(),
+        name="institucion-ubicaciones-create",
+    ),
+    path(
+        "institucion/ubicaciones/<int:pk>/editar/",
+        UbicacionUpdateWebView.as_view(),
+        name="institucion-ubicaciones-update",
+    ),
+    path(
+        "institucion/ubicaciones/<int:pk>/eliminar/",
+        UbicacionDeleteWebView.as_view(),
+        name="institucion-ubicaciones-delete",
+    ),
+    path(
+        "institucion/ubicaciones/",
+        UbicacionListWebView.as_view(),
+        name="institucion-ubicaciones-list",
+    ),
+    path(
+        "institucion/ubicaciones/<int:pk>/",
+        UbicacionDetailWebView.as_view(),
+        name="institucion-ubicaciones-detail",
     ),
 ]

@@ -115,12 +115,17 @@ import { vatInscripcionOfertaRoute } from "./vatInscripcionOferta";
 import { vatInscripcionOfertaFormRoute } from "./vatInscripcionOfertaForm";
 import { vatContactosRoute } from "./vatContactos";
 import { vatContactosFormRoute } from "./vatContactosForm";
+import { vatUbicacionesRoute } from "./vatUbicaciones";
+import { vatUbicacionesFormRoute } from "./vatUbicacionesForm";
+import { vatIdentificadoresFormRoute } from "./vatIdentificadoresForm";
+import { vatIdentificadoresRoute } from "./vatIdentificadores";
 import { vatModalidadInstitucionalRoute } from "./vatModalidadInstitucional";
 import { vatModalidadInstitucionalFormRoute } from "./vatModalidadInstitucionalForm";
 import { vatCatalogosRoute } from "./vatCatalogos";
 import { vatCatalogosFormRoute } from "./vatCatalogosForm";
 import { vatBuscadorCiudadanoRoute } from "./vatBuscadorCiudadano";
 import { vatComisionDetalleRoute } from "./vatComisionDetalle";
+import { vatComisionHorarioFormRoute } from "./vatComisionHorarioForm";
 import { vatEvaluacionesRoute } from "./vatEvaluaciones";
 import { vatEvaluacionesFormRoute } from "./vatEvaluacionesForm";
 import { vatInscripcionRoute } from "./vatInscripcion";
@@ -247,12 +252,17 @@ export const ROUTES: RouteDefinition[] = [
   vatInscripcionOfertaFormRoute,
   vatContactosRoute,
   vatContactosFormRoute,
+  vatUbicacionesRoute,
+  vatUbicacionesFormRoute,
+  vatIdentificadoresFormRoute,
+  vatIdentificadoresRoute,
   vatModalidadInstitucionalRoute,
   vatModalidadInstitucionalFormRoute,
   vatInscripcionRoute,
   vatInscripcionFormRoute,
   vatBuscadorCiudadanoRoute,
   vatComisionDetalleRoute,
+  vatComisionHorarioFormRoute,
   ocrRoute,
   organizacionesRoute,
   organizacionConvenioRoute,

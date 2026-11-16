@@ -41,6 +41,7 @@ from comedores.api_views_territorial_pnud import (
 from comedores.api_views_territorial_validaciones import (
     leer_texto,
 )
+from comedores.services.alcance_programa import apply_programa_scope
 from comedores.models import (
     Comedor,
     ComedorPwaCreateOperation,
@@ -360,9 +361,12 @@ class TerritorialComedorViewSet(
             .prefetch_related("seguimientos")
             .order_by("-fecha_visita", "-id")
         )
+        # El alcance por programa gana también sobre lo asignado desde SISOC.
+        comedores = apply_programa_scope(
+            Comedor.objects.filter(id__in=self._comedor_ids_asignados(user)), user
+        )
         return (
-            Comedor.objects.filter(id__in=self._comedor_ids_asignados(user))
-            .select_related("provincia", "municipio", "localidad")
+            comedores.select_related("provincia", "municipio", "localidad")
             .prefetch_related(
                 Prefetch(
                     "relevamiento_set",
@@ -495,11 +499,11 @@ class TerritorialComedorViewSet(
         if pk is None:
             return None
         provincia_ids = get_territorial_comedor_provincia_ids(self.request.user)
-        return (
-            Comedor.objects.filter(pk=pk, provincia_id__in=provincia_ids)
-            .select_related("provincia", "municipio", "localidad")
-            .first()
+        comedores = apply_programa_scope(
+            Comedor.objects.filter(pk=pk, provincia_id__in=provincia_ids),
+            self.request.user,
         )
+        return comedores.select_related("provincia", "municipio", "localidad").first()
 
     def _comedor_accesible(self):
         """Comedor con un relevamiento asignado a mí o, si no, de mi zona.
@@ -804,8 +808,9 @@ class TerritorialComedorZonaListView(generics.ListAPIView):
         provincia_ids = get_territorial_comedor_provincia_ids(self.request.user)
         if not provincia_ids:
             return Comedor.objects.none()
-        return (
-            Comedor.objects.filter(provincia_id__in=provincia_ids)
-            .select_related("provincia", "municipio", "localidad", "programa")
-            .order_by("nombre", "id")
+        comedores = apply_programa_scope(
+            Comedor.objects.filter(provincia_id__in=provincia_ids), self.request.user
         )
+        return comedores.select_related(
+            "provincia", "municipio", "localidad", "programa"
+        ).order_by("nombre", "id")

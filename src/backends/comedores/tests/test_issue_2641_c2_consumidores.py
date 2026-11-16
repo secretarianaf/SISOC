@@ -15,7 +15,6 @@ from core import backend_proxy
 from core.models import FiltroFavorito
 from core.services.favorite_filters import registry
 
-
 CONTRIBUCIONES = ("comedores", "comedores_colaboraciones", "pwa", "pwa_badges")
 
 

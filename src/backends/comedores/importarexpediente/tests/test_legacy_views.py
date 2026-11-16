@@ -19,7 +19,6 @@ from importarexpediente.models import (
 from comedores.models import Comedor
 from expedientespagos.models import ExpedientePago
 
-
 User = get_user_model()
 
 

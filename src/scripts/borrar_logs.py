@@ -3,7 +3,6 @@ import logging
 import os
 import shutil
 
-
 if not logging.getLogger().handlers:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("django")

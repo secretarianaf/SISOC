@@ -8,7 +8,6 @@ from openpyxl import Workbook
 
 from users.models import Profile
 
-
 pytestmark = pytest.mark.django_db
 
 

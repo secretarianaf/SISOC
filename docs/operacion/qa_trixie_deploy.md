@@ -317,6 +317,11 @@ server {
         return 404;
     }
 
+    # Documentos de intervenciones CDI: sólo por la API autenticada (CDI-F2).
+    location ^~ /media/cdi/ {
+        return 404;
+    }
+
     # Evidencia de Inspecciones escolares: sólo por la API, con los permisos del acta.
     location ^~ /media/inspecciones/ {
         return 404;

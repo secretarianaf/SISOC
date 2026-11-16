@@ -14,8 +14,9 @@ storage of that object, never a path or a name sent by the client; the bytes
 are served as an attachment with a controlled name and ``private, no-store``
 plus ``nosniff``. A missing intervention, one outside the scope, a soft-deleted
 one, one without attachment or a missing file all answer the same 404. This
-endpoint does not close the legacy ``/media/documentacion/`` alias; that closure
-is a separate decision of the CDI-F2 contract.
+endpoint serves files under the private ``cdi/documentacion/`` prefix (Nginx answers
+404 for ``/media/cdi/``); ``mover_documentacion_cdi`` moves the legacy files there.
+The shared ``/media/documentacion/`` alias stays open because Comedores uses it.
 """
 
 import os

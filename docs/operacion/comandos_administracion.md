@@ -57,6 +57,22 @@
 - `cargar_legajos`: crea ciudadanos/participantes desde Excel. Evidencia: `src/backends/cdf/centrodefamilia/management/commands/cargar_legajos.py`.
 - `reprocess_cabal`: reprocesa registros CABAL rechazados con confirmacion interactiva. Evidencia: `src/backends/cdf/centrodefamilia/management/commands/reprocess_cabal.py`.
 
+## Centro de infancia (CDI)
+- `mover_documentacion_cdi`: mueve los archivos de intervenciones CDI de `media/documentacion/` a `media/cdi/documentacion/` y actualiza el nombre guardado en cada fila (solo filas de CDI; los archivos de Comedores no se tocan). Dry-run por defecto; `--aplicar` ejecuta. Es idempotente y reanudable, informa los archivos faltantes sin fallar y borra el archivo viejo solo después de actualizar la fila. Evidencia: `src/backends/cdi/centrodeinfancia/management/commands/mover_documentacion_cdi.py`.
+
+### Pasos en producción (CDI-F2)
+Orden obligatorio: el movimiento tiene que correr **antes** de que Nginx cierre `/media/cdi/`, o en la misma ventana. Mientras haya filas con `documentacion/...` el archivo sigue accesible por la API autenticada (que lee el almacenamiento, no la URL); lo único que deja de funcionar al cerrar Nginx son los enlaces directos a `/media/cdi/`, que ya no usa ninguna pantalla.
+
+1. Respaldar `media/documentacion/` y `media/cdi/` (o confirmar el respaldo vigente) y la tabla de intervenciones CDI.
+2. Desplegar la versión con la migración `0055_documentacion_intervencion_prefijo_cdi` (solo cambia `upload_to`; no toca datos) y reiniciar `backend_cdi`.
+3. Dry-run, en el contenedor de `backend_cdi`: `python manage.py mover_documentacion_cdi`. Revisar la lista `MOVER`, los `FALTANTE` (filas cuyo archivo ya no existe; no se tocan) y los `CONFLICTO` (el destino existe con otro tamaño; resolver a mano).
+4. Aplicar: `python manage.py mover_documentacion_cdi --aplicar`. Repetirlo debe dar `movidos=0`. Si la corrida se corta, volver a correrla: es idempotente y retoma donde quedó; revisar las líneas `CONFLICTO` (un nombre que no entra en el campo, un error al actualizar la fila o un destino con otro tamaño) y resolverlas a mano.
+5. Verificar una intervención con documento: descarga por `/api/web/cdi/intervenciones/<id>/documentacion/` con un usuario con permiso.
+6. Agregar a Nginx `location ^~ /media/cdi/ { return 404; }` (ver `docs/operacion/nginx/sisoc-produccion.conf`), `nginx -t` y reload. No tocar `/media/documentacion/`: Comedores lo sigue usando.
+7. Comprobar que `https://<host>/media/cdi/documentacion/<archivo>` responde 404.
+
+Reversa: no hay comando inverso. Si hiciera falta, restaurar `media/documentacion/` desde el respaldo del paso 1 y revertir los nombres de las filas desde el respaldo de la tabla.
+
 ## Celiaquia
 - `migrar_comentarios`: migra comentarios legados de expedientes al historial; soporta `--dry-run`. Evidencia: `src/backends/celiaquia/celiaquia/management/commands/migrar_comentarios.py`.
 

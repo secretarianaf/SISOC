@@ -1311,3 +1311,10 @@ Un alta rechazada (400) desde los modales de intervención y observación lleva 
 comedor con los valores y errores del servidor (`comedorFichaRechazo.ts`: el cuerpo del 400 espera en
 `sessionStorage` hasta que la pantalla de alta lo toma con `tomarRechazo`). Registro:
 `../registro/cambios/2026-T4/2026-11-13-2785-react-comedor-ficha.md`.
+
+Los catálogos de VAT (V07.01 y V07.02: sectores, subsectores, modalidades de cursado y títulos de referencia) usan
+`GET .../vat/catalogos/<catalogo>/` y `.../<pk>/` y `GET` y `POST` `.../nuevo/` (`nueva/` en modalidades),
+`.../<pk>/editar/` y `.../<pk>/eliminar/` (`src/backends/vat/VAT/web_api_catalogos.py` y `web_api_catalogos_forms.py`):
+ejecutan las vistas nativas con el permiso de cada ruta y proyectan su contexto o corren su `form_valid` y su `post`. Las
+pantallas son `routes/vatCatalogos.tsx` y `routes/vatCatalogosForm.tsx`. Registro:
+`docs/registro/cambios/2026-T4/2026-11-13-2785-react-vat-catalogos.md`.

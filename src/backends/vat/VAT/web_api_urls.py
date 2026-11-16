@@ -19,6 +19,30 @@ from VAT.web_api_asistencia import (
     AsistenciaSesionCursoWebView,
     AsistenciaSesionOfertaWebView,
 )
+from VAT.web_api_catalogos import (
+    ModalidadCursadaDetailWebView,
+    ModalidadCursadaListWebView,
+    SectorDetailWebView,
+    SectorListWebView,
+    SubsectorDetailWebView,
+    SubsectorListWebView,
+    TituloReferenciaDetailWebView,
+    TituloReferenciaListWebView,
+)
+from VAT.web_api_catalogos_forms import (
+    ModalidadCursadaCreateWebView,
+    ModalidadCursadaDeleteWebView,
+    ModalidadCursadaUpdateWebView,
+    SectorCreateWebView,
+    SectorDeleteWebView,
+    SectorUpdateWebView,
+    SubsectorCreateWebView,
+    SubsectorDeleteWebView,
+    SubsectorUpdateWebView,
+    TituloReferenciaCreateWebView,
+    TituloReferenciaDeleteWebView,
+    TituloReferenciaUpdateWebView,
+)
 from VAT.web_api_evaluaciones_forms import (
     EvaluacionCreateWebView,
     EvaluacionDeleteWebView,
@@ -281,5 +305,109 @@ urlpatterns += [
         "inscripciones-oferta/<int:pk>/",
         InscripcionOfertaDetailWebView.as_view(),
         name="inscripciones-oferta-detail",
+    ),
+]
+
+# V07.01 y V07.02 catálogos: sectores, subsectores, modalidades de cursado y títulos de referencia (vistas nativas).
+urlpatterns += [
+    path(
+        "catalogos/sectores/nuevo/",
+        SectorCreateWebView.as_view(),
+        name="catalogos-sector-create",
+    ),
+    path(
+        "catalogos/sectores/<int:pk>/editar/",
+        SectorUpdateWebView.as_view(),
+        name="catalogos-sector-update",
+    ),
+    path(
+        "catalogos/sectores/<int:pk>/eliminar/",
+        SectorDeleteWebView.as_view(),
+        name="catalogos-sector-delete",
+    ),
+    path(
+        "catalogos/sectores/",
+        SectorListWebView.as_view(),
+        name="catalogos-sector-list",
+    ),
+    path(
+        "catalogos/sectores/<int:pk>/",
+        SectorDetailWebView.as_view(),
+        name="catalogos-sector-detail",
+    ),
+    path(
+        "catalogos/subsectores/nuevo/",
+        SubsectorCreateWebView.as_view(),
+        name="catalogos-subsector-create",
+    ),
+    path(
+        "catalogos/subsectores/<int:pk>/editar/",
+        SubsectorUpdateWebView.as_view(),
+        name="catalogos-subsector-update",
+    ),
+    path(
+        "catalogos/subsectores/<int:pk>/eliminar/",
+        SubsectorDeleteWebView.as_view(),
+        name="catalogos-subsector-delete",
+    ),
+    path(
+        "catalogos/subsectores/",
+        SubsectorListWebView.as_view(),
+        name="catalogos-subsector-list",
+    ),
+    path(
+        "catalogos/subsectores/<int:pk>/",
+        SubsectorDetailWebView.as_view(),
+        name="catalogos-subsector-detail",
+    ),
+    path(
+        "catalogos/modalidades-cursado/nueva/",
+        ModalidadCursadaCreateWebView.as_view(),
+        name="catalogos-modalidadcursada-create",
+    ),
+    path(
+        "catalogos/modalidades-cursado/<int:pk>/editar/",
+        ModalidadCursadaUpdateWebView.as_view(),
+        name="catalogos-modalidadcursada-update",
+    ),
+    path(
+        "catalogos/modalidades-cursado/<int:pk>/eliminar/",
+        ModalidadCursadaDeleteWebView.as_view(),
+        name="catalogos-modalidadcursada-delete",
+    ),
+    path(
+        "catalogos/modalidades-cursado/",
+        ModalidadCursadaListWebView.as_view(),
+        name="catalogos-modalidadcursada-list",
+    ),
+    path(
+        "catalogos/modalidades-cursado/<int:pk>/",
+        ModalidadCursadaDetailWebView.as_view(),
+        name="catalogos-modalidadcursada-detail",
+    ),
+    path(
+        "catalogos/titulos-referencia/nuevo/",
+        TituloReferenciaCreateWebView.as_view(),
+        name="catalogos-titulorreferencia-create",
+    ),
+    path(
+        "catalogos/titulos-referencia/<int:pk>/editar/",
+        TituloReferenciaUpdateWebView.as_view(),
+        name="catalogos-titulorreferencia-update",
+    ),
+    path(
+        "catalogos/titulos-referencia/<int:pk>/eliminar/",
+        TituloReferenciaDeleteWebView.as_view(),
+        name="catalogos-titulorreferencia-delete",
+    ),
+    path(
+        "catalogos/titulos-referencia/",
+        TituloReferenciaListWebView.as_view(),
+        name="catalogos-titulorreferencia-list",
+    ),
+    path(
+        "catalogos/titulos-referencia/<int:pk>/",
+        TituloReferenciaDetailWebView.as_view(),
+        name="catalogos-titulorreferencia-detail",
     ),
 ]

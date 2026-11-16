@@ -104,6 +104,8 @@ import { usuariosRoute } from "./usuarios";
 import { vatAsistenciaRoute } from "./vatAsistencia";
 import { vatInscripcionOfertaRoute } from "./vatInscripcionOferta";
 import { vatInscripcionOfertaFormRoute } from "./vatInscripcionOfertaForm";
+import { vatCatalogosRoute } from "./vatCatalogos";
+import { vatCatalogosFormRoute } from "./vatCatalogosForm";
 import { vatEvaluacionesRoute } from "./vatEvaluaciones";
 import { vatEvaluacionesFormRoute } from "./vatEvaluacionesForm";
 import { vatParametriaDetalleRoute } from "./vatParametriaDetalle";
@@ -204,6 +206,8 @@ export const ROUTES: RouteDefinition[] = [
   comedorActividadesRoute,
   comedorCursosRoute,
   vatVouchersRoute,
+  vatCatalogosRoute,
+  vatCatalogosFormRoute,
   vatEvaluacionesRoute,
   vatEvaluacionesFormRoute,
   vatResultadosRoute,

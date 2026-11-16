@@ -15320,6 +15320,106 @@
   "regex": "^api/web/vat/comisiones/sesiones/(?P<pk>[0-9]+)/asistencia/\\Z"
  },
  {
+  "name": "catalogos-modalidadcursada-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/modalidades\\-cursado/nueva/\\Z"
+ },
+ {
+  "name": "catalogos-modalidadcursada-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/modalidades\\-cursado/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "catalogos-modalidadcursada-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/modalidades\\-cursado/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "catalogos-modalidadcursada-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/modalidades\\-cursado/\\Z"
+ },
+ {
+  "name": "catalogos-modalidadcursada-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/modalidades\\-cursado/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "catalogos-sector-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/sectores/nuevo/\\Z"
+ },
+ {
+  "name": "catalogos-sector-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/sectores/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "catalogos-sector-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/sectores/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "catalogos-sector-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/sectores/\\Z"
+ },
+ {
+  "name": "catalogos-sector-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/sectores/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "catalogos-subsector-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/subsectores/nuevo/\\Z"
+ },
+ {
+  "name": "catalogos-subsector-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/subsectores/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "catalogos-subsector-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/subsectores/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "catalogos-subsector-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/subsectores/\\Z"
+ },
+ {
+  "name": "catalogos-subsector-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/subsectores/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "catalogos-titulorreferencia-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/titulos\\-referencia/nuevo/\\Z"
+ },
+ {
+  "name": "catalogos-titulorreferencia-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/titulos\\-referencia/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "catalogos-titulorreferencia-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/titulos\\-referencia/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "catalogos-titulorreferencia-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/titulos\\-referencia/\\Z"
+ },
+ {
+  "name": "catalogos-titulorreferencia-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/titulos\\-referencia/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
   "name": "centros-delete-preview",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/centros/(?P<pk>[0-9]+)/delete\\-preview/\\Z"

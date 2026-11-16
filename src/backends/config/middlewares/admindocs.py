@@ -6,6 +6,8 @@ from django.contrib.admindocs.middleware import XViewMiddleware
 
 
 _OWNED_PATTERNS = (
+    r"/api/web/vat/catalogos/(?:sectores|subsectores|modalidades-cursado|titulos-referencia)/"
+    r"(?:nuevo/|nueva/|[0-9]+/(?:editar/|eliminar/)?)?",
     r"/api/web/insumos/(?:categorias/)?[0-9]+/(?:editar|eliminar)/",
     r"/api/web/groups/[0-9]+/edit/",
     r"/api/web/users/[0-9]+/(?:deactivate|activate|edit)/",

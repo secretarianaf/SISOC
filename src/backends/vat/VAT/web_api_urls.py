@@ -73,6 +73,13 @@ from VAT.web_api_voucher_forms import (
     VoucherCreateWebView,
     VoucherMasivoWebView,
 )
+from VAT.web_api_vat_contactos import (
+    ContactoCreateWebView,
+    ContactoDeleteWebView,
+    ContactoDetailWebView,
+    ContactoListWebView,
+    ContactoUpdateWebView,
+)
 from VAT.web_api_vat_modalidad_institucional import (
     ModalidadCreateWebView,
     ModalidadDeleteWebView,
@@ -520,5 +527,34 @@ urlpatterns += [
         "modalidades-institucionales/<int:pk>/",
         ModalidadDetailWebView.as_view(),
         name="modalidades-institucionales-detail",
+    ),
+]
+
+# V06.01 contactos de institución (vistas nativas).
+urlpatterns += [
+    path(
+        "institucion/contactos/nuevo/",
+        ContactoCreateWebView.as_view(),
+        name="institucion-contactos-create",
+    ),
+    path(
+        "institucion/contactos/<int:pk>/editar/",
+        ContactoUpdateWebView.as_view(),
+        name="institucion-contactos-update",
+    ),
+    path(
+        "institucion/contactos/<int:pk>/eliminar/",
+        ContactoDeleteWebView.as_view(),
+        name="institucion-contactos-delete",
+    ),
+    path(
+        "institucion/contactos/",
+        ContactoListWebView.as_view(),
+        name="institucion-contactos-list",
+    ),
+    path(
+        "institucion/contactos/<int:pk>/",
+        ContactoDetailWebView.as_view(),
+        name="institucion-contactos-detail",
     ),
 ]

@@ -105,6 +105,7 @@ _OWNED_PATTERNS = (
     r"|buscador-ciudadano/)",
     r"/api/web/vat/inscripciones-oferta/(?:nueva/|[0-9]+/(?:editar/|eliminar/)?)?",
     r"/api/web/vat/modalidades-institucionales/(?:nueva/|[0-9]+/(?:editar/|eliminar/)?)?",
+    r"/api/web/vat/institucion/contactos/(?:nuevo/|[0-9]+/(?:editar/|eliminar/)?)?",
     r"/api/web/auditoria/(?:listado/|evento/[0-9]+/|[a-z_]+/[a-z_]+/[^/]+/)",
     r"/api/web/auditoria/[a-z_]+/[a-z_]+/[^/]+/",
     r"/api/web/comedores/comedores/(?:formulario/|crear/|[0-9]+/(?:baja/|formulario/|editar/|admision/|capacitaciones/[0-9]+/estado/)?)?",

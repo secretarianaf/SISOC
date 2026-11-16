@@ -12,6 +12,13 @@ from django.urls import path
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 
+from VAT.views.institucion import (
+    InstitucionContactoCreateView,
+    InstitucionContactoDeleteView,
+    InstitucionContactoDetailView,
+    InstitucionContactoListView,
+    InstitucionContactoUpdateView,
+)
 from VAT.views.modalidad_institucional import (
     ModalidadInstitucionalCreateView,
     ModalidadInstitucionalDeleteView,
@@ -69,6 +76,36 @@ ROUTES = (
         "vat/modalidades-institucionales/<int:pk>/eliminar/",
         ModalidadInstitucionalDeleteView,
         "VAT.delete_modalidadinstitucional",
+        "object",
+    ),
+    (
+        "vat/institucion/contactos/",
+        InstitucionContactoListView,
+        "VAT.view_institucioncontacto",
+        "list",
+    ),
+    (
+        "vat/institucion/contactos/nuevo/",
+        InstitucionContactoCreateView,
+        "VAT.add_institucioncontacto",
+        "new",
+    ),
+    (
+        "vat/institucion/contactos/<int:pk>/",
+        InstitucionContactoDetailView,
+        "VAT.view_institucioncontacto",
+        "object",
+    ),
+    (
+        "vat/institucion/contactos/<int:pk>/editar/",
+        InstitucionContactoUpdateView,
+        "VAT.change_institucioncontacto",
+        "object",
+    ),
+    (
+        "vat/institucion/contactos/<int:pk>/eliminar/",
+        InstitucionContactoDeleteView,
+        "VAT.delete_institucioncontacto",
         "object",
     ),
 )

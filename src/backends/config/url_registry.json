@@ -15890,6 +15890,31 @@
   "regex": "^api/web/vat/inscripciones\\-persona/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
+  "name": "institucion-contactos-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/contactos/nuevo/\\Z"
+ },
+ {
+  "name": "institucion-contactos-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/contactos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "institucion-contactos-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/contactos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "institucion-contactos-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/contactos/\\Z"
+ },
+ {
+  "name": "institucion-contactos-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/contactos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
   "name": "modalidades-institucionales-create",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/modalidades\\-institucionales/nueva/\\Z"

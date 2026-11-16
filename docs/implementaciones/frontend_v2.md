@@ -1393,3 +1393,8 @@ iframes de la plantilla. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-
 `GET /api/web/encuestas/<pk>/revision/` (`src/backends/sisoc_core/encuestas/web_api_revision.py`) corre `EncuestaRevisionView`; aprobar y rechazar
 (`POST .../aprobar/` y `.../rechazar/`) corren sus vistas nativas y la ruta `routes/encuestasRevision.tsx` navega al redirect con el mensaje en cola.
 Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-encuestas-revision.md`.
+
+Los contactos de institución de VAT (V06.01) usan `GET /api/web/vat/institucion/contactos/` y `.../<pk>/`, y `GET` y `POST` `.../nuevo/`,
+`.../<pk>/editar/` y `.../<pk>/eliminar/` (`src/backends/vat/VAT/web_api_vat_contactos.py`, sobre las bases de `web_api_vat_centros_base.py`):
+corren las vistas nativas `InstitucionContacto*View`, con sus filtros, el centro bloqueado por `?centro=` y el mensaje nativo en cola. Rutas
+React: `routes/vatContactos.tsx` y `routes/vatContactosForm.tsx`. El acceso es el de cada ruta nativa.

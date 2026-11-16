@@ -9,7 +9,8 @@ from django.contrib.auth.models import Permission
 from django.test import Client, override_settings
 
 from config.urls_all import urlpatterns as monolith_patterns
-from VAT.models import ModalidadInstitucional
+from core.models import Localidad, Municipio, Provincia
+from VAT.models import Centro, InstitucionContacto, ModalidadInstitucional
 from VAT.web_preview_vat_centros_lista import ROUTES, centros_preview_patterns
 
 pytestmark = pytest.mark.django_db
@@ -43,9 +44,26 @@ def preview_fixture(tmp_path):
         yield
 
 
+def crear_centro():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Tolosa", municipio=municipio)
+    return Centro.objects.create(
+        nombre="CFP 401",
+        codigo="060144900",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+
+
 def _pks():
+    centro = crear_centro()
     return {
-        ModalidadInstitucional: ModalidadInstitucional.objects.create(nombre="M").pk
+        ModalidadInstitucional: ModalidadInstitucional.objects.create(nombre="M").pk,
+        InstitucionContacto: InstitucionContacto.objects.create(
+            centro=centro, tipo="email", valor="a@b.com"
+        ).pk,
     }
 
 

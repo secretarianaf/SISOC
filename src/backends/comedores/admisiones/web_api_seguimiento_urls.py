@@ -6,6 +6,11 @@ Ver ``admisiones.web_api_listas``.
 from django.urls import include, path
 
 from admisiones.web_api_detalle import AdmisionDetailWebView
+from admisiones.web_api_documentos import (
+    DocumentoEliminarWebView,
+    DocumentoPersonalizadoWebView,
+    DocumentoSubirWebView,
+)
 from admisiones.web_api_editor import EditorAccionWebView, EditorWebView
 from admisiones.web_api_listas import LegalesListaWebView, TecnicosListaWebView
 
@@ -23,5 +28,20 @@ urlpatterns = [
         "<int:pk>/acciones/<slug:accion>/",
         EditorAccionWebView.as_view(),
         name="admisiones_web_editor_accion",
+    ),
+    path(
+        "<int:admision_id>/documentacion/<int:documentacion_id>/subir/",
+        DocumentoSubirWebView.as_view(),
+        name="admisiones_web_documento_subir",
+    ),
+    path(
+        "<int:admision_id>/documentacion/personalizada/agregar/",
+        DocumentoPersonalizadoWebView.as_view(),
+        name="admisiones_web_documento_personalizado",
+    ),
+    path(
+        "<int:admision_id>/documentacion/<int:documentacion_id>/eliminar/",
+        DocumentoEliminarWebView.as_view(),
+        name="admisiones_web_documento_eliminar",
     ),
 ]

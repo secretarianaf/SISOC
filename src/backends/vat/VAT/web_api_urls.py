@@ -16,6 +16,13 @@ from VAT.web_api_inscripcion_oferta import (
     InscripcionOfertaUpdateWebView,
 )
 from VAT.web_api_buscador_ciudadano import BuscadorCiudadanoWebView
+from VAT.web_api_comision_detalle import (
+    ComisionCursoResultadosWebView,
+    ComisionDetalleCursoWebView,
+    ComisionDetalleOfertaWebView,
+    ProfesorCentroBuscarWebView,
+    ProfesorCentroCrearWebView,
+)
 from VAT.web_api_inscripcion_acciones import (
     InscripcionCambiarEstadoWebView,
     InscripcionCursoCambiarEstadoLoteWebView,
@@ -556,5 +563,34 @@ urlpatterns += [
         "institucion/contactos/<int:pk>/",
         ContactoDetailWebView.as_view(),
         name="institucion-contactos-detail",
+    ),
+]
+
+# V04.01 detalle de comisión (U4): vistas nativas ``ComisionDetailView`` y ``ComisionCursoDetailView``.
+urlpatterns += [
+    path(
+        "comisiones-detalle/cursos/<int:pk>/resultados/",
+        ComisionCursoResultadosWebView.as_view(),
+        name="comisiones-detalle-curso-resultados",
+    ),
+    path(
+        "comisiones-detalle/cursos/<int:pk>/profesores/buscar/",
+        ProfesorCentroBuscarWebView.as_view(),
+        name="comisiones-detalle-curso-profesores-buscar",
+    ),
+    path(
+        "comisiones-detalle/cursos/<int:pk>/profesores/nuevo/",
+        ProfesorCentroCrearWebView.as_view(),
+        name="comisiones-detalle-curso-profesores-nuevo",
+    ),
+    path(
+        "comisiones-detalle/cursos/<int:pk>/",
+        ComisionDetalleCursoWebView.as_view(),
+        name="comisiones-detalle-curso",
+    ),
+    path(
+        "comisiones-detalle/<int:pk>/",
+        ComisionDetalleOfertaWebView.as_view(),
+        name="comisiones-detalle-oferta",
     ),
 ]

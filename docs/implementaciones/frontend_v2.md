@@ -880,6 +880,10 @@ Acciones del detalle y complementario (AD02.02): `web_api_informe_acciones.py` (
 `web_api_informe_complementario.py` (GET y POST de `informes/complementario/<tipo>/<pk>/`) ejecutan los manejadores
 nativos con el cuerpo como POST y devuelven mensajes y la URL a la que React redirige; ver
 `../registro/cambios/2026-T4/2026-11-13-2785-react-admisiones-informe-acciones.md`.
+Documentación de la admisión (AD02.03): `web_api_documentos.py` ejecuta las funciones nativas de subir, adjuntar y eliminar
+archivos (`documentacion/<id>/subir/`, `documentacion/personalizada/agregar/`, `documentacion/<id>/eliminar/`) y devuelve
+el JSON nativo sin HTML; el editor arma la fila con los datos. Ver
+`../registro/cambios/2026-T4/2026-11-16-2785-react-admisiones-documentos.md`.
 
 Circuito técnico/legal de admisiones (AD03.01, entrega de listados):
 `src/backends/comedores/admisiones/web_api_listas.py` ejecuta `AdmisionesTecnicosListView` y
@@ -1304,6 +1308,14 @@ nativas de `views/persona.py`, `oferta_institucional.py`, `curso.py` y `buscador
 POST de escritura devuelven `{"ok": true, "redirect": ...}` (el mensaje nativo queda encolado) o 400 con el formulario ligado; las
 exportaciones CSV/XLSX del buscador siguen siendo el POST nativo de la página. Rutas React: `vatInscripcion.tsx`, `vatInscripcionForm.tsx`
 y `vatBuscadorCiudadano.tsx`. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-vat-inscripcion-persona.md`.
+
+El detalle de comisión (V04.01, U4) usa `GET /api/web/vat/comisiones-detalle/<pk>/` (oferta) y `.../comisiones-detalle/cursos/<pk>/`
+(curso) (`src/backends/vat/VAT/web_api_comision_detalle.py`): ejecutan `ComisionDetailView` y `ComisionCursoDetailView` (las dos usan
+`comision_detail.html`) con el permiso de la ruta nativa (`VAT.view_comision` o `VAT.view_comisioncurso`) y su alcance (404 fuera
+de él) y proyectan sus datos, tablas, permisos `puede_*` y enlaces. Ruta React: `vatComisionDetalle.tsx`; las acciones de la página (estado, lote, alta rápida y resultados: `POST .../cursos/<pk>/resultados/`, `profesores/buscar/` y
+`profesores/nuevo/`) usan las vistas nativas y las que todavía
+no migran (eliminar la comisión, alta, edición y baja de horarios, baja de inscripción) enlazan a su pantalla nativa y las
+descargas de nómina siguen siendo las nativas. Registro: `../registro/cambios/2026-T4/2026-11-16-2785-react-vat-comision-detalle.md`.
 
 Las intervenciones y observaciones de comedor (CO02, CO06) usan `src/backends/comedores/intervenciones/web_api.py`,
 `web_api_formulario.py` y `web_api_baja.py` bajo `/api/web/comedores/intervenciones/` (listado `comedor/<pk>/`, ficha `<pk>/`,

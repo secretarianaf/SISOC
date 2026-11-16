@@ -812,7 +812,7 @@ function Fila({ doc, admisionId, toast, reload, pedirObservacion, pedirEliminar 
     setProgreso(0);
     const form = new FormData();
     form.append("archivo", file);
-    const r = await editorNative.upload(`/admision/${admisionId}/documentacion/${doc.documentacion_id}/subir/`, form, setProgreso);
+    const r = await editorNative.upload(`/api/web/comedores/admisiones/${admisionId}/documentacion/${doc.documentacion_id}/subir/`, form, setProgreso);
     if (r.status === 200) {
       const data = JSON.parse(r.body) as { success?: boolean; error?: string };
       if (data.success) reload(); else editorNative.alert("Error al subir el archivo: " + (data.error || ""));
@@ -930,7 +930,7 @@ function Documentos({ data, toast, reload }: { data: EditorData; toast: (t: Toas
     const doc = eliminar!;
     const identifier = doc.documentacion_id !== null ? doc.documentacion_id : doc.archivo_id;
     if (identifier === null) return;
-    let url = `/admision/${data.id}/documentacion/${identifier}/eliminar/`;
+    let url = `/api/web/comedores/admisiones/${data.id}/documentacion/${identifier}/eliminar/`;
     if (doc.archivo_id !== null) url += `?archivo_id=${doc.archivo_id}`;
     try {
       const r = await editorNative.remove(url);

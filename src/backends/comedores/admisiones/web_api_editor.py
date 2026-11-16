@@ -475,7 +475,9 @@ def projection(request, context, admision, pk):
             ),
             "pagina": reverse("admisiones_tecnicos_editar", args=[pk]),
             "localidades": reverse("ajax_load_localidades"),
-            "agregar_documento": reverse("documento_personalizado_crear", args=[pk]),
+            "agregar_documento": reverse(
+                "admisiones_web_documento_personalizado", args=[pk]
+            ),
             "resync": reverse("admision_resync_convenio", args=[pk]),
         },
         "botones": [

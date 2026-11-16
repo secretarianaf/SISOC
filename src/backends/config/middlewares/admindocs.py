@@ -59,6 +59,7 @@ _OWNED_PATTERNS = (
     r"(?:variables/|incidencias/(?:[0-9]+/)?|[0-9]+/(?:(?:publicar|archivar|destacado|eliminar)/)?)?",
     r"/api/web/comedores/admisiones/informes/[a-z]+/(?:admision/)?[0-9]+/(?:formulario/|guardar/)?",
     r"/api/web/comedores/admisiones/informes/(?:complementario/)?[a-z]+/[0-9]+/(?:docx-editado/|revision/)?",
+    r"/api/web/comedores/admisiones/[0-9]+/documentacion/(?:[0-9]+/(?:subir|eliminar)/|personalizada/agregar/)",
     r"/api/web/comedores/admisiones/(?:tecnicos/|legales/|[0-9]+/[0-9]+/detalle/"
     r"|[0-9]+/(?:acciones/[a-z-]+/)?"
     r"|legales/[0-9]+/(?:acciones/[a-z-]+/|complementario/revision/)?)",
@@ -100,6 +101,7 @@ _OWNED_PATTERNS = (
     r"|resultados-evaluacion/(?:nuevo/|[0-9]+/(?:editar/|eliminar/)?)?"
     r"|reportes/inscripciones-asistencias/)",
     r"/api/web/vat/(?:cursos/)?comisiones/sesiones/[0-9]+/asistencia/",
+    r"/api/web/vat/comisiones-detalle/(?:[0-9]+/|cursos/[0-9]+/(?:resultados/|profesores/(?:buscar|nuevo)/)?)",
     r"/api/web/vat/(?:inscripciones-persona/(?:nueva/|rapida-comision/|[0-9]+/(?:editar/|eliminar/|cambiar-estado/)?"
     r"|cursos/(?:rapida-comision/|[0-9]+/cambiar-estado/|comisiones/[0-9]+/cambiar-estado-lote/))?"
     r"|buscador-ciudadano/)",

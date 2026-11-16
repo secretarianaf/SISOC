@@ -287,7 +287,7 @@ describe("Technical admision editor (AD03.02)", () => {
     setup();
     await screen.findByText("Documentos requeridos");
     fireEvent.change(document.getElementById("file-3")!, { target: { files: [new File(["x"], "e.pdf")] } });
-    await waitFor(() => expect(upload).toHaveBeenCalledWith("/admision/5/documentacion/3/subir/", expect.any(FormData), expect.any(Function)));
+    await waitFor(() => expect(upload).toHaveBeenCalledWith("/api/web/comedores/admisiones/5/documentacion/3/subir/", expect.any(FormData), expect.any(Function)));
     await waitFor(() => expect(webGet).toHaveBeenCalledWith(`${API}?r=1`, expect.anything()));
     fireEvent.change(screen.getByPlaceholderText("Nombre del documento adicional"), { target: { value: "Nota" } });
     fireEvent.change(document.getElementById("nuevoDocumentoArchivo")!, { target: { files: [new File(["x"], "n.pdf")] } });
@@ -296,7 +296,7 @@ describe("Technical admision editor (AD03.02)", () => {
     const modal = await screen.findByRole("dialog");
     expect(within(modal).getByText("¿Seguro que quiere eliminar el siguiente archivo?")).toBeTruthy();
     fireEvent.click(within(modal).getByRole("button", { name: "Eliminar" }));
-    await waitFor(() => expect(remove).toHaveBeenCalledWith("/admision/5/documentacion/4/eliminar/?archivo_id=12"));
+    await waitFor(() => expect(remove).toHaveBeenCalledWith("/api/web/comedores/admisiones/5/documentacion/4/eliminar/?archivo_id=12"));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 

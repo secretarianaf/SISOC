@@ -18,10 +18,12 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from ciudadanos.web_preview import BUILD_ASSETS, PUBLIC_ASSETS, _index
 from core.decorators import permissions_any_required
 from encuestas.views import (
+    EncuestaCreateView,
     EncuestaListView,
     EncuestaResultadosView,
     EncuestaRevisionView,
     EncuestaSegmentacionView,
+    EncuestaUpdateView,
 )
 
 
@@ -73,6 +75,29 @@ class RevisionEntry(EncuestaRevisionView):
         return _index(request, self.index_bytes)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CrearEntry(EncuestaCreateView):
+    """Native login first, then the frozen React index; the native POST keeps its HTML flow."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EditarEntry(EncuestaUpdateView):
+    """Native login, 404 and pending-survey redirect first, then the frozen React index."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        if isinstance(response, HttpResponseRedirect):
+            return response
+        return _index(request, self.index_bytes)
+
+
 def encuestas_preview_patterns(build_directory):
     """Freeze the index of an explicit local ``apps/sisoc`` build for a disposable URLconf."""
     original = Path(build_directory)
@@ -91,6 +116,18 @@ def encuestas_preview_patterns(build_directory):
             permissions_any_required(
                 ["encuestas.view_encuesta", "encuestas.ver_resultados"]
             )(ListaEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "encuestas/crear/",
+            permissions_any_required(["encuestas.add_encuesta"])(
+                CrearEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "encuestas/<int:pk>/editar/",
+            permissions_any_required(["encuestas.change_encuesta"])(
+                EditarEntry.as_view(index_bytes=index_bytes)
+            ),
         ),
         path(
             "encuestas/<int:pk>/revision/",

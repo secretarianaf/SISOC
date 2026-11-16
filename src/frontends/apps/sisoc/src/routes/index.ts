@@ -67,6 +67,7 @@ import { dispositivosRoute } from "./dispositivos";
 import { cdfCentroUsuarioRoute } from "./cdfCentroUsuario";
 import { dashboardRoute, dashboardTableroRoute } from "./dashboardTableros";
 import { duplasRoute } from "./duplas";
+import { encuestasFormularioRoute } from "./encuestasFormulario";
 import { encuestasListaRoute } from "./encuestasLista";
 import { encuestasResultadosRoute } from "./encuestasResultados";
 import { encuestasRevisionRoute } from "./encuestasRevision";
@@ -153,6 +154,7 @@ export const ROUTES: RouteDefinition[] = [
   encuestasSegmentacionRoute,
   encuestasResultadosRoute,
   encuestasListaRoute,
+  encuestasFormularioRoute,
   dashboardRoute,
   dashboardTableroRoute,
   encuestasRevisionRoute,

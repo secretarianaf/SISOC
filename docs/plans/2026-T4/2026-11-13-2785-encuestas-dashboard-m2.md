@@ -114,12 +114,23 @@ E04 se entrega en subunidades; cada una activa solo los pathname que cubre.
   lista, o la revisión otra vez si el servicio rechaza). Un motivo inválido es el 400 nativo con `errors.motivo`: el modal sigue
   abierto con el error y el texto escrito. Repetir una transición devuelve el error nativo sin cambios.
 
-### E04.C Formulario de alta y edición (pendiente)
+### E04.C Formulario de alta y edición (entregada)
 
-- `EncuestaCreateView` y `EncuestaUpdateView` (`add_encuesta` y `change_encuesta`): campos generales, editor de preguntas
-  (`preguntas_json`, validado con `reemplazar_preguntas`), condiciones, opciones y ponderación, y el menú «Exportar JSON»
-  (`encuestas_exportar`). Sin implementar: el editor dinámico (`encuestaPreguntasBuilder.js`, 571 líneas, con arrastre) es la
-  parte de mayor riesgo de paridad.
+- `GET /api/web/encuestas/crear/` (`encuestas.add_encuesta`) y `GET .../<pk>/editar/` (`encuestas.change_encuesta`) corren
+  `EncuestaCreateView` y `EncuestaUpdateView` y proyectan `encuesta_form.html`: el valor de cada campo como lo imprime el widget, sus
+  errores y los atributos `aria-invalid` y `aria-describedby`, el motivo de rechazo de un borrador devuelto, las preguntas del editor
+  (`preguntas_json_inicial`, el formato de `serializar_preguntas`), los tipos y operadores de condición y la URL de «Exportar JSON»
+  (`encuestas_exportar`, solo al editar). Una encuesta pendiente de aprobación responde el redirect nativo a su revisión; una inexistente es 404.
+- `POST` en la misma ruta corre la vista nativa sobre la misma petición. Un formulario válido deja el mensaje nativo en cola
+  («Encuesta creada correctamente.» o «Encuesta actualizada correctamente.») y responde `{ok, redirect: "/encuestas/"}`; uno inválido
+  (campos, `preguntas_json` rechazado por `reemplazar_preguntas`, encuesta pendiente o con ronda abierta) es 400 con la misma proyección:
+  valores enviados, errores y las preguntas enviadas, sin cambios persistidos (la transacción de la vista nativa los revierte).
+- La pantalla (`routes/encuestasFormulario.tsx`) reproduce el editor de `encuestaPreguntasBuilder.js`: alta, cambio de tipo (opciones,
+  ponderación y máximo de caracteres según el tipo), puntaje por opción por texto de opción, condiciones que solo referencian preguntas
+  anteriores con valor de lista cerrada para Sí/No y opciones, reordenamiento por arrastre (marcas de destino, desplazamiento automático,
+  animación y aviso) y con las flechas del teclado, validación de dependencias al mover, y el modal «Quitar pregunta» con foco y Tab
+  atrapado. Envía `preguntas_json` con la serialización nativa y el resto de los campos con el `FormData` del propio formulario (el
+  intervalo de recordatorio deshabilitado no viaja). Tras un 400 vuelve al inicio, como la recarga nativa.
 
 ## D01 Dashboards y tableros (entregada)
 

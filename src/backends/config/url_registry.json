@@ -2810,6 +2810,16 @@
   "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/aprobar/\\Z"
  },
  {
+  "name": "encuestas_web_crear",
+  "namespace": "",
+  "regex": "^api/web/encuestas/crear/\\Z"
+ },
+ {
+  "name": "encuestas_web_editar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
   "name": "encuestas_web_importar",
   "namespace": "",
   "regex": "^api/web/encuestas/importar/\\Z"

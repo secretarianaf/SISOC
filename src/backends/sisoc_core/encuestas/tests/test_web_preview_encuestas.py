@@ -136,3 +136,44 @@ def test_revision_keeps_native_guards_then_frozen_index(preview):
     assert response.status_code == 200
     assert "/ciudadanos/react/assets/app-1.js" in response.content.decode()
     assert client.get("/encuestas/0/revision/").status_code == 404
+
+
+def test_formulario_keeps_native_guards_then_frozen_index(preview):
+    gestor, client = _client(
+        "prev_form", "encuestas.add_encuesta", "encuestas.change_encuesta"
+    )
+    encuesta = crear_encuesta(
+        usuario=gestor, titulo="Formulario", es_obligatoria=True, duracion_ronda_dias=3
+    )
+    for url in ("/encuestas/crear/", f"/encuestas/{encuesta.pk}/editar/"):
+        assert Client().get(url).status_code == 403
+        assert _client("prev_form_sin" + url[-6:-1])[1].get(url).status_code == 403
+        response = client.get(url)
+        assert response.status_code == 200
+        assert "/ciudadanos/react/assets/app-1.js" in response.content.decode()
+        assert "no-store" in response["Cache-Control"]
+    assert client.get("/encuestas/0/editar/").status_code == 404
+
+
+def test_formulario_edit_pending_survey_keeps_the_native_redirect(preview):
+    gestor, client = _client("prev_form_pend", "encuestas.change_encuesta")
+    encuesta = crear_encuesta(
+        usuario=gestor, titulo="Pendiente", es_obligatoria=True, duracion_ronda_dias=3
+    )
+    Pregunta.objects.create(
+        encuesta=encuesta, texto="¿Sí?", tipo=TipoPregunta.SI_NO, orden=1
+    )
+    actualizar_segmentacion(encuesta, tipo=TipoSegmentacion.TODOS_LOS_USUARIOS)
+    solicitar_publicacion(encuesta, usuario=gestor)
+    response = client.get(f"/encuestas/{encuesta.pk}/editar/")
+    assert response.status_code == 302
+    assert response["Location"] == f"/encuestas/{encuesta.pk}/revision/"
+
+
+def test_formulario_post_stays_native(preview):
+    gestor, client = _client("prev_form_post", "encuestas.add_encuesta")
+    response = client.post(
+        "/encuestas/crear/",
+        {"titulo": "Nativa", "modalidad": "opcional", "duracion_ronda_dias": "4"},
+    )
+    assert response.status_code == 302 and response["Location"] == "/encuestas/"

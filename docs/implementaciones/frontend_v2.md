@@ -1370,6 +1370,14 @@ barra de filtros; «Solicitar publicación» (`POST .../<pk>/publicar/`) e «Imp
 cola y la ruta `routes/encuestasLista.tsx` (`/encuestas/`) navega al redirect, como el formulario nativo. La revisión y el
 formulario de encuestas siguen nativos. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-encuestas-lista.md`.
 
+`GET /api/web/encuestas/<pk>/revision/` (`src/backends/sisoc_core/encuestas/web_api_revision.py`) corre `EncuestaRevisionView`; aprobar y rechazar
+(`POST .../aprobar/` y `.../rechazar/`) corren sus vistas nativas y la ruta `routes/encuestasRevision.tsx` navega al redirect con el mensaje en cola.
+Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-encuestas-revision.md`.
+
+`GET/POST /api/web/encuestas/crear/` y `.../<pk>/editar/` (`src/backends/sisoc_core/encuestas/web_api_formulario.py`) corren `EncuestaCreateView` y
+`EncuestaUpdateView`; la ruta `routes/encuestasFormulario.tsx` reproduce el editor de preguntas nativo (arrastre, condiciones, ponderación) y envía
+`preguntas_json` con su serialización. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-encuestas-formulario.md`.
+
 `GET /api/web/dashboard/centro-de-familia/` y `GET /api/web/dashboard/<slug>/` (`src/backends/sisoc_core/dashboard/web_api_dashboard.py`) corren
 `DashboardView` y `TableroEmbedView`; la ruta `routes/dashboardTableros.tsx` dibuja los indicadores solo con `dashboard.view_dashboard` y los
 iframes de la plantilla. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-dashboard-tableros.md`.

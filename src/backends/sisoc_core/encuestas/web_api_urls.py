@@ -2,6 +2,7 @@
 
 from django.urls import path
 
+from encuestas.web_api_formulario import CrearWebView, EditarWebView
 from encuestas.web_api_lista import ListaWebView, PublicarWebView, RondaCerrarWebView
 from encuestas.web_api_resultados import ResultadosWebView
 from encuestas.web_api_revision import (
@@ -18,6 +19,8 @@ from encuestas.web_api_segmentacion import (
 )
 
 urlpatterns = [
+    path("crear/", CrearWebView.as_view(), name="encuestas_web_crear"),
+    path("<int:pk>/editar/", EditarWebView.as_view(), name="encuestas_web_editar"),
     path(
         "<int:pk>/revision/", RevisionWebView.as_view(), name="encuestas_web_revision"
     ),

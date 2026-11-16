@@ -4,6 +4,8 @@ Módulo centralizado para validaciones de permisos en comunicados.
 
 from django.core.exceptions import PermissionDenied
 from comedores.api import (
+    acotar_ids_comedores_por_programa,
+    acotar_ids_organizaciones_por_programa,
     obtener_ids_comedores,
     obtener_ids_comedores_del_tecnico,
     obtener_ids_organizaciones,
@@ -195,25 +197,29 @@ def require_seleccionar_destinatarios_permission(user):
 
 
 def get_ids_comedores_del_usuario(user) -> tuple[int, ...]:
-    """Retorna los identificadores de comedores que puede ver/enviar el usuario."""
+    """Comedores que puede ver/enviar el usuario (con su alcance por programa)."""
 
     if tiene_alcance_total_destinatarios(user):
-        return obtener_ids_comedores()
-    if es_tecnico(user):
-        return get_ids_comedores_del_tecnico(user)
-    return ()
+        ids = obtener_ids_comedores()
+    elif es_tecnico(user):
+        ids = get_ids_comedores_del_tecnico(user)
+    else:
+        return ()
+    return acotar_ids_comedores_por_programa(user, ids)
 
 
 def get_ids_organizaciones_del_usuario(user) -> tuple[int, ...]:
-    """Retorna los identificadores de organizaciones que puede ver/enviar el usuario."""
+    """Organizaciones que puede ver/enviar el usuario (con su alcance por programa)."""
 
     if tiene_alcance_total_destinatarios(user):
-        return obtener_ids_organizaciones()
-    if es_tecnico(user):
-        return obtener_ids_organizaciones_de_comedores(
+        ids = obtener_ids_organizaciones()
+    elif es_tecnico(user):
+        ids = obtener_ids_organizaciones_de_comedores(
             get_ids_comedores_del_tecnico(user)
         )
-    return ()
+    else:
+        return ()
+    return acotar_ids_organizaciones_por_programa(user, ids)
 
 
 # Permisos para comunicados internos

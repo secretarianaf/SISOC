@@ -15615,9 +15615,24 @@
   "regex": "^api/web/vat/centros/\\Z"
  },
  {
+  "name": "centros-lista",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-lista/\\Z"
+ },
+ {
+  "name": "centros-lista-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-lista/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
   "name": "centros-options",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/centros/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "centros-usuarios-generar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-usuarios/(?P<pk>[0-9]+)/generar/\\Z"
  },
  {
   "name": "ciudadano-aporte",

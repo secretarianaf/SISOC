@@ -124,6 +124,13 @@ from VAT.web_api_vat_modalidad_institucional import (
     ModalidadListWebView,
     ModalidadUpdateWebView,
 )
+from VAT.web_api_vat_centro_usuario import (
+    CentroGenerarUsuarioWebView,
+)
+from VAT.web_api_vat_centros import (
+    CentroDeleteWebView,
+    CentroListWebView,
+)
 from VAT.web_api_reportes import ReporteInscripcionesAsistenciasWebView
 from VAT.web_api_resultados import (
     ResultadoCreateWebView,
@@ -748,5 +755,28 @@ urlpatterns += [
         "comisiones-formularios/cursos/<int:pk>/eliminar/",
         ComisionCursoDeleteWebView.as_view(),
         name="comisiones-formularios-curso-delete",
+    ),
+]
+
+# V06.01 lista y baja de centros (vistas nativas).
+urlpatterns += [
+    path(
+        "centros-lista/",
+        CentroListWebView.as_view(),
+        name="centros-lista",
+    ),
+    path(
+        "centros-lista/<int:pk>/eliminar/",
+        CentroDeleteWebView.as_view(),
+        name="centros-lista-delete",
+    ),
+]
+
+# V06.02 generar usuario de un centro (vista nativa).
+urlpatterns += [
+    path(
+        "centros-usuarios/<int:pk>/generar/",
+        CentroGenerarUsuarioWebView.as_view(),
+        name="centros-usuarios-generar",
     ),
 ]

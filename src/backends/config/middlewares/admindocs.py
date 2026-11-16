@@ -112,6 +112,8 @@ _OWNED_PATTERNS = (
     r"/api/web/vat/institucion/contactos/(?:nuevo/|[0-9]+/(?:editar/|eliminar/)?)?",
     r"/api/web/vat/institucion/ubicaciones/(?:nuevo/|[0-9]+/(?:editar/|eliminar/)?)?",
     r"/api/web/vat/institucion/identificadores/(?:nuevo/|[0-9]+/(?:editar/|eliminar/)?)?",
+    r"/api/web/vat/centros-usuarios/[0-9]+/generar/",
+    r"/api/web/vat/centros-lista/(?:[0-9]+/eliminar/)?",
     r"/api/web/auditoria/(?:listado/|evento/[0-9]+/|[a-z_]+/[a-z_]+/[^/]+/)",
     r"/api/web/auditoria/[a-z_]+/[a-z_]+/[^/]+/",
     r"/api/web/comedores/comedores/(?:formulario/|crear/|[0-9]+/(?:baja/|formulario/|editar/|admision/|capacitaciones/[0-9]+/estado/)?)?",

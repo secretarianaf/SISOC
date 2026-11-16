@@ -12,6 +12,13 @@ from django.urls import path
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 
+from VAT.views.centro import (
+    CentroDeleteView,
+    CentroListView,
+)
+from VAT.views.generar_usuario import (
+    GenerarUsuarioCentroVATView,
+)
 from VAT.views.institucion import (
     InstitucionContactoCreateView,
     InstitucionContactoDeleteView,
@@ -180,6 +187,28 @@ ROUTES = (
     ),
 )
 
+# (route, native view, permission, kind of native GET): centros
+CENTROS_ROUTES = (
+    (
+        "vat/centros/<int:pk>/generar-usuario/",
+        GenerarUsuarioCentroVATView,
+        "VAT.view_centro",
+        "new",
+    ),
+    (
+        "vat/centros/",
+        CentroListView,
+        "VAT.view_centro",
+        "list",
+    ),
+    (
+        "vat/centros/<int:pk>/eliminar/",
+        CentroDeleteView,
+        "VAT.view_centro",
+        "object",
+    ),
+)
+
 
 def _entry_class(view, kind):
     entry = type(
@@ -204,7 +233,7 @@ def centros_preview_patterns(build_directory):
     )
     return [
         path(route, _entry(_entry_class(view, kind), permission, index_bytes))
-        for route, view, permission, kind in ROUTES
+        for route, view, permission, kind in ROUTES + CENTROS_ROUTES
     ] + [
         path(
             "vat/react/<path:asset_path>",

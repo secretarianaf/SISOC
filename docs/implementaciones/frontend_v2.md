@@ -1378,6 +1378,20 @@ VAT modalidad institucional (V06, U8a1): listado, detalle, alta, edición y baja
 entradas de vista previa están en `web_preview_vat_centros_lista.py`. Las pantallas son `routes/vatModalidadInstitucional.tsx`
 y `routes/vatModalidadInstitucionalForm.tsx`. Se conserva la peculiaridad nativa: una descripción nula se imprime como «None».
 
+«Generar usuario» de un centro de VAT (V06.02) usa `GET` y `POST` `/api/web/vat/centros-usuarios/<pk>/generar/`
+(`src/backends/vat/VAT/web_api_vat_centro_usuario.py`). Corre `GenerarUsuarioCentroVATView` con su `dispatch` (404 del centro y, después, el predicado
+`puede_generar_usuario_centro_vat`: delegación del grupo CFP, edición del centro y cupo, 403). El GET devuelve el formulario precargado; un POST válido
+responde 201 con lo que muestra la página nativa de resultado, la contraseña temporal incluida, una sola vez y con `Cache-Control: private, no-store`: la
+pantalla la guarda solo en memoria (sin almacenamiento, URL ni historial), ningún GET la devuelve y el POST nunca se reintenta. Un POST inválido responde 400
+con el formulario ligado. Pantalla: `routes/vatCentrosUsuario.tsx`; el acceso es el de la ruta nativa.
+
+La lista de centros de VAT (V06.01) y su baja (V06.02) usan `GET /api/web/vat/centros-lista/` y `GET` y `POST` `/api/web/vat/centros-lista/<pk>/eliminar/`
+(`src/backends/vat/VAT/web_api_vat_centros.py`; el prefijo `centros/` es de la API INET). Corren las vistas nativas `CentroListView` (alcance por usuario,
+búsqueda, filtros avanzados, páginas sin conteo y favoritos) y `CentroDeleteView` (su `dispatch` da el mismo 403 y 404; el GET devuelve la vista previa de la
+baja lógica en cascada y el POST da de baja con el mensaje nativo). La baja de cada fila sigue siendo un formulario con `confirm()`. El tour de ayuda es el
+nativo (`vatTour.tsx`). `vat_centros_ajax` y los `vat_ajax_*` siguen nativos: ninguna pantalla React los llama. Pantallas: `routes/vatCentrosLista.tsx` y
+`routes/vatCentrosBaja.tsx`. La baja conserva un defecto nativo: el botón Cancelar apunta a `centro_detail`, la ruta de Centro de Familia.
+
 ### Encuestas sobre G1: segmentación (E02)
 
 `GET /api/web/encuestas/<pk>/segmentacion/` (`src/backends/sisoc_core/encuestas/web_api_segmentacion.py`, rutas en `src/backends/sisoc_core/encuestas/web_api_urls.py`)

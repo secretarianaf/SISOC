@@ -70,7 +70,6 @@ from VAT.services.sesion_comision_service.impl import SesionComisionService
 from ciudadanos.models import Ciudadano
 from iam.services import user_has_permission_code
 
-
 # Campos de los filtros de búsqueda: sus catálogos alcanzan con permiso de lectura.
 FILTER_FIELDS = {
     "centros": {"provincia", "municipio", "localidad"},

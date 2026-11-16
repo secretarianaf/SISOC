@@ -10,7 +10,6 @@ import pytest
 
 from scripts.ci import pr_doc_automation
 
-
 WORKFLOW_PATH = Path(__file__).resolve().parents[4] / ".github/workflows/pr-docs.yml"
 
 

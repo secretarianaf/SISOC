@@ -9,7 +9,6 @@ from django.views.generic.detail import SingleObjectMixin
 from comedores.forms.actividades_pnud_form import ActividadPnudForm
 from pwa.models import CatalogoActividadPWA
 
-
 VIEW_PERMISSION = "pwa.view_catalogoactividadpwa"
 MANAGE_PERMISSION = "pwa.manage_catalogoactividadpwa"
 

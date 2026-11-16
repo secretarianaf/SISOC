@@ -6,7 +6,6 @@ from django.urls import reverse
 
 from users.bootstrap.groups_seed import permission_codes_for_bootstrap_group
 
-
 pytestmark = pytest.mark.django_db
 
 

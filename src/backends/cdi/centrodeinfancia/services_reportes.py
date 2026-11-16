@@ -42,7 +42,6 @@ from ciudadanos.models import Ciudadano
 from core.constants import UserGroups
 from core.models import Provincia
 
-
 logger = logging.getLogger("django")
 
 CHUNK_SIZE = 500

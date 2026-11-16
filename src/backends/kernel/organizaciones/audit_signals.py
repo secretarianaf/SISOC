@@ -7,7 +7,6 @@ from audittrail.api import ACTION_CREATE, ACTION_DELETE, ACTION_UPDATE, registra
 from core.soft_delete.signals import post_soft_delete
 from organizaciones.models import Aval
 
-
 DELETE_EVENT_LOGGED_ATTR = "_audittrail_delete_logged"
 PREVIOUS_STATE_ATTR = "_audittrail_previous_state"
 

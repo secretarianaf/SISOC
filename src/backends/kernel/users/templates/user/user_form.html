@@ -461,6 +461,17 @@
                         </div>
                     </div>
                 </div>
+                {% if form.programas_comedores %}
+                    <!-- Programas de comedores -->
+                    <div class="card card-custom mb-3 shadow-sm" id="backoffice-programas-card">
+                        <div class="card-header card-header-custom">
+                            <h5 class="mb-0">
+                                <i class="fas fa-utensils mr-3"></i>Programas de comedores
+                            </h5>
+                        </div>
+                        <div class="card-body">{{ form.programas_comedores|as_crispy_field }}</div>
+                    </div>
+                {% endif %}
                 {% if form.can_manage_technical_teams %}
                     <!-- Equipos técnicos (Comedores) -->
                     <div class="card card-custom mb-3 shadow-sm" id="backoffice-equipos-card">

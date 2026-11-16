@@ -9,6 +9,8 @@ from django.utils.crypto import get_random_string
 from django.utils import timezone
 
 
+from comedores.models import AlcanceProgramaComedor
+from comedores.services.alcance_programa import invalidar_cache_alcance_programa
 from core.models import Provincia
 
 from users.form_sections import (
@@ -37,7 +39,6 @@ from pwa.services.accesos import (
     sync_coordinador_equipo_tecnico_pwa_access,
     sync_representante_accesses,
 )
-
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 PWA_OPERATION_PERMISSION_CODES = PWA_ASSIGNABLE_PERMISSION_CODES | {
@@ -565,10 +566,50 @@ class TerritorialComedorFormMixin:
             )
 
 
+class AlcanceProgramaComedorFormMixin:
+    """Programas de comedores a los que se acota al usuario (PNUD / Alimentar).
+
+    Sin nada tildado, o con ambos, el usuario ve todos los programas. Se guarda
+    en ``AlcanceProgramaComedor`` (una fila por grupo tildado).
+    """
+
+    def _setup_alcance_programa_fields(self):
+        self.fields["programas_comedores"] = forms.MultipleChoiceField(
+            choices=AlcanceProgramaComedor.PROGRAMA_CHOICES,
+            required=False,
+            widget=forms.CheckboxSelectMultiple,
+            label="Programas",
+            help_text="Sin tildar: ve todos los programas.",
+        )
+
+    def _init_alcance_programa_fields(self, profile):
+        if not profile:
+            return
+        self.fields["programas_comedores"].initial = list(
+            profile.alcances_programa_comedor.values_list("programa", flat=True)
+        )
+
+    def _sync_alcance_programa(self, profile):
+        if self.fields["programas_comedores"].disabled:
+            return
+        selected = set(self.cleaned_data.get("programas_comedores") or [])
+        existing = set(
+            profile.alcances_programa_comedor.values_list("programa", flat=True)
+        )
+        to_delete = existing - selected
+        if to_delete:
+            profile.alcances_programa_comedor.filter(programa__in=to_delete).delete()
+        for programa in selected - existing:
+            AlcanceProgramaComedor.objects.create(profile=profile, programa=programa)
+        invalidar_cache_alcance_programa(profile.user)
+        invalidar_cache_alcance_programa(getattr(self, "instance", None))
+
+
 class UserCreationForm(
     TerritorialScopeFormMixin,
     PWAAccessMixin,
     TerritorialComedorFormMixin,
+    AlcanceProgramaComedorFormMixin,
     RelevadorCalleFormMixin,
     InspeccionesEscolaresFormMixin,
     DelegationScopeMixin,
@@ -617,6 +658,7 @@ class UserCreationForm(
         )
         self._setup_pwa_fields()
         self._setup_territorial_comedor_fields()
+        self._setup_alcance_programa_fields()
         self._setup_relevador_calle_fields()
         self._setup_inspecciones_escolares_fields()
         self._setup_delegation_fields()
@@ -737,6 +779,7 @@ class UserCreationForm(
         profile.temporary_password_plaintext = self.generated_password
         profile.save()
         self._sync_territorial_comedor_provincias(profile)
+        self._sync_alcance_programa(profile)
         self._sync_relevador_calle_provincias(profile)
         sync_profile_territorial_scopes(
             profile,
@@ -777,6 +820,7 @@ class CustomUserChangeForm(
     TerritorialScopeFormMixin,
     PWAAccessMixin,
     TerritorialComedorFormMixin,
+    AlcanceProgramaComedorFormMixin,
     RelevadorCalleFormMixin,
     InspeccionesEscolaresFormMixin,
     DelegationScopeMixin,
@@ -830,6 +874,7 @@ class CustomUserChangeForm(
         )
         self._setup_pwa_fields()
         self._setup_territorial_comedor_fields()
+        self._setup_alcance_programa_fields()
         self._setup_relevador_calle_fields()
         self._setup_inspecciones_escolares_fields()
         self._setup_delegation_fields()
@@ -846,6 +891,7 @@ class CustomUserChangeForm(
 
         self._setup_territorial_scope_fields(prof)
         self._init_territorial_comedor_fields(prof)
+        self._init_alcance_programa_fields(prof)
         self._init_relevador_calle_fields(prof)
         self._init_inspecciones_escolares_fields(prof)
         if prof:
@@ -956,6 +1002,7 @@ class CustomUserChangeForm(
                 profile.temporary_password_plaintext = None
             profile.save()
             self._sync_territorial_comedor_provincias(profile)
+            self._sync_alcance_programa(profile)
             self._sync_relevador_calle_provincias(profile)
             sync_profile_territorial_scopes(
                 profile,

@@ -9,6 +9,7 @@ from django.db.models import Sum
 from django.db.models.signals import post_delete, post_save
 
 from comedores.models import Comedor, ValorComida
+from comedores.services.alcance_programa import apply_programa_scope, programas_visibles
 from core.soft_delete.signals import post_restore, post_soft_delete
 from organizaciones.models import Organizacion
 
@@ -76,7 +77,7 @@ def obtener_ids_comedores_del_tecnico(user) -> tuple[int, ...]:
 
 
 def obtener_ids_organizaciones_de_comedores(
-    comedor_ids: tuple[int, ...]
+    comedor_ids: tuple[int, ...],
 ) -> tuple[int, ...]:
     """Expone las organizaciones vinculadas a una selección de comedores."""
 
@@ -124,6 +125,22 @@ class PaginaDestinatarios:
 
 def _detalle(*partes) -> str:
     return " · ".join(str(parte) for parte in partes if parte)
+
+
+def acotar_ids_comedores_por_programa(user, ids_scope):
+    """Suma el alcance por programa del usuario a un alcance de ids de comedores.
+
+    ``ids_scope`` en ``None`` es alcance total. Sin restricción de programa se
+    devuelve igual; con restricción se materializan solo los ids de los
+    comedores de esos programas (acotados a ``ids_scope`` si venía).
+    """
+
+    if programas_visibles(user) is None:
+        return ids_scope
+    comedores = apply_programa_scope(Comedor.objects.all(), user)
+    if ids_scope is not None:
+        comedores = comedores.filter(pk__in=tuple(ids_scope))
+    return tuple(comedores.values_list("pk", flat=True))
 
 
 def _acotar(queryset, ids_scope):

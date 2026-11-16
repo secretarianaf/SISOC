@@ -1430,3 +1430,13 @@ vistas nativas `InstitucionUbicacion*View`, con sus filtros, la guarda de `dispa
 mensaje nativo en cola. El formulario envía solo los campos que dibuja la plantilla (no `nombre_ubicacion`) y la cascada Departamento -> Localidad consulta los
 mismos endpoints nativos que el script de `ubicacion_form.html` (`vat_ajax_municipios_por_centro` y `ajax_load_localidades`). Rutas React:
 `routes/vatUbicaciones.tsx` y `routes/vatUbicacionesForm.tsx`. El acceso es el de cada ruta nativa.
+
+Las comisiones de oferta y de curso (V04.02, U5) usan `GET|POST /api/web/vat/comisiones-formularios/{nueva,<pk>/editar,<pk>/eliminar}/` (oferta) y
+`.../comisiones-formularios/cursos/...` (curso) (`src/backends/vat/VAT/web_api_comision_forms.py`): corren `Comision{Create,Update,Delete}View` y
+`ComisionCurso{Create,Update,Delete}View` con el permiso de la ruta nativa (`VAT.add|change|delete_comision` y `..._comisioncurso`), su alcance (404
+fuera de él) y, en el alta de curso, la guarda de `dispatch` sobre `?curso=` (403 si el curso no es editable); el POST ejecuta su `form_valid`
+(guardado, regeneración de clases si cambian las fechas y mensaje) o la baja lógica y responde `{"ok": true, "redirect": ...}` o 400 con el
+formulario ligado. El formulario de oferta envía solo los campos que dibuja la plantilla (no `acepta_lista_espera`, que se conserva como en la página
+nativa) y el de curso oculta el cupo de lista de espera mientras la lista está apagada, como el script nativo. Ruta React: `vatComisionForm.tsx`, que
+atiende las seis URLs nativas; el detalle de comisión ya enlaza a ellas.
+Registro: `../registro/cambios/2026-T4/2026-11-16-2785-react-vat-comisiones-formularios.md`.

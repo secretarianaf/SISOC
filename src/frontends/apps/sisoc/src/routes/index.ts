@@ -126,6 +126,7 @@ import { vatCatalogosFormRoute } from "./vatCatalogosForm";
 import { vatBuscadorCiudadanoRoute } from "./vatBuscadorCiudadano";
 import { vatComisionDetalleRoute } from "./vatComisionDetalle";
 import { vatComisionHorarioFormRoute } from "./vatComisionHorarioForm";
+import { vatComisionFormRoute } from "./vatComisionForm";
 import { vatEvaluacionesRoute } from "./vatEvaluaciones";
 import { vatEvaluacionesFormRoute } from "./vatEvaluacionesForm";
 import { vatInscripcionRoute } from "./vatInscripcion";
@@ -263,6 +264,7 @@ export const ROUTES: RouteDefinition[] = [
   vatBuscadorCiudadanoRoute,
   vatComisionDetalleRoute,
   vatComisionHorarioFormRoute,
+  vatComisionFormRoute,
   ocrRoute,
   organizacionesRoute,
   organizacionConvenioRoute,

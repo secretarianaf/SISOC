@@ -15685,6 +15685,36 @@
   "regex": "^api/web/vat/comisiones/form/\\Z"
  },
  {
+  "name": "comisiones-formularios-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-formularios/nueva/\\Z"
+ },
+ {
+  "name": "comisiones-formularios-curso-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-formularios/cursos/nueva/\\Z"
+ },
+ {
+  "name": "comisiones-formularios-curso-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-formularios/cursos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "comisiones-formularios-curso-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-formularios/cursos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "comisiones-formularios-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-formularios/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "comisiones-formularios-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-formularios/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
   "name": "comisiones-horarios-create",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/comisiones\\-horarios/nuevo/\\Z"

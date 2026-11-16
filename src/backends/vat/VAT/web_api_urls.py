@@ -24,6 +24,14 @@ from VAT.web_api_comision_horario_forms import (
     ComisionHorarioDeleteWebView,
     ComisionHorarioUpdateWebView,
 )
+from VAT.web_api_comision_forms import (
+    ComisionCreateWebView,
+    ComisionCursoCreateWebView,
+    ComisionCursoDeleteWebView,
+    ComisionCursoUpdateWebView,
+    ComisionDeleteWebView,
+    ComisionUpdateWebView,
+)
 from VAT.web_api_comision_detalle import (
     ComisionCursoResultadosWebView,
     ComisionDetalleCursoWebView,
@@ -706,5 +714,39 @@ urlpatterns += [
         "institucion/ubicaciones/<int:pk>/",
         UbicacionDetailWebView.as_view(),
         name="institucion-ubicaciones-detail",
+    ),
+]
+
+# V04.02 comisiones de oferta y de curso: alta, edición y baja (vistas nativas).
+urlpatterns += [
+    path(
+        "comisiones-formularios/nueva/",
+        ComisionCreateWebView.as_view(),
+        name="comisiones-formularios-create",
+    ),
+    path(
+        "comisiones-formularios/<int:pk>/editar/",
+        ComisionUpdateWebView.as_view(),
+        name="comisiones-formularios-update",
+    ),
+    path(
+        "comisiones-formularios/<int:pk>/eliminar/",
+        ComisionDeleteWebView.as_view(),
+        name="comisiones-formularios-delete",
+    ),
+    path(
+        "comisiones-formularios/cursos/nueva/",
+        ComisionCursoCreateWebView.as_view(),
+        name="comisiones-formularios-curso-create",
+    ),
+    path(
+        "comisiones-formularios/cursos/<int:pk>/editar/",
+        ComisionCursoUpdateWebView.as_view(),
+        name="comisiones-formularios-curso-update",
+    ),
+    path(
+        "comisiones-formularios/cursos/<int:pk>/eliminar/",
+        ComisionCursoDeleteWebView.as_view(),
+        name="comisiones-formularios-curso-delete",
     ),
 ]

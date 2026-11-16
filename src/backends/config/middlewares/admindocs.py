@@ -103,6 +103,7 @@ _OWNED_PATTERNS = (
     r"/api/web/vat/(?:cursos/)?comisiones/sesiones/[0-9]+/asistencia/",
     r"/api/web/vat/comisiones-detalle/(?:[0-9]+/|cursos/[0-9]+/(?:resultados/|profesores/(?:buscar|nuevo)/)?)",
     r"/api/web/vat/comisiones-horarios/(?:cursos/)?(?:nuevo/|[0-9]+/(?:editar/|eliminar/))",
+    r"/api/web/vat/comisiones-formularios/(?:cursos/)?(?:nueva/|[0-9]+/(?:editar/|eliminar/))",
     r"/api/web/vat/(?:inscripciones-persona/(?:nueva/|rapida-comision/|[0-9]+/(?:editar/|eliminar/|cambiar-estado/)?"
     r"|cursos/(?:rapida-comision/|[0-9]+/cambiar-estado/|comisiones/[0-9]+/cambiar-estado-lote/))?"
     r"|buscador-ciudadano/)",

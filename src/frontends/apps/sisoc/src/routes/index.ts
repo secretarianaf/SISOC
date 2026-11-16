@@ -72,9 +72,11 @@ import { encuestasResultadosRoute } from "./encuestasResultados";
 import { encuestasRevisionRoute } from "./encuestasRevision";
 import { encuestasSegmentacionRoute } from "./encuestasSegmentacion";
 import { expedientesPagosRoute } from "./expedientesPagos";
+import { importarExpedientesRoute } from "./importarExpedientes";
 import { rendicionFinalRoute } from "./rendicionFinal";
 import { rendicionMensualRoute } from "./rendicionMensual";
 import { comunicadosRoute } from "./comunicados";
+import { comunicadosMailingRoute } from "./comunicadosMailing";
 import { organizacionConvenioRoute } from "./organizacionConvenio";
 import { organizacionDocumentosRoute } from "./organizacionDocumentos";
 import { organizacionFirmantesRoute } from "./organizacionFirmantes";
@@ -211,8 +213,10 @@ export const ROUTES: RouteDefinition[] = [
   comedorCertificacionesRoute,
   comedorTransaccionesRoute,
   expedientesPagosRoute,
+  importarExpedientesRoute,
   rendicionMensualRoute,
   rendicionFinalRoute,
+  comunicadosMailingRoute,
   comunicadosRoute,
   comedorIntervencionesRoute,
   comedorObservacionesRoute,

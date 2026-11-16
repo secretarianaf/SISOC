@@ -2290,6 +2290,21 @@
   "regex": "^api/web/comedores/comunicados/\\Z"
  },
  {
+  "name": "comunicados_web_mailing",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/mailing/\\Z"
+ },
+ {
+  "name": "comunicados_web_mailing_job",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/mailing/jobs/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comunicados_web_mailing_resume",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/mailing/jobs/(?P<pk>[0-9]+)/resume/\\Z"
+ },
+ {
   "name": "comunicados_web_publicar",
   "namespace": "",
   "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/publicar/\\Z"
@@ -3178,6 +3193,36 @@
   "name": "importarexpedientes_list",
   "namespace": "",
   "regex": "^importarexpedientes/listar\\Z"
+ },
+ {
+  "name": "importarexpedientes_web_borrar",
+  "namespace": "",
+  "regex": "^api/web/comedores/importarexpedientes/(?P<pk>[0-9]+)/borrar\\-datos/\\Z"
+ },
+ {
+  "name": "importarexpedientes_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/importarexpedientes/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "importarexpedientes_web_fechas",
+  "namespace": "",
+  "regex": "^api/web/comedores/importarexpedientes/(?P<pk>[0-9]+)/fechas\\-acreditacion/\\Z"
+ },
+ {
+  "name": "importarexpedientes_web_importar",
+  "namespace": "",
+  "regex": "^api/web/comedores/importarexpedientes/(?P<pk>[0-9]+)/importar/\\Z"
+ },
+ {
+  "name": "importarexpedientes_web_list",
+  "namespace": "",
+  "regex": "^api/web/comedores/importarexpedientes/\\Z"
+ },
+ {
+  "name": "importarexpedientes_web_subir",
+  "namespace": "",
+  "regex": "^api/web/comedores/importarexpedientes/subir/\\Z"
  },
  {
   "name": "informe_complementario_ver",

@@ -910,6 +910,28 @@ sesión, escritura con uno de los cuatro permisos de lectura) y nunca recalcula
 montos. Registro:
 `../registro/cambios/2026-T4/2026-11-11-2785-react-expedientes-pagos.md`.
 
+La importación de expedientes de pago (EX02.01 y EX02.02) usa el mismo marco:
+`src/backends/comedores/importarexpediente/web_api_importarexpedientes.py` ejecuta
+las vistas nativas de listado (filtros combinables y completado de períodos),
+detalle de errores, subida, importación, borrado de datos importados y fechas de
+acreditación, con el acceso actual (listado y detalle con
+`importarexpediente.view_archivosimportados`; subir, importar y borrar solo con
+sesión; fechas con uno de los dos permisos de cambio). No hay job: todo es el
+código síncrono nativo, y los mensajes de Django llegan al listado destino como
+hoy. El módulo React es `importarExpedientes.tsx`; la descarga del archivo sigue
+siendo el enlace nativo. Registro:
+`../registro/cambios/2026-T4/2026-11-16-2785-react-importar-expedientes.md`.
+
+El mailing masivo de comunicados (CM01.01 y CM01.02) usa el mismo marco:
+`src/backends/comedores/comunicados/web_api_mailing.py` ejecuta
+`MailingUploadView` y `MailingJobResumeView` con `is_admin` y sin scope de
+lote (el detalle de un lote ajeno sigue visible). Crear un lote solo deja un
+`MailingJob` en `pending`: la API no envía correo ni arranca el worker
+`process_mailing_jobs`, y las pruebas usan el backend de correo en memoria.
+El módulo React es `comunicadosMailing.tsx`; la plantilla XLSX sigue siendo el
+GET nativo. Registro:
+`../registro/cambios/2026-T4/2026-11-16-2785-react-comunicados-mailing.md`.
+
 El listado global de rendiciones mensuales (RM01.01, primera entrega) usa el
 mismo marco: `src/backends/comedores/rendicioncuentasmensual/web_api.py`
 ejecuta `RendicionCuentaMensualGlobalListView` (filtros por tipo, territorial y

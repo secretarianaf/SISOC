@@ -29,7 +29,12 @@ urlpatterns = [
     path("admisiones/", include("admisiones.web_api_seguimiento_urls")),
     path("acompanamientos/", include("acompanamientos.web_api_urls")),
     path("expedientespagos/", include("expedientespagos.web_api_urls")),
+    path(
+        "importarexpedientes/",
+        include("importarexpediente.web_api_importarexpedientes_urls"),
+    ),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.web_api_urls")),
+    path("comunicados/mailing/", include("comunicados.web_api_mailing_urls")),
     path("comunicados/", include("comunicados.web_api_urls")),
     path("intervenciones/", include("intervenciones.web_api_urls")),
     path("observaciones/", include("comedores.web_api_observaciones_urls")),

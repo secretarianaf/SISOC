@@ -15875,6 +15875,31 @@
   "regex": "^api/web/vat/inscripciones\\-persona/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
+  "name": "modalidades-institucionales-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/modalidades\\-institucionales/nueva/\\Z"
+ },
+ {
+  "name": "modalidades-institucionales-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/modalidades\\-institucionales/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "modalidades-institucionales-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/modalidades\\-institucionales/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "modalidades-institucionales-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/modalidades\\-institucionales/\\Z"
+ },
+ {
+  "name": "modalidades-institucionales-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/modalidades\\-institucionales/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
   "name": "planes-delete-preview",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/planes/(?P<pk>[0-9]+)/delete\\-preview/\\Z"

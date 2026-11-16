@@ -1350,6 +1350,11 @@ ejecutan las vistas nativas con el permiso de cada ruta y proyectan su contexto 
 pantallas son `routes/vatCatalogos.tsx` y `routes/vatCatalogosForm.tsx`. Registro:
 `docs/registro/cambios/2026-T4/2026-11-13-2785-react-vat-catalogos.md`.
 
+VAT modalidad institucional (V06, U8a1): listado, detalle, alta, edición y baja corren las vistas nativas desde
+`src/backends/vat/VAT/web_api_vat_modalidad_institucional.py` (bases compartidas en `web_api_vat_centros_base.py`); las
+entradas de vista previa están en `web_preview_vat_centros_lista.py`. Las pantallas son `routes/vatModalidadInstitucional.tsx`
+y `routes/vatModalidadInstitucionalForm.tsx`. Se conserva la peculiaridad nativa: una descripción nula se imprime como «None».
+
 ### Encuestas sobre G1: segmentación (E02)
 
 `GET /api/web/encuestas/<pk>/segmentacion/` (`src/backends/sisoc_core/encuestas/web_api_segmentacion.py`, rutas en `src/backends/sisoc_core/encuestas/web_api_urls.py`)

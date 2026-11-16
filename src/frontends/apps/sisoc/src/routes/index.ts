@@ -112,6 +112,8 @@ import { usuariosRoute } from "./usuarios";
 import { vatAsistenciaRoute } from "./vatAsistencia";
 import { vatInscripcionOfertaRoute } from "./vatInscripcionOferta";
 import { vatInscripcionOfertaFormRoute } from "./vatInscripcionOfertaForm";
+import { vatModalidadInstitucionalRoute } from "./vatModalidadInstitucional";
+import { vatModalidadInstitucionalFormRoute } from "./vatModalidadInstitucionalForm";
 import { vatCatalogosRoute } from "./vatCatalogos";
 import { vatCatalogosFormRoute } from "./vatCatalogosForm";
 import { vatBuscadorCiudadanoRoute } from "./vatBuscadorCiudadano";
@@ -238,6 +240,8 @@ export const ROUTES: RouteDefinition[] = [
   vatAsistenciaRoute,
   vatInscripcionOfertaRoute,
   vatInscripcionOfertaFormRoute,
+  vatModalidadInstitucionalRoute,
+  vatModalidadInstitucionalFormRoute,
   vatInscripcionRoute,
   vatInscripcionFormRoute,
   vatBuscadorCiudadanoRoute,

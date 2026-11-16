@@ -103,6 +103,7 @@ _OWNED_PATTERNS = (
     r"|cursos/(?:rapida-comision/|[0-9]+/cambiar-estado/|comisiones/[0-9]+/cambiar-estado-lote/))?"
     r"|buscador-ciudadano/)",
     r"/api/web/vat/inscripciones-oferta/(?:nueva/|[0-9]+/(?:editar/|eliminar/)?)?",
+    r"/api/web/vat/modalidades-institucionales/(?:nueva/|[0-9]+/(?:editar/|eliminar/)?)?",
     r"/api/web/auditoria/(?:listado/|evento/[0-9]+/|[a-z_]+/[a-z_]+/[^/]+/)",
     r"/api/web/auditoria/[a-z_]+/[a-z_]+/[^/]+/",
     r"/api/web/comedores/comedores/(?:formulario/|crear/|[0-9]+/(?:baja/|formulario/|editar/|admision/|capacitaciones/[0-9]+/estado/)?)?",

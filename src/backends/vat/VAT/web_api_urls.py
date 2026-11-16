@@ -73,6 +73,13 @@ from VAT.web_api_voucher_forms import (
     VoucherCreateWebView,
     VoucherMasivoWebView,
 )
+from VAT.web_api_vat_modalidad_institucional import (
+    ModalidadCreateWebView,
+    ModalidadDeleteWebView,
+    ModalidadDetailWebView,
+    ModalidadListWebView,
+    ModalidadUpdateWebView,
+)
 from VAT.web_api_reportes import ReporteInscripcionesAsistenciasWebView
 from VAT.web_api_resultados import (
     ResultadoCreateWebView,
@@ -484,5 +491,34 @@ urlpatterns += [
         "buscador-ciudadano/",
         BuscadorCiudadanoWebView.as_view(),
         name="buscador-ciudadano",
+    ),
+]
+
+# V06.01 modalidades institucionales (vistas nativas).
+urlpatterns += [
+    path(
+        "modalidades-institucionales/nueva/",
+        ModalidadCreateWebView.as_view(),
+        name="modalidades-institucionales-create",
+    ),
+    path(
+        "modalidades-institucionales/<int:pk>/editar/",
+        ModalidadUpdateWebView.as_view(),
+        name="modalidades-institucionales-update",
+    ),
+    path(
+        "modalidades-institucionales/<int:pk>/eliminar/",
+        ModalidadDeleteWebView.as_view(),
+        name="modalidades-institucionales-delete",
+    ),
+    path(
+        "modalidades-institucionales/",
+        ModalidadListWebView.as_view(),
+        name="modalidades-institucionales-list",
+    ),
+    path(
+        "modalidades-institucionales/<int:pk>/",
+        ModalidadDetailWebView.as_view(),
+        name="modalidades-institucionales-detail",
     ),
 ]

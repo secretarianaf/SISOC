@@ -10,7 +10,6 @@ from admisiones.services.legales_filter_config import (
     get_filters_ui_config as get_legales_filters_ui_config,
 )
 
-
 # Common required fields for both configurations
 REQUIRED_FILTER_FIELDS = [
     "comedor_nombre",

@@ -22,7 +22,6 @@ from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import is_soft_deletable_instance
 from iam.services import user_has_permission_code
 
-
 logger = logging.getLogger("django")
 
 ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"

@@ -20,7 +20,6 @@ from ver_para_ser_libre.models import (
 )
 from ver_para_ser_libre.services import map_location, workflow
 
-
 pytestmark = pytest.mark.django_db
 
 MAP_URL = "https://www.google.com/maps/search/" "?api=1&query=-34.603700%2C-58.381600"

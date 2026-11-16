@@ -43,7 +43,6 @@ from users.services_auth import (
     request_password_reset_for_email,
 )
 
-
 AUDIT_SOURCE = "ticketera"
 
 

@@ -25,7 +25,6 @@ from pas.models import (
     PasPersona,
 )
 
-
 COLUMNAS_REQUERIDAS = {
     "apellidos": "Apellidos",
     "nombres": "Nombres",

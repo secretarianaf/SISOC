@@ -3,7 +3,6 @@
 from pathlib import Path
 import re
 
-
 SCRIPT_TAG_RE = re.compile(r"<script\b(?P<attrs>[^>]*)>", re.IGNORECASE | re.DOTALL)
 
 

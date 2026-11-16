@@ -15,7 +15,6 @@ from comunicados.models import (
 )
 from core.constants import UserGroups
 
-
 pytestmark = pytest.mark.django_db
 
 

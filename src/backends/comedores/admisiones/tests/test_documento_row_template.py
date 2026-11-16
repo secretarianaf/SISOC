@@ -7,7 +7,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.template.loader import render_to_string
 from django.test import RequestFactory
 
-
 pytestmark = pytest.mark.django_db
 User = get_user_model()
 

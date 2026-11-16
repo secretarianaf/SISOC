@@ -11,7 +11,6 @@ from admisiones.models.admisiones import Admision
 from comedores.models import Comedor
 from duplas.models import Dupla
 
-
 User = get_user_model()
 
 

@@ -24,7 +24,6 @@ from .trash_views import (
     TrashRestoreView,
 )
 
-
 urlpatterns = [
     path(
         "ajax/ubicacion/previsualizar/",

@@ -27,7 +27,6 @@ from relevamientos.tasks import (
     build_primer_seguimiento_payload,
 )
 
-
 pytestmark = pytest.mark.django_db
 
 

@@ -2,6 +2,7 @@
 """
 Script para verificar relaciones familiares en la BD
 """
+
 import os
 import django
 

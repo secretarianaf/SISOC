@@ -8,7 +8,6 @@ from openpyxl.styles import Font
 
 from VAT.services.tipo_alumno_service import anotar_tipo_alumno
 
-
 NOMINA_HEADERS = [
     "Apellido",
     "Nombre",

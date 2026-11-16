@@ -11,7 +11,6 @@ from types import SimpleNamespace
 from comedores.services.comedor_service import impl as comedor_module
 from celiaquia.services import ciudadano_service as celiaquia_module
 
-
 # ---------------------------------------------------------------------------
 # comedor_service — _buscar_ciudadano_existente_por_dni_renaper
 # ---------------------------------------------------------------------------

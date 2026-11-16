@@ -8,7 +8,6 @@ from catalogo_intervenciones.models import (
     TipoIntervencion,
 )
 
-
 FIXTURE_CATALOGO_PATH = (
     Path(__file__).resolve().parent
     / "fixtures"

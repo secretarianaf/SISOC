@@ -116,12 +116,20 @@ E04 se entrega en subunidades; cada una activa solo los pathname que cubre.
   (`encuestas_exportar`). Sin implementar: el editor dinámico (`encuestaPreguntasBuilder.js`, 571 líneas, con arrastre) es la
   parte de mayor riesgo de paridad.
 
-## D01 Dashboards y tableros
+## D01 Dashboards y tableros (entregada)
 
-- `DashboardView` y `TableroEmbedView` exigen sesión (`login_required`); el tablero además `usuario_puede_ver`.
-  Las métricas de comedores y de Centro de Familia vienen de las mismas funciones nativas; un cero no prueba ausencia de datos
-  cuando una fuente remota no responde (se conserva el aviso nativo).
-- Los gráficos usan las mismas versiones de CDN que la plantilla nativa; el iframe del tablero conserva `title` y `src`.
+- Montaje: `path("api/web/dashboard/", include("dashboard.web_api_urls"))` en `src/backends/config/urls.py`; la app `dashboard` trae
+  su propio transporte mínimo (sesión, G1 y la vista nativa sobre la misma petición) porque no depende de `encuestas`.
+- `GET /api/web/dashboard/centro-de-familia/` corre `DashboardView` (solo sesión, como `login_required`). Proyecta `can_view`
+  (`dashboard.view_dashboard`), las banderas de frescura y los cinco indicadores de Comedores ya impresos como la plantilla
+  (`Sin información` sin valor). Sin `view_dashboard` los números no salen (`metricas: null`), como en la página.
+  La actualización remota de métricas es la de la vista nativa: si falla, la página lo dice y conserva los últimos valores;
+  un cero nunca reemplaza un dato faltante.
+- `GET /api/web/dashboard/<slug>/` corre `TableroEmbedView`: 403 si `usuario_puede_ver` lo niega, 404 si no existe o está inactivo y
+  `{"redirect": ruta_interna}` si el tablero tiene pantalla propia.
+- Pantalla React `dashboardTableros.tsx`: `/dashboard/centro-de-familia` (sin barra final, como la URL nativa) y `/dashboard/<slug>/`.
+  Mismos CDN que la plantilla (`ionicons` y `charts.min.css`), mismos iframes (`title` y `src`) y botón de colapso de tarjeta
+  funcional. Los informes remotos quedan en sus iframes.
 
 ## Criterios de aceptación y verificación
 

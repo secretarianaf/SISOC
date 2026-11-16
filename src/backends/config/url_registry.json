@@ -2430,6 +2430,16 @@
   "regex": "^dashboard/(?P<slug>[-a-zA-Z0-9_]+)/\\Z"
  },
  {
+  "name": "dashboard_web_centro_de_familia",
+  "namespace": "",
+  "regex": "^api/web/dashboard/centro\\-de\\-familia/\\Z"
+ },
+ {
+  "name": "dashboard_web_tablero",
+  "namespace": "",
+  "regex": "^api/web/dashboard/(?P<slug>[-a-zA-Z0-9_]+)/\\Z"
+ },
+ {
   "name": "datacalle_ajax_dispositivos",
   "namespace": "",
   "regex": "^datacalle/ajax/dispositivos/\\Z"

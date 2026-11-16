@@ -1327,6 +1327,7 @@ Los catálogos de VAT (V07.01 y V07.02: sectores, subsectores, modalidades de cu
 ejecutan las vistas nativas con el permiso de cada ruta y proyectan su contexto o corren su `form_valid` y su `post`. Las
 pantallas son `routes/vatCatalogos.tsx` y `routes/vatCatalogosForm.tsx`. Registro:
 `docs/registro/cambios/2026-T4/2026-11-13-2785-react-vat-catalogos.md`.
+
 ### Encuestas sobre G1: segmentación (E02)
 
 `GET /api/web/encuestas/<pk>/segmentacion/` (`src/backends/sisoc_core/encuestas/web_api_segmentacion.py`, rutas en `src/backends/sisoc_core/encuestas/web_api_urls.py`)
@@ -1346,3 +1347,7 @@ contexto de `encuesta_resultados.html` con los números y fechas ya formateados;
 barra de filtros; «Solicitar publicación» (`POST .../<pk>/publicar/`) e «Importar» (`POST .../importar/`) dejan el mensaje nativo en
 cola y la ruta `routes/encuestasLista.tsx` (`/encuestas/`) navega al redirect, como el formulario nativo. La revisión y el
 formulario de encuestas siguen nativos. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-encuestas-lista.md`.
+
+`GET /api/web/dashboard/centro-de-familia/` y `GET /api/web/dashboard/<slug>/` (`src/backends/sisoc_core/dashboard/web_api_dashboard.py`) corren
+`DashboardView` y `TableroEmbedView`; la ruta `routes/dashboardTableros.tsx` dibuja los indicadores solo con `dashboard.view_dashboard` y los
+iframes de la plantilla. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-dashboard-tableros.md`.

@@ -65,6 +65,7 @@ import { datacalleCasosRoute } from "./datacalleCasos";
 import { datacalleRelevamientosRoute } from "./datacalleRelevamientos";
 import { dispositivosRoute } from "./dispositivos";
 import { cdfCentroUsuarioRoute } from "./cdfCentroUsuario";
+import { dashboardRoute, dashboardTableroRoute } from "./dashboardTableros";
 import { duplasRoute } from "./duplas";
 import { encuestasListaRoute } from "./encuestasLista";
 import { encuestasResultadosRoute } from "./encuestasResultados";
@@ -149,6 +150,8 @@ export const ROUTES: RouteDefinition[] = [
   encuestasSegmentacionRoute,
   encuestasResultadosRoute,
   encuestasListaRoute,
+  dashboardRoute,
+  dashboardTableroRoute,
   inspeccionesActasRoute,
   inspeccionesActaDetalleRoute,
   inspeccionesAsignacionesRoute,

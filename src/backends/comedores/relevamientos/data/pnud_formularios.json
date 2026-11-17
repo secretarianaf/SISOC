@@ -2526,6 +2526,11 @@
             "type": "number"
           },
           {
+            "name": "menu_personas_observadas",
+            "label": "Cantidad de personas observadas",
+            "type": "number"
+          },
+          {
             "name": "menu_ingredientes",
             "label": "Ingredientes / Cantidades totales utilizadas (litros, kg, unidades)",
             "type": "child",

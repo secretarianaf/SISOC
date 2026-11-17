@@ -949,6 +949,17 @@ nativas conservan el prefijo duplicado `/rendicioncuentasmensual/rendicioncuenta
 Registro:
 `../registro/cambios/2026-T4/2026-11-11-2785-react-rendicion-mensual-listado.md`.
 
+El detalle de la rendición mensual (RM01.01, segunda entrega) usa el mismo
+marco: `src/backends/comedores/rendicioncuentasmensual/web_api_rendicion_detalle.py`
+ejecuta `RendicionCuentaMensualDetailView` (`get_object`, documentación por
+categoría, alcance de proyecto y las once capacidades de `get_context_data`) con
+los cinco permisos de hoy y es de solo lectura. Las escrituras no pasan por la
+API: acciones de etapa, revisión de documentos y solicitud de faltantes siguen
+siendo el POST nativo de la misma URL (formulario con redirección o AJAX con
+`X-Requested-With`), y el PDF y «Ver» siguen siendo las descargas nativas. Ruta
+React `/rendicioncuentasmensual/rendicioncuentasmensual/detalle/<pk>/`. Registro:
+`../registro/cambios/2026-T4/2026-11-16-2785-react-rendicion-mensual-detalle.md`.
+
 La rendición de cuentas final (RF01.01 a RF01.03) usa el
 mismo marco: `src/backends/comedores/rendicioncuentasfinal/web_api.py` ejecuta
 `RendicionCuentasFinalDetailView` (conserva el `get_or_create` del GET) y

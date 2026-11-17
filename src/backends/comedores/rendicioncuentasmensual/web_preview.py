@@ -23,7 +23,10 @@ from comedores.web_preview_catalogos import (
     _index,
 )
 from rendicioncuentasmensual.urls import _RENDICION_ACCESS_PERMS
-from rendicioncuentasmensual.views import RendicionCuentaMensualGlobalListView
+from rendicioncuentasmensual.views import (
+    RendicionCuentaMensualDetailView,
+    RendicionCuentaMensualGlobalListView,
+)
 
 PUBLIC_ASSETS = "/rendicioncuentasmensual/react/assets/"
 
@@ -38,6 +41,18 @@ class ListadoEntry(RendicionCuentaMensualGlobalListView):
         self.object_list = self.get_queryset()
         # Same Http404 as the native list for an invalid or out-of-range page.
         self.paginate_queryset(self.object_list, self.get_paginate_by(self.object_list))
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class DetalleEntry(RendicionCuentaMensualDetailView):
+    """Detail (RM01.01): a GET gets the frozen index, every POST stays the native one."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        # Same Http404 as the native detail for a missing or deleted rendición.
+        self.object = self.get_object()
         return _index(request, self.index_bytes)
 
 
@@ -61,6 +76,12 @@ def rendicion_preview_patterns(build_directory):
     )
     return [
         path("rendicioncuentasmensual/rendicioncuentasmensual/listado/", listado),
+        path(
+            "rendicioncuentasmensual/rendicioncuentasmensual/detalle/<int:pk>/",
+            permissions_any_required(_RENDICION_ACCESS_PERMS)(
+                DetalleEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
         path(
             "rendicioncuentasmensual/react/<path:asset_path>",
             ReactAssetView.as_view(assets=_frozen_assets(root)),

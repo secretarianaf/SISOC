@@ -69,6 +69,7 @@ _OWNED_PATTERNS = (
     r"/api/web/comedores/importarexpedientes/(?:subir/|[0-9]+/(?:importar/|borrar-datos/|fechas-acreditacion/)?)?",
     r"/api/web/dispositivos/(?:listado/|options/|mapa/|[0-9]+/(?:ubicacion/)?)",
     r"/api/web/comedores/rendicioncuentasmensual/listado/",
+    r"/api/web/comedores/rendicioncuentasmensual/[0-9]+/",
     r"/api/web/comedores/rendicion_cuentas_final/(?:comedor/[0-9]+/|documentos/(?:adjuntar/|[0-9]+/(?:validar|subsanar|eliminar)/)?"
     r"|[0-9]+/(?:crear|fisicamente_presentada)/)",
     r"/api/web/dispositivos/datacalle/(?:opciones/(?:dispositivos|relevadores)/|relevamientos/"

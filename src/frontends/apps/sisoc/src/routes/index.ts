@@ -39,6 +39,7 @@ import { cdiCentroDetalleRoute } from "./cdiCentroDetalle";
 import { cdiCentroFormRoute } from "./cdiCentroForm";
 import { cdiDocumentacionRoute } from "./cdiDocumentacion";
 import { cdiCentrosRoute } from "./cdiCentros";
+import { cdiIntervencionFormRoute } from "./cdiIntervencionForm";
 import { cdiNominaRoute } from "./cdiNomina";
 import { cdiNominaListaRoute } from "./cdiNominaLista";
 import { cdiObservacionesRoute } from "./cdiObservaciones";
@@ -202,6 +203,7 @@ export const ROUTES: RouteDefinition[] = [
   cdiFormularioFormRoute,
   cdiUsuariosGenerarRoute,
   cdiDestinatarioFormRoute,
+  cdiIntervencionFormRoute,
   cdfCentrosRoute,
   cdfCentroFormRoute,
   dispositivosRoute,

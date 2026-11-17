@@ -724,6 +724,15 @@ Registros:
 `../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-formulario-form.md`.
 `../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-renaper-generar-usuario.md`.
 `../registro/cambios/2026-T4/2026-11-13-2785-react-cdi-destinatario-form.md`.
+
+El alta y la edición de intervenciones de Centro de Infancia
+(`/centrodeinfancia/intervencion/crear/<centro>` y `/centrodeinfancia/intervencion/editar/<centro>/<id>`,
+sin barra final como las rutas nativas) corren sobre `IntervencionCentroInfanciaCreateView` y
+`IntervencionCentroInfanciaUpdateView` mediante `web_api_intervencion_form.py` (permisos de la URL,
+destinatario fijo, autor y mensajes nativos; acceso sin cambios). Como el template dibuja
+`{{ form.as_p }}`, la API envía ese marcado y la pantalla lo inserta tal cual; el POST es multipart
+(adjunto) o urlencoded. Entradas de vista previa en `centrodeinfancia/web_preview_intervencion_form.py`.
+Registro: `../registro/cambios/2026-T4/2026-11-17-2785-react-cdi-intervencion-form.md`.
 ### Vertical remoto sobre G1: Duplas (equipo técnico) de Comedores
 
 Segunda aplicación del patrón, ahora con el marco nativo `includes/main.html`

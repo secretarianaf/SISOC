@@ -40,7 +40,7 @@ afterEach(() => {
 describe("CDI intervention detail route", () => {
   it("owns only the native detail path", () => {
     expect(findRoute("/centrodeinfancia/intervencion/detalle/7/")?.params).toEqual({ id: "7" });
-    for (const other of ["/centrodeinfancia/intervencion/detalle/7", "/centrodeinfancia/intervencion/detalle/x/", "/centrodeinfancia/intervencion/editar/4/7"]) {
+    for (const other of ["/centrodeinfancia/intervencion/detalle/7", "/centrodeinfancia/intervencion/detalle/x/"]) {
       expect(findRoute(other)?.route.name).toBe("business");
     }
   });

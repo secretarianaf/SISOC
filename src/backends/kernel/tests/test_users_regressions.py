@@ -1,6 +1,7 @@
 import json
 
 import pytest
+from django import forms
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -15,7 +16,7 @@ from pwa.user_forms import (
     UserCreationForm as CompositeUserCreationForm,
 )
 from usuarios.forms import CustomUserChangeForm, UserCreationForm
-from users.models import ProfileTerritorialScope
+from users.models import Profile, ProfileTerritorialScope
 from users.services import UsuariosService
 from users.territorial_scope import apply_territorial_scope
 from usuarios.views_export import UserExportView
@@ -102,6 +103,20 @@ def test_alta_usuario_requiere_tipo_usuario():
 
     assert not form.is_valid()
     assert "tipo_usuario" in form.errors
+
+
+@pytest.mark.django_db
+def test_alta_usuario_tipo_usuario_es_desplegable_sin_preseleccion():
+    form = UserCreationForm()
+    field = form.fields["tipo_usuario"]
+
+    assert isinstance(field.widget, forms.Select)
+    assert field.required
+    assert field.choices[0] == ("", "Seleccioná un tipo")
+    assert field.choices[1:] == list(Profile.TipoUsuario.choices)
+    html = str(form["tipo_usuario"])
+    assert html.startswith("<select")
+    assert '<option value="" selected>Seleccioná un tipo</option>' in html
 
 
 @pytest.mark.django_db

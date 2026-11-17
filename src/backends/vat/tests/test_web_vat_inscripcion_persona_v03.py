@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.test import Client, override_settings
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from ciudadanos.models import Ciudadano
@@ -192,7 +193,9 @@ def test_list_projects_the_native_rows_buttons_and_search(base, inscripcion):
         "Programa Sintetico",
         "Backoffice",
     )
-    assert ana["fecha"] == inscripcion.fecha_inscripcion.strftime("%d/%m/%Y")
+    assert ana["fecha"] == timezone.localtime(inscripcion.fecha_inscripcion).strftime(
+        "%d/%m/%Y"
+    )
     assert (ana["estado"], ana["estado_label"]) == ("pre_inscripta", "Pre-inscripta")
     assert ana["detail_url"] == f"/vat/inscripciones/{inscripcion.pk}/"
     assert data["urls"] == {

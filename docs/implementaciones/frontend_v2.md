@@ -1454,3 +1454,11 @@ formulario ligado. El formulario de oferta envía solo los campos que dibuja la 
 nativa) y el de curso oculta el cupo de lista de espera mientras la lista está apagada, como el script nativo. Ruta React: `vatComisionForm.tsx`, que
 atiende las seis URLs nativas; el detalle de comisión ya enlaza a ellas.
 Registro: `../registro/cambios/2026-T4/2026-11-16-2785-react-vat-comisiones-formularios.md`.
+
+El asistente de alta de comisión de curso (V04.02, U5; `/vat/cursos/<id>/comision/nueva/`) usa `GET|POST /api/web/vat/comisiones-asistente/cursos/<id>/`
+(`src/backends/vat/VAT/web_api_comision_wizard.py`): una subclase del `ComisionCursoWizardView` nativo (`SessionWizardView`) devuelve el contexto de cada
+paso en JSON en lugar de la plantilla y el POST se entrega al almacenamiento nativo del asistente (sesión), así que validación, avance, retroceso
+(`wizard_goto_step`) y creación (`done`: comisión, horarios, sesiones y mensaje) son los nativos. El `GET` reinicia el asistente; un paso inválido responde 400
+con los errores y, al confirmar, `{"ok": true, "redirect": ...}`. Acceso: `VAT.add_comisioncurso` y el alcance del centro del curso de la vista nativa (403 sin
+alcance, 404 si el curso no existe). Ruta React: `vatComisionWizard.tsx` (`vatComisionWizardStyles.ts` trae el CSS de la plantilla).
+Registro: `../registro/cambios/2026-T4/2026-11-16-2785-react-vat-comision-asistente.md`.

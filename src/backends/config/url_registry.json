@@ -15650,6 +15650,11 @@
   "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/ciudadanos/\\Z"
  },
  {
+  "name": "comisiones-asistente-curso",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-asistente/cursos/(?P<curso_id>[0-9]+)/\\Z"
+ },
+ {
   "name": "comisiones-delete-preview",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/delete\\-preview/\\Z"

@@ -32,6 +32,7 @@ from VAT.web_api_comision_forms import (
     ComisionDeleteWebView,
     ComisionUpdateWebView,
 )
+from VAT.web_api_comision_wizard import ComisionCursoAsistenteWebView
 from VAT.web_api_comision_detalle import (
     ComisionCursoResultadosWebView,
     ComisionDetalleCursoWebView,
@@ -778,5 +779,14 @@ urlpatterns += [
         "centros-usuarios/<int:pk>/generar/",
         CentroGenerarUsuarioWebView.as_view(),
         name="centros-usuarios-generar",
+    ),
+]
+
+# V04.02 asistente de alta de comisión de curso (vista nativa del asistente de tres pasos).
+urlpatterns += [
+    path(
+        "comisiones-asistente/cursos/<int:curso_id>/",
+        ComisionCursoAsistenteWebView.as_view(),
+        name="comisiones-asistente-curso",
     ),
 ]

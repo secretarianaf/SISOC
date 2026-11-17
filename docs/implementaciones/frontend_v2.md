@@ -1392,6 +1392,26 @@ baja lógica en cascada y el POST da de baja con el mensaje nativo). La baja de 
 nativo (`vatTour.tsx`). `vat_centros_ajax` y los `vat_ajax_*` siguen nativos: ninguna pantalla React los llama. Pantallas: `routes/vatCentrosLista.tsx` y
 `routes/vatCentrosBaja.tsx`. La baja conserva un defecto nativo: el botón Cancelar apunta a `centro_detail`, la ruta de Centro de Familia.
 
+El detalle de un centro de VAT en lectura (V06.01) y su panel de cursos y comisiones (V05.01) usan `GET /api/web/vat/centros-detalle/<pk>/` y
+`GET /api/web/vat/centros-detalle/<pk>/cursos/` (`src/backends/vat/VAT/web_api_vat_centro_detalle.py`; el prefijo `centros/` es de la API INET). Corren
+`CentroDetailView` (con su guarda de alcance: 404 fuera del queryset y 403 si el usuario no alcanza el centro) y `CentroCursosPanelView` y proyectan lo que
+imprimen `centro_detail.html` y el fragmento `partials/centro_cursos_panel.html`, con el texto renderizado por el motor de plantillas. La pantalla
+(`routes/vatCentrosDetalle.tsx`) reproduce las pestañas laterales, el mapa incrustado y las tablas de ubicaciones y contactos; el panel
+(`routes/vatCentrosDetalleCursos.tsx`) pide su propio recurso, como hace la página nativa por AJAX, y repite los filtros, el bloqueo por curso y la paginación local
+del script nativo (que solo corre si el centro tiene cursos y comisiones). La ruta nativa `/vat/centros/<pk>/panel/cursos/` es un fragmento y sigue nativa: ninguna
+pantalla React la navega. Las acciones de la página son los modales y botones de `centro_detail.html` y del panel (`routes/vatCentrosDetalleModales.tsx` y
+`routes/vatCentrosDetalleCursoModales.tsx`): agregar, editar y borrar ubicaciones y contactos, "Agregar curso" y editar cursos y
+comisiones de curso. El detalle y el panel llevan en `modales` los formularios de alta tal como los arma la vista nativa (`form.as_p`
+para contactos y ubicaciones, con la cascada Departamento -> Localidad por AJAX) y en cada fila los valores de edición (los `data-*`
+nativos); `GET /api/web/vat/centros-acciones/{contactos,ubicaciones}/<pk>/editar/` da el fragmento `?modal=1` de la vista de edición
+(todos los campos visibles) y `POST /api/web/vat/centros-acciones/cursos/{nuevo/?centro=<id>,<pk>/editar/}` corre `CursoCreateView` y
+`CursoUpdateView` con su guarda de `dispatch` (los demás guardados usan los endpoints de contactos, ubicaciones y comisiones de
+curso ya migrados). Como el script nativo: validación HTML antes de enviar, `Guardando...`, `invalid-feedback` por campo y un
+`alert` con el mensaje nativo si se rechaza, y recarga de la página (contactos y ubicaciones) o del panel (cursos y comisiones) al
+guardar. El borrado de contactos y ubicaciones pide `confirm` y recarga; el de cursos y comisiones y el alta de comisión (asistente)
+siguen siendo enlaces. La página nativa no dibuja ningún botón de identificadores (el modal existe, sin disparador), así que
+tampoco esta.
+
 ### Encuestas sobre G1: segmentación (E02)
 
 `GET /api/web/encuestas/<pk>/segmentacion/` (`src/backends/sisoc_core/encuestas/web_api_segmentacion.py`, rutas en `src/backends/sisoc_core/encuestas/web_api_urls.py`)

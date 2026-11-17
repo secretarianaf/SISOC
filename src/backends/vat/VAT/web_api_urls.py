@@ -138,6 +138,16 @@ from VAT.web_api_vat_modalidad_institucional import (
     ModalidadListWebView,
     ModalidadUpdateWebView,
 )
+from VAT.web_api_vat_centro_acciones import (
+    ContactoEdicionModalWebView,
+    CursoCreateModalWebView,
+    CursoUpdateModalWebView,
+    UbicacionEdicionModalWebView,
+)
+from VAT.web_api_vat_centro_detalle import (
+    CentroCursosPanelWebView,
+    CentroDetalleWebView,
+)
 from VAT.web_api_vat_centro_usuario import (
     CentroGenerarUsuarioWebView,
 )
@@ -854,5 +864,43 @@ urlpatterns += [
         "cursos-formularios/<int:pk>/eliminar/",
         CursoDeleteWebView.as_view(),
         name="cursos-formularios-delete",
+    ),
+]
+
+# V06.01 detalle de un centro y V05.01 su panel de cursos y comisiones (vistas nativas).
+urlpatterns += [
+    path(
+        "centros-detalle/<int:pk>/",
+        CentroDetalleWebView.as_view(),
+        name="centros-detalle",
+    ),
+    path(
+        "centros-detalle/<int:pk>/cursos/",
+        CentroCursosPanelWebView.as_view(),
+        name="centros-detalle-cursos",
+    ),
+]
+
+# V06.01/V05.01 acciones en página del detalle de un centro: modales de contactos, ubicaciones y cursos (vistas nativas).
+urlpatterns += [
+    path(
+        "centros-acciones/contactos/<int:pk>/editar/",
+        ContactoEdicionModalWebView.as_view(),
+        name="centros-acciones-contactos-editar",
+    ),
+    path(
+        "centros-acciones/ubicaciones/<int:pk>/editar/",
+        UbicacionEdicionModalWebView.as_view(),
+        name="centros-acciones-ubicaciones-editar",
+    ),
+    path(
+        "centros-acciones/cursos/nuevo/",
+        CursoCreateModalWebView.as_view(),
+        name="centros-acciones-cursos-nuevo",
+    ),
+    path(
+        "centros-acciones/cursos/<int:pk>/editar/",
+        CursoUpdateModalWebView.as_view(),
+        name="centros-acciones-cursos-editar",
     ),
 ]

@@ -15580,6 +15580,26 @@
   "regex": "^api/web/vat/catalogos/titulos\\-referencia/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
+  "name": "centros-acciones-contactos-editar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-acciones/contactos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centros-acciones-cursos-editar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-acciones/cursos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centros-acciones-cursos-nuevo",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-acciones/cursos/nuevo/\\Z"
+ },
+ {
+  "name": "centros-acciones-ubicaciones-editar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-acciones/ubicaciones/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
   "name": "centros-delete-preview",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/centros/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
@@ -15588,6 +15608,16 @@
   "name": "centros-detail",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/centros/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centros-detalle",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-detalle/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centros-detalle-cursos",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-detalle/(?P<pk>[0-9]+)/cursos/\\Z"
  },
  {
   "name": "centros-edit-form",

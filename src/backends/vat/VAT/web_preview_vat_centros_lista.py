@@ -14,6 +14,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from VAT.views.centro import (
     CentroDeleteView,
+    CentroDetailView,
     CentroListView,
 )
 from VAT.views.generar_usuario import (
@@ -204,6 +205,12 @@ CENTROS_ROUTES = (
     (
         "vat/centros/<int:pk>/eliminar/",
         CentroDeleteView,
+        "VAT.view_centro",
+        "object",
+    ),
+    (
+        "vat/centros/<int:pk>/",
+        CentroDetailView,
         "VAT.view_centro",
         "object",
     ),

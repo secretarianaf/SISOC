@@ -131,6 +131,10 @@ import { vatComisionDetalleRoute } from "./vatComisionDetalle";
 import { vatComisionHorarioFormRoute } from "./vatComisionHorarioForm";
 import { vatComisionFormRoute } from "./vatComisionForm";
 import { vatComisionWizardRoute } from "./vatComisionWizard";
+import { vatOfertaRoute } from "./vatOferta";
+import { vatCursoDetalleRoute } from "./vatCursoDetalle";
+import { vatOfertaFormRoute } from "./vatOfertaForm";
+import { vatCursoFormRoute } from "./vatCursoForm";
 import { vatEvaluacionesRoute } from "./vatEvaluaciones";
 import { vatEvaluacionesFormRoute } from "./vatEvaluacionesForm";
 import { vatInscripcionRoute } from "./vatInscripcion";
@@ -273,6 +277,10 @@ export const ROUTES: RouteDefinition[] = [
   vatComisionHorarioFormRoute,
   vatComisionFormRoute,
   vatComisionWizardRoute,
+  vatOfertaRoute,
+  vatCursoDetalleRoute,
+  vatOfertaFormRoute,
+  vatCursoFormRoute,
   ocrRoute,
   organizacionesRoute,
   organizacionConvenioRoute,

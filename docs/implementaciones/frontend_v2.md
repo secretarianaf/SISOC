@@ -1462,3 +1462,18 @@ paso en JSON en lugar de la plantilla y el POST se entrega al almacenamiento nat
 con los errores y, al confirmar, `{"ok": true, "redirect": ...}`. Acceso: `VAT.add_comisioncurso` y el alcance del centro del curso de la vista nativa (403 sin
 alcance, 404 si el curso no existe). Ruta React: `vatComisionWizard.tsx` (`vatComisionWizardStyles.ts` trae el CSS de la plantilla).
 Registro: `../registro/cambios/2026-T4/2026-11-16-2785-react-vat-comision-asistente.md`.
+
+La lista y el detalle de ofertas institucionales y el detalle de curso (V05.01, U6; `/vat/ofertas-institucionales/`, `/vat/ofertas-institucionales/<id>/` y
+`/vat/cursos/<id>/`) usan `GET /api/web/vat/ofertas-institucionales/[<id>/]` y `GET /api/web/vat/cursos-detalle/<id>/` (`src/backends/vat/VAT/web_api_oferta_curso.py`):
+corren `OfertaInstitucionalListView`, `OfertaInstitucionalDetailView` y `CursoDetailView` y proyectan su contexto con el texto de la plantilla (fechas `d/m/Y`, coma decimal,
+`default`), más los mensajes encolados. Acceso: `VAT.view_ofertainstitucional` y `VAT.view_curso`, con el alcance (404 fuera de él) de cada vista nativa. Rutas React:
+`vatOferta.tsx` y `vatCursoDetalle.tsx` (`vatCursoDetalleStyles.ts` trae el CSS de la plantilla); el panel de cursos del centro sigue nativo.
+Registro: `../registro/cambios/2026-T4/2026-11-16-2785-react-vat-oferta-curso-lectura.md`.
+
+El alta, la edición y la baja de ofertas institucionales y de cursos (V05.02, U7) usan `GET|POST /api/web/vat/ofertas-institucionales/{nueva,<pk>/editar,<pk>/eliminar}/` y
+`GET|POST /api/web/vat/cursos-formularios/{nuevo,<pk>/editar,<pk>/eliminar}/` (`src/backends/vat/VAT/web_api_oferta_curso_forms.py`): corren `OfertaInstitucional{Create,Update,Delete}View` y
+`Curso{Create,Update,Delete}View`, su formulario y su `form_valid` (guardado, mensaje) o su baja lógica. El POST responde `{"ok": true, "redirect": ...}` o, con el formulario
+inválido, 400 con los campos y errores; el `<select multiple>` de vouchers viaja aparte (`vouchers`: opciones con su programa y los valores elegidos). Acceso: `VAT.add|change|delete_ofertainstitucional`
+y `VAT.add|change|delete_curso`; el alta de curso exige `?centro=<id>` editable por el usuario (403, guarda del `dispatch` nativo). La variante embebida del curso (`?modal=1`) sigue
+siendo la página nativa. Rutas React: `vatOfertaForm.tsx` y `vatCursoForm.tsx`.
+Registro: `../registro/cambios/2026-T4/2026-11-16-2785-react-vat-oferta-curso-formularios.md`.

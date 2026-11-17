@@ -15820,6 +15820,11 @@
   "regex": "^api/web/vat/cursos/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "cursos-detalle",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos\\-detalle/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
   "name": "cursos-edit-form",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/cursos/(?P<pk>[0-9]+)/form/\\Z"
@@ -15833,6 +15838,21 @@
   "name": "cursos-form",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/cursos/form/\\Z"
+ },
+ {
+  "name": "cursos-formularios-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos\\-formularios/nuevo/\\Z"
+ },
+ {
+  "name": "cursos-formularios-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos\\-formularios/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "cursos-formularios-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos\\-formularios/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
   "name": "cursos-list",
@@ -16108,6 +16128,31 @@
   "name": "modalidades-institucionales-update",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/modalidades\\-institucionales/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "ofertas-institucionales-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ofertas\\-institucionales/nueva/\\Z"
+ },
+ {
+  "name": "ofertas-institucionales-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ofertas\\-institucionales/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "ofertas-institucionales-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ofertas\\-institucionales/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "ofertas-institucionales-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ofertas\\-institucionales/\\Z"
+ },
+ {
+  "name": "ofertas-institucionales-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ofertas\\-institucionales/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
   "name": "planes-delete-preview",

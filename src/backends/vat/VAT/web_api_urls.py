@@ -33,6 +33,19 @@ from VAT.web_api_comision_forms import (
     ComisionUpdateWebView,
 )
 from VAT.web_api_comision_wizard import ComisionCursoAsistenteWebView
+from VAT.web_api_oferta_curso_forms import (
+    CursoCreateWebView,
+    CursoDeleteWebView,
+    CursoUpdateWebView,
+    OfertaInstitucionalCreateWebView,
+    OfertaInstitucionalDeleteWebView,
+    OfertaInstitucionalUpdateWebView,
+)
+from VAT.web_api_oferta_curso import (
+    CursoDetailWebView,
+    OfertaInstitucionalDetailWebView,
+    OfertaInstitucionalListWebView,
+)
 from VAT.web_api_comision_detalle import (
     ComisionCursoResultadosWebView,
     ComisionDetalleCursoWebView,
@@ -788,5 +801,58 @@ urlpatterns += [
         "comisiones-asistente/cursos/<int:curso_id>/",
         ComisionCursoAsistenteWebView.as_view(),
         name="comisiones-asistente-curso",
+    ),
+]
+
+# V05.01 ofertas institucionales (lista y detalle) y detalle de curso (vistas nativas).
+urlpatterns += [
+    path(
+        "ofertas-institucionales/",
+        OfertaInstitucionalListWebView.as_view(),
+        name="ofertas-institucionales-list",
+    ),
+    path(
+        "ofertas-institucionales/<int:pk>/",
+        OfertaInstitucionalDetailWebView.as_view(),
+        name="ofertas-institucionales-detail",
+    ),
+    path(
+        "cursos-detalle/<int:pk>/",
+        CursoDetailWebView.as_view(),
+        name="cursos-detalle",
+    ),
+]
+
+# V05.02 ofertas institucionales y cursos: alta, edición y baja (vistas nativas).
+urlpatterns += [
+    path(
+        "ofertas-institucionales/nueva/",
+        OfertaInstitucionalCreateWebView.as_view(),
+        name="ofertas-institucionales-create",
+    ),
+    path(
+        "ofertas-institucionales/<int:pk>/editar/",
+        OfertaInstitucionalUpdateWebView.as_view(),
+        name="ofertas-institucionales-update",
+    ),
+    path(
+        "ofertas-institucionales/<int:pk>/eliminar/",
+        OfertaInstitucionalDeleteWebView.as_view(),
+        name="ofertas-institucionales-delete",
+    ),
+    path(
+        "cursos-formularios/nuevo/",
+        CursoCreateWebView.as_view(),
+        name="cursos-formularios-create",
+    ),
+    path(
+        "cursos-formularios/<int:pk>/editar/",
+        CursoUpdateWebView.as_view(),
+        name="cursos-formularios-update",
+    ),
+    path(
+        "cursos-formularios/<int:pk>/eliminar/",
+        CursoDeleteWebView.as_view(),
+        name="cursos-formularios-delete",
     ),
 ]

@@ -186,6 +186,23 @@ describe("VAT centro detalle in-page actions", () => {
     expect(document.getElementById("modalContacto")).toBeNull();
   });
 
+  it("takes the rejection text from the server answer and draws a Select2 error before its box, as the native script does", async () => {
+    setup();
+    fireEvent.click(await screen.findByText("Agregar contacto"));
+    const form = modal("modalContacto");
+    fireEvent.change(form.querySelector("#id_telefono_contacto")!, { target: { value: "1" } });
+    webPost.mockImplementation(() => Promise.reject({ response: { status: 400, data: { editing: false, message: "Texto del servidor.", fields: [field("centro", { tag: "select", attrs: { class: "form-control select2" }, errors: ["Elegí un centro."] })], non_field_errors: [], urls: { list: "/vat/centros/" } } } }));
+    fireEvent.submit(form.querySelector("form")!);
+    await waitFor(() => expect(centroAcciones.alert).toHaveBeenCalledWith("Texto del servidor."));
+    const select = form.querySelector("#id_centro")!;
+    const feedback = select.closest("p")!.querySelector(".invalid-feedback")!;
+    expect(feedback.textContent).toBe("Elegí un centro.");
+    expect(select.className).toContain("is-invalid");
+    // select, then the feedback, then the Select2 container: the native script inserts it `afterend` of the `<select>`
+    expect(select.nextElementSibling).toBe(feedback);
+    expect(feedback.nextElementSibling?.className).toContain("select2-container");
+  });
+
   it("edits a contact from the fragment the native view draws and posts to the update endpoint", async () => {
     const url = "web/vat/centros-acciones/contactos/2/editar/";
     setup(detalle(), panel(), { [url]: { fields: [select2("centro", "Centro", [["5", "CFP 401"]], "5"), field("nombre_contacto", { label: "Nombre y apellido", value: "Ana Gómez" }), contactoFields()[3]] } });

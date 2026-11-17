@@ -144,6 +144,10 @@ from VAT.web_api_vat_centro_acciones import (
     CursoUpdateModalWebView,
     UbicacionEdicionModalWebView,
 )
+from VAT.web_api_vat_centro_formulario import (
+    CentroCreateFormWebView,
+    CentroUpdateFormWebView,
+)
 from VAT.web_api_vat_centro_detalle import (
     CentroCursosPanelWebView,
     CentroDetalleWebView,
@@ -902,5 +906,19 @@ urlpatterns += [
         "centros-acciones/cursos/<int:pk>/editar/",
         CursoUpdateModalWebView.as_view(),
         name="centros-acciones-cursos-editar",
+    ),
+]
+
+# V06.02 alta y edición de un centro (vistas nativas CentroCreateView y CentroUpdateView).
+urlpatterns += [
+    path(
+        "centros-formulario/nuevo/",
+        CentroCreateFormWebView.as_view(),
+        name="centros-formulario-nuevo",
+    ),
+    path(
+        "centros-formulario/<int:pk>/editar/",
+        CentroUpdateFormWebView.as_view(),
+        name="centros-formulario-editar",
     ),
 ]

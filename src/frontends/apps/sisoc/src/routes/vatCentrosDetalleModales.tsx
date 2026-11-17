@@ -22,11 +22,11 @@ export const centroAcciones = {
 };
 
 export const fieldsValid = (v: unknown): v is Field[] => Array.isArray(v) && v.every(fieldValid);
-export const formDataValid = (v: unknown): v is { fields: Field[] } => record(v) && fieldsValid(v.fields);
+export const formDataValid = (v: unknown): v is { fields: Field[]; message?: unknown } => record(v) && fieldsValid(v.fields);
 export const planesValid = (v: unknown): v is Plan[] => Array.isArray(v) && v.every((p) => record(p) && typeof p.id === "number" && text(p.etiqueta) && text(p.normativa));
 export type Plan = { id: number; etiqueta: string; normativa: string };
 
-const isSelect2 = (f: Field) => (f.attrs.class ?? "").split(" ").includes("select2");
+export const isSelect2 = (f: Field) => (f.attrs.class ?? "").split(" ").includes("select2");
 const isMultiple = (f: Field) => f.attrs.multiple !== undefined;
 const isDisabled = (f: Field) => f.attrs.disabled !== undefined;
 const asList = (value: string | boolean) => (typeof value === "string" ? value.split(",").filter(Boolean) : []);
@@ -70,7 +70,8 @@ export function useModalForm({ fields, endpoint, rejection, onSaved, extra }: {
     if (result.kind === "redirect") { onSaved(); return; }
     busyRef.current = false;
     setBusy(false);
-    if (result.kind === "invalid" && formDataValid(result.data)) { setErrors(errorsOf(result.data.fields)); centroAcciones.alert(rejection); } else centroAcciones.alert(GENERIC_ERROR);
+    // The native view sends the text of its rejection (`payload.message`); the constant is only the fallback for a view that sends none.
+    if (result.kind === "invalid" && formDataValid(result.data)) { setErrors(errorsOf(result.data.fields)); centroAcciones.alert(text(result.data.message) ? result.data.message : rejection); } else centroAcciones.alert(GENERIC_ERROR);
   }
   return { state, set, errors, busy, submit };
 }
@@ -86,13 +87,15 @@ export function useModalClass(id: string, className: string) {
 }
 
 /** A control as the native widget draws it, with the select2 states the modal forms need (`disabled`, `multiple`, `is-invalid`). */
-export function ModalControl({ f, state, set, invalid, choices, disabled, dropdownParent, placeholderOnly = false, plainSelect = false }: {
+function ModalControlInner({ f, state, set, invalid, choices, disabled, dropdownParent, placeholderOnly = false, plainSelect = false, after }: {
   f: Field; state: FormValues; set: (name: string, value: string | boolean) => void; invalid?: boolean;
   choices?: Field["choices"]; disabled?: boolean; dropdownParent?: HTMLElement | null;
   /** The select2 box shows its placeholder while the form state keeps the value (the native `select.value = x` without `change.select2`). */
   placeholderOnly?: boolean;
   /** A `select.select2` the native script never initialised: it draws as the browser's plain select. */
   plainSelect?: boolean;
+  /** The feedback the native script inserts right after the `<select>`: a Select2 draws it before its box. */
+  after?: ReactNode;
 }) {
   // `select.value = x` without `change.select2`: the hidden select holds the value while the box shows its placeholder.
   const real = String(state[f.name] ?? "");
@@ -111,7 +114,7 @@ export function ModalControl({ f, state, set, invalid, choices, disabled, dropdo
     const options = choices ?? f.choices;
     return <Select2 id={f.id} name={f.name} choices={options} value={placeholderOnly ? [""] : multiple ? asList(state[f.name]) : [String(state[f.name] ?? "")]}
       onChange={(v) => set(f.name, multiple ? v.join(",") : v[0] ?? "")} multiple={multiple} disabled={disabled ?? isDisabled(f)} invalid={invalid}
-      placeholder={f.attrs["data-placeholder"] ?? (multiple ? undefined : options.find((c) => c.value === "")?.label)} dropdownParent={dropdownParent}
+      placeholder={f.attrs["data-placeholder"] ?? (multiple ? undefined : options.find((c) => c.value === "")?.label)} dropdownParent={dropdownParent} afterSelect={after}
       selectClassName={f.attrs.class ?? ""} selectProps={{ required: f.attrs.required !== undefined && !placeholderOnly ? true : undefined, "data-width": f.attrs["data-width"] }}
       hideEmptyChoice noResults="No results found" clearTrigger="mousedown" focusMarker="container" termHandling="reset" enterOnSelected="toggle" outsideClick="dropdown" />;
   }
@@ -122,6 +125,17 @@ export function ModalControl({ f, state, set, invalid, choices, disabled, dropdo
   return <Control f={patched} state={state} set={filtered} />;
 }
 
+type ModalControlProps = Parameters<typeof ModalControlInner>[0];
+
+/**
+ * A modal control with the `invalid-feedback` a rejected save adds. The native script inserts it right after the `<select>`, so a
+ * Select2 box (which Select2 puts after the select) follows its feedback; any other control is followed by it.
+ */
+export function ModalControl({ feedback, ...props }: Omit<ModalControlProps, "after"> & { feedback?: ReactNode }) {
+  const s2 = props.f.tag === "select" && isSelect2(props.f) && !props.plainSelect;
+  return s2 ? <ModalControlInner {...props} after={feedback} /> : <><ModalControlInner {...props} />{feedback}</>;
+}
+
 /** `label_tag`: Django adds the suffix unless the label already ends in punctuation. */
 export const labelOf = (f: Field) => (/[:?.!]$/.test(f.label) ? f.label : `${f.label}:`);
 
@@ -130,12 +144,12 @@ export function AsPField({ f, state, set, error, choices, disabled, dropdownPare
   f: Field; state: FormValues; set: (name: string, value: string | boolean) => void; error?: string;
   choices?: Field["choices"]; disabled?: boolean; dropdownParent?: HTMLElement | null;
 }) {
+  const feedback = error !== undefined ? <div className="invalid-feedback d-block">{error}</div> : null;
   const withDescription: Field = f.help_text ? { ...f, attrs: { ...f.attrs, "aria-describedby": `${f.id}_helptext` } } : f;
   return (
     <p>
       <label htmlFor={f.id}>{labelOf(f)}</label>{" "}
-      <ModalControl f={withDescription} state={state} set={set} invalid={error !== undefined} choices={choices} disabled={disabled} dropdownParent={dropdownParent} />
-      {error !== undefined && <div className="invalid-feedback d-block">{error}</div>}
+      <ModalControl f={withDescription} state={state} set={set} invalid={error !== undefined} choices={choices} disabled={disabled} dropdownParent={dropdownParent} feedback={feedback} />
       {f.help_text ? <>{" "}<span className="helptext" id={`${f.id}_helptext`}>{f.help_text}</span></> : null}
     </p>
   );

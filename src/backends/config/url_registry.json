@@ -15645,6 +15645,16 @@
   "regex": "^api/web/vat/centros/form/\\Z"
  },
  {
+  "name": "centros-formulario-editar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-formulario/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centros-formulario-nuevo",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-formulario/nuevo/\\Z"
+ },
+ {
   "name": "centros-list",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/centros/\\Z"

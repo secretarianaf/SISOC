@@ -23,6 +23,7 @@ from VAT.views.oferta_institucional import (
 )
 from VAT.web_api_catalogos_forms import CatalogoEscrituraView
 from VAT.web_api_common import campo_formulario, texto
+from VAT.web_api_vat_centros_base import con_mensaje
 
 # Campos que dibuja la plantilla nativa ``comision_form.html``; ``acepta_lista_espera`` no está (se conserva).
 CAMPOS_OFERTA = (
@@ -91,7 +92,7 @@ class ComisionFormView(ComisionEscrituraView):
         form = vista.get_form()
         if form.is_valid():
             return self.destino(vista.form_valid(form))
-        return self.formulario(vista, form, status=400)
+        return con_mensaje(self.formulario(vista, form, status=400), vista, form)
 
     def formulario(self, vista, form, status=200):
         editando = form.instance.pk is not None

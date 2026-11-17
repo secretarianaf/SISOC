@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- shared parity module: components plus the helpers and hooks that go with them. */
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type SelectHTMLAttributes } from "react";
 import { createPortal } from "react-dom";
+import type { ReactNode } from "react";
 
 /**
  * Select2 4.1 look-alike over local choices (markup of the native widget, so `select2.min.css`
@@ -53,12 +54,15 @@ export type Select2Props = {
   outsideClick?: "results" | "dropdown";
   /** Single only. `search`: opening moves focus to the search field of the dropdown. `selection`: the box keeps focus (native single select: Enter, Space and Alt+ArrowDown open; Escape, Tab and Alt+ArrowUp close without moving focus). */
   singleFocus?: "search" | "selection";
+  /** Rendered between the hidden native `<select>` and the Select2 box (where a script inserts feedback `afterend` of the select). */
+  afterSelect?: ReactNode;
 };
 
 export default function Select2({
   id, name, choices, value, onChange, multiple = false, placeholder, selectClassName, selectProps, invalid = false, disabled = false,
   noResults, dropdownParent, hideEmptyChoice = false, clearTrigger = "none", focusMarker = "container", termHandling = "reset",
   enterOnSelected = "toggle", removeOpensResults = false, outsideClick = "dropdown", singleFocus = "search",
+  afterSelect,
 }: Select2Props) {
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -208,6 +212,7 @@ export default function Select2({
       {...selectProps} value={multiple ? value : value[0] ?? ""} onChange={() => undefined}>
       {choices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
     </select>
+    {afterSelect}
     <span ref={container} className={containerClass} dir="ltr" style={{ width: "100%" }} {...containerFocus}>
       <span className="selection">
         {multiple

@@ -126,6 +126,7 @@ import { vatCentrosUsuarioRoute } from "./vatCentrosUsuario";
 import { vatCentrosBajaRoute } from "./vatCentrosBaja";
 import { vatCentrosListaRoute } from "./vatCentrosLista";
 import { vatCentrosDetalleRoute } from "./vatCentrosDetalle";
+import { vatCentrosFormularioRoute } from "./vatCentrosFormulario";
 import { vatCatalogosRoute } from "./vatCatalogos";
 import { vatCatalogosFormRoute } from "./vatCatalogosForm";
 import { vatBuscadorCiudadanoRoute } from "./vatBuscadorCiudadano";
@@ -274,6 +275,7 @@ export const ROUTES: RouteDefinition[] = [
   vatCentrosBajaRoute,
   vatCentrosListaRoute,
   vatCentrosDetalleRoute,
+  vatCentrosFormularioRoute,
   vatInscripcionRoute,
   vatInscripcionFormRoute,
   vatBuscadorCiudadanoRoute,

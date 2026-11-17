@@ -136,8 +136,7 @@ export function CursoModal({ fields, planes, edicion, endpoint, close, onSaved }
                     <i className="fas fa-ticket-alt" />{" "}<span data-voucher-counter-value="tipo">{selectedCount}</span>{" "}<span className="sisoc-curso-voucher-counter-label">seleccionados</span>
                   </span>
                 </div>
-                <ModalControl f={tipo} state={form.state} set={form.set} invalid={form.errors.tipo !== undefined} dropdownParent={dropdownParent} />
-                <Feedback error={form.errors.tipo} />
+                <ModalControl f={tipo} state={form.state} set={form.set} invalid={form.errors.tipo !== undefined} dropdownParent={dropdownParent} feedback={<Feedback error={form.errors.tipo} />} />
                 {tipo.help_text ? <div className="form-text sisoc-curso-help">{tipo.help_text}</div> : null}
               </>, "col-12 mb-3 sisoc-curso-vouchers sisoc-curso-tipo")}
               {row(<>
@@ -190,12 +189,12 @@ export function ComisionCursoModal({ fields, edicion, close, onSaved }: { fields
     set(name, value);
     if (name === "acepta_lista_espera" && value !== true) set("cupo_lista_espera", "");
   };
-  const control = (f: Field) => {
+  const control = (f: Field, withFeedback = true) => {
     const props = f.name === "fecha_fin" ? { ...f, attrs: { ...f.attrs, min: inicio } } : f.name === "cupo_lista_espera" ? { ...f, attrs: { ...f.attrs, ...(waitlist ? { required: "required" } : {}) } } : f;
     // `setFormValue` assigns `select.value` without refreshing the select2 box: curso and ubicación show their placeholder until they are changed.
     // The ubicación select is never turned into a select2 by the native script: it stays a plain select showing the value.
     const stale = f.name === "curso" && !touched.has(f.name);
-    return <ModalControl f={props} state={form.state} set={setValue} invalid={form.errors[f.name] !== undefined} placeholderOnly={stale} plainSelect={f.name === "ubicacion"} />;
+    return <ModalControl f={props} state={form.state} set={setValue} invalid={form.errors[f.name] !== undefined} placeholderOnly={stale} plainSelect={f.name === "ubicacion"} feedback={withFeedback ? <Feedback error={form.errors[f.name]} /> : undefined} />;
   };
   const help = (f: Field) => (f.help_text ? <div className="form-text">{f.help_text}</div> : null);
   return (
@@ -216,7 +215,7 @@ export function ComisionCursoModal({ fields, edicion, close, onSaved }: { fields
                   return (
                     <div key={f.name} className="col-md-6 mb-3">
                       <div className="form-check mt-4 pt-2">
-                        {control(f)}{" "}<label htmlFor={f.id} className="form-check-label fw-bold">{f.label}</label>
+                        {control(f, false)}{" "}<label htmlFor={f.id} className="form-check-label fw-bold">{f.label}</label>
                       </div>
                       <Feedback error={error} />{help(f)}
                     </div>
@@ -226,14 +225,14 @@ export function ComisionCursoModal({ fields, edicion, close, onSaved }: { fields
                   return (
                     <div key={f.name} className={`col-md-6 mb-3${waitlist || f.value ? "" : " d-none"}`} data-waitlist-capacity-wrapper>
                       <label htmlFor={f.id} className="form-label fw-bold">{f.label}{" "}<span className={`text-danger${waitlist ? "" : " d-none"}`} data-waitlist-required-mark>*</span></label>
-                      {control(f)}<Feedback error={error} />{help(f)}
+                      {control(f)}{help(f)}
                     </div>
                   );
                 }
                 return (
                   <div key={f.name} className="col-md-6 mb-3">
                     <label htmlFor={f.id} className="form-label fw-bold">{f.label}<Required f={f} /></label>
-                    {control(f)}<Feedback error={error} />{help(f)}
+                    {control(f)}{help(f)}
                   </div>
                 );
               })}

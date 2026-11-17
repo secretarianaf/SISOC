@@ -23,7 +23,7 @@ from VAT.views.institucion import (
     InstitucionUbicacionUpdateView,
 )
 from VAT.web_api_common import campo_formulario
-from VAT.web_api_vat_centros_base import VatFormWebView, redireccion
+from VAT.web_api_vat_centros_base import VatFormWebView, con_mensaje, redireccion
 
 
 def campo_modal(form, nombre):
@@ -135,7 +135,7 @@ class _CursoEscrituraWebView(VatFormWebView):
         form = vista.get_form()
         if form.is_valid():
             return redireccion(vista.form_valid(form))
-        return self.formulario(vista, form, status=400)
+        return con_mensaje(self.formulario(vista, form, status=400), vista, form)
 
 
 class CursoCreateModalWebView(_CursoEscrituraWebView):

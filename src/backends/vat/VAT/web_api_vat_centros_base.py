@@ -6,9 +6,10 @@ answers 400 with the bound form (fields, errors and non-field errors), so a reje
 the stored data unchanged.
 """
 
+import copy
 import json
 
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.urls import reverse
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
@@ -22,6 +23,26 @@ def redireccion(respuesta):
     if destino is None:
         destino = json.loads(respuesta.content)["redirect_url"]
     return Response({"ok": True, "redirect": destino})
+
+
+def con_mensaje(respuesta, vista, form):
+    """Add to a rejected answer the ``message`` the native view sends its modal script (its AJAX ``form_invalid``), if it sends one."""
+    original = vista.request
+    ajax = copy.copy(original)
+    ajax.META = {**original.META, "HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}
+    ajax.__dict__.pop(
+        "headers", None
+    )  # the native check reads the cached ``request.headers``
+    vista.request = ajax
+    try:
+        nativa = vista.form_invalid(form)
+    finally:
+        vista.request = original
+    if isinstance(nativa, JsonResponse):
+        mensaje = json.loads(nativa.content).get("message")
+        if isinstance(mensaje, str):
+            respuesta.data["message"] = mensaje
+    return respuesta
 
 
 class VatEscrituraWebView(VatNativeReadView):
@@ -74,7 +95,7 @@ class VatFormWebView(VatEscrituraWebView):
         form = vista.get_form()
         if form.is_valid():
             return redireccion(vista.form_valid(form))
-        return self.formulario(vista, form, status=400)
+        return con_mensaje(self.formulario(vista, form, status=400), vista, form)
 
 
 class VatBajaWebView(VatEscrituraWebView):

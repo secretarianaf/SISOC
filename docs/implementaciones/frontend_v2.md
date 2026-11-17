@@ -1508,3 +1508,19 @@ inválido, 400 con los campos y errores; el `<select multiple>` de vouchers viaj
 y `VAT.add|change|delete_curso`; el alta de curso exige `?centro=<id>` editable por el usuario (403, guarda del `dispatch` nativo). La variante embebida del curso (`?modal=1`) sigue
 siendo la página nativa. Rutas React: `vatOfertaForm.tsx` y `vatCursoForm.tsx`.
 Registro: `../registro/cambios/2026-T4/2026-11-16-2785-react-vat-oferta-curso-formularios.md`.
+El formulario de alta y edición de un centro de VAT (V06.02) usa `GET`/`POST /api/web/vat/centros-formulario/nuevo/` y
+`/api/web/vat/centros-formulario/<pk>/editar/` (`src/backends/vat/VAT/web_api_vat_centro_formulario.py`; el prefijo `centros/` es de la API INET).
+Corren `CentroCreateView` y `CentroUpdateView` (su guarda de `dispatch`: 403 sin alcance de alta o de edición y 404 si el centro no existe;
+`CentroAltaForm`, el formset de contactos y el `post` completo con `crear_centro` o `actualizar_centro`) y proyectan lo que imprime
+`centro_create_form.html`. Un POST válido responde `{"ok": true, "redirect": <url nativa>}`; uno inválido, 400 con el formulario ligado (valores,
+errores de campo, de contactos y no de campo), de modo que un rechazo no cambia lo guardado. La pantalla (`routes/vatCentrosFormulario.tsx`,
+`vatCentrosFormularioCampos.tsx`) reproduce `centro_create_form.js`: la búsqueda de referentes y revisores con chips, la cascada
+jurisdicción -> municipio -> localidad por los endpoints AJAX del core (al cambiar la jurisdicción solo se recargan los municipios y la
+localidad queda como estaba) y el alta y baja de contactos (el último no se quita y el agregado lleva las clases del script). Los campos
+bloqueados no se envían y el mapa no existe en esta página. Registro del plan: `docs/plans/2026-T4/2026-11-13-2785-vat-v02-v07-m2.md`.
+
+Ajuste de los modales del detalle de un centro (V06.01, paridad): el `invalid-feedback` de un campo Select2 va antes de su caja, como lo inserta el
+script nativo (`insertAdjacentElement('afterend')` sobre el `<select>`), y el texto del `alert` de un guardado rechazado es el `message` que la vista
+nativa envía a su script. Los POST rechazados de contactos y ubicaciones (`VatFormWebView`), de cursos (`centros-acciones/cursos/`) y de comisiones de
+curso agregan ese `message` a la respuesta 400 (`con_mensaje` en `src/backends/vat/VAT/web_api_vat_centros_base.py`, que ejecuta el `form_invalid`
+nativo con su rama AJAX); las constantes del cliente quedan solo como respaldo cuando la vista no lo envía.

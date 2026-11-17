@@ -120,6 +120,7 @@ _OWNED_PATTERNS = (
     r"/api/web/vat/cursos-(?:detalle/[0-9]+/|formularios/(?:nuevo/|[0-9]+/(?:editar/|eliminar/)))",
     r"/api/web/vat/centros-detalle/[0-9]+/(?:cursos/)?",
     r"/api/web/vat/centros-acciones/(?:contactos/[0-9]+/editar/|ubicaciones/[0-9]+/editar/|cursos/(?:nuevo/|[0-9]+/editar/))",
+    r"/api/web/vat/centros-formulario/(?:nuevo/|[0-9]+/editar/)",
     r"/api/web/auditoria/(?:listado/|evento/[0-9]+/|[a-z_]+/[a-z_]+/[^/]+/)",
     r"/api/web/auditoria/[a-z_]+/[a-z_]+/[^/]+/",
     r"/api/web/comedores/comedores/(?:formulario/|crear/|[0-9]+/(?:baja/|formulario/|editar/|admision/|capacitaciones/[0-9]+/estado/)?)?",

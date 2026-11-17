@@ -49,8 +49,8 @@ describe("segmentacion de una encuesta", () => {
     serve(page());
     render(<App />);
     expect(await screen.findByRole("heading", { name: "Segmentación" })).toBeTruthy();
-    expect(document.title).toContain("Segmentación: Satisfacción 2026");
-    expect(radio(/Todos los usuarios logueados/).checked).toBe(true);
+    await waitFor(() => expect(document.title).toContain("Segmentación: Satisfacción 2026"));
+    await waitFor(() => expect(radio(/Todos los usuarios logueados/).checked).toBe(true));
     expect(radio(/Listado de documentos/).checked).toBe(false);
     expect((document.getElementById("grupos-field") as HTMLFieldSetElement).hidden).toBe(true);
     expect((document.getElementById("listado-archivo-field") as HTMLElement).style.display).toBe("none");

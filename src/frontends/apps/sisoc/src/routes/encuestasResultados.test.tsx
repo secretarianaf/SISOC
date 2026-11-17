@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import App from "../App";
 import { findRoute } from "./index";
 import { resultadosValid } from "./encuestasResultados";
@@ -46,7 +46,7 @@ describe("resultados de una encuesta", () => {
     serve(page());
     render(<App />);
     expect(await screen.findByRole("heading", { name: "Resultados" })).toBeTruthy();
-    expect(document.title).toContain("Resultados: Satisfacción 2026");
+    await waitFor(() => expect(document.title).toContain("Resultados: Satisfacción 2026"));
     expect(webGet).toHaveBeenCalledWith("web/encuestas/7/resultados/", expect.anything());
     expect((screen.getByLabelText("Ronda") as HTMLSelectElement).value).toBe("12");
     expect(screen.getByRole("link", { name: /CSV/ }).getAttribute("href")).toBe("/encuestas/7/resultados/rondas/12/exportar/?formato=csv");

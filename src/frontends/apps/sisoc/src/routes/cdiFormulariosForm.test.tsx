@@ -121,12 +121,12 @@ describe("CDI institutional form route", () => {
     setup();
     await screen.findByText("Formulario vinculado al centro #7 (CDI-7)");
     const wrapper = document.querySelector("[data-field-name=tipo_jornada_otra]") as HTMLElement;
-    expect(wrapper.className).toContain("d-none");
+    await waitFor(() => expect(wrapper.className).toContain("d-none"));
     expect(($("id_tipo_jornada_otra") as HTMLInputElement).value).toBe("");
     fireEvent.change($("id_tipo_jornada"), { target: { value: "other" } });
-    expect(wrapper.className).not.toContain("d-none");
+    await waitFor(() => expect(wrapper.className).not.toContain("d-none"));
     fireEvent.click($("id_prestaciones_alimentarias_1"));
-    expect(($("id_tipo_jornada_otra") as HTMLInputElement).disabled).toBe(false);
+    await waitFor(() => expect(($("id_tipo_jornada_otra") as HTMLInputElement).disabled).toBe(false));
   });
 
   it("masks the CUIT and computes the room totals and ratios", async () => {

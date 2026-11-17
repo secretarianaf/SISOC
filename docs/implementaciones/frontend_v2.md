@@ -975,6 +975,20 @@ siendo el POST nativo de la misma URL (formulario con redirección o AJAX con
 React `/rendicioncuentasmensual/rendicioncuentasmensual/detalle/<pk>/`. Registro:
 `../registro/cambios/2026-T4/2026-11-16-2785-react-rendicion-mensual-detalle.md`.
 
+Los formularios de la rendición mensual (RM01.02) usan el mismo marco:
+`src/backends/comedores/rendicioncuentasmensual/web_api_rendicion_form.py`
+ejecuta las vistas nativas de alta (`nuevo/<comedor_id>/`), edición de datos
+(`editar/<pk>/`, que conserva el permiso extra `edit_rendicion_data`) y baja
+(`eliminar/<pk>/`, confirmación con baja lógica en cascada) con el permiso de
+cada URL de hoy; una redirección nativa vuelve como `{"ok": true, "redirect"}`
+y un formulario rechazado como 400. Conservado de la nativa: la página de alta
+nunca guarda (su formulario exige `linea_programatica` y `estado`, que la
+plantilla no dibuja), así que un POST rechazado devuelve el formulario en blanco
+y sin errores. Rutas React
+`/rendicioncuentasmensual/rendicioncuentasmensual/{nuevo,editar,eliminar}/<id>/`.
+Registro:
+`../registro/cambios/2026-T4/2026-11-17-2785-react-rendicion-mensual-formularios.md`.
+
 La rendición de cuentas final (RF01.01 a RF01.03) usa el
 mismo marco: `src/backends/comedores/rendicioncuentasfinal/web_api.py` ejecuta
 `RendicionCuentasFinalDetailView` (conserva el `get_or_create` del GET) y

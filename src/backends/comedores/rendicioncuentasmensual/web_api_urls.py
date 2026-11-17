@@ -4,6 +4,11 @@ from django.urls import path
 
 from rendicioncuentasmensual.web_api import RendicionListadoWebView
 from rendicioncuentasmensual.web_api_rendicion_detalle import RendicionDetalleWebView
+from rendicioncuentasmensual.web_api_rendicion_form import (
+    RendicionBajaWebView,
+    RendicionEditarWebView,
+    RendicionNuevaWebView,
+)
 
 urlpatterns = [
     path(
@@ -15,5 +20,20 @@ urlpatterns = [
         "<int:pk>/",
         RendicionDetalleWebView.as_view(),
         name="rendicioncuentasmensual_web_detalle",
+    ),
+    path(
+        "nuevo/<int:comedor_id>/",
+        RendicionNuevaWebView.as_view(),
+        name="rendicioncuentasmensual_web_nuevo",
+    ),
+    path(
+        "editar/<int:pk>/",
+        RendicionEditarWebView.as_view(),
+        name="rendicioncuentasmensual_web_editar",
+    ),
+    path(
+        "eliminar/<int:pk>/",
+        RendicionBajaWebView.as_view(),
+        name="rendicioncuentasmensual_web_eliminar",
     ),
 ]

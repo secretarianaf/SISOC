@@ -4985,9 +4985,24 @@
   "regex": "^api/web/comedores/rendicioncuentasmensual/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "rendicioncuentasmensual_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/editar/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/eliminar/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
   "name": "rendicioncuentasmensual_web_listado",
   "namespace": "",
   "regex": "^api/web/comedores/rendicioncuentasmensual/listado/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_web_nuevo",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/nuevo/(?P<comedor_id>[0-9]+)/\\Z"
  },
  {
   "name": "reporter_provincias",

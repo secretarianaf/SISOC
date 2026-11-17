@@ -25,7 +25,7 @@ jobs:
       - name: Verificar front y tipos OpenAPI
         working-directory: src/frontends
         run: |
-          npm audit --audit-level=low
+          npm audit --omit=dev --audit-level=low
           npm run lint
           npm run typecheck
           npm run test

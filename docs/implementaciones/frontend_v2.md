@@ -810,6 +810,12 @@ El listado de actividades y el catálogo (`routes/cdfActividadList.tsx`) usan
 `src/backends/cdf/centrodefamilia/web_api_actividades_gestion.py`, que corre
 `ActividadCentroListView` y `ActividadCreateView`; el orden por columna es local, como
 `listSort.js`. Registro: `../registro/cambios/2026-T4/2026-11-13-2785-react-cdf-actividades-lista-catalogo.md`.
+El Informe Cabal (`routes/cdfInformeCabal.tsx`: historial, detalle de archivo, registro y detalle por centro) usa
+`src/backends/cdf/centrodefamilia/web_api_informecabal.py`, que corre las vistas nativas y solo lee. La
+previsualización, el procesamiento y el reproceso siguen siendo los endpoints AJAX nativos, que la pantalla
+React invoca como el script `informecabal.js` (multipart o urlencoded con `X-CSRFToken`, sin reintentos).
+`metricas-dashboard/` no es una pantalla (JSON para el dashboard del core) y no cambia. Registro:
+`../registro/cambios/2026-T4/2026-11-16-2785-react-cdf-informecabal.md`.
 El formulario de la actividad de un centro (`routes/cdfActividadForm.tsx`) usa
 `src/backends/cdf/centrodefamilia/web_api_actividad_form.py`, que corre
 `ActividadCentroCreateView` y `ActividadCentroUpdateView`; la hora usa flatpickr desde el

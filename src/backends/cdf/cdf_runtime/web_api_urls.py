@@ -8,6 +8,7 @@ urlpatterns = [
     path("", include("centrodefamilia.web_api_urls")),
     path("", include("centrodefamilia.web_api_beneficiarios_urls")),
     path("", include("centrodefamilia.web_api_actividades_urls")),
+    path("", include("centrodefamilia.web_api_informecabal_urls")),
     # Aporte de Centro de Familia a Ciudadano 360 (C04).
     path(
         "ciudadanos/<int:pk>/aportes/<str:aporte>/",

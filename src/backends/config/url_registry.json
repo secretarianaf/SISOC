@@ -6515,6 +6515,26 @@
   "regex": "^api/web/cdf/centros/(?P<pk>[0-9]+)/usuarios/\\Z"
  },
  {
+  "name": "web_cdf_informecabal_archivo",
+  "namespace": "",
+  "regex": "^api/web/cdf/informecabal/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_cdf_informecabal_list",
+  "namespace": "",
+  "regex": "^api/web/cdf/informecabal/\\Z"
+ },
+ {
+  "name": "web_cdf_informecabal_por_centro",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<centro_id>[0-9]+)/informecabal/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_cdf_informecabal_registro",
+  "namespace": "",
+  "regex": "^api/web/cdf/informecabal/registro/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
   "name": "web_cdf_participantes_crear",
   "namespace": "",
   "regex": "^api/web/cdf/centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/participantes/\\Z"

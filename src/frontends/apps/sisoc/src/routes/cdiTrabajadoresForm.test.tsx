@@ -191,6 +191,8 @@ describe("CDI worker form route", () => {
     webPost.mockResolvedValue({ data: { ok: true, redirect: "/centrodeinfancia/detalle/7" }, status: 200 });
     setup();
     await screen.findByRole("heading", { name: "Institución" });
+    // The binding effect disables the controls of the hidden function rows after the first paint.
+    await waitFor(() => expect(($("id_funcion_pfpi") as HTMLInputElement).disabled).toBe(true));
     const button = screen.getByRole("button", { name: "Agregar trabajador" });
     fireEvent.click(button);
     fireEvent.click(button);

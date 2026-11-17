@@ -733,6 +733,15 @@ destinatario fijo, autor y mensajes nativos; acceso sin cambios). Como el templa
 `{{ form.as_p }}`, la API envía ese marcado y la pantalla lo inserta tal cual; el POST es multipart
 (adjunto) o urlencoded. Entradas de vista previa en `centrodeinfancia/web_preview_intervencion_form.py`.
 Registro: `../registro/cambios/2026-T4/2026-11-17-2785-react-cdi-intervencion-form.md`.
+
+El detalle del formulario de nómina de Centro de Infancia (`/centrodeinfancia/<nómina>/nomina/formulario/`,
+con barra final; el número de la ruta nativa es el de la nómina) corre sobre
+`NominaCentroInfanciaFormularioDetailView` mediante `web_api_nomina_formulario.py` (`GET
+/api/web/cdi/nomina/<id>/formulario/`, permiso `view_nominacentroinfancia`, alcance por provincia y 404 como el
+nativo). Cada fila se renderiza en el servidor con la misma expresión del template (`default`, `yesno`,
+`date`) y la pantalla solo dibuja la tabla. Solo lectura. Entrada de vista previa en
+`centrodeinfancia/web_preview_nomina_formulario.py`.
+Registro: `../registro/cambios/2026-T4/2026-11-17-2785-react-cdi-nomina-formulario.md`.
 ### Vertical remoto sobre G1: Duplas (equipo técnico) de Comedores
 
 Segunda aplicación del patrón, ahora con el marco nativo `includes/main.html`

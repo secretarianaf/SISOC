@@ -11,4 +11,5 @@ urlpatterns = [
     path("", include("centrodeinfancia.web_api_urls_destinatario")),
     path("", include("centrodeinfancia.web_api_urls_centro_form")),
     path("", include("centrodeinfancia.web_api_urls_intervencion_form")),
+    path("", include("centrodeinfancia.web_api_urls_nomina_formulario")),
 ]

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from django import forms
@@ -19,6 +19,7 @@ from centrodeinfancia.forms import (
     NominaCentroInfanciaDestinatariosForm,
     NominaCentroInfanciaForm,
 )
+from centrodeinfancia.services import fecha_nacimiento_limite_nomina
 from core.models import Localidad, Municipio, Provincia
 from core.constants import UserGroups
 
@@ -332,6 +333,34 @@ class TestNominaCentroInfanciaDestinatariosFormValidation:
         form = NominaCentroInfanciaDestinatariosForm(data, centro=centro, actor=actor)
 
         assert form.is_valid(), form.errors
+        # La excepción queda marcada para que el pase automático la respete.
+        assert form.instance.control_edad_maxima_en == date.today()
+
+    def test_el_dia_que_cumple_4_anios_ya_debe_ser_pendiente(self, centro):
+        """#2925: el día del cumpleaños número 4 no puede quedar Activo."""
+        actor = User.objects.create_user(username="operador-cumple-4")
+        cumple_hoy = fecha_nacimiento_limite_nomina(date.today())
+
+        form = NominaCentroInfanciaDestinatariosForm(
+            datos_validos(centro, fecha_nacimiento=cumple_hoy.isoformat()),
+            centro=centro,
+            actor=actor,
+        )
+        assert not form.is_valid()
+        assert form.errors["estado"] == [
+            "Para niños y niñas de 4 años o más el estado debe ser Pendiente."
+        ]
+
+        form = NominaCentroInfanciaDestinatariosForm(
+            datos_validos(
+                centro,
+                fecha_nacimiento=(cumple_hoy + timedelta(days=1)).isoformat(),
+            ),
+            centro=centro,
+            actor=actor,
+        )
+        assert form.is_valid(), form.errors
+        assert form.instance.control_edad_maxima_en is None
 
     def test_form_invalido_sin_apellido(self, centro):
         data = datos_validos(centro)

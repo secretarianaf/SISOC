@@ -1642,6 +1642,15 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
     )
+    # Día en que se aplicó el control de 4 años (pase automático a Pendiente o
+    # reactivación de un Administrador). Con fecha, el pase automático no vuelve
+    # a tocar la ficha: así se respeta la decisión del Administrador (#2925).
+    control_edad_maxima_en = models.DateField(
+        blank=True,
+        null=True,
+        editable=False,
+        verbose_name="Control de edad máxima aplicado el",
+    )
 
     # ── Sección 8: Domicilio (campos extendidos) ──────────────────────────────
     tipo_barrio = models.CharField(

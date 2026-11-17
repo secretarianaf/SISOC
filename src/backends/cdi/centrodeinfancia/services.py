@@ -1,6 +1,7 @@
 import datetime
 import logging
 import re
+from calendar import monthrange
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -34,6 +35,65 @@ MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO = (
 
 MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO = "duplicada_mismo_centro"
 MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO = "vigente_otro_centro"
+
+# Los CDI atienden a niños y niñas hasta el día anterior a cumplir 4 años.
+EDAD_MAXIMA_NOMINA_MESES = 48
+
+
+def fecha_nacimiento_limite_nomina(hoy: datetime.date) -> datetime.date:
+    """Nacimientos en esta fecha o antes ya cumplieron 48 meses a ``hoy``.
+
+    Quien nació el 16/11/2022 cumple 4 años el 16/11/2026 y ese mismo día deja
+    de contar como activo. El día se ajusta al último del mes (29/02).
+    """
+    indice_mes = hoy.year * 12 + hoy.month - 1 - EDAD_MAXIMA_NOMINA_MESES
+    anio, indice_mes = divmod(indice_mes, 12)
+    mes = indice_mes + 1
+    return hoy.replace(year=anio, month=mes, day=min(hoy.day, monthrange(anio, mes)[1]))
+
+
+def pasar_nomina_a_pendiente_por_edad(
+    *,
+    hoy: datetime.date | None = None,
+    centro_id: int | None = None,
+    provincia_id: int | None = None,
+) -> int:
+    """Pasa a Pendiente las fichas activas de quienes ya cumplieron 4 años.
+
+    Corre sobre cada ficha una sola vez: si después un Administrador la vuelve
+    a Activo, se respeta. Devuelve la cantidad de fichas actualizadas.
+    """
+    hoy = hoy or timezone.localdate()
+    limite = fecha_nacimiento_limite_nomina(hoy)
+    queryset = NominaCentroInfancia.objects.filter(
+        estado=NominaCentroInfancia.ESTADO_ACTIVO,
+        control_edad_maxima_en__isnull=True,
+    ).filter(
+        # Misma fuente que la nómina descargable: la ficha y, si no la tiene,
+        # la fecha del ciudadano.
+        Q(fecha_nacimiento__lte=limite)
+        | Q(fecha_nacimiento__isnull=True, ciudadano__fecha_nacimiento__lte=limite)
+    )
+    if centro_id is not None:
+        queryset = queryset.filter(centro_id=centro_id)
+    if provincia_id is not None:
+        queryset = queryset.filter(centro__provincia_id=provincia_id)
+    actualizadas = queryset.update(
+        estado=NominaCentroInfancia.ESTADO_PENDIENTE,
+        control_edad_maxima_en=hoy,
+    )
+    if actualizadas:
+        logger.info(
+            "Fichas de nómina CDI pasadas a Pendiente por cumplir 4 años",
+            extra={
+                "data": {
+                    "actualizadas": actualizadas,
+                    "centro_id": centro_id,
+                    "provincia_id": provincia_id,
+                }
+            },
+        )
+    return actualizadas
 
 
 def tiene_nomina_cdi_vigente_en_otro_centro(

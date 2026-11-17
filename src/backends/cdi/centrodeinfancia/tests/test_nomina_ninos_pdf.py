@@ -478,18 +478,20 @@ def test_export_data_no_duplica_mismo_dni_en_ciudadanos_distintos():
 
 
 @pytest.mark.django_db
-def test_export_data_excluye_mayores_de_48_meses_aunque_sigan_activos():
+def test_export_data_excluye_desde_el_dia_que_cumple_4_anios():
+    """#2925: el día del cumpleaños número 4 el niño ya no figura."""
     provincia = Provincia.objects.create(nombre="Provincia Límite Edad")
     user = _create_egp("egp-limite-edad", provincia)
     centro = CentroDeInfancia.objects.create(
         nombre="CDI Límite Edad",
         provincia=provincia,
     )
-    fecha_exportacion = timezone.make_aware(datetime(2026, 8, 31, 12, 0))
+    fecha_exportacion = timezone.make_aware(datetime(2026, 11, 16, 12, 0))
 
     for documento, nacimiento in (
-        (44000001, date(2022, 8, 31)),  # exactamente 48 meses
-        (44000002, date(2022, 8, 30)),  # 48 meses y un día
+        (44000001, date(2022, 11, 17)),  # cumple 4 mañana
+        (44000002, date(2022, 11, 16)),  # cumple 4 hoy
+        (44000003, date(2022, 11, 15)),  # cumplió 4 ayer
     ):
         ciudadano = _create_child(documento, birth_date=nacimiento)
         NominaCentroInfancia.objects.create(
@@ -508,6 +510,40 @@ def test_export_data_excluye_mayores_de_48_meses_aunque_sigan_activos():
 
     assert data.total_ninos == 1
     assert data.centros[0].rows[0].dni == "44000001"
+    estados = dict(
+        NominaCentroInfancia.objects.values_list("ciudadano__documento", "estado")
+    )
+    assert estados == {
+        44000001: NominaCentroInfancia.ESTADO_ACTIVO,
+        44000002: NominaCentroInfancia.ESTADO_PENDIENTE,
+        44000003: NominaCentroInfancia.ESTADO_PENDIENTE,
+    }
+
+
+@pytest.mark.django_db
+def test_export_data_excluye_activo_de_4_anios_que_dejo_un_administrador():
+    """La excepción del Administrador mantiene el estado, no la fila en la nómina."""
+    provincia = Provincia.objects.create(nombre="Provincia Excepción Edad")
+    user = _create_egp("egp-excepcion-edad", provincia)
+    centro = CentroDeInfancia.objects.create(nombre="CDI Excepción", provincia=provincia)
+    nacimiento = date(2022, 1, 10)
+    ficha = NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=_create_child(44000010, birth_date=nacimiento),
+        estado=NominaCentroInfancia.ESTADO_ACTIVO,
+        fecha_nacimiento=nacimiento,
+        control_edad_maxima_en=date(2026, 1, 10),
+    )
+
+    data = build_export_data(
+        user=user,
+        provincia=provincia,
+        generado_en=timezone.make_aware(datetime(2026, 11, 16, 12, 0)),
+    )
+
+    ficha.refresh_from_db()
+    assert data.total_ninos == 0
+    assert ficha.estado == NominaCentroInfancia.ESTADO_ACTIVO
 
 
 @pytest.mark.django_db

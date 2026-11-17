@@ -50,6 +50,7 @@ from centrodeinfancia.models import (
 from centrodeinfancia.services import (
     ESTADOS_NOMINA_CDI_VIGENTE,
     MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO,
+    fecha_nacimiento_limite_nomina,
     tiene_nomina_cdi_vigente_en_otro_centro,
 )
 from centrodeinfancia.services_user_provisioning import (
@@ -1373,23 +1374,33 @@ class NominaCentroInfanciaBaseForm(CamposRenaperFormMixin, forms.ModelForm):
             if "edad_unidad" in self.fields:
                 cleaned_data["edad_unidad"] = unidad
         self._validar_vigencia_unica_cdi(cleaned_data)
-        if (
-            self.actor
-            and fecha_nacimiento
-            and fecha_nacimiento < date.today().replace(year=date.today().year - 4)
-            and cleaned_data.get("estado") != NominaCentroInfancia.ESTADO_PENDIENTE
-            and not (
-                self.actor.is_superuser
-                or self.actor.groups.filter(
-                    name=UserGroups.SIMEPI_ADMINISTRADOR
-                ).exists()
-            )
-        ):
-            self.add_error(
-                "estado",
-                "Para niños y niñas mayores de 48 meses el estado debe ser Pendiente.",
-            )
+        self._validar_edad_maxima(fecha_nacimiento, cleaned_data.get("estado"))
         return cleaned_data
+
+    def _validar_edad_maxima(self, fecha_nacimiento, estado):
+        """Desde el día en que cumple 4 años la ficha va en Pendiente (#2925).
+
+        Solo un Administrador puede dejarla Activa; en ese caso se marca como
+        controlada para que el pase automático no la vuelva a Pendiente.
+        """
+        hoy = date.today()
+        if (
+            not self.actor
+            or not fecha_nacimiento
+            or fecha_nacimiento > fecha_nacimiento_limite_nomina(hoy)
+            or estado == NominaCentroInfancia.ESTADO_PENDIENTE
+        ):
+            return
+        if self.actor.is_superuser or self.actor.groups.filter(
+            name=UserGroups.SIMEPI_ADMINISTRADOR
+        ).exists():
+            if estado == NominaCentroInfancia.ESTADO_ACTIVO:
+                self.instance.control_edad_maxima_en = hoy
+            return
+        self.add_error(
+            "estado",
+            "Para niños y niñas de 4 años o más el estado debe ser Pendiente.",
+        )
 
 
 class NominaCentroInfanciaForm(NominaCentroInfanciaBaseForm):

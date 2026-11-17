@@ -10,6 +10,8 @@ from ciudadanos.web_aportes import AporteCiudadanoWebView
 
 urlpatterns = [
     path("duplas/", include("duplas.web_api_urls")),
+    path("asignar-dupla/", include("comedores.web_api_dupla_asignar_urls")),
+    path("nomina-crear/", include("comedores.web_api_nomina_crear_urls")),
     path("", include("comedores.web_api_montos_urls")),
     path("", include("comedores.web_api_pnud_urls")),
     path("", include("comedores.web_api_comedores_urls")),

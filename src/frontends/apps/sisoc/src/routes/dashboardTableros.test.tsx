@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import App from "../App";
 import { findRoute } from "./index";
 import { dashboardValid, tableroValid } from "./dashboardTableros";
@@ -144,8 +144,11 @@ describe("tablero embebido", () => {
     render(<App />);
     await screen.findByText("Tablero Prueba");
     const card = document.querySelector(".card") as HTMLElement;
+    // The collapse handler is attached by a passive effect: flush it before the click.
+    await act(async () => {});
     fireEvent.click(card.querySelector('[data-card-widget="collapse"]') as HTMLElement);
-    expect(card.querySelector("i.fa-plus")).toBeTruthy();
+    await waitFor(() => expect(card.querySelector("i.fa-plus")).toBeTruthy());
+    expect(card.classList.contains("collapsed-card")).toBe(true);
   });
 
   it("follows the native redirect of a board with its own screen", async () => {

@@ -38,6 +38,8 @@ _OWNED_PATTERNS = (
     r"/api/web/cdi/centros/[0-9]+/nomina/(?:crear/|[0-9]+/editar/)",
     r"/api/web/cdi/centros/(?:[0-9]+/nomina/[0-9]+/(?:(?:publicar|archivar|destacado|eliminar)/)?)?",
     r"/api/web/comedores/duplas/(?:crear/|[0-9]+/(?:(?:editar|eliminar)/)?)?",
+    r"/api/web/comedores/asignar-dupla/[0-9]+/",
+    r"/api/web/comedores/nomina-crear/[0-9]+/(?:admision/[0-9]+/)?",
     r"/api/web/comedores/montos/(?:crear/|[0-9]+/(?:editar/|eliminar/)?)?",
     r"/api/web/comedores/actividades-pnud/(?:crear/|[0-9]+/(?:editar|baja)/)?",
     r"/api/web/comedores/colaboradores/comedor/[0-9]+/(?:crear/|[0-9]+/(?:editar|eliminar)/)",

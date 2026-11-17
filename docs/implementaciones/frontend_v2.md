@@ -1553,3 +1553,15 @@ script nativo (`insertAdjacentElement('afterend')` sobre el `<select>`), y el te
 nativa envía a su script. Los POST rechazados de contactos y ubicaciones (`VatFormWebView`), de cursos (`centros-acciones/cursos/`) y de comisiones de
 curso agregan ese `message` a la respuesta 400 (`con_mensaje` en `src/backends/vat/VAT/web_api_vat_centros_base.py`, que ejecuta el `form_invalid`
 nativo con su rama AJAX); las constantes del cliente quedan solo como respaldo cuando la vista no lo envía.
+
+La asignación de equipo técnico a un comedor (CO07, `comedores/dupla/asignar/<pk>`) y el alta de personas en la nómina (CO01,
+`comedores/<pk>/nomina/crear/` y `comedores/<pk>/admision/<admision_pk>/nomina/crear/`) usan
+`src/backends/comedores/comedores/web_api_dupla_asignar.py` bajo `/api/web/comedores/asignar-dupla/<pk>/` y
+`src/backends/comedores/comedores/web_api_nomina_crear.py` bajo `/api/web/comedores/nomina-crear/<pk>/` (y `<pk>/admision/<admision_pk>/`).
+Ejecutan las vistas nativas (`AsignarDuplaListView`, `NominaDirectaCreateView`, `NominaCreateView`) con el permiso de la URL nativa
+(`duplas.change_dupla`, `comedores.add_nomina`) y su alcance: un comedor fuera del alcance, una admisión ajena o una nómina directa de un
+comedor que exige admisión responden 404. Los POST devuelven `{"ok": true, "redirect": ...}` o, en el alta de nómina, 400 con los
+formularios ligados; los mensajes nativos (incluida la consulta a RENAPER del buscador) quedan en la respuesta. Rutas React:
+`comedorDuplaAsignar.tsx` y `comedorNominaCrear.tsx`. Quedan nativos `comedores/<pk>/admision/<admision_pk>/nomina/importar/`, `comedores/<pk>/validar/` y
+`comedores_nuevo/<pk>` (POST o redirección, sin página) y `comedores/editar-nomina/<pk>/` (fragmento AJAX del modal de la nómina).
+Registro: `../registro/cambios/2026-T4/2026-11-17-2785-react-comedor-nomina-crear-dupla-asignar.md`.

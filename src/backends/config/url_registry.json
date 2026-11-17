@@ -2075,6 +2075,11 @@
   "regex": "^api/web/comedores/comedores/crear/\\Z"
  },
  {
+  "name": "comedores_web_dupla_asignar",
+  "namespace": "",
+  "regex": "^api/web/comedores/asignar\\-dupla/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
   "name": "comedores_web_editar",
   "namespace": "",
   "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/editar/\\Z"
@@ -2138,6 +2143,16 @@
   "name": "comedores_web_nomina_cambiar_estado",
   "namespace": "",
   "regex": "^api/web/comedores/comedores/nomina/(?P<pk>[0-9]+)/cambiar\\-estado/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_crear_admision",
+  "namespace": "",
+  "regex": "^api/web/comedores/nomina\\-crear/(?P<pk>[0-9]+)/admision/(?P<admision_pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_crear_directa",
+  "namespace": "",
+  "regex": "^api/web/comedores/nomina\\-crear/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "comedores_web_nomina_derivar",

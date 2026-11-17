@@ -58,4 +58,16 @@ Se conservan los `id` de todas las tarjetas que usan los tests y el JS. Las clas
   Los 2 que fallan (`test_issue_2641_http_contracts.py`: operación compuesta y login) fallan
   en el setup porque el servidor auxiliar tarda más de 30 s en arrancar en el Docker local
   de Windows. No llegan a renderizar el template.
-- Falta la revisión visual en navegador.
+- Tests nuevos: `test_alta_usuario_tipo_usuario_es_desplegable_sin_preseleccion` en
+  `src/backends/kernel/tests/test_users_regressions.py` y un caso en
+  `src/backends/sisoc_core/tests/js/user_mobile_access.test.js` que comprueba que el bloque
+  web completo se oculta en usuarios solo mobile.
+- El DOM simulado de `user_mobile_access.test.js` sumó `createElement`, `append` e
+  `insertBefore`: el script del ojo de contraseña los usa y sin ellos fallaban los 26 tests
+  JS del archivo (en `development` pasaban 25).
+- Revalidación del 2026-11-17: 26 tests JS pasan; en Python, 271 pasan y 2 se saltean en los
+  tests de usuarios de `sisoc_core`, comedores y DataCalle. black, pylint y djlint sin
+  observaciones.
+- Revisión visual en navegador hecha en el entorno local: alta (bloques, desplegable sin
+  preselección, ojo de contraseña, rechazo sin tipo), usuario solo mobile (bloque web
+  oculto) y edición (tipo precargado y guardado).

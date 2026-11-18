@@ -1642,6 +1642,15 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
     )
+    # Día en que el sistema pasó la ficha de Activo a Pendiente por cumplir 4
+    # años (#2925). Si después se corrige una fecha de nacimiento mal cargada y
+    # deja de tener 4 años, la ficha vuelve sola a Activo.
+    pendiente_por_edad_desde = models.DateField(
+        blank=True,
+        null=True,
+        editable=False,
+        verbose_name="Pendiente por edad desde",
+    )
 
     # ── Sección 8: Domicilio (campos extendidos) ──────────────────────────────
     tipo_barrio = models.CharField(

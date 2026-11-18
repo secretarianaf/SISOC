@@ -72,26 +72,26 @@ def test_pasa_a_pendiente_desde_el_dia_que_cumple_4_anios(centro):
 
     assert actualizadas == 2
     assert _estado(cumple_hoy) == NominaCentroInfancia.ESTADO_PENDIENTE
-    assert cumple_hoy.control_edad_maxima_en == HOY
+    assert cumple_hoy.pendiente_por_edad_desde == HOY
     assert _estado(solo_ciudadano) == NominaCentroInfancia.ESTADO_PENDIENTE
     assert _estado(cumple_manana) == NominaCentroInfancia.ESTADO_ACTIVO
-    assert cumple_manana.control_edad_maxima_en is None
+    assert cumple_manana.pendiente_por_edad_desde is None
     assert _estado(de_baja) == NominaCentroInfancia.ESTADO_BAJA
 
 
 @pytest.mark.django_db
-def test_respeta_la_reactivacion_de_un_administrador(centro):
+def test_no_hay_excepcion_si_se_reactiva_por_fuera_del_formulario(centro):
+    """Con 4 años o más ningún perfil la deja Activa: el pase la vuelve a tomar."""
     ficha = _ficha(centro, 50000011, date(2022, 11, 16))
     pasar_nomina_a_pendiente_por_edad(hoy=HOY)
-    # Un Administrador la vuelve a Activo: la marca de control queda.
     NominaCentroInfancia.objects.filter(pk=ficha.pk).update(
         estado=NominaCentroInfancia.ESTADO_ACTIVO
     )
 
     actualizadas = pasar_nomina_a_pendiente_por_edad(hoy=HOY + timedelta(days=1))
 
-    assert actualizadas == 0
-    assert _estado(ficha) == NominaCentroInfancia.ESTADO_ACTIVO
+    assert actualizadas == 1
+    assert _estado(ficha) == NominaCentroInfancia.ESTADO_PENDIENTE
 
 
 @pytest.mark.django_db

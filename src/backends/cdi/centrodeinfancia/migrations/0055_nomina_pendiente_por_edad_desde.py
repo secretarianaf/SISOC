@@ -10,12 +10,12 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="nominacentroinfancia",
-            name="control_edad_maxima_en",
+            name="pendiente_por_edad_desde",
             field=models.DateField(
                 blank=True,
                 editable=False,
                 null=True,
-                verbose_name="Control de edad máxima aplicado el",
+                verbose_name="Pendiente por edad desde",
             ),
         ),
     ]

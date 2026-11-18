@@ -521,8 +521,8 @@ def test_export_data_excluye_desde_el_dia_que_cumple_4_anios():
 
 
 @pytest.mark.django_db
-def test_export_data_excluye_activo_de_4_anios_que_dejo_un_administrador():
-    """La excepción del Administrador mantiene el estado, no la fila en la nómina."""
+def test_export_data_pasa_a_pendiente_y_excluye_activo_de_4_anios():
+    """#2925: al descargar, la ficha de 4 años pasa a Pendiente y no figura."""
     provincia = Provincia.objects.create(nombre="Provincia Excepción Edad")
     user = _create_egp("egp-excepcion-edad", provincia)
     centro = CentroDeInfancia.objects.create(
@@ -534,7 +534,6 @@ def test_export_data_excluye_activo_de_4_anios_que_dejo_un_administrador():
         ciudadano=_create_child(44000010, birth_date=nacimiento),
         estado=NominaCentroInfancia.ESTADO_ACTIVO,
         fecha_nacimiento=nacimiento,
-        control_edad_maxima_en=date(2026, 1, 10),
     )
 
     data = build_export_data(
@@ -545,7 +544,8 @@ def test_export_data_excluye_activo_de_4_anios_que_dejo_un_administrador():
 
     ficha.refresh_from_db()
     assert data.total_ninos == 0
-    assert ficha.estado == NominaCentroInfancia.ESTADO_ACTIVO
+    assert ficha.estado == NominaCentroInfancia.ESTADO_PENDIENTE
+    assert ficha.pendiente_por_edad_desde == date(2026, 11, 16)
 
 
 @pytest.mark.django_db

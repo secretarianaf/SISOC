@@ -1642,14 +1642,14 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
     )
-    # Día en que se aplicó el control de 4 años (pase automático a Pendiente o
-    # reactivación de un Administrador). Con fecha, el pase automático no vuelve
-    # a tocar la ficha: así se respeta la decisión del Administrador (#2925).
-    control_edad_maxima_en = models.DateField(
+    # Día en que el sistema pasó la ficha de Activo a Pendiente por cumplir 4
+    # años (#2925). Si después se corrige una fecha de nacimiento mal cargada y
+    # deja de tener 4 años, la ficha vuelve sola a Activo.
+    pendiente_por_edad_desde = models.DateField(
         blank=True,
         null=True,
         editable=False,
-        verbose_name="Control de edad máxima aplicado el",
+        verbose_name="Pendiente por edad desde",
     )
 
     # ── Sección 8: Domicilio (campos extendidos) ──────────────────────────────

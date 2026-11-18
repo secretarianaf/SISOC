@@ -213,7 +213,8 @@ def _exclude_overage_registros(
 ) -> tuple[list[NominaCentroInfancia], int]:
     """Omite a quienes ya cumplieron 48 meses: el día del cumpleaños no figuran.
 
-    Cubre también las fichas que un Administrador dejó en Activo (#2925).
+    Resguardo por si queda una ficha Activa de 4 años (por ejemplo, cargada por
+    fuera de los formularios) antes de que corra el pase a Pendiente (#2925).
     """
     cutoff_date = fecha_nacimiento_limite_nomina(as_of)
     selected = []

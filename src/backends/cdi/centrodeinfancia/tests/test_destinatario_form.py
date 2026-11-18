@@ -16,12 +16,15 @@ from centrodeinfancia.models import (
     Trabajador,
 )
 from centrodeinfancia.forms import (
+    NominaCentroInfanciaAdminForm,
     NominaCentroInfanciaDestinatariosForm,
     NominaCentroInfanciaForm,
 )
 from centrodeinfancia.services import fecha_nacimiento_limite_nomina
 from core.models import Localidad, Municipio, Provincia
 from core.constants import UserGroups
+
+FECHA_NACIMIENTO_MENOR = date.today() - timedelta(days=2 * 365)
 
 
 @pytest.fixture
@@ -88,7 +91,8 @@ def datos_validos(centro, **overrides):
         # Datos del niño/a
         "apellido": "Torres",
         "nombre": "Luca",
-        "fecha_nacimiento": "2021-07-01",
+        # Menor de 4 años: con 4 o más el estado no puede ser Activo (#2925).
+        "fecha_nacimiento": FECHA_NACIMIENTO_MENOR.isoformat(),
         "sexo": "Masculino",
         "tipo_documentacion": "dni_permanente",
         "dni": "45123456",
@@ -318,23 +322,21 @@ class TestNominaCentroInfanciaDestinatariosFormValidation:
         )
         assert form.is_valid(), form.errors
 
-    def test_mayor_de_48_meses_queda_pendiente_salvo_admin_simepi(self, centro):
-        actor = User.objects.create_user(username="operador-nomina")
+    def test_mayor_de_48_meses_no_puede_quedar_activo_ni_con_admin_simepi(self, centro):
+        """#2925: ningún perfil puede dejar Activa una ficha de 4 años o más."""
         data = datos_validos(centro, fecha_nacimiento="2020-01-01")
-        form = NominaCentroInfanciaDestinatariosForm(data, centro=centro, actor=actor)
-
-        assert not form.is_valid()
-        assert "estado" in form.errors
-
+        actor = User.objects.create_superuser(username="super-nomina-edad")
         admin_group, _ = Group.objects.get_or_create(
             name=UserGroups.SIMEPI_ADMINISTRADOR
         )
         actor.groups.add(admin_group)
-        form = NominaCentroInfanciaDestinatariosForm(data, centro=centro, actor=actor)
 
-        assert form.is_valid(), form.errors
-        # La excepción queda marcada para que el pase automático la respete.
-        assert form.instance.control_edad_maxima_en == date.today()
+        for kwargs in ({"actor": actor}, {}):
+            form = NominaCentroInfanciaDestinatariosForm(data, centro=centro, **kwargs)
+            assert not form.is_valid()
+            assert form.errors["estado"] == [
+                "Para niños y niñas de 4 años o más el estado debe ser Pendiente."
+            ]
 
     def test_el_dia_que_cumple_4_anios_ya_debe_ser_pendiente(self, centro):
         """#2925: el día del cumpleaños número 4 no puede quedar Activo."""
@@ -360,7 +362,7 @@ class TestNominaCentroInfanciaDestinatariosFormValidation:
             actor=actor,
         )
         assert form.is_valid(), form.errors
-        assert form.instance.control_edad_maxima_en is None
+        assert form.instance.pendiente_por_edad_desde is None
 
     def test_form_invalido_sin_apellido(self, centro):
         data = datos_validos(centro)
@@ -396,7 +398,7 @@ class TestNominaCentroInfanciaDestinatariosFormValidation:
         form = NominaCentroInfanciaDestinatariosForm(
             datos_validos(
                 centro,
-                fecha_nacimiento="2021-07-01",
+                fecha_nacimiento=FECHA_NACIMIENTO_MENOR.isoformat(),
                 edad_unidad="meses",
             ),
             centro=centro,
@@ -562,6 +564,140 @@ class TestNominaCentroInfanciaDestinatariosFormEdit:
         # Campos dinámicos de vacuna deben precargarse
         assert form.fields["vacuna_bcg_dosis"].initial == "1_dosis"
         assert form.fields["vacuna_bcg_fecha"].initial == "2022-01-10"
+
+
+def _ficha_guardada(centro, ciudadano, nacimiento, estado, pendiente_desde=None):
+    ciudadano.fecha_nacimiento = nacimiento
+    ciudadano.save(update_fields=["fecha_nacimiento"])
+    return NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=ciudadano,
+        dni=ciudadano.documento,
+        apellido=ciudadano.apellido,
+        nombre=ciudadano.nombre,
+        fecha_nacimiento=nacimiento,
+        estado=estado,
+        pendiente_por_edad_desde=pendiente_desde,
+    )
+
+
+@pytest.mark.django_db
+class TestEstadoAutomaticoPorEdad:
+    """#2925: con 4 años o más el estado lo fija el sistema; la fecha se corrige."""
+
+    MAYOR = date(2020, 1, 1)
+
+    def _editar(self, centro, ficha, **overrides):
+        form = NominaCentroInfanciaDestinatariosForm(
+            datos_validos(centro, **overrides), instance=ficha, centro=centro
+        )
+        assert form.is_valid(), form.errors
+        return form
+
+    def test_estado_no_se_edita_con_4_anios_o_mas(self, centro, ciudadano):
+        ficha = _ficha_guardada(
+            centro,
+            ciudadano,
+            self.MAYOR,
+            NominaCentroInfancia.ESTADO_PENDIENTE,
+            pendiente_desde=date.today(),
+        )
+
+        form = NominaCentroInfanciaDestinatariosForm(instance=ficha, centro=centro)
+
+        assert form.fields["estado"].disabled
+        # Aunque se fuerce Activo en el POST, el estado no cambia.
+        form = self._editar(
+            centro,
+            ficha,
+            fecha_nacimiento=self.MAYOR.isoformat(),
+            estado=NominaCentroInfancia.ESTADO_ACTIVO,
+        )
+        assert form.cleaned_data["estado"] == NominaCentroInfancia.ESTADO_PENDIENTE
+
+    def test_estado_se_edita_si_es_menor_de_4(self, centro, ciudadano):
+        ficha = _ficha_guardada(
+            centro,
+            ciudadano,
+            FECHA_NACIMIENTO_MENOR,
+            NominaCentroInfancia.ESTADO_ACTIVO,
+        )
+
+        form = NominaCentroInfanciaDestinatariosForm(instance=ficha, centro=centro)
+
+        assert not form.fields["estado"].disabled
+
+    def test_corregir_fecha_a_menor_de_4_vuelve_a_activo(self, centro, ciudadano):
+        ficha = _ficha_guardada(
+            centro,
+            ciudadano,
+            self.MAYOR,
+            NominaCentroInfancia.ESTADO_PENDIENTE,
+            pendiente_desde=date.today(),
+        )
+
+        form = self._editar(centro, ficha)
+        form.save()
+
+        ficha.refresh_from_db()
+        assert ficha.estado == NominaCentroInfancia.ESTADO_ACTIVO
+        assert ficha.pendiente_por_edad_desde is None
+
+    def test_corregir_fecha_que_sigue_en_4_o_mas_queda_pendiente(
+        self, centro, ciudadano
+    ):
+        ficha = _ficha_guardada(
+            centro,
+            ciudadano,
+            self.MAYOR,
+            NominaCentroInfancia.ESTADO_PENDIENTE,
+            pendiente_desde=date.today(),
+        )
+
+        form = self._editar(centro, ficha, fecha_nacimiento="2021-06-15")
+
+        assert form.cleaned_data["estado"] == NominaCentroInfancia.ESTADO_PENDIENTE
+        assert form.instance.pendiente_por_edad_desde == date.today()
+
+    def test_pendiente_que_no_fue_por_edad_no_se_activa_al_corregir(
+        self, centro, ciudadano
+    ):
+        ficha = _ficha_guardada(
+            centro, ciudadano, self.MAYOR, NominaCentroInfancia.ESTADO_PENDIENTE
+        )
+
+        form = self._editar(centro, ficha)
+
+        assert form.cleaned_data["estado"] == NominaCentroInfancia.ESTADO_PENDIENTE
+
+    def test_activa_de_4_anios_sin_pasar_queda_pendiente_al_editar(
+        self, centro, ciudadano
+    ):
+        ficha = _ficha_guardada(
+            centro, ciudadano, self.MAYOR, NominaCentroInfancia.ESTADO_ACTIVO
+        )
+
+        form = self._editar(centro, ficha, fecha_nacimiento=self.MAYOR.isoformat())
+
+        assert form.cleaned_data["estado"] == NominaCentroInfancia.ESTADO_PENDIENTE
+        assert form.instance.pendiente_por_edad_desde == date.today()
+
+    def test_admin_de_django_tampoco_deja_activo_con_4_anios(self, centro, ciudadano):
+        ficha = _ficha_guardada(
+            centro, ciudadano, self.MAYOR, NominaCentroInfancia.ESTADO_PENDIENTE
+        )
+        data = {
+            campo.name: campo.value_from_object(ficha)
+            for campo in NominaCentroInfancia._meta.fields  # pylint: disable=protected-access
+            if campo.editable and not campo.primary_key
+        }
+        data = {k: v for k, v in data.items() if v is not None}
+        data["estado"] = NominaCentroInfancia.ESTADO_ACTIVO
+
+        form = NominaCentroInfanciaAdminForm(data, instance=ficha)
+
+        assert not form.is_valid()
+        assert "estado" in form.errors
 
 
 # ─────────────────────────────────────────────────────────

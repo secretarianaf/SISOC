@@ -52,6 +52,16 @@ def fecha_nacimiento_limite_nomina(hoy: datetime.date) -> datetime.date:
     return hoy.replace(year=anio, month=mes, day=min(hoy.day, monthrange(anio, mes)[1]))
 
 
+def cumplio_edad_maxima_nomina(
+    fecha_nacimiento: datetime.date | None, hoy: datetime.date | None = None
+) -> bool:
+    """Indica si con esa fecha de nacimiento ya cumplió 4 años a ``hoy``."""
+    if not fecha_nacimiento:
+        return False
+    hoy = hoy or timezone.localdate()
+    return fecha_nacimiento <= fecha_nacimiento_limite_nomina(hoy)
+
+
 def pasar_nomina_a_pendiente_por_edad(
     *,
     hoy: datetime.date | None = None,
@@ -60,14 +70,13 @@ def pasar_nomina_a_pendiente_por_edad(
 ) -> int:
     """Pasa a Pendiente las fichas activas de quienes ya cumplieron 4 años.
 
-    Corre sobre cada ficha una sola vez: si después un Administrador la vuelve
-    a Activo, se respeta. Devuelve la cantidad de fichas actualizadas.
+    Con 4 años o más el estado lo fija el sistema y ningún perfil puede
+    dejarla Activa. Devuelve la cantidad de fichas actualizadas.
     """
     hoy = hoy or timezone.localdate()
     limite = fecha_nacimiento_limite_nomina(hoy)
     queryset = NominaCentroInfancia.objects.filter(
         estado=NominaCentroInfancia.ESTADO_ACTIVO,
-        control_edad_maxima_en__isnull=True,
     ).filter(
         # Misma fuente que la nómina descargable: la ficha y, si no la tiene,
         # la fecha del ciudadano.
@@ -80,7 +89,7 @@ def pasar_nomina_a_pendiente_por_edad(
         queryset = queryset.filter(centro__provincia_id=provincia_id)
     actualizadas = queryset.update(
         estado=NominaCentroInfancia.ESTADO_PENDIENTE,
-        control_edad_maxima_en=hoy,
+        pendiente_por_edad_desde=hoy,
     )
     if actualizadas:
         logger.info(

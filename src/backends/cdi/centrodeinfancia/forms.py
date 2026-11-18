@@ -4,12 +4,12 @@ from datetime import date
 from decimal import Decimal
 
 from django import forms
+from django.utils import timezone
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator
 
 from core.models import Localidad, Municipio, Nacionalidad, Provincia
-from core.constants import UserGroups
 from core.validators import (
     solo_digitos,
     validate_codigo_postal_ar,
@@ -50,7 +50,7 @@ from centrodeinfancia.models import (
 from centrodeinfancia.services import (
     ESTADOS_NOMINA_CDI_VIGENTE,
     MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO,
-    fecha_nacimiento_limite_nomina,
+    cumplio_edad_maxima_nomina,
     tiene_nomina_cdi_vigente_en_otro_centro,
 )
 from centrodeinfancia.services_user_provisioning import (
@@ -74,6 +74,10 @@ from centrodeinfancia.forms_formulario_cdi import (
     construir_clase_formset_articulacion,
     construir_clase_formset_distribucion_salas,
     construir_clase_formset_demanda_insatisfecha,
+)
+
+MENSAJE_ESTADO_POR_EDAD = (
+    "Para niños y niñas de 4 años o más el estado debe ser Pendiente."
 )
 
 NOMINA_SALA_CHOICES = [
@@ -1044,6 +1048,7 @@ class NominaCentroInfanciaBaseForm(CamposRenaperFormMixin, forms.ModelForm):
         self._configure_geography_fields()
         self._configure_initial_age()
         self._apply_required_flags()
+        self._bloquear_estado_por_edad()
 
     def _configure_sala_choices(self):
         """Renderiza una sola sala y conserva valores legacy ya registrados."""
@@ -1373,34 +1378,68 @@ class NominaCentroInfanciaBaseForm(CamposRenaperFormMixin, forms.ModelForm):
             if "edad_unidad" in self.fields:
                 cleaned_data["edad_unidad"] = unidad
         self._validar_vigencia_unica_cdi(cleaned_data)
-        self._validar_edad_maxima(fecha_nacimiento, cleaned_data.get("estado"))
+        self._aplicar_estado_por_edad(cleaned_data, fecha_nacimiento)
         return cleaned_data
 
-    def _validar_edad_maxima(self, fecha_nacimiento, estado):
+    def _fecha_nacimiento_guardada(self):
+        instancia = self.instance
+        return instancia.fecha_nacimiento or getattr(
+            instancia.ciudadano if instancia.ciudadano_id else None,
+            "fecha_nacimiento",
+            None,
+        )
+
+    def _bloquear_estado_por_edad(self):
+        """Con 4 años o más el estado lo fija el sistema, no se edita (#2925).
+
+        La fecha de nacimiento cargada a mano sigue editable: si se corrige, el
+        estado se recalcula al guardar (ver ``_aplicar_estado_por_edad``).
+        """
+        campo = self.fields.get("estado")
+        if (
+            not campo
+            or not self.instance.pk
+            or not cumplio_edad_maxima_nomina(self._fecha_nacimiento_guardada())
+        ):
+            return
+        campo.disabled = True
+        campo.help_text = "Se asigna automáticamente: tiene 4 años o más."
+        if self.instance.estado == NominaCentroInfancia.ESTADO_ACTIVO:
+            self.initial["estado"] = NominaCentroInfancia.ESTADO_PENDIENTE
+
+    def _aplicar_estado_por_edad(self, cleaned_data, fecha_nacimiento):
         """Desde el día en que cumple 4 años la ficha va en Pendiente (#2925).
 
-        Solo un Administrador puede dejarla Activa; en ese caso se marca como
-        controlada para que el pase automático no la vuelva a Pendiente.
+        Ningún perfil puede dejarla Activa. Si se corrige una fecha mal cargada y
+        deja de tener 4 años, la ficha que el sistema había pasado a Pendiente
+        por edad vuelve a Activo.
         """
-        hoy = date.today()
-        if (
-            not self.actor
-            or not fecha_nacimiento
-            or fecha_nacimiento > fecha_nacimiento_limite_nomina(hoy)
-            or estado == NominaCentroInfancia.ESTADO_PENDIENTE
-        ):
+        if "estado" not in self.fields:
             return
-        if (
-            self.actor.is_superuser
-            or self.actor.groups.filter(name=UserGroups.SIMEPI_ADMINISTRADOR).exists()
-        ):
+        instancia = self.instance
+        estado_bloqueado = self.fields["estado"].disabled
+        # Bloqueado, el POST del estado se ignora: se parte del guardado.
+        estado = instancia.estado if estado_bloqueado else cleaned_data.get("estado")
+        fecha = fecha_nacimiento or self._fecha_nacimiento_guardada()
+
+        if cumplio_edad_maxima_nomina(fecha):
             if estado == NominaCentroInfancia.ESTADO_ACTIVO:
-                self.instance.control_edad_maxima_en = hoy
+                if not estado_bloqueado:
+                    self.add_error("estado", MENSAJE_ESTADO_POR_EDAD)
+                    return
+                estado = NominaCentroInfancia.ESTADO_PENDIENTE
+                instancia.pendiente_por_edad_desde = timezone.localdate()
+            cleaned_data["estado"] = estado
             return
-        self.add_error(
-            "estado",
-            "Para niños y niñas de 4 años o más el estado debe ser Pendiente.",
-        )
+
+        if (
+            instancia.pendiente_por_edad_desde
+            and instancia.estado == NominaCentroInfancia.ESTADO_PENDIENTE
+            and estado == NominaCentroInfancia.ESTADO_PENDIENTE
+        ):
+            estado = NominaCentroInfancia.ESTADO_ACTIVO
+        instancia.pendiente_por_edad_desde = None
+        cleaned_data["estado"] = estado
 
 
 class NominaCentroInfanciaForm(NominaCentroInfanciaBaseForm):
@@ -1428,6 +1467,16 @@ class NominaCentroInfanciaAdminForm(forms.ModelForm):
         centro = cleaned_data.get("centro")
         estado = cleaned_data.get("estado")
         instancia = self.instance
+
+        # Ni desde el admin se deja Activa una ficha de 4 años o más (#2925).
+        fecha_nacimiento = cleaned_data.get("fecha_nacimiento") or getattr(
+            ciudadano, "fecha_nacimiento", None
+        )
+        if estado == NominaCentroInfancia.ESTADO_ACTIVO and cumplio_edad_maxima_nomina(
+            fecha_nacimiento
+        ):
+            self.add_error("estado", MENSAJE_ESTADO_POR_EDAD)
+            return cleaned_data
 
         if not ciudadano or not centro or estado not in ESTADOS_NOMINA_CDI_VIGENTE:
             return cleaned_data

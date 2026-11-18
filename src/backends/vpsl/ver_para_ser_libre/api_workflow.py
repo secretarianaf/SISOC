@@ -39,7 +39,6 @@ from ver_para_ser_libre.models import (
 from ver_para_ser_libre.services import workflow
 from ver_para_ser_libre.services import access
 
-
 FORM_PERMISSIONS = {
     "itinerario-create": ("add_itinerariovpsl", "create_itinerarios_any_province_vpsl"),
     "itinerario-edit": ("change_itinerariovpsl",),

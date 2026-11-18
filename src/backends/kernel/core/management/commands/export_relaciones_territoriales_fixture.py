@@ -4,7 +4,6 @@ from django.core.management.base import BaseCommand, CommandError
 
 from core.services.territorial_export import export_fixture_relations_workbook
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[6]
 DEFAULT_FIXTURE_PATH = (
     Path(__file__).resolve().parents[2]

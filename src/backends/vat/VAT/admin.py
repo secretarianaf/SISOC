@@ -46,7 +46,6 @@ from .models import (
     ActaCierreComision,
 )
 
-
 # FKs a tablas grandes con ``raw_id_fields`` y no ``autocomplete_fields``: el
 # autocomplete pide ``/admin/autocomplete/``, que atiende el core y no conoce
 # los modelos de VAT cuando cada backend corre en su runtime.

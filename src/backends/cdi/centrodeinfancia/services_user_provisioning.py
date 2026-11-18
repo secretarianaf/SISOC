@@ -23,7 +23,6 @@ from users.models import Profile
 from users.services_generate_user import DatosUsuarioDelegado, generar_usuario_delegado
 from users.territorial_scope import sync_profile_territorial_scopes
 
-
 logger = logging.getLogger(__name__)
 User = get_user_model()
 

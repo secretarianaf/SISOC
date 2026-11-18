@@ -33,7 +33,6 @@ from admisiones.models.admisiones import (
     VariableTemplateInformeTecnico,
 )
 
-
 # Operaciones de soporte (issue #2789). Cada adaptador repite la secuencia que
 # arma AdmisionService._procesar_post_* para el botón equivalente de la
 # pantalla, y antes valida la misma condición con la que la pantalla muestra

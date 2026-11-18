@@ -75,7 +75,6 @@ from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
-
 BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
     field_map=CENTRO_FILTER_MAP,
     field_types=CENTRO_FIELD_TYPES,

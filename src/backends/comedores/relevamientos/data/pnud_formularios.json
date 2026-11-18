@@ -40,7 +40,7 @@
           {
             "name": "funcionamiento_motivo",
             "label": "Motivo",
-            "type": "text"
+            "type": "longtext"
           },
           {
             "name": "fecha_hora",
@@ -1211,7 +1211,7 @@
           {
             "name": "menu_planificado_porque",
             "label": "¿Por qué?",
-            "type": "text"
+            "type": "longtext"
           }
         ]
       },
@@ -1605,7 +1605,7 @@
           },
           {
             "name": "composicion_modulo",
-            "label": "3.5 En cuanto a la composición del módulo:",
+            "label": "3.5 En cuanto a la composición del módulo, el mismo es:",
             "type": "enum",
             "options": [
               {
@@ -1625,7 +1625,7 @@
           },
           {
             "name": "tipo_alimentos_modulo",
-            "label": "3.6 Tipo de alimentos del módulo (mensual):",
+            "label": "3.6 Tipo de alimentos del módulo (mensual)",
             "type": "enum",
             "options": [
               {
@@ -1673,22 +1673,22 @@
           {
             "name": "destinatarios_modulo_a",
             "label": "Módulo A: Destinatarios",
-            "type": "number"
+            "type": "text"
           },
           {
             "name": "destinatarios_modulo_b",
             "label": "Módulo B: Destinatarios",
-            "type": "number"
+            "type": "text"
           },
           {
             "name": "destinatarios_modulo_c",
             "label": "Módulo C: Destinatarios",
-            "type": "number"
+            "type": "text"
           },
           {
             "name": "destinatarios_modulo_d",
             "label": "Módulo D: Destinatarios",
-            "type": "number"
+            "type": "text"
           },
           {
             "name": "modulo_alimentos",
@@ -1869,7 +1869,7 @@
           {
             "name": "funcionamiento_motivo",
             "label": "Motivo",
-            "type": "text"
+            "type": "longtext"
           },
           {
             "name": "fecha_hora",
@@ -2316,7 +2316,7 @@
           {
             "name": "quien_compra",
             "label": "4.1 ¿Quién realiza las compras?",
-            "type": "enum",
+            "type": "enumlist",
             "options": [
               {
                 "value": "Organización Solicitante",
@@ -2380,7 +2380,7 @@
           },
           {
             "name": "compra_otro_cual",
-            "label": "¿Cuál?",
+            "label": "Otro ¿Cuál?",
             "type": "text"
           }
         ]
@@ -2475,7 +2475,7 @@
           },
           {
             "name": "motivo_diferencia",
-            "label": "5.3 Motivo si lo aprobado no coincide con lo declarado",
+            "label": "5.3 En caso de que lo aprobado no coincida con lo declarado, indicar el motivo",
             "type": "longtext"
           },
           {
@@ -2523,6 +2523,11 @@
           {
             "name": "menu_personas",
             "label": "Cantidad de personas para las que se preparó este menú",
+            "type": "number"
+          },
+          {
+            "name": "menu_personas_observadas",
+            "label": "Cantidad de personas observadas",
             "type": "number"
           },
           {
@@ -2584,7 +2589,7 @@
           {
             "name": "menu_planificado_porque",
             "label": "¿Por qué?",
-            "type": "text"
+            "type": "longtext"
           }
         ]
       },
@@ -2619,7 +2624,7 @@
         "fields": [
           {
             "name": "almacenamiento_alimentos_adecuado",
-            "label": "¿Es adecuado el almacenamiento de alimentos?",
+            "label": "7.1.1 ¿Es adecuado el almacenamiento de alimentos?",
             "type": "bool",
             "etiquetasSiNo": [
               "SI",
@@ -2627,8 +2632,13 @@
             ]
           },
           {
+            "name": "almacenamiento_alimentos_adecuado_porque",
+            "label": "¿Por qué?",
+            "type": "longtext"
+          },
+          {
             "name": "tiene_heladera",
-            "label": "Heladeras",
+            "label": "Heladera",
             "type": "bool"
           },
           {
@@ -2638,12 +2648,17 @@
           },
           {
             "name": "almacenamiento_limpieza_adecuado",
-            "label": "¿Es adecuado el almacenamiento de los productos de limpieza?",
+            "label": "7.1.3 De acuerdo al relevamiento visual del técnico ¿Es adecuado el almacenamiento de los productos de limpieza?",
             "type": "bool",
             "etiquetasSiNo": [
               "SI",
               "NO"
             ]
+          },
+          {
+            "name": "almacenamiento_limpieza_adecuado_porque",
+            "label": "¿Por qué?",
+            "type": "longtext"
           },
           {
             "name": "condicion_limpieza",
@@ -2685,17 +2700,22 @@
           },
           {
             "name": "condiciones_detalle",
-            "label": "Descripción libre si no adecuada",
+            "label": "En caso de consignar medianamente adecuada y/o inadecuada, describir la situación",
             "type": "longtext"
           },
           {
             "name": "presencia_plagas",
-            "label": "Presencia de animales/plagas donde se preparan, sirven y/o entregan los alimentos",
+            "label": "7.1.5 De acuerdo al relevamiento visual del técnico ¿Existe presencia de animales/plagas donde se preparan, sirven y/o entregan los alimentos?",
             "type": "bool",
             "etiquetasSiNo": [
               "SI",
               "NO"
             ]
+          },
+          {
+            "name": "basura_recipiente",
+            "label": "Recipiente para la basura",
+            "type": "bool"
           },
           {
             "name": "basura_con_tapa",
@@ -2709,32 +2729,32 @@
           },
           {
             "name": "combustible_gas_red",
-            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Gas de red (n° de orden)",
+            "label": "7.2.1 ¿Cuál es el tipo de combustible que utilizan para cocinar? — Gas de red (n° de orden)",
             "type": "number"
           },
           {
             "name": "combustible_electricidad",
-            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Electricidad (n° de orden)",
+            "label": "7.2.1 ¿Cuál es el tipo de combustible que utilizan para cocinar? — Electricidad (n° de orden)",
             "type": "number"
           },
           {
             "name": "combustible_garrafa",
-            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Gas envasado en garrafa o tubo (n° de orden)",
+            "label": "7.2.1 ¿Cuál es el tipo de combustible que utilizan para cocinar? — Gas envasado en garrafa o tubo (n° de orden)",
             "type": "number"
           },
           {
             "name": "combustible_lena_carbon",
-            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Leña o carbón (n° de orden)",
+            "label": "7.2.1 ¿Cuál es el tipo de combustible que utilizan para cocinar? — Leña o carbón (n° de orden)",
             "type": "number"
           },
           {
             "name": "combustible_otros",
-            "label": "7.2.1 Tipo de combustible que utilizan para cocinar — Otros (n° de orden)",
+            "label": "7.2.1 ¿Cuál es el tipo de combustible que utilizan para cocinar? — Otros (n° de orden)",
             "type": "number"
           },
           {
             "name": "combustible_otros_cual",
-            "label": "Otros",
+            "label": "Otros: ¿cuál?",
             "type": "text"
           },
           {
@@ -2769,7 +2789,7 @@
         "fields": [
           {
             "name": "cantidad_personas",
-            "label": "8.1.1 Cantidad de personas",
+            "label": "8.1.1 ¿Qué cantidad de personas realizan tareas en el Espacio Comunitario?",
             "type": "enum",
             "options": [
               {
@@ -2788,12 +2808,12 @@
           },
           {
             "name": "recibieron_capacitacion",
-            "label": "8.1.2 ¿Reciben o recibieron capacitaciones?",
+            "label": "8.1.2 Las personas que realizan tareas en el Espacio Comunitario ¿reciben o recibieron capacitaciones?",
             "type": "bool"
           },
           {
             "name": "capacitacion_temas",
-            "label": "8.1.3 Temática de la capacitación recibida",
+            "label": "8.1.3 Temática de la capacitación que recibieron",
             "type": "enumlist",
             "options": [
               {
@@ -3018,7 +3038,7 @@
           {
             "name": "funcionamiento_motivo",
             "label": "Motivo",
-            "type": "text"
+            "type": "longtext"
           },
           {
             "name": "fecha_hora",
@@ -3465,7 +3485,7 @@
           {
             "name": "quien_compra",
             "label": "4.1 ¿Quién realiza las compras?",
-            "type": "enum",
+            "type": "enumlist",
             "options": [
               {
                 "value": "Organización Solicitante",
@@ -3529,7 +3549,7 @@
           },
           {
             "name": "compra_otro_cual",
-            "label": "¿Cuál?",
+            "label": "Otro ¿Cuál?",
             "type": "text"
           }
         ]
@@ -3619,7 +3639,7 @@
           },
           {
             "name": "composicion_modulo",
-            "label": "5.5 En cuanto a la composición del módulo:",
+            "label": "5.5 En cuanto a la composición del módulo, el mismo es:",
             "type": "enum",
             "options": [
               {
@@ -3639,7 +3659,7 @@
           },
           {
             "name": "tipo_alimentos_modulo",
-            "label": "5.6 Tipo de alimentos del módulo (mensual):",
+            "label": "5.6 Tipo de alimentos del módulo (mensual)",
             "type": "enum",
             "options": [
               {
@@ -3687,22 +3707,22 @@
           {
             "name": "destinatarios_modulo_a",
             "label": "Módulo A: Destinatarios",
-            "type": "number"
+            "type": "text"
           },
           {
             "name": "destinatarios_modulo_b",
             "label": "Módulo B: Destinatarios",
-            "type": "number"
+            "type": "text"
           },
           {
             "name": "destinatarios_modulo_c",
             "label": "Módulo C: Destinatarios",
-            "type": "number"
+            "type": "text"
           },
           {
             "name": "destinatarios_modulo_d",
             "label": "Módulo D: Destinatarios",
-            "type": "number"
+            "type": "text"
           },
           {
             "name": "modulo_alimentos",
@@ -3799,7 +3819,7 @@
         "fields": [
           {
             "name": "almacenamiento_alimentos_adecuado",
-            "label": "¿Es adecuado el almacenamiento de alimentos?",
+            "label": "7.1.1 ¿Es adecuado el almacenamiento de alimentos?",
             "type": "bool",
             "etiquetasSiNo": [
               "SI",
@@ -3807,8 +3827,13 @@
             ]
           },
           {
+            "name": "almacenamiento_alimentos_adecuado_porque",
+            "label": "¿Por qué?",
+            "type": "longtext"
+          },
+          {
             "name": "tiene_heladera",
-            "label": "Heladeras",
+            "label": "Heladera",
             "type": "bool"
           },
           {
@@ -3818,12 +3843,17 @@
           },
           {
             "name": "almacenamiento_limpieza_adecuado",
-            "label": "¿Es adecuado el almacenamiento de los productos de limpieza?",
+            "label": "7.1.3 De acuerdo al relevamiento visual del técnico ¿Es adecuado el almacenamiento de los productos de limpieza?",
             "type": "bool",
             "etiquetasSiNo": [
               "SI",
               "NO"
             ]
+          },
+          {
+            "name": "almacenamiento_limpieza_adecuado_porque",
+            "label": "¿Por qué?",
+            "type": "longtext"
           },
           {
             "name": "condicion_limpieza",
@@ -3865,17 +3895,22 @@
           },
           {
             "name": "condiciones_detalle",
-            "label": "Descripción libre si no adecuada",
+            "label": "En caso de consignar medianamente adecuada y/o inadecuada, describir la situación",
             "type": "longtext"
           },
           {
             "name": "presencia_plagas",
-            "label": "Presencia de animales/plagas donde se entregan los alimentos",
+            "label": "7.1.5 De acuerdo al relevamiento visual del técnico ¿Existe presencia de animales/plagas donde se entregan los alimentos?",
             "type": "bool",
             "etiquetasSiNo": [
               "SI",
               "NO"
             ]
+          },
+          {
+            "name": "basura_recipiente",
+            "label": "Recipiente para la basura",
+            "type": "bool"
           },
           {
             "name": "basura_con_tapa",
@@ -3919,7 +3954,7 @@
         "fields": [
           {
             "name": "cantidad_personas",
-            "label": "8.1.1 Cantidad de personas",
+            "label": "8.1.1 ¿Qué cantidad de personas realizan tareas en el Espacio Comunitario?",
             "type": "enum",
             "options": [
               {
@@ -3938,12 +3973,12 @@
           },
           {
             "name": "recibieron_capacitacion",
-            "label": "8.1.2 ¿Reciben o recibieron capacitaciones?",
+            "label": "8.1.2 Las personas que realizan tareas en el Espacio Comunitario ¿reciben o recibieron capacitaciones?",
             "type": "bool"
           },
           {
             "name": "capacitacion_temas",
-            "label": "8.1.3 Temática de la capacitación recibida",
+            "label": "8.1.3 Temática de la capacitación que recibieron",
             "type": "enumlist",
             "options": [
               {

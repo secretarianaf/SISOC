@@ -4,7 +4,6 @@ from django.views.decorators.http import require_POST
 from core.decorators import permissions_all_required, permissions_any_required
 from ver_para_ser_libre import views
 
-
 urlpatterns = [
     path(
         "ver-para-ser-libre/",

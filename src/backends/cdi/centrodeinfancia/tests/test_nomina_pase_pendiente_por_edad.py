@@ -106,8 +106,7 @@ def test_se_puede_acotar_a_un_centro_o_provincia(centro):
     assert pasar_nomina_a_pendiente_por_edad(hoy=HOY, centro_id=centro.pk) == 1
     assert _estado(ajena) == NominaCentroInfancia.ESTADO_ACTIVO
     assert (
-        pasar_nomina_a_pendiente_por_edad(hoy=HOY, provincia_id=otra_provincia.pk)
-        == 1
+        pasar_nomina_a_pendiente_por_edad(hoy=HOY, provincia_id=otra_provincia.pk) == 1
     )
     assert _estado(propia) == NominaCentroInfancia.ESTADO_PENDIENTE
     assert _estado(ajena) == NominaCentroInfancia.ESTADO_PENDIENTE

@@ -525,7 +525,9 @@ def test_export_data_excluye_activo_de_4_anios_que_dejo_un_administrador():
     """La excepción del Administrador mantiene el estado, no la fila en la nómina."""
     provincia = Provincia.objects.create(nombre="Provincia Excepción Edad")
     user = _create_egp("egp-excepcion-edad", provincia)
-    centro = CentroDeInfancia.objects.create(nombre="CDI Excepción", provincia=provincia)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Excepción", provincia=provincia
+    )
     nacimiento = date(2022, 1, 10)
     ficha = NominaCentroInfancia.objects.create(
         centro=centro,

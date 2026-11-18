@@ -76,7 +76,6 @@ from centrodeinfancia.forms_formulario_cdi import (
     construir_clase_formset_demanda_insatisfecha,
 )
 
-
 NOMINA_SALA_CHOICES = [
     ("menos_de_un_ano", "Menos de un año"),
     ("un_ano", "1 año"),
@@ -1391,9 +1390,10 @@ class NominaCentroInfanciaBaseForm(CamposRenaperFormMixin, forms.ModelForm):
             or estado == NominaCentroInfancia.ESTADO_PENDIENTE
         ):
             return
-        if self.actor.is_superuser or self.actor.groups.filter(
-            name=UserGroups.SIMEPI_ADMINISTRADOR
-        ).exists():
+        if (
+            self.actor.is_superuser
+            or self.actor.groups.filter(name=UserGroups.SIMEPI_ADMINISTRADOR).exists()
+        ):
             if estado == NominaCentroInfancia.ESTADO_ACTIVO:
                 self.instance.control_edad_maxima_en = hoy
             return

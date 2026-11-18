@@ -626,8 +626,6 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, ComedorAlcanceMixin, Detai
         context["bloques"] = bloques
 
         context["prestaciones"] = list(seguimiento.prestaciones.all())
-        # #2781: el cuadro 6.1 del primer seguimiento tiene AP unico.
-        context["es_primer"] = seguimiento.tipo == PrimerSeguimiento.TIPO_PRIMER
         menu = seguimiento.menu
         context["receta_items"] = (
             list(menu.receta_items.all()) if menu is not None else []

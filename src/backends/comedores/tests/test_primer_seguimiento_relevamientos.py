@@ -1135,17 +1135,32 @@ def test_detalle_primer_seguimiento_muestra_ap_unico_con_suma_en_filas_viejas(
     assert "<td>12</td>" in content
 
 
-def test_detalle_seguimiento_posterior_mantiene_columnas_ap_viejas(
-    auth_client, comedor
+@pytest.mark.parametrize(
+    "tipo", [PrimerSeguimiento.TIPO_POSTERIOR, PrimerSeguimiento.TIPO_VIRTUAL]
+)
+def test_detalle_posterior_y_virtual_muestran_ap_unico_con_ap_total(
+    auth_client, comedor, tipo
 ):
+    """#2922: Posterior y Virtual usan el mismo cuadro que el Primer."""
     content = _detalle_con_prestacion(
-        auth_client,
-        comedor,
-        PrimerSeguimiento.TIPO_POSTERIOR,
-        ap_presencial=10,
-        ap_vianda=2,
+        auth_client, comedor, tipo, ap_total=15, ap_presencial=15
     )
 
-    assert "AP presencial" in content
-    assert "AP vianda" in content
-    assert "<th>AP</th>" not in content
+    assert "<th>AP</th>" in content
+    assert "AP presencial" not in content
+    assert "AP vianda" not in content
+    assert "<td>15</td>" in content
+
+
+@pytest.mark.parametrize(
+    "tipo", [PrimerSeguimiento.TIPO_POSTERIOR, PrimerSeguimiento.TIPO_VIRTUAL]
+)
+def test_detalle_posterior_y_virtual_viejos_suman_ap_presencial_y_vianda(
+    auth_client, comedor, tipo
+):
+    content = _detalle_con_prestacion(
+        auth_client, comedor, tipo, ap_presencial=10, ap_vianda=2
+    )
+
+    assert "<th>AP</th>" in content
+    assert "<td>12</td>" in content

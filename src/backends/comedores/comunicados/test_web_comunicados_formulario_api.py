@@ -3,12 +3,12 @@
 import json
 
 import pytest
+from django.apps import apps
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 
-from comedores.models import Comedor
 from comunicados.models import (
     Comunicado,
     ComunicadoAdjunto,
@@ -16,7 +16,11 @@ from comunicados.models import (
     SubtipoComunicado,
     TipoComunicado,
 )
-from duplas.models import Dupla
+
+# Other domains' models are resolved through the app registry, as the
+# import contract forbids importing their internals (.importlinter).
+Comedor = apps.get_model("comedores", "Comedor")
+Dupla = apps.get_model("duplas", "Dupla")
 
 CREAR = "/api/web/comedores/comunicados/crear/"
 EDITAR = "/api/web/comedores/comunicados/{}/editar/"

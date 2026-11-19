@@ -18,7 +18,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.web_gate import WebGatePermission
-from iam.services import user_has_permission_code
 from pas import web_api_serializers as proyectar
 from pas.forms import PasRetornoSintysForm
 from pas.services.cruces_service import (
@@ -83,7 +82,7 @@ class PasCrucesWebView(APIView):
         renaper = context["resumen_renaper"]
         return Response(
             {
-                "can_change": user_has_permission_code(request.user, CHANGE),
+                "can_change": request.user.has_perm(CHANGE),
                 "total_padron": context["total_padron"],
                 "circuito": {
                     "periodo": circuito.periodo.isoformat(),

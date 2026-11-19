@@ -14,16 +14,19 @@ Assets are served under ``/core/react/``.
 
 # pylint: disable=protected-access
 
+import hashlib
+import mimetypes
 from pathlib import Path
+from types import MappingProxyType
 
 from django.contrib.auth.decorators import login_required
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.urls import path
+from django.utils.cache import patch_cache_control, patch_vary_headers
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from ciudadanos.web_preview import ReactAssetView, _frozen_assets, _index
 from core.trash_views import (
     TrashListView,
     TrashRestorePreviewView,
@@ -39,6 +42,61 @@ from core.views import (
 
 BUILD_ASSETS = "/v2/sisoc/assets/"
 PUBLIC_ASSETS = "/core/react/assets/"
+ASSET_SUFFIXES = {".js", ".css", ".woff", ".woff2", ".svg", ".png", ".jpg", ".ico"}
+
+
+# The asset and index helpers are local on purpose, as in every vertical's preview module:
+# core must not import a domain app (kernel/tests/test_mapa_arquitectura_generador.py).
+def _index(request, index_bytes):
+    response = HttpResponse(
+        b"" if request.method == "HEAD" else index_bytes,
+        content_type="text/html; charset=utf-8",
+    )
+    response["Content-Length"] = str(len(index_bytes))
+    patch_cache_control(response, private=True, no_store=True)
+    patch_vary_headers(response, ("Cookie",))
+    return response
+
+
+class ReactAssetView(View):
+    """Serve only frozen build assets; no request data reaches a static upstream."""
+
+    http_method_names = ["get", "head"]
+    assets = None
+
+    def get(self, request, asset_path):
+        asset = self.assets.get(asset_path) if self.assets is not None else None
+        if request.META.get("QUERY_STRING") or asset is None:
+            return HttpResponse(status=404)
+        body, content_type, digest = asset
+        response = HttpResponse(
+            b"" if request.method == "HEAD" else body, content_type=content_type
+        )
+        response["Content-Length"] = str(len(body))
+        response["ETag"] = f'"{digest}"'
+        response["Cache-Control"] = "public, max-age=31536000, immutable"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
+
+
+def _frozen_assets(root):
+    asset_root = root / "assets"
+    if asset_root.is_symlink():
+        raise ValueError("Core preview assets must not be symlinks")
+    assets = {}
+    for file in asset_root.rglob("*"):
+        if not file.is_file() or file.suffix not in ASSET_SUFFIXES:
+            continue
+        if file.is_symlink() or not file.resolve().is_relative_to(root):
+            raise ValueError("Core preview assets must stay inside the build")
+        body = file.read_bytes()
+        content_type = mimetypes.guess_type(file.name)[0] or "application/octet-stream"
+        assets[file.relative_to(root).as_posix()] = (
+            body,
+            content_type,
+            hashlib.sha256(body).hexdigest(),
+        )
+    return MappingProxyType(assets)
 
 
 class _IndexMixin:

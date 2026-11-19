@@ -1152,6 +1152,14 @@ La cola de revisión de identidad (C02) es `routes/ciudadanoColaRevision.tsx` so
 reutiliza `POST .../<pk>/marcar-revisado/`. Ver
 `docs/registro/cambios/2026-T4/2026-11-13-2785-react-ciudadano-cola-revision.md`.
 
+El listado de ciudadanos (`/ciudadanos/listar`) es `routes/ciudadanoListado.tsx` sobre
+`GET /api/web/ciudadanos/listar/` (`ciudadanos.web_api_listado`, que corre `CiudadanosListView` con su
+`dispatch`: permiso `ciudadanos.view_ciudadano`, filtros del formulario propio y combinables, páginas de 25
+sin total). Reutiliza `Filters` y `Pagination` de `listControls.tsx`; el orden de columnas es local, como
+`listSort.js`, y «Exportar búsqueda» sigue siendo la navegación nativa a `/ciudadanos/exportar` con la consulta
+y el orden activo (`export_helper.js`). Ver
+`docs/registro/cambios/2026-T4/2026-11-19-2785-react-ciudadano-listado.md`.
+
 Desvincular un familiar (C03.02) es `routes/ciudadanoFamiliarEliminar.tsx` sobre
 `/api/web/ciudadanos/familiares/<pk>/eliminar/` (`ciudadanos.web_api_familiar_eliminar`, que corre
 `GrupoFamiliarDeleteView`) y reutiliza la tarjeta de confirmación de `ciudadanoBaja.tsx`. Ver

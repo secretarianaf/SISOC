@@ -1915,6 +1915,11 @@
   "regex": "^api/web/ciudadanos/importacion\\-masiva/lotes/(?P<pk>[0-9]+)/reanudar/\\Z"
  },
  {
+  "name": "ciudadanos_web_listado",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/listar/\\Z"
+ },
+ {
   "name": "ciudadanos_web_marcar_revisado",
   "namespace": "",
   "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/marcar\\-revisado/\\Z"

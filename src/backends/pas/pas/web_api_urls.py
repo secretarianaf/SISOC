@@ -15,6 +15,7 @@ from pas.web_api_informes import (
     PasInformeOpcionesWebView,
     PasInformePrevisualizarWebView,
 )
+from pas.web_api_titulares_import import PasTitularesImportWebView
 from pas.web_api_views import (
     PasAreaWebView,
     PasCambioEstadoWebView,
@@ -88,5 +89,10 @@ urlpatterns = [
         "cruces/actualizar-renaper/",
         PasCrucesActualizarRenaperWebView.as_view(),
         name="pas_web_cruces_actualizar_renaper",
+    ),
+    path(
+        "titulares/importar/",
+        PasTitularesImportWebView.as_view(),
+        name="pas_web_titulares_importar",
     ),
 ]

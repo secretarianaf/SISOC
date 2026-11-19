@@ -1311,6 +1311,18 @@ en el mismo POST y tras cada acción React vuelve a pedir la proyección. La web
 nunca llama a SINTyS ni a RENAPER. Entrada local:
 `src/backends/pas/pas/web_preview_cruces.py`. Registro:
 `../registro/cambios/2026-T4/2026-11-12-2785-react-pas-cruces.md`.
+
+Importar titulares PAS (`routes/pasTitularesImportar.tsx`) toma `/pas/titulares/importar`; la
+página lee `GET /api/web/pas/titulares/importar/` (migas y campo del formulario nativo) y envía el CSV
+(multipart `archivo`) al mismo endpoint, que corre `PasTitularesImportForm` y la importación atómica
+`importar_titulares_csv` con `pas.add_paspersona`
+(`src/backends/pas/pas/web_api_titulares_import.py`). Responde `{"resultado": {total, creados, duplicados,
+errores}}` o 400 con `errors.archivo` (texto nativo); React imprime el resumen y la lista de errores como la
+plantilla y no reintenta un resultado incierto. Entrada local:
+`src/backends/pas/pas/web_preview_titulares_import.py`. El POST nativo, la DDJJ pública
+(`/pas/ddjj/formulario/<token>` y `/pas/ddjj/confirmacion`, ya servidas por `apps/pas` desde #2806) y las
+descargas siguen como están. Registro:
+`../registro/cambios/2026-T4/2026-11-19-2785-react-pas-titulares-importar.md`.
 Publicar, archivar y destacar comunicados (CM02.03) usan `POST .../comunicados/<pk>/publicar/`,
 `.../archivar/` y `.../destacado/`: cada uno ejecuta el `post()` de la vista nativa y devuelve
 `{"ok": true, "redirect": "/comunicados/gestion/"}` con el mensaje nativo en cola. Registro:

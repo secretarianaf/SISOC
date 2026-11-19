@@ -4540,6 +4540,11 @@
   "regex": "^api/web/pas/personas/\\Z"
  },
  {
+  "name": "pas_web_titulares_importar",
+  "namespace": "",
+  "regex": "^api/web/pas/titulares/importar/\\Z"
+ },
+ {
   "name": "password_change",
   "namespace": "",
   "regex": "^password_change/\\Z"

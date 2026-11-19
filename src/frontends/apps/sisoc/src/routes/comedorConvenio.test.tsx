@@ -20,10 +20,9 @@ const field = (name: string, label: string, over: Partial<ConvenioField> = {}): 
   name, label, type: "number", required: false, help: "", value: "", monto: false, errors: [], attrs: { min: "0" }, ...over,
 });
 const montos = () => [
-  field("monto_total_conveniado", "Monto total conveniado", { type: "text", monto: true, value: "1.235", attrs: { inputmode: "numeric" } }),
-  field("nro_convenio", "Nro convenio", { type: "text", value: "CV-1", attrs: { maxlength: "120" } }),
-  field("monto_convenio_prestaciones_alimentarias", "Monto total de convenio por Espacio - Prestaciones Alimentarias", { type: "text", monto: true, attrs: { inputmode: "numeric" } }),
-  field("monto_convenio_siph", "Monto total de convenio por Espacio - Servicio Integral de Promoción Humana", { type: "text", monto: true, attrs: { inputmode: "numeric" } }),
+  field("nro_convenio", "Número de Convenio", { type: "text", value: "CV-1", attrs: { maxlength: "120" } }),
+  field("monto_convenio_prestaciones_alimentarias", "Monto total del Convenio por Espacio - Prestaciones Alimentarias", { type: "text", monto: true, value: "1.235", attrs: { inputmode: "numeric" } }),
+  field("monto_convenio_siph", "Monto total del Convenio por Espacio - Servicio Integral de Promoción Humana", { type: "text", monto: true, attrs: { inputmode: "numeric" } }),
 ];
 const matriz = (reforzada: boolean) => DIAS.flatMap((d) => COMIDAS.filter((c) => reforzada || c !== "merienda_reforzada")
   .map((c) => field(`aprobadas_${c}_${d}`, `Aprobadas ${c} ${d}`, { required: true, value: "0" })));
@@ -34,11 +33,11 @@ const form = (variante: "resto" | "secos" | "tradicional", over: Record<string, 
   es_linea_secos: variante === "secos", es_linea_tradicional: variante === "tradicional",
   fields: [
     ...montos(),
-    field("personas_conveniadas", "Personas conveniadas"),
-    field("personas_declaradas_siph", "Total de Personas declaradas en Servicio Integral de Promoción Humana"),
-    ...(variante === "tradicional" ? [] : [field("cantidad_modulos", "Cantidad Módulos Mensuales")]),
     ...(variante === "resto" ? [field("prestaciones_financiadas_mensuales", "Prestaciones financiadas mensuales")] : []),
     ...(variante === "tradicional" ? COMIDAS.map((c) => field(`prestaciones_financiadas_diarias_${c}`, `Prestaciones Financiadas Diarias - ${c}`)) : []),
+    field("personas_conveniadas", "Personas Conveniadas"),
+    ...(variante === "tradicional" ? [] : [field("cantidad_modulos", "Cantidad de Módulos Mensuales")]),
+    field("personas_declaradas_siph", "Total de personas declaradas en Servicio Integral de Promoción Humana"),
     ...(variante === "secos" ? [] : matriz(variante === "tradicional")),
   ],
   non_field_errors: [], urls: { ficha: "/comedores/7" }, ...over,
@@ -76,24 +75,24 @@ describe("Comedor convenio PNUD route (CO07.03)", () => {
   it("shows the prefill, territoriales and the resto layout with the matrix without Merienda Reforzada", async () => {
     serve(payload());
     render(<App />);
-    expect(await screen.findByText("Cargar datos del Convenio")).toBeTruthy();
+    expect(await screen.findByText("Datos del Convenio", { selector: ".section-title" })).toBeTruthy();
     await waitFor(() => expect(document.title).toBe("SISOC - Datos del Convenio"));
     expect(webGet).toHaveBeenCalledWith(API, expect.anything());
-    expect(screen.getByText("Organización solicitante:").parentElement?.textContent).toBe("Organización solicitante: Org Norte");
+    expect(screen.getByText("Organización solicitante").parentElement?.textContent).toBe("Organización solicitanteOrg Norte");
     expect(screen.getByText("Pérez, Ana (ana) — Código de Proyecto: PRY-7")).toBeTruthy();
-    expect(screen.getByText("Prestaciones por convenio")).toBeTruthy();
+    expect(screen.getByText("Prestaciones por convenio", { selector: ".section-title" })).toBeTruthy();
     expect([...document.querySelectorAll("thead th")].map((c) => c.textContent)).toEqual(["Día", "Desayuno", "Almuerzo", "Merienda", "Cena"]);
     expect(document.querySelectorAll("tbody input").length).toBe(28);
-    expect((screen.getByLabelText("Monto total conveniado") as HTMLInputElement).value).toBe("1.235");
+    expect((screen.getByLabelText("Monto total del Convenio por Espacio - Prestaciones Alimentarias") as HTMLInputElement).value).toBe("1.235");
     expect(screen.getByLabelText("Prestaciones financiadas mensuales")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Guardar" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Guardar convenio" })).toBeTruthy();
   });
 
   it("secos has no matrix and tradicional adds the daily prestaciones and Merienda Reforzada", async () => {
     serve(payload("secos"));
     const first = render(<App />);
-    expect(await screen.findByText("Cargar datos del Convenio")).toBeTruthy();
-    expect(screen.queryByText("Prestaciones por convenio")).toBeNull();
+    expect(await screen.findByText("Datos del Convenio", { selector: ".section-title" })).toBeTruthy();
+    expect(screen.queryByText("Prestaciones por convenio", { selector: ".section-title" })).toBeNull();
     expect(screen.queryByLabelText("Prestaciones financiadas mensuales")).toBeNull();
     first.unmount();
     serve(payload("tradicional"));
@@ -101,25 +100,25 @@ describe("Comedor convenio PNUD route (CO07.03)", () => {
     await waitFor(() => expect([...document.querySelectorAll("thead th")].map((c) => c.textContent)).toEqual(["Día", "Desayuno", "Almuerzo", "Merienda", "Merienda Reforzada", "Cena"]));
     expect(document.querySelectorAll("tbody input").length).toBe(35);
     expect(screen.getByLabelText("Prestaciones Financiadas Diarias - desayuno")).toBeTruthy();
-    expect(screen.queryByLabelText("Cantidad Módulos Mensuales")).toBeNull();
+    expect(screen.queryByLabelText("Cantidad de Módulos Mensuales")).toBeNull();
   });
 
   it("formats the monto on blur and posts only the variant's fields", async () => {
     serve(payload());
     webPost.mockResolvedValue({ status: 200, data: { redirect: "/comedores/7" } });
     render(<App />);
-    const monto = (await screen.findByLabelText("Monto total conveniado")) as HTMLInputElement;
+    const monto = (await screen.findByLabelText("Monto total del Convenio por Espacio - Prestaciones Alimentarias")) as HTMLInputElement;
     fireEvent.change(monto, { target: { value: "100000000" } });
     fireEvent.blur(monto);
     expect(monto.value).toBe("100.000.000");
-    fireEvent.change(screen.getByLabelText("Personas conveniadas"), { target: { value: "30" } });
-    fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+    fireEvent.change(screen.getByLabelText("Personas Conveniadas"), { target: { value: "30" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar convenio" }));
     await waitFor(() => expect(assign).toHaveBeenCalledWith("/comedores/7"));
     const [url, body] = webPost.mock.calls[0];
     expect(url).toBe(API);
     const posted = body as URLSearchParams;
     expect([...posted.keys()].sort()).toEqual(form("resto").fields.map((f) => f.name).sort());
-    expect(posted.get("monto_total_conveniado")).toBe("100.000.000");
+    expect(posted.get("monto_convenio_prestaciones_alimentarias")).toBe("100.000.000");
     expect(posted.get("personas_conveniadas")).toBe("30");
     expect(posted.has("prestaciones_financiadas_diarias_cena")).toBe(false);
   });
@@ -127,21 +126,33 @@ describe("Comedor convenio PNUD route (CO07.03)", () => {
   it("a rejected POST shows the native errors, keeps the typed values and does not navigate", async () => {
     serve(payload());
     const rechazado = form("resto");
-    rechazado.fields[0] = { ...rechazado.fields[0], value: "1000,5", errors: ["Ingresá un monto sin decimales, por ejemplo 100.000.000."] };
+    rechazado.fields[1] = { ...rechazado.fields[1], value: "1000,5", errors: ["Ingresá un monto sin decimales, por ejemplo 100.000.000."] };
     const celda = rechazado.fields.findIndex((f) => f.name === "aprobadas_cena_lunes");
     rechazado.fields[celda] = { ...rechazado.fields[celda], errors: ["Asegúrese de que este valor es mayor o igual a 0."] };
     webPost.mockRejectedValue({ response: { status: 400 } });
     webPost.mockResolvedValueOnce({ status: 400, data: { errors: {}, non_field_errors: [], form: rechazado } });
     const scroll = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
     render(<App />);
-    fireEvent.click(await screen.findByRole("button", { name: "Guardar" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Guardar convenio" }));
     expect(await screen.findByText("Ingresá un monto sin decimales, por ejemplo 100.000.000.")).toBeTruthy();
-    expect((screen.getByLabelText("Monto total conveniado") as HTMLInputElement).value).toBe("1000,5");
-    expect(screen.getByLabelText("Monto total conveniado").className).toContain("is-invalid");
+    expect((screen.getByLabelText("Monto total del Convenio por Espacio - Prestaciones Alimentarias") as HTMLInputElement).value).toBe("1000,5");
+    expect(screen.getByText("Ingresá un monto sin decimales, por ejemplo 100.000.000.").className).toBe("invalid-feedback d-block");
     expect(document.querySelector(".errorlist li")?.textContent).toBe("Asegúrese de que este valor es mayor o igual a 0.");
     expect(assign).not.toHaveBeenCalled();
     expect(scroll).toHaveBeenCalledWith(0, 0);
     scroll.mockRestore();
+  });
+
+  it("keeps an invalid monto as typed and blocks non-numeric keys in the quantity fields like convenio_pnud.js", async () => {
+    serve(payload());
+    render(<App />);
+    const monto = (await screen.findByLabelText("Monto total del Convenio por Espacio - Prestaciones Alimentarias")) as HTMLInputElement;
+    fireEvent.change(monto, { target: { value: "1000,5" } });
+    fireEvent.blur(monto);
+    expect(monto.value).toBe("1000,5");
+    const personas = screen.getByLabelText("Personas Conveniadas");
+    expect(fireEvent.keyDown(personas, { key: "e" })).toBe(false);
+    expect(fireEvent.keyDown(personas, { key: "7" })).toBe(true);
   });
 
   it("the native refusal redirect (not PNUD/Abordaje) leaves for the ficha", async () => {
@@ -154,9 +165,9 @@ describe("Comedor convenio PNUD route (CO07.03)", () => {
     serve(payload());
     webPost.mockRejectedValue(new Error("network"));
     render(<App />);
-    fireEvent.click(await screen.findByRole("button", { name: "Guardar" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Guardar convenio" }));
     expect(await screen.findByRole("alert")).toBeTruthy();
-    expect((screen.getByRole("button", { name: "Guardar" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Guardar convenio" }) as HTMLButtonElement).disabled).toBe(true);
     expect(webPost).toHaveBeenCalledTimes(1);
     expect(assign).not.toHaveBeenCalled();
   });
@@ -164,7 +175,7 @@ describe("Comedor convenio PNUD route (CO07.03)", () => {
   it("shows the access screen on a 403", async () => {
     webGet.mockImplementation((url: string) => Promise.resolve(url === "web/session/" ? { data: readyContext, status: 200 } : { data: { detail: "Usted no tiene permiso para realizar esta acción." }, status: 403 }));
     render(<App />);
-    await waitFor(() => expect(screen.queryByText("Cargar datos del Convenio")).toBeNull());
+    await waitFor(() => expect(screen.queryByText("Datos del Convenio", { selector: ".section-title" })).toBeNull());
     expect(webPost).not.toHaveBeenCalled();
   });
 });

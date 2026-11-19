@@ -22,11 +22,6 @@ from duplas.models import Dupla
 pytestmark = pytest.mark.django_db
 User = get_user_model()
 ROOT = "/api/web/comedores/comedores/"
-MONTOS = (
-    "monto_total_conveniado",
-    "monto_convenio_prestaciones_alimentarias",
-    "monto_convenio_siph",
-)
 
 
 @pytest.fixture(name="comedor_fixture", autouse=True)
@@ -148,12 +143,12 @@ def test_get_projects_the_resto_variant_in_form_order_with_prefill(gestor, resto
 
     nombres = [f["name"] for f in datos["fields"]]
     assert nombres[:4] == [
-        "monto_total_conveniado",
         "nro_convenio",
         "monto_convenio_prestaciones_alimentarias",
         "monto_convenio_siph",
+        "prestaciones_financiadas_mensuales",
     ]
-    assert "prestaciones_financiadas_mensuales" in nombres
+    assert "monto_total_conveniado" not in nombres
     assert "cantidad_modulos" in nombres
     assert not [n for n in nombres if "diarias" in n or "reforzada" in n]
     assert len([n for n in nombres if n.startswith("aprobadas_")]) == 28
@@ -163,9 +158,12 @@ def test_get_projects_the_resto_variant_in_form_order_with_prefill(gestor, resto
     assert datos["prefill"]["domicilio_completo"] == "Sin información"
     assert datos["urls"]["ficha"] == f"/comedores/{resto.pk}"
     campos = {f["name"]: f for f in datos["fields"]}
-    assert campos["monto_total_conveniado"]["monto"] is True
-    assert campos["monto_total_conveniado"]["type"] == "text"
-    assert campos["monto_total_conveniado"]["attrs"]["inputmode"] == "numeric"
+    assert campos["monto_convenio_prestaciones_alimentarias"]["monto"] is True
+    assert campos["monto_convenio_prestaciones_alimentarias"]["type"] == "text"
+    assert (
+        campos["monto_convenio_prestaciones_alimentarias"]["attrs"]["inputmode"]
+        == "numeric"
+    )
     assert campos["aprobadas_desayuno_lunes"]["required"] is True
     assert campos["aprobadas_desayuno_lunes"]["value"] == "0"
     assert campos["aprobadas_desayuno_lunes"]["attrs"]["min"] == "0"
@@ -237,9 +235,8 @@ def test_post_saves_decimal_montos_counts_and_the_matrix_and_goes_to_the_ficha(
         _url(resto),
         _datos(
             "resto",
-            monto_total_conveniado="100.000.000",
-            monto_convenio_prestaciones_alimentarias="2500",
-            monto_convenio_siph="",
+            monto_convenio_prestaciones_alimentarias="100.000.000",
+            monto_convenio_siph="2500",
             prestaciones_financiadas_mensuales="120",
             personas_conveniadas="30",
             personas_declaradas_siph="5",
@@ -252,9 +249,8 @@ def test_post_saves_decimal_montos_counts_and_the_matrix_and_goes_to_the_ficha(
     assert respuesta.json() == {"redirect": f"/comedores/{resto.pk}"}
     assert _mensajes(respuesta) == []
     datos = ComedorDatosConvenioPnud.objects.get(comedor=resto)
-    assert datos.monto_total_conveniado == Decimal("100000000.00")
-    assert datos.monto_convenio_prestaciones_alimentarias == Decimal("2500.00")
-    assert datos.monto_convenio_siph is None
+    assert datos.monto_convenio_prestaciones_alimentarias == Decimal("100000000.00")
+    assert datos.monto_convenio_siph == Decimal("2500.00")
     assert datos.nro_convenio == "CV-1"
     assert (datos.prestaciones_financiadas_mensuales, datos.personas_conveniadas) == (
         120,
@@ -264,44 +260,46 @@ def test_post_saves_decimal_montos_counts_and_the_matrix_and_goes_to_the_ficha(
     assert datos.aprobadas_cena_domingo == 9 and datos.aprobadas_desayuno_lunes == 1
 
 
-@pytest.mark.parametrize(
-    "monto", ["1000,5", "1000.5", "10.00", "1.2345", "abc", "$100"]
-)
+@pytest.mark.parametrize("monto", ["1000,5", "1000.5", "10.00", "1.2345", "abc"])
 def test_a_decimal_or_malformed_monto_is_rejected_with_the_native_message(
     gestor, resto, monto
 ):
     gestor.get(_url(resto))
     antes = _snapshot(resto)
 
-    respuesta = gestor.post(_url(resto), _datos("resto", monto_total_conveniado=monto))
+    respuesta = gestor.post(
+        _url(resto), _datos("resto", monto_convenio_prestaciones_alimentarias=monto)
+    )
 
     assert respuesta.status_code == 400
     cuerpo = respuesta.json()
-    assert cuerpo["errors"]["monto_total_conveniado"] == [
+    assert cuerpo["errors"]["monto_convenio_prestaciones_alimentarias"] == [
         "Ingresá un monto sin decimales, por ejemplo 100.000.000."
     ]
     campos = {f["name"]: f for f in cuerpo["form"]["fields"]}
-    assert campos["monto_total_conveniado"]["value"] == monto
-    assert campos["monto_total_conveniado"]["errors"]
+    assert campos["monto_convenio_prestaciones_alimentarias"]["value"] == monto
+    assert campos["monto_convenio_prestaciones_alimentarias"]["errors"]
     assert _snapshot(resto) == antes
 
 
 def test_editing_another_field_keeps_the_historical_cents(gestor, resto):
     datos = ComedorDatosConvenioPnud.objects.create(
         comedor=resto,
-        monto_total_conveniado=Decimal("1234.56"),
+        monto_convenio_prestaciones_alimentarias=Decimal("1234.56"),
         monto_convenio_siph=Decimal("99.50"),
     )
     web = gestor.get(_url(resto)).json()["form"]["fields"]
     visibles = {f["name"]: f["value"] for f in web}
-    assert visibles["monto_total_conveniado"] == "1.235"
+    assert visibles["monto_convenio_prestaciones_alimentarias"] == "1.235"
     assert visibles["monto_convenio_siph"] == "100"
 
     respuesta = gestor.post(
         _url(resto),
         _datos(
             "resto",
-            monto_total_conveniado=visibles["monto_total_conveniado"],
+            monto_convenio_prestaciones_alimentarias=visibles[
+                "monto_convenio_prestaciones_alimentarias"
+            ],
             monto_convenio_siph=visibles["monto_convenio_siph"],
             personas_conveniadas="44",
         ),
@@ -309,20 +307,22 @@ def test_editing_another_field_keeps_the_historical_cents(gestor, resto):
 
     assert respuesta.status_code == 200
     datos.refresh_from_db()
-    assert datos.monto_total_conveniado == Decimal("1234.56")
+    assert datos.monto_convenio_prestaciones_alimentarias == Decimal("1234.56")
     assert datos.monto_convenio_siph == Decimal("99.50")
     assert datos.personas_conveniadas == 44
 
 
 def test_changing_the_visible_monto_replaces_the_cents(gestor, resto):
     datos = ComedorDatosConvenioPnud.objects.create(
-        comedor=resto, monto_total_conveniado=Decimal("1234.56")
+        comedor=resto, monto_convenio_prestaciones_alimentarias=Decimal("1234.56")
     )
 
-    gestor.post(_url(resto), _datos("resto", monto_total_conveniado="1.300"))
+    gestor.post(
+        _url(resto), _datos("resto", monto_convenio_prestaciones_alimentarias="1.300")
+    )
 
     datos.refresh_from_db()
-    assert datos.monto_total_conveniado == Decimal("1300.00")
+    assert datos.monto_convenio_prestaciones_alimentarias == Decimal("1300.00")
 
 
 @pytest.mark.parametrize(

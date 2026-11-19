@@ -1,11 +1,11 @@
 /* eslint-disable react-refresh/only-export-components -- route module: the validators and the navigation seam are exported for the tests. */
-import { useEffect, useRef, useState, type FocusEvent, type FormEvent } from "react";
+import { Fragment, useEffect, useRef, useState, type ClipboardEvent, type FocusEvent, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { internal, record, renderMain, text, useMainResource, webClient } from "./MainFrame";
 import { NativeToasts, resetAfterRejectedPost } from "./nativeParity";
 import type { RouteDefinition } from "./types";
 
 /**
- * CO07.03 `comedor_convenio_pnud_form.html`: the PNUD / Abordaje Comunitario convenio data. The page
+ * CO07.03 `comedor_convenio_pnud_form.html` (#2843 layout: four section cards, rows of `_convenio_pnud_fila.html`): the PNUD / Abordaje Comunitario convenio data. The page
  * reads and saves through `/api/web/comedores/comedores/<id>/convenio-pnud/`, which runs the native
  * `ComedorDatosConvenioPnudUpdateView` (scope, applicability, variant form, Decimal montos and the
  * preservation of historical cents). React lays out what the server projected: the variant flags choose the
@@ -26,9 +26,9 @@ export type ConvenioForm = {
 export type ConvenioPayload = { form: ConvenioForm; messages: Message[] };
 
 const PREFILL = [
-  ["organizacion_solicitante", "Organización solicitante"], ["codigo_proyecto", "Código del proyecto"], ["estado_general", "Estado general"],
-  ["subestado", "Subestado"], ["nombre_espacio", "Nombre del espacio comunitario"], ["id_externo", "ID externo"],
-  ["domicilio_completo", "Domicilio completo del espacio"],
+  ["organizacion_solicitante", "Organización solicitante"], ["codigo_proyecto", "Código de Proyecto"], ["estado_general", "Estado General"],
+  ["subestado", "Subestado"], ["nombre_espacio", "Nombre del Espacio Comunitario"], ["id_externo", "ID Externo"],
+  ["domicilio_completo", "Domicilio Completo"],
 ] as const;
 const DIAS = [["lunes", "Lunes"], ["martes", "Martes"], ["miercoles", "Miércoles"], ["jueves", "Jueves"], ["viernes", "Viernes"], ["sabado", "Sábado"], ["domingo", "Domingo"]] as const;
 const COMIDAS = [["desayuno", "Desayuno"], ["almuerzo", "Almuerzo"], ["merienda", "Merienda"], ["merienda_reforzada", "Merienda Reforzada"], ["cena", "Cena"]] as const;
@@ -64,21 +64,56 @@ export const formatMonto = (value: string) => {
 type Values = Record<string, string>;
 const valuesOf = (form: ConvenioForm): Values => Object.fromEntries(form.fields.map((f) => [f.name, f.value]));
 
-/** `{{ form.x|as_crispy_field }}`: label with the asterisk, widget, errors and hint. */
-function Campo({ f, values, set }: { f: ConvenioField; values: Values; set: (name: string, v: string) => void }) {
+/** `_convenio_pnud_fila.html` with a `campo`: label, the bare widget (inside its `convenio-campo` box) and the errors. */
+function Fila({ f, values, set }: { f: ConvenioField | undefined; values: Values; set: (name: string, v: string) => void }) {
+  if (!f) return null;
   const id = `id_${f.name}`;
-  const invalid = f.errors.length > 0;
   const { maxlength, minlength, min, max, step, inputmode } = f.attrs;
-  const describedBy = [f.help ? `hint_${id}` : "", invalid ? `error_1_${id}` : ""].filter(Boolean).join(" ") || undefined;
+  const numero = f.type === "number";
+  const input = (
+    <input type={f.type} name={f.name} id={id} className="form-control" value={values[f.name] ?? ""} required={f.required || undefined}
+      maxLength={maxlength ? Number(maxlength) : undefined} minLength={minlength ? Number(minlength) : undefined} min={min} max={max} step={step}
+      inputMode={inputmode as "numeric" | undefined} data-monto-entero={f.monto ? "true" : undefined} data-solo-numeros={numero ? "true" : undefined}
+      onChange={(e) => set(f.name, e.target.value)} onBlur={f.monto ? (e: FocusEvent<HTMLInputElement>) => set(f.name, formatMonto(e.target.value)) : undefined}
+      onKeyDown={numero ? soloNumerosKey : undefined} onPaste={numero ? soloNumerosPaste : undefined} />
+  );
   return (
-    <div id={`div_${id}`} className="mb-3">
-      <label htmlFor={id} className={`form-label${f.required ? " requiredField" : ""}`}>{f.label}{f.required && <span className="asteriskField">*</span>}</label>
-      <input type={f.type} name={f.name} id={id} className={`${f.type === "number" ? "numberinput" : "textinput"} form-control${invalid ? " is-invalid" : ""}`}
-        value={values[f.name] ?? ""} required={f.required || undefined} maxLength={maxlength ? Number(maxlength) : undefined} minLength={minlength ? Number(minlength) : undefined}
-        min={min} max={max} step={step} inputMode={inputmode as "numeric" | undefined} data-monto-entero={f.monto ? "true" : undefined} aria-describedby={describedBy}
-        onChange={(e) => set(f.name, e.target.value)} onBlur={f.monto ? (e: FocusEvent<HTMLInputElement>) => set(f.name, formatMonto(e.target.value)) : undefined} />
-      {f.errors.map((e, i) => <p key={e} id={`error_${i + 1}_${id}`} className="invalid-feedback"><strong>{e}</strong></p>)}
-      {f.help && <div id={`hint_${id}`} className="form-text">{f.help}</div>}
+    <div className="row mb-2 align-items-center">
+      <label htmlFor={id} className="col-md-5 col-form-label">{f.label}</label>
+      <div className="col-md-7">
+        {f.monto
+          ? <div className="input-group convenio-campo convenio-campo--monto"><span className="input-group-text">$</span>{input}</div>
+          : <div className={`convenio-campo${numero ? " convenio-campo--cantidad" : ""}`}>{input}</div>}
+        {f.errors.map((e) => <div key={e} className="invalid-feedback d-block">{e}</div>)}
+      </div>
+    </div>
+  );
+}
+
+/** `_convenio_pnud_fila.html` without a `campo`: a read-only label and value. */
+function FilaLectura({ etiqueta, valor }: { etiqueta: string; valor: string }) {
+  return (
+    <div className="row mb-2 align-items-center">
+      <span className="col-md-5 col-form-label fw-bold">{etiqueta}</span>
+      <div className="col-md-7"><span className="form-control-plaintext">{valor}</span></div>
+    </div>
+  );
+}
+
+/** `convenio_pnud.js`: the quantity fields take whole numbers only (no "e", signs, dots or commas, no pasted text). */
+const soloNumerosKey = (event: KeyboardEvent<HTMLInputElement>) => { if (["e", "E", "+", "-", ".", ","].includes(event.key)) event.preventDefault(); };
+const soloNumerosPaste = (event: ClipboardEvent<HTMLInputElement>) => { if (!/^[0-9]+$/.test(event.clipboardData.getData("text").trim())) event.preventDefault(); };
+
+function Seccion({ icono, titulo, subtitulo, children }: { icono: string; titulo: string; subtitulo: string; children: ReactNode }) {
+  return (
+    <div className="section-card">
+      <div className="section-header active">
+        <div className="section-header-left">
+          <div className="section-icon"><i className={`fas ${icono}`} aria-hidden="true" /></div>
+          <div className="section-title-group"><h3 className="section-title">{titulo}</h3><p className="section-subtitle">{subtitulo}</p></div>
+        </div>
+      </div>
+      <div className="section-body show">{children}</div>
     </div>
   );
 }
@@ -88,8 +123,8 @@ function Celda({ f, values, set }: { f: ConvenioField | undefined; values: Value
   if (!f) return <td />;
   return (
     <td>
-      <input type="number" name={f.name} id={`id_${f.name}`} className="form-control form-control-sm" min={f.attrs.min} required={f.required || undefined} value={values[f.name] ?? ""}
-        onChange={(e) => set(f.name, e.target.value)} />
+      <input type="number" name={f.name} id={`id_${f.name}`} className="form-control form-control-sm" min={f.attrs.min} step={f.attrs.step} inputMode={f.attrs.inputmode as "numeric" | undefined}
+        data-solo-numeros="true" required={f.required || undefined} value={values[f.name] ?? ""} onChange={(e) => set(f.name, e.target.value)} onKeyDown={soloNumerosKey} onPaste={soloNumerosPaste} />
       {f.errors.length > 0 && <ul className="errorlist">{f.errors.map((e) => <li key={e}>{e}</li>)}</ul>}
     </td>
   );
@@ -104,9 +139,9 @@ function ConvenioContent({ form: inicial, messages }: { form: ConvenioForm; mess
   const by = new Map(form.fields.map((f) => [f.name, f]));
   const set = (name: string, v: string) => setValues((cur) => ({ ...cur, [name]: v }));
   const { es_linea_secos: secos, es_linea_tradicional: tradicional } = form;
-  const resto = !secos && !tradicional;
-  const campo = (name: string) => { const f = by.get(name); return f ? <Campo f={f} values={values} set={set} /> : null; };
-  const col = (name: string) => <div className="col-md-6">{campo(name)}</div>;
+  const fila = (name: string) => <Fila f={by.get(name)} values={values} set={set} />;
+  const lectura = (key: (typeof PREFILL)[number][0]) => <FilaLectura etiqueta={PREFILL.find(([k]) => k === key)![1]} valor={form.prefill[key]} />;
+  const comidas = COMIDAS.filter(([comida]) => tradicional || comida !== "merienda_reforzada");
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -135,68 +170,61 @@ function ConvenioContent({ form: inicial, messages }: { form: ConvenioForm; mess
   return (
     <>
       <NativeToasts messages={messages} />
-      <div className="card">
-        <div className="card-header d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">Cargar datos del Convenio</h5>
-        </div>
-        <div className="card-body">
-          <div className="mb-3">
-            {PREFILL.map(([key, label]) => <p key={key} className="mb-1"><strong>{label}:</strong> {form.prefill[key]}</p>)}
-          </div>
-          <form method="post" onSubmit={submit}>
+      <link rel="stylesheet" href="/static/custom/css/comedorFormModerno.css" />
+      <link rel="stylesheet" href="/static/custom/css/convenioPnud.css" />
+      <div className="row comedor-form">
+        <div className="col-12">
+          <form method="post" className="w-100" onSubmit={submit}>
             {form.territoriales.length > 0 && <>
               <p className="fw-bold mb-1">Territoriales Asignados</p>
               <ul className="list-unstyled">
                 {form.territoriales.map((t, i) => <li key={i}>{t.territorial} — Código de Proyecto: {t.codigo}</li>)}
               </ul>
             </>}
-            <div className="row">
-              {col("monto_total_conveniado")}
-              {resto && col("personas_declaradas_siph")}
-              {col("nro_convenio")}
-              {col("monto_convenio_prestaciones_alimentarias")}
-              {col("monto_convenio_siph")}
-              {resto && col("prestaciones_financiadas_mensuales")}
-              {tradicional && DIARIAS.map((name) => <div key={name} className="col-md-6">{campo(name)}</div>)}
-              <div className="col-12">
-                <div className="row">
-                  {col("personas_conveniadas")}
-                  {tradicional && col("personas_declaradas_siph")}
-                </div>
-                {!tradicional && (
-                  <div className="row">
-                    {col("cantidad_modulos")}
-                    {secos && col("personas_declaradas_siph")}
-                  </div>
-                )}
-              </div>
-              {!secos && (
-                <div className="col-12 mt-3">
-                  <h6 className="fw-bold">Prestaciones por convenio</h6>
-                  <div className="table-responsive">
-                    <table className="table table-sm table-bordered align-middle">
-                      <thead>
-                        <tr>
-                          <th>Día</th>
-                          {COMIDAS.filter(([comida]) => tradicional || comida !== "merienda_reforzada").map(([comida, label]) => <th key={comida}>{label}</th>)}
+            {form.non_field_errors.length > 0 && <div className="alert alert-danger">{form.non_field_errors.map((e) => <ul key={e} className="errorlist nonfield"><li>{e}</li></ul>)}</div>}
+            <Seccion icono="fa-file-contract" titulo="Datos del Convenio" subtitulo="Organización, proyecto y espacio comunitario">
+              {lectura("organizacion_solicitante")}
+              {lectura("codigo_proyecto")}
+              {fila("nro_convenio")}
+              {lectura("estado_general")}
+              {lectura("subestado")}
+              {lectura("nombre_espacio")}
+              {lectura("id_externo")}
+              {lectura("domicilio_completo")}
+            </Seccion>
+            <Seccion icono="fa-dollar-sign" titulo="Montos del Convenio" subtitulo="Montos totales por espacio, sin centavos">
+              {fila("monto_convenio_prestaciones_alimentarias")}
+              {fila("monto_convenio_siph")}
+            </Seccion>
+            <Seccion icono="fa-users" titulo="Prestaciones y Personas" subtitulo="Prestaciones financiadas y personas conveniadas">
+              {tradicional ? DIARIAS.map((name) => <Fragment key={name}>{fila(name)}</Fragment>) : !secos && fila("prestaciones_financiadas_mensuales")}
+              {fila("personas_conveniadas")}
+              {!tradicional && fila("cantidad_modulos")}
+              {fila("personas_declaradas_siph")}
+            </Seccion>
+            {!secos && (
+              <Seccion icono="fa-calendar-week" titulo="Prestaciones por convenio" subtitulo="Prestaciones aprobadas por día">
+                <div className="table-responsive">
+                  <table className="table table-sm table-bordered align-middle">
+                    <thead>
+                      <tr><th>Día</th>{comidas.map(([comida, label]) => <th key={comida}>{label}</th>)}</tr>
+                    </thead>
+                    <tbody>
+                      {DIAS.map(([dia, label]) => (
+                        <tr key={dia}>
+                          <th>{label}</th>
+                          {comidas.map(([comida]) => <Celda key={comida} f={by.get(`aprobadas_${comida}_${dia}`)} values={values} set={set} />)}
                         </tr>
-                      </thead>
-                      <tbody>
-                        {DIAS.map(([dia, label]) => (
-                          <tr key={dia}>
-                            <th>{label}</th>
-                            {COMIDAS.filter(([comida]) => tradicional || comida !== "merienda_reforzada").map(([comida]) => (
-                              <Celda key={comida} f={by.get(`aprobadas_${comida}_${dia}`)} values={values} set={set} />
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              )}
+              </Seccion>
+            )}
+            <div className="sticky-actions">
+              <div><a href={form.urls.ficha} className="btn btn-secondary"><i className="fas fa-times mr-1" aria-hidden="true" />{" "}Cancelar</a></div>
+              <div><button type="submit" className="btn btn-success" disabled={pending || !!uncertain}><i className="fas fa-save mr-1" aria-hidden="true" />{" "}Guardar convenio</button></div>
             </div>
-            <button type="submit" className="btn btn-primary" disabled={pending || !!uncertain}>Guardar</button>
             {uncertain && <p role="alert" className="mb-0 mt-2">{uncertain}</p>}
           </form>
         </div>

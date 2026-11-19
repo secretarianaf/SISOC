@@ -53,13 +53,16 @@ describe("Comedor dupla assignment", () => {
     setup();
     expect(await screen.findByRole("heading", { name: "Asignar Equipo Técnico" })).toBeTruthy();
     expect(webGet).toHaveBeenCalledWith(API, expect.anything());
-    expect(document.title).toContain("Espacio Comunitario: Comedor Sintético");
+    await waitFor(() => expect(document.title).toContain("Espacio Comunitario: Comedor Sintético"));
     expect(screen.getAllByRole("button", { name: "Asignar" })).toHaveLength(2);
     expect(document.querySelectorAll("i.bi-check-circle-fill")).toHaveLength(1);
     const filter = screen.getByPlaceholderText("Filtrar por nombre de equipo técnico...") as HTMLInputElement;
     filter.value = "beta";
-    fireEvent.keyUp(filter);
-    await waitFor(() => expect((screen.getByText("Dupla Alfa").closest("tr") as HTMLElement).style.display).toBe("none"));
+    // The keyup listener is attached in an effect; repeat the idempotent keyup until it is bound.
+    await waitFor(() => {
+      fireEvent.keyUp(filter);
+      expect((screen.getByText("Dupla Alfa").closest("tr") as HTMLElement).style.display).toBe("none");
+    });
     expect((screen.getByText("Dupla Beta").closest("tr") as HTMLElement).style.display).toBe("");
   });
 

@@ -32,6 +32,7 @@ import { ciudadano360Route } from "./ciudadano360";
 import { ciudadanoBajaRoute } from "./ciudadanoBaja";
 import { ciudadanoFamiliarRoute } from "./ciudadanoFamiliar";
 import { ciudadanoColaRevisionRoute } from "./ciudadanoColaRevision";
+import { ciudadanoListadoRoute } from "./ciudadanoListado";
 import { ciudadanoFamiliarEliminarRoute } from "./ciudadanoFamiliarEliminar";
 import { ciudadanoFormRoute } from "./ciudadanoForm";
 import { ciudadanoImportacionLoteRoute, ciudadanoImportacionRoute } from "./ciudadanoImportacion";
@@ -326,6 +327,7 @@ export const ROUTES: RouteDefinition[] = [
   ciudadano360Route,
   ciudadanoBajaRoute,
   ciudadanoColaRevisionRoute,
+  ciudadanoListadoRoute,
   ciudadanoFamiliarEliminarRoute,
   ciudadanoFamiliarRoute,
   ciudadanoFormRoute,

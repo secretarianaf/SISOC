@@ -14,6 +14,7 @@ from ciudadanos.web_api_cola_revision import (
     CiudadanoColaRevisionWebView,
     CiudadanoDescartarRevisionWebView,
 )
+from ciudadanos.web_api_listado import CiudadanoListadoWebView
 from ciudadanos.web_api_familiar_eliminar import GrupoFamiliarEliminarWebView
 from ciudadanos.web_form import CiudadanoCrearWebView, CiudadanoEditarWebView
 
@@ -60,6 +61,11 @@ urlpatterns = [
         "<int:pk>/descartar-revision/",
         CiudadanoDescartarRevisionWebView.as_view(),
         name="ciudadanos_web_descartar_revision",
+    ),
+    path(
+        "listar/",
+        CiudadanoListadoWebView.as_view(),
+        name="ciudadanos_web_listado",
     ),
     path(
         "familiares/<int:pk>/eliminar/",

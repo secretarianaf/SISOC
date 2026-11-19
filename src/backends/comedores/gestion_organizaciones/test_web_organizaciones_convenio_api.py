@@ -257,7 +257,9 @@ def test_project_without_line_is_409_with_the_native_message_and_target(web):
         assert respuesta.json() == esperado
     assert not ConvenioProyecto.objects.exists()
     # The queued native message was consumed by the answer.
-    assert web.get("/api/web/comedores/organizaciones/listado/").json()["messages"] == []
+    assert (
+        web.get("/api/web/comedores/organizaciones/listado/").json()["messages"] == []
+    )
 
 
 def test_access_is_today_s_anonymous_401_no_permission_403_and_csrf_403():

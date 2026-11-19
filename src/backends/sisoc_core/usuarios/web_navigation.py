@@ -19,7 +19,6 @@ from core.templatetags.custom_filters import (
     puede_gestionar_inspecciones,
 )
 
-
 _ADMINISTRATION_PERMISSIONS = (
     "auth.view_user",
     "auth.add_user",

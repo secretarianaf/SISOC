@@ -12,7 +12,6 @@ from rest_framework.test import APIClient
 from core.models import Programa
 from insumos.models import Insumo, InsumoCategoria
 
-
 pytestmark = pytest.mark.django_db
 ROOT = "/api/web/insumos/categorias/"
 

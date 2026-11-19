@@ -100,7 +100,9 @@ def _pdf(nombre="a.pdf", contenido=b"%PDF-1.4 ok", tipo="application/pdf"):
 def _subir(cliente, mundo, **extra):
     datos = {"archivo": _pdf()}
     datos.update(extra)
-    return cliente.post(f"{API}{mundo.org.pk}/documentacion/{mundo.doc.pk}/subir/", datos)
+    return cliente.post(
+        f"{API}{mundo.org.pk}/documentacion/{mundo.doc.pk}/subir/", datos
+    )
 
 
 def _archivo(mundo, estado=A_VALIDAR, **extra):
@@ -159,7 +161,9 @@ def test_technician_uploads_and_gets_the_row_as_data(mundo):
 
 
 def test_upload_over_a_not_accepted_document_replaces_the_same_record(mundo):
-    previo = _archivo(mundo, "Rectificar", observaciones="Falta firma", numero_gde="GDE-1")
+    previo = _archivo(
+        mundo, "Rectificar", observaciones="Falta firma", numero_gde="GDE-1"
+    )
 
     respuesta = _subir(mundo.tec, mundo, fecha_vencimiento="2030-05-06")
 
@@ -207,7 +211,9 @@ def test_upload_over_an_accepted_document_adds_a_new_version(mundo):
         (_pdf(), "no-es-fecha", "Fecha de vencimiento invalida."),
     ],
 )
-def test_upload_validations_answer_400_with_the_django_text(mundo, archivo, fecha, texto):
+def test_upload_validations_answer_400_with_the_django_text(
+    mundo, archivo, fecha, texto
+):
     datos = {}
     if archivo is not None:
         datos["archivo"] = archivo
@@ -238,7 +244,11 @@ def test_only_the_technician_of_the_dupla_uploads(mundo):
 def test_additional_document_is_created_without_catalog(mundo):
     respuesta = mundo.tec.post(
         f"{API}{mundo.org.pk}/documentacion/personalizada/",
-        {"nombre": "  " + "N" * 300 + "  ", "archivo": _pdf(), "fecha_vencimiento": "2030-01-02"},
+        {
+            "nombre": "  " + "N" * 300 + "  ",
+            "archivo": _pdf(),
+            "fecha_vencimiento": "2030-01-02",
+        },
     )
 
     assert respuesta.status_code == 200
@@ -277,7 +287,9 @@ def test_lawyer_accepts_and_the_row_carries_the_new_state(mundo):
 
     assert respuesta.status_code == 200
     archivo.refresh_from_db()
-    assert archivo.estado == ACEPTADO and archivo.modificado_por.username == "doc_abogado"
+    assert (
+        archivo.estado == ACEPTADO and archivo.modificado_por.username == "doc_abogado"
+    )
     fila = respuesta.json()["fila"]
     assert fila["file"]["state"] == ACEPTADO and fila["can_validate"] is True
 
@@ -314,7 +326,9 @@ def test_state_rules_keep_the_native_403_texts(mundo):
     }
     assert lector.status_code == 403
     assert lector.json() == {"error": "Sin permisos para modificar este documento."}
-    assert invalido.status_code == 400 and invalido.json() == {"error": "Estado invalido."}
+    assert invalido.status_code == 400 and invalido.json() == {
+        "error": "Estado invalido."
+    }
     archivo.refresh_from_db()
     assert archivo.estado == "Documento adjunto"
 
@@ -328,7 +342,9 @@ def test_technician_sends_to_validate_and_accepted_is_not_resent(mundo):
 
     assert enviado.status_code == 200
     assert reenvio.status_code == 403
-    assert reenvio.json() == {"error": "El documento no esta disponible para envio tecnico."}
+    assert reenvio.json() == {
+        "error": "El documento no esta disponible para envio tecnico."
+    }
 
 
 # --- vencimiento y GDE -----------------------------------------------------------------
@@ -410,9 +426,19 @@ def test_history_lists_every_version_newest_first_inside_the_dupla(mundo):
         "legajo": f"/organizaciones/detalle/{mundo.org.pk}",
     }
     ajena = Organizacion.objects.create(nombre="Ajena")
-    assert mundo.tec.get(f"{API}{ajena.pk}/documentacion/{mundo.doc.pk}/historial/").status_code == 404
+    assert (
+        mundo.tec.get(
+            f"{API}{ajena.pk}/documentacion/{mundo.doc.pk}/historial/"
+        ).status_code
+        == 404
+    )
     assert mundo.lector.get(url).status_code == 200
-    assert mundo.tec.get(f"{API}{mundo.org.pk}/documentacion/999999/historial/").status_code == 404
+    assert (
+        mundo.tec.get(
+            f"{API}{mundo.org.pk}/documentacion/999999/historial/"
+        ).status_code
+        == 404
+    )
 
 
 # --- acceso y sección del legajo ---------------------------------------------------------
@@ -425,7 +451,9 @@ def test_access_is_todays_anonymous_401_no_permission_403_and_csrf_403(mundo):
     anonimo = Client().post(url, {"estado": ACEPTADO})
     assert anonimo.status_code == 401
     assert anonimo.json() == {"detail": web_gate.DETAIL_UNAUTHENTICATED}
-    assert _client(_usuario("doc_sin")).post(url, {"estado": ACEPTADO}).status_code == 403
+    assert (
+        _client(_usuario("doc_sin")).post(url, {"estado": ACEPTADO}).status_code == 403
+    )
     con_csrf = Client(enforce_csrf_checks=True)
     con_csrf.force_login(get_user_model().objects.get(username="doc_abogado"))
     assert con_csrf.post(url, {"estado": ACEPTADO}).status_code == 403

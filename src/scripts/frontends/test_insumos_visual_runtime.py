@@ -8,7 +8,6 @@ import sys
 import tempfile
 import unittest
 
-
 SCRIPT = Path(__file__).with_name("insumos_visual_runtime.py")
 
 

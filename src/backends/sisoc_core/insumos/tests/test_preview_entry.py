@@ -5,7 +5,6 @@ from django.contrib.auth.models import Permission, User
 from django.test import override_settings
 from django.urls import resolve
 
-
 PREVIEW_PATHS = (
     "/v2/sisoc/insumos/categorias/",
     "/v2/sisoc/insumos/categorias/crear",

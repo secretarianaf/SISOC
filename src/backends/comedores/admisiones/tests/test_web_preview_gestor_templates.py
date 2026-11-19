@@ -166,7 +166,10 @@ def test_version_editor_gets_the_frozen_index_only_for_a_draft_of_that_template(
     assert "csrftoken" in respuesta.cookies
     assert anonimo.get(url).status_code == 403
     assert sin_permiso.get(url).status_code == 403
-    assert gestor.get(f"{BASE}{objetos['plantilla']}/versiones/999999/editar/").status_code == 404
+    assert (
+        gestor.get(f"{BASE}{objetos['plantilla']}/versiones/999999/editar/").status_code
+        == 404
+    )
     version.estado = "publicada"
     version.save()
     assert gestor.get(url).status_code == 404

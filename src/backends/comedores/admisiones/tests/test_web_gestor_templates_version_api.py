@@ -170,7 +170,10 @@ def test_post_saves_the_sanitised_content_and_the_next_page_shows_the_message(
     assert (version.contenido_html, version.observaciones) == (LIMPIO, "Revisada")
     assert plantilla.modificado_por == gestor
     assert web.get(f"{ROOT}{plantilla.pk}/").json()["messages"] == [
-        {"message": "Versión en preparación guardada correctamente.", "level": "success"}
+        {
+            "message": "Versión en preparación guardada correctamente.",
+            "level": "success",
+        }
     ]
 
 

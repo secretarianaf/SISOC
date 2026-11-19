@@ -96,9 +96,11 @@ def test_detail_projects_every_native_field(org):
         acta_auditoria=SimpleUploadedFile("acta.pdf", b"%PDF"),
     )
 
-    data = _client(_usuario("rend_admin", superuser=True)).get(
-        f"{API}{organizacion.pk}/rendiciones/{rendicion.pk}/"
-    ).json()
+    data = (
+        _client(_usuario("rend_admin", superuser=True))
+        .get(f"{API}{organizacion.pk}/rendiciones/{rendicion.pk}/")
+        .json()
+    )
 
     assert data["number"] == 7 and data["number_text"] == "7"
     assert data["organization"] == {"id": organizacion.pk, "name": "Org Rendiciones"}
@@ -108,7 +110,9 @@ def test_detail_projects_every_native_field(org):
         f"{rendicion.get_etapa_proceso_display()} — "
         f"{rendicion.get_subestado_proceso_display()}"
     )
-    assert data["territorial"] == "Sí" and data["territorial_date"].startswith("01/04/2026")
+    assert data["territorial"] == "Sí" and data["territorial_date"].startswith(
+        "01/04/2026"
+    )
     assert data["audit"] == "Sí" and data["audit_date"].startswith("0")
     assert data["validated"] == "No" and data["validated_date"] == "-"
     assert data["audited"] == "No" and data["audited_date"] == "-"
@@ -134,9 +138,11 @@ def test_detail_falls_back_to_the_month_and_the_dash_defaults(org):
     Comedor.objects.filter(pk=comedor.pk).update(codigo_de_proyecto="VIEJO-1")
     rendicion = RendicionCuentaMensual.objects.create(mes=3, anio=2026, comedor=comedor)
 
-    data = _client(_usuario("rend_admin2", superuser=True)).get(
-        f"{API}{organizacion.pk}/rendiciones/{rendicion.pk}/"
-    ).json()
+    data = (
+        _client(_usuario("rend_admin2", superuser=True))
+        .get(f"{API}{organizacion.pk}/rendiciones/{rendicion.pk}/")
+        .json()
+    )
 
     assert data["number"] == rendicion.pk and data["number_text"] == "-"
     assert data["convenio"] == "-" and data["project_code"] == "VIEJO-1"
@@ -153,9 +159,11 @@ def test_validated_date_prefers_the_audit_management_date(org):
         fecha_carga_auditoria=datetime(2026, 5, 1, 12, 0, tzinfo=timezone.utc),
     )
 
-    data = _client(_usuario("rend_admin3", superuser=True)).get(
-        f"{API}{organizacion.pk}/rendiciones/{rendicion.pk}/"
-    ).json()
+    data = (
+        _client(_usuario("rend_admin3", superuser=True))
+        .get(f"{API}{organizacion.pk}/rendiciones/{rendicion.pk}/")
+        .json()
+    )
 
     assert data["validated"] == "Sí"
     assert data["validated_date"].startswith("01/05/2026")
@@ -172,7 +180,9 @@ def test_pdf_button_needs_the_view_permission_and_the_audit_validation(org):
     con_permiso = _client(_usuario("rend_ver", "organizaciones.view_organizacion", VER))
     sin_permiso = _client(_usuario("rend_solo_org", "organizaciones.view_organizacion"))
 
-    pedir = lambda c, r: c.get(f"{API}{organizacion.pk}/rendiciones/{r.pk}/").json()  # noqa: E731
+    pedir = lambda c, r: c.get(
+        f"{API}{organizacion.pk}/rendiciones/{r.pk}/"
+    ).json()  # noqa: E731
 
     assert pedir(con_permiso, abierta)["can_download_pdf"] is False
     assert pedir(con_permiso, validada)["can_download_pdf"] is True
@@ -190,9 +200,15 @@ def test_the_native_queryset_decides_404(org):
     propia = _rendicion(3, proyecto=proyecto)
     web = _client(_usuario("rend_lector", "organizaciones.view_organizacion"))
 
-    assert web.get(f"{API}{organizacion.pk}/rendiciones/{propia.pk}/").status_code == 200
-    assert web.get(f"{API}{organizacion.pk}/rendiciones/{borrada.pk}/").status_code == 404
-    assert web.get(f"{API}{organizacion.pk}/rendiciones/{de_otra.pk}/").status_code == 404
+    assert (
+        web.get(f"{API}{organizacion.pk}/rendiciones/{propia.pk}/").status_code == 200
+    )
+    assert (
+        web.get(f"{API}{organizacion.pk}/rendiciones/{borrada.pk}/").status_code == 404
+    )
+    assert (
+        web.get(f"{API}{organizacion.pk}/rendiciones/{de_otra.pk}/").status_code == 404
+    )
     assert web.get(f"{API}{ajena.pk}/rendiciones/{propia.pk}/").status_code == 404
     assert web.get(f"{API}{organizacion.pk}/rendiciones/999999/").status_code == 404
 
@@ -250,7 +266,12 @@ def test_legajo_delivers_the_table_filter_and_other_lines_as_sections():
     )
     ProyectoOrganizacion.objects.create(organizacion=organizacion, codigo="S-2")
     LineaProyecto.objects.create(proyecto=proyecto, programa=secos)
-    _rendicion(1, SECOS, proyecto=proyecto, fecha_validacion_territorial=datetime(2026, 4, 1, tzinfo=timezone.utc))
+    _rendicion(
+        1,
+        SECOS,
+        proyecto=proyecto,
+        fecha_validacion_territorial=datetime(2026, 4, 1, tzinfo=timezone.utc),
+    )
     _rendicion(2, TRADICIONAL, proyecto=proyecto)
     web = _client(_usuario("rend_leg", "organizaciones.view_organizacion"))
 
@@ -264,16 +285,28 @@ def test_legajo_delivers_the_table_filter_and_other_lines_as_sections():
     principal, otras = tablas
     assert [r["convenio"] for r in principal["rows"]] == ["C-1"]
     fila = principal["rows"][0]
-    assert (fila["number"], fila["project"], fila["period"]) == ("1", "S-1", "Marzo 2026")
+    assert (fila["number"], fila["project"], fila["period"]) == (
+        "1",
+        "S-1",
+        "Marzo 2026",
+    )
     assert (fila["territorial"], fila["audit"], fila["validated"], fila["audited"]) == (
         True,
         False,
         False,
         False,
     )
-    assert fila["url"] == f"/organizaciones/{organizacion.pk}/rendiciones/{fila['id']}/detalle/"
+    assert (
+        fila["url"]
+        == f"/organizaciones/{organizacion.pk}/rendiciones/{fila['id']}/detalle/"
+    )
     assert fila["line"] == SECOS
-    assert fila["line_label"] == RendicionCuentaMensual(linea_programatica=SECOS).get_linea_programatica_display()
+    assert (
+        fila["line_label"]
+        == RendicionCuentaMensual(
+            linea_programatica=SECOS
+        ).get_linea_programatica_display()
+    )
     assert [r["convenio"] for r in otras["rows"]] == ["C-2"]
     assert otras["rows"][0]["line"] == TRADICIONAL
     assert len(filtros) == 1 and filtros[0] == {

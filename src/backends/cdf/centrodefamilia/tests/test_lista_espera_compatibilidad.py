@@ -16,7 +16,6 @@ from centrodefamilia.models import (
     ParticipanteActividad,
 )
 
-
 pytestmark = pytest.mark.django_db
 
 

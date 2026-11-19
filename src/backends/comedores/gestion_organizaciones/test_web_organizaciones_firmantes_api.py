@@ -139,7 +139,9 @@ def test_programs_are_limited_to_the_organization_and_the_current_one(web):
         f"{API}{_organizacion(nombre='Sin').pk}/firmantes/formulario/"
     ).json()
 
-    etiquetas = lambda d: [o["label"] for o in _campos(d)["programa"]["options"]]  # noqa: E731
+    etiquetas = lambda d: [
+        o["label"] for o in _campos(d)["programa"]["options"]
+    ]  # noqa: E731
     assert etiquetas(alta) == ["---------", "Propio"]
     assert sorted(etiquetas(edicion)) == ["---------", "Actual", "Propio"]
     assert len(etiquetas(sin_programas)) == 4
@@ -182,7 +184,10 @@ def test_save_and_add_another_returns_to_the_create_form(web):
 
     assert respuesta.status_code == 201
     assert respuesta.json()["otro"] is True
-    assert respuesta.json()["redirect"] == f"/organizaciones/firmante/crear/{organizacion.pk}"
+    assert (
+        respuesta.json()["redirect"]
+        == f"/organizaciones/firmante/crear/{organizacion.pk}"
+    )
 
 
 def test_create_takes_the_organization_from_the_body_like_the_native_view(web):
@@ -214,7 +219,9 @@ def test_one_role_per_organization_on_create_and_edit(web, roles):
     base = {"organizacion_id": organizacion.pk, "rol": rol}
     web.post(f"{API}{organizacion.pk}/firmantes/", {**base, "nombre": "Ana"})
 
-    repetido = web.post(f"{API}{organizacion.pk}/firmantes/", {**base, "nombre": "Beto"})
+    repetido = web.post(
+        f"{API}{organizacion.pk}/firmantes/", {**base, "nombre": "Beto"}
+    )
     otro = Firmante.objects.create(
         organizacion=organizacion, nombre="Cris", rol=roles["Tesorero"]
     )
@@ -227,7 +234,9 @@ def test_one_role_per_organization_on_create_and_edit(web, roles):
     assert repetido.status_code == 400
     assert repetido.json()["errors"] == {"rol": [ROL_UNICO]}
     assert _campos(repetido.json()["form"])["rol"]["errors"] == [ROL_UNICO]
-    assert edicion.status_code == 400 and edicion.json()["errors"] == {"rol": [ROL_UNICO]}
+    assert edicion.status_code == 400 and edicion.json()["errors"] == {
+        "rol": [ROL_UNICO]
+    }
     assert propio.status_code == 200
     assert Firmante.objects.count() == 2
 
@@ -251,7 +260,9 @@ def test_edit_updates_and_redirects_and_unknown_is_404(web):
     organizacion = _organizacion()
     firmante = Firmante.objects.create(organizacion=organizacion, nombre="Ana")
 
-    respuesta = web.post(f"{API}firmantes/{firmante.pk}/", {"nombre": "Ana Z", "cuit": "5"})
+    respuesta = web.post(
+        f"{API}firmantes/{firmante.pk}/", {"nombre": "Ana Z", "cuit": "5"}
+    )
 
     assert respuesta.status_code == 200
     assert respuesta.json() == {
@@ -304,7 +315,9 @@ def test_avales_have_the_same_flows_with_optional_fields(web):
     )
     aval = Aval.objects.get()
     edicion = web.get(f"{API}avales/{aval.pk}/formulario/").json()
-    editado = web.post(f"{API}avales/{aval.pk}/", {"nombre": "Beto", "cuit": "20222222223"})
+    editado = web.post(
+        f"{API}avales/{aval.pk}/", {"nombre": "Beto", "cuit": "20222222223"}
+    )
     baja = web.get(f"{API}avales/{aval.pk}/baja/").json()
     borrado = web.post(f"{API}avales/{aval.pk}/baja/")
 
@@ -446,9 +459,7 @@ def test_legajo_avales_of_a_dupla_technician_have_no_management_actions():
     cliente = Client()
     cliente.force_login(tecnico)
 
-    (seccion,) = _secciones_de(
-        cliente.get(f"{API}{organizacion.pk}/").json(), "avales"
-    )
+    (seccion,) = _secciones_de(cliente.get(f"{API}{organizacion.pk}/").json(), "avales")
 
     assert seccion["can_manage"] is False and seccion["add_url"] is None
     assert [r["name"] for r in seccion["rows"]] == ["Beto"]

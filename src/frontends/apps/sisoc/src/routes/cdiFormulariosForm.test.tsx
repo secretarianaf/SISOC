@@ -107,9 +107,10 @@ describe("CDI institutional form route", () => {
     setup();
     await screen.findByText("Formulario vinculado al centro #7 (CDI-7)");
     const [lunes, martes] = Array.from(document.querySelectorAll<HTMLElement>(".formulario-horario-row"));
-    expect(lunes.className).not.toContain("d-none");
+    // bindFormularioForm applies the row visibility in an effect; wait for it before clicking.
+    await waitFor(() => expect(lunes.className).not.toContain("d-none"));
     fireEvent.click($("id_dias_funcionamiento_1"));
-    expect(martes.className).toContain("d-none");
+    await waitFor(() => expect(martes.className).toContain("d-none"));
     expect(($("id_horario_martes_apertura") as HTMLInputElement).disabled).toBe(true);
     fireEvent.click($("id_dias_funcionamiento_1"));
     expect(martes.className).not.toContain("d-none");

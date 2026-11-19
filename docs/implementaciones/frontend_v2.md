@@ -409,7 +409,7 @@ a la operación, en memoria y con apariencia Toastr. El archivo actual muestra s
 nombre base y conserva la descarga protegida. Estado histórico del piloto:
 [registro INS-A](../registro/cambios/2026-T4/2026-10-30-2785-listado-react-insumos.md).
 La reconciliación local en Migracion-2 se sigue en
-`odd/tasks/react-global-2785.md`; sus verificaciones y aceptación se distinguen
+el registro de tareas ODD local de #2785 (no versionado); sus verificaciones y aceptación se distinguen
 de las del origen. No se activaron rutas globales ni despliegues.
 
 ### Continuación local INS-B: categorías en validación

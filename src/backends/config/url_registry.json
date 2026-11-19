@@ -15640,6 +15640,26 @@
   "regex": "^api/web/vat/catalogos/modalidades\\-cursado/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
+  "name": "catalogos-planes-curriculares-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/planes\\-curriculares/nuevo/\\Z"
+ },
+ {
+  "name": "catalogos-planes-curriculares-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/planes\\-curriculares/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "catalogos-planes-curriculares-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/planes\\-curriculares/\\Z"
+ },
+ {
+  "name": "catalogos-planes-curriculares-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/planes\\-curriculares/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
   "name": "catalogos-sector-create",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/catalogos/sectores/nuevo/\\Z"
@@ -15935,6 +15955,16 @@
   "regex": "^api/web/vat/comisiones\\-horarios/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
+  "name": "comisiones-horarios-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comisiones-horarios-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/\\Z"
+ },
+ {
   "name": "comisiones-horarios-update",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/comisiones\\-horarios/(?P<pk>[0-9]+)/editar/\\Z"
@@ -15943,6 +15973,11 @@
   "name": "comisiones-list",
   "namespace": "vat_web_api",
   "regex": "^api/web/vat/comisiones/\\Z"
+ },
+ {
+  "name": "comisiones-lista",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-lista/\\Z"
  },
  {
   "name": "comisiones-options",

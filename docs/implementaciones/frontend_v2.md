@@ -1646,3 +1646,31 @@ formularios ligados; los mensajes nativos (incluida la consulta a RENAPER del bu
 `comedorDuplaAsignar.tsx` y `comedorNominaCrear.tsx`. Quedan nativos `comedores/<pk>/admision/<admision_pk>/nomina/importar/`, `comedores/<pk>/validar/` y
 `comedores_nuevo/<pk>` (POST o redirección, sin página) y `comedores/editar-nomina/<pk>/` (fragmento AJAX del modal de la nómina).
 Registro: `../registro/cambios/2026-T4/2026-11-17-2785-react-comedor-nomina-crear-dupla-asignar.md`.
+
+La lista de comisiones de oferta (V04.01, `vat/comisiones/`) usa `src/backends/vat/VAT/web_api_comision_lista.py` bajo
+`/api/web/vat/comisiones-lista/` (el recurso `comisiones/` es del front INET). Ejecuta `ComisionListView` con el permiso de la URL nativa
+(`VAT.view_comision`) y su alcance: fuera del alcance la lista llega vacía; los filtros `estado` y `oferta_id`, la paginación y la página no
+válida (404) son los nativos. Ruta React: `vatComisionLista.tsx`, con el ayudante del recorrido guiado `comision_list`. Los botones «Editar» y
+«Eliminar» salen con `VAT.change_comision` y `VAT.delete_comision`. La búsqueda `busqueda` queda como la nativa: su filtro
+`oferta__nombre__icontains` falla con `FieldError` porque `OfertaInstitucional` no tiene `nombre` (ver el registro). Registro:
+`../registro/cambios/2026-T4/2026-11-19-2785-react-vat-comisiones-lista.md`.
+
+La lista y el detalle de horarios de comisión de oferta (V04.01, `vat/comisiones/horarios/` y `vat/comisiones/horarios/<pk>/`) usan
+`src/backends/vat/VAT/web_api_comision_horario_lista.py` bajo `/api/web/vat/comisiones-horarios/` y `.../<pk>/` (el mismo prefijo de las altas,
+ediciones y bajas de `web_api_comision_horario_forms.py`). Ejecutan `ComisionHorarioListView` y `ComisionHorarioDetailView` con el permiso de la URL
+nativa (`VAT.view_comisionhorario`) y su alcance: el detalle fuera del alcance responde 404 (los horarios de comisiones de curso no están en él) y la lista
+llega vacía. Los filtros `comision_id` y `dia_semana`, la paginación y la página no válida (404) son los nativos; el campo de búsqueda se envía pero la vista
+nativa no lo usa, igual que hoy. El detalle dibuja «Editar» y «Eliminar» para todos, como la plantilla. Ruta React: `vatComisionHorarios.tsx`.
+Registro: `../registro/cambios/2026-T4/2026-11-19-2785-react-vat-comisiones-horarios.md`.
+
+Los planes curriculares de VAT (V07.01 y V07.02: `vat/catalogos/planes-curriculares/`, `nuevo/`, `<pk>/` y `<pk>/editar/`) usan
+`src/backends/vat/VAT/web_api_planes_curriculares.py` bajo `/api/web/vat/catalogos/planes-curriculares/` (el recurso `planes/` es del front INET). Ejecutan
+`PlanVersionCurricular{List,Detail,Create,Update}View` con el permiso de la URL nativa (`VAT.view|add|change_planversioncurricular`) y, además, la guarda
+del `dispatch` nativo de cada vista (rol SSE o provincial; el alta y la edición exigen SSE o provincial con el permiso): un usuario con el permiso pero sin
+el rol recibe 403, como en la página. El alcance (SSE ve todo, el provincial su provincia) es el del queryset nativo: la lista llega acotada y el detalle o
+la edición fuera de él responden 404. La lista conserva los filtros combinables (`filters_config` y favoritos) y los filtros `titulo` y `activo`. El formulario
+es el nativo (`PlanVersionCurricularForm`): proyecta los campos con sus atributos, los bloqueos del rol INET provincial (`disabled` y ocultos), el aviso de la normativa
+libre y los textos de la vista (`page_title`, `submit_text`, `cancel_url`); el POST corre `form_valid` (guardado, título de referencia y mensaje) y responde
+`{"ok": true, "redirect": ...}` o 400 con los campos y sus errores. Rutas React: `vatPlanes.tsx` y `vatPlanesForm.tsx`. La baja sigue nativa: el detalle
+elimina con el POST nativo (formulario con `confirm`) y «Eliminar» de la lista lleva a `eliminar/`, que sigue siendo la página nativa. Registro:
+`../registro/cambios/2026-T4/2026-11-19-2785-react-vat-planes-curriculares.md`.

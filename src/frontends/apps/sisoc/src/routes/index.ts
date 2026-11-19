@@ -162,6 +162,10 @@ import { vatResultadosRoute } from "./vatResultados";
 import { vatResultadosFormRoute } from "./vatResultadosForm";
 import { vatVouchersFormRoute } from "./vatVouchersForm";
 import { vatVouchersRoute } from "./vatVouchers";
+import { vatPlanesFormRoute } from "./vatPlanesForm";
+import { vatPlanesRoute } from "./vatPlanes";
+import { vatComisionHorariosRoute } from "./vatComisionHorarios";
+import { vatComisionListaRoute } from "./vatComisionLista";
 import type { RouteDefinition, ShellRouteDefinition } from "./types";
 
 export type { RouteDefinition, ShellRouteDefinition } from "./types";
@@ -314,6 +318,10 @@ export const ROUTES: RouteDefinition[] = [
   vatCursoDetalleRoute,
   vatOfertaFormRoute,
   vatCursoFormRoute,
+  vatPlanesFormRoute,
+  vatPlanesRoute,
+  vatComisionHorariosRoute,
+  vatComisionListaRoute,
   ocrRoute,
   organizacionesRoute,
   organizacionConvenioRoute,

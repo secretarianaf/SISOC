@@ -173,6 +173,17 @@ from VAT.web_api_vouchers import (
     VoucherListWebView,
     VoucherParametriaListWebView,
 )
+from VAT.web_api_comision_lista import ComisionListWebView
+from VAT.web_api_comision_horario_lista import (
+    ComisionHorarioDetailWebView,
+    ComisionHorarioListWebView,
+)
+from VAT.web_api_planes_curriculares import (
+    PlanCreateWebView,
+    PlanDetailWebView,
+    PlanListWebView,
+    PlanUpdateWebView,
+)
 
 app_name = "vat_web_api"
 urlpatterns = [
@@ -920,5 +931,52 @@ urlpatterns += [
         "centros-formulario/<int:pk>/editar/",
         CentroUpdateFormWebView.as_view(),
         name="centros-formulario-editar",
+    ),
+]
+
+# V04.01 lista de comisiones de oferta (vista nativa ``ComisionListView``).
+urlpatterns += [
+    path(
+        "comisiones-lista/",
+        ComisionListWebView.as_view(),
+        name="comisiones-lista",
+    ),
+]
+
+# V04.01 lista y detalle de horarios de comisión de oferta (vistas nativas ``ComisionHorarioListView`` y ``ComisionHorarioDetailView``).
+urlpatterns += [
+    path(
+        "comisiones-horarios/",
+        ComisionHorarioListWebView.as_view(),
+        name="comisiones-horarios-list",
+    ),
+    path(
+        "comisiones-horarios/<int:pk>/",
+        ComisionHorarioDetailWebView.as_view(),
+        name="comisiones-horarios-detail",
+    ),
+]
+
+# V07.01 y V07.02 planes curriculares: lista, detalle, alta y edición (vistas nativas ``PlanVersionCurricular*View``).
+urlpatterns += [
+    path(
+        "catalogos/planes-curriculares/nuevo/",
+        PlanCreateWebView.as_view(),
+        name="catalogos-planes-curriculares-create",
+    ),
+    path(
+        "catalogos/planes-curriculares/<int:pk>/editar/",
+        PlanUpdateWebView.as_view(),
+        name="catalogos-planes-curriculares-update",
+    ),
+    path(
+        "catalogos/planes-curriculares/",
+        PlanListWebView.as_view(),
+        name="catalogos-planes-curriculares-list",
+    ),
+    path(
+        "catalogos/planes-curriculares/<int:pk>/",
+        PlanDetailWebView.as_view(),
+        name="catalogos-planes-curriculares-detail",
     ),
 ]

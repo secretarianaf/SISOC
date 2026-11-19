@@ -1,0 +1,30 @@
+{% comment %}
+Fila del listado de Datos del Convenio (#2843).
+Con "campo" muestra el input editable; sin "campo", "etiqueta" y "valor" de solo lectura.
+"monto" antepone el signo $ al input.
+{% endcomment %}
+{% if campo %}
+    <div class="row mb-2 align-items-center">
+        <label for="{{ campo.id_for_label }}" class="col-md-5 col-form-label">{{ campo.label }}</label>
+        <div class="col-md-7">
+            {% if monto %}
+                <div class="input-group convenio-campo convenio-campo--monto">
+                    <span class="input-group-text">$</span>
+                    {{ campo }}
+                </div>
+            {% elif campo.field.widget.input_type == "number" %}
+                <div class="convenio-campo convenio-campo--cantidad">{{ campo }}</div>
+            {% else %}
+                <div class="convenio-campo">{{ campo }}</div>
+            {% endif %}
+            {% for error in campo.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+    </div>
+{% else %}
+    <div class="row mb-2 align-items-center">
+        <span class="col-md-5 col-form-label fw-bold">{{ etiqueta }}</span>
+        <div class="col-md-7">
+            <span class="form-control-plaintext">{{ valor }}</span>
+        </div>
+    </div>
+{% endif %}

@@ -70,7 +70,7 @@ def test_nomina_detail_context_data(mocker):
     view = module.NominaDetailView()
     view.kwargs = {"pk": 9, "admision_pk": 77}
     view.request = SimpleNamespace(
-        GET={"page": "2", "dni": "1234"}, user=SimpleNamespace()
+        GET={"page": "2", "dni": "1234"}, user=SimpleNamespace(), session={}
     )
 
     ctx = view.get_context_data()

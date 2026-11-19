@@ -8,6 +8,7 @@
 .env
 .env.*
 !.env.example
+.deploy/
 
 __pycache__
 *.py[cod]

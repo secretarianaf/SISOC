@@ -1,0 +1,17 @@
+{% load custom_filters %}
+{% comment %}
+Un dato del cuadro "Datos del Convenio" del legajo (#2843): etiqueta chica arriba y valor en negrita.
+Va dentro de un div.row; "columna" fija el ancho (por defecto fila completa).
+Sin valor muestra "Sin información" atenuado. "monto" formatea como $100.000.000.
+"Sin información" también cubre valores que ya llegan con ese texto (ej. domicilio).
+{% endcomment %}
+<div class="{{ columna|default:'col-12' }} mb-2">
+    <span class="d-block small opacity-75">{{ etiqueta }}</span>
+    {% if valor is None or valor == "" or valor == "Sin información" %}
+        <span class="d-block fst-italic opacity-50">Sin informaci&oacute;n</span>
+    {% elif monto %}
+        <span class="d-block fw-bold">${{ valor|monto_sin_decimales }}</span>
+    {% else %}
+        <span class="d-block fw-bold">{{ valor }}</span>
+    {% endif %}
+</div>

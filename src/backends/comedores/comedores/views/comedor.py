@@ -1613,6 +1613,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             selected_admision
         )
         context.update(timeline_selected)
+        # #2843: sin "Mes de ejecución" a la derecha, Datos del Convenio ocupa
+        # toda la columna y Transacciones se apila debajo de Asistencia.
+        context["convenio_ocupa_columna"] = usa_convenio_pnud and not context.get(
+            "mostrar_mes_ejecucion"
+        )
 
         context["resumen_dw_transacciones"] = None
         request_user = getattr(self.request, "user", None)

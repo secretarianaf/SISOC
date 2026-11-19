@@ -9,6 +9,7 @@ from iam.roles_vat import (  # noqa: F401  reexportados: VAT los usa desde acá
     ROLE_VAT_SSE_PERMISSION,
     VAT_VIEW_CENTRO_PERMISSION,
     _user_has_any_permission_code,
+    is_inet_asistencia,
     is_vat_provincial,
     is_vat_referente,
     is_vat_sse,
@@ -155,6 +156,41 @@ def _user_is_revisor_for_centro(user, centro) -> bool:
     return revisores.filter(pk=user.id).exists()
 
 
+def es_perfil_solo_asistencia(user) -> bool:
+    return bool(
+        is_inet_asistencia(user)
+        and not (
+            is_vat_sse(user)
+            or is_vat_provincial(user)
+            or is_vat_referente(user)
+            or is_vat_revisor(user)
+            or is_vat_admin_visualizador(user)
+        )
+    )
+
+
+def centros_para_asistencia(user) -> QuerySet:
+    from VAT.models import Centro
+
+    gestion = filter_centros_queryset_for_management(Centro.objects.all(), user)
+    if is_inet_asistencia(user):
+        return (
+            gestion.distinct()
+            | Centro.objects.filter(_centro_referente_q(user)).distinct()
+        )
+    return gestion
+
+
+def puede_cargar_asistencia_resultados(user, centro) -> bool:
+    return bool(
+        (can_user_edit_centro(user, centro) and user.has_perm("VAT.change_inscripcion"))
+        or (
+            is_inet_asistencia(user)
+            and centros_para_asistencia(user).filter(pk=centro.pk).exists()
+        )
+    )
+
+
 def filter_centros_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
     if is_vat_sse(user) or is_vat_admin_visualizador(user):
         return base_qs
@@ -162,7 +198,12 @@ def filter_centros_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
     if is_vat_provincial(user) and _has_effective_territorial_scopes(user):
         return _filter_centros_by_territorial_scope(base_qs, user)
 
-    return _filter_centros_by_assignment(base_qs, user, include_revisores=True)
+    asignados = _filter_centros_by_assignment(base_qs, user, include_revisores=True)
+    if is_inet_asistencia(user):
+        return (
+            asignados.distinct() | base_qs.filter(_centro_referente_q(user)).distinct()
+        )
+    return asignados
 
 
 def filter_centros_queryset_for_management(base_qs: QuerySet, user) -> QuerySet:
@@ -194,6 +235,10 @@ def can_user_access_centro(user, centro) -> bool:
     return bool(
         _user_is_referente_for_centro(user, centro)
         or _user_is_revisor_for_centro(user, centro)
+        or (
+            is_inet_asistencia(user)
+            and centros_para_asistencia(user).filter(pk=centro.pk).exists()
+        )
     )
 
 
@@ -434,6 +479,8 @@ def puede_ver_usuarios_centro_vat(user, centro) -> bool:
         return False
     if is_vat_sse(user):
         return True
+    if es_perfil_solo_asistencia(user):
+        return False
     if not getattr(centro, "pk", None):
         return False
     if getattr(centro, "referente_id", None) == getattr(user, "id", None):

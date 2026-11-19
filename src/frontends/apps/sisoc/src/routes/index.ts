@@ -13,6 +13,7 @@ import { comedorTransaccionesRoute } from "./comedorTransacciones";
 import { actividadesPnudRoute } from "./actividadesPnud";
 import { admisionesTemplatesRoute } from "./admisionesTemplates";
 import { admisionesTemplatesFormRoute } from "./admisionesTemplatesForm";
+import { admisionesTemplatesVersionRoute } from "./admisionesTemplatesVersion";
 import { admisionesInformeDetalleRoute } from "./admisionesInformeDetalle";
 import { admisionesInformeComplementarioRoute } from "./admisionesInformeComplementario";
 import { admisionesInformeEditorRoute } from "./admisionesInformeEditor";
@@ -72,6 +73,7 @@ import { cdfCentrosRoute } from "./cdfCentros";
 import { datacalleCasosRoute } from "./datacalleCasos";
 import { datacalleRelevamientosRoute } from "./datacalleRelevamientos";
 import { dispositivosRoute } from "./dispositivos";
+import { dispositivoFormRoute } from "./dispositivoForm";
 import { cdfCentroUsuarioRoute } from "./cdfCentroUsuario";
 import { dashboardRoute, dashboardTableroRoute } from "./dashboardTableros";
 import { duplasRoute } from "./duplas";
@@ -216,6 +218,7 @@ export const ROUTES: RouteDefinition[] = [
   cdfCentrosRoute,
   cdfCentroFormRoute,
   dispositivosRoute,
+  dispositivoFormRoute,
   cdfCentroUsuarioRoute,
   cdfBeneficiariosRoute,
   cdfActividadRoute,
@@ -236,6 +239,7 @@ export const ROUTES: RouteDefinition[] = [
   pasInformesGenerarRoute,
   admisionesTemplatesRoute,
   admisionesTemplatesFormRoute,
+  admisionesTemplatesVersionRoute,
   admisionesInformeDetalleRoute,
   admisionesInformeComplementarioRoute,
   admisionesInformeEditorRoute,

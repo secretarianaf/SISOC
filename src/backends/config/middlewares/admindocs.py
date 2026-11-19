@@ -56,6 +56,7 @@ _OWNED_PATTERNS = (
     r"/api/web/cdf/centros/[0-9]+/generar-usuario/",
     r"/api/web/cdf/informecabal/(?:registro/[0-9]+/|[0-9]+/)?",
     r"/api/web/cdf/centros/[0-9]+/informecabal/[0-9]+/",
+    r"/api/web/dispositivos/(?:crear/|[0-9]+/editar/)",
     r"/api/web/cdf/actividades/(?:nueva/|[0-9]+/(?:asistencia/|editar/)?)?",
     r"/api/web/cdf/centros/[0-9]+/actividades/nueva/",
     r"/api/web/cdf/centros/[0-9]+/actividades/[0-9]+/"

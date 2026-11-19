@@ -114,10 +114,13 @@ def test_the_incident_post_and_the_other_routes_stay_native(gestor, objetos):
     assert (incidencia.estado, incidencia.observaciones) == ("en_analisis", "Revisando")
 
     version = PlantillaInformeTecnico.objects.get().versiones.create(numero=1)
-    editor = gestor.get(f"{BASE}{objetos['plantilla']}/versiones/{version.pk}/editar/")
-    assert "admisiones/templates_informes_tecnicos/version_form.html" in [
-        t.name for t in editor.templates
-    ]
+    editor = gestor.post(
+        f"{BASE}{objetos['plantilla']}/versiones/{version.pk}/editar/",
+        {"contenido_html": "<p>Nuevo</p>", "observaciones": ""},
+    )
+    assert editor.status_code == 302
+    version.refresh_from_db()
+    assert version.contenido_html == "<p>Nuevo</p>"
     previa = gestor.get(
         f"{BASE}{objetos['plantilla']}/versiones/{version.pk}/previsualizar/"
     )
@@ -144,6 +147,29 @@ def test_create_form_gets_the_frozen_index_and_keeps_the_native_post(gestor, obj
     assert "admisiones/templates_informes_tecnicos/form.html" in [
         t.name for t in invalido.templates
     ]
+
+
+@pytest.mark.usefixtures("preview")
+def test_version_editor_gets_the_frozen_index_only_for_a_draft_of_that_template(
+    gestor, objetos
+):
+    version = PlantillaInformeTecnico.objects.get().versiones.create(numero=1)
+    url = f"{BASE}{objetos['plantilla']}/versiones/{version.pk}/editar/"
+    anonimo = Client()
+    sin_permiso = Client()
+    sin_permiso.force_login(get_user_model().objects.create_user("sin_permiso_editor"))
+
+    respuesta = gestor.get(url)
+
+    assert respuesta.status_code == 200
+    assert '/comedores/react/assets/app-1.js"' in respuesta.content.decode()
+    assert "csrftoken" in respuesta.cookies
+    assert anonimo.get(url).status_code == 403
+    assert sin_permiso.get(url).status_code == 403
+    assert gestor.get(f"{BASE}{objetos['plantilla']}/versiones/999999/editar/").status_code == 404
+    version.estado = "publicada"
+    version.save()
+    assert gestor.get(url).status_code == 404
 
 
 def test_build_without_index_is_refused(tmp_path):

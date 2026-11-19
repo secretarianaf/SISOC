@@ -7,7 +7,7 @@ dispatch (``GestorTemplatesPermissionMixin``): users they reject get the native
 the frozen React ``index.html``, which loads its data from
 ``/api/web/comedores/admisiones/plantillas-informe/``. Other methods (the
 incident management POST) reach the native view unchanged, and the routes this
-module does not list (version editor, DOCX preview and every
+module does not list (DOCX preview and every
 action) stay the native Django pages. Assets are served like the other Comedores
 previews, under ``/comedores/react/``.
 """
@@ -33,6 +33,7 @@ from admisiones.views.templates_informe_tecnico import (
     PlantillaInformeTecnicoCreateView,
     PlantillaInformeTecnicoDetailView,
     PlantillaInformeTecnicoListView,
+    PlantillaInformeTecnicoVersionUpdateView,
     VariableTemplateInformeTecnicoListView,
 )
 
@@ -62,6 +63,17 @@ class PlantillaCrearEntry(PlantillaInformeTecnicoCreateView):
     index_bytes = b""
 
     def get(self, request, *args, **kwargs):
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class VersionEditarEntry(PlantillaInformeTecnicoVersionUpdateView):
+    """GET serves the index for a draft of that template (else the native 404)."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
         return _index(request, self.index_bytes)
 
 
@@ -120,6 +132,10 @@ def templates_preview_patterns(build_directory):
         path(f"{base}incidencias/<int:pk>/", entry(IncidenciaDetailEntry)),
         path(f"{base}variables/", entry(VariablesListEntry)),
         path(f"{base}<int:pk>/", entry(PlantillaDetailEntry)),
+        path(
+            f"{base}<int:plantilla_pk>/versiones/<int:version_pk>/editar/",
+            entry(VersionEditarEntry),
+        ),
         path(
             "comedores/react/<path:asset_path>",
             ReactAssetView.as_view(assets=_frozen_assets(root)),

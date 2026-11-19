@@ -8,6 +8,7 @@ sobre el [protocolo G1 v1](../../decisiones/2026-11-06-2808-protocolo-g1-v1.md),
 que completa [AD01.01](2026-11-10-2785-react-ad01-gestor-templates.md):
 
 - Alta de template, `/comedores/configuracion/templates/crear/` (`form.html`).
+- Editor de versión, `/comedores/configuracion/templates/<plantilla>/versiones/<version>/editar/` (`version_form.html`).
 
 No cambia vistas, formularios, servicios, modelos, plantillas ni URLs nativas.
 No activa React en producción.
@@ -31,6 +32,20 @@ Archivos:
 - Pruebas: `src/backends/comedores/admisiones/tests/test_web_gestor_templates_crear_api.py`,
   `src/backends/comedores/admisiones/tests/test_web_preview_gestor_templates.py`
   y `src/frontends/apps/sisoc/src/routes/admisionesTemplatesForm.test.tsx`.
+
+## Editor de versión
+
+`GET/POST /api/web/comedores/admisiones/plantillas-informe/<pk>/versiones/<version_pk>/`
+(`web_api_template_version.py`) ejecuta `PlantillaInformeTecnicoVersionUpdateView`:
+solo editan los borradores de esa plantilla (otra versión: 404), el HTML lo sanea
+únicamente `PlantillaInformeTecnicoVersionForm`, `guardar_borrador` guarda y un
+rechazo del servicio vuelve como 400 con el formulario ligado. La ruta
+`admisionesTemplatesVersion.tsx` dibuja el mismo DOM y carga, en el orden
+nativo, jQuery 3.6.0, jQuery UI 1.12.1, Summernote 0.8.18 y `gestor_templates_editor.js`
+(decisión §9.1 del contrato, sin dependencia npm nueva); el `submit` del script
+nativo sincroniza el textarea antes del envío. Solo se envían `contenido_html`
+y `observaciones`. El formulario de vista previa sigue siendo el GET nativo en
+pestaña nueva.
 
 ## Comportamiento
 

@@ -6,6 +6,10 @@ DS02.01 de #2785).
 
 from django.urls import path
 
+from dispositivos.web_api_dispositivo_form import (
+    DispositivoCrearWebView,
+    DispositivoEditarWebView,
+)
 from dispositivos.web_api import (
     DispositivoDetailWebView,
     DispositivoListWebView,
@@ -37,5 +41,15 @@ urlpatterns = [
         "<int:pk>/ubicacion/",
         DispositivoLocationWebView.as_view(),
         name="web_dispositivos_ubicacion",
+    ),
+    path(
+        "crear/",
+        DispositivoCrearWebView.as_view(),
+        name="web_dispositivos_crear",
+    ),
+    path(
+        "<int:pk>/editar/",
+        DispositivoEditarWebView.as_view(),
+        name="web_dispositivos_editar",
     ),
 ]

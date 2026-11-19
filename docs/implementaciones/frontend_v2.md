@@ -814,6 +814,13 @@ nativas y assets en `/dispositivos/react/assets/`. En el front, `routes/disposit
 (listado y legajo) y `routes/dispositivosMapa.tsx` (Leaflet por CDN con el mismo SRI y la
 consulta de ubicación en serie). Registro:
 `../registro/cambios/2026-T4/2026-11-11-2785-react-dispositivos-consulta.md`.
+El alta y la edición (`/dispositivos/crear` y `/dispositivos/<pk>/editar`, sin barra final) usan
+`src/backends/dispositivos/dispositivos/web_api_dispositivo_form.py`, que corre
+`DispositivoCreateView` y `DispositivoUpdateView` (alcance, validaciones, adjuntos y mensaje
+nativos; el POST es `multipart/form-data`). `routes/dispositivoForm.tsx` dibuja las nueve secciones
+con sus scripts y reutiliza el editor de pin (`routes/dispositivoFormMapa.tsx`). La ubicación y la
+previsualización siguen siendo JSON nativo. Registro:
+`../registro/cambios/2026-T4/2026-11-19-2785-react-dispositivos-formulario.md`.
 Generar usuario referente (`routes/cdfCentroUsuario.tsx`) usa
 `src/backends/cdf/centrodefamilia/web_api_usuario.py`, que corre
 `GenerarUsuarioCDFView` (404 antes de la regla de delegación, territorio y cupo)
@@ -908,7 +915,9 @@ Alta de template del gestor (AD01.02, `form.html`):
 `post()` con `crear_plantilla` y devuelve `{ok, redirect}` o 400 con el
 formulario ligado) y la ruta
 `src/frontends/apps/sisoc/src/routes/admisionesTemplatesForm.tsx` dibuja la
-misma pantalla. La vista previa del DOCX (`previsualizar/`) y la creación de
+misma pantalla. El editor de versión (`web_api_template_version.py` y
+`admisionesTemplatesVersion.tsx`) usa el mismo marco y carga el editor nativo
+(jQuery, Summernote y `gestor_templates_editor.js`). La vista previa del DOCX (`previsualizar/`) y la creación de
 versión (solo POST) no tienen pantalla que migrar y siguen nativas. Registro:
 `../registro/cambios/2026-T4/2026-11-17-2785-react-admisiones-templates-formularios.md`.
 

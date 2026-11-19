@@ -742,6 +742,18 @@ nativo). Cada fila se renderiza en el servidor con la misma expresión del templ
 `date`) y la pantalla solo dibuja la tabla. Solo lectura. Entrada de vista previa en
 `centrodeinfancia/web_preview_nomina_formulario.py`.
 Registro: `../registro/cambios/2026-T4/2026-11-17-2785-react-cdi-nomina-formulario.md`.
+
+La asistencia de la nómina de Centro de Infancia (`/centrodeinfancia/<centro>/nomina/asistencia/`, con barra final) corre sobre
+`AsistenciaNominaCentroView` mediante `web_api_nomina_asistencia.py` (`GET` y `POST /api/web/cdi/centros/<id>/nomina/asistencia/`, permiso
+`change_centrodeinfancia`, alcance por centro y 404 como el nativo). El GET envía las filas de la nómina activa, los contadores y los mensajes
+pendientes; el POST (solo urlencoded, con CSRF) ejecuta el `guardar` nativo y, tanto si guarda como si rechaza, responde
+`{"ok": true, "redirect": <url nativa>}`: el mensaje de éxito o de error se muestra en la página de destino, como con el HTML. La pantalla
+(`routes/cdiNominaAsistencia.tsx`) reproduce los scripts del template: páginas de 10 filas, tilde que se quita al volver a elegir, "Marcar
+todos", contadores en vivo y el diálogo de calendario. El calendario mensual **no** se migra: sigue siendo el endpoint JSON nativo
+`/centrodeinfancia/<centro>/nomina/asistencia/calendario/?mes=AAAA-MM`, que la pantalla consulta con `fetch` y `credentials: "same-origin"` igual
+que el script nativo (cualquier respuesta no exitosa deja el mes sin marcas). Entrada de vista previa en
+`src/backends/cdi/centrodeinfancia/web_preview_nomina_asistencia.py`.
+Registro: `../registro/cambios/2026-T4/2026-11-17-2785-react-cdi-nomina-asistencia.md`.
 ### Vertical remoto sobre G1: Duplas (equipo técnico) de Comedores
 
 Segunda aplicación del patrón, ahora con el marco nativo `includes/main.html`

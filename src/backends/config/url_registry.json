@@ -1690,6 +1690,11 @@
   "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/intervenciones/(?P<pk2>[0-9]+)/editar/\\Z"
  },
  {
+  "name": "centrodeinfancia_web_nomina_asistencia",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/nomina/asistencia/\\Z"
+ },
+ {
   "name": "centrodeinfancia_web_nomina_derivar",
   "namespace": "",
   "regex": "^api/web/cdi/nomina/(?P<pk>[0-9]+)/derivar/\\Z"

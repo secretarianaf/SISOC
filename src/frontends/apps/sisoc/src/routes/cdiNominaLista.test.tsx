@@ -59,9 +59,11 @@ afterEach(() => {
 describe("CDI nómina list route", () => {
   it("owns only the native list path", () => {
     expect(findRoute("/centrodeinfancia/7/nomina/")?.route.name).toBe("cdi-nomina-lista");
-    for (const other of ["/centrodeinfancia/7/nomina", "/centrodeinfancia/0/nomina/", "/centrodeinfancia/7/nomina/asistencia/"]) {
+    for (const other of ["/centrodeinfancia/7/nomina", "/centrodeinfancia/0/nomina/"]) {
       expect(findRoute(other)?.route.name).toBe("business");
     }
+    expect(findRoute("/centrodeinfancia/7/nomina/formulario/")?.route.name).toBe("cdi-nomina-formulario");
+    expect(findRoute("/centrodeinfancia/7/nomina/asistencia/")?.route.name).toBe("cdi-nomina-asistencia");
   });
 
   it("loads session and page, keeps the page query and draws hero, metrics and rows", async () => {

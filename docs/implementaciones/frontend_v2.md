@@ -1020,6 +1020,16 @@ y sin errores. Rutas React
 Registro:
 `../registro/cambios/2026-T4/2026-11-17-2785-react-rendicion-mensual-formularios.md`.
 
+La auditoría de la rendición mensual (RM01.03) usa el mismo marco:
+`src/backends/comedores/rendicioncuentasmensual/web_api_rendicion_auditoria.py`
+ejecuta `RendicionAuditoriaView` (búsqueda con `AuditoriaBusquedaForm`, formulario
+`AuditoriaForm` y `AuditoriaService.guardar`) con el permiso `manage_auditoria_stage`
+de las URL nativas. Para poder reutilizar el contexto, la vista nativa extrajo
+`_contexto_busqueda` y `_contexto` sin cambiar su comportamiento. Rutas React
+`/rendicioncuentasmensual/rendicioncuentasmensual/auditoria/` y
+`.../auditoria/<pk>/`. Registro:
+`../registro/cambios/2026-T4/2026-11-17-2785-react-rendicion-mensual-auditoria.md`.
+
 La rendición de cuentas final (RF01.01 a RF01.03) usa el
 mismo marco: `src/backends/comedores/rendicioncuentasfinal/web_api.py` ejecuta
 `RendicionCuentasFinalDetailView` (conserva el `get_or_create` del GET) y

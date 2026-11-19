@@ -11,6 +11,7 @@ the backend's own prefix ``/rendicioncuentasmensual/react/``.
 
 from pathlib import Path
 
+from django.shortcuts import get_object_or_404
 from django.urls import path
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -22,6 +23,7 @@ from comedores.web_preview_catalogos import (
     _frozen_assets,
     _index,
 )
+from rendicioncuentasmensual.auditoria import AuditoriaService
 from rendicioncuentasmensual.urls import _RENDICION_ACCESS_PERMS
 from rendicioncuentasmensual.urls import _RENDICION_PERM
 from rendicioncuentasmensual.views import (
@@ -31,10 +33,12 @@ from rendicioncuentasmensual.views import (
 from rendicioncuentasmensual.views import (
     RendicionCuentaMensualCreateView,
     RendicionCuentaMensualDeleteView,
+    RendicionAuditoriaView,
     RendicionCuentaMensualUpdateView,
 )
 
 PUBLIC_ASSETS = "/rendicioncuentasmensual/react/assets/"
+PERMISO_AUDITORIA = ["rendicioncuentasmensual.manage_auditoria_stage"]
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -93,6 +97,21 @@ class BajaEntry(RendicionCuentaMensualDeleteView):
         return _index(request, self.index_bytes)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class AuditoriaEntry(RendicionAuditoriaView):
+    """Audit search and form (RM01.03): the native redirect and 404 first, then the index."""
+
+    index_bytes = b""
+
+    def get(self, request, pk=None):
+        if pk is None and request.GET.get("rendicion"):
+            # ``?rendicion=<id>``: the native redirect to the audit form, or its 404.
+            return super().get(request, pk=pk)
+        if pk is not None:
+            get_object_or_404(AuditoriaService.disponibles(), pk=pk)
+        return _index(request, self.index_bytes)
+
+
 def rendicion_preview_patterns(build_directory):
     """Freeze an explicit local ``apps/sisoc`` build for a disposable preview URLconf.
 
@@ -135,6 +154,18 @@ def rendicion_preview_patterns(build_directory):
             "rendicioncuentasmensual/rendicioncuentasmensual/eliminar/<int:pk>/",
             permissions_any_required(_RENDICION_PERM)(
                 BajaEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "rendicioncuentasmensual/rendicioncuentasmensual/auditoria/",
+            permissions_any_required(PERMISO_AUDITORIA)(
+                AuditoriaEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "rendicioncuentasmensual/rendicioncuentasmensual/auditoria/<int:pk>/",
+            permissions_any_required(PERMISO_AUDITORIA)(
+                AuditoriaEntry.as_view(index_bytes=index_bytes)
             ),
         ),
         path(

@@ -78,6 +78,7 @@ _OWNED_PATTERNS = (
     r"/api/web/comedores/rendicioncuentasmensual/listado/",
     r"/api/web/comedores/rendicioncuentasmensual/[0-9]+/",
     r"/api/web/comedores/rendicioncuentasmensual/(?:nuevo|editar|eliminar)/[0-9]+/",
+    r"/api/web/comedores/rendicioncuentasmensual/auditoria/(?:[0-9]+/)?",
     r"/api/web/comedores/rendicion_cuentas_final/(?:comedor/[0-9]+/|documentos/(?:adjuntar/|[0-9]+/(?:validar|subsanar|eliminar)/)?"
     r"|[0-9]+/(?:crear|fisicamente_presentada)/)",
     r"/api/web/dispositivos/datacalle/(?:opciones/(?:dispositivos|relevadores)/|relevamientos/"

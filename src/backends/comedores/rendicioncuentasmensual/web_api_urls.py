@@ -4,6 +4,10 @@ from django.urls import path
 
 from rendicioncuentasmensual.web_api import RendicionListadoWebView
 from rendicioncuentasmensual.web_api_rendicion_detalle import RendicionDetalleWebView
+from rendicioncuentasmensual.web_api_rendicion_auditoria import (
+    AuditoriaBusquedaWebView,
+    AuditoriaGestionWebView,
+)
 from rendicioncuentasmensual.web_api_rendicion_form import (
     RendicionBajaWebView,
     RendicionEditarWebView,
@@ -35,5 +39,15 @@ urlpatterns = [
         "eliminar/<int:pk>/",
         RendicionBajaWebView.as_view(),
         name="rendicioncuentasmensual_web_eliminar",
+    ),
+    path(
+        "auditoria/",
+        AuditoriaBusquedaWebView.as_view(),
+        name="rendicioncuentasmensual_web_auditoria_busqueda",
+    ),
+    path(
+        "auditoria/<int:pk>/",
+        AuditoriaGestionWebView.as_view(),
+        name="rendicioncuentasmensual_web_auditoria_gestion",
     ),
 ]

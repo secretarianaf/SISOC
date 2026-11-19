@@ -5010,6 +5010,16 @@
   "regex": "^rendicioncuentasmensual/rendicioncuentasmensual/editar/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "rendicioncuentasmensual_web_auditoria_busqueda",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/auditoria/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_web_auditoria_gestion",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/auditoria/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
   "name": "rendicioncuentasmensual_web_detalle",
   "namespace": "",
   "regex": "^api/web/comedores/rendicioncuentasmensual/(?P<pk>[0-9]+)/\\Z"

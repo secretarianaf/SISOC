@@ -49,6 +49,7 @@ class AporteCiudadanoWebView(APIView):
     permission_classes = [WebGatePermission, IsAuthenticated, PuedeVerCiudadano]
     renderer_classes = [JSONRenderer]
     http_method_names = ["get", "head", "options"]
+    schema = None
     backend = ""
 
     def finalize_response(self, request, response, *args, **kwargs):

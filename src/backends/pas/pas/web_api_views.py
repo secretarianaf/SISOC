@@ -27,7 +27,6 @@ from rest_framework.views import APIView
 
 from core.decorators import permissions_any_required
 from core.web_gate import WebGatePermission
-from iam.services import user_has_permission_code
 from pas.forms import PasCambioEstadoForm
 from pas.models import PasPersona
 from pas.services.persona_service import cambiar_estado
@@ -179,10 +178,8 @@ class PasPersonaListWebView(PasWebView):
                 "estado_seleccionado": context["estado_seleccionado"],
                 "estados": [{"nombre": e.nombre} for e in context["estados_pas"]],
                 "capabilities": {
-                    "can_import": user_has_permission_code(user, "pas.add_paspersona"),
-                    "can_export_tokens": user_has_permission_code(
-                        user, "pas.export_ddjj_tokens"
-                    ),
+                    "can_import": user.has_perm("pas.add_paspersona"),
+                    "can_export_tokens": user.has_perm("pas.export_ddjj_tokens"),
                 },
                 "results": [
                     proyectar.persona_listado(item) for item in context["personas"]
@@ -222,7 +219,7 @@ def panel_payload(request, context):
             "avisos_por_estado": context["avisos_por_estado"],
         },
         "capabilities": {
-            "can_change": user_has_permission_code(request.user, CHANGE),
+            "can_change": request.user.has_perm(CHANGE),
         },
     }
 

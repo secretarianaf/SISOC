@@ -3,14 +3,18 @@
 from datetime import timedelta
 
 import pytest
+from django.apps import apps
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.test import Client
 from django.utils import timezone
 
-from comedores.models import Comedor
 from comunicados.models import Comunicado, EstadoComunicado, TipoComunicado
-from duplas.models import Dupla
+
+# Other domains' models are resolved through the app registry, as the
+# import contract forbids importing their internals (.importlinter).
+Comedor = apps.get_model("comedores", "Comedor")
+Dupla = apps.get_model("duplas", "Dupla")
 
 GESTION = "/api/web/comedores/comunicados/gestion/"
 DETALLE = "/api/web/comedores/comunicados/{}/"

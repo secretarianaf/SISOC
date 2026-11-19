@@ -27,7 +27,6 @@ from rest_framework.views import APIView
 
 from core.decorators import permissions_all_required
 from core.web_gate import WebGatePermission
-from iam.services import user_has_permission_code
 from pas import web_api_serializers as proyectar
 from pas.forms import PasInformeGenerarForm
 from pas.services.informe_service import (
@@ -74,7 +73,7 @@ def native_all_rule(codes):
 
 
 def has_all(user, codes):
-    return all(user_has_permission_code(user, code) for code in codes)
+    return all(user.has_perm(code) for code in codes)
 
 
 def usuario(user):

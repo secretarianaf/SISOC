@@ -15,7 +15,7 @@ import PasSelect2 from "./pasSelect2";
  * with the message shown as a toast; a result that cannot be confirmed reloads
  * the panel instead of retrying.
  */
-type Notice = { message: string; level: "success" | "error" };
+export type Notice = { message: string; level: "success" | "error" };
 type Options = { estados: { id: number; nombre: string }[]; avisos_por_estado: Record<string, { id: number; text: string }[]> };
 type Data = PanelData & { cambio_estado: Options };
 
@@ -176,8 +176,8 @@ function Panel({ id, notices, onDone }: { id?: string; notices: Notice[]; onDone
 }
 
 /** The native view redirects to `pas/panel-control/<pk>` (without the list filters) after every POST. */
-export default function PasPanelRoute({ id }: { id?: string }) {
-  const [view, setView] = useState({ id, generation: 0, notices: [] as Notice[] });
+export default function PasPanelRoute({ id, notices = [] }: { id?: string; notices?: Notice[] }) {
+  const [view, setView] = useState({ id, generation: 0, notices });
   return <Panel key={view.generation} id={view.id} notices={view.notices} onDone={(pk, outcome) => {
     if (outcome.kind !== "done") return;
     window.history.pushState({}, "", `/pas/panel-control/${pk}`);

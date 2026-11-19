@@ -1267,6 +1267,17 @@ POST. Entrada local: `src/backends/pas/pas/web_preview_informes.py`. Registros:
 `../registro/cambios/2026-T4/2026-11-11-2785-react-pas-informes.md` y
 `../registro/cambios/2026-T4/2026-11-12-2785-react-pas-informes-generar.md`.
 
+El alta y la edición de titulares PAS (`routes/pasPersonaForm.tsx`) toman `/pas/crear` y
+`/pas/<pk>/editar`; los datos salen de `/api/web/pas/personas/` (`opciones/`, `crear/`, `<pk>/` y
+`<pk>/editar/`, en `src/backends/pas/pas/web_api_persona_form.py`), que reusa
+`PasPersonaCreateForm`, `registrar_persona` y `PasPersonaUpdateForm` con las reglas nativas
+`add_paspersona` y `change_paspersona`. Un guardado válido lleva al panel
+`/pas/panel-control/<pk>` con el mensaje nativo como toast; un rechazo vuelve al mismo formulario con
+los errores bajo cada campo. Los municipios se piden a `opciones/?provincia=`. `/pas/formacion/personas`
+es el fragmento AJAX del scroll incremental y ya lo consume el área de formación: no hay pantalla que
+migrar. Entrada local: `src/backends/pas/pas/web_preview_backoffice.py`. Registro:
+`../registro/cambios/2026-T4/2026-11-19-2785-react-pas-persona-form.md`.
+
 La carga y el seguimiento de lotes OCR (`routes/ocr.tsx`) toman `/ocr/` y
 `/ocr/<pk>/`; los datos salen de `/api/web/ocr/`
 (`src/backends/ocr/ocr/web_api_views.py`), que reusa el formulario nativo y

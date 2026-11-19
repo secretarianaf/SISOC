@@ -8,7 +8,7 @@ import Select2, { type Choice } from "./select2";
  */
 export type { Choice };
 
-export default function PasSelect2({ id, name, multiple = false, choices, value, onChange, parent }: {
+export default function PasSelect2({ id, name, multiple = false, choices, value, onChange, parent, invalid = false }: {
   id: string;
   name: string;
   multiple?: boolean;
@@ -18,9 +18,11 @@ export default function PasSelect2({ id, name, multiple = false, choices, value,
   onChange: (value: string[]) => void;
   /** `dropdownParent`: the dropdown is placed inside this element. */
   parent: HTMLElement | null;
+  /** Server-side rejection of the field (`is-invalid` on the native select). */
+  invalid?: boolean;
 }) {
   return <Select2 id={id} name={name} multiple={multiple} placeholder={multiple ? "Seleccione avisos" : "Seleccione una opcion"}
     selectClassName={`form-select pas-select2${multiple ? " selectmultiple" : ""}`} selectProps={{ required: true }}
-    choices={multiple ? choices.filter((c) => c.value !== "") : choices} hideEmptyChoice value={value} onChange={onChange} noResults="No results found"
+    choices={multiple ? choices.filter((c) => c.value !== "") : choices} hideEmptyChoice value={value} onChange={onChange} noResults="No results found" invalid={invalid}
     dropdownParent={parent} clearTrigger="mousedown" focusMarker="container" termHandling="reset" enterOnSelected="toggle" outsideClick="dropdown" />;
 }

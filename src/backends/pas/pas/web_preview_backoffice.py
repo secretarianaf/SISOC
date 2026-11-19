@@ -16,7 +16,13 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from core.decorators import permissions_any_required
 from pas.ddjj_preview import PasDDJJAssetView, _frozen_assets, _index_response
-from pas.views import PasAreaView, PasPersonaDetailView, PasPersonaListView
+from pas.views import (
+    PasAreaView,
+    PasPersonaCreateView,
+    PasPersonaDetailView,
+    PasPersonaListView,
+    PasPersonaUpdateView,
+)
 
 BUILD_ASSETS = "/v2/sisoc/assets/"
 PUBLIC_ASSETS = "/pas/react/assets/"
@@ -49,6 +55,27 @@ class PasAreaEntry(PasAreaView):
         return _index_response(request, self.index_bytes)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class PasPersonaCreateEntry(PasPersonaCreateView):
+    """Only the GET is replaced; a POST reaches the native view unchanged."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return _index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class PasPersonaUpdateEntry(PasPersonaUpdateView):
+    """Native lookup first: an unknown ``pk`` is the native 404."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return _index_response(request, self.index_bytes)
+
+
 def _patterns(index_bytes):
     def entry(vista, **kwargs):
         return permissions_any_required(["pas.view_paspersona"])(
@@ -63,6 +90,18 @@ def _patterns(index_bytes):
         path("pas/formacion", entry(PasAreaEntry, area_key="formacion")),
         path("pas/mesa-ayuda", entry(PasAreaEntry, area_key="mesa-ayuda")),
         path("pas/liquidacion", entry(PasAreaEntry, area_key="liquidacion")),
+        path(
+            "pas/crear",
+            permissions_any_required(["pas.add_paspersona"])(
+                PasPersonaCreateEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "pas/<int:pk>/editar",
+            permissions_any_required(["pas.change_paspersona"])(
+                PasPersonaUpdateEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
     ]
 
 

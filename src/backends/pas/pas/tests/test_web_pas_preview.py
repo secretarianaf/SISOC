@@ -106,8 +106,8 @@ def test_empty_padron_panel_still_gets_the_index(gestor):
 @pytest.mark.usefixtures("preview")
 def test_other_routes_stay_native(gestor, persona):
     assert gestor.get("/pas/formacion/personas").json()["html"] is not None
-    respuesta = gestor.get(f"/pas/{persona.pk}/editar")
-    assert "pas/persona_form.html" in [t.name for t in respuesta.templates]
+    respuesta = gestor.get("/pas/titulares/importar")
+    assert "pas/titulares_import.html" in [t.name for t in respuesta.templates]
 
 
 @pytest.mark.usefixtures("preview")

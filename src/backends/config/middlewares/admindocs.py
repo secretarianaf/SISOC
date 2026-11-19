@@ -52,6 +52,7 @@ _OWNED_PATTERNS = (
     r"/api/web/pas/cruces/(?:exportar-sintys/|importar-sintys/|actualizar-renaper/)?",
     r"/api/web/pas/informes/(?:[0-9]+/|opciones/|previsualizar/|generar/)?",
     r"/api/web/pas/titulares/importar/",
+    r"/api/web/pas/personas/(?:opciones/|crear/|[0-9]+/(?:editar/)?)",
     r"/api/web/cdf/centros/(?:[0-9]+/(?:usuarios/)?)?",
     r"/api/web/cdf/centros/(?:options/|crear/|[0-9]+/(?:editar|eliminar)/)",
     r"/api/web/cdf/centros/[0-9]+/generar-usuario/",

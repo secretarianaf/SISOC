@@ -16,6 +16,11 @@ from pas.web_api_informes import (
     PasInformePrevisualizarWebView,
 )
 from pas.web_api_titulares_import import PasTitularesImportWebView
+from pas.web_api_persona_form import (
+    PasPersonaCrearWebView,
+    PasPersonaEditarWebView,
+    PasPersonaOpcionesWebView,
+)
 from pas.web_api_views import (
     PasAreaWebView,
     PasCambioEstadoWebView,
@@ -94,5 +99,25 @@ urlpatterns = [
         "titulares/importar/",
         PasTitularesImportWebView.as_view(),
         name="pas_web_titulares_importar",
+    ),
+    path(
+        "personas/opciones/",
+        PasPersonaOpcionesWebView.as_view(),
+        name="pas_web_personas_opciones",
+    ),
+    path(
+        "personas/crear/",
+        PasPersonaCrearWebView.as_view(),
+        name="pas_web_persona_crear",
+    ),
+    path(
+        "personas/<int:pk>/",
+        PasPersonaEditarWebView.as_view(),
+        name="pas_web_persona",
+    ),
+    path(
+        "personas/<int:pk>/editar/",
+        PasPersonaEditarWebView.as_view(),
+        name="pas_web_persona_editar",
     ),
 ]

@@ -4530,14 +4530,34 @@
   "regex": "^api/web/pas/panel/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "pas_web_persona",
+  "namespace": "",
+  "regex": "^api/web/pas/personas/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
   "name": "pas_web_persona_cambiar_estado",
   "namespace": "",
   "regex": "^api/web/pas/personas/(?P<pk>[0-9]+)/cambiar\\-estado/\\Z"
  },
  {
+  "name": "pas_web_persona_crear",
+  "namespace": "",
+  "regex": "^api/web/pas/personas/crear/\\Z"
+ },
+ {
+  "name": "pas_web_persona_editar",
+  "namespace": "",
+  "regex": "^api/web/pas/personas/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
   "name": "pas_web_personas",
   "namespace": "",
   "regex": "^api/web/pas/personas/\\Z"
+ },
+ {
+  "name": "pas_web_personas_opciones",
+  "namespace": "",
+  "regex": "^api/web/pas/personas/opciones/\\Z"
  },
  {
   "name": "pas_web_titulares_importar",

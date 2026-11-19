@@ -117,6 +117,7 @@ import { pasInformesRoute } from "./pasInformes";
 import { pasCrucesRoute } from "./pasCruces";
 import { pasInformesGenerarRoute } from "./pasInformesGenerar";
 import { pasTitularesImportarRoute } from "./pasTitularesImportar";
+import { pasPersonaFormRoute } from "./pasPersonaForm";
 import { passwordChangeRoute } from "./passwordChange";
 import { passwordResetRoute } from "./passwordReset";
 import { requiredPasswordRoute } from "./requiredPassword";
@@ -239,6 +240,7 @@ export const ROUTES: RouteDefinition[] = [
   pasInformesRoute,
   pasInformesGenerarRoute,
   pasTitularesImportarRoute,
+  pasPersonaFormRoute,
   admisionesTemplatesRoute,
   admisionesTemplatesFormRoute,
   admisionesTemplatesVersionRoute,

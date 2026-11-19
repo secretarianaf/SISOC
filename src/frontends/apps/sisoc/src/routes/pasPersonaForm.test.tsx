@@ -25,10 +25,14 @@ async function open(path: string, data: unknown, status = 200) {
     ? { data: readyContext, status: 200 } : { data, status }));
   window.history.replaceState({}, "", path);
   render(<App />);
-  // jsdom does not fetch stylesheets: report them applied, as the browser would.
-  await waitFor(() => expect(document.querySelector('link[href$="comedorFormModerno.css"]')).toBeTruthy()).catch(() => null);
-  document.querySelectorAll('link[rel="stylesheet"]').forEach((l) => l.dispatchEvent(new Event("load")));
-  await screen.findByRole("heading", { level: 3, name: /registro PAS/ }).catch(() => null);
+  // jsdom does not fetch stylesheets: report them applied, as the browser would, until the page paints.
+  const applyStyles = () => document.querySelectorAll('link[rel="stylesheet"]').forEach((l) => l.dispatchEvent(new Event("load")));
+  if (status !== 200) {
+    await waitFor(() => expect(document.querySelector('link[href$="comedorFormModerno.css"]')).toBeTruthy(), { timeout: 4000 }).catch(() => null);
+    applyStyles();
+    return;
+  }
+  await waitFor(() => { applyStyles(); expect(document.getElementById("pasForm")).toBeTruthy(); }, { timeout: 4000 });
 }
 const body = () => webPost.mock.calls[0][1] as URLSearchParams;
 const type = (id: string, value: string) => fireEvent.change(document.getElementById(id)!, { target: { value } });
@@ -97,10 +101,11 @@ describe("pas/crear and pas/<pk>/editar", () => {
 
   it("prints the edit form without the state section and posts to editar", async () => {
     await open("/pas/3/editar", edit());
-    expect(screen.getByText("Editar registro PAS")).toBeTruthy();
+    expect(await screen.findByText("Editar registro PAS")).toBeTruthy();
     expect(screen.queryByText("Estado del titular")).toBeNull();
-    expect((document.getElementById("id_apellidos") as HTMLInputElement).value).toBe("Apellido");
-    expect(within(document.getElementById("pasForm")!).getByRole("link", { name: /Volver/ }).getAttribute("href")).toBe("/pas/panel-control/3");
+    await waitFor(() => expect((document.getElementById("id_apellidos") as HTMLInputElement).value).toBe("Apellido"));
+    const back = within(document.getElementById("pasForm")!).getByText(/Volver/).closest("a");
+    expect(back?.getAttribute("href")).toBe("/pas/panel-control/3");
     expect(webGet.mock.calls.some(([u]) => u === "web/pas/personas/3/")).toBe(true);
     webPost.mockResolvedValue({ status: 200, data: { id: 3, message: "Registro PAS actualizado correctamente." } });
     submit();

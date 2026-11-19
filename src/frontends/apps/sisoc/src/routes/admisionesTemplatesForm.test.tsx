@@ -60,9 +60,9 @@ describe("Template create form (AD01.02)", () => {
   it("renders the native form, the help aside and the title", async () => {
     await setup();
     expect(webGet).toHaveBeenCalledWith(API, expect.anything());
-    expect(document.title).toContain("Crear template");
-    expect(screen.getByRole("heading", { name: "Nueva plantilla lógica" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: /Antes de crear/ })).toBeTruthy();
+    await waitFor(() => expect(document.title).toContain("Crear template"));
+    expect(await screen.findByRole("heading", { name: "Nueva plantilla lógica" }, { timeout: 4000 })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: /Antes de crear/ }, { timeout: 4000 })).toBeTruthy();
     expect(screen.getByText(/Esta condición toma el tipo de convenio registrado/)).toBeTruthy();
     expect((box("Nombre") as HTMLInputElement).maxLength).toBe(255);
     expect(box("Nombre").required).toBe(true);

@@ -58,8 +58,8 @@ describe("Template version editor (AD01.02)", () => {
   it("renders the native editor contract, loads the editor assets and groups the variables", async () => {
     await setup();
     expect(webGet).toHaveBeenCalledWith(API, expect.anything());
-    expect(editorAssets.load).toHaveBeenCalled();
-    expect(document.title).toContain("Editar versión");
+    await waitFor(() => expect(editorAssets.load).toHaveBeenCalled());
+    await waitFor(() => expect(document.title).toContain("Editar versión"));
     expect(screen.getByText("IT-000001 · Versión 3")).toBeTruthy();
     const source = document.querySelector("[data-template-editor-source]") as HTMLTextAreaElement;
     expect(source.value).toBe("<p>Hola</p>");

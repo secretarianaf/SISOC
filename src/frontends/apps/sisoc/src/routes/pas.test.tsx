@@ -302,8 +302,9 @@ describe("PAS areas", () => {
   it("loads the next pages on the sentinel like pas_formacion.js", async () => {
     let fire: () => void = () => undefined;
     const disconnect = vi.fn();
+    let observed = false;
     vi.stubGlobal("IntersectionObserver", class {
-      constructor(callback: (entries: { isIntersecting: boolean }[]) => void) { fire = () => callback([{ isIntersecting: true }]); }
+      constructor(callback: (entries: { isIntersecting: boolean }[]) => void) { observed = true; fire = () => callback([{ isIntersecting: true }]); }
       observe() { return undefined; }
       disconnect() { disconnect(); }
     });
@@ -323,7 +324,7 @@ describe("PAS areas", () => {
     fire();
     expect(webGet).toHaveBeenCalledTimes(2);
     stylesLoaded();
-    await new Promise((r) => setTimeout(r, 0));
+    await waitFor(() => expect(observed).toBe(true));
     fire();
     await screen.findByText("Apellido3, Nombre3");
     expect(webGet).toHaveBeenCalledWith("web/pas/formacion/personas/?page=2&q=+x&estado_formacion=todos&persona=7");

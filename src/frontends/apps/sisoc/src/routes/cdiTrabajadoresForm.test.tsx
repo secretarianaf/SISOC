@@ -123,10 +123,10 @@ describe("CDI worker form route", () => {
   it("applies the native conditional rows and the age", async () => {
     serve(data());
     setup();
-    await screen.findByRole("heading", { name: "Institución" });
-    expect($("row-funcion-pfpi").className).toContain("d-none");
+    await screen.findByRole("heading", { name: "Institución" }, { timeout: 4000 });
+    await waitFor(() => expect($("row-funcion-pfpi").className).toContain("d-none"));
     expect($("row-funcion-cdi").className).not.toContain("d-none");
-    expect(($("id_funcion_pfpi") as HTMLInputElement).disabled).toBe(true);
+    await waitFor(() => expect(($("id_funcion_pfpi") as HTMLInputElement).disabled).toBe(true));
     fireEvent.change($("id_subcomponente"), { target: { value: "pfpi" } });
     expect($("row-funcion-pfpi").className).not.toContain("d-none");
     expect($("row-funcion-cdi").className).toContain("d-none");
@@ -143,7 +143,7 @@ describe("CDI worker form route", () => {
     expect($("row-pueblo-originario").className).toContain("d-none");
     fireEvent.click($("id_grupo_pertenencia_0"));
     expect($("row-pueblo-originario").className).not.toContain("d-none");
-    expect(($("id_edad_calculada") as HTMLInputElement).value).not.toBe("");
+    await waitFor(() => expect(($("id_edad_calculada") as HTMLInputElement).value).not.toBe(""));
   });
 
   it("updates the progress and the status badges while typing", async () => {

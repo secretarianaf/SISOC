@@ -902,6 +902,16 @@ restaura hitos con `admision_id` explícito y lista blanca de los 23 hitos.
 Registros: `../registro/cambios/2026-T4/2026-11-10-2785-react-ad01-gestor-templates.md` y
 `../registro/cambios/2026-T4/2026-11-10-2785-react-ac01-acompanamientos.md`.
 
+Alta de template del gestor (AD01.02, `form.html`):
+`src/backends/comedores/admisiones/web_api_template_crear.py` ejecuta
+`PlantillaInformeTecnicoCreateView` (GET proyecta el formulario, POST corre su
+`post()` con `crear_plantilla` y devuelve `{ok, redirect}` o 400 con el
+formulario ligado) y la ruta
+`src/frontends/apps/sisoc/src/routes/admisionesTemplatesForm.tsx` dibuja la
+misma pantalla. La vista previa del DOCX (`previsualizar/`) y la creación de
+versión (solo POST) no tienen pantalla que migrar y siguen nativas. Registro:
+`../registro/cambios/2026-T4/2026-11-17-2785-react-admisiones-templates-formularios.md`.
+
 Detalle del informe técnico de admisión (AD02.01):
 `src/backends/comedores/admisiones/web_api_informes.py` ejecuta
 `InformeTecnicoDetailView` con el acceso actual y las acciones (subir DOCX editado,

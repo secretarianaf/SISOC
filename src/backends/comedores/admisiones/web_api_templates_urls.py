@@ -5,6 +5,7 @@ Ver ``admisiones.web_api_templates``.
 
 from django.urls import path
 
+from admisiones.web_api_template_crear import PlantillaCrearWebView
 from admisiones.web_api_templates import (
     IncidenciaDetailWebView,
     IncidenciasListWebView,
@@ -29,6 +30,11 @@ urlpatterns = [
         "incidencias/<int:pk>/",
         IncidenciaDetailWebView.as_view(),
         name="gestor_templates_web_incidencia",
+    ),
+    path(
+        "crear/",
+        PlantillaCrearWebView.as_view(),
+        name="gestor_templates_web_crear",
     ),
     path(
         "<int:pk>/",

@@ -11,13 +11,13 @@ import type { RouteDefinition } from "./types";
  * native templates' markup. Data comes from
  * `/api/web/comedores/admisiones/plantillas-informe/`, which runs the native
  * views. Every action keeps the native form POST to its native URL (AD01.02),
- * and the create form, version editor and DOCX preview stay Django pages.
+ * and the version editor and DOCX preview stay Django pages (the create form is `admisionesTemplatesForm.tsx`).
  */
 type Page = "templates" | "detalle" | "variables" | "incidencias" | "incidencia";
 type Params = { page: Page; id?: string };
-type Message = { message: string; level: "success" | "error" | "warning" | "info" };
-type Choice = { value: string; label: string };
-type Nav = { templates: string; variables: string; incidencias: string };
+export type Message = { message: string; level: "success" | "error" | "warning" | "info" };
+export type Choice = { value: string; label: string };
+export type Nav = { templates: string; variables: string; incidencias: string };
 type Pagination = { is_paginated: boolean; number: number; count: number; has_rows: boolean; previous: number | null; next: number | null; range: (number | "…")[]; query_without_page: string };
 type Plantilla = { id: number; codigo: string; nombre: string; descripcion: string; combinacion: string; version_vigente: number | null; estado: string; estado_display: string; url: string };
 const FILTROS = ["tipo_admision", "tipo_convenio", "es_ex_pnud", "estado_convenio_pnud", "tipo_renovacion", "estado_financiamiento", "informe_complementario_modifica_prestaciones"] as const;
@@ -44,15 +44,15 @@ type IncidenciaData = {
   urls: Nav & { gestionar: string }; messages: Message[];
 };
 
-const API = "web/comedores/admisiones/plantillas-informe/";
-const BASE = "/comedores/configuracion/templates/";
+export const API = "web/comedores/admisiones/plantillas-informe/";
+export const BASE = "/comedores/configuracion/templates/";
 const LEVELS = ["success", "error", "warning", "info"];
-const int = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v);
+export const int = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v);
 const nullable = <T,>(v: unknown, ok: (x: unknown) => x is T) => v === null || ok(v);
-const texts = (v: unknown, keys: readonly string[]) => record(v) && keys.every((k) => text(v[k]));
-const choices = (v: unknown): v is Choice[] => Array.isArray(v) && v.every((c) => texts(c, ["value", "label"]));
-const messagesValid = (v: unknown): v is Message[] => Array.isArray(v) && v.every((m) => record(m) && text(m.message) && LEVELS.includes(m.level as string));
-const navValid = (v: unknown, extra: string[] = []) => record(v) && ["templates", "variables", "incidencias", ...extra].every((k) => internal(v[k]));
+export const texts = (v: unknown, keys: readonly string[]) => record(v) && keys.every((k) => text(v[k]));
+export const choices = (v: unknown): v is Choice[] => Array.isArray(v) && v.every((c) => texts(c, ["value", "label"]));
+export const messagesValid = (v: unknown): v is Message[] => Array.isArray(v) && v.every((m) => record(m) && text(m.message) && LEVELS.includes(m.level as string));
+export const navValid = (v: unknown, extra: string[] = []) => record(v) && ["templates", "variables", "incidencias", ...extra].every((k) => internal(v[k]));
 const pageValid = (p: unknown): p is Pagination => record(p) && typeof p.is_paginated === "boolean" && typeof p.has_rows === "boolean" &&
   int(p.number) && int(p.count) && nullable(p.previous, int) && nullable(p.next, int) &&
   Array.isArray(p.range) && p.range.every((n) => n === "…" || int(n)) && text(p.query_without_page);
@@ -87,11 +87,11 @@ const incidenciaValid = (v: unknown): v is IncidenciaData => texts(v, ["codigo",
   navValid(v.urls, ["gestionar"]) && messagesValid(v.messages);
 
 /** `{% csrf_token %}` of the native forms (the entry sets the cookie). */
-function Csrf() {
+export function Csrf() {
   return <input type="hidden" name="csrfmiddlewaretoken" value={leerCookie("csrftoken") ?? ""} />;
 }
 
-function Frame({ section, urls, children }: { section: "templates" | "variables" | "incidencias"; urls: Nav; children: ReactNode }) {
+export function Frame({ section, urls, children }: { section: "templates" | "variables" | "incidencias"; urls: Nav; children: ReactNode }) {
   const link = (key: keyof Nav, icon: string, label: string) =>
     <a href={urls[key]} className={`nav-link ${section === key ? "active" : ""}`}><i className={`fas ${icon}`} />{label}</a>;
   return <>
@@ -110,7 +110,7 @@ function Frame({ section, urls, children }: { section: "templates" | "variables"
   </>;
 }
 
-function Hero({ eyebrow, title, children, actions }: { eyebrow: string; title: string; children: ReactNode; actions?: ReactNode }) {
+export function Hero({ eyebrow, title, children, actions }: { eyebrow: string; title: string; children: ReactNode; actions?: ReactNode }) {
   return <section className="gt-hero">
     <div><span className="gt-eyebrow">{eyebrow}</span><h1>{title}</h1><p>{children}</p></div>
     {actions !== undefined && <div className="gt-hero__actions">{actions}</div>}
@@ -146,7 +146,7 @@ function Status({ tone, children }: { tone: "success" | "pending" | "muted"; chi
   return <span className={`gt-status gt-status--${tone}`}>{children}</span>;
 }
 
-function Card({ icon, title, extra = "", children }: { icon: string; title: string; extra?: string; children: ReactNode }) {
+export function Card({ icon, title, extra = "", children }: { icon: string; title: string; extra?: string; children: ReactNode }) {
   return <section className={`card gt-card${extra}`}>
     <div className="card-header"><h2 className="card-title"><i className={`fas ${icon}`} />{title}</h2></div>
     {children}
@@ -425,14 +425,14 @@ function IncidenciaPage({ data }: { data: IncidenciaData }) {
   </Frame>;
 }
 
-function Crumbs({ items }: { items: [string, string | null][] }) {
+export function Crumbs({ items }: { items: [string, string | null][] }) {
   return <ol className="breadcrumb float-sm-right">
     {items.map(([label, url], i) => <li key={i} className={`breadcrumb-item${url ? "" : " active"}`}>{url ? <a href={url}>{label}</a> : label}</li>)}
   </ol>;
 }
 
-const HEADING = "Gestor de templates";
-const ROOT: [string, string] = ["Gestor de templates", BASE];
+export const HEADING = "Gestor de templates";
+export const ROOT: [string, string] = ["Gestor de templates", BASE];
 
 function TemplatesRoute() {
   const [state] = useMainResource(`${API}${window.location.search}`, listValid);

@@ -113,11 +113,11 @@ def test_the_incident_post_and_the_other_routes_stay_native(gestor, objetos):
     incidencia = IncidenciaTemplateInformeTecnico.objects.get()
     assert (incidencia.estado, incidencia.observaciones) == ("en_analisis", "Revisando")
 
-    crear = gestor.get(f"{BASE}crear/")
-    assert "admisiones/templates_informes_tecnicos/form.html" in [
-        t.name for t in crear.templates
-    ]
     version = PlantillaInformeTecnico.objects.get().versiones.create(numero=1)
+    editor = gestor.get(f"{BASE}{objetos['plantilla']}/versiones/{version.pk}/editar/")
+    assert "admisiones/templates_informes_tecnicos/version_form.html" in [
+        t.name for t in editor.templates
+    ]
     previa = gestor.get(
         f"{BASE}{objetos['plantilla']}/versiones/{version.pk}/previsualizar/"
     )
@@ -125,6 +125,25 @@ def test_the_incident_post_and_the_other_routes_stay_native(gestor, objetos):
     assert previa["Location"] == (
         f"{BASE}{objetos['plantilla']}/versiones/{version.pk}/editar/"
     )
+
+
+@pytest.mark.usefixtures("preview")
+def test_create_form_gets_the_frozen_index_and_keeps_the_native_post(gestor, objetos):
+    anonimo = Client()
+    sin_permiso = Client()
+    sin_permiso.force_login(get_user_model().objects.create_user("sin_permiso_crear"))
+
+    respuesta = gestor.get(f"{BASE}crear/")
+
+    assert respuesta.status_code == 200
+    assert '/comedores/react/assets/app-1.js"' in respuesta.content.decode()
+    assert "csrftoken" in respuesta.cookies
+    assert anonimo.get(f"{BASE}crear/").status_code == 403
+    assert sin_permiso.get(f"{BASE}crear/").status_code == 403
+    invalido = gestor.post(f"{BASE}crear/", {"nombre": ""})
+    assert "admisiones/templates_informes_tecnicos/form.html" in [
+        t.name for t in invalido.templates
+    ]
 
 
 def test_build_without_index_is_refused(tmp_path):

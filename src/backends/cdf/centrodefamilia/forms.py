@@ -339,8 +339,14 @@ class BeneficiarioForm(forms.ModelForm):
 
     class Meta:
         model = Beneficiario
-        exclude = ["fecha_creado", "fecha_modificado", "responsable"]
+        exclude = [
+            "fecha_creado",
+            "fecha_modificado",
+            "responsable",
+            "carga_masiva_origen",
+        ]
         widgets = {
+            "observaciones": forms.Textarea(attrs={"rows": 3}),
             "genero": forms.Select(
                 choices=Beneficiario.GENERO_CHOICES, attrs={"disabled": True}
             ),

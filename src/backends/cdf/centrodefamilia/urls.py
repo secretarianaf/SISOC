@@ -50,6 +50,20 @@ from .views.beneficiarios import (
     BuscarResponsableView,
 )
 from .views.beneficiarios_export import BeneficiariosExportView
+from .views.carga_masiva import (
+    CargaMasivaArchivoView,
+    CargaMasivaComprobanteView,
+    CargaMasivaConfirmarView,
+    CargaMasivaDetailView,
+    CargaMasivaEdicionesView,
+    CargaMasivaEliminarView,
+    CargaMasivaErroresView,
+    CargaMasivaFilaEditarView,
+    CargaMasivaFilaQuitarView,
+    CargaMasivaListView,
+    CargaMasivaPlantillaView,
+    CargaMasivaSubirView,
+)
 
 from centrodefamilia.views_metricas import metricas_dashboard
 
@@ -292,4 +306,37 @@ urlpatterns = [
         ),
         name="buscar_responsable",
     ),
+]
+
+# Carga masiva de preinscriptos: todas las pantallas y descargas exigen el
+# mismo permiso que el alta por formulario (RN-01, RN-02).
+_CARGA_MASIVA_RUTAS = (
+    ("", CargaMasivaListView, "carga_masiva_list"),
+    ("plantilla/", CargaMasivaPlantillaView, "carga_masiva_plantilla"),
+    ("subir/", CargaMasivaSubirView, "carga_masiva_subir"),
+    ("<int:pk>/", CargaMasivaDetailView, "carga_masiva_detail"),
+    ("<int:pk>/confirmar/", CargaMasivaConfirmarView, "carga_masiva_confirmar"),
+    ("<int:pk>/eliminar/", CargaMasivaEliminarView, "carga_masiva_eliminar"),
+    ("<int:pk>/errores/", CargaMasivaErroresView, "carga_masiva_errores"),
+    ("<int:pk>/comprobante/", CargaMasivaComprobanteView, "carga_masiva_comprobante"),
+    ("<int:pk>/archivo/", CargaMasivaArchivoView, "carga_masiva_archivo"),
+    ("<int:pk>/ediciones/", CargaMasivaEdicionesView, "carga_masiva_ediciones"),
+    (
+        "<int:pk>/filas/<int:fila_id>/editar/",
+        CargaMasivaFilaEditarView,
+        "carga_masiva_fila_editar",
+    ),
+    (
+        "<int:pk>/filas/<int:fila_id>/quitar/",
+        CargaMasivaFilaQuitarView,
+        "carga_masiva_fila_quitar",
+    ),
+)
+urlpatterns += [
+    path(
+        f"beneficiarios/carga-masiva/{ruta}",
+        permissions_any_required(["centrodefamilia.view_centro"])(vista.as_view()),
+        name=nombre,
+    )
+    for ruta, vista, nombre in _CARGA_MASIVA_RUTAS
 ]

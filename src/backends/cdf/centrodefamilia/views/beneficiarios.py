@@ -73,6 +73,13 @@ class BeneficiariosListView(LoginRequiredMixin, ListView):
                 "filters_config": get_beneficiarios_filters_ui_config(),
                 "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.CDF_BENEFICIARIOS,
                 "add_text": "Crear un nuevo Preinscripto",
+                "additional_buttons": [
+                    {
+                        "url": reverse("carga_masiva_list"),
+                        "label": "Carga masiva",
+                        "class": "btn btn-primary btn-lg text-white text-nowrap",
+                    }
+                ],
                 # `firstof` en search_bar.html renderiza el valor como texto:
                 # se pasa la lista de permisos separada por comas.
                 "export_permissions": ",".join(

@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -580,6 +582,17 @@ class Beneficiario(SoftDeleteModelMixin, models.Model):
     actividades_extracurriculares = models.BooleanField(default=False)
     actividades_detalle = models.ManyToManyField("Actividad", blank=True)
 
+    observaciones = models.TextField(blank=True, default="")
+
+    # Lote de carga masiva que lo cargó; vacío si vino del formulario.
+    carga_masiva_origen = models.ForeignKey(
+        "CargaMasivaPreinscriptos",
+        on_delete=models.PROTECT,
+        related_name="beneficiarios",
+        null=True,
+        blank=True,
+    )
+
     # Relación con Responsable
     responsable = models.ForeignKey(
         "Responsable", on_delete=models.PROTECT, related_name="beneficiarios"
@@ -625,6 +638,136 @@ class BeneficiarioResponsable(SoftDeleteModelMixin, models.Model):
         unique_together = ["beneficiario", "responsable"]
         verbose_name = "Vínculo Beneficiario-Responsable"
         verbose_name_plural = "Vínculos Beneficiario-Responsable"
+
+
+def carga_masiva_upload_to(_instance, _filename):
+    # Nombre aleatorio: el archivo tiene datos personales de menores y solo se
+    # descarga por la vista con permiso, nunca por un nombre adivinable.
+    return f"centrodefamilia/cargas_masivas/{uuid.uuid4().hex}.xlsx"
+
+
+class CargaMasivaPreinscriptos(models.Model):
+    """Lote de preinscriptos subido desde la plantilla Excel oficial."""
+
+    class Estado(models.TextChoices):
+        PENDIENTE = "pendiente", "Pendiente"
+        CONFIRMADO = "confirmado", "Confirmado"
+
+    archivo = models.FileField(upload_to=carga_masiva_upload_to)
+    nombre_archivo = models.CharField(max_length=255)
+    estado = models.CharField(
+        max_length=20,
+        choices=Estado.choices,
+        default=Estado.PENDIENTE,
+        db_index=True,
+    )
+    subido_por = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="cargas_masivas_cdf_subidas"
+    )
+    fecha_subida = models.DateTimeField(default=timezone.now)
+    confirmado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="cargas_masivas_cdf_confirmadas",
+        null=True,
+        blank=True,
+    )
+    fecha_confirmacion = models.DateTimeField(null=True, blank=True)
+    total_filas = models.PositiveIntegerField(default=0)
+    total_validas = models.PositiveIntegerField(default=0)
+    total_advertencias = models.PositiveIntegerField(default=0)
+    total_errores = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.nombre_archivo} ({self.fecha_subida:%d/%m/%Y %H:%M})"
+
+    @property
+    def esta_pendiente(self):
+        return self.estado == self.Estado.PENDIENTE
+
+    class Meta:
+        ordering = ["-fecha_subida", "-id"]
+        verbose_name = "Carga masiva de preinscriptos"
+        verbose_name_plural = "Cargas masivas de preinscriptos"
+
+
+class FilaCargaMasivaPreinscriptos(models.Model):
+    """Una fila del Excel: un preinscripto con su titular."""
+
+    class Estado(models.TextChoices):
+        VALIDA = "valida", "Válida"
+        ADVERTENCIA = "advertencia", "Válida con advertencias"
+        ERROR = "error", "Con error"
+
+    class AccionPreinscripto(models.TextChoices):
+        CREAR = "creado", "Creado"
+        REACTIVAR = "reactivado", "Reactivado"
+
+    class AccionTitular(models.TextChoices):
+        CREAR = "creado", "Creado"
+        EXISTENTE = "existente", "Existente"
+        ACTUALIZAR = "actualizado", "Actualizado"
+        REACTIVAR = "reactivado", "Reactivado"
+
+    carga = models.ForeignKey(
+        CargaMasivaPreinscriptos, on_delete=models.CASCADE, related_name="filas"
+    )
+    numero_fila = models.PositiveIntegerField()
+    # Valores como texto, por clave de columna; se editan desde la vista previa.
+    datos = models.JSONField(default=dict)
+    estado = models.CharField(
+        max_length=20, choices=Estado.choices, default=Estado.VALIDA, db_index=True
+    )
+    errores = models.JSONField(default=list)
+    advertencias = models.JSONField(default=list)
+    quitada = models.BooleanField(default=False)
+    # Acción prevista al validar; al confirmar es la acción realizada.
+    accion_preinscripto = models.CharField(
+        max_length=20, choices=AccionPreinscripto.choices, blank=True
+    )
+    accion_titular = models.CharField(
+        max_length=20, choices=AccionTitular.choices, blank=True
+    )
+    # Fila (del Excel original) cuyos datos de titular se usan.
+    fila_titular = models.PositiveIntegerField(null=True, blank=True)
+    beneficiario = models.ForeignKey(
+        Beneficiario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    def __str__(self):
+        return f"Fila {self.numero_fila} de la carga {self.carga_id}"
+
+    class Meta:
+        ordering = ["numero_fila"]
+        unique_together = ["carga", "numero_fila"]
+
+
+class EdicionCargaMasivaPreinscriptos(models.Model):
+    """Registro de cada celda editada o fila quitada en la vista previa."""
+
+    carga = models.ForeignKey(
+        CargaMasivaPreinscriptos, on_delete=models.CASCADE, related_name="ediciones"
+    )
+    fila = models.ForeignKey(
+        FilaCargaMasivaPreinscriptos,
+        on_delete=models.CASCADE,
+        related_name="ediciones",
+    )
+    usuario = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    fecha = models.DateTimeField(default=timezone.now)
+    columna = models.CharField(max_length=100, blank=True)
+    valor_anterior = models.TextField(blank=True)
+    valor_nuevo = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"Edición fila {self.fila.numero_fila} ({self.columna})"
+
+    class Meta:
+        ordering = ["-fecha", "-id"]
 
 
 class PadronBeneficiarios(models.Model):

@@ -1,0 +1,7 @@
+<form method="post"
+      action="{% url 'carga_masiva_eliminar' carga.pk %}"
+      class="d-inline"
+      data-confirm-submit="¿Eliminar el lote «{{ carga.nombre_archivo }}»? Se borran sus filas, ediciones y el archivo original. No se puede deshacer.">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger {{ clase }}">Eliminar</button>
+</form>

@@ -147,4 +147,14 @@ describe("Comedor ficha: hero and accordion", () => {
     expect(screen.getByText("Inactiva")).toBeTruthy();
     expect(screen.getAllByText("Ver detalles")).toHaveLength(2);
   });
+
+  it("renders values with markup characters as text and creates no element", () => {
+    const base = ficha().acordeon;
+    const crudo = 'A&B "Norte" <b>x</b>';
+    render(<FichaAcordeon data={{ ...base, ubicacion: { ...base.ubicacion, datos: [{ icon: "bi bi-geo", label: "Calle", value: crudo }] } }} />);
+    const parrafo = screen.getByText(/Calle:/).closest("p") as HTMLElement;
+    expect(parrafo.textContent).toContain(crudo);
+    expect(parrafo.querySelector("b")).toBeNull();
+    expect(parrafo.innerHTML).toContain("&amp;B");
+  });
 });

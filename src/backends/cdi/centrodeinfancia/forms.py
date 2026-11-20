@@ -67,6 +67,9 @@ from centrodeinfancia.services_renaper_bloques import (
     bloques_verificados,
 )
 from centrodeinfancia.forms_observacion import ObservacionCentroInfanciaForm
+from centrodeinfancia.widgets_intervencion import (
+    DocumentacionIntervencionWidget,
+)
 from centrodeinfancia.forms_formulario_cdi import (
     FormularioCDIForm,
     construir_filas_iniciales_fijas,
@@ -2588,6 +2591,10 @@ class IntervencionCentroInfanciaForm(forms.ModelForm):
                 self.fields["destinatario"].required = False
             if hide_destinatario:
                 self.fields["destinatario"].widget = forms.HiddenInput()
+
+        self.fields["documentacion"].widget = DocumentacionIntervencionWidget(
+            intervencion_pk=self.instance.pk
+        )
 
         for field_name in [
             "tipo_intervencion",

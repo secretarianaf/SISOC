@@ -27,8 +27,14 @@ LOAD = "{% load custom_filters %}"
 
 
 def _render(source, **context):
-    """The template expression, with the whitespace HTML collapses."""
-    return " ".join(Template(LOAD + source).render(Context(context)).split())
+    """The template expression as plain text: whitespace collapsed, nothing HTML-escaped.
+
+    The values reach React text nodes, which escape on their own; escaping here as well
+    would show ``A&amp;B`` literally.
+    """
+    return " ".join(
+        Template(LOAD + source).render(Context(context, autoescape=False)).split()
+    )
 
 
 def _dato(icon, label, value):

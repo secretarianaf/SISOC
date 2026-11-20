@@ -5,8 +5,8 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularRedocView, SpectacularSwaggerView
 
 from config.backend_urls import urlpatterns_de_backend
-from core.react_activation import react_preview_patterns
 from config.views import VatSpectacularAPIView
+from core.react_activation import react_preview_patterns
 
 backend_urlpatterns = [
     # Entradas React de las pantallas migradas, solo con el flag activo.

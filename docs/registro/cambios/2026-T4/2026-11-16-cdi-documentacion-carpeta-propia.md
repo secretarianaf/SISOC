@@ -41,3 +41,10 @@ Tests en `src/backends/cdi/centrodeinfancia/tests/test_mover_documentacion_cdi.p
 prefijo CDI, dry-run sin cambios, `--aplicar` mueve solo archivos CDI (un archivo de Comedores queda
 intacto) y la segunda corrida no hace nada, reanudación tras copia interrumpida, faltante informado,
 descarga autenticada del archivo movido (anónimo 401, sin permiso 403) y enlace del detalle nativo.
+
+## Endurecimiento del comando (revisión independiente)
+
+- Antes de actualizar la fila y de borrar el archivo viejo se compara el SHA-256 (en streaming) de origen y destino; un destino con otro contenido, aunque tenga el mismo tamaño, es CONFLICTO y se conservan ambos archivos.
+- Si no se puede comprobar el uso por Comedores (app no instalada en el runtime, p. ej. `backend_cdi`), el archivo viejo no se borra y se informa `PENDIENTE`; hay que repetir el comando en el migrador / `settings_all`.
+- Una pasada de reconciliación borra el archivo viejo de las filas ya movidas cuyo borrado se interrumpió (nombre legado recuperado de `cdi/documentacion/<pk>_<nombre>`), con la misma comprobación de hash y de uso. Si el nombre se acortó al mover, el original no es recuperable por esta vía y queda a revisión manual.
+- Tests nuevos: consumidores no comprobables, destino de igual tamaño y distinto contenido, reanudación tras interrupción entre actualizar y borrar, y reconciliación en dry-run, con contenido distinto y sin poder comprobar Comedores.

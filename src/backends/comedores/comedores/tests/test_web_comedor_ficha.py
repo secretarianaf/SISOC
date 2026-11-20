@@ -447,3 +447,17 @@ def test_execution_month_card_only_for_pnud_secos_and_with_the_expediente(
     assert con["mes_pago"] == "Octubre"
     assert con["ano"] == "2026"
     assert con["mes_ejecucion"] == "Sin información"
+
+
+def test_accordion_values_are_plain_text_not_html_escaped(lector):
+    """React escapes on its own: the JSON must carry the raw text, not ``A&amp;B``."""
+    comedor = Comedor.objects.create(
+        nombre='A&B "Norte" <b>x</b>', calle="O'Higgins & Sarmiento"
+    )
+
+    datos = {
+        d["label"]: d["value"] for d in _acordeon(lector, comedor)["ubicacion"]["datos"]
+    }
+
+    assert datos["Nombre del espacio comunitario"] == 'A&B "Norte" <b>x</b>'
+    assert datos["Calle"] == "O'Higgins & Sarmiento"

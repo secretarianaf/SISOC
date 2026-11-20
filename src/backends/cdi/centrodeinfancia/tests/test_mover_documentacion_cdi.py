@@ -238,3 +238,92 @@ def test_old_file_is_kept_when_a_comedores_row_still_uses_it(centro, media):
 
     assert _nombre(fila.pk).startswith(PREFIJO)
     assert (media / "documentacion" / "acta.pdf").exists()
+
+
+def _sin_comedores(monkeypatch):
+    """Simulate the runtime where the Comedores app is not installed."""
+    real = apps.get_model
+
+    def get_model(app_label, model_name=None, **kwargs):
+        if app_label == "intervenciones":
+            raise LookupError(app_label)
+        return real(app_label, model_name, **kwargs)
+
+    monkeypatch.setattr(apps, "get_model", get_model)
+
+
+def test_old_file_is_kept_when_consumers_cannot_be_checked(centro, media, monkeypatch):
+    fila = _legado(media, centro)
+    _sin_comedores(monkeypatch)
+
+    salida, error = _mover("--aplicar")
+
+    assert _nombre(fila.pk).startswith(PREFIJO)
+    assert (media / _nombre(fila.pk)).read_bytes() == CONTENIDO
+    assert (media / "documentacion" / "acta.pdf").exists()
+    assert f"PENDIENTE pk={fila.pk}" in error
+    assert "pendientes=1" in salida
+
+
+def test_equal_size_destination_with_other_content_is_a_conflict(centro, media):
+    fila = _legado(media, centro)
+    destino = f"{PREFIJO}{fila.pk}_acta.pdf"
+    (media / "cdi" / "documentacion").mkdir(parents=True)
+    ajeno = b"X" * len(CONTENIDO)
+    (media / destino).write_bytes(ajeno)
+
+    salida, error = _mover("--aplicar")
+
+    assert f"CONFLICTO pk={fila.pk}" in error
+    assert "conflictos=1" in salida
+    assert _nombre(fila.pk) == "documentacion/acta.pdf"
+    assert (media / "documentacion" / "acta.pdf").read_bytes() == CONTENIDO
+    assert (media / destino).read_bytes() == ajeno
+
+
+def test_rerun_cleans_the_old_copy_left_by_an_interruption(centro, media):
+    fila = _legado(media, centro)
+    _mover("--aplicar")
+    nuevo = _nombre(fila.pk)
+    # Crash after the row update committed and before the old file was deleted.
+    (media / "documentacion" / "acta.pdf").write_bytes(CONTENIDO)
+
+    salida, _ = _mover("--aplicar")
+
+    assert not (media / "documentacion" / "acta.pdf").exists()
+    assert (media / nuevo).read_bytes() == CONTENIDO
+    assert "limpiados=1" in salida
+
+
+def test_cleanup_pass_keeps_old_copy_with_other_content_or_other_users(
+    centro, media, monkeypatch
+):
+    fila = _legado(media, centro)
+    _mover("--aplicar")
+    viejo = media / "documentacion" / "acta.pdf"
+    viejo.write_bytes(b"otro contenido")
+
+    _, error = _mover("--aplicar")
+
+    assert f"CONFLICTO pk={fila.pk}" in error
+    assert viejo.read_bytes() == b"otro contenido"
+
+    viejo.write_bytes(CONTENIDO)
+    _sin_comedores(monkeypatch)
+    salida, error = _mover("--aplicar")
+
+    assert viejo.exists()
+    assert f"PENDIENTE pk={fila.pk}" in error
+    assert "pendientes=1" in salida
+
+
+def test_cleanup_pass_dry_run_changes_nothing(centro, media):
+    fila = _legado(media, centro)
+    _mover("--aplicar")
+    viejo = media / "documentacion" / "acta.pdf"
+    viejo.write_bytes(CONTENIDO)
+
+    salida, _ = _mover()
+
+    assert f"LIMPIAR pk={fila.pk}" in salida
+    assert viejo.exists()

@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-
 REPO_ROOT = Path(__file__).resolve().parents[4]
 DEPLOY_SCRIPT = REPO_ROOT / "src" / "scripts" / "operacion" / "deploy_refresh.sh"
 HTTPS_MOBILE_REMOTE = "https://github.com/dsocial118/SISOC-Mobile.git"

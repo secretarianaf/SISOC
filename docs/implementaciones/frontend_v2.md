@@ -1683,4 +1683,4 @@ elimina con el POST nativo (formulario con `confirm`) y «Eliminar» de la lista
 - Con flag, las entradas van antes de las rutas nativas: el GET de una URL migrada devuelve el `index.html` congelado con las guardas nativas (login, permiso, 404). POST, exportaciones, AJAX y rutas sin entrada siguen nativos.
 - Vuelta atrás: vaciar la variable y reiniciar el servicio.
 - La DDJJ pública usa el build de `apps/pas` (`SISOC_REACT_PAS_BUILD_DIR`).
-- Test: `kernel/tests/test_react_activation.py` (incluye la verificación de rutas duplicadas o sin ruta nativa).
+- Test: `src/backends/kernel/tests/test_react_activation.py` (incluye la verificación de rutas duplicadas o sin ruta nativa).

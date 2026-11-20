@@ -344,6 +344,8 @@ services:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SERVICE_ROLE: migrator
     volumes:
+      # media: lo usa mover_documentacion_cdi (mismo almacenamiento que la web).
+      - ./media:/sisoc/media
       - ./static_root:/sisoc/static_root
       - ./logs:/sisoc/logs
     profiles:

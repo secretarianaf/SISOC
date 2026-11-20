@@ -121,10 +121,21 @@ la configuración o el lockfile de `src/frontends/`, o en `src/scripts/frontends
 
 ## Activación de las pantallas React por vertical (#2785)
 
-Las pantallas migradas se encienden con `REACT_VERTICALES_ACTIVAS` (lista separada por comas, vacía por defecto) en el
-core y en los runtimes. Claves: `sisoc` y `core` (páginas del core), `ciudadanos`, `audittrail`, `dashboard`,
+Las pantallas migradas están **activas por defecto**: sin la variable `REACT_VERTICALES_ACTIVAS` se montan todas las
+claves de `react_activation.REGISTRO`, siempre que el entorno tenga el build congelado. Se controlan con
+`REACT_VERTICALES_ACTIVAS` en el core y en los runtimes. Claves: `sisoc` y `core` (páginas del core), `ciudadanos`, `audittrail`, `dashboard`,
 `encuestas`, `usuarios`, `pas`, `vat`, `cdi`, `cdf`, `comedores`, `dispositivos`, `inspecciones`, `ocr`
-(`src/backends/kernel/core/react_activation.py`). Con la variable vacía el ruteo es idéntico al anterior.
+(`src/backends/kernel/core/react_activation.py`). 
+
+| Valor de `REACT_VERTICALES_ACTIVAS` | Resultado |
+| --- | --- |
+| sin definir | todas las claves activas |
+| `ninguna` (o definida y vacía) | nada se monta: ruteo idéntico al anterior, Django sirve todo |
+| lista (`pas,cdi`) | solo esas claves |
+
+Sin build congelado (`SISOC_REACT_BUILD_DIR` sin `index.html`) no se monta nada, con cualquier valor. **Producción
+también recibe React al promover**, salvo que ese entorno defina `REACT_VERTICALES_ACTIVAS=ninguna` (o una lista).
+Ojo: un `env_file` o un compose que pase la variable vacía (`REACT_VERTICALES_ACTIVAS=`) la apaga.
 
 Requisitos por entorno, antes de la primera vertical:
 
@@ -136,16 +147,20 @@ Requisitos por entorno, antes de la primera vertical:
 
 Encendido de una vertical (QA, luego HML, luego producción):
 
-1. Agregar la clave a `REACT_VERTICALES_ACTIVAS` del entorno y reiniciar el core y el runtime de esa vertical.
+1. Por defecto ya está activa. Para limitar un entorno, definir `REACT_VERTICALES_ACTIVAS` con las claves deseadas y reiniciar el core y el runtime de esa vertical.
 2. Recorrer las pantallas de la vertical con un usuario con permisos y con uno sin permisos: mismas pantallas,
    mismos permisos y mensajes que en Django; exportaciones y descargas siguen funcionando.
 3. Dejar registrado en `docs/registro/` la fecha, el entorno y el retorno ("Retorno: quitar la clave y reiniciar").
 
-Vuelta atrás: quitar la clave de `REACT_VERTICALES_ACTIVAS` y reiniciar el core y el runtime; Django vuelve a servir
-las páginas. No hay datos que revertir: las APIs web ejecutan las vistas nativas.
+Vuelta atrás: definir `REACT_VERTICALES_ACTIVAS=ninguna` (o quitar la clave de la lista) y reiniciar el core y el runtime;
+Django vuelve a servir las páginas. No hay datos que revertir: las APIs web ejecutan las vistas nativas.
 
 Notas: empezar por `pas`. La DDJJ pública de PAS ya la sirve su app propia; la entrada `pas.ddjj_preview` lee
 `SISOC_REACT_PAS_BUILD_DIR`, que no se configura en deploy, y por eso se omite (queda un aviso en el log).
+## Movimiento de documentos CDI en el deploy
+
+`deploy_refresh.sh` ejecuta `mover_documentacion_cdi --aplicar` en el servicio `migrator` (que monta `./media`) despues de las migraciones, en cada deploy que despliega servicios (completo o selectivo, con o sin `MIGRAR`). Es idempotente: los deploys posteriores no mueven nada. Un fallo del comando detiene el deploy; los `CONFLICTO`, `PENDIENTE`, `EN USO`, `FALTANTE` y `OMITIDO` se listan con el prefijo `[REVISAR-CDI]` en el log sin fallarlo. El deploy no toma backup de `media/`. Detalle y reversa en `docs/operacion/comandos_administracion.md` (seccion "Centro de infancia (CDI)"). El cierre de `/media/cdi/` en Nginx sigue siendo manual por entorno.
+
 ## Inspeccion de talla legacy en produccion
 
 Con 0042 sin operación de base de datos y 0043 restaurando `talla` a texto, el

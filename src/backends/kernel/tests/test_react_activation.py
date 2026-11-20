@@ -15,7 +15,8 @@ from django.test import Client, override_settings
 from django.urls import Resolver404, clear_url_caches, resolve, set_urlconf
 
 from config.backends import load_backends_registry
-from core.react_activation import REGISTRO, react_preview_patterns
+from config.settings import parse_react_verticales
+from core.react_activation import REGISTRO, claves_activas, react_preview_patterns
 
 pytestmark = pytest.mark.django_db
 
@@ -162,3 +163,37 @@ def test_sin_duplicados_ni_tapados_con_todo_activo(build):
             except Resolver404:
                 sin_nativa.append(ruta)
         assert not sin_nativa
+
+
+def test_variable_sin_definir_activa_todas_las_claves():
+    assert parse_react_verticales(None) == frozenset({"todas"})
+    with override_settings(REACT_VERTICALES_ACTIVAS=parse_react_verticales(None)):
+        assert claves_activas() == frozenset(REGISTRO)
+
+
+@pytest.mark.parametrize("valor", ["ninguna", " ninguna ", ""])
+def test_ninguna_o_vacia_apaga_todo(valor, build):
+    assert parse_react_verticales(valor) == frozenset()
+    with _flag(parse_react_verticales(valor), build):
+        assert claves_activas() == frozenset()
+        assert react_preview_patterns(*REGISTRO) == []
+        respuesta = _cliente().get("/pas/listar")
+        assert MARCA not in respuesta.content.decode()
+
+
+def test_lista_explicita_se_respeta():
+    assert parse_react_verticales("pas, cdi") == frozenset({"pas", "cdi"})
+    with override_settings(REACT_VERTICALES_ACTIVAS=parse_react_verticales("pas,cdi")):
+        assert claves_activas() == frozenset({"pas", "cdi"})
+
+
+def test_por_defecto_monta_todo_con_build_y_nada_sin_build(build, tmp_path):
+    activas = parse_react_verticales(None)
+    with _flag(activas, build):
+        assert react_preview_patterns("pas", "cdi", "core")
+        assert MARCA in _cliente().get("/pas/listar").content.decode()
+    vacio = tmp_path / "sin-build"
+    vacio.mkdir()
+    with _flag(activas, vacio):
+        assert react_preview_patterns("pas", "cdi", "core") == []
+        assert MARCA not in _cliente().get("/pas/listar").content.decode()

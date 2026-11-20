@@ -4,7 +4,8 @@ Cada pantalla migrada tiene una entrada ``web_preview*`` que conserva la URL
 nativa, el decorador de permisos y el despacho de la vista nativa: solo el GET
 devuelve el ``index.html`` congelado del build; cualquier otro método llega a
 la vista nativa. Este módulo las monta en las URLconf reales, detrás de
-``settings.REACT_VERTICALES_ACTIVAS`` (vacío por defecto: nada cambia).
+``settings.REACT_VERTICALES_ACTIVAS``: sin la variable de entorno están todas
+activas (``"todas"``); ``ninguna`` o vacío las apaga.
 
 El kernel no importa las verticales: el registro usa rutas con punto y cada
 URLconf pide solo las claves que le corresponden (``react_preview_patterns``).
@@ -268,9 +269,17 @@ REGISTRO = {
 }
 
 
+TODAS = "todas"
+
+
 def claves_activas():
-    """Claves activas en ``REACT_VERTICALES_ACTIVAS``; las desconocidas se avisan."""
+    """Claves activas en ``REACT_VERTICALES_ACTIVAS``; las desconocidas se avisan.
+
+    ``"todas"`` expande a todas las claves de ``REGISTRO``.
+    """
     activas = frozenset(getattr(settings, "REACT_VERTICALES_ACTIVAS", ()) or ())
+    if TODAS in activas:
+        return frozenset(REGISTRO)
     for clave in sorted(activas - set(REGISTRO)):
         logger.warning("REACT_VERTICALES_ACTIVAS: clave desconocida %r", clave)
     return activas & set(REGISTRO)
@@ -281,9 +290,9 @@ def _directorio_build(build):
 
 
 def react_preview_patterns(*claves):
-    """Rutas de las entradas React de ``claves`` activas; ``[]`` si no hay flag.
+    """Rutas de las entradas React de ``claves`` activas; ``[]`` si no hay ninguna.
 
-    Sin flag, o con el build ausente, devuelve ``[]``: la URLconf queda igual
+    Con ``ninguna``, o con el build ausente, devuelve ``[]``: la URLconf queda igual
     que sin esta función y las pantallas siguen siendo las de Django.
     """
     activas = claves_activas()

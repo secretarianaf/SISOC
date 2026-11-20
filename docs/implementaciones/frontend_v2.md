@@ -1677,10 +1677,10 @@ elimina con el POST nativo (formulario con `confirm`) y «Eliminar» de la lista
 
 ## Activación por vertical de las pantallas React (#2785)
 
-`REACT_VERTICALES_ACTIVAS` (env, lista separada por comas, vacía por defecto) monta las entradas `web_preview*` de cada vertical en su URLconf real (`core.react_activation`). Claves: `pas`, `cdi`, `cdf`, `comedores`, `dispositivos`, `inspecciones`, `ocr`, `vat` y, para pantallas del core, `core`, `ciudadanos`, `audittrail`, `dashboard`, `encuestas`, `usuarios`.
+`REACT_VERTICALES_ACTIVAS` (env, lista separada por comas; **sin definir = todas activas**, `ninguna` = apagado) monta las entradas `web_preview*` de cada vertical en su URLconf real (`core.react_activation`). Claves: `pas`, `cdi`, `cdf`, `comedores`, `dispositivos`, `inspecciones`, `ocr`, `vat` y, para pantallas del core, `core`, `ciudadanos`, `audittrail`, `dashboard`, `encuestas`, `usuarios`.
 
-- Sin flag (o sin `SISOC_REACT_BUILD_DIR` con `index.html`) la URLconf es idéntica a la anterior: Django sirve todo.
-- Con flag, las entradas van antes de las rutas nativas: el GET de una URL migrada devuelve el `index.html` congelado con las guardas nativas (login, permiso, 404). POST, exportaciones, AJAX y rutas sin entrada siguen nativos.
-- Vuelta atrás: vaciar la variable y reiniciar el servicio.
+- Con `ninguna` (o sin `SISOC_REACT_BUILD_DIR` con `index.html`) la URLconf es idéntica a la anterior: Django sirve todo.
+- Activa (por defecto, con build), las entradas van antes de las rutas nativas: el GET de una URL migrada devuelve el `index.html` congelado con las guardas nativas (login, permiso, 404). POST, exportaciones, AJAX y rutas sin entrada siguen nativos.
+- Vuelta atrás: `REACT_VERTICALES_ACTIVAS=ninguna` y reiniciar el servicio.
 - La DDJJ pública usa el build de `apps/pas` (`SISOC_REACT_PAS_BUILD_DIR`).
 - Test: `src/backends/kernel/tests/test_react_activation.py` (incluye la verificación de rutas duplicadas o sin ruta nativa).

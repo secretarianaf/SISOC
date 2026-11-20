@@ -288,14 +288,24 @@ FRONTEND_V2_UPSTREAMS = {
 # Carpeta con el build congelado de apps/sisoc (index.html + assets/) que leen las entradas
 # web_preview_* de los runtimes. Vacía: no hay build congelado (las entradas no se montan).
 SISOC_REACT_BUILD_DIR = os.getenv("SISOC_REACT_BUILD_DIR", "")
+
+
 # Activación de las pantallas React migradas (#2785, core.react_activation).
-# Lista separada por comas de claves de vertical ("pas,cdi"); vacía = todo en
-# Django. Solo se monta con el flag y el build congelado presente.
-REACT_VERTICALES_ACTIVAS = frozenset(
-    clave.strip()
-    for clave in os.getenv("REACT_VERTICALES_ACTIVAS", "").split(",")
-    if clave.strip()
-)
+# Sin la variable: "todas" (cada clave de react_activation.REGISTRO). Lista separada por
+# comas de claves ("pas,cdi") para limitar; "ninguna" o la variable definida y vacía
+# apagan todo (Django sirve todas las pantallas). Solo se monta con el build congelado.
+def parse_react_verticales(valor):
+    """Interpreta ``REACT_VERTICALES_ACTIVAS``: ``None`` (sin definir) = todas."""
+    if valor is None:
+        return frozenset({"todas"})
+    return frozenset(
+        clave.strip()
+        for clave in valor.split(",")
+        if clave.strip() and clave.strip() != "ninguna"
+    )
+
+
+REACT_VERTICALES_ACTIVAS = parse_react_verticales(os.getenv("REACT_VERTICALES_ACTIVAS"))
 # SISOC_REACT_BUILD_DIR (build de apps/sisoc) lo define el bloque de FRONTEND_V2.
 # Build de apps/pas, solo para la DDJJ pública.
 SISOC_REACT_PAS_BUILD_DIR = os.getenv("SISOC_REACT_PAS_BUILD_DIR", "")

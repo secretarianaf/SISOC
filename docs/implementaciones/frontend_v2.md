@@ -1674,3 +1674,13 @@ libre y los textos de la vista (`page_title`, `submit_text`, `cancel_url`); el P
 `{"ok": true, "redirect": ...}` o 400 con los campos y sus errores. Rutas React: `vatPlanes.tsx` y `vatPlanesForm.tsx`. La baja sigue nativa: el detalle
 elimina con el POST nativo (formulario con `confirm`) y «Eliminar» de la lista lleva a `eliminar/`, que sigue siendo la página nativa. Registro:
 `../registro/cambios/2026-T4/2026-11-19-2785-react-vat-planes-curriculares.md`.
+
+## Activación por vertical de las pantallas React (#2785)
+
+`REACT_VERTICALES_ACTIVAS` (env, lista separada por comas, vacía por defecto) monta las entradas `web_preview*` de cada vertical en su URLconf real (`core.react_activation`). Claves: `pas`, `cdi`, `cdf`, `comedores`, `dispositivos`, `inspecciones`, `ocr`, `vat` y, para pantallas del core, `core`, `ciudadanos`, `audittrail`, `dashboard`, `encuestas`, `usuarios`.
+
+- Sin flag (o sin `SISOC_REACT_BUILD_DIR` con `index.html`) la URLconf es idéntica a la anterior: Django sirve todo.
+- Con flag, las entradas van antes de las rutas nativas: el GET de una URL migrada devuelve el `index.html` congelado con las guardas nativas (login, permiso, 404). POST, exportaciones, AJAX y rutas sin entrada siguen nativos.
+- Vuelta atrás: vaciar la variable y reiniciar el servicio.
+- La DDJJ pública usa el build de `apps/pas` (`SISOC_REACT_PAS_BUILD_DIR`).
+- Test: `kernel/tests/test_react_activation.py` (incluye la verificación de rutas duplicadas o sin ruta nativa).

@@ -10,6 +10,7 @@ from config.urls_dev import dev_urlpatterns
 from core.admin_site import admindocs_urlpatterns
 from core.backend_proxy import backend_proxy_urlpatterns
 from core.legacy_redirects import redirecciones_legacy
+from core.react_activation import react_preview_patterns
 from core.url_registry import stub_urlpatterns
 from core.v2_frontend import frontend_v2
 from usuarios.auth_views import (
@@ -36,6 +37,10 @@ urlpatterns = [
             "informecabal/",
             "beneficiarios/",
         ],
+    ),
+    # Pantallas React del core (#2785): solo con el flag activo, antes de las nativas.
+    *react_preview_patterns(
+        "core", "ciudadanos", "audittrail", "dashboard", "encuestas", "usuarios"
     ),
     # Keep the Insumos preview entry guard ahead of the generic V2 login gate.
     path("v2/sisoc/", include("insumos.preview_urls")),

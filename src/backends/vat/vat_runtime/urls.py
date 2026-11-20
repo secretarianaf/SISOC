@@ -5,9 +5,13 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularRedocView, SpectacularSwaggerView
 
 from config.backend_urls import urlpatterns_de_backend
+from core.react_activation import react_preview_patterns
 from config.views import VatSpectacularAPIView
 
 backend_urlpatterns = [
+    # Entradas React de las pantallas migradas, solo con el flag activo.
+    # Antes de las nativas: el GET llega a la entrada; el resto, a la nativa.
+    *react_preview_patterns("vat"),
     path("", include("VAT.urls")),
     path("api/vat/", include("VAT.api_urls")),
     # API web G1 v1 del frontend INET (core.web_gate).

@@ -102,6 +102,16 @@ Las plantillas de la skill contienen la matriz y la secuencia operativa. La
 restricción de no mergear ni armar PRs finales y el ciclo semanal HML se conservan
 para SISOC; no describen los PRs satélite ya mergeados durante el pre-deploy.
 
+## Front v2 SISOC (`front_sisoc`)
+
+El servicio `front_sisoc` (imagen de `docker/frontends/Dockerfile` con `APP=sisoc`) sirve el build React compartido en
+`/v2/sisoc/` y `/v2/sisoc/assets/`. El core lo proxea con el upstream `sisoc` de `FRONTEND_V2_UPSTREAMS`
+(`FRONT_SISOC_ORIGIN`, por defecto `http://front_sisoc:8080`). `deploy.yml` verifica `/v2/sisoc/` en QA, HML y producción.
+
+Las entradas `web_preview_*` leen un build congelado (`index.html` + `assets/`) que reciben por argumento; el setting
+`SISOC_REACT_BUILD_DIR` apunta a esa carpeta (vacío por defecto: sin build congelado). El stage `export` de
+`docker/frontends/Dockerfile` deja solo el `dist` para copiarlo a la imagen de cada runtime que monte entradas.
+
 ## Inspeccion de talla legacy en produccion
 
 Con 0042 sin operación de base de datos y 0043 restaurando `talla` a texto, el

@@ -97,6 +97,23 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Front v2 SISOC (build compartido de las pantallas React). Sin puerto publicado.
+  front_sisoc:
+    image: sisoc/front-sisoc:local
+    build:
+      context: .
+      dockerfile: docker/frontends/Dockerfile
+      target: prod
+      args:
+        APP: sisoc
+        VITE_SENTRY_DSN: ${SENTRY_DSN:-}
+        VITE_SENTRY_ENVIRONMENT: ${ENVIRONMENT:-dev}
+        VITE_RELEASE_SHA: ${VITE_RELEASE_SHA:-local}
+    depends_on:
+      django:
+        condition: service_healthy
+    restart: unless-stopped
+
   ocr_worker:
     build:
       context: .

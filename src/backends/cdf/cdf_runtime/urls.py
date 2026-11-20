@@ -4,12 +4,18 @@ from django.contrib import admin
 from django.urls import include, path
 
 from config.backend_urls import urlpatterns_de_backend
+from core.react_activation import react_preview_patterns
 
 backend_urlpatterns = [
+    # Entradas React de las pantallas migradas, solo con el flag activo.
+    # Antes de las nativas: el GET llega a la entrada; el resto, a la nativa.
+    *react_preview_patterns("cdf"),
     # Antes sin prefijo (/centros/, /beneficiarios/...): el core redirige
     # esas rutas acá (src/backends/config/urls.py, solo por compatibilidad).
     path("centrodefamilia/", include("centrodefamilia.urls")),
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
+    # API web de las pantallas React (G1 v1, cdf_runtime.web_api_urls).
+    path("api/web/cdf/", include("cdf_runtime.web_api_urls")),
 ]
 
 # El admin queda fuera de backend_urlpatterns: settings_all ya lo monta completo.

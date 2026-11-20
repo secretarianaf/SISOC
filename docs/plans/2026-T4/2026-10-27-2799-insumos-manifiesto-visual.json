@@ -1,0 +1,2295 @@
+{
+  "schema_version": 1,
+  "status": "planning_manifest_not_executable_or_accepted_baseline",
+  "issue": 2799,
+  "pilot_issue": 2802,
+  "source_sha": "afa6fcf4bb221082d5fa692ff941be75bc74d8d1",
+  "reference_sha_accepted": null,
+  "candidate_sha": null,
+  "legacy_base_url": null,
+  "candidate_base_url": null,
+  "baseline_approval": "pending",
+  "runtime_authorization": "pending_explicit_environment_scope",
+  "candidate_app_name": "sisoc (contract proposal; not scaffolded)",
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "id": "mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "lg_below",
+      "width": 991,
+      "height": 900
+    },
+    {
+      "id": "lg_at",
+      "width": 992,
+      "height": 900
+    }
+  ],
+  "additional_breakpoint_review": [
+    480,
+    768,
+    1200,
+    1400
+  ],
+  "browser_environment": {
+    "browser": "same pinned Chromium build and OS for both",
+    "locale": "es-AR",
+    "timezone": "America/Argentina/Buenos_Aires",
+    "device_scale_factor": 1,
+    "zoom": 1,
+    "reduced_motion": "reduce",
+    "fonts": "same loaded fonts/assets; no fallback font baseline",
+    "theme": "dark as forced by current Insumos shell",
+    "cookies_or_tokens_in_manifest": false
+  },
+  "fixtures": {
+    "database_created": false,
+    "users_created": false,
+    "file_storage_created": false,
+    "profile_default": {
+      "acceso_web": true,
+      "must_change_password": false,
+      "needs_profile_confirmation": false,
+      "pending_surveys": []
+    },
+    "roles": {
+      "consulta": {
+        "permissions": [
+          "insumos.view_insumo"
+        ],
+        "display": "Prueba Insumos Consulta"
+      },
+      "gestion": {
+        "permissions": [
+          "insumos.view_insumo",
+          "insumos.add_insumo",
+          "insumos.change_insumo",
+          "insumos.delete_insumo",
+          "insumos.view_insumocategoria",
+          "insumos.add_insumocategoria",
+          "insumos.change_insumocategoria",
+          "insumos.delete_insumocategoria"
+        ],
+        "display": "Prueba Insumos Gestion"
+      },
+      "alta_sin_edicion_baja": {
+        "permissions": [
+          "insumos.view_insumo",
+          "insumos.add_insumo"
+        ],
+        "display": "Prueba Insumos Alta"
+      },
+      "categorias": {
+        "permissions": [
+          "insumos.view_insumo",
+          "insumos.view_insumocategoria",
+          "insumos.add_insumocategoria"
+        ],
+        "display": "Prueba Insumos Categorias"
+      },
+      "sin_permiso": {
+        "permissions": [],
+        "display": "Prueba Insumos Sin Permiso"
+      },
+      "gestion_categorias": {
+        "permissions": [
+          "insumos.view_insumocategoria",
+          "insumos.add_insumocategoria",
+          "insumos.change_insumocategoria",
+          "insumos.delete_insumocategoria"
+        ],
+        "display": "Prueba Gestion Categorias"
+      },
+      "alta_sin_consulta": {
+        "permissions": [
+          "insumos.add_insumo"
+        ],
+        "display": "Prueba Alta sin Consulta"
+      },
+      "edicion_sin_consulta": {
+        "permissions": [
+          "insumos.change_insumo"
+        ],
+        "display": "Prueba Edicion sin Consulta"
+      },
+      "baja_sin_consulta": {
+        "permissions": [
+          "insumos.delete_insumo"
+        ],
+        "display": "Prueba Baja sin Consulta"
+      }
+    },
+    "categories": [
+      {
+        "ref": "cat_a",
+        "name": "Manuales A",
+        "active": true,
+        "order": 1,
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "cat_b",
+        "name": "Manuales B",
+        "active": true,
+        "order": 2,
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "cat_inactiva",
+        "name": "Categoria inactiva",
+        "active": false,
+        "order": 3,
+        "program_ref": "programa_prueba"
+      }
+    ],
+    "program": {
+      "ref": "programa_prueba",
+      "name": "Programa Prueba Visual",
+      "active": true
+    },
+    "items": [
+      {
+        "ref": "insumo_001",
+        "title": "Manual de prueba 01",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:01:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-01.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_002",
+        "title": "Manual de prueba 02",
+        "description": "Busqueda especial de prueba",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:02:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-02.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_003",
+        "title": "Manual de prueba 03",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": false,
+        "created_at": "2026-10-27T00:03:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-03.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_004",
+        "title": "Manual de prueba 04",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:04:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-04.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_005",
+        "title": "Manual de prueba 05",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:05:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-05.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_006",
+        "title": "Manual de prueba 06",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:06:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-06.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_007",
+        "title": "Manual de prueba 07",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:07:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-07.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_008",
+        "title": "Manual de prueba 08",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:08:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-08.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_009",
+        "title": "Manual de prueba 09",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:09:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-09.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_010",
+        "title": "Manual de prueba 10",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:10:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-10.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_011",
+        "title": "Manual de prueba 11",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:11:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-11.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_012",
+        "title": "Manual de prueba 12",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:12:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-12.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_013",
+        "title": "Manual de prueba 13",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:13:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-13.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_014",
+        "title": "Manual de prueba 14",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:14:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-14.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_015",
+        "title": "Manual de prueba 15",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:15:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-15.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_016",
+        "title": "Manual de prueba 16",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:16:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-16.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_017",
+        "title": "Manual de prueba 17",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:17:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-17.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_018",
+        "title": "Manual de prueba 18",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:18:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-18.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_019",
+        "title": "Manual de prueba 19",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:19:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-19.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_020",
+        "title": "Manual de prueba 20",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:20:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-20.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_021",
+        "title": "Manual de prueba 21",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_a",
+        "active": true,
+        "created_at": "2026-10-27T00:21:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-21.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_022",
+        "title": "Manual de prueba 22",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_b",
+        "active": true,
+        "created_at": "2026-10-27T00:22:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-22.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_023",
+        "title": "Manual de prueba 23",
+        "description": "Contenido sintetico",
+        "category_ref": "cat_inactiva",
+        "active": true,
+        "created_at": "2026-10-27T00:23:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-23.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_024",
+        "title": "Manual de prueba 24",
+        "description": "Contenido sintetico",
+        "category_ref": null,
+        "active": true,
+        "created_at": "2026-10-26T00:24:00-03:00",
+        "creator_role": null,
+        "file": {
+          "name": "manual-prueba-24.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": true
+        },
+        "program_ref": "programa_prueba"
+      },
+      {
+        "ref": "insumo_025",
+        "title": "Titulo muy largo de prueba para verificar salto de linea y ancho de columna en Insumos",
+        "description": "Contenido sintetico",
+        "category_ref": null,
+        "active": true,
+        "created_at": "2026-10-26T00:25:00-03:00",
+        "creator_role": "gestion",
+        "file": {
+          "name": "manual-prueba-25.pdf",
+          "content_ref": "pdf_sintetico_minimo",
+          "present_in_storage": false
+        },
+        "program_ref": "programa_prueba"
+      }
+    ],
+    "rules": [
+      "Synthetic references must be mapped to generated IDs in the isolated fixture loader; never assume production IDs.",
+      "Use identical snapshot/loader version on reference and candidate; compare mappings before capturing.",
+      "No passwords, cookies or storageState in this committed manifest.",
+      "Timestamps are assigned in isolated fixture preparation; auto_now_add requires explicit fixture strategy, not reliance on wall clock."
+    ]
+  },
+  "visual_cases": [
+    {
+      "id": "list_consulta",
+      "role": "consulta",
+      "legacy_url": "/insumos/",
+      "candidate_url": "/v2/sisoc/insumos/",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "25 results; first page max 20",
+        "No Agregar/Categorias/Editar/Eliminar controls",
+        "Inactivo badge shown for insumo_003",
+        "Footer/back/header/sidebar included"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile",
+        "lg_below",
+        "lg_at"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "list_gestion",
+      "role": "gestion",
+      "legacy_url": "/insumos/",
+      "candidate_url": "/v2/sisoc/insumos/",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Agregar insumo/Categorias/Editar/Eliminar visible",
+        "Links keep legacy destination while management is unmigrated"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "list_alta_sin_edicion_baja",
+      "role": "alta_sin_edicion_baja",
+      "legacy_url": "/insumos/",
+      "candidate_url": "/v2/sisoc/insumos/",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Editar/Eliminar visually present because legacy gates on add_insumo",
+        "Direct edit/delete requests remain forbidden without corresponding permission"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "list_categorias",
+      "role": "categorias",
+      "legacy_url": "/insumos/",
+      "candidate_url": "/v2/sisoc/insumos/",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Categorias visible",
+        "Agregar insumo and row Editar/Eliminar absent"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "search_description",
+      "role": "consulta",
+      "legacy_url": "/insumos/?busqueda=especial",
+      "candidate_url": "/v2/sisoc/insumos/?busqueda=especial",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Only insumo_002 matches",
+        "Query visible in search input"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "filter_category",
+      "role": "consulta",
+      "legacy_url": "/insumos/?categoria={{cat_a.id}}",
+      "candidate_url": "/v2/sisoc/insumos/?categoria={{cat_a.id}}",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "21 category A items; two pages",
+        "Selected category label preserved"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "filter_without_category",
+      "role": "consulta",
+      "legacy_url": "/insumos/?categoria=sin",
+      "candidate_url": "/v2/sisoc/insumos/?categoria=sin",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Items 024/025 only",
+        "Missing creator displayed as -",
+        "Long title wrapping visible"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "filter_combined",
+      "role": "consulta",
+      "legacy_url": "/insumos/?categoria={{cat_a.id}}&busqueda=02",
+      "candidate_url": "/v2/sisoc/insumos/?categoria={{cat_a.id}}&busqueda=02",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Same title/description matching and selected filters as legacy"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "list_empty",
+      "role": "consulta",
+      "legacy_url": "/insumos/?busqueda=sin-coincidencias-visual",
+      "candidate_url": "/v2/sisoc/insumos/?busqueda=sin-coincidencias-visual",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "No se encontraron insumos",
+        "Counter and empty message match legacy"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "page_two",
+      "role": "consulta",
+      "legacy_url": "/insumos/?categoria={{cat_a.id}}&page=2",
+      "candidate_url": "/v2/sisoc/insumos/?categoria={{cat_a.id}}&page=2",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "One item on page two",
+        "Previous/next and filter query preserved"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "category_inactive_direct",
+      "role": "consulta",
+      "legacy_url": "/insumos/?categoria={{cat_inactiva.id}}",
+      "candidate_url": "/v2/sisoc/insumos/?categoria={{cat_inactiva.id}}",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Results can include category inactive even though absent from dropdown; do not fix or filter it silently"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "category_invalid",
+      "role": "consulta",
+      "legacy_url": "/insumos/?categoria=no-numero",
+      "candidate_url": "/v2/sisoc/insumos/?categoria=no-numero",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Same unfiltered queryset behavior as legacy; do not add a new 400"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "sidebar_mobile_open",
+      "role": "consulta",
+      "legacy_url": "/insumos/",
+      "candidate_url": "/v2/sisoc/insumos/",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "open mobile sidebar using Abrir menu",
+        "wait_for_stable_layout"
+      ],
+      "assertions": [
+        "Full sidebar with same labels/order/icons and selected Insumos"
+      ],
+      "viewports": [
+        "mobile",
+        "lg_below"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "sidebar_group_expanded",
+      "role": "gestion",
+      "legacy_url": "/insumos/",
+      "candidate_url": "/v2/sisoc/insumos/",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "expand Configuracion de Comedores if collapsed",
+        "wait_for_stable_layout"
+      ],
+      "assertions": [
+        "Preserve group hierarchy and permissions, not a flat module list"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "keyboard_search_focus",
+      "role": "consulta",
+      "legacy_url": "/insumos/",
+      "candidate_url": "/v2/sisoc/insumos/",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "focus search by keyboard",
+        "wait_for_stable_layout"
+      ],
+      "assertions": [
+        "Visible focus indicator preserved",
+        "Enter submits same query; no invented clear control"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "direct_forbidden",
+      "role": "sin_permiso",
+      "legacy_url": "/insumos/",
+      "candidate_url": "/v2/sisoc/insumos/",
+      "comparison": "requires_guard_and_error_parity",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "403, no business rows or protected file content",
+        "Error layout/text preserved"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "anonymous_entry",
+      "role": null,
+      "legacy_url": "/insumos/",
+      "candidate_url": "/v2/sisoc/insumos/",
+      "comparison": "blocked_guard_difference",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Legacy /insumos/ returns 403 before login mixin because URL permission decorator is outermost",
+        "Generic /v2 router redirects anonymous to login: resolve guard before calling this case visually equivalent"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "return_with_query",
+      "role": "consulta",
+      "legacy_url": "/insumos/?categoria={{cat_a.id}}&page=2",
+      "candidate_url": "/v2/sisoc/insumos/?categoria={{cat_a.id}}&page=2",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "navigate from synthetic previous URL to filtered list",
+        "exercise existing Volver and navigation/download return without any form mutation",
+        "navigate forward to list and compare existing query behavior"
+      ],
+      "assertions": [
+        "Existing navigation query behavior only; this case never asserts filters survive create/edit/delete",
+        "All successful form mutations keep their source fixed redirect without filters"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_create_blank",
+      "role": "gestion",
+      "legacy_url": "/insumos/crear",
+      "candidate_url": "/v2/sisoc/insumos/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Open new Insumo; preserve labels/layout/required file and program-category help",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Open new Insumo; preserve labels/layout/required file and program-category help",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_create_required_errors",
+      "role": "gestion",
+      "legacy_url": "/insumos/crear",
+      "candidate_url": "/v2/sisoc/insumos/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Submit empty; same general alert and field errors; no save",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Submit empty; same general alert and field errors; no save",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_program_category",
+      "role": "gestion",
+      "legacy_url": "/insumos/crear",
+      "candidate_url": "/v2/sisoc/insumos/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Change program; invalid selected category clears, same empty Sin categoría option",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Change program; invalid selected category clears, same empty Sin categoría option",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_wrong_category",
+      "role": "gestion",
+      "legacy_url": "/insumos/crear",
+      "candidate_url": "/v2/sisoc/insumos/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "POST category of another program; backend field error and no save",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "POST category of another program; backend field error and no save",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_bad_extension",
+      "role": "gestion",
+      "legacy_url": "/insumos/crear",
+      "candidate_url": "/v2/sisoc/insumos/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Submit synthetic invalid extension; same archivo error, no save",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Submit synthetic invalid extension; same archivo error, no save",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_oversize",
+      "role": "gestion",
+      "legacy_url": "/insumos/crear",
+      "candidate_url": "/v2/sisoc/insumos/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Submit synthetic >10 MiB file; same archivo error, no save",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Submit synthetic >10 MiB file; same archivo error, no save",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_bad_content_type",
+      "role": "gestion",
+      "legacy_url": "/insumos/crear",
+      "candidate_url": "/v2/sisoc/insumos/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Submit synthetic unsupported content type; same archivo error, no save",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Submit synthetic unsupported content type; same archivo error, no save",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_create_success",
+      "role": "gestion",
+      "legacy_url": "/insumos/crear",
+      "candidate_url": "/v2/sisoc/insumos/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Fill valid form/file and submit; navigate /insumos/ with exact success notice, verify saved record/file independently",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Fill valid form/file and submit; navigate /insumos/ with exact success notice, verify saved record/file independently",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_edit_existing",
+      "role": "gestion",
+      "legacy_url": "/insumos/{{insumo_001.id}}/editar",
+      "candidate_url": "/v2/sisoc/insumos/{{insumo_001.id}}/editar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Initial values and current file name/link; no raw storage URL",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Initial values and current file name/link; no raw storage URL",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_edit_keep_file",
+      "role": "gestion",
+      "legacy_url": "/insumos/{{insumo_001.id}}/editar",
+      "candidate_url": "/v2/sisoc/insumos/{{insumo_001.id}}/editar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Save text change without replacing file; same file preserved and update notice",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Save text change without replacing file; same file preserved and update notice",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_edit_replace_file",
+      "role": "gestion",
+      "legacy_url": "/insumos/{{insumo_001.id}}/editar",
+      "candidate_url": "/v2/sisoc/insumos/{{insumo_001.id}}/editar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Replace using allowed synthetic file; inspect name/bytes via protected download and notice",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Replace using allowed synthetic file; inspect name/bytes via protected download and notice",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_edit_inactive_options",
+      "role": "gestion",
+      "legacy_url": "/insumos/{{insumo_inactivo_contexto.id}}/editar",
+      "candidate_url": "/v2/sisoc/insumos/{{insumo_inactivo_contexto.id}}/editar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Current inactive program/category remain selectable and retained; unrelated inactive excluded",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Current inactive program/category remain selectable and retained; unrelated inactive excluded",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_edit_invalid",
+      "role": "gestion",
+      "legacy_url": "/insumos/{{insumo_001.id}}/editar",
+      "candidate_url": "/v2/sisoc/insumos/{{insumo_001.id}}/editar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Invalid field submit; same form errors and persisted record unchanged",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Invalid field submit; same form errors and persisted record unchanged",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_edit_cancel",
+      "role": "gestion",
+      "legacy_url": "/insumos/{{insumo_001.id}}/editar",
+      "candidate_url": "/v2/sisoc/insumos/{{insumo_001.id}}/editar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Modify visible input then Cancel; /insumos/ without filters, no save",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Modify visible input then Cancel; /insumos/ without filters, no save",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_delete_confirm",
+      "role": "gestion",
+      "legacy_url": "/insumos/{{insumo_001.id}}/eliminar",
+      "candidate_url": "/v2/sisoc/insumos/{{insumo_001.id}}/eliminar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Same confirmation, title, red header and actions; GET does not delete",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Same confirmation, title, red header and actions; GET does not delete",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_delete_cancel",
+      "role": "gestion",
+      "legacy_url": "/insumos/{{insumo_001.id}}/eliminar",
+      "candidate_url": "/v2/sisoc/insumos/{{insumo_001.id}}/eliminar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Cancel to /insumos/; record and file remain",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Cancel to /insumos/; record and file remain",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_delete_success",
+      "role": "gestion",
+      "legacy_url": "/insumos/{{insumo_001.id}}/eliminar",
+      "candidate_url": "/v2/sisoc/insumos/{{insumo_001.id}}/eliminar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Confirm POST; success notice/list; verify DB and file results separately",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Confirm POST; success notice/list; verify DB and file results separately",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_add_without_view",
+      "role": "alta_sin_consulta",
+      "legacy_url": "/insumos/crear",
+      "candidate_url": "/v2/sisoc/insumos/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Valid create may persist then return to denied list; do not grant View or claim create failed",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Valid create may persist then return to denied list; do not grant View or claim create failed",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "insumo_edit_without_view",
+      "role": "edicion_sin_consulta",
+      "legacy_url": "/insumos/{{insumo_001.id}}/editar",
+      "candidate_url": "/v2/sisoc/insumos/{{insumo_001.id}}/editar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Form access by Change does not imply download/list access; preserve denied destinations",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Form access by Change does not imply download/list access; preserve denied destinations",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    },
+    {
+      "id": "categorias_list",
+      "role": "gestion_categorias",
+      "legacy_url": "/insumos/categorias/",
+      "candidate_url": "/v2/sisoc/insumos/categorias/",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Columns Nombre Programa Orden Estado Acciones, badges, Add/Change/Delete visibility",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Columns Nombre Programa Orden Estado Acciones, badges, Add/Change/Delete visibility",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-B"
+    },
+    {
+      "id": "categorias_pagination",
+      "role": "gestion_categorias",
+      "legacy_url": "/insumos/categorias/?page=2",
+      "candidate_url": "/v2/sisoc/insumos/categorias/?page=2",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Dedicated 21-category dataset; same 20/page order and compact pager",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Dedicated 21-category dataset; same 20/page order and compact pager",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-B"
+    },
+    {
+      "id": "categoria_create_blank",
+      "role": "gestion_categorias",
+      "legacy_url": "/insumos/categorias/crear",
+      "candidate_url": "/v2/sisoc/insumos/categorias/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Same labels/initials/layout and cancel destination",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Same labels/initials/layout and cancel destination",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-B"
+    },
+    {
+      "id": "categoria_create_required_errors",
+      "role": "gestion_categorias",
+      "legacy_url": "/insumos/categorias/crear",
+      "candidate_url": "/v2/sisoc/insumos/categorias/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Submit empty; backend errors and no save",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Submit empty; backend errors and no save",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-B"
+    },
+    {
+      "id": "categoria_create_success",
+      "role": "gestion_categorias",
+      "legacy_url": "/insumos/categorias/crear",
+      "candidate_url": "/v2/sisoc/insumos/categorias/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Valid create; exact Categoría creada correctamente. notice and list",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Valid create; exact Categoría creada correctamente. notice and list",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-B"
+    },
+    {
+      "id": "categoria_duplicate",
+      "role": "gestion_categorias",
+      "legacy_url": "/insumos/categorias/crear",
+      "candidate_url": "/v2/sisoc/insumos/categorias/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Duplicate same program with case variation; nombre error and no new row",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Duplicate same program with case variation; nombre error and no new row",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-B"
+    },
+    {
+      "id": "categoria_negative_order",
+      "role": "gestion_categorias",
+      "legacy_url": "/insumos/categorias/crear",
+      "candidate_url": "/v2/sisoc/insumos/categorias/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Negative orden rejected with backend form error",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Negative orden rejected with backend form error",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-B"
+    },
+    {
+      "id": "categoria_edit",
+      "role": "gestion_categorias",
+      "legacy_url": "/insumos/categorias/{{cat_a.id}}/editar",
+      "candidate_url": "/v2/sisoc/insumos/categorias/{{cat_a.id}}/editar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Same initial values; valid save and exact updated notice",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Same initial values; valid save and exact updated notice",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-B"
+    },
+    {
+      "id": "categoria_edit_inactive_program",
+      "role": "gestion_categorias",
+      "legacy_url": "/insumos/categorias/{{cat_inactiva_contexto.id}}/editar",
+      "candidate_url": "/v2/sisoc/insumos/categorias/{{cat_inactiva_contexto.id}}/editar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Current inactive program remains an option; form excludes unrelated inactive programs",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Current inactive program remains an option; form excludes unrelated inactive programs",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-B"
+    },
+    {
+      "id": "categoria_cancel",
+      "role": "gestion_categorias",
+      "legacy_url": "/insumos/categorias/{{cat_a.id}}/editar",
+      "candidate_url": "/v2/sisoc/insumos/categorias/{{cat_a.id}}/editar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Cancel discards visible edits and returns category list without filters",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Cancel discards visible edits and returns category list without filters",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-B"
+    },
+    {
+      "id": "categoria_delete_confirm",
+      "role": "gestion_categorias",
+      "legacy_url": "/insumos/categorias/{{cat_a.id}}/eliminar",
+      "candidate_url": "/v2/sisoc/insumos/categorias/{{cat_a.id}}/eliminar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Same warning that linked items become Sin categoría; GET no effects",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Same warning that linked items become Sin categoría; GET no effects",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-B"
+    },
+    {
+      "id": "categoria_delete_cancel",
+      "role": "gestion_categorias",
+      "legacy_url": "/insumos/categorias/{{cat_a.id}}/eliminar",
+      "candidate_url": "/v2/sisoc/insumos/categorias/{{cat_a.id}}/eliminar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Cancel preserves category and item links",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Cancel preserves category and item links",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-B"
+    },
+    {
+      "id": "categoria_delete_success",
+      "role": "gestion",
+      "legacy_url": "/insumos/categorias/{{cat_a.id}}/eliminar",
+      "candidate_url": "/v2/sisoc/insumos/categorias/{{cat_a.id}}/eliminar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Confirm delete; exact category notice; linked Insumo still exists, appears Sin categoría, file unchanged",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Confirm delete; exact category notice; linked Insumo still exists, appears Sin categoría, file unchanged",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-B"
+    },
+    {
+      "id": "categoria_denied",
+      "role": "consulta",
+      "legacy_url": "/insumos/categorias/crear",
+      "candidate_url": "/v2/sisoc/insumos/categorias/crear",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "navigate_and_prepare_state",
+        "Direct entry denied with current error UI; no permission grant inferred from filter options",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Direct entry denied with current error UI; no permission grant inferred from filter options",
+        "same shell/theme/labels/help/errors/focus and notice severity/location",
+        "any successful mutation verified against backend state, not only toast"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "whole_page_with_shell",
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-B"
+    },
+    {
+      "id": "insumo_delete_without_view",
+      "role": "baja_sin_consulta",
+      "legacy_url": "/insumos/{{insumo_001.id}}/eliminar",
+      "candidate_url": "/v2/sisoc/insumos/{{insumo_001.id}}/eliminar",
+      "comparison": "visual",
+      "capture_status": "not_run",
+      "steps": [
+        "reset_independent_synthetic_fixture_pair",
+        "resolve_placeholders_independently",
+        "open authorized delete confirmation without View and capture",
+        "submit valid deletion once; verify backend effect separately",
+        "follow fixed return /insumos/ and capture denied destination; never replay mutation"
+      ],
+      "assertions": [
+        "Delete permission authorizes confirmation and mutation independently of View",
+        "Fixed return may deny list with403 after deletion; do not classify persisted deletion as failed or add View",
+        "Compare confirmation and denied-return presentation with reference; file lifecycle checked separately"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "theme": "dark",
+      "identity": "confirmation_then_denied_return",
+      "capture_points": [
+        "confirmation",
+        "denied_return"
+      ],
+      "fixture_status": "specified_not_created",
+      "candidate_status": "not_implemented",
+      "human_acceptance": "pending",
+      "activation_group": "INS-A"
+    }
+  ],
+  "contract_cases": [
+    {
+      "id": "download_active",
+      "url": "/insumos/{{insumo_001.id}}/descargar",
+      "role": "consulta",
+      "expected": {
+        "status": 200,
+        "content_disposition": "attachment; actual synthetic filename",
+        "body": "same bytes in reference and candidate"
+      },
+      "activation_group": "INS-A",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "download_inactive",
+      "url": "/insumos/{{insumo_003.id}}/descargar",
+      "role": "consulta",
+      "expected": {
+        "status": 200,
+        "body": "same bytes; no active filter"
+      },
+      "activation_group": "INS-A",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "download_missing_file",
+      "url": "/insumos/{{insumo_025.id}}/descargar",
+      "role": "consulta",
+      "expected": {
+        "status": 404,
+        "visual_followup": "capture rendered 404 in both versions if error template changes"
+      },
+      "activation_group": "INS-A",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "download_no_permission",
+      "url": "/insumos/{{insumo_001.id}}/descargar",
+      "role": "sin_permiso",
+      "expected": {
+        "status": 403,
+        "body_contains_no_file_bytes": true
+      },
+      "activation_group": "INS-A",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "download_absent_record",
+      "url": "/insumos/{{absent_insumo_id}}/descargar",
+      "role": "consulta",
+      "expected": {
+        "status": 404
+      },
+      "activation_group": "INS-A",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "row_edit_forbidden",
+      "url": "/insumos/{{insumo_001.id}}/editar",
+      "role": "alta_sin_edicion_baja",
+      "expected": {
+        "status": 403,
+        "mutation": false
+      },
+      "activation_group": "INS-A",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "row_delete_forbidden",
+      "url": "/insumos/{{insumo_001.id}}/eliminar",
+      "role": "alta_sin_edicion_baja",
+      "expected": {
+        "status": 403,
+        "mutation": false
+      },
+      "activation_group": "INS-A",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "post_no_csrf",
+      "url": "/api/web/insumos/crear/",
+      "role": "gestion",
+      "expected": {
+        "status": 403,
+        "mutation": false,
+        "note": "handle actual middleware response, including non-JSON without false success"
+      },
+      "activation_group": "INS-A",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "api_methods_rejected",
+      "url": "/api/web/insumos/{{insumo_001.id}}/eliminar/",
+      "role": "gestion",
+      "expected": {
+        "PUT_PATCH_DELETE": 405,
+        "mutation": false
+      },
+      "activation_group": "INS-A",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "category_delete_set_null",
+      "url": "/api/web/insumos/categorias/{{cat_a.id}}/eliminar/",
+      "role": "gestion",
+      "expected": {
+        "POST": 200,
+        "linked_items_preserved": true,
+        "category_null": true,
+        "files_unchanged": true
+      },
+      "activation_group": "INS-B",
+      "execution_status": "not_run",
+      "affected_activation_groups": [
+        "INS-A",
+        "INS-B"
+      ]
+    },
+    {
+      "id": "lost_mutation_response",
+      "url": "/api/web/insumos/crear/",
+      "role": "gestion",
+      "expected": {
+        "automatic_retry": false,
+        "success_not_assumed": true,
+        "reconcile_backend_state_before_manual_repeat": true
+      },
+      "activation_group": "INS-A",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "storage_failure_after_db_delete",
+      "url": "/api/web/insumos/{{insumo_001.id}}/eliminar/",
+      "role": "gestion",
+      "expected": {
+        "atomic_storage_rollback_promised": false,
+        "no_false_success": true,
+        "no_automatic_retry": true
+      },
+      "activation_group": "INS-A",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "delete_without_view_persisted_then_return_denied",
+      "url": "/api/web/insumos/{{insumo_001.id}}/eliminar/",
+      "role": "baja_sin_consulta",
+      "activation_group": "INS-A",
+      "execution_status": "not_run",
+      "expected": {
+        "authorized_POST": 200,
+        "record_deleted": true,
+        "redirect": "/insumos/",
+        "followed_legacy_list_status": 403,
+        "View_granted_implicitly": false,
+        "mutation_retry": false,
+        "file_result": "verify source lifecycle separately; no transactional storage promise"
+      }
+    }
+  ],
+  "required_error_followups": [
+    "CSRF invalid on legacy logout: rejected without ending session",
+    "Session expiration before fetch and during download: no private stale UI, no mutation retry",
+    "Missing frontend/upstream: HTTP503 emergency independent from React; not a legacy business-state screenshot",
+    "Session-control pending: web_access denied, password_change, profile_confirmation, mandatory_survey; full-page/endpoint behavior must be resolved before pilot acceptance"
+  ],
+  "omission_policy": "Block any impacted UI URL/state without explicit manifest mapping; include POST responses with UI and indirect consumers of shared assets. Downloads/API without UI get contract and visible-followup checks.",
+  "snapshot_policy": {
+    "intentional_differences": 0,
+    "initial_different_pixel_budget": 0,
+    "automatic_accept_candidate_baseline": false,
+    "masks_hiding_regressions": false,
+    "human_acceptance_required": true
+  },
+  "expected_output": [
+    "before.png",
+    "after.png",
+    "diff.png",
+    "report with case/role/viewport/steps/SHAs/fixture hashes and actual result"
+  ],
+  "blockers": [
+    "No implementation, runtime environment, seed, browser or screenshot authorized by E2; these are future execution gates, not unresolved product choices.",
+    "Baseline/candidate revisions and URLs remain null and acceptance pending.",
+    "Static fixture union/group definitions are coherent, but no loader/data has been run.",
+    "Source audit uses frozen local cached59a8f only; refresh/reconcile before implementation.",
+    "Any shared shell/package diff expands mandatory impacted URL coverage."
+  ],
+  "source_definition_sha": "59a8f797688c9e762d5a4e9eaa187698ffade8aa",
+  "activation_groups": [
+    "INS-A",
+    "INS-B"
+  ],
+  "fixture_isolation": {
+    "created": false,
+    "policy": "Independent reference/candidate dataset reset for each mutating case; no shared mutable DB/storage; fixture IDs resolved separately. Never use real identities or documents.",
+    "clock": "same synthetic comparable timestamps for successful writes and lists",
+    "file_rules": "same allowed bytes/name; upload >10 MiB and invalid extension/content type are synthetic negative fixtures"
+  },
+  "operation_fixture_sets": {
+    "programs": [
+      {
+        "ref": "programa_prueba",
+        "active": true,
+        "name": "Programa Prueba Visual"
+      },
+      {
+        "ref": "programa_otro",
+        "active": true,
+        "name": "Programa Alternativo Visual"
+      },
+      {
+        "ref": "programa_inactivo",
+        "active": false,
+        "name": "Programa Inactivo Visual"
+      }
+    ],
+    "categories": [
+      {
+        "ref": "cat_ajena",
+        "program_ref": "programa_otro",
+        "active": true,
+        "name": "Categoria de otro programa",
+        "order": 4
+      },
+      {
+        "ref": "cat_inactiva",
+        "program_ref": "programa_prueba",
+        "active": false
+      }
+    ],
+    "insumo_inactivo_contexto": {
+      "program_ref": "programa_inactivo",
+      "category_ref": "cat_inactiva_contexto",
+      "file": {
+        "name": "contexto-inactivo.pdf",
+        "content_ref": "pdf_sintetico_minimo",
+        "present_in_storage": true
+      },
+      "category_program_ref": "programa_inactivo",
+      "ref": "insumo_inactivo_contexto",
+      "title": "Insumo con contexto inactivo",
+      "description": "Contenido sintetico para edicion",
+      "active": false,
+      "creator_role": "gestion"
+    },
+    "cat_inactiva_contexto": {
+      "program_ref": "programa_inactivo",
+      "active": false,
+      "ref": "cat_inactiva_contexto",
+      "name": "Categoria del programa inactivo",
+      "order": 0
+    },
+    "category_pagination": "Separate case dataset with 21 synthetic categories, deterministic order/name; not added to original 25-item read dataset by default",
+    "mutation_reset": "Start each case from a clean equivalent copy; materialize created/new IDs during its own steps, no fixed DB numeric IDs"
+  },
+  "manifest_summary": {
+    "visual_cases": 52,
+    "case_viewport_combinations": 106,
+    "contract_cases": 13,
+    "captures_executed": 0,
+    "scope": "full proposed INS-A/INS-B; per-group counts explicit; no executable loader or accepted baseline",
+    "role_count": 9,
+    "activation_group_counts": {
+      "INS-A": {
+        "visual_cases": 38,
+        "case_viewport_combinations": 78,
+        "contract_cases": 12
+      },
+      "INS-B": {
+        "visual_cases": 14,
+        "case_viewport_combinations": 28,
+        "contract_cases": 1
+      }
+    },
+    "capture_point_note": "Case-viewport combinations are not PNG count; cases with multiple capture_points require evidence for each point."
+  },
+  "fixture_materialization": {
+    "status": "specified_not_created",
+    "read_cases": "Use fixtures.program/categories/items only: exactly25 read items. Do not add operation-only items or21-category pagination dataset to these cases.",
+    "operation_cases": "Reset an independent equivalent pair per case; merge only referenced operation_fixture_sets entities by ref. Existing refs extend matching base specs, never duplicate database records.",
+    "special_refs": [
+      "programa_inactivo",
+      "cat_inactiva_contexto",
+      "insumo_inactivo_contexto"
+    ],
+    "program_category_rule": "Every category has explicit program_ref; every item has program_ref and nullable category_ref. Resolve against the same per-case logical registry; category must belong to item program.",
+    "missing_reference_rule": "Stop fixture preparation on unresolved ref; never guess a program, default a role or use production objects.",
+    "files": "Use matching synthetic bytes/content_ref and names in each isolated storage. Honor present_in_storage=false negative case; no actual files generated by this manifest.",
+    "roles": "Create nine non-superuser role fixtures with only declared permissions and existing profile_default; no implicit group grants."
+  },
+  "source_provenance": {
+    "source_sha_role": "Historical initial inventory/reference extraction afa6fc; not an accepted visual baseline.",
+    "source_definition_sha_role": "Contract definition and audited local cached origin/development59a8f; no remote fetch or freshness claim.",
+    "local_cached_development": "59a8f797688c9e762d5a4e9eaa187698ffade8aa",
+    "remote_refreshed": false,
+    "visual_reference_accepted": false
+  },
+  "planning_readiness": {
+    "status": "B0_B1_B2_static_preparation_coherent_not_runtime_ready",
+    "static_open_items": [],
+    "implementation_and_environment_authorized": false,
+    "future_gates": [
+      "refresh/reconcile current source in authorized implementation without losing frozen evidence",
+      "authorize isolated environment and materialize per-case fixtures",
+      "accept exact reference/candidate revisions/baseURLs/Chromium/fonts",
+      "implement real APIs/types/app checks with existing tooling",
+      "execute contract/backend/frontend/visual comparisons and human acceptance",
+      "expand indirect consumers from actual shared-file diff before acceptance"
+    ]
+  }
+}

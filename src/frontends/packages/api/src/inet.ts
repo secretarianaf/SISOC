@@ -15,7 +15,7 @@ export type InetEnrollmentInput = components["schemas"]["InetInscripcionInput"];
 export type InetSchedule = components["schemas"]["InetHorario"];
 export type InetDeletePreview = components["schemas"]["InetDeletePreview"];
 
-export const inetClient = crearCliente("/api/inet/");
+export const inetClient = crearCliente("/api/web/vat/");
 export async function inetGet<T>(path: string): Promise<T> {
   return (await inetClient.get<T>(path)).data;
 }

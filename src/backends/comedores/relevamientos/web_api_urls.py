@@ -1,0 +1,119 @@
+"""Rutas de ``/api/web/comedores/relevamientos/`` (G1 v1): ver ``relevamientos.web_api_views``."""
+
+from django.urls import path
+
+from relevamientos.web_api_forms import (
+    ActaCrearWebView,
+    ActaEditarWebView,
+    ActaEliminarWebView,
+    ActaRevisionWebView,
+    PnudRevisionWebView,
+    SeguimientoEditarWebView,
+    SeguimientoEliminarWebView,
+    SeguimientoRevisionWebView,
+)
+from relevamientos.web_api_mutations import (
+    NumeroIfWebView,
+    RelevamientoBajaWebView,
+    RelevamientoRevisionWebView,
+)
+from relevamientos.web_api_views import (
+    ActaDetalleWebView,
+    SeguimientoDetalleWebView,
+    SeguimientoPnudDetalleWebView,
+    RelevamientoDetalleWebView,
+    RelevamientosListadoWebView,
+)
+
+urlpatterns = [
+    path(
+        "<int:comedor_pk>/",
+        RelevamientosListadoWebView.as_view(),
+        name="relevamientos_web_listado",
+    ),
+    path(
+        "<int:comedor_pk>/relevamiento/<int:pk>/",
+        RelevamientoDetalleWebView.as_view(),
+        name="relevamientos_web_detalle",
+    ),
+    path(
+        "<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimientos/primero/",
+        SeguimientoDetalleWebView.as_view(),
+        name="relevamientos_web_seguimiento_primero",
+    ),
+    path(
+        "<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimientos/<int:pk>/",
+        SeguimientoDetalleWebView.as_view(),
+        name="relevamientos_web_seguimiento",
+    ),
+    path(
+        "<int:comedor_pk>/pnud/<int:pk>/",
+        SeguimientoPnudDetalleWebView.as_view(),
+        name="relevamientos_web_pnud",
+    ),
+    path(
+        "<int:comedor_pk>/actas/<int:pk>/",
+        ActaDetalleWebView.as_view(),
+        name="relevamientos_web_acta",
+    ),
+    path(
+        "<int:comedor_pk>/relevamiento/numero-if/",
+        NumeroIfWebView.as_view(),
+        name="relevamientos_web_numero_if",
+    ),
+    path(
+        "<int:comedor_pk>/relevamiento/<int:pk>/eliminar/",
+        RelevamientoBajaWebView.as_view(),
+        name="relevamientos_web_baja",
+    ),
+    path(
+        "<int:comedor_pk>/relevamiento/<int:pk>/revision/",
+        RelevamientoRevisionWebView.as_view(),
+        name="relevamientos_web_revision",
+    ),
+    path(
+        "<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimientos/primero/eliminar/",
+        SeguimientoEliminarWebView.as_view(),
+        name="relevamientos_web_seguimiento_primero_eliminar",
+    ),
+    path(
+        "<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimientos/<int:pk>/editar/",
+        SeguimientoEditarWebView.as_view(),
+        name="relevamientos_web_seguimiento_editar",
+    ),
+    path(
+        "<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimientos/<int:pk>/eliminar/",
+        SeguimientoEliminarWebView.as_view(),
+        name="relevamientos_web_seguimiento_eliminar",
+    ),
+    path(
+        "<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimientos/<int:pk>/revision/",
+        SeguimientoRevisionWebView.as_view(),
+        name="relevamientos_web_seguimiento_revision",
+    ),
+    path(
+        "<int:comedor_pk>/pnud/<int:pk>/revision/",
+        PnudRevisionWebView.as_view(),
+        name="relevamientos_web_pnud_revision",
+    ),
+    path(
+        "<int:comedor_pk>/actas/crear/",
+        ActaCrearWebView.as_view(),
+        name="relevamientos_web_acta_crear",
+    ),
+    path(
+        "<int:comedor_pk>/actas/<int:pk>/editar/",
+        ActaEditarWebView.as_view(),
+        name="relevamientos_web_acta_editar",
+    ),
+    path(
+        "<int:comedor_pk>/actas/<int:pk>/revision/",
+        ActaRevisionWebView.as_view(),
+        name="relevamientos_web_acta_revision",
+    ),
+    path(
+        "<int:comedor_pk>/actas/<int:pk>/eliminar/",
+        ActaEliminarWebView.as_view(),
+        name="relevamientos_web_acta_eliminar",
+    ),
+]

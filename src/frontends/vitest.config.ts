@@ -22,6 +22,8 @@ export default defineConfig({
       "apps/vpsl",
       "apps/inet",
       "apps/celiaquia",
+      "apps/sisoc",
+      "apps/pas",
     ],
   },
 });

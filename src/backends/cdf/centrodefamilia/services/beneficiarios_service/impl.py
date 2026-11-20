@@ -274,6 +274,18 @@ def separar_datos_post(request):
     return beneficiario_data, responsable_data
 
 
+def errores_preinscripcion(forms_data):
+    """Errores por formulario de una preinscripción rechazada."""
+    beneficiario_form = forms_data.get("beneficiario_form")
+    responsable_form = forms_data.get("responsable_form")
+    errors = {}
+    if beneficiario_form and not beneficiario_form.is_valid():
+        errors["beneficiario"] = beneficiario_form.errors
+    if responsable_form and not responsable_form.is_valid():
+        errors["responsable"] = responsable_form.errors
+    return errors
+
+
 def generar_respuesta(request, beneficiario, forms_data, template_name):
     """Genera respuesta apropiada según resultado"""
     beneficiario_form = forms_data.get("beneficiario_form")
@@ -291,11 +303,7 @@ def generar_respuesta(request, beneficiario, forms_data, template_name):
             )
         return redirect("beneficiarios_crear")
 
-    errors = {}
-    if beneficiario_form and not beneficiario_form.is_valid():
-        errors["beneficiario"] = beneficiario_form.errors
-    if responsable_form and not responsable_form.is_valid():
-        errors["responsable"] = responsable_form.errors
+    errors = errores_preinscripcion(forms_data)
 
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return JsonResponse({"status": "error", "errors": errors}, status=400)
@@ -310,23 +318,33 @@ def generar_respuesta(request, beneficiario, forms_data, template_name):
     )
 
 
+def procesar_preinscripcion(request):
+    """Procesa el POST combinado de beneficiario y responsable, sin armar respuesta.
+
+    Lo usan la vista nativa (que después llama a ``generar_respuesta``) y la API
+    web (que responde JSON sin encolar mensajes de Django).
+    """
+    beneficiario_data, responsable_data = separar_datos_post(request)
+    beneficiario, beneficiario_form, responsable_form = procesar_formularios(
+        request, beneficiario_data, responsable_data
+    )
+
+    if beneficiario and "renaper_cache" in request.session:
+        del request.session["renaper_cache"]
+        request.session.modified = True
+
+    forms_data = {
+        "beneficiario_form": beneficiario_form,
+        "responsable_form": responsable_form,
+        "beneficiario_data": beneficiario_data,
+    }
+    return beneficiario, forms_data
+
+
 def manejar_request_beneficiarios(request, template_name):
     """Maneja todo el request de beneficiarios"""
     try:
-        beneficiario_data, responsable_data = separar_datos_post(request)
-        beneficiario, beneficiario_form, responsable_form = procesar_formularios(
-            request, beneficiario_data, responsable_data
-        )
-
-        if beneficiario and "renaper_cache" in request.session:
-            del request.session["renaper_cache"]
-            request.session.modified = True
-
-        forms_data = {
-            "beneficiario_form": beneficiario_form,
-            "responsable_form": responsable_form,
-            "beneficiario_data": beneficiario_data,
-        }
+        beneficiario, forms_data = procesar_preinscripcion(request)
         return generar_respuesta(request, beneficiario, forms_data, template_name)
 
     except Exception as e:

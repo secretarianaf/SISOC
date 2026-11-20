@@ -26,6 +26,13 @@ ARG VITE_SENTRY_ENVIRONMENT
 ARG VITE_RELEASE_SHA
 RUN npm run build -w @sisoc/${APP}
 
+# --- Export del build ----------------------------------------------------------
+# Solo el `dist` (index.html + assets/). Lo consumen los runtimes con
+# `COPY --from=<este stage>` para las entradas web_preview_* (SISOC_REACT_BUILD_DIR).
+FROM scratch AS export
+ARG APP
+COPY --from=build /app/src/frontends/apps/${APP}/dist /
+
 # --- Produccion: estatico servido por nginx sin privilegios -------------------
 # El `dist` se copia bajo /v2/<app>/ porque es el `base` con el que Vite genero
 # las rutas de los assets con hash; servirlo desde la raiz los rompe.

@@ -1,0 +1,5 @@
+/* The native page puts header, main and footer directly in <body>; PAS's own
+   stylesheet lays them out as body children (mobile flex column, success grid). */
+#root {
+  display: contents;
+}

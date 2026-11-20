@@ -115,7 +115,7 @@ Las entradas `web_preview_*` leen un build congelado (`index.html` + `assets/`) 
 Como ese build vive dentro de las imágenes de Django, un cambio en `src/frontends/apps/sisoc/`, en los paquetes compartidos,
 la configuración o el lockfile de `src/frontends/`, o en `src/scripts/frontends/` no alcanza con recrear `front_sisoc`:
 `deploy_targets.py` suma el core (`@core`) y todo servicio que declara `SISOC_REACT_BUILD_DIR` en
-`docker-compose.deploy.yml` (con los procesos que corren su mismo código). El resto de las apps (`inet`, `vpsl`,
+`docker/compose/docker-compose.deploy.yml` (con los procesos que corren su mismo código). El resto de las apps (`inet`, `vpsl`,
 `celiaquia`) sigue desplegando solo su `front_<x>`.
 
 

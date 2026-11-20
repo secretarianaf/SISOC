@@ -1,6 +1,5 @@
 from django.db import migrations
 
-
 VARIABLES_DOCUMENTALES = (
     (
         "informe.if_ultimo_informe_tecnico",

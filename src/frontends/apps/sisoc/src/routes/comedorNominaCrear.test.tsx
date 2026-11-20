@@ -43,6 +43,8 @@ function setup(url = "/comedores/3/nomina/crear/") {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // jsdom has no scrollIntoView; the creation card scrolls to itself in a frame callback.
+  Element.prototype.scrollIntoView = vi.fn();
   document.title = "SISOC";
   document.body.className = "layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary dark-mode";
   setViewport(false);

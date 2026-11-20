@@ -112,6 +112,34 @@ Las entradas `web_preview_*` leen un build congelado (`index.html` + `assets/`) 
 `SISOC_REACT_BUILD_DIR` apunta a esa carpeta (vacío por defecto: sin build congelado). El stage `export` de
 `docker/frontends/Dockerfile` deja solo el `dist` para copiarlo a la imagen de cada runtime que monte entradas.
 
+
+## Activación de las pantallas React por vertical (#2785)
+
+Las pantallas migradas se encienden con `REACT_VERTICALES_ACTIVAS` (lista separada por comas, vacía por defecto) en el
+core y en los runtimes. Claves: `sisoc` y `core` (páginas del core), `ciudadanos`, `audittrail`, `dashboard`,
+`encuestas`, `usuarios`, `pas`, `vat`, `cdi`, `cdf`, `comedores`, `dispositivos`, `inspecciones`, `ocr`
+(`src/backends/kernel/core/react_activation.py`). Con la variable vacía el ruteo es idéntico al anterior.
+
+Requisitos por entorno, antes de la primera vertical:
+
+1. Imagen con el build congelado: `SISOC_REACT_BUILD_DIR=/opt/sisoc-react` en el core y en los runtimes, y
+   `front_sisoc` respondiendo en `/v2/sisoc/` (lo verifica `deploy.yml`).
+2. G1: el mismo `SECRET_KEY` (y `SECRET_KEY_FALLBACKS`) en el core y en todos los runtimes, `SISOC_BACKEND` correcto
+   en cada runtime, gunicorn con `RAW_URI` y timeouts 75 s (core) / 65 s (runtimes). G1 no se probó todavía con
+   nginx ni con carga real: mirar errores 403/503 de `/api/web/` en los logs durante la primera activación.
+
+Encendido de una vertical (QA, luego HML, luego producción):
+
+1. Agregar la clave a `REACT_VERTICALES_ACTIVAS` del entorno y reiniciar el core y el runtime de esa vertical.
+2. Recorrer las pantallas de la vertical con un usuario con permisos y con uno sin permisos: mismas pantallas,
+   mismos permisos y mensajes que en Django; exportaciones y descargas siguen funcionando.
+3. Dejar registrado en `docs/registro/` la fecha, el entorno y el retorno ("Retorno: quitar la clave y reiniciar").
+
+Vuelta atrás: quitar la clave de `REACT_VERTICALES_ACTIVAS` y reiniciar el core y el runtime; Django vuelve a servir
+las páginas. No hay datos que revertir: las APIs web ejecutan las vistas nativas.
+
+Notas: empezar por `pas`. La DDJJ pública de PAS ya la sirve su app propia; la entrada `pas.ddjj_preview` lee
+`SISOC_REACT_PAS_BUILD_DIR`, que no se configura en deploy, y por eso se omite (queda un aviso en el log).
 ## Inspeccion de talla legacy en produccion
 
 Con 0042 sin operación de base de datos y 0043 restaurando `talla` a texto, el

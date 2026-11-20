@@ -327,3 +327,41 @@ def test_cleanup_pass_dry_run_changes_nothing(centro, media):
 
     assert f"LIMPIAR pk={fila.pk}" in salida
     assert viejo.exists()
+
+
+def test_cleanup_reports_in_use_when_another_cdi_row_shares_the_old_file(centro, media):
+    fila = _legado(media, centro)
+    viejo = media / "documentacion" / "acta.pdf"
+    _mover("--aplicar")
+    otra = IntervencionCentroInfancia.objects.create(
+        centro=centro, tiene_documentacion=True
+    )
+    IntervencionCentroInfancia.objects.filter(pk=otra.pk).update(
+        documentacion="documentacion/acta.pdf"
+    )
+    viejo.write_bytes(CONTENIDO)
+
+    seco, _ = _mover()
+
+    assert f"EN USO pk={fila.pk}" in seco
+    assert f"LIMPIAR pk={fila.pk}" not in seco
+    assert "limpiados=0" in seco and "en_uso=1" in seco
+    assert viejo.exists()
+
+
+def test_truncated_name_is_reported_as_in_use_not_as_cleaned(centro, media):
+    fila = _legado(media, centro)
+    _mover("--aplicar")
+    viejo = media / "documentacion" / "acta.pdf"
+    viejo.write_bytes(CONTENIDO)
+    comedores = apps.get_model("intervenciones", "Intervencion")
+    comedores.all_objects.bulk_create(
+        [comedores(documentacion="documentacion/acta.pdf")]
+    )
+
+    salida, _ = _mover("--aplicar")
+
+    assert f"EN USO pk={fila.pk}" in salida
+    assert f"LIMPIADO pk={fila.pk}" not in salida
+    assert "limpiados=0" in salida and "en_uso=1" in salida
+    assert viejo.exists()

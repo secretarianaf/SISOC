@@ -65,7 +65,7 @@ class Command(BaseCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._pendiente = False
+        self._limpieza = None
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -84,6 +84,7 @@ class Command(BaseCommand):
                 "conflictos",
                 "omitidos",
                 "limpiados",
+                "en_uso",
                 "pendientes",
             ),
             0,
@@ -104,14 +105,14 @@ class Command(BaseCommand):
         for fila in filas.iterator():
             resultado = self._procesar(fila, aplicar)
             conteo[resultado] += 1
-            if self._pendiente:
-                conteo["pendientes"] += 1
+            if self._limpieza:
+                conteo[self._limpieza] += 1
 
         self.stdout.write(
             "Resumen: "
             f"movidos={conteo['movidos']} faltantes={conteo['faltantes']} "
             f"conflictos={conteo['conflictos']} omitidos={conteo['omitidos']} "
-            f"limpiados={conteo['limpiados']} pendientes={conteo['pendientes']}"
+            f"limpiados={conteo['limpiados']} en_uso={conteo['en_uso']} pendientes={conteo['pendientes']}"
         )
         if not aplicar:
             self.stdout.write("Dry-run: no se modifico nada. Usar --aplicar.")
@@ -152,15 +153,18 @@ class Command(BaseCommand):
             )
             return "conflictos"
         if not aplicar:
-            self.stdout.write(f"LIMPIAR pk={fila.pk}: {origen}")
-            return "limpiados"
-        if self._borrar_origen_sin_uso(almacen, origen, fila.pk):
+            if self._otra_fila_usa(origen) is False:
+                self.stdout.write(f"LIMPIAR pk={fila.pk}: {origen}")
+                return "limpiados"
+            resultado = self._estado_uso(origen, fila.pk)
+            return resultado
+        resultado = self._borrar_origen_sin_uso(almacen, origen, fila.pk)
+        if resultado == "limpiados":
             self.stdout.write(f"LIMPIADO pk={fila.pk}: {origen}")
-            return "limpiados"
-        return "pendientes"
+        return resultado
 
     def _procesar(self, fila, aplicar):
-        self._pendiente = False
+        self._limpieza = None
         origen = fila.documentacion.name
         almacen = fila.documentacion.storage
         destino = _destino(fila.pk, origen)
@@ -182,7 +186,8 @@ class Command(BaseCommand):
             self.stderr.write(f"CONFLICTO pk={fila.pk}: no se pudo actualizar ({exc})")
             return "conflictos"
         if actualizadas:
-            self._pendiente = not self._borrar_origen_sin_uso(almacen, origen, fila.pk)
+            self._limpieza = self._borrar_origen_sin_uso(almacen, origen, fila.pk)
+            self._limpieza = None if self._limpieza == "limpiados" else self._limpieza
         self.stdout.write(f"MOVIDO pk={fila.pk}: {origen} -> {destino}")
         return "movidos"
 
@@ -223,15 +228,20 @@ class Command(BaseCommand):
             return None
         return comedores.all_objects.filter(documentacion=origen).exists()
 
-    def _borrar_origen_sin_uso(self, almacen, origen, pk):
-        """Delete the old file if no consumer uses it. False when it is pending."""
-        uso = self._otra_fila_usa(origen)
-        if uso is None:
+    def _estado_uso(self, origen, pk):
+        """Report why the old file is kept: "en_uso" or "pendientes"."""
+        if self._otra_fila_usa(origen) is None:
             self.stderr.write(
                 f"PENDIENTE pk={pk}: no se pudo comprobar si Comedores usa {origen}; "
                 "no se borra. Correr donde esten todas las apps instaladas."
             )
-            return False
-        if not uso:
+            return "pendientes"
+        self.stdout.write(f"EN USO pk={pk}: {origen} lo usa otra fila; no se borra")
+        return "en_uso"
+
+    def _borrar_origen_sin_uso(self, almacen, origen, pk):
+        """Delete the old file if unused: "limpiados", "en_uso" or "pendientes"."""
+        if self._otra_fila_usa(origen) is False:
             almacen.delete(origen)
-        return True
+            return "limpiados"
+        return self._estado_uso(origen, pk)

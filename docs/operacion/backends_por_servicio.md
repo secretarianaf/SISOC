@@ -129,6 +129,7 @@ nuevo:
 | Solo `src/backends/<x>/**` | **Selectivo:** construye ese backend y el migrador, migra, y recrea solo ese servicio y sus `extra_services` (`up --no-deps`). Sólo mailing/importación pueden faltar en ese entorno; otros servicios ausentes fuerzan completo. Todos los backends incluyen el importador con imagen del migrador; Comedores también incluye mailing. |
 | Solo `src/backends/sisoc_core/**` | **Selectivo:** construye la imagen del core y el migrador, migra, y recrea los servicios con imagen `sisoc/core` y el rol `user_import_worker` del entorno (en QA, `django`; en PRD, además los workers de importación y credenciales; mailing pertenece a Comedores y OCR a su backend). Los backends no se reinician. Si no se pueden resolver esos servicios, hace un deploy completo. |
 | Solo `src/frontends/apps/<x>/**` | **Selectivo:** solo `front_<x>`. |
+| `apps/sisoc` (build compartido de las pantallas React por vertical) | **Selectivo:** solo `front_sisoc`; el core lo proxea en `/v2/sisoc/` (`FRONT_SISOC_ORIGIN`). |
 | Solo docs/Markdown salvo CHANGELOG, `.github/`, `src/scripts/github/`, `src/backends/<dueño>/tests/` o `src/frontends/e2e/` | **Ninguno:** no se reinicia nada. Los tests dentro de una app siguen la regla del dueño. |
 | Compartidos de `src/frontends/` (paquetes, config, lockfile) | **Selectivo:** todos los fronts; sin migrador. |
 | `docker/frontends/` o `src/scripts/frontends/` | **Selectivo:** todos los fronts; sin migrador. |

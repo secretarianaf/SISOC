@@ -13,6 +13,8 @@ services:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
+      # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
+      SISOC_REACT_BUILD_DIR: /opt/sisoc-react
       # La DB la prepara el migrador (servicio `migrator`), no la web.
       SISOC_PREPARAR_DB: "false"
     volumes:
@@ -45,6 +47,8 @@ services:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
+      # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
+      SISOC_REACT_BUILD_DIR: /opt/sisoc-react
       DJANGO_SETTINGS_MODULE: dispositivos_runtime.settings
     command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_DISPOSITIVOS_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
@@ -73,6 +77,8 @@ services:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
+      # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
+      SISOC_REACT_BUILD_DIR: /opt/sisoc-react
       DJANGO_SETTINGS_MODULE: comedores_runtime.settings
     command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_COMEDORES_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
@@ -100,6 +106,8 @@ services:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
+      # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
+      SISOC_REACT_BUILD_DIR: /opt/sisoc-react
       DJANGO_SETTINGS_MODULE: ocr_runtime.settings
     command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_OCR_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
@@ -127,6 +135,8 @@ services:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
+      # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
+      SISOC_REACT_BUILD_DIR: /opt/sisoc-react
       DJANGO_SETTINGS_MODULE: vpsl_runtime.settings
     command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_VPSL_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
@@ -154,6 +164,8 @@ services:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
+      # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
+      SISOC_REACT_BUILD_DIR: /opt/sisoc-react
       DJANGO_SETTINGS_MODULE: pas_runtime.settings
     command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_PAS_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
@@ -181,6 +193,8 @@ services:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
+      # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
+      SISOC_REACT_BUILD_DIR: /opt/sisoc-react
       DJANGO_SETTINGS_MODULE: vat_runtime.settings
     command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_VAT_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
@@ -208,6 +222,8 @@ services:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
+      # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
+      SISOC_REACT_BUILD_DIR: /opt/sisoc-react
       DJANGO_SETTINGS_MODULE: celiaquia_runtime.settings
     command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_CELIAQUIA_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
@@ -235,6 +251,8 @@ services:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
+      # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
+      SISOC_REACT_BUILD_DIR: /opt/sisoc-react
       DJANGO_SETTINGS_MODULE: cdi_runtime.settings
     command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_CDI_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
@@ -262,6 +280,8 @@ services:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
+      # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
+      SISOC_REACT_BUILD_DIR: /opt/sisoc-react
       DJANGO_SETTINGS_MODULE: cdf_runtime.settings
     command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_CDF_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
@@ -292,6 +312,8 @@ services:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
+      # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
+      SISOC_REACT_BUILD_DIR: /opt/sisoc-react
       DJANGO_SETTINGS_MODULE: inspecciones_runtime.settings
     command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_INSPECCIONES_WORKERS:-4}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
@@ -378,6 +400,24 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Front v2 SISOC: sirve /v2/sisoc/ y /v2/sisoc/assets/ (el core lo proxea). Mismo esquema que
+  # front_celiaquia.
+  front_sisoc:
+    image: sisoc/front-sisoc:${SISOC_RELEASE_SHA:-local}
+    build:
+      context: .
+      dockerfile: docker/frontends/Dockerfile
+      target: prod
+      args:
+        APP: sisoc
+        VITE_SENTRY_DSN: ${SENTRY_DSN:-}
+        VITE_SENTRY_ENVIRONMENT: ${ENVIRONMENT:-production}
+        VITE_RELEASE_SHA: ${VITE_RELEASE_SHA:-local}
+    depends_on:
+      django:
+        condition: service_healthy
+    restart: unless-stopped
+
   ocr_worker:
     image: sisoc/backend-ocr:${SISOC_RELEASE_SHA:-local}
     build:
@@ -390,6 +430,8 @@ services:
       - .env
     environment:
       TZ: America/Argentina/Buenos_Aires
+      # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
+      SISOC_REACT_BUILD_DIR: /opt/sisoc-react
       DJANGO_SERVICE_ROLE: ocr_worker
       DJANGO_SETTINGS_MODULE: ocr_runtime.settings
       SISOC_PREPARAR_DB: "false"

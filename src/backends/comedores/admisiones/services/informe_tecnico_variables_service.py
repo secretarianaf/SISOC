@@ -51,6 +51,20 @@ class InformeTecnicoVariablesDocumentalesService:
         renovaciones_anteriores = admisiones_anteriores.filter(
             tipo="renovacion"
         ).order_by("creado", "pk")
+        if_it_complementario = cls._texto(getattr(informe, "if_it_complementario", ""))
+        if_ultimo_informe_tecnico = cls._texto(
+            admisiones_anteriores.exclude(numero_if_tecnico__isnull=True)
+            .exclude(numero_if_tecnico="")
+            .order_by("-creado", "-pk")
+            .values_list("numero_if_tecnico", flat=True)
+            .first()
+        )
+        modifica_prestaciones = (
+            getattr(
+                admision_actual, "informe_complementario_modifica_prestaciones", None
+            )
+            == "si"
+        )
 
         valores.update(
             {
@@ -60,8 +74,12 @@ class InformeTecnicoVariablesDocumentalesService:
                 "renovaciones_anteriores_detalladas": cls._formatear_renovaciones(
                     informe, renovaciones_anteriores
                 ),
-                "referencia_itcomp_modificacion_prestaciones": cls._texto(
-                    getattr(informe, "if_it_complementario", "")
+                "referencia_itcomp_modificacion_prestaciones": if_it_complementario,
+                "if_ultimo_informe_tecnico": if_ultimo_informe_tecnico,
+                "if_referencia_prestaciones": (
+                    if_it_complementario
+                    if modifica_prestaciones
+                    else if_ultimo_informe_tecnico
                 ),
                 "expediente_pago_en_curso": cls._texto(
                     getattr(ultima_admision, "num_expediente", "")
@@ -126,6 +144,8 @@ class InformeTecnicoVariablesDocumentalesService:
             "resolucion_o_disposicion_incorporacion": "",
             "renovaciones_anteriores_detalladas": "",
             "referencia_itcomp_modificacion_prestaciones": "",
+            "if_ultimo_informe_tecnico": "",
+            "if_referencia_prestaciones": "",
             "expediente_pago_en_curso": "",
             "expediente_ultimo_convenio": "",
         }

@@ -56,7 +56,7 @@ def identity_preview(tmp_path):
     module = ModuleType("identity_preview_test_urls")
     module.urlpatterns = identity_preview_patterns(tmp_path) + urlpatterns
     with override_settings(ROOT_URLCONF=module):
-        yield f"/static/sisoc-identity/assets/{name}", script
+        yield f"/sisoc-identity/react/assets/{name}", script
 
 
 @pytest.mark.django_db
@@ -96,8 +96,8 @@ def test_identity_assets_are_exact_immutable_and_credential_free(
         assert hashlib.sha256(script).hexdigest() in response["ETag"]
     for invalid in (
         path + "?private=ignored",
-        "/static/sisoc-identity/missing.js",
-        "/static/sisoc-identity/assets/not-public.env",
+        "/sisoc-identity/react/missing.js",
+        "/sisoc-identity/react/assets/not-public.env",
     ):
         assert client.get(invalid).status_code == 404
     assert client.post(path).status_code == 405

@@ -6,7 +6,7 @@ native 403, an unknown comedor (list) or relevamiento (detail, including soft
 deleted ones) the native 404. Only then a GET returns the frozen React
 ``index.html``, which loads its data from ``/api/web/comedores/relevamientos/``.
 POSTs reach the native views. Assets are served under the backend's own prefix
-``/comedores/react/relevamientos/``.
+``/comedores/react/`` (shared with the other comedores entries, routed to this backend).
 """
 
 from pathlib import Path
@@ -42,7 +42,7 @@ from relevamientos.views.web_views import (
 )
 from relevamientos.web_api_views import VIEW_PERMISSIONS
 
-PUBLIC_ASSETS = "/comedores/react/relevamientos/assets/"
+PUBLIC_ASSETS = "/comedores/react/assets/"
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -191,7 +191,7 @@ def relevamientos_preview_patterns(build_directory):
             guard(ActaEntry.as_view(index_bytes=index_bytes)),
         ),
         path(
-            "comedores/react/relevamientos/<path:asset_path>",
+            "comedores/react/<path:asset_path>",
             ReactAssetView.as_view(assets=_frozen_assets(root)),
         ),
     ]

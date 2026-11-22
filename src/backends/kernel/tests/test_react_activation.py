@@ -40,11 +40,11 @@ def _recargar():
 
 
 @contextmanager
-def _flag(activas, build):
+def _flag(activas, build, pas_build=None):
     with override_settings(
         REACT_VERTICALES_ACTIVAS=frozenset(activas),
         SISOC_REACT_BUILD_DIR=str(build),
-        SISOC_REACT_PAS_BUILD_DIR=str(build),
+        SISOC_REACT_PAS_BUILD_DIR=str(pas_build or build),
         ROOT_URLCONF="config.urls_all",
     ):
         _recargar()
@@ -154,7 +154,7 @@ def test_sin_duplicados_ni_tapados_con_todo_activo(build):
     with _flag((), build):
         sin_nativa = []
         for ruta in por_ruta:
-            if "react/" in ruta or ruta.startswith("static/sisoc-identity/"):
+            if "react/" in ruta:
                 with pytest.raises(Resolver404):
                     resolve("/" + _ruta_ejemplo(ruta))
                 continue
@@ -197,3 +197,62 @@ def test_por_defecto_monta_todo_con_build_y_nada_sin_build(build, tmp_path):
     with _flag(activas, vacio):
         assert react_preview_patterns("pas", "cdi", "core") == []
         assert MARCA not in _cliente().get("/pas/listar").content.decode()
+
+
+def _dueno_de_ruta(ruta, backends):
+    """Backend al que el proxy del core reenvía ``ruta``; ``None`` es el core."""
+    relativa = ruta.lstrip("/")
+    for nombre, spec in backends.items():
+        if any(relativa.startswith(prefijo) for prefijo in spec["url_prefixes"]):
+            return nombre
+    return None
+
+
+def _urlconf(dueno, backends):
+    return backends[dueno]["urlconf"] if dueno else "config.urls"
+
+
+def _assets_de_entradas(patrones):
+    """Rutas de assets reescritas en el ``index.html`` de cada entrada."""
+    assets = set()
+    for patron in patrones:
+        index = getattr(patron.callback, "view_initkwargs", {}).get("index_bytes")
+        if index:
+            assets.update(re.findall(r'"(/[^"]*app-1\.js)"', index.decode()))
+    return assets
+
+
+def test_assets_de_cada_entrada_llegan_al_backend_que_la_sirve(build, tmp_path, rf):
+    """Guarda del hotfix: nginx sirve ``/static/`` y ``/media/`` desde disco y el
+    proxy del core reenvía por ``url_prefixes``; un asset fuera del backend que
+    monta la entrada, o tapado por otra ruta, deja la pantalla en blanco."""
+    backends = load_backends_registry()
+    # El build de PAS (DDJJ) publica sus assets bajo /v2/pas/.
+    pas_build = tmp_path / "pas-build"
+    (pas_build / "assets").mkdir(parents=True)
+    (pas_build / "index.html").write_text(
+        INDEX.replace("/v2/sisoc/", "/v2/pas/"), encoding="utf-8"
+    )
+    (pas_build / "assets" / "app-1.js").write_text("console.log(1);", encoding="utf-8")
+    errores = []
+    with _flag(set(REGISTRO), build, pas_build):
+        for clave in REGISTRO:
+            dueno = clave if clave in backends else None
+            assets = _assets_de_entradas(react_preview_patterns(clave))
+            assert assets, clave
+            for ruta in sorted(assets):
+                if ruta.startswith(("/static/", "/media/")):
+                    errores.append(f"{clave}: {ruta} lo intercepta nginx")
+                    continue
+                if _dueno_de_ruta(ruta, backends) != dueno:
+                    errores.append(f"{clave}: {ruta} no se enruta a {dueno or 'core'}")
+                    continue
+                try:
+                    match = resolve(ruta, urlconf=_urlconf(dueno, backends))
+                except Resolver404:
+                    errores.append(f"{clave}: {ruta} no resuelve")
+                    continue
+                respuesta = match.func(rf.get(ruta), *match.args, **match.kwargs)
+                if respuesta.status_code != 200:
+                    errores.append(f"{clave}: {ruta} da {respuesta.status_code}")
+    assert not errores, errores

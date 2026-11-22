@@ -567,7 +567,13 @@ las siguientes:
    rutas al patrón de `src/backends/config/middlewares/admindocs.py` y regenerar
    `url_registry.json`.
 2. Entrada sin montar en el vertical: hereda la vista nativa (guardas, 403, 404)
-   y sirve el `index.html` con assets bajo el prefijo propio. Ejemplo:
+   y sirve el `index.html` con assets bajo el prefijo propio. El prefijo de
+   assets tiene que llegar al mismo proceso que monta la entrada: nunca bajo
+   `/static/` ni `/media/` (Nginx los sirve de disco), y en un vertical dentro de
+   un `url_prefixes` suyo en `src/backends/config/backends.json` sin que otra
+   ruta `<path:...>` más corta lo tape. Lo fija
+   `test_assets_de_cada_entrada_llegan_al_backend_que_la_sirve` en
+   `src/backends/kernel/tests/test_react_activation.py`. Ejemplo:
    `actas_preview_patterns` en
    `src/backends/inspecciones/inspecciones/web_preview.py`.
 3. Ruta en `apps/sisoc/src/routes/` con la URL nativa: el menú, el usuario y el

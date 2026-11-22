@@ -38,7 +38,8 @@ prueba o de demostración local la importa.
 - Las respuestas HTML son `private, no-store`, varían por `Cookie` y entregan
   la cookie CSRF. Los parámetros de consulta no se copian al HTML.
 - Los assets se congelan en memoria al crear las rutas, bajo
-  `/static/sisoc-identity/`, con una lista cerrada de extensiones, `ETag`
+  `/sisoc-identity/react/` (antes `/static/sisoc-identity/`; ver
+  `2026-11-22-2785-assets-react-ruteables.md`), con una lista cerrada de extensiones, `ETag`
   SHA-256, caché inmutable y `nosniff`. Una consulta, un archivo fuera de la
   lista o un enlace simbólico responde `404` o rechaza la construcción.
 

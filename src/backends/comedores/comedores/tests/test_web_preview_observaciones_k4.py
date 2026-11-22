@@ -73,10 +73,10 @@ def test_every_entry_serves_the_frozen_index_with_its_native_permission(datos):
     for indice, (url, permiso) in enumerate(_entradas(*datos).items()):
         respuesta = _cliente(f"u{indice}_obs_k4", permiso).get(url)
         assert respuesta.status_code == 200, url
-        assert '/observaciones/react/assets/app-1.js"' in respuesta.content.decode()
+        assert '/comedores/react/assets/app-1.js"' in respuesta.content.decode()
         assert "no-store" in respuesta["Cache-Control"]
         assert "csrftoken" in respuesta.cookies
-    asset = Client().get("/observaciones/react/assets/app-1.js")
+    asset = Client().get("/comedores/react/assets/app-1.js")
     assert asset.content == b"console.log(1);"
 
 

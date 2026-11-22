@@ -76,10 +76,7 @@ def test_the_details_get_the_frozen_index():
     for clave in ("seguimiento", "alias", "pnud", "acta"):
         respuesta = client.get(urls[clave])
         assert respuesta.status_code == 200, clave
-        assert (
-            '/comedores/react/relevamientos/assets/app-1.js"'
-            in respuesta.content.decode()
-        )
+        assert '/comedores/react/assets/app-1.js"' in respuesta.content.decode()
         assert "csrftoken" in respuesta.cookies
 
 
@@ -131,10 +128,7 @@ def test_the_edit_forms_get_the_frozen_index_and_post_stays_native():
     for url in (editar, acta_editar, acta_crear):
         respuesta = cliente.get(url)
         assert respuesta.status_code == 200, url
-        assert (
-            "/comedores/react/relevamientos/assets/app-1.js"
-            in respuesta.content.decode()
-        )
+        assert "/comedores/react/assets/app-1.js" in respuesta.content.decode()
         assert Client().get(url).status_code == 403
         assert sin_permiso.get(url).status_code == 403
     assert (

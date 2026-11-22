@@ -253,7 +253,7 @@ def identity_preview_patterns(build_directory):
         raise ValueError("Identity preview requires a regular fixed index.html")
     index_bytes = (
         index.read_text(encoding="utf-8")
-        .replace("/v2/sisoc/assets/", "/static/sisoc-identity/assets/")
+        .replace("/v2/sisoc/assets/", "/sisoc-identity/react/assets/")
         .encode("utf-8")
     )
     assets = {}
@@ -397,7 +397,7 @@ def identity_preview_patterns(build_directory):
             IdentityPasswordResetCompleteEntry.as_view(index_bytes=index_bytes),
         ),
         path(
-            "static/sisoc-identity/<path:asset_path>",
+            "sisoc-identity/react/<path:asset_path>",
             IdentityAssetView.as_view(assets=frozen_assets),
         ),
     ]

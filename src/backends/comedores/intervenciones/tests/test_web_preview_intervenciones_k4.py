@@ -86,10 +86,10 @@ def test_every_entry_serves_the_frozen_index_with_its_native_permission(datos):
     for url, permiso in entradas.items():
         respuesta = _cliente(f"u_{abs(hash(url))}", permiso).get(url)
         assert respuesta.status_code == 200, url
-        assert '/intervenciones/react/assets/app-1.js"' in respuesta.content.decode()
+        assert '/comedores/react/assets/app-1.js"' in respuesta.content.decode()
         assert "no-store" in respuesta["Cache-Control"]
         assert "csrftoken" in respuesta.cookies
-    asset = Client().get("/intervenciones/react/assets/app-1.js")
+    asset = Client().get("/comedores/react/assets/app-1.js")
     assert asset.content == b"console.log(1);"
 
 

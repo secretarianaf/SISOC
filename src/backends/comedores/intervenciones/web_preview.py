@@ -6,7 +6,7 @@ the lookups that are a 404 for the native page. Only then a GET returns the
 frozen React ``index.html``, which loads its data from
 ``/api/web/comedores/intervenciones/``. The subtype AJAX, the document upload and every
 POST stay native. Assets are served under
-the backend's own prefix ``/intervenciones/react/``.
+the backend's own prefix ``/comedores/react/``.
 """
 
 from pathlib import Path
@@ -33,7 +33,7 @@ from intervenciones.views import (
     IntervencionUpdateView,
 )
 
-PUBLIC_ASSETS = "/intervenciones/react/assets/"
+PUBLIC_ASSETS = "/comedores/react/assets/"
 VER = ["intervenciones.view_intervencion"]
 ALTA = ["intervenciones.add_intervencion"]
 EDICION = ["intervenciones.change_intervencion"]
@@ -121,7 +121,7 @@ def intervenciones_preview_patterns(build_directory):
             entry(BajaEntry, BAJA),
         ),
         path(
-            "intervenciones/react/<path:asset_path>",
+            "comedores/react/<path:asset_path>",
             ReactAssetView.as_view(assets=_frozen_assets(root)),
         ),
     ]

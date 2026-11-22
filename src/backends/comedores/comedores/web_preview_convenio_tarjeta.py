@@ -7,7 +7,7 @@ redirect). Only then a GET returns the frozen React ``index.html``, which loads
 its data from ``/api/web/comedores/comedores/<pk>/convenio-pnud/``. Unlike the
 native GET, the entry does not create the empty convenio record: the React page
 does it when it reads the API, as the native page did. Assets are served under
-``/convenio-tarjeta/react/``.
+``/comedores/react/``.
 
 The card holder entry (``comedores/<pk>/responsable-tarjeta/editar``) keeps the
 native route decorator (``auth.role_tecnico_comedor``) and the native dispatch:
@@ -36,7 +36,7 @@ from comedores.web_preview_catalogos import (
     _index,
 )
 
-PUBLIC_ASSETS = "/convenio-tarjeta/react/assets/"
+PUBLIC_ASSETS = "/comedores/react/assets/"
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -84,7 +84,7 @@ def convenio_tarjeta_preview_patterns(build_directory):
             ),
         ),
         path(
-            "convenio-tarjeta/react/<path:asset_path>",
+            "comedores/react/<path:asset_path>",
             ReactAssetView.as_view(assets=_frozen_assets(root)),
         ),
     ]

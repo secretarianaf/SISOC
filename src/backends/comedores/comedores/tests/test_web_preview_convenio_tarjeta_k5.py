@@ -68,11 +68,11 @@ def test_the_entry_serves_the_frozen_index_without_creating_the_record():
     )
 
     assert respuesta.status_code == 200
-    assert '/convenio-tarjeta/react/assets/app-1.js"' in respuesta.content.decode()
+    assert '/comedores/react/assets/app-1.js"' in respuesta.content.decode()
     assert "no-store" in respuesta["Cache-Control"]
     assert "csrftoken" in respuesta.cookies
     assert not ComedorDatosConvenioPnud.objects.exists()
-    asset = Client().get("/convenio-tarjeta/react/assets/app-1.js")
+    asset = Client().get("/comedores/react/assets/app-1.js")
     assert asset.content == b"console.log(1);"
 
 
@@ -140,7 +140,7 @@ def test_the_tarjeta_entry_serves_the_frozen_index_after_the_native_guards():
     respuesta = tecnico.get(f"/comedores/{comedor.pk}/responsable-tarjeta/editar")
 
     assert respuesta.status_code == 200
-    assert '/convenio-tarjeta/react/assets/app-1.js"' in respuesta.content.decode()
+    assert '/comedores/react/assets/app-1.js"' in respuesta.content.decode()
     assert "csrftoken" in respuesta.cookies
 
 

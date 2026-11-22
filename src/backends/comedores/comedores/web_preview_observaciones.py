@@ -6,7 +6,7 @@ its scoped lookups: a comedor or observation outside the user's scope is the
 native 404 (and a missing id on the detail page, a 500 natively, is a 404).
 Only then a GET returns the frozen React ``index.html``, which loads its data
 from ``/api/web/comedores/observaciones/``. Every POST stays native. Assets are
-served under the backend's own prefix ``/observaciones/react/``.
+served under the backend's own prefix ``/comedores/react/``.
 """
 
 from pathlib import Path
@@ -32,7 +32,7 @@ from comedores.web_preview_catalogos import (
 )
 from core.decorators import permissions_any_required
 
-PUBLIC_ASSETS = "/observaciones/react/assets/"
+PUBLIC_ASSETS = "/comedores/react/assets/"
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -115,7 +115,7 @@ def observaciones_preview_patterns(build_directory):
             entry(BajaEntry, "comedores.delete_observacion"),
         ),
         path(
-            "observaciones/react/<path:asset_path>",
+            "comedores/react/<path:asset_path>",
             ReactAssetView.as_view(assets=_frozen_assets(root)),
         ),
     ]

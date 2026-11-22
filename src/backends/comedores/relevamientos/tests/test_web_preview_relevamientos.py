@@ -62,12 +62,9 @@ def test_list_and_detail_get_the_frozen_index():
     ):
         respuesta = client.get(url)
         assert respuesta.status_code == 200
-        assert (
-            '/comedores/react/relevamientos/assets/app-1.js"'
-            in respuesta.content.decode()
-        )
+        assert '/comedores/react/assets/app-1.js"' in respuesta.content.decode()
         assert "csrftoken" in respuesta.cookies
-    asset = client.get("/comedores/react/relevamientos/assets/app-1.js")
+    asset = client.get("/comedores/react/assets/app-1.js")
     assert asset.content == b"console.log(1);"
 
 
@@ -111,8 +108,6 @@ def test_the_baja_confirmation_gets_the_frozen_index_and_post_stays_native():
     assert client.get(f"{url[:-8]}9999/eliminar").status_code == 404
     respuesta = client.get(url)
     assert respuesta.status_code == 200
-    assert (
-        "/comedores/react/relevamientos/assets/app-1.js" in respuesta.content.decode()
-    )
+    assert "/comedores/react/assets/app-1.js" in respuesta.content.decode()
     assert client.post(url).status_code == 302
     assert client.get(url).status_code == 404

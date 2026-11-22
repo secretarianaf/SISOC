@@ -77,7 +77,6 @@ from comedores.services.filter_config import (
     TEXT_OPS,
 )
 
-
 COMEDOR_ADVANCED_FILTER = AdvancedFilterEngine(
     field_map=FIELD_MAP,
     field_types=FIELD_TYPES,
@@ -827,7 +826,8 @@ class ComedorService:
         return comedor
 
     @staticmethod
-    def delete_images(post):
+    def delete_images(post, comedor_id):
+        """Borra solo las imágenes marcadas que pertenecen al comedor indicado."""
         pattern = re.compile(r"^imagen_ciudadano-borrar-(\d+)$")
         imagenes_ids = []
         for key in post:
@@ -836,7 +836,9 @@ class ComedorService:
                 imagen_id = match.group(1)
                 imagenes_ids.append(imagen_id)
 
-        ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
+        ImagenComedor.objects.filter(
+            id__in=imagenes_ids, comedor_id=comedor_id
+        ).delete()
 
     @staticmethod
     def delete_legajo_photo(post, comedor_instance):

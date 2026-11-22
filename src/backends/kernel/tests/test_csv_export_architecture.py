@@ -3,7 +3,6 @@
 import re
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 CSV_POLICY_PATH = Path("src/backends/kernel/core/services/csv_export.py")
 CSV_INPUT_VALIDATOR_PATH = Path("src/backends/sisoc_core/insumos/validators.py")
@@ -38,6 +37,7 @@ def test_exportadores_csv_http_reutilizan_la_politica_central():
             "tests" in relative_path.parts
             or relative_path.name == "tests.py"
             or relative_path.name.startswith("test_")
+            or ".test." in relative_path.name
             or "migrations" in relative_path.parts
         ):
             continue

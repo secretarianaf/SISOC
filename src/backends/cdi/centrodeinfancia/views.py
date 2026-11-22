@@ -118,7 +118,6 @@ from centrodeinfancia.services_user_provisioning import (
 from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
 from catalogo_intervenciones.api import programa_aliases_cdi
 
-
 CDI_LIST_HEADERS = [
     {"title": "Nombre"},
     {"title": "Organización"},
@@ -2280,7 +2279,9 @@ class IntervencionCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class ObservacionCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
+class ObservacionCentroInfanciaCreateView(
+    _AuditoriaSoloLecturaMixin, LoginRequiredMixin, CreateView
+):
     model = ObservacionCentroInfancia
     form_class = ObservacionCentroInfanciaForm
     template_name = "centrodeinfancia/observacion_form.html"
@@ -2319,7 +2320,9 @@ class ObservacionCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
         return _observaciones_cdi_queryset_scoped(self.request.user)
 
 
-class ObservacionCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
+class ObservacionCentroInfanciaUpdateView(
+    _AuditoriaSoloLecturaMixin, LoginRequiredMixin, UpdateView
+):
     model = ObservacionCentroInfancia
     form_class = ObservacionCentroInfanciaForm
     template_name = "centrodeinfancia/observacion_form.html"
@@ -2345,6 +2348,7 @@ class ObservacionCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class ObservacionCentroInfanciaDeleteView(
+    _AuditoriaSoloLecturaMixin,
     SoftDeleteDeleteViewMixin,
     LoginRequiredMixin,
     DeleteView,

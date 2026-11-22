@@ -11,6 +11,8 @@ backend_urlpatterns = [
     # API del front v2 (/v2/celiaquia/). Vive en el backend y no en
     # config/urls.py, igual que /api/ticketera/ y /api/datacalle/.
     path("api/celiaquia/", include("celiaquia.api_urls")),
+    # API web de las pantallas React (G1 v1, celiaquia_runtime.web_api_urls).
+    path("api/web/celiaquia/", include("celiaquia_runtime.web_api_urls")),
 ]
 
 # El admin queda fuera de backend_urlpatterns: settings_all ya lo monta completo.

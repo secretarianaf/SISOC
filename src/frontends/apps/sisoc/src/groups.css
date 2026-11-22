@@ -1,0 +1,4 @@
+/* Presentation comes from the original group and list stylesheets. */
+.group-dual-listbox .selector a[aria-disabled="true"] {
+  cursor: default;
+}

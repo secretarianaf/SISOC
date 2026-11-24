@@ -14,13 +14,7 @@ stay the native ones:
 A native redirect becomes ``{"ok": true, "redirect": ...}``; a rejected form returns
 400 with the page's form data.
 
-Native quirks kept on purpose:
-
-* The create page renders only ``mes``, ``anio`` and ``observaciones`` while its form
-  also requires ``linea_programatica`` and ``estado``, so a POST made from the page is
-  always rejected, and the native view answers with a new blank form and no errors
-  (it replaces the bound form in its context). The 400 carries that same blank form.
-* An unknown comedor on a valid create POST is a native 500; it is a 404 here.
+An unknown comedor on a valid create POST is a native 500; it is a 404 here.
 """
 
 from django.http import Http404
@@ -131,12 +125,14 @@ class RendicionNuevaWebView(_FormularioWebView):
             "campos": {
                 "mes": _campo(form, "mes"),
                 "anio": _campo(form, "anio"),
+                "linea_programatica": _campo(form, "linea_programatica"),
+                "estado": _campo(form, "estado"),
                 "observaciones": _campo(form, "observaciones"),
                 "nombre": _campo(adjunta, "nombre"),
                 "archivo": _campo(adjunta, "archivo"),
             },
-            "errors": {},
-            "non_field_errors": [],
+            "errors": _errores(form),
+            "non_field_errors": [str(e) for e in form.non_field_errors()],
             "urls": {
                 "listado": reverse("rendicioncuentasmensual_list", args=[comedor_id])
             },

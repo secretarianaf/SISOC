@@ -13,8 +13,7 @@ import type { RouteDefinition } from "./types";
  * (edit the general data) and `rendicioncuentasmensual_confirm_delete.html` (the shared
  * `delete_confirm.html`). Data and POSTs go through `/api/web/comedores/rendicioncuentasmensual/`, which
  * runs the native views; a confirmed redirect is a full-page navigation like the native 302.
- * Native quirk kept: the create page never saves (its form also requires two fields the page does not
- * draw), so a rejected POST gives back a blank form without errors.
+ * Create options and validation come from the bound Django form.
  */
 type Message = { message: string; level: "success" | "error" | "warning" | "info" };
 type Choice = { value: string; label: string };
@@ -23,7 +22,7 @@ type Campo = { name: string; label: string; required: boolean; value: string; ch
 type FormBase = { errors: Record<string, FieldError[]>; non_field_errors: string[]; messages: Message[] };
 export type RendicionNuevaData = FormBase & {
   comedor_id: number; titulo: string; urls: { listado: string };
-  campos: Record<"mes" | "anio" | "observaciones" | "nombre" | "archivo", Campo>;
+  campos: Record<"mes" | "anio" | "linea_programatica" | "estado" | "observaciones" | "nombre" | "archivo", Campo>;
 };
 export type RendicionEditarData = FormBase & {
   id: number; numero: string; urls: { detalle: string };
@@ -46,7 +45,7 @@ const baseValid = (v: Record<string, unknown>) => record(v.errors) &&
 
 export function nuevaValid(v: unknown): v is RendicionNuevaData {
   return record(v) && baseValid(v) && integer(v.comedor_id) && text(v.titulo) && record(v.urls) && internal(v.urls.listado) &&
-    camposValid(v.campos, ["mes", "anio", "observaciones", "nombre", "archivo"]);
+    camposValid(v.campos, ["mes", "anio", "linea_programatica", "estado", "observaciones", "nombre", "archivo"]);
 }
 
 export function editarValid(v: unknown): v is RendicionEditarData {
@@ -149,7 +148,7 @@ function NuevaForm({ data, endpoint }: { data: RendicionNuevaData; endpoint: str
   // Each row has its own key, so clearing a row (or the whole list) remounts its inputs empty.
   const [rows, setRows] = useState({ keys: [0], next: 1 });
   const form = useSubmit(nuevaValid, data, (element) => new FormData(element), endpoint, () => setRows((s) => ({ keys: [s.next], next: s.next + 1 })));
-  const { campos, errors } = form.data;
+  const { campos, errors, non_field_errors: general } = form.data;
   const errorsOf = (name: string) => errors[name] ?? [];
   // `rendicioncuentasmensual_form.js`: add clones the last row empty; remove drops the last, or clears the only one.
   const add = () => setRows((s) => ({ keys: [...s.keys, s.next], next: s.next + 1 }));
@@ -160,6 +159,7 @@ function NuevaForm({ data, endpoint }: { data: RendicionNuevaData; endpoint: str
       <h2 className="mb-4">{form.data.titulo} Seguimiento mensual</h2>
       <form method="post" encType="multipart/form-data" onSubmit={form.submit} key={form.revision}>
         {csrf()}
+        {general.length > 0 && <ul role="alert" className="errorlist nonfield">{general.map((m, i) => <li key={i}>{m}</li>)}</ul>}
         <div className="row">
           <div className="col-md-6">
             <div className="card">
@@ -167,6 +167,8 @@ function NuevaForm({ data, endpoint }: { data: RendicionNuevaData; endpoint: str
               <div className="card-body">
                 <Field campo={campos.mes} kind="select" errors={errorsOf("mes")} />
                 <Field campo={campos.anio} kind="number" errors={errorsOf("anio")} />
+                <Field campo={campos.linea_programatica} kind="select" errors={errorsOf("linea_programatica")} />
+                <Field campo={campos.estado} kind="select" errors={errorsOf("estado")} />
                 <Field campo={campos.observaciones} kind="textarea" errors={errorsOf("observaciones")} />
               </div>
             </div>

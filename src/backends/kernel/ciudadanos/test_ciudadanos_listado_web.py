@@ -211,7 +211,7 @@ def test_exportar_e_importar_siguen_los_permisos_nativos():
         {
             "label": "IMPORTACION MASIVA",
             "url": "/ciudadanos/importacion-masiva/",
-            "class": "btn btn-lg btn-export-csv",
+            "class": "btn btn-lg btn-import-xlsx",
             "title": "Importar ciudadanos desde Excel",
         }
     ]

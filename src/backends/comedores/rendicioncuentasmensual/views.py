@@ -990,7 +990,6 @@ class RendicionCuentaMensualCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         comedor_id = self.kwargs.get("comedor_id")
         context["comedorid"] = comedor_id
-        context["form"] = RendicionCuentaMensualForm()
         context["documentacion_adjunta_form"] = DocumentacionAdjuntaForm()
         return context
 

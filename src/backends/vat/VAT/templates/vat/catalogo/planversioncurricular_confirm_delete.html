@@ -19,7 +19,7 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        ¿Eliminar el plan de estudio <strong>{{ plan.nombre }} ({{ plan.modalidad_cursada.nombre }})</strong>?
+                        ¿Eliminar el plan de estudio <strong>{{ planversioncurricular.nombre }} ({{ planversioncurricular.modalidad_cursada.nombre }})</strong>?
                     </p>
                 </div>
                 <div class="card-footer">
@@ -28,7 +28,7 @@
                         <button type="submit" class="btn btn-danger">
                             <i class="fas fa-trash"></i> Eliminar
                         </button>
-                        <a href="{% url 'vat_planversioncurricular_detail' plan.id %}"
+                        <a href="{% url 'vat_planversioncurricular_detail' planversioncurricular.pk %}"
                            class="btn btn-secondary">Cancelar</a>
                     </form>
                 </div>

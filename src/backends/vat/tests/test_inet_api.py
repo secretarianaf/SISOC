@@ -196,7 +196,7 @@ def test_commission_counters_match_and_are_not_grouped(api, data, superuser):
             estado=estado,
         )
 
-    response = api.get("/api/inet/comisiones/")
+    response = api.get("/api/web/vat/comisiones/")
 
     assert response.status_code == 200
     counters = {

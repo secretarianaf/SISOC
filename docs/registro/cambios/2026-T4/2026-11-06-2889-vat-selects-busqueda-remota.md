@@ -34,6 +34,14 @@ Quedan fuera de este cambio, y siguen abiertos en #2889: `/api/inet/comisiones/`
 
 No hay migraciones ni cambios de datos.
 
+## Pantallas React (#2785)
+
+Los cuatro formularios también tienen versión React en `apps/sisoc`, activa por defecto en QA, HML y PRD. Su API web proyecta el form nativo, así que después del cambio el campo llega solo con la opción elegida y con los atributos `data-ajax--*`. Sin búsqueda remota en React, el select quedaba sin opciones para elegir.
+
+- `src/frontends/apps/sisoc/src/routes/select2.tsx`: opción `remote` del `Select2` compartido. Reproduce el `ajax` que Select2 arma con `data-ajax--url`, `data-ajax--delay` y `data-minimum-input-length`: misma petición (`term`, `_type`, `q`), mismos mensajes en inglés y la opción elegida se conserva en el `<select>` oculto.
+- `src/frontends/apps/sisoc/src/routes/vatFormShared.tsx`: `Control` pasa `remote` cuando el campo trae `data-ajax--url`. Aplica a inscripción, inscripción a oferta, voucher y resultado de evaluación.
+- Pruebas: `src/frontends/apps/sisoc/src/routes/select2.test.tsx` (mínimo de caracteres, petición, elección, sin resultados y error) y `src/backends/vat/tests/test_web_vat_voucher_forms_v01.py` (la API manda solo la opción elegida y la URL de búsqueda).
+
 ## Verificación
 
 Validado en local, en un contenedor efímero con SQLite y sin datos de PRD:

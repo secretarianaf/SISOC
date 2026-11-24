@@ -104,8 +104,17 @@ def test_voucher_form_projects_the_native_widgets_and_the_initial_citizen(
     assert campos["ciudadano"]["value"] == str(ciudadano.pk)
     assert "select2" in campos["ciudadano"]["attrs"]["class"]
     assert campos["ciudadano"]["attrs"]["data-placeholder"] == (
-        "Seleccionar ciudadano..."
+        "Buscar por DNI o pasaporte..."
     )
+    # #2889: solo viaja el ciudadano elegido; el resto lo busca el select remoto.
+    assert [o["value"] for o in campos["ciudadano"]["choices"]] == [
+        "",
+        str(ciudadano.pk),
+    ]
+    assert campos["ciudadano"]["attrs"]["data-ajax--url"] == (
+        "/vat/ajax/ciudadanos-buscar/"
+    )
+    assert campos["ciudadano"]["attrs"]["data-minimum-input-length"] == "6"
     assert [o["value"] for o in campos["programa"]["choices"]] == [
         "",
         str(programa.pk),

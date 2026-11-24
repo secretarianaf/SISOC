@@ -4,7 +4,7 @@ import { leerCookie } from "@sisoc/api";
 import { prerequisiteFromForbidden } from "../webAccess";
 import { postForm, record, text, type MainState } from "./MainFrame";
 import { resetAfterRejectedPost } from "./nativeParity";
-import Select2 from "./select2";
+import Select2, { type RemoteSource } from "./select2";
 import { bool, vatNavigation } from "./vatShared";
 
 /**
@@ -28,6 +28,13 @@ export const fieldValid = (f: unknown) => record(f) && text(f.name) && text(f.id
 
 const isSelect2 = (f: Field) => (f.attrs.class ?? "").split(" ").includes("select2");
 
+/** `data-ajax--*` of a remote widget (`BusquedaRemotaFormMixin`, #2889): its choices are only the chosen value. */
+export const remoteSource = (f: Field): RemoteSource | undefined => (f.attrs["data-ajax--url"] ? {
+  url: f.attrs["data-ajax--url"],
+  delay: Number(f.attrs["data-ajax--delay"] ?? 0) || 0,
+  minimumInputLength: Number(f.attrs["data-minimum-input-length"] ?? 0) || 0,
+} : undefined);
+
 /** Widget attributes as Django prints them; `class`, `required` and the `data-*` of the widget are kept. */
 function widgetProps(f: Field) {
   const { class: className, required, rows, cols, ...rest } = f.attrs;
@@ -44,7 +51,8 @@ export function Control({ f, state, set }: { f: Field; state: FormValues; set: (
     return <Select2 id={f.id} name={f.name} choices={f.choices} value={[String(state[f.name] ?? "")]} onChange={(v) => set(f.name, v[0] ?? "")}
       placeholder={f.attrs["data-placeholder"] ?? f.choices.find((c) => c.value === "")?.label}
       selectClassName={f.attrs.class ?? ""} selectProps={{ required: f.attrs.required !== undefined ? true : undefined, "data-width": f.attrs["data-width"] }}
-      hideEmptyChoice noResults="No results found" clearTrigger="mousedown" focusMarker="container" termHandling="reset" enterOnSelected="toggle" outsideClick="dropdown" />;
+      hideEmptyChoice noResults="No results found" clearTrigger="mousedown" focusMarker="container" termHandling="reset" enterOnSelected="toggle" outsideClick="dropdown"
+      remote={remoteSource(f)} />;
   }
   if (f.tag === "radio") {
     return <>{f.choices.map((c) => <label key={c.value} className="vp-radio-option d-flex align-items-start gap-2 mb-0" htmlFor={c.id}>

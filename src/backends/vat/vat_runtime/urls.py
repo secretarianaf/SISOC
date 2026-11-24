@@ -6,11 +6,16 @@ from drf_spectacular.views import SpectacularRedocView, SpectacularSwaggerView
 
 from config.backend_urls import urlpatterns_de_backend
 from config.views import VatSpectacularAPIView
+from core.react_activation import react_preview_patterns
 
 backend_urlpatterns = [
+    # Entradas React de las pantallas migradas, solo con el flag activo.
+    # Antes de las nativas: el GET llega a la entrada; el resto, a la nativa.
+    *react_preview_patterns("vat"),
     path("", include("VAT.urls")),
     path("api/vat/", include("VAT.api_urls")),
-    path("api/inet/", include("VAT.api_inet_urls")),
+    # API web G1 v1 del frontend INET (core.web_gate).
+    path("api/web/vat/", include("VAT.web_api_urls")),
     # Schema y docs OpenAPI de la API de VAT (antes en src/backends/config/urls.py).
     path("api/schema/VAT/", VatSpectacularAPIView.as_view(), name="schema-vat"),
     path(

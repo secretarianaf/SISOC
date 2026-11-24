@@ -34,11 +34,19 @@ def test_rutas_publicas_ocr_conservan_prefijo_y_nombres():
         "ocr_upload",
         "ocr_job_detail",
         "ocr_document_download",
+        "ocr_web_carga",
+        "ocr_web_lote_crear",
+        "ocr_web_lote",
     }
     assert all(
-        route["regex"].startswith("^ocr/") for route in recolectar(backend_urlpatterns)
+        route["regex"].startswith(("^ocr/", "^api/web/ocr/"))
+        for route in recolectar(backend_urlpatterns)
     )
-    assert load_backends_registry()["ocr"]["url_prefixes"] == ["ocr/", "admin/ocr/"]
+    assert load_backends_registry()["ocr"]["url_prefixes"] == [
+        "ocr/",
+        "api/web/ocr/",
+        "admin/ocr/",
+    ]
 
 
 @pytest.mark.parametrize(

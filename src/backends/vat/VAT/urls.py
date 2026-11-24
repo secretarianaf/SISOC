@@ -161,7 +161,6 @@ from VAT.views.evaluacion import (
 from VAT.views.reporte import ReporteInscriptosAsistenciasView
 from VAT.views.buscador_ciudadano import BuscadorCiudadanoView
 
-
 urlpatterns = [
     path(
         "vat/reportes/inscripciones-asistencias/",
@@ -313,7 +312,11 @@ urlpatterns = [
     path(
         "vat/cursos/comisiones/sesiones/<int:sesion_pk>/asistencia/",
         permissions_any_required(
-            ["VAT.add_asistenciasesion", "VAT.change_asistenciasesion"]
+            [
+                "VAT.add_asistenciasesion",
+                "VAT.change_asistenciasesion",
+                "auth.role_inet_asistencia",
+            ]
         )(AsistenciaSesionCursoView.as_view()),
         name="vat_asistencia_sesion_curso",
     ),
@@ -344,16 +347,16 @@ urlpatterns = [
     # feature sin tocar users/bootstrap/groups_seed.py.
     path(
         "vat/cursos/comisiones/<int:pk>/resultados/",
-        permissions_any_required(["VAT.change_inscripcion"])(
-            ComisionCursoResultadosView.as_view()
-        ),
+        permissions_any_required(
+            ["VAT.change_inscripcion", "auth.role_inet_asistencia"]
+        )(ComisionCursoResultadosView.as_view()),
         name="vat_comision_curso_resultados",
     ),
     path(
         "vat/cursos/comisiones/<int:pk>/profesores/buscar/",
-        permissions_any_required(["VAT.change_inscripcion"])(
-            ProfesorCentroBuscarView.as_view()
-        ),
+        permissions_any_required(
+            ["VAT.change_inscripcion", "auth.role_inet_asistencia"]
+        )(ProfesorCentroBuscarView.as_view()),
         name="vat_profesor_centro_buscar",
     ),
     path(

@@ -1,0 +1,1635 @@
+{
+  "schema_version": 1,
+  "status": "E2_planning_cases_not_executable_or_accepted",
+  "source_sha": "59a8f797688c9e762d5a4e9eaa187698ffade8aa",
+  "reference_sha_accepted": null,
+  "candidate_sha": null,
+  "legacy_base_url": null,
+  "candidate_base_url": null,
+  "runtime_authorization": "not_authorized_E2",
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "id": "mobile",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "environment": {
+    "locale": "es-AR",
+    "timezone": "America/Argentina/Buenos_Aires",
+    "browser": "same pinned build and OS for both versions",
+    "fonts": "same fonts/assets loaded; do not compare fallbacks",
+    "theme": "per source screen; login/reset own layout, protected main/base separately"
+  },
+  "fixtures": {
+    "created": false,
+    "roles": [
+      "all_pending",
+      "anonymous",
+      "inactive",
+      "initial_expired",
+      "optional_round",
+      "optional_then_mandatory",
+      "password_pending",
+      "postponable_round",
+      "profile_and_survey",
+      "profile_pending",
+      "ready",
+      "survey_manager_pending",
+      "survey_pending",
+      "web_disabled",
+      "web_disabled_cookie"
+    ],
+    "policy": "Synthetic isolated account/session/mail outbox/round fixtures, independent reference/candidate datasets; no real emails, passwords, tokens or survey answers in screenshots/logs. Mask password inputs normally, never dump auth payload. Resolve IDs/tokens inside authorized future test only.",
+    "secret_values_in_manifest": false,
+    "conditional_rounds": "cover optional earlier deadline followed by mandatory, postergable, closed, expired, already answered, not segmented and anonymous response",
+    "role_definitions": {
+      "anonymous": {
+        "session": "absent",
+        "account_required": false
+      },
+      "ready": {
+        "account": "active, acceso_web, password/profile/survey resolved"
+      },
+      "inactive": {
+        "account": "inactive synthetic account; no pre-existing session"
+      },
+      "web_disabled": {
+        "account": "active synthetic account with acceso_web=False; no pre-existing session"
+      },
+      "web_disabled_cookie": {
+        "account": "active, acceso_web=False",
+        "session": "existing"
+      },
+      "initial_expired": {
+        "account": "active, acceso_web=True, must_change_password=True, initial_password_expires_at before frozen clock"
+      },
+      "password_pending": {
+        "account": "active, acceso_web=True, must_change_password=True, initial password not expired"
+      },
+      "profile_pending": {
+        "account": "active, acceso_web=True, password resolved, profile confirmation pending"
+      },
+      "all_pending": {
+        "account": "active, acceso_web=True, password/profile/mandatory survey pending"
+      },
+      "profile_and_survey": {
+        "account": "active, acceso_web=True, password resolved, profile and mandatory survey pending"
+      },
+      "survey_pending": {
+        "account": "active, acceso_web=True, password/profile resolved, segmented mandatory round pending",
+        "survey_admin_permissions": []
+      },
+      "optional_then_mandatory": {
+        "account": "higher requirements resolved",
+        "rounds": "segmented optional with earlier deadline, mandatory with later deadline"
+      },
+      "optional_round": {
+        "account": "higher requirements resolved",
+        "rounds": "segmented optional open round"
+      },
+      "postponable_round": {
+        "account": "higher requirements resolved",
+        "rounds": "segmented postergable open round"
+      },
+      "survey_manager_pending": {
+        "account": "higher requirements resolved, mandatory round pending",
+        "effective_permissions": [
+          "encuestas.change_encuesta",
+          "encuestas.view_encuesta"
+        ],
+        "permission_evaluation": "Change exception uses user.has_perm; route action permission still checked"
+      }
+    },
+    "reset_subject": "Separate active synthetic account and test-only mailbox; never send real email; temporary token generated only in authorized future test, never saved to artifacts."
+  },
+  "visual_cases": [
+    {
+      "id": "login_root",
+      "activation_group": "ID-A",
+      "legacy_url": "/",
+      "candidate_public_url": "/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Login layout/header/footer/assets/focus and recovery link; no protected shell substitution",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Login layout/header/footer/assets/focus and recovery link; no protected shell substitution",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "login_alias",
+      "activation_group": "ID-A",
+      "legacy_url": "/login/",
+      "candidate_public_url": "/login/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Same login state at explicit alias",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Same login state at explicit alias",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "login_required_fields",
+      "activation_group": "ID-A",
+      "legacy_url": "/login/",
+      "candidate_public_url": "/login/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Submit empty/whitespace fields; same errors, no session",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Submit empty/whitespace fields; same errors, no session",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "login_bad_password",
+      "activation_group": "ID-A",
+      "legacy_url": "/login/",
+      "candidate_public_url": "/login/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Invalid synthetic credentials; same general message, username retained, password cleared",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Invalid synthetic credentials; same general message, username retained, password cleared",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "login_inactive",
+      "activation_group": "ID-A",
+      "legacy_url": "/login/",
+      "candidate_public_url": "/login/",
+      "role": "inactive",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Inactive synthetic account is rejected by existing form",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Inactive synthetic account is rejected by existing form",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "login_web_disabled",
+      "activation_group": "ID-A",
+      "legacy_url": "/login/",
+      "candidate_public_url": "/login/",
+      "role": "web_disabled",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Valid credentials but web access disabled; same validation message",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Valid credentials but web access disabled; same validation message",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "login_initial_expired",
+      "activation_group": "ID-A",
+      "legacy_url": "/login/",
+      "candidate_public_url": "/login/",
+      "role": "initial_expired",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Initial password expired and must_change flag; same rejection and remediation text",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Initial password expired and must_change flag; same rejection and remediation text",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "login_success",
+      "activation_group": "ID-A",
+      "legacy_url": "/login/",
+      "candidate_public_url": "/login/",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Valid synthetic login; session/CSRF rotation and safe target, no token-login shortcut",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Valid synthetic login; session/CSRF rotation and safe target, no token-login shortcut",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "login_safe_next",
+      "activation_group": "ID-A",
+      "legacy_url": "/login/?next=/insumos/",
+      "candidate_public_url": "/login/?next=/insumos/",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Safe destination preserved through current checks; no replay of prior POST",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Safe destination preserved through current checks; no replay of prior POST",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "login_unsafe_next",
+      "activation_group": "ID-A",
+      "legacy_url": "/login/?next=https://external.invalid/",
+      "candidate_public_url": "/login/?next=https://external.invalid/",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "External destination rejected according to LoginView; fallback inicio",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "External destination rejected according to LoginView; fallback inicio",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "login_authenticated",
+      "activation_group": "ID-A",
+      "legacy_url": "/login/",
+      "candidate_public_url": "/login/",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Authenticated redirect consistent with current LoginView",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Authenticated redirect consistent with current LoginView",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "login_restricted_cookie",
+      "activation_group": "ID-A",
+      "legacy_url": "/login/",
+      "candidate_public_url": "/login/",
+      "role": "web_disabled_cookie",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Existing restricted cookie keeps HTML access denial; public entry does not bypass it",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Existing restricted cookie keeps HTML access denial; public entry does not bypass it",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "logout_no_slash",
+      "activation_group": "ID-A",
+      "legacy_url": "/logout",
+      "candidate_public_url": "/logout",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "POST CSRF logout then login UI; GET does not log out by navigation",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "POST CSRF logout then login UI; GET does not log out by navigation",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "logout_slash",
+      "activation_group": "ID-A",
+      "legacy_url": "/logout/",
+      "candidate_public_url": "/logout/",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Standard slash alias POST then login UI; no private stale content on Back",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Standard slash alias POST then login UI; no private stale content on Back",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "logout_pending_requirements",
+      "activation_group": "ID-A",
+      "legacy_url": "/logout",
+      "candidate_public_url": "/logout",
+      "role": "all_pending",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Logout allowed to leave restricted session, current destination and CSRF",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Logout allowed to leave restricted session, current destination and CSRF",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "reset_request",
+      "activation_group": "ID-B",
+      "legacy_url": "/password_reset/",
+      "candidate_public_url": "/password_reset/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Username/email layout/labels and return link identical",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Username/email layout/labels and return link identical",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "reset_request_invalid",
+      "activation_group": "ID-B",
+      "legacy_url": "/password_reset/",
+      "candidate_public_url": "/password_reset/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Required and malformed email errors identical, no email send",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Required and malformed email errors identical, no email send",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "reset_request_match",
+      "activation_group": "ID-B",
+      "legacy_url": "/password_reset/",
+      "candidate_public_url": "/password_reset/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Valid syntax matching synthetic active account reaches done; inspect synthetic outbox only",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Valid syntax matching synthetic active account reaches done; inspect synthetic outbox only",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "reset_request_mismatch",
+      "activation_group": "ID-B",
+      "legacy_url": "/password_reset/",
+      "candidate_public_url": "/password_reset/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Valid syntax nonmatching account reaches same done; no account enumeration in response",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Valid syntax nonmatching account reaches same done; no account enumeration in response",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "reset_done",
+      "activation_group": "ID-B",
+      "legacy_url": "/password_reset/done/",
+      "candidate_public_url": "/password_reset/done/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Current explanatory text; no claim actual email delivered",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Current explanatory text; no claim actual email delivered",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "reset_confirm_valid",
+      "activation_group": "ID-B",
+      "legacy_url": "/reset/{{synthetic_uid}}/{{synthetic_token}}/",
+      "candidate_public_url": "/reset/{{synthetic_uid}}/{{synthetic_token}}/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Core Django token handshake before React; clean set-password state, no token sent to static upstream",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Core Django token handshake before React; clean set-password state, no token sent to static upstream",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "reset_confirm_alias",
+      "activation_group": "ID-B",
+      "legacy_url": "/password/reset/confirm/{{synthetic_uid}}/{{synthetic_token}}/",
+      "candidate_public_url": "/password/reset/confirm/{{synthetic_uid}}/{{synthetic_token}}/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Custom alias has same validlink and form semantics",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Custom alias has same validlink and form semantics",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "reset_confirm_invalid",
+      "activation_group": "ID-B",
+      "legacy_url": "/reset/{{synthetic_uid}}/{{invalid_synthetic_token}}/",
+      "candidate_public_url": "/reset/{{synthetic_uid}}/{{invalid_synthetic_token}}/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Invalid/expired link message and request-new-link action, no editable reset form",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Invalid/expired link message and request-new-link action, no editable reset form",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "reset_password_mismatch",
+      "activation_group": "ID-B",
+      "legacy_url": "/reset/{{synthetic_uid}}/set-password/",
+      "candidate_public_url": "/reset/{{synthetic_uid}}/set-password/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "New passwords mismatch/validator errors; no password or token echoed",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "New passwords mismatch/validator errors; no password or token echoed",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "reset_confirm_direct_post",
+      "activation_group": "ID-B",
+      "legacy_url": "/reset/{{synthetic_uid}}/{{synthetic_token}}/",
+      "candidate_public_url": "/reset/{{synthetic_uid}}/{{synthetic_token}}/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Direct POST compatibility with valid synthetic token and actual CSRF, preserve effects and complete page",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Direct POST compatibility with valid synthetic token and actual CSRF, preserve effects and complete page",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "reset_complete",
+      "activation_group": "ID-B",
+      "legacy_url": "/reset/done/",
+      "candidate_public_url": "/reset/done/",
+      "role": "anonymous",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Same final page, no invented auto-login",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Same final page, no invented auto-login",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "anonymous_session"
+    },
+    {
+      "id": "password_required",
+      "activation_group": "ID-C",
+      "legacy_url": "/password/first-change/",
+      "candidate_public_url": "/password/first-change/",
+      "role": "password_pending",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Same form without old_password, help text and errors",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Same form without old_password, help text and errors",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "password_required_invalid",
+      "activation_group": "ID-C",
+      "legacy_url": "/password/first-change/",
+      "candidate_public_url": "/password/first-change/",
+      "role": "password_pending",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Invalid new pair; no changes, same error placement",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Invalid new pair; no changes, same error placement",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "password_required_success",
+      "activation_group": "ID-C",
+      "legacy_url": "/password/first-change/",
+      "candidate_public_url": "/password/first-change/",
+      "role": "password_pending",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Save; flags cleared, same session hash update and success notice, then profile/next requirement",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Save; flags cleared, same session hash update and success notice, then profile/next requirement",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "password_not_required",
+      "activation_group": "ID-C",
+      "legacy_url": "/password/first-change/",
+      "candidate_public_url": "/password/first-change/",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Same early redirect to inicio, no mutation",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Same early redirect to inicio, no mutation",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "account",
+      "activation_group": "ID-D",
+      "legacy_url": "/mi-cuenta/",
+      "candidate_public_url": "/mi-cuenta/",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Own initial values, layout/help and only allowed fields",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Own initial values, layout/help and only allowed fields",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "account_invalid",
+      "activation_group": "ID-D",
+      "legacy_url": "/mi-cuenta/",
+      "candidate_public_url": "/mi-cuenta/",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Invalid DNI/CUIL/email/required fields; same errors and no partial User/Profile save",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Invalid DNI/CUIL/email/required fields; same errors and no partial User/Profile save",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "account_success",
+      "activation_group": "ID-D",
+      "legacy_url": "/mi-cuenta/",
+      "candidate_public_url": "/mi-cuenta/",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Valid synthetic data save, same success feedback and self destination",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Valid synthetic data save, same success feedback and self destination",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "profile_confirmation",
+      "activation_group": "ID-D",
+      "legacy_url": "/mi-cuenta/confirmar/",
+      "candidate_public_url": "/mi-cuenta/confirmar/",
+      "role": "profile_pending",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Dedicated modal with same backdrop and no close; keyboard/focus/responsive",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Dedicated modal with same backdrop and no close; keyboard/focus/responsive",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "profile_confirmation_invalid",
+      "activation_group": "ID-D",
+      "legacy_url": "/mi-cuenta/confirmar/",
+      "candidate_public_url": "/mi-cuenta/confirmar/",
+      "role": "profile_pending",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Invalid data keeps required modal and no bypass",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Invalid data keeps required modal and no bypass",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "profile_confirmation_success",
+      "activation_group": "ID-D",
+      "legacy_url": "/mi-cuenta/confirmar/",
+      "candidate_public_url": "/mi-cuenta/confirmar/",
+      "role": "profile_pending",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Valid data atomically confirms; next requirement according to source",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Valid data atomically confirms; next requirement according to source",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "profile_already_confirmed",
+      "activation_group": "ID-D",
+      "legacy_url": "/mi-cuenta/confirmar/",
+      "candidate_public_url": "/mi-cuenta/confirmar/",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Same redirect without mutation",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Same redirect without mutation",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "password_voluntary",
+      "activation_group": "ID-E",
+      "legacy_url": "/password_change/",
+      "candidate_public_url": "/password_change/",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Framework route requires old_password and two new fields; baseline loader/version must be fixed first",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Framework route requires old_password and two new fields; baseline loader/version must be fixed first",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "password_voluntary_wrong_old",
+      "activation_group": "ID-E",
+      "legacy_url": "/password_change/",
+      "candidate_public_url": "/password_change/",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Wrong old_password rejected; password unchanged",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Wrong old_password rejected; password unchanged",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "password_voluntary_success",
+      "activation_group": "ID-E",
+      "legacy_url": "/password_change/",
+      "candidate_public_url": "/password_change/",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Valid change, current session behavior and done page from framework",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Valid change, current session behavior and done page from framework",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "password_voluntary_done",
+      "activation_group": "ID-E",
+      "legacy_url": "/password_change/done/",
+      "candidate_public_url": "/password_change/done/",
+      "role": "ready",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Same confirmation route; own baseline required, not admin exclusion",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Same confirmation route; own baseline required, not admin exclusion",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "priority_all_pending",
+      "activation_group": "ID-C",
+      "legacy_url": "/inicio/",
+      "candidate_public_url": "/inicio/",
+      "role": "all_pending",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Password before profile before mandatory survey; do not display survey prematurely",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Password before profile before mandatory survey; do not display survey prematurely",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "priority_profile_before_survey",
+      "activation_group": "ID-D",
+      "legacy_url": "/inicio/",
+      "candidate_public_url": "/inicio/",
+      "role": "profile_and_survey",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Confirm profile before survey; no redirect loop",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Confirm profile before survey; no redirect loop",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "survey_mandatory",
+      "activation_group": "EQ-A",
+      "legacy_url": "/inicio/",
+      "candidate_public_url": "/inicio/",
+      "role": "survey_pending",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Mandatory modal static backdrop/no ESC/no close/no postpone/discard, current labels/order",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Mandatory modal static backdrop/no ESC/no close/no postpone/discard, current labels/order",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "survey_optional_before_required",
+      "activation_group": "EQ-A",
+      "legacy_url": "/inicio/",
+      "candidate_public_url": "/inicio/",
+      "role": "optional_then_mandatory",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Earlier optional round remains first; respond/discard via service then mandatory, no automatic reordering",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Earlier optional round remains first; respond/discard via service then mandatory, no automatic reordering",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "survey_optional_discard",
+      "activation_group": "EQ-A",
+      "legacy_url": "/inicio/",
+      "candidate_public_url": "/inicio/",
+      "role": "optional_round",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Prefiero no responder allowed only for optional, same feedback/next",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Prefiero no responder allowed only for optional, same feedback/next",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "survey_postpone",
+      "activation_group": "EQ-A",
+      "legacy_url": "/inicio/",
+      "candidate_public_url": "/inicio/",
+      "role": "postponable_round",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Responder más tarde only postergable; interval behavior unchanged",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Responder más tarde only postergable; interval behavior unchanged",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "survey_multiple_and_condition",
+      "activation_group": "EQ-A",
+      "legacy_url": "/inicio/",
+      "candidate_public_url": "/inicio/",
+      "role": "survey_pending",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Repeated multi-select values survive POST; conditional fields hide/disable and backend validates visibility",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Repeated multi-select values survive POST; conditional fields hide/disable and backend validates visibility",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "survey_invalid",
+      "activation_group": "EQ-A",
+      "legacy_url": "/inicio/",
+      "candidate_public_url": "/inicio/",
+      "role": "survey_pending",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Required/invalid question gives existing error notice and modal reconstruction, no partial answers or invented draft",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Required/invalid question gives existing error notice and modal reconstruction, no partial answers or invented draft",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "survey_success",
+      "activation_group": "EQ-A",
+      "legacy_url": "/inicio/",
+      "candidate_public_url": "/inicio/",
+      "role": "survey_pending",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Exact thanks notice, compliance and next round/state; no duplicate submission on replay",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Exact thanks notice, compliance and next round/state; no duplicate submission on replay",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "survey_unavailable",
+      "activation_group": "EQ-A",
+      "legacy_url": "/inicio/",
+      "candidate_public_url": "/inicio/",
+      "role": "survey_pending",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "Round expires/closes between load/submit; same error/next, no save",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Round expires/closes between load/submit; same error/next, no save",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    },
+    {
+      "id": "survey_management_exception",
+      "activation_group": "EQ-A",
+      "legacy_url": "/encuestas/",
+      "candidate_public_url": "/encuestas/",
+      "role": "survey_manager_pending",
+      "steps": [
+        "instantiate_independent_synthetic_pair",
+        "prepare_preconditions",
+        "navigate_or_submit_as_case_requires",
+        "S1 permits management gate with effective Change and action permission; survey remains pending and source modal presentation is preserved, not silently dismissed",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "S1 permits management gate with effective Change and action permission; survey remains pending and source modal presentation is preserved, not silently dismissed",
+        "compare whole visible page/modal, labels, spacing, focus, errors and feedback"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "request_session_state": "authenticated_synthetic_session"
+    }
+  ],
+  "contract_cases": [
+    {
+      "id": "anonymous_login_csrf",
+      "expected": "Missing/invalid CSRF rejected before login; no reliance on anonymous SessionAuthentication",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "cookie_rotation",
+      "expected": "Login/session rotation and CSRF correctly followed without stale cookie or private cache",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "static_reset_boundary",
+      "expected": "Static upstream receives only clean index/assets, no reset uid/token/next/query/user cookie",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "reset_token_reused",
+      "expected": "Second use invalid after password changed; state reflects backend token checks",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "reset_revokes_drf_token",
+      "expected": "Custom reset explicit Token deletion and profile cleanup preserved; no assumption about untested signals",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "required_vs_voluntary_effects",
+      "expected": "Do not unify forms/flags/revocation; test their distinct backend effects",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "account_mass_assignment",
+      "expected": "Payload cannot alter another user/groups/permissions/scopes/delegation/flags",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "survey_no_admin_permission",
+      "expected": "Segmented ordinary user may respond without Change/View survey administration",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "survey_anonymity",
+      "expected": "Response user=None when anonymous, compliance separate; do not expose linkable answer identity",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "survey_atomic_validation",
+      "expected": "Later invalid question leaves no partial response",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "survey_concurrent_double_post",
+      "expected": "Backend compliance/transaction rejects duplicate; no automatic retry when response lost",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "survey_action_limits",
+      "expected": "Mandatory cannot postpone/discard; optional cannot postpone; nonsegmented/closed/expired reject",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "next_validation",
+      "expected": "Safe host/scheme and fallback according to source; no arbitrary redirect",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "session_expiry_during_submit",
+      "expected": "No replay after relogin; reconcile whether mutation happened",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "survey_higher_priority",
+      "expected": "No management exception may bypass disabled access/password/profile requirements",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "s1_no_action_permission",
+      "expected": "Change allows exception to survey block, never grants Publish/Approve/Export permission missing from route/service",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "s1_approve_without_change_pending",
+      "expected": "Approve without Change does not get legacy Change exception while mandatory survey pending",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "s1_approve_without_change_ready",
+      "expected": "When ready, keep original Approve permission; do not add Change universally to approval",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "s1_other_domain",
+      "expected": "Change survey does not allow Insumos/VAT/users/PAS business while blocked by survey",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "s1_state_not_ready",
+      "expected": "Access state stays mandatory_survey; no false ready or clearing compliance required",
+      "execution_status": "not_run"
+    }
+  ],
+  "baseline_approval": "pending",
+  "snapshot_policy": {
+    "unexpected_differences_allowed": 0,
+    "automatic_acceptance": false,
+    "human_acceptance_required": true
+  },
+  "candidate_entry_policy": "Scoped same public paths after authorized activation; static index request never contains uid/reset token/next/private query",
+  "framework_auth_supplement": "2026-10-27-2786-auth-framework-suplemento.json",
+  "pending_decision": null,
+  "summary": {
+    "visual_cases": 52,
+    "case_viewport_combinations": 104,
+    "contract_cases": 20,
+    "executed": 0
+  },
+  "selected_survey_management_policy": "S1"
+}

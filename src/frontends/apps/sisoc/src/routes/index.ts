@@ -60,6 +60,7 @@ import { comedorActividadesRoute } from "./comedorActividades";
 import { comedorCursosRoute } from "./comedorCursos";
 import { comedorDuplaAsignarRoute } from "./comedorDuplaAsignar";
 import { comedorNominaCrearRoute } from "./comedorNominaCrear";
+import { comedorNominaBajaRoute } from "./comedorNominaBaja";
 import { cdiReportesRoute } from "./cdiReportes";
 import { cdfActividadFormRoute } from "./cdfActividadForm";
 import { cdfActividadListRoute } from "./cdfActividadList";
@@ -289,6 +290,7 @@ export const ROUTES: RouteDefinition[] = [
   comedorCursosRoute,
   comedorDuplaAsignarRoute,
   comedorNominaCrearRoute,
+  comedorNominaBajaRoute,
   vatVouchersRoute,
   vatCatalogosRoute,
   vatCatalogosFormRoute,

@@ -2170,6 +2170,16 @@
   "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/admision/(?P<admision_pk>[0-9]+)/nomina/asistencia/\\Z"
  },
  {
+  "name": "comedores_web_nomina_baja_admision",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/admision/(?P<admision_pk>[0-9]+)/nomina/(?P<pk2>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_baja_directa",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/nomina/(?P<pk2>[0-9]+)/eliminar/\\Z"
+ },
+ {
   "name": "comedores_web_nomina_cambiar_estado",
   "namespace": "",
   "regex": "^api/web/comedores/comedores/nomina/(?P<pk>[0-9]+)/cambiar\\-estado/\\Z"

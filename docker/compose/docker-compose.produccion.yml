@@ -52,8 +52,11 @@ services:
     environment:
       TZ: America/Argentina/Buenos_Aires
       DJANGO_SERVICE_ROLE: health_urls_worker
+    # Renderiza templates: necesita el manifest de collectstatic (lo deja el
+    # migrador en static_root); sin él, {% static %} responde 500.
     volumes:
       - ./logs:/sisoc/logs
+      - ./static_root:/sisoc/static_root:ro
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
     restart: unless-stopped
 

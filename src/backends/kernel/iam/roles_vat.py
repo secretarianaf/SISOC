@@ -19,6 +19,7 @@ ROLE_REFERENTE_CENTRO_PERMISSIONS = (
     "auth.role_referentecentrovat",
     "auth.role_centroreferentevat",
 )
+ROLE_INET_ASISTENCIA_PERMISSION = "auth.role_inet_asistencia"
 VAT_VIEW_CENTRO_PERMISSION = "VAT.view_centro"
 
 
@@ -31,6 +32,12 @@ def is_vat_sse(user) -> bool:
         return False
     return bool(
         user.is_superuser or user_has_permission_code(user, ROLE_VAT_SSE_PERMISSION)
+    )
+
+
+def is_inet_asistencia(user) -> bool:
+    return bool(
+        user and user_has_permission_code(user, ROLE_INET_ASISTENCIA_PERMISSION)
     )
 
 
@@ -59,4 +66,9 @@ def is_vat_provincial(user) -> bool:
 def es_usuario_solo_vat(user: Any) -> bool:
     if not user or not user.is_authenticated or user.is_superuser:
         return False
-    return bool(is_vat_sse(user) or is_vat_referente(user) or is_vat_provincial(user))
+    return bool(
+        is_vat_sse(user)
+        or is_vat_referente(user)
+        or is_vat_provincial(user)
+        or is_inet_asistencia(user)
+    )

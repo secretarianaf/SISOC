@@ -3,40 +3,57 @@
 from collections import defaultdict
 from typing import Any
 
-from ciudadanos.detail_contributions import registrar_contribucion_detalle
+from django.urls import reverse
+
+from ciudadanos.detail_contributions import (
+    registrar_contribucion_detalle,
+    registrar_proyector_aporte,
+)
 from VAT.models import AsistenciaSesion, Inscripcion, InscripcionOferta, Voucher
 
 
-def obtener_contexto(  # pylint: disable=too-many-locals,too-many-branches
-    ciudadano: Any, logger: Any
-) -> dict[str, Any]:
+def consultar_datos(ciudadano: Any) -> tuple[list, list, list, list]:
+    """Consultas de VAT del ciudadano; propagan excepciones y evaluan los querysets."""
+    inscripciones = list(
+        Inscripcion.objects.filter(ciudadano=ciudadano)
+        .select_related("comision__oferta__centro", "programa")
+        .prefetch_related("comision__oferta__plan_curricular__titulos")
+        .order_by("-fecha_inscripcion")
+    )
+    vouchers = list(
+        Voucher.objects.filter(ciudadano=ciudadano)
+        .select_related("programa")
+        .order_by("-fecha_asignacion")
+    )
+    inscripciones_oferta = list(
+        InscripcionOferta.objects.filter(ciudadano=ciudadano)
+        .select_related("oferta__oferta__centro")
+        .prefetch_related("oferta__oferta__plan_curricular__titulos")
+        .order_by("-fecha_inscripcion")
+    )
+    asistencias = list(
+        AsistenciaSesion.objects.filter(inscripcion__ciudadano=ciudadano)
+        .select_related("inscripcion")
+        .order_by("-fecha_registro")
+    )
+    return inscripciones, vouchers, inscripciones_oferta, asistencias
+
+
+def obtener_contexto(ciudadano: Any, logger: Any) -> dict[str, Any]:
     try:
-        inscripciones = list(
-            Inscripcion.objects.filter(ciudadano=ciudadano)
-            .select_related("comision__oferta__centro", "programa")
-            .prefetch_related("comision__oferta__plan_curricular__titulos")
-            .order_by("-fecha_inscripcion")
-        )
-        vouchers = list(
-            Voucher.objects.filter(ciudadano=ciudadano)
-            .select_related("programa")
-            .order_by("-fecha_asignacion")
-        )
-        inscripciones_oferta = list(
-            InscripcionOferta.objects.filter(ciudadano=ciudadano)
-            .select_related("oferta__oferta__centro")
-            .prefetch_related("oferta__oferta__plan_curricular__titulos")
-            .order_by("-fecha_inscripcion")
-        )
-        asistencias = list(
-            AsistenciaSesion.objects.filter(inscripcion__ciudadano=ciudadano)
-            .select_related("inscripcion")
-            .order_by("-fecha_registro")
-        )
+        datos = consultar_datos(ciudadano)
     except Exception:
         logger.exception("Error cargando datos VAT para ciudadano %s", ciudadano.pk)
         return _contexto_vacio()
+    return armar_contexto(*datos)
 
+
+def armar_contexto(  # pylint: disable=too-many-locals,too-many-branches
+    inscripciones: list,
+    vouchers: list,
+    inscripciones_oferta: list,
+    asistencias: list,
+) -> dict[str, Any]:
     creditos_totales = sum(voucher.cantidad_inicial for voucher in vouchers)
     creditos_disponibles = sum(
         voucher.cantidad_disponible
@@ -142,7 +159,88 @@ def _contexto_vacio() -> dict[str, Any]:
     }
 
 
+def _titulo_curso(plan_curricular: Any) -> str:
+    """``plan_curricular.titulo_referencia.nombre|default:"-"`` del template."""
+    titulo = getattr(plan_curricular, "titulo_referencia", None)
+    return getattr(titulo, "nombre", "") or "-"
+
+
+def _comision(comision: Any) -> dict[str, Any]:
+    return {
+        "id": comision.pk,
+        "codigo": comision.codigo_comision,
+        "url": reverse("vat_comision_detail", args=[comision.pk]),
+    }
+
+
+def _voucher_badge(programa: dict[str, Any]) -> dict[str, str]:
+    if programa["voucher_activo"]:
+        return {"tipo": "activo", "estado_display": ""}
+    referencia = programa["voucher_referencia"]
+    if referencia:
+        return {
+            "tipo": "referencia",
+            "estado_display": str(referencia.get_estado_display()),
+        }
+    return {"tipo": "sin_voucher", "estado_display": ""}
+
+
+def _voucher(programa: dict[str, Any]) -> dict[str, Any] | None:
+    voucher = programa["voucher_activo"] or programa["voucher_referencia"]
+    if not voucher:
+        return None
+    return {
+        "id": voucher.pk,
+        "url": reverse("vat_voucher_detail", args=[voucher.pk]),
+        "estado_display": str(voucher.get_estado_display()),
+    }
+
+
+def _programa(programa: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "nombre": str(programa["programa"]),
+        "voucher_badge": _voucher_badge(programa),
+        "voucher": _voucher(programa),
+        "creditos_totales": programa["creditos_totales"],
+        "creditos_actuales": programa["creditos_actuales"],
+        "cursos_asignados": programa["cursos_asignados"],
+        "asistencias_presentes": programa["asistencias_presentes"],
+        "asistencias_registradas": programa["asistencias_registradas"],
+        "inscripciones": [
+            {
+                "curso_texto": _titulo_curso(
+                    inscripcion.comision.oferta.plan_curricular
+                ),
+                "comision": _comision(inscripcion.comision),
+                "estado_display": str(inscripcion.get_estado_display()),
+                "asistencias_presentes": inscripcion.asistencias_presentes,
+                "asistencias_registradas": inscripcion.asistencias_registradas,
+                "asistencia_porcentaje": inscripcion.asistencia_porcentaje,
+                "url": reverse("vat_inscripcion_detail", args=[inscripcion.pk]),
+            }
+            for inscripcion in programa["inscripciones"]
+        ],
+        "inscripciones_oferta": [
+            {
+                "curso_texto": _titulo_curso(item.oferta.oferta.plan_curricular),
+                # El template enlaza ``oferta.pk`` con ``vat_comision_detail``.
+                "comision": _comision(item.oferta),
+                "estado_display": str(item.get_estado_display()),
+                "url": reverse("vat_inscripcion_oferta_detail", args=[item.pk]),
+            }
+            for item in programa["inscripciones_oferta"]
+        ],
+    }
+
+
+def proyectar_aporte(ciudadano: Any) -> dict[str, Any]:
+    """Seccion ``vat`` en JSON; las consultas propagan sus excepciones."""
+    contexto = armar_contexto(*consultar_datos(ciudadano))
+    return {"vat": {"programas": [_programa(p) for p in contexto["vat_programas"]]}}
+
+
 def registrar_contribucion_ciudadano() -> None:
     registrar_contribucion_detalle(
         "vat", obtener_contexto, "vat/ciudadano_detalle_seccion.html"
     )
+    registrar_proyector_aporte("vat", proyectar_aporte)

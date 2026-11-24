@@ -1,4 +1,9 @@
-"""API de sesión del frontend INET; no usa las claves de integración VAT."""
+"""API de sesión del frontend INET bajo ``/api/web/vat/`` (G1 v1, ``core.web_gate``).
+
+No usa las claves de integración VAT. ``WebGatePermission`` va antes de los
+permisos de acción y de objeto de cada vista: en el runtime de VAT solo acepta
+requests que el core firmó y en el monolito evalúa los requisitos web del core.
+"""
 
 from django import forms
 from django.db import IntegrityError, transaction
@@ -16,6 +21,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.web_gate import WebGatePermission
 from VAT import models
 from VAT.api_inet_serializers import (
     InetAsistenciaSerializer,
@@ -70,7 +76,6 @@ from VAT.services.sesion_comision_service.impl import SesionComisionService
 from ciudadanos.models import Ciudadano
 from iam.services import user_has_permission_code
 
-
 # Campos de los filtros de búsqueda: sus catálogos alcanzan con permiso de lectura.
 FILTER_FIELDS = {
     "centros": {"provincia", "municipio", "localidad"},
@@ -91,12 +96,15 @@ class InetSessionScheme(SessionScheme):
 
 
 class InetSchema(AutoSchema):
+    # Partes del prefijo de montaje: /api/web/vat/<recurso>/ -> inet_<recurso>_<método>.
+    MOUNT_PARTS = 3
+
     def get_operation_id(self):
         return (
             "inet_"
             + "_".join(
                 part.strip("{}").replace("-", "_")
-                for part in self.path.strip("/").split("/")[2:]
+                for part in self.path.strip("/").split("/")[self.MOUNT_PARTS :]
             )
             + "_"
             + self.method.lower()
@@ -111,7 +119,7 @@ class InetPagination(PageNumberPagination):
 
 class InetAPIView(APIView):
     authentication_classes = [InetSessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [WebGatePermission, IsAuthenticated]
     resource = "centros"
     schema = InetSchema()
 

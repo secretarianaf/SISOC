@@ -22,8 +22,9 @@ entregado: ninguna de las tres tenía ruta React. Quedan fuera
 plantilla de alta, que nunca se dibuja porque la vista no manda
 `archivos_adjuntos`) y la auditoría, que va en la entrega siguiente.
 
-No cambia vistas, formularios, servicios, modelos, plantillas, JavaScript ni URLs
-nativas. No activa React en producción.
+La entrega inicial no cambió la UI nativa. La corrección posterior de #2946
+actualiza el alta en Django y React, sin cambiar las URLs ni los permisos.
+No activa React en producción.
 
 Archivos:
 
@@ -59,11 +60,15 @@ sin CSRF); después, superusuario o `rendicioncuentasmensual.view_rendicioncuent
 (403 sin él). Un POST con otro tipo de contenido que `multipart/form-data` o
 `application/x-www-form-urlencoded` es 415.
 
-Alta: la tarjeta «Datos asociados» (Mes, Año, Observaciones) y la de
-«Documentación Adjunta» con las filas de archivo. «Agregar Archivo» suma una fila
-vacía; «Eliminar Archivo» quita la última o, si queda una, la vacía (igual que
-`rendicioncuentasmensual_form.js`). Se envía multipart solo con lo que dibuja la
-plantilla.
+Alta (#2946): completa Mes, Año, Línea programática y Estado de rendición
+en «Datos asociados». Django define y valida las opciones que muestran ambas
+interfaces. El envío multipart válido guarda la rendición y sus archivos, y
+vuelve al listado del comedor. Si el formulario no es válido, ambas interfaces
+conservan los datos ingresados y muestran los errores de Django. Hay que volver
+a seleccionar los archivos tras el rechazo.
+
+La tarjeta «Documentación Adjunta» conserva sus controles: «Agregar Archivo»
+suma una fila vacía; «Eliminar Archivo» quita la última o, si queda una, la vacía.
 
 Edición: convenio, número, período y nombre precargados (la fecha en ISO); un
 campo vacío conserva su valor y el nombre se puede limpiar. Los errores de campo y
@@ -72,15 +77,15 @@ los generales salen del formulario nativo.
 Baja: la confirmación con el desglose en cascada; confirmar da de baja la
 rendición y vuelve al listado del comedor con el mensaje nativo.
 
+## Verificación de #2946
+
+Las pruebas de alta comparan las opciones de Django y del API web. También
+comprueban que un POST inválido no escribe, y que un POST válido guarda los
+datos y archivos y vuelve al listado por ambas vías. Las pruebas de React
+comprueban el cuerpo multipart y la presentación de los errores.
+
 ## Limitaciones
 
-- Conservado de la nativa: la página de alta **nunca guarda**. El formulario exige
-  `linea_programatica` y `estado`, que la plantilla no dibuja, así que todo POST
-  hecho desde la página se rechaza y la vista responde con un formulario nuevo,
-  en blanco y sin errores (reemplaza el formulario enlazado de su contexto). React
-  lo reproduce. Además, ningún enlace de la aplicación apunta a esa pantalla ni a
-  la baja. Requiere decisión humana: corregirlo en la vista nativa (dibujar los
-  dos campos) o retirar la ruta; este cambio no lo toca.
 - Conservado: el nombre escrito en cada fila de documento se ignora (la vista
   nombra el documento con el nombre del archivo).
 - Conservado: la plantilla de baja deja el segundo elemento del migas de pan sin

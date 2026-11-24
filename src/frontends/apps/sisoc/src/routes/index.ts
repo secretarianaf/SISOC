@@ -111,6 +111,7 @@ import { inspeccionesActaDetalleRoute } from "./inspeccionesActaDetalle";
 import { inspeccionesActasRoute } from "./inspeccionesActas";
 import { inspeccionesAsignacionesRoute } from "./inspeccionesAsignaciones";
 import { inspeccionesEscuelasRoute } from "./inspeccionesEscuelas";
+import { inspeccionesImportacionRoute } from "./inspeccionesImportacion";
 import { inspeccionesTableroRoute } from "./inspeccionesTablero";
 import { loginRoute } from "./login";
 import { montosRoute } from "./montos";
@@ -205,6 +206,7 @@ export const ROUTES: RouteDefinition[] = [
   inspeccionesActaDetalleRoute,
   inspeccionesAsignacionesRoute,
   inspeccionesEscuelasRoute,
+  inspeccionesImportacionRoute,
   inspeccionesTableroRoute,
   cdiReportesRoute,
   cdiObservacionesRoute,

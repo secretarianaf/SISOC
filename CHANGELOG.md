@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-11-25 -->
+# Versión SISOC 25.11.2026
+
+## Corrección de Errores
+
+- [Rendiciones de cuentas mensuales.] El filtro y la exportación usan el proyecto de la rendición cuando existe. (PR #2959)
+<!-- AUTO-GENERATED RELEASE END: 2026-11-25 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-11-13 -->
 # Versión SISOC 13.11.2026
 

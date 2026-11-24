@@ -7,6 +7,8 @@ import {
 import { LegajoDetalle, safeHref, type LegajoDialog } from "./expedienteDetalle/LegajoDetalle";
 import { RegistrosErroneos } from "./expedienteDetalle/RegistrosErroneos";
 import { formatDate, postNative, type NativeResult } from "./expedienteDetalle/native";
+import { SearchableSelect } from "./expedienteDetalle/SearchableSelect";
+import { clearTimedAlert, expedienteIdFromPath, queueTimedAlert, readTimedAlert } from "./expedienteDetalle/timedAlert";
 import type { Detalle, Legajo, Notice } from "./expedienteDetalle/types";
 
 type Dialog =
@@ -71,6 +73,48 @@ function useProjection() {
   return { data, error, reload };
 }
 
+/** A success alert queued before a reload, shown until it expires (native `getTimedAlert`). */
+function useTimedAlert() {
+  const [expedienteId] = useState(() => expedienteIdFromPath());
+  const [alert, setAlert] = useState(() => readTimedAlert(expedienteId));
+  useEffect(() => {
+    if (!alert) return undefined;
+    const timer = setTimeout(() => { clearTimedAlert(expedienteId); setAlert(null); }, Math.max(0, alert.expiresAt - Date.now()));
+    return () => clearTimeout(timer);
+  }, [alert, expedienteId]);
+  return alert;
+}
+
+/**
+ * "Procesar Expediente" with the native simulated counter: the total is the
+ * number of preview rows and the counter advances every 200 ms in about 20
+ * steps until the native response arrives (static/custom/js/expediente_detail.js).
+ */
+function ProcesarButton({ url, total, run, disabled }: { url: string; total: number; run: Run; disabled: boolean }) {
+  const [progress, setProgress] = useState<{ current: number; done: boolean } | null>(null);
+  const procesar = async () => {
+    let current = 0;
+    setProgress({ current, done: false });
+    const step = Math.max(1, Math.floor(total / 20));
+    const timer = setInterval(() => {
+      current = Math.min(current + step, total);
+      setProgress({ current, done: false });
+    }, 200);
+    const ok = await run(() => postNative(url), (data) => {
+      const base = String(data.alerta_resumen || data.message || `Se crearon ${data.creados ?? "-"} legajos y el expediente pasó a EN ESPERA.`);
+      const errores = Number(data.errores || 0);
+      if (errores === 0 && Number(data.creados ?? 0) > 0) queueTimedAlert(expedienteIdFromPath(), "success", base);
+      return { tone: errores > 0 ? "warning" : "success", text: `¡Listo! ${base}${errores ? ` ${errores} errores.` : ""}` };
+    });
+    clearInterval(timer);
+    if (!ok) { setProgress(null); return; }
+    setProgress({ current: total, done: true });
+    setTimeout(() => setProgress(null), 2000);
+  };
+  const label = !progress ? "Procesar Expediente" : progress.done ? `✓ Completado ${total} / ${total} registros` : `Procesando ${progress.current} / ${total} registros...`;
+  return <button type="button" className="ed-primary" disabled={disabled || Boolean(progress)} aria-busy={Boolean(progress && !progress.done)} onClick={() => void procesar()}>{label}</button>;
+}
+
 export function ExpedienteDetalleScreen() {
   const { data, error: loadError, reload } = useProjection();
   const [notices, setNotices] = useState<Notice[]>([]);
@@ -80,9 +124,13 @@ export function ExpedienteDetalleScreen() {
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState("");
+  const timed = useTimedAlert();
 
   // Django messages arrive once per projection; show them with the local notices.
-  const serverNotices = useMemo<Notice[]>(() => (data?.messages ?? []).map((m) => ({ tone: (m.level === "error" ? "danger" : m.level) as Notice["tone"], text: m.text })), [data]);
+  const serverNotices = useMemo<Notice[]>(() => [
+    ...(timed ? [{ tone: timed.kind as Notice["tone"], text: timed.message }] : []),
+    ...(data?.messages ?? []).map((m) => ({ tone: (m.level === "error" ? "danger" : m.level) as Notice["tone"], text: m.text })),
+  ], [data, timed]);
 
   const navigate = useCallback((href: string) => {
     window.history.pushState({}, "", internal(href));
@@ -97,7 +145,8 @@ export function ExpedienteDetalleScreen() {
     try {
       const result = await task();
       if (result === undefined) return false; // cancelled by the user before dispatch
-      setNotices([{ tone: "success", text: success ? success(result) : String(result.message ?? "Acción realizada.") }]);
+      const notice = success ? success(result) : String(result.message ?? "Acción realizada.");
+      setNotices([typeof notice === "string" ? { tone: "success", text: notice } : notice]);
       setDialog(null);
       await reload();
       return true;
@@ -206,7 +255,7 @@ export function ExpedienteDetalleScreen() {
         <label>Registros a leer del Excel <select value={data.preview.limit} onChange={(e) => setPreviewLimit(e.target.value)}>{data.preview.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label></div>
       <div className="ed-scroll" tabIndex={0} role="region" aria-label="Vista previa del Excel"><table><thead><tr>{data.preview.headers.map((h) => <th key={h} scope="col">{h.charAt(0).toUpperCase() + h.slice(1)}</th>)}</tr></thead>
         <tbody>{data.preview.rows.map((row, i) => <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>)}</tbody></table></div>
-      {data.preview.procesar && <button type="button" className="ed-primary" disabled={disabled} onClick={() => simplePost(data.preview!.procesar!, undefined, "El expediente pasó a EN ESPERA.")}>{pending ? "Procesando…" : "Procesar Expediente"}</button>}
+      {data.preview.procesar && <ProcesarButton url={data.preview.procesar} total={data.preview.rows.length} run={run} disabled={disabled} />}
     </section> : data.preview_error ? <p className="ed-alert ed-danger" role="alert">{data.preview_error}</p> : null}
 
     <section className="ed-panel" aria-labelledby="ed-legajos">
@@ -243,7 +292,7 @@ export function ExpedienteDetalleScreen() {
     {data.registros_erroneos.length > 0 && <RegistrosErroneos registros={data.registros_erroneos} catalogos={data.catalogos} reprocesarUrl={actions.reprocesar_errores} run={run} disabled={disabled} />}
 
     {actions.asignar_tecnico && <section className="ed-panel" aria-labelledby="ed-asignar"><h2 id="ed-asignar">Asignar Técnico</h2>
-      <form onSubmit={asignar}><label>Seleccionar Técnico: <select name="tecnico_id" required>{data.tecnicos.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
+      <form onSubmit={asignar}><SearchableSelect label="Seleccionar Técnico:" searchLabel="Buscar Técnico" name="tecnico_id" required options={data.tecnicos.map((t) => ({ value: String(t.id), label: t.name }))} />
         <button type="submit" className="ed-primary" disabled={disabled}>Asignar</button></form>
     </section>}
 

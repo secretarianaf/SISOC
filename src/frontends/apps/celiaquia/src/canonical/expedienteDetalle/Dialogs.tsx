@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { ErrorText, Modal, getNative, postNative, formatDate, type NativeResult } from "./native";
-import type { Catalogos, Detalle, Legajo } from "./types";
+import { SearchableSelect } from "./SearchableSelect";
+import type { Catalogos, Detalle, Legajo, Notice } from "./types";
 
 /** Runs a native mutation; resolves true when it succeeded and the page reloaded. */
-export type Run = (task: () => Promise<NativeResult | void>, success?: (result: NativeResult) => string) => Promise<boolean>;
+export type Run = (task: () => Promise<NativeResult | void>, success?: (result: NativeResult) => string | Notice) => Promise<boolean>;
 type Common = { onClose: () => void; run: Run; pending: boolean; error: string };
 
 const MENSAJE_SIN_MOTIVO = "Seleccioná al menos un motivo o completá la información complementaria.";
@@ -199,17 +200,19 @@ export function EditarLegajoDialog({ legajo, catalogos, ...common }: Common & { 
   };
   const field = (name: string, label: string, props: Record<string, unknown> = {}) => <label>{label}<input name={name} value={values?.[name] ?? ""} onChange={(e) => set(name, e.target.value)} {...props} /></label>;
   const select = (name: string, label: string, options: { id: number; label: string }[], required = true) => <label>{label}<select name={name} required={required} value={values?.[name] ?? ""} onChange={(e) => set(name, e.target.value)}><option value="">Seleccionar...</option>{options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}</select></label>;
-  const localidades = (catalogos?.localidades ?? []).filter((loc) => String(loc.municipio_id) === (values?.municipio ?? ""));
+  // Long lists use a search box like the select2 widgets of the native modal.
+  const searchable = (name: string, label: string, options: { id: number; label: string }[]) => <SearchableSelect label={label} name={name} required placeholder="Seleccionar..." value={values?.[name] ?? ""} onChange={(value) => set(name, value)} options={options.map((o) => ({ value: String(o.id), label: o.label }))} />;
+  const localidades = (catalogos?.localidades ?? []).filter((loc) => String(loc.municipio_id) === (values?.municipio ?? "")).map((loc) => ({ id: loc.id, label: `${loc.label} (${loc.municipio})` }));
   return <Modal title="Editar datos del legajo" wide onClose={common.onClose} footer={values ? <Footer onClose={common.onClose} pending={common.pending} label="Guardar cambios" form="form-editar-legajo" /> : undefined}>
     <ErrorText error={loadError} />
     {!values && !loadError && <p role="status">Cargando…</p>}
     {values && <form id="form-editar-legajo" className="ed-form-grid" onSubmit={submit}>
       {field("apellido", "Apellido *", { required: true })}{field("nombre", "Nombre *", { required: true })}
       {field("documento", "CUIL *", { required: true })}{field("fecha_nacimiento", "Fecha de Nacimiento *", { required: true, type: "date" })}
-      {select("sexo", "Sexo *", catalogos?.sexos ?? [])}{select("nacionalidad", "Nacionalidad *", catalogos?.nacionalidades ?? [])}
+      {select("sexo", "Sexo *", catalogos?.sexos ?? [])}{searchable("nacionalidad", "Nacionalidad *", catalogos?.nacionalidades ?? [])}
       {field("telefono", "Teléfono")}{field("email", "Email", { type: "email" })}
       {field("calle", "Calle")}{field("altura", "Altura")}{field("codigo_postal", "Código Postal")}
-      {select("municipio", "Municipio *", catalogos?.municipios ?? [])}{select("localidad", "Localidad *", localidades)}
+      {searchable("municipio", "Municipio *", catalogos?.municipios ?? [])}{searchable("localidad", "Localidad *", localidades)}
       <ErrorText error={common.error} />
     </form>}
   </Modal>;

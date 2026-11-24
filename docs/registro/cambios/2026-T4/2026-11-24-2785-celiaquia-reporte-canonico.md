@@ -125,8 +125,16 @@ nativos. Todas las acciones (revisión, subsanación, Renaper, archivos,
 comentarios, cruce, confirmación, registros erróneos, asignación de técnico)
 van a los endpoints Django sin reintentos. `preview_limit` e `historial_page`
 viven en la URL; el historial ahora navega todas sus páginas (Django solo
-mostraba la primera). Faltan: autoguardado de registros erróneos (hay botón
-"Guardar cambios"), contador de progreso al procesar y selectores con búsqueda.
+mostraba la primera).
+
+Brechas cerradas después: los registros erróneos se autoguardan 500 ms después
+de cada cambio con el mismo cuerpo JSON del template, sin reintentos automáticos
+ni pérdida de ediciones, y "Reprocesar Todos" guarda antes todos los registros.
+"Procesar" muestra el mismo contador simulado que la pantalla nativa (cuenta las
+filas de la vista previa; no consulta endpoints). Técnico, nacionalidad,
+municipio y localidad tienen búsqueda accesible por teclado en lugar de select2.
+Las alertas de éxito duran 120 s tras recargar con la misma clave de
+almacenamiento (`expediente-detail-timed-alert:<pk>`) que la pantalla nativa.
 
 ## Observaciones de seguridad preexis## Observaciones preexistentes (sin cambios)
 

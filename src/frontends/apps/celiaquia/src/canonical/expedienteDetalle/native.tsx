@@ -5,12 +5,21 @@ import { internal, sendNative } from "../transport";
 /** Native JSON endpoints answer `{success, message|error}`; anything else is a rejection. */
 export type NativeResult = Record<string, unknown> & { success?: boolean; message?: string; error?: string };
 
+/** A native rejection that keeps the response body (e.g. `saved_partial`, `invalid_fields`). */
+export class NativeError extends Error {
+  readonly data: NativeResult;
+  constructor(message: string, data: NativeResult) {
+    super(message);
+    this.data = data;
+  }
+}
+
 async function readResult(response: Response): Promise<NativeResult> {
   if (response.redirected) throw new Error("Tu sesión expiró o no tenés permisos. Volvé a iniciar sesión.");
   const type = response.headers?.get?.("Content-Type") ?? "application/json";
   const data: NativeResult = type.includes("application/json") ? await response.json() : {};
   if (!response.ok || data.success === false) {
-    throw new Error(String(data.error || data.message || `La acción fue rechazada (${response.status}).`));
+    throw new NativeError(String(data.error || data.message || `La acción fue rechazada (${response.status}).`), data);
   }
   return data;
 }

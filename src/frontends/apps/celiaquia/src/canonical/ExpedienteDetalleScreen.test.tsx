@@ -166,3 +166,132 @@ it("rejects with the motives the native preview offers and requires a motive", a
   expect((post[1].body as FormData).get("accion")).toBe("RECHAZAR");
   expect((post[1].body as FormData).getAll("observaciones_ids")).toEqual(["6"]);
 });
+
+const registro = (id: number, apellido: string) => ({
+  id, fila: id, datos_raw: { apellido, nombre: "Uno", documento: "20111222333", sexo: "F" }, datos: {},
+  mensaje_error: "Falta municipio", invalid_fields: ["municipio"], responsable_requerido: false,
+  nacionalidad_id: "", municipio_id: "", actualizar_url: `/celiaquia/expedientes/7/registros-erroneos/${id}/actualizar/`,
+  eliminar_url: `/celiaquia/expedientes/7/registros-erroneos/${id}/eliminar/`,
+});
+const catalogos = {
+  sexos: [{ id: 1, label: "Femenino" }, { id: 2, label: "Masculino" }], nacionalidades: [{ id: 10, label: "Argentina" }],
+  nacionalidad_argentina_id: "10", municipios: [{ id: 20, label: "Resistencia" }], localidades: [{ id: 30, label: "Centro", municipio_id: 20, municipio: "Resistencia" }],
+};
+const posts = (fetcher: ReturnType<typeof vi.fn>) => fetcher.mock.calls.filter(([, init]) => init?.method === "POST");
+
+it("autosaves an erroneous record after a 500 ms pause with the native JSON body and never retries a failure", async () => {
+  window.history.replaceState({}, "", "/celiaquia/expedientes/7/");
+  const data = detalle({ registros_erroneos: [registro(1, "Pérez")], catalogos });
+  let saves = 0;
+  const fetcher = vi.fn().mockImplementation(async (_url: string, init?: RequestInit) => {
+    if (init?.method !== "POST") return json(data);
+    saves += 1;
+    return saves === 1 ? json({ success: true, message: "Registro actualizado correctamente." }) : json({ success: false, error: "Ocurrió un error interno al actualizar el registro." }, 500);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  render(<ExpedienteDetalleScreen />);
+  fireEvent.click(await screen.findByRole("button", { name: "Editar" }));
+  expect(screen.getByText(/Los campos se guardan automáticamente al cambiar/)).toBeTruthy();
+  const apellido = screen.getByLabelText("Apellido *") as HTMLInputElement;
+  fireEvent.input(apellido, { target: { value: "Pére" } });
+  fireEvent.input(apellido, { target: { value: " Pérez Gómez " } });
+  expect(posts(fetcher)).toHaveLength(0);
+  await waitFor(() => expect(posts(fetcher)).toHaveLength(1), { timeout: 1500 });
+  const [url, init] = posts(fetcher)[0];
+  expect(url).toBe("/celiaquia/expedientes/7/registros-erroneos/1/actualizar/");
+  expect(init.headers["Content-Type"]).toBe("application/json");
+  const body = JSON.parse(init.body as string);
+  expect(body.apellido).toBe("Pérez Gómez");
+  expect(body.sexo).toBe("1");
+  expect(await screen.findByText("Cambios guardados.")).toBeTruthy();
+  fireEvent.input(apellido, { target: { value: "Gómez" } });
+  expect(await screen.findByText("Error: Ocurrió un error interno al actualizar el registro.", undefined, { timeout: 1500 })).toBeTruthy();
+  await new Promise((resolve) => setTimeout(resolve, 700));
+  expect(posts(fetcher)).toHaveLength(2);
+  expect((screen.getByLabelText("Apellido *") as HTMLInputElement).value).toBe("Gómez");
+  // Collapsing and reopening keeps the unsaved edit.
+  fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+  fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+  expect((screen.getByLabelText("Apellido *") as HTMLInputElement).value).toBe("Gómez");
+  expect(fetcher).toHaveBeenCalledTimes(3);
+});
+
+it("Reprocesar Todos saves every erroneous record first and warns about the ones still invalid", async () => {
+  window.history.replaceState({}, "", "/celiaquia/expedientes/7/");
+  const data = detalle({ registros_erroneos: [registro(1, "Pérez"), registro(2, "López")], catalogos, actions: { ...detalle().actions, reprocesar_errores: "/celiaquia/expedientes/7/registros-erroneos/reprocesar/" } });
+  const fetcher = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+    if (init?.method !== "POST") return json(data);
+    if (url.includes("/2/actualizar/")) return json({ success: false, saved_partial: true, error: "CUIL inválido", invalid_fields: ["documento"] }, 400);
+    if (url.includes("/1/actualizar/")) return json({ success: false, error: "Ocurrió un error interno al actualizar el registro." }, 500);
+    return json({ success: true, creados: 1, errores: 1, excluidos: 0, registros_restantes: 1 });
+  });
+  vi.stubGlobal("fetch", fetcher);
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  render(<ExpedienteDetalleScreen />);
+  fireEvent.click(await screen.findByRole("button", { name: "Reprocesar Todos" }));
+  expect(await screen.findByText(/Se guardaron 1 registros antes de reprocesar y 1 siguen con errores de validacion\./)).toBeTruthy();
+  expect(screen.getByText(/Se creó 1 legajo correctamente\. 1 registro aún tienen errores\./)).toBeTruthy();
+  expect(posts(fetcher).map(([url]) => url)).toEqual([
+    "/celiaquia/expedientes/7/registros-erroneos/1/actualizar/",
+    "/celiaquia/expedientes/7/registros-erroneos/2/actualizar/",
+    "/celiaquia/expedientes/7/registros-erroneos/reprocesar/",
+  ]);
+  expect(JSON.parse(posts(fetcher)[1][1].body as string).apellido).toBe("López");
+});
+
+it("shows the native simulated progress counter while Procesar runs and keeps the success alert for a reload", async () => {
+  window.history.replaceState({}, "", "/celiaquia/expedientes/7/");
+  window.localStorage.clear();
+  const preview = { headers: ["apellido"], rows: [["Uno"], ["Dos"], ["Tres"]], limit: "all", options: [{ value: "all", label: "Todos" }], procesar: "/celiaquia/expedientes/7/procesar/" };
+  const data = detalle({ preview });
+  let finish: (value: unknown) => void = () => undefined;
+  const fetcher = vi.fn().mockImplementation(async (_url: string, init?: RequestInit) => {
+    if (init?.method !== "POST") return json(data);
+    return new Promise((resolve) => { finish = resolve; });
+  });
+  vi.stubGlobal("fetch", fetcher);
+  render(<ExpedienteDetalleScreen />);
+  fireEvent.click(await screen.findByRole("button", { name: "Procesar Expediente" }));
+  expect(screen.getByRole("button", { name: /Procesando 0 \/ 3 registros\.\.\./ })).toBeTruthy();
+  expect(await screen.findByRole("button", { name: /Procesando 3 \/ 3 registros\.\.\./ }, { timeout: 1500 })).toBeTruthy();
+  finish(json({ success: true, creados: 3, errores: 0, alerta_resumen: "Se crearon 3 legajos." }));
+  expect(await screen.findByText("¡Listo! Se crearon 3 legajos.")).toBeTruthy();
+  expect(screen.getByRole("button", { name: /Completado 3 \/ 3 registros/ })).toBeTruthy();
+  const stored = JSON.parse(window.localStorage.getItem("expediente-detail-timed-alert:7") ?? "null");
+  expect(stored).toMatchObject({ kind: "success", message: "Se crearon 3 legajos." });
+  expect(stored.expiresAt).toBeGreaterThan(Date.now() + 100000);
+  expect(posts(fetcher)).toHaveLength(1);
+});
+
+it("restores an unexpired timed success alert after a reload and drops an expired one", async () => {
+  window.history.replaceState({}, "", "/celiaquia/expedientes/7/");
+  window.localStorage.setItem("expediente-detail-timed-alert:7", JSON.stringify({ kind: "success", message: "Se crearon 2 legajos.", expiresAt: Date.now() + 60000 }));
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(detalle())));
+  render(<ExpedienteDetalleScreen />);
+  expect(await screen.findByText("Se crearon 2 legajos.")).toBeTruthy();
+  cleanup();
+  window.localStorage.setItem("expediente-detail-timed-alert:7", JSON.stringify({ kind: "success", message: "Vieja alerta.", expiresAt: Date.now() - 1 }));
+  render(<ExpedienteDetalleScreen />);
+  await screen.findByRole("heading", { name: /Detalle del Expediente/ });
+  expect(screen.queryByText("Vieja alerta.")).toBeNull();
+  expect(window.localStorage.getItem("expediente-detail-timed-alert:7")).toBeNull();
+});
+
+it("filters the técnico list with an accessible search box before assigning", async () => {
+  window.history.replaceState({}, "", "/celiaquia/expedientes/7/");
+  const data = detalle({ actions: { ...detalle().actions, asignar_tecnico: "/celiaquia/expedientes/7/asignar-tecnico/" }, tecnicos: [{ id: 1, name: "Ana Álvarez" }, { id: 2, name: "Bruno Díaz" }, { id: 3, name: "Carla Díez" }] });
+  const fetcher = vi.fn().mockImplementation(async (_url: string, init?: RequestInit) => (init?.method === "POST" ? json({ success: true }) : json(data)));
+  vi.stubGlobal("fetch", fetcher);
+  render(<ExpedienteDetalleScreen />);
+  const filtro = await screen.findByRole("searchbox", { name: "Buscar Técnico" });
+  const select = screen.getByRole("combobox", { name: /Seleccionar Técnico/ }) as HTMLSelectElement;
+  expect(select.options).toHaveLength(3);
+  fireEvent.change(filtro, { target: { value: "diez" } });
+  expect(Array.from(select.options).map((o) => o.text)).toEqual(["Ana Álvarez", "Carla Díez"]);
+  fireEvent.keyDown(filtro, { key: "Enter" });
+  expect(select.value).toBe("3");
+  expect(document.activeElement).toBe(select);
+  fireEvent.click(screen.getByRole("button", { name: "Asignar" }));
+  await waitFor(() => expect(posts(fetcher)).toHaveLength(1));
+  expect((posts(fetcher)[0][1].body as FormData).get("tecnico_id")).toBe("3");
+});

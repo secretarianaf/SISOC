@@ -68,6 +68,7 @@ logger = logging.getLogger("django")
 
 from core.security import safe_redirect
 from core.services.advanced_filters import AdvancedFilterEngine
+from comedores.services.alcance_programa import apply_programa_scope
 from comedores.services.filter_config import (
     BOOL_OPS,
     CHOICE_OPS,
@@ -492,7 +493,7 @@ def _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids):
     return base_qs.filter(dupla_id__in=duplas_ids)
 
 
-def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
+def _apply_role_scope_to_comedores_list_queryset(base_qs, user):
     if _user_tiene_scope_global_comedores(user):
         return base_qs
 
@@ -528,11 +529,27 @@ def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
     return territorial_qs
 
 
+def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
+    """Alcance por rol/territorio AND alcance por programa (solo superuser lo saltea)."""
+    if not user or user.is_superuser:
+        return base_qs
+    role_qs = _apply_role_scope_to_comedores_list_queryset(base_qs, user)
+    return apply_programa_scope(role_qs, user)
+
+
+def _apply_user_scope_to_comedores_queryset(base_qs, user):
+    """Alcance por rol/territorio AND alcance por programa (solo superuser lo saltea)."""
+    if not user or user.is_superuser:
+        return base_qs
+    role_qs = _apply_role_scope_to_comedores_queryset(base_qs, user)
+    return apply_programa_scope(role_qs, user)
+
+
 def _build_comedores_model_queryset():
     return Comedor.objects.all()
 
 
-def _apply_user_scope_to_comedores_queryset(base_qs, user):
+def _apply_role_scope_to_comedores_queryset(base_qs, user):
     if _user_tiene_scope_global_comedores(user):
         return base_qs
 

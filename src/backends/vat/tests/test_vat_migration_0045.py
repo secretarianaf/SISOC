@@ -7,7 +7,6 @@ from django.contrib.auth.models import Group, User
 from VAT.models import Centro
 from core.models import Localidad, Municipio, Provincia
 
-
 pytestmark = pytest.mark.django_db
 
 migration_module = importlib.import_module("VAT.migrations.0001_squashed_0045")

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-
 FixturePostLoadHandler = Callable[[], str]
 _HANDLERS: dict[str, FixturePostLoadHandler] = {}
 

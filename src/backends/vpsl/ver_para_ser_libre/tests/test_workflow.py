@@ -30,7 +30,6 @@ from ver_para_ser_libre.models import (
 )
 from ver_para_ser_libre.services import workflow
 
-
 pytestmark = pytest.mark.django_db
 
 

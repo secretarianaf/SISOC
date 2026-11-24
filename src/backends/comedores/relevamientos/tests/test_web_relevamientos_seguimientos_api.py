@@ -1,8 +1,7 @@
 """Web API (G1 v1) of the seguimiento, PNUD and acta detail pages (R03.01, R02.01).
 
-The tests compare the projected values with the native HTML pages and pin
-today's access: ``relevamientos.view_relevamiento`` only, no object scope other
-than the URL's own comedor and relevamiento, and the native POSTs left alone.
+The tests compare the projected values with the native HTML pages and check
+that the URL identifies the correct comedor and relevamiento.
 """
 
 from datetime import datetime, timezone as dt_timezone
@@ -239,7 +238,7 @@ def test_seguimiento_of_another_relevamiento_or_comedor_is_404(web):
     )
 
 
-def test_seguimiento_without_blocks_is_empty_and_non_primer_has_two_ap_columns(web):
+def test_seguimiento_without_blocks_uses_total_ap_like_native_view(web):
     comedor, relevamiento, _, posterior = _ciclo()
     PrestacionSeguimiento.objects.create(
         seguimiento=posterior, dias_prestacion="Martes", ap_presencial=1, ap_vianda=2
@@ -248,7 +247,7 @@ def test_seguimiento_without_blocks_is_empty_and_non_primer_has_two_ap_columns(w
     data = web.get(_url(comedor, relevamiento, posterior)).json()
 
     assert data["bloques"] == [] and data["es_primer"] is False
-    assert data["prestaciones"] == [["Martes", "-", "1", "2", "-", "-"]]
+    assert data["prestaciones"] == [["Martes", "-", "3", "-", "-"]]
     assert data["seguimiento"]["sincronizado_gestionar"] is False
 
 

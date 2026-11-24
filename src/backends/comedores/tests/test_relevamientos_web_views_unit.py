@@ -485,7 +485,7 @@ def test_detail_view_get_context_data_limita_timeline_y_agrega_datos(mocker):
 
 def test_detail_view_get_object_usa_relaciones_optimizadas(mocker):
     view = RelevamientoDetailView()
-    view.kwargs = {"pk": 44}
+    view.kwargs = {"pk": 44, "comedor_pk": 8}
     get_mock = mocker.Mock(return_value="OBJ")
     prefetch_mock = mocker.Mock(return_value=SimpleNamespace(get=get_mock))
     select_mock = mocker.patch(
@@ -498,7 +498,7 @@ def test_detail_view_get_object_usa_relaciones_optimizadas(mocker):
     assert result == "OBJ"
     assert select_mock.called
     assert prefetch_mock.called
-    get_mock.assert_called_once_with(pk=44)
+    get_mock.assert_called_once_with(pk=44, comedor_id=8)
 
 
 def test_delete_view_get_success_url_redirige_a_comedor_detalle():

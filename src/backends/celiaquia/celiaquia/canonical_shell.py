@@ -16,6 +16,7 @@ from django.utils.cache import patch_vary_headers
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from core import v2_frontend
+from core.react_activation import TODAS
 
 
 def marker(screen):
@@ -23,7 +24,9 @@ def marker(screen):
 
 
 def react_enabled():
-    return "celiaquia" in settings.REACT_VERTICALES_ACTIVAS
+    # Same semantics as core.react_activation: "todas" (the default) or the key.
+    active = getattr(settings, "REACT_VERTICALES_ACTIVAS", ()) or ()
+    return "celiaquia" in active or TODAS in active
 
 
 def wants_json(request):

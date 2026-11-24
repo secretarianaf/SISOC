@@ -3,10 +3,10 @@
 from copy import copy
 from functools import wraps
 
-from django.conf import settings
 from django.http import Http404
 from django.utils.cache import patch_vary_headers
 
+from celiaquia.canonical_shell import react_enabled
 from celiaquia.views.reporter_provincias import ReporterProvinciasView
 from core import v2_frontend
 
@@ -17,10 +17,7 @@ _native_report = ReporterProvinciasView.as_view()
 @wraps(_native_report)
 def canonical_report(request, *args, **kwargs):
     # The exact URL still applies its original report permission first.
-    if (
-        request.method not in {"GET", "HEAD"}
-        or "celiaquia" not in settings.REACT_VERTICALES_ACTIVAS
-    ):
+    if request.method not in {"GET", "HEAD"} or not react_enabled():
         return _native_report(request, *args, **kwargs)
 
     upstream_request = copy(request)

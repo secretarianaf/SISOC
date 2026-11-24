@@ -151,6 +151,13 @@ build sin marcador se agregan `private, no-store` y `Vary: Accept`, correctos
 porque la URL también sirve JSON. Se incorporaron `test_flag_off_keeps_native_headers`
 y el barrido `test_canonical_guards_sweep.py`. Celiaquía pytest 781.
 
-Pendiente de activación: `react_enabled()` exige `celiaquia` literal en
-`REACT_VERTICALES_ACTIVAS`; el valor por defecto `{"todas"}` no lo incluye y
-`celiaquia` no está en `react_activation.REGISTRO`.
+## Activación
+
+`canonical_shell.react_enabled()` usa la misma semántica que
+`core.react_activation`: Celiaquía se activa con `todas` (el valor por defecto
+cuando `REACT_VERTICALES_ACTIVAS` no está definida) o con la clave `celiaquia`;
+`ninguna`, una variable vacía o una lista sin `celiaquia` la apagan. El reporte
+provincial usa la misma función. No se registra en `REGISTRO` porque esas
+entradas montan rutas `web_preview` con assets propios, y Celiaquía sirve el
+build `/v2/celiaquia/` desde sus vistas canónicas. Rollback: definir la
+variable sin `celiaquia`; las pantallas vuelven a Django sin desplegar código.

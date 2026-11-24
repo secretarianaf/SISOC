@@ -84,3 +84,14 @@ def test_projection_and_submit_hooks_only_for_json_when_enabled(settings, monkey
     assert call("post", "text/html") == b"native"
     assert call("post", "application/json", enabled=False) == b"native"
     assert call("get", "application/json", enabled=False) == b"native"
+
+
+@pytest.mark.parametrize(
+    "active,expected",
+    [({"todas"}, True), ({"celiaquia"}, True), ({"pas"}, False), (frozenset(), False)],
+)
+def test_activation_follows_react_activation_semantics(settings, active, expected):
+    from celiaquia.canonical_shell import react_enabled
+
+    settings.REACT_VERTICALES_ACTIVAS = frozenset(active)
+    assert react_enabled() is expected

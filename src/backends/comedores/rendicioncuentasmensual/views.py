@@ -13,7 +13,7 @@ from django.urls import reverse, reverse_lazy
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Case, CharField, F, Q, When
 from django.http import HttpResponseRedirect
 from django.views.generic import (
     ListView,
@@ -118,7 +118,7 @@ class RendicionCuentaMensualGlobalListView(
     export_filename = "listado_rendiciones.csv"
     COLUMN_LIST_KEY = "rendiciones_global_list"
     COLUMN_DEFINITIONS = (
-        ("proyecto", "Proyecto", "comedor.codigo_de_proyecto"),
+        ("proyecto", "Proyecto", "codigo_proyecto_efectivo"),
         ("organizacion", "Organización", "comedor.organizacion.nombre"),
         (
             TERRITORIAL_ASIGNADO_FIELD,
@@ -174,6 +174,13 @@ class RendicionCuentaMensualGlobalListView(
         """Retorna todas las rendiciones activas para el listado global."""
         queryset = (
             RendicionCuentaMensualService.obtener_todas_rendiciones_cuentas_mensuales()
+        )
+        queryset = queryset.annotate(
+            codigo_proyecto_efectivo=Case(
+                When(proyecto__isnull=False, then=F("proyecto__codigo")),
+                default=F("comedor__codigo_de_proyecto"),
+                output_field=CharField(),
+            )
         )
         engine = AdvancedFilterEngine(
             field_map=FIELD_MAP,

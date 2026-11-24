@@ -708,29 +708,7 @@ class RendicionAuditoriaView(LoginRequiredMixin, View):
                         "rendicioncuentasmensual_auditoria", kwargs={"pk": rendicion.pk}
                     )
                 )
-            busqueda_form = AuditoriaBusquedaForm.desde_parametros(request.GET)
-            busqueda_realizada = busqueda_form.is_bound
-            disponibles = (
-                AuditoriaService.buscar(busqueda_form.cleaned_data)
-                if busqueda_realizada and busqueda_form.is_valid()
-                else AuditoriaService.disponibles().none()
-            )
-            page_obj = Paginator(
-                disponibles.order_by("proyecto__codigo", "periodo_inicio", "pk"), 20
-            ).get_page(request.GET.get("page"))
-            return render(
-                request,
-                self.template_name,
-                {
-                    "disponibles": page_obj,
-                    "page_obj": page_obj,
-                    "is_paginated": page_obj.has_other_pages(),
-                    "busqueda_form": busqueda_form,
-                    "busqueda_realizada": busqueda_realizada,
-                    "busqueda_valida": busqueda_realizada and not busqueda_form.errors,
-                    "volver_url": reverse("rendicioncuentasmensual_global_list"),
-                },
-            )
+            return render(request, self.template_name, self._contexto_busqueda(request))
         rendicion = get_object_or_404(AuditoriaService.disponibles(), pk=pk)
         form = AuditoriaForm(
             rendicion=rendicion,
@@ -740,6 +718,27 @@ class RendicionAuditoriaView(LoginRequiredMixin, View):
             },
         )
         return self._render(request, rendicion, form)
+
+    def _contexto_busqueda(self, request):
+        busqueda_form = AuditoriaBusquedaForm.desde_parametros(request.GET)
+        busqueda_realizada = busqueda_form.is_bound
+        disponibles = (
+            AuditoriaService.buscar(busqueda_form.cleaned_data)
+            if busqueda_realizada and busqueda_form.is_valid()
+            else AuditoriaService.disponibles().none()
+        )
+        page_obj = Paginator(
+            disponibles.order_by("proyecto__codigo", "periodo_inicio", "pk"), 20
+        ).get_page(request.GET.get("page"))
+        return {
+            "disponibles": page_obj,
+            "page_obj": page_obj,
+            "is_paginated": page_obj.has_other_pages(),
+            "busqueda_form": busqueda_form,
+            "busqueda_realizada": busqueda_realizada,
+            "busqueda_valida": busqueda_realizada and not busqueda_form.errors,
+            "volver_url": reverse("rendicioncuentasmensual_global_list"),
+        }
 
     def post(self, request, pk=None):
         if pk is None:
@@ -766,6 +765,11 @@ class RendicionAuditoriaView(LoginRequiredMixin, View):
         return self._render(request, rendicion, form)
 
     def _render(self, request, rendicion, form):
+        return render(
+            request, self.template_name, self._contexto(request, rendicion, form)
+        )
+
+    def _contexto(self, request, rendicion, form):
         volver_a_busqueda = request.GET.get("origen") == "busqueda"
         volver_url = (
             reverse("rendicioncuentasmensual_auditoria_nueva")
@@ -784,21 +788,17 @@ class RendicionAuditoriaView(LoginRequiredMixin, View):
             }
             for item in [rendicion, *candidatas]
         ]
-        return render(
-            request,
-            self.template_name,
-            {
-                "rendicion": rendicion,
-                "form": form,
-                "scope_proyecto": RendicionCuentaMensualService.obtener_scope_proyecto(
-                    rendicion
-                ),
-                "resumenes": resumenes,
-                "volver_url": volver_url,
-                "volver_a_busqueda": volver_a_busqueda,
-                "volver_transitoria": True,
-            },
-        )
+        return {
+            "rendicion": rendicion,
+            "form": form,
+            "scope_proyecto": RendicionCuentaMensualService.obtener_scope_proyecto(
+                rendicion
+            ),
+            "resumenes": resumenes,
+            "volver_url": volver_url,
+            "volver_a_busqueda": volver_a_busqueda,
+            "volver_transitoria": True,
+        }
 
 
 class RendicionCuentaMensualDownloadPdfView(LoginRequiredMixin, DetailView):

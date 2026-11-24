@@ -1,7 +1,6 @@
 """Vistas de identidad; no importan el ABM ni los modelos de Espacios."""
 
 from django.contrib import messages
-from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import (
@@ -25,6 +24,7 @@ from usuarios.auth_forms import (
     MiCuentaForm,
     UsernameEmailPasswordResetForm,
 )
+from usuarios.required_password_change import complete_required_password_change
 
 
 class UsuariosLoginView(LoginView):
@@ -50,25 +50,7 @@ class FirstLoginPasswordChangeView(LoginRequiredMixin, FormView):
         return kwargs
 
     def form_valid(self, form):
-        user = form.save()
-        profile = getattr(user, "profile", None)
-        if profile:
-            profile.must_change_password = False
-            profile.password_changed_at = timezone.now()
-            profile.initial_password_expires_at = None
-            profile.password_reset_requested_at = None
-            profile.temporary_password_plaintext = None
-            profile.save(
-                update_fields=[
-                    "must_change_password",
-                    "password_changed_at",
-                    "initial_password_expires_at",
-                    "password_reset_requested_at",
-                    "temporary_password_plaintext",
-                ]
-            )
-        update_session_auth_hash(self.request, user)
-        messages.success(self.request, "Contraseña actualizada correctamente.")
+        complete_required_password_change(self.request, form)
         return super().form_valid(form)
 
 

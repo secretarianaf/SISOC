@@ -53,6 +53,34 @@ def test_v2_no_reenvia_credenciales_y_cachea_asset_con_hash():
     assert response["Cache-Control"] == "public, max-age=31536000, immutable"
 
 
+def test_v2_sisoc_esta_en_el_allowlist_y_proxea_al_front_sisoc():
+    from django.conf import settings
+    from unittest.mock import MagicMock
+
+    assert settings.FRONTEND_V2_UPSTREAMS["sisoc"].endswith("front_sisoc:8080")
+    request = RequestFactory().get("/v2/sisoc/assets/index-ABC123.js")
+    request.user = SimpleNamespace(is_authenticated=True)
+    upstream = SimpleNamespace(
+        status=200,
+        headers={"Content-Type": "application/javascript"},
+        read=lambda: b"export {};",
+    )
+    source = MagicMock()
+    source.__enter__.return_value = upstream
+    with (
+        override_settings(FRONTEND_V2_UPSTREAMS={"sisoc": "http://front_sisoc:8080"}),
+        patch("core.v2_frontend.urlopen", return_value=source) as fetch,
+    ):
+        response = frontend_v2(request, "sisoc", "assets/index-ABC123.js")
+
+    assert (
+        fetch.call_args.args[0].full_url
+        == "http://front_sisoc:8080/v2/sisoc/assets/index-ABC123.js"
+    )
+    assert response.status_code == 200
+    assert response["Cache-Control"] == "public, max-age=31536000, immutable"
+
+
 @pytest.mark.parametrize(
     "debug,path,allows_hmr",
     [

@@ -1,0 +1,159 @@
+# E02, E03, E04 y D01: gestión de encuestas y tableros en React sobre G1 v1
+
+Estado M2 ejecutable: contrato basado en la fuente HEAD `b920d91d8`, sin ejecución de datos reales, correo, proveedores
+externos ni la ronda programada.
+Entregas del catálogo `2026-10-27-2785-entregas-por-flujo.json`, en el orden de implementación: E02 «Segmentación e
+importación» (app `src/backends/sisoc_core/encuestas`), E03 «Resultados y exportación», E04 «Gestión, revisión y rondas» y
+D01 «Dashboards y tableros» (app `src/backends/sisoc_core/dashboard`). E01 (responder encuestas) ya está en React y no
+cambia: ver `docs/registro/cambios/2026-T4/2026-11-04-2785-react-respuesta-encuestas.md`.
+Regla transversal: paridad nativa (S13: «mantene la paridad»). Las rutas HTML nativas no cambian; React las atiende solo
+desde la vista previa local hasta la activación acordada.
+
+## Entregas y orden
+
+| ID | Título | Rutas nativas cubiertas | Depende de |
+| --- | --- | --- | --- |
+| E02 | Segmentación e importación | GET `/encuestas/<pk>/segmentacion/`, POST `.../segmentacion/tipo/`, `.../agregar/`, `.../<destinatario_pk>/quitar/`, POST `/encuestas/importar/`, GET `.../segmentacion/plantilla/` (binario nativo enlazado) | Transporte común (abajo) |
+| E03 | Resultados y exportación | GET `/encuestas/<pk>/resultados/`, GET `.../resultados/rondas/<ronda_pk>/exportar/` y GET `/encuestas/<pk>/exportar/` (binarios nativos enlazados) | E02 |
+| E04 | Gestión, revisión y rondas | GET `/encuestas/`, GET/POST `/encuestas/crear/`, `/encuestas/<pk>/editar/`, POST `.../publicar/`, GET `.../revision/`, POST `.../aprobar/`, `.../rechazar/`, POST `/encuestas/rondas/<pk>/cerrar/` | E02, E03 |
+| D01 | Dashboards y tableros | GET `/dashboard/centro-de-familia`, GET `/dashboard/<slug>/` | transporte común |
+
+La ronda programada de encuestas (apertura y cierre por fecha) sigue en el worker nativo: no se invoca ni se replica desde la
+API. Cerrar una ronda a mano (`encuestas_ronda_cerrar`) corre `cerrar_ronda(ronda, manual=True)` sin cambios.
+
+## Transporte común
+
+- Montaje: `path("api/web/encuestas/", include("encuestas.web_api_urls"))` en `src/backends/config/urls.py`, hermano de
+  `api/web/auditoria/`. Lo sirve el core: la app vive en `sisoc_core` y no se reenvía a un backend de vertical.
+- Cada vista es una `APIView` con `SessionAuthentication`, `WebGatePermission` (401 sin sesión; 403 con `state` y
+  `required_action_url` ante un requisito web pendiente) y, después, los **mismos códigos de permiso** que el decorador de
+  `encuestas/urls.py`. Sin ese permiso: 403 `{"detail": "No tiene permisos para esta acción."}`. Respuestas
+  `private, no-store` con `Vary: Cookie`. Las escrituras exigen CSRF (403) y cuerpo `application/x-www-form-urlencoded` o
+  multipart (415 si el cuerpo es de otro tipo).
+- Implementación: `web_transport_encuestas.py` ejecuta la vista nativa (`setup` + `dispatch`) sobre la misma petición. Los
+  formularios, servicios, `ValidationError` y mensajes son los nativos, no se reimplementan. Un 302 nativo se convierte en
+  `{"ok": true, "redirect": "<Location>", "messages": [{message, level}]}`: los mensajes en cola se consumen en esa respuesta,
+  como los mostraría la página tras el redirect. Un rechazo del servicio (mensaje de error y redirect) conserva ese
+  contrato: 200 con `ok`, el mensaje en `error` y **sin cambios persistidos**.
+- Lectura: la vista nativa de detalle corre su `get` y el JSON proyecta el contexto de la plantilla tal como la imprime
+  (textos, fechas en hora local, números con la localización de Django). Un objeto fuera del queryset nativo da 404; un
+  redirect nativo (encuesta pendiente de aprobación) se devuelve como `{"redirect": "<Location>"}`.
+- Vista previa: `web_preview_encuestas.py` (nunca montado por un URLconf de producción) conserva la URL nativa, el mismo
+  decorador `permissions_any_required` y el `dispatch` nativo (login, 404, redirect); solo el GET sirve el `index.html`
+  congelado. Los activos viajan por la entrada de `ciudadanos.web_preview`, como en auditoría.
+- `config/middlewares/admindocs.py` agrega las rutas propias para que admindocs no responda metadatos (HEAD desde IP
+  interna) antes de los controles de sesión y permiso. `url_registry.json` se actualiza con `generar_registro_urls`.
+
+## E02 Segmentación e importación
+
+### Acceso (conservado)
+
+- `encuestas/<pk>/segmentacion/` y sus tres POST: `encuestas.change_encuesta`. `encuestas/importar/`: `encuestas.add_encuesta`.
+  La plantilla de segmentación es el GET nativo `.../plantilla/?tipo=` (`change_encuesta`), enlazado como descarga.
+- Una encuesta pendiente de aprobación no se segmenta: el GET redirige a la revisión (nativo y API).
+
+### API
+
+- `GET /api/web/encuestas/<pk>/segmentacion/` → `{id, titulo, disponible_pwa, tipo ("" sin segmentación), grupos:
+  [{id, name, selected}], destinatarios: [{id, tipo_label, numero_documento}], usuarios: [{id, username, full_name}],
+  urls: {plantilla}, messages}`.
+- `POST .../segmentacion/tipo/` (multipart: `tipo`, `disponibilidad_pwa_presente`, `disponible_pwa`, `grupos`,
+  `archivo_listado`), `.../agregar/` (`tipo_documento` y `numero_documento`, o `usuario_id`), `.../<destinatario_pk>/quitar/`
+  y `POST /api/web/encuestas/importar/` (`archivo`). Cada uno corre su vista nativa y responde el contrato común. La
+  importación solo expone el endpoint: su botón es de la lista (E04) y no se dibuja antes.
+
+### Pantalla React (`encuestasSegmentacion.tsx`)
+
+- Se dibujan los cuatro tipos como tarjetas de opción, el interruptor PWA, la lista de grupos con búsqueda y chips, el campo de
+  archivo (solo con los tipos de listado), «Descargar plantilla» con el `?tipo=` del tipo marcado, «Agregar destinatario» y la
+  lista de destinatarios, con los textos y el orden de la plantilla.
+- Se envía lo que envía el formulario nativo (`FormData` del propio formulario: el grupo y el archivo deshabilitados no
+  viajan). Tras cada POST se leen de nuevo los datos, se muestran los mensajes verbatim como toasts al final de `<body>` y
+  se reinicia scroll y foco, como la recarga nativa.
+
+## E03 Resultados y exportación
+
+- Acceso: `encuestas.ver_resultados` (lista de resultados y exportación por ronda); `encuestas.change_encuesta` para exportar la
+  encuesta (`encuestas_exportar`). Solo lectura: las exportaciones CSV, Excel y JSON son los GET nativos enlazados, sin
+  reimplementarlos en la API.
+- `GET /api/web/encuestas/<pk>/resultados/?ronda=` proyecta el contexto de `encuesta_resultados.html` (rondas, ronda actual,
+  tarjetas, puntajes y resultados por pregunta con `opcion_lider_texto` y `posicion_promedio`). El selector de ronda hace un GET
+  de la página con `?ronda=`, como el `onchange` nativo.
+- Riesgo de confidencialidad: el JSON no agrega campos que la plantilla no imprime (identificadas y anónimas se proyectan
+  igual que hoy); los filtros de ronda son los de la vista.
+
+## E04 Gestión, revisión y rondas
+
+E04 se entrega en subunidades; cada una activa solo los pathname que cubre.
+
+### E04.A Lista y acciones de fila (entregada)
+
+- Lista (`EncuestaListView`, `GET /api/web/encuestas/lista/?filters=&page=`): `encuestas.view_encuesta` o
+  `encuestas.ver_resultados`, igual que la URL nativa. Proyecta el contexto de `encuesta_list.html` y de la barra de búsqueda que
+  incluye: `filters_config` y `favorites` (sección vacía, como la plantilla), filas ya formateadas (versión, fecha `d/m/Y`,
+  estado, modalidad con `capfirst`, anónima o identificada, creador), banderas `puede_*`, bandeja de pendientes (`aprobar_encuesta`)
+  y paginación de 20 con el prefijo de consulta de `pagination.html`. Los enlaces antiguos `busqueda`/`estado` devuelven el
+  redirect nativo a `filters`; una página inválida es 404.
+- «Solicitar publicación»: `POST /api/web/encuestas/<pk>/publicar/` corre `EncuestaPublicarView` (`solicitar_publicacion`).
+  «Importar»: el archivo oculto se envía a `POST /api/web/encuestas/importar/` (E02). Ambos dejan el mensaje nativo **en cola** y
+  la pantalla navega al redirect (recarga completa, como el formulario nativo): la lista siguiente muestra el mensaje una vez.
+  Un rechazo del servicio no cambia nada y muestra su mensaje de error.
+- `POST /api/web/encuestas/rondas/<pk>/cerrar/` (`encuestas.change_rondaencuesta`) corre `cerrar_ronda(ronda, manual=True)`.
+  Ninguna plantilla ni pantalla nativa dibuja un control para esa ruta, así que la API queda probada (efecto persistido, repetir
+  sin cambios, permisos) y React no agrega un botón.
+- Los enlaces «Editar», «Segmentación», «Revisar solicitud», «Resultados», «Ver motivo del rechazo», «Crear encuesta» y
+  «Ver pendientes» van a las rutas nativas o de React ya incorporadas.
+
+### E04.B Revisión, aprobar y rechazar (entregada)
+
+- `GET /api/web/encuestas/<pk>/revision/` corre `EncuestaRevisionView` (`encuestas.aprobar_encuesta` o `encuestas.change_encuesta`) y
+  proyecta `encuesta_revision.html`: cabecera, motivo del último rechazo, datos, destinatarios, preguntas con condición y puntos y la
+  tarjeta de decisión (`puede_aprobar` es `perms.encuestas.aprobar_encuesta`). Una encuesta inexistente es 404.
+- `POST .../aprobar/` corre `EncuestaAprobarView` (`publicar`) y `POST .../rechazar/` corre `EncuestaRechazarView`
+  (`rechazar_publicacion`); ambos exigen `aprobar_encuesta`. Dejan el mensaje nativo en cola y la pantalla navega al redirect (la
+  lista, o la revisión otra vez si el servicio rechaza). Un motivo inválido es el 400 nativo con `errors.motivo`: el modal sigue
+  abierto con el error y el texto escrito. Repetir una transición devuelve el error nativo sin cambios.
+
+### E04.C Formulario de alta y edición (entregada)
+
+- `GET /api/web/encuestas/crear/` (`encuestas.add_encuesta`) y `GET .../<pk>/editar/` (`encuestas.change_encuesta`) corren
+  `EncuestaCreateView` y `EncuestaUpdateView` y proyectan `encuesta_form.html`: el valor de cada campo como lo imprime el widget, sus
+  errores y los atributos `aria-invalid` y `aria-describedby`, el motivo de rechazo de un borrador devuelto, las preguntas del editor
+  (`preguntas_json_inicial`, el formato de `serializar_preguntas`), los tipos y operadores de condición y la URL de «Exportar JSON»
+  (`encuestas_exportar`, solo al editar). Una encuesta pendiente de aprobación responde el redirect nativo a su revisión; una inexistente es 404.
+- `POST` en la misma ruta corre la vista nativa sobre la misma petición. Un formulario válido deja el mensaje nativo en cola
+  («Encuesta creada correctamente.» o «Encuesta actualizada correctamente.») y responde `{ok, redirect: "/encuestas/"}`; uno inválido
+  (campos, `preguntas_json` rechazado por `reemplazar_preguntas`, encuesta pendiente o con ronda abierta) es 400 con la misma proyección:
+  valores enviados, errores y las preguntas enviadas, sin cambios persistidos (la transacción de la vista nativa los revierte).
+- La pantalla (`routes/encuestasFormulario.tsx`) reproduce el editor de `encuestaPreguntasBuilder.js`: alta, cambio de tipo (opciones,
+  ponderación y máximo de caracteres según el tipo), puntaje por opción por texto de opción, condiciones que solo referencian preguntas
+  anteriores con valor de lista cerrada para Sí/No y opciones, reordenamiento por arrastre (marcas de destino, desplazamiento automático,
+  animación y aviso) y con las flechas del teclado, validación de dependencias al mover, y el modal «Quitar pregunta» con foco y Tab
+  atrapado. Envía `preguntas_json` con la serialización nativa y el resto de los campos con el `FormData` del propio formulario (el
+  intervalo de recordatorio deshabilitado no viaja). Tras un 400 vuelve al inicio, como la recarga nativa.
+
+## D01 Dashboards y tableros (entregada)
+
+- Montaje: `path("api/web/dashboard/", include("dashboard.web_api_urls"))` en `src/backends/config/urls.py`; la app `dashboard` trae
+  su propio transporte mínimo (sesión, G1 y la vista nativa sobre la misma petición) porque no depende de `encuestas`.
+- `GET /api/web/dashboard/centro-de-familia/` corre `DashboardView` (solo sesión, como `login_required`). Proyecta `can_view`
+  (`dashboard.view_dashboard`), las banderas de frescura y los cinco indicadores de Comedores ya impresos como la plantilla
+  (`Sin información` sin valor). Sin `view_dashboard` los números no salen (`metricas: null`), como en la página.
+  La actualización remota de métricas es la de la vista nativa: si falla, la página lo dice y conserva los últimos valores;
+  un cero nunca reemplaza un dato faltante.
+- `GET /api/web/dashboard/<slug>/` corre `TableroEmbedView`: 403 si `usuario_puede_ver` lo niega, 404 si no existe o está inactivo y
+  `{"redirect": ruta_interna}` si el tablero tiene pantalla propia.
+- Pantalla React `dashboardTableros.tsx`: `/dashboard/centro-de-familia` (sin barra final, como la URL nativa) y `/dashboard/<slug>/`.
+  Mismos CDN que la plantilla (`ionicons` y `charts.min.css`), mismos iframes (`title` y `src`) y botón de colapso de tarjeta
+  funcional. Los informes remotos quedan en sus iframes.
+
+## Criterios de aceptación y verificación
+
+- Cada unidad: pruebas de acceso (401, 403, CSRF 403), efecto persistido y «sin cambios» ante rechazo; G1 de extremo a extremo;
+  comparación visual nativo contra React en los estados clave (escritorio y móvil) y las guardas.
+- Excepciones asumidas: página 2 de listas, menú móvil y el nombre accesible del logo del shell.
+
+## Incertidumbres
+
+- La activación de React en producción no forma parte de este contrato.
+- El detalle de E03, E04 y D01 se amplía en cada unidad cuando se cierra su lectura de plantilla.

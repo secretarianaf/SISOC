@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: API de gestión de comedores, centros de familia y más
 paths:
-  /api/inet/centros/:
+  /api/web/vat/centros/:
     get:
       operationId: inet_centros_get
       tags:
@@ -45,7 +45,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetItem'
           description: ''
-  /api/inet/centros/{id}/:
+  /api/web/vat/centros/{id}/:
     get:
       operationId: inet_centros_id_get
       parameters:
@@ -114,7 +114,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/inet/centros/{id}/delete-preview/:
+  /api/web/vat/centros/{id}/delete-preview/:
     get:
       operationId: inet_centros_id_delete_preview_get
       parameters:
@@ -135,7 +135,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetDeletePreview'
           description: ''
-  /api/inet/centros/{id}/form/:
+  /api/web/vat/centros/{id}/form/:
     get:
       operationId: inet_centros_id_form_get
       parameters:
@@ -156,7 +156,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/centros/{id}/options/{field}/:
+  /api/web/vat/centros/{id}/options/{field}/:
     get:
       operationId: inet_centros_id_options_field_get
       parameters:
@@ -182,7 +182,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetOptionsPage'
           description: ''
-  /api/inet/centros/filter-form/:
+  /api/web/vat/centros/filter-form/:
     get:
       operationId: inet_centros_filter_form_get
       tags:
@@ -197,7 +197,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/centros/form/:
+  /api/web/vat/centros/form/:
     get:
       operationId: inet_centros_form_get
       tags:
@@ -212,7 +212,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/centros/options/{field}/:
+  /api/web/vat/centros/options/{field}/:
     get:
       operationId: inet_centros_options_field_get
       parameters:
@@ -233,7 +233,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetOptionsPage'
           description: ''
-  /api/inet/ciudadano-form/:
+  /api/web/vat/ciudadano-form/:
     get:
       operationId: inet_ciudadano_form_get
       tags:
@@ -248,7 +248,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/comisiones/:
+  /api/web/vat/comisiones/:
     get:
       operationId: inet_comisiones_get
       tags:
@@ -289,7 +289,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetItem'
           description: ''
-  /api/inet/comisiones/{id}/:
+  /api/web/vat/comisiones/{id}/:
     get:
       operationId: inet_comisiones_id_get
       parameters:
@@ -358,7 +358,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/inet/comisiones/{id}/ciudadanos/:
+  /api/web/vat/comisiones/{id}/ciudadanos/:
     get:
       operationId: inet_comisiones_id_ciudadanos_get
       parameters:
@@ -379,7 +379,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetCiudadanoPage'
           description: ''
-  /api/inet/comisiones/{id}/delete-preview/:
+  /api/web/vat/comisiones/{id}/delete-preview/:
     get:
       operationId: inet_comisiones_id_delete_preview_get
       parameters:
@@ -400,7 +400,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetDeletePreview'
           description: ''
-  /api/inet/comisiones/{id}/form/:
+  /api/web/vat/comisiones/{id}/form/:
     get:
       operationId: inet_comisiones_id_form_get
       parameters:
@@ -421,7 +421,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/comisiones/{id}/horarios/:
+  /api/web/vat/comisiones/{id}/horarios/:
     get:
       operationId: inet_comisiones_id_horarios_get
       parameters:
@@ -444,7 +444,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/InetHorario'
           description: ''
-  /api/inet/comisiones/{id}/inscribir/:
+  /api/web/vat/comisiones/{id}/inscribir/:
     post:
       operationId: inet_comisiones_id_inscribir_post
       parameters:
@@ -476,7 +476,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetItem'
           description: ''
-  /api/inet/comisiones/{id}/options/{field}/:
+  /api/web/vat/comisiones/{id}/options/{field}/:
     get:
       operationId: inet_comisiones_id_options_field_get
       parameters:
@@ -502,7 +502,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetOptionsPage'
           description: ''
-  /api/inet/comisiones/form/:
+  /api/web/vat/comisiones/form/:
     get:
       operationId: inet_comisiones_form_get
       tags:
@@ -517,7 +517,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/comisiones/options/{field}/:
+  /api/web/vat/comisiones/options/{field}/:
     get:
       operationId: inet_comisiones_options_field_get
       parameters:
@@ -538,7 +538,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetOptionsPage'
           description: ''
-  /api/inet/contactos/:
+  /api/web/vat/contactos/:
     get:
       operationId: inet_contactos_get
       tags:
@@ -579,7 +579,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetItem'
           description: ''
-  /api/inet/contactos/{id}/:
+  /api/web/vat/contactos/{id}/:
     get:
       operationId: inet_contactos_id_get
       parameters:
@@ -648,7 +648,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/inet/contactos/{id}/delete-preview/:
+  /api/web/vat/contactos/{id}/delete-preview/:
     get:
       operationId: inet_contactos_id_delete_preview_get
       parameters:
@@ -669,7 +669,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetDeletePreview'
           description: ''
-  /api/inet/contactos/{id}/form/:
+  /api/web/vat/contactos/{id}/form/:
     get:
       operationId: inet_contactos_id_form_get
       parameters:
@@ -690,7 +690,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/contactos/{id}/options/{field}/:
+  /api/web/vat/contactos/{id}/options/{field}/:
     get:
       operationId: inet_contactos_id_options_field_get
       parameters:
@@ -716,7 +716,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetOptionsPage'
           description: ''
-  /api/inet/contactos/form/:
+  /api/web/vat/contactos/form/:
     get:
       operationId: inet_contactos_form_get
       tags:
@@ -731,7 +731,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/contactos/options/{field}/:
+  /api/web/vat/contactos/options/{field}/:
     get:
       operationId: inet_contactos_options_field_get
       parameters:
@@ -752,7 +752,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetOptionsPage'
           description: ''
-  /api/inet/cursos/:
+  /api/web/vat/cursos/:
     get:
       operationId: inet_cursos_get
       tags:
@@ -793,7 +793,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetItem'
           description: ''
-  /api/inet/cursos/{id}/:
+  /api/web/vat/cursos/{id}/:
     get:
       operationId: inet_cursos_id_get
       parameters:
@@ -862,7 +862,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/inet/cursos/{id}/delete-preview/:
+  /api/web/vat/cursos/{id}/delete-preview/:
     get:
       operationId: inet_cursos_id_delete_preview_get
       parameters:
@@ -883,7 +883,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetDeletePreview'
           description: ''
-  /api/inet/cursos/{id}/form/:
+  /api/web/vat/cursos/{id}/form/:
     get:
       operationId: inet_cursos_id_form_get
       parameters:
@@ -904,7 +904,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/cursos/{id}/options/{field}/:
+  /api/web/vat/cursos/{id}/options/{field}/:
     get:
       operationId: inet_cursos_id_options_field_get
       parameters:
@@ -930,7 +930,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetOptionsPage'
           description: ''
-  /api/inet/cursos/form/:
+  /api/web/vat/cursos/form/:
     get:
       operationId: inet_cursos_form_get
       tags:
@@ -945,7 +945,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/cursos/options/{field}/:
+  /api/web/vat/cursos/options/{field}/:
     get:
       operationId: inet_cursos_options_field_get
       parameters:
@@ -966,7 +966,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetOptionsPage'
           description: ''
-  /api/inet/horario-form/:
+  /api/web/vat/horario-form/:
     get:
       operationId: inet_horario_form_get
       tags:
@@ -981,7 +981,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/horarios/:
+  /api/web/vat/horarios/:
     get:
       operationId: inet_horarios_get
       tags:
@@ -1022,7 +1022,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetItem'
           description: ''
-  /api/inet/horarios/{id}/:
+  /api/web/vat/horarios/{id}/:
     get:
       operationId: inet_horarios_id_get
       parameters:
@@ -1091,7 +1091,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/inet/horarios/{id}/delete-preview/:
+  /api/web/vat/horarios/{id}/delete-preview/:
     get:
       operationId: inet_horarios_id_delete_preview_get
       parameters:
@@ -1112,7 +1112,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetDeletePreview'
           description: ''
-  /api/inet/horarios/{id}/form/:
+  /api/web/vat/horarios/{id}/form/:
     get:
       operationId: inet_horarios_id_form_get
       parameters:
@@ -1133,7 +1133,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/horarios/{id}/options/{field}/:
+  /api/web/vat/horarios/{id}/options/{field}/:
     get:
       operationId: inet_horarios_id_options_field_get
       parameters:
@@ -1159,7 +1159,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetOptionsPage'
           description: ''
-  /api/inet/horarios/form/:
+  /api/web/vat/horarios/form/:
     get:
       operationId: inet_horarios_form_get
       tags:
@@ -1174,7 +1174,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/horarios/options/{field}/:
+  /api/web/vat/horarios/options/{field}/:
     get:
       operationId: inet_horarios_options_field_get
       parameters:
@@ -1195,7 +1195,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetOptionsPage'
           description: ''
-  /api/inet/inscripciones/:
+  /api/web/vat/inscripciones/:
     get:
       operationId: inet_inscripciones_get
       tags:
@@ -1236,7 +1236,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetItem'
           description: ''
-  /api/inet/inscripciones/{id}/:
+  /api/web/vat/inscripciones/{id}/:
     get:
       operationId: inet_inscripciones_id_get
       parameters:
@@ -1305,7 +1305,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/inet/inscripciones/{id}/estado/:
+  /api/web/vat/inscripciones/{id}/estado/:
     get:
       operationId: inet_inscripciones_id_estado_get
       parameters:
@@ -1358,7 +1358,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetItem'
           description: ''
-  /api/inet/planes/:
+  /api/web/vat/planes/:
     get:
       operationId: inet_planes_get
       tags:
@@ -1399,7 +1399,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetItem'
           description: ''
-  /api/inet/planes/{id}/:
+  /api/web/vat/planes/{id}/:
     get:
       operationId: inet_planes_id_get
       parameters:
@@ -1468,7 +1468,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/inet/planes/{id}/delete-preview/:
+  /api/web/vat/planes/{id}/delete-preview/:
     get:
       operationId: inet_planes_id_delete_preview_get
       parameters:
@@ -1489,7 +1489,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetDeletePreview'
           description: ''
-  /api/inet/planes/{id}/form/:
+  /api/web/vat/planes/{id}/form/:
     get:
       operationId: inet_planes_id_form_get
       parameters:
@@ -1510,7 +1510,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/planes/{id}/options/{field}/:
+  /api/web/vat/planes/{id}/options/{field}/:
     get:
       operationId: inet_planes_id_options_field_get
       parameters:
@@ -1536,7 +1536,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetOptionsPage'
           description: ''
-  /api/inet/planes/filter-form/:
+  /api/web/vat/planes/filter-form/:
     get:
       operationId: inet_planes_filter_form_get
       tags:
@@ -1551,7 +1551,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/planes/form/:
+  /api/web/vat/planes/form/:
     get:
       operationId: inet_planes_form_get
       tags:
@@ -1566,7 +1566,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/planes/options/{field}/:
+  /api/web/vat/planes/options/{field}/:
     get:
       operationId: inet_planes_options_field_get
       parameters:
@@ -1587,7 +1587,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetOptionsPage'
           description: ''
-  /api/inet/sesiones/:
+  /api/web/vat/sesiones/:
     get:
       operationId: inet_sesiones_get
       tags:
@@ -1628,7 +1628,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetItem'
           description: ''
-  /api/inet/sesiones/{id}/:
+  /api/web/vat/sesiones/{id}/:
     get:
       operationId: inet_sesiones_id_get
       parameters:
@@ -1697,7 +1697,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/inet/sesiones/{id}/asistencia/:
+  /api/web/vat/sesiones/{id}/asistencia/:
     get:
       operationId: inet_sesiones_id_asistencia_get
       parameters:
@@ -1746,7 +1746,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/inet/session/:
+  /api/web/vat/session/:
     get:
       operationId: inet_session_get
       tags:
@@ -1761,7 +1761,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetSession'
           description: ''
-  /api/inet/ubicaciones/:
+  /api/web/vat/ubicaciones/:
     get:
       operationId: inet_ubicaciones_get
       tags:
@@ -1802,7 +1802,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetItem'
           description: ''
-  /api/inet/ubicaciones/{id}/:
+  /api/web/vat/ubicaciones/{id}/:
     get:
       operationId: inet_ubicaciones_id_get
       parameters:
@@ -1871,7 +1871,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/inet/ubicaciones/{id}/delete-preview/:
+  /api/web/vat/ubicaciones/{id}/delete-preview/:
     get:
       operationId: inet_ubicaciones_id_delete_preview_get
       parameters:
@@ -1892,7 +1892,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetDeletePreview'
           description: ''
-  /api/inet/ubicaciones/{id}/form/:
+  /api/web/vat/ubicaciones/{id}/form/:
     get:
       operationId: inet_ubicaciones_id_form_get
       parameters:
@@ -1913,7 +1913,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/ubicaciones/{id}/options/{field}/:
+  /api/web/vat/ubicaciones/{id}/options/{field}/:
     get:
       operationId: inet_ubicaciones_id_options_field_get
       parameters:
@@ -1939,7 +1939,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetOptionsPage'
           description: ''
-  /api/inet/ubicaciones/form/:
+  /api/web/vat/ubicaciones/form/:
     get:
       operationId: inet_ubicaciones_form_get
       tags:
@@ -1954,7 +1954,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InetForm'
           description: ''
-  /api/inet/ubicaciones/options/{field}/:
+  /api/web/vat/ubicaciones/options/{field}/:
     get:
       operationId: inet_ubicaciones_options_field_get
       parameters:

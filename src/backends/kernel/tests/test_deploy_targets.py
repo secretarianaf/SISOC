@@ -136,11 +136,11 @@ _spec.loader.exec_module(deploy_targets)
         (["src/scripts/github/release_orchestrator.js"], ("ninguno", [], False)),
         (
             ["docker/frontends/Dockerfile", "docker/frontends/nginx.conf.template"],
-            ("selectivo", ["front_celiaquia", "front_inet", "front_vpsl"], False),
-        ),
-        (
-            ["src/scripts/frontends/verificar-contrato.mjs"],
-            ("selectivo", ["front_celiaquia", "front_inet", "front_vpsl"], False),
+            (
+                "selectivo",
+                ["front_celiaquia", "front_inet", "front_sisoc", "front_vpsl"],
+                False,
+            ),
         ),
     ],
 )
@@ -269,3 +269,42 @@ def test_selectivo_portal_no_reinicia_ocr_extraido():
             }
         }
     ) == ["django"]
+
+
+def _consumidores():
+    return set(deploy_targets._consumidores_build_sisoc())
+
+
+def test_consumidores_del_build_congelado_salen_del_compose_de_deploy():
+    consumidores = _consumidores()
+    assert "@core" in consumidores
+    assert "backend_comedores" in consumidores
+    assert "ocr_worker" in consumidores
+    assert "django" not in consumidores
+    assert not {s for s in consumidores if s.startswith("front_")}
+
+
+@pytest.mark.parametrize(
+    "ruta",
+    [
+        "src/frontends/apps/sisoc/src/routes/comedorFicha.tsx",
+        "src/frontends/packages/ui/src/Button.tsx",
+        "src/frontends/package-lock.json",
+        "src/frontends/tsconfig.json",
+        "src/scripts/frontends/verificar-contrato.mjs",
+    ],
+)
+def test_cambio_del_build_de_sisoc_despliega_front_core_y_runtimes(ruta):
+    modo, servicios, migrar = deploy_targets.planificar([ruta])
+    assert modo == "selectivo"
+    assert migrar is False
+    assert "front_sisoc" in servicios
+    assert _consumidores() <= set(servicios)
+
+
+def test_cambio_de_otra_app_no_arrastra_core_ni_runtimes():
+    assert deploy_targets.planificar(["src/frontends/apps/celiaquia/src/App.tsx"]) == (
+        "selectivo",
+        ["front_celiaquia"],
+        False,
+    )

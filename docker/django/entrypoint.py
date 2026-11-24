@@ -5,7 +5,6 @@ import time
 
 import pymysql
 
-
 if not logging.getLogger().handlers:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("django")
@@ -316,6 +315,8 @@ def run_server():
         logger.info("[server] Iniciando Django en modo produccion con Gunicorn...")
         workers = os.getenv("GUNICORN_WORKERS", "4")
         threads = os.getenv("GUNICORN_THREADS", "1")
+        # Debe superar la ventana G1 de 60 s (proxy a /api/web/<vertical>/).
+        timeout = os.getenv("GUNICORN_TIMEOUT", "75")
         cmd = [
             "gunicorn",
             "config.wsgi:application",
@@ -323,6 +324,8 @@ def run_server():
             "0.0.0.0:8000",
             "--workers",
             workers,
+            "--timeout",
+            timeout,
             "--log-level",
             "info",
         ]

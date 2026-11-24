@@ -1213,6 +1213,7 @@ def test_admisiones_legales_list_view_queryset_y_contexto(mocker):
 def test_admisiones_legales_detail_contexto_y_post(mocker):
     view = module.AdmisionesLegalesDetailView()
     obj = SimpleNamespace(pk=99)
+    view.object = obj
     view.get_object = lambda: obj
     view.request = _Req(user=_user(), GET={})
 
@@ -1220,7 +1221,7 @@ def test_admisiones_legales_detail_contexto_y_post(mocker):
         "django.views.generic.detail.SingleObjectMixin.get_context_data",
         return_value={},
     )
-    mocker.patch(
+    get_legales_context = mocker.patch(
         "admisiones.views.web_views.LegalesService.get_legales_context",
         return_value={"ctx": 1},
     )
@@ -1228,6 +1229,7 @@ def test_admisiones_legales_detail_contexto_y_post(mocker):
     mocker.patch("admisiones.views.web_views.LegalesNumIFForm", return_value="FORM_IF")
 
     context = view.get_context_data()
+    get_legales_context.assert_called_once_with(obj, view.request)
     assert context["ctx"] == 1
     assert context["form"] == "FORM"
     assert context["form_legales_num_if"] == "FORM_IF"
@@ -1236,7 +1238,9 @@ def test_admisiones_legales_detail_contexto_y_post(mocker):
         "admisiones.views.web_views.LegalesService.procesar_post_legales",
         return_value="OK_POST",
     )
+    del view.object
     assert view.post(_Req(user=_user()), pk=99) == "OK_POST"
+    assert view.object is obj
 
 
 def test_admisiones_legales_detail_renders_invalid_num_if_form(mocker):

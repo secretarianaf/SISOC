@@ -40,13 +40,13 @@ def test_global_list_view_get_queryset_delega_en_service(mocker):
     view = module.RendicionCuentaMensualGlobalListView()
     view.request = _Req(user=_user(), GET={})
 
-    expected = [SimpleNamespace(id=1)]
+    queryset = module.RendicionCuentaMensual.objects.none()
     service_mock = mocker.patch(
         "rendicioncuentasmensual.views.RendicionCuentaMensualService.obtener_todas_rendiciones_cuentas_mensuales",
-        return_value=expected,
+        return_value=queryset,
     )
 
-    assert view.get_queryset() == expected
+    assert list(view.get_queryset()) == []
     service_mock.assert_called_once_with()
 
 
@@ -333,7 +333,7 @@ def test_global_list_exporta_solo_columnas_activas_y_en_su_orden(mocker):
 
     assert view.get_export_columns() == [
         ("Estado", "estado_proceso_display"),
-        ("Proyecto", "comedor.codigo_de_proyecto"),
+        ("Proyecto", "codigo_proyecto_efectivo"),
     ]
 
 

@@ -1,5 +1,6 @@
 import { useLegacyScrollHints } from "./useLegacyScrollHints";
 import { pageRange } from "./insumosPagination";
+import { insumoActionPath, insumosListPath } from "./insumosPaths";
 import {
   useEffect,
   useState,
@@ -39,7 +40,6 @@ type LoadState =
   | { status: "error"; requestKey: string; message: string; forbidden: boolean; statusCode?: number; prerequisite?: WebPrerequisite | null };
 
 const webClient = crearCliente("/api");
-const LIST_PATH = "/v2/sisoc/insumos/";
 const SIN_CATEGORIA = "sin";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -109,13 +109,13 @@ function isInsumosPage(value: unknown): value is InsumosPage {
   );
 }
 
-function pageHref(search: string, category: string, page?: number): string {
+function pageHref(listPath: string, search: string, category: string, page?: number): string {
   const params = new URLSearchParams();
   if (search) params.set("busqueda", search);
   if (category) params.set("categoria", category);
   if (page !== undefined) params.set("page", String(page));
   const query = params.toString();
-  return `${LIST_PATH}${query ? `?${query}` : ""}`;
+  return `${listPath}${query ? `?${query}` : ""}`;
 }
 
 function useListLocation() {
@@ -153,6 +153,8 @@ export default function InsumosList({
   showCategories: boolean;
 }) {
   const { search: locationSearch, navigate } = useListLocation();
+  const pathname = window.location.pathname;
+  const listPath = insumosListPath(pathname);
   const searchParams = new URLSearchParams(locationSearch);
   const busqueda = (searchParams.get("busqueda") ?? "").trim();
   const categoria = (searchParams.get("categoria") ?? "").trim();
@@ -226,22 +228,22 @@ export default function InsumosList({
     const values = new FormData(event.currentTarget);
     const search = String(values.get("busqueda") ?? "").trim();
     const selectedCategory = String(values.get("categoria") ?? "").trim();
-    navigate(pageHref(search, selectedCategory));
+    navigate(pageHref(listPath, search, selectedCategory));
   };
-  const reset = internalNavigation(navigate, LIST_PATH);
+  const reset = internalNavigation(navigate, listPath);
   const renderActions = (
     <div className="row mt-3">
       <div className="col-12 d-flex flex-wrap justify-content-end gap-2 search-actions">
-      <a className="poncho-btn poncho-btn--neutro" href={LIST_PATH} onClick={reset}>
+      <a className="poncho-btn poncho-btn--neutro" href={listPath} onClick={reset}>
         Resetear
       </a>
       {showManagement && (
-        <a className="poncho-btn poncho-btn--cta" href={`${LIST_PATH}crear/`}>
+        <a className="poncho-btn poncho-btn--cta" href={insumoActionPath(pathname, "crear")}>
           <i className="fas fa-plus" aria-hidden="true" /> Agregar insumo
         </a>
       )}
       {showCategories && (
-        <a className="poncho-btn poncho-btn--neutro" href={`${LIST_PATH}categorias/`}>
+        <a className="poncho-btn poncho-btn--neutro" href={insumosListPath(pathname, true)}>
           Categorías
         </a>
       )}
@@ -372,14 +374,14 @@ export default function InsumosList({
                               <>
                                 <a
                                   className="btn btn-editar"
-                                  href={`${LIST_PATH}${item.id}/editar/`}
+                                  href={insumoActionPath(pathname, `${item.id}/editar`)}
                                   title="Editar"
                                 >
                                   <i className="fas fa-edit" aria-hidden="true" /> Editar
                                 </a>
                                 <a
                                   className="btn btn-eliminar"
-                                  href={`${LIST_PATH}${item.id}/eliminar/`}
+                                  href={insumoActionPath(pathname, `${item.id}/eliminar`)}
                                   title="Eliminar"
                                 >
                                   <i className="fas fa-trash-alt" aria-hidden="true" /> Eliminar
@@ -405,7 +407,7 @@ export default function InsumosList({
               </div>
             </div>
           </div>
-          <Pagination page={visibleState.page} onNavigate={navigate} />
+          <Pagination page={visibleState.page} listPath={listPath} onNavigate={navigate} />
         </>
       )}
     </div>
@@ -415,9 +417,11 @@ export default function InsumosList({
 
 function Pagination({
   page,
+  listPath,
   onNavigate,
 }: {
   page: InsumosPage;
+  listPath: string;
   onNavigate: (url: string) => void;
 }) {
   if (page.pages <= 1) {
@@ -430,7 +434,7 @@ function Pagination({
     );
   }
   const current = Math.min(Math.max(page.page, 1), page.pages);
-  const hrefFor = (number: number) => pageHref(page.filters.busqueda, page.filters.categoria, number);
+  const hrefFor = (number: number) => pageHref(listPath, page.filters.busqueda, page.filters.categoria, number);
   return (
     <div className="mt-2">
       <ul className="pagination">

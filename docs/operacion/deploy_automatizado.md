@@ -123,7 +123,7 @@ la configuración o el lockfile de `src/frontends/`, o en `src/scripts/frontends
 
 Las pantallas migradas están **activas por defecto**: sin la variable `REACT_VERTICALES_ACTIVAS` se montan todas las
 claves de `react_activation.REGISTRO`, siempre que el entorno tenga el build congelado. Se controlan con
-`REACT_VERTICALES_ACTIVAS` en el core y en los runtimes. Claves: `sisoc` y `core` (páginas del core), `ciudadanos`, `audittrail`, `dashboard`,
+`REACT_VERTICALES_ACTIVAS` en el core y en los runtimes. Claves: `core` (páginas del core), `insumos`, `ciudadanos`, `audittrail`, `dashboard`,
 `encuestas`, `usuarios`, `pas`, `vat`, `cdi`, `cdf`, `comedores`, `dispositivos`, `inspecciones`, `ocr`
 (`src/backends/kernel/core/react_activation.py`). 
 

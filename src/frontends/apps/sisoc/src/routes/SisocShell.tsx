@@ -2,6 +2,7 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { leerCookie } from "@sisoc/api";
 import InsumosToast from "../InsumosToast";
+import { INSUMOS_CANONICAL_LIST, INSUMOS_PREVIEW_LIST, isCanonicalInsumosPath } from "../insumosPaths";
 import { safeInternalPath } from "../webAccess";
 import type { NavigationNode, ReadyContext, ShellRouteDefinition, ShellRouteParams } from "./types";
 
@@ -191,7 +192,7 @@ export function nestedNavMarkup(item: NavigationNode, depth: number, parentId?: 
 // Identity frames render the legacy menu with its original public links.
 function projectedHref(item: NavigationNode, previewLinks = true): string | null {
   if (previewLinks && item.id === "insumos_listar" && item.href === "/insumos/") {
-    return "/v2/sisoc/insumos/";
+    return INSUMOS_PREVIEW_LIST;
   }
   return internalPath(item.href);
 }
@@ -337,7 +338,7 @@ export default function SisocShell({
   pageTitle,
   heading,
   overlays,
-  previewLinks = true,
+  previewLinks: allowPreviewLinks = true,
   breadcrumb,
   hideBack = false,
   backHref = "/",
@@ -370,6 +371,8 @@ export default function SisocShell({
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pathname, setPathname] = useState(() => window.location.pathname);
+  const canonicalInsumos = isCanonicalInsumosPath(pathname);
+  const previewLinks = allowPreviewLinks && !canonicalInsumos;
   // Native groups-list markup does not mark its Administration branch active.
   const navigationPath = activePath ?? (!previewLinks && pathname === "/grupos/" ? "" : pathname);
   const [successMessage, setSuccessMessage] = useState("");
@@ -381,7 +384,8 @@ export default function SisocShell({
     return () => { document.title = previousTitle; };
   }, [routeTitle, pageTitle]);
   const returnToList = (message = "") => {
-    window.history.pushState({}, "", shellRoute?.route.listPath ?? "/v2/sisoc/insumos/");
+    const target = shellRoute?.route.listPath ?? INSUMOS_PREVIEW_LIST;
+    window.history.pushState({}, "", canonicalInsumos ? target.replace(INSUMOS_PREVIEW_LIST, INSUMOS_CANONICAL_LIST) : target);
     setPathname(window.location.pathname);
     setSuccessMessage(message);
   };

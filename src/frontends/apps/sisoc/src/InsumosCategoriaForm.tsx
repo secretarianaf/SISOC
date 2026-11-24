@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { crearCliente, SinPermiso } from "@sisoc/api";
 import InsumosAccessError from "./InsumosAccessError";
+import { insumosListPath } from "./insumosPaths";
 import { InsumosForbiddenError, rejectInsumosForbidden, validateInsumosStatus, type WebPrerequisite } from "./webAccess";
 
 type Action = "crear" | "editar" | "eliminar";
@@ -11,7 +12,6 @@ type Errors = Record<string, string[]>;
 type State = { status: "loading" } | { status: "ready"; endpoint: string; data: Metadata | Confirmation } | { status: "error"; endpoint: string; forbidden: boolean; prerequisite?: WebPrerequisite | null };
 type Props = { action: Action; id?: string; onComplete: (message: string) => void; onCancel: () => void };
 const client = crearCliente("/api");
-const LIST = "/v2/sisoc/insumos/categorias/";
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object";
 
 function isMetadata(value: unknown): value is Metadata {
@@ -36,6 +36,7 @@ function fieldErrors(error: unknown): Errors | null {
 }
 
 export default function InsumosCategoriaForm({ action, id, onComplete, onCancel }: Props) {
+  const listPath = insumosListPath(window.location.pathname, true);
   const endpoint = action === "crear" ? "web/insumos/categorias/crear/" : `web/insumos/categorias/${id}/${action}/`;
   const [state, setState] = useState<State>({ status: "loading" });
   const [values, setValues] = useState<Values>({ programa: "", nombre: "", descripcion: "", orden: "0", activo: true });
@@ -109,13 +110,13 @@ export default function InsumosCategoriaForm({ action, id, onComplete, onCancel 
   const renderErrors = (name: string) => errors[name]?.length ? <div id={`error_${name}`} className="invalid-feedback d-block">{errors[name].map((message, index) => <div key={index}><strong>{message}</strong></div>)}</div> : null;
   const classes = (name: string, base: string) => `${base}${errors[name]?.length ? " is-invalid" : ""}`;
   if (state.status === "loading" || state.endpoint !== endpoint) return <div className="container mt-4" role="status">Cargando formulario…</div>;
-  if (state.status === "error") return state.forbidden ? <InsumosAccessError prerequisite={state.prerequisite} /> : <div className="container mt-4"><div className="alert alert-danger" role="alert">No se pudo cargar el formulario.</div><a href={LIST} onClick={cancel}>Volver al listado</a></div>;
+  if (state.status === "error") return state.forbidden ? <InsumosAccessError prerequisite={state.prerequisite} /> : <div className="container mt-4"><div className="alert alert-danger" role="alert">No se pudo cargar el formulario.</div><a href={listPath} onClick={cancel}>Volver al listado</a></div>;
   const disabled = pending || uncertain;
   const uncertainMessage = uncertain ? <div className="alert alert-danger" role="alert">No se pudo confirmar el resultado. Antes de volver a intentarlo, revisá el listado.</div> : null;
   if (isConfirmation(state.data)) return <div className="container mt-4"><div className="card">
     <div className="card-header bg-danger text-white"><h5 className="mb-0 fw-semibold">Confirmar eliminación</h5></div>
     <div className="card-body"><p className="mb-3">¿Seguro que desea eliminar la categoría <strong>{state.data.nombre}</strong>? Los insumos asociados quedarán como "Sin categoría".</p>
-      {uncertainMessage}<form method="post" onSubmit={submit} aria-busy={pending}><button type="submit" className="btn btn-danger" disabled={disabled}>Eliminar</button>{" "}<a href={LIST} className="btn btn-secondary" aria-disabled={pending || undefined} onClick={cancel}>Cancelar</a></form>
+      {uncertainMessage}<form method="post" onSubmit={submit} aria-busy={pending}><button type="submit" className="btn btn-danger" disabled={disabled}>Eliminar</button>{" "}<a href={listPath} className="btn btn-secondary" aria-disabled={pending || undefined} onClick={cancel}>Cancelar</a></form>
     </div>
   </div></div>;
   return <div className="container mt-4">
@@ -133,7 +134,7 @@ export default function InsumosCategoriaForm({ action, id, onComplete, onCancel 
         <div className="col-md-3"><div id="div_id_orden" className="mb-3"><label htmlFor="id_orden" className="form-label requiredField">Orden<span className="asteriskField">*</span></label><input id="id_orden" name="orden" type="number" min={0} required className={classes("orden", "numberinput form-control")} value={values.orden} disabled={disabled} {...feedback("orden")} onChange={(event) => setValues({ ...values, orden: event.target.value })} />{renderErrors("orden")}</div></div>
         <div className="col-md-3"><div className="mb-3"><div id="div_id_activo" className="form-check"><input id="id_activo" name="activo" type="checkbox" role="switch" className={classes("activo", "checkboxinput form-check-input toggle-switch")} checked={values.activo} disabled={disabled} {...feedback("activo")} onChange={(event) => setValues({ ...values, activo: event.target.checked })} /><label htmlFor="id_activo" className="form-check-label">Activa</label>{renderErrors("activo")}</div></div></div>
       </div>
-      <div className="d-flex justify-content-end gap-2 mt-3"><a href={LIST} className="btn btn-secondary" aria-disabled={pending || undefined} onClick={cancel}>Cancelar</a><button type="submit" className="btn btn-success" disabled={disabled}><i className="fas fa-save" aria-hidden="true" /> Guardar categoría</button></div>
+      <div className="d-flex justify-content-end gap-2 mt-3"><a href={listPath} className="btn btn-secondary" aria-disabled={pending || undefined} onClick={cancel}>Cancelar</a><button type="submit" className="btn btn-success" disabled={disabled}><i className="fas fa-save" aria-hidden="true" /> Guardar categoría</button></div>
     </form></div></div>
   </div>;
 }

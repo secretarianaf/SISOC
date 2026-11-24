@@ -18,7 +18,6 @@ from celiaquia.views.pago import (
     PagoNominaExportActualView,
 )
 from celiaquia.views.expediente import (
-    ExpedienteListView,
     ExpedienteDeleteView,
     ExpedienteExcelMasivoDownloadView,
     ExpedientePreviewExcelView,

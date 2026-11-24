@@ -15,7 +15,9 @@ from django.utils import timezone
 from core.models import Provincia
 from celiaquia.canonical_shell import canonical_screen
 from celiaquia.forms import CupoBajaLegajoForm, CupoSuspenderLegajoForm
-from celiaquia.services.cupo_service import CupoService
+from celiaquia.services.cupo_service import (  # pylint: disable=no-name-in-module
+    CupoService,
+)
 from celiaquia.views.cupo import (
     CupoDashboardView,
     CupoProvinciaDetailView,

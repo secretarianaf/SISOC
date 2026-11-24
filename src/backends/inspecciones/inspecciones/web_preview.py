@@ -17,7 +17,7 @@ import re
 from pathlib import Path
 from types import MappingProxyType
 
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.middleware.csrf import get_token
 from django.urls import path, reverse
 from django.utils.cache import patch_cache_control, patch_vary_headers
@@ -166,6 +166,10 @@ class _ImportacionEntry:
     """Keep native dispatch and forms; change only the successful page renderer."""
 
     index_bytes = b""
+    # Provided by the native import view this mixin is combined with.
+    config: dict
+    titulo: str
+    request: HttpRequest
 
     def render_to_response(self, context, **response_kwargs):
         paso = context.get("paso", 1)

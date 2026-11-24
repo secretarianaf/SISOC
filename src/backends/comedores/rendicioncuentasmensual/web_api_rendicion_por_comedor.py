@@ -30,9 +30,8 @@ class RendicionPorComedorWebView(APIView):
 
     def get(self, request, comedor_id):
         view = RendicionCuentaMensualListView()
-        view.setup(
-            request._request, comedor_id=comedor_id
-        )  # pylint: disable=protected-access
+        native_request = request._request  # pylint: disable=protected-access
+        view.setup(native_request, comedor_id=comedor_id)
         view.object_list = view.get_queryset()
         try:
             context = view.get_context_data()

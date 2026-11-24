@@ -72,7 +72,7 @@ def _list_projection(request, *args, **kwargs):
 def _detail_projection(request, pago_id):
     # Same lookup as PagoExpedienteDetailView.get.
     pago = get_object_or_404(PagoExpediente, pk=pago_id)
-    field = PagoRespuestaUploadForm.base_fields["archivo"]
+    field = PagoRespuestaUploadForm().fields["archivo"]
     return JsonResponse(
         {
             "version": 1,

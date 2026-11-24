@@ -135,7 +135,9 @@ def _subsanacion(sub):
     }
 
 
-def _legajo(legajo, ctx, expediente, responsables_de):
+def _legajo(  # pylint: disable=too-many-locals
+    legajo, ctx, expediente, responsables_de
+):
     estado = expediente.estado.nombre
     is_tec, is_coord = ctx["is_tecnico_celiaquia"], ctx["is_coord_celiaquia"]
     is_prov, is_admin = ctx["is_provincial_celiaquia"], ctx["is_admin_celiaquia"]

@@ -35,9 +35,9 @@ src/backends/comedores/tests/test_web_user_form_pwa.py:generic-api-key:224
 src/backends/comedores/tests/test_web_user_form_pwa.py:generic-api-key:243
 src/backends/comedores/tests/test_web_user_form_pwa.py:generic-api-key:252
 src/backends/sisoc_core/tests/test_web_bulk_credentials.py:generic-api-key:19
-src/backends/sisoc_core/tests/test_web_user_form_api.py:generic-api-key:456
-src/backends/sisoc_core/tests/test_web_user_form_api.py:generic-api-key:483
+src/backends/sisoc_core/tests/test_web_user_form_api.py:generic-api-key:459
 src/backends/sisoc_core/tests/test_web_user_form_api.py:generic-api-key:486
+src/backends/sisoc_core/tests/test_web_user_form_api.py:generic-api-key:489
 src/backends/sisoc_core/tests/test_web_user_import.py:generic-api-key:17
 src/frontends/apps/sisoc/src/routes/acompanamientos.test.tsx:generic-api-key:15
 src/frontends/apps/sisoc/src/routes/acompanamientos.tsx:generic-api-key:29

@@ -61,8 +61,10 @@ export function Breadcrumb({ items }: { items: CdfListData["breadcrumb"] }) {
 }
 
 /** `search_bar.html` in filters mode: optional export button, title, filters and actions. */
-export function SearchBar({ data, title, reset, add, exportButton }: {
-  data: CdfListData; title: string; reset: string; add?: { url: string; text: string }; exportButton?: ReactNode;
+export function SearchBar({ data, title, reset, add, extra = [], exportButton }: {
+  data: CdfListData; title: string; reset: string; add?: { url: string; text: string };
+  /** `additional_buttons` of `search_bar.html`, next to the add button. */
+  extra?: { url: string; text: string }[]; exportButton?: ReactNode;
 }) {
   return (
     <>
@@ -76,6 +78,7 @@ export function SearchBar({ data, title, reset, add, exportButton }: {
         <div className="col-12 d-flex flex-wrap justify-content-end gap-2 search-actions">
           <a href={reset} className="poncho-btn poncho-btn--neutro" data-restablecer-filtros-favoritos="true">Resetear</a>
           {add && <a href={add.url} className="poncho-btn poncho-btn--cta"><i className="fas fa-plus" aria-hidden="true" />{add.text}</a>}
+          {extra.map((b) => <a key={b.url} href={b.url} className="btn btn-primary btn-lg text-white text-nowrap">{b.text}</a>)}
         </div>
       </div>
     </>

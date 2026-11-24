@@ -10,12 +10,16 @@ from centrodefamilia.models import Beneficiario, BeneficiarioResponsable
 
 MAX_FILAS = 500
 MAX_TAMANIO_BYTES = 10 * 1024 * 1024
+# Edad del preinscripto al validar: de 6 a 17 años inclusive.
+EDAD_MINIMA = 6
+EDAD_MAXIMA = 17
 SEPARADOR_MULTIPLE = ";"
 
 HOJA_DATOS = "Preinscriptos"
 HOJA_INSTRUCCIONES = "Instrucciones"
 HOJA_ACTIVIDADES = "Actividades"
 HOJA_LISTAS = "Listas"
+HOJA_UBICACIONES = "Ubicaciones"
 
 
 class Tipo:
@@ -74,7 +78,7 @@ COLUMNAS = (
     Columna("provincia", "Provincia", Tipo.PROVINCIA, True),
     Columna("municipio", "Municipio", Tipo.MUNICIPIO),
     Columna("localidad", "Localidad", Tipo.LOCALIDAD),
-    Columna("calle", "Calle", Tipo.TEXTO, True, 150),
+    Columna("calle", "Calle", Tipo.TEXTO, largo_maximo=150),
     Columna("altura", "Altura", Tipo.ENTERO),
     Columna("piso_vivienda", "Piso", Tipo.TEXTO, largo_maximo=10),
     Columna("departamento_vivienda", "Departamento", Tipo.TEXTO, largo_maximo=10),
@@ -134,7 +138,6 @@ COLUMNAS = (
             "hoja Actividades, separados por ;"
         ),
     ),
-    Columna("observaciones", "Observaciones", Tipo.TEXTO),
     # Datos del titular
     Columna("titular_cuil", "CUIL titular", Tipo.CUIL, True),
     Columna("titular_dni", "DNI titular", Tipo.DNI, True),
@@ -151,7 +154,7 @@ COLUMNAS = (
         True,
         opciones=VINCULOS,
     ),
-    Columna("titular_calle", "Calle titular", Tipo.TEXTO, True, 150),
+    Columna("titular_calle", "Calle titular", Tipo.TEXTO, largo_maximo=150),
     Columna("titular_altura", "Altura titular", Tipo.ENTERO),
     Columna("titular_piso_vivienda", "Piso titular", Tipo.TEXTO, largo_maximo=10),
     Columna(

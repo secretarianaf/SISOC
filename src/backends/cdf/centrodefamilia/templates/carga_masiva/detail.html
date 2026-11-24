@@ -12,11 +12,12 @@
                 <h3 class="mb-0">{{ carga.nombre_archivo }}</h3>
                 <small class="text-muted">
                     Subido el {{ carga.fecha_subida|date:"d/m/Y H:i" }} por {{ carga.subido_por.username }}.
-                    {% if carga.esta_pendiente %}
-                        <span class="badge bg-warning text-dark">Pendiente</span>
-                    {% else %}
-                        <span class="badge bg-success">Confirmado</span>
-                        el {{ carga.fecha_confirmacion|date:"d/m/Y H:i" }} por {{ carga.confirmado_por.username }}.
+                    {% include "carga_masiva/_estado_lote.html" %}
+                    {% if carga.fecha_confirmacion %}
+                        Confirmado el {{ carga.fecha_confirmacion|date:"d/m/Y H:i" }} por {{ carga.confirmado_por.username }}.
+                    {% endif %}
+                    {% if carga.fecha_deshecho %}
+                        Deshecho el {{ carga.fecha_deshecho|date:"d/m/Y H:i" }} por {{ carga.deshecho_por.username }}.
                     {% endif %}
                 </small>
             </div>
@@ -35,13 +36,29 @@
                             class="btn btn-primary"
                             data-bs-toggle="modal"
                             data-bs-target="#modal-confirmar"
-                            {% if not puede_confirmar %}disabled title="Hay filas con error"{% endif %}>
+                            {% if not puede_confirmar %}disabled title="{{ motivo_no_confirmar }}"{% endif %}>
                         Confirmar carga
                     </button>
                     {% include "carga_masiva/_eliminar_form.html" %}
                 {% else %}
                     <a href="{% url 'carga_masiva_comprobante' carga.pk %}"
                        class="btn btn-success">Descargar comprobante</a>
+                    {% if carga.esta_confirmado %}
+                        {% if motivo_no_deshacer %}
+                            <button type="button"
+                                    class="btn btn-outline-danger"
+                                    disabled
+                                    title="{{ motivo_no_deshacer }}">Deshacer carga</button>
+                        {% else %}
+                            <form method="post"
+                                  action="{% url 'carga_masiva_deshacer' carga.pk %}"
+                                  class="d-inline"
+                                  data-confirm-submit="¿Deshacer la carga? Se borran los preinscriptos y titulares que creó y se restauran los que reactivó o actualizó.">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger">Deshacer carga</button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
@@ -51,10 +68,33 @@
                      role="alert">{{ message }}</div>
             {% endfor %}
         {% endif %}
+        {% if carga.esta_pendiente and carga.renaper_pendientes %}
+            <div id="renaper-verificacion"
+                 class="alert alert-info"
+                 role="status"
+                 data-url="{% url 'carga_masiva_renaper' carga.pk %}"
+                 data-total="{{ carga.renaper_pendientes }}">
+                {% csrf_token %}
+                <p class="mb-2" data-renaper-texto>
+                    Verificando con RENAPER: faltan {{ carga.renaper_pendientes }} persona{{ carga.renaper_pendientes|pluralize }}. No cierre esta página; si la cierra, la verificación sigue al volver.
+                </p>
+                <div class="progress"
+                     role="progressbar"
+                     aria-label="Avance de la verificación con RENAPER">
+                    <div class="progress-bar" style="width: 0%" aria-valuenow="0"></div>
+                </div>
+                <button type="button"
+                        class="btn btn-sm btn-outline-primary mt-2 d-none"
+                        data-renaper-reintentar>Reintentar</button>
+            </div>
+        {% endif %}
         {% if carga.esta_pendiente and carga.total_errores %}
             <div class="alert alert-warning" role="alert">
-                Hay {{ carga.total_errores }} fila{{ carga.total_errores|pluralize }} con error. Para confirmar, corríjala{{ carga.total_errores|pluralize }} o quítela{{ carga.total_errores|pluralize }} del lote.
+                Hay {{ carga.total_errores }} fila{{ carga.total_errores|pluralize }} con error. Si confirma, esa{{ carga.total_errores|pluralize }} fila{{ carga.total_errores|pluralize }} se rechaza{{ carga.total_errores|pluralize:"n" }} y no se carga{{ carga.total_errores|pluralize:"n" }}; puede corregirla{{ carga.total_errores|pluralize }} antes.
             </div>
+        {% endif %}
+        {% if carga.esta_confirmado and motivo_no_deshacer %}
+            <div class="alert alert-secondary" role="alert">{{ motivo_no_deshacer }}</div>
         {% endif %}
         <div class="row mb-3">
             <div class="col-6 col-md-3 mb-2">
@@ -128,6 +168,8 @@
                                 <td>
                                     {% if fila.quitada %}
                                         <span class="badge bg-secondary">Quitada</span>
+                                    {% elif fila.estado == "error" and not carga.esta_pendiente %}
+                                        <span class="badge bg-danger">Rechazada</span>
                                     {% elif fila.estado == "error" %}
                                         <span class="badge bg-danger">Con error</span>
                                     {% elif fila.estado == "advertencia" %}
@@ -171,7 +213,9 @@
                                     </td>
                                 {% else %}
                                     <td>
-                                        {% if fila.beneficiario_id %}
+                                        {% if fila.estado == "error" %}
+                                            Rechazada
+                                        {% elif fila.beneficiario_id %}
                                             <a href="{% url 'beneficiarios_detail' fila.beneficiario_id %}">{{ fila.get_accion_preinscripto_display }}</a>
                                         {% else %}
                                             -
@@ -229,7 +273,7 @@
                                 aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body">
-                        <p>Se van a cargar {{ carga.total_filas }} filas:</p>
+                        <p>Se van a cargar las filas sin error:</p>
                         <ul>
                             <li>Preinscriptos a crear: {{ resumen.preinscriptos_crear }}</li>
                             <li>Preinscriptos a reactivar: {{ resumen.preinscriptos_reactivar }}</li>
@@ -237,7 +281,14 @@
                             <li>Titulares a actualizar: {{ resumen.titulares_actualizar }}</li>
                             <li>Titulares a reactivar: {{ resumen.titulares_reactivar }}</li>
                         </ul>
-                        <p class="mb-0 text-danger">Un lote confirmado no se puede deshacer.</p>
+                        {% if resumen.rechazadas %}
+                            <p class="text-danger">
+                                Se rechazan {{ resumen.rechazadas }} fila{{ resumen.rechazadas|pluralize }} con error: no se carga{{ resumen.rechazadas|pluralize:"n" }} y figura{{ resumen.rechazadas|pluralize:"n" }} en el comprobante.
+                            </p>
+                        {% endif %}
+                        <p class="mb-0 text-muted">
+                            Solo se puede deshacer el último lote cargado, mientras nadie modifique sus preinscriptos.
+                        </p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -247,4 +298,7 @@
             </div>
         </div>
     {% endif %}
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/carga_masiva_renaper.js' %}"></script>
 {% endblock %}

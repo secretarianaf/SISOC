@@ -19,12 +19,13 @@ from centrodefamilia.services.carga_masiva.columnas import (
     HOJA_DATOS,
     HOJA_INSTRUCCIONES,
     HOJA_LISTAS,
+    HOJA_UBICACIONES,
     MAX_FILAS,
     MAX_TAMANIO_BYTES,
     SEPARADOR_MULTIPLE,
     Tipo,
 )
-from core.models import Provincia
+from core.models import Localidad, Municipio, Provincia
 from core.services.csv_export import neutralize_csv_formula
 
 NOMBRE_PLANTILLA = "plantilla_carga_masiva_preinscriptos.xlsx"
@@ -132,10 +133,14 @@ def generar_plantilla():
     hoja = libro.active
     hoja.title = HOJA_DATOS
     listas = libro.create_sheet(HOJA_LISTAS)
-    _escribir_hoja_datos(hoja, _escribir_listas(listas))
+    rangos = _escribir_listas(listas)
+    ubicaciones = libro.create_sheet(HOJA_UBICACIONES)
+    rangos.update(_escribir_ubicaciones(ubicaciones))
+    _escribir_hoja_datos(hoja, rangos)
     _escribir_actividades(libro.create_sheet(HOJA_ACTIVIDADES))
     _escribir_instrucciones(libro.create_sheet(HOJA_INSTRUCCIONES, 1))
     listas.sheet_state = "hidden"
+    ubicaciones.sheet_state = "hidden"
     return _a_bytes(libro)
 
 
@@ -175,22 +180,85 @@ def _escribir_listas(hoja):
     return rangos
 
 
+def _escribir_ubicaciones(hoja):
+    """Municipios por provincia y localidades por municipio, ordenados por su padre.
+
+    Cada lista desplegable dependiente toma el bloque contiguo de su padre con
+    DESREF/COINCIDIR/CONTAR.SI, así que las filas tienen que quedar agrupadas.
+    """
+    hoja.append(["Provincia", "Municipio", "Provincia|Municipio", "Localidad"])
+    municipios = list(
+        Municipio.objects.filter(provincia__isnull=False)
+        .order_by("provincia__nombre", "nombre")
+        .values_list("provincia__nombre", "nombre")
+    )
+    localidades = list(
+        Localidad.objects.filter(municipio__provincia__isnull=False)
+        .order_by("municipio__provincia__nombre", "municipio__nombre", "nombre")
+        .values_list("municipio__provincia__nombre", "municipio__nombre", "nombre")
+    )
+    for fila in range(max(len(municipios), len(localidades))):
+        valores = ["", "", "", ""]
+        if fila < len(municipios):
+            valores[0:2] = municipios[fila]
+        if fila < len(localidades):
+            provincia, municipio, localidad = localidades[fila]
+            valores[2:4] = [f"{provincia}|{municipio}", localidad]
+        hoja.append([neutralize_csv_formula(valor) for valor in valores])
+    ultima_municipio = len(municipios) + 1
+    ultima_localidad = len(localidades) + 1
+    return {
+        Tipo.MUNICIPIO: (
+            f"'{HOJA_UBICACIONES}'!$A$2:$A${ultima_municipio}",
+            f"'{HOJA_UBICACIONES}'!$B$1",
+        ),
+        Tipo.LOCALIDAD: (
+            f"'{HOJA_UBICACIONES}'!$C$2:$C${ultima_localidad}",
+            f"'{HOJA_UBICACIONES}'!$D$1",
+        ),
+    }
+
+
+def _formula_dependiente(rango_claves, origen, clave):
+    """Lista con las filas de `rango_claves` iguales a `clave` (bloque contiguo)."""
+    return (
+        f"OFFSET({origen},MATCH({clave},{rango_claves},0),0,"
+        f"COUNTIF({rango_claves},{clave}),1)"
+    )
+
+
+def _formula_lista(columna, rangos, letras):
+    if columna.tipo == Tipo.MUNICIPIO:
+        provincia = f"${letras[columna.clave.replace('municipio', 'provincia')]}2"
+        return _formula_dependiente(*rangos[Tipo.MUNICIPIO], provincia)
+    if columna.tipo == Tipo.LOCALIDAD:
+        provincia = f"${letras[columna.clave.replace('localidad', 'provincia')]}2"
+        municipio = f"${letras[columna.clave.replace('localidad', 'municipio')]}2"
+        return _formula_dependiente(
+            *rangos[Tipo.LOCALIDAD], f'{provincia}&"|"&{municipio}'
+        )
+    clave = Tipo.PROVINCIA if columna.tipo == Tipo.PROVINCIA else columna.clave
+    return rangos.get(clave)
+
+
 def _escribir_hoja_datos(hoja, rangos):
     _escribir_encabezado(hoja, ENCABEZADOS)
+    letras = {
+        columna.clave: get_column_letter(indice)
+        for indice, columna in enumerate(COLUMNAS, start=1)
+    }
     for indice, columna in enumerate(COLUMNAS, start=1):
         letra = get_column_letter(indice)
         rango_celdas = f"{letra}2:{letra}{FILAS_CON_FORMATO}"
         if columna.tipo in (Tipo.CUIL, Tipo.DNI, Tipo.DIGITOS):
             for fila in range(2, FILAS_CON_FORMATO + 1):
                 hoja.cell(row=fila, column=indice).number_format = "@"
-        clave_lista = (
-            Tipo.PROVINCIA if columna.tipo == Tipo.PROVINCIA else columna.clave
-        )
-        if clave_lista not in rangos:
+        formula = _formula_lista(columna, rangos, letras)
+        if not formula:
             continue
         validacion = DataValidation(
             type="list",
-            formula1=rangos[clave_lista],
+            formula1=formula,
             allow_blank=True,
             # Varios valores separados por ; no entran en una lista desplegable.
             showErrorMessage=columna.tipo != Tipo.OPCIONES,
@@ -221,8 +289,8 @@ def _formato_columna(columna):
         Tipo.EMAIL: "Correo electrónico válido.",
         Tipo.SI_NO: "Sí o No. Vacío equivale a No.",
         Tipo.PROVINCIA: "Nombre de la lista.",
-        Tipo.MUNICIPIO: "Municipio de la provincia indicada.",
-        Tipo.LOCALIDAD: "Localidad del municipio indicado.",
+        Tipo.MUNICIPIO: "Lista desplegable con los municipios de la provincia elegida.",
+        Tipo.LOCALIDAD: "Lista desplegable con las localidades del municipio elegido.",
     }
     partes = []
     if columna.tipo in formatos:
@@ -302,7 +370,10 @@ def generar_listado_errores(carga):
 
 
 def generar_comprobante(carga):
-    """Comprobante del lote confirmado: una fila por preinscripto cargado (RF-12)."""
+    """Comprobante del lote: una fila por fila del Excel, cargada o rechazada (RF-12).
+
+    Las filas con error no se cargan: figuran como «Rechazada» con sus motivos.
+    """
     libro = Workbook()
     hoja = libro.active
     hoja.title = "Comprobante"
@@ -316,11 +387,13 @@ def generar_comprobante(carga):
             "DNI titular",
             "Resultado preinscripto",
             "Resultado titular",
+            "Motivos del rechazo",
             "Advertencias",
             "ID preinscripto en SISOC",
         ),
     )
     for fila in carga.filas.filter(quitada=False):
+        rechazada = fila.estado == FilaCargaMasivaPreinscriptos.Estado.ERROR
         hoja.append(
             _fila_segura(
                 [
@@ -329,8 +402,13 @@ def generar_comprobante(carga):
                     fila.datos.get("dni", ""),
                     fila.datos.get("titular_cuil", ""),
                     fila.datos.get("titular_dni", ""),
-                    fila.get_accion_preinscripto_display(),
-                    fila.get_accion_titular_display(),
+                    (
+                        "Rechazada"
+                        if rechazada
+                        else fila.get_accion_preinscripto_display()
+                    ),
+                    "" if rechazada else fila.get_accion_titular_display(),
+                    _motivos(fila.errores) if rechazada else "",
                     _motivos(fila.advertencias),
                     fila.beneficiario_id or "",
                 ]

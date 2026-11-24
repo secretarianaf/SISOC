@@ -27,7 +27,7 @@
                     <li>Corrija o quite las filas con error y confirme la carga.</li>
                 </ol>
                 <p class="text-muted small">
-                    Solo archivos .xlsx de la plantilla oficial, hasta 10 MB y {{ max_filas }} filas con datos.
+                    Solo archivos .xlsx de la plantilla oficial, hasta 10 MB y {{ max_filas }} filas con datos. Los lotes que no se confirman se eliminan a los {{ dias_retencion }} días de subidos.
                 </p>
                 <form method="post"
                       action="{% url 'carga_masiva_subir' %}"
@@ -67,13 +67,7 @@
                                 <td>{{ carga.fecha_subida|date:"d/m/Y H:i" }}</td>
                                 <td>{{ carga.subido_por.username }}</td>
                                 <td>{{ carga.nombre_archivo }}</td>
-                                <td>
-                                    {% if carga.esta_pendiente %}
-                                        <span class="badge bg-warning text-dark">Pendiente</span>
-                                    {% else %}
-                                        <span class="badge bg-success">Confirmado</span>
-                                    {% endif %}
-                                </td>
+                                <td>{% include "carga_masiva/_estado_lote.html" %}</td>
                                 <td>{{ carga.total_filas }}</td>
                                 <td>{{ carga.total_validas }}</td>
                                 <td>{{ carga.total_advertencias }}</td>

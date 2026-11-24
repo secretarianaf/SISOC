@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import DatabaseError
-from django.http import FileResponse, Http404, HttpResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import DetailView, ListView, View
@@ -29,13 +29,20 @@ from centrodefamilia.services.carga_masiva.excel import (
     generar_plantilla,
 )
 from centrodefamilia.services.carga_masiva.lotes import (
+    CargaNoDeshacible,
     CargaNoPendiente,
+    VerificacionRenaperPendiente,
     confirmar_carga,
     crear_carga,
+    deshacer_carga,
     editar_fila,
     eliminar_carga,
+    DIAS_RETENCION_PENDIENTES,
+    motivo_no_deshacer,
+    purgar_lotes_pendientes_vencidos,
     quitar_fila,
     resumen_confirmacion,
+    verificar_renaper,
 )
 
 XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -71,6 +78,12 @@ class CargaMasivaListView(LoginRequiredMixin, ListView):
     context_object_name = "cargas"
     paginate_by = 20
 
+    def get(self, request, *args, **kwargs):
+        # Retención de datos de menores: sin depender de un cron del servidor,
+        # cada vez que se abre el historial se eliminan los pendientes vencidos.
+        purgar_lotes_pendientes_vencidos()
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
         return CargaMasivaPreinscriptos.objects.select_related(
             "subido_por", "confirmado_por"
@@ -80,6 +93,7 @@ class CargaMasivaListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["form"] = SubirArchivoForm()
         context["max_filas"] = MAX_FILAS
+        context["dias_retencion"] = DIAS_RETENCION_PENDIENTES
         return context
 
 
@@ -138,9 +152,16 @@ class CargaMasivaDetailView(LoginRequiredMixin, DetailView):
                 "filtros_estado": FILTROS_ESTADO,
                 "total_quitadas": self.object.filas.filter(quitada=True).count(),
                 "resumen": resumen_confirmacion(self.object),
+                # Se cargan las filas sin error y se rechazan las demás.
                 "puede_confirmar": self.object.esta_pendiente
-                and self.object.total_filas > 0
-                and not self.object.total_errores,
+                and not self.object.renaper_pendientes
+                and self.object.total_validas + self.object.total_advertencias > 0,
+                "motivo_no_confirmar": (
+                    "Falta terminar la verificación con RENAPER"
+                    if self.object.renaper_pendientes
+                    else "No hay filas sin error para cargar"
+                ),
+                "motivo_no_deshacer": motivo_no_deshacer(self.object),
             }
         )
         return context
@@ -242,6 +263,13 @@ class CargaMasivaConfirmarView(LoginRequiredMixin, View):
         except CargaNoPendiente:
             messages.error(request, "El lote ya fue confirmado.")
             return redirect(_url_detalle(pk))
+        except VerificacionRenaperPendiente:
+            messages.error(
+                request,
+                "Todavía hay personas sin verificar contra RENAPER. Espere a que "
+                "termine la verificación y vuelva a confirmar.",
+            )
+            return redirect(_url_detalle(pk))
         except DatabaseError:
             messages.error(
                 request,
@@ -251,14 +279,47 @@ class CargaMasivaConfirmarView(LoginRequiredMixin, View):
             )
             return redirect(_url_detalle(pk))
         if confirmado:
+            carga.refresh_from_db()
             messages.success(
-                request, "Lote confirmado. Ya puede descargar el comprobante."
+                request,
+                "Lote confirmado: se cargaron "
+                f"{carga.total_validas + carga.total_advertencias} filas y se "
+                f"rechazaron {carga.total_errores}. Ya puede descargar el comprobante.",
             )
         else:
             messages.error(
                 request,
-                "No se confirmó el lote: la revalidación encontró filas con error. "
-                "Corríjalas o quítelas y vuelva a confirmar.",
+                "No se confirmó el lote: después de revalidarlo no quedó ninguna "
+                "fila sin error para cargar.",
+            )
+        return redirect(_url_detalle(pk))
+
+
+class CargaMasivaRenaperView(LoginRequiredMixin, View):
+    """Verifica contra RENAPER la próxima tanda de personas del lote (JSON)."""
+
+    def post(self, request, pk):
+        carga = get_object_or_404(CargaMasivaPreinscriptos, pk=pk)
+        try:
+            avance = verificar_renaper(carga.pk)
+        except CargaNoPendiente:
+            return JsonResponse({"error": LOTE_CONFIRMADO}, status=409)
+        return JsonResponse(avance)
+
+
+class CargaMasivaDeshacerView(LoginRequiredMixin, View):
+    """Deshace el último lote confirmado si nadie modificó sus preinscriptos."""
+
+    def post(self, request, pk):
+        carga = get_object_or_404(CargaMasivaPreinscriptos, pk=pk)
+        try:
+            deshacer_carga(carga.pk, request.user)
+        except CargaNoDeshacible as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(
+                request,
+                "Se deshizo el lote: SISOC quedó como antes de confirmarlo.",
             )
         return redirect(_url_detalle(pk))
 
@@ -298,7 +359,10 @@ class CargaMasivaComprobanteView(LoginRequiredMixin, View):
         carga = get_object_or_404(
             CargaMasivaPreinscriptos,
             pk=pk,
-            estado=CargaMasivaPreinscriptos.Estado.CONFIRMADO,
+            estado__in=[
+                CargaMasivaPreinscriptos.Estado.CONFIRMADO,
+                CargaMasivaPreinscriptos.Estado.DESHECHO,
+            ],
         )
         return _respuesta_xlsx(
             generar_comprobante(carga), f"comprobante_carga_masiva_{carga.pk}.xlsx"

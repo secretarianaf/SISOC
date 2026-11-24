@@ -2,6 +2,8 @@
 from django.urls import path
 from core.decorators import permissions_any_required
 
+from centrodefamilia.access import ROLE_CDF_CARGA_MASIVA_PERMISSION
+
 from centrodefamilia.views.informecabal import (
     InformeCabalArchivoDetailView,
     InformeCabalListView,
@@ -54,6 +56,7 @@ from .views.carga_masiva import (
     CargaMasivaArchivoView,
     CargaMasivaComprobanteView,
     CargaMasivaConfirmarView,
+    CargaMasivaDeshacerView,
     CargaMasivaDetailView,
     CargaMasivaEdicionesView,
     CargaMasivaEliminarView,
@@ -62,6 +65,7 @@ from .views.carga_masiva import (
     CargaMasivaFilaQuitarView,
     CargaMasivaListView,
     CargaMasivaPlantillaView,
+    CargaMasivaRenaperView,
     CargaMasivaSubirView,
 )
 
@@ -308,8 +312,8 @@ urlpatterns = [
     ),
 ]
 
-# Carga masiva de preinscriptos: todas las pantallas y descargas exigen el
-# mismo permiso que el alta por formulario (RN-01, RN-02).
+# Carga masiva de preinscriptos: todas las pantallas y descargas exigen el rol
+# propio de la carga masiva, que se asigna solo a algunos usuarios.
 _CARGA_MASIVA_RUTAS = (
     ("", CargaMasivaListView, "carga_masiva_list"),
     ("plantilla/", CargaMasivaPlantillaView, "carga_masiva_plantilla"),
@@ -317,6 +321,8 @@ _CARGA_MASIVA_RUTAS = (
     ("<int:pk>/", CargaMasivaDetailView, "carga_masiva_detail"),
     ("<int:pk>/confirmar/", CargaMasivaConfirmarView, "carga_masiva_confirmar"),
     ("<int:pk>/eliminar/", CargaMasivaEliminarView, "carga_masiva_eliminar"),
+    ("<int:pk>/deshacer/", CargaMasivaDeshacerView, "carga_masiva_deshacer"),
+    ("<int:pk>/renaper/", CargaMasivaRenaperView, "carga_masiva_renaper"),
     ("<int:pk>/errores/", CargaMasivaErroresView, "carga_masiva_errores"),
     ("<int:pk>/comprobante/", CargaMasivaComprobanteView, "carga_masiva_comprobante"),
     ("<int:pk>/archivo/", CargaMasivaArchivoView, "carga_masiva_archivo"),
@@ -335,7 +341,7 @@ _CARGA_MASIVA_RUTAS = (
 urlpatterns += [
     path(
         f"beneficiarios/carga-masiva/{ruta}",
-        permissions_any_required(["centrodefamilia.view_centro"])(vista.as_view()),
+        permissions_any_required([ROLE_CDF_CARGA_MASIVA_PERMISSION])(vista.as_view()),
         name=nombre,
     )
     for ruta, vista, nombre in _CARGA_MASIVA_RUTAS

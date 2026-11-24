@@ -1,6 +1,7 @@
 import uuid
 
 from django.conf import settings
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User
@@ -439,7 +440,7 @@ class Responsable(SoftDeleteModelMixin, models.Model):
     )
     codigo_postal = models.IntegerField(null=True, blank=True)
 
-    calle = models.CharField(max_length=150)
+    calle = models.CharField(max_length=150, blank=True)
     altura = models.IntegerField(null=True, blank=True)
     piso_vivienda = models.CharField(max_length=10, null=True, blank=True)
     departamento_vivienda = models.CharField(max_length=10, null=True, blank=True)
@@ -541,7 +542,7 @@ class Beneficiario(SoftDeleteModelMixin, models.Model):
         Localidad, on_delete=models.PROTECT, null=True, blank=True
     )
     codigo_postal = models.IntegerField(null=True, blank=True)
-    calle = models.CharField(max_length=150)
+    calle = models.CharField(max_length=150, blank=True)
     altura = models.IntegerField(null=True, blank=True)
     piso_vivienda = models.CharField(max_length=10, null=True, blank=True)
     departamento_vivienda = models.CharField(max_length=10, null=True, blank=True)
@@ -581,8 +582,6 @@ class Beneficiario(SoftDeleteModelMixin, models.Model):
     actividad_preferida = models.JSONField(default=list, blank=True)
     actividades_extracurriculares = models.BooleanField(default=False)
     actividades_detalle = models.ManyToManyField("Actividad", blank=True)
-
-    observaciones = models.TextField(blank=True, default="")
 
     # Lote de carga masiva que lo cargó; vacío si vino del formulario.
     carga_masiva_origen = models.ForeignKey(
@@ -652,6 +651,7 @@ class CargaMasivaPreinscriptos(models.Model):
     class Estado(models.TextChoices):
         PENDIENTE = "pendiente", "Pendiente"
         CONFIRMADO = "confirmado", "Confirmado"
+        DESHECHO = "deshecho", "Deshecho"
 
     archivo = models.FileField(upload_to=carga_masiva_upload_to)
     nombre_archivo = models.CharField(max_length=255)
@@ -673,10 +673,20 @@ class CargaMasivaPreinscriptos(models.Model):
         blank=True,
     )
     fecha_confirmacion = models.DateTimeField(null=True, blank=True)
+    deshecho_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="cargas_masivas_cdf_deshechas",
+        null=True,
+        blank=True,
+    )
+    fecha_deshecho = models.DateTimeField(null=True, blank=True)
     total_filas = models.PositiveIntegerField(default=0)
     total_validas = models.PositiveIntegerField(default=0)
     total_advertencias = models.PositiveIntegerField(default=0)
     total_errores = models.PositiveIntegerField(default=0)
+    # Personas (DNI y sexo) del lote que todavía no se verificaron contra RENAPER.
+    renaper_pendientes = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f"{self.nombre_archivo} ({self.fecha_subida:%d/%m/%Y %H:%M})"
@@ -684,6 +694,10 @@ class CargaMasivaPreinscriptos(models.Model):
     @property
     def esta_pendiente(self):
         return self.estado == self.Estado.PENDIENTE
+
+    @property
+    def esta_confirmado(self):
+        return self.estado == self.Estado.CONFIRMADO
 
     class Meta:
         ordering = ["-fecha_subida", "-id"]
@@ -737,6 +751,25 @@ class FilaCargaMasivaPreinscriptos(models.Model):
         blank=True,
         related_name="+",
     )
+    titular = models.ForeignKey(
+        Responsable,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    # Estado previo a la confirmación de lo que esta fila creó o modificó, para
+    # poder deshacer el lote: {"preinscripto": ..., "titular": ..., "vinculo": ...}.
+    deshacer = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
+
+    @property
+    def rechazada(self):
+        """Fila con error en un lote ya confirmado: no se cargó."""
+        return (
+            not self.quitada
+            and self.estado == self.Estado.ERROR
+            and not self.carga.esta_pendiente
+        )
 
     def __str__(self):
         return f"Fila {self.numero_fila} de la carga {self.carga_id}"
@@ -744,6 +777,41 @@ class FilaCargaMasivaPreinscriptos(models.Model):
     class Meta:
         ordering = ["numero_fila"]
         unique_together = ["carga", "numero_fila"]
+
+
+class ConsultaRenaperCargaMasiva(models.Model):
+    """Respuesta de RENAPER para una persona (DNI y sexo) de un lote.
+
+    Se consulta una sola vez por persona aunque aparezca en varias filas, y se
+    reutiliza al editar o revalidar. Se borra al confirmar el lote.
+    """
+
+    class Estado(models.TextChoices):
+        ENCONTRADO = "encontrado", "Encontrado"
+        NO_ENCONTRADO = "no_encontrado", "No encontrado"
+        FALLECIDO = "fallecido", "Fallecido"
+        FALLA = "falla", "RENAPER no respondió"
+
+    carga = models.ForeignKey(
+        CargaMasivaPreinscriptos,
+        on_delete=models.CASCADE,
+        related_name="consultas_renaper",
+    )
+    dni = models.PositiveIntegerField()
+    sexo = models.CharField(max_length=1)
+    estado = models.CharField(max_length=20, choices=Estado.choices)
+    apellido = models.CharField(max_length=200, blank=True)
+    nombre = models.CharField(max_length=200, blank=True)
+    fecha_nacimiento = models.DateField(null=True, blank=True)
+    # Respuesta completa, para guardarla al confirmar como hace el formulario.
+    datos_api = models.JSONField(default=dict)
+    fecha_consulta = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"RENAPER {self.dni} {self.sexo} ({self.estado})"
+
+    class Meta:
+        unique_together = ["carga", "dni", "sexo"]
 
 
 class EdicionCargaMasivaPreinscriptos(models.Model):

@@ -18,6 +18,7 @@ from django.db.models import Q
 from centrodefamilia.models import (
     Actividad,
     Beneficiario,
+    ConsultaRenaperCargaMasiva,
     FilaCargaMasivaPreinscriptos,
     PadronBeneficiarios,
     Responsable,
@@ -27,6 +28,8 @@ from centrodefamilia.services.carga_masiva.columnas import (
     CAMPOS_IDENTIDAD_TITULAR,
     COLUMNAS,
     COLUMNAS_POR_CLAVE,
+    EDAD_MAXIMA,
+    EDAD_MINIMA,
     SEPARADOR_MULTIPLE,
     Tipo,
 )
@@ -79,6 +82,8 @@ class ResultadoFila:
     fila_titular: int | None = None
     beneficiario_existente: int | None = None
     titular_existente: int | None = None
+    # Personas (DNI, sexo) de la fila todavía sin respuesta de RENAPER.
+    renaper_pendientes: set = field(default_factory=set)
 
     def error(self, clave, mensaje):
         self.errores.append({"columna": _encabezado(clave), "mensaje": mensaje})
@@ -249,11 +254,12 @@ _PARSERS = {
 }
 
 
-def _no_reconocido(resultado, columna, mensaje):
-    """RN-17: error en columna obligatoria; advertencia y sin dato en opcional."""
+def _no_reconocido(resultado, columna, mensaje, texto=""):
+    """Dato mal cargado: error en columna obligatoria; en una opcional, advertencia
+    y la fila se carga sin ese dato."""
     if columna.obligatoria:
         resultado.error(columna.clave, mensaje)
-        resultado.valores[columna.clave] = Invalido(mensaje)
+        resultado.valores[columna.clave] = Invalido(texto or mensaje)
     else:
         resultado.advertencia(columna.clave, f"{mensaje} Se cargará sin este dato.")
         resultado.valores[columna.clave] = None
@@ -278,11 +284,8 @@ def _interpretar_celdas(resultado, datos):
             continue
         try:
             resultado.valores[columna.clave] = _PARSERS[columna.tipo](texto, columna)
-        except ValorNoReconocido as exc:
-            _no_reconocido(resultado, columna, str(exc))
         except ValueError as exc:
-            resultado.error(columna.clave, str(exc))
-            resultado.valores[columna.clave] = Invalido(texto)
+            _no_reconocido(resultado, columna, str(exc), texto)
 
 
 def _validar_dni_en_cuil(resultado, clave_cuil, clave_dni):
@@ -291,6 +294,25 @@ def _validar_dni_en_cuil(resultado, clave_cuil, clave_dni):
     dni = resultado.valor(clave_dni)
     if cuil and dni and int(str(cuil)[2:10]) != dni:
         resultado.error(clave_dni, "No coincide con el número de documento del CUIL.")
+
+
+def _edad(fecha_nacimiento, hoy):
+    cumplio = (hoy.month, hoy.day) >= (fecha_nacimiento.month, fecha_nacimiento.day)
+    return hoy.year - fecha_nacimiento.year - (0 if cumplio else 1)
+
+
+def _validar_edad(resultado):
+    """El preinscripto tiene que tener entre 6 y 17 años inclusive al validar."""
+    fecha = resultado.valor("fecha_nacimiento")
+    if not fecha:
+        return
+    edad = _edad(fecha, date.today())
+    if not EDAD_MINIMA <= edad <= EDAD_MAXIMA:
+        resultado.error(
+            "fecha_nacimiento",
+            f"El preinscripto debe tener entre {EDAD_MINIMA} y {EDAD_MAXIMA} años "
+            f"(tiene {edad}).",
+        )
 
 
 def _validar_titular_distinto(resultado):
@@ -305,6 +327,13 @@ def _validar_titular_distinto(resultado):
         resultado.error(
             "titular_dni",
             "El titular no puede tener el mismo DNI o CUIL que el preinscripto.",
+        )
+    fecha = resultado.valor("fecha_nacimiento")
+    if fecha and resultado.valor("titular_fecha_nacimiento") == fecha:
+        resultado.error(
+            "titular_fecha_nacimiento",
+            "El titular no puede tener la misma fecha de nacimiento que el "
+            "preinscripto.",
         )
 
 
@@ -449,17 +478,76 @@ def _interpretar_actividades(resultado, datos, catalogos):
     resultado.valores["actividades_detalle"] = ids
 
 
-def validar_fila(numero_fila, datos, catalogos):
-    """Reglas de una sola fila (7.1 y 7.2)."""
+def claves_renaper(datos):
+    """(DNI, sexo) del preinscripto y del titular que se pueden consultar en RENAPER."""
+    claves = []
+    for prefijo in ("", "titular_"):
+        try:
+            dni = _parsear_dni(str(datos.get(f"{prefijo}dni") or ""), None)
+            sexo = _parsear_sexo(str(datos.get(f"{prefijo}genero") or ""), None)
+        except ValueError:
+            continue
+        claves.append((dni, sexo))
+    return claves
+
+
+_CAMPOS_RENAPER = ("apellido", "nombre", "fecha_nacimiento")
+
+
+def _texto_renaper(campo, valor):
+    if campo == "fecha_nacimiento":
+        return valor.strftime("%d/%m/%Y")
+    return valor
+
+
+def _validar_renaper(resultado, consultas, prefijo):
+    """Apellido, nombre y fecha de nacimiento tienen que coincidir con RENAPER.
+
+    Se comparan sin mayúsculas, tildes ni espacios repetidos. Si RENAPER no informa
+    un dato, ese dato no se compara.
+    """
+    clave_dni = f"{prefijo}dni"
+    clave = (resultado.valor(clave_dni), resultado.valor(f"{prefijo}genero"))
+    if None in clave:
+        return
+    consulta = consultas.get(clave)
+    estados = ConsultaRenaperCargaMasiva.Estado
+    if consulta is None or consulta.estado == estados.FALLA:
+        resultado.renaper_pendientes.add(clave)
+        return
+    if consulta.estado == estados.NO_ENCONTRADO:
+        resultado.error(clave_dni, "No se encontró en RENAPER con ese DNI y sexo.")
+        return
+    if consulta.estado == estados.FALLECIDO:
+        resultado.error(clave_dni, "RENAPER informa que la persona falleció.")
+        return
+    for campo in _CAMPOS_RENAPER:
+        valor_renaper = getattr(consulta, campo)
+        valor_excel = resultado.valor(f"{prefijo}{campo}")
+        if not valor_renaper or valor_excel is None:
+            continue
+        if _comparable(valor_excel) != _comparable(valor_renaper):
+            resultado.error(
+                f"{prefijo}{campo}",
+                "No coincide con RENAPER: "
+                f"«{_texto_renaper(campo, valor_renaper)}».",
+            )
+
+
+def validar_fila(numero_fila, datos, catalogos, consultas=None):
+    """Reglas de una sola fila (7.1 y 7.2) y el control contra RENAPER."""
     resultado = ResultadoFila(numero_fila=numero_fila)
     _interpretar_celdas(resultado, datos)
     _validar_dni_en_cuil(resultado, "cuil", "dni")
     _validar_dni_en_cuil(resultado, "titular_cuil", "titular_dni")
     _validar_titular_distinto(resultado)
+    _validar_edad(resultado)
     _interpretar_ubicacion(resultado, datos, catalogos, "")
     _interpretar_ubicacion(resultado, datos, catalogos, "titular_")
     _interpretar_actividades(resultado, datos, catalogos)
     _validar_nivel_actual(resultado)
+    for prefijo in ("", "titular_"):
+        _validar_renaper(resultado, consultas or {}, prefijo)
     return resultado
 
 
@@ -603,9 +691,14 @@ def _datos_titular(resultado):
 
 
 def _agrupar_titulares(resultados):
-    """RN-24/25: un titular puede repetirse; gana la primera aparición."""
+    """RN-24/25: un titular puede repetirse; gana su primera fila que se carga.
+
+    Las filas con error no se cargan, así que no definen los datos del titular.
+    """
     por_cuil, por_dni = {}, {}
     for resultado in resultados:
+        if resultado.errores:
+            continue
         cuil, dni = resultado.valor("titular_cuil"), resultado.valor("titular_dni")
         primero_cuil, primero_dni = por_cuil.get(cuil), por_dni.get(dni)
         if primero_cuil and primero_dni and primero_cuil is not primero_dni:
@@ -652,7 +745,10 @@ def _diferencias(resultado, existente, campos):
 
 
 def _validar_titulares_existentes(resultados):
-    """RN-26/27/28. S-03 (identidad al reactivar) se trata igual que RN-26."""
+    """Titular existente: el Excel actualiza todos sus datos o lo reactiva.
+
+    Solo es error que el DNI y el CUIL sean de dos titulares distintos (RN-28).
+    """
     por_cuil, por_dni = _existentes(
         Responsable, resultados, "titular_cuil", "titular_dni"
     )
@@ -671,25 +767,22 @@ def _validar_titulares_existentes(resultados):
         if not existente:
             resultado.accion_titular = AccionTitular.CREAR
             continue
-        identidad = _diferencias(resultado, existente, CAMPOS_IDENTIDAD_TITULAR)
-        for campo in identidad:
-            resultado.error(
-                f"titular_{campo}",
-                "No coincide con el dato del titular registrado en SISOC.",
-            )
-        if identidad:
-            continue
         resultado.titular_existente = existente.pk
+        diferentes = _diferencias(
+            resultado, existente, CAMPOS_IDENTIDAD_TITULAR + CAMPOS_CONTACTO_TITULAR
+        )
         if existente.is_deleted:
             resultado.advertencia(
                 "titular_cuil",
                 "El titular estaba dado de baja: se reactivará con los datos del Excel.",
             )
             resultado.accion_titular = AccionTitular.REACTIVAR
-        elif _diferencias(resultado, existente, CAMPOS_CONTACTO_TITULAR):
+        elif diferentes:
             resultado.advertencia(
                 "titular_cuil",
-                "Se actualizarán los datos de contacto y domicilio del titular.",
+                "Se actualizarán los datos del titular registrado en SISOC: "
+                + ", ".join(_encabezado(f"titular_{campo}") for campo in diferentes)
+                + ".",
             )
             resultado.accion_titular = AccionTitular.ACTUALIZAR
         else:
@@ -706,11 +799,16 @@ def _heredar_accion_titular(resultados):
             resultado.titular_existente = primero.titular_existente
 
 
-def validar_filas(filas):
-    """Valida [(numero_fila, datos)] y devuelve {numero_fila: ResultadoFila}."""
+def validar_filas(filas, consultas=None):
+    """Valida [(numero_fila, datos)] y devuelve {numero_fila: ResultadoFila}.
+
+    `consultas` son las respuestas de RENAPER del lote, por (DNI, sexo).
+    """
     filas = sorted(filas, key=lambda fila: fila[0])
     catalogos = Catalogos([datos for _, datos in filas])
-    resultados = [validar_fila(numero, datos, catalogos) for numero, datos in filas]
+    resultados = [
+        validar_fila(numero, datos, catalogos, consultas) for numero, datos in filas
+    ]
     _validar_repetidos(resultados)
     _validar_padron(resultados)
     _validar_preinscriptos_existentes(resultados)

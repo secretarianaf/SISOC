@@ -1,20 +1,25 @@
 """Criterios de aceptación de la carga masiva de preinscriptos (issue #2939)."""
 
-from datetime import date
-from io import BytesIO
+from datetime import date, timedelta
+from io import BytesIO, StringIO
 from unittest.mock import patch
 
 import pytest
-from django.contrib.auth.models import Permission, User
+from django.contrib.auth.models import Group, Permission, User
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.urls import reverse
+from django.utils import timezone
 from openpyxl import Workbook, load_workbook
 
+from centrodefamilia.forms import BeneficiarioForm, ResponsableForm
 from centrodefamilia.models import (
     Actividad,
     Beneficiario,
     BeneficiarioResponsable,
+    BeneficiariosResponsablesRenaper,
     CargaMasivaPreinscriptos,
     Categoria,
     EdicionCargaMasivaPreinscriptos,
@@ -36,7 +41,7 @@ from centrodefamilia.services.carga_masiva.excel import (
     leer_archivo,
 )
 from centrodefamilia.services.carga_masiva.validacion import cuil_valido
-from core.models import Municipio, Provincia
+from core.models import Localidad, Municipio, Provincia
 
 Estado = FilaCargaMasivaPreinscriptos.Estado
 
@@ -70,7 +75,6 @@ def _fila(**cambios):
         "altura": "123",
         "maximo_nivel_educativo": "Primario incompleto",
         "actividad_preferida": "Deportiva; Educativa",
-        "observaciones": "Llega en transporte escolar",
         "titular_cuil": str(CUIL_TITULAR),
         "titular_dni": str(DNI_TITULAR),
         "titular_apellido": "Gómez",
@@ -137,21 +141,78 @@ def padron(db):
         yield agregar
 
 
-@pytest.fixture
-def usuario(db):
-    user = User.objects.create_user(username="cdf-carga", password="x")
+def _rol_carga_masiva():
+    permiso, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_cdf_carga_masiva",
+        defaults={"name": "Cdf Carga Masiva"},
+    )
+    return permiso
+
+
+def _usuario_cdf(username, *, carga_masiva):
+    user = User.objects.create_user(username=username, password="x")
     user.user_permissions.add(
         Permission.objects.get(
             content_type__app_label="centrodefamilia", codename="view_centro"
         )
     )
+    if carga_masiva:
+        user.user_permissions.add(_rol_carga_masiva())
     return User.objects.get(pk=user.pk)
 
 
 @pytest.fixture
-def subir(provincia, padron, usuario):
+def usuario(db):
+    return _usuario_cdf("cdf-carga", carga_masiva=True)
+
+
+@pytest.fixture
+def renaper(db):
+    """RENAPER simulado: {dni: (apellido, nombre, fecha ISO) o el tipo de error}.
+
+    Un DNI que no está en el diccionario responde como el preinscripto de `_fila`.
+    """
+    personas = {
+        DNI_PREINSCRIPTO: ("Pérez", "Juan", "2015-02-01"),
+        DNI_TITULAR: ("GÓMEZ", "ana", "1985-03-10"),
+    }
+
+    def consultar(dni, sexo):  # pylint: disable=unused-argument
+        datos = personas.get(int(dni), ("Pérez", "Juan", "2015-02-01"))
+        if isinstance(datos, str):
+            return {"success": False, "error": "x", "error_type": datos}
+        apellido, nombre, fecha = datos
+        return {
+            "success": True,
+            "data": {"apellido": apellido, "nombre": nombre, "fecha_nacimiento": fecha},
+            "datos_api": {
+                "apellido": apellido,
+                "nombres": nombre,
+                "fechaNacimiento": fecha,
+            },
+        }
+
+    with patch(
+        "centrodefamilia.services.carga_masiva.renaper.consultar_datos_renaper",
+        side_effect=consultar,
+    ) as simulado:
+        personas["simulado"] = simulado
+        yield personas
+
+
+def _verificar_todo(carga):
+    """Corre las tandas de RENAPER hasta que no quede nadie pendiente."""
+    while lotes.verificar_renaper(carga.pk)["consultadas"]:
+        pass
+    carga.refresh_from_db()
+    return carga
+
+
+@pytest.fixture
+def subir(provincia, padron, usuario, renaper):
     def _subir(*filas):
-        return lotes.crear_carga(_archivo(filas), usuario)
+        return _verificar_todo(lotes.crear_carga(_archivo(filas), usuario))
 
     return _subir
 
@@ -455,29 +516,20 @@ def test_ca10_titular_con_vinculos_distintos(subir, padron, usuario):
 
 
 @pytest.mark.django_db
-def test_ca11_titular_existente_con_apellido_distinto_es_error(subir):
-    _crear_titular(apellido="Otro")
-
-    carga = subir(_fila())
-
-    fila = _filas(carga)[2]
-    assert fila.estado == Estado.ERROR
-    assert fila.errores[0]["columna"] == "Apellido titular"
-
-
-@pytest.mark.django_db
-def test_ca11_titular_existente_actualiza_solo_contacto_y_domicilio(subir, usuario):
+def test_titular_existente_se_actualiza_con_todos_los_datos_del_excel(subir, usuario):
     creador = User.objects.create_user(username="otro")
-    titular = _crear_titular(creado_por=creador)
+    titular = _crear_titular(apellido="Otro", nombre="Ana María", creado_por=creador)
 
     carga = subir(_fila(titular_calle="Nueva 500", titular_numero_celular=""))
     fila = _filas(carga)[2]
     assert fila.estado == Estado.ADVERTENCIA
-    assert "Se actualizarán los datos de contacto" in _mensajes(fila)
+    assert "Apellido titular" in _mensajes(fila)
+    assert "Calle titular" in _mensajes(fila)
     assert lotes.resumen_confirmacion(carga)["titulares_actualizar"] == 1
 
     assert lotes.confirmar_carga(carga.pk, usuario) is True
     titular.refresh_from_db()
+    assert (titular.apellido, titular.nombre) == ("Gómez", "Ana")
     assert titular.calle == "Nueva 500"
     assert titular.numero_celular is None
     assert titular.vinculo_parental == "Tutor/Tutora"
@@ -570,15 +622,58 @@ def test_nivel_actual_sin_estudiar_es_advertencia_y_no_se_guarda(subir, usuario)
 @pytest.mark.django_db
 def test_una_fila_informa_todos_sus_errores(subir):
     carga = subir(
-        _fila(apellido="", fecha_nacimiento="31/02/2015", correo_electronico="x@")
+        _fila(apellido="", fecha_nacimiento="31/02/2015", provincia="Atlántida")
     )
 
     columnas = {m["columna"] for m in _filas(carga)[2].errores}
     assert {
         "Apellido preinscripto",
         "Fecha de nacimiento preinscripto",
-        "Correo electrónico",
+        "Provincia",
     } <= columnas
+
+
+@pytest.mark.django_db
+def test_dato_opcional_mal_cargado_se_carga_sin_el_dato_con_aviso(subir, usuario):
+    carga = subir(_fila(correo_electronico="x@", altura="12b", calle=""))
+    fila = _filas(carga)[2]
+    assert fila.estado == Estado.ADVERTENCIA
+    columnas = {m["columna"] for m in fila.advertencias}
+    assert {"Correo electrónico", "Altura"} <= columnas
+
+    assert lotes.confirmar_carga(carga.pk, usuario) is True
+    beneficiario = Beneficiario.objects.get()
+    assert beneficiario.correo_electronico is None
+    assert beneficiario.altura is None
+    assert beneficiario.calle == ""
+    hoja = load_workbook(BytesIO(generar_comprobante(carga))).active
+    assert "Correo electrónico" in next(hoja.iter_rows(min_row=2, values_only=True))[8]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "anios,valida",
+    [(5, False), (6, True), (17, True), (18, False)],
+)
+def test_preinscripto_debe_tener_entre_6_y_17_anios(subir, renaper, anios, valida):
+    hoy = date.today()
+    nacimiento = hoy.replace(year=hoy.year - anios)
+    renaper[DNI_PREINSCRIPTO] = ("Pérez", "Juan", nacimiento.isoformat())
+    carga = subir(_fila(fecha_nacimiento=nacimiento.strftime("%d/%m/%Y")))
+
+    fila = _filas(carga)[2]
+    assert (fila.estado != Estado.ERROR) is valida
+    if not valida:
+        assert "entre 6 y 17 años" in _mensajes(fila)
+
+
+@pytest.mark.django_db
+def test_titular_no_puede_tener_la_misma_fecha_de_nacimiento(subir):
+    carga = subir(_fila(titular_fecha_nacimiento="01/02/2015"))
+
+    fila = _filas(carga)[2]
+    assert fila.estado == Estado.ERROR
+    assert "Fecha de nacimiento titular" in {m["columna"] for m in fila.errores}
 
 
 @pytest.mark.django_db
@@ -594,8 +689,24 @@ def test_ca13_provincia_inexistente_es_error(subir):
 
 
 @pytest.mark.django_db
-def test_ca14_con_errores_no_se_confirma(subir, usuario):
+def test_se_cargan_las_validas_y_se_rechazan_las_filas_con_error(subir, usuario):
     carga = subir(_fila(), _otro_preinscripto(41222333))
+    assert lotes.resumen_confirmacion(carga)["rechazadas"] == 1
+
+    assert lotes.confirmar_carga(carga.pk, usuario) is True
+    carga.refresh_from_db()
+    assert carga.esta_confirmado
+    assert Beneficiario.objects.get().dni == DNI_PREINSCRIPTO
+    hoja = load_workbook(BytesIO(generar_comprobante(carga))).active
+    filas = {fila[0]: fila for fila in hoja.iter_rows(min_row=2, values_only=True)}
+    assert filas[2][5] == "Creado"
+    assert filas[3][5] == "Rechazada"
+    assert "padrón" in filas[3][7]
+
+
+@pytest.mark.django_db
+def test_sin_filas_validas_no_se_confirma(subir, usuario):
+    carga = subir(_otro_preinscripto(41222333))
 
     assert lotes.confirmar_carga(carga.pk, usuario) is False
     carga.refresh_from_db()
@@ -714,10 +825,9 @@ def test_ca20_comprobante_y_descargas_neutralizan_formulas(subir, usuario):
     beneficiario = Beneficiario.objects.get()
     assert fila[0] == 2
     assert fila[5:7] == ("Creado", "Creado")
-    assert fila[8] == beneficiario.pk
+    assert fila[9] == beneficiario.pk
     assert beneficiario.carga_masiva_origen == carga
     assert beneficiario.creado_por == usuario
-    assert beneficiario.observaciones == "Llega en transporte escolar"
     assert beneficiario.provincia_tabla == "Buenos Aires"
 
 
@@ -728,7 +838,7 @@ def test_ca20_comprobante_y_descargas_neutralizan_formulas(subir, usuario):
 def test_ca21_sin_permiso_no_accede_a_ninguna_pantalla(client, subir):
     carga = subir(_fila())
     fila = carga.filas.get()
-    sin_permiso = User.objects.create_user(username="sin-permiso", password="x")
+    sin_permiso = _usuario_cdf("sin-rol", carga_masiva=False)
     client.force_login(sin_permiso)
     urls = [
         reverse("carga_masiva_list"),
@@ -746,16 +856,19 @@ def test_ca21_sin_permiso_no_accede_a_ninguna_pantalla(client, subir):
         reverse("carga_masiva_subir"),
         reverse("carga_masiva_confirmar", args=[carga.pk]),
         reverse("carga_masiva_eliminar", args=[carga.pk]),
+        reverse("carga_masiva_deshacer", args=[carga.pk]),
         reverse("carga_masiva_fila_quitar", args=[carga.pk, fila.pk]),
     ):
         assert client.post(url).status_code == 403, url
+    listado = client.get(reverse("beneficiarios_list"))
+    assert listado.context["additional_buttons"] == []
 
     carga.refresh_from_db()
     assert carga.esta_pendiente
 
 
 @pytest.mark.django_db
-def test_flujo_completo_por_pantallas(client, provincia, padron, usuario):
+def test_flujo_completo_por_pantallas(client, provincia, padron, usuario, renaper):
     client.force_login(usuario)
 
     assert client.get(reverse("carga_masiva_list")).status_code == 200
@@ -776,6 +889,12 @@ def test_flujo_completo_por_pantallas(client, provincia, padron, usuario):
     url_editar = reverse("carga_masiva_fila_editar", args=[carga.pk, fila.pk])
     assert client.get(url_editar).status_code == 200
     client.post(url_editar, {"dni": str(DNI_PREINSCRIPTO)})
+    pendiente = client.get(respuesta.url)
+    assert pendiente.context["puede_confirmar"] is False
+    assert "Verificando con RENAPER" in pendiente.content.decode()
+    url_renaper = reverse("carga_masiva_renaper", args=[carga.pk])
+    while client.post(url_renaper).json()["pendientes"]:
+        pass
     assert client.get(respuesta.url).context["puede_confirmar"] is True
     assert (
         client.get(reverse("carga_masiva_ediciones", args=[carga.pk])).status_code
@@ -809,11 +928,6 @@ def test_pantallas_de_errores_quitar_y_lote_confirmado(client, subir, usuario):
     assert client.get(detalle, {"estado": "error"}).context["filas"][0] == con_error
     errores = client.get(reverse("carga_masiva_errores", args=[carga.pk]))
     assert errores.status_code == 200
-    rechazo = client.post(
-        reverse("carga_masiva_confirmar", args=[carga.pk]), follow=True
-    )
-    assert "encontró filas con error" in rechazo.content.decode()
-
     client.post(reverse("carga_masiva_fila_quitar", args=[carga.pk, con_error.pk]))
     quitadas = client.get(detalle, {"estado": "quitada"}).context["filas"]
     assert list(quitadas) == [con_error]
@@ -859,13 +973,287 @@ def test_rf15_listado_de_preinscriptos_tiene_boton_de_carga_masiva(client, usuar
 
 
 @pytest.mark.django_db
-def test_ca22_formulario_y_detalle_muestran_observaciones(client, provincia, usuario):
-    client.force_login(usuario)
-    formulario = client.get(reverse("beneficiarios_crear"))
-    assert 'name="observaciones"' in formulario.content.decode()
+def test_calle_opcional_en_el_formulario_de_preinscripcion(provincia):
+    beneficiario = BeneficiarioForm()
+    responsable = ResponsableForm()
 
-    beneficiario = _crear_preinscripto(
-        _crear_titular(), observaciones="Necesita acompañante"
+    assert beneficiario.fields["calle"].required is False
+    assert responsable.fields["calle"].required is False
+    assert "observaciones" not in beneficiario.fields
+
+
+# ——— Deshacer el último lote ———
+
+
+@pytest.mark.django_db
+def test_deshacer_borra_lo_creado_y_restaura_lo_reactivado(subir, padron, usuario):
+    padron(_cuil(20, 46111222), 46111222, "M")
+    titular = _crear_titular(calle="Vieja")
+    dado_de_baja = _crear_preinscripto(
+        titular, cuil=_cuil(20, 46111222), dni=46111222, apellido="Antes"
     )
-    detalle = client.get(reverse("beneficiarios_detail", args=[beneficiario.pk]))
-    assert "Necesita acompañante" in detalle.content.decode()
+    dado_de_baja.delete()
+    carga = subir(
+        _fila(titular_calle="Nueva"),
+        _otro_preinscripto(46111222, titular_calle="Nueva"),
+    )
+    assert lotes.confirmar_carga(carga.pk, usuario) is True
+    creado = Beneficiario.objects.get(dni=DNI_PREINSCRIPTO)
+
+    lotes.deshacer_carga(carga.pk, usuario)
+
+    carga.refresh_from_db()
+    assert carga.estado == CargaMasivaPreinscriptos.Estado.DESHECHO
+    assert carga.deshecho_por == usuario
+    assert not Beneficiario.all_objects.filter(pk=creado.pk).exists()
+    dado_de_baja.refresh_from_db()
+    assert dado_de_baja.is_deleted
+    assert dado_de_baja.apellido == "Antes"
+    assert dado_de_baja.carga_masiva_origen is None
+    titular.refresh_from_db()
+    assert titular.calle == "Vieja"
+    assert not BeneficiarioResponsable.all_objects.filter(
+        beneficiario__dni=DNI_PREINSCRIPTO
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_deshacer_borra_el_titular_creado_por_el_lote(subir, usuario):
+    carga = subir(_fila())
+    lotes.confirmar_carga(carga.pk, usuario)
+
+    lotes.deshacer_carga(carga.pk, usuario)
+
+    assert not Beneficiario.all_objects.exists()
+    assert not Responsable.all_objects.exists()
+
+
+@pytest.mark.django_db
+def test_no_se_deshace_si_modificaron_un_preinscripto(subir, usuario):
+    carga = subir(_fila())
+    lotes.confirmar_carga(carga.pk, usuario)
+    beneficiario = Beneficiario.objects.get()
+    beneficiario.barrio = "Cambiado después"
+    beneficiario.save()
+
+    with pytest.raises(lotes.CargaNoDeshacible, match="modificados"):
+        lotes.deshacer_carga(carga.pk, usuario)
+
+    assert Beneficiario.objects.filter(pk=beneficiario.pk).exists()
+
+
+@pytest.mark.django_db
+def test_solo_se_deshace_el_ultimo_lote(subir, padron, usuario):
+    primera = subir(_fila())
+    lotes.confirmar_carga(primera.pk, usuario)
+    padron(_cuil(20, 46111222), 46111222, "M")
+    segunda = subir(_otro_preinscripto(46111222))
+    lotes.confirmar_carga(segunda.pk, usuario)
+    primera.refresh_from_db()
+
+    assert "último lote" in lotes.motivo_no_deshacer(primera)
+    with pytest.raises(lotes.CargaNoDeshacible):
+        lotes.deshacer_carga(primera.pk, usuario)
+    lotes.deshacer_carga(segunda.pk, usuario)
+    primera.refresh_from_db()
+    assert "último lote" in lotes.motivo_no_deshacer(primera)
+
+
+@pytest.mark.django_db
+def test_deshacer_por_pantalla(client, subir, usuario):
+    carga = subir(_fila())
+    client.force_login(usuario)
+    url = reverse("carga_masiva_deshacer", args=[carga.pk])
+
+    pendiente = client.post(url, follow=True)
+    assert "Solo se puede deshacer un lote confirmado" in pendiente.content.decode()
+
+    lotes.confirmar_carga(carga.pk, usuario)
+    respuesta = client.post(url, follow=True)
+    assert "Se deshizo el lote" in respuesta.content.decode()
+    assert not Beneficiario.all_objects.exists()
+    comprobante = client.get(reverse("carga_masiva_comprobante", args=[carga.pk]))
+    assert comprobante.status_code == 200
+
+
+@pytest.mark.django_db
+def test_plantilla_tiene_desplegables_dependientes_de_ubicacion(provincia):
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    Localidad.objects.create(nombre="Tolosa", municipio=municipio)
+
+    libro = load_workbook(BytesIO(generar_plantilla()))
+
+    ubicaciones = libro["Ubicaciones"]
+    assert ubicaciones.sheet_state == "hidden"
+    assert [c.value for c in ubicaciones[2]] == [
+        "Buenos Aires",
+        "La Plata",
+        "Buenos Aires|La Plata",
+        "Tolosa",
+    ]
+    formulas = {
+        str(validacion.sqref): validacion.formula1
+        for validacion in libro[HOJA_DATOS].data_validations.dataValidation
+    }
+    letra = {c.value: c.column_letter for c in libro[HOJA_DATOS][1]}
+    municipio_col = formulas[f"{letra['Municipio']}2:{letra['Municipio']}501"]
+    localidad_col = formulas[f"{letra['Localidad']}2:{letra['Localidad']}501"]
+    assert "OFFSET" in municipio_col and f"${letra['Provincia']}2" in municipio_col
+    assert f"${letra['Municipio']}2" in localidad_col
+    assert (
+        f"{letra['Provincia titular']}2"
+        in formulas[f"{letra['Municipio titular']}2:{letra['Municipio titular']}501"]
+    )
+
+
+# ——— RENAPER ———
+
+
+@pytest.mark.django_db
+def test_renaper_rechaza_diferencias_y_muestra_el_dato_de_renaper(
+    subir, renaper, usuario
+):
+    renaper[DNI_PREINSCRIPTO] = ("Pérez Gómez", "Juan", "2015-02-01")
+    renaper[DNI_TITULAR] = ("Gómez", "Ana", "1985-03-11")
+
+    carga = subir(_fila())
+
+    fila = _filas(carga)[2]
+    assert fila.estado == Estado.ERROR
+    motivos = {m["columna"]: m["mensaje"] for m in fila.errores}
+    assert motivos["Apellido preinscripto"] == "No coincide con RENAPER: «Pérez Gómez»."
+    assert (
+        motivos["Fecha de nacimiento titular"]
+        == "No coincide con RENAPER: «11/03/1985»."
+    )
+    assert "Nombre preinscripto" not in motivos
+
+
+@pytest.mark.django_db
+def test_renaper_sin_tildes_ni_mayusculas_coincide(subir):
+    carga = subir(_fila(apellido="PEREZ", titular_apellido="gomez"))
+
+    assert _filas(carga)[2].estado == Estado.VALIDA
+
+
+@pytest.mark.django_db
+def test_renaper_no_encontrado_o_fallecido_es_error(subir, renaper, padron):
+    padron(_cuil(20, 46111222), 46111222, "M")
+    renaper[DNI_PREINSCRIPTO] = "no_match"
+    renaper[46111222] = "fallecido"
+
+    carga = subir(_fila(), _otro_preinscripto(46111222, titular_dni="30111222"))
+
+    filas = _filas(carga)
+    assert "No se encontró en RENAPER" in _mensajes(filas[2])
+    assert "falleció" in _mensajes(filas[3])
+
+
+@pytest.mark.django_db
+def test_renaper_caido_deja_pendiente_y_bloquea_confirmar(
+    provincia, padron, usuario, renaper
+):
+    renaper[DNI_PREINSCRIPTO] = "timeout"
+    carga = lotes.crear_carga(_archivo([_fila()]), usuario)
+
+    avance = lotes.verificar_renaper(carga.pk)
+
+    assert avance == {"consultadas": 2, "fallas": 1, "pendientes": 1}
+    with pytest.raises(lotes.VerificacionRenaperPendiente):
+        lotes.confirmar_carga(carga.pk, usuario)
+    renaper[DNI_PREINSCRIPTO] = ("Pérez", "Juan", "2015-02-01")
+    assert lotes.verificar_renaper(carga.pk)["pendientes"] == 0
+    assert lotes.confirmar_carga(carga.pk, usuario) is True
+
+
+@pytest.mark.django_db
+def test_renaper_consulta_una_vez_por_persona(subir, renaper, padron):
+    padron(_cuil(20, 46111222), 46111222, "M")
+
+    subir(_fila(), _otro_preinscripto(46111222))
+
+    assert renaper["simulado"].call_count == 3
+
+
+@pytest.mark.django_db
+def test_confirmar_guarda_respuesta_renaper_y_borra_las_consultas(subir, usuario):
+    carga = subir(_fila())
+    assert carga.consultas_renaper.count() == 2
+
+    lotes.confirmar_carga(carga.pk, usuario)
+
+    assert not carga.consultas_renaper.exists()
+    guardados = BeneficiariosResponsablesRenaper.objects.order_by("tipo")
+    assert [(r.dni, r.tipo, r.apellido) for r in guardados] == [
+        (str(DNI_PREINSCRIPTO), "Beneficiario", "Pérez"),
+        (str(DNI_TITULAR), "Responsable", "GÓMEZ"),
+    ]
+
+
+@pytest.mark.django_db
+def test_renaper_por_pantalla_con_lote_confirmado(client, subir, usuario):
+    carga = subir(_fila())
+    lotes.confirmar_carga(carga.pk, usuario)
+    client.force_login(usuario)
+
+    respuesta = client.post(reverse("carga_masiva_renaper", args=[carga.pk]))
+
+    assert respuesta.status_code == 409
+
+
+@pytest.mark.django_db
+def test_confirmar_con_renaper_pendiente_por_pantalla(
+    client, provincia, padron, usuario, renaper
+):
+    carga = lotes.crear_carga(_archivo([_fila()]), usuario)
+    client.force_login(usuario)
+
+    respuesta = client.post(
+        reverse("carga_masiva_confirmar", args=[carga.pk]), follow=True
+    )
+
+    assert "sin verificar contra RENAPER" in respuesta.content.decode()
+    assert not Beneficiario.objects.exists()
+
+
+# ——— Retención de 90 días ———
+
+
+@pytest.mark.django_db
+def test_lotes_pendientes_vencidos_se_eliminan(
+    client, subir, usuario, django_capture_on_commit_callbacks
+):
+    vencido = subir(_fila())
+    reciente = subir(_fila())
+    confirmado = subir(_fila())
+    lotes.confirmar_carga(confirmado.pk, usuario)
+    hace_91_dias = timezone.now() - timedelta(days=91)
+    CargaMasivaPreinscriptos.objects.filter(pk__in=[vencido.pk, confirmado.pk]).update(
+        fecha_subida=hace_91_dias
+    )
+    storage, nombre = vencido.archivo.storage, vencido.archivo.name
+    client.force_login(usuario)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        respuesta = client.get(reverse("carga_masiva_list"))
+
+    assert "se eliminan a los 90 días" in respuesta.content.decode()
+    assert set(CargaMasivaPreinscriptos.objects.values_list("pk", flat=True)) == {
+        reciente.pk,
+        confirmado.pk,
+    }
+    assert not storage.exists(nombre)
+
+
+@pytest.mark.django_db
+def test_comando_de_purga(subir):
+    vencido = subir(_fila())
+    CargaMasivaPreinscriptos.objects.filter(pk=vencido.pk).update(
+        fecha_subida=timezone.now() - timedelta(days=31)
+    )
+    salida = StringIO()
+
+    call_command("purgar_cargas_masivas_pendientes", "--dias", "30", stdout=salida)
+
+    assert "Lotes pendientes eliminados: 1." in salida.getvalue()
+    assert not CargaMasivaPreinscriptos.objects.exists()

@@ -1010,6 +1010,11 @@
   "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/confirmar/\\Z"
  },
  {
+  "name": "carga_masiva_deshacer",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/deshacer/\\Z"
+ },
+ {
   "name": "carga_masiva_detail",
   "namespace": "",
   "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/\\Z"
@@ -1048,6 +1053,11 @@
   "name": "carga_masiva_plantilla",
   "namespace": "",
   "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/plantilla/\\Z"
+ },
+ {
+  "name": "carga_masiva_renaper",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/renaper/\\Z"
  },
  {
   "name": "carga_masiva_subir",

@@ -373,6 +373,10 @@ class BeneficiariosListWebView(CdfWebView):
             "add": context["add_url"],
             "export": reverse("beneficiarios_export"),
             "export_available": reverse("web_cdf_beneficiarios_exportar_disponible"),
+            # Solo para quien tiene el rol de carga masiva (issue #2939).
+            "carga_masiva": next(
+                (b["url"] for b in context.get("additional_buttons", [])), None
+            ),
         }
         return Response(payload)
 

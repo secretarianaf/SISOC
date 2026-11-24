@@ -346,7 +346,6 @@ class BeneficiarioForm(forms.ModelForm):
             "carga_masiva_origen",
         ]
         widgets = {
-            "observaciones": forms.Textarea(attrs={"rows": 3}),
             "genero": forms.Select(
                 choices=Beneficiario.GENERO_CHOICES, attrs={"disabled": True}
             ),

@@ -223,22 +223,5 @@
                 </div>
             </div>
         </div>
-        <!-- Observaciones -->
-        <div class="cdf-card">
-            <div class="cdf-card-head">
-                <i class="fas fa-note-sticky"></i>
-                <span>Observaciones</span>
-            </div>
-            <div class="cdf-card-body">
-                {% if beneficiario.observaciones %}
-                    <p class="mb-0" style="white-space: pre-line">{{ beneficiario.observaciones }}</p>
-                {% else %}
-                    <p class="cdf-td-muted mb-0">Sin observaciones</p>
-                {% endif %}
-                {% if beneficiario.carga_masiva_origen_id %}
-                    <p class="cdf-td-muted mb-0 mt-2">Cargado por carga masiva (lote {{ beneficiario.carga_masiva_origen_id }}).</p>
-                {% endif %}
-            </div>
-        </div>
     </div>
 {% endblock %}

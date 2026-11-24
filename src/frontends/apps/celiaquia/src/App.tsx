@@ -10,8 +10,18 @@ import { PagoListPage } from "./pages/PagoListPage";
 import { PagoDetailPage } from "./pages/PagoDetailPage";
 import { ReportePage } from "./pages/ReportePage";
 import { SinPermisoPage } from "./pages/SinPermisoPage";
+import { CanonicalExpedientesList } from "./canonicalExpedientes";
+import type { matchCanonicalScreen } from "./canonical/screens";
 
-export function App({ canonicalReport = false }: { canonicalReport?: boolean } = {}) {
+type AppProps = {
+  canonicalReport?: boolean;
+  canonicalExpedientes?: boolean;
+  canonicalScreen?: ReturnType<typeof matchCanonicalScreen>;
+};
+
+export function App({ canonicalReport = false, canonicalExpedientes = false, canonicalScreen = null }: AppProps = {}) {
+  if (canonicalScreen) return <canonicalScreen.Component params={canonicalScreen.params} />;
+  if (canonicalExpedientes) return <CanonicalExpedientesList />;
   if (canonicalReport) {
     return (
       <AppShell modulo="Celiaquía" secciones={seccionesReporteCanonico}>

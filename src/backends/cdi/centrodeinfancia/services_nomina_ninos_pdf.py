@@ -37,7 +37,6 @@ from centrodeinfancia.services_renaper_estado import (
 from core.services.text_encoding import normalize_text as _normalize
 from core.services.text_encoding import repair_utf8_mojibake
 
-
 logger = logging.getLogger(__name__)
 
 PAGE_SIZE = landscape(A4)

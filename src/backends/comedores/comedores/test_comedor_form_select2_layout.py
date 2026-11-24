@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-
 # El JS es de comedores; el CSS lo comparten varios verticales (kernel).
 STATIC_DIR = Path(__file__).resolve().parent / "static" / "custom"
 KERNEL_STATIC_DIR = Path(__file__).resolve().parents[2] / "kernel" / "static" / "custom"

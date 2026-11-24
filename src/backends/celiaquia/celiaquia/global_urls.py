@@ -5,7 +5,6 @@ from django.urls import path
 from celiaquia.views.reporter_provincias import ReporterProvinciasView
 from core.decorators import permissions_any_required
 
-
 urlpatterns = [
     path(
         "reporter-provincias/",

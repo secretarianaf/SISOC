@@ -20,8 +20,20 @@ from expedientespagos.services import (
     ExpedientesPagosService,
     ordenar_expedientes_por_periodo_desc,
 )
-from comedores.models import Comedor
+from comedores.services.comedor_service import ComedorService
 from iam.services import user_has_any_permission_codes
+
+
+class ExpedientePagoEnAlcanceMixin:
+    """Valida que el comedor del expediente esté dentro del alcance del usuario."""
+
+    def get_object(self, queryset=None):
+        expediente = super().get_object(queryset)
+        if expediente.comedor_id is not None:
+            ComedorService.get_scoped_comedor_or_404(
+                expediente.comedor_id, self.request.user
+            )
+        return expediente
 
 
 def _build_expediente_pago_list_item(expediente):
@@ -53,6 +65,9 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         """Retorna expedientes ordenados para evitar warning de paginación"""
+        ComedorService.get_scoped_comedor_or_404(
+            self.kwargs.get("pk"), self.request.user
+        )
         return ordenar_expedientes_por_periodo_desc(ExpedientePago.objects.all())
 
     def get_context_data(self, **kwargs):
@@ -94,7 +109,9 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
         return context
 
 
-class ExpedientesPagosDetailView(LoginRequiredMixin, DetailView):
+class ExpedientesPagosDetailView(
+    ExpedientePagoEnAlcanceMixin, LoginRequiredMixin, DetailView
+):
     model = ExpedientePago
     template_name = "expedientespagos_detail.html"
     context_object_name = "expediente_pago"
@@ -138,7 +155,15 @@ class ExpedientesPagosCreateView(LoginRequiredMixin, CreateView):
         )
         return es_area_legales, es_tecnico_comedor
 
+    def get_comedor_en_alcance(self):
+        if not hasattr(self, "_comedor_en_alcance"):
+            self._comedor_en_alcance = ComedorService.get_scoped_comedor_or_404(
+                self.kwargs.get("pk"), self.request.user
+            )
+        return self._comedor_en_alcance
+
     def get_form_kwargs(self):
+        self.get_comedor_en_alcance()
         kwargs = super().get_form_kwargs()
         es_area_legales, es_tecnico_comedor = self._get_role_flags()
         kwargs.update(
@@ -170,9 +195,8 @@ class ExpedientesPagosCreateView(LoginRequiredMixin, CreateView):
 
     def post(self, request, *args, **kwargs):
         self.object = None
-        comedor_id = self.kwargs.get("pk")
         form = self.get_form()
-        comedor = Comedor.objects.get(pk=comedor_id)
+        comedor = self.get_comedor_en_alcance()
         if form.is_valid():
             # Crear el objeto y asignarlo a self.object
             self.object = ExpedientesPagosService.crear_expediente_pago(
@@ -183,7 +207,9 @@ class ExpedientesPagosCreateView(LoginRequiredMixin, CreateView):
             return self.form_invalid(form)
 
 
-class ExpedientesPagosUpdateView(LoginRequiredMixin, UpdateView):
+class ExpedientesPagosUpdateView(
+    ExpedientePagoEnAlcanceMixin, LoginRequiredMixin, UpdateView
+):
     model = ExpedientePago
     template_name = "expedientespagos_form.html"
     form_class = ExpedientePagoForm
@@ -259,7 +285,10 @@ class ExpedientesPagosUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class ExpedientesPagosDeleteView(
-    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+    ExpedientePagoEnAlcanceMixin,
+    SoftDeleteDeleteViewMixin,
+    LoginRequiredMixin,
+    DeleteView,
 ):
     model = ExpedientePago
     template_name = "expedientespagos_confirm_delete.html"

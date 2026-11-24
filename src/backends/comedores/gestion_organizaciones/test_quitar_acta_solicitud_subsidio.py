@@ -14,7 +14,6 @@ from organizaciones.models import (
     TipoEntidad,
 )
 
-
 pytestmark = pytest.mark.django_db
 
 _migracion = importlib.import_module(

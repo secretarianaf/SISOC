@@ -21,7 +21,6 @@ from core.mixins import CSVExportMixin
 from core.models import Provincia
 from core.services.column_preferences import build_columns_context_from_fields
 
-
 logger = logging.getLogger(__name__)
 
 

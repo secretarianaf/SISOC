@@ -11,7 +11,6 @@ from historial.models import Historial
 from historial.services import historial_service
 from historial.services.historial_service import HistorialService
 
-
 User = get_user_model()
 
 

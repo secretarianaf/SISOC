@@ -14,7 +14,6 @@ from core.services.text_encoding import (
     repair_utf8_mojibake,
 )
 
-
 DEFAULT_BATCH_SIZE = 2000
 TARGETS = {
     "ciudadano": ("ciudadanos", "Ciudadano", ("apellido", "nombre")),

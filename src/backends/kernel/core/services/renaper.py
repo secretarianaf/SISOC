@@ -13,7 +13,6 @@ from core.integrations.renaper import APIClient
 from core.models import Sexo
 from core.validators import validate_cuit
 
-
 logger = logging.getLogger("django")
 _RENAPER_INT_PLACEHOLDERS = {
     "",

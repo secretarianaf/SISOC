@@ -4,7 +4,6 @@ from django.urls import path
 
 from VAT.views.reporte import ReporteInscriptosAsistenciasView
 
-
 urlpatterns = [
     path(
         "vat/reportes/inscripciones-asistencias/",

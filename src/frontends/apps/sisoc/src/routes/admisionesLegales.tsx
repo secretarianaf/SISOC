@@ -24,12 +24,12 @@ type Boton = { key: string; texto: string; modal: string | null; clase: string; 
 type Providencia = { pdf: string | null; docx: string | null; numero_gde_pv: string | null } | null;
 type Final = { pdf: string | null; docx: string | null; numero_if: string | null };
 type Page = { is_paginated: boolean; number: number; count: number; has_rows: boolean; previous: number | null; next: number | null; range: (number | "…")[]; param: string; query_without_page: string };
-const FORM_KEYS = ["rectificar", "numero_expediente", "primera_providencia", "segunda_providencia", "gde_pv_primera", "gde_pv_segunda", "intervencion_juridicos", "if_proyecto_convenio", "convenio", "reinicio_expediente", "solicitar_complementario"] as const;
+const FORM_KEYS = ["rectificar", "proyecto", "numero_expediente", "primera_providencia", "segunda_providencia", "gde_pv_primera", "gde_pv_segunda", "intervencion_juridicos", "if_proyecto_convenio", "convenio", "reinicio_expediente", "solicitar_complementario"] as const;
 type FormKey = (typeof FORM_KEYS)[number];
 export type LegalData = {
   id: number;
   titulo: { num_expediente: string; archivada: boolean; rechazo: string; estado: string };
-  urls: { lista: string; pagina: string };
+  urls: { lista: string; pagina: string; localidades: string };
   botones: Boton[];
   expediente: {
     estado: string; numero: string; proyecto: Final | null; primera_providencia: Providencia; segunda_providencia: Providencia;
@@ -41,7 +41,7 @@ export type LegalData = {
     complementarios: { fecha: string; estado: string; pdf: string | null }[]; complementario_final: Final | null;
   };
   comedor: { id: number; nombre: string; url: string; tipo: string; programa: string; organizacion: string; ubicacion: string; calle: string };
-  es_judicializado: boolean; tipo_admision: string;
+  es_judicializado: boolean; primera_es_judicializado: boolean; tipo_admision: string;
   documentos: { id: number; nombre: string; archivo_url: string | null }[];
   historial_estados: { headers: { title: string; width: string | null }[]; rows: string[][]; page: Page };
   forms: Record<FormKey, FormPayload>;
@@ -71,7 +71,7 @@ export function legalValid(v: unknown): v is LegalData {
   if (!record(v) || !record(v.titulo) || !record(v.urls) || !record(v.expediente) || !record(v.admision) || !record(v.comedor) || !record(v.historial_estados) || !record(v.forms)) return false;
   const e = v.expediente, a = v.admision, h = v.historial_estados, p = h.page;
   if (!record(p)) return false;
-  return int(v.id) && strings(v.titulo, ["num_expediente", "rechazo", "estado"]) && typeof v.titulo.archivada === "boolean" && internal(v.urls.lista) && internal(v.urls.pagina) &&
+  return int(v.id) && strings(v.titulo, ["num_expediente", "rechazo", "estado"]) && typeof v.titulo.archivada === "boolean" && internal(v.urls.lista) && internal(v.urls.pagina) && internal(v.urls.localidades) &&
     list(v.botones, (b) => strings(b, ["key", "texto", "clase"]) && (b as Boton).modal !== undefined && nullableText((b as Boton).modal) && nullableText((b as Boton).url)) &&
     strings(e, ["estado", "numero"]) && finalOk(e.proyecto) && providenciaOk(e.primera_providencia) && providenciaOk(e.segunda_providencia) &&
     (e.intervencion === null || (record(e.intervencion) && text(e.intervencion.label) && nullableText(e.intervencion.rechazo))) && nullableText(e.dictamen) &&
@@ -80,7 +80,7 @@ export function legalValid(v: unknown): v is LegalData {
     strings(a, ["tipo", "tipo_convenio", "estado", "fecha", "vencimiento_mandatos", "num_expediente"]) && fileUrl(a.informe_pdf) && finalOk(a.complementario_final) &&
     list(a.complementarios, (c) => strings(c, ["fecha", "estado"]) && fileUrl((c as Record<string, unknown>).pdf)) &&
     int(v.comedor.id) && strings(v.comedor, ["nombre", "tipo", "programa", "organizacion", "ubicacion", "calle"]) && internal(v.comedor.url) &&
-    typeof v.es_judicializado === "boolean" && text(v.tipo_admision) &&
+    typeof v.es_judicializado === "boolean" && typeof v.primera_es_judicializado === "boolean" && text(v.tipo_admision) &&
     list(v.documentos, (d) => record(d) && int(d.id) && text(d.nombre) && (d.archivo_url === null || text(d.archivo_url))) &&
     list(h.headers, (x) => record(x) && text(x.title) && nullableText(x.width)) && list(h.rows, (r) => list(r, text)) &&
     typeof p.is_paginated === "boolean" && typeof p.has_rows === "boolean" && int(p.number) && int(p.count) && (p.previous === null || int(p.previous)) && (p.next === null || int(p.next)) &&
@@ -271,6 +271,56 @@ function ActionModal({ spec, data, action, close }: { spec: ModalSpec; data: Leg
 const crispy = (ctx: Ctx, name: string, required?: boolean) => <Crispy f={ctx.field(name)} value={ctx.values[name] ?? ""} onChange={(v) => ctx.set(name, v)} onFile={ctx.file} required={required} />;
 const readonly = (label: string, value: string) => <div className="mb-3"><label className="form-label">{label}</label><input type="text" className="form-control" value={value} readOnly /></div>;
 
+function ProyectoConvenioBody({ ctx, judicializado, urlLocalidades }: { ctx: Ctx; judicializado: boolean; urlLocalidades: string }) {
+  const provincia = ctx.values.autoridad_provincia ?? "";
+  const localidad = ctx.field("autoridad_localidad");
+  const [localidades, setLocalidades] = useState<{ provincia: string; choices: Choice[] }>();
+  const [error, setError] = useState(false);
+
+  const cargarProvincia = (value: string) => {
+    setError(false);
+    ctx.set("autoridad_provincia", value);
+    ctx.set("autoridad_localidad", "");
+  };
+
+  const provinciaInicial = ctx.field("autoridad_provincia").value;
+  useEffect(() => {
+    if (!provincia || provincia === provinciaInicial) return;
+    const carga = new AbortController();
+    const url = `${urlLocalidades}?provincia_id=${encodeURIComponent(provincia)}`;
+    void fetch(url, { signal: carga.signal })
+      .then((respuesta) => {
+        if (!respuesta.ok) throw new Error("No se pudieron cargar las localidades");
+        return respuesta.json() as Promise<{ id: number; nombre: string }[]>;
+      })
+      .then((opciones) => {
+        if (!carga.signal.aborted) {
+          setLocalidades({ provincia, choices: [{ value: "", label: "---------" }, ...opciones.map(({ id, nombre }) => ({ value: String(id), label: nombre }))] });
+        }
+      })
+      .catch(() => { if (!carga.signal.aborted) setError(true); });
+    return () => carga.abort();
+  }, [provincia, provinciaInicial, urlLocalidades]);
+
+  const provinciaField = ctx.field("autoridad_provincia");
+  const choices = provincia === provinciaField.value
+    ? localidad.choices
+    : localidades?.provincia === provincia ? localidades.choices : [{ value: "", label: "---------" }];
+
+  return <div className="modal-body">
+    {crispy(ctx, "cantidad_espacios")}
+    {readonly("¿Es judicializado?", judicializado ? "Sí" : "No")}
+    {judicializado && <>{crispy(ctx, "caratula_causa")}{crispy(ctx, "juzgado")}{crispy(ctx, "memo")}</>}
+    <fieldset>
+      <legend className="h6">Autoridad firmante</legend>
+      {["autoridad_nombre", "autoridad_cargo", "autoridad_dni", "autoridad_domicilio"].map((name) => <Fragment key={name}>{crispy(ctx, name)}</Fragment>)}
+      <Crispy f={provinciaField} value={provincia} onChange={cargarProvincia} />
+      <Crispy f={{ ...localidad, choices }} value={ctx.values.autoridad_localidad ?? ""} onChange={(value) => ctx.set("autoridad_localidad", value)} />
+      {error && <p className="text-danger" role="status">No se pudieron cargar las localidades.</p>}
+    </fieldset>
+  </div>;
+}
+
 function IntervencionBody({ ctx }: { ctx: Ctx }) {
   const rechazado = ctx.values.intervencion_juridicos === "rechazado";
   const dictamen = rechazado && ctx.values.rechazo_juridicos_motivo === "dictamen";
@@ -308,8 +358,8 @@ function specs(data: LegalData): Record<string, ModalSpec> {
         {readonly("Número de Providencia", "Primera Providencia")}
         {readonly("Tipo de Admisión", data.tipo_admision === "" ? "Sin información" : data.tipo_admision)}
         {crispy(ctx, "cantidad_espacios")}
-        {readonly("¿Es Judicializado?", data.es_judicializado ? "Sí" : "No")}
-        {data.es_judicializado && <>{crispy(ctx, "caratula_causa")}{crispy(ctx, "juzgado")}{crispy(ctx, "memo")}</>}
+        {readonly("¿Es Judicializado?", data.primera_es_judicializado ? "Sí" : "No")}
+        {data.primera_es_judicializado && <>{crispy(ctx, "caratula_causa")}{crispy(ctx, "juzgado")}{crispy(ctx, "memo")}</>}
       </div>,
     },
     modalSegundaProvidencia: {
@@ -322,9 +372,9 @@ function specs(data: LegalData): Record<string, ModalSpec> {
       </div>,
     },
     modalFormConvenio: {
-      id: "modalFormConvenio", title: "Formulario Proyecto de Convenio", accion: "proyecto-convenio",
+      id: "modalFormConvenio", title: "Formulario Proyecto de Convenio", accion: "proyecto-convenio", formKey: "proyecto",
       submit: primaryBtn("btnProyectoConvenio_id", "btnProyectoConvenio", "Aceptar"),
-      body: () => <div className="modal-body">Generará los archivos del Formulario Proyecto de Convenio.</div>,
+      body: (ctx) => <ProyectoConvenioBody ctx={ctx} judicializado={data.es_judicializado} urlLocalidades={data.urls.localidades} />,
     },
     modalReinicioExpediente: {
       id: "modalReinicioExpediente", title: "Reinicio de Expediente", accion: "reinicio-expediente", formKey: "reinicio_expediente",

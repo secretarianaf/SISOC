@@ -1842,20 +1842,18 @@ class AdmisionesLegalesDetailView(LoginRequiredMixin, FormMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(
-            LegalesService.get_legales_context(self.get_object(), self.request)
-        )
+        context.update(LegalesService.get_legales_context(self.object, self.request))
         # Los kwargs explícitos ganan sobre los formularios limpios que arma el
         # service: son los que traen los errores del intento anterior.
         context.update(kwargs)
         context.setdefault("form", self.get_form())
         context.setdefault(
-            "form_legales_num_if", LegalesNumIFForm(instance=self.get_object())
+            "form_legales_num_if", LegalesNumIFForm(instance=self.object)
         )
         return context
 
     def post(self, request, *args, **kwargs):
-        admision = self.get_object()
+        self.object = admision = self.get_object()
         if "btnLegalesNumIF" in getattr(request, "POST", {}):
             legales_num_if_form = LegalesNumIFForm(request.POST, instance=admision)
             if not legales_num_if_form.is_valid():

@@ -5,13 +5,20 @@ that a rejection leaves the admision unchanged and the HTTP contract (400 bound 
 404, 409) added by the API.
 """
 
+import shutil
+import subprocess
 import types
+from zipfile import ZipFile
+
+from docx import Document
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, override_settings
+from django.urls import reverse
+from core.models import Localidad, Municipio, Provincia
 
 from admisiones.models.admisiones import (
     Admision,
@@ -339,26 +346,281 @@ def test_if_proyecto_convenio_saves_the_number(web):
     assert _campos(admision, "estado_legales") == ("IF Convenio Asignado",)
 
 
-def test_proyecto_convenio_generates_the_files_through_the_native_service(web, mocker):
-    admision = _admision(estado_legales="Expediente Agregado")
-    generar = mocker.patch(
-        "admisiones.services.legales_service.impl.LegalesService.guardar_formulario_proyecto_convenio",
-        side_effect=lambda request, adm: _aplicar(request, adm, "formulario_convenio"),
+@pytest.fixture
+def proyecto_datos():
+    provincia = Provincia.objects.create(nombre="Provincia firmante")
+    municipio = Municipio.objects.create(
+        nombre="Municipio firmante", provincia=provincia
+    )
+    localidad = Localidad.objects.create(
+        nombre="Localidad firmante", municipio=municipio
+    )
+    return {
+        "cantidad_espacios": "hasta_5",
+        "autoridad_nombre": "Autoridad & Asociación",
+        "autoridad_cargo": "Secretaria",
+        "autoridad_dni": "12345678",
+        "autoridad_domicilio": "Calle Ficticia 123",
+        "autoridad_provincia": provincia.pk,
+        "autoridad_localidad": localidad.pk,
+    }
+
+
+def _informe_proyecto(admision, estado="Validado"):
+    return InformeTecnico.objects.create(
+        admision=admision,
+        tipo="base",
+        estado=estado,
+        expediente_nro="EX-1",
+        representante_nombre="Autoridad del informe",
+        representante_cargo="Presidente",
+        representante_dni="87654321",
+        aprobadas_almuerzo_lunes=42,
     )
 
-    respuesta = _accion(web, admision, "proyecto-convenio")
+
+@pytest.mark.parametrize("tipo", ["incorporacion", "renovacion"])
+@pytest.mark.parametrize("judicializado", [False, True])
+@pytest.mark.parametrize("espacios", ["hasta_5", "mas_de_5"])
+def test_proyecto_convenio_genera_word_y_pdf(
+    web, admision_media, proyecto_datos, mocker, tipo, judicializado, espacios
+):
+    admision = _admision(tipo=tipo, estado_legales="Expediente Agregado")
+    admision.comedor.es_judicializado = judicializado
+    admision.comedor.save(update_fields=["es_judicializado"])
+    informe = _informe_proyecto(
+        admision, estado="Para revision" if judicializado else "Validado"
+    )
+    detalle = web.get(f"{API}{admision.pk}/").json()
+    campos = {
+        campo["name"]: campo["value"]
+        for campo in detalle["forms"]["proyecto"]["fields"]
+    }
+    assert campos["autoridad_nombre"] == informe.representante_nombre
+    assert campos["autoridad_cargo"] == informe.representante_cargo
+    assert campos["autoridad_dni"] == informe.representante_dni
+
+    convertir = mocker.patch(
+        "admisiones.services.legales_service.impl.convertir_convenio_a_pdf",
+        return_value=b"%PDF-1.7",
+    )
+    datos = {
+        **proyecto_datos,
+        "cantidad_espacios": espacios,
+        "caratula_causa": "Causa ficticia",
+        "juzgado": "Juzgado ficticio",
+        "memo": "Memo ficticio",
+    }
+    respuesta = _accion(web, admision, "proyecto-convenio", datos)
+    assert respuesta.status_code == 200
+    assert _campos(admision, "estado_legales") == ("Formulario Convenio Creado",)
+    proyecto = admision.admisiones_proyecto_convenio.get()
+    assert proyecto.es_judicializado is judicializado
+    assert proyecto.caratula_causa == ("Causa ficticia" if judicializado else None)
+    with proyecto.archivo.open("rb") as pdf:
+        assert pdf.read() == b"%PDF-1.7"
+    with proyecto.archivo_docx.open("rb") as docx:
+        convertir.assert_called_once_with(docx.read())
+        docx.seek(0)
+        with ZipFile(docx) as zip_doc:
+            assert all("comment" not in name for name in zip_doc.namelist())
+        docx.seek(0)
+        documento = Document(docx)
+        texto = "\n".join(p.text for p in documento.paragraphs)
+        assert "[PRESIDENTE" not in texto
+        assert "[" not in "".join(documento.element.xpath("//w:t/text()"))
+        assert "Autoridad & Asociación" in texto
+        assert "Secretaria" in texto
+        assert "BORRADOR" not in texto
+        header = documento.sections[0].header
+        assert (
+            bool(
+                header._element.xpath(
+                    ".//wp:anchor[@behindDoc='1']/wp:docPr[@descr='BORRADOR']"
+                )
+            )
+            is judicializado
+        )
+        assert (
+            "Causa ficticia" in texto and "Juzgado ficticio" in texto
+        ) is judicializado
+        assert ("con el propósito de garantizar la continuidad" in texto) is (
+            espacios == "mas_de_5"
+        )
+        assert len(documento.tables) == 3
+        assert documento.tables[1].cell(2, 1).text == "42"
+    informe.refresh_from_db()
+    assert informe.representante_nombre == "Autoridad del informe"
+
+
+@pytest.fixture
+def admision_media(settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+    return tmp_path
+
+
+def test_proyecto_convenio_rechaza_campos_obligatorios_y_localidad_de_otra_provincia(
+    web, proyecto_datos
+):
+    admision = _admision(estado_legales="Expediente Agregado")
+    otra_provincia = Provincia.objects.create(nombre="Otra provincia firmante")
+    respuesta = _accion(
+        web,
+        admision,
+        "proyecto-convenio",
+        {
+            **proyecto_datos,
+            "autoridad_nombre": "",
+            "autoridad_provincia": otra_provincia.pk,
+        },
+    )
+    assert respuesta.status_code == 400
+    assert respuesta.json()["form"] == "proyecto"
+    errores = {campo["name"] for campo in respuesta.json()["fields"] if campo["errors"]}
+    assert errores == {"autoridad_nombre", "autoridad_localidad"}
+    assert not admision.admisiones_proyecto_convenio.exists()
+    assert _campos(admision, "estado_legales") == ("Expediente Agregado",)
+
+
+def test_proyecto_convenio_django_reabre_el_modal_con_errores(web):
+    admision = _admision(estado_legales="Expediente Agregado")
+    respuesta = web.post(
+        reverse("admisiones_legales_ver", args=[admision.pk]),
+        {"btnProyectoConvenio": "", "cantidad_espacios": "mas_de_5"},
+    )
 
     assert respuesta.status_code == 200
-    assert generar.call_count == 1
-    assert "btnProyectoConvenio" in generar.call_args.args[0].POST
-    assert _campos(admision, "estado_legales") == ("Formulario Convenio Creado",)
+    assert respuesta.context["abrir_modal"] == "modalFormConvenio"
+    form = respuesta.context["proyecto_form"]
+    assert form["cantidad_espacios"].value() == "mas_de_5"
+    assert "autoridad_nombre" in form.errors
+    assert not admision.admisiones_proyecto_convenio.exists()
 
 
-def _aplicar(request, admision, accion):
-    from admisiones.services.legales_service.impl import LegalesService
+@pytest.mark.parametrize("componente", ["word", "pdf"])
+def test_proyecto_convenio_no_guarda_si_falla_un_documento(
+    web, proyecto_datos, admision_media, mocker, componente
+):
+    admision = _admision(estado_legales="Expediente Agregado")
+    _informe_proyecto(admision)
+    modulo = "admisiones.services.legales_service.impl"
+    funcion = (
+        "DocumentTemplateService.generar_docx"
+        if componente == "word"
+        else "convertir_convenio_a_pdf"
+    )
+    mocker.patch(f"{modulo}.{funcion}", side_effect=RuntimeError("falló la generación"))
+    respuesta = _accion(web, admision, "proyecto-convenio", proyecto_datos)
+    assert (
+        "error",
+        "No se pudieron generar el Word y el PDF del Proyecto de Convenio.",
+    ) in _niveles(respuesta)
+    assert not list(admision_media.iterdir())
+    assert not admision.admisiones_proyecto_convenio.exists()
+    assert _campos(admision, "estado_legales") == ("Expediente Agregado",)
 
-    LegalesService.actualizar_estado_por_accion(admision, accion)
-    return None
+
+def test_primera_providencia_copia_datos_del_convenio_sin_admitir_cambios(web, mocker):
+    admision = _admision(estado_legales="IF Convenio Asignado")
+    FormularioProyectoDeConvenio.objects.create(
+        admision=admision,
+        numero_if="IF-1",
+        es_judicializado=True,
+        cantidad_espacios="mas_de_5",
+        caratula_causa="Causa",
+        juzgado="Juzgado",
+        memo="Memo",
+    )
+    generar = mocker.patch(
+        "admisiones.services.legales_service.impl.LegalesService._generar_archivos_providencia"
+    )
+    detalle = web.get(f"{API}{admision.pk}/").json()
+    assert detalle["primera_es_judicializado"] is True
+    assert all(
+        campo["attrs"]["disabled"]
+        for campo in detalle["forms"]["primera_providencia"]["fields"]
+    )
+    respuesta = _accion(
+        web,
+        admision,
+        "primera-providencia",
+        {
+            "cantidad_espacios": "hasta_5",
+            "caratula_causa": "Ignorar",
+        },
+    )
+    assert respuesta.status_code == 200
+    providencia = Providencia.objects.get(admision=admision, orden="primera")
+    assert providencia.es_judicializado
+    assert providencia.cantidad_espacios == "mas_de_5"
+    assert (providencia.caratula_causa, providencia.juzgado, providencia.memo) == (
+        "Causa",
+        "Juzgado",
+        "Memo",
+    )
+    generar.assert_called_once()
+
+
+def test_regenerar_proyecto_conserva_datos_y_reinicia_documentos(web, proyecto_datos):
+    from admisiones.services.legales_service import LegalesService
+
+    admision = _admision(estado_legales="Expediente Agregado")
+    proyecto = FormularioProyectoDeConvenio.objects.create(
+        admision=admision,
+        archivo="viejo.pdf",
+        archivo_docx="viejo.docx",
+        numero_if="IF-1",
+        **{
+            k: v
+            for k, v in proyecto_datos.items()
+            if k not in {"autoridad_provincia", "autoridad_localidad"}
+        },
+        autoridad_provincia_id=proyecto_datos["autoridad_provincia"],
+        autoridad_localidad_id=proyecto_datos["autoridad_localidad"],
+    )
+    LegalesService._reiniciar_proyecto_convenio(admision)
+    proyecto.refresh_from_db()
+    detalle = web.get(f"{API}{admision.pk}/").json()
+    assert detalle["expediente"]["proyecto"] is None
+    campos = {
+        campo["name"]: campo["value"]
+        for campo in detalle["forms"]["proyecto"]["fields"]
+    }
+    assert campos["autoridad_nombre"] == proyecto_datos["autoridad_nombre"]
+    assert campos["autoridad_localidad"] == str(proyecto_datos["autoridad_localidad"])
+    assert not proyecto.numero_if
+
+
+@pytest.mark.skipif(
+    not (shutil.which("libreoffice") or shutil.which("soffice"))
+    or not all(shutil.which(tool) for tool in ("pdftotext", "pdfimages")),
+    reason="Requiere LibreOffice y las herramientas PDF de Poppler",
+)
+def test_proyecto_convenio_convierte_el_word_a_pdf_con_marca_borrador(
+    web, admision_media, proyecto_datos
+):
+    admision = _admision(estado_legales="Expediente Agregado")
+    _informe_proyecto(admision, estado="Para revision")
+    respuesta = _accion(web, admision, "proyecto-convenio", proyecto_datos)
+    assert respuesta.status_code == 200
+    proyecto = admision.admisiones_proyecto_convenio.get()
+    texto_pdf = subprocess.check_output(
+        ["pdftotext", proyecto.archivo.path, "-"], text=True, timeout=30
+    )
+    assert "BORRADOR" not in texto_pdf
+    imagenes_pdf = subprocess.check_output(
+        ["pdfimages", "-list", proyecto.archivo.path], text=True, timeout=30
+    )
+    paginas_con_marca = {
+        int(columnas[0])
+        for linea in imagenes_pdf.splitlines()[2:]
+        if (columnas := linea.split()) and columnas[2] == "image"
+    }
+    cantidad_paginas = len(texto_pdf.rstrip("\f").split("\f"))
+    assert cantidad_paginas > 1
+    assert paginas_con_marca == set(range(1, cantidad_paginas + 1))
+    assert proyecto_datos["autoridad_nombre"] in texto_pdf.replace("\n", " ")
+    assert "CLÁUSULA" in texto_pdf
 
 
 def test_primera_providencia_creates_it_and_the_sequence_guard_answers_409(web, mocker):

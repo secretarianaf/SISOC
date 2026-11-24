@@ -695,6 +695,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - templates `src/backends/comedores/admisiones/templates/admisiones/docx/`
 - templates `src/backends/comedores/admisiones/templates/admisiones/pdf/`
 - `src/backends/comedores/admisiones/tests/`
+- Proyecto de Convenio de Legales en `src/backends/comedores/admisiones/services/proyecto_convenio.py`.
+  Un DOCX para incorporación y renovación, convertido a PDF con LibreOffice. Sus datos alimentan la Primera Providencia.
 - El catálogo de variables de contenido se persiste como
   `VariableTemplateInformeTecnico`; guarda expresiones Django sin delimitadores
   (por ejemplo, `informe.nombre_organizacion`). Sólo las variables activas se

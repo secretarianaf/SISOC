@@ -626,6 +626,7 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, ComedorAlcanceMixin, Detai
         context["bloques"] = bloques
 
         context["prestaciones"] = list(seguimiento.prestaciones.all())
+        context["es_primer"] = seguimiento.tipo == PrimerSeguimiento.TIPO_PRIMER
         menu = seguimiento.menu
         context["receta_items"] = (
             list(menu.receta_items.all()) if menu is not None else []

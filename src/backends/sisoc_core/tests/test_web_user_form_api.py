@@ -199,8 +199,11 @@ def test_create_projection_follows_the_native_cards(manager, group):
     fields = fields_of(data)
     assert fields["password"]["required"] is True
     assert fields["password"]["value"] == ""
-    assert fields["tipo_usuario"]["kind"] == "radio"
+    # Desplegable con la opción vacía primero: obligatorio y sin preselección.
+    assert fields["tipo_usuario"]["kind"] == "select"
+    assert [item["value"] for item in fields["tipo_usuario"]["choices"]][0] == ""
     assert {item["value"] for item in fields["tipo_usuario"]["choices"]} == {
+        "",
         "interno",
         "provincial",
         "externo",

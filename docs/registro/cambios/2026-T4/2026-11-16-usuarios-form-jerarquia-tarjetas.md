@@ -45,6 +45,17 @@ No cambian validaciones, permisos ni el JS que maneja el alcance mobile.
 - Se reemplazaron clases de Bootstrap 4 que no tenían efecto en Bootstrap 5 (`mr-*`,
   `ml-2`, `text-right`, `badge-success`/`badge-secondary`).
 
+## Pantalla React (#2785)
+
+`/usuarios/crear/` y `/usuarios/editar/<id>/` también tienen versión React en `apps/sisoc`, activa por defecto en QA, HML y PRD. React reproducía el template anterior, así que el rediseño se portó con el mismo marcado, las mismas clases y los mismos `id`, sobre el mismo `user_form.css`:
+
+- `src/frontends/apps/sisoc/src/routes/usuariosForm.tsx`: los tres bloques numerados, las tarjetas con ícono, título, descripción y "Habilitado", el correo en "Datos personales", el ojo dentro del campo de contraseña, la introducción, la tarjeta de usuarios mobile al final y la botonera fija. Con "Espacios comunitarios" tildado se oculta el bloque web completo, igual que `user_mobile_access.js`.
+- `src/frontends/apps/sisoc/src/routes/usuariosControls.tsx`: `Control` acepta `wrap` para envolver el input (el ojo).
+- `src/frontends/apps/sisoc/src/routes/usuariosMobile.tsx`: tarjeta informativa de usuarios mobile creados.
+- `src/frontends/apps/sisoc/src/routes/usuarios.tsx`: título "Nuevo usuario"/"Editar usuario" y breadcrumb "Agregar"/"Editar".
+- "Tipo de usuario" llega a React como desplegable sin cambios en el front: la API toma el tipo de control del widget del form.
+- Pruebas: `src/frontends/apps/sisoc/src/routes/usuariosForm.test.tsx` (bloques, orden de tarjetas, correo, ojo, introducción, bloque web oculto y desplegable) y `src/backends/sisoc_core/tests/test_web_user_form_api.py` (la API proyecta "Tipo de usuario" como desplegable con la opción vacía primero).
+
 Se conservan los `id` de todas las tarjetas que usan los tests y el JS. Las clases
 `.card-custom`/`.card-header-custom` siguen en `user_form.css`, porque las usan
 `encuestas/encuesta_revision.html` y `duplas/dupla_form.html`.

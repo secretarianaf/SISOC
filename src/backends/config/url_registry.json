@@ -1615,6 +1615,21 @@
   "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/usuarios/(?P<acceso_id>[0-9]+)/estado/\\Z"
  },
  {
+  "name": "centrodeinfancia_web_calidad_cargar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/calidad/cargar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_calidad_detalle",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/calidad/(?P<form_pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_calidad_listado",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/calidad/\\Z"
+ },
+ {
   "name": "centrodeinfancia_web_centro_crear",
   "namespace": "",
   "regex": "^api/web/cdi/centros/crear/\\Z"

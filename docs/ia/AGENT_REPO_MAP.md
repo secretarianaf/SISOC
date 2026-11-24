@@ -766,6 +766,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - conversión e incrustación de Office en rendiciones: `src/backends/comedores/rendicioncuentasmensual/service_helpers.py`
 - el runtime Django requiere LibreOffice Writer/Calc para convertir DOCX/XLSX a PDF
 
+### Si necesitas cambiar el Formulario de Calidad CDI
+
+- Calidad CDI usa `/centrodeinfancia/<pk>/calidad/` (historial), `…/cargar/` (alta o borrador) y `…/<form_pk>/` (detalle). El transporte `centrodeinfancia/web_api_formulario_calidad.py` proyecta el esquema, conserva las validaciones de Django y no permite reescribir un envío.
+
 ### Si necesitas cambiar rendiciones mensuales u Organizaciones
 
 - Entradas canónicas de React (#2785): «Seguimiento Mensual» conserva el listado por comedor en `/rendicioncuentasmensual/rendicioncuentasmensual/<id>/`. El módulo `rendicioncuentasmensual/web_api_rendicion_por_comedor.py` reutiliza el alcance por proyecto de la vista nativa; no usar el listado global como sustituto.

@@ -6770,6 +6770,11 @@
   "regex": "^api/web/dispositivos/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
+  "name": "web_dispositivos_eliminar",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
   "name": "web_dispositivos_list",
   "namespace": "",
   "regex": "^api/web/dispositivos/listado/\\Z"

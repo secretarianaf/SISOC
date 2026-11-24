@@ -76,6 +76,7 @@ import { datacalleCasosRoute } from "./datacalleCasos";
 import { datacalleRelevamientosRoute } from "./datacalleRelevamientos";
 import { dispositivosRoute } from "./dispositivos";
 import { dispositivoFormRoute } from "./dispositivoForm";
+import { dispositivoEliminarRoute } from "./dispositivoEliminar";
 import { cdfCentroUsuarioRoute } from "./cdfCentroUsuario";
 import { dashboardRoute, dashboardTableroRoute } from "./dashboardTableros";
 import { duplasRoute } from "./duplas";
@@ -231,6 +232,7 @@ export const ROUTES: RouteDefinition[] = [
   cdfCentroFormRoute,
   dispositivosRoute,
   dispositivoFormRoute,
+  dispositivoEliminarRoute,
   cdfCentroUsuarioRoute,
   cdfBeneficiariosRoute,
   cdfActividadRoute,

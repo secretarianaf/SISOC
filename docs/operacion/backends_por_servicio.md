@@ -13,7 +13,7 @@ Para desarrollar y revisar cambios, usar `docs/desarrollo/verticales_independien
 | `celiaquia` | celiaquia | `/celiaquia/`, `/reporter-provincias/`, `/api/celiaquia/`, `/admin/celiaquia/` |
 | `cdi` | centrodeinfancia, ticketera | `/centrodeinfancia/`, `/simepi/`, `/api/ticketera/`, `/admin/centrodeinfancia/` |
 | `cdf` | centrodefamilia | `/centrodefamilia/`, `/api/centrodefamilia/`, `/admin/centrodefamilia/` |
-| `inspecciones` | inspecciones (inspecciones escolares, PWA Sisoc Inspecciones) | `/inspecciones/`, `/api/inspecciones/`, `/admin/inspecciones/` |
+| `inspecciones` | inspecciones (inspecciones escolares, PWA Sisoc Inspecciones) | `/inspecciones/`, `/api/inspecciones/`, `/api/web/inspecciones/`, `/admin/inspecciones/` |
 | `comedores` (C3 validado localmente) | cluster de catorce apps, Espacios comunitarios (`pwa`), mailing | rutas históricas de comedores/admisiones/organizaciones/rendiciones, Montos, AJAX y APIs; prefijos exactos en el registro |
 | `ocr` (C4 validado localmente) | OCR, lotes/documentos y worker existente | `/ocr/`, `/admin/ocr/` |
 
@@ -104,6 +104,19 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
   settings de su backend y escucha su cola (`pas`, `comedores`). El beat corre
   con la imagen de PAS y envía por nombre las tareas de otros backends. El
   deploy selectivo de cada backend recrea su worker (`extra_services`).
+- **APIs web remotas (G1 v1).** Las APIs web nuevas de un vertical viven bajo
+  `/api/web/<vertical>/`. El core valida la sesión y los permisos, firma cada
+  pedido reenviado con `X-SISOC-Web-Gate` y el runtime lo verifica antes de
+  leer el cuerpo (`src/backends/kernel/core/web_gate.py`). La firma vale 60 s
+  y el proxy usa 60 s de timeout de lectura solo en esas rutas; las rutas
+  existentes conservan su timeout. Decisión:
+  `docs/registro/decisiones/2026-11-06-2808-protocolo-g1-v1.md`.
+- **Timeout de Gunicorn.** Para que la ventana de 60 s se cumpla, el core corre
+  Gunicorn con `--timeout` 75 s (`GUNICORN_TIMEOUT`) y los runtimes con 65 s
+  (`BACKEND_RUNTIME_TIMEOUT`, en `docker/compose/docker-compose.deploy.yml`).
+  Aplica a todas las rutas de esos procesos: un pedido colgado ocupa un worker
+  hasta ese tiempo. Para volver al valor anterior basta con fijar ambas
+  variables en `30`.
 
 ## Deploy
 
@@ -116,6 +129,7 @@ nuevo:
 | Solo `src/backends/<x>/**` | **Selectivo:** construye ese backend y el migrador, migra, y recrea solo ese servicio y sus `extra_services` (`up --no-deps`). Sólo mailing/importación pueden faltar en ese entorno; otros servicios ausentes fuerzan completo. Todos los backends incluyen el importador con imagen del migrador; Comedores también incluye mailing. |
 | Solo `src/backends/sisoc_core/**` | **Selectivo:** construye la imagen del core y el migrador, migra, y recrea los servicios con imagen `sisoc/core` y el rol `user_import_worker` del entorno (en QA, `django`; en PRD, además los workers de importación y credenciales; mailing pertenece a Comedores y OCR a su backend). Los backends no se reinician. Si no se pueden resolver esos servicios, hace un deploy completo. |
 | Solo `src/frontends/apps/<x>/**` | **Selectivo:** solo `front_<x>`. |
+| `apps/sisoc` (build compartido de las pantallas React por vertical) | **Selectivo:** solo `front_sisoc`; el core lo proxea en `/v2/sisoc/` (`FRONT_SISOC_ORIGIN`). |
 | Solo docs/Markdown salvo CHANGELOG, `.github/`, `src/scripts/github/`, `src/backends/<dueño>/tests/` o `src/frontends/e2e/` | **Ninguno:** no se reinicia nada. Los tests dentro de una app siguen la regla del dueño. |
 | Compartidos de `src/frontends/` (paquetes, config, lockfile) | **Selectivo:** todos los fronts; sin migrador. |
 | `docker/frontends/` o `src/scripts/frontends/` | **Selectivo:** todos los fronts; sin migrador. |

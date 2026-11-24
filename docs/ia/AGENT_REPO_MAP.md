@@ -35,6 +35,11 @@ decisiones del 2026-10-15 y 2026-10-16 en `docs/registro/decisiones/`.
   `src/backends/sisoc_core/usuarios/api_views.py`; DTOs y formularios compartidos en
   `src/backends/kernel/users/` (`credentials.py`, `account_forms.py`,
   `admin_forms.py`, `form_sections.py`, `identity_fields.py`). Las rutas públicas se conservan.
+- Contexto JSON por sesión: `src/backends/sisoc_core/usuarios/web_api_views.py`,
+  `src/backends/sisoc_core/usuarios/web_api_serializers.py` y
+  `src/backends/sisoc_core/usuarios/web_context.py`; entry `/api/web/session/`.
+  `config.middlewares.admindocs.WebSessionXViewMiddleware` conserva el HEAD del
+  endpoint sin modificar el tratamiento admindocs de otros paths/métodos.
 - ABM compuesto: `src/backends/comedores/pwa/user_forms.py`,
   `src/backends/comedores/pwa/user_admin_views.py` y contratos de login/contexto en
   `src/backends/comedores/pwa/identity_services.py`. Campos/efectos se clasifican en
@@ -149,6 +154,8 @@ Reglas entre servicios: `AGENTS.md` ("Verticales independientes") y la guía
 - VPSL convive con sus pantallas Django existentes y el nuevo React en `/v2/vpsl/`. La app está en `src/frontends/apps/vpsl/`, usa `@sisoc/ui` y `@sisoc/api`, y se sirve desde `front_vpsl` por el router autenticado `src/backends/kernel/core/v2_frontend.py`. La API `/api/vpsl/` corre en el backend VPSL (o en el proceso único local con settings_all) y reutiliza la lógica del dominio, con adaptadores de ModelForms/vistas existentes y alcance compartido en `services/access.py`. Ver `docs/implementaciones/frontend_v2.md` y `docs/operacion/ver_para_ser_libre_react.md`.
 - Registro nominal React: `src/frontends/apps/vpsl/src/Workflow.tsx` replica las secciones y reglas condicionales de `registro_form.html`; el schema de `api_workflow.py` incluye `renaper_estado` oculto y `graduacion_opcional` desde el ModelForm oficial para registros históricos. Crear usa Guardar y continuar y recarga el schema para el siguiente número de acta. La compatibilidad con PR #2566 se verifica en `src/backends/vpsl/ver_para_ser_libre/tests/test_api_compatibilidad.py` y `src/frontends/apps/vpsl/src/Workflow.test.tsx`; los límites de promoción están en `docs/operacion/ver_para_ser_libre_react.md`.
 - El tema visual de Front v2 usa `getTheme(mode)` de `src/frontends/packages/ui/src/theme.ts`, con correcciones de contraste AA; las reglas de componentes y UX vigentes están en `docs/implementaciones/frontend_v2.md`.
+
+- Piloto React local de Insumos (#2785): `src/frontends/apps/sisoc/` consume el contexto de sesión de `src/backends/sisoc_core/usuarios/web_api_views.py` y la lectura de `src/backends/sisoc_core/insumos/web_api_views.py`. Los recursos públicos de referencia se verifican con `src/scripts/frontends/insumos_visual_assets.py`. El piloto local no activa un módulo en el router público de Django. Estado y límites de la integración en este worktree en el registro de tareas ODD local de #2785 (no versionado) y `docs/implementaciones/frontend_v2.md`; la evidencia original de INS-A permanece en el worktree de origen.
 
 ### Inferencias utiles
 
@@ -1242,13 +1249,15 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 
 - Entrada `/v2/inet/`, app `src/frontends/apps/inet`, servicio `front_inet` y
   variable `FRONT_INET_ORIGIN`; acceso y comandos: `docs/operacion/inet_react.md`.
-- API interna `/api/inet/` en `src/backends/vat/VAT/api_inet_urls.py`, `api_inet_views.py` y
-  `api_inet_serializers.py`. Se enruta al backend VAT desde `src/backends/config/backends.json`.
+- API web de sesión `/api/web/vat/` (G1 v1, `core.web_gate`) en `src/backends/vat/VAT/web_api_urls.py`,
+  `api_inet_views.py` y `api_inet_serializers.py`. Se enruta al backend VAT desde
+  `src/backends/config/backends.json`; no hay alias `/api/inet/`.
 - Queries/formularios/workflows: `src/backends/vat/VAT/services/inet_{queries,forms,workflow}.py`.
   Alta CFP, wizard comisión y asistencia comparten operaciones con legacy.
 - Contrato dedicado `config.urls_inet_v2`, `openapi.inet.yaml` e
   `inet.generated.ts`; checks CI y `npm run api:check` incluyen INET.
-- Tests `src/backends/vat/tests/test_inet_api.py`, `apps/inet/src/App.test.tsx`,
+- Tests `src/backends/vat/tests/test_inet_api.py`, `src/backends/vat/tests/test_vat_web_api.py`,
+  `packages/api/src/inet.test.ts`, `apps/inet/src/App.test.tsx`,
   `apps/inet/src/Fields.test.tsx`,
   `e2e/inet.e2e.ts`. No modificar HasAPIKey de `/api/vat/` para habilitar React.
 - Formularios: permitir opcionales JSON nulos, describir ModelMultipleChoiceField

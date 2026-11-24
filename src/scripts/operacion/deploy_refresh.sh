@@ -335,6 +335,41 @@ configure_mobile() {
   fi
 }
 
+# Mueve los documentos de intervenciones CDI a media/cdi/documentacion/ con el
+# migrador (grafo completo, necesario para comprobar el uso de Comedores). El
+# comando es idempotente y no destructivo (copia, verifica SHA-256, actualiza la
+# fila y borra el original solo si nadie lo usa), asi que corre en cada deploy.
+# Una excepcion o un exit distinto de 0 falla el deploy; CONFLICTO, PENDIENTE,
+# FALTANTE, OMITIDO y EN USO no lo fallan: se listan para revision humana.
+mover_documentacion_cdi() {
+  local -a compose=("$@")
+  local -a cmd=("${compose[@]}" --profile migrate run --rm -T migrator
+    python manage.py mover_documentacion_cdi --aplicar)
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    run "${cmd[@]}"
+    return 0
+  fi
+  local salida revisar
+  salida="$(mktemp)"
+  printf '+'
+  printf ' %q' "${cmd[@]}"
+  printf '
+'
+  if ! "${cmd[@]}" 2>&1 | tee "$salida"; then
+    rm -f "$salida"
+    fail "mover_documentacion_cdi fallo: el deploy se detiene (el comando es reanudable)."
+  fi
+  revisar="$(grep -E '^(CONFLICTO|PENDIENTE|FALTANTE|OMITIDO|EN USO)' "$salida" || true)"
+  rm -f "$salida"
+  if [[ -n "$revisar" ]]; then
+    log "REVISAR-CDI: hay archivos de CDI que requieren revision humana:"
+    printf '%s
+' "$revisar" | sed 's/^/[REVISAR-CDI] /'
+  else
+    log "mover_documentacion_cdi sin pendientes de revision."
+  fi
+}
+
 main() {
   parse_args "$@"
 
@@ -457,11 +492,14 @@ main() {
       # Solo se reconstruyen y recrean los servicios afectados: el resto sigue
       # corriendo con su imagen anterior.
       run "${compose[@]}" build "${servicios[@]}"
+      # El migrador se construye siempre: tambien lo usa el movimiento de
+      # documentos CDI, que corre en cada deploy aunque no haya migraciones.
+      run "${compose[@]}" --profile migrate build migrator
       if [[ "$MIGRAR" -eq 1 ]]; then
-        run "${compose[@]}" --profile migrate build migrator
         if [[ "${#runtime_setup[@]}" -gt 0 ]]; then record_runtime_phase cut; fi
         run "${compose[@]}" --profile migrate run --rm migrator
       fi
+      mover_documentacion_cdi "${compose[@]}"
       if [[ "${#runtime_setup[@]}" -gt 0 ]]; then run "${runtime_setup[@]}"; fi
       if [[ "${#runtime_setup[@]}" -gt 0 ]]; then record_runtime_phase cut; fi
       run "${compose[@]}" up -d --no-deps "${servicios[@]}"
@@ -473,6 +511,7 @@ main() {
       if [[ "${#runtime_setup[@]}" -gt 0 ]]; then record_runtime_phase cut; fi
       run "${compose[@]}" "${DOWN_ARGS[@]}"
       run "${compose[@]}" --profile migrate run --rm migrator
+      mover_documentacion_cdi "${compose[@]}"
       if [[ "${#runtime_setup[@]}" -gt 0 ]]; then run "${runtime_setup[@]}"; fi
       run "${compose[@]}" up -d
       ;;

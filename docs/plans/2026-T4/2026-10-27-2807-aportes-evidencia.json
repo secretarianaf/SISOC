@@ -1,0 +1,881 @@
+{
+  "schema_version": 1,
+  "status": "static_source_evidence_not_api_schema",
+  "issue": 2807,
+  "source_sha": "13d367f81d6da879f1fc3e43532a894e034dc557",
+  "entry_source": "src/backends/kernel/ciudadanos/views.py",
+  "transport_source": "src/backends/kernel/ciudadanos/detail_contributions.py",
+  "registry_source": "src/backends/config/backends.json",
+  "source_data_only": true,
+  "private_records_included": false,
+  "degradation_decision": "C2_unavailable_is_not_zero_or_confirmed_empty",
+  "contributions": [
+    {
+      "name": "comedores",
+      "backend_owner": "comedores",
+      "app_owner": "comedores",
+      "provider_path": "src/backends/comedores/comedores/ciudadano_detail.py",
+      "provider_sha256": "964fab9066e4d827cf733cb146c129697d06d9e3e889fcc4167462f8f8a5d9fb",
+      "template_path": "src/backends/comedores/comedores/templates/comedor/ciudadano_seccion.html",
+      "template_sha256": "58ddfbed8bc48287438b7f36ba35ed35308de1abe57bbc2156a2a0b4470e4f38",
+      "template_expressions": [
+        {
+          "line": 5,
+          "kind": "tag",
+          "expression": "if nomina_actual and nomina_actual.estado == 'activo'"
+        },
+        {
+          "line": 12,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 14,
+          "kind": "tag",
+          "expression": "if nomina_actual"
+        },
+        {
+          "line": 15,
+          "kind": "tag",
+          "expression": "with comedor_actual=nomina_actual.admision.comedor"
+        },
+        {
+          "line": 25,
+          "kind": "tag",
+          "expression": "if comedor_actual and comedor_actual.id"
+        },
+        {
+          "line": 26,
+          "kind": "tag",
+          "expression": "url 'comedor_detalle' comedor_actual.id"
+        },
+        {
+          "line": 28,
+          "kind": "variable",
+          "expression": "comedor_actual.nombre"
+        },
+        {
+          "line": 29,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 31,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 38,
+          "kind": "variable",
+          "expression": "comedor_actual.tipocomedor.nombre|default:\"-\""
+        },
+        {
+          "line": 44,
+          "kind": "variable",
+          "expression": "comedor_actual.provincia.nombre|default:\"-\""
+        },
+        {
+          "line": 50,
+          "kind": "variable",
+          "expression": "comedor_actual.municipio.nombre|default:\"-\""
+        },
+        {
+          "line": 57,
+          "kind": "tag",
+          "expression": "if nomina_actual.estado == 'activo'"
+        },
+        {
+          "line": 59,
+          "kind": "tag",
+          "expression": "elif nomina_actual.estado == 'espera'"
+        },
+        {
+          "line": 61,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 63,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 70,
+          "kind": "variable",
+          "expression": "nomina_actual.fecha|date:\"d/m/Y\""
+        },
+        {
+          "line": 73,
+          "kind": "tag",
+          "expression": "endwith"
+        },
+        {
+          "line": 74,
+          "kind": "tag",
+          "expression": "if nominas_comedor|length > 1"
+        },
+        {
+          "line": 88,
+          "kind": "tag",
+          "expression": "for nomina in nominas_comedor"
+        },
+        {
+          "line": 91,
+          "kind": "tag",
+          "expression": "with comedor=nomina.admision.comedor"
+        },
+        {
+          "line": 92,
+          "kind": "tag",
+          "expression": "if comedor and comedor.id"
+        },
+        {
+          "line": 93,
+          "kind": "tag",
+          "expression": "url 'comedor_detalle' comedor.id"
+        },
+        {
+          "line": 95,
+          "kind": "variable",
+          "expression": "comedor.nombre"
+        },
+        {
+          "line": 96,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 98,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 99,
+          "kind": "tag",
+          "expression": "endwith"
+        },
+        {
+          "line": 102,
+          "kind": "tag",
+          "expression": "if nomina.estado == 'activo'"
+        },
+        {
+          "line": 104,
+          "kind": "tag",
+          "expression": "elif nomina.estado == 'espera'"
+        },
+        {
+          "line": 106,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 108,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 110,
+          "kind": "variable",
+          "expression": "nomina.fecha|date:\"d/m/Y\""
+        },
+        {
+          "line": 112,
+          "kind": "tag",
+          "expression": "endfor"
+        },
+        {
+          "line": 115,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 116,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 118,
+          "kind": "tag",
+          "expression": "endif"
+        }
+      ],
+      "observed_entry_permission": "ciudadanos.view_ciudadano + login",
+      "object_scope_status": "not_demonstrated_by_this_static_scan",
+      "api_schema_status": "not_defined",
+      "runtime_validation": "not_run",
+      "visual_validation": "not_run"
+    },
+    {
+      "name": "comedores_colaboraciones",
+      "backend_owner": "comedores",
+      "app_owner": "comedores",
+      "provider_path": "src/backends/comedores/comedores/ciudadano_detail.py",
+      "provider_sha256": "964fab9066e4d827cf733cb146c129697d06d9e3e889fcc4167462f8f8a5d9fb",
+      "template_path": "src/backends/comedores/comedores/templates/comedor/ciudadano_colaboraciones.html",
+      "template_sha256": "21e2d17bd53eb05ff79d6300c56bc502ca29d91083a593228082d783de686be4",
+      "template_expressions": [
+        {
+          "line": 2,
+          "kind": "tag",
+          "expression": "if colaboraciones_comedor"
+        },
+        {
+          "line": 17,
+          "kind": "tag",
+          "expression": "for colaboracion in colaboraciones_comedor"
+        },
+        {
+          "line": 20,
+          "kind": "tag",
+          "expression": "if colaboracion.comedor and colaboracion.comedor.id"
+        },
+        {
+          "line": 21,
+          "kind": "tag",
+          "expression": "url 'comedor_detalle' colaboracion.comedor.id"
+        },
+        {
+          "line": 23,
+          "kind": "variable",
+          "expression": "colaboracion.comedor.nombre"
+        },
+        {
+          "line": 24,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 26,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 28,
+          "kind": "variable",
+          "expression": "colaboracion.fecha_alta|date:\"d/m/Y\"|default:\"-\""
+        },
+        {
+          "line": 29,
+          "kind": "variable",
+          "expression": "colaboracion.fecha_baja|date:\"d/m/Y\"|default:\"-\""
+        },
+        {
+          "line": 31,
+          "kind": "tag",
+          "expression": "for actividad in colaboracion.actividades.all"
+        },
+        {
+          "line": 32,
+          "kind": "variable",
+          "expression": "actividad.nombre"
+        },
+        {
+          "line": 33,
+          "kind": "tag",
+          "expression": "if not forloop.last"
+        },
+        {
+          "line": 33,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 34,
+          "kind": "tag",
+          "expression": "empty"
+        },
+        {
+          "line": 36,
+          "kind": "tag",
+          "expression": "endfor"
+        },
+        {
+          "line": 39,
+          "kind": "tag",
+          "expression": "endfor"
+        },
+        {
+          "line": 45,
+          "kind": "tag",
+          "expression": "endif"
+        }
+      ],
+      "observed_entry_permission": "ciudadanos.view_ciudadano + login",
+      "object_scope_status": "not_demonstrated_by_this_static_scan",
+      "api_schema_status": "not_defined",
+      "runtime_validation": "not_run",
+      "visual_validation": "not_run"
+    },
+    {
+      "name": "pwa",
+      "backend_owner": "comedores",
+      "app_owner": "pwa",
+      "provider_path": "src/backends/comedores/pwa/ciudadano_detail.py",
+      "provider_sha256": "7f51935729c74b721af13207631a7c176a5fc669eddbdedbed728bab03bbc3c9",
+      "template_path": "src/backends/comedores/pwa/templates/pwa/ciudadano_flags.html",
+      "template_sha256": "d72cfce61d6703e6a9c737d612ac0084339641d50c724e6911f005b675be2780",
+      "template_expressions": [
+        {
+          "line": 5,
+          "kind": "tag",
+          "expression": "if pertenece_comunidad_indigena"
+        },
+        {
+          "line": 7,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 9,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 15,
+          "kind": "tag",
+          "expression": "if situacion_calle_pwa"
+        },
+        {
+          "line": 17,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 19,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 25,
+          "kind": "tag",
+          "expression": "if persona_con_celiaquia_pwa"
+        },
+        {
+          "line": 27,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 29,
+          "kind": "tag",
+          "expression": "endif"
+        }
+      ],
+      "observed_entry_permission": "ciudadanos.view_ciudadano + login",
+      "object_scope_status": "not_demonstrated_by_this_static_scan",
+      "api_schema_status": "not_defined",
+      "runtime_validation": "not_run",
+      "visual_validation": "not_run"
+    },
+    {
+      "name": "pwa_badges",
+      "backend_owner": "comedores",
+      "app_owner": "pwa",
+      "provider_path": "src/backends/comedores/pwa/ciudadano_detail.py",
+      "provider_sha256": "7f51935729c74b721af13207631a7c176a5fc669eddbdedbed728bab03bbc3c9",
+      "template_path": "src/backends/comedores/pwa/templates/pwa/ciudadano_badges.html",
+      "template_sha256": "eb06e9d00df028a30a36a26a5d80653c4b8d19972779519053a5d0c4f11483df",
+      "template_expressions": [
+        {
+          "line": 2,
+          "kind": "tag",
+          "expression": "if situacion_calle_pwa"
+        },
+        {
+          "line": 4,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 5,
+          "kind": "tag",
+          "expression": "if persona_con_celiaquia_pwa"
+        },
+        {
+          "line": 8,
+          "kind": "tag",
+          "expression": "endif"
+        }
+      ],
+      "observed_entry_permission": "ciudadanos.view_ciudadano + login",
+      "object_scope_status": "not_demonstrated_by_this_static_scan",
+      "api_schema_status": "not_defined",
+      "runtime_validation": "not_run",
+      "visual_validation": "not_run"
+    },
+    {
+      "name": "celiaquia",
+      "backend_owner": "celiaquia",
+      "app_owner": "celiaquia",
+      "provider_path": "src/backends/celiaquia/celiaquia/ciudadano_detail.py",
+      "provider_sha256": "6d1e231e68744316efc84cc1d16c78222ab44301f22ede09433100deb208088b",
+      "template_path": "src/backends/celiaquia/celiaquia/templates/celiaquia/ciudadano_detalle_seccion.html",
+      "template_sha256": "fc706e9ae6ab403c4833eab66ae3e77a59de8207437f484f7d74dee01435c57d",
+      "template_expressions": [
+        {
+          "line": 13,
+          "kind": "tag",
+          "expression": "if celiaquia_resumen.legajo_actual"
+        },
+        {
+          "line": 22,
+          "kind": "variable",
+          "expression": "celiaquia_resumen.legajo_actual.estado_expediente"
+        },
+        {
+          "line": 28,
+          "kind": "variable",
+          "expression": "celiaquia_resumen.legajo_actual.estado_legajo"
+        },
+        {
+          "line": 34,
+          "kind": "variable",
+          "expression": "celiaquia_resumen.legajo_actual.resultado_cruce"
+        },
+        {
+          "line": 40,
+          "kind": "variable",
+          "expression": "celiaquia_resumen.legajo_actual.estado_cupo"
+        },
+        {
+          "line": 47,
+          "kind": "variable",
+          "expression": "celiaquia_resumen.legajo_actual.es_titular_activo|yesno:\"Si,No\""
+        },
+        {
+          "line": 54,
+          "kind": "variable",
+          "expression": "celiaquia_resumen.legajo_actual.revision_tecnica"
+        },
+        {
+          "line": 57,
+          "kind": "tag",
+          "expression": "if celiaquia_resumen.historial|length > 1"
+        },
+        {
+          "line": 71,
+          "kind": "tag",
+          "expression": "for legajo in celiaquia_resumen.historial"
+        },
+        {
+          "line": 73,
+          "kind": "variable",
+          "expression": "legajo.estado_legajo"
+        },
+        {
+          "line": 74,
+          "kind": "variable",
+          "expression": "legajo.estado_cupo"
+        },
+        {
+          "line": 75,
+          "kind": "variable",
+          "expression": "legajo.creado_en|date:\"d/m/Y H:i\""
+        },
+        {
+          "line": 77,
+          "kind": "tag",
+          "expression": "endfor"
+        },
+        {
+          "line": 80,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 81,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 83,
+          "kind": "tag",
+          "expression": "endif"
+        }
+      ],
+      "observed_entry_permission": "ciudadanos.view_ciudadano + login",
+      "object_scope_status": "not_demonstrated_by_this_static_scan",
+      "api_schema_status": "not_defined",
+      "runtime_validation": "not_run",
+      "visual_validation": "not_run"
+    },
+    {
+      "name": "vat",
+      "backend_owner": "vat",
+      "app_owner": "VAT",
+      "provider_path": "src/backends/vat/VAT/ciudadano_detail.py",
+      "provider_sha256": "eec9ccf3ec83932250b1934243380d52756c9403a5e0a4c2b2b9b269a1332eaf",
+      "template_path": "src/backends/vat/VAT/templates/vat/ciudadano_detalle_seccion.html",
+      "template_sha256": "fd6af7af9303686fe1549e59617ae32c8ed0c263f8f9b838f0def8d9bb1e88c5",
+      "template_expressions": [
+        {
+          "line": 7,
+          "kind": "tag",
+          "expression": "if vat_programas"
+        },
+        {
+          "line": 13,
+          "kind": "variable",
+          "expression": "vat_programas|length"
+        },
+        {
+          "line": 13,
+          "kind": "variable",
+          "expression": "vat_programas|length|pluralize"
+        },
+        {
+          "line": 14,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 16,
+          "kind": "tag",
+          "expression": "if vat_programas"
+        },
+        {
+          "line": 18,
+          "kind": "tag",
+          "expression": "for programa_vat in vat_programas"
+        },
+        {
+          "line": 30,
+          "kind": "variable",
+          "expression": "programa_vat.programa"
+        },
+        {
+          "line": 34,
+          "kind": "tag",
+          "expression": "if programa_vat.voucher_activo"
+        },
+        {
+          "line": 36,
+          "kind": "tag",
+          "expression": "elif programa_vat.voucher_referencia"
+        },
+        {
+          "line": 37,
+          "kind": "variable",
+          "expression": "programa_vat.voucher_referencia.get_estado_display|lower"
+        },
+        {
+          "line": 38,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 40,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 53,
+          "kind": "tag",
+          "expression": "with voucher_ref=programa_vat.voucher_activo|default:programa_vat.voucher_referencia"
+        },
+        {
+          "line": 54,
+          "kind": "tag",
+          "expression": "if voucher_ref"
+        },
+        {
+          "line": 55,
+          "kind": "tag",
+          "expression": "url 'vat_voucher_detail' voucher_ref.pk"
+        },
+        {
+          "line": 57,
+          "kind": "variable",
+          "expression": "voucher_ref.pk"
+        },
+        {
+          "line": 58,
+          "kind": "variable",
+          "expression": "voucher_ref.get_estado_display"
+        },
+        {
+          "line": 59,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 61,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 62,
+          "kind": "tag",
+          "expression": "endwith"
+        },
+        {
+          "line": 69,
+          "kind": "variable",
+          "expression": "programa_vat.creditos_totales"
+        },
+        {
+          "line": 75,
+          "kind": "variable",
+          "expression": "programa_vat.creditos_actuales"
+        },
+        {
+          "line": 81,
+          "kind": "variable",
+          "expression": "programa_vat.cursos_asignados"
+        },
+        {
+          "line": 88,
+          "kind": "variable",
+          "expression": "programa_vat.asistencias_presentes"
+        },
+        {
+          "line": 88,
+          "kind": "variable",
+          "expression": "programa_vat.asistencias_registradas"
+        },
+        {
+          "line": 93,
+          "kind": "tag",
+          "expression": "if programa_vat.inscripciones"
+        },
+        {
+          "line": 108,
+          "kind": "tag",
+          "expression": "for inscripcion in programa_vat.inscripciones"
+        },
+        {
+          "line": 110,
+          "kind": "variable",
+          "expression": "inscripcion.comision.oferta.plan_curricular.titulo_referencia.nombre|default:\"-\""
+        },
+        {
+          "line": 112,
+          "kind": "tag",
+          "expression": "url 'vat_comision_detail' inscripcion.comision.pk"
+        },
+        {
+          "line": 115,
+          "kind": "variable",
+          "expression": "inscripcion.comision.codigo_comision"
+        },
+        {
+          "line": 118,
+          "kind": "variable",
+          "expression": "inscripcion.get_estado_display"
+        },
+        {
+          "line": 120,
+          "kind": "variable",
+          "expression": "inscripcion.asistencias_presentes"
+        },
+        {
+          "line": 120,
+          "kind": "variable",
+          "expression": "inscripcion.asistencias_registradas"
+        },
+        {
+          "line": 121,
+          "kind": "tag",
+          "expression": "if inscripcion.asistencias_registradas"
+        },
+        {
+          "line": 122,
+          "kind": "variable",
+          "expression": "inscripcion.asistencia_porcentaje"
+        },
+        {
+          "line": 123,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 126,
+          "kind": "tag",
+          "expression": "url 'vat_inscripcion_detail' inscripcion.pk"
+        },
+        {
+          "line": 131,
+          "kind": "tag",
+          "expression": "endfor"
+        },
+        {
+          "line": 134,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 136,
+          "kind": "tag",
+          "expression": "if programa_vat.inscripciones_oferta"
+        },
+        {
+          "line": 150,
+          "kind": "tag",
+          "expression": "for inscripcion_oferta in programa_vat.inscripciones_oferta"
+        },
+        {
+          "line": 152,
+          "kind": "variable",
+          "expression": "inscripcion_oferta.oferta.oferta.plan_curricular.titulo_referencia.nombre|default:\"-\""
+        },
+        {
+          "line": 154,
+          "kind": "tag",
+          "expression": "url 'vat_comision_detail' inscripcion_oferta.oferta.pk"
+        },
+        {
+          "line": 157,
+          "kind": "variable",
+          "expression": "inscripcion_oferta.oferta.codigo_comision"
+        },
+        {
+          "line": 160,
+          "kind": "variable",
+          "expression": "inscripcion_oferta.get_estado_display"
+        },
+        {
+          "line": 162,
+          "kind": "tag",
+          "expression": "url 'vat_inscripcion_oferta_detail' inscripcion_oferta.pk"
+        },
+        {
+          "line": 167,
+          "kind": "tag",
+          "expression": "endfor"
+        },
+        {
+          "line": 170,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 172,
+          "kind": "tag",
+          "expression": "endfor"
+        },
+        {
+          "line": 174,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 176,
+          "kind": "tag",
+          "expression": "endif"
+        }
+      ],
+      "observed_entry_permission": "ciudadanos.view_ciudadano + login",
+      "object_scope_status": "not_demonstrated_by_this_static_scan",
+      "api_schema_status": "not_defined",
+      "runtime_validation": "not_run",
+      "visual_validation": "not_run"
+    },
+    {
+      "name": "centrodefamilia",
+      "backend_owner": "cdf",
+      "app_owner": "centrodefamilia",
+      "provider_path": "src/backends/cdf/centrodefamilia/ciudadano_detail.py",
+      "provider_sha256": "a8c6632ec4243c0be527b24e6d210ac42235fd2ac48dbb4bbd85a6b6e8e05b7a",
+      "template_path": "src/backends/cdf/centrodefamilia/templates/centrodefamilia/ciudadano_detalle_seccion.html",
+      "template_sha256": "0b9f069ec38e1f4d3a662e4f097f08124652fa791fc3291c4a3f03b962bfe32a",
+      "template_expressions": [
+        {
+          "line": 6,
+          "kind": "tag",
+          "expression": "if participaciones_cdf"
+        },
+        {
+          "line": 17,
+          "kind": "tag",
+          "expression": "for participacion in participaciones_cdf"
+        },
+        {
+          "line": 19,
+          "kind": "variable",
+          "expression": "participacion.actividad_centro.centro.nombre"
+        },
+        {
+          "line": 20,
+          "kind": "variable",
+          "expression": "participacion.actividad_centro.actividad.nombre"
+        },
+        {
+          "line": 22,
+          "kind": "tag",
+          "expression": "if participacion.estado == 'inscrito'"
+        },
+        {
+          "line": 24,
+          "kind": "tag",
+          "expression": "elif participacion.estado == 'lista_espera'"
+        },
+        {
+          "line": 26,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 28,
+          "kind": "tag",
+          "expression": "endif"
+        },
+        {
+          "line": 30,
+          "kind": "variable",
+          "expression": "participacion.fecha_registro|date:\"d/m/Y\""
+        },
+        {
+          "line": 32,
+          "kind": "tag",
+          "expression": "endfor"
+        },
+        {
+          "line": 35,
+          "kind": "tag",
+          "expression": "else"
+        },
+        {
+          "line": 37,
+          "kind": "tag",
+          "expression": "endif"
+        }
+      ],
+      "observed_entry_permission": "ciudadanos.view_ciudadano + login",
+      "object_scope_status": "not_demonstrated_by_this_static_scan",
+      "api_schema_status": "not_defined",
+      "runtime_validation": "not_run",
+      "visual_validation": "not_run"
+    },
+    {
+      "name": "centrodefamilia_monto",
+      "backend_owner": "cdf",
+      "app_owner": "centrodefamilia",
+      "provider_path": "src/backends/cdf/centrodefamilia/ciudadano_detail.py",
+      "provider_sha256": "a8c6632ec4243c0be527b24e6d210ac42235fd2ac48dbb4bbd85a6b6e8e05b7a",
+      "template_path": "src/backends/cdf/centrodefamilia/templates/centrodefamilia/ciudadano_detalle_monto.html",
+      "template_sha256": "03f6ac29905978b98c990fa5e983cea6c6edf3e9850968cdc2666a58fae1c2ca",
+      "template_expressions": [
+        {
+          "line": 2,
+          "kind": "variable",
+          "expression": "costo_total_cdf|default:0|floatformat:2"
+        }
+      ],
+      "observed_entry_permission": "ciudadanos.view_ciudadano + login",
+      "object_scope_status": "not_demonstrated_by_this_static_scan",
+      "api_schema_status": "not_defined",
+      "runtime_validation": "not_run",
+      "visual_validation": "not_run"
+    }
+  ],
+  "limitations": [
+    "Template expressions are source evidence, not serializer fields or complete runtime behavior",
+    "No Django setup, endpoints, database or HTTP execution",
+    "No production/deployed revision verified",
+    "No accepted baseline or React implementation",
+    "No object/province/domain authorization proved by template extraction"
+  ],
+  "degradation_decision_record": "../../registro/decisiones/2026-10-27-2807-ciudadano360-c2.md",
+  "degradation_scope": "Ciudadano 360 contribution failure states only; no automatic extension to other modules"
+}

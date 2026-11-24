@@ -1,0 +1,396 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SISOC - propuesta de contexto de sesión web (#2798)",
+    "version": "0.0.0-proposal",
+    "description": "Documento de planificación, no API existente ni schema generado. No modifica contratos PWA/SIIS. Validar con implementación y generar tipos solo desde schema runtime cuando exista. S1: mandatory_survey is not a universal authorization decision; explicitly mapped survey-management operations may pass only that block with effective Change, higher requirements satisfied and action/object permission. Context never becomes ready for that exception. Navigation/capability projection must be reviewed against current source/modal, not used as backend authorization."
+  },
+  "paths": {
+    "/api/web/session/": {
+      "get": {
+        "operationId": "web_session_context_retrieve",
+        "summary": "Consultar contexto de sesión web sin token/PWA",
+        "description": "Solo lectura de contexto; inicializa cookie CSRF con Django. 200 no autoriza datos de negocio: evaluar access.state. Sin sesión, 401 explícito sin Location. HEAD conserva headers/status sin cuerpo. No se acepta next en este endpoint.",
+        "security": [
+          {
+            "DjangoSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contexto determinado; controles pendientes con menú vacío y capacidades falsas. Perfil ausente se trata como web_access_denied antes de otros controles.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Cookie, manteniendo otras variaciones aplicables"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebSessionContext"
+                },
+                "examples": {
+                  "web_access_denied": {
+                    "value": {
+                      "user": null,
+                      "access": {
+                        "state": "web_access_denied",
+                        "required_action_url": null
+                      },
+                      "navigation": [],
+                      "capabilities": {
+                        "insumos": {
+                          "can_view": false,
+                          "show_management": false,
+                          "show_categories": false
+                        }
+                      },
+                      "footer_version_label": "Versiones"
+                    }
+                  },
+                  "password_change_required": {
+                    "value": {
+                      "user": {
+                        "username": "insumos_prueba",
+                        "display_name": "Prueba Insumos",
+                        "avatar_initial": "I",
+                        "role_label": "-"
+                      },
+                      "access": {
+                        "state": "password_change_required",
+                        "required_action_url": "/password/first-change/"
+                      },
+                      "navigation": [],
+                      "capabilities": {
+                        "insumos": {
+                          "can_view": false,
+                          "show_management": false,
+                          "show_categories": false
+                        }
+                      },
+                      "footer_version_label": "Versiones"
+                    }
+                  },
+                  "profile_confirmation_required": {
+                    "value": {
+                      "user": {
+                        "username": "insumos_prueba",
+                        "display_name": "Prueba Insumos",
+                        "avatar_initial": "I",
+                        "role_label": "-"
+                      },
+                      "access": {
+                        "state": "profile_confirmation_required",
+                        "required_action_url": "/mi-cuenta/confirmar/"
+                      },
+                      "navigation": [],
+                      "capabilities": {
+                        "insumos": {
+                          "can_view": false,
+                          "show_management": false,
+                          "show_categories": false
+                        }
+                      },
+                      "footer_version_label": "Versiones"
+                    }
+                  },
+                  "mandatory_survey_required": {
+                    "value": {
+                      "user": {
+                        "username": "insumos_prueba",
+                        "display_name": "Prueba Insumos",
+                        "avatar_initial": "I",
+                        "role_label": "-"
+                      },
+                      "access": {
+                        "state": "mandatory_survey_required",
+                        "required_action_url": "/inicio/"
+                      },
+                      "navigation": [],
+                      "capabilities": {
+                        "insumos": {
+                          "can_view": false,
+                          "show_management": false,
+                          "show_categories": false
+                        }
+                      },
+                      "footer_version_label": "Versiones"
+                    }
+                  },
+                  "ready_forma_abreviada": {
+                    "summary": "Forma ilustrativa; navegación abreviada, no fixture esperada de permisos",
+                    "value": {
+                      "user": {
+                        "username": "insumos_consulta",
+                        "display_name": "Prueba Insumos Consulta",
+                        "avatar_initial": "I",
+                        "role_label": "-"
+                      },
+                      "access": {
+                        "state": "ready",
+                        "required_action_url": null
+                      },
+                      "navigation": [
+                        {
+                          "id": "inicio",
+                          "label": "Inicio",
+                          "href": "/inicio/",
+                          "children": []
+                        },
+                        {
+                          "id": "configuracion_comedores",
+                          "label": "Configuración de Comedores",
+                          "href": null,
+                          "children": [
+                            {
+                              "id": "insumos",
+                              "label": "Insumos",
+                              "href": "/insumos/",
+                              "children": []
+                            }
+                          ]
+                        }
+                      ],
+                      "capabilities": {
+                        "insumos": {
+                          "can_view": true,
+                          "show_management": false,
+                          "show_categories": false
+                        }
+                      },
+                      "footer_version_label": "Versiones"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión válida; sin datos privados, sin redirección HTTP. Token sin cookie no autentica este endpoint.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Cookie, manteniendo otras variaciones aplicables"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                },
+                "example": {
+                  "detail": "Inicie sesión para continuar."
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Método no permitido, sin mutaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Fallo no suprimido al evaluar contexto; no responder ready por default. Manejo/logging existentes, sin detalles internos."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "DjangoSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "sessionid",
+        "description": "Cookie de sesión Django del mismo origen, nombre por defecto actualmente sin override en settings inspeccionados. No representa token que el frontend deba guardar o construir."
+      }
+    },
+    "schemas": {
+      "WebSessionContext": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "user",
+          "access",
+          "navigation",
+          "capabilities",
+          "footer_version_label"
+        ],
+        "properties": {
+          "user": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": false,
+            "required": [
+              "username",
+              "display_name",
+              "avatar_initial",
+              "role_label"
+            ],
+            "properties": {
+              "username": {
+                "type": "string"
+              },
+              "display_name": {
+                "type": "string"
+              },
+              "avatar_initial": {
+                "type": "string"
+              },
+              "role_label": {
+                "type": "string"
+              }
+            }
+          },
+          "access": {
+            "$ref": "#/components/schemas/WebAccess"
+          },
+          "navigation": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NavigationNode"
+            },
+            "description": "Árbol completo visible en respuesta real, orden visual legacy. Los ejemplos pueden abreviar el árbol para mostrar forma; no usarlos como expected de permisos."
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/WebCapabilities"
+          },
+          "footer_version_label": {
+            "type": "string"
+          }
+        }
+      },
+      "WebAccess": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "state",
+          "required_action_url"
+        ],
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "web_access_denied",
+              "password_change_required",
+              "profile_confirmation_required",
+              "mandatory_survey_required"
+            ]
+          },
+          "required_action_url": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^/(?!/)",
+            "description": "Ruta interna del control forzado existente, o null. Nunca URL externa ni next aportado por el request."
+          }
+        }
+      },
+      "NavigationNode": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "href",
+          "children"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string"
+          },
+          "href": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^/(?!/)"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NavigationNode"
+            }
+          }
+        }
+      },
+      "WebCapabilities": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "insumos"
+        ],
+        "properties": {
+          "insumos": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "can_view",
+              "show_management",
+              "show_categories"
+            ],
+            "properties": {
+              "can_view": {
+                "type": "boolean",
+                "description": "Acceso de consulta efectivo para usuario ready; backend sigue autorizando requests."
+              },
+              "show_management": {
+                "type": "boolean",
+                "description": "Visibilidad actual basada en add_insumo; NO autoriza editar/eliminar."
+              },
+              "show_categories": {
+                "type": "boolean",
+                "description": "Visibilidad actual basada en add_insumocategoria; NO reemplaza permiso del destino."
+              }
+            }
+          }
+        }
+      },
+      "ErrorDetail": {
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "properties": {
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "x-planning-status": "proposal-not-implemented",
+  "x-source-sha": "afa6fcf4bb221082d5fa692ff941be75bc74d8d1",
+  "x-invariants": [
+    "Non-ready => navigation empty and capabilities all false",
+    "ready => required_action_url null",
+    "web_access_denied => user may be null; no business data",
+    "Session cookie identity only; no token issuance/deletion",
+    "Backend domain permission/object/province checks remain mandatory",
+    "No global authentication/middleware defaults changed"
+  ]
+}

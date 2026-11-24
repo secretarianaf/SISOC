@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 
 from core.decorators import permissions_all_required, permissions_any_required
 from pas.views import (
@@ -44,6 +44,7 @@ urlpatterns = [
         PasDDJJMunicipiosView.as_view(),
         name="pas_ddjj_municipios",
     ),
+    path("", include("pas.web_ddjj_urls")),
     path(
         "pas/ddjj/confirmacion",
         PasDDJJConfirmacionView.as_view(),

@@ -8,7 +8,6 @@ import pytest
 
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
 
-
 BASE_DIR = Path(__file__).resolve().parent
 
 

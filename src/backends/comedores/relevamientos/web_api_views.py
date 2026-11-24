@@ -5,10 +5,8 @@ in ``src/backends/config/backends.json``). In a split deploy the core checks the
 session and the web prerequisites and signs each request; the runtime only
 serves requests its ``WebGateMiddleware`` verified. In the monolith
 ``WebGatePermission`` evaluates the same policy locally. After that the native
-rule applies unchanged: superuser or ``relevamientos.view_relevamiento`` (the
-predicate of ``permissions_any_required``), with no object scope and the detail
-looked up by ``pk`` alone (kept on purpose, see
-``docs/registro/decisiones/2026-11-10-2785-brechas-acceso-conservadas.md``).
+rule applies: superuser or ``relevamientos.view_relevamiento`` and the same
+comedor scope enforced by the native views.
 
 Each endpoint runs the native view itself (queryset, context, 404s); this
 module only projects that context to JSON. The native POSTs stay native.
@@ -30,6 +28,7 @@ from relevamientos.views.backoffice_views import (
     ActaComplementariaDetailView,
     SeguimientoPnudDetailView,
 )
+from relevamientos.views.alcance_comedor import resolver_comedor_en_alcance
 from relevamientos.views.web_views import (
     PrimerSeguimientoDetailView,
     RelevamientoDetailView,
@@ -70,7 +69,15 @@ class RelevamientoAccess(BasePermission):
         return _has_any_permissions(request.user, VIEW_PERMISSIONS)
 
 
-class _NativeReadView(APIView):
+class _ComedorScopeMixin:
+    """Apply native scope even when a view is called without its dispatch."""
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        resolver_comedor_en_alcance(request.user, kwargs["comedor_pk"])
+
+
+class _NativeReadView(_ComedorScopeMixin, APIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [WebGatePermission, RelevamientoAccess]
     renderer_classes = [JSONRenderer]
@@ -149,7 +156,7 @@ class RelevamientosListadoWebView(_NativeReadView):
 class RelevamientoDetalleWebView(_NativeReadView):
     """``GET .../relevamientos/<comedor_pk>/relevamiento/<pk>/``: ``relevamiento_detail.html``.
 
-    ``comedor_pk`` is ignored, as in the native view (it looks up ``pk`` only).
+    The comedor must be in scope and own the relevamiento.
     """
 
     def get(self, request, comedor_pk, pk):
@@ -249,9 +256,7 @@ class SeguimientoDetalleWebView(_NativeReadView):
                 ),
                 "bloques": bloques_seguimiento(context["bloques"]),
                 "es_primer": context["es_primer"],
-                "prestaciones": prestaciones_seguimiento(
-                    context["prestaciones"], context["es_primer"]
-                ),
+                "prestaciones": prestaciones_seguimiento(context["prestaciones"]),
                 "receta_items": receta_items(context["receta_items"]),
                 "adjuntos": adjuntos_detalle(context["adjuntos"]),
                 "pdf": pdf_seguimiento(

@@ -16,7 +16,6 @@ from audittrail.constants import get_tracked_models, is_tracked_model
 from audittrail.forms import MAX_EXPORT_RANGE_DAYS
 from core.utils import rango_del_dia_local
 
-
 GROUPING_WINDOW_SECONDS = 2
 SYSTEM_ACTOR_LABEL = "Sistema/Proceso"
 EXPORT_MAX_ROWS = 5000

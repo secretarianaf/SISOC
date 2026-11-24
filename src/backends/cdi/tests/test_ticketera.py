@@ -19,7 +19,6 @@ from auditlog.models import LogEntry
 from audittrail.models import AuditEntryMeta
 from centrodeinfancia.models import AccesoCDI, CentroDeInfancia, Trabajador
 
-
 USUARIOS_URL = "/api/ticketera/usuarios/"
 VERIFICAR_URL = "/api/ticketera/auth/verificar/"
 CAMBIAR_PASSWORD_URL = "/api/ticketera/auth/cambiar-password/"

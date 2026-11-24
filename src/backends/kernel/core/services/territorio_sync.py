@@ -9,7 +9,6 @@ from django.db import IntegrityError, transaction
 
 from core.models import Localidad, Municipio, Provincia
 
-
 logger = logging.getLogger(__name__)
 FIXTURE_TERRITORIO_PATH = (
     Path(__file__).resolve().parent.parent

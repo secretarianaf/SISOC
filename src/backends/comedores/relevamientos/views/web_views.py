@@ -34,6 +34,7 @@ from relevamientos import pdf_oficial
 from relevamientos.pdf_service import RelevamientoPdfService
 from relevamientos.service import RelevamientoService
 from relevamientos.services.adjuntos import adjuntos_de
+from relevamientos.views.alcance_comedor import ComedorAlcanceMixin
 from relevamientos.views.seguimiento_helpers import (
     aplicar_revision_coordinador,
     resolver_seguimiento,
@@ -41,7 +42,7 @@ from relevamientos.views.seguimiento_helpers import (
 )
 
 
-class RelevamientoCreateView(LoginRequiredMixin, CreateView):
+class RelevamientoCreateView(LoginRequiredMixin, ComedorAlcanceMixin, CreateView):
     model = Relevamiento
     form_class = RelevamientoForm
     template_name = "relevamiento_form.html"
@@ -97,7 +98,7 @@ def _opciones_del_popup(comedor_pk):
     return opciones_alta(comedor), opciones_seguimiento_pac(comedor)
 
 
-class RelevamientoListView(LoginRequiredMixin, ListView):
+class RelevamientoListView(LoginRequiredMixin, ComedorAlcanceMixin, ListView):
     model = Relevamiento
     template_name = "relevamiento_list.html"
     context_object_name = "relevamientos"
@@ -198,7 +199,7 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
         return context
 
 
-class RelevamientoDetailView(LoginRequiredMixin, DetailView):
+class RelevamientoDetailView(LoginRequiredMixin, ComedorAlcanceMixin, DetailView):
     model = Relevamiento
     template_name = "relevamiento_detail.html"
     context_object_name = "relevamiento"
@@ -390,6 +391,8 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
                 "punto_entregas__frecuencia_recepcion_mercaderias",
             ),
             pk=self.kwargs["pk"],
+            # Del comedor de la URL, que ya se validó contra el alcance.
+            comedor_id=self.kwargs["comedor_pk"],
         )
 
 
@@ -438,11 +441,15 @@ class RelevamientoPdfView(RelevamientoDetailView):
         return response
 
 
-class RelevamientoUpdateView(LoginRequiredMixin, UpdateView):
+class RelevamientoUpdateView(LoginRequiredMixin, ComedorAlcanceMixin, UpdateView):
     model = Relevamiento
     form_class = RelevamientoForm
     template_name = "relevamiento_form.html"
     success_url = reverse_lazy("relevamiento_lista")
+
+    def get_queryset(self):
+        # Solo relevamientos del comedor de la URL, que ya se validó contra el alcance.
+        return super().get_queryset().filter(comedor_id=self.kwargs["comedor_pk"])
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -504,12 +511,17 @@ class RelevamientoUpdateView(LoginRequiredMixin, UpdateView):
 class RelevamientoDeleteView(
     SoftDeleteDeleteViewMixin,
     LoginRequiredMixin,
+    ComedorAlcanceMixin,
     DeleteView,
 ):
     model = Relevamiento
     template_name = "relevamiento_confirm_delete.html"
     context_object_name = "relevamiento"
     success_message = "Acompañamiento Territorial dado de baja correctamente."
+
+    def get_queryset(self):
+        # Solo relevamientos del comedor de la URL, que ya se validó contra el alcance.
+        return super().get_queryset().filter(comedor_id=self.kwargs["comedor_pk"])
 
     def get_success_url(self):
         comedor = self.object.comedor
@@ -575,7 +587,7 @@ def _bloque_campos(instance):
     return rows
 
 
-class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
+class PrimerSeguimientoDetailView(LoginRequiredMixin, ComedorAlcanceMixin, DetailView):
     model = PrimerSeguimiento
     template_name = "primer_seguimiento_detail.html"
     context_object_name = "seguimiento"
@@ -614,7 +626,6 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
         context["bloques"] = bloques
 
         context["prestaciones"] = list(seguimiento.prestaciones.all())
-        # #2781: el cuadro 6.1 del primer seguimiento tiene AP unico.
         context["es_primer"] = seguimiento.tipo == PrimerSeguimiento.TIPO_PRIMER
         menu = seguimiento.menu
         context["receta_items"] = (
@@ -623,7 +634,7 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class SeguimientoPdfView(LoginRequiredMixin, View):
+class SeguimientoPdfView(LoginRequiredMixin, ComedorAlcanceMixin, View):
     """PDF oficial de una instancia de seguimiento, el que subió Gestionar (#2630).
 
     SISOC no tiene una versión propia del PDF del seguimiento: sin documento
@@ -642,7 +653,9 @@ class SeguimientoPdfView(LoginRequiredMixin, View):
         )
 
 
-class RelevamientoRevisionCoordinadorView(LoginRequiredMixin, View):
+class RelevamientoRevisionCoordinadorView(
+    LoginRequiredMixin, ComedorAlcanceMixin, View
+):
     """Revisión del coordinador sobre un relevamiento (N16).
 
     El coordinador aprueba (``Validado``) o devuelve el registro
@@ -680,7 +693,7 @@ class RelevamientoRevisionCoordinadorView(LoginRequiredMixin, View):
         )
 
 
-class PrimerSeguimientoEliminarView(LoginRequiredMixin, View):
+class PrimerSeguimientoEliminarView(LoginRequiredMixin, ComedorAlcanceMixin, View):
     """Borrado del primer seguimiento desde la UI.
 
     Acepta la ruta nueva (por pk de instancia) y la historica (primera

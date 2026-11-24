@@ -17,7 +17,6 @@ from admisiones.models.admisiones import (
 )
 from comedores.models import Comedor
 
-
 pytestmark = pytest.mark.django_db
 User = get_user_model()
 

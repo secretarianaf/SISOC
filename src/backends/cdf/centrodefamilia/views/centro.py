@@ -46,7 +46,6 @@ from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from iam.services import user_has_permission_code
 
-
 BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
     field_map=CENTRO_FILTER_MAP,
     field_types=CENTRO_FIELD_TYPES,

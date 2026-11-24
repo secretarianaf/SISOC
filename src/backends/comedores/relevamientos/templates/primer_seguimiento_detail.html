@@ -211,12 +211,7 @@
                             <tr>
                                 <th>Días</th>
                                 <th>Tipo</th>
-                                {% if es_primer %}
-                                    <th>AP</th>
-                                {% else %}
-                                    <th>AP presencial</th>
-                                    <th>AP vianda</th>
-                                {% endif %}
+                                <th>AP</th>
                                 <th>DE presencial</th>
                                 <th>DE vianda</th>
                             </tr>
@@ -226,12 +221,7 @@
                                 <tr>
                                     <td>{{ prestacion.dias_prestacion | default_if_none:"-" }}</td>
                                     <td>{{ prestacion.tipo_prestacion | default_if_none:"-" }}</td>
-                                    {% if es_primer %}
-                                        <td>{{ prestacion.ap_total_efectivo | default_if_none:"-" }}</td>
-                                    {% else %}
-                                        <td>{{ prestacion.ap_presencial | default_if_none:"-" }}</td>
-                                        <td>{{ prestacion.ap_vianda | default_if_none:"-" }}</td>
-                                    {% endif %}
+                                    <td>{{ prestacion.ap_total_efectivo | default_if_none:"-" }}</td>
                                     <td>{{ prestacion.de_presencial | default_if_none:"-" }}</td>
                                     <td>{{ prestacion.de_vianda | default_if_none:"-" }}</td>
                                 </tr>

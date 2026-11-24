@@ -1482,6 +1482,43 @@ class ValorComida(models.Model):
         return f"{self.tipo}: ${self.valor} ({self.fecha})"
 
 
+class AlcanceProgramaComedor(models.Model):
+    """Programa de comedores al que un usuario queda acotado.
+
+    Guarda el grupo de negocio (PNUD o Alimentar comunidad) y no ids de
+    ``Programas``: una línea PNUD nueva queda incluida sin tocar datos. Sin
+    filas, o con las dos, el usuario no tiene restricción de programa. Se
+    declara acá y no en ``users`` porque el kernel no conoce el dominio comedores.
+    """
+
+    PNUD = "pnud"
+    ALIMENTAR_COMUNIDAD = "alimentar_comunidad"
+    PROGRAMA_CHOICES = [
+        (PNUD, "PNUD"),
+        (ALIMENTAR_COMUNIDAD, "Alimentar comunidad"),
+    ]
+
+    profile = models.ForeignKey(
+        "users.Profile",
+        on_delete=models.CASCADE,
+        related_name="alcances_programa_comedor",
+    )
+    programa = models.CharField(max_length=32, choices=PROGRAMA_CHOICES)
+
+    class Meta:
+        verbose_name = "Alcance por programa de comedores"
+        verbose_name_plural = "Alcances por programa de comedores"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["profile", "programa"],
+                name="uniq_alcance_programa_comedor_profile_programa",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.profile_id} - {self.programa}"
+
+
 class CategoriaComedor(models.Model):
     nombre = models.CharField(max_length=255)
     puntuacion_min = models.IntegerField()

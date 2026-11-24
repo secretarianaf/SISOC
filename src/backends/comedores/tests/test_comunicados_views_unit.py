@@ -21,7 +21,6 @@ from comunicados.models import (
 from comedores.models import Comedor
 from core.constants import UserGroups
 
-
 pytestmark = pytest.mark.django_db
 
 

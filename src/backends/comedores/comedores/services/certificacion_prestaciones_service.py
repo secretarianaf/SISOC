@@ -10,7 +10,6 @@ from lxml import etree
 
 from comedores.utils import is_abordaje_comunitario_linea_tradicional_program
 
-
 W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 NS = {"w": W_NS}
 DIAS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")

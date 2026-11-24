@@ -17,7 +17,6 @@ from VAT.models import (
 )
 from core.models import Localidad, Municipio, Provincia
 
-
 pytestmark = pytest.mark.django_db
 
 

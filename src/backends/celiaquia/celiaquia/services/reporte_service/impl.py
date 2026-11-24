@@ -34,7 +34,6 @@ from users.territorial_scope import (  # pylint: disable=import-error
     is_territorial_user,
 )
 
-
 PAGE_SIZE = 12
 
 VALIDACION_ITEMS = [

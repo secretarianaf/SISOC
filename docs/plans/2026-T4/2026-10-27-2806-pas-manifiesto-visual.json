@@ -1,0 +1,564 @@
+{
+  "schema_version": 1,
+  "status": "draft_not_executed",
+  "issue": 2806,
+  "source_sha": "13d367f81d6da879f1fc3e43532a894e034dc557",
+  "reference_sha_accepted": null,
+  "candidate_sha": null,
+  "legacy_base_url": null,
+  "candidate_base_url": null,
+  "access_policy": "P1_preserve_current_restricted_session_behavior",
+  "baseline_approval": "pending",
+  "runtime_authorization": "not_requested",
+  "fixtures_status": "declared_only_not_created",
+  "fixtures": {
+    "invitation_states": [
+      "available",
+      "unknown",
+      "used",
+      "revoked",
+      "expired",
+      "submitted"
+    ],
+    "person_data": "synthetic_only",
+    "real_tokens_allowed": false
+  },
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "id": "mobile",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "additional_breakpoint_review": "Inspect PAS CSS breakpoints during implementation; not all verified by these two viewports",
+  "visual_cases": [
+    {
+      "id": "step_1",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Wizard step 1",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "step_2",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Wizard step 2",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "step_3",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Wizard step 3",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "step_4",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Wizard step 4",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "step_5",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Wizard step 5",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "pregnancy_yes",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Pregnancy yes, dependent control visible",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "pregnancy_no",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Pregnancy no, dependent value cleared by server",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "children_yes",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Children yes, vaccination and school controls visible",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "children_no",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Children no, dependent values cleared by server",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "inverted_yes",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Both inverted questions: visible yes maps to current server values",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "inverted_no",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Both inverted questions: visible no maps to current server values",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "legal_modal",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Legal text modal, focus and close",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "confirm_modal",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Submit confirmation modal, focus and close",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "invalid_contact",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "HTTP 400: contact field errors, retain entered values",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "invalid_municipality",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "HTTP 400: municipality outside province",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "invalid_dependent",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "HTTP 400: required conditional answer missing",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "municipality_loading",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Municipality loading placeholder",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "municipality_unavailable",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Municipality request unavailable: capture current fallback",
+      "actor": "anonymous",
+      "fixture": "available_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "invitation_unknown",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "404",
+      "actor": "anonymous",
+      "fixture": "unknown_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "invitation_used",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "410",
+      "actor": "anonymous",
+      "fixture": "used_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "invitation_revoked",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "410",
+      "actor": "anonymous",
+      "fixture": "revoked_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "invitation_expired",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "410",
+      "actor": "anonymous",
+      "fixture": "expired_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "confirmation",
+      "legacy_route_template": "/pas/ddjj/confirmacion",
+      "state": "Generic confirmation, OK button, no automatic redirect",
+      "actor": "anonymous",
+      "fixture": "submitted_invitation",
+      "policy_dependency": null,
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "restricted_web_access_denied",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Current block/remediation for web_access_denied; entry, data and POST must agree",
+      "actor": "web_access_denied",
+      "fixture": "available_invitation",
+      "policy_dependency": "P1_selected",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "restricted_password_change_required",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Current block/remediation for password_change_required; entry, data and POST must agree",
+      "actor": "password_change_required",
+      "fixture": "available_invitation",
+      "policy_dependency": "P1_selected",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "restricted_profile_confirmation_required",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Current block/remediation for profile_confirmation_required; entry, data and POST must agree",
+      "actor": "profile_confirmation_required",
+      "fixture": "available_invitation",
+      "policy_dependency": "P1_selected",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "restricted_mandatory_survey_required",
+      "legacy_route_template": "/pas/ddjj/formulario/<synthetic-token>",
+      "state": "Current block/remediation for mandatory_survey_required; entry, data and POST must agree",
+      "actor": "mandatory_survey_required",
+      "fixture": "available_invitation",
+      "policy_dependency": "P1_selected",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    }
+  ],
+  "contract_cases": [
+    {
+      "id": "public_read",
+      "expected": "Available invitation without session does not require login",
+      "status": "not_run"
+    },
+    {
+      "id": "invalid_invitation",
+      "expected": "Unknown 404 and unavailable 410 before reading personal data",
+      "status": "not_run"
+    },
+    {
+      "id": "server_validation",
+      "expected": "Form rules remain server authority; 400 retains fields and first error step",
+      "status": "not_run"
+    },
+    {
+      "id": "visible_values",
+      "expected": "Inverted yes/no labels map to current payload and PDF in both directions",
+      "status": "not_run"
+    },
+    {
+      "id": "csrf",
+      "expected": "POST without correct CSRF rejects even for anonymous guest with token",
+      "status": "not_run"
+    },
+    {
+      "id": "single_use",
+      "expected": "Two submissions of same invitation cannot both consume it; test with authorized DB",
+      "status": "not_run"
+    },
+    {
+      "id": "pdf",
+      "expected": "Backend generates stored immutable PDF; no browser PDF substitution",
+      "status": "not_run"
+    },
+    {
+      "id": "confirmation",
+      "expected": "No private identifier or implicit proof of a specific submission in generic confirmation",
+      "status": "not_run"
+    },
+    {
+      "id": "download",
+      "expected": "Authenticated permission checked separately; invitation does not authorize PDF download",
+      "status": "not_run"
+    },
+    {
+      "id": "media",
+      "expected": "Direct private media rejects with 404",
+      "status": "not_run"
+    },
+    {
+      "id": "lost_response",
+      "expected": "No automatic POST replay when submission outcome is uncertain",
+      "status": "not_run"
+    },
+    {
+      "id": "cookie_policy",
+      "expected": "GET/municipality/POST preserve selected P1; cannot bypass by changing endpoint",
+      "status": "not_run"
+    },
+    {
+      "id": "entry_assets",
+      "expected": "Public assets are narrow; admin and generic v2 router remain protected",
+      "status": "not_run"
+    },
+    {
+      "id": "token_privacy",
+      "expected": "No real tokens or private fields in captures, reports, logs, localStorage or static upstream requests",
+      "status": "not_run"
+    },
+    {
+      "id": "routes",
+      "expected": "Canonical no-trailing-slash routes, reload and encoded forms checked with real server",
+      "status": "not_run"
+    }
+  ],
+  "snapshot_policy": {
+    "all_changed_urls_and_states": true,
+    "all_unexpected_differences_block": true,
+    "automatic_baseline_acceptance": false,
+    "real_data_allowed": false
+  },
+  "blockers": [
+    "Review precise entry and JSON contracts after access decision",
+    "Synthetic fixtures and isolated runtime authorization",
+    "Accepted current reference revision",
+    "React candidate not implemented",
+    "No visual captures or application tests executed"
+  ],
+  "access_policy_decision": "../../registro/decisiones/2026-10-27-2806-ddjj-pas-p1.md"
+}

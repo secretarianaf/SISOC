@@ -26,6 +26,10 @@ Reglas (ver docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md y
 - ``src/frontends/apps/<x>/**`` despliega solo ``front_<x>``. ``src/frontends/``
   fuera de ``apps/`` (paquetes compartidos, configuración, lockfile),
   ``docker/frontends/`` y ``src/scripts/frontends/`` despliegan todos los fronts.
+- ``apps/sisoc`` y lo que comparte (paquetes, configuración, lockfile,
+  ``src/scripts/frontends/``) además se congela en ``/opt/sisoc-react`` dentro de
+  las imágenes de Django (``SISOC_REACT_BUILD_DIR``): también despliegan el core y
+  cada runtime que declara esa variable en el compose de deploy.
 - Documentación y CI no despliegan nada.
 - Cualquier otra cosa (kernel, config, requirements, docker, compose,
   CHANGELOG.md que muestra el footer) es despliegue completo.
@@ -73,10 +77,80 @@ def _backends() -> dict:
 
 
 def _fronts() -> list[str]:
-    apps = ROOT / "src" / "frontends" / "apps"
-    if not apps.is_dir():
+    """Servicios ``front_<x>`` declarados en el compose de deploy.
+
+    Una app de ``src/frontends/apps/`` sin servicio propio (por ejemplo, la que se
+    sirve desde una entrada del backend) no tiene contenedor que recrear.
+    """
+    compose = ROOT / "docker" / "compose" / "docker-compose.deploy.yml"
+    if not compose.is_file():
         return []
-    return sorted(f"front_{p.name}" for p in apps.iterdir() if p.is_dir())
+    servicios = set()
+    for linea in compose.read_text(encoding="utf-8").splitlines():
+        if linea.startswith("  front_") and linea.rstrip().endswith(":"):
+            servicios.add(linea.strip()[:-1])
+    return sorted(servicios)
+
+
+def _consumidores_build_sisoc() -> list[str]:
+    """Servicios que congelan el build de ``apps/sisoc`` en su imagen.
+
+    Son los que declaran ``SISOC_REACT_BUILD_DIR`` en el compose de deploy. El
+    core se expresa con ``@core`` (``deploy_refresh.sh`` lo expande); los runtimes
+    de backend suman los procesos que corren su mismo código.
+    """
+    compose = ROOT / "docker" / "compose" / "docker-compose.deploy.yml"
+    if not compose.is_file():
+        return []
+    backends = _backends()
+    extras = {
+        datos["service"]: datos.get("extra_services", [])
+        for datos in backends.values()
+        if "service" in datos
+    }
+    consumidores: set[str] = set()
+    servicio, es_core, usa_build = "", False, False
+
+    def cerrar() -> None:
+        if servicio and usa_build:
+            if es_core:
+                consumidores.add(CORE_MARCADOR)
+            else:
+                consumidores.add(servicio)
+                consumidores.update(extras.get(servicio, []))
+
+    for linea in compose.read_text(encoding="utf-8").splitlines():
+        if (
+            linea.startswith("  ")
+            and not linea.startswith("   ")
+            and linea.rstrip().endswith(":")
+        ):
+            cerrar()
+            servicio, es_core, usa_build = linea.strip()[:-1], False, False
+        elif linea.strip().startswith("image:") and CORE_IMAGEN in linea:
+            es_core = True
+        elif "SISOC_REACT_BUILD_DIR" in linea:
+            usa_build = True
+    cerrar()
+    return sorted(consumidores)
+
+
+def _servicios_frontend(ruta: str, partes: list[str]) -> set[str] | None:
+    """Servicios de un cambio de frontend; ``None`` si la ruta no es de frontend."""
+    if ruta.startswith("docker/frontends/"):
+        return set(_fronts())
+    if ruta.startswith("src/scripts/frontends/"):
+        return set(_fronts()) | set(_consumidores_build_sisoc())
+    if partes[:2] != ["src", "frontends"]:
+        return None
+    if len(partes) > 4 and partes[2] == "apps":
+        destino = {f"front_{partes[3]}"} & set(_fronts())
+        if partes[3] == "sisoc":
+            destino.update(_consumidores_build_sisoc())
+        return destino
+    if len(partes) > 2 and partes[2] == "e2e":
+        return set()
+    return set(_fronts()) | set(_consumidores_build_sisoc())
 
 
 def planificar(archivos: list[str]) -> tuple[str, list[str], bool]:
@@ -102,16 +176,9 @@ def planificar(archivos: list[str]) -> tuple[str, list[str], bool]:
                 servicios.add(CORE_MARCADOR)
                 migrar = True
                 continue
-        if ruta.startswith(("docker/frontends/", "src/scripts/frontends/")):
-            servicios.update(_fronts())
-            continue
-        if partes[:2] == ["src", "frontends"]:
-            if len(partes) > 4 and partes[2] == "apps":
-                servicios.add(f"front_{partes[3]}")
-            elif len(partes) > 2 and partes[2] in ("e2e",):
-                continue
-            else:
-                servicios.update(_fronts())
+        destino = _servicios_frontend(ruta, partes)
+        if destino is not None:
+            servicios.update(destino)
             continue
         return "completo", [], True
     if not servicios:

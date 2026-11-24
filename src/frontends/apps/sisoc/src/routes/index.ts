@@ -87,6 +87,7 @@ import { expedientesPagosRoute } from "./expedientesPagos";
 import { importarExpedientesRoute } from "./importarExpedientes";
 import { rendicionFinalRoute } from "./rendicionFinal";
 import { rendicionMensualRoute } from "./rendicionMensual";
+import { rendicionMensualPorComedorRoute } from "./rendicionMensualPorComedor";
 import { rendicionMensualDetalleRoute } from "./rendicionMensualDetalle";
 import { rendicionMensualFormRoute } from "./rendicionMensualForm";
 import { rendicionMensualAuditoriaRoute } from "./rendicionMensualAuditoria";
@@ -268,6 +269,7 @@ export const ROUTES: RouteDefinition[] = [
   expedientesPagosRoute,
   importarExpedientesRoute,
   rendicionMensualRoute,
+  rendicionMensualPorComedorRoute,
   rendicionMensualDetalleRoute,
   rendicionMensualFormRoute,
   rendicionMensualAuditoriaRoute,

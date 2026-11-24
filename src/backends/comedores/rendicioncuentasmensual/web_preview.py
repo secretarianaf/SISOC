@@ -1,22 +1,21 @@
-"""Explicit local React preview of the global list of rendiciones (RM01.01); never mounted by a production URLconf.
+"""React entries for the native Rendiciones routes.
 
-The entry keeps the native URL, its route decorator and the native view's
-dispatch: anonymous users and users without one of the five codes get the
-native 403, an invalid ``page`` the native 404 and ``?export=csv`` the native
-CSV download (with its own export check). Only then a GET returns the frozen
-React ``index.html``, which loads its data from
-``/api/web/comedores/rendicioncuentasmensual/listado/``. Assets are served under
-the backend's own prefix ``/rendicioncuentasmensual/react/``.
+The activation registry mounts these entries for Comedores when a SISOC
+build is available. Each entry keeps the native URL and its guard. The lists
+keep the native page validation and the global CSV stays a native download.
+Assets are served under ``/rendicioncuentasmensual/react/``.
 """
 
 from pathlib import Path
 
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import path
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from core.decorators import permissions_any_required
+from comedores.models import Comedor
 from comedores.web_preview_catalogos import (
     BUILD_ASSETS,
     ReactAssetView,
@@ -29,6 +28,7 @@ from rendicioncuentasmensual.urls import _RENDICION_PERM
 from rendicioncuentasmensual.views import (
     RendicionCuentaMensualDetailView,
     RendicionCuentaMensualGlobalListView,
+    RendicionCuentaMensualListView,
 )
 from rendicioncuentasmensual.views import (
     RendicionCuentaMensualCreateView,
@@ -51,6 +51,20 @@ class ListadoEntry(RendicionCuentaMensualGlobalListView):
         self.object_list = self.get_queryset()
         # Same Http404 as the native list for an invalid or out-of-range page.
         self.paginate_queryset(self.object_list, self.get_paginate_by(self.object_list))
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class PorComedorEntry(RendicionCuentaMensualListView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        # Validate the comedor and page without evaluating the projected rows.
+        self.object_list = self.get_queryset()
+        try:
+            self.get_context_data()
+        except Comedor.DoesNotExist as exc:
+            raise Http404 from exc
         return _index(request, self.index_bytes)
 
 
@@ -113,9 +127,9 @@ class AuditoriaEntry(RendicionAuditoriaView):
 
 
 def rendicion_preview_patterns(build_directory):
-    """Freeze an explicit local ``apps/sisoc`` build for a disposable preview URLconf.
+    """Freeze an explicit ``apps/sisoc`` build for the React route overrides.
 
-    The caller supplies its own isolated build directory, never a request path.
+    The caller supplies the build directory, never a request path.
     """
     original = Path(build_directory)
     root = original.resolve(strict=True)
@@ -132,6 +146,12 @@ def rendicion_preview_patterns(build_directory):
     )
     return [
         path("rendicioncuentasmensual/rendicioncuentasmensual/listado/", listado),
+        path(
+            "rendicioncuentasmensual/rendicioncuentasmensual/<int:comedor_id>/",
+            permissions_any_required(_RENDICION_ACCESS_PERMS)(
+                PorComedorEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
         path(
             "rendicioncuentasmensual/rendicioncuentasmensual/detalle/<int:pk>/",
             permissions_any_required(_RENDICION_ACCESS_PERMS)(

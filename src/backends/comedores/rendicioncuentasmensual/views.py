@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.http import FileResponse, Http404, JsonResponse
 from django.urls import reverse, reverse_lazy
+from django.utils.functional import cached_property
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -96,12 +97,16 @@ class RendicionCuentaMensualListView(LoginRequiredMixin, ListView):
         """Retorna rendiciones ordenadas para evitar warning de paginación"""
         return RendicionCuentaMensual.objects.order_by("-id")
 
+    @cached_property
+    def comedor(self):
+        return Comedor.objects.get(id=self.kwargs["comedor_id"])
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor_id = self.kwargs.get("comedor_id")
         context["rendiciones_cuentas_mensuales"] = (
             RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(
-                Comedor.objects.get(id=comedor_id)
+                self.comedor
             )
         )
         context["comedorid"] = comedor_id

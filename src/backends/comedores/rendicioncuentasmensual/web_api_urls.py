@@ -4,6 +4,9 @@ from django.urls import path
 
 from rendicioncuentasmensual.web_api import RendicionListadoWebView
 from rendicioncuentasmensual.web_api_rendicion_detalle import RendicionDetalleWebView
+from rendicioncuentasmensual.web_api_rendicion_por_comedor import (
+    RendicionPorComedorWebView,
+)
 from rendicioncuentasmensual.web_api_rendicion_auditoria import (
     AuditoriaBusquedaWebView,
     AuditoriaGestionWebView,
@@ -19,6 +22,11 @@ urlpatterns = [
         "listado/",
         RendicionListadoWebView.as_view(),
         name="rendicioncuentasmensual_web_listado",
+    ),
+    path(
+        "por-comedor/<int:comedor_id>/",
+        RendicionPorComedorWebView.as_view(),
+        name="rendicioncuentasmensual_web_por_comedor",
     ),
     path(
         "<int:pk>/",

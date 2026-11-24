@@ -103,9 +103,19 @@ RUN test -n "$BACKEND" && test -d "/repo/src/backends/$BACKEND" \
     && cp -a /repo/docker /repo/manage.py /repo/CHANGELOG.md /out/ \
     && cp -a /repo/src/backends/config /repo/src/backends/kernel "/repo/src/backends/$BACKEND" /out/src/backends/
 
+# La DDJJ publica usa el build de apps/pas solo en su backend, sin un servicio
+# frontend adicional. Se reutilizan el checkout y npm ci del build de SISOC.
+FROM sisoc_react_build AS backend_react_build
+ARG BACKEND
+RUN mkdir -p /pas-react && \
+    if [ "$BACKEND" = pas ]; then \
+      npm run build -w @sisoc/pas && cp -a apps/pas/dist/. /pas-react/; \
+    fi
+
 FROM base AS backend
 COPY --from=backend_source /out /sisoc
 COPY --from=sisoc_react_build /app/src/frontends/apps/sisoc/dist /opt/sisoc-react
+COPY --from=backend_react_build /pas-react/ /opt/sisoc-pas-react/
 CMD ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000"]
 
 # Migrador único: composición completa (config.settings_all). No sirve tráfico.

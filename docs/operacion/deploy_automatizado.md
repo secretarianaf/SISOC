@@ -155,8 +155,12 @@ Encendido de una vertical (QA, luego HML, luego producción):
 Vuelta atrás: definir `REACT_VERTICALES_ACTIVAS=ninguna` (o quitar la clave de la lista) y reiniciar el core y el runtime;
 Django vuelve a servir las páginas. No hay datos que revertir: las APIs web ejecutan las vistas nativas.
 
-Notas: empezar por `pas`. La DDJJ pública de PAS ya la sirve su app propia; la entrada `pas.ddjj_preview` lee
-`SISOC_REACT_PAS_BUILD_DIR`, que no se configura en deploy, y por eso se omite (queda un aviso en el log).
+Para probar la primera vertical, empezar por `pas`. La imagen de `backend_pas` incluye también el build de la app de
+DDJJ pública en `/opt/sisoc-pas-react`. El compose de deploy asigna esa ruta a `SISOC_REACT_PAS_BUILD_DIR` solo en PAS.
+Con PAS activo y el build disponible, los enlaces de invitación y la confirmación conservan sus URLs canónicas y se
+renderizan en React sin exigir sesión al invitado. Los assets se sirven bajo `/pas/ddjj/react/assets/`.
+Si se desactiva PAS o falta el build, vuelven las vistas Django. Verificar invitación vigente, enlace usado/vencido,
+confirmación y descarga protegida; el build de la app pública no autoriza acceso al backoffice.
 ## Movimiento de documentos CDI en el deploy
 
 `deploy_refresh.sh` ejecuta `mover_documentacion_cdi --aplicar` en el servicio `migrator` (que monta `./media`) despues de las migraciones, en cada deploy que despliega servicios (completo o selectivo, con o sin `MIGRAR`). Es idempotente: los deploys posteriores no mueven nada. Un fallo del comando detiene el deploy; los `CONFLICTO`, `PENDIENTE`, `EN USO`, `FALTANTE` y `OMITIDO` se listan con el prefijo `[REVISAR-CDI]` en el log sin fallarlo. El deploy no toma backup de `media/`. Detalle y reversa en `docs/operacion/comandos_administracion.md` (seccion "Centro de infancia (CDI)"). El cierre de `/media/cdi/` en Nginx sigue siendo manual por entorno.

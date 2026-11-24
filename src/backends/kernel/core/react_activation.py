@@ -87,6 +87,7 @@ REGISTRO = {
             "cdi_trabajadores_preview_patterns",
             "sisoc",
         ),
+        ("centrodeinfancia.web_preview_bajas", "cdi_bajas_preview_patterns", "sisoc"),
     ),
     "comedores": (
         ("acompanamientos.web_preview", "acompanamientos_preview_patterns", "sisoc"),

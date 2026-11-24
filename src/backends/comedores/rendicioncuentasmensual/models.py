@@ -113,7 +113,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         {
             "codigo": CATEGORIA_FORMULARIO_I,
             "label": "Formulario I - Certificación de Cuenta Bancaria",
-            "description": "Adjuntar sólo si hubo cambios en los datos bancarios",
+            "description": "Presentar solo si cambió la cuenta o los firmantes",
             "required": False,
             "multiple": True,
             "order": 13,

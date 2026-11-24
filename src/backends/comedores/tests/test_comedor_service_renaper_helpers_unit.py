@@ -564,9 +564,10 @@ def test_asignar_dupla_y_delete_images(mocker):
             "imagen_ciudadano-borrar-12": "on",
             "otra_key": "x",
             "imagen_ciudadano-borrar-34": "on",
-        }
+        },
+        5,
     )
-    filter_mock.assert_called_once_with(id__in=["12", "34"])
+    filter_mock.assert_called_once_with(id__in=["12", "34"], comedor_id=5)
     filtered.delete.assert_called_once()
 
 

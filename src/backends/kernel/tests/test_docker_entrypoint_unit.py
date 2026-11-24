@@ -190,6 +190,55 @@ def test_run_server_usa_gunicorn_en_entornos_deploy(mocker, monkeypatch, environ
     assert kwargs["stage"] == "gunicorn"
 
 
+def _gunicorn_timeout(cmd):
+    return cmd[cmd.index("--timeout") + 1]
+
+
+def test_run_server_gunicorn_timeout_supera_la_ventana_g1(mocker, monkeypatch):
+    """El worker no puede cortar antes que la ventana G1 de 60 s."""
+    module = _load_entrypoint_module()
+    mocker.patch.object(module, "cache_busting")
+    mock_run_command = mocker.patch.object(module, "run_command")
+    monkeypatch.setenv("ENVIRONMENT", "prd")
+    monkeypatch.delenv("GUNICORN_TIMEOUT", raising=False)
+
+    module.run_server()
+
+    args, _ = mock_run_command.call_args
+    assert _gunicorn_timeout(args[0]) == "75"
+
+
+def test_run_server_gunicorn_timeout_configurable(mocker, monkeypatch):
+    module = _load_entrypoint_module()
+    mocker.patch.object(module, "cache_busting")
+    mock_run_command = mocker.patch.object(module, "run_command")
+    monkeypatch.setenv("ENVIRONMENT", "prd")
+    monkeypatch.setenv("GUNICORN_TIMEOUT", "30")
+
+    module.run_server()
+
+    args, _ = mock_run_command.call_args
+    assert _gunicorn_timeout(args[0]) == "30"
+
+
+def test_compose_deploy_runtimes_usan_timeout_de_runtime():
+    """Cada runtime vertical corre gunicorn con timeout >= ventana G1."""
+    compose = (
+        Path(__file__).resolve().parents[4]
+        / "docker"
+        / "compose"
+        / "docker-compose.deploy.yml"
+    ).read_text(encoding="utf-8")
+    comandos = [
+        linea
+        for linea in compose.splitlines()
+        if '"gunicorn"' in linea and "command:" in linea
+    ]
+    assert comandos
+    for linea in comandos:
+        assert '"--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}"' in linea
+
+
 @pytest.mark.parametrize("environment", ["qa", "homologacion", "prd"])
 def test_run_server_sigue_si_falla_el_mapa_de_arquitectura(
     mocker, monkeypatch, environment

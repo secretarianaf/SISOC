@@ -2279,7 +2279,9 @@ class IntervencionCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class ObservacionCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
+class ObservacionCentroInfanciaCreateView(
+    _AuditoriaSoloLecturaMixin, LoginRequiredMixin, CreateView
+):
     model = ObservacionCentroInfancia
     form_class = ObservacionCentroInfanciaForm
     template_name = "centrodeinfancia/observacion_form.html"
@@ -2318,7 +2320,9 @@ class ObservacionCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
         return _observaciones_cdi_queryset_scoped(self.request.user)
 
 
-class ObservacionCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
+class ObservacionCentroInfanciaUpdateView(
+    _AuditoriaSoloLecturaMixin, LoginRequiredMixin, UpdateView
+):
     model = ObservacionCentroInfancia
     form_class = ObservacionCentroInfanciaForm
     template_name = "centrodeinfancia/observacion_form.html"
@@ -2344,6 +2348,7 @@ class ObservacionCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class ObservacionCentroInfanciaDeleteView(
+    _AuditoriaSoloLecturaMixin,
     SoftDeleteDeleteViewMixin,
     LoginRequiredMixin,
     DeleteView,

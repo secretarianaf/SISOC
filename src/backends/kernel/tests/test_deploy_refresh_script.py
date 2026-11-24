@@ -310,7 +310,16 @@ CORE_COMPOSE_JSON = json.dumps(
 
 
 def _run_selectivo(
-    tmp_path, archivos, compose_json, *, environment="qa", fail_runtime_preflight=False
+    tmp_path,
+    archivos,
+    compose_json,
+    *,
+    environment="qa",
+    fail_runtime_preflight=False,
+    dry_run=True,
+    mover_exit=0,
+    mover_salida="",
+    frentes=(),
 ):
     """Deploy en dry-run con --diff-base: el plan sale de deploy_targets.py."""
     checkout = _backend_checkout(tmp_path)
@@ -322,6 +331,11 @@ def _run_selectivo(
     (checkout / "src" / "backends" / "config" / "backends.json").write_bytes(
         (REPO_ROOT / "src" / "backends" / "config" / "backends.json").read_bytes()
     )
+    if frentes:
+        compose_deploy = checkout / "docker" / "compose" / "docker-compose.deploy.yml"
+        compose_deploy.write_text(
+            "services:\n" + "".join(f"  {f}:\n" for f in frentes), encoding="utf-8"
+        )
     (checkout / ".diff").write_text("\n".join(archivos) + "\n", encoding="utf-8")
     env_file = tmp_path / ".env"
     env_file.write_text(f"ENVIRONMENT={environment}\n", encoding="utf-8")
@@ -334,6 +348,10 @@ def _run_selectivo(
     docker.write_text(
         "#!/usr/bin/env bash\n"
         'if [[ "${FAIL_RUNTIME_PREFLIGHT:-0}" == 1 && "$*" == *"run --rm --no-deps runtime_permissions"* ]]; then exit 73; fi\n'
+        'if [[ "$*" == *"mover_documentacion_cdi"* ]]; then\n'
+        '  printf "%s" "${MOVER_SALIDA:-}"\n'
+        '  exit "${MOVER_EXIT:-0}"\n'
+        "fi\n"
         'if [[ "$*" == *"config --format json"* ]]; then\n'
         f'  cat "{compose_config}"\n'
         "fi\n"
@@ -345,12 +363,14 @@ def _run_selectivo(
     env["ENV_FILE"] = str(env_file)
     env["SISOC_DEPLOY_PHASE_FILE"] = str(tmp_path / "phase")
     env["FAIL_RUNTIME_PREFLIGHT"] = "1" if fail_runtime_preflight else "0"
+    env["MOVER_EXIT"] = str(mover_exit)
+    env["MOVER_SALIDA"] = mover_salida
     env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
     return subprocess.run(
         [
             "bash",
             str(operacion / "deploy_refresh.sh"),
-            *([] if fail_runtime_preflight else ["--dry-run"]),
+            *([] if fail_runtime_preflight or not dry_run else ["--dry-run"]),
             "--yes",
             "--allow-dirty",
             "--allow-branch-mismatch",
@@ -567,3 +587,102 @@ def test_runtime_phase_is_reported_only_for_hml_mutation(tmp_path, environment):
         assert phase.read_text() == "cut"
     else:
         assert not phase.exists()
+
+
+MOVER = "run --rm -T migrator python manage.py mover_documentacion_cdi --aplicar"
+
+
+def test_deploy_completo_mueve_documentos_cdi_despues_de_migrar(tmp_path):
+    resultado = _run_selectivo(
+        tmp_path, ["docker/django/Dockerfile"], CORE_COMPOSE_JSON
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert (
+        resultado.stdout.index("run --rm migrator")
+        < resultado.stdout.index(MOVER)
+        < resultado.stdout.index(" up -d")
+    )
+
+
+def test_selectivo_sin_migraciones_igual_mueve_documentos_cdi(tmp_path):
+    config = {"services": {"django": {}, "front_vpsl": {}}}
+    resultado = _run_selectivo(
+        tmp_path,
+        ["src/frontends/apps/vpsl/src/App.tsx"],
+        json.dumps(config),
+        frentes=("front_vpsl",),
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "run --rm migrator\n" not in resultado.stdout
+    assert "build migrator" in resultado.stdout
+    assert (
+        resultado.stdout.index("build migrator")
+        < resultado.stdout.index(MOVER)
+        < resultado.stdout.index("up -d --no-deps")
+    )
+
+
+def test_hml_mueve_documentos_cdi_antes_de_reaplicar_permisos(tmp_path):
+    resultado = _run_selectivo(
+        tmp_path,
+        ["src/backends/sisoc_core/usuarios/views.py"],
+        CORE_COMPOSE_JSON,
+        environment="hml",
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert resultado.stdout.index(MOVER) < resultado.stdout.rindex(
+        "run --rm --no-deps runtime_permissions"
+    )
+
+
+def test_sin_servicios_a_desplegar_no_mueve_documentos_cdi(tmp_path):
+    resultado = _run_selectivo(tmp_path, ["docs/indice.md"], CORE_COMPOSE_JSON)
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "mover_documentacion_cdi" not in resultado.stdout
+
+
+def test_fallo_del_movimiento_cdi_falla_el_deploy_antes_de_levantar(tmp_path):
+    resultado = _run_selectivo(
+        tmp_path,
+        ["docker/django/Dockerfile"],
+        CORE_COMPOSE_JSON,
+        dry_run=False,
+        mover_exit=74,
+    )
+    assert resultado.returncode != 0
+    assert "mover_documentacion_cdi fallo" in resultado.stderr
+    assert " up -d" not in resultado.stdout
+
+
+def test_conflictos_cdi_no_fallan_el_deploy_y_se_listan(tmp_path):
+    salida = (
+        "MOVIDO pk=1: documentacion/a.pdf -> cdi/documentacion/1_a.pdf\n"
+        "CONFLICTO pk=2: cdi/documentacion/2_b.pdf existe con otro contenido\n"
+        "PENDIENTE pk=3: no se pudo comprobar Comedores\n"
+        "EN USO pk=4: documentacion/c.pdf lo usa otra fila; no se borra\n"
+        "Resumen: movidos=1 conflictos=1\n"
+    )
+    resultado = _run_selectivo(
+        tmp_path,
+        ["docker/django/Dockerfile"],
+        CORE_COMPOSE_JSON,
+        dry_run=False,
+        mover_salida=salida,
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "[REVISAR-CDI] CONFLICTO pk=2" in resultado.stdout
+    assert "[REVISAR-CDI] PENDIENTE pk=3" in resultado.stdout
+    assert "[REVISAR-CDI] EN USO pk=4" in resultado.stdout
+    assert "[REVISAR-CDI] MOVIDO" not in resultado.stdout
+
+
+def test_movimiento_cdi_limpio_no_pide_revision(tmp_path):
+    resultado = _run_selectivo(
+        tmp_path,
+        ["docker/django/Dockerfile"],
+        CORE_COMPOSE_JSON,
+        dry_run=False,
+        mover_salida="Resumen: movidos=0\n",
+    )
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "REVISAR-CDI" not in resultado.stdout

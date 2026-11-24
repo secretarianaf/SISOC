@@ -79,8 +79,18 @@ RUN rm -rf /repo/src/frontends
 FROM source AS core_source
 RUN find /repo/src/backends -mindepth 1 -maxdepth 1 ! -name config ! -name kernel ! -name sisoc_core -exec rm -rf {} +
 
+# Build congelado de apps/sisoc (index.html + assets/) para las entradas web_preview_*.
+# Se construye dentro de este mismo Dockerfile (no depende de que exista la imagen front_sisoc)
+# y BuildKit lo cachea entre el core y los backends. Ver SISOC_REACT_BUILD_DIR.
+FROM node:22.14.0 AS sisoc_react_build
+WORKDIR /app/src/frontends
+COPY src/frontends/ .
+COPY src/scripts/frontends/ ../scripts/frontends/
+RUN npm ci && npm run build -w @sisoc/sisoc
+
 FROM base AS core
 COPY --from=core_source /repo /sisoc
+COPY --from=sisoc_react_build /app/src/frontends/apps/sisoc/dist /opt/sisoc-react
 CMD ["python", "./docker/django/entrypoint.py"]
 
 # Backend de un vertical: kernel (con templates y static compartidos),
@@ -95,6 +105,7 @@ RUN test -n "$BACKEND" && test -d "/repo/src/backends/$BACKEND" \
 
 FROM base AS backend
 COPY --from=backend_source /out /sisoc
+COPY --from=sisoc_react_build /app/src/frontends/apps/sisoc/dist /opt/sisoc-react
 CMD ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000"]
 
 # Migrador único: composición completa (config.settings_all). No sirve tráfico.

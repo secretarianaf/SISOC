@@ -1764,7 +1764,7 @@ class ComedorUpdateView(LoginRequiredMixin, UpdateView):
                     # incluyendo _sync_estado_historial
                     self.object = form.save()
 
-                    ComedorService.delete_images(self.request.POST)
+                    ComedorService.delete_images(self.request.POST, self.object.pk)
                     ComedorService.delete_legajo_photo(self.request.POST, self.object)
 
                     for imagen in imagenes:

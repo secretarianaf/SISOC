@@ -23,7 +23,7 @@ def enabled(settings):
 def pagos():
     provincia = Provincia.objects.create(nombre="Provincia Sintética")
     otra = Provincia.objects.create(nombre="Otra Provincia")
-    user = _usuario("canonical_pagos_owner")
+    user = _usuario("canonical_pagos_owner", "view_cupo_dashboard")
     viejo = PagoExpediente.objects.create(
         provincia=provincia,
         periodo="2026-01",
@@ -218,7 +218,8 @@ def test_shell_served_with_screen_marker(
 
 
 def test_anonymous_json_gets_same_status_as_native(client, enabled, pagos):
-    # Pre-existing: these URLs carry no permission decorator; preserve exactly.
+    # The URL guard (view_cupo_dashboard) runs before HTML or JSON.
     path = reverse("pago_expediente_list", args=[pagos["provincia"].id])
     native_status = client.get(path, HTTP_ACCEPT="text/html").status_code
+    assert native_status in {302, 403}
     assert client.get(path, **ACCEPT).status_code == native_status

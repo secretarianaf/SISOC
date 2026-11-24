@@ -273,27 +273,37 @@ urlpatterns = [
     ),
     path(
         "pagos/provincia/<int:provincia_id>/",
-        canonical_pagos.pagos,
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
+            canonical_pagos.pagos
+        ),
         name="pago_expediente_list",
     ),
     path(
         "pagos/provincia/<int:provincia_id>/crear/",
-        PagoExpedienteCreateView.as_view(),
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
+            PagoExpedienteCreateView.as_view()
+        ),
         name="pago_expediente_create",
     ),
     path(
         "pagos/expediente/<int:pago_id>/",
-        canonical_pagos.pago_detalle,
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
+            canonical_pagos.pago_detalle
+        ),
         name="pago_expediente_detail",
     ),
     path(
         "pagos/expediente/<int:pago_id>/exportar/",
-        PagoExpedienteExportView.as_view(),
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
+            PagoExpedienteExportView.as_view()
+        ),
         name="pago_expediente_export",
     ),
     path(
         "pagos/expediente/<int:pago_id>/exportar-nomina-actual/",
-        PagoNominaExportActualView.as_view(),
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
+            PagoNominaExportActualView.as_view()
+        ),
         name="pago_nomina_export_actual",
     ),
     path(

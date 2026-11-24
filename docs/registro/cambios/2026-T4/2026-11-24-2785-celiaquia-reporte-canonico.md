@@ -169,3 +169,14 @@ provincial usa la misma función. No se registra en `REGISTRO` porque esas
 entradas montan rutas `web_preview` con assets propios, y Celiaquía sirve el
 build `/v2/celiaquia/` desde sus vistas canónicas. Rollback: definir la
 variable sin `celiaquia`; las pantallas vuelven a Django sin desplegar código.
+
+## Permiso de Pagos
+
+Las cinco URLs de pagos (listado, generar, detalle, exportar envío y exportar
+nómina actual) exigen `celiaquia.view_cupo_dashboard`, el mismo permiso que
+Cupos y que la API DRF de pagos. La única entrada a Pagos es la pantalla de cupo
+por provincia, que ya lo pedía. Los usuarios estrictamente provinciales siguen
+sin ese permiso, igual que para el Dashboard de Cupos (issue 2254). Decisión
+confirmada por el usuario en la sesión del 2026-11-24. Pruebas:
+`test_pagos_permisos.py` (anónimo y sin permiso denegados en las cinco URLs,
+sin crear registros; con permiso, acceso conservado).

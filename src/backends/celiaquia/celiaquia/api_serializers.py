@@ -166,6 +166,9 @@ class ReporteCasoSerializer(serializers.Serializer):
     estado_cupo = serializers.CharField(allow_blank=True)
     archivos_ok = serializers.BooleanField()
     clasificacion = serializers.CharField(allow_blank=True)
+    clasificacion_label = serializers.CharField(required=False)
+    clasificacion_tone = serializers.CharField(required=False)
+    integra_dupla = serializers.BooleanField(required=False)
     creado_en = serializers.DateTimeField(allow_null=True)
 
     def create(self, validated_data):

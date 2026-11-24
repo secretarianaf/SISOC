@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "@sisoc/ui";
-import { secciones } from "./navegacion";
+import { CANONICAL_REPORT_PATH, secciones, seccionesReporteCanonico } from "./navegacion";
 import { ExpedienteListPage } from "./pages/ExpedienteListPage";
 import { ExpedienteFormPage } from "./pages/ExpedienteFormPage";
 import { ExpedienteDetailPage } from "./pages/ExpedienteDetailPage";
@@ -11,7 +11,16 @@ import { PagoDetailPage } from "./pages/PagoDetailPage";
 import { ReportePage } from "./pages/ReportePage";
 import { SinPermisoPage } from "./pages/SinPermisoPage";
 
-export function App() {
+export function App({ canonicalReport = false }: { canonicalReport?: boolean } = {}) {
+  if (canonicalReport) {
+    return (
+      <AppShell modulo="Celiaquía" secciones={seccionesReporteCanonico}>
+        <Routes>
+          <Route path={CANONICAL_REPORT_PATH} element={<ReportePage canonical />} />
+        </Routes>
+      </AppShell>
+    );
+  }
   return (
     <AppShell modulo="Celiaquía" secciones={secciones}>
       <Routes>

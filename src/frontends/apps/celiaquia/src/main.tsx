@@ -9,7 +9,9 @@ import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
 import { App } from "./App";
-import { BASE } from "./navegacion";
+import { BASE, CANONICAL_REPORT_PATH } from "./navegacion";
+
+const canonicalReport = window.location.pathname === CANONICAL_REPORT_PATH;
 
 // Antes de montar nada, para que un error del arranque tambien se reporte.
 iniciarObservabilidad({ modulo: "celiaquia" }, import.meta.env);
@@ -32,9 +34,9 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter basename={BASE}>
+      <BrowserRouter basename={canonicalReport ? undefined : BASE}>
         <ThemeProvider>
-          <App />
+          <App canonicalReport={canonicalReport} />
         </ThemeProvider>
       </BrowserRouter>
     </QueryClientProvider>

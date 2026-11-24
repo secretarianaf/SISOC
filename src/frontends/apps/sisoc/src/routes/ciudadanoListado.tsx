@@ -244,8 +244,7 @@ export function ListadoContent({ data }: { data: ListadoData }) {
           <a href={data.urls.list} className="poncho-btn poncho-btn--neutro" data-restablecer-filtros-favoritos="true">Resetear</a>
           <a href={data.urls.add} className="poncho-btn poncho-btn--cta"><i className="fas fa-plus" aria-hidden="true" />Nuevo ciudadano</a>
           {data.additional_buttons.map((button) => (
-            // The native link carries `btn-export-csv`, so `export_helper.js` cancels its click and, with no `data-url`, goes nowhere.
-            <a key={button.url} href={button.url} className={button.class} title={button.title} onClick={(e) => e.preventDefault()}>{button.label}</a>
+            <a key={button.url} href={button.url} className={button.class} title={button.title}>{button.label}</a>
           ))}
         </div>
       </div>

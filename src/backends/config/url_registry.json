@@ -4870,9 +4870,19 @@
   "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
+  "name": "relevamientos_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/crear/\\Z"
+ },
+ {
   "name": "relevamientos_web_detalle",
   "namespace": "",
   "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "relevamientos_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
   "name": "relevamientos_web_listado",

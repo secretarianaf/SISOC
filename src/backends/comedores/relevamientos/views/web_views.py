@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models as dj_models
 from django.db import transaction
+from django.forms.models import model_to_dict
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -444,6 +445,11 @@ class RelevamientoUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "relevamiento_form.html"
     success_url = reverse_lazy("relevamiento_lista")
 
+    def get_queryset(self):
+        # The URL identifies the parent while the form loads its disabled comedor.
+        # Require the same relationship for React, native GET and native POST.
+        return super().get_queryset().filter(comedor_id=self.kwargs["comedor_pk"])
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["comedor_pk"] = self.kwargs["comedor_pk"]
@@ -471,7 +477,16 @@ class RelevamientoUpdateView(LoginRequiredMixin, UpdateView):
         data["comedor"] = RelevamientoFormManager.get_comedor_context(
             self.kwargs["comedor_pk"]
         )
-        data["responsable"] = getattr(self.object, "responsable", None)
+        responsable = self.object.responsable_relevamiento
+        if responsable:
+            referente_form = data["referente_form"]
+            referente_form.initial.update(
+                model_to_dict(responsable, fields=referente_form.fields)
+            )
+        data["form"].initial[
+            "responsable_es_referente"
+        ] = self.object.responsable_es_referente
+        data["responsable"] = responsable
         self._context_data = data
         return data
 

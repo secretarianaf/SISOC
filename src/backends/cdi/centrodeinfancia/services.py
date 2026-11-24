@@ -87,6 +87,10 @@ def pasar_nomina_a_pendiente_por_edad(
         queryset = queryset.filter(centro_id=centro_id)
     if provincia_id is not None:
         queryset = queryset.filter(centro__provincia_id=provincia_id)
+    # Corre en cada GET de nómina, asistencia y reportes: sin fichas para pasar
+    # no se emite el UPDATE (una lectura que no cambia nada no escribe ni bloquea).
+    if not queryset.exists():
+        return 0
     actualizadas = queryset.update(
         estado=NominaCentroInfancia.ESTADO_PENDIENTE,
         pendiente_por_edad_desde=hoy,

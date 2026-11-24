@@ -66,16 +66,33 @@ El issue pide dos cosas:
 
 La pantalla de nómina de un CDI daba error 500 cuando ni la ficha ni el
 ciudadano tenían sexo cargado. `nomina_detail.html` ahora usa `{% firstof %}`
-y muestra "-".
+y muestra "-". La lista React (#2785) evalúa la misma expresión desde
+`src/backends/cdi/centrodeinfancia/web_api_nomina_lista.py`: se cambió igual y
+lo cubre `test_row_without_sex_shows_a_dash_like_the_native_html` en
+`src/backends/cdi/centrodeinfancia/tests/test_web_nomina_lista.py`.
+
+## Pantallas React (#2785)
+
+La nómina CDI se sirve con React por defecto en QA, HML y PRD. Las APIs web
+reutilizan los métodos nativos donde se agregó el pase a Pendiente
+(`get_context_data` del centro, asistencia y reportes; `get_queryset` de la
+nómina), así que el pase también ocurre desde React. El formulario React del
+destinatario recibe el estado deshabilitado y su texto de ayuda desde la API,
+y no lo envía en el POST.
 
 ## Riesgos y operación
 
 - Migración aditiva (columna nula); no cambia datos existentes al migrar. El
   primer acceso a una pantalla de CDI pasa a Pendiente a todas las fichas
   activas que ya tienen 4 años o más.
-- Las pantallas de consulta escriben en la base (un `UPDATE` acotado y sin
-  efecto cuando no hay fichas para pasar). Se eligió así para no depender de
-  infraestructura nueva: CDI no tiene worker de Celery.
+- Las pantallas de consulta escriben en la base solo cuando hay fichas para
+  pasar: antes del `UPDATE` se consulta si existe alguna, así una lectura que
+  no cambia nada no escribe ni toma bloqueos (`test_list_reads_never_write`).
+  Se eligió así para no depender de infraestructura nueva: CDI no tiene worker
+  de Celery.
+- Migración de merge `0056_merge_2925_pendiente_edad_documentacion`: une esta
+  `0055` con la `0055` de development (documentación de intervenciones). No
+  tiene operaciones.
 - Cron recomendado (opcional, lo agrega infraestructura): una vez por día
   `python manage.py pasar_nomina_cdi_a_pendiente_por_edad` en el servicio del
   backend CDI.

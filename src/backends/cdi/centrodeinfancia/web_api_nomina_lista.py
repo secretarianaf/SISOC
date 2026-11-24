@@ -59,7 +59,8 @@ _CELDAS = {
         "{{ e.nombre|default:e.ciudadano.nombre }}"
     ),
     "dni": '{{ e.dni|default:e.ciudadano.documento|default:"-" }}',
-    "sexo": '{{ e.sexo|default:e.ciudadano.sexo.sexo|default:"-" }}',
+    # ``firstof``: with no sex on the record nor on the citizen, ``default:`` raised (#2925).
+    "sexo": '{% firstof e.sexo e.ciudadano.sexo.sexo "-" %}',
     "edad": '{{ e.edad|default:e.ciudadano.edad|default:"-" }}',
     "sala": '{{ e.sala|default:"-" }}',
     "sala_filtro": "{{ e.sala|default:'' }}",

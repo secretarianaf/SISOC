@@ -26,6 +26,12 @@ type Fetched = { term: string; status: "ready" | "error"; options: Choice[] };
 const isRemoteOption = (o: unknown): o is { id: string | number; text: string } =>
   typeof o === "object" && o !== null && ["string", "number"].includes(typeof (o as { id?: unknown }).id) && typeof (o as { text?: unknown }).text === "string";
 
+/** Elemento desde el que el navegador mide un hijo `position: absolute` de `parent`. */
+const baseDePosicion = (parent: HTMLElement): HTMLElement | null => {
+  if (getComputedStyle(parent).position !== "static") return parent;
+  return parent.offsetParent as HTMLElement | null;
+};
+
 export const plain = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
 
 type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & { [key: `data-${string}`]: string | undefined };
@@ -65,7 +71,7 @@ export type Select2Props = {
   outsideClick?: "results" | "dropdown";
   /** Single only. `search`: opening moves focus to the search field of the dropdown. `selection`: the box keeps focus (native single select: Enter, Space and Alt+ArrowDown open; Escape, Tab and Alt+ArrowUp close without moving focus). */
   singleFocus?: "search" | "selection";
-  /** Preserve the viewport when moving focus into or back from the dropdown. */
+  /** Preserve the viewport when restoring focus after the dropdown closes. */
   preventFocusScroll?: boolean;
   /** Rendered between the hidden native `<select>` and the Select2 box (where a script inserts feedback `afterend` of the select). */
   afterSelect?: ReactNode;
@@ -118,9 +124,14 @@ export default function Select2({
     if (!open || !container.current || dropdownParent === null) return undefined;
     const place = () => {
       const r = container.current!.getBoundingClientRect();
-      if (dropdownParent) {
-        const p = dropdownParent.getBoundingClientRect();
-        setPosition({ top: r.bottom - p.top + dropdownParent.scrollTop, left: r.left - p.left + dropdownParent.scrollLeft, width: r.width });
+      // Como el AttachBody de Select2: el desplegable cuelga de dropdownParent, pero su
+      // `position: absolute` se mide desde el primer ancestro posicionado. Con un padre
+      // estático (#municipio-field en comedorForm) se medía desde el padre y el navegador
+      // lo dibujaba arriba de todo (#2954).
+      const base = dropdownParent ? baseDePosicion(dropdownParent) : null;
+      if (base && base !== document.body) {
+        const p = base.getBoundingClientRect();
+        setPosition({ top: r.bottom - p.top - base.clientTop + base.scrollTop, left: r.left - p.left - base.clientLeft + base.scrollLeft, width: r.width });
       } else setPosition({ top: r.bottom + window.scrollY, left: r.left + window.scrollX, width: r.width });
     };
     place();
@@ -141,8 +152,10 @@ export default function Select2({
   }, [open, dropdownParent, resultsId, outsideClick, value.length]);
 
   useLayoutEffect(() => {
-    if (open && !multiple && !selectionFocus) focusControl(search.current, preventFocusScroll);
-  }, [open, multiple, selectionFocus, preventFocusScroll]);
+    // Sin scroll: este efecto corre antes del render con la posición calculada, con el
+    // desplegable todavía en {0, 0}; enfocar con scroll subía la página entera (#2954).
+    if (open && !multiple && !selectionFocus) search.current?.focus({ preventScroll: true });
+  }, [open, multiple, selectionFocus]);
 
   // Select2 AjaxAdapter: waits `delay` after the last keystroke, cancels the previous request.
   useEffect(() => {

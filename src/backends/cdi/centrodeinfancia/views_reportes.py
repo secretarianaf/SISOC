@@ -7,10 +7,12 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 
+from centrodeinfancia.services import pasar_nomina_a_pendiente_por_edad
 from centrodeinfancia.services_reportes import (
     COLUMNAS_RESUMEN,
     REPORTE_COMPLETO,
     VARIANTES_REPORTE,
+    centros_en_alcance,
     filas_resumen,
     generar_reporte_cdi_xlsx,
     provincias_en_alcance,
@@ -40,6 +42,10 @@ class ReportesCDIView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         provincia_id = self.request.GET.get("provincia") or ""
+        # Antes de contar por estado: quien cumplió 4 años ya no figura Activo.
+        pasar_nomina_a_pendiente_por_edad(
+            centros=centros_en_alcance(self.request.user, provincia_id)
+        )
         context["provincias"] = provincias_en_alcance(self.request.user)
         context["provincia_seleccionada"] = provincia_id
         context["variantes"] = [
@@ -71,6 +77,9 @@ class ReporteCDIDescargaView(LoginRequiredMixin, View):
         # La variante pedida solo se respeta si el rol la tiene: quien no puede
         # ver el reporte completo recibe el reducido aunque edite la URL.
         variante = resolver_variante(request.user, request.GET.get("variante"))
+        pasar_nomina_a_pendiente_por_edad(
+            centros=centros_en_alcance(request.user, provincia_id)
+        )
         contenido = generar_reporte_cdi_xlsx(request.user, provincia_id, variante)
         sufijo = "" if variante == REPORTE_COMPLETO else f"-{variante}"
         nombre = f"reporte-cdi{sufijo}-{timezone.localdate():%Y%m%d}.xlsx"

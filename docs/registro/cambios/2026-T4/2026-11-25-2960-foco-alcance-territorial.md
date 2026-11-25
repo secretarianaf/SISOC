@@ -2,7 +2,12 @@
 
 ## Alcance y comportamiento
 
-El selector React daba foco a la búsqueda al abrir y devolvía el foco al control al cerrar, sin inhibir el desplazamiento implícito del navegador. Los selectores de alcance optan por `preventScroll` en ambas transiciones; conservan la búsqueda, el teclado y la carga dependiente. Los demás consumidores conservan su comportamiento.
+El selector React daba foco a la búsqueda al abrir y devolvía el foco al
+control al cerrar, sin inhibir el desplazamiento implícito del navegador.
+Con #2967 integrado, el foco de apertura no desplaza la vista por defecto.
+Los selectores de alcance activan además `preventScroll` al devolver el foco
+al cerrar; conservan la búsqueda, el teclado y la carga dependiente. Los
+demás consumidores conservan su comportamiento de cierre.
 
 ## Verificación
 

@@ -7,6 +7,7 @@ from django.apps import apps
 from core.backend_proxy import backend_de_app, pedir_json_a_backend
 from dashboard.models import Dashboard, Tablero
 from dashboard.comedores_metrics import METRIC_KEYS, actualizar_metricas_comedores
+from dashboard.services.tablero_progresar_curso import construir_tablero
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -83,3 +84,19 @@ class TableroEmbedView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         if tablero.ruta_interna:
             return redirect(tablero.ruta_interna)
         return super().get(request, *args, **kwargs)
+
+
+class TableroProgresarCursoView(LoginRequiredMixin, TemplateView):
+    """Tablero Becas Progresar · Curso obligatorio.
+
+    La lógica y el recorte por alcance del usuario viven en
+    `dashboard/services/tablero_progresar_curso/`; acá queda la pantalla.
+    El permiso se chequea en la URL (`dashboard.view_tablero_progresar_curso`).
+    """
+
+    template_name = "tablero_progresar_curso.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["tablero_datos"] = construir_tablero(self.request.user)
+        return context

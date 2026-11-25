@@ -58,6 +58,7 @@ from centrodeinfancia.access import (
     get_provincias_completas_egp_ids,
     get_object_scoped_cdi_or_404,
     puede_administrar_usuarios_cdi,
+    puede_cambiar_estado_cdi,
     puede_generar_usuario_cdi,
     puede_gestionar_referentes_cdi,
     puede_ver_credenciales_cdi,
@@ -845,6 +846,10 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["puede_generar_usuario_cdi"] = puede_generar_usuario_cdi(
             self.request.user, self.object
         )
+        context["puede_cambiar_estado_cdi"] = puede_cambiar_estado_cdi(
+            self.request.user
+        )
+        context["estados_cdi"] = CentroDeInfancia.Estado.choices
         context["puede_gestionar_referentes_cdi"] = puede_gestionar_referentes_cdi(
             self.request.user, self.object
         )

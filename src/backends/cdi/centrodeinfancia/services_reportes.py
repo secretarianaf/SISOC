@@ -84,6 +84,7 @@ COLUMNAS_CDI = (
     "horarios_funcionamiento",
     "oferta_servicios",
     "referente_con_acceso_activo",
+    "estado",
 )
 
 RUTAS_CDI = {
@@ -143,11 +144,14 @@ COLUMNAS_TRABAJADORES = (
     "tiene_cud",
     "numero_cud",
     "campos_verificados_renaper",
+    "estado_cdi",
 )
 
 RUTAS_TRABAJADORES = {
     "cdi_id": "centro_id",
     "cdi_nombre": "centro.nombre",
+    # Estado del CDI (#2945); `estado_cdi` para no confundirlo con el del niño.
+    "estado_cdi": "centro.estado",
     "provincia_contacto": "provincia_contacto.nombre",
     "municipio_contacto": "municipio_contacto.nombre",
     "localidad_contacto": "localidad_contacto.nombre",
@@ -255,6 +259,7 @@ COLUMNAS_NOMINA = (
     "renaper_responsable_1",
     "renaper_responsable_2",
     "renaper_nino_motivo",
+    "estado_cdi",
 )
 
 # Variante reducida: la que descargan los roles CDI/SIMEPI sin acceso al
@@ -285,6 +290,7 @@ COLUMNAS_TRABAJADORES_REDUCIDO = (
     "pais_nacimiento",
     "nacionalidad_trabajador",
     "email",
+    "estado_cdi",
 )
 
 COLUMNAS_NOMINA_REDUCIDO = (
@@ -310,6 +316,7 @@ COLUMNAS_NOMINA_REDUCIDO = (
     "responsable_legal_1_pais_nacimiento",
     "responsable_legal_1_nacionalidad",
     "responsable_legal_1_sexo_registral",
+    "estado_cdi",
 )
 
 REPORTE_COMPLETO = "completo"
@@ -343,6 +350,7 @@ COLUMNAS_METADATOS = ("dato", "valor")
 RUTAS_NOMINA = {
     "cdi_id": "centro_id",
     "cdi_nombre": "centro.nombre",
+    "estado_cdi": "centro.estado",
     "provincia_domicilio": "provincia_domicilio.nombre",
     "departamento_ipi_domicilio": "departamento.nombre",
     "decil_ipi_domicilio": "departamento.decil_ipi",
@@ -563,8 +571,14 @@ def resolver_variante(user, pedida=None):
     return pedida if pedida in disponibles else disponibles[0]
 
 
+# Columnas que vienen de otro modelo y declaran choices allá.
+OPCIONES_POR_RUTA = {"estado_cdi": CentroDeInfancia.Estado.choices}
+
+
 def _opciones_de_columna(modelo, columna, rutas):
     """Etiquetas de una columna: primero el campo del modelo, luego el catálogo."""
+    if columna in OPCIONES_POR_RUTA:
+        return list(OPCIONES_POR_RUTA[columna])
     if columna not in rutas:
         try:
             campo = modelo._meta.get_field(columna)  # pylint: disable=protected-access

@@ -29,7 +29,6 @@ from core.constants import UserGroups
 from core.models import Provincia
 from users.bootstrap.groups_seed import permission_codes_for_bootstrap_group
 
-
 # Contrato del archivo validado por el equipo en el issue #2508.
 COLUMNAS_NOMINA_ORIGINALES = 96
 

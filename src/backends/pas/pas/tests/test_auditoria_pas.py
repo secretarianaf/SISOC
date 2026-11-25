@@ -34,8 +34,16 @@ def persona_fixture():
 
 
 def _ultimo_cambio(obj):
-    """`changes` del último evento: {campo: [viejo, nuevo]}."""
-    return LogEntry.objects.get_for_object(obj).first().changes
+    """`changes` del último evento: {campo: [viejo, nuevo]}.
+
+    Ties on `timestamp` (Windows clock ticks every ~15.6 ms) are broken by pk.
+    """
+    return (
+        LogEntry.objects.get_for_object(obj)
+        .order_by("-timestamp", "-pk")
+        .first()
+        .changes
+    )
 
 
 def test_cambio_de_estado_y_contacto_de_la_persona_queda_auditado(persona):

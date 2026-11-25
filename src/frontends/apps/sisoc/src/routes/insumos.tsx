@@ -1,8 +1,9 @@
 import InsumosForm from "../InsumosForm";
 import InsumosList from "../InsumosList";
+import { INSUMOS_PREVIEW_LIST } from "../insumosPaths";
 import type { ShellRouteAction, ShellRouteDefinition } from "./types";
 
-const INSUMOS_FORM = /^\/v2\/sisoc\/insumos\/(?:(crear)\/?|([0-9]+)\/(editar|eliminar)\/?)$/;
+const INSUMOS_FORM = /^(?:\/v2\/sisoc)?\/insumos\/(?:(crear)\/?|([0-9]+)\/(editar|eliminar)\/?)$/;
 
 const TITLES: Record<ShellRouteAction, string> = {
   crear: "Nuevo insumo",
@@ -13,7 +14,7 @@ const TITLES: Record<ShellRouteAction, string> = {
 // Business fallback: every in-shell path without a more specific route renders the list.
 export const insumosRoute: ShellRouteDefinition = {
   name: "insumos",
-  listPath: "/v2/sisoc/insumos/",
+  listPath: INSUMOS_PREVIEW_LIST,
   match(pathname) {
     const form = pathname.match(INSUMOS_FORM);
     return { action: form?.[1] === "crear" ? "crear" : form?.[3] as "editar" | "eliminar" | undefined, id: form?.[2] };

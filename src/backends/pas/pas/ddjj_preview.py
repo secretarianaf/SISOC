@@ -1,4 +1,4 @@
-"""Explicit local React preview of the public DDJJ; never mounted by a production URLconf.
+"""React entry for the public DDJJ, mounted when PAS is active and its build exists.
 
 The entry keeps the canonical invitation URL and the native view: unknown (404)
 and unavailable (410) invitations and every POST still get the native response.
@@ -100,7 +100,7 @@ def _frozen_assets(root):
 
 
 def ddjj_preview_patterns(build_directory):
-    """Freeze an explicit local ``apps/pas`` build for a disposable preview URLconf."""
+    """Freeze a local ``apps/pas`` build for the canonical public entry."""
     original = Path(build_directory)
     root = original.resolve(strict=True)
     index = root / "index.html"

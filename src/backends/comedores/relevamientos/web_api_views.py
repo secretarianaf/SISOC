@@ -135,6 +135,13 @@ class RelevamientosListadoWebView(_NativeReadView):
                 "urls": {
                     "listado": reverse("relevamientos", args=[comedor_id]),
                     "alta": reverse("relevamiento_create_edit_ajax", args=[comedor_id]),
+                    "crear_formulario": (
+                        reverse("relevamiento_crear", args=[comedor_id])
+                        if _has_any_permissions(
+                            request.user, ["relevamientos.add_relevamiento"]
+                        )
+                        else None
+                    ),
                     "acta_crear": reverse(
                         "acta_complementaria_crear", args=[comedor_id]
                     ),
@@ -197,6 +204,15 @@ class RelevamientoDetalleWebView(_NativeReadView):
                     "comedores": reverse("comedores"),
                     "comedor": reverse("comedor_detalle", args=[comedor_id]),
                     "alta": reverse("relevamiento_create_edit_ajax", args=[comedor_id]),
+                    "editar_formulario": (
+                        reverse(
+                            "relevamiento_editar", args=[comedor_id, relevamiento.id]
+                        )
+                        if _has_any_permissions(
+                            request.user, ["relevamientos.change_relevamiento"]
+                        )
+                        else None
+                    ),
                     "eliminar": reverse(
                         "relevamiento_eliminar", args=[comedor_id, relevamiento.id]
                     ),

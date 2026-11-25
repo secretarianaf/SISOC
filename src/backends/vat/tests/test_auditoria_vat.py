@@ -82,8 +82,16 @@ def _ciudadano(documento):
 
 
 def _ultimo_cambio(obj):
-    """`changes` del último evento: {campo: [viejo, nuevo]}."""
-    return LogEntry.objects.get_for_object(obj).first().changes
+    """`changes` del último evento: {campo: [viejo, nuevo]}.
+
+    Ties on `timestamp` (Windows clock ticks every ~15.6 ms) are broken by pk.
+    """
+    return (
+        LogEntry.objects.get_for_object(obj)
+        .order_by("-timestamp", "-pk")
+        .first()
+        .changes
+    )
 
 
 def test_cambio_de_estado_de_inscripcion_queda_auditado(comision_curso):
@@ -98,7 +106,9 @@ def test_cambio_de_estado_de_inscripcion_queda_auditado(comision_curso):
     inscripcion.observaciones = "Otro dato personal"
     inscripcion.save()
 
-    entradas = LogEntry.objects.get_for_object(inscripcion)
+    entradas = LogEntry.objects.get_for_object(inscripcion).order_by(
+        "-timestamp", "-pk"
+    )
     assert entradas.count() == 2  # alta + modificación
     cambios = entradas.first().changes
     assert cambios["estado"] == ["pre_inscripta", "inscripta"]

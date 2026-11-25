@@ -9,6 +9,7 @@ import {
   tabsValid, totalesValid, type EscuelaFormData, type Totales,
 } from "./inspeccionesEscuelasApi";
 import { escuelasNavigation } from "./inspeccionesEscuelasNavigation";
+import { EscuelasImportHelp, ImportSteps } from "./inspeccionesImportacionUI";
 import { useBootstrapModal } from "./inspeccionesModal";
 import { submitForm, useScreen, type Loaded } from "./inspeccionesScreen";
 import InspToasts, { type InspMessage } from "./inspeccionesToasts";
@@ -60,7 +61,7 @@ function escuelasValid(v: unknown): v is EscuelasData {
     apiUrlValid(v.urls.nueva) && internal(v.urls.importar) && (v.editar_url === null || apiUrlValid(v.editar_url)) && messagesValid(v.messages);
 }
 
-function Encabezado({ totales, tabs }: { totales: Totales; tabs: EscuelasData["tabs"] }) {
+export function Encabezado({ totales, tabs }: { totales: Totales; tabs: EscuelasData["tabs"] }) {
   return (
     <>
       <h1 className="insp-titulo">Inspecciones escolares</h1>
@@ -199,26 +200,8 @@ export function InspModal({ id, labelledBy, dialogClass, modalRef, close, childr
   );
 }
 
-const PASOS = (
-  <ol className="insp-pasos" aria-label="Pasos">
-    <li className="actual" aria-current="step"><span className="insp-paso-num">1</span>{" Archivo "}</li>
-    <li className="insp-paso-linea" aria-hidden="true" />
-    <li className=""><span className="insp-paso-num">2</span>{" Revisión "}</li>
-    <li className="insp-paso-linea" aria-hidden="true" />
-    <li className=""><span className="insp-paso-num">3</span>{" Resultado "}</li>
-  </ol>
-);
-
-const ESCUELAS_HELP = (
-  <p className="small text-muted">
-            {"Columnas del padrón oficial: "}<strong>Jurisdicción</strong>{", "}<strong>Localidad</strong>{", "}
-            <strong>Cueanexo</strong>{" y "}<strong>Nombre</strong>
-            {" (obligatorias), Domicilio, C. P., Teléfono y Mail. Del Excel se lee sólo la primera hoja y el encabezado puede estar después de filas de título. El Cueanexo lleva 9 dígitos: dejá la columna como texto para conservar los ceros iniciales. Una escuela que ya está en el catálogo se actualiza; nada se borra. Antes de guardar vas a ver qué se importa y qué queda a revisar."}
-  </p>
-);
-
 /** `partials/modal_importar.html` for escuelas: the native multipart POST (IN01). */
-export function ImportModal({ action, trigger, close, title = "Importar escuelas", tipo = "escuelas", help = ESCUELAS_HELP }: {
+export function ImportModal({ action, trigger, close, title = "Importar escuelas", tipo = "escuelas", help = <EscuelasImportHelp /> }: {
   action: string; trigger: HTMLElement; close: () => void; title?: string; tipo?: string; help?: ReactNode;
 }) {
   const modal = useRef<HTMLDivElement>(null);
@@ -234,7 +217,7 @@ export function ImportModal({ action, trigger, close, title = "Importar escuelas
           <button type="button" className="btn-close" aria-label="Cerrar" onClick={close} />
         </div>
         <div className="modal-body">
-          {PASOS}
+          <ImportSteps step={1} />
           {help}
           <label className="form-label" htmlFor={`id_archivo_${tipo}`}>Archivo Excel (.xlsx) o CSV</label>
           <input id={`id_archivo_${tipo}`} className="form-control" type="file" name="archivo" accept=".xlsx,.csv" required />

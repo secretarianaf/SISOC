@@ -6,13 +6,20 @@ Ver ``centrodeinfancia.web_api`` (reportes),
 ``centrodeinfancia.web_api_nomina`` (ficha de un destinatario de la nómina) y
 ``centrodeinfancia.web_api_nomina_lista`` (lista de la nómina y derivación) y
 ``centrodeinfancia.web_api_legajo`` (ficha del centro y sus acciones) y
-``centrodeinfancia.web_api_intervenciones`` (detalle de intervención y su documento).
+``centrodeinfancia.web_api_intervenciones`` (detalle de intervención y su documento) y
+``centrodeinfancia.web_api_bajas`` (confirmación de baja de centro y de nómina).
 """
 
 from django.urls import path
 
 from centrodeinfancia.web_api import ReportesWebView
+from centrodeinfancia.web_api_bajas import CentroEliminarWebView, NominaEliminarWebView
 from centrodeinfancia.web_api_centros import CentrosListWebView
+from centrodeinfancia.web_api_formulario_calidad import (
+    CalidadCargarWebView,
+    CalidadDetalleWebView,
+    CalidadHistorialWebView,
+)
 from centrodeinfancia.web_api_legajo import (
     CentroDetalleWebView,
     trabajador_eliminar_web,
@@ -36,6 +43,21 @@ from centrodeinfancia.web_api_observaciones import (
 )
 
 urlpatterns = [
+    path(
+        "centros/<int:pk>/calidad/",
+        CalidadHistorialWebView.as_view(),
+        name="centrodeinfancia_web_calidad_listado",
+    ),
+    path(
+        "centros/<int:pk>/calidad/cargar/",
+        CalidadCargarWebView.as_view(),
+        name="centrodeinfancia_web_calidad_cargar",
+    ),
+    path(
+        "centros/<int:pk>/calidad/<int:form_pk>/",
+        CalidadDetalleWebView.as_view(),
+        name="centrodeinfancia_web_calidad_detalle",
+    ),
     path("reportes/", ReportesWebView.as_view(), name="centrodeinfancia_web_reportes"),
     path("centros/", CentrosListWebView.as_view(), name="centrodeinfancia_web_centros"),
     path(
@@ -102,5 +124,15 @@ urlpatterns = [
         "observaciones/<int:pk>/eliminar/",
         ObservacionEliminarWebView.as_view(),
         name="centrodeinfancia_web_observacion_eliminar",
+    ),
+    path(
+        "centros/<int:pk>/eliminar/",
+        CentroEliminarWebView.as_view(),
+        name="centrodeinfancia_web_centro_eliminar",
+    ),
+    path(
+        "centros/<int:pk>/nomina/<int:pk2>/eliminar/",
+        NominaEliminarWebView.as_view(),
+        name="centrodeinfancia_web_nomina_eliminar",
     ),
 ]

@@ -16,6 +16,7 @@
         <h2 class="mb-4">{{ form.instance.id|default:"Crear" }} Seguimiento mensual</h2>
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
+            {{ form.non_field_errors }}
             <div class="row">
                 <div class="col-md-6">
                     <div class="card">
@@ -25,6 +26,8 @@
                         <div class="card-body">
                             {{ form.mes|as_crispy_field }}
                             {{ form.anio|as_crispy_field }}
+                            {{ form.linea_programatica|as_crispy_field }}
+                            {{ form.estado|as_crispy_field }}
                             {{ form.observaciones|as_crispy_field }}
                         </div>
                     </div>

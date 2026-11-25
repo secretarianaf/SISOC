@@ -2,6 +2,10 @@
 
 from django.urls import path
 
+from relevamientos.web_api_editor import (
+    RelevamientoCrearWebView,
+    RelevamientoEditarWebView,
+)
 from relevamientos.web_api_forms import (
     ActaCrearWebView,
     ActaEditarWebView,
@@ -26,6 +30,16 @@ from relevamientos.web_api_views import (
 )
 
 urlpatterns = [
+    path(
+        "<int:comedor_pk>/relevamiento/crear/",
+        RelevamientoCrearWebView.as_view(),
+        name="relevamientos_web_crear",
+    ),
+    path(
+        "<int:comedor_pk>/relevamiento/<int:pk>/editar/",
+        RelevamientoEditarWebView.as_view(),
+        name="relevamientos_web_editar",
+    ),
     path(
         "<int:comedor_pk>/",
         RelevamientosListadoWebView.as_view(),

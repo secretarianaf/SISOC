@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.http import FileResponse, Http404, JsonResponse
 from django.urls import reverse, reverse_lazy
+from django.utils.functional import cached_property
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -118,12 +119,19 @@ class RendicionCuentaMensualListView(LoginRequiredMixin, ListView):
         """Retorna rendiciones ordenadas para evitar warning de paginación"""
         return RendicionCuentaMensual.objects.order_by("-id")
 
+    @cached_property
+    def comedor(self):
+        # Shared by the native page and the React transport: same user scope.
+        return ComedorService.get_scoped_comedor_or_404(
+            self.kwargs["comedor_id"], self.request.user
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor_id = self.kwargs.get("comedor_id")
         context["rendiciones_cuentas_mensuales"] = (
             RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(
-                ComedorService.get_scoped_comedor_or_404(comedor_id, self.request.user)
+                self.comedor
             )
         )
         context["comedorid"] = comedor_id
@@ -1011,7 +1019,6 @@ class RendicionCuentaMensualCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         comedor_id = self.kwargs.get("comedor_id")
         context["comedorid"] = comedor_id
-        context["form"] = RendicionCuentaMensualForm()
         context["documentacion_adjunta_form"] = DocumentacionAdjuntaForm()
         return context
 

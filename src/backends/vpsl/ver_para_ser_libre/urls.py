@@ -3,6 +3,15 @@ from django.views.decorators.http import require_POST
 
 from core.decorators import permissions_all_required, permissions_any_required
 from ver_para_ser_libre import views
+from ver_para_ser_libre.canonical_entry import canonical_entry
+from ver_para_ser_libre.canonical_itinerarios import (
+    CanonicalItinerariosListView,
+    ITINERARIOS_BUILD_MARKER,
+)
+from ver_para_ser_libre.canonical_sedes import (
+    CanonicalSedesListView,
+    SEDES_BUILD_MARKER,
+)
 
 urlpatterns = [
     path(
@@ -13,7 +22,12 @@ urlpatterns = [
                 "ver_para_ser_libre.view_all_itinerarios_vpsl",
                 "ver_para_ser_libre.create_itinerarios_any_province_vpsl",
             ]
-        )(views.ItinerarioListView.as_view()),
+        )(
+            canonical_entry(
+                CanonicalItinerariosListView.as_view(),
+                build_marker=ITINERARIOS_BUILD_MARKER,
+            )
+        ),
         name="vpsl_itinerario_list",
     ),
     path(
@@ -63,28 +77,30 @@ urlpatterns = [
     path(
         "ver-para-ser-libre/sedes/",
         permissions_any_required(["ver_para_ser_libre.view_sedevpsl"])(
-            views.SedeListView.as_view()
+            canonical_entry(
+                CanonicalSedesListView.as_view(), build_marker=SEDES_BUILD_MARKER
+            )
         ),
         name="vpsl_sede_list",
     ),
     path(
         "ver-para-ser-libre/sedes/crear/",
         permissions_any_required(["ver_para_ser_libre.add_sedevpsl"])(
-            views.SedeCreateView.as_view()
+            canonical_entry(views.SedeCreateView.as_view())
         ),
         name="vpsl_sede_create",
     ),
     path(
         "ver-para-ser-libre/sedes/<int:pk>/editar/",
         permissions_any_required(["ver_para_ser_libre.change_sedevpsl"])(
-            views.SedeUpdateView.as_view()
+            canonical_entry(views.SedeUpdateView.as_view())
         ),
         name="vpsl_sede_update",
     ),
     path(
         "ver-para-ser-libre/sedes/<int:pk>/eliminar/",
         permissions_any_required(["ver_para_ser_libre.delete_sedevpsl"])(
-            views.SedeDeleteView.as_view()
+            canonical_entry(views.SedeDeleteView.as_view())
         ),
         name="vpsl_sede_delete",
     ),
@@ -95,7 +111,7 @@ urlpatterns = [
                 "ver_para_ser_libre.add_itinerariovpsl",
                 "ver_para_ser_libre.create_itinerarios_any_province_vpsl",
             ]
-        )(views.ItinerarioCreateView.as_view()),
+        )(canonical_entry(views.ItinerarioCreateView.as_view())),
         name="vpsl_itinerario_create",
     ),
     path(
@@ -106,7 +122,7 @@ urlpatterns = [
                 "ver_para_ser_libre.view_all_itinerarios_vpsl",
                 "ver_para_ser_libre.create_itinerarios_any_province_vpsl",
             ]
-        )(views.ItinerarioDetailView.as_view()),
+        )(canonical_entry(views.ItinerarioDetailView.as_view())),
         name="vpsl_itinerario_detail",
     ),
     path(
@@ -119,21 +135,21 @@ urlpatterns = [
     path(
         "ver-para-ser-libre/<int:pk>/editar/",
         permissions_any_required(["ver_para_ser_libre.change_itinerariovpsl"])(
-            views.ItinerarioUpdateView.as_view()
+            canonical_entry(views.ItinerarioUpdateView.as_view())
         ),
         name="vpsl_itinerario_update",
     ),
     path(
         "ver-para-ser-libre/<int:pk>/eliminar/",
         permissions_any_required(["ver_para_ser_libre.delete_itinerariovpsl"])(
-            views.ItinerarioDeleteView.as_view()
+            canonical_entry(views.ItinerarioDeleteView.as_view())
         ),
         name="vpsl_itinerario_delete",
     ),
     path(
         "ver-para-ser-libre/<int:pk>/subsanar/",
         permissions_any_required(["ver_para_ser_libre.change_itinerariovpsl"])(
-            views.ItinerarioSubsanarView.as_view()
+            canonical_entry(views.ItinerarioSubsanarView.as_view())
         ),
         name="vpsl_itinerario_subsanar",
     ),
@@ -154,14 +170,14 @@ urlpatterns = [
     path(
         "ver-para-ser-libre/<int:itinerario_pk>/jornadas/crear/",
         permissions_any_required(["ver_para_ser_libre.add_jornadavpsl"])(
-            views.JornadaCreateView.as_view()
+            canonical_entry(views.JornadaCreateView.as_view())
         ),
         name="vpsl_jornada_create",
     ),
     path(
         "ver-para-ser-libre/jornadas/<int:pk>/",
         permissions_any_required(["ver_para_ser_libre.view_jornadavpsl"])(
-            views.JornadaDetailView.as_view()
+            canonical_entry(views.JornadaDetailView.as_view())
         ),
         name="vpsl_jornada_detail",
     ),
@@ -175,14 +191,14 @@ urlpatterns = [
     path(
         "ver-para-ser-libre/jornadas/<int:pk>/editar/",
         permissions_any_required(["ver_para_ser_libre.change_jornadavpsl"])(
-            views.JornadaUpdateView.as_view()
+            canonical_entry(views.JornadaUpdateView.as_view())
         ),
         name="vpsl_jornada_update",
     ),
     path(
         "ver-para-ser-libre/jornadas/<int:pk>/eliminar/",
         permissions_any_required(["ver_para_ser_libre.delete_jornadavpsl"])(
-            views.JornadaDeleteView.as_view()
+            canonical_entry(views.JornadaDeleteView.as_view())
         ),
         name="vpsl_jornada_delete",
     ),
@@ -203,35 +219,35 @@ urlpatterns = [
     path(
         "ver-para-ser-libre/jornadas/<int:jornada_pk>/checklist/crear/",
         permissions_any_required(["ver_para_ser_libre.add_checklistjornadavpsl"])(
-            views.ChecklistCreateView.as_view()
+            canonical_entry(views.ChecklistCreateView.as_view())
         ),
         name="vpsl_checklist_create",
     ),
     path(
         "ver-para-ser-libre/jornadas/<int:jornada_pk>/registros/crear/",
         permissions_any_required(["ver_para_ser_libre.add_registronominalvpsl"])(
-            views.RegistroNominalCreateView.as_view()
+            canonical_entry(views.RegistroNominalCreateView.as_view())
         ),
         name="vpsl_registro_create",
     ),
     path(
         "ver-para-ser-libre/registros/<int:pk>/editar/",
         permissions_any_required(["ver_para_ser_libre.change_registronominalvpsl"])(
-            views.RegistroNominalUpdateView.as_view()
+            canonical_entry(views.RegistroNominalUpdateView.as_view())
         ),
         name="vpsl_registro_update",
     ),
     path(
         "ver-para-ser-libre/registros/<int:pk>/eliminar/",
         permissions_any_required(["ver_para_ser_libre.delete_registronominalvpsl"])(
-            views.RegistroNominalDeleteView.as_view()
+            canonical_entry(views.RegistroNominalDeleteView.as_view())
         ),
         name="vpsl_registro_delete",
     ),
     path(
         "ver-para-ser-libre/laboratorio/<int:pk>/editar/",
         permissions_any_required(["ver_para_ser_libre.change_casolaboratoriovpsl"])(
-            views.CasoLaboratorioUpdateView.as_view()
+            canonical_entry(views.CasoLaboratorioUpdateView.as_view())
         ),
         name="vpsl_laboratorio_update",
     ),
@@ -245,7 +261,7 @@ urlpatterns = [
     path(
         "ver-para-ser-libre/jornadas/<int:jornada_pk>/cierre/crear/",
         permissions_any_required(["ver_para_ser_libre.add_cierrediariovpsl"])(
-            views.CierreDiarioCreateView.as_view()
+            canonical_entry(views.CierreDiarioCreateView.as_view())
         ),
         name="vpsl_cierre_create",
     ),

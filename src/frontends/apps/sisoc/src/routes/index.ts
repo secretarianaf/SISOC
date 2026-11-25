@@ -39,6 +39,7 @@ import { ciudadanoImportacionLoteRoute, ciudadanoImportacionRoute } from "./ciud
 import { auditoriaEventoRoute } from "./auditoriaEvento";
 import { auditoriaListadoRoute, ciudadanoHistorialRoute } from "./ciudadanoHistorial";
 import { cdiCentroDetalleRoute } from "./cdiCentroDetalle";
+import { cdiFormularioCalidadRoute } from "./cdiFormularioCalidad";
 import { cdiCentroFormRoute } from "./cdiCentroForm";
 import { cdiDocumentacionRoute } from "./cdiDocumentacion";
 import { cdiCentrosRoute } from "./cdiCentros";
@@ -47,6 +48,7 @@ import { cdiNominaRoute } from "./cdiNomina";
 import { cdiNominaListaRoute } from "./cdiNominaLista";
 import { cdiNominaAsistenciaRoute } from "./cdiNominaAsistencia";
 import { cdiNominaFormularioRoute } from "./cdiNominaFormulario";
+import { cdiBajasRoute } from "./cdiBajas";
 import { cdiObservacionesRoute } from "./cdiObservaciones";
 import { cdiTrabajadorRoute } from "./cdiTrabajadores";
 import { cdiTrabajadorFormRoute } from "./cdiTrabajadoresForm";
@@ -59,6 +61,7 @@ import { comedorActividadesRoute } from "./comedorActividades";
 import { comedorCursosRoute } from "./comedorCursos";
 import { comedorDuplaAsignarRoute } from "./comedorDuplaAsignar";
 import { comedorNominaCrearRoute } from "./comedorNominaCrear";
+import { comedorNominaBajaRoute } from "./comedorNominaBaja";
 import { cdiReportesRoute } from "./cdiReportes";
 import { cdfActividadFormRoute } from "./cdfActividadForm";
 import { cdfActividadListRoute } from "./cdfActividadList";
@@ -75,6 +78,7 @@ import { datacalleCasosRoute } from "./datacalleCasos";
 import { datacalleRelevamientosRoute } from "./datacalleRelevamientos";
 import { dispositivosRoute } from "./dispositivos";
 import { dispositivoFormRoute } from "./dispositivoForm";
+import { dispositivoEliminarRoute } from "./dispositivoEliminar";
 import { cdfCentroUsuarioRoute } from "./cdfCentroUsuario";
 import { dashboardRoute, dashboardTableroRoute } from "./dashboardTableros";
 import { duplasRoute } from "./duplas";
@@ -87,6 +91,7 @@ import { expedientesPagosRoute } from "./expedientesPagos";
 import { importarExpedientesRoute } from "./importarExpedientes";
 import { rendicionFinalRoute } from "./rendicionFinal";
 import { rendicionMensualRoute } from "./rendicionMensual";
+import { rendicionMensualPorComedorRoute } from "./rendicionMensualPorComedor";
 import { rendicionMensualDetalleRoute } from "./rendicionMensualDetalle";
 import { rendicionMensualFormRoute } from "./rendicionMensualForm";
 import { rendicionMensualAuditoriaRoute } from "./rendicionMensualAuditoria";
@@ -109,6 +114,7 @@ import { inspeccionesActaDetalleRoute } from "./inspeccionesActaDetalle";
 import { inspeccionesActasRoute } from "./inspeccionesActas";
 import { inspeccionesAsignacionesRoute } from "./inspeccionesAsignaciones";
 import { inspeccionesEscuelasRoute } from "./inspeccionesEscuelas";
+import { inspeccionesImportacionRoute } from "./inspeccionesImportacion";
 import { inspeccionesTableroRoute } from "./inspeccionesTablero";
 import { loginRoute } from "./login";
 import { montosRoute } from "./montos";
@@ -203,9 +209,12 @@ export const ROUTES: RouteDefinition[] = [
   inspeccionesActaDetalleRoute,
   inspeccionesAsignacionesRoute,
   inspeccionesEscuelasRoute,
+  inspeccionesImportacionRoute,
   inspeccionesTableroRoute,
   cdiReportesRoute,
   cdiObservacionesRoute,
+  cdiFormularioCalidadRoute,
+  cdiBajasRoute,
   cdiCentrosRoute,
   cdiCentroDetalleRoute,
   cdiCentroFormRoute,
@@ -226,6 +235,7 @@ export const ROUTES: RouteDefinition[] = [
   cdfCentroFormRoute,
   dispositivosRoute,
   dispositivoFormRoute,
+  dispositivoEliminarRoute,
   cdfCentroUsuarioRoute,
   cdfBeneficiariosRoute,
   cdfActividadRoute,
@@ -268,6 +278,7 @@ export const ROUTES: RouteDefinition[] = [
   expedientesPagosRoute,
   importarExpedientesRoute,
   rendicionMensualRoute,
+  rendicionMensualPorComedorRoute,
   rendicionMensualDetalleRoute,
   rendicionMensualFormRoute,
   rendicionMensualAuditoriaRoute,
@@ -281,6 +292,7 @@ export const ROUTES: RouteDefinition[] = [
   comedorCursosRoute,
   comedorDuplaAsignarRoute,
   comedorNominaCrearRoute,
+  comedorNominaBajaRoute,
   vatVouchersRoute,
   vatCatalogosRoute,
   vatCatalogosFormRoute,

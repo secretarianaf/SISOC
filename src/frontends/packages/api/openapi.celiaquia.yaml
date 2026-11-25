@@ -3635,6 +3635,12 @@ components:
           type: boolean
         clasificacion:
           type: string
+        clasificacion_label:
+          type: string
+        clasificacion_tone:
+          type: string
+        integra_dupla:
+          type: boolean
         creado_en:
           type: string
           format: date-time

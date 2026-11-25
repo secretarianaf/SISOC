@@ -24,6 +24,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from core.decorators import permissions_all_required, permissions_any_required
 from dispositivos.urls import MAPA_PERMISSIONS
 from dispositivos.views import (
+    DispositivoDeleteView,
     DispositivoDetailView,
     DispositivoListView,
     DispositivoMapView,
@@ -33,6 +34,7 @@ BUILD_ASSETS = "/v2/sisoc/assets/"
 PUBLIC_ASSETS = "/dispositivos/react/assets/"
 ASSET_SUFFIXES = {".js", ".css", ".woff", ".woff2", ".svg", ".png", ".jpg", ".ico"}
 VIEW_DISPOSITIVO = "dispositivos.view_dispositivo"
+DELETE_DISPOSITIVO = "dispositivos.delete_dispositivo"
 
 
 def index_response(request, index_bytes):
@@ -70,6 +72,21 @@ class DispositivoMapEntry(DispositivoMapView):
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class DispositivoDetailEntry(DispositivoDetailView):
     """The native object rule (404 out of scope or missing), then the index."""
+
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class DispositivoEliminarEntry(DispositivoDeleteView):
+    """Delete confirmation: the native scope 404 first, then the index.
+
+    Only GET/HEAD are replaced; the confirmed POST runs the inherited native
+    ``DeleteView.post`` (delete, messages and redirect).
+    """
 
     index_bytes = b""
 
@@ -136,6 +153,7 @@ def dispositivos_preview_patterns(build_directory):
     )
     view = permissions_any_required([VIEW_DISPOSITIVO])
     mapa = permissions_all_required(MAPA_PERMISSIONS)
+    delete = permissions_any_required([DELETE_DISPOSITIVO])
     return [
         path(
             "dispositivos/mapa/",
@@ -144,6 +162,10 @@ def dispositivos_preview_patterns(build_directory):
         path(
             "dispositivos/<int:pk>/",
             view(DispositivoDetailEntry.as_view(index_bytes=index_bytes)),
+        ),
+        path(
+            "dispositivos/<int:pk>/eliminar",
+            delete(DispositivoEliminarEntry.as_view(index_bytes=index_bytes)),
         ),
         path(
             "dispositivos/",

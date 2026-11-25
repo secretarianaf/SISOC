@@ -6,16 +6,65 @@ from threading import Event, current_thread
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, transaction
 from django.db.models.query import QuerySet
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
 from comedores.models import Comedor
-from importarexpediente.models import ArchivosImportados, CambioEstadoImportacion
+from importarexpediente.models import (
+    ArchivosImportados,
+    BloqueoImportacion,
+    CambioEstadoImportacion,
+)
 from importarexpediente import views
+from importarexpediente.services import bloquear_importaciones
 from importarexpediente.tests.test_import_flow import _upload_csv
+
+pytestmark = pytest.mark.mysql_compat
+
+
+@pytest.mark.django_db(transaction=True)
+def test_bloqueo_se_crea_y_serializa_al_iniciar_sin_fila():
+    if connection.vendor != "mysql":
+        pytest.skip("Requires real MySQL row locking")
+    BloqueoImportacion.objects.all().delete()
+    acquired, attempted, second_acquired, proceed = Event(), Event(), Event(), Event()
+
+    def first():
+        close_old_connections()
+        try:
+            with transaction.atomic():
+                bloquear_importaciones()
+                acquired.set()
+                assert proceed.wait(15)
+        finally:
+            close_old_connections()
+
+    def second():
+        close_old_connections()
+        try:
+            with transaction.atomic():
+                attempted.set()
+                bloquear_importaciones()
+                second_acquired.set()
+        finally:
+            close_old_connections()
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        one = pool.submit(first)
+        try:
+            assert acquired.wait(15)
+            two = pool.submit(second)
+            assert attempted.wait(15)
+            assert not second_acquired.wait(3)
+        finally:
+            proceed.set()
+        one.result(timeout=30)
+        two.result(timeout=30)
+    assert second_acquired.is_set()
+    assert BloqueoImportacion.objects.count() == 1
 
 
 @pytest.mark.django_db(transaction=True)
@@ -65,7 +114,8 @@ def test_undo_preserva_cambio_concurrente_de_mes(monkeypatch):
     with ThreadPoolExecutor(max_workers=1, thread_name_prefix="undo") as pool:
         result = pool.submit(undo)
         try:
-            assert waiting.wait(15)
+            if not waiting.wait(30):
+                pytest.fail(f"Undo did not reach update: {result.result(timeout=5)}")
             Comedor.all_objects.filter(pk=comedor.pk).update(mes_ejecucion=99)
         finally:
             proceed.set()

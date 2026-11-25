@@ -45,5 +45,14 @@
 - Las pruebas de concurrencia ejecutan dos transacciones reales sobre MySQL
   aislado. No cubren cambios en otros campos ni escrituras externas que no
   respeten las transacciones del sistema.
+- Durante un despliegue selectivo, las instancias anteriores pueden seguir
+  activas mientras se ejecuta la migración y no toman el bloqueo nuevo. Antes
+  del despliegue o rollback se debe detener la importación y reversión de lotes
+  hasta que todas las instancias estén actualizadas; la migración sola no
+  protege una convivencia de versiones. No se verificó ese procedimiento en un
+  entorno real y requiere coordinación operativa antes de desplegar.
+- El bloqueo solo coordina este flujo. El `UPDATE` condicionado evita pisar un
+  valor diferente de estado o mes, pero no detecta un cambio externo que vuelva
+  a dejar exactamente esos mismos valores, ni serializa otras escrituras.
 - Para revertir el cambio, revertir `0017` antes de `0016` y el código asociado;
   no hacerlo mientras haya operaciones de importación o reversión en curso.

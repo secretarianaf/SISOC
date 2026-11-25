@@ -1108,6 +1108,7 @@
           {
             "name": "menu_prestacion",
             "label": "Prestación",
+            "titulo": "3.4 Detalle del menú brindado al momento de la entrevista (listar todos los alimentos utilizados y las respectivas cantidades)",
             "type": "enum",
             "options": [
               {
@@ -1172,6 +1173,7 @@
           {
             "name": "menu_dia_1",
             "label": "Día 1",
+            "titulo": "3.5 Indique el menú que sirvieron los últimos 4 días:",
             "type": "longtext"
           },
           {
@@ -1527,6 +1529,7 @@
           {
             "name": "aprobados_desayuno",
             "label": "Desayuno: Destinatarios aprobados",
+            "titulo": "3.2 TIPO DE PRESTACIÓN (Completar con la cantidad de personas)",
             "type": "number"
           },
           {
@@ -1645,6 +1648,7 @@
           {
             "name": "frecuencia_entrega_modulo",
             "label": "Frecuencia de entrega",
+            "titulo": "3.7 Frecuencia, alimentos y cantidades (kg, paquetes, botellas) que se incluyen en la entrega:",
             "type": "enum",
             "options": [
               {
@@ -1725,6 +1729,7 @@
           {
             "name": "cantidad_modulos_a",
             "label": "A: Cantidad total de módulos alimentarios (mensuales)",
+            "titulo": "3.8 ¿Qué cantidad de módulos se entregan según tipo?",
             "type": "number"
           },
           {
@@ -2090,6 +2095,7 @@
           {
             "name": "recibe_donaciones",
             "label": "Donaciones: Recibe",
+            "titulo": "Origen y tipo de recursos",
             "type": "bool"
           },
           {
@@ -2331,6 +2337,7 @@
           {
             "name": "compra_negocio_cercania",
             "label": "Negocio de cercanía",
+            "titulo": "4.2 Lugares donde se realizan habitualmente las compras (respuesta múltiple, cada uno ☐Sí ☐No)",
             "type": "bool"
           },
           {
@@ -2481,6 +2488,7 @@
           {
             "name": "menu_prestacion",
             "label": "Prestación",
+            "titulo": "5.4 Detalle del menú brindado al momento de la entrevista (listar todos los alimentos utilizados y las respectivas cantidades)",
             "type": "enum",
             "options": [
               {
@@ -2550,6 +2558,7 @@
           {
             "name": "menu_dia_1",
             "label": "Día 1",
+            "titulo": "5.5 Indique el menú que sirvieron los últimos 4 días:",
             "type": "longtext"
           },
           {
@@ -2625,6 +2634,7 @@
           {
             "name": "almacenamiento_alimentos_adecuado",
             "label": "7.1.1 ¿Es adecuado el almacenamiento de alimentos?",
+            "titulo": "7.1 Seguridad e higiene",
             "type": "bool",
             "etiquetasSiNo": [
               "SI",
@@ -2663,6 +2673,7 @@
           {
             "name": "condicion_limpieza",
             "label": "Limpieza",
+            "titulo": "7.1.4 En el espacio donde se preparan los alimentos las condiciones de las instalaciones son:",
             "type": "enum",
             "options": [
               {
@@ -2715,6 +2726,7 @@
           {
             "name": "basura_recipiente",
             "label": "Recipiente para la basura",
+            "titulo": "7.1.6 De acuerdo al relevamiento visual del técnico",
             "type": "bool"
           },
           {
@@ -2730,6 +2742,7 @@
           {
             "name": "combustible_gas_red",
             "label": "7.2.1 ¿Cuál es el tipo de combustible que utilizan para cocinar? — Gas de red (n° de orden)",
+            "titulo": "7.2 Servicios básicos",
             "type": "number"
           },
           {
@@ -3259,6 +3272,7 @@
           {
             "name": "recibe_donaciones",
             "label": "Donaciones: Recibe",
+            "titulo": "Origen y tipo de recursos",
             "type": "bool"
           },
           {
@@ -3500,6 +3514,7 @@
           {
             "name": "compra_negocio_cercania",
             "label": "Negocio de cercanía",
+            "titulo": "4.2 Lugares donde se realizan habitualmente las compras (respuesta múltiple, cada uno ☐Sí ☐No)",
             "type": "bool"
           },
           {
@@ -3561,6 +3576,7 @@
           {
             "name": "aprobados_desayuno",
             "label": "Desayuno: Destinatarios aprobados",
+            "titulo": "5.2 TIPO DE PRESTACIÓN (Completar con la cantidad de personas)",
             "type": "number"
           },
           {
@@ -3679,6 +3695,7 @@
           {
             "name": "frecuencia_entrega_modulo",
             "label": "Frecuencia de entrega",
+            "titulo": "5.7 Frecuencia, alimentos y cantidades (kg, paquetes, botellas) que se incluyen en la entrega:",
             "type": "enum",
             "options": [
               {
@@ -3759,6 +3776,7 @@
           {
             "name": "cantidad_modulos_a",
             "label": "A: Cantidad total de módulos alimentarios (mensuales)",
+            "titulo": "5.8 ¿Qué cantidad de módulos se entregan según tipo?",
             "type": "number"
           },
           {
@@ -3820,6 +3838,7 @@
           {
             "name": "almacenamiento_alimentos_adecuado",
             "label": "7.1.1 ¿Es adecuado el almacenamiento de alimentos?",
+            "titulo": "7.1 Seguridad e higiene",
             "type": "bool",
             "etiquetasSiNo": [
               "SI",
@@ -3858,6 +3877,7 @@
           {
             "name": "condicion_limpieza",
             "label": "Limpieza",
+            "titulo": "7.1.4 En el espacio donde se entregan los alimentos las condiciones de las instalaciones son:",
             "type": "enum",
             "options": [
               {
@@ -3910,6 +3930,7 @@
           {
             "name": "basura_recipiente",
             "label": "Recipiente para la basura",
+            "titulo": "7.1.6 De acuerdo al relevamiento visual del técnico",
             "type": "bool"
           },
           {
@@ -3925,6 +3946,7 @@
           {
             "name": "agua_potable",
             "label": "7.2.2 ¿Cuentan con agua potable dentro del espacio?",
+            "titulo": "7.2 Servicios básicos",
             "type": "bool",
             "etiquetasSiNo": [
               "SI",

@@ -8,7 +8,6 @@ from core.models import Municipio, Provincia
 from pas.api import ResumenTitularPAS, obtener_resumen_titular
 from pas.models import PasAviso, PasEstado, PasPersona
 
-
 _migration = importlib.import_module("pas.migrations.0001_initial")
 
 

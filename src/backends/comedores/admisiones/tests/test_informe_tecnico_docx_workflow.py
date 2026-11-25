@@ -16,7 +16,6 @@ from admisiones.services.informes_service import InformeService
 from comedores.models import Comedor
 from duplas.models import Dupla
 
-
 User = get_user_model()
 
 

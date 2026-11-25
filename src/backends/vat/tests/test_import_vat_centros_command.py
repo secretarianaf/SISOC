@@ -9,7 +9,6 @@ from VAT.models import Centro, InstitucionContacto, InstitucionIdentificadorHist
 from VAT.models import InstitucionUbicacion
 from core.models import Localidad, Municipio, Provincia
 
-
 pytestmark = pytest.mark.django_db
 
 

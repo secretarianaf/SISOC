@@ -8,6 +8,7 @@
       "dispositivos/",
       "datacalle/",
       "api/datacalle/",
+      "api/web/dispositivos/",
       "admin/dispositivos/",
       "admin/datacalle/"
     ],
@@ -67,6 +68,7 @@
     "url_prefixes": [
       "pas/",
       "media/pas/",
+      "api/web/pas/",
       "admin/pas/"
     ],
     "urlconf": "pas_runtime.urls",
@@ -94,7 +96,7 @@
     "url_prefixes": [
       "vat/",
       "api/vat/",
-      "api/inet/",
+      "api/web/vat/",
       "api/schema/VAT/",
       "api/docs/VAT/",
       "api/redoc/VAT/",
@@ -130,6 +132,7 @@
       "celiaquia/",
       "reporter-provincias/",
       "api/celiaquia/",
+      "api/web/celiaquia/",
       "admin/celiaquia/"
     ],
     "urlconf": "celiaquia_runtime.urls",
@@ -160,6 +163,7 @@
       "centrodeinfancia/",
       "simepi/",
       "api/ticketera/",
+      "api/web/cdi/",
       "admin/centrodeinfancia/"
     ],
     "urlconf": "cdi_runtime.urls",
@@ -185,6 +189,7 @@
     "url_prefixes": [
       "centrodefamilia/",
       "api/centrodefamilia/",
+      "api/web/cdf/",
       "admin/centrodefamilia/"
     ],
     "urlconf": "cdf_runtime.urls",
@@ -219,6 +224,7 @@
     "url_prefixes": [
       "inspecciones/",
       "api/inspecciones/",
+      "api/web/inspecciones/",
       "admin/inspecciones/"
     ],
     "urlconf": "inspecciones_runtime.urls",
@@ -273,6 +279,7 @@
       "api/territorial/",
       "api/comunicados/",
       "api/pwa/",
+      "api/web/comedores/",
       "api/relevamiento",
       "ajax/load-organizaciones/",
       "ajax/actualizar-estado/",
@@ -406,6 +413,7 @@
     ],
     "url_prefixes": [
       "ocr/",
+      "api/web/ocr/",
       "admin/ocr/"
     ],
     "urlconf": "ocr_runtime.urls",

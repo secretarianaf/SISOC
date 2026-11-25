@@ -1268,6 +1268,10 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
         if item["codigo"] == DocumentacionAdjunta.CATEGORIA_FORMULARIO_I
     )
     assert formulario_i["required"] is False
+    assert (
+        formulario_i["description"]
+        == "Presentar solo si cambió la cuenta o los firmantes"
+    )
     assert formulario_i["archivos"] == []
     comprobantes = next(
         item

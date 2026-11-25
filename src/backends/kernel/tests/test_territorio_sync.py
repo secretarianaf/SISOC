@@ -7,7 +7,6 @@ import pytest
 from core.models import Localidad, Municipio, Provincia
 from core.services.territorio_sync import sync_territorio_desde_fixture
 
-
 pytestmark = pytest.mark.django_db
 
 

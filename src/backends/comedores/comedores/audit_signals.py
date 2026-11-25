@@ -6,7 +6,6 @@ from django.dispatch import receiver
 from audittrail.api import ACTION_CREATE, ACTION_DELETE, ACTION_UPDATE, registrar_evento
 from comedores.models import Comedor, ImagenComedor, Referente
 
-
 REFERENTE_FIELDS = ("nombre", "apellido", "mail", "celular", "documento", "funcion")
 PREVIOUS_STATE_ATTR = "_audittrail_previous_state"
 PREVIOUS_IMAGE_ATTR = "_audittrail_previous_image"

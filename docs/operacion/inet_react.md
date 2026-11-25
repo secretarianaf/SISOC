@@ -31,8 +31,15 @@ No se agrega una dependencia de red para inscribir o tomar asistencia.
 
 ## API interna
 
-`/api/inet/` usa SessionAuthentication + CSRF y permisos IAM de VAT. La API externa
-`/api/vat/` conserva HasAPIKey. Los catálogos de territorio, referentes, planes,
+`/api/web/vat/` es la API web de sesión de VAT (protocolo G1 v1, igual que el resto
+de las APIs `/api/web/<vertical>/`). El core exige sesión y los requisitos web
+(acceso web, contraseña, perfil y encuesta obligatoria) antes de reenviar al
+runtime de VAT, y firma cada request; el runtime verifica la constancia con
+`core.web_gate` y después aplica SessionAuthentication + CSRF y los permisos IAM
+de VAT. Sin sesión responde 401 JSON; con un requisito pendiente, 403 JSON con
+`state` y `required_action_url`. Reemplaza a la ruta anterior `/api/inet/`, que ya
+no se publica (ver `docs/registro/cambios/2026-T4/2026-11-10-2794-api-web-vat.md`).
+La API externa `/api/vat/` conserva HasAPIKey. Los catálogos de territorio, referentes, planes,
 sectores y modalidades se consultan desde opciones del formulario, paginadas,
 con el mismo alcance que el recurso. No se expone una búsqueda global de padrón.
 
@@ -93,7 +100,7 @@ y el volumen Linux compartido de dependencias. El servicio opcional
 ## Validación
 
 ```powershell
-docker compose exec django pytest src/backends/vat/tests/test_inet_api.py -q
+docker compose exec django pytest src/backends/vat/tests/test_inet_api.py src/backends/vat/tests/test_vat_web_api.py -q
 docker compose exec django python manage.py check
 docker compose exec django python manage.py spectacular --urlconf config.urls_inet_v2 --file src/frontends/packages/api/openapi.inet.yaml --validate --fail-on-warn
 ```

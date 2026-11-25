@@ -11,7 +11,6 @@ from pas.services.filter_config import (
     TEXT_OPS,
 )
 
-
 PAS_FILTER_SECTION = "pas"
 
 

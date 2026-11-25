@@ -16,8 +16,16 @@ pytestmark = pytest.mark.django_db
 
 
 def _ultimo_cambio(obj):
-    """`changes` del último evento: {campo: [viejo, nuevo]}."""
-    return LogEntry.objects.get_for_object(obj).first().changes
+    """`changes` del último evento: {campo: [viejo, nuevo]}.
+
+    Ties on `timestamp` (Windows clock ticks every ~15.6 ms) are broken by pk.
+    """
+    return (
+        LogEntry.objects.get_for_object(obj)
+        .order_by("-timestamp", "-pk")
+        .first()
+        .changes
+    )
 
 
 def test_cambio_de_estado_de_itinerario_y_jornada_queda_auditado():
@@ -54,7 +62,7 @@ def test_registro_nominal_audita_el_circuito_sin_datos_de_salud():
     registro.telefono = "1100000000"
     registro.save()
 
-    entradas = LogEntry.objects.get_for_object(registro)
+    entradas = LogEntry.objects.get_for_object(registro).order_by("-timestamp", "-pk")
     assert entradas.count() == 2  # alta + modificación
     assert all(
         entry.object_repr == f"Registro nominal VPSL #{registro.pk}"

@@ -25,6 +25,9 @@ _SKIP_PATH_SUBSTRINGS = (
     "/informecabal/preview",
     "/informecabal/process",
     "/informecabal/reprocess",
+    # /v2/<modulo>/ proxea a un front externo (front_sisoc, front_inet...) que no corre en
+    # este test: sin upstream responde 503 por diseño (core/v2_frontend.py).
+    "/v2/",
 )
 
 

@@ -19,7 +19,6 @@ from centrodeinfancia.services_reportes import (
 )
 from iam.services import user_has_permission_code
 
-
 # Permiso propio del módulo y no `auth.role_exportar_a_csv`: ese es global y
 # habilitaría a los roles SIMEPI a exportar comedores, usuarios y los demás
 # listados. Custodia tanto la pantalla como la descarga.

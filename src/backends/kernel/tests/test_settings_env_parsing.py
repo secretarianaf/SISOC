@@ -3,7 +3,6 @@ from pathlib import Path
 from unittest import mock
 from uuid import uuid4
 
-
 SETTINGS_PATH = (
     Path(__file__).resolve().parents[4] / "src" / "backends" / "config" / "settings.py"
 )

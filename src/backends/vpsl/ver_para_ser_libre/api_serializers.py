@@ -240,6 +240,7 @@ class DeleteSummarySerializer(ReadOnlySerializer):
 
 class DeletePreviewSerializer(ReadOnlySerializer):
     preview = DeleteSummarySerializer()
+    back = serializers.CharField(required=False)
 
 
 class RenaperSerializer(ReadOnlySerializer):

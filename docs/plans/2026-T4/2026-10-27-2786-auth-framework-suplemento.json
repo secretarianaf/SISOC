@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "status": "E2_framework_auth_supplement_static_not_runtime",
+  "project_source_sha": "59a8f797688c9e762d5a4e9eaa187698ffade8aa",
+  "framework_source": "Installed django/contrib/auth/urls.py read as text; Django 5.2.15 local, target 5.2.17 must be checked before implementation",
+  "project_includes": [
+    "src/backends/config/urls.py",
+    "src/backends/sisoc_core/usuarios/urls.py"
+  ],
+  "obligations": [
+    {
+      "name": "login",
+      "public_path": "/login/",
+      "expected_view_from_static_order": "UsuariosLoginView",
+      "project_precedence": "shadowed_by_earlier_project_route",
+      "versioned_registry_entries": [
+        {
+          "name": "login",
+          "namespace": "",
+          "regex": "^login/\\Z"
+        }
+      ],
+      "runtime_resolver_verified": false,
+      "target_version_recheck_required": true,
+      "baseline_accepted": false
+    },
+    {
+      "name": "logout",
+      "public_path": "/logout/",
+      "expected_view_from_static_order": "LogoutView",
+      "project_precedence": "additional_standard_path",
+      "versioned_registry_entries": [
+        {
+          "name": "logout",
+          "namespace": "",
+          "regex": "^logout\\Z"
+        }
+      ],
+      "runtime_resolver_verified": false,
+      "target_version_recheck_required": true,
+      "baseline_accepted": false
+    },
+    {
+      "name": "password_change",
+      "public_path": "/password_change/",
+      "expected_view_from_static_order": "PasswordChangeView",
+      "project_precedence": "additional_standard_path",
+      "versioned_registry_entries": [
+        {
+          "name": "password_change",
+          "namespace": "",
+          "regex": "^password_change/\\Z"
+        }
+      ],
+      "runtime_resolver_verified": false,
+      "target_version_recheck_required": true,
+      "baseline_accepted": false
+    },
+    {
+      "name": "password_change_done",
+      "public_path": "/password_change/done/",
+      "expected_view_from_static_order": "PasswordChangeDoneView",
+      "project_precedence": "additional_standard_path",
+      "versioned_registry_entries": [
+        {
+          "name": "password_change_done",
+          "namespace": "",
+          "regex": "^password_change/done/\\Z"
+        }
+      ],
+      "runtime_resolver_verified": false,
+      "target_version_recheck_required": true,
+      "baseline_accepted": false
+    },
+    {
+      "name": "password_reset",
+      "public_path": "/password_reset/",
+      "expected_view_from_static_order": "SisocPasswordResetView",
+      "project_precedence": "shadowed_by_earlier_project_route",
+      "versioned_registry_entries": [
+        {
+          "name": "password_reset",
+          "namespace": "",
+          "regex": "^password_reset/\\Z"
+        }
+      ],
+      "runtime_resolver_verified": false,
+      "target_version_recheck_required": true,
+      "baseline_accepted": false
+    },
+    {
+      "name": "password_reset_done",
+      "public_path": "/password_reset/done/",
+      "expected_view_from_static_order": "SisocPasswordResetDoneView",
+      "project_precedence": "shadowed_by_earlier_project_route",
+      "versioned_registry_entries": [
+        {
+          "name": "password_reset_done",
+          "namespace": "",
+          "regex": "^password_reset/done/\\Z"
+        }
+      ],
+      "runtime_resolver_verified": false,
+      "target_version_recheck_required": true,
+      "baseline_accepted": false
+    },
+    {
+      "name": "password_reset_confirm",
+      "public_path": "/reset/<uidb64>/<token>/",
+      "expected_view_from_static_order": "PasswordResetConfirmCustomView",
+      "project_precedence": "shadowed_by_earlier_project_route",
+      "versioned_registry_entries": [
+        {
+          "name": "password_reset_confirm",
+          "namespace": "",
+          "regex": "^reset/(?P<uidb64>[^/]+)/(?P<token>[^/]+)/\\Z"
+        }
+      ],
+      "runtime_resolver_verified": false,
+      "target_version_recheck_required": true,
+      "baseline_accepted": false
+    },
+    {
+      "name": "password_reset_complete",
+      "public_path": "/reset/done/",
+      "expected_view_from_static_order": "SisocPasswordResetCompleteView",
+      "project_precedence": "shadowed_by_earlier_project_route",
+      "versioned_registry_entries": [
+        {
+          "name": "password_reset_complete",
+          "namespace": "",
+          "regex": "^reset/done/\\Z"
+        }
+      ],
+      "runtime_resolver_verified": false,
+      "target_version_recheck_required": true,
+      "baseline_accepted": false
+    }
+  ],
+  "original_inventory_counts_unchanged": {
+    "assigned_literal_routes": 614,
+    "total_literal_declarations": 770
+  },
+  "additional_distinct_standard_paths": 3,
+  "shadowed_standard_paths": 5,
+  "implementation_authorized": false
+}

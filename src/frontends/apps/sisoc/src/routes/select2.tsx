@@ -65,16 +65,23 @@ export type Select2Props = {
   outsideClick?: "results" | "dropdown";
   /** Single only. `search`: opening moves focus to the search field of the dropdown. `selection`: the box keeps focus (native single select: Enter, Space and Alt+ArrowDown open; Escape, Tab and Alt+ArrowUp close without moving focus). */
   singleFocus?: "search" | "selection";
+  /** Preserve the viewport when moving focus into or back from the dropdown. */
+  preventFocusScroll?: boolean;
   /** Rendered between the hidden native `<select>` and the Select2 box (where a script inserts feedback `afterend` of the select). */
   afterSelect?: ReactNode;
   /** Remote source: results come from `url` (`term`, `_type`, `q`) as `{results: [{id, text}]}`, not from `choices`. */
   remote?: RemoteSource;
 };
 
+function focusControl(control: HTMLElement | null, preventScroll: boolean) {
+  if (preventScroll) control?.focus({ preventScroll: true });
+  else control?.focus();
+}
+
 export default function Select2({
   id, name, choices, value, onChange, multiple = false, placeholder, selectClassName, selectProps, invalid = false, disabled = false,
   noResults, dropdownParent, hideEmptyChoice = false, clearTrigger = "none", focusMarker = "container", termHandling = "reset",
-  enterOnSelected = "toggle", removeOpensResults = false, outsideClick = "dropdown", singleFocus = "search",
+  enterOnSelected = "toggle", removeOpensResults = false, outsideClick = "dropdown", singleFocus = "search", preventFocusScroll = false,
   afterSelect, remote,
 }: Select2Props) {
   const [open, setOpen] = useState(false);
@@ -134,8 +141,8 @@ export default function Select2({
   }, [open, dropdownParent, resultsId, outsideClick, value.length]);
 
   useLayoutEffect(() => {
-    if (open && !multiple && !selectionFocus) search.current?.focus();
-  }, [open, multiple, selectionFocus]);
+    if (open && !multiple && !selectionFocus) focusControl(search.current, preventFocusScroll);
+  }, [open, multiple, selectionFocus, preventFocusScroll]);
 
   // Select2 AjaxAdapter: waits `delay` after the last keystroke, cancels the previous request.
   useEffect(() => {
@@ -168,7 +175,7 @@ export default function Select2({
   function hide(refocus = true) {
     setOpen(false);
     setTerm("");
-    if (refocus) (multiple ? search : selection).current?.focus();
+    if (refocus) focusControl((multiple ? search : selection).current, preventFocusScroll);
   }
   function pick(choice: Choice, fromKeyboard = false) {
     if (remote && !known.some((c) => c.value === choice.value)) setRemembered((r) => [...r, choice]);

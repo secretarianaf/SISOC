@@ -35,3 +35,5 @@
   La clase `btn-import-xlsx` conserva el estilo sin disparar el exportador. El enlace conserva su URL y
   su permiso de alta; allí siguen aplicándose las validaciones de importación.
 - La segunda página y el menú móvil quedan fuera de la comparación visual.
+
+La prueba de importación masiva verifica la nueva clase visual del botón y sigue comprobando que no se muestra sin permiso.

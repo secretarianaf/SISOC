@@ -81,7 +81,11 @@ def test_recodificar_no_pisa_una_reasignacion_intercalada(organizacion, proyecto
 
     def reasignar(execute, sql, params, many, context):
         nonlocal intercalado
-        if not intercalado and sql.startswith("UPDATE") and Comedor._meta.db_table in sql:
+        if (
+            not intercalado
+            and sql.startswith("UPDATE")
+            and Comedor._meta.db_table in sql
+        ):
             intercalado = True
             Comedor.all_objects.filter(pk=comedor.pk).update(codigo_de_proyecto="P-99")
         return execute(sql, params, many, context)

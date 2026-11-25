@@ -180,7 +180,7 @@ def test_formulario_bancario_al_final_del_catalogo(linea):
         DocumentacionAdjunta.CATEGORIA_OTROS,
     ]
     assert categorias[-2]["description"] == (
-        "Adjuntar sólo si hubo cambios en los datos bancarios"
+        "Presentar solo si cambió la cuenta o los firmantes"
     )
     if linea == DocumentacionAdjunta.LINEA_TRADICIONAL:
         assert codigos[-3] == DocumentacionAdjunta.CATEGORIA_PLANILLA_SEGUROS

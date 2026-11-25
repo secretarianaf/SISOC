@@ -22,7 +22,6 @@ from .models import (
     Responsable,
 )
 
-
 # Operación de soporte (issue #2789): misma llamada que
 # ParticipanteActividadDeleteView. El service promueve al primero de la lista
 # de espera.

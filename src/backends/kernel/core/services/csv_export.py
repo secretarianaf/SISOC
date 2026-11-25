@@ -4,7 +4,6 @@ from collections.abc import Iterable, Iterator
 
 from django.http import HttpResponse
 
-
 CSV_CONTENT_TYPE = "text/csv; charset=utf-8"
 UTF8_BOM = "\ufeff"
 CSV_FORMULA_PREFIXES = ("=", "+", "-", "@")

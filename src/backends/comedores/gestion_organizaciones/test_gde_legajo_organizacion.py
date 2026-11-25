@@ -23,7 +23,6 @@ from organizaciones.models import (
 )
 from gestion_organizaciones.views import actualizar_numero_gde_documento_organizacion
 
-
 pytestmark = pytest.mark.django_db
 User = get_user_model()
 

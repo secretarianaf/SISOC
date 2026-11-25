@@ -1,13 +1,12 @@
 # centrodefamilia/views/participante.py
 
-import threading
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import CreateView, View, ListView
+from django.views.generic import CreateView, View
 
-from centrodefamilia.models import ParticipanteActividad, ActividadCentro
+from centrodefamilia.models import ParticipanteActividad, ActividadCentro, Centro
 from centrodefamilia.forms import ParticipanteActividadForm
 from centrodefamilia.services.participante import (
     ParticipanteService,
@@ -53,7 +52,7 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
             return self.form_invalid(form)
 
         try:
-            tipo, participante = ParticipanteService.procesar_creacion(
+            tipo, _participante = ParticipanteService.procesar_creacion(
                 usuario=request.user,
                 actividad_id=actividad_id,
                 ciudadano_id=ciudadano_id,
@@ -74,7 +73,7 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
             return redirect(self.get_success_url())
         except CupoExcedido as e:
             # Cupo completo: inscribir automáticamente en lista de espera
-            tipo2, participante2 = ParticipanteService.procesar_creacion(
+            _tipo2, _participante2 = ParticipanteService.procesar_creacion(
                 usuario=request.user,
                 actividad_id=actividad_id,
                 ciudadano_id=ciudadano_id,
@@ -122,7 +121,7 @@ class ParticipanteActividadDeleteView(LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         participante_id = kwargs["pk"]
-        participante = get_object_or_404(ParticipanteActividad, pk=participante_id)
+        _participante = get_object_or_404(ParticipanteActividad, pk=participante_id)
         try:
             ParticipanteService.dar_de_baja(participante_id, request.user)
             messages.success(request, "Participante dado de baja correctamente.")
@@ -136,22 +135,18 @@ class ParticipanteActividadDeleteView(LoginRequiredMixin, View):
         )
 
 
-class ParticipanteActividadListEsperaView(LoginRequiredMixin, ListView):
-    model = ParticipanteActividad
-    template_name = "centros/participanteactividad_lista_espera.html"
-    context_object_name = "participantes"
+class ParticipanteActividadListEsperaView(LoginRequiredMixin, View):
+    """Conserva la URL histórica como acceso a la sección de la ficha."""
 
-    def get_queryset(self):
-        actividad_id = self.kwargs.get("actividad_id")
-        return ParticipanteActividad.objects.filter(
-            actividad_centro_id=actividad_id, estado="lista_espera"
-        ).select_related("ciudadano")
+    http_method_names = ["get", "head"]
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["centro_id"] = self.kwargs.get("centro_id")
-        context["actividad_id"] = self.kwargs.get("actividad_id")
-        return context
+    def get(self, request, *args, **kwargs):
+        centro = get_object_or_404(Centro, pk=kwargs["centro_id"])
+        actividad = get_object_or_404(
+            ActividadCentro, pk=kwargs["actividad_id"], centro=centro
+        )
+        destino = reverse_lazy("actividadcentro_detail", kwargs={"pk": actividad.pk})
+        return redirect(f"{destino}#lista-espera")
 
 
 class ParticipanteActividadPromoverView(LoginRequiredMixin, View):
@@ -162,7 +157,7 @@ class ParticipanteActividadPromoverView(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         # Si alguien accede por GET, reenviamos al detalle con promo_error
-        centro_id = kwargs.get("centro_id")
+        _centro_id = kwargs.get("centro_id")
         actividad_id = kwargs.get("actividad_id")
         detail_url = reverse_lazy(
             "actividadcentro_detail",
@@ -173,7 +168,7 @@ class ParticipanteActividadPromoverView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         participante = get_object_or_404(ParticipanteActividad, pk=kwargs["pk"])
         actividad = participante.actividad_centro
-        centro_id = kwargs["centro_id"]
+        _centro_id = kwargs["centro_id"]
         actividad_id = kwargs["actividad_id"]
         detail_url = reverse_lazy(
             "actividadcentro_detail",

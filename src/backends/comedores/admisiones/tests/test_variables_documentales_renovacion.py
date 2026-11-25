@@ -422,3 +422,107 @@ def test_catalogo_registra_todas_las_variables_documentales():
 
     assert set(variables.values_list("codigo", flat=True)) == codigos
     assert not variables.filter(activo=False).exists()
+
+
+@pytest.mark.django_db
+def test_if_ultimo_informe_tecnico_es_el_del_tramite_anterior_mas_reciente(comedor):
+    Admision.objects.create(
+        comedor=comedor, tipo="incorporacion", numero_if_tecnico="IF-IT-VIEJO"
+    )
+    Admision.objects.create(
+        comedor=comedor, tipo="renovacion", numero_if_tecnico="IF-IT-ANTERIOR"
+    )
+    Admision.objects.create(comedor=comedor, tipo="renovacion", numero_if_tecnico="")
+    Admision.objects.create(
+        comedor=comedor,
+        tipo="renovacion",
+        activa=False,
+        numero_if_tecnico="IF-IT-INACTIVA",
+    )
+    actual = Admision.objects.create(
+        comedor=comedor, tipo="renovacion", numero_if_tecnico="IF-IT-ACTUAL"
+    )
+    Admision.objects.create(
+        comedor=comedor, tipo="renovacion", numero_if_tecnico="IF-IT-POSTERIOR"
+    )
+    informe = crear_informe(actual)
+
+    valores = InformeTecnicoVariablesDocumentalesService.obtener_valores(informe)
+
+    assert valores["if_ultimo_informe_tecnico"] == "IF-IT-ANTERIOR"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("modifica_prestaciones", "esperado"),
+    [("si", "IF-IT-COMP"), ("no", "IF-IT-ANTERIOR"), (None, "IF-IT-ANTERIOR")],
+)
+def test_if_referencia_prestaciones_depende_de_si_se_modificaron_prestaciones(
+    comedor, modifica_prestaciones, esperado
+):
+    Admision.objects.create(
+        comedor=comedor, tipo="renovacion", numero_if_tecnico="IF-IT-ANTERIOR"
+    )
+    actual = Admision.objects.create(
+        comedor=comedor,
+        tipo="renovacion",
+        informe_complementario_modifica_prestaciones=modifica_prestaciones,
+    )
+    informe = crear_informe(actual, if_it_complementario="IF-IT-COMP")
+
+    valores = InformeTecnicoVariablesDocumentalesService.obtener_valores(informe)
+
+    assert valores["if_referencia_prestaciones"] == esperado
+
+
+@pytest.mark.django_db
+def test_variables_de_if_quedan_vacias_sin_informe_tecnico_anterior(comedor):
+    actual = Admision.objects.create(comedor=comedor, tipo="renovacion")
+    informe = crear_informe(actual)
+
+    valores = InformeTecnicoVariablesDocumentalesService.obtener_valores(informe)
+
+    assert valores["if_ultimo_informe_tecnico"] == ""
+    assert valores["if_referencia_prestaciones"] == ""
+
+
+@pytest.mark.django_db
+def test_renderiza_variables_de_if_desde_el_contexto(comedor):
+    Admision.objects.create(
+        comedor=comedor, tipo="renovacion", numero_if_tecnico="IF-IT-ANTERIOR"
+    )
+    actual = Admision.objects.create(
+        comedor=comedor,
+        tipo="renovacion",
+        informe_complementario_modifica_prestaciones="si",
+    )
+    informe = crear_informe(actual, if_it_complementario="IF-IT-COMP")
+
+    contexto = AdmisionesContextService.preparar_contexto_informe_tecnico(informe)
+    contenido = (
+        Engine(debug=False)
+        .from_string(
+            "{{ informe.if_ultimo_informe_tecnico }}|"
+            "{{ informe.if_referencia_prestaciones }}"
+        )
+        .render(Context(contexto, autoescape=True))
+    )
+
+    assert contenido == "IF-IT-ANTERIOR|IF-IT-COMP"
+
+
+@pytest.mark.django_db
+def test_catalogo_registra_las_variables_de_if_de_informe_tecnico():
+    migracion = import_module(
+        "admisiones.migrations.0084_variables_if_ultimo_informe_tecnico"
+    )
+    migracion.registrar_variables(apps, None)
+    codigos = {
+        "informe.if_ultimo_informe_tecnico",
+        "informe.if_referencia_prestaciones",
+    }
+
+    variables = VariableTemplateInformeTecnico.objects.filter(codigo__in=codigos)
+
+    assert set(variables.values_list("codigo", flat=True)) == codigos
+    assert not variables.filter(activo=False).exists()

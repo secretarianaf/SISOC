@@ -18,7 +18,6 @@ from admisiones.tests.test_informe_tecnico_docx_workflow import crear_informe_te
 from comedores.models import Comedor
 from organizaciones.models import Organizacion, TipoEntidad
 
-
 pytestmark = pytest.mark.django_db
 
 

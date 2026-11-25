@@ -9,7 +9,6 @@ from pathlib import Path
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
-
 PROVINCIA_MODEL = "core.provincia"
 MUNICIPIO_MODEL = "core.municipio"
 LOCALIDAD_MODEL = "core.localidad"

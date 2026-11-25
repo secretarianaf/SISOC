@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.http import FileResponse, Http404, JsonResponse
 from django.urls import reverse, reverse_lazy
+from django.utils.functional import cached_property
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -23,7 +24,7 @@ from django.views.generic import (
     DeleteView,
 )
 from django.views import View
-from comedores.models import Comedor
+from comedores.services.comedor_service import ComedorService
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.mixins import CSVExportMixin
@@ -62,10 +63,32 @@ from rendicioncuentasmensual.filter_config import (
 )
 
 
+def _validar_alcance_rendicion(rendicion, user):
+    """404 si el comedor de la rendición queda fuera del alcance del usuario."""
+    if rendicion is not None and rendicion.comedor_id is not None:
+        ComedorService.get_scoped_comedor_or_404(rendicion.comedor_id, user)
+
+
+class RendicionEnAlcanceMixin:
+    """Valida el alcance del usuario sobre el comedor de la rendición pedida."""
+
+    def get_object(self, queryset=None):
+        rendicion = super().get_object(queryset)
+        _validar_alcance_rendicion(rendicion, self.request.user)
+        return rendicion
+
+
+def _get_rendicion_en_alcance(pk, user):
+    rendicion = RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual(pk)
+    _validar_alcance_rendicion(rendicion, user)
+    return rendicion
+
+
 @login_required
 @require_POST
 def eliminar_archivo(request, archivo_id):
     archivo = get_object_or_404(DocumentacionAdjunta, id=archivo_id)
+    _validar_alcance_rendicion(archivo.rendicion_cuenta_mensual, request.user)
     preview_enabled = str(
         request.GET.get("preview") or request.POST.get("preview") or ""
     )
@@ -96,12 +119,19 @@ class RendicionCuentaMensualListView(LoginRequiredMixin, ListView):
         """Retorna rendiciones ordenadas para evitar warning de paginación"""
         return RendicionCuentaMensual.objects.order_by("-id")
 
+    @cached_property
+    def comedor(self):
+        # Shared by the native page and the React transport: same user scope.
+        return ComedorService.get_scoped_comedor_or_404(
+            self.kwargs["comedor_id"], self.request.user
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor_id = self.kwargs.get("comedor_id")
         context["rendiciones_cuentas_mensuales"] = (
             RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(
-                Comedor.objects.get(id=comedor_id)
+                self.comedor
             )
         )
         context["comedorid"] = comedor_id
@@ -276,7 +306,9 @@ class RendicionCuentaMensualGlobalListView(
         return context
 
 
-class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
+class RendicionCuentaMensualDetailView(
+    RendicionEnAlcanceMixin, LoginRequiredMixin, DetailView
+):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_detail.html"
     context_object_name = "rendicion_cuenta_mensual"
@@ -708,29 +740,7 @@ class RendicionAuditoriaView(LoginRequiredMixin, View):
                         "rendicioncuentasmensual_auditoria", kwargs={"pk": rendicion.pk}
                     )
                 )
-            busqueda_form = AuditoriaBusquedaForm.desde_parametros(request.GET)
-            busqueda_realizada = busqueda_form.is_bound
-            disponibles = (
-                AuditoriaService.buscar(busqueda_form.cleaned_data)
-                if busqueda_realizada and busqueda_form.is_valid()
-                else AuditoriaService.disponibles().none()
-            )
-            page_obj = Paginator(
-                disponibles.order_by("proyecto__codigo", "periodo_inicio", "pk"), 20
-            ).get_page(request.GET.get("page"))
-            return render(
-                request,
-                self.template_name,
-                {
-                    "disponibles": page_obj,
-                    "page_obj": page_obj,
-                    "is_paginated": page_obj.has_other_pages(),
-                    "busqueda_form": busqueda_form,
-                    "busqueda_realizada": busqueda_realizada,
-                    "busqueda_valida": busqueda_realizada and not busqueda_form.errors,
-                    "volver_url": reverse("rendicioncuentasmensual_global_list"),
-                },
-            )
+            return render(request, self.template_name, self._contexto_busqueda(request))
         rendicion = get_object_or_404(AuditoriaService.disponibles(), pk=pk)
         form = AuditoriaForm(
             rendicion=rendicion,
@@ -740,6 +750,27 @@ class RendicionAuditoriaView(LoginRequiredMixin, View):
             },
         )
         return self._render(request, rendicion, form)
+
+    def _contexto_busqueda(self, request):
+        busqueda_form = AuditoriaBusquedaForm.desde_parametros(request.GET)
+        busqueda_realizada = busqueda_form.is_bound
+        disponibles = (
+            AuditoriaService.buscar(busqueda_form.cleaned_data)
+            if busqueda_realizada and busqueda_form.is_valid()
+            else AuditoriaService.disponibles().none()
+        )
+        page_obj = Paginator(
+            disponibles.order_by("proyecto__codigo", "periodo_inicio", "pk"), 20
+        ).get_page(request.GET.get("page"))
+        return {
+            "disponibles": page_obj,
+            "page_obj": page_obj,
+            "is_paginated": page_obj.has_other_pages(),
+            "busqueda_form": busqueda_form,
+            "busqueda_realizada": busqueda_realizada,
+            "busqueda_valida": busqueda_realizada and not busqueda_form.errors,
+            "volver_url": reverse("rendicioncuentasmensual_global_list"),
+        }
 
     def post(self, request, pk=None):
         if pk is None:
@@ -766,6 +797,11 @@ class RendicionAuditoriaView(LoginRequiredMixin, View):
         return self._render(request, rendicion, form)
 
     def _render(self, request, rendicion, form):
+        return render(
+            request, self.template_name, self._contexto(request, rendicion, form)
+        )
+
+    def _contexto(self, request, rendicion, form):
         volver_a_busqueda = request.GET.get("origen") == "busqueda"
         volver_url = (
             reverse("rendicioncuentasmensual_auditoria_nueva")
@@ -784,21 +820,17 @@ class RendicionAuditoriaView(LoginRequiredMixin, View):
             }
             for item in [rendicion, *candidatas]
         ]
-        return render(
-            request,
-            self.template_name,
-            {
-                "rendicion": rendicion,
-                "form": form,
-                "scope_proyecto": RendicionCuentaMensualService.obtener_scope_proyecto(
-                    rendicion
-                ),
-                "resumenes": resumenes,
-                "volver_url": volver_url,
-                "volver_a_busqueda": volver_a_busqueda,
-                "volver_transitoria": True,
-            },
-        )
+        return {
+            "rendicion": rendicion,
+            "form": form,
+            "scope_proyecto": RendicionCuentaMensualService.obtener_scope_proyecto(
+                rendicion
+            ),
+            "resumenes": resumenes,
+            "volver_url": volver_url,
+            "volver_a_busqueda": volver_a_busqueda,
+            "volver_transitoria": True,
+        }
 
 
 class RendicionCuentaMensualDownloadPdfView(LoginRequiredMixin, DetailView):
@@ -850,9 +882,7 @@ class RendicionCuentaMensualDownloadPdfView(LoginRequiredMixin, DetailView):
 
     def get(self, request, *args, **kwargs):
         """Entrega el PDF ya generado; la generación la dispara la solicitud."""
-        rendicion = RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual(
-            self.kwargs.get("pk")
-        )
+        rendicion = _get_rendicion_en_alcance(self.kwargs.get("pk"), request.user)
         detalle_url = reverse(
             "rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk}
         )
@@ -896,9 +926,7 @@ class RendicionPdfDescargaSolicitarView(LoginRequiredMixin, View):
     """Encola la generación del PDF consolidado (o reutiliza la vigente)."""
 
     def post(self, request, *args, **kwargs):
-        rendicion = RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual(
-            self.kwargs.get("pk")
-        )
+        rendicion = _get_rendicion_en_alcance(self.kwargs.get("pk"), request.user)
         try:
             solicitud = services_pdf_descarga.solicitar_pdf_descarga(
                 rendicion, request.user
@@ -920,9 +948,7 @@ class RendicionPdfDescargaEstadoView(LoginRequiredMixin, View):
     """Estado de la generación del PDF consolidado, para el polling del detalle."""
 
     def get(self, request, *args, **kwargs):
-        rendicion = RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual(
-            self.kwargs.get("pk")
-        )
+        rendicion = _get_rendicion_en_alcance(self.kwargs.get("pk"), request.user)
         solicitud = services_pdf_descarga.obtener_estado_pdf_descarga(rendicion)
         return JsonResponse(_pdf_descarga_payload(rendicion, solicitud))
 
@@ -937,6 +963,7 @@ class RendicionDocumentoVerView(LoginRequiredMixin, View):
         )
         if not documento.rendicion_cuenta_mensual:
             raise Http404
+        _validar_alcance_rendicion(documento.rendicion_cuenta_mensual, request.user)
 
         try:
             archivo = documento.archivo.open("rb")
@@ -961,7 +988,9 @@ class RendicionCuentaMensualCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         comedor_id = self.kwargs.get("comedor_id")
-        comedor = Comedor.objects.get(id=comedor_id)
+        comedor = ComedorService.get_scoped_comedor_or_404(
+            comedor_id, self.request.user
+        )
 
         rendicion = form.save(commit=False)
         rendicion.comedor = comedor
@@ -990,12 +1019,13 @@ class RendicionCuentaMensualCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         comedor_id = self.kwargs.get("comedor_id")
         context["comedorid"] = comedor_id
-        context["form"] = RendicionCuentaMensualForm()
         context["documentacion_adjunta_form"] = DocumentacionAdjuntaForm()
         return context
 
 
-class RendicionCuentaMensualUpdateView(LoginRequiredMixin, UpdateView):
+class RendicionCuentaMensualUpdateView(
+    RendicionEnAlcanceMixin, LoginRequiredMixin, UpdateView
+):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_datos_form.html"
     form_class = RendicionDatosForm
@@ -1043,6 +1073,7 @@ class RendicionCuentaMensualUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class RendicionCuentaMensualDeleteView(
+    RendicionEnAlcanceMixin,
     SoftDeleteDeleteViewMixin,
     LoginRequiredMixin,
     DeleteView,

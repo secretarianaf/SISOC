@@ -30,6 +30,10 @@ En Datos del Convenio (`/comedores/<pk>/convenio-pnud/`), sección
   (`src/backends/comedores/comedores/models.py`) y migración
   `0064_comedordatosconveniopnud_personas_identidad_reservada`: agrega una
   columna con default 0, sin tocar datos existentes.
+- `0065_merge_alcance_programa_identidad_reservada` une las dos migraciones
+  `0064` de Comedores sin operaciones. En MySQL aislado, la ida y la reversa
+  al estado previo conservaron filas existentes y la tabla de alcance por
+  programa; la nueva columna queda en 0 al aplicar el cambio.
 - Formulario y validación: `src/backends/comedores/comedores/forms/convenio_pnud_form.py`.
 - Tope de nómina: `_get_tope_nomina_alimentaria` en
   `src/backends/comedores/pwa/services/nomina_service.py`.

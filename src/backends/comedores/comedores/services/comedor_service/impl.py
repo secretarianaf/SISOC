@@ -68,6 +68,7 @@ logger = logging.getLogger("django")
 
 from core.security import safe_redirect
 from core.services.advanced_filters import AdvancedFilterEngine
+from comedores.services.alcance_programa import apply_programa_scope
 from comedores.services.filter_config import (
     BOOL_OPS,
     CHOICE_OPS,
@@ -76,7 +77,6 @@ from comedores.services.filter_config import (
     NUM_OPS,
     TEXT_OPS,
 )
-
 
 COMEDOR_ADVANCED_FILTER = AdvancedFilterEngine(
     field_map=FIELD_MAP,
@@ -493,7 +493,7 @@ def _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids):
     return base_qs.filter(dupla_id__in=duplas_ids)
 
 
-def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
+def _apply_role_scope_to_comedores_list_queryset(base_qs, user):
     if _user_tiene_scope_global_comedores(user):
         return base_qs
 
@@ -529,11 +529,27 @@ def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
     return territorial_qs
 
 
+def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
+    """Alcance por rol/territorio AND alcance por programa (solo superuser lo saltea)."""
+    if not user or user.is_superuser:
+        return base_qs
+    role_qs = _apply_role_scope_to_comedores_list_queryset(base_qs, user)
+    return apply_programa_scope(role_qs, user)
+
+
+def _apply_user_scope_to_comedores_queryset(base_qs, user):
+    """Alcance por rol/territorio AND alcance por programa (solo superuser lo saltea)."""
+    if not user or user.is_superuser:
+        return base_qs
+    role_qs = _apply_role_scope_to_comedores_queryset(base_qs, user)
+    return apply_programa_scope(role_qs, user)
+
+
 def _build_comedores_model_queryset():
     return Comedor.objects.all()
 
 
-def _apply_user_scope_to_comedores_queryset(base_qs, user):
+def _apply_role_scope_to_comedores_queryset(base_qs, user):
     if _user_tiene_scope_global_comedores(user):
         return base_qs
 
@@ -827,7 +843,8 @@ class ComedorService:
         return comedor
 
     @staticmethod
-    def delete_images(post):
+    def delete_images(post, comedor_id):
+        """Borra solo las imágenes marcadas que pertenecen al comedor indicado."""
         pattern = re.compile(r"^imagen_ciudadano-borrar-(\d+)$")
         imagenes_ids = []
         for key in post:
@@ -836,7 +853,9 @@ class ComedorService:
                 imagen_id = match.group(1)
                 imagenes_ids.append(imagen_id)
 
-        ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
+        ImagenComedor.objects.filter(
+            id__in=imagenes_ids, comedor_id=comedor_id
+        ).delete()
 
     @staticmethod
     def delete_legajo_photo(post, comedor_instance):

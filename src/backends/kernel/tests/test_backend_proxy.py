@@ -9,11 +9,14 @@ import gzip
 import json
 import socket
 import threading
+import types
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
+from django.conf import settings
+from django.contrib.sessions.backends.db import SessionStore
 from django.http import Http404
-from django.test import RequestFactory, override_settings
+from django.test import Client, RequestFactory, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from core.backend_proxy import _forward, backend_proxy_urlpatterns
@@ -263,3 +266,78 @@ def test_favoritos_de_seccion_desconocida_siguen_dando_400(django_user_model):
 
     with override_settings(SISOC_BACKENDS={}):
         assert filtros_favoritos(request).status_code == 400
+
+
+OLD_SECRET = "synthetic-old-secret-key-for-proxy-tests-0123456789"
+NEW_SECRET = "synthetic-new-secret-key-for-proxy-tests-9876543210"
+
+
+class _CookieRecorder(BaseHTTPRequestHandler):
+    """Backend that records the ``Cookie`` it receives and sets none."""
+
+    cookies = []
+
+    def log_message(self, *args):
+        del args
+
+    def do_GET(self):  # noqa: N802
+        type(self).cookies.append(self.headers.get("Cookie", ""))
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain")
+        self.send_header("Content-Length", "2")
+        self.end_headers()
+        self.wfile.write(b"ok")
+
+
+@pytest.mark.django_db
+def test_session_cycled_by_core_auth_survives_a_proxied_request(django_user_model):
+    """Precondition of G1 (E05): rotating ``SECRET_KEY`` must not log users out.
+
+    The session hash only validates with ``SECRET_KEY_FALLBACKS``, so Django's
+    authentication cycles the session key inside the core. The backend must get
+    the current key and the browser must keep a valid session cookie.
+    """
+    _CookieRecorder.cookies = []
+    servidor = ThreadingHTTPServer(("127.0.0.1", 0), _CookieRecorder)
+    threading.Thread(target=servidor.serve_forever, daemon=True).start()
+    backends = {
+        "pas": {
+            "url_prefixes": ("api/pas/",),
+            "origin": f"http://127.0.0.1:{servidor.server_port}",
+        }
+    }
+    with override_settings(SISOC_BACKENDS=backends):
+        urls = types.ModuleType("proxy_rotation_urls")
+        urls.urlpatterns = backend_proxy_urlpatterns()
+    user = django_user_model.objects.create_user("rotado", password="x")
+    client = Client()
+    name = settings.SESSION_COOKIE_NAME
+    try:
+        with override_settings(SECRET_KEY=OLD_SECRET, SECRET_KEY_FALLBACKS=[]):
+            client.force_login(user)
+        old_key = client.cookies[name].value
+        with override_settings(
+            SECRET_KEY=NEW_SECRET,
+            SECRET_KEY_FALLBACKS=[OLD_SECRET],
+            ROOT_URLCONF=urls,
+            INTERNAL_IPS=[],
+        ):
+            first = client.get("/api/pas/listado/")
+            b"".join(first.streaming_content)
+            new_key = client.cookies[name].value
+            second = client.get("/api/pas/listado/")
+            b"".join(second.streaming_content)
+            stored = SessionStore(session_key=new_key).get("_auth_user_id")
+            old_exists = SessionStore().exists(old_key)
+    finally:
+        servidor.shutdown()
+
+    assert first.status_code == 200
+    assert new_key not in ("", old_key)
+    assert first.cookies[name]["max-age"] != 0
+    assert "Cookie" in first["Vary"]
+    assert _CookieRecorder.cookies == [f"{name}={new_key}"] * 2
+    assert stored == str(user.pk)
+    assert not old_exists
+    assert second.status_code == 200
+    assert name not in second.cookies

@@ -7,7 +7,6 @@ import pytest
 
 from comedores.models import Comedor, Programas
 
-
 MIGRATION = importlib.import_module(
     "comedores.migrations.0052_issue_2169_codigo_proyecto"
 )

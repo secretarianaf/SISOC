@@ -2,6 +2,7 @@
 """
 Script para debuggear el proceso de cruce de SINTYS
 """
+
 import logging
 import os
 import sys

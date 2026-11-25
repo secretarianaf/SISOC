@@ -364,6 +364,14 @@ def test_reporter_provincias_marca_dupla_en_el_detalle(client):
     assert filas[legajo_responsable.pk].clasificacion_label == "Responsable"
     assert filas[legajo_responsable.pk].integra_dupla is False
 
+    api = client.get(reverse("celiaquia-reporte-list"))
+    assert api.status_code == 200
+    api_filas = {caso["id"]: caso for caso in api.json()["casos"]}
+    for pk in (legajo_hijo.pk, legajo_responsable.pk):
+        assert api_filas[pk]["clasificacion_label"] == filas[pk].clasificacion_label
+        assert api_filas[pk]["clasificacion_tone"] == filas[pk].clasificacion_tone
+        assert api_filas[pk]["integra_dupla"] is filas[pk].integra_dupla
+
 
 def _expediente(user, estado_expediente, numero):
     return Expediente.objects.create(

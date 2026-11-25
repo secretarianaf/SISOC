@@ -10,6 +10,10 @@ from django.core.exceptions import DisallowedHost, ValidationError
 from django.db.models import Max
 from django.urls import reverse
 
+from comedores.services.alcance_programa import (
+    programa_ids_por_grupos,
+    programas_visibles,
+)
 from comedores.models import (
     Comedor,
     Programas,
@@ -1837,6 +1841,7 @@ class TerritorialComedorWriteSerializer(serializers.Serializer):
             attrs["programa"] = self._single_by_name(
                 Programas, attrs["programa"], "programa"
             )
+        self._validar_programa_en_alcance(attrs)
         if "organizacion" in attrs:
             attrs["organizacion"] = self._single_by_name(
                 Organizacion, attrs["organizacion"], "organizacion"
@@ -1872,6 +1877,30 @@ class TerritorialComedorWriteSerializer(serializers.Serializer):
             attrs["comienzo"] = self._normalizar_comienzo(attrs["comienzo"])
 
         return attrs
+
+    def _validar_programa_en_alcance(self, attrs):
+        """Aplica el alcance por programa del usuario al alta y al cambio de programa."""
+        user = self.context["request"].user
+        grupos = programas_visibles(user)
+        if grupos is None:
+            return
+        permitidos = list(
+            Programas.objects.filter(pk__in=programa_ids_por_grupos(grupos))
+        )
+        permitidos_ids = {programa.pk for programa in permitidos}
+        if self.instance is None and not attrs.get("programa"):
+            if len(permitidos) == 1:
+                attrs["programa"] = permitidos[0]
+                return
+            raise serializers.ValidationError(
+                {"programa": "Seleccione el programa del comedor."}
+            )
+        if "programa" in attrs and getattr(attrs["programa"], "pk", None) not in (
+            permitidos_ids
+        ):
+            raise serializers.ValidationError(
+                {"programa": "El programa no está dentro de su alcance."}
+            )
 
     def _validar_cambio_territorio(self, attrs, municipio):
         if not self.instance:

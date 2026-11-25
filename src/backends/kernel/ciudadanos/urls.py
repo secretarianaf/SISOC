@@ -26,7 +26,6 @@ from ciudadanos.views_importacion_masiva import (
     CiudadanosImportUploadView,
 )
 
-
 urlpatterns = [
     # Composición local: mismo contrato que urlpatterns_de_backend, sin nombre
     # público adicional. Cada dueño registra únicamente sus fragmentos.

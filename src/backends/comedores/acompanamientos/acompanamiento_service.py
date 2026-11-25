@@ -25,6 +25,7 @@ from duplas.models import Dupla
 from intervenciones.models.intervenciones import Intervencion
 from catalogo_intervenciones.models import SubIntervencion
 from comedores.models import Comedor
+from comedores.services.alcance_programa import apply_programa_scope
 from iam.services import user_has_any_permission_codes
 from users.services import UserPermissionService
 from core.services.advanced_filters import AdvancedFilterEngine
@@ -640,6 +641,7 @@ class AcompanamientoService:
                     qs = qs.filter(
                         Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq)
                     )
+                qs = apply_programa_scope(qs, user)
 
             if hasattr(request_or_query, "GET"):
                 qs = ACOMPANAMIENTO_ADVANCED_FILTER.filter_queryset(

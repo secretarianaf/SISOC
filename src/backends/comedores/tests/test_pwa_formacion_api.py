@@ -15,7 +15,6 @@ from core.models import Provincia
 from pwa.api_views import CursoAppMobilePWAViewSet
 from pwa.models import AccesoComedorPWA
 
-
 pytestmark = pytest.mark.django_db
 
 

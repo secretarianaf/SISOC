@@ -2,4 +2,4 @@
 
 from django.urls import include, path
 
-urlpatterns = [path("api/inet/", include("VAT.api_inet_urls"))]
+urlpatterns = [path("api/web/vat/", include("VAT.web_api_urls"))]

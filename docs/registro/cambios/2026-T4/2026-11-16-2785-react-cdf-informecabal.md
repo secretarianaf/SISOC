@@ -57,9 +57,14 @@ Pantalla React: mismos textos, controles y orden que las plantillas.
   encolado aparece en el historial). Nada se reintenta.
 - **Orden por columna** local a la página, como `listSort.js` (ascendente, descendente,
   sin cambio; la fecha se ordena por `aaaa-mm-dd HH:MM` como lo hace el script).
-- **Registro.** La plantilla nativa lee la variable `registro`, que su vista (un
-  `DetailView` de `CabalArchivo`) nunca define: la página nativa muestra valores vacíos,
-  «—» en Centro y «No» en «No coincidente». Se conserva tal cual (ver limitaciones).
+- **Registro (actualización #2946).** En el detalle del archivo, el número de cada
+  fila enlaza al registro exacto, tanto en Django como en React. La ruta
+  `informecabal/registro/<archivo_pk>/` conserva su significado: `?registro=<registro_pk>`
+  selecciona una fila que pertenece a ese archivo. Django y la API reutilizan la misma
+  búsqueda y mantienen sus guardas. Un selector inválido, repetido o de otro archivo
+  devuelve 404. Sin selector, ambas pantallas conservan los valores anteriores y no
+  eligen una fila por defecto. El detalle seleccionado muestra el Centro y la marca
+  «No coincidente» persistidos, y permite volver al archivo.
 
 ## Verificación
 
@@ -72,11 +77,12 @@ Entorno sintético, sin red ni datos reales, imagen fijada.
 - Frontend: Vitest de la ruta (14), `tsc`, ESLint y build de Vite.
 - Visual (regla S13) y G1 de punta a punta: ver el informe de la unidad.
 
+Para #2946, las pruebas usan dos filas del mismo archivo con distintos Centro y
+«No coincidente». Cubren el enlace y la apertura exacta en Django, el contrato de la
+API, la vista previa local y la solicitud y el renderizado de React.
+
 ## Limitaciones
 
-- La vista nativa del registro no puede mostrar datos: la plantilla y la vista no coinciden
-  desde antes de esta migración. Corregirlo es un cambio funcional aparte, que requiere
-  decisión del equipo (qué mostrar y cómo enlazarlo); aquí solo se reproduce la conducta.
 - Las celdas de la vista previa del archivo y los mensajes de error se dibujan como texto. El
   script nativo los inserta como HTML, así que un valor con marcado se vería distinto; el
   cambio es deliberado y cierra una inyección posible.

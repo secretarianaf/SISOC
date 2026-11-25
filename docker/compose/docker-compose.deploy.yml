@@ -166,6 +166,7 @@ services:
       TZ: America/Argentina/Buenos_Aires
       # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
       SISOC_REACT_BUILD_DIR: /opt/sisoc-react
+      SISOC_REACT_PAS_BUILD_DIR: /opt/sisoc-pas-react
       DJANGO_SETTINGS_MODULE: pas_runtime.settings
     command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_PAS_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:

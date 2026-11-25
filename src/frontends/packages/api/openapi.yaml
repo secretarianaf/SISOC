@@ -710,6 +710,8 @@ components:
       properties:
         preview:
           $ref: '#/components/schemas/DeleteSummary'
+        back:
+          type: string
       required:
       - preview
     DeleteSummary:

@@ -93,10 +93,11 @@ MESES_ES_CORTOS = [
 
 
 def descargar_certificacion_prestaciones_web(request, pk, certificacion_id):
+    comedor = ComedorService.get_scoped_comedor_or_404(pk, request.user)
     certificacion = get_object_or_404(
         PrestacionAlimentariaConformidad,
         id=certificacion_id,
-        comedor_id=pk,
+        comedor_id=comedor.pk,
         certificacion_pdf__isnull=False,
     )
     if not certificacion.certificacion_pdf:

@@ -12,7 +12,6 @@ import unicodedata
 from collections import Counter
 from pathlib import Path
 
-
 MODELO_PROVINCIA = "core.provincia"
 MODELO_MUNICIPIO = "core.municipio"
 MODELO_LOCALIDAD = "core.localidad"

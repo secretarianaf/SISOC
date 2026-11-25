@@ -10,7 +10,6 @@ from core.admin_operaciones import Operacion, OperacionesAdminMixin
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 
-
 # Operaciones de soporte (issue #2789). Igual que la vista de revisión de
 # documentos: el service valida que la rendición esté en una etapa de revisión
 # en curso, que el documento sea vigente y que "subsanar" traiga observaciones

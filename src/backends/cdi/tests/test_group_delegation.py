@@ -8,7 +8,6 @@ from users.bootstrap.groups_seed import permission_codes_for_bootstrap_group
 from users.services_delegation import effective_delegatable_group_ids
 from users.services_generate_user import _actor_puede_delegar_grupo
 
-
 CASCADE_GROUP_NAMES = (
     UserGroups.SIMEPI_ADMINISTRADOR,
     UserGroups.SIMEPI_EQUIPO_NACIONAL,

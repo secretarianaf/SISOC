@@ -186,3 +186,41 @@ describe("Select2 multiple", () => {
     expect(seen).toHaveBeenLastCalledWith([]);
   });
 });
+
+describe("Select2 remote source", () => {
+  const EMPTY: Choice[] = [{ value: "", label: "---------" }];
+  const REMOTE = { url: "/vat/ajax/ciudadanos-buscar/", delay: 0, minimumInputLength: 3 };
+  const respond = (body: unknown, ok = true) => vi.fn(() => Promise.resolve({ ok, status: ok ? 200 : 500, json: () => Promise.resolve(body) }));
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("asks for the minimum characters, searches like the AjaxAdapter and keeps the picked option", async () => {
+    const fetchMock = respond({ results: [{ id: 7, text: "Pérez, Ana (12345678)" }] });
+    vi.stubGlobal("fetch", fetchMock);
+    const seen = vi.fn();
+    render(<Harness choices={EMPTY} hideEmptyChoice placeholder="Buscar por DNI" remote={REMOTE} onValue={seen} />);
+    fireEvent.mouseDown(box());
+    expect(optionTexts()).toEqual(["Please enter 3 or more characters"]);
+    fireEvent.change(dropdownSearch(), { target: { value: "12" } });
+    expect(optionTexts()).toEqual(["Please enter 1 or more characters"]);
+    expect(fetchMock).not.toHaveBeenCalled();
+    fireEvent.change(dropdownSearch(), { target: { value: "123" } });
+    expect(optionTexts()).toEqual(["Searching…"]);
+    fireEvent.click(await screen.findByRole("option", { name: "Pérez, Ana (12345678)" }));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]).toEqual(["/vat/ajax/ciudadanos-buscar/?term=123&_type=query&q=123", expect.objectContaining({ credentials: "same-origin" })]);
+    expect(seen).toHaveBeenLastCalledWith(["7"]);
+    expect(document.querySelector(".select2-selection__rendered")?.textContent).toBe("Pérez, Ana (12345678)");
+    expect((document.getElementById("s") as HTMLSelectElement).value).toBe("7");
+  });
+
+  it("shows the empty and the failed search with the Select2 messages", async () => {
+    vi.stubGlobal("fetch", respond({ results: [] }));
+    render(<Harness choices={EMPTY} hideEmptyChoice noResults="No results found" remote={REMOTE} />);
+    fireEvent.mouseDown(box());
+    fireEvent.change(dropdownSearch(), { target: { value: "999" } });
+    expect(await screen.findByText("No results found")).toBeTruthy();
+    vi.stubGlobal("fetch", respond({}, false));
+    fireEvent.change(dropdownSearch(), { target: { value: "9999" } });
+    expect(await screen.findByText("The results could not be loaded.")).toBeTruthy();
+  });
+});

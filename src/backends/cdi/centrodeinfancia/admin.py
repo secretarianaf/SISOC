@@ -32,7 +32,6 @@ from centrodeinfancia.services_accesos_cdi import (
     cambiar_estado_acceso,
 )
 
-
 # Operaciones de soporte (issue #2789): las transiciones, el motivo obligatorio
 # y los bloqueos (propio usuario, responsable) los aplica cambiar_estado_acceso,
 # igual que la botonera "Usuarios del centro" (cambiar_estado_usuario_cdi).

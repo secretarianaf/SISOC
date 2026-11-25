@@ -2,16 +2,62 @@
 
 import django.db.models.deletion
 from django.db import migrations, models
+from django.db.migrations.recorder import MigrationRecorder
+
+COLUMNAS_PROYECTO = frozenset(
+    {
+        "autoridad_cargo",
+        "autoridad_dni",
+        "autoridad_domicilio",
+        "autoridad_localidad_id",
+        "autoridad_nombre",
+        "autoridad_provincia_id",
+        "cantidad_espacios",
+        "caratula_causa",
+        "es_judicializado",
+        "juzgado",
+        "memo",
+    }
+)
+
+
+def verificar_migracion_anterior(apps, schema_editor):
+    """Frena antes del DDL ante una migración previa o columnas parciales."""
+    aplicadas = MigrationRecorder(schema_editor.connection).applied_migrations()
+    if ("admisiones", "0084_proyecto_convenio") in aplicadas:
+        raise RuntimeError(
+            "La migración anterior admisiones.0084_proyecto_convenio ya fue "
+            "aplicada. Detenga la migración y consulte el procedimiento de "
+            "reconciliación; no vuelva a aplicar las columnas a ciegas."
+        )
+    modelo = apps.get_model("admisiones", "FormularioProyectoDeConvenio")
+    with schema_editor.connection.cursor() as cursor:
+        descripcion = schema_editor.connection.introspection.get_table_description(
+            cursor, modelo._meta.db_table
+        )
+    existentes = sorted(
+        columna.name
+        for columna in descripcion
+        if columna.name.casefold() in COLUMNAS_PROYECTO
+    )
+    if existentes:
+        raise RuntimeError(
+            "Hay columnas de admisiones.0085_proyecto_convenio ya existentes "
+            "sin la migración anterior registrada: "
+            + ", ".join(existentes)
+            + ". Detenga la migración y revise el esquema y los datos."
+        )
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("admisiones", "0083_admision_datos_organizacion_snapshot"),
+        ("admisiones", "0084_variables_if_ultimo_informe_tecnico"),
         ("core", "0010_programa_organismo_id"),
     ]
 
     operations = [
+        migrations.RunPython(verificar_migracion_anterior, migrations.RunPython.noop),
         migrations.AddField(
             model_name="formularioproyectodeconvenio",
             name="autoridad_cargo",

@@ -24,19 +24,22 @@ export function submitForm(form: HTMLFormElement) {
 
 export type Loaded<T> = { status: "loading" } | { status: "error" } | { status: "forbidden"; prerequisite: WebPrerequisite | null } | { status: "ready"; data: T; session: Session };
 
-export function useScreen<T>(url: string, valid: (v: unknown) => v is T) {
+export function useScreen<T>(url: string | null, valid: (v: unknown) => v is T, embedded: unknown = null) {
   const [state, setState] = useState<Loaded<T>>({ status: "loading" });
   const forbidden = useCallback((data: unknown) => setState({ status: "forbidden", prerequisite: prerequisiteFromForbidden(data) }), []);
   useEffect(() => {
     const controller = new AbortController();
     const options = { signal: controller.signal, validateStatus: accepted };
-    Promise.all([client.get("web/session/", options), client.get(url, options)]).then(([session, screen]: { data: unknown; status?: number }[]) => {
+    // Session first so the request order stays stable; both still run in parallel.
+    const session = client.get("web/session/", options);
+    const data = url === null ? Promise.resolve({ data: embedded, status: 200 }) : client.get(url, options);
+    Promise.all([session, data]).then(([session, screen]: { data: unknown; status?: number }[]) => {
       if (controller.signal.aborted) return;
       if (session.status === 403 || screen.status === 403) forbidden(session.status === 403 ? session.data : screen.data);
       else if (sessionValid(session.data) && valid(screen.data)) setState({ status: "ready", data: screen.data, session: session.data });
       else setState({ status: "error" });
     }).catch(() => { if (!controller.signal.aborted) setState({ status: "error" }); });
     return () => controller.abort();
-  }, [url, valid, forbidden]);
+  }, [url, valid, forbidden, embedded]);
   return { state, forbidden };
 }

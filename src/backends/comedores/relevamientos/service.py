@@ -957,11 +957,28 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             prestacion = extra_forms["prestacion_form"].save()
             relevamiento.prestacion = prestacion
 
-            referente = extra_forms["referente_form"].save()
-            relevamiento.responsable = referente
-            relevamiento.responsable_es_referente = (
-                relevamiento_form.cleaned_data["responsable_es_referente"] == "True"
-            )
+            if not relevamiento.datos_comedor_congelados:
+                relevamiento.responsable_es_referente = (
+                    relevamiento_form.cleaned_data["responsable_es_referente"] == "True"
+                )
+                responsable = extra_forms["referente_form"]
+                if (
+                    relevamiento.responsable_es_referente
+                    and relevamiento.comedor.referente_id
+                ):
+                    relevamiento.responsable_relevamiento = (
+                        relevamiento.comedor.referente
+                    )
+                elif responsable.has_changed():
+                    # An edit must not modify a contact shared by other records.
+                    relevamiento.responsable_relevamiento = (
+                        responsable.save()
+                        if any(
+                            v not in (None, "")
+                            for v in responsable.cleaned_data.values()
+                        )
+                        else None
+                    )
             punto_entregas = extra_forms["punto_entregas_form"].save()
             relevamiento.punto_entregas = punto_entregas
 

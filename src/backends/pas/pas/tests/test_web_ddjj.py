@@ -1,7 +1,10 @@
-"""Public DDJJ JSON transport and unmounted React entry (P1 session policy)."""
+"""Public DDJJ JSON transport and canonical React entry (P1 session policy)."""
 
 import hashlib
+from contextlib import contextmanager
 from datetime import timedelta
+from pathlib import Path
+from runpy import run_path
 from types import ModuleType
 
 import pytest
@@ -415,10 +418,7 @@ def _encuesta_obligatoria():
 
 
 @pytest.fixture
-def entrada_react(tmp_path):
-    from config.urls_all import urlpatterns
-    from pas.ddjj_preview import ddjj_preview_patterns
-
+def build_ddjj(tmp_path):
     assets = tmp_path / "assets"
     assets.mkdir()
     script = b"export const ddjj = true;"
@@ -428,10 +428,51 @@ def entrada_react(tmp_path):
     (tmp_path / "index.html").write_text(
         f'<html><script type="module" src="/v2/pas/assets/{nombre}"></script></html>'
     )
-    modulo = ModuleType("pas_ddjj_preview_test_urls")
-    modulo.urlpatterns = ddjj_preview_patterns(tmp_path) + urlpatterns
-    with override_settings(ROOT_URLCONF=modulo):
-        yield f"/pas/ddjj/react/assets/{nombre}", script
+    return tmp_path, f"/pas/ddjj/react/assets/{nombre}", script
+
+
+@contextmanager
+def _urlconf_pas(build, activas):
+    # Evaluar las rutas de producción con estos settings sin recargar el URLconf
+    # compartido del resto de la suite.
+    ruta = Path(__file__).resolve().parents[2] / "pas_runtime" / "urls.py"
+    with override_settings(
+        REACT_VERTICALES_ACTIVAS=activas,
+        SISOC_REACT_BUILD_DIR="",
+        SISOC_REACT_PAS_BUILD_DIR=str(build),
+    ):
+        modulo = ModuleType("pas_ddjj_runtime_test_urls")
+        modulo.urlpatterns = run_path(str(ruta))["urlpatterns"]
+        with override_settings(ROOT_URLCONF=modulo):
+            yield
+
+
+@pytest.fixture
+def entrada_react(build_ddjj):
+    build, asset, script = build_ddjj
+    with _urlconf_pas(build, frozenset({"todas"})):
+        yield asset, script
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("build_disponible", [True, False])
+def test_ddjj_fallback_nativo_sin_activacion_o_sin_build(
+    persona, build_ddjj, build_disponible
+):
+    build, asset, _ = build_ddjj
+    activas = frozenset() if build_disponible else frozenset({"todas"})
+    build = build if build_disponible else build / "faltante"
+    invitacion = crear_invitacion(persona)
+    client = Client()
+
+    with _urlconf_pas(build, activas):
+        formulario = client.get(_rutas(invitacion)["canonica"])
+        assert formulario.status_code == 200
+        assert b"pas-ddjj-form" in formulario.content
+        confirmacion = client.get(reverse("pas_ddjj_confirmacion"))
+        assert confirmacion.status_code == 200
+        assert asset.encode() not in confirmacion.content
+        assert client.get(asset).status_code == 404
 
 
 @pytest.mark.django_db

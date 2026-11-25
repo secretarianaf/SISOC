@@ -11,8 +11,7 @@ import type { RouteDefinition } from "./types";
  * `registro_detail.html` and `archivo_por_centro.html`. The API runs the native views; the upload
  * preview, the processing and the reprocess are the native AJAX endpoints, posted exactly as the
  * native script does (multipart or urlencoded, `X-CSRFToken`), so nothing is retried and nothing
- * is duplicated. The native `registro_detail.html` reads a variable its view never sets: it
- * renders empty values and this screen keeps that.
+ * is duplicated. The registration detail accepts the same optional archive-scoped selector as Django.
  */
 const PAGE_SIZE = 25;
 
@@ -25,15 +24,23 @@ export type CabalListData = {
   results: Archivo[]; alerts: { message: string; tags: string }[];
   urls: { list: string; preview: string; process: string; reprocess: string }; messages: CdfMessage[];
 };
-type Registro = {
-  numero: number; nro_comercio: string; razon_social: string; importe: string; fecha_trx: string; moneda_origen: string;
-  importe_pesos: string; pago_aceptado: boolean; impactado: boolean;
+type RegistroFields = {
+  nro_comercio: string; razon_social: string; importe: string; fecha_trx: string;
+  moneda_origen: string; importe_pesos: string;
+};
+type Registro = RegistroFields & {
+  numero: number; pago_aceptado: boolean; impactado: boolean; urls: { detail: string };
+};
+type RegistroDetail = RegistroFields & {
+  id: number; centro: string; motivo_rechazo: string; desc_motivo_rechazo: string; no_coincidente: string; fila_numero: string;
 };
 export type CabalArchivoData = {
   archivo: { id: number; nombre_original: string; fecha_subida: string; usuario: string; total_filas: number; total_validas: number; total_invalidas: number };
   registros: Registro[]; urls: { list: string }; messages: CdfMessage[];
 };
-export type CabalRegistroData = { messages: CdfMessage[] };
+export type CabalRegistroData = { messages: CdfMessage[] } & (
+  { registro?: undefined; urls?: undefined } | { registro: RegistroDetail; urls: { archivo: string } }
+);
 type FilaCentro = { numero: number; nro_comercio: string; razon_social: string; importe: string; fecha_trx: string; pago_aceptado: boolean };
 export type CabalCentroData = {
   centro: { id: number; nombre: string }; count: number; page: number; num_pages: number;
@@ -56,9 +63,10 @@ export function listValid(v: unknown): v is CabalListData {
     record(v.urls) && ["list", "preview", "process", "reprocess"].every((k) => internal((v.urls as Record<string, unknown>)[k])) && messagesValid(v.messages);
 }
 
+const REGISTRO_FIELDS = ["nro_comercio", "razon_social", "importe", "fecha_trx", "moneda_origen", "importe_pesos"];
 const registroValid = (r: unknown): r is Registro => record(r) && integer(r.numero) &&
-  strings(r, ["nro_comercio", "razon_social", "importe", "fecha_trx", "moneda_origen", "importe_pesos"]) &&
-  typeof r.pago_aceptado === "boolean" && typeof r.impactado === "boolean";
+  strings(r, REGISTRO_FIELDS) && typeof r.pago_aceptado === "boolean" && typeof r.impactado === "boolean" &&
+  record(r.urls) && internal(r.urls.detail);
 
 export function archivoValidator(v: unknown): v is CabalArchivoData {
   if (!record(v) || !record(v.archivo) || !record(v.urls)) return false;
@@ -67,7 +75,13 @@ export function archivoValidator(v: unknown): v is CabalArchivoData {
     Array.isArray(v.registros) && v.registros.every(registroValid) && internal(v.urls.list) && messagesValid(v.messages);
 }
 
-export const registroValidator = (v: unknown): v is CabalRegistroData => record(v) && messagesValid(v.messages);
+export function registroValidator(v: unknown): v is CabalRegistroData {
+  if (!record(v) || !messagesValid(v.messages)) return false;
+  if (v.registro === undefined) return v.urls === undefined;
+  return record(v.registro) && integer(v.registro.id) &&
+    strings(v.registro, [...REGISTRO_FIELDS, "centro", "motivo_rechazo", "desc_motivo_rechazo", "no_coincidente", "fila_numero"]) &&
+    record(v.urls) && internal(v.urls.archivo);
+}
 
 export function centroValidator(v: unknown): v is CabalCentroData {
   return record(v) && record(v.centro) && integer(v.centro.id) && text(v.centro.nombre) && numbers(v, ["count", "page", "num_pages"]) && neighboursValid(v) &&
@@ -450,7 +464,7 @@ export function CabalArchivoContent({ data }: { data: CabalArchivoData }) {
               <tbody>
                 {data.registros.length ? data.registros.map((r) => (
                   <tr key={r.numero}>
-                    <td>{r.numero}</td><td>{r.nro_comercio}</td><td>{r.razon_social}</td><td>{r.importe}</td><td>{r.fecha_trx}</td>
+                    <td><a href={r.urls.detail} aria-label={`Ver registro ${r.numero}`}>{r.numero}</a></td><td>{r.nro_comercio}</td><td>{r.razon_social}</td><td>{r.importe}</td><td>{r.fecha_trx}</td>
                     <td>{r.moneda_origen}</td><td>{r.importe_pesos}</td>
                     <td>{r.pago_aceptado ? <span className="badge badge-success">Pago aceptado</span> : <span className="badge badge-danger">Pago no aceptado</span>}</td>
                     <td>{r.impactado ? <span className="badge badge-success">Impactado</span> : <span className="badge badge-danger">Rechazado</span>}</td>
@@ -465,16 +479,20 @@ export function CabalArchivoContent({ data }: { data: CabalArchivoData }) {
   );
 }
 
-// --- Registro detail (the native template reads an unset variable) ------------------------------
+// --- Registro detail ---------------------------------------------------------------------------
 
-export function CabalRegistroContent() {
+export function CabalRegistroContent({ data }: { data: CabalRegistroData }) {
+  const r = data.registro;
   const fields: [string, string][] = [
-    ["Centro", "—"], ["NroComercio", ""], ["RazonSocial", ""], ["FechaTRX", ""], ["Importe", ""], ["ImportePesos", ""],
-    ["MonedaOrigen", ""], ["MotivoRechazo", ""], ["Desc Motivo Rechazo", ""], ["No coincidente", "No"], ["Fila (Excel)", ""],
+    ["Centro", r?.centro ?? "—"], ["NroComercio", r?.nro_comercio ?? ""], ["RazonSocial", r?.razon_social ?? ""],
+    ["FechaTRX", r?.fecha_trx ?? ""], ["Importe", r?.importe ?? ""], ["ImportePesos", r?.importe_pesos ?? ""],
+    ["MonedaOrigen", r?.moneda_origen ?? ""], ["MotivoRechazo", r?.motivo_rechazo ?? ""],
+    ["Desc Motivo Rechazo", r?.desc_motivo_rechazo ?? ""], ["No coincidente", r?.no_coincidente ?? "No"], ["Fila (Excel)", r?.fila_numero ?? ""],
   ];
   return (
     <div className="container">
-      <h3>Detalle de Registro CABAL #</h3>
+      {data.urls && <a href={data.urls.archivo} className="btn btn-secondary btn-sm">← Volver al archivo</a>}
+      <h3>Detalle de Registro CABAL #{r?.id}</h3>
       <div className="card">
         <div className="card-body">
           <dl className="row">
@@ -541,8 +559,8 @@ function Archivo({ id }: { id: string }) {
   return renderWithNativeToasts(state, (data) => ({ title: "Detalle Archivo CABAL", breadcrumb: null, content: <CabalArchivoContent data={data} /> }));
 }
 function Registro({ id }: { id: string }) {
-  const state = useCdfPage(`web/cdf/informecabal/registro/${id}/`, registroValidator);
-  return renderWithNativeToasts(state, () => ({ title: "Detalle Registro CABAL", breadcrumb: null, content: <CabalRegistroContent /> }));
+  const state = useCdfPage(`web/cdf/informecabal/registro/${id}/${window.location.search}`, registroValidator);
+  return renderWithNativeToasts(state, (data) => ({ title: "Detalle Registro CABAL", breadcrumb: null, content: <CabalRegistroContent data={data} /> }));
 }
 function PorCentro({ centro, id }: { centro: string; id: string }) {
   const state = useCdfPage(`web/cdf/centros/${centro}/informecabal/${id}/${window.location.search}`, centroValidator);

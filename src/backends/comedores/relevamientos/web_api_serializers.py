@@ -518,19 +518,14 @@ def bloques_seguimiento(bloques):
     ]
 
 
-def prestaciones_seguimiento(prestaciones, es_primer):
+def prestaciones_seguimiento(prestaciones):
     filas = []
     for p in prestaciones:
-        ap = (
-            [mostrar(p.ap_total_efectivo, "-")]
-            if es_primer
-            else [mostrar(p.ap_presencial, "-"), mostrar(p.ap_vianda, "-")]
-        )
         filas.append(
             [
                 mostrar(p.dias_prestacion, "-"),
                 mostrar(p.tipo_prestacion, "-"),
-                *ap,
+                mostrar(p.ap_total_efectivo, "-"),
                 mostrar(p.de_presencial, "-"),
                 mostrar(p.de_vianda, "-"),
             ]

@@ -7,7 +7,6 @@ from django.urls import reverse
 
 from core.constants import UserGroups
 
-
 pytestmark = pytest.mark.django_db
 
 

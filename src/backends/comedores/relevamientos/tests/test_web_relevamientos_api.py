@@ -1,8 +1,7 @@
 """Web API (G1 v1) of the relevamiento list and detail (R01.01, ``relevamientos.web_api_views``).
 
-The tests compare every projected value with the native HTML page and pin
-today's access: ``relevamientos.view_relevamiento`` only, no object scope, the
-detail looked up by ``pk`` alone and the native POSTs left alone.
+The tests compare projected values with the native HTML page and check the
+comedor scope for reads and mutations.
 """
 
 import re
@@ -15,7 +14,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.test import Client, override_settings
 
-from comedores.models import Comedor
+from comedores.models import AlcanceProgramaComedor, Comedor, Programas
 from core import web_gate
 from core.models import Localidad, Municipio, Provincia
 from relevamientos.models import (
@@ -101,6 +100,61 @@ def _ciclo(comedor):
         fecha_hora=FECHA,
     )
     return viejo, nuevo, primero, posterior, acta, pnud
+
+
+def test_api_respects_the_comedor_program_scope_without_writes():
+    usuario = _usuario("lector_con_alcance", VIEW)
+    AlcanceProgramaComedor.objects.create(
+        profile=usuario.profile, programa=AlcanceProgramaComedor.PNUD
+    )
+    permitido = Comedor.objects.create(
+        nombre="Permitido",
+        programa=Programas.objects.create(nombre="Abordaje comunitario - Línea Secos"),
+    )
+    ajeno = Comedor.objects.create(
+        nombre="Ajeno", programa=Programas.objects.create(nombre="Alimentar comunidad")
+    )
+    relevamiento, _, seguimiento, _, acta, pnud = _ciclo(ajeno)
+    cliente = _client(usuario)
+    urls = (
+        f"{API}{ajeno.pk}/",
+        f"{API}{ajeno.pk}/relevamiento/{relevamiento.pk}/",
+        f"{API}{ajeno.pk}/relevamiento/{relevamiento.pk}/seguimientos/{seguimiento.pk}/",
+        f"{API}{ajeno.pk}/pnud/{pnud.pk}/",
+        f"{API}{ajeno.pk}/actas/{acta.pk}/",
+    )
+    antes = (Relevamiento.objects.count(), PrimerSeguimiento.objects.count())
+
+    assert cliente.get(f"{API}{permitido.pk}/").status_code == 200
+    for url in urls:
+        assert cliente.get(url).status_code == 404, url
+    assert (Relevamiento.objects.count(), PrimerSeguimiento.objects.count()) == antes
+
+
+def test_api_rejects_mutations_for_a_comedor_outside_program_scope():
+    usuario = _usuario("editor_con_alcance", VIEW, "relevamientos.change_relevamiento")
+    AlcanceProgramaComedor.objects.create(
+        profile=usuario.profile, programa=AlcanceProgramaComedor.PNUD
+    )
+    ajeno = Comedor.objects.create(
+        nombre="Ajeno", programa=Programas.objects.create(nombre="Alimentar comunidad")
+    )
+    relevamiento, *_ = _ciclo(ajeno)
+    cliente = _client(usuario)
+    numero_original = relevamiento.numero_if
+
+    respuesta = cliente.post(
+        f"{API}{ajeno.pk}/relevamiento/numero-if/",
+        {"relevamiento_id": relevamiento.pk, "numero_if": "IF-OTRO"},
+    )
+    assert respuesta.status_code == 404
+    respuesta = cliente.post(
+        f"{API}{ajeno.pk}/relevamiento/{relevamiento.pk}/eliminar/"
+    )
+    assert respuesta.status_code == 404
+    relevamiento.refresh_from_db()
+    assert relevamiento.numero_if == numero_original
+    assert Relevamiento.objects.filter(pk=relevamiento.pk).exists()
 
 
 class _Texto(HTMLParser):
@@ -354,15 +408,15 @@ def test_detail_tree_keeps_the_native_markup_and_drops_the_rest(web, comedor_rel
     assert cabecera[:2] == ["LUNES", "MARTES"]
 
 
-def test_detail_ignores_the_comedor_of_the_url_like_the_native_view(web, comedor_rel):
+def test_detail_rejects_a_relevamiento_from_another_comedor(web, comedor_rel):
     viejo, *_ = _ciclo(comedor_rel)
     otro = Comedor.objects.create(nombre="Otro")
 
     respuesta = web.get(f"{API}{otro.pk}/relevamiento/{viejo.pk}/")
 
-    assert respuesta.status_code == 200
-    assert respuesta.json()["relevamiento"]["comedor"]["id"] == comedor_rel.pk
-    assert web.get(f"/comedores/{otro.pk}/relevamiento/{viejo.pk}").status_code == 200
+    assert respuesta.status_code == 404
+    assert web.get(f"/comedores/{otro.pk}/relevamiento/{viejo.pk}").status_code == 404
+    assert web.get(f"{API}{comedor_rel.pk}/relevamiento/{viejo.pk}/").status_code == 200
 
 
 def test_detail_of_a_soft_deleted_or_unknown_relevamiento_is_404(web, comedor_rel):

@@ -230,6 +230,23 @@ Toda nueva feature debe depender de **permisos Django** (`app_label.codename`), 
   - `app.<accion>_<recurso>`
   - Evitar nombres ambiguos.
 
+## Asignación de Coordinador DataCalle
+
+Seleccionar por primera vez el grupo `Coordinador DataCalle` también asigna
+`Profile.datacalle_rol=coordinador` y habilita el acceso DataCalle. Se requiere
+exactamente una provincia en la sección DataCalle y autoridad para gestionar
+esa sección y asignar el rol. La delegación del grupo por sí sola no alcanza.
+Si falta la provincia, el formulario muestra un error junto al selector de
+grupos, incluso cuando el panel Mobile está oculto. Habilitar el acceso en esa
+sección permite seleccionar la provincia y volver a guardar.
+
+Se reutilizan las validaciones de alcance territorial: no se amplían ni
+sobrescriben alcances incompatibles. Una revocación o degradación explícita de
+un rol existente sigue teniendo prioridad sobre el grupo reenviado. No cambia
+la asignación de otros grupos ni se reparan automáticamente perfiles históricos.
+
+Detalle y verificación: `docs/registro/cambios/2026-11-13-hotfix-2908-datacalle.md`.
+
 ## Checklist rápido (PR)
 
 - [ ] No hay checks de `has_group` / `group_required` en código nuevo.

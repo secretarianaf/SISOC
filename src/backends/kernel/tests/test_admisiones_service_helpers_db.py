@@ -10,7 +10,6 @@ from admisiones.models.admisiones import (
 )
 from admisiones.services import admisiones_service as module
 
-
 pytestmark = pytest.mark.django_db
 
 

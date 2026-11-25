@@ -1615,6 +1615,21 @@
   "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/usuarios/(?P<acceso_id>[0-9]+)/estado/\\Z"
  },
  {
+  "name": "centrodeinfancia_web_calidad_cargar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/calidad/cargar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_calidad_detalle",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/calidad/(?P<form_pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_calidad_listado",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/calidad/\\Z"
+ },
+ {
   "name": "centrodeinfancia_web_centro_crear",
   "namespace": "",
   "regex": "^api/web/cdi/centros/crear/\\Z"
@@ -1628,6 +1643,11 @@
   "name": "centrodeinfancia_web_centro_editar",
   "namespace": "",
   "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_centro_eliminar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
   "name": "centrodeinfancia_web_centros",
@@ -1703,6 +1723,11 @@
   "name": "centrodeinfancia_web_nomina_destinatario",
   "namespace": "",
   "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/nomina/(?P<nomina_id>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_nomina_eliminar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/nomina/(?P<pk2>[0-9]+)/eliminar/\\Z"
  },
  {
   "name": "centrodeinfancia_web_nomina_formulario",
@@ -2153,6 +2178,16 @@
   "name": "comedores_web_nomina_asistencia_historial",
   "namespace": "",
   "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/admision/(?P<admision_pk>[0-9]+)/nomina/asistencia/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_baja_admision",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/admision/(?P<admision_pk>[0-9]+)/nomina/(?P<pk2>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_baja_directa",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/nomina/(?P<pk2>[0-9]+)/eliminar/\\Z"
  },
  {
   "name": "comedores_web_nomina_cambiar_estado",
@@ -4870,9 +4905,19 @@
   "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
+  "name": "relevamientos_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/crear/\\Z"
+ },
+ {
   "name": "relevamientos_web_detalle",
   "namespace": "",
   "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "relevamientos_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
   "name": "relevamientos_web_listado",
@@ -5078,6 +5123,11 @@
   "name": "rendicioncuentasmensual_web_nuevo",
   "namespace": "",
   "regex": "^api/web/comedores/rendicioncuentasmensual/nuevo/(?P<comedor_id>[0-9]+)/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_web_por_comedor",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/por\\-comedor/(?P<comedor_id>[0-9]+)/\\Z"
  },
  {
   "name": "reporter_provincias",
@@ -5628,6 +5678,16 @@
   "name": "vat-web-titulo-list",
   "namespace": "",
   "regex": "^api/vat/web/titulos/$"
+ },
+ {
+  "name": "vat_ajax_buscar_ciudadanos",
+  "namespace": "",
+  "regex": "^vat/ajax/ciudadanos\\-buscar/\\Z"
+ },
+ {
+  "name": "vat_ajax_buscar_inscripciones",
+  "namespace": "",
+  "regex": "^vat/ajax/inscripciones\\-buscar/\\Z"
  },
  {
   "name": "vat_ajax_localidades_por_centro",
@@ -6738,6 +6798,11 @@
   "name": "web_dispositivos_editar",
   "namespace": "",
   "regex": "^api/web/dispositivos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "web_dispositivos_eliminar",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
   "name": "web_dispositivos_list",

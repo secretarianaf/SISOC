@@ -16,7 +16,6 @@ from gestion_organizaciones.views import (
     agregar_documento_personalizado_organizacion,
 )
 
-
 pytestmark = pytest.mark.django_db
 User = get_user_model()
 

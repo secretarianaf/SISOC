@@ -199,6 +199,24 @@
                             <button class="btn btn-success">Finalizar regularización</button>
                         </form>
                     {% endif %}
+                    {% if estados_revision_disponibles %}
+                        <form method="post" class="mt-3 d-flex flex-wrap align-items-end gap-2">
+                            {% csrf_token %}
+                            <div>
+                                <label for="estado-revision" class="form-label mb-1">Modificar estado de la rendición</label>
+                                <select id="estado-revision"
+                                        name="estado_revision"
+                                        class="form-select"
+                                        required>
+                                    <option value="">Seleccionar estado</option>
+                                    {% for valor, etiqueta in estados_revision_disponibles %}
+                                        <option value="{{ valor }}">{{ etiqueta }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button class="btn btn-outline-primary">Modificar estado</button>
+                        </form>
+                    {% endif %}
                 </div>
             </div>
         {% endif %}

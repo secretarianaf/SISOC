@@ -2545,6 +2545,11 @@
   "regex": "^dashboard/(?P<slug>[-a-zA-Z0-9_]+)/\\Z"
  },
  {
+  "name": "dashboard_tablero_progresar_curso",
+  "namespace": "",
+  "regex": "^dashboard/progresar\\-curso\\-obligatorio/\\Z"
+ },
+ {
   "name": "dashboard_web_centro_de_familia",
   "namespace": "",
   "regex": "^api/web/dashboard/centro\\-de\\-familia/\\Z"
@@ -4133,6 +4138,11 @@
   "name": "organizacion_exportar",
   "namespace": "",
   "regex": "^organizaciones/exportar\\Z"
+ },
+ {
+  "name": "organizacion_proyecto_codigo",
+  "namespace": "",
+  "regex": "^organizaciones/proyectos/(?P<proyecto_id>[0-9]+)/codigo/\\Z"
  },
  {
   "name": "organizacion_proyecto_convenio",

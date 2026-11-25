@@ -50,10 +50,17 @@ class OrganizacionAdmin(SisocModelAdmin):
 
 @admin.register(ProyectoOrganizacion)
 class ProyectoOrganizacionAdmin(SisocModelAdmin):
-    list_display = ("codigo", "nombre", "organizacion", "activo")
+    list_display = (
+        "codigo",
+        "nombre",
+        "organizacion",
+        "region_abordaje",
+        "subzona_abordaje",
+        "activo",
+    )
     search_fields = ("codigo", "nombre", "organizacion__nombre", "organizacion__cuit")
-    list_filter = ("activo",)
-    list_select_related = ("organizacion",)
+    list_filter = ("activo", ("region_abordaje", RelatedDropdownFilter))
+    list_select_related = ("organizacion", "region_abordaje", "subzona_abordaje")
     autocomplete_fields = ("organizacion", "territoriales")
 
 

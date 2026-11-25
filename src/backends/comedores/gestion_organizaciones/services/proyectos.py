@@ -90,8 +90,11 @@ def cambiar_codigo_proyecto(*, proyecto, codigo_nuevo, actor=None):
             codigo_de_proyecto=codigo_anterior,
         )
     )
-    comedores_ids = list(comedores.values_list("pk", flat=True))
-    actualizados = Comedor.all_objects.filter(pk__in=comedores_ids).update(
+    # Se bloquean en orden estable antes de registrar qué comedores se tocaron.
+    comedores_ids = list(
+        comedores.select_for_update().order_by("pk").values_list("pk", flat=True)
+    )
+    actualizados = comedores.filter(pk__in=comedores_ids).update(
         codigo_de_proyecto=codigo_nuevo
     )
 

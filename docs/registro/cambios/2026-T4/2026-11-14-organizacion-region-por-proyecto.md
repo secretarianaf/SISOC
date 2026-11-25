@@ -36,6 +36,8 @@ Fundamento y trade-offs: [decisión](../../decisiones/2026-11-14-region-por-proy
 - "Editar código" de un proyecto guardado actualiza proyecto y comedores juntos;
   si el prefijo AMBA cambia la línea de las rendiciones nuevas, pide
   confirmación. Las rendiciones existentes no se modifican.
+- Se bloquean los comedores vinculados antes de recodificarlos. La escritura
+  vuelve a comprobar que siguen vinculados, para preservar una reasignación.
 - Territoriales/Supervisores anteriores sin proyecto se ven como aviso en la
   tarjeta de proyectos hasta asignarlos.
 - Filtros: "Programa" pasa de texto a opciones en Comedores y se agrega en

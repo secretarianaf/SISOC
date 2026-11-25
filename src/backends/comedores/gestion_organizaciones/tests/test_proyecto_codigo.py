@@ -4,6 +4,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
 from django.core.exceptions import ValidationError
+from django.db import connection
 from django.urls import reverse
 
 from comedores.models import Comedor
@@ -67,6 +68,31 @@ def test_cambia_el_codigo_en_el_proyecto_y_en_sus_comedores(organizacion, proyec
     assert Comedor.all_objects.get(pk=dado_de_baja.pk).codigo_de_proyecto == "P-01"
     ajeno.refresh_from_db()
     assert ajeno.codigo_de_proyecto == "P-0l"
+
+
+@pytest.mark.django_db
+def test_recodificar_no_pisa_una_reasignacion_intercalada(organizacion, proyecto):
+    comedor = Comedor.objects.create(
+        nombre="Vinculado antes",
+        organizacion=organizacion,
+        codigo_de_proyecto=proyecto.codigo,
+    )
+    intercalado = False
+
+    def reasignar(execute, sql, params, many, context):
+        nonlocal intercalado
+        if not intercalado and sql.startswith("UPDATE") and Comedor._meta.db_table in sql:
+            intercalado = True
+            Comedor.all_objects.filter(pk=comedor.pk).update(codigo_de_proyecto="P-99")
+        return execute(sql, params, many, context)
+
+    with connection.execute_wrapper(reasignar):
+        actualizados = cambiar_codigo_proyecto(proyecto=proyecto, codigo_nuevo="P-01")
+
+    assert intercalado
+    comedor.refresh_from_db()
+    assert comedor.codigo_de_proyecto == "P-99"
+    assert actualizados == 0
 
 
 @pytest.mark.django_db

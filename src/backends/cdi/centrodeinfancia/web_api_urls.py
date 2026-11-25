@@ -22,6 +22,7 @@ from centrodeinfancia.web_api_formulario_calidad import (
 )
 from centrodeinfancia.web_api_legajo import (
     CentroDetalleWebView,
+    centro_estado_web,
     trabajador_eliminar_web,
     usuario_estado_web,
 )
@@ -69,6 +70,11 @@ urlpatterns = [
         "centros/<int:pk>/usuarios/<int:acceso_id>/estado/",
         usuario_estado_web,
         name="centrodeinfancia_web_usuario_estado",
+    ),
+    path(
+        "centros/<int:pk>/estado/",
+        centro_estado_web,
+        name="centrodeinfancia_web_centro_estado",
     ),
     path(
         "centros/<int:pk>/trabajadores/<int:trabajador_id>/eliminar/",

@@ -28,7 +28,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from centrodeinfancia.models import AccesoCDI, NominaCentroInfancia
+from centrodeinfancia.models import AccesoCDI, CentroDeInfancia, NominaCentroInfancia
 from centrodeinfancia.services import (
     fecha_nacimiento_limite_nomina,
     pasar_nomina_a_pendiente_por_edad,
@@ -237,6 +237,8 @@ def build_export_data(  # pylint: disable=too-many-locals
     registros = list(
         NominaCentroInfancia.objects.filter(
             centro__provincia=provincia,
+            # Un CDI en Pendiente o Baja no figura en el PDF, ni sus niños (#2945).
+            centro__estado=CentroDeInfancia.Estado.ACTIVO,
             estado=NominaCentroInfancia.ESTADO_ACTIVO,
         )
         .select_related("centro", "ciudadano", "ciudadano__sexo")

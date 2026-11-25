@@ -613,6 +613,39 @@ def test_export_data_repara_mojibake_capitalizado_del_snapshot(
     assert data.centros[0].rows[0].nombre == expected_name
 
 
+@pytest.mark.django_db
+def test_export_data_excluye_cdi_pendientes_o_de_baja_y_sus_ninos():
+    # #2945: solo los CDI en estado Activo figuran en el PDF.
+    provincia = Provincia.objects.create(nombre="Provincia Estados CDI")
+    user = _create_egp("egp-estados-cdi", provincia)
+    centros = {}
+    for documento, estado in (
+        (45000001, CentroDeInfancia.Estado.ACTIVO),
+        (45000002, CentroDeInfancia.Estado.PENDIENTE),
+        (45000003, CentroDeInfancia.Estado.BAJA),
+    ):
+        centro = CentroDeInfancia.objects.create(
+            nombre=f"CDI {estado}", provincia=provincia, estado=estado
+        )
+        centros[estado] = centro
+        NominaCentroInfancia.objects.create(
+            centro=centro,
+            ciudadano=_create_child(documento),
+            estado=NominaCentroInfancia.ESTADO_ACTIVO,
+        )
+
+    data = build_export_data(user=user, provincia=provincia)
+
+    assert [grupo.nombre for grupo in data.centros] == ["CDI activo"]
+    assert data.total_ninos == 1
+
+    # Si vuelve a Activo, reaparece en la próxima descarga.
+    centros[CentroDeInfancia.Estado.BAJA].estado = CentroDeInfancia.Estado.ACTIVO
+    centros[CentroDeInfancia.Estado.BAJA].save(update_fields=["estado"])
+    data = build_export_data(user=user, provincia=provincia)
+    assert data.total_ninos == 2
+
+
 def _sample_export_data():
     row = NinoRow(
         centro_id=1,

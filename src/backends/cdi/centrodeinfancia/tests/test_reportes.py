@@ -132,8 +132,11 @@ def test_encabezados_replican_el_contrato_del_issue(datos):
     assert hojas["CDI"][0] == list(COLUMNAS_CDI)
     assert hojas["Trabajadores"][0] == list(COLUMNAS_TRABAJADORES)
     assert hojas["Nomina"][0] == list(COLUMNAS_NOMINA)
-    assert len(COLUMNAS_CDI) == 36
-    assert len(COLUMNAS_TRABAJADORES) == 47
+    # #2945 sumó al final `estado` (CDI) y `estado_cdi` (Trabajadores y Nómina).
+    assert len(COLUMNAS_CDI) == 37
+    assert len(COLUMNAS_TRABAJADORES) == 48
+    assert COLUMNAS_CDI[-1] == "estado"
+    assert COLUMNAS_TRABAJADORES[-1] == "estado_cdi"
     # Las columnas nuevas van al final para no mover las que el equipo ya validó.
     assert hojas["Nomina"][0][:COLUMNAS_NOMINA_ORIGINALES] == list(
         COLUMNAS_NOMINA[:COLUMNAS_NOMINA_ORIGINALES]
@@ -143,6 +146,7 @@ def test_encabezados_replican_el_contrato_del_issue(datos):
         "renaper_responsable_1",
         "renaper_responsable_2",
         "renaper_nino_motivo",
+        "estado_cdi",
     ]
 
 
@@ -537,8 +541,10 @@ def test_variante_reducida_acota_trabajadores_y_nomina(datos):
     assert hojas["CDI"][0] == list(COLUMNAS_CDI)
     assert hojas["Trabajadores"][0] == list(COLUMNAS_TRABAJADORES_REDUCIDO)
     assert hojas["Nomina"][0] == list(COLUMNAS_NOMINA_REDUCIDO)
-    assert len(COLUMNAS_TRABAJADORES_REDUCIDO) == 24
-    assert len(COLUMNAS_NOMINA_REDUCIDO) == 22
+    assert len(COLUMNAS_TRABAJADORES_REDUCIDO) == 25
+    assert len(COLUMNAS_NOMINA_REDUCIDO) == 23
+    assert COLUMNAS_TRABAJADORES_REDUCIDO[-1] == "estado_cdi"
+    assert COLUMNAS_NOMINA_REDUCIDO[-1] == "estado_cdi"
     # El diccionario no describe columnas que el archivo no trae.
     columnas_publicadas = {
         "CDI": set(COLUMNAS_CDI),
@@ -549,6 +555,50 @@ def test_variante_reducida_acota_trabajadores_y_nomina(datos):
         fila[1] in columnas_publicadas[fila[0]] for fila in hojas["Diccionario"][1:]
     )
     assert dict(hojas["Metadatos"][1:])["Variante"].startswith("Reducido")
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("variante", [None, REPORTE_REDUCIDO])
+def test_estado_del_cdi_en_las_tres_hojas_sin_excluir_filas(datos, variante):
+    # #2945: los CDI en Pendiente o Baja siguen en el Excel; BI filtra con la columna.
+    datos["ajeno"].estado = CentroDeInfancia.Estado.BAJA
+    datos["ajeno"].save(update_fields=["estado"])
+    kwargs = {"variante": variante} if variante else {}
+    hojas = _hojas(
+        generar_reporte_cdi_xlsx(
+            _usuario(f"reportes-estado-{variante}", superuser=True), **kwargs
+        )
+    )
+
+    por_cdi = dict(
+        zip(_columna(hojas["CDI"], "nombre"), _columna(hojas["CDI"], "estado"))
+    )
+    assert por_cdi == {"CDI Ajeno": "baja", "CDI Propio": "activo"}
+    assert dict(
+        zip(
+            _columna(hojas["Trabajadores"], "cdi_nombre"),
+            _columna(hojas["Trabajadores"], "estado_cdi"),
+        )
+    ) == {"CDI Ajeno": "baja", "CDI Propio": "activo"}
+    assert dict(
+        zip(
+            _columna(hojas["Nomina"], "cdi_nombre"),
+            _columna(hojas["Nomina"], "estado_cdi"),
+        )
+    ) == {"CDI Ajeno": "baja", "CDI Propio": "activo"}
+    # La columna `estado` de Nómina sigue siendo la del niño.
+    assert set(_columna(hojas["Nomina"], "estado")) == {"activo"}
+    entradas = {
+        (fila[0], fila[1], fila[2]): fila[3] for fila in hojas["Diccionario"][1:]
+    }
+    for hoja, columna in (
+        ("CDI", "estado"),
+        ("Trabajadores", "estado_cdi"),
+        ("Nomina", "estado_cdi"),
+    ):
+        assert entradas[(hoja, columna, "activo")] == "Activo"
+        assert entradas[(hoja, columna, "pendiente")] == "Pendiente"
+        assert entradas[(hoja, columna, "baja")] == "Baja"
 
 
 def test_las_columnas_reducidas_existen_en_el_reporte_completo():

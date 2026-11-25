@@ -29,6 +29,7 @@ class SeleccionAccesosPWAImportacion:
 
 
 ResolverAccesosPWAImportacion = Callable[[str, str], SeleccionAccesosPWAImportacion]
+# pylint: disable-next=invalid-name
 _resolver: ResolverAccesosPWAImportacion | None = None
 
 
@@ -67,6 +68,7 @@ class AdaptadorImportacionPWA:
     sincronizar: Callable
 
 
+# pylint: disable-next=invalid-name
 _adaptador: AdaptadorImportacionPWA | None = None
 
 

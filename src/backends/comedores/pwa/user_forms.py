@@ -88,7 +88,7 @@ PWA_SELECTION_FIELDS = (
 class ComedorPWASelectMultiple(forms.SelectMultiple):
     """Agrega metadata de organización en las opciones para filtrado dinámico."""
 
-    def create_option(  # pylint: disable=too-many-arguments
+    def create_option(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self, name, value, label, selected, index, subindex=None, attrs=None
     ):
         option = super().create_option(

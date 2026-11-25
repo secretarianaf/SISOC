@@ -43,7 +43,7 @@ from VAT.models import (
 
 
 class VoucherParametriaSelectMultiple(forms.SelectMultiple):
-    def create_option(  # pylint: disable=too-many-arguments
+    def create_option(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self, name, value, label, selected, index, subindex=None, attrs=None
     ):
         option = super().create_option(

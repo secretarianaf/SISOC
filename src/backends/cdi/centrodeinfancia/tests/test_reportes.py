@@ -343,6 +343,30 @@ def test_pantalla_ofrece_solo_las_provincias_del_alcance(client, datos):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    "url_name", ["centrodeinfancia_reportes", "centrodeinfancia_reportes_descargar"]
+)
+def test_pase_por_edad_en_reportes_respeta_el_alcance(client, datos, url_name):
+    user = _dar_permiso_reportes(_dar_permiso_vista(_usuario("reportes-pase-edad")))
+    AccesoCDI.objects.create(user=user, centro=datos["propio"])
+    client.force_login(user)
+    propia = NominaCentroInfancia.objects.get(centro=datos["propio"])
+    ajena = NominaCentroInfancia.objects.get(centro=datos["ajeno"])
+    NominaCentroInfancia.objects.filter(pk__in=[propia.pk, ajena.pk]).update(
+        fecha_nacimiento=date(2020, 1, 1)
+    )
+
+    respuesta = client.get(reverse(url_name))
+
+    assert respuesta.status_code == 200
+    propia.refresh_from_db()
+    ajena.refresh_from_db()
+    assert propia.estado == NominaCentroInfancia.ESTADO_PENDIENTE
+    assert ajena.estado == NominaCentroInfancia.ESTADO_ACTIVO
+    assert ajena.pendiente_por_edad_desde is None
+
+
+@pytest.mark.django_db
 def test_columnas_derivadas_del_centro():
     provincia = Provincia.objects.create(nombre="Mendoza")
     centro = CentroDeInfancia.objects.create(

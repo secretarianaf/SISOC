@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-from calendar import monthrange
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -29,10 +28,10 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from centrodeinfancia.models import (
-    AccesoCDI,
-    CentroDeInfancia,
-    NominaCentroInfancia,
+from centrodeinfancia.models import AccesoCDI, CentroDeInfancia, NominaCentroInfancia
+from centrodeinfancia.services import (
+    fecha_nacimiento_limite_nomina,
+    pasar_nomina_a_pendiente_por_edad,
 )
 from centrodeinfancia.services_renaper_estado import (
     build_adult_validation_map,
@@ -49,7 +48,6 @@ TABLE_FONT_SIZE = 9
 FONT_REGULAR = "Helvetica"
 FONT_BOLD = "Helvetica-Bold"
 AGE_MEASURE_LABELS = {"meses": "Meses", "anios": "Años"}
-MAX_EXPORT_AGE_MONTHS = 48
 
 
 class NominaNinosPDFError(Exception):
@@ -213,20 +211,17 @@ def _deduplicate_registros(registros):
 def _exclude_overage_registros(
     registros: list[NominaCentroInfancia], as_of: date
 ) -> tuple[list[NominaCentroInfancia], int]:
-    """Omite nacimientos anteriores al corte inclusivo de 48 meses exactos."""
-    cutoff_month_index = as_of.year * 12 + as_of.month - 1 - MAX_EXPORT_AGE_MONTHS
-    cutoff_year, cutoff_month_index = divmod(cutoff_month_index, 12)
-    cutoff_month = cutoff_month_index + 1
-    cutoff_date = as_of.replace(
-        year=cutoff_year,
-        month=cutoff_month,
-        day=min(as_of.day, monthrange(cutoff_year, cutoff_month)[1]),
-    )
+    """Omite a quienes ya cumplieron 48 meses: el día del cumpleaños no figuran.
+
+    Resguardo por si queda una ficha Activa de 4 años (por ejemplo, cargada por
+    fuera de los formularios) antes de que corra el pase a Pendiente (#2925).
+    """
+    cutoff_date = fecha_nacimiento_limite_nomina(as_of)
     selected = []
     excluded_count = 0
     for registro in registros:
         birth_date = _resolved_child_fields(registro)[3]
-        if birth_date and birth_date < cutoff_date:
+        if birth_date and birth_date <= cutoff_date:
             excluded_count += 1
             continue
         selected.append(registro)
@@ -238,6 +233,7 @@ def build_export_data(  # pylint: disable=too-many-locals
 ):
     generado_en = timezone.localtime(generado_en or timezone.now())
     as_of = generado_en.date()
+    pasar_nomina_a_pendiente_por_edad(hoy=as_of, provincia_id=provincia.pk)
     registros = list(
         NominaCentroInfancia.objects.filter(
             centro__provincia=provincia,
@@ -262,7 +258,7 @@ def build_export_data(  # pylint: disable=too-many-locals
     registros, overage_count = _exclude_overage_registros(registros, as_of)
     if overage_count:
         logger.info(
-            "Se omitieron de la nómina provincial fichas mayores de 48 meses",
+            "Se omitieron de la nómina provincial fichas de 48 meses o más",
             extra={
                 "data": {
                     "provincia_id": provincia.pk,

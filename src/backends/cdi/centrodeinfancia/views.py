@@ -96,6 +96,7 @@ from centrodeinfancia.services import (
     AsistenciaNominaCentroInfanciaService,
     CentroDeInfanciaService,
     bloquear_ciudadano_para_nomina_cdi,
+    pasar_nomina_a_pendiente_por_edad,
     puede_reactivar_nomina_cdi_bajo_bloqueo,
     tiene_nomina_cdi_vigente_en_otro_centro,
 )
@@ -516,6 +517,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         )
         context["cdi_formularios_visible"] = settings.CDI_FORMULARIOS_VISIBLE
         context["cdi_intervenciones_visible"] = settings.CDI_INTERVENCIONES_VISIBLE
+        pasar_nomina_a_pendiente_por_edad(centro_id=self.object.pk)
         nomina_qs = self.object.nominas.select_related(
             "ciudadano",
             "ciudadano__sexo",
@@ -1450,6 +1452,7 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         centro = self._get_centro()
+        pasar_nomina_a_pendiente_por_edad(centro_id=centro.pk)
         return (
             NominaCentroInfancia.objects.select_related(
                 "ciudadano",
@@ -2477,6 +2480,7 @@ class AsistenciaNominaCentroView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         centro = self._get_centro()
         fecha = self._parse_fecha(self.request.GET.get("fecha"))
+        pasar_nomina_a_pendiente_por_edad(centro_id=centro.pk)
         nominas = AsistenciaNominaCentroInfanciaService.nominas_editables(
             centro,
             fecha,

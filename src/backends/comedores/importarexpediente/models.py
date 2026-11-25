@@ -63,6 +63,12 @@ def format_periodo_pago(mes_pago, ano_pago):
     return None
 
 
+class BloqueoImportacion(models.Model):
+    """Fila compartida para serializar importaciones y reversiones."""
+
+    id = models.PositiveSmallIntegerField(primary_key=True)
+
+
 class ArchivosImportados(models.Model):
     archivo = models.FileField(upload_to="importados/")
     delimiter = models.CharField(max_length=1, default=",")

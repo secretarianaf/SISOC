@@ -32,3 +32,18 @@
 
 - Riesgo: una importación ahora guarda una fila por comedor modificado (todos los de Alimentar Comunidad). Es un volumen acotado.
 - Rollback: revertir el PR y la migración `importarexpediente.0016`. Se pierden los registros de estados previos, y los lotes importados mientras tanto vuelven a no poder deshacerse.
+
+## Protección frente a operaciones simultáneas
+
+- La migración `0017` agrega una tabla de coordinación. Al importar o deshacer,
+  ambas operaciones bloquean la misma fila hasta finalizar la transacción y
+  comprueban el lote después de obtener el bloqueo. Esto conserva el orden entre
+  operaciones de este flujo, a costa de ejecutarlas de a una.
+- La reversión actualiza cada comedor solo si su estado y mes todavía coinciden
+  con lo que dejó la importación. La comparación y actualización son una sola
+  operación SQL; un cambio concurrente se respeta y se informa como omitido.
+- Las pruebas de concurrencia ejecutan dos transacciones reales sobre MySQL
+  aislado. No cubren cambios en otros campos ni escrituras externas que no
+  respeten las transacciones del sistema.
+- Para revertir el cambio, revertir `0017` antes de `0016` y el código asociado;
+  no hacerlo mientras haya operaciones de importación o reversión en curso.

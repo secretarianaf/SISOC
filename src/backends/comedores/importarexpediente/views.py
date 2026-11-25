@@ -31,6 +31,7 @@ from importarexpediente.services import (
     HeaderlessImportFileError,
     actualizar_fechas_acreditacion_por_lote,
     aplicar_estados_por_lote,
+    bloquear_importaciones,
     deshacer_importacion,
     eliminar_lote,
     ensure_import_required_defaults,
@@ -630,6 +631,7 @@ class ImportDatosView(LoginRequiredMixin, FormView):
 
         try:
             with transaction.atomic():
+                bloquear_importaciones()
                 batch = ArchivosImportados.objects.select_for_update().get(
                     pk=self.batch_id
                 )
@@ -736,6 +738,7 @@ class BorrarDatosImportadosView(LoginRequiredMixin, FormView):
             "importarexpediente_detail", kwargs={"id_archivo": self.batch_id}
         )
         with transaction.atomic():
+            bloquear_importaciones()
             batch = get_object_or_404(
                 ArchivosImportados.objects.select_for_update(), pk=self.batch_id
             )

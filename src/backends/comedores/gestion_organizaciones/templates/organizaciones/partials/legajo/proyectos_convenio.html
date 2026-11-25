@@ -1,0 +1,175 @@
+{% comment %}
+Proyectos con región, subzona/aglomerado, territoriales/supervisores y convenio (#2745).
+Cada fila se despliega con los Datos de Convenio del proyecto.
+Recibe: filas (proyecto, convenio, resumen), titulo, color, es_linea_tradicional,
+permite_convenio (False si los proyectos no tienen línea) y territoriales_sin_proyecto.
+{% endcomment %}
+{% load organizaciones_tags %}
+<div class="tabla-legajo card-programa card-{{ color|default:'otro' }}"
+     style="position: relative">
+    {% if puede_gestionar_organizaciones %}
+        <a href="{% url 'organizacion_editar' organizacion.id %}#abordaje-card"
+           class="btn-edit-card"
+           aria-label="Editar proyectos">
+            <i class="fas fa-pen"></i>
+        </a>
+    {% endif %}
+    <h5 class="mb-3">
+        {{ titulo }}
+        <span class="badge badge-gold ms-2">{{ filas|length }} Total</span>
+    </h5>
+    {% if filas %}
+        <div class="proyectos-tabla">
+            <div class="proyecto-columnas" aria-hidden="true">
+                <span>Código de Proyecto</span>
+                <span>Región</span>
+                <span>Subzona/Aglomerado</span>
+                <span>Territoriales/Supervisores</span>
+                <span>Convenio</span>
+                <span></span>
+            </div>
+            {% for fila in filas %}
+                {% with proyecto=fila.proyecto convenio=fila.convenio %}
+                    <details class="convenio-paquete proyecto-fila">
+                        <summary aria-label="Proyecto {{ proyecto.codigo }}: ver datos de convenio">
+                            <span><span class="badge rounded-pill bg-primary px-3 py-2">{{ proyecto.codigo }}</span></span>
+                            <span>
+                                {% if proyecto.region_abordaje %}
+                                    {{ proyecto.region_abordaje }}
+                                {% else %}
+                                    <span class="badge badge-pendiente">Sin región</span>
+                                {% endif %}
+                            </span>
+                            <span>{{ proyecto.subzona_abordaje|default:"-" }}</span>
+                            <span class="proyecto-territoriales">
+                                {% for territorial in proyecto.territoriales.all %}
+                                    <span class="badge-territorial">{{ territorial|etiqueta_territorial }}</span>
+                                {% empty %}
+                                    <span class="badge badge-pendiente">Sin territorial/supervisor</span>
+                                {% endfor %}
+                            </span>
+                            <span>
+                                {% if convenio %}
+                                    {% if fila.resumen.coincide %}
+                                        <span class="badge-status vigente">Convenio {{ convenio.numero }}</span>
+                                    {% else %}
+                                        <span class="badge-status por-vencer">Convenio {{ convenio.numero }} · revisar montos</span>
+                                    {% endif %}
+                                {% elif permite_convenio %}
+                                    <span class="badge badge-pendiente">Sin cargar</span>
+                                {% else %}
+                                    <span class="texto-vacio">Sin línea</span>
+                                {% endif %}
+                            </span>
+                            <span class="proyecto-flecha" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+                        </summary>
+                        <div class="convenio-cuerpo">
+                            {% if convenio %}
+                                <div class="convenio-generales">
+                                    <div>
+                                        <span class="etiqueta">N° de convenio</span><strong>{{ convenio.numero }}</strong>
+                                    </div>
+                                    <div>
+                                        <span class="etiqueta">Fecha</span><strong>{{ convenio.fecha|date:"d/m/Y" }}</strong>
+                                    </div>
+                                    <div>
+                                        <span class="etiqueta">Meses</span><strong>{{ convenio.meses }}</strong>
+                                    </div>
+                                    <div>
+                                        <span class="etiqueta">Monto total</span><strong>{{ convenio.monto_total|monto }}</strong>
+                                    </div>
+                                </div>
+                                <h6 class="titulo-dorado mt-3 mb-1">Componentes del convenio</h6>
+                                <table class="table table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Componente</th>
+                                            <th class="text-end">Monto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Componente alimentario</td>
+                                            <td class="text-end">{{ convenio.componente_alimentario|monto }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Componente gastos generales</td>
+                                            <td class="text-end">{{ convenio.componente_gastos_generales|monto }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Componente SIPH</td>
+                                            <td class="text-end">{{ convenio.componente_siph|monto }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Componente gasto bancario</td>
+                                            <td class="text-end">{{ convenio.componente_gasto_bancario|monto }}</td>
+                                        </tr>
+                                        {% if es_linea_tradicional %}
+                                            <tr>
+                                                <td>Imprevistos</td>
+                                                <td class="text-end">{{ convenio.imprevistos|monto|default:"-" }}</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th>Suma de componentes</th>
+                                            <th class="text-end">{{ fila.resumen.suma|monto }}</th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                                {% if fila.resumen.coincide %}
+                                    <p class="texto-ok mt-2 mb-0">✔ La suma de componentes coincide con el monto total del convenio.</p>
+                                {% else %}
+                                    <div class="aviso-legajo mt-2" role="status">
+                                        <strong>La suma de componentes no coincide con el monto total del convenio.</strong>
+                                        Suma: {{ fila.resumen.suma|monto }} · Monto total: {{ fila.resumen.total|monto }} · Diferencia: {{ fila.resumen.diferencia|monto }}.
+                                    </div>
+                                {% endif %}
+                                {% if not es_linea_tradicional %}
+                                    <p class="nota-legajo mt-2 mb-0">Imprevistos no aplica: es solo para Línea Tradicional.</p>
+                                {% endif %}
+                            {% elif permite_convenio %}
+                                <p class="texto-vacio mt-3 mb-0">El proyecto todavía no tiene convenio cargado.</p>
+                            {% else %}
+                                <p class="texto-vacio mt-3 mb-0">El convenio se carga cuando el proyecto tiene una línea de Abordaje Comunitario.</p>
+                            {% endif %}
+                            {% if puede_gestionar_organizaciones and permite_convenio %}
+                                <a href="{% url 'organizacion_proyecto_convenio' proyecto.pk %}"
+                                   class="btn btn-success btn-sm mt-3">
+                                    {% if convenio %}
+                                        Editar convenio
+                                    {% else %}
+                                        Cargar convenio
+                                    {% endif %}
+                                </a>
+                            {% endif %}
+                        </div>
+                    </details>
+                {% endwith %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="texto-vacio mb-0">
+            No hay proyectos activos.
+            {% if organizacion.region_abordaje_id or organizacion.subzona_abordaje_id %}
+                Región anterior de la organización: {{ organizacion.region_abordaje|default:"-" }} / {{ organizacion.subzona_abordaje|default:"-" }}.
+            {% endif %}
+        </p>
+    {% endif %}
+    {% if territoriales_sin_proyecto %}
+        <div class="aviso-legajo mt-3 mb-0" role="note">
+            <strong>Territoriales/Supervisores anteriores sin proyecto:</strong>
+            asignados a la organización antes de que fueran por proyecto.
+            Asignalos a un proyecto o quitalos en Editar organización.
+            <div class="mt-2">
+                {% for territorial in territoriales_sin_proyecto %}
+                    <span class="badge-territorial">{{ territorial|etiqueta_territorial }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    <p class="nota-legajo mt-2 mb-0">
+        Cada proyecto pertenece a una sola línea y tiene su región, subzona/aglomerado, territoriales/supervisores y convenio. Tocá un proyecto para ver su convenio.
+    </p>
+</div>

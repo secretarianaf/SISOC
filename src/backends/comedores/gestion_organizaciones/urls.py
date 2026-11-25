@@ -9,6 +9,7 @@ from gestion_organizaciones.views import (
     OrganizacionRendicionDetailView,
     OrganizacionDeleteView,
     ConvenioProyectoView,
+    ProyectoCodigoUpdateView,
     FirmanteCreateView,
     AvalCreateView,
     AvalUpdateView,
@@ -164,6 +165,13 @@ urlpatterns = [
             ConvenioProyectoView.as_view()
         ),
         name="organizacion_proyecto_convenio",
+    ),
+    path(
+        "organizaciones/proyectos/<int:proyecto_id>/codigo/",
+        permissions_any_required(["organizaciones.view_organizacion"])(
+            ProyectoCodigoUpdateView.as_view()
+        ),
+        name="organizacion_proyecto_codigo",
     ),
     path(
         "organizaciones/aval/crear/<int:organizacion_pk>",

@@ -10,6 +10,7 @@ from io import BytesIO
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Case, Exists, F, Max, OuterRef, Q, When
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from pypdf import PdfReader, PdfWriter
@@ -1477,19 +1478,34 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
                     "comedor__organizacion__territoriales_abordaje_comunitario",
                 )
                 .annotate(
+                    # Región/subzona del proyecto de la rendición (o del
+                    # comedor); si el proyecto no la tiene, la anterior de su
+                    # organización.
                     region_abordaje_id=Case(
                         When(
                             proyecto__isnull=False,
-                            then=F("proyecto__organizacion__region_abordaje_id"),
+                            then=Coalesce(
+                                F("proyecto__region_abordaje_id"),
+                                F("proyecto__organizacion__region_abordaje_id"),
+                            ),
                         ),
-                        default=F("comedor__organizacion__region_abordaje_id"),
+                        default=Coalesce(
+                            F("comedor__proyecto__region_abordaje_id"),
+                            F("comedor__organizacion__region_abordaje_id"),
+                        ),
                     ),
                     subzona_abordaje_id=Case(
                         When(
                             proyecto__isnull=False,
-                            then=F("proyecto__organizacion__subzona_abordaje_id"),
+                            then=Coalesce(
+                                F("proyecto__subzona_abordaje_id"),
+                                F("proyecto__organizacion__subzona_abordaje_id"),
+                            ),
                         ),
-                        default=F("comedor__organizacion__subzona_abordaje_id"),
+                        default=Coalesce(
+                            F("comedor__proyecto__subzona_abordaje_id"),
+                            F("comedor__organizacion__subzona_abordaje_id"),
+                        ),
                     ),
                 )
                 .order_by("-ultima_modificacion", "-id")

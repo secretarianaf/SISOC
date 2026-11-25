@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- shared parity module: components plus the helpers and hooks that go with them. */
-import { useLayoutEffect, useRef, useState, type KeyboardEvent, type SelectHTMLAttributes } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type SelectHTMLAttributes } from "react";
 import { createPortal } from "react-dom";
 import type { ReactNode } from "react";
 
@@ -12,8 +12,19 @@ import type { ReactNode } from "react";
  * defaults reproduce the `datacalle`/`pas` interaction. The remote selector of Inspecciones
  * (`InspSelect2`) keeps its own async data source; its focus rule is available here as
  * `singleFocus="selection"`.
+ *
+ * `remote` reproduces the `ajax` source Select2 builds from the widget's `data-ajax--*` attributes
+ * (the big VAT selects of #2889): the choices are only the chosen value and the rest is searched.
  */
 export type Choice = { value: string; label: string };
+
+/** Select2 `ajax` from `data-ajax--url`, `data-ajax--delay` and `data-minimum-input-length`. */
+export type RemoteSource = { url: string; delay: number; minimumInputLength: number };
+
+type Fetched = { term: string; status: "ready" | "error"; options: Choice[] };
+
+const isRemoteOption = (o: unknown): o is { id: string | number; text: string } =>
+  typeof o === "object" && o !== null && ["string", "number"].includes(typeof (o as { id?: unknown }).id) && typeof (o as { text?: unknown }).text === "string";
 
 export const plain = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
 
@@ -56,26 +67,40 @@ export type Select2Props = {
   singleFocus?: "search" | "selection";
   /** Rendered between the hidden native `<select>` and the Select2 box (where a script inserts feedback `afterend` of the select). */
   afterSelect?: ReactNode;
+  /** Remote source: results come from `url` (`term`, `_type`, `q`) as `{results: [{id, text}]}`, not from `choices`. */
+  remote?: RemoteSource;
 };
 
 export default function Select2({
   id, name, choices, value, onChange, multiple = false, placeholder, selectClassName, selectProps, invalid = false, disabled = false,
   noResults, dropdownParent, hideEmptyChoice = false, clearTrigger = "none", focusMarker = "container", termHandling = "reset",
   enterOnSelected = "toggle", removeOpensResults = false, outsideClick = "dropdown", singleFocus = "search",
-  afterSelect,
+  afterSelect, remote,
 }: Select2Props) {
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
   const [term, setTerm] = useState("");
   const [highlight, setHighlight] = useState(0);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+  // Remote options picked here: the hidden select keeps their `<option>` like Select2 appends it.
+  const [remembered, setRemembered] = useState<Choice[]>([]);
+  const [fetched, setFetched] = useState<Fetched | null>(null);
   const container = useRef<HTMLSpanElement>(null);
   const selection = useRef<HTMLSpanElement>(null);
   const search = useRef<HTMLInputElement>(null);
+  const known = [...choices, ...remembered.filter((r) => !choices.some((c) => c.value === r.value))];
   // Select2 lists choices in option order, not in selection order.
-  const options = hideEmptyChoice ? choices.filter((c) => c.value !== "") : choices;
+  const options = hideEmptyChoice ? known.filter((c) => c.value !== "") : known;
   const chosen = options.filter((c) => value.includes(c.value));
-  const results = options.filter((c) => plain(c.label).includes(plain(term)));
+  const remoteUrl = remote?.url;
+  const remoteDelay = remote?.delay ?? 0;
+  const minimumInput = remote?.minimumInputLength ?? 0;
+  const remoteStatus = !remote ? null : term.length < minimumInput ? "short" : fetched?.term === term ? fetched.status : "searching";
+  const results = !remote ? options.filter((c) => plain(c.label).includes(plain(term)))
+    : remoteStatus === "ready" ? fetched!.options : [];
+  // Select2 4.1 English messages (the native VAT pages load Select2 without a language).
+  const message = remoteStatus === "short" ? `Please enter ${minimumInput - term.length} or more characters`
+    : remoteStatus === "searching" ? "Searching…" : remoteStatus === "error" ? "The results could not be loaded." : noResults;
   const containerId = `select2-${id}-container`;
   const resultsId = `select2-${id}-results`;
   const keepTerm = termHandling === "keep";
@@ -112,6 +137,27 @@ export default function Select2({
     if (open && !multiple && !selectionFocus) search.current?.focus();
   }, [open, multiple, selectionFocus]);
 
+  // Select2 AjaxAdapter: waits `delay` after the last keystroke, cancels the previous request.
+  useEffect(() => {
+    if (!remoteUrl || !open || term.length < minimumInput) return undefined;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams({ term, _type: "query", q: term });
+      fetch(`${remoteUrl}?${params}`, {
+        credentials: "same-origin", headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" }, signal: controller.signal,
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+        .then((data: unknown) => {
+          const list = (data as { results?: unknown } | null)?.results;
+          setHighlight(0);
+          if (!Array.isArray(list) || !list.every(isRemoteOption)) setFetched({ term, status: "error", options: [] });
+          else setFetched({ term, status: "ready", options: list.map((o) => ({ value: String(o.id), label: o.text })) });
+        })
+        .catch(() => { if (!controller.signal.aborted) setFetched({ term, status: "error", options: [] }); });
+    }, remoteDelay);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [remoteUrl, remoteDelay, minimumInput, open, term]);
+
   function show() {
     if (disabled) return;
     setOpen(true);
@@ -125,6 +171,7 @@ export default function Select2({
     if (refocus) (multiple ? search : selection).current?.focus();
   }
   function pick(choice: Choice, fromKeyboard = false) {
+    if (remote && !known.some((c) => c.value === choice.value)) setRemembered((r) => [...r, choice]);
     if (multiple) {
       if (!(fromKeyboard && enterOnSelected === "close" && value.includes(choice.value))) {
         onChange(value.includes(choice.value) ? value.filter((v) => v !== choice.value) : [...value, choice.value]);
@@ -210,7 +257,7 @@ export default function Select2({
     <select name={name} className={`${selectClassName}${invalid ? " is-invalid" : ""} select2-hidden-accessible`} id={id} multiple={multiple}
       disabled={disabled || undefined} aria-invalid={invalid ? "true" : undefined} tabIndex={-1} aria-hidden="true"
       {...selectProps} value={multiple ? value : value[0] ?? ""} onChange={() => undefined}>
-      {choices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+      {known.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
     </select>
     {afterSelect}
     <span ref={container} className={containerClass} dir="ltr" style={{ width: "100%" }} {...containerFocus}>
@@ -260,7 +307,7 @@ export default function Select2({
               {results.length ? results.map((c, index) => <li key={c.value} id={`select2-${id}-result-${c.value}`} role="option" aria-selected={value.includes(c.value)}
                 className={`select2-results__option select2-results__option--selectable${value.includes(c.value) ? " select2-results__option--selected" : ""}${index === highlight ? " select2-results__option--highlighted" : ""}`}
                 onMouseEnter={() => setHighlight(index)} onMouseDown={(e) => e.preventDefault()} onClick={() => pick(c)}>{c.label}</li>)
-                : <li className="select2-results__option select2-results__message" role="alert" aria-live="assertive">{noResults}</li>}
+                : <li className={`select2-results__option ${remoteStatus === "searching" ? "loading-results" : "select2-results__message"}`} role="alert" aria-live="assertive">{message}</li>}
             </ul>
           </span>
         </span>

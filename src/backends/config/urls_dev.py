@@ -10,7 +10,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.http import Http404
-from django.urls import include, path
+from django.urls import include, path as url_path
 from django.views.static import serve
 
 _PREFIJO_PRIVADO_CARGAS_CDF = "centrodefamilia/cargas_masivas"
@@ -28,9 +28,9 @@ def _servir_media_dev(request, path, **kwargs):
 def dev_urlpatterns():
     if not settings.DEBUG or getattr(settings, "RUNNING_TESTS", False):
         return []
-    patterns = [path("__debug__/", include("debug_toolbar.urls"))]
+    patterns = [url_path("__debug__/", include("debug_toolbar.urls"))]
     if getattr(settings, "ENABLE_SILK", False):
-        patterns += [path("silk/", include("silk.urls", namespace="silk"))]
+        patterns += [url_path("silk/", include("silk.urls", namespace="silk"))]
     patterns += staticfiles_urlpatterns()
     patterns += static(
         settings.MEDIA_URL, view=_servir_media_dev, document_root=settings.MEDIA_ROOT
